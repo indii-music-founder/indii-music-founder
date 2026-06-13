@@ -25,6 +25,8 @@ export const CreativeAgent: AgentConfig = {
             add_character_reference: DirectorTools.add_character_reference,
             analyze_audio: DirectorTools.analyze_audio,
             canvas_push: DirectorTools.canvas_push,
+            generate_moodboard: DirectorTools.generate_moodboard,
+            analyze_visual_trends: DirectorTools.analyze_visual_trends,
         } as Record<string, import('@/services/agent/types').AnyToolFunction>;
     },
     authorizedTools: [
@@ -37,6 +39,8 @@ export const CreativeAgent: AgentConfig = {
         'add_character_reference',
         'analyze_audio',
         'canvas_push',
+        'generate_moodboard',
+        'analyze_visual_trends',
     ],
     tools: [{
         functionDeclarations: [
@@ -159,6 +163,29 @@ export const CreativeAgent: AgentConfig = {
                         label: { type: 'STRING', description: 'Optional label for the canvas element.' }
                     },
                     required: ['assetId']
+                }
+            },
+            {
+                name: 'generate_moodboard',
+                description: 'Generate a visual moodboard comprising color palettes, textures, and aesthetic inspiration for a given theme.',
+                parameters: {
+                    type: 'OBJECT',
+                    properties: {
+                        theme: { type: 'STRING', description: 'The core theme, concept, or genre for the moodboard.' },
+                        style: { type: 'STRING', description: 'Optional specific visual style (e.g., "cyberpunk", "minimalist").' }
+                    },
+                    required: ['theme']
+                }
+            },
+            {
+                name: 'analyze_visual_trends',
+                description: 'Analyze current visual and aesthetic trends for a specific industry or music genre.',
+                parameters: {
+                    type: 'OBJECT',
+                    properties: {
+                        industry_or_genre: { type: 'STRING', description: 'The industry or music genre to analyze (e.g., "electronic music", "streetwear").' }
+                    },
+                    required: ['industry_or_genre']
                 }
             }
         ]

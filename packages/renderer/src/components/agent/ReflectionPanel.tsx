@@ -136,7 +136,7 @@ export const ReflectionPanel: React.FC<ReflectionPanelProps> = ({
                   )}
                 </div>
                 <span className="text-xs text-gray-500">
-                  {new Date(iteration.timestamp).toLocaleTimeString()}
+                  {new Date(iteration.timestamp).toLocaleTimeString('en-US')}
                 </span>
               </div>
 

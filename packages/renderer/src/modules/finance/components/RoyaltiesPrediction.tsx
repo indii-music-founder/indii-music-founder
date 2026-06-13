@@ -141,7 +141,7 @@ function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
             <p className="text-gray-400 mb-1">{label}</p>
             {streams != null && (
                 <>
-                    <p className="text-white font-bold">{streams.toLocaleString()} streams</p>
+                    <p className="text-white font-bold">{streams.toLocaleString('en-US')} streams</p>
                     <p className="text-green-400">${(streams * PER_STREAM_RATE).toFixed(2)}</p>
                 </>
             )}

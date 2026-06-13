@@ -41,7 +41,7 @@ function formatCountdown(nextRunAt?: string): string {
 }
 
 function formatTime(iso: string): string {
-    return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    return new Date(iso).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 }
 
 // ── Sub-components ──────────────────────────────────────────────────────────

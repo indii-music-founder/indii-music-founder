@@ -116,7 +116,7 @@ const CampaignsTab: React.FC = () => {
                                 </span>
                             </div>
                             {c.budget !== undefined && (
-                                <p className="text-xs text-slate-500 mt-2">{t('agent.campaigns.budget', { amount: '$' + c.budget.toLocaleString() })}</p>
+                                <p className="text-xs text-slate-500 mt-2">{t('agent.campaigns.budget', { amount: '$' + c.budget.toLocaleString('en-US') })}</p>
                             )}
                         </div>
                     ))}

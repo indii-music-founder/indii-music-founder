@@ -10,7 +10,7 @@
  * Setup: Enable YouTube Data API v3 in GCP Console
  * Free quota: 10,000 units/day
  */
-
+import { fetchWithRetry } from '@/utils/async';
 export interface YouTubeVideoMetadata {
     title: string;
     description: string;
@@ -114,7 +114,7 @@ export class YouTubeDataService {
             key: this.apiKey,
         });
 
-        const response = await fetch(`${YOUTUBE_API_BASE}/search?${params}`);
+        const response = await fetchWithRetry(`${YOUTUBE_API_BASE}/search?${params}`);
 
         if (!response.ok) {
             throw new Error(`YouTube search error: ${response.status}`);
@@ -149,7 +149,7 @@ export class YouTubeDataService {
             key: this.apiKey,
         });
 
-        const response = await fetch(`${YOUTUBE_API_BASE}/videos?${params}`);
+        const response = await fetchWithRetry(`${YOUTUBE_API_BASE}/videos?${params}`);
 
         if (!response.ok) {
             throw new Error(`YouTube video details error: ${response.status}`);
@@ -187,7 +187,7 @@ export class YouTubeDataService {
             key: this.apiKey,
         });
 
-        const response = await fetch(`${YOUTUBE_API_BASE}/channels?${params}`);
+        const response = await fetchWithRetry(`${YOUTUBE_API_BASE}/channels?${params}`);
 
         if (!response.ok) {
             throw new Error(`YouTube channel error: ${response.status}`);
@@ -244,7 +244,7 @@ export class YouTubeDataService {
             part: Object.keys(body).filter(k => k !== 'id').join(','),
         });
 
-        const response = await fetch(`${YOUTUBE_API_BASE}/videos?${params}`, {
+        const response = await fetchWithRetry(`${YOUTUBE_API_BASE}/videos?${params}`, {
             method: 'PUT',
             headers: {
                 ...this.getHeaders(true),

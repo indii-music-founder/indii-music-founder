@@ -579,7 +579,7 @@ export default function MerchDesigner() {
                                 </button>
                                 {lastSaved && (
                                     <span className="text-[10px] text-neutral-600 mt-0.5">
-                                        Saved {new Date(lastSaved).toLocaleTimeString()}
+                                        Saved {new Date(lastSaved).toLocaleTimeString('en-US')}
                                     </span>
                                 )}
                             </div>

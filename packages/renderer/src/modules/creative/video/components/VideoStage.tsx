@@ -234,7 +234,7 @@ export const VideoStage = React.memo<VideoStageProps>(({
                         <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-md px-3 py-2 rounded-lg border border-white/10 max-w-sm opacity-0 group-hover/stage:opacity-100 transition-opacity duration-300 pointer-events-none">
                             <p className="text-xs font-medium text-white truncate">{activeVideo.prompt}</p>
                             <div className="flex gap-2 text-[9px] text-gray-400 mt-0.5">
-                                <span>{new Date(activeVideo.timestamp).toLocaleTimeString()}</span>
+                                <span>{new Date(activeVideo.timestamp).toLocaleTimeString('en-US')}</span>
                                 <span>•</span>
                                 <span>{activeVideo.id.slice(0, 8)}</span>
                             </div>

@@ -145,7 +145,7 @@ export const DSRUploadModal: React.FC<DSRUploadModalProps> = ({ isOpen, onClose,
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="p-4 bg-gray-900/30 border border-gray-800 rounded-xl">
                                         <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Total Transactions</p>
-                                        <p className="text-2xl font-black text-white">{parsedReport.transactions.length.toLocaleString()}</p>
+                                        <p className="text-2xl font-black text-white">{parsedReport.transactions.length.toLocaleString('en-US')}</p>
                                     </div>
                                     <div className="p-4 bg-gray-900/30 border border-gray-800 rounded-xl">
                                         <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Estimated Revenue</p>
@@ -170,7 +170,7 @@ export const DSRUploadModal: React.FC<DSRUploadModalProps> = ({ isOpen, onClose,
                                                 {parsedReport.transactions.slice(0, 5).map((row: { resourceId: { isrc?: string }; usageCount: number; revenueAmount: number }, i: number) => (
                                                     <tr key={i} className="text-gray-300">
                                                         <td className="px-4 py-2 font-mono">{row.resourceId.isrc}</td>
-                                                        <td className="px-4 py-2">{row.usageCount.toLocaleString()}</td>
+                                                        <td className="px-4 py-2">{row.usageCount.toLocaleString('en-US')}</td>
                                                         <td className="px-4 py-2 text-green-500/80">${row.revenueAmount.toFixed(4)}</td>
                                                     </tr>
                                                 ))}

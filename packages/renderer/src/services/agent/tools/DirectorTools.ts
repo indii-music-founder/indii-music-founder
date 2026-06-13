@@ -501,6 +501,51 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
             },
             agentId: 'creative'
         });
+    }),
+
+    generate_moodboard: wrapTool('generate_moodboard', async (args: { theme: string, style?: string }) => {
+        const { useStore } = await import('@/core/store');
+        const { userProfile, currentProjectId, addToHistory } = useStore.getState();
+        try {
+            const effectivePrompt = `A professional design moodboard for the theme "${args.theme}". ${args.style ? `Style: ${args.style}. ` : ''}Including color palettes, textures, and typography inspiration, cohesive visual aesthetic, high resolution, laid out as a moodboard collage`;
+
+            const results = await ImageGeneration.generateImages({
+                prompt: effectivePrompt,
+                count: 1,
+                resolution: '4K',
+                aspectRatio: '16:9',
+                userProfile
+            });
+
+            if (results.length > 0) {
+                const res = results[0]!;
+                addToHistory({
+                    id: res.id,
+                    url: res.url,
+                    prompt: res.prompt,
+                    type: 'image',
+                    timestamp: Date.now(),
+                    projectId: currentProjectId || 'default-project',
+                    meta: 'moodboard'
+                });
+
+                return toolSuccess({
+                    image_id: res.id,
+                    url: res.url
+                }, `Moodboard generated successfully for theme "${args.theme}".`);
+            }
+            return toolError("Generation completed but no image was returned.", "EMPTY_RESULT");
+        } catch (err: unknown) {
+            return handleGenerationError(err, 'generate_moodboard');
+        }
+    }),
+
+    analyze_visual_trends: wrapTool('analyze_visual_trends', async (args: { industry_or_genre: string }) => {
+        const analysisFramework = `1. Dominant Color Palettes\n2. Typography Trends\n3. Visual Motifs & Textures\n4. Photography / Illustration Styles\n5. Recommended Aesthetic Direction`;
+        return toolSuccess({
+            framework: analysisFramework,
+            topic: args.industry_or_genre
+        }, `Please provide a comprehensive visual trends analysis for "${args.industry_or_genre}" using your internal knowledge, structured around the provided framework.`);
     })
 };
 

@@ -268,16 +268,16 @@ export const BankPanel: React.FC = () => {
                                 <div className="bg-black border border-gray-800 rounded-2xl p-6 space-y-4">
                                     <div className="flex justify-between items-end">
                                         <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Gross Inventory</span>
-                                        <span className="text-lg font-black text-gray-300 italic">${parseFloat(amount).toLocaleString()}</span>
+                                        <span className="text-lg font-black text-gray-300 italic">${parseFloat(amount).toLocaleString('en-US')}</span>
                                     </div>
                                     <div className="flex justify-between items-end">
                                         <span className="text-[10px] font-black text-dept-marketing uppercase tracking-widest">Compliance Levy</span>
-                                        <span className="text-lg font-black text-dept-marketing italic">-${(parseFloat(amount) * taxReport.withholding_rate).toLocaleString()}</span>
+                                        <span className="text-lg font-black text-dept-marketing italic">-${(parseFloat(amount) * taxReport.withholding_rate).toLocaleString('en-US')}</span>
                                     </div>
                                     <div className="border-t border-gray-900 pt-4 flex justify-between items-end">
                                         <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Net Disbursable</span>
                                         <span data-testid="bank-tax-net-disbursable" className="text-lg font-black text-white italic tracking-tighter shadow-dept-licensing/20 drop-shadow-lg">
-                                            ${(parseFloat(amount) * (1 - taxReport.withholding_rate)).toLocaleString()}
+                                            ${(parseFloat(amount) * (1 - taxReport.withholding_rate)).toLocaleString('en-US')}
                                         </span>
                                     </div>
                                 </div>
@@ -295,7 +295,7 @@ export const BankPanel: React.FC = () => {
                             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                                 <div className="flex items-center justify-between border-b border-gray-800 pb-6">
                                     <h4 className="text-xl font-black text-white italic uppercase tracking-tighter">Waterfall Flow</h4>
-                                    <div className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Processed: {new Date(waterfallReport.processed_at).toLocaleTimeString()}</div>
+                                    <div className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Processed: {new Date(waterfallReport.processed_at).toLocaleTimeString('en-US')}</div>
                                 </div>
 
                                 <div className="space-y-4">
@@ -310,7 +310,7 @@ export const BankPanel: React.FC = () => {
                                                 </div>
                                                 <div className="flex items-center gap-3">
                                                     <ArrowDownRight className="w-4 h-4 text-dept-creative opacity-20 group-hover:opacity-100 transition-all" />
-                                                    <span className="text-xl font-black text-white italic">${distAmount.toLocaleString()}</span>
+                                                    <span className="text-xl font-black text-white italic">${distAmount.toLocaleString('en-US')}</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -319,7 +319,7 @@ export const BankPanel: React.FC = () => {
 
                                 <div className="mt-8 pt-6 border-t border-gray-800 flex justify-between items-center">
                                     <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Total Dispersed</span>
-                                    <span className="text-lg font-black text-white italic">${waterfallReport.net_revenue.toLocaleString()}</span>
+                                    <span className="text-lg font-black text-white italic">${waterfallReport.net_revenue.toLocaleString('en-US')}</span>
                                 </div>
                             </div>
                         )

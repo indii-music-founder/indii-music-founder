@@ -59,7 +59,7 @@ export const DistributorCard: React.FC<DistributorCardProps> = ({ connection, on
                                 </p>
                                 <p className="text-[11px] text-gray-400 flex items-center justify-between">
                                     <span>Last Sync</span>
-                                    <span className="text-gray-300 font-medium">{connection.lastSyncedAt ? new Date(connection.lastSyncedAt).toLocaleDateString() : 'Never'}</span>
+                                    <span className="text-gray-300 font-medium">{connection.lastSyncedAt ? new Date(connection.lastSyncedAt).toLocaleDateString('en-US') : 'Never'}</span>
                                 </p>
                             </div>
                         ) : (

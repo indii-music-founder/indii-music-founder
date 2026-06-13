@@ -126,7 +126,7 @@ export const ProRegistrationSection: React.FC<ProRegistrationSectionProps> = ({
 
                         <div className="md:w-64 bg-slate-50 p-5 rounded-xl border border-slate-100">
                             <h4 className="font-semibold text-slate-800 mb-3">Timeline</h4>
-                            <p className="text-sm text-slate-600 mb-2"><strong>Expected completion:</strong><br /> 5-7 business days from Application Date ({applicationDate?.toLocaleDateString() ?? 'Recently'})</p>
+                            <p className="text-sm text-slate-600 mb-2"><strong>Expected completion:</strong><br /> 5-7 business days from Application Date ({applicationDate?.toLocaleDateString('en-US') ?? 'Recently'})</p>
                             <p className="text-sm text-slate-600"><strong>First payout cycle:</strong><br /> Q3 (Aug 2026)</p>
                         </div>
                     </div>
@@ -159,7 +159,7 @@ export const ProRegistrationSection: React.FC<ProRegistrationSectionProps> = ({
                                 </div>
                                 <div>
                                     <p className="text-gray-500 mb-0.5">Registration Date</p>
-                                    <p className="font-medium text-gray-900">{applicationDate ? new Date(applicationDate).toLocaleDateString() : 'N/A'}</p>
+                                    <p className="font-medium text-gray-900">{applicationDate ? new Date(applicationDate).toLocaleDateString('en-US') : 'N/A'}</p>
                                 </div>
                                 <div>
                                     <p className="text-gray-500 mb-0.5">Next Statement</p>

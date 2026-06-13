@@ -12,6 +12,8 @@
  *   2. Optionally call `createListing()` to set a fixed-price sale
  */
 
+import { fetchWithRetry } from '@/utils/async';
+
 export interface NFTAsset {
     contractAddress: string;   // ERC-1155/721 contract address
     tokenId: string;           // Token ID (decimal string)
@@ -83,7 +85,7 @@ export class OpenSeaService {
         const chain = CHAIN_SLUG[asset.chain];
         const url = `${OPENSEA_API}/chain/${chain}/contract/${asset.contractAddress}/nfts/${asset.tokenId}/refresh`;
 
-        const res = await fetch(url, {
+        const res = await fetchWithRetry(url, {
             method: 'POST',
             headers: {
                 accept: 'application/json',
@@ -109,7 +111,7 @@ export class OpenSeaService {
         const chain = CHAIN_SLUG[asset.chain];
         const url = `${OPENSEA_API}/chain/${chain}/contract/${asset.contractAddress}/nfts/${asset.tokenId}`;
 
-        const res = await fetch(url, {
+        const res = await fetchWithRetry(url, {
             headers: {
                 accept: 'application/json',
                 'x-api-key': this.apiKey,
@@ -149,7 +151,7 @@ export class OpenSeaService {
         const endTime = (Math.floor(Date.now() / 1000) + durationDays * 86400).toString();
 
         // Step 1: Get the listing order from OpenSea (they prepare the Seaport struct)
-        const buildRes = await fetch(`${OPENSEA_API}/listings`, {
+        const buildRes = await fetchWithRetry(`${OPENSEA_API}/listings`, {
             method: 'POST',
             headers: {
                 accept: 'application/json',
@@ -185,7 +187,7 @@ export class OpenSeaService {
         }) as string;
 
         // Step 3: Submit signed order to OpenSea
-        const submitRes = await fetch(`${OPENSEA_API}/orders/${chain}/seaport/listings`, {
+        const submitRes = await fetchWithRetry(`${OPENSEA_API}/orders/${chain}/seaport/listings`, {
             method: 'POST',
             headers: {
                 accept: 'application/json',

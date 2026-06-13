@@ -93,20 +93,20 @@ describe('RoadAgent', () => {
         });
     });
 
-    describe('calculate_tour_budget', () => {
+    describe('estimate_tour_budget', () => {
         it('should return budget data', async () => {
             const args = {
                 duration_days: 10,
                 crew_size: 5
             };
 
-            const result = await RoadAgent.functions!.calculate_tour_budget(args);
+            const result = await RoadAgent.functions!.estimate_tour_budget(args);
             expect(result.success).toBe(true);
             expect(result.data?.totalBudget).toBeGreaterThan(0);
         });
     });
 
-    describe('generate_itinerary', () => {
+    describe('draft_tour_itinerary', () => {
         it('should call generateStructuredData and return itinerary', async () => {
             const args = {
                 tour_name: 'Summer Rock Tour',
@@ -115,7 +115,7 @@ describe('RoadAgent', () => {
                 cities: ['Detroit']
             };
 
-            const result = await RoadAgent.functions!.generate_itinerary(args);
+            const result = await RoadAgent.functions!.draft_tour_itinerary(args);
             expect(result.success).toBe(true);
             expect(result.data?.tourName).toBe('Summer Rock Tour');
             expect(AutonomousIntelligence.generateStructuredData).toHaveBeenCalled();
@@ -131,7 +131,7 @@ describe('RoadAgent', () => {
                 cities: ['Detroit']
             };
 
-            const result = await RoadAgent.functions!.generate_itinerary(args);
+            const result = await RoadAgent.functions!.draft_tour_itinerary(args);
             expect(result.success).toBe(false);
             expect(result.error).toBe('Itinerary error');
         });

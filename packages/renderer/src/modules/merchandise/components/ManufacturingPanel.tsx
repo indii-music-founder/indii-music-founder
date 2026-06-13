@@ -418,7 +418,7 @@ export default function ManufacturingPanel({ theme, productType, productId, desi
                         <span className={`${theme.colors.text} font-medium text-sm`}>Est. Project Profit</span>
                         <span className="text-green-500 font-bold font-mono text-lg flex items-center">
                             <DollarSign className="w-4 h-4" />
-                            {totalProfit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            {totalProfit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
                     </div>
                 </div>

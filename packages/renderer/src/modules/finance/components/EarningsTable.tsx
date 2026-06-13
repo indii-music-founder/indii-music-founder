@@ -78,10 +78,10 @@ export const EarningsTable = React.memo(({ data, pageSize = 10 }: EarningsTableP
                                             </TableCell>
                                             <TableCell className="text-gray-500 font-mono text-[10px] font-bold tracking-tighter">{row.isrc || 'N/A'}</TableCell>
                                             <TableCell className="text-right text-gray-300 font-bold tabular-nums">
-                                                {row.streams.toLocaleString()}
+                                                {row.streams.toLocaleString('en-US')}
                                             </TableCell>
                                             <TableCell className="text-right text-gray-300 font-bold tabular-nums">
-                                                {row.downloads.toLocaleString()}
+                                                {row.downloads.toLocaleString('en-US')}
                                             </TableCell>
                                             <TableCell className="text-right">
                                                 <span className="font-black text-white bg-dept-licensing/10 px-2 py-1 rounded-lg border border-dept-licensing/20 shadow-sm">

@@ -115,7 +115,7 @@ export const MetricsDashboard: React.FC = () => {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <StatCard
                             label="Total Executions"
-                            value={metrics.totalExecutions.toLocaleString()}
+                            value={metrics.totalExecutions.toLocaleString('en-US')}
                             icon={TrendingUp}
                             color="text-emerald-400"
                         />

@@ -142,7 +142,7 @@ export class CostAnomalyService {
 
         if (this.counters.aiTokensUsed > DEFAULT_THRESHOLDS.aiTokensPerDay) {
             this.addAlert('warning', 'Gemini Intelligence',
-                `High token usage: ${this.counters.aiTokensUsed.toLocaleString()} tokens (threshold: ${DEFAULT_THRESHOLDS.aiTokensPerDay.toLocaleString()})`,
+                `High token usage: ${this.counters.aiTokensUsed.toLocaleString('en-US')} tokens (threshold: ${DEFAULT_THRESHOLDS.aiTokensPerDay.toLocaleString('en-US')})`,
                 this.counters.aiTokensUsed * PRICING.geminiInputToken,
                 DEFAULT_THRESHOLDS.aiTokensPerDay * PRICING.geminiInputToken
             );

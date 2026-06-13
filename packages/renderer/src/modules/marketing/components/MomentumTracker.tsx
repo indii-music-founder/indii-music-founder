@@ -46,7 +46,7 @@ function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
             <p className="text-gray-400 mb-1.5">{label}</p>
             {payload.map((p) => (
                 <p key={p.name} style={{ color: p.color }} className="font-semibold">
-                    {p.name === 'streams' ? `${p.value.toLocaleString()} streams` : `$${p.value} ad spend`}
+                    {p.name === 'streams' ? `${p.value.toLocaleString('en-US')} streams` : `$${p.value} ad spend`}
                 </p>
             ))}
         </div>
@@ -72,7 +72,7 @@ export default function MomentumTracker() {
         }
         return rawAnalyticsData.map((d, index) => ({
             day: index + 1,
-            label: `Day ${index + 1} (${new Date(d.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })})`,
+            label: `Day ${index + 1} (${new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})`,
             streams: d.streams || 0,
             adSpend: 0 // Mocked for now until Google Ads API / FB Ads API is integrated
         }));
@@ -155,9 +155,9 @@ export default function MomentumTracker() {
                 <>
                     <div className="grid grid-cols-4 gap-3">
                         {[
-                            { label: 'Total Streams', value: totalStreams.toLocaleString(), icon: BarChart2, color: 'text-dept-marketing' },
-                            { label: 'Week 1 Streams', value: week1Streams.toLocaleString(), icon: Calendar, color: 'text-blue-400' },
-                            { label: 'Total Ad Spend', value: `$${totalAdSpend.toLocaleString()}`, icon: DollarSign, color: 'text-yellow-400' },
+                            { label: 'Total Streams', value: totalStreams.toLocaleString('en-US'), icon: BarChart2, color: 'text-dept-marketing' },
+                            { label: 'Week 1 Streams', value: week1Streams.toLocaleString('en-US'), icon: Calendar, color: 'text-blue-400' },
+                            { label: 'Total Ad Spend', value: `$${totalAdSpend.toLocaleString('en-US')}`, icon: DollarSign, color: 'text-yellow-400' },
                             { label: 'Organic %', value: `${organicRatio}%`, icon: TrendingUp, color: 'text-green-400' },
                         ].map(s => (
                             <div key={s.label} className="p-3 rounded-xl bg-white/[0.03] border border-white/5">

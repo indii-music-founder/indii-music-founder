@@ -187,7 +187,7 @@ function formatTime(ts: number): string {
     const d = new Date(ts);
     const now = new Date();
     if (d.toDateString() === now.toDateString()) {
-        return d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+        return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
     }
-    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }

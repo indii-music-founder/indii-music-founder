@@ -18,7 +18,7 @@ export const RoadAgent: AgentConfig = {
     get functions() {
         return {
             plan_tour_route: RoadTools.plan_tour_route,
-            calculate_tour_budget: RoadTools.calculate_tour_budget,
+            estimate_tour_budget: RoadTools.estimate_tour_budget,
             create_project: ProjectTools.create_project,
             search_knowledge: KnowledgeTools.search_knowledge,
             search_places: RoadTools.search_places,
@@ -28,10 +28,10 @@ export const RoadAgent: AgentConfig = {
             browser_tool: UniversalTools.browser_tool,
             credential_vault: UniversalTools.credential_vault,
             generate_visa_checklist: RoadTools.generate_visa_checklist,
-            generate_itinerary: RoadTools.generate_itinerary,
+            draft_tour_itinerary: RoadTools.draft_tour_itinerary,
         } as Record<string, import('@/services/agent/types').AnyToolFunction>;
     },
-    authorizedTools: ['plan_tour_route', 'calculate_tour_budget', 'create_project', 'search_knowledge', 'search_places', 'get_place_details', 'get_distance_matrix', 'generate_social_post', 'browser_tool', 'credential_vault', 'generate_visa_checklist', 'generate_itinerary'],
+    authorizedTools: ['plan_tour_route', 'estimate_tour_budget', 'create_project', 'search_knowledge', 'search_places', 'get_place_details', 'get_distance_matrix', 'generate_social_post', 'browser_tool', 'credential_vault', 'generate_visa_checklist', 'draft_tour_itinerary'],
     tools: [{
         functionDeclarations: [
             {
@@ -48,7 +48,7 @@ export const RoadAgent: AgentConfig = {
                 }
             },
             {
-                name: "calculate_tour_budget",
+                name: "estimate_tour_budget",
                 description: "Calculate estimated budget for a tour.",
                 parameters: {
                     type: "OBJECT",
@@ -170,7 +170,7 @@ export const RoadAgent: AgentConfig = {
                 }
             },
             {
-                name: "generate_itinerary",
+                name: "draft_tour_itinerary",
                 description: "Generate a detailed day-by-day tour itinerary including travel, load-in, soundcheck, and show times.",
                 parameters: {
                     type: "OBJECT",

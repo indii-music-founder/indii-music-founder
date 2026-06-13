@@ -21,6 +21,8 @@ vi.mock('../tools/MarketingTools', () => ({
         deploy_sms_blast: vi.fn(),
         enrich_fan_data: vi.fn(),
         generate_influencer_bounty: vi.fn(),
+        generate_ad_copy: vi.fn(),
+        analyze_campaign_roi: vi.fn(),
     }
 }));
 
@@ -67,6 +69,8 @@ describe('MarketingAgent', () => {
         expect(MarketingAgent.authorizedTools).toContain('deploy_sms_blast');
         expect(MarketingAgent.authorizedTools).toContain('enrich_fan_data');
         expect(MarketingAgent.authorizedTools).toContain('generate_influencer_bounty');
+        expect(MarketingAgent.authorizedTools).toContain('generate_ad_copy');
+        expect(MarketingAgent.authorizedTools).toContain('analyze_campaign_roi');
     });
 
     it('should map the functions to correct tool implementations', () => {
@@ -85,5 +89,7 @@ describe('MarketingAgent', () => {
         expect(MarketingAgent.functions!.deploy_sms_blast).toBeDefined();
         expect(MarketingAgent.functions!.enrich_fan_data).toBeDefined();
         expect(MarketingAgent.functions!.generate_influencer_bounty).toBeDefined();
+        expect(MarketingAgent.functions!.generate_ad_copy).toBeDefined();
+        expect(MarketingAgent.functions!.analyze_campaign_roi).toBeDefined();
     });
 });

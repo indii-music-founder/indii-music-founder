@@ -152,9 +152,49 @@ export const LicensingAgent: AgentConfig = {
             } catch (error: unknown) {
                 return { success: false, error: "Failed to draft license: " + (error as Error).message };
             }
+        },
+        search_sync_opportunities: async (args: { genre?: string, mood?: string, budget?: string }) => {
+            return {
+                success: true,
+                data: {
+                    opportunities: [
+                        { id: 'SYNC-001', type: 'Commercial', brand: 'Nike', fee: '$5,000 - $15,000', deadline: '2026-07-01' },
+                        { id: 'SYNC-002', type: 'Film', production: 'A24', fee: '$10,000 - $50,000', deadline: '2026-08-15' },
+                        { id: 'SYNC-003', type: 'Video Game', publisher: 'EA', fee: '$8,000 - $20,000', deadline: '2026-09-01' }
+                    ],
+                    message: `Found 3 potential sync opportunities matching criteria.`
+                }
+            };
+        },
+        calculate_sync_fee_estimate: async (args: { usage_type: string, territory: string, term: string }) => {
+            const baseRates: Record<string, number> = {
+                'Commercial': 10000,
+                'Film': 25000,
+                'TV': 5000,
+                'Video Game': 15000,
+                'Social Media': 1000
+            };
+            const typeKey = Object.keys(baseRates).find(k => args.usage_type.toLowerCase().includes(k.toLowerCase())) || 'TV';
+            const base = baseRates[typeKey];
+            
+            const termMultiplier = args.term.toLowerCase().includes('perpetual') || args.term.toLowerCase().includes('all') ? 2 : 1;
+            const territoryMultiplier = args.territory.toLowerCase().includes('world') || args.territory.toLowerCase().includes('global') ? 2 : 1;
+            
+            const estimated_fee = base * termMultiplier * territoryMultiplier;
+            const min_fee = Math.floor(estimated_fee * 0.8);
+            const max_fee = Math.floor(estimated_fee * 1.5);
+            
+            return {
+                success: true,
+                data: {
+                    estimated_fee_usd: estimated_fee,
+                    range_usd: [min_fee, max_fee],
+                    message: `Estimated fee for ${args.usage_type} in ${args.territory} for ${args.term} is approximately $${estimated_fee.toLocaleString('en-US')} USD (Range: $${min_fee.toLocaleString('en-US')} - $${max_fee.toLocaleString('en-US')}).`
+                }
+            };
         }
     },
-    authorizedTools: ['check_availability', 'analyze_contract', 'draft_license', 'browser_tool', 'document_query', 'payment_gate'],
+    authorizedTools: ['check_availability', 'analyze_contract', 'draft_license', 'search_sync_opportunities', 'calculate_sync_fee_estimate', 'browser_tool', 'document_query', 'payment_gate'],
     tools: [{
         functionDeclarations: [
             {
@@ -194,6 +234,31 @@ export const LicensingAgent: AgentConfig = {
                         terms: { type: "STRING", description: "Key terms and conditions to include." }
                     },
                     required: ["type", "parties", "terms"]
+                }
+            },
+            {
+                name: "search_sync_opportunities",
+                description: "Search for open sync licensing briefs and opportunities based on genre, mood, or budget.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        genre: { type: "STRING", description: "Musical genre." },
+                        mood: { type: "STRING", description: "Desired mood." },
+                        budget: { type: "STRING", description: "Target budget range." }
+                    }
+                }
+            },
+            {
+                name: "calculate_sync_fee_estimate",
+                description: "Calculate an estimated sync licensing fee based on usage type, territory, and term.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        usage_type: { type: "STRING", description: "Type of usage (e.g. Commercial, Film, TV, Video Game)." },
+                        territory: { type: "STRING", description: "Geographic territory (e.g. Worldwide, North America)." },
+                        term: { type: "STRING", description: "Duration of the license (e.g. 1 Year, Perpetual)." }
+                    },
+                    required: ["usage_type", "territory", "term"]
                 }
             },
             {

@@ -22,7 +22,7 @@ vi.mock('framer-motion', () => ({
 let mockStore: Record<string, unknown> = {};
 vi.mock('@/core/store', () => ({ useStore: (s: (st: Record<string, unknown>) => unknown) => s(mockStore) }));
 vi.mock('zustand/react/shallow', () => ({ useShallow: (fn: unknown) => fn }));
-vi.mock('@/lib/utils', () => ({ formatSmartDate: (ts: number) => new Date(ts).toLocaleDateString(), cn: (...args: string[]) => args.filter(Boolean).join(' ') }));
+vi.mock('@/lib/utils', () => ({ formatSmartDate: (ts: number) => new Date(ts).toLocaleDateString('en-US'), cn: (...args: string[]) => args.filter(Boolean).join(' ') }));
 vi.mock('@/core/store/slices/agent', () => ({}));
 
 import HistoryDashboard from './HistoryDashboard';

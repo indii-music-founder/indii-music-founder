@@ -39,7 +39,7 @@ export const RevenueChart: React.FC<RevenueChartProps> = ({
                                 whileHover={{ opacity: 1, y: 0 }}
                                 className="absolute -top-10 left-1/2 -translate-x-1/2 bg-white/10 backdrop-blur-md border border-white/20 text-white text-[10px] rounded-lg px-2 py-1 shadow-xl pointer-events-none z-20"
                             >
-                                {valuePrefix}{point.value.toLocaleString()}
+                                {valuePrefix}{point.value.toLocaleString('en-US')}
                             </motion.div>
 
                             {/* Bar background */}

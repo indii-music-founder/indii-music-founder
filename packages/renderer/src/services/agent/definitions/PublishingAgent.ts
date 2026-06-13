@@ -53,10 +53,12 @@ export const PublishingAgent: AgentConfig = {
             return { success: true, data: { status: "ReadyForReview", externalDelivery: false, ...response } };
         },
         check_pro_catalog: PublishingTools.check_pro_catalog,
+        search_pro_database: PublishingTools.search_pro_database,
+        register_work_with_pro: PublishingTools.register_work_with_pro,
         pro_scraper: UniversalTools.pro_scraper,
         payment_gate: UniversalTools.payment_gate,
     },
-    authorizedTools: ['analyze_contract', 'register_work', 'check_pro_catalog', 'package_release_assets', 'pro_scraper', 'payment_gate'],
+    authorizedTools: ['analyze_contract', 'register_work', 'check_pro_catalog', 'package_release_assets', 'pro_scraper', 'payment_gate', 'search_pro_database', 'register_work_with_pro'],
     tools: [{
         functionDeclarations: [
             {
@@ -132,6 +134,54 @@ export const PublishingAgent: AgentConfig = {
                         reason: { type: "STRING" }
                     },
                     required: ["amount", "vendor", "reason"]
+                }
+            },
+            {
+                name: "search_pro_database",
+                description: "Search Performance Rights Organization (PRO) databases for existing catalog matches.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        query: { type: "STRING", description: "Title of the musical work or writer name." },
+                        society: { type: "STRING", description: "ASCAP, BMI, or SESAC." }
+                    },
+                    required: ["query"]
+                }
+            },
+            {
+                name: "register_work_with_pro",
+                description: "Submit a musical work registration directly to a PRO (ASCAP/BMI/SESAC).",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        workTitle: { type: "STRING", description: "Title of the work." },
+                        writers: {
+                            type: "ARRAY",
+                            description: "List of writers and their splits.",
+                            items: {
+                                type: "OBJECT",
+                                properties: {
+                                    name: { type: "STRING" },
+                                    ipi: { type: "STRING" },
+                                    role: { type: "STRING" },
+                                    split: { type: "NUMBER" }
+                                },
+                                required: ["name", "role", "split"]
+                            }
+                        },
+                        publisher: {
+                            type: "OBJECT",
+                            description: "Publisher details and split.",
+                            properties: {
+                                name: { type: "STRING" },
+                                ipi: { type: "STRING" },
+                                split: { type: "NUMBER" }
+                            },
+                            required: ["name", "split"]
+                        },
+                        society: { type: "STRING", description: "ASCAP, BMI, or SESAC." }
+                    },
+                    required: ["workTitle", "writers", "society"]
                 }
             }
         ]

@@ -146,6 +146,37 @@ Key Terms: ${args.terms}`;
         }
     }),
 
+    summarize_contract_terms: wrapTool('summarize_contract_terms', async (args: {
+        contractText: string;
+        focusAreas?: string[];
+    }) => {
+        if (!args.contractText || typeof args.contractText !== 'string') {
+            throw new Error("Validation Error: 'contractText' is required and must be a string.");
+        }
+
+        const systemPrompt = `
+You are a senior entertainment lawyer.
+Analyze the provided contract text and provide a concise summary of its key terms.
+Focus on: Obligations, Term, Termination, Compensation, and Rights Granted.
+${args.focusAreas && args.focusAreas.length > 0 ? `Pay special attention to these focus areas: ${args.focusAreas.join(', ')}.` : ''}
+Output in Markdown format. Use bullet points for readability. Highlight any unusual or highly restrictive clauses.
+`;
+        const prompt = `Please summarize the following contract:\n\n${args.contractText}`;
+
+        const response = await AutonomousIntelligence.generateContent(
+            prompt,
+            getFineTunedModel('legal'),
+            undefined,
+            systemPrompt
+        );
+
+        const content = getResponseText(response);
+
+        return toolSuccess({
+            summary: content
+        }, "Contract terms summarized successfully.");
+    }),
+
     generate_dmca_takedown: wrapTool('generate_dmca_takedown', async (args: { infringingUrl: string; originalWorkTitle: string; rightsholderName: string }) => {
         // Pre-filled DMCA/Takedown Notices generator (Item 136)
         const draftText = `

@@ -57,7 +57,7 @@ export function buildDesignHistoryState(
 
             const newVersion: DesignVersion = {
                 id: `version_${Date.now()}`,
-                name: name || `Version ${new Date().toLocaleString()}`,
+                name: name || `Version ${new Date().toLocaleString('en-US')}`,
                 createdAt: Date.now(),
                 projectId: currentProjectId,
                 userId,

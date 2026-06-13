@@ -240,7 +240,7 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
             const ts = cmd.timestamp && 'toMillis' in (cmd.timestamp as any) 
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 ? (cmd.timestamp as any).toMillis() 
-                : typeof cmd.timestamp === 'number' ? cmd.timestamp : Date.now();
+                : typeof cmd.timestamp === 'number' ? cmd.timestamp : 0;
                 
             all.push({
                 id: cmd.id || `cmd-${ts}`,
@@ -256,7 +256,7 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
             const ts = res.timestamp && 'toMillis' in (res.timestamp as any) 
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 ? (res.timestamp as any).toMillis() 
-                : typeof res.timestamp === 'number' ? res.timestamp : Date.now();
+                : typeof res.timestamp === 'number' ? res.timestamp : 0;
 
             all.push({
                 id: res.id || `res-${ts}`,
@@ -465,7 +465,7 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
                                 </div>
                                 
                                 <span className="text-[9px] text-[#48484a] font-bold uppercase tracking-widest mx-2">
-                                    {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    {new Date(msg.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
                                 </span>
                             </motion.div>
                         );

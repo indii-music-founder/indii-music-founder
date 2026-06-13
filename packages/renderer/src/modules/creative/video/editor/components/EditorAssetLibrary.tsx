@@ -98,7 +98,7 @@ export const EditorAssetLibrary: React.FC<EditorAssetLibraryProps> = ({ onDragSt
                                         {item.prompt || 'Untitled Asset'}
                                     </p>
                                     <p className="text-[9px] text-gray-600 mt-0.5">
-                                        {new Date(item.timestamp).toLocaleDateString()}
+                                        {new Date(item.timestamp).toLocaleDateString('en-US')}
                                     </p>
                                 </div>
                             </div>

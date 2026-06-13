@@ -25,7 +25,7 @@ export const SocialAgent: AgentConfig = {
                 }
             },
             generate_social_post: SocialTools.generate_social_post,
-            create_social_calendar: async (args: { releaseDate: string, campaignTitle: string, durationWeeks: number }) => {
+            generate_content_calendar: async (args: { releaseDate: string, campaignTitle: string, durationWeeks: number }) => {
                 const prompt = `Generate a long-term social media content calendar for a music release.
                 Campaign: ${args.campaignTitle}
                 Release Date: ${args.releaseDate}
@@ -60,13 +60,22 @@ export const SocialAgent: AgentConfig = {
             analyze_sentiment: SocialTools.analyze_sentiment,
             multi_platform_autopost: SocialTools.multi_platform_autopost,
             dispatch_community_webhook: SocialTools.dispatch_community_webhook,
+            analyze_engagement_rate: async (args: { platform: string, timePeriod: string }) => {
+                const prompt = `Analyze engagement rate for ${args.platform} over the last ${args.timePeriod}. Calculate the total engagement divided by followers or impressions, and provide actionable tips to increase engagement.`;
+                try {
+                    const response = await AutonomousIntelligence.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });
+                    return { success: true, data: { analysis: response } };
+                } catch (e: unknown) {
+                    return { success: false, error: (e as Error).message };
+                }
+            },
         } as Record<string, import('@/services/agent/types').AnyToolFunction>;
     },
-    authorizedTools: ['create_social_calendar', 'schedule_post_execution', 'generate_social_post', 'analyze_trends', 'browser_tool', 'indii_image_gen', 'credential_vault', 'draft_advanced_thread', 'analyze_sentiment', 'multi_platform_autopost', 'dispatch_community_webhook'],
+    authorizedTools: ['generate_content_calendar', 'schedule_post_execution', 'generate_social_post', 'analyze_trends', 'browser_tool', 'indii_image_gen', 'credential_vault', 'draft_advanced_thread', 'analyze_sentiment', 'multi_platform_autopost', 'dispatch_community_webhook', 'analyze_engagement_rate'],
     tools: [{
         functionDeclarations: [
             {
-                name: "create_social_calendar",
+                name: "generate_content_calendar",
                 description: "Generate a multi-week content calendar for a music release.",
                 parameters: {
                     type: "OBJECT",
@@ -209,6 +218,18 @@ export const SocialAgent: AgentConfig = {
                         embedLink: { type: "STRING", description: "Call to action link (e.g., pre-save link)." }
                     },
                     required: ["platform", "webhookUrl", "messageContent"]
+                }
+            },
+            {
+                name: "analyze_engagement_rate",
+                description: "Analyze the engagement rate across social platforms.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        platform: { type: "STRING", description: "The platform to analyze." },
+                        timePeriod: { type: "STRING", description: "The time period to analyze (e.g., '7d', '30d')." }
+                    },
+                    required: ["platform", "timePeriod"]
                 }
             }
         ]

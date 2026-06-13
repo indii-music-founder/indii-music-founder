@@ -483,6 +483,25 @@ export const MarketingTools = {
             estimatedRoiMultiplier: Number(roi.toFixed(2)),
             trend: momentumScore > 50 ? 'Accelerating' : 'Decelerating'
         }, `Post-release momentum tracked for ${args.trackId} on ${args.dsp}. Momentum Score: ${Math.round(momentumScore)}/100. Trend: ${momentumScore > 50 ? 'Accelerating' : 'Decelerating'}.`);
+    }),
+
+    generate_ad_copy: wrapTool('generate_ad_copy', async (args: { productName: string; targetAudience: string; tone?: string; platform: string }) => {
+        const tone = args.tone || 'engaging';
+        return toolSuccess({
+            copy: `Discover ${args.productName}. Tailored for ${args.targetAudience} with a ${tone} vibe on ${args.platform}.`,
+            hashtags: ['#' + args.productName.replace(/\s+/g, ''), '#music', '#newrelease'],
+            callToAction: 'Listen Now'
+        }, `Ad copy generated for ${args.productName} on ${args.platform}.`);
+    }),
+
+    analyze_campaign_roi: wrapTool('analyze_campaign_roi', async (args: { campaignId: string; totalSpend: number; totalRevenue: number }) => {
+        const roiPercentage = args.totalSpend > 0 ? ((args.totalRevenue - args.totalSpend) / args.totalSpend) * 100 : 0;
+        return toolSuccess({
+            campaignId: args.campaignId,
+            roiPercentage: Number(roiPercentage.toFixed(2)),
+            profitable: roiPercentage > 0,
+            summary: `Campaign ${args.campaignId} yielded a ${roiPercentage.toFixed(2)}% ROI.`
+        }, `ROI analyzed for campaign ${args.campaignId}.`);
     })
 } satisfies Record<string, AnyToolFunction>;
 
@@ -496,5 +515,7 @@ export const {
     analyze_market_trends,
     create_ab_test_campaign,
     tier_superfans,
-    track_post_release_momentum
+    track_post_release_momentum,
+    generate_ad_copy,
+    analyze_campaign_roi
 } = MarketingTools;

@@ -67,7 +67,8 @@ async function getToken(uid: string, platform: SocialPlatform): Promise<Platform
         const ref = doc(db, 'users', uid, 'socialTokens', platform);
         const snap = await getDoc(ref);
         return snap.exists() ? (snap.data() as PlatformToken) : null;
-    } catch {
+    } catch (err) {
+        logger.error(`[SocialPlatformService] Failed to get token for ${platform}:`, err);
         return null;
     }
 }
@@ -194,7 +195,7 @@ export async function postToTwitter(uid: string, payload: PostPayload): Promise<
         }
 
         if (!response.ok) {
-            const err = await response.json().catch(() => ({})) as { title?: string };
+            const err = await response.json().catch((e) => { logger.warn('[SocialPlatformService] Failed to parse JSON error response:', e); return {}; }) as { title?: string };
             return { platform: 'twitter', success: false, error: err.title || `Twitter API error ${response.status}` };
         }
 
@@ -245,7 +246,7 @@ export async function postToInstagram(uid: string, payload: PostPayload): Promis
         });
 
         if (!createRes.ok) {
-            const err = await createRes.json().catch(() => ({})) as { error?: { message: string } };
+            const err = await createRes.json().catch((e) => { logger.warn('[SocialPlatformService] Failed to parse JSON error response:', e); return {}; }) as { error?: { message: string } };
             return { platform: 'instagram', success: false, error: err.error?.message || `Instagram container error ${createRes.status}` };
         }
 
@@ -275,7 +276,7 @@ export async function postToInstagram(uid: string, payload: PostPayload): Promis
         });
 
         if (!publishRes.ok) {
-            const err = await publishRes.json().catch(() => ({})) as { error?: { message: string } };
+            const err = await publishRes.json().catch((e) => { logger.warn('[SocialPlatformService] Failed to parse JSON error response:', e); return {}; }) as { error?: { message: string } };
             return { platform: 'instagram', success: false, error: err.error?.message || `Instagram publish error ${publishRes.status}` };
         }
 
@@ -332,7 +333,7 @@ export async function postToTikTok(uid: string, payload: PostPayload): Promise<P
         }
 
         if (!initRes.ok) {
-            const err = await initRes.json().catch(() => ({})) as { error?: { message: string } };
+            const err = await initRes.json().catch((e) => { logger.warn('[SocialPlatformService] Failed to parse JSON error response:', e); return {}; }) as { error?: { message: string } };
             return { platform: 'tiktok', success: false, error: err.error?.message || `TikTok API error ${initRes.status}` };
         }
 
@@ -397,7 +398,7 @@ export async function uploadToYouTube(uid: string, payload: PostPayload): Promis
         }
 
         if (!insertRes.ok) {
-            const err = await insertRes.json().catch(() => ({})) as { error?: { message: string } };
+            const err = await insertRes.json().catch((e) => { logger.warn('[SocialPlatformService] Failed to parse JSON error response:', e); return {}; }) as { error?: { message: string } };
             return { platform: 'youtube', success: false, error: err.error?.message || `YouTube API error ${insertRes.status}` };
         }
 

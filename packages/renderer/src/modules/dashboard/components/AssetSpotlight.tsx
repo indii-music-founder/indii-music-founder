@@ -24,7 +24,7 @@ function relTime(ts: number) {
     if (h < 24) return `${h}h ago`;
     const days = Math.floor(h / 24);
     if (days < 7) return `${days}d ago`;
-    return new Date(ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    return new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
 /**
