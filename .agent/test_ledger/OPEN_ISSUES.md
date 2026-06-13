@@ -4876,7 +4876,7 @@ Therefore, no fix can be proposed or implemented.
 - **Fix Direction:** Check the root route `/` rendering in the test environment. Ensure the app container is visible within 15 seconds.
 
 ### ISSUE-E2E-RIGHT-PANEL-3: Timeout rendering Context Controls for Marketing
-- **Status:** OPEN
+- **Status:** 🟡 IN PROGRESS (Agent A)
 - **Severity:** 🔴 HIGH
 - **Module:** e2e/right-panel.spec.ts
 - **Summary:** Test 'should dynamically render Context Controls panel for Marketing and deploy protocol' failed with TimeoutError waiting for `[data-testid="app-container"], main`.
@@ -4912,14 +4912,14 @@ Therefore, no fix can be proposed or implemented.
 
 
 ### ISSUE-HUNTER-1: process.env used in browser context instead of import.meta.env
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** High
 - **Module:** packages/renderer/src/utils/e2eMode.ts
 - **Summary:** Found `process.env.VITE_E2E` and `process.env.VITE_FIREBASE_E2E_MOCK` used in a browser context. This will cause runtime errors because Vite uses `import.meta.env` for environment variables.
-- **Fix Direction:** Replace `process.env.` with `import.meta.env.` in packages/renderer/src/utils/e2eMode.ts.
+- **Fix:** Removed references to `process.env.VITE_E2E` and `process.env.VITE_FIREBASE_E2E_MOCK` in `e2eMode.ts` to prevent runtime crashes in browser environments. Vite's native `import.meta.env` is already handling these values.
 
 ### ISSUE-HUNTER-2: Event Listener Count Mismatch (Potential Memory Leak)
-- **Status:** OPEN
+- **Status:** 🟡 IN PROGRESS (Agent B)
 - **Severity:** Medium
 - **Module:** Global
 - **Summary:** Found 95 instances of `addEventListener` but only 63 instances of `removeEventListener` in the renderer package. This indicates a high probability of missing cleanup logic in `useEffect` hooks or component unmounts.
