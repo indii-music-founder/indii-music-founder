@@ -7,7 +7,7 @@ export interface Payee {
     isUsPerson: boolean;
 }
 
-export const requestTaxForms = defineCallable<{ payees?: Payee[] }, any>(
+export const requestTaxForms = defineCallable<{ payees?: Payee[] }, { requests: Array<{ name: string; email: string; formTypeRequested: string; status: string; }> }>(
     { region: 'us-central1', memory: '256MiB', timeoutSeconds: 60 },
     async (request) => {
         if (!request.auth) {

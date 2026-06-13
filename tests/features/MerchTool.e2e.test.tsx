@@ -21,11 +21,10 @@ import {
   screen,
   fireEvent,
   waitFor,
-  act,
-  within,
+  act
 } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import '@testing-library/jest-dom';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 
@@ -34,7 +33,7 @@ import MerchDashboard from '@/modules/merchandise/MerchDashboard';
 import MerchDesigner from '@/modules/merchandise/MerchDesigner';
 import MerchStudio from '@/modules/merchandise/MerchStudio';
 import { useMerchandise } from '@/modules/merchandise/hooks/useMerchandise';
-import { MerchProduct, MerchandiseStats } from '@/modules/merchandise/types';
+import { MerchProduct } from '@/modules/merchandise/types';
 import { AIGenerationDialog } from '@/modules/merchandise/components/AIGenerationDialog';
 
 // ─── Service imports (for mocking) ───────────────────────────────────────────

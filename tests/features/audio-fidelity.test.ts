@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import type { Mock } from 'vitest';
+// import type { Mock } from 'vitest';
 import { AudioFidelityFeature } from '../../src/features/audio/AudioFidelityFeature';
 import { PythonBridge } from '../../electron/utils/python-bridge';
 

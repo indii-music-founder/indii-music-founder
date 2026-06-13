@@ -19,7 +19,6 @@ export class CredentialService {
      * Uses Electron's safeStorage for platform-level encryption before storing in the keychain.
      */
     async saveCredentials(distributorId: DistributorId, credentials: Credentials): Promise<void> {
-        // eslint-disable-next-line no-useless-catch
         try {
             const secretSerialized = JSON.stringify(credentials);
 
@@ -46,7 +45,6 @@ export class CredentialService {
      * Automatically decrypts if the payload was encrypted with safeStorage.
      */
     async getCredentials(distributorId: DistributorId): Promise<Credentials | null> {
-        // eslint-disable-next-line no-useless-catch
         try {
             const storedPayload = await keytar.getPassword(SERVICE_NAME, distributorId);
             if (!storedPayload) return null;
@@ -58,8 +56,7 @@ export class CredentialService {
                 // Legacy plain JSON
                 decryptedPayload = storedPayload;
             } else {
-                // eslint-disable-next-line no-useless-catch
-        try {
+                try {
                     if (safeStorage.isEncryptionAvailable()) {
                         const encryptedBuffer = Buffer.from(storedPayload, 'base64');
                         decryptedPayload = safeStorage.decryptString(encryptedBuffer);
@@ -75,7 +72,7 @@ export class CredentialService {
             }
 
             return JSON.parse(decryptedPayload) as Credentials;
-        } catch (error) {
+        } catch (_error) {
             void 0;
             return null;
         }
@@ -85,10 +82,9 @@ export class CredentialService {
      * Delete credentials for a specific distributor
      */
     async deleteCredentials(distributorId: DistributorId): Promise<boolean> {
-        // eslint-disable-next-line no-useless-catch
         try {
             return await keytar.deletePassword(SERVICE_NAME, distributorId);
-        } catch (error) {
+        } catch (_error) {
             void 0;
             return false;
         }
