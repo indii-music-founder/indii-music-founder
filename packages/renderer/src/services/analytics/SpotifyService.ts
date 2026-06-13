@@ -23,6 +23,8 @@ import { doc, getDoc } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { auth } from '@/services/firebase';
 import type { PlatformData, StreamDataPoint } from './types';
+import * as Sentry from '@sentry/react';
+import { logger } from '@/utils/logger';
 
 // ── PKCE helpers ──────────────────────────────────────────────────────────────
 
@@ -206,7 +208,9 @@ export class SpotifyService {
             if (!snap.exists()) return false;
             const token = snap.data() as SpotifyStoredToken;
             return !!token.accessToken;
-        } catch {
+        } catch (err: unknown) {
+            logger.error('[SpotifyService] Failed to check connection:', err);
+            Sentry.captureException(err);
             return false;
         }
     }
@@ -248,7 +252,9 @@ export class SpotifyService {
         try {
             const token = await this._getValidToken();
             return await this._fetch<SpotifyTrack>(`/v1/tracks/${trackId}`, token);
-        } catch {
+        } catch (err: unknown) {
+            logger.error('[SpotifyService] Failed to get track:', err);
+            Sentry.captureException(err);
             return null;
         }
     }
@@ -261,7 +267,9 @@ export class SpotifyService {
         try {
             const token = await this._getValidToken();
             return await this._fetch<SpotifyArtist>(`/v1/artists/${artistId}`, token);
-        } catch {
+        } catch (err: unknown) {
+            logger.error('[SpotifyService] Failed to get artist:', err);
+            Sentry.captureException(err);
             return null;
         }
     }
