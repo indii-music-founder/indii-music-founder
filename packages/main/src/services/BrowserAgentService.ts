@@ -58,8 +58,6 @@ export class BrowserAgentService {
                 ses.clearStorageData().catch(() => {});
             });
 
-        } catch (error) {
-            throw error;
         } finally {
             this.isInitializing = false;
         }
@@ -106,7 +104,7 @@ export class BrowserAgentService {
         const screenshotBase64 = image.toDataURL(); // Returns props 'data:image/png;base64,...'
 
         // Extract Main Text via JS
-        const text = await this.window.webContents.executeJavaScript('document.body.innerText').catch(e => { void 0; return ''; });
+        const text = await this.window.webContents.executeJavaScript('document.body.innerText').catch(_e => { void 0; return ''; });
 
         return {
             title,

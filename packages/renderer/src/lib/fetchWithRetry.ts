@@ -34,9 +34,13 @@ export async function fetchWithRetry(
 
     while (attempt <= maxRetries) {
         let signal = init.signal;
+        let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
         // If caller didn't provide a signal, create a timeout signal for this attempt
         if (!signal) {
-            signal = AbortSignal.timeout(timeoutMs);
+            const controller = new AbortController();
+            signal = controller.signal;
+            timeoutId = setTimeout(() => controller.abort(new Error('TimeoutError')), timeoutMs);
         }
 
         try {
@@ -55,9 +59,10 @@ export async function fetchWithRetry(
             }
 
             return response;
-        } catch (error: any) {
+        } catch (err: unknown) {
+            const error = err as Error;
             // Determine if we should retry
-            const isAbortError = error.name === 'AbortError' || error.name === 'TimeoutError';
+            const isAbortError = error.name === 'AbortError' || error.name === 'TimeoutError' || error.message === 'TimeoutError';
             const isTransientError = error.message.includes('Transient HTTP Error') || 
                                      error.message.includes('fetch failed') || 
                                      error.message.includes('Network request failed');
@@ -70,6 +75,8 @@ export async function fetchWithRetry(
             }
 
             throw error;
+        } finally {
+            if (timeoutId) clearTimeout(timeoutId);
         }
     }
 

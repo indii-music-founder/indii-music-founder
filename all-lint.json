@@ -1,0 +1,206 @@
+[
+  {
+    "file": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/packages/firebase/src/functions/creative/gateway.ts",
+    "msgs": [
+      "@typescript-eslint/no-explicit-any: 297",
+      "@typescript-eslint/no-explicit-any: 299",
+      "@typescript-eslint/no-explicit-any: 300"
+    ]
+  },
+  {
+    "file": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/packages/firebase/src/orchestration/circuit-breaker.ts",
+    "msgs": [
+      "@typescript-eslint/no-explicit-any: 41"
+    ]
+  },
+  {
+    "file": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/packages/firebase/src/orchestration/toggle/unified-distribution.ts",
+    "msgs": [
+      "@typescript-eslint/no-explicit-any: 47"
+    ]
+  },
+  {
+    "file": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/packages/firebase/src/stripe/connect.ts",
+    "msgs": [
+      "@typescript-eslint/no-explicit-any: 7",
+      "@typescript-eslint/no-explicit-any: 46",
+      "@typescript-eslint/no-explicit-any: 57",
+      "@typescript-eslint/no-explicit-any: 109",
+      "@typescript-eslint/no-explicit-any: 122",
+      "@typescript-eslint/no-explicit-any: 154"
+    ]
+  },
+  {
+    "file": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/packages/firebase/src/stripe/escrow.ts",
+    "msgs": [
+      "@typescript-eslint/no-unused-vars: 34"
+    ]
+  },
+  {
+    "file": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/packages/firebase/src/stripe/taxForms.ts",
+    "msgs": [
+      "@typescript-eslint/no-explicit-any: 10"
+    ]
+  },
+  {
+    "file": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/packages/main/src/launch_remote.ts",
+    "msgs": [
+      "@typescript-eslint/no-unused-vars: 9"
+    ]
+  },
+  {
+    "file": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/packages/main/src/services/AuthStorage.ts",
+    "msgs": [
+      "null: 9",
+      "null: 24",
+      "null: 30",
+      "@typescript-eslint/no-unused-vars: 40",
+      "null: 47",
+      "@typescript-eslint/no-unused-vars: 50"
+    ]
+  },
+  {
+    "file": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/packages/main/src/services/BrowserAgentService.ts",
+    "msgs": [
+      "no-useless-catch: 61",
+      "@typescript-eslint/no-unused-vars: 109"
+    ]
+  },
+  {
+    "file": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/packages/main/src/services/CredentialService.ts",
+    "msgs": [
+      "null: 22",
+      "null: 49",
+      "null: 61",
+      "@typescript-eslint/no-unused-vars: 78",
+      "null: 88",
+      "@typescript-eslint/no-unused-vars: 91"
+    ]
+  },
+  {
+    "file": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/packages/main/src/services/ElectronRenderService.ts",
+    "msgs": [
+      "null: 7"
+    ]
+  },
+  {
+    "file": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/packages/renderer/src/core/store/slices/agent/agentOrchestrationSlice.ts",
+    "msgs": [
+      "@typescript-eslint/no-unused-vars: 93",
+      "@typescript-eslint/no-unused-vars: 145"
+    ]
+  },
+  {
+    "file": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/packages/renderer/src/core/store/slices/profileSlice.ts",
+    "msgs": [
+      "@typescript-eslint/no-unused-vars: 209"
+    ]
+  },
+  {
+    "file": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/packages/renderer/src/lib/fetchWithRetry.ts",
+    "msgs": [
+      "@typescript-eslint/no-explicit-any: 62"
+    ]
+  },
+  {
+    "file": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/packages/renderer/src/modules/analytics/components/CustomizableAnalyticsDashboard.tsx",
+    "msgs": [
+      "@typescript-eslint/no-unused-vars: 84"
+    ]
+  },
+  {
+    "file": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/packages/renderer/src/services/agent/RAGAgent.ts",
+    "msgs": [
+      "@typescript-eslint/no-explicit-any: 45"
+    ]
+  },
+  {
+    "file": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/packages/renderer/src/services/agent/definitions/LicensingAgent.ts",
+    "msgs": [
+      "@typescript-eslint/no-unused-vars: 156"
+    ]
+  },
+  {
+    "file": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/packages/renderer/src/services/agent/definitions/PublishingAgent.test.ts",
+    "msgs": [
+      "@typescript-eslint/no-unused-vars: 3"
+    ]
+  },
+  {
+    "file": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/packages/renderer/src/services/agent/tools/PublishingTools.ts",
+    "msgs": [
+      "@typescript-eslint/no-explicit-any: 164"
+    ]
+  },
+  {
+    "file": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/packages/renderer/src/services/audio/AudioIntelligenceService.ts",
+    "msgs": [
+      "@typescript-eslint/no-explicit-any: 140"
+    ]
+  },
+  {
+    "file": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/packages/renderer/src/services/intelligence/GeminiFileService.ts",
+    "msgs": [
+      "@typescript-eslint/no-unused-vars: 36"
+    ]
+  },
+  {
+    "file": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/packages/renderer/src/services/marketing/CampaignIntelligenceService.ts",
+    "msgs": [
+      "@typescript-eslint/no-unused-vars: 375"
+    ]
+  },
+  {
+    "file": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/packages/renderer/src/services/rag/GeminiRetrievalService.ts",
+    "msgs": [
+      "@typescript-eslint/no-explicit-any: 334",
+      "@typescript-eslint/no-explicit-any: 404"
+    ]
+  },
+  {
+    "file": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/scratch/test-genai-files.ts",
+    "msgs": [
+      "@typescript-eslint/no-explicit-any: 5"
+    ]
+  },
+  {
+    "file": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/scratch/test-genai-files3.ts",
+    "msgs": [
+      "@typescript-eslint/no-explicit-any: 3"
+    ]
+  },
+  {
+    "file": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/scratch/test-query-env.ts",
+    "msgs": [
+      "@typescript-eslint/no-unused-vars: 2",
+      "@typescript-eslint/no-explicit-any: 29"
+    ]
+  },
+  {
+    "file": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/scratch/test-query.ts",
+    "msgs": [
+      "@typescript-eslint/no-unused-vars: 2",
+      "@typescript-eslint/no-explicit-any: 29"
+    ]
+  },
+  {
+    "file": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/tests/features/DevOpsTools.test.ts",
+    "msgs": [
+      "@typescript-eslint/no-unused-vars: 3"
+    ]
+  },
+  {
+    "file": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/tests/features/MerchTool.e2e.test.tsx",
+    "msgs": [
+      "@typescript-eslint/no-unused-vars: 25",
+      "@typescript-eslint/no-unused-vars: 28",
+      "@typescript-eslint/no-unused-vars: 37"
+    ]
+  },
+  {
+    "file": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/tests/features/audio-fidelity.test.ts",
+    "msgs": [
+      "@typescript-eslint/no-unused-vars: 2"
+    ]
+  }
+]

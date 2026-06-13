@@ -293,11 +293,19 @@ function buildOmniPrompt(data: z.infer<typeof GenerateOmniRemixSchema>): string 
 }
 
 function extractInlineMedia(response: unknown, kind: MediaKind): { data: string; mimeType: string } {
-  // Support for new Gemini 3 native generatedImages array (e.g. from unified responses)
-  if (kind === 'image' && (response as any)?.generatedImages?.[0]?.image?.imageBytes) {
+  interface GeneratedImageResponse {
+    generatedImages?: Array<{
+      image?: {
+        mimeType?: string;
+        imageBytes?: string;
+      };
+    }>;
+  }
+  const typedResponse = response as GeneratedImageResponse;
+  if (kind === 'image' && typedResponse?.generatedImages?.[0]?.image?.imageBytes) {
     return {
-      mimeType: (response as any).generatedImages[0].image.mimeType || 'image/jpeg',
-      data: (response as any).generatedImages[0].image.imageBytes
+      mimeType: typedResponse.generatedImages[0].image.mimeType || 'image/jpeg',
+      data: typedResponse.generatedImages[0].image.imageBytes
     };
   }
 

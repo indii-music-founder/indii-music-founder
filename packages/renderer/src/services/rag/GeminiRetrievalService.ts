@@ -331,7 +331,7 @@ export class GeminiRetrievalService {
      * If fileUri is provided, it ensures that file is present in the store.
      * If fileUri is null/empty, it searches the entire store.
      */
-    async query(fileUri: string | null, userQuery: string, fileContent?: string, model?: string, projectId?: string, metadataFilter?: any) {
+    async query(fileUri: string | null, userQuery: string, fileContent?: string, model?: string, projectId?: string, metadataFilter?: Record<string, unknown>) {
         let tools: Record<string, unknown>[] | undefined;
         const targetModel = model || INTELLIGENCE_MODELS.TEXT.AGENT;
 
@@ -401,7 +401,7 @@ export class GeminiRetrievalService {
     /**
      * Streams query responses using the Gemini API.
      */
-    async *streamQuery(fileUri: string | null, userQuery: string, fileContent?: string, model?: string, projectId?: string, metadataFilter?: any): AsyncGenerator<string> {
+    async *streamQuery(fileUri: string | null, userQuery: string, fileContent?: string, model?: string, projectId?: string, metadataFilter?: Record<string, unknown>): AsyncGenerator<string> {
         let tools: Record<string, unknown>[] | undefined;
         const targetModel = model || INTELLIGENCE_MODELS.TEXT.AGENT;
 

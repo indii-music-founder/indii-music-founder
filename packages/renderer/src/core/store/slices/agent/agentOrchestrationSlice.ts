@@ -90,7 +90,7 @@ export const buildAgentOrchestrationState: (
                     });
                 }
             },
-            (error) => {
+            (_error) => {
                 // Ignore or handle differently
             }
         );
@@ -142,7 +142,7 @@ export const buildAgentOrchestrationState: (
                     set({ activeGraphExecution: null });
                 }
             },
-            (error) => {
+            (_error) => {
                 // Ignore or handle differently
             }
         );

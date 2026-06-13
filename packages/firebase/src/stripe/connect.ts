@@ -4,7 +4,7 @@ import { stripe } from './config';
 /**
  * Triggered by the client to create a Stripe Connect Express account for an artist.
  */
-export const createStripeAccount = defineCallable<{ artistId: string }, any>(
+export const createStripeAccount = defineCallable<{ artistId: string }, { accountId: string; onboardingUrl: string }>(
     { region: 'us-central1' },
     async (request) => {
         // 1. Basic auth check
@@ -43,9 +43,9 @@ export const createStripeAccount = defineCallable<{ artistId: string }, any>(
                 accountId: account.id,
                 onboardingUrl: accountLink.url
             };
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('[StripeConnect] Error creating account:', error);
-            throw new HttpsError('internal', `Stripe account creation failed: ${error.message}`);
+            throw new HttpsError('internal', `Stripe account creation failed: ${error instanceof Error ? error.message : String(error)}`);
         }
     }
 );
@@ -54,7 +54,7 @@ export const createStripeAccount = defineCallable<{ artistId: string }, any>(
  * Triggered by the client to onboard a collaborator to Stripe Connect.
  * Moved from createStripeConnectAccount.ts to connect.ts to consolidate duplicates.
  */
-export const createStripeConnectAccount = defineCallable<{ email: string; businessType?: string }, any>(
+export const createStripeConnectAccount = defineCallable<{ email: string; businessType?: string }, { accountId: string; onboardingUrl: string }>(
     { region: 'us-central1', memory: '256MiB', timeoutSeconds: 60 },
     async (request) => {
         if (!request.auth) {
@@ -106,11 +106,11 @@ export const createStripeConnectAccount = defineCallable<{ email: string; busine
                 accountId: account.id,
                 onboardingUrl: accountLink.url
             };
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('[StripeConnect] Error creating collaborator account:', error);
             throw new HttpsError(
                 'internal',
-                `Stripe account creation failed: ${error.message}`
+                `Stripe account creation failed: ${error instanceof Error ? error.message : String(error)}`
             );
         }
     }
@@ -119,7 +119,7 @@ export const createStripeConnectAccount = defineCallable<{ email: string; busine
 /**
  * Triggers a payout/transfer from the platform to the destination artist.
  */
-export const createTransfer = defineCallable<{ amount: number; destinationId: string; currency?: string }, any>(
+export const createTransfer = defineCallable<{ amount: number; destinationId: string; currency?: string }, { transferId: string }>(
     { region: 'us-central1' },
     async (request) => {
         if (!request.auth) {
@@ -151,9 +151,9 @@ export const createTransfer = defineCallable<{ amount: number; destinationId: st
             });
 
             return { transferId: transfer.id };
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('[StripeConnect] Transfer failed:', error);
-            throw new HttpsError('internal', `Stripe transfer failed: ${error.message}`);
+            throw new HttpsError('internal', `Stripe transfer failed: ${error instanceof Error ? error.message : String(error)}`);
         }
     }
 );

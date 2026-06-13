@@ -42,7 +42,7 @@ export class RAGAgent extends BaseAgent {
             let ragText = ragTextRaw;
             if (ragTextRaw && groundingMetadata?.groundingChunks) {
                 const chunks = groundingMetadata.groundingChunks;
-                const citations = chunks.map((chunk: any) => {
+                const citations = chunks.map((chunk: { retrievedContext?: { title?: string; uri?: string; pageNumber?: number; } }) => {
                     const ctx = chunk.retrievedContext;
                     if (ctx) {
                         return `[Source: ${ctx.title || ctx.uri || 'Unknown'}${ctx.pageNumber ? ` - Page ${ctx.pageNumber}` : ''}]`;
