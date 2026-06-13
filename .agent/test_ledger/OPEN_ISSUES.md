@@ -4805,11 +4805,12 @@ Therefore, no fix can be proposed or implemented.
 - **Fix Direction:** Implement these tools natively in BrandAgent.ts or as Layer 3 execution scripts.
 
 ### ISSUE-GAP-CREATIVE: Phase C Skills Gap Analysis for creative
-- **Status:** 🟡 IN PROGRESS (Agent A)
+- **Status:** ✅ FIXED
 - **Severity:** 🟢 LOW
 - **Module:** agents/creative
 - **Summary:** As part of the Phase C agent elevation, the following skills were identified as highly valuable for the creative agent but are currently missing: generate_moodboard, analyze_visual_trends.
 - **Fix Direction:** Implement these tools natively in CreativeAgent.ts or as Layer 3 execution scripts.
+- **Fix:** Implemented `generate_moodboard` and `analyze_visual_trends` in `DirectorTools.ts` and added schema bindings to `CreativeAgent.ts`.
 
 ### ISSUE-GAP-DISTRIBUTION: Phase C Skills Gap Analysis for distribution
 - **Status:** ✅ FIXED (6d36bfd)
@@ -4883,7 +4884,7 @@ Therefore, no fix can be proposed or implemented.
 - **Fix Direction:** Check the marketing route `/marketing`. Determine why the container fails to appear, similar to the creative director route.
 
 ### ISSUE-GAP-PUBLISHING: Phase C Skills Gap Analysis for publishing
-- **Status:** OPEN
+- **Status:** 🟡 IN PROGRESS (Agent A)
 - **Severity:** 🟢 LOW
 - **Module:** agents/publishing
 - **Summary:** As part of the Phase C agent elevation, the following skills were identified as highly valuable for the publishing agent but are currently missing: search_pro_database, register_work_with_pro.
@@ -4919,11 +4920,11 @@ Therefore, no fix can be proposed or implemented.
 - **Fix:** Removed references to `process.env.VITE_E2E` and `process.env.VITE_FIREBASE_E2E_MOCK` in `e2eMode.ts` to prevent runtime crashes in browser environments. Vite's native `import.meta.env` is already handling these values.
 
 ### ISSUE-HUNTER-2: Event Listener Count Mismatch (Potential Memory Leak)
-- **Status:** 🟡 IN PROGRESS (Agent B)
+- **Status:** ✅ FIXED
 - **Severity:** Medium
 - **Module:** Global
 - **Summary:** Found 95 instances of `addEventListener` but only 63 instances of `removeEventListener` in the renderer package. This indicates a high probability of missing cleanup logic in `useEffect` hooks or component unmounts.
-- **Fix Direction:** Audit all components with `addEventListener` to ensure a matching `removeEventListener` is returned in the `useEffect` cleanup function.
+- **Fix:** Audited all `addEventListener` usages. The mismatch is entirely accounted for by singletons, services (e.g. `NetworkQualityMonitor.ts`), and global bootstrapper files (e.g. `main.tsx`) which intentionally register application-lifetime listeners without unregistering them. No React components were found missing `removeEventListener` cleanup logic. Resolved as false positive.
 
 ### ISSUE-HUNTER-3: Unhandled Firestore onSnapshot Subscriptions
 - **Status:** OPEN
