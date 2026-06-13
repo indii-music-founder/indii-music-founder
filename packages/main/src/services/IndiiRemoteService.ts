@@ -144,7 +144,7 @@ class IndiiRemoteService {
                         }
 
                         this.handleMobileMessage(ws, parsed);
-                    } catch (e) {
+                    } catch (_e) {
                         console.error('[IndiiRemoteService] Failed to parse message', e);
                     }
                 });
@@ -211,7 +211,7 @@ class IndiiRemoteService {
         // Disconnect Ngrok
         try {
             await ngrok.disconnect();
-        } catch (e) {
+        } catch (_e) {
             console.error('[IndiiRemoteService] Error disconnecting ngrok:', e);
         }
 
@@ -260,7 +260,7 @@ class IndiiRemoteService {
             if (!win.isDestroyed() && !win.webContents.isDestroyed()) {
                 try {
                     win.webContents.send('indii-remote:message-from-mobile', payload);
-                } catch (err) {
+                } catch (_err) {
                     console.warn('[IndiiRemoteService] Failed to send message to desktop:', err);
                 }
             }
@@ -284,7 +284,7 @@ class IndiiRemoteService {
             if (!win.isDestroyed() && !win.webContents.isDestroyed()) {
                 try {
                     win.webContents.send('indii-remote:status-updated', this.getStatus());
-                } catch (err) {
+                } catch (_err) {
                     console.warn('[IndiiRemoteService] Failed to broadcast state to desktop:', err);
                 }
             }

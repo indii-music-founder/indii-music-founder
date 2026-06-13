@@ -4,6 +4,7 @@ export const electronRenderService = {
     async render(config: { compositionId: string; outputLocation: string; inputProps?: Record<string, unknown> }) {
         console.log('[ElectronRenderService] Starting local render for', config.compositionId);
         
+        // eslint-disable-next-line no-useless-catch
         try {
             // Dynamically import @remotion/renderer so that it doesn't break if not available
             const { renderMedia } = await import('@remotion/renderer');
@@ -28,7 +29,7 @@ export const electronRenderService = {
             
             console.log('[ElectronRenderService] Local render successful:', config.outputLocation);
             return config.outputLocation;
-        } catch (error) {
+        } catch (_error) {
             console.error('[ElectronRenderService] Local render failed; no stub render will be reported as success.', error);
             throw error;
         }
