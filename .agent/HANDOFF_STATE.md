@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-12 17:35 EDT
+**Updated:** 2026-06-13 08:52 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+1fd5aec49 chore: session checkpoint [17:35]
 82aed5ae9 chore: session checkpoint [16:46]
 6c819747a feat(agents): perfect agent tool API formations
 219378509 fix(agent): map fallback model correctly
@@ -13,11 +14,14 @@ a70fd4046 docs(agent): register /away workflow for autonomous CI loops
 95cbd0161 fix(chat): resolve merge duplicate properties and variables in MessageRating
 a3f2675ff chore: session checkpoint [11:25]
 af091bfb8 Merge branch 'main' into feat/agent-elevation-stage-0
-66b176751 test: fix expected error message in DirectGenerationTab.test.tsx
 ```
 
 ## Working State
 ```
+ M .agent/test_ledger/OPEN_ISSUES.md
+ M .agent/test_ledger/REAL_TEST_HISTORY.md
+ M .agent/workflows/mega-test.md
+ M .agent/workflows/mega.md
  M python/tests/fixtures/e2e_interop/ts_to_py/envelope.json
 ```
 
