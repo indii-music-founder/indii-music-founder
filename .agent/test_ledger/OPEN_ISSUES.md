@@ -4798,7 +4798,7 @@ Therefore, no fix can be proposed or implemented.
 
 ---
 ### ISSUE-GAP-BRAND: Phase C Skills Gap Analysis for brand
-- **Status:** 🟡 IN PROGRESS (Agent A)
+- **Status:** OPEN
 - **Severity:** 🟢 LOW
 - **Module:** agents/brand
 - **Summary:** As part of the Phase C agent elevation, the following skills were identified as highly valuable for the brand agent but are currently missing: analyze_brand_sentiment, generate_brand_kit.
@@ -4823,7 +4823,7 @@ Therefore, no fix can be proposed or implemented.
 - **UX Impact:** Distribution Agent now possesses native tools for checking DSP delivery status and validating metadata readiness.
 
 ### ISSUE-GAP-LEGAL: Phase C Skills Gap Analysis for legal
-- **Status:** 🟡 IN PROGRESS (Agent A)
+- **Status:** OPEN
 - **Severity:** 🟢 LOW
 - **Module:** agents/legal
 - **Summary:** As part of the Phase C agent elevation, the following skills were identified as highly valuable for the legal agent but are currently missing: draft_split_sheet, summarize_contract_terms.
@@ -4839,7 +4839,7 @@ Therefore, no fix can be proposed or implemented.
 - **Files:** `packages/renderer/src/services/agent/definitions/LicensingAgent.ts`, `packages/renderer/src/services/agent/definitions/LicensingAgent.test.ts`
 
 ### ISSUE-GAP-MARKETING: Phase C Skills Gap Analysis for marketing
-- **Status:** 🟡 IN PROGRESS (Agent A)
+- **Status:** OPEN
 - **Severity:** 🟢 LOW
 - **Module:** agents/marketing
 - **Summary:** As part of the Phase C agent elevation, the following skills were identified as highly valuable for the marketing agent but are currently missing: generate_ad_copy, analyze_campaign_roi.
@@ -4856,49 +4856,49 @@ Therefore, no fix can be proposed or implemented.
 - **UX Impact:** Music agent now has specialized, fast tools for isolating stem analysis and extracting purely technical features like BPM and Key without the overhead of full semantic generation.
 
 ### ISSUE-GAP-PUBLICIST: Phase C Skills Gap Analysis for publicist
-- **Status:** 🟡 IN PROGRESS (Agent A)
+- **Status:** OPEN
 - **Severity:** 🟢 LOW
 - **Module:** agents/publicist
 - **Summary:** As part of the Phase C agent elevation, the following skills were identified as highly valuable for the publicist agent but are currently missing: draft_press_release, find_media_contacts.
 - **Fix Direction:** Implement these tools natively in PublicistAgent.ts or as Layer 3 execution scripts.
 
 ### ISSUE-E2E-RIGHT-PANEL-1: Timeout rendering Context Controls for Creative Director
-- **Status:** 🟡 IN PROGRESS (Agent A)
+- **Status:** OPEN
 - **Severity:** 🔴 HIGH
 - **Module:** e2e/right-panel.spec.ts
 - **Summary:** Test 'should dynamically render Context Controls panel for Creative Director' failed with TimeoutError waiting for `[data-testid="app-container"], main`.
 - **Fix Direction:** Investigate why the creative director route `/creative` is hanging or failing to render the main container. Check for unhandled exceptions or missing mocks in the E2E environment.
 
 ### ISSUE-E2E-RIGHT-PANEL-2: Timeout interacting with filters and search in Project Assets tab
-- **Status:** 🟡 IN PROGRESS (Agent A)
+- **Status:** OPEN
 - **Severity:** 🔴 HIGH
 - **Module:** e2e/right-panel.spec.ts
 - **Summary:** Test 'should interact with filters and search in Project Assets tab' failed with TimeoutError waiting for `[data-testid="app-container"], main`.
 - **Fix Direction:** Check the root route `/` rendering in the test environment. Ensure the app container is visible within 15 seconds.
 
 ### ISSUE-E2E-RIGHT-PANEL-3: Timeout rendering Context Controls for Marketing
-- **Status:** 🟡 IN PROGRESS (Agent A)
+- **Status:** OPEN
 - **Severity:** 🔴 HIGH
 - **Module:** e2e/right-panel.spec.ts
 - **Summary:** Test 'should dynamically render Context Controls panel for Marketing and deploy protocol' failed with TimeoutError waiting for `[data-testid="app-container"], main`.
 - **Fix Direction:** Check the marketing route `/marketing`. Determine why the container fails to appear, similar to the creative director route.
 
 ### ISSUE-GAP-PUBLISHING: Phase C Skills Gap Analysis for publishing
-- **Status:** 🟡 IN PROGRESS (Agent A)
+- **Status:** OPEN
 - **Severity:** 🟢 LOW
 - **Module:** agents/publishing
 - **Summary:** As part of the Phase C agent elevation, the following skills were identified as highly valuable for the publishing agent but are currently missing: search_pro_database, register_work_with_pro.
 - **Fix Direction:** Implement these tools natively in PublishingAgent.ts or as Layer 3 execution scripts.
 
 ### ISSUE-GAP-ROAD: Phase C Skills Gap Analysis for road
-- **Status:** 🟡 IN PROGRESS (Agent A)
+- **Status:** OPEN
 - **Severity:** 🟢 LOW
 - **Module:** agents/road
 - **Summary:** As part of the Phase C agent elevation, the following skills were identified as highly valuable for the road agent but are currently missing: draft_tour_itinerary, estimate_tour_budget.
 - **Fix Direction:** Implement these tools natively in RoadAgent.ts or as Layer 3 execution scripts.
 
 ### ISSUE-GAP-SOCIAL: Phase C Skills Gap Analysis for social
-- **Status:** 🟡 IN PROGRESS (Agent A)
+- **Status:** OPEN
 - **Severity:** 🟢 LOW
 - **Module:** agents/social
 - **Summary:** As part of the Phase C agent elevation, the following skills were identified as highly valuable for the social agent but are currently missing: generate_content_calendar, analyze_engagement_rate.
@@ -4927,7 +4927,7 @@ Therefore, no fix can be proposed or implemented.
 - **Fix:** Audited all `addEventListener` usages. The mismatch is entirely accounted for by singletons, services (e.g. `NetworkQualityMonitor.ts`), and global bootstrapper files (e.g. `main.tsx`) which intentionally register application-lifetime listeners without unregistering them. No React components were found missing `removeEventListener` cleanup logic. Resolved as false positive.
 
 ### ISSUE-HUNTER-3: Unhandled Firestore onSnapshot Subscriptions
-- **Status:** 🟡 IN PROGRESS (Agent B)
+- **Status:** OPEN
 - **Severity:** Medium
 - **Module:** Firebase / Store Slices
 - **Summary:** Found numerous usages of `onSnapshot` across store slices and hooks (e.g., `profileSlice.ts`, `agentOrchestrationSlice.ts`, etc.). Without proper unsubscribe mechanisms, these can leak memory over time.
