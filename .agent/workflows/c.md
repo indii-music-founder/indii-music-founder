@@ -24,6 +24,7 @@ Your exact job is to keep the system flowing, maintain the master branch, and ac
 - If Agents A or B left uncommitted functional changes in the workspace (excluding scratch/test files), stage and commit them with appropriate messages.
 - Let `git_monitor_sync.js` handle the typechecking, testing, and pushing of these commits to `origin/main`. 
 - If `git_monitor_sync.js` fails due to merge conflicts or test failures, YOU must fix them.
+- **CI/CD Pipeline Monitoring:** Periodically check the GitHub Actions pipeline for `main` (using `gh run list` if authenticated). If any failures pop up, log them to `.agent/test_ledger/OPEN_ISSUES.md` and immediately diagnose and fix them.
 
 ## 4. Continuity Loop
 - When you are finished with an iteration, do NOT stop. 
