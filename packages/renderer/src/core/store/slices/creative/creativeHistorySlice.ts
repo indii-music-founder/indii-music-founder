@@ -2,6 +2,8 @@ import { StateCreator } from 'zustand';
 import { HistoryItem } from '@/core/types/history';
 import { logger } from '@/utils/logger';
 
+let creativeHistoryUnsubscribe: (() => void) | null = null;
+
 export interface CanvasImage {
     id: string;
     base64: string;
@@ -106,6 +108,10 @@ export function buildCreativeHistoryState(
                 return new Promise<void>((resolve) => {
                     (async () => {
                         try {
+                            if (creativeHistoryUnsubscribe) {
+                                creativeHistoryUnsubscribe();
+                                creativeHistoryUnsubscribe = null;
+                            }
                             const unsubscribe = await StorageService.subscribeToHistory(50, (history) => {
                                 set((state) => {
                                     const historyMap = new Map(state.generatedHistory.map(item => [item.id, item]));
@@ -173,10 +179,7 @@ export function buildCreativeHistoryState(
                                 }
                             });
 
-                            // Register with SubscriptionManager
-                            import('@/core/store').then(({ useStore }) => {
-                                useStore.getState().registerSubscription('creative_history', unsubscribe);
-                            });
+                            creativeHistoryUnsubscribe = unsubscribe;
 
                         } catch (err: unknown) {
                             logger.error('[CreativeSlice] Failed to initialize history:', err);

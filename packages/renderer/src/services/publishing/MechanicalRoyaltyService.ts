@@ -90,7 +90,7 @@ export const MechanicalRoyaltyService = {
         if (!uid) throw new Error('Not authenticated');
 
         const copies = params.distributionCopies ?? 1000;
-        const fee = parseFloat((copies * STATUTORY_RATE_USD).toFixed(2));
+        const fee = Math.round(copies * STATUTORY_RATE_USD * 100) / 100;
 
         const licenseId = `ml_${uid}_${Date.now()}`;
         const license: Omit<MechanicalLicense, 'createdAt' | 'updatedAt'> = {
@@ -192,11 +192,9 @@ export const MechanicalRoyaltyService = {
 
     /** Compute the total mechanical royalty fee for a set of licenses. */
     computeTotalFee(licenses: MechanicalLicense[]): number {
-        return parseFloat(
-            licenses
-                .filter(l => l.status !== 'not_required')
-                .reduce((sum, l) => sum + l.totalFee, 0)
-                .toFixed(2)
-        );
+        const totalCents = licenses
+            .filter(l => l.status !== 'not_required')
+            .reduce((sum, l) => sum + Math.round(l.totalFee * 100), 0);
+        return totalCents / 100;
     },
 };

@@ -1,6 +1,7 @@
 import { A2ATransport, RouterCallContext } from './A2ATransport';
 import { MessageEnvelope } from '@/services/security/E2EEncryptionService';
 import { logger } from '@/utils/logger';
+import { fetchWithRetry } from '@/lib/fetchWithRetry';
 
 /**
  * HTTP transport for A2A.
@@ -15,10 +16,11 @@ export class HttpA2ATransport implements A2ATransport {
   // intentionally ignored: an out-of-process HTTP sidecar cannot use the
   // in-process runAgent closure. Kept so the A2ATransport contract is uniform.
   async rpc(envelope: MessageEnvelope, _localCtx?: RouterCallContext): Promise<MessageEnvelope> {
-    const response = await fetch(`${this.baseUrl}/rpc`, {
+    const response = await fetchWithRetry(`${this.baseUrl}/rpc`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(envelope),
+      throwOnHttpError: false,
     });
 
     if (!response.ok) {
@@ -30,10 +32,11 @@ export class HttpA2ATransport implements A2ATransport {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async postPlain(payload: any): Promise<any> {
-    const response = await fetch(`${this.baseUrl}/rpc`, {
+    const response = await fetchWithRetry(`${this.baseUrl}/rpc`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
+      throwOnHttpError: false,
     });
 
     if (!response.ok) {
@@ -45,9 +48,10 @@ export class HttpA2ATransport implements A2ATransport {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async discovery(): Promise<{ agents: any[] }> {
-    const response = await fetch(`${this.baseUrl}/discovery`, {
+    const response = await fetchWithRetry(`${this.baseUrl}/discovery`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
+      throwOnHttpError: false,
     });
 
     if (!response.ok) {
@@ -80,13 +84,12 @@ export class HttpA2ATransport implements A2ATransport {
 
   async isAvailable(): Promise<boolean> {
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 2000);
-      const response = await fetch(`${this.baseUrl}/discovery`, {
+      const response = await fetchWithRetry(`${this.baseUrl}/discovery`, {
         method: 'HEAD',
-        signal: controller.signal,
+        timeoutMs: 2000,
+        maxRetries: 0,
+        throwOnHttpError: false,
       });
-      clearTimeout(timeoutId);
       return response.ok;
     } catch (e) {
       logger.debug(`[HttpA2ATransport] Sidecar unavailable: ${e}`);

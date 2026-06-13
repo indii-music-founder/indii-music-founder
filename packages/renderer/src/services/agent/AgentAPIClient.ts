@@ -1,5 +1,6 @@
 import { env } from '@/config/env';
 import { logger } from '@/utils/logger';
+import { fetchWithRetry } from '@/lib/fetchWithRetry';
 
 export interface AgentTriggerPayload {
     prompt: string;
@@ -53,44 +54,28 @@ export class AgentAPIClient {
         const endpoint = `${this.baseUrl}/api/agent/${agentId}/trigger`;
         logger.debug(`[AgentAPIClient] Triggering agent ${agentId} at ${endpoint}`);
 
-        for (let attempt = 1; attempt <= retries; attempt++) {
-            try {
-                const response = await fetch(endpoint, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${env.VITE_API_KEY || ''}`
-                    },
-                    body: JSON.stringify(payload)
-                });
+        try {
+            const response = await fetchWithRetry(endpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${env.VITE_API_KEY || ''}`
+                },
+                body: JSON.stringify(payload),
+                maxRetries: retries - 1, // triggerAgent retries logic passed 'retries' as total attempts, fetchWithRetry takes max retries
+                baseDelayMs: delay,
+                throwOnHttpError: true
+            });
 
-                if (!response.ok) {
-                    throw new Error(`HTTP Error ${response.status}: ${response.statusText}`);
-                }
-
-                const data = await response.json() as AgentTriggerResponse;
-                return data;
-            } catch (error: unknown) {
-                const isLastAttempt = attempt === retries;
-                const errMessage = error instanceof Error ? error.message : String(error);
-                logger.warn(`[AgentAPIClient] Attempt ${attempt} failed to trigger agent ${agentId}: ${errMessage}`);
-
-                if (isLastAttempt) {
-                    logger.error(`[AgentAPIClient] Terminal failure: all retry attempts exhausted for agent ${agentId}`);
-                    return {
-                        success: false,
-                        error: `Failed to contact specialist agent ${agentId} after ${retries} attempts: ${errMessage}`
-                    };
-                }
-
-                // Exponential backoff
-                await new Promise(resolve => setTimeout(resolve, delay * Math.pow(2, attempt - 1)));
-            }
+            const data = await response.json() as AgentTriggerResponse;
+            return data;
+        } catch (error: unknown) {
+            const errMessage = error instanceof Error ? error.message : String(error);
+            logger.error(`[AgentAPIClient] Terminal failure for agent ${agentId}: ${errMessage}`);
+            return {
+                success: false,
+                error: `Failed to contact specialist agent ${agentId}: ${errMessage}`
+            };
         }
-
-        return {
-            success: false,
-            error: 'Unknown error occurred during API dispatch.'
-        };
     }
 }
