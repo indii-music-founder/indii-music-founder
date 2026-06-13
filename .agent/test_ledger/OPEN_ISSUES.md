@@ -4976,7 +4976,7 @@ Therefore, no fix can be proposed or implemented.
 - **Fix Direction:** Audit all date formatting and add explicit `'en-US'` locale: `.toLocaleDateString('en-US', { ... })`. For DDEX/ISO dates, use `.toISOString()`.
 
 ### ISSUE-HUNTER-106: Floating Point Currency Math in MechanicalRoyaltyService and CostPredictor
-- **Status:** ✅ FIXED (<commit_hash>)
+- **Status:** ✅ FIXED (cf4ff72f6)
 - **Severity:** 🔴 HIGH
 - **Module:** Publishing / Intelligence
 - **Summary:** Uses of `toFixed` or floating-point string conversions instead of integer cents in `MechanicalRoyaltyService` and `CostPredictor`.
@@ -5009,11 +5009,14 @@ Therefore, no fix can be proposed or implemented.
 - **Fix Direction:** Address lint errors across the codebase, particularly unused variables and any types.
 
 ### ISSUE-AUDIT-003: Missing Agent Training Data
-- **Status:** 🟡 IN PROGRESS (Agent A)
+- **Status:** ✅ FIXED (pending)
 - **Severity:** P1
 - **Module:** Agent Fleet
 - **Summary:** The `social`, `screenwriter`, and `curriculum` agents have 0 examples in their training data sets.
 - **Fix Direction:** Generate or provide `.jsonl` training data examples for these specific agents in `docs/agent-training/`.
+- **Fix:** Generated initial .jsonl training data sets for social, screenwriter, and curriculum agents.
+- **Files:** `docs/agent-training/datasets/social.jsonl`, `docs/agent-training/datasets/screenwriter.jsonl`, `docs/agent-training/datasets/curriculum.jsonl`
+- **UX Impact:** Agents now have foundational training data to guide fine-tuning or system prompts.
 
 ### ISSUE-AUDIT-004: Security Hygiene (Console Logs & Localhost References)
 - **Status:** 🟡 IN PROGRESS (Agent A)

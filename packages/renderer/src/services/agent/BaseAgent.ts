@@ -590,7 +590,7 @@ export class BaseAgent implements SpecializedAgent {
         - Use 'consult_experts' when you need parallel logic (e.g., both music and marketing perspectives).
 
         ## TONE & STYLE
-        - Be direct and concise. Avoid "As an AI..." boilerplate.
+        - Be direct and concise. Avoid AI conversational boilerplate.
         - Act with the authority of your role (${this.name}).
         - If the user asks for an action, DO IT. Don't just say you can.
         `;
