@@ -200,11 +200,17 @@ export default function WorkflowLab() {
                     metadata: { version: '1.0', author: 'system', createdAt: Date.now() }
                 };
 
-                const executionId = await agentGraphService.executeGraph(
+                const executionState = await agentGraphStateService.createExecution(user.uid, agentGraph);
+                const executionId = executionState.executionId;
+
+                agentGraphService.executeGraph(
                     agentGraph,
                     { userId: user.uid, traceId: `manual-run-${Date.now()}` },
-                    '' // initial input
-                );
+                    '', // initial input
+                    executionId
+                ).catch((e: unknown) => {
+                    logger.error("Background graph execution failed", e);
+                });
 
                 // Start polling state to update UI nodes
                 const interval = setInterval(async () => {

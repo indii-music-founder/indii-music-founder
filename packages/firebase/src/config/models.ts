@@ -15,25 +15,25 @@ export const FUNCTION_INTELLIGENCE_MODELS = {
         /** Nano Banana Pro — highest quality, 4K, advanced thinking */
         GENERATION: 'gemini-3-pro-image-preview',
         /** Nano Banana 2 — fast + quality, grounding, 4K */
-        FAST: 'gemini-3.1-flash-image-preview',
+        FAST: 'gemini-3-pro-image-preview',
         /** Nano Banana OG — legacy, high-volume / low-latency */
-        LEGACY: 'gemini-2.5-flash-image',
+        LEGACY: 'gemini-3-pro-image-preview',
     },
     TEXT: {
         FAST: 'gemini-3-flash-preview',
-        LITE: 'gemini-3.1-flash-lite',
-        PRO: 'gemini-3.1-pro-preview',
+        LITE: 'gemini-3-flash-preview',
+        PRO: 'gemini-3-pro-preview',
     },
     VIDEO: {
         GENERATION: 'veo-3.1-generate-preview',
         PRO: 'veo-3.1-generate-preview', // Alias for internal consistency
-        FAST: 'veo-3.1-fast-generate-preview',
+        FAST: 'veo-3.1-generate-preview',
     },
     SPEECH: {
         GENERATION: 'gemini-2.5-pro-tts',
     },
     AUDIO: {
-        ANALYSIS: 'gemini-3.1-pro-preview', // Multimodal audio support
+        ANALYSIS: 'gemini-3-flash-preview', // Multimodal audio support
     }
 } as const;
 
