@@ -44,7 +44,7 @@ export default function SocialDashboard() {
                 ? post.scheduledTime.getTime()
                 : post.scheduledTime
                     ? new Date(post.scheduledTime as unknown as string).getTime()
-                    : Date.now();
+                    : new Date().getTime();
 
             const _success = await actions.schedulePost({
                 platform: post.platform,

@@ -197,7 +197,7 @@ export default function WorkflowLab() {
                         targetId: e.to
                     })),
                     description: protocol.description || '',
-                    metadata: { version: '1.0', author: 'system', createdAt: Date.now() }
+                    metadata: { version: '1.0', author: 'system', createdAt: new Date().getTime() }
                 };
 
                 const executionState = await agentGraphStateService.createExecution(user.uid, agentGraph);
@@ -205,7 +205,7 @@ export default function WorkflowLab() {
 
                 agentGraphService.executeGraph(
                     agentGraph,
-                    { userId: user.uid, traceId: `manual-run-${Date.now()}` },
+                    { userId: user.uid, traceId: `manual-run-${crypto.randomUUID()}` },
                     '', // initial input
                     executionId
                 ).catch((e: unknown) => {
