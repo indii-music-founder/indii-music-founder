@@ -48,14 +48,14 @@ export default function MarketingAssetGeneratorUI() {
                 const { avatarGenerationService } = await import('@/services/video/AvatarGenerationService');
                 const audioUrl = await CloudStorageService.uploadAudio(
                     audioFile!,
-                    `avatar_audio_${Date.now()}`,
+                    `avatar_audio_${crypto.randomUUID()}`,
                     userId,
                     audioFile!.type || 'audio/wav'
                 );
                 const imageDataUri = await readAsDataUri(avatarImage!);
                 const imageUpload = await CloudStorageService.uploadImage(
                     imageDataUri,
-                    `avatar_image_${Date.now()}`,
+                    `avatar_image_${crypto.randomUUID()}`,
                     userId
                 );
                 const jobId = await avatarGenerationService.generateLipSync(imageUpload.url, audioUrl);
@@ -86,7 +86,7 @@ export default function MarketingAssetGeneratorUI() {
         if (!videoUrl) return;
         const link = document.createElement('a');
         link.href = videoUrl;
-        link.download = `marketing-video-${Date.now()}.mp4`;
+        link.download = `marketing-video-${crypto.randomUUID().substring(0, 8)}.mp4`;
         link.rel = 'noopener';
         document.body.appendChild(link);
         link.click();
