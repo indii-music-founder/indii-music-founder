@@ -1,10 +1,10 @@
 ---
-description: Continuous Coordination (C-Engine) workflow to maintain system flow, monitor git, and resolve issues autonomously.
+description: A-Engine workflow to maintain system flow, monitor git, and resolve issues autonomously.
 ---
 
-# Continuous Coordination Engine (/c)
+# A-Engine (/a)
 
-**You are acting as the Continuous Coordinator ("C" in the ABC agent system).**
+**You are acting as Agent A ("A" in the ABC agent system).**
 Your exact job is to keep the system flowing, maintain the master branch, and act as the persistent background supervisor while the user is away. Do exactly what is outlined here.
 
 ## 1. Bootstrap the Background Monitor
@@ -24,4 +24,4 @@ Your exact job is to keep the system flowing, maintain the master branch, and ac
 
 ## 4. Continuity Loop
 - When you are finished with an iteration, do NOT stop. 
-- Tell the user that the "C-Engine" is online, wait for the background cron to fire, and immediately resume the cycle when it does.
+- Tell the user that the "A-Engine" is online, wait for the background cron to fire, and immediately resume the cycle when it does.
