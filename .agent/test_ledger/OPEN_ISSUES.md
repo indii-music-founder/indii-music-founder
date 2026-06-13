@@ -4669,7 +4669,6 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-421: Walkthrough test-count claim contradicts its own output (4,081 vs 1,070)
 - **Status:** ✅ CLOSED (2026-06-12 — full suite re-run: 659 files, 4,142 tests, 4,141 pass; sole failure is pre-existing environmental `AgentExecutor.integration.test.ts` requiring live VITE_API_KEY, confirmed failing on clean tree via git stash)
-- **Status:** OPEN (process)
 - **Severity:** 🟡 MEDIUM (process)
 - **Dimension:** Verification Integrity
 - **Module:** repo-wide
@@ -4765,3 +4764,34 @@ Therefore, no fix can be proposed or implemented.
 - **Notes:** Check Firestore security rules or user auth roles.
 
 ---
+
+---
+
+### ISSUE-065: Mobile Remote Reconnection Loop & UI Lockout
+
+- **Status:** ✅ FIXED
+- **Severity:** 🔴 HIGH
+- **Module:** Mobile Remote / RemoteRelayService
+- **Summary:** The mobile-remote module displays a yellow warning banner ("Session Connection Interrupted - Attempting seamless handshake recovery…") and completely locks the user out of the app. It cycles through 5 reconnection attempts and then shows "Studio Disconnected".
+- **Root Cause:**
+  1. **Clock Skew Vulnerability:** `isFreshDesktopState` in `RemoteRelayService.ts` compares the local device clock (`Date.now()`) with the desktop's `timestamp` (which is a Firebase `serverTimestamp()`). If the mobile device's local clock is ahead of the Firebase server by more than 15 seconds (`DESKTOP_HEARTBEAT_STALE_MS`), the state is ALWAYS evaluated as "stale" even if it just arrived.
+  2. **Reconnection Loop UI Lockout:** When `onDesktopState` receives the "stale" state, it calls `markDesktopOffline()` which sets `isPaired = false`, `isReconnecting = true`, and `connectionStatus = 'pairing'`. This triggers the "Session Connection Interrupted" yellow banner (or "HANDSHAKE INIT") in `StatusDashboard.tsx`. Because `isPaired` becomes false, all UI interactions (tabs, CommandPad) are disabled.
+  3. **Fake Reconnection Logic:** The reconnection `useEffect` in `MobileRemote.tsx` (lines 343-372) merely increments a `reconnectAttempts` counter using `setTimeout`. After 5 loops, it falls back to 'idle'. If the desktop keeps pushing states every 5 seconds (via `useRemoteCommandListener.ts`), the loop gets continuously re-triggered and aborted.
+- **Fix Required:**
+  1. Refactor `isFreshDesktopState` in `RemoteRelayService.ts` to avoid comparing local `Date.now()` with server timestamps, or calculate a local clock offset.
+  2. In `MobileRemote.tsx`, ensure the reconnection loop actually attempts to re-establish the connection.
+  3. Keep the UI semi-functional or cache the last paired state during transient connection drops rather than instantly setting `isPaired = false`.
+- **Files:**
+  - `packages/renderer/src/services/agent/RemoteRelayService.ts` (lines 145-153)
+  - `packages/renderer/src/modules/mobile-remote/MobileRemote.tsx` (lines 343-372, 298-312)
+
+### ISSUE-VAL-001: RemoteRelayService Unit Tests Fail due to Timestamp mock
+- **Status:** ✅ FIXED
+- **Severity:** 🔴 HIGH
+- **Module:** RemoteRelayService
+- **Found:** 2026-06-13 by validation script
+- **Steps to Reproduce:**
+  1. Run `npm run test -- --run`
+  2. Observe `TypeError: Right-hand side of 'instanceof' is not callable` in `RemoteRelayService.test.ts`
+- **Root Cause:** `Timestamp` is mocked as a plain object in `packages/renderer/src/test/setup.ts`, so `ts instanceof Timestamp` throws an error.
+- **Fix:** Remove the `instanceof Timestamp` check in `packages/renderer/src/services/agent/RemoteRelayService.ts` and rely on duck-typing `typeof ts.toMillis === 'function'` instead.

@@ -300,7 +300,7 @@ export default function MobileRemote() {
       const currentStatus = connectionStatusRef.current;
       if (currentIsPaired || currentStatus === 'connected') {
         logger.warn('[MobileRemote] Desktop heartbeat went stale. Initiating auto-reconnect sequence…');
-        setIsPaired(false);
+        // Do NOT set isPaired(false) here. Keep UI semi-functional during transient drops.
         setIsReconnecting(true);
         setConnectionStatus('pairing');
         setReconnectAttempts(1);
@@ -354,6 +354,7 @@ export default function MobileRemote() {
       queueMicrotask(() => {
         setIsReconnecting(false);
         setConnectionStatus('idle');
+        setIsPaired(false);
       });
       return;
     }

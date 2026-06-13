@@ -28,8 +28,8 @@ test.describe('Founders Program Flow', () => {
     });
 
     test('should show Access Denied in the Founders Portal for non-founders', async ({ authedPage: page }) => {
-        // Try navigating to the portal
-        await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
+        // Navigate directly to the portal to avoid SPA router sync issues
+        await page.goto('/founders-portal', { waitUntil: 'domcontentloaded' });
 
         // Wait for store initialization
         await page.waitForFunction(() => (window as any).useStore !== undefined);
@@ -50,13 +50,6 @@ test.describe('Founders Program Flow', () => {
             }
         });
 
-        // Emulate changing module to founders portal
-        await page.evaluate(() => {
-            if ((window as any).useStore) {
-                (window as any).useStore.getState().setModule('founders-portal' as any);
-            }
-        });
-
         // Verify Access Denied is shown
         const deniedHeading = page.locator('h2:has-text("Access Denied")');
         await expect(deniedHeading).toBeVisible();
@@ -67,7 +60,8 @@ test.describe('Founders Program Flow', () => {
     });
 
     test('should render platform download options for verified founders', async ({ authedPage: page }) => {
-        await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
+        // Navigate directly to the portal to avoid SPA router sync issues
+        await page.goto('/founders-portal', { waitUntil: 'domcontentloaded' });
 
         // Wait for store initialization
         await page.waitForFunction(() => (window as any).useStore !== undefined);
@@ -85,13 +79,6 @@ test.describe('Founders Program Flow', () => {
                         updatedAt: new Date(Date.now() + 10000000).toISOString()
                     }
                 });
-            }
-        });
-
-        // Navigate to the portal module
-        await page.evaluate(() => {
-            if ((window as any).useStore) {
-                (window as any).useStore.getState().setModule('founders-portal' as any);
             }
         });
 

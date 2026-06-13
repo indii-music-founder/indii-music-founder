@@ -13,7 +13,7 @@ interface EmptyActionStateProps {
     gradient?: string;
 }
 
-export const EmptyActionState: React.FC<EmptyActionStateProps> = ({
+export const EmptyActionState = React.forwardRef<HTMLDivElement, EmptyActionStateProps>(({
     icon: Icon,
     title,
     description,
@@ -22,9 +22,10 @@ export const EmptyActionState: React.FC<EmptyActionStateProps> = ({
     secondaryLabel,
     onSecondary,
     gradient = 'from-emerald-500/20 to-cyan-500/20'
-}) => {
+}, ref) => {
     return (
         <motion.div
+            ref={ref}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="group relative overflow-hidden rounded-3xl border border-white/5 bg-[#1c2128] p-8 md:p-12 text-center"
@@ -72,4 +73,6 @@ export const EmptyActionState: React.FC<EmptyActionStateProps> = ({
             </div>
         </motion.div>
     );
-};
+});
+
+EmptyActionState.displayName = 'EmptyActionState';
