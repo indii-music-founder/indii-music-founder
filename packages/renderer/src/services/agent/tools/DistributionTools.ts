@@ -797,5 +797,73 @@ export const DistributionTools = {
                 estimatedRemovalTime: '24-48 hours after notification',
             }, `Takedown for release ${args.releaseId} recorded. Distributor notification pending Cloud Function deployment.`);
         }
+    }),
+
+    check_dsp_delivery_status: wrapTool('check_dsp_delivery_status', async (args: { releaseId: string; dspName?: string }) => {
+        const { releaseId, dspName } = args;
+        const uid = auth.currentUser?.uid;
+        if (!uid) return toolError('User not authenticated');
+
+        try {
+            const releaseRef = doc(db, 'releases', releaseId);
+            const snap = await getDoc(releaseRef);
+
+            if (!snap.exists()) {
+                return toolError(`Release ${releaseId} not found`, 'RELEASE_NOT_FOUND');
+            }
+
+            const data = snap.data();
+            const deliveryStatus = data.deliveryStatus || {};
+            
+            if (dspName) {
+                const status = deliveryStatus[dspName] || 'NOT_DELIVERED';
+                return toolSuccess({
+                    releaseId,
+                    dsp: dspName,
+                    status
+                }, `Delivery status for release ${releaseId} to ${dspName} is ${status}.`);
+            } else {
+                return toolSuccess({
+                    releaseId,
+                    statuses: deliveryStatus
+                }, `Delivery statuses for release ${releaseId} retrieved successfully.`);
+            }
+        } catch (error: unknown) {
+            return toolError(error instanceof Error ? error.message : 'Failed to check DSP delivery status', 'DSP_STATUS_ERROR');
+        }
+    }),
+
+    validate_metadata_readiness: wrapTool('validate_metadata_readiness', async (args: { releaseId: string }) => {
+        const { releaseId } = args;
+        const uid = auth.currentUser?.uid;
+        if (!uid) return toolError('User not authenticated');
+
+        try {
+            const releaseRef = doc(db, 'releases', releaseId);
+            const snap = await getDoc(releaseRef);
+
+            if (!snap.exists()) {
+                return toolError(`Release ${releaseId} not found`, 'RELEASE_NOT_FOUND');
+            }
+
+            const data = snap.data();
+            const metadata = data.metadata || {};
+            
+            const missingFields: string[] = [];
+            if (!metadata.title && !data.title) missingFields.push('title');
+            if (!metadata.artist && !data.artist) missingFields.push('artist');
+            if (!metadata.genre && !data.genre) missingFields.push('genre');
+            if (!metadata.isrc && !data.isrc) missingFields.push('isrc');
+
+            const isReady = missingFields.length === 0;
+
+            return toolSuccess({
+                releaseId,
+                isReady,
+                missingFields
+            }, isReady ? `Metadata for release ${releaseId} is ready for distribution.` : `Metadata for release ${releaseId} is incomplete. Missing fields: ${missingFields.join(', ')}.`);
+        } catch (error: unknown) {
+            return toolError(error instanceof Error ? error.message : 'Failed to validate metadata readiness', 'METADATA_VALIDATION_ERROR');
+        }
     })
 } satisfies Record<string, AnyToolFunction>;
