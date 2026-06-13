@@ -4845,11 +4845,14 @@ Therefore, no fix can be proposed or implemented.
 - **Fix Direction:** Implement these tools natively in MarketingAgent.ts or as Layer 3 execution scripts.
 
 ### ISSUE-GAP-MUSIC: Phase C Skills Gap Analysis for music
-- **Status:** 🟡 IN PROGRESS (Agent A)
+- **Status:** ✅ FIXED
 - **Severity:** 🟢 LOW
 - **Module:** agents/music
 - **Summary:** As part of the Phase C agent elevation, the following skills were identified as highly valuable for the music agent but are currently missing: analyze_audio_stem, detect_bpm_and_key.
 - **Fix Direction:** Implement these tools natively in MusicAgent.ts or as Layer 3 execution scripts.
+- **Fix:** Implemented `analyze_audio_stem` and `detect_bpm_and_key` natively in `MusicTools.ts` and registered them to the agent definition in `MusicAgent.ts`.
+- **Files:** `packages/renderer/src/services/agent/definitions/MusicAgent.ts`, `packages/renderer/src/services/agent/tools/MusicTools.ts`
+- **UX Impact:** Music agent now has specialized, fast tools for isolating stem analysis and extracting purely technical features like BPM and Key without the overhead of full semantic generation.
 
 ### ISSUE-GAP-PUBLICIST: Phase C Skills Gap Analysis for publicist
 - **Status:** 🟡 IN PROGRESS (Agent A)
@@ -4866,7 +4869,7 @@ Therefore, no fix can be proposed or implemented.
 - **Fix Direction:** Investigate why the creative director route `/creative` is hanging or failing to render the main container. Check for unhandled exceptions or missing mocks in the E2E environment.
 
 ### ISSUE-E2E-RIGHT-PANEL-2: Timeout interacting with filters and search in Project Assets tab
-- **Status:** OPEN
+- **Status:** 🟡 IN PROGRESS (Agent A)
 - **Severity:** 🔴 HIGH
 - **Module:** e2e/right-panel.spec.ts
 - **Summary:** Test 'should interact with filters and search in Project Assets tab' failed with TimeoutError waiting for `[data-testid="app-container"], main`.
