@@ -9,6 +9,8 @@
  *   VITE_PINATA_GATEWAY — Optional dedicated gateway (e.g. https://myapp.mypinata.cloud)
  */
 
+import { fetchWithRetry } from '@/utils/async';
+
 export interface PinResult {
     cid: string;         // IPFS Content Identifier
     ipfsUrl: string;     // ipfs:// URI
@@ -58,7 +60,7 @@ export class IPFSPinataService {
             pinataOptions: { cidVersion: 1 },
         };
 
-        const res = await fetch(`${PINATA_API}/pinning/pinJSONToIPFS`, {
+        const res = await fetchWithRetry(`${PINATA_API}/pinning/pinJSONToIPFS`, {
             method: 'POST',
             headers: {
                 Authorization: `Bearer ${this.jwt}`,
@@ -89,7 +91,7 @@ export class IPFSPinataService {
         form.append('pinataMetadata', JSON.stringify({ name: filename }));
         form.append('pinataOptions', JSON.stringify({ cidVersion: 1 }));
 
-        const res = await fetch(`${PINATA_API}/pinning/pinFileToIPFS`, {
+        const res = await fetchWithRetry(`${PINATA_API}/pinning/pinFileToIPFS`, {
             method: 'POST',
             headers: { Authorization: `Bearer ${this.jwt}` },
             body: form,

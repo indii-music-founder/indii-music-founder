@@ -11,6 +11,7 @@
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { storage } from './firebase';
 import { Logger } from '@/core/logger/Logger';
+import { fetchWithRetry } from '@/utils/async';
 
 export interface ImageCompressionOptions {
     maxWidth?: number;
@@ -112,7 +113,7 @@ export class CloudStorageService {
      * Convert data URI to Blob
      */
     static async dataURItoBlob(dataURI: string): Promise<Blob> {
-        const response = await fetch(dataURI);
+        const response = await fetchWithRetry(dataURI);
         return response.blob();
     }
 

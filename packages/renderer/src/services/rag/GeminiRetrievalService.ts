@@ -6,7 +6,7 @@ import { QuotaExceededError } from '@/shared/types/errors';
 
 // Switch to File API resource types
 import { INTELLIGENCE_MODELS } from '../../core/config/intelligence-models.ts';
-import { delay } from '@/utils/async';
+import { delay, fetchWithRetry } from '@/utils/async';
 import { logger } from '@/utils/logger';
 
 export interface GeminiFile {
@@ -465,7 +465,7 @@ export class GeminiRetrievalService {
         }
 
         logger.debug('--- RAG FETCH ---', url, streamHeaders);
-                const response = await fetch(url, {
+                const response = await fetchWithRetry(url, {
             method: 'POST',
             headers: streamHeaders,
             body: JSON.stringify(body)
