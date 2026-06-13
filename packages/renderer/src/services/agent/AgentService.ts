@@ -1297,15 +1297,36 @@ The user will see this plan and can approve it to start execution.`;
         // Hub and Spoke: Inject runner for intra-agent delegation
         context.runAgent = this.runAgent.bind(this);
 
-        return await this.executor.execute(
+        // Fail-safe: Enforce a master timeout of 5 minutes per agent run
+        // to prevent indefinite workflow orchestration hangs.
+        const timeoutController = new AbortController();
+        const timeoutMs = 300 * 1000;
+        
+        const timeoutPromise = new Promise<{ text: string; thoughtSignature?: string }>((_, reject) => {
+            setTimeout(() => {
+                logger.error(`[AgentService] Timeout: Agent ${agentId} took longer than 5 minutes to complete.`);
+                timeoutController.abort(new Error(`Agent ${agentId} execution timed out.`));
+                reject(new Error(`Agent ${agentId} execution timed out after ${timeoutMs / 1000}s.`));
+            }, timeoutMs);
+        });
+
+        const executePromise = this.executor.execute(
             agentId,
             task,
             context as PipelineContext,
             undefined,
-            undefined,
+            timeoutController.signal,
             parentTraceId,
             attachments || context.attachments
-        );
+        ).catch(err => {
+            if (timeoutController.signal.aborted) {
+                // We already rejected via the timeout promise, swallow to avoid unhandled rejection
+                return { text: `Agent ${agentId} execution timed out.` };
+            }
+            throw err;
+        });
+
+        return await Promise.race([executePromise, timeoutPromise]);
     }
 
     /**
