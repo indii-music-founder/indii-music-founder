@@ -9,8 +9,8 @@ The following Mermaid flowchart visualizes the high-level domains of the Cloud F
 ```mermaid
 graph LR
     subgraph Clients
-        Studio["indii Studio<br>(React/Electron)"]
-        Landing["Landing Page<br>(Next.js)"]
+        Studio["indii Studio (React/Electron)"]
+        Landing["Landing Page (Next.js)"]
     end
 
     subgraph Firebase Cloud Functions
@@ -123,3 +123,11 @@ Below is a detailed inventory of every exposed Firebase Cloud Function, mapped b
 - **Health Checks**: `healthCheck`, `healthCheckWest1`
 - **Bug Reporting**: `reportBugFn`
 - **MCP Server**: Exports defined via `mcp/index.ts`
+
+## Transition Breakdown
+
+1. **Client Request**: The frontend initiates a request to the backend using an HTTPS callable function.
+2. **REST API Router**: For REST-specific paths (like `getTrack`, `createTrack`), the HTTP request routes through the Express API router wrapper.
+3. **Domain Execution**: The request is routed to the specific domain bucket (e.g., Creative Engine, Business Engine) where specialized Cloud Functions process the business logic.
+4. **External Services**: If third-party interaction is required, the function triggers outbound requests to external APIs such as Stripe, Vertex AI, DDEX endpoints, or Clearbit.
+5. **Orchestration & Background**: For long-running operations or scheduled items (e.g., video rendering, timeline tasks), the request is queued onto Inngest or triggers BigQuery execution loops to process asynchronously.

@@ -4681,7 +4681,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-422: Missing Mermaid Diagram for API Endpoints
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟢 LOW
 - **UX Dimension:** Action Discoverability
 - **Module:** documentation
@@ -4693,11 +4693,12 @@ Therefore, no fix can be proposed or implemented.
 - **User Impact:** Developers or agents lack a single visual reference for the entire API surface, increasing friction when integrating or updating services.
 - **Screenshot:** N/A
 - **Notes:** Generate a new `.md` file in `docs/flowcharts/` containing a `mermaid` diagram mapping all backend API endpoints, cloud functions, and their module relationships.
+- **Fix:** Created `docs/flowcharts/api_endpoints.md` with a comprehensive Mermaid diagram mapping all Cloud Functions.
 
 ---
 
 ### ISSUE-423: Creative Pipeline API Error - Google Generation Service Internal Error
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **UX Dimension:** Error Communication
 - **Module:** Creative Studio
@@ -4709,11 +4710,12 @@ Therefore, no fix can be proposed or implemented.
 - **User Impact:** User cannot generate any images or videos, completely blocking the creative pipeline.
 - **Screenshot:** Native artifact
 - **Notes:** Backend Google Generation service returned a 500-level internal error. Workaround: None via UI.
+- **Fix:** Upgraded `extractInlineMedia` to support the new `generatedImages` format used by `@google/genai` v1.0.0 (Gemini 3 Pro Imagen), which prevents the parsing logic from throwing when no `inlineData` is found. Also modified the error string to include "Invalid response" so any future unhandled data shapes map to `invalid-argument` and relay the exact error to the UI rather than falling back to "internal error". Comprehensive debug logging added.
 
 ---
 
 ### ISSUE-424: Workflow Orchestrator Indefinite Hang on Template Execution
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **UX Dimension:** Error Communication
 - **Module:** Agent Orchestration / Workflow Lab
@@ -4726,11 +4728,12 @@ Therefore, no fix can be proposed or implemented.
 - **User Impact:** User believes the system is frozen and cannot use Agent workflows.
 - **Screenshot:** Native artifact
 - **Notes:** The orchestrator does not return a state.
+- **Fix:** Refactored triad execution to offload processing to Inngest `executeWorkflowStepFn` to bypass synchronous Firestore trigger timeouts. Updated typescript types in `models.ts` so `npm run build` passes cleanly. Added a master 5-minute overarching `Promise.race` timeout in `AgentService.ts` and `AbortSignal` checks in `BaseAgent.ts` to guarantee agent executions cannot hang indefinitely without throwing an error that the orchestrator UI can catch.
 
 ---
 
 ### ISSUE-425: Finance Receipt OCR Fetch Error to Gemini AI
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **UX Dimension:** Error Communication
 - **Module:** Finance
@@ -4741,12 +4744,13 @@ Therefore, no fix can be proposed or implemented.
   3. Fetch error: "Failed to upload file to Gemini AI: Failed to fetch (generativelanguage.googleapis.com)".
 - **User Impact:** User cannot scan receipts.
 - **Screenshot:** Native artifact
+- **Fix:** Refactored `GeminiFileService.ts` to use the unified `@google/genai` SDK (`FallbackClient`) instead of hardcoded raw `fetch` endpoints. This ensures consistency and proper routing, resolving CORS and fetch-related issues.
 - **Notes:** Check API keys and CORS configured on the backend.
 
 ---
 
 ### ISSUE-426: Distribution Department Fails to Load Releases (Permission Denied)
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **UX Dimension:** Error Communication
 - **Module:** Distribution
@@ -4757,6 +4761,7 @@ Therefore, no fix can be proposed or implemented.
   3. Observe "Missing or insufficient permissions" error.
 - **User Impact:** User cannot see their releases, blocking the entire distribution management flow.
 - **Screenshot:** Native artifact
+- **Fix:** Fixed query constraints in `DistributionService.ts` and `DistributionSyncService.ts` to properly query by `userId` directly when in the `org-default` workspace, removing the problematic `orgId == null` condition that caused Firestore rules evaluation failures.
 - **Notes:** Check Firestore security rules or user auth roles.
 
 ---
