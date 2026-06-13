@@ -6,7 +6,7 @@ async function bootstrap() {
     const passcode = crypto.randomInt(100000, 999999).toString();
 
     try {
-        const url = await indiiRemoteService.start({
+        const _url = await indiiRemoteService.start({
             port: 3333,
             password: passcode,
             // Local-only mode: no Ngrok tunnel — avoids clobbering the user's phone session

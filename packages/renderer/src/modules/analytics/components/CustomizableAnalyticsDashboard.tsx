@@ -81,7 +81,7 @@ export const CustomizableAnalyticsDashboard: React.FC = () => {
             const hasData = (stats?.totalRevenue > 0) || (expenseList.length > 0) || (usageObj.imagesGenerated > 0) || (tracks.length > 0);
             setIsRealData(hasData);
 
-        } catch (error) {
+        } catch (_error) {
             void 0;
         } finally {
             setLoading(false);

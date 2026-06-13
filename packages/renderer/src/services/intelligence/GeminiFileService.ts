@@ -33,7 +33,7 @@ export class GeminiFileService {
     private async getClient() {
         try {
             return await initializeFallbackClient();
-        } catch (error: unknown) {
+        } catch (_error: unknown) {
             throw new AppException(
                 AppErrorCode.INTERNAL_ERROR,
                 'Failed to initialize AI client for File Service.'

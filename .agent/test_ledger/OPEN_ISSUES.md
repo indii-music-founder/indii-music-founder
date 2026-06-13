@@ -5002,11 +5002,12 @@ Therefore, no fix can be proposed or implemented.
 - **Fix Direction:** Run `npm audit fix` and upgrade dependencies carefully, ensuring the application still builds and runs correctly.
 
 ### ISSUE-AUDIT-002: 125 Linting Problems (25 Errors, 100 Warnings)
-- **Status:** 🟡 IN PROGRESS (Agent A)
+- **Status:** ✅ FIXED
 - **Severity:** P1
 - **Module:** Code Quality
 - **Summary:** `npx eslint` reported 125 problems, including 25 errors (mostly unexpected any and unused variables).
 - **Fix Direction:** Address lint errors across the codebase, particularly unused variables and any types.
+- **Fix:** Fixed unused vars and explicit any across the codebase using exact manual replacements. Evaluated using ESLint.
 
 ### ISSUE-AUDIT-003: Missing Agent Training Data
 - **Status:** ✅ FIXED (pending)
@@ -5047,3 +5048,7 @@ Therefore, no fix can be proposed or implemented.
 - **Summary:** Many Zustand store selectors returned objects/arrays without being wrapped in `useShallow`, leading to infinite re-render loops or performance degradation under Zustand 5.
 - **Fix:** Used an AST codemod script to automatically identify `useStore` hooks returning objects or arrays, wrap their selector arguments with `useShallow`, and properly inject the `import { useShallow } from 'zustand/react/shallow';` statement.
 - **Files:** Modified 186 files across `packages/renderer/src`.
+
+### ISSUE-HUNTER-103: Missing HTTP Retry & Status Handling
+- [x] **Description**: Replaced raw fetch calls with a central robust `fetchWithRetry` utility. Handled test timeout leak with `AbortSignal`. Updated `QCPanel.test.tsx` regex matching.
+- [x] **Status**: FIXED

@@ -44,9 +44,10 @@ export const triggerUnifiedDistribution = onCall(async (request) => {
         await fsm.transition('MONITORING');
         return { success: true, status: 'DISTRIBUTED' };
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Unified Distribution Error:', error);
-        await fsm.transition('FAILED', error.message);
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        await fsm.transition('FAILED', errorMessage);
         throw new HttpsError('internal', 'Unified distribution failed.');
     }
 });

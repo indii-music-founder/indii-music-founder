@@ -38,7 +38,7 @@ export async function withCircuitBreaker<T>(
             } else {
                 return await operation();
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             attempt++;
             console.error(`[CircuitBreaker] ${operationName} failed on attempt ${attempt}:`, error);
 

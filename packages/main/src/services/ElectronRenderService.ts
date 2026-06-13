@@ -4,7 +4,6 @@ export const electronRenderService = {
     async render(config: { compositionId: string; outputLocation: string; inputProps?: Record<string, unknown> }) {
         void 0;
         
-        // eslint-disable-next-line no-useless-catch
         try {
             // Dynamically import @remotion/renderer so that it doesn't break if not available
             const { renderMedia } = await import('@remotion/renderer');

@@ -153,7 +153,7 @@ export const LicensingAgent: AgentConfig = {
                 return { success: false, error: "Failed to draft license: " + (error as Error).message };
             }
         },
-        search_sync_opportunities: async (args: { genre?: string, mood?: string, budget?: string }) => {
+        search_sync_opportunities: async (_args: { genre?: string, mood?: string, budget?: string }) => {
             return {
                 success: true,
                 data: {

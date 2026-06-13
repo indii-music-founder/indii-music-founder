@@ -161,7 +161,7 @@ export const PublishingTools = {
     }) => {
         const result = await queryProDatabase({
             trackTitle: args.query,
-            pro: args.society as any
+            pro: args.society as 'ASCAP' | 'BMI' | 'SESAC' | undefined
         });
         return {
             ...result,
