@@ -206,6 +206,36 @@ async function executeSync() {
     state.lastCheckTime = new Date().toISOString();
     fs.writeFileSync(STATE_FILE_PATH, JSON.stringify(state, null, 2));
 
+    function checkGitHubActions() {
+        logMessage('Checking GitHub Actions for failed workflows...');
+        try {
+            const ghOutput = runCommand('gh run list --limit 10 --json status,conclusion,name,url,createdAt,headBranch,databaseId');
+            const runs = JSON.parse(ghOutput);
+            
+            const failedRuns = runs.filter(r => r.conclusion === 'failure');
+            
+            if (failedRuns.length > 0) {
+                const issuesPath = path.resolve('.agent/test_ledger/OPEN_ISSUES.md');
+                const issuesContent = fs.existsSync(issuesPath) ? fs.readFileSync(issuesPath, 'utf-8') : '';
+                
+                for (const run of failedRuns) {
+                    if (!issuesContent.includes(run.url)) {
+                        logMessage(`Found newly failed CI pipeline: ${run.name} (${run.url}). Logging to OPEN_ISSUES.md...`);
+                        const issueEntry = `\n### ISSUE-CI-${run.databaseId}: CI Pipeline Failure (${run.name})\n- **Status:** OPEN\n- **Severity:** 🔴 HIGH\n- **Module:** CI/CD\n- **Summary:** The GitHub Actions workflow \`${run.name}\` failed on branch \`${run.headBranch}\`.\n- **Link:** [View Logs](${run.url})\n- **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.\n`;
+                        fs.appendFileSync(issuesPath, issueEntry);
+                    }
+                }
+            } else {
+                logMessage('No recent failed workflows found.');
+            }
+        } catch (e) {
+            logMessage(`Warning: Could not check GitHub Actions. Is gh CLI installed and authenticated? Error: ${e.message}`);
+        }
+    }
+
+    // Run the GitHub actions check
+    checkGitHubActions();
+
     logMessage('--- Git Monitor Sync Cycle Complete ---');
     console.log(JSON.stringify(result, null, 2));
 }

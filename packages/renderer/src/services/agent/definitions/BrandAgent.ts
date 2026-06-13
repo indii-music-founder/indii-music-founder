@@ -102,9 +102,35 @@ export const BrandAgent: AgentConfig = {
             } catch (e: unknown) {
                 return { success: false, error: e instanceof Error ? e.message : String(e) };
             }
+        },
+        analyze_brand_sentiment: async (args: { text: string; context?: string }) => {
+            const prompt = `Analyze the brand sentiment of the following text.
+            Context: ${args.context || 'General public discussion'}
+            Text: ${args.text}
+            
+            Evaluate the overall sentiment, dominant emotion, key themes, and provide a summary of public perception.`;
+            try {
+                const response = await AutonomousIntelligence.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });
+                return { success: true, data: { analysis: response } };
+            } catch (e: unknown) {
+                return { success: false, error: e instanceof Error ? e.message : String(e) };
+            }
+        },
+        generate_brand_kit: async (args: { description: string; core_values: string[] }) => {
+            const prompt = `Generate a comprehensive brand kit based on the following description and core values.
+            Description: ${args.description}
+            Core Values: ${args.core_values.join(', ')}
+            
+            Include suggested color hex codes, typography/font pairings, a description of the brand voice, and a logo concept.`;
+            try {
+                const response = await AutonomousIntelligence.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });
+                return { success: true, data: { brandKit: response } };
+            } catch (e: unknown) {
+                return { success: false, error: e instanceof Error ? e.message : String(e) };
+            }
         }
     },
-    authorizedTools: ['verify_output', 'analyze_brand_consistency', 'generate_brand_guidelines', 'audit_visual_assets', 'analyze_audio'],
+    authorizedTools: ['verify_output', 'analyze_brand_consistency', 'generate_brand_guidelines', 'audit_visual_assets', 'analyze_audio', 'analyze_brand_sentiment', 'generate_brand_kit'],
     tools: [{
         functionDeclarations: [
             {
@@ -165,6 +191,30 @@ export const BrandAgent: AgentConfig = {
                         uploadedAudioIndex: { type: 'NUMBER', description: 'Index of the audio file in the upload list (default 0).' }
                     },
                     required: []
+                }
+            },
+            {
+                name: 'analyze_brand_sentiment',
+                description: 'Analyze public sentiment or text for brand perception, dominant emotions, and key themes.',
+                parameters: {
+                    type: 'OBJECT',
+                    properties: {
+                        text: { type: 'STRING', description: 'The text, comments, or articles to analyze.' },
+                        context: { type: 'STRING', description: 'Optional context regarding the source of the text.' }
+                    },
+                    required: ['text']
+                }
+            },
+            {
+                name: 'generate_brand_kit',
+                description: 'Generate a complete brand kit including colors, typography, and voice based on a description.',
+                parameters: {
+                    type: 'OBJECT',
+                    properties: {
+                        description: { type: 'STRING', description: 'A description of the brand identity or vibe.' },
+                        core_values: { type: 'ARRAY', description: 'List of core values.', items: { type: 'STRING' } }
+                    },
+                    required: ['description', 'core_values']
                 }
             }
         ]
