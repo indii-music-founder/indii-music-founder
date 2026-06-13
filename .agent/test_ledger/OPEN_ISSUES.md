@@ -4819,7 +4819,7 @@ Therefore, no fix can be proposed or implemented.
 - **Fix Direction:** Implement these tools natively in DistributionAgent.ts or as Layer 3 execution scripts.
 
 ### ISSUE-GAP-LEGAL: Phase C Skills Gap Analysis for legal
-- **Status:** OPEN
+- **Status:** 🟡 IN PROGRESS (Agent A)
 - **Severity:** 🟢 LOW
 - **Module:** agents/legal
 - **Summary:** As part of the Phase C agent elevation, the following skills were identified as highly valuable for the legal agent but are currently missing: draft_split_sheet, summarize_contract_terms.
