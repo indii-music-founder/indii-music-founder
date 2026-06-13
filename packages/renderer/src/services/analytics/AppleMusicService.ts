@@ -36,6 +36,7 @@
  */
 
 import { logger } from '@/utils/logger';
+import * as Sentry from '@sentry/react';
 import type { PlatformData, StreamDataPoint } from './types';
 
 // ── MusicKit JS type declarations ─────────────────────────────────────────────
@@ -165,7 +166,9 @@ export class AppleMusicService {
         try {
             await this.initialize();
             return this._kit?.isAuthorized ?? false;
-        } catch {
+        } catch (err: unknown) {
+            logger.error('[AppleMusicService] Failed to check connection:', err);
+            Sentry.captureException(err);
             return false;
         }
     }

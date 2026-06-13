@@ -31,6 +31,8 @@ import { doc, getDoc } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { auth } from '@/services/firebase';
 import type { PlatformData, StreamDataPoint } from './types';
+import * as Sentry from '@sentry/react';
+import { logger } from '@/utils/logger';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -182,7 +184,9 @@ export class InstagramAnalyticsService {
             if (!snap.exists()) return false;
             const token = snap.data() as IGStoredToken;
             return !!token.accessToken && token.expiresAt > Date.now();
-        } catch {
+        } catch (err: unknown) {
+            logger.error('[InstagramAnalyticsService] Failed to check connection:', err);
+            Sentry.captureException(err);
             return false;
         }
     }

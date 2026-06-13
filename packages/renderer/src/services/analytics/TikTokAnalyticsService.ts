@@ -28,6 +28,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { auth } from '@/services/firebase';
 import { logger } from '@/utils/logger';
+import * as Sentry from '@sentry/react';
 import type { PlatformData, StreamDataPoint } from './types';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -168,7 +169,9 @@ export class TikTokAnalyticsService {
             if (!snap.exists()) return false;
             const token = snap.data() as TikTokStoredToken;
             return !!token.accessToken && token.expiresAt > Date.now();
-        } catch {
+        } catch (err: unknown) {
+            logger.error('[TikTokAnalyticsService] Failed to check connection:', err);
+            Sentry.captureException(err);
             return false;
         }
     }
