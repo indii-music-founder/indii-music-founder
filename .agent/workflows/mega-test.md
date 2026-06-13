@@ -6,7 +6,7 @@ description: >
   Example: `/mega-test road-manager`, `/mega-test audio-analyzer`, `/mega-test marketing`.
   The target taxonomy is the live sidebar, defined in `.agent/test_ledger/departments_test_config.json`.
   Runs the scoped test surface (Vitest unit/integration + Playwright E2E + connections) via
-  `execution/run_department_test.py <target>`, then drives the 11-dimension browser gauntlet
+  `execution/run_department_test.py <target>`, then drives the 12-dimension browser gauntlet
   against the live module, documents pass/fail, logs new issues to
   `.agent/test_ledger/OPEN_ISSUES.md`, and produces a structured per-target report.
   TEST AGENT DOES NOT WRITE CODE. Issues go to .agent/test_ledger/OPEN_ISSUES.md for a fixing agent.
@@ -19,7 +19,7 @@ description: >
 
 # /mega-test — Per-Menu-Item Multi-Dimensional Stress Test
 
-> **Purpose:** Test ONE left-menu item end-to-end against the live running application using the browser subagent, across 11 critical dimensions, plus its scoped unit/E2E/connection test surface.
+> **Purpose:** Test ONE left-menu item end-to-end against the live running application using the browser subagent, across 12 critical dimensions, plus its scoped unit/E2E/connection test surface.
 > **The unit of work is a menu item, NOT a version number.** `/mega-test road-manager`, not `/mega-test v5`.
 > **Mode:** STRICTLY OBSERVATIONAL — no code modifications, no source reading. EVER.
 > **Output:** Per-target pass/fail report + all new issues → `.agent/test_ledger/OPEN_ISSUES.md`
@@ -28,7 +28,7 @@ description: >
 
 ## 0. PRIME RULES (READ BEFORE ANYTHING ELSE)
 
-You are a **multi-dimensional test executor**, not an engineer. For the target menu item, you observe through ALL 11 lenses simultaneously.
+You are a **multi-dimensional test executor**, not an engineer. For the target menu item, you observe through ALL 12 lenses simultaneously.
 
 You DO:
 - Resolve the user's target to a registry entry (manager / department / tool / project)
@@ -104,6 +104,32 @@ The menu is organized into four categories. Any item below is a valid fill-in-th
 | Founders Checkout | `founders`, `checkout` |
 | Onboarding | `onboarding`, `curriculum` |
 
+### Right Bar — Omni-Panel tabs (`category: rightbar`)
+The right-side panel ([RightPanel.tsx](packages/renderer/src/core/components/RightPanel.tsx)) is testable per tab.
+| Target | Aliases |
+|--------|---------|
+| Context Controls | `context-controls`, `context`, `studio-controls` |
+| Project Assets | `project-assets`, `assets` |
+| Artifacts | `artifacts`, `artifacts-panel` |
+| Omni Agent | `omni-agent`, `omni`, `agent-panel` |
+
+### Top Bar — per-module top toolbars / dropdown menus (`category: topbar`)
+The top toolbar that appears above a module's content (e.g. the Creative Studio top menu with dropdowns).
+| Target | Aliases |
+|--------|---------|
+| Creative Studio Top Toolbar | `creative-toolbar`, `canvas-toolbar`, `studio-toolbar` |
+| Design Top Toolbar | `design-toolbar` |
+| Agent Top Toolbar | `agent-toolbar` |
+| Marketing Top Toolbar | `marketing-toolbar` |
+
+### Continuity Chains — backend cross-pollination of information (`category: continuity`)
+These targets are NOT a single UI surface. Each is an end-to-end **information chain**: a fact captured in one place must propagate through the memory/profile layer and be *acted on* by a downstream agent — possibly across time. See §12 for the chain test discipline.
+| Target | Chain |
+|--------|-------|
+| `chain-aesthetic` | Preference captured (onboarding/settings) → memory → Creative/Brand/Merch *uses* it (e.g. favorite color "puke green" becomes the aesthetic) |
+| `chain-longitudinal-finance` | Spend history accumulates over time → aggregated → surfaced as an insight (e.g. 3 yrs of guitar-string spend → "look for a sponsor") |
+| `chain-identity` | Artist profile/identity facts → propagate to ALL agents (brand, creative, marketing, publicist, legal) consistently |
+
 > **The registry is canonical — these tables are a convenience snapshot.** At startup, dump the live registry to confirm targets and aliases:
 > ```bash
 > python3 execution/run_department_test.py --help && \
@@ -167,7 +193,7 @@ Scan `docs/flowcharts/` for invariants touching this target (its module + every 
 1. **Navigate** — open the target module via its sidebar path (§5).
 2. **Exercise the surface** — every button, input, generation trigger, and persisted state in the module.
 3. **Follow the connections** — the registry lists connected modules. Verify data flows out (e.g. Creative image → Distribution; Road Manager itinerary → Calendar/Finance).
-4. **Observe** — watch PASS/FAIL across all 11 Dimensions (§6).
+4. **Observe** — watch PASS/FAIL across all 12 Dimensions (§6).
 5. **Screenshot** — capture every meaningful state (pass or fail).
 6. **Record** — append to the running report with dimensional scores.
 7. **Log issues** — if FAIL or PARTIAL, append to `.agent/test_ledger/OPEN_ISSUES.md`.
@@ -244,6 +270,17 @@ Viewports 1920 / 1280 / 768 / 375; no horizontal scrollbars; touch targets ≥ 4
 ### Dimension 11: Asset Generation Gauntlet
 Every endpoint in this module that CREATES a real artifact MUST be tested end-to-end: TRIGGER → WAIT → VERIFY (real, correct MIME, visible, playable/downloadable) → USE DOWNSTREAM.
 *Cost Awareness: respect API budgets; use `check_budget_status()`.*
+
+### Dimension 12: Information Continuity (Cross-Pollination)
+The deep extension of Dimension 7. Dim 7 asks "does an *asset* reach the next module?" Dim 12 asks "does a *fact* the user gave us actually change what the agents do, everywhere and over time?"
+
+For the target module, verify that:
+1. **Inbound:** facts/preferences captured elsewhere (onboarding, settings, prior chat) are present and correct when this module's agent acts. (Memory layer: [UserMemory.ts](packages/renderer/src/types/UserMemory.ts) `preference`/`fact`, `UserContext.topPreferences`/`keyFacts`.)
+2. **Applied, not just stored:** the agent's *output* visibly reflects the fact — not merely that the fact is retrievable. ("Puke green" stored ≠ pass. A puke-green design = pass.)
+3. **Consistent across agents:** the same fact yields consistent behavior in every consuming module the registry lists.
+4. **Superseded correctly:** when the user later changes the fact, the new value wins and the old one stops influencing output (UserMemory `supersededBy`).
+
+*This dimension is exercised most directly by the `continuity` category targets (§12).*
 
 ---
 
@@ -328,7 +365,7 @@ When `--deep` is given: read the named plan, extract ONLY the routines that exer
 ## 10. QUICK REFERENCE
 
 ```
-/mega-test <item>            → Full 11-dimension gauntlet against one menu item
+/mega-test <item>            → Full 12-dimension gauntlet against one menu item
 /mega-test <category>        → Sweep every item in a category (managers|departments|tools|projects)
 /mega-test                   → List the registry, ask which item to run
 /mega-test <item> --deep vN  → Attach numbered depth-pack routines for that item
@@ -358,3 +395,39 @@ Output files:
 | Marking PARTIAL when it's clearly FAIL | Do not soften failures. |
 | Reading source to diagnose | You are the user. Observe and report. |
 | Ignoring console errors on PASS | A "working" feature with an Unhandled Promise Rejection is a FAIL. |
+
+---
+
+## 12. CONTINUITY CHAIN TEST DISCIPLINE (the `continuity` category)
+
+> Continuity targets test the backend **cross-pollination of information** — the thing the user cares about most: a fact captured anywhere must change what the agents *do*, everywhere, and over time. This is still black-box: you set a fact as a user, then observe whether downstream agent *output* reflects it. You never read source.
+
+Each continuity target runs as a **4-stage chain**. A stage that "stores but doesn't apply" is a FAIL, not a PARTIAL.
+
+### Stage 1 — CAPTURE
+Enter the fact at its natural capture point as a real user would:
+- `chain-aesthetic`: in Onboarding (or Settings/Brand Manager), set the artist's favorite color / aesthetic (e.g. "puke green"). Screenshot the saved value.
+- `chain-longitudinal-finance`: seed spend history. Real-time accrual isn't testable live, so use the fixture seed (see Stage 0 below) to represent 3 years of recurring guitar-string purchases.
+- `chain-identity`: in Onboarding/Profile, set identity facts (genre, hometown, pronouns, band members, mission statement).
+
+### Stage 2 — PERSIST & RETRIEVE
+Verify the fact reached the memory/profile layer:
+- Open **Memory Agent** (Tools) and confirm the fact appears as a `UserMemory` (`preference`/`fact`) with sensible tags, and/or in `UserContext.topPreferences`/`keyFacts`.
+- If it is NOT retrievable here, the chain breaks at storage → file a 🔴 HIGH issue, Dimension: `Continuity`, and stop the chain.
+
+### Stage 3 — APPLY (the real test)
+Go to each **consuming module** listed in the target's `connectedDepartments` and trigger an action that *should* use the fact. Observe the OUTPUT:
+- `chain-aesthetic`: in Creative Director, generate cover art / a design with a neutral prompt ("make me a poster"). The result must visibly reflect puke green as the aesthetic — without you re-stating the color. Repeat in Brand Manager and Art & Merch.
+- `chain-longitudinal-finance`: in Finance (and Boardroom/Marketing), ask for insights. The agent should surface the aggregated guitar-string spend and a reasoned suggestion (e.g. seek a string sponsor).
+- `chain-identity`: ask Brand, Creative, Marketing, Publicist, and Legal agents something that depends on identity. Every agent must answer consistently with the captured facts (no agent thinks the band is a different genre).
+
+**PASS = the fact changed the output. Retrievability alone is not a pass.**
+
+### Stage 4 — SUPERSEDE
+Change the fact at the capture point (e.g. favorite color → matte black). Re-run one Stage-3 action per consuming module. The new value must win and the old value must stop influencing output (`UserMemory.supersededBy`). Stale influence = 🟡 MEDIUM issue minimum.
+
+### Stage 0 — Fixture seeding (longitudinal chains only)
+Longitudinal chains need historical data that can't be produced live. Before Stage 1, ask the user whether a seed fixture exists; if so, load it via the documented seed path. Never fabricate displayed numbers — if no seed exists, mark the chain `⏭️ BLOCKED (needs fixture)` and file a note rather than faking a 3-year history. (Honors the no-mock-data rule.)
+
+### Continuity issue tagging
+File continuity findings with `Dimension: Continuity`, name the **broken stage** (Capture / Persist / Apply / Supersede), the **source fact**, and the **consuming module(s)** where it failed to surface. Example summary: *"Aesthetic chain breaks at APPLY: favorite color 'puke green' persists in Memory Agent but Creative cover-art generation ignores it (output is default blue)."*

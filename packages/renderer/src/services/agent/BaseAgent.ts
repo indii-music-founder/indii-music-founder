@@ -852,6 +852,10 @@ export class BaseAgent implements SpecializedAgent {
                 // Build a fresh tool snapshot for each iteration to avoid SDK freeze contamination
                 const iterationTools = buildToolsSnapshot();
 
+                if (signal?.aborted) {
+                    throw new Error(signal.reason || 'Agent execution aborted via signal.');
+                }
+
                 logger.debug(`BaseAgent calling AutonomousIntelligence.generateContent for ${this.id}, iteration ${iterations}`);
                 const result = await AutonomousIntelligence.generateContent(
                     requestContents,
@@ -859,7 +863,7 @@ export class BaseAgent implements SpecializedAgent {
                     { ...INTELLIGENCE_CONFIG.THINKING.LOW }, // config
                     undefined, // systemInstruction
                     iterationTools as unknown as Parameters<import('@/services/intelligence/FirebaseIntelligenceService').FirebaseIntelligenceService['generateContent']>[4], // tools — bridges internal ToolDefinition to SDK type
-                    { thoughtSignature: currentThoughtSignature } // options
+                    { thoughtSignature: currentThoughtSignature, signal } // options
                 );
 
                 // Wrap the raw result into a WrappedResponse-like shape for downstream use

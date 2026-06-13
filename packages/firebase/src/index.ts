@@ -16,6 +16,7 @@ import { VideoJobSchema } from "./lib/video";
 import { GenerateSpeechRequestSchema } from "./lib/audio";
 
 
+import { executeWorkflowStepFn } from "./functions/agent/executeWorkflowStep";
 import { LongFormVideoJobSchema, generateLongFormVideoFn, stitchVideoFn } from "./lib/long_form_video";
 import { generateVideoFn } from "./lib/video_generation";
 import { generateVideoDirect } from "./lib/video_generation_direct";
@@ -765,9 +766,12 @@ export const inngestApi = functions
         // Timeline Orchestrator: Autonomous milestone execution
         const executeMilestone = executeMilestoneFn(inngestClient);
 
+        // Agent Orchestration (offloaded triad execution)
+        const executeWorkflowStep = executeWorkflowStepFn(inngestClient);
+
         const handler = serve({
             client: inngestClient,
-            functions: [generateVideo, generateLongFormVideo, stitchVideo, executeMilestone],
+            functions: [generateVideo, generateLongFormVideo, stitchVideo, executeMilestone, executeWorkflowStep],
             signingKey: inngestSigningKey.value(),
         });
 
