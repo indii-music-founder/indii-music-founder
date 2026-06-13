@@ -14,6 +14,21 @@ d17895e73 fix(gemini): use @google/genai Pager API in listFiles (unblocks CI typ
 7e95f0893 fix: resolve CI failure by correcting IMAGE model IDs and update get-git workflow
 3155e4a37 chore: session checkpoint [09:14]
 fb1af767c chore: snapshot commit (agent ledger updates and partial fixes)
+**Updated:** 2026-06-13 10:48 EDT
+**Branch:** `main`
+
+## Recent Commits
+```
+74d162497 chore: session checkpoint [10:48]
+8fef0afbc test(creative): gracefully handle HTTP referrer API key blocks in CI
+7e95f0893 fix: resolve CI failure by correcting IMAGE model IDs and update get-git workflow
+3155e4a37 chore: session checkpoint [09:14]
+fb1af767c chore: snapshot commit (agent ledger updates and partial fixes)
+93b6af233 chore: session checkpoint [08:52]
+1fd5aec49 chore: session checkpoint [17:35]
+82aed5ae9 chore: session checkpoint [16:46]
+6c819747a feat(agents): perfect agent tool API formations
+219378509 fix(agent): map fallback model correctly
 ```
 
 ## Working State
