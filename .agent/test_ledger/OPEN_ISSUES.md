@@ -4898,7 +4898,7 @@ Therefore, no fix can be proposed or implemented.
 - **Fix Direction:** Implement these tools natively in RoadAgent.ts or as Layer 3 execution scripts.
 
 ### ISSUE-GAP-SOCIAL: Phase C Skills Gap Analysis for social
-- **Status:** OPEN
+- **Status:** 🟡 IN PROGRESS (Agent A)
 - **Severity:** 🟢 LOW
 - **Module:** agents/social
 - **Summary:** As part of the Phase C agent elevation, the following skills were identified as highly valuable for the social agent but are currently missing: generate_content_calendar, analyze_engagement_rate.
