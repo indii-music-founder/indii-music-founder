@@ -6,6 +6,8 @@ import { logger } from '@/utils/logger';
 import { auth } from '@/services/firebase';
 import { isAnonymousOrDemoUser, isDemoUserId } from '@/utils/authGuards';
 
+let globalProfileUnsubscribe: (() => void) | null = null;
+
 export interface Organization {
     id: string;
     name: string;
@@ -207,6 +209,12 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
                 const { useStore } = await import('@/core/store');
 
                 const userRef = doc(db, 'users', uid);
+                
+                if (globalProfileUnsubscribe) {
+                    globalProfileUnsubscribe();
+                    globalProfileUnsubscribe = null;
+                }
+
                 const unsubscribe = onSnapshot(userRef, (docSnap) => {
                     if (docSnap.exists()) {
                         const cloudProfile = docSnap.data() as UserProfile;
@@ -236,7 +244,7 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
                     logger.error('[Profile] Real-time listener error:', error);
                 });
 
-                useStore.getState().registerSubscription('global_profile', unsubscribe);
+                globalProfileUnsubscribe = unsubscribe;
             } catch (err: unknown) {
                 logger.error('[Profile] Failed to initialize real-time listener:', err);
             }
@@ -246,6 +254,10 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
     },
     logout: async () => {
         try {
+            if (globalProfileUnsubscribe) {
+                globalProfileUnsubscribe();
+                globalProfileUnsubscribe = null;
+            }
             const { useStore } = await import('@/core/store');
             useStore.getState().clearAllSubscriptions();
         } catch (err: unknown) {

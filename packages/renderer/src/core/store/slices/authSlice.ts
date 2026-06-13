@@ -351,7 +351,10 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, _get) => ({
         if (!isE2EMock && (!apiKey || apiKeyLower.includes('fake') || apiKeyLower.includes('bypass') || apiKeyLower.includes('mock') || apiKeyLower.includes('your_'))) {
             logger.warn('[Auth] No valid API Key found and not in E2E mode.');
             set({ authLoading: false });
-            return () => { };
+            return () => {
+                if (electronUnsub) electronUnsub();
+                if (errorUnsub) errorUnsub();
+            };
         }
 
         // TIMEOUT FAILSAFE: If onAuthStateChanged never fires (API key blocked,

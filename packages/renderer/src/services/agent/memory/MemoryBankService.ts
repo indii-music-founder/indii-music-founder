@@ -1,4 +1,5 @@
 import { logger } from '@/utils/logger';
+import { fetchWithRetry } from '@/lib/fetchWithRetry';
 
 export interface MemoryBankResult {
     id: string;
@@ -55,13 +56,14 @@ class MemoryBankService {
 
         try {
             const redactedContent = this.redactPII(content);
-            const response = await fetch(this.baseUrl, {
+            const response = await fetchWithRetry(this.baseUrl, {
                 method: 'POST',
                 headers: this.headers,
                 body: JSON.stringify({
                     messages: [{ role: 'user', content: redactedContent }],
                     user_id: userId,
                 }),
+                throwOnHttpError: false
             });
 
             if (!response.ok) {
@@ -86,7 +88,7 @@ class MemoryBankService {
 
         try {
             const redactedQuery = this.redactPII(query);
-            const response = await fetch(`${this.baseUrl}search/`, {
+            const response = await fetchWithRetry(`${this.baseUrl}search/`, {
                 method: 'POST',
                 headers: this.headers,
                 body: JSON.stringify({
@@ -94,6 +96,7 @@ class MemoryBankService {
                     user_id: userId,
                     limit,
                 }),
+                throwOnHttpError: false
             });
 
             if (!response.ok) {
@@ -117,9 +120,10 @@ class MemoryBankService {
         if (!this.apiKey) return [];
 
         try {
-            const response = await fetch(`${this.baseUrl}?user_id=${userId}`, {
+            const response = await fetchWithRetry(`${this.baseUrl}?user_id=${userId}`, {
                 method: 'GET',
                 headers: this.headers,
+                throwOnHttpError: false
             });
 
             if (!response.ok) {

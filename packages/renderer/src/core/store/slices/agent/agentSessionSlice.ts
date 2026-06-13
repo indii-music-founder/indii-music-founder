@@ -1,6 +1,8 @@
 import { StateCreator } from 'zustand';
 import { logger } from '@/utils/logger';
 
+let agentSessionsUnsubscribe: (() => void) | null = null;
+
 export type MessageSource = 'desktop' | 'mobile-remote' | 'background' | 'api';
 
 export interface AgentMessage {
@@ -304,6 +306,10 @@ export function buildAgentSessionState(
             let hasDoneInitialCleanup = false;
 
             try {
+                if (agentSessionsUnsubscribe) {
+                    agentSessionsUnsubscribe();
+                    agentSessionsUnsubscribe = null;
+                }
                 const unsubscribe = sessionService.subscribeToSessions((sessions) => {
                     const sessionMap: Record<string, ConversationSession> = {};
 
@@ -355,9 +361,7 @@ export function buildAgentSessionState(
                     logger.error('[AgentSlice] Sessions subscription error:', error);
                 });
 
-                import('@/core/store').then(({ useStore }) => {
-                    useStore.getState().registerSubscription('agent_sessions', unsubscribe);
-                });
+                agentSessionsUnsubscribe = unsubscribe;
             } catch (error: unknown) {
                 logger.error('[AgentSlice] Failed to initialize sessions subscription:', error);
             }
