@@ -62,6 +62,10 @@ These commands are called by the Core Pipeline or can be invoked directly as nee
 - **Purpose:** Checks local repository state, fetches origin, pulls/rebases changes, validates ahead commits using typecheck/Vitest, and manages background scheduling cron.
 - **When to use:** Run at start, middle, or manually to keep commits organized and pushed cleanly.
 
+### `/c` — Continuous Coordination Engine
+- **Purpose:** Acts as the continuous supervisor, maintaining system flow by running git sync cycles, committing workspace changes, and triggering issue resolution autonomously.
+- **When to use:** Used to put the agent into a persistent background monitor mode while the user steps away.
+
 ### `/away` — Autonomous CI Monitor & Merge Loop
 - **Purpose:** Executes an autonomous loop to monitor branch CI using the browser subagent, automatically fixing errors until green, then merging to main.
 - **When to use:** When the user steps away from the keyboard and wants the agent to drive a branch across the finish line.
