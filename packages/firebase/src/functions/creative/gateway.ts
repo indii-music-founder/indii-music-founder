@@ -293,6 +293,14 @@ function buildOmniPrompt(data: z.infer<typeof GenerateOmniRemixSchema>): string 
 }
 
 function extractInlineMedia(response: unknown, kind: MediaKind): { data: string; mimeType: string } {
+  // Support for new Gemini 3 native generatedImages array (e.g. from unified responses)
+  if (kind === 'image' && (response as any)?.generatedImages?.[0]?.image?.imageBytes) {
+    return {
+      mimeType: (response as any).generatedImages[0].image.mimeType || 'image/jpeg',
+      data: (response as any).generatedImages[0].image.imageBytes
+    };
+  }
+
   const result = response as GeminiContentResponse;
   const candidates = result.candidates ?? [];
   const parts = candidates.flatMap(candidate => candidate.content?.parts ?? []);
@@ -320,7 +328,7 @@ function extractInlineMedia(response: unknown, kind: MediaKind): { data: string;
     .slice(0, 180);
 
   throw new Error(
-    `No ${kind} data returned from Gemini. Finish reason: ${finishReasons}${textPreview ? `. Text response: ${textPreview}` : ''}`
+    `Invalid response: No ${kind} data returned from Gemini. Finish reason: ${finishReasons}${textPreview ? `. Text response: ${textPreview}` : ''}`
   );
 }
 
