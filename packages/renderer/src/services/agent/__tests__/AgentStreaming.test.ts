@@ -21,6 +21,7 @@ vi.mock('@/services/MembershipService', () => ({
 
 import { GeneralistAgent } from '../specialists/GeneralistAgent';
 import { useStore } from '@/core/store';
+import { MembershipService } from '@/services/MembershipService';
 
 vi.mock('@/core/store', () => ({
     useStore: {
@@ -31,7 +32,8 @@ vi.mock('@/core/store', () => ({
             currentOrganizationId: 'org1',
             currentProjectId: 'proj1',
             uploadedImages: [],
-            currentModule: 'debug'
+            currentModule: 'debug',
+            userProfile: { id: 'test-user', uid: 'test-user', email: 'test@example.com' }
         } as any)
     }
 }));
@@ -64,12 +66,20 @@ class TestAgent extends GeneralistAgent {
     }
 }
 
+import { ModelArmor } from '../governance/ModelArmor';
+
 describe('Agent Streaming', () => {
     let agent: TestAgent;
 
     beforeEach(() => {
         // Reset all mocks to ensure return value queues (mockResolvedValueOnce) are cleared
         vi.resetAllMocks();
+        
+        // Restore ModelArmor and MembershipService mocks after resetAllMocks
+        vi.mocked(ModelArmor.scanInput).mockResolvedValue({ allowed: true });
+        vi.mocked(ModelArmor.scanOutput).mockResolvedValue({ allowed: true });
+        vi.mocked(MembershipService.checkBudget).mockResolvedValue({ allowed: true, remainingBudget: 100, requiresApproval: false });
+        vi.mocked(MembershipService.recordSpend).mockResolvedValue(true as any);
         
         // Restore essential store mocks
         vi.mocked(useStore.getState).mockReturnValue({
@@ -79,8 +89,10 @@ describe('Agent Streaming', () => {
             currentOrganizationId: 'org1',
             currentProjectId: 'proj1',
             uploadedImages: [],
-            currentModule: 'debug'
+            currentModule: 'debug',
+            userProfile: { id: 'test-user', uid: 'test-user', email: 'test@example.com' }
         } as any);
+
 
         // Restore default mocks that were defined in vi.mock
         vi.mocked(AI.batchEmbedContents).mockResolvedValue([]);
@@ -105,7 +117,11 @@ describe('Agent Streaming', () => {
 
         // Mock the final response
         const mockResponse: WrappedResponse = {
-            response: {} as unknown as WrappedResponse['response'],
+            response: {
+                text: () => tokens.join(''),
+                functionCalls: () => [],
+                candidates: []
+            } as unknown as WrappedResponse['response'],
             text: () => tokens.join(''),
             functionCalls: () => [],
             usage: () => undefined
@@ -132,6 +148,10 @@ describe('Agent Streaming', () => {
     it('should handle tool calls after streaming', { timeout: 60000 }, async () => {
         const tokens = ['Analyzing', '...'];
 
+        (agent as any).functions = {
+            save_memory: vi.fn().mockResolvedValue({ status: 'success' })
+        };
+
         const mockStream = new ReadableStream<StreamChunk>({
             start(controller) {
                 tokens.forEach(t => controller.enqueue({
@@ -152,7 +172,9 @@ describe('Agent Streaming', () => {
                             ]
                         }
                     }
-                ]
+                ],
+                text: () => 'I will save this.',
+                functionCalls: () => [{ name: 'save_memory', args: { content: 'test' } }]
             } as unknown as WrappedResponse['response'],
             text: () => 'I will save this.',
             functionCalls: () => [{ name: 'save_memory', args: { content: 'test' } }],
@@ -172,7 +194,10 @@ describe('Agent Streaming', () => {
                     }
                 }),
                 response: Promise.resolve({
-                    response: {},
+                    response: {
+                        text: () => 'Done',
+                        functionCalls: () => []
+                    },
                     text: () => 'Done',
                     functionCalls: () => [],
                     usage: () => undefined
@@ -185,7 +210,6 @@ describe('Agent Streaming', () => {
         const onProgress = vi.fn((p) => progressHistory.push(p));
 
         await agent.execute('Save this', {}, onProgress);
-
         // Should see token events
         expect(progressHistory.some(p => p.type === 'token' && p.content === 'Analyzing')).toBe(true);
 

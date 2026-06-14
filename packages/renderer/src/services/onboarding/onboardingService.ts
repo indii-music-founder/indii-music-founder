@@ -363,6 +363,7 @@ export function processFunctionCalls(
                 if (args.bio) { updatedProfile = { ...updatedProfile, bio: args.bio }; updates.push('Bio'); }
                 if (args.creative_preferences) { updatedProfile = { ...updatedProfile, creativePreferences: args.creative_preferences }; updates.push('Creative Preferences'); }
                 if (args.career_stage) { updatedProfile = { ...updatedProfile, careerStage: args.career_stage }; updates.push('Career Stage'); }
+                if (args.career_profile) { updatedProfile = { ...updatedProfile, careerProfile: args.career_profile }; updates.push('Career Profile'); }
                 if (args.goals) { updatedProfile = { ...updatedProfile, goals: args.goals }; updates.push('Goals'); }
 
                 // Handle BrandKit (Identity + Release)

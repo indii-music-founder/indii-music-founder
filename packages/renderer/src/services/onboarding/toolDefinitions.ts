@@ -24,6 +24,7 @@ export const updateProfileFunction: FunctionDeclaration = {
             negative_prompt: { type: 'STRING', description: 'Things to AVOID in Intelligence-generated content (e.g., "no neon colors, no cartoons").' },
             visuals_acknowledged: { type: 'BOOLEAN', description: 'Set to true when user confirms they have no visual assets yet (e.g., "None yet - starting fresh"). This marks visuals as complete so we stop asking.' },
             career_stage: { type: 'STRING', description: 'Career stage: Emerging (just starting), Rising (building momentum), Professional (established), Legend (industry veteran).' },
+            career_profile: { type: 'STRING', description: 'Career profile: dj, sync_producer, touring_band, label_manager.' },
             goals: { type: 'ARRAY', items: { type: 'STRING' }, description: 'Career goals: Touring, Sync Licensing, Grow Fanbase, Label Deal, Brand Partnerships, etc.' },
 
             // Social & Business (Permanent)

@@ -197,6 +197,50 @@ class A2ARouter {
       throw new Error('No runAgent available in router context');
     }
 
+    // Swarm Feed Integration (ISSUE-063)
+    let approved = true;
+    try {
+      const { useStore } = await import('@/core/store');
+      const addA2AMessage = useStore.getState().addA2AMessage;
+      const requiresApproval = task.toLowerCase().includes('contract') || 
+                               task.toLowerCase().includes('marketing copy') || 
+                               task.toLowerCase().includes('mockup') || 
+                               task.toLowerCase().includes('artwork') || 
+                               task.toLowerCase().includes('agreement');
+
+      if (addA2AMessage) {
+        const msgId = crypto.randomUUID();
+        addA2AMessage({
+          id: msgId,
+          fromAgent: sourceAgentId,
+          toAgent: targetAgentId,
+          content: task,
+          timestamp: Date.now(),
+          requiresApproval,
+          approved: false
+        });
+
+        if (requiresApproval) {
+          approved = false;
+          let checks = 0;
+          while (!approved && checks < 300) { // 5-minute timeout window matching execution limits
+            await new Promise(r => setTimeout(r, 1000));
+            const msg = useStore.getState().a2aMessages.find(m => m.id === msgId);
+            if (msg?.approved) {
+              approved = true;
+            }
+            checks++;
+          }
+        }
+      }
+    } catch (e) {
+      logger.warn('[A2ARouter] Swarm Feed integration failed:', e);
+    }
+
+    if (!approved) {
+      throw new Error(`Task handoff from ${sourceAgentId} to ${targetAgentId} timed out or was rejected by user.`);
+    }
+
     const result = await localCtx.runAgent(targetAgentId, task, localCtx.parentContext, localCtx.traceId);
     return { text: result?.text || String(result), agentId: targetAgentId };
   }

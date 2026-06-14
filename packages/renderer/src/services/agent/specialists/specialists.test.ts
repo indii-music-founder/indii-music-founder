@@ -1,6 +1,7 @@
 
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { agentRegistry } from '../registry';
+import { MembershipService } from '@/services/MembershipService';
 
 // Mock TOOL_REGISTRY to avoid circular dependency issues in test environment
 vi.mock('../tools/index', () => ({
@@ -97,6 +98,10 @@ vi.mock('@/services/MembershipService', () => ({
 
 
 describe('Specialist Agents Connection', () => {
+    beforeEach(() => {
+        vi.mocked(MembershipService.checkBudget).mockResolvedValue({ allowed: true, remainingBudget: 100, requiresApproval: false });
+    });
+
     it('should have Brand, Road, and Marketing agents registered', async () => {
         const brandAgent = await agentRegistry.getAsync('brand');
         const roadAgent = await agentRegistry.getAsync('road');
@@ -126,7 +131,7 @@ describe('Specialist Agents Connection', () => {
         const { AutonomousIntelligence } = await import('@/services/intelligence/AutonomousIntelligence');
         await brandAgent.execute('Test Task', {});
 
-        const tools = vi.mocked(AutonomousIntelligence.generateContent).mock.calls[0]?.[4] as unknown[] || []; // safe access
+        const tools = vi.mocked(AutonomousIntelligence.generateContentStream).mock.calls[0]?.[4] as unknown[] || []; // safe access
 
         // Create a flat list of all function declarations from all tool objects
         const allFunctionDeclarations = tools.flatMap((t: unknown) => (t as { functionDeclarations?: { name: string }[] }).functionDeclarations || []);

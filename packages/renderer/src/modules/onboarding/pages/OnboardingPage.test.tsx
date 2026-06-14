@@ -15,10 +15,13 @@ vi.mock('@/core/store', () => ({
                 colors: [], // Added for accessibility test rendering
             },
             goals: [],
-            analyzedTrackIds: []
+            analyzedTrackIds: [],
+            careerProfile: 'dj'
         },
         setUserProfile: mockSetUserProfile,
         setModule: mockSetModule,
+        addActiveAgent: vi.fn(),
+        removeActiveAgent: vi.fn(),
     }),
 }));
 

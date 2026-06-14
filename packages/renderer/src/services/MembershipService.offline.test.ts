@@ -1,6 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+vi.unmock('@/services/MembershipService');
 import { MembershipService } from './MembershipService';
 import { getDoc, setDoc } from 'firebase/firestore';
+
+
 
 // Mock Firebase services
 vi.mock('@/services/firebase', () => ({

@@ -44,6 +44,13 @@ const PARTNER_METADATA: Omit<PODPartner, 'products' | 'status' | 'lastSync'>[] =
         description: 'Premium products, global fulfillment centers.',
         docsUrl: 'https://www.gooten.com',
     },
+    {
+        id: 'prodigi',
+        name: 'Prodigi',
+        logo: 'PR',
+        description: 'Print on demand for global art, prints, and custom apparel.',
+        docsUrl: 'https://www.prodigi.com',
+    },
 ];
 
 interface ApiKeyModalProps {

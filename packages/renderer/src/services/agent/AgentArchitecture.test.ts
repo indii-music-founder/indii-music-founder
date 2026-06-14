@@ -260,7 +260,7 @@ describe('Multi-Agent Architecture Tests', () => {
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const result = await agent_marketing?.execute('Research market trends');
 
-            expect(AI.generateContent).toHaveBeenCalledWith(
+            expect(AI.generateContentStream).toHaveBeenCalledWith(
                 expect.any(Array),  // contents
                 expect.any(String), // model
                 expect.any(Object), // config
