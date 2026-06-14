@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-14 12:32 EDT
+**Updated:** 2026-06-14 12:40 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+08d1b7834 test: align GeneralistAgentRouting test mock imports and fix spy assertions
+15605bc2c chore: session checkpoint [12:32]
 f01d50016 fix(remote): implement P2P local pairing fallback and unified context event bus
 c3e9f9439 chore: session checkpoint [12:21]
 9182ef38f fix(conductor): resolve execution loop duplication by inheriting from BaseAgent
@@ -12,13 +14,12 @@ c3e9f9439 chore: session checkpoint [12:21]
 8fdd277bc chore: session checkpoint [12:15]
 9d9b93321 fix(security): resolve offline daily spend budget check vulnerability
 c80d94ec0 chore: session checkpoint [12:10]
-561b17716 chore: session checkpoint [12:08]
-d28a48806 chore: session checkpoint [12:05]
 ```
 
 ## Working State
 ```
  M .agent/test_ledger/OPEN_ISSUES.md
+ M python/tests/fixtures/e2e_interop/ts_to_py/envelope.json
 ```
 
 ## Decisions
