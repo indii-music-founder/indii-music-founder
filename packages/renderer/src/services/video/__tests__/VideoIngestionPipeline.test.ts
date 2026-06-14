@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { VideoIngestionPipeline } from '../VideoIngestionPipeline';
-import { useStore } from '@/core/store';
+import { useVideoEditorStore } from '@/modules/creative/video/store/videoEditorStore';
 
 // Mock the Zustand store hooks and actions
-vi.mock('@/core/store', () => {
+vi.mock('@/modules/creative/video/store/videoEditorStore', () => {
     const mockStore = {
         project: {
             fps: 30,
@@ -20,7 +20,7 @@ vi.mock('@/core/store', () => {
         })
     };
     return {
-        useStore: {
+        useVideoEditorStore: {
             getState: () => mockStore
         }
     };
@@ -29,7 +29,7 @@ vi.mock('@/core/store', () => {
 describe('VideoIngestionPipeline', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        const state = useStore.getState();
+        const state = useVideoEditorStore.getState();
         state.project.clips = [];
         state.project.tracks = [{ id: 'track-1', name: 'Main Video', type: 'video' }];
     });
@@ -46,8 +46,8 @@ describe('VideoIngestionPipeline', () => {
         const clipId = await VideoIngestionPipeline.ingestAsset(asset);
 
         expect(clipId).toContain('clip-');
-        expect(useStore.getState().addClip).toHaveBeenCalled();
-        const addedClip = useStore.getState().project.clips[0];
+        expect(useVideoEditorStore.getState().addClip).toHaveBeenCalled();
+        const addedClip = useVideoEditorStore.getState().project.clips[0];
         expect(addedClip.name).toBe('broll-1.mp4');
         expect(addedClip.startFrame).toBe(0);
         expect(addedClip.durationInFrames).toBe(150); // 5s * 30fps
@@ -63,7 +63,7 @@ describe('VideoIngestionPipeline', () => {
         };
 
         // Add pre-existing clip of 3 seconds (ends at Frame 90 / 3.0s)
-        useStore.getState().project.clips.push({
+        useVideoEditorStore.getState().project.clips.push({
             id: 'clip-pre',
             type: 'video',
             name: 'pre.mp4',
@@ -81,7 +81,7 @@ describe('VideoIngestionPipeline', () => {
         // 3.0s is closest to 3.4s transient (since difference is 0.4s vs 0.5s for 2.5s)
         const clipId = await VideoIngestionPipeline.ingestAsset(asset, syncParams);
 
-        const addedClip = useStore.getState().project.clips.find(c => c.id === clipId);
+        const addedClip = useVideoEditorStore.getState().project.clips.find(c => c.id === clipId);
         expect(addedClip).toBeDefined();
         // Snapped to 3.4s * 30fps = 102
         expect(addedClip?.startFrame).toBe(102);
