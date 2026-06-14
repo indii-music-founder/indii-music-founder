@@ -12,10 +12,34 @@ vi.mock('@/core/store', () => ({
     }
 }));
 
-vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
-    AutonomousIntelligence: {
-        generateContentStream: vi.fn(),
-        generateContent: vi.fn()
+vi.mock('@/services/intelligence/AutonomousIntelligence', () => {
+    const generateContentStream = vi.fn();
+    const generateContent = vi.fn().mockImplementation(async (...args: any[]) => {
+        const streamResult = await generateContentStream(...args);
+        return streamResult;
+    });
+    return {
+        AutonomousIntelligence: {
+            generateContentStream,
+            generateContent
+        }
+    };
+});
+
+// Mock ModelArmor to prevent prompt rejections
+vi.mock('../governance/ModelArmor', () => ({
+    ModelArmor: {
+        scanInput: vi.fn().mockResolvedValue({ allowed: true }),
+        scanOutput: vi.fn().mockResolvedValue({ allowed: true })
+    },
+    getDefaultPolicy: vi.fn().mockReturnValue({})
+}));
+
+// Mock MembershipService to bypass spend checks
+vi.mock('@/services/MembershipService', () => ({
+    MembershipService: {
+        checkBudget: vi.fn().mockResolvedValue({ allowed: true, remaining: 100 }),
+        recordSpend: vi.fn().mockResolvedValue(true)
     }
 }));
 
@@ -404,9 +428,9 @@ describe('GeneralistAgent Routing Logic', () => {
         await agent.execute('I want to launch my social media site');
 
         expect(delegateSpy).toHaveBeenCalledTimes(3);
-        expect(delegateSpy).toHaveBeenCalledWith(expect.objectContaining({ targetAgentId: 'brand' }), expect.anything());
-        expect(delegateSpy).toHaveBeenCalledWith(expect.objectContaining({ targetAgentId: 'social' }), expect.anything());
-        expect(delegateSpy).toHaveBeenCalledWith(expect.objectContaining({ targetAgentId: 'marketing' }), expect.anything());
+        expect(delegateSpy).toHaveBeenCalledWith(expect.objectContaining({ targetAgentId: 'brand' }), expect.anything(), expect.anything());
+        expect(delegateSpy).toHaveBeenCalledWith(expect.objectContaining({ targetAgentId: 'social' }), expect.anything(), expect.anything());
+        expect(delegateSpy).toHaveBeenCalledWith(expect.objectContaining({ targetAgentId: 'marketing' }), expect.anything(), expect.anything());
     });
 
     describe('Phase 2 Keywords & Migration Logic', () => {
@@ -420,7 +444,7 @@ describe('GeneralistAgent Routing Logic', () => {
 
             expect(delegateSpy).toHaveBeenCalledWith(expect.objectContaining({
                 targetAgentId: 'distribution'
-            }), expect.anything());
+            }), expect.anything(), expect.anything());
         });
 
         it('routes Historical Royalties to Finance Agent', async () => {
@@ -433,7 +457,7 @@ describe('GeneralistAgent Routing Logic', () => {
 
             expect(delegateSpy).toHaveBeenCalledWith(expect.objectContaining({
                 targetAgentId: 'finance'
-            }), expect.anything());
+            }), expect.anything(), expect.anything());
         });
 
         it('routes Sonic DNA Training to Music Agent', async () => {
@@ -446,7 +470,7 @@ describe('GeneralistAgent Routing Logic', () => {
 
             expect(delegateSpy).toHaveBeenCalledWith(expect.objectContaining({
                 targetAgentId: 'music'
-            }), expect.anything());
+            }), expect.anything(), expect.anything());
         });
 
         it('routes Brand Voice Training to Brand Agent', async () => {
@@ -459,7 +483,7 @@ describe('GeneralistAgent Routing Logic', () => {
 
             expect(delegateSpy).toHaveBeenCalledWith(expect.objectContaining({
                 targetAgentId: 'brand'
-            }), expect.anything());
+            }), expect.anything(), expect.anything());
         });
 
         it('routes Visual Style Reference to Director Agent', async () => {
@@ -472,7 +496,7 @@ describe('GeneralistAgent Routing Logic', () => {
 
             expect(delegateSpy).toHaveBeenCalledWith(expect.objectContaining({
                 targetAgentId: 'director'
-            }), expect.anything());
+            }), expect.anything(), expect.anything());
         });
 
         it('handles Team Management directly as a Hub task', async () => {
@@ -497,7 +521,7 @@ describe('GeneralistAgent Routing Logic', () => {
 
             expect(delegateSpy).toHaveBeenCalledWith(expect.objectContaining({
                 targetAgentId: 'social'
-            }), expect.anything());
+            }), expect.anything(), expect.anything());
         });
     });
 });

@@ -153,6 +153,7 @@ export interface ElectronDistributionAPI {
 export interface ElectronRemoteAPI {
     onMessageFromMobile: (callback: (data: unknown) => void) => () => void;
     onStatusUpdated: (callback: (status: unknown) => void) => () => void;
+    broadcast: (payload: unknown) => void;
 }
 
 export interface ElectronUpdaterAPI {

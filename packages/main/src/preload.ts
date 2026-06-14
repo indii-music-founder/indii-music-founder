@@ -165,7 +165,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
             const handler = (_event: unknown, status: unknown) => callback(status);
             ipcRenderer.on('indii-remote:status-updated', handler);
             return () => ipcRenderer.removeListener('indii-remote:status-updated', handler);
-        }
+        },
+        broadcast: (payload: unknown) => ipcRenderer.send('mobile-remote:broadcast', payload)
     },
 
     // Auto-Updater
