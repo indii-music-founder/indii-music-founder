@@ -1,9 +1,12 @@
 # Handoff State
-**Updated:** 2026-06-14 09:06 EDT
+**Updated:** 2026-06-14 09:09 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+6c1b12d84 build: mock remotion dependencies in electron vite configuration
+046ba1bb2 refactor(remotion): dynamically import remotion renderer to avoid environment import conflicts
+425a792a0 chore: session checkpoint [09:06]
 93ed26744 feat(infrastructure): refactor redeemption to use transaction and expand electron API types
 f710355e8 chore: session checkpoint [09:05]
 d4eadb2b7 feat(agent): support listener cleanups and recoupment doc overrides
@@ -11,9 +14,6 @@ d4eadb2b7 feat(agent): support listener cleanups and recoupment doc overrides
 c32185373 test: add DevOpsAgent and SecurityAgent unit test suites
 2cdbfbace test: add unit test suite for CreativeAgent definitions
 f01990db0 chore(e2e-interop): auto-sync envelope test fixture
-99123cb85 chore(e2e-interop): auto-sync envelope test fixture
-3e9a5794f chore(e2e-interop): auto-sync envelope test fixture
-eb46c08d7 chore(e2e-interop): auto-sync envelope test fixture
 ```
 
 ## Working State
