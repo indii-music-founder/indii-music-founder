@@ -50,9 +50,11 @@ describe('CRMDashboard', () => {
     ];
 
     const defaultState = {
-        campaigns: mockCampaigns,
-        crmLoading: false,
-        crmError: null,
+        crm: {
+            campaigns: mockCampaigns,
+            loading: false,
+            error: null,
+        },
         createCampaign: mockCreateCampaign,
         deleteCampaign: mockDeleteCampaign,
         subscribeToCampaigns: mockSubscribeToCampaigns
@@ -70,7 +72,11 @@ describe('CRMDashboard', () => {
     it('renders placeholder empty state when there are no campaigns', () => {
         const emptyState = {
             ...defaultState,
-            campaigns: []
+            crm: {
+                campaigns: [],
+                loading: false,
+                error: null,
+            }
         };
         (useStore as unknown as import('vitest').Mock).mockImplementation((selector: any) => {
             if (selector) return selector(emptyState);
@@ -79,14 +85,17 @@ describe('CRMDashboard', () => {
 
         render(<CRMDashboard />);
         expect(screen.getByText('No active campaigns yet')).toBeInTheDocument();
-        expect(screen.getByText('Create a new drop to engage your superfans and release Digital Vinyls.')).toBeInTheDocument();
+        expect(screen.getByText('Create your first Digital Vinyl, audio drop, or VIP bundle to start engaging with superfans.')).toBeInTheDocument();
     });
 
-    it('renders loading spinner when crmLoading is true', () => {
+    it('renders loading spinner when loading is true', () => {
         const loadingState = {
             ...defaultState,
-            crmLoading: true,
-            campaigns: []
+            crm: {
+                campaigns: [],
+                loading: true,
+                error: null,
+            }
         };
         (useStore as unknown as import('vitest').Mock).mockImplementation((selector: any) => {
             if (selector) return selector(loadingState);
@@ -98,10 +107,14 @@ describe('CRMDashboard', () => {
         expect(spinner).toBeInTheDocument();
     });
 
-    it('renders error banner when crmError is present', () => {
+    it('renders error banner when error is present', () => {
         const errorState = {
             ...defaultState,
-            crmError: 'Firestore permission denied'
+            crm: {
+                campaigns: [],
+                loading: false,
+                error: 'Firestore permission denied',
+            }
         };
         (useStore as unknown as import('vitest').Mock).mockImplementation((selector: any) => {
             if (selector) return selector(errorState);
@@ -109,7 +122,7 @@ describe('CRMDashboard', () => {
         });
 
         render(<CRMDashboard />);
-        expect(screen.getByText('Error: Firestore permission denied')).toBeInTheDocument();
+        expect(screen.getByText('Firestore permission denied')).toBeInTheDocument();
     });
 
     it('renders campaigns correctly with prices and supply counts', () => {
@@ -146,17 +159,17 @@ describe('CRMDashboard', () => {
         render(<CRMDashboard />);
 
         // Modal should be closed initially
-        expect(screen.queryByText('Launch a new Digital Vinyl drop.')).not.toBeInTheDocument();
+        expect(screen.queryByText('Launch a new Digital Vinyl or VIP drop for your superfans.')).not.toBeInTheDocument();
 
         // Click New Drop button
         const newDropBtn = screen.getByText('New Drop');
         fireEvent.click(newDropBtn);
 
         // Modal should open
-        expect(screen.getByText('Launch a new Digital Vinyl drop.')).toBeInTheDocument();
+        expect(screen.getByText('Launch a new Digital Vinyl or VIP drop for your superfans.')).toBeInTheDocument();
 
         // Fill form fields
-        const nameInput = screen.getByPlaceholderText('e.g. Genesis Digital Vinyl');
+        const nameInput = screen.getByPlaceholderText('e.g. Genesis Digital Vinyl Drop');
         const supplyInput = screen.getByPlaceholderText('100');
         const priceInput = screen.getByPlaceholderText('9.99');
 
@@ -165,12 +178,18 @@ describe('CRMDashboard', () => {
         fireEvent.change(priceInput, { target: { value: '14.99' } });
 
         // Click Launch
-        const launchBtn = screen.getByText('Launch');
+        const launchBtn = screen.getByText('Launch Drop');
         fireEvent.click(launchBtn);
 
         await waitFor(() => {
-            expect(mockCreateCampaign).toHaveBeenCalledWith('Synthwave Collector Pack', '250', '14.99');
-            expect(screen.queryByText('Launch a new Digital Vinyl drop.')).not.toBeInTheDocument();
+            expect(mockCreateCampaign).toHaveBeenCalledWith({
+                name: 'Synthwave Collector Pack',
+                type: 'Digital Vinyl',
+                supply: 250,
+                price: 14.99,
+                status: 'active'
+            });
+            expect(screen.queryByText('Launch a new Digital Vinyl or VIP drop for your superfans.')).not.toBeInTheDocument();
         });
     });
 
@@ -180,21 +199,21 @@ describe('CRMDashboard', () => {
         // Open modal
         const newDropBtn = screen.getByText('New Drop');
         fireEvent.click(newDropBtn);
-        expect(screen.getByText('Launch a new Digital Vinyl drop.')).toBeInTheDocument();
+        expect(screen.getByText('Launch a new Digital Vinyl or VIP drop for your superfans.')).toBeInTheDocument();
 
         // Click Cancel
         const cancelBtn = screen.getByText('Cancel');
         fireEvent.click(cancelBtn);
 
         // Modal should be closed and createCampaign not called
-        expect(screen.queryByText('Launch a new Digital Vinyl drop.')).not.toBeInTheDocument();
+        expect(screen.queryByText('Launch a new Digital Vinyl or VIP drop for your superfans.')).not.toBeInTheDocument();
         expect(mockCreateCampaign).not.toHaveBeenCalled();
     });
 
     it('calls deleteCampaign handler when trash button is clicked', () => {
         render(<CRMDashboard />);
 
-        const deleteButtons = screen.getAllByTitle('Delete campaign');
+        const deleteButtons = screen.getAllByTitle('Delete Campaign');
         expect(deleteButtons).toHaveLength(2);
 
         // Click delete on the second campaign
