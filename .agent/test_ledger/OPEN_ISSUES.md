@@ -5385,7 +5385,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-065: Creator-Friendly Sync Licensing Fee Surcharge Model
 
-- **Status:** 🟡 IN PROGRESS (Agent A)
+- **Status:** ✅ FIXED (9bb93687)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Licensing Department / Finance Department
 - **Summary:** Sync licensing transactions currently lack a buyer-pays-fee billing structure. To protect artist revenue, the platform needs a surcharge model where the purchaser of the license pays the transaction fee on top of the artist's set price (ensuring the artist receives exactly 100% of their set price, and the platform collects the surcharge fee from the buyer).
