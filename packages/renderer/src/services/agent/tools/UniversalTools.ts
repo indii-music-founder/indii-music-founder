@@ -168,8 +168,9 @@ export const UniversalTools = {
         try {
             // 1. Try reading from filesystem if path provided
             const path = args.filePath || args.fileUri;
-            if (path && window.electronAPI?.fs) {
-                docContent = await window.electronAPI.fs.readTextFile(path);
+            const api = (window as any).electronAPI;
+            if (path && api?.fs) {
+                docContent = await api.fs.readTextFile(path);
             }
 
             // 2. Fallback to searching user contracts if no content yet
