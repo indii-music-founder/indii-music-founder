@@ -243,6 +243,16 @@ vi.mock('@/core/store', () => {
         updateJobProgress: vi.fn(),
         updateJobStatus: vi.fn(),
         removeJob: vi.fn(),
+        // crm slice
+        crm: {
+            campaigns: [],
+            loading: false,
+            error: null,
+        },
+        fetchCampaigns: vi.fn().mockResolvedValue(undefined),
+        subscribeToCampaigns: vi.fn(() => vi.fn()),
+        createCampaign: vi.fn().mockResolvedValue('camp-1'),
+        deleteCampaign: vi.fn().mockResolvedValue(undefined),
         clearCompletedJobs: vi.fn(),
         toggleJobMonitor: vi.fn(),
         addUploadItems: vi.fn(),
