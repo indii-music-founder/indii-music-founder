@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-14 09:40 EDT
+**Updated:** 2026-06-14 09:45 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+2761c1ee4 chore: session checkpoint [09:40]
 de3a9a979 chore: session checkpoint [09:35]
 e00e300d3 chore: session checkpoint [09:30]
 397bda6ca chore: session checkpoint [09:25]
@@ -13,7 +14,6 @@ e00e300d3 chore: session checkpoint [09:30]
 0eb7e59a4 docs(ledger): document zustand subscription leak and preload typescript fixes in error ledger
 779133929 chore: session checkpoint [09:11]
 27a0ebb5e chore: session checkpoint [09:09]
-6c1b12d84 build: mock remotion dependencies in electron vite configuration
 ```
 
 ## Working State
