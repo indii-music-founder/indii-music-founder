@@ -488,7 +488,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                             </button>
 
                             <AnimatePresence>
-                                {showModePicker && modeButtonRect && typeof document !== 'undefined' && createPortal(
+                                {showModePicker && modeButtonRect && typeof document !== 'undefined' && (createPortal(
                                     <div className="fixed inset-0 z-9999">
                                         <motion.div 
                                             initial={{ opacity: 0 }}
@@ -516,7 +516,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                                         </motion.div>
                                     </div>,
                                     document.body
-                                )}
+                                ) as any)}
                             </AnimatePresence>
                         </div>
 
