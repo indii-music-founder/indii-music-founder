@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 vi.unmock('@/services/MembershipService');
+vi.unmock('./MembershipService');
 import { MembershipService } from './MembershipService';
 import { getDoc, setDoc } from 'firebase/firestore';
 
