@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-14 09:09 EDT
+**Updated:** 2026-06-14 09:11 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+27a0ebb5e chore: session checkpoint [09:09]
 6c1b12d84 build: mock remotion dependencies in electron vite configuration
 046ba1bb2 refactor(remotion): dynamically import remotion renderer to avoid environment import conflicts
 425a792a0 chore: session checkpoint [09:06]
@@ -13,12 +14,11 @@ d4eadb2b7 feat(agent): support listener cleanups and recoupment doc overrides
 030a98094 fix(warnings): remove unused import and clean up eslint disable
 c32185373 test: add DevOpsAgent and SecurityAgent unit test suites
 2cdbfbace test: add unit test suite for CreativeAgent definitions
-f01990db0 chore(e2e-interop): auto-sync envelope test fixture
 ```
 
 ## Working State
 ```
-clean working tree
+ M python/tests/fixtures/e2e_interop/ts_to_py/envelope.json
 ```
 
 ## Decisions
