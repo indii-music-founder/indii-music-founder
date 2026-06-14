@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-14 09:45 EDT
+**Updated:** 2026-06-14 09:50 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+6864eb4a0 chore: session checkpoint [09:45]
 2761c1ee4 chore: session checkpoint [09:40]
 de3a9a979 chore: session checkpoint [09:35]
 e00e300d3 chore: session checkpoint [09:30]
@@ -13,7 +14,6 @@ e00e300d3 chore: session checkpoint [09:30]
 240fc69c6 chore: session checkpoint [09:15]
 0eb7e59a4 docs(ledger): document zustand subscription leak and preload typescript fixes in error ledger
 779133929 chore: session checkpoint [09:11]
-27a0ebb5e chore: session checkpoint [09:09]
 ```
 
 ## Working State
