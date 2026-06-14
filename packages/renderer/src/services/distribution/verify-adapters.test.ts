@@ -69,6 +69,7 @@ describe('Distribution System Verification', () => {
         distributionChannels: ['streaming', 'download'],
         copyrightYear: '2025',
         copyrightOwner: 'The Synthwave Collective',
+        language: 'English', // Added language for Symphonic validation
         aiGeneratedContent: {
             isFullyAIGenerated: false,
             isPartiallyAIGenerated: false
