@@ -101,6 +101,14 @@ export interface ElectronAgentAPI {
 export interface ElectronVideoAPI {
     saveAsset: (url: string, filename: string) => Promise<unknown>;
     openFolder: (filePath?: string) => Promise<unknown>;
+    render: (config: unknown) => Promise<string>;
+}
+
+export interface ElectronDawAPI {
+    start: () => Promise<unknown>;
+    stop: () => Promise<unknown>;
+    getState: () => Promise<unknown>;
+    onStateChanged: (callback: (state: unknown) => void) => () => void;
 }
 
 export interface ElectronDistributionAPI {
@@ -213,6 +221,7 @@ export interface ElectronAPI {
     security: ElectronSecurityAPI;
     agent: ElectronAgentAPI;
     video: ElectronVideoAPI;
+    daw: ElectronDawAPI;
     distribution: ElectronDistributionAPI;
     remote: ElectronRemoteAPI;
     updater: ElectronUpdaterAPI;
