@@ -45,7 +45,7 @@ export const createOneTimeCheckout = onCall({
     }
 
     try {
-        const lineItems = items.map((item) => ({
+        const lineItems: any[] = items.map((item) => ({
             price_data: {
                 currency: 'usd',
                 unit_amount: item.amount,
