@@ -3,9 +3,9 @@ import { ParallelRenderOrchestrator } from '../ParallelRenderOrchestrator';
 import { renderService } from '../RenderService';
 
 // Mock the dependencies
-vi.mock('@/core/store', () => {
+vi.mock('@/modules/creative/video/store/videoEditorStore', () => {
     return {
-        useStore: {
+        useVideoEditorStore: {
             getState: () => ({
                 project: {
                     id: 'proj-1',
