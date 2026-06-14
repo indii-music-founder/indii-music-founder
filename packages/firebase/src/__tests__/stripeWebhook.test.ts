@@ -74,6 +74,7 @@ const mocks = vi.hoisted(() => {
 
     const mockConstructEvent = vi.fn();
     const mockRetrieve = vi.fn();
+    const mockTransferCreate = vi.fn().mockResolvedValue({ id: 'tr_123' });
 
     return {
         mockSet,
@@ -88,6 +89,7 @@ const mocks = vi.hoisted(() => {
         mockDb,
         mockConstructEvent,
         mockRetrieve,
+        mockTransferCreate,
         makeSnap,
     };
 });
@@ -126,6 +128,7 @@ vi.mock('../stripe/config', async () => {
         stripe: {
             webhooks: { constructEvent: mocks.mockConstructEvent },
             subscriptions: { retrieve: mocks.mockRetrieve },
+            transfers: { create: mocks.mockTransferCreate },
         },
         mapStripeStatus: (status: string) => {
             const map: Record<string, string> = {
@@ -433,6 +436,66 @@ describe('Stripe Webhook Handler (WO-8)', () => {
             expect.objectContaining({
                 invoiceId: 'in_failed_001',
                 status: 'pending',
+            })
+        );
+    });
+
+    // ── checkout.session.completed — Licensing Purchase ───────────────────────
+
+    it('should handle checkout.session.completed for a licensing purchase', async () => {
+        const session: Partial<Stripe.Checkout.Session> = {
+            id: 'cs_lic_001',
+            metadata: {
+                userId: 'user-123',
+                type: 'licensing_purchase',
+                connectedAccountId: 'acct_123456',
+                artistAmount: '1000000',
+                trackTitle: 'Midnight Blaze',
+                artist: 'The Flames',
+            },
+        };
+        const event: Partial<Stripe.Event> = {
+            id: 'evt_checkout_lic',
+            type: 'checkout.session.completed',
+            data: { object: session as Stripe.Checkout.Session },
+        };
+        mocks.mockConstructEvent.mockReturnValue(event);
+
+        const { req, res, jsonFn, statusFn } = makeReqRes(event);
+        await stripeWebhook(req, res);
+
+        expect(statusFn).not.toHaveBeenCalled();
+        expect(jsonFn).toHaveBeenCalledWith({ received: true });
+
+        // Verify Stripe transfer was created
+        expect(mocks.mockTransferCreate).toHaveBeenCalledWith(
+            expect.objectContaining({
+                amount: 1000000,
+                currency: 'usd',
+                destination: 'acct_123456',
+            })
+        );
+
+        // Verify active license was recorded in Firestore
+        expect(mocks.mockDb.collection).toHaveBeenCalledWith('licenses');
+        expect(mocks.mockAdd).toHaveBeenCalledWith(
+            expect.objectContaining({
+                userId: 'user-123',
+                title: 'Midnight Blaze',
+                artist: 'The Flames',
+                licenseType: 'sync',
+                status: 'active',
+                amount: 1000000,
+            })
+        );
+
+        // Verify transaction log in user's ledger
+        expect(mocks.mockDb.collection).toHaveBeenCalledWith('users/user-123/ledger');
+        expect(mocks.mockAdd).toHaveBeenCalledWith(
+            expect.objectContaining({
+                type: 'sync_license_sale',
+                amount: 1000000,
+                status: 'paid',
             })
         );
     });
