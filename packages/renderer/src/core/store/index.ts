@@ -32,6 +32,7 @@ import { AgentPlanSlice, createAgentPlanSlice } from './slices/agentPlanSlice';
 import { AgentCanvasSlice, createAgentCanvasSlice } from './slices/agentCanvasSlice';
 import { AgentMemoryState, createAgentMemorySlice } from './slices/agentMemorySlice';
 import { HandoffSlice, createHandoffSlice } from './slices/handoffSlice';
+import { CrmSlice, createCrmSlice } from './slices/crmSlice';
 
 export type { AgentMessage, AgentThought } from './slices/agent';
 
@@ -64,7 +65,8 @@ export interface StoreState extends
     AgentPlanSlice,
     AgentCanvasSlice,
     AgentMemoryState,
-    HandoffSlice { }
+    HandoffSlice,
+    CrmSlice { }
 
 
 import { OrganizationService } from '@/services/OrganizationService';
@@ -104,6 +106,7 @@ export const useStore = create<StoreState>()(
                 ...createAgentCanvasSlice(...a),
                 ...createAgentMemorySlice(...a),
                 ...createHandoffSlice(...a),
+                ...createCrmSlice(...a),
             };
 
             // Phase 3.6: Bridge store state to OrganizationService for synchronous access
