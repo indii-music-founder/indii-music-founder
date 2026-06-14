@@ -5090,9 +5090,9 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-049: Offline Token Budget Ledger Security Gate
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (v1.64.3)
 - **Severity:** 🔴 HIGH
 - **Module:** Security / Finance
 - **Summary:** Budget breaker checks cost-breaker thresholds on Firestore ledgers, but client-side offline execution (PWA) queues Firestore updates. A user executing rapid offline agent loops could run up significant API token debt before sync reconciles the budget.
-- **Fix Direction:** Enforce local budget allocation bounds. Maintain active token spending limits inside `IndexedDB` that decrement immediately on execution, blocking token-heavy operations when offline quotas are exhausted.
+- **Fix:** Enforce local budget allocation bounds using `localStorage` spend accumulation when offline (`!navigator.onLine`). Automatically flushes and syncs accumulated offline spend to the Firestore daily spend ledger upon transitioning online.
 - **Files:** `packages/renderer/src/services/MembershipService.ts`

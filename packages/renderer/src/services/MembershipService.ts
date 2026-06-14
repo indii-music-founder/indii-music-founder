@@ -409,6 +409,33 @@ class MembershipServiceImpl {
     }
 
     /**
+     * Helper to get local storage key for daily offline spend tracking.
+     */
+    private getOfflineSpendKey(): string {
+        return `indii_offline_spend_${this.getTodayKey()}`;
+    }
+
+    /**
+     * Retrieve accumulated offline spend from localStorage.
+     */
+    getLocalOfflineSpend(): number {
+        if (typeof window === 'undefined' || !window.localStorage) {
+            return 0;
+        }
+        const val = window.localStorage.getItem(this.getOfflineSpendKey());
+        return val ? parseFloat(val) || 0 : 0;
+    }
+
+    /**
+     * Write offline spend to localStorage.
+     */
+    private setLocalOfflineSpend(amount: number): void {
+        if (typeof window !== 'undefined' && window.localStorage) {
+            window.localStorage.setItem(this.getOfflineSpendKey(), amount.toString());
+        }
+    }
+
+    /**
      * Records a monetary spend amount for a user's daily usage.
      * This is used for budget enforcement and tiered pass-through billing.
      * 
@@ -424,6 +451,14 @@ class MembershipServiceImpl {
             // Phase 4: Track session-wide spend for immediate circuit breaking
             this.sessionSpend += amount;
 
+            // If offline, accumulate spend locally so we can track offline quota limits instantly
+            if (typeof navigator !== 'undefined' && !navigator.onLine) {
+                const currentOfflineSpend = this.getLocalOfflineSpend();
+                this.setLocalOfflineSpend(currentOfflineSpend + amount);
+                logger.info(`[MembershipService] Offline mode: accumulated $${amount} to offline spend ledger.`);
+                return;
+            }
+
             // Atomic update or create with merge to prevent race conditions
             await setDoc(usageRef, {
                 date: dateKey,
@@ -432,6 +467,29 @@ class MembershipServiceImpl {
             }, { merge: true });
         } catch (error: unknown) {
             logger.error('[MembershipService] Failed to record spend:', error);
+        }
+    }
+
+    /**
+     * Flushes accumulated offline daily spend back to the Firestore server ledger when transitioning online.
+     */
+    async syncOfflineSpend(userId: string): Promise<void> {
+        const offlineSpend = this.getLocalOfflineSpend();
+        if (offlineSpend <= 0) return;
+
+        logger.info(`[MembershipService] Syncing accumulated offline spend of $${offlineSpend.toFixed(4)} to Firestore.`);
+        
+        // Temporarily override navigator.onLine during sync to ensure recordSpend performs a network operation
+        const originalOnLine = navigator.onLine;
+        Object.defineProperty(navigator, 'onLine', { value: true, configurable: true });
+
+        try {
+            await this.recordSpend(userId, offlineSpend);
+            this.setLocalOfflineSpend(0);
+        } catch (err) {
+            logger.error('[MembershipService] Failed to sync offline spend:', err);
+        } finally {
+            Object.defineProperty(navigator, 'onLine', { value: originalOnLine, configurable: true });
         }
     }
 
@@ -455,8 +513,20 @@ class MembershipServiceImpl {
 
         const tier = await this.getCurrentTier();
         const limits = this.getLimits(tier);
-        const usage = await this.getDailyUsage(userId);
-        const currentSpend = usage.totalSpend || 0;
+        
+        let currentSpend = 0;
+        const isOffline = typeof navigator !== 'undefined' && !navigator.onLine;
+
+        if (isOffline) {
+            // Offline Budget Gate: Combine local offline spend accumulator to prevent offline quota escapes
+            currentSpend = this.getLocalOfflineSpend();
+            logger.info(`[MembershipService] Offline budget check: current local spend is $${currentSpend}`);
+        } else {
+            // Attempt to sync any existing offline spend first before checking
+            await this.syncOfflineSpend(userId);
+            const usage = await this.getDailyUsage(userId);
+            currentSpend = usage.totalSpend || 0;
+        }
 
         // Use fixed point arithmetic for currency comparison to avoid float errors
         const currentSpendFixed = Math.round(currentSpend * 100);
@@ -469,7 +539,7 @@ class MembershipServiceImpl {
         // EMERGENCY CIRCUIT BREAKER: Check session-wide limit
         if (this.sessionSpend + estimatedCost > this.MAX_SESSION_SPEND) {
             logger.error(`[MembershipService] EMERGENCY KILL: Session spend ($${this.sessionSpend.toFixed(2)}) + estimate ($${estimatedCost.toFixed(2)}) exceeds session safety limit ($${this.MAX_SESSION_SPEND.toFixed(2)})`);
-            return { allowed: false, remainingBudget: 0, requiresApproval: false };
+            return { allowed: false, remainingBudget: remainingBudgetFixed / 100, requiresApproval: false };
         }
 
         // Ledger Policy: User must approve every charge over $0.50
