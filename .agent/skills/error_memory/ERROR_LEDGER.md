@@ -1,3 +1,25 @@
+## 2026-06-14 Zustand Subscription Leaks on Logout
+
+**SEVERITY:** Medium (causes Firestore permission errors and memory leaks when switching users)
+
+**MISTAKE:**
+- FILES: `packages/renderer/src/core/store/slices/agent/agentOrchestrationSlice.ts`, `packages/renderer/src/core/store/slices/agent/agentSessionSlice.ts`, `packages/renderer/src/core/store/slices/creative/creativeHistorySlice.ts`, `packages/renderer/src/core/store/slices/financeSlice.ts`, `packages/renderer/src/core/store/slices/subscriptionSlice.ts`
+- ERROR: When a user logged out, file-scoped Firestore unsubscribe callbacks (`graphListeners`, `executionUnsubscribe`, `agentSessionsUnsubscribe`, `creativeHistoryUnsubscribe`, `financeUnsubscribe`) were not cleared. This caused permission denied exceptions in the background console because Firestore listeners tried to run using the previous credentials.
+- CAUSE: File-scoped listeners are outside of the standard Zustand slice state registry, so a simple state reset or calling `clearAllSubscriptions` did not execute the closure references.
+- FIX: Added explicit reset exporter functions (`resetGraphListeners`, `resetAgentSessionsListener`, `resetCreativeHistoryListener`, `resetFinanceListener`) to clear file-scoped unsubscribe callbacks, and updated `clearAllSubscriptions` in `subscriptionSlice.ts` to dynamically import and invoke them.
+- PREVENTION: Avoid using file-scoped variables for active listeners if possible. If they are necessary, expose a dedicated cleanup utility and call it during the logout action.
+
+## 2026-06-14 Electron Preload type definitions out of sync with main process
+
+**SEVERITY:** High (causes typescript compilation failures during package typechecking)
+
+**MISTAKE:**
+- FILES: `packages/shared/src/ipc/electron-api.types.ts`
+- ERROR: Preload declared `daw` and `video.render` namespace methods, but the renderer and shared type definitions lacked these properties in the `ElectronAPI` definition.
+- CAUSE: Interface declarations inside `electron-api.types.ts` fell out of sync with actual IPC handlers exposed in `packages/main/src/preload.ts`.
+- FIX: Synchronized the types by adding `ElectronDawAPI` and updating `ElectronVideoAPI` with the missing methods.
+- PREVENTION: When adding or removing IPC handlers in `preload.ts`, immediately update `electron-api.types.ts` to match the exact properties.
+
 ## 2026-06-04 Electron macOS Hidden Window Reactivation Hang
 
 **SEVERITY:** High (causes application to become completely unresponsive to launcher clicks or new instance launches, appearing "hung" in background)
