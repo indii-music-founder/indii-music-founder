@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-14 13:00 EDT
+**Updated:** 2026-06-14 13:15 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+4d1fad2d8 chore: session checkpoint [13:00]
 38476ad05 chore: session checkpoint [12:53]
 1c9bd07d5 chore: session checkpoint [12:51]
 4b6b14665 chore: session checkpoint [12:44]
@@ -13,24 +14,57 @@
 f01d50016 fix(remote): implement P2P local pairing fallback and unified context event bus
 c3e9f9439 chore: session checkpoint [12:21]
 9182ef38f fix(conductor): resolve execution loop duplication by inheriting from BaseAgent
-51b293a29 refactor(agent): unify specialist execution loops by removing GeneralistAgent custom execute override
 ```
 
 ## Working State
 ```
 MM .agent/test_ledger/OPEN_ISSUES.md
+ M packages/firebase/src/legal/digitalSignature.ts
+ M packages/firebase/src/legal/pandadocWebhook.ts
+ M packages/firebase/src/subscription/createOneTimeCheckout.ts
+ M packages/renderer/src/core/store/slices/boardroomSlice.ts
+ M packages/renderer/src/modules/boardroom/BoardroomModule.tsx
+ M packages/renderer/src/modules/creative/components/CanvasToolbar.test.tsx
+ M packages/renderer/src/modules/creative/components/CanvasToolbar.tsx
+ M packages/renderer/src/modules/creative/video/store/videoEditorStore.test.ts
+ M packages/renderer/src/modules/merchandise/components/PODIntegrationPanel.tsx
+ M packages/renderer/src/modules/onboarding/hooks/useOnboarding.ts
+ M packages/renderer/src/modules/onboarding/pages/OnboardingPage.test.tsx
+ M packages/renderer/src/modules/onboarding/pages/OnboardingPage.tsx
+ M packages/renderer/src/modules/workflow/services/workflowTemplates.ts
+ M packages/renderer/src/services/MembershipService.god-mode.test.ts
 M  packages/renderer/src/services/MembershipService.ledger_transaction.test.ts
+ M packages/renderer/src/services/MembershipService.quota.test.ts
+ M packages/renderer/src/services/MembershipService.subscription.test.ts
 M  packages/renderer/src/services/MembershipService.test.ts
-M  packages/renderer/src/services/agent/BaseAgent.ts
+ M packages/renderer/src/services/agent/AgentArchitecture.test.ts
+MM packages/renderer/src/services/agent/BaseAgent.ts
 M  packages/renderer/src/services/agent/GeneralistAgent.test.ts
  M packages/renderer/src/services/agent/__tests__/AgentService.security.test.ts
-M  packages/renderer/src/services/agent/__tests__/AgentStreaming.test.ts
+MM packages/renderer/src/services/agent/__tests__/AgentStreaming.test.ts
  M packages/renderer/src/services/agent/__tests__/Keeper_AgentContext.test.ts
+ M packages/renderer/src/services/agent/a2a/A2ARouter.ts
 M  packages/renderer/src/services/agent/governance/__tests__/ModelArmor.test.ts
+ M packages/renderer/src/services/agent/sdk/AgentSDK.test.ts
 M  packages/renderer/src/services/agent/specialists/GeneralistAgent.test.ts
+ M packages/renderer/src/services/agent/specialists/specialists.test.ts
 M  packages/renderer/src/services/finance/RoyaltyService.ts
-M  packages/renderer/src/test/setup.ts
-M  python/tests/fixtures/e2e_interop/ts_to_py/envelope.json
+ M packages/renderer/src/services/onboarding/onboardingService.ts
+ M packages/renderer/src/services/onboarding/toolDefinitions.ts
+ M packages/renderer/src/services/onboarding/types.ts
+ M packages/renderer/src/services/pod/PODCredentialService.ts
+ M packages/renderer/src/services/pod/PrintOnDemandService.ts
+ M packages/renderer/src/services/rights/PRORightsService.ts
+MM packages/renderer/src/test/setup.ts
+ M packages/renderer/src/types/User.ts
+MM python/tests/fixtures/e2e_interop/ts_to_py/envelope.json
+?? packages/renderer/src/modules/boardroom/components/SwarmCollaborationFeed.tsx
+?? packages/renderer/src/services/audio/ClientPitchTracker.ts
+?? packages/renderer/src/services/creative/EPKGeneratorService.ts
+?? packages/renderer/src/services/distribution/VinylPressingService.ts
+?? packages/renderer/src/services/licensing/SyncPitchingService.ts
+?? packages/renderer/src/services/marketing/PrintDispatchService.ts
+?? packages/renderer/src/services/rights/NeighboringRightsService.ts
 ```
 
 ## Decisions
