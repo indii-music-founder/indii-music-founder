@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-14 12:44 EDT
+**Updated:** 2026-06-14 12:51 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+4b6b14665 chore: session checkpoint [12:44]
 7f8dca8fa chore: session checkpoint [12:40]
 08d1b7834 test: align GeneralistAgentRouting test mock imports and fix spy assertions
 15605bc2c chore: session checkpoint [12:32]
@@ -13,15 +14,17 @@ c3e9f9439 chore: session checkpoint [12:21]
 51b293a29 refactor(agent): unify specialist execution loops by removing GeneralistAgent custom execute override
 73db8c0ac chore: session checkpoint [12:17]
 8fdd277bc chore: session checkpoint [12:15]
-9d9b93321 fix(security): resolve offline daily spend budget check vulnerability
 ```
 
 ## Working State
 ```
  M .agent/test_ledger/OPEN_ISSUES.md
+ M packages/renderer/src/services/MembershipService.ledger_transaction.test.ts
  M packages/renderer/src/services/MembershipService.test.ts
  M packages/renderer/src/services/agent/BaseAgent.ts
+ M packages/renderer/src/services/agent/GeneralistAgent.test.ts
  M packages/renderer/src/services/agent/__tests__/AgentStreaming.test.ts
+ M packages/renderer/src/services/agent/specialists/GeneralistAgent.test.ts
  M packages/renderer/src/services/finance/RoyaltyService.ts
  M packages/renderer/src/test/setup.ts
  M python/tests/fixtures/e2e_interop/ts_to_py/envelope.json
