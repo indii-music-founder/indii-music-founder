@@ -1,23 +1,25 @@
 # Handoff State
-**Updated:** 2026-06-13 22:19 EDT
+**Updated:** 2026-06-14 09:05 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
-666f134df chore: session checkpoint [22:18]
-a5ebcddb1 chore: session checkpoint [20:40]
-a6d3c4b4f fix(tests): resolve failing unit tests
-988310af7 fix(tests): resolve failing agent clock skew and security permissions tests
-ca29e0ee6 build(agents): use same-volume local cache for npm install to prevent extraction errors
-5393b57d6 fix(ci): restore package.json and lint variables
-0fed33e9e build(agents): implement strict npm install cache isolation guardrail
-8f769a16e chore: session checkpoint [19:16]
-5be487244 fix: resolve lint errors and add fetchWithRetry (ISSUE-AUDIT-002, ISSUE-HUNTER-103)
-132b258da fix(ledger): mark ISSUE-HUNTER-105 as fixed
+d4eadb2b7 feat(agent): support listener cleanups and recoupment doc overrides
+030a98094 fix(warnings): remove unused import and clean up eslint disable
+c32185373 test: add DevOpsAgent and SecurityAgent unit test suites
+2cdbfbace test: add unit test suite for CreativeAgent definitions
+f01990db0 chore(e2e-interop): auto-sync envelope test fixture
+99123cb85 chore(e2e-interop): auto-sync envelope test fixture
+3e9a5794f chore(e2e-interop): auto-sync envelope test fixture
+eb46c08d7 chore(e2e-interop): auto-sync envelope test fixture
+2be0b637f chore(e2e-interop): auto-sync envelope test fixture
+2dee9e370 chore(e2e-interop): auto-sync envelope test fixture
 ```
 
 ## Working State
 ```
+ M packages/firebase/src/functions/auth/handoff.ts
+ M packages/firebase/src/subscription/createMicroTransaction.ts
  M python/tests/fixtures/e2e_interop/ts_to_py/envelope.json
 ```
 
