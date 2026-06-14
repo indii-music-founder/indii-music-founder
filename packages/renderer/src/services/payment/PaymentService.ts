@@ -34,6 +34,7 @@ export interface OneTimePaymentRequest {
     cancelUrl?: string;
     customerEmail?: string;
     metadata?: Record<string, string>;
+    applySurcharge?: boolean;
 }
 
 /**

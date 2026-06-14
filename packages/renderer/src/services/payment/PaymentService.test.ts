@@ -67,7 +67,7 @@ describe('PaymentService', () => {
             );
         });
 
-        it('should use custom success/cancel URLs when provided', async () => {
+        it('should use custom success/cancel URLs and applySurcharge when provided', async () => {
             const mockCallable = vi.fn().mockResolvedValue({
                 data: {
                     checkoutUrl: 'https://checkout.stripe.com/session/cs_test_def',
@@ -80,6 +80,7 @@ describe('PaymentService', () => {
                 ...validRequest,
                 successUrl: 'https://myapp.com/success',
                 cancelUrl: 'https://myapp.com/cancel',
+                applySurcharge: true,
             };
 
             await createOneTimePayment(customRequest);
@@ -88,6 +89,7 @@ describe('PaymentService', () => {
                 expect.objectContaining({
                     successUrl: 'https://myapp.com/success',
                     cancelUrl: 'https://myapp.com/cancel',
+                    applySurcharge: true,
                 })
             );
         });
