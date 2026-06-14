@@ -1,24 +1,24 @@
 # Handoff State
-**Updated:** 2026-06-13 19:16 EDT
+**Updated:** 2026-06-13 20:40 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+a6d3c4b4f fix(tests): resolve failing unit tests
+988310af7 fix(tests): resolve failing agent clock skew and security permissions tests
+ca29e0ee6 build(agents): use same-volume local cache for npm install to prevent extraction errors
+5393b57d6 fix(ci): restore package.json and lint variables
+0fed33e9e build(agents): implement strict npm install cache isolation guardrail
+8f769a16e chore: session checkpoint [19:16]
 5be487244 fix: resolve lint errors and add fetchWithRetry (ISSUE-AUDIT-002, ISSUE-HUNTER-103)
 132b258da fix(ledger): mark ISSUE-HUNTER-105 as fixed
 364b0d0a6 fix(ledger): update OPEN_ISSUES.md to reflect fixed agent tasks
 c1511b0ae fix(mobile): patch RemoteRelayService clock skew tolerance
-973b55f68 chore(swarm): commit latest ABC swarm updates across main, renderer, and test ledgers
-e3ab5a8cb fix(training): resolve ISSUE-AUDIT-003 missing agent data
-cf4ff72f6 fix: Floating Point Currency Math in MechanicalRoyaltyService and CostPredictor (ISSUE-HUNTER-106)
-baa49badd chore(tests): updated test ledger with user changes
-ec0b4cb9b fix(swarm): batch resolve ISSUE-HUNTER-100 to 106 by background Fix Agents
-3c7c487a0 chore(agent): update /c workflow to explicitly monitor GitHub Actions CI pipelines and commit test-harness cleanup
 ```
 
 ## Working State
 ```
-?? run_ci.sh
+clean working tree
 ```
 
 ## Decisions
