@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-14 09:55 EDT
+**Updated:** 2026-06-14 10:00 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+20e7fbb3c feat(api): add helper functions for extracting resource IDs and mapping firebase errors
+972078945 chore: session checkpoint [09:55]
 859dcda2c chore: session checkpoint [09:50]
 6864eb4a0 chore: session checkpoint [09:45]
 2761c1ee4 chore: session checkpoint [09:40]
@@ -12,13 +14,11 @@ e00e300d3 chore: session checkpoint [09:30]
 397bda6ca chore: session checkpoint [09:25]
 155d88fc5 chore: session checkpoint [09:20]
 50d0c9117 chore: session checkpoint [09:17]
-240fc69c6 chore: session checkpoint [09:15]
-0eb7e59a4 docs(ledger): document zustand subscription leak and preload typescript fixes in error ledger
 ```
 
 ## Working State
 ```
-clean working tree
+ M packages/firebase/src/functions/api/router.ts
 ```
 
 ## Decisions
