@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import React from 'react';
 
 function filterDomProps(props: Record<string, unknown>): Record<string, unknown> {
@@ -25,7 +25,18 @@ vi.mock('react-router-dom', () => ({
 let mockStore: Record<string, unknown> = {};
 vi.mock('@/core/store', () => ({ useStore: (s: (st: Record<string, unknown>) => unknown) => s(mockStore) }));
 vi.mock('zustand/react/shallow', () => ({ useShallow: (fn: unknown) => fn }));
-vi.mock('@/utils/logger', () => ({ logger: { error: vi.fn() } }));
+vi.mock('@/utils/logger', () => ({ 
+    logger: { 
+        error: vi.fn(),
+        info: vi.fn(),
+        warn: vi.fn()
+    } 
+}));
+
+// Mock payment service
+vi.mock('@/services/payment/PaymentService', () => ({
+    createOneTimePayment: vi.fn().mockRejectedValue(new Error('Stripe offline mock fallback'))
+}));
 
 import FoundersCheckout from './FoundersCheckout';
 
@@ -33,23 +44,32 @@ describe('FoundersCheckout', () => {
     beforeEach(() => {
         mockStore = {
             setModule: vi.fn(),
+            user: { email: 'founder@test.com', displayName: 'Test Founder' }
         };
     });
 
-    it('renders the checkout instructions view', () => {
+    it('renders the checkout intro view', () => {
         render(<FoundersCheckout />);
         expect(screen.getByText(/Back The/)).toBeInTheDocument();
-        expect(screen.getByText(/Cash App/)).toBeInTheDocument();
-        expect(screen.getByText(/Wire Transfer/)).toBeInTheDocument();
+        expect(screen.getByText(/Proceed to Secure Stripe Checkout/)).toBeInTheDocument();
     });
 
     it('shows the Founders Round badge', () => {
         render(<FoundersCheckout />);
-        expect(screen.getByText('Founders Round — 11 Total Seats')).toBeInTheDocument();
+        expect(screen.getByText(/Founders Round — 4 Seats Left/)).toBeInTheDocument();
     });
 
     it('renders the return to studio button', () => {
         render(<FoundersCheckout />);
         expect(screen.getByText('Return to Studio')).toBeInTheDocument();
+    });
+
+    it('triggers the secure Stripe checkout redirect simulation', async () => {
+        render(<FoundersCheckout />);
+        const button = screen.getByText('Proceed to Secure Stripe Checkout');
+        fireEvent.click(button);
+
+        // Should show connection status or transition state
+        expect(screen.getByText(/Connecting to Stripe/i)).toBeInTheDocument();
     });
 });
