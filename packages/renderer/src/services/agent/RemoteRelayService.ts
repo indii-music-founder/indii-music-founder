@@ -163,6 +163,67 @@ export function isFreshDesktopState(
 // ---------------------------------------------------------------------------
 
 class RemoteRelayService {
+    private localWs: any = null;
+    private localMessageCallbacks: Map<string, (data: any) => void> = new Map();
+    private localStateCallback: ((state: DesktopState | null) => void) | null = null;
+
+    constructor() {
+        if (typeof window !== 'undefined' && typeof WebSocket !== 'undefined') {
+            const isLocalServer = window.location.port === '3333' || window.location.hostname.startsWith('192.168.') || window.location.hostname === 'localhost';
+            if (isLocalServer) {
+                this.initLocalWebSocket();
+            }
+        }
+    }
+
+    private initLocalWebSocket() {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}`;
+        logger.info(`[RemoteRelay] Connecting local P2P WebSocket to ${wsUrl}`);
+        
+        try {
+            const ws = new WebSocket(wsUrl);
+            ws.onopen = () => {
+                logger.info('[RemoteRelay] Local P2P WebSocket connected');
+                this.localWs = ws;
+                const passcode = new URLSearchParams(window.location.search).get('passcode') || localStorage.getItem('indii_p2p_passcode');
+                if (passcode) {
+                    ws.send(JSON.stringify({ type: 'auth', token: passcode }));
+                }
+            };
+            ws.onmessage = (event) => {
+                try {
+                    const parsed = JSON.parse(event.data);
+                    if (parsed.type === 'response' && parsed.response) {
+                        const callback = this.localMessageCallbacks.get(parsed.response.commandId);
+                        if (callback) {
+                            callback({
+                                ...parsed.response,
+                                timestamp: Timestamp.fromMillis(parsed.response.timestamp)
+                            });
+                        }
+                    } else if (parsed.type === 'sync' && parsed.payload) {
+                        if (this.localStateCallback) {
+                            this.localStateCallback({
+                                ...parsed.payload,
+                                timestamp: Timestamp.now()
+                            });
+                        }
+                    }
+                } catch (err) {
+                    logger.error('[RemoteRelay] P2P message parse error', err);
+                }
+            };
+            ws.onclose = () => {
+                logger.info('[RemoteRelay] Local P2P WebSocket closed. Retrying in 5s...');
+                this.localWs = null;
+                setTimeout(() => this.initLocalWebSocket(), 5000);
+            };
+        } catch (err) {
+            logger.error('[RemoteRelay] Local P2P WebSocket creation failed', err);
+        }
+    }
+
     // -----------------------------------------------------------------------
     // PHONE SIDE
     // -----------------------------------------------------------------------
@@ -171,6 +232,24 @@ class RemoteRelayService {
      * Send a command from the phone. Returns the command document ID.
      */
     async sendCommand(text: string, targetAgentId?: string, metadata?: Record<string, unknown>): Promise<string | null> {
+        // P2P WebSocket send path
+        if (this.localWs && this.localWs.readyState === 1 /* OPEN */) {
+            const commandId = `p2p-${Math.random().toString(36).substring(2)}`;
+            const payload = {
+                type: 'command',
+                command: {
+                    id: commandId,
+                    text,
+                    targetAgentId,
+                    metadata
+                },
+                ts: Date.now()
+            };
+            this.localWs.send(JSON.stringify(payload));
+            logger.info(`[RemoteRelay] 📱 Local P2P Command sent via WebSocket: ${commandId}`);
+            return commandId;
+        }
+
         const ref = getCommandsRef();
         if (!ref) {
             logger.warn('[RemoteRelay] No auth — cannot send command');
@@ -199,28 +278,33 @@ class RemoteRelayService {
         commandId: string,
         callback: (response: RemoteResponse) => void
     ): Unsubscribe {
+        let unsubFirestore: Unsubscribe = () => {};
         const ref = getResponsesRef();
-        if (!ref) {
-            logger.warn('[RemoteRelay] No auth — cannot listen for responses');
-            return () => { };
+        if (ref) {
+            const q = query(
+                ref,
+                where('commandId', '==', commandId)
+            );
+
+            unsubFirestore = onSnapshot(q, (snapshot) => {
+                snapshot.docChanges().forEach((change) => {
+                    if (change.type === 'added' || change.type === 'modified') {
+                        const data = change.doc.data() as RemoteResponse;
+                        data.id = change.doc.id;
+                        callback(data);
+                    }
+                });
+            }, (error) => {
+                logger.error('[RemoteRelay] Response listener error:', error);
+            });
         }
 
-        const q = query(
-            ref,
-            where('commandId', '==', commandId)
-        );
+        this.localMessageCallbacks.set(commandId, callback);
 
-        return onSnapshot(q, (snapshot) => {
-            snapshot.docChanges().forEach((change) => {
-                if (change.type === 'added' || change.type === 'modified') {
-                    const data = change.doc.data() as RemoteResponse;
-                    data.id = change.doc.id;
-                    callback(data);
-                }
-            });
-        }, (error) => {
-            logger.error('[RemoteRelay] Response listener error:', error);
-        });
+        return () => {
+            unsubFirestore();
+            this.localMessageCallbacks.delete(commandId);
+        };
     }
 
     /**
@@ -291,16 +375,24 @@ class RemoteRelayService {
      * Listen for desktop state changes (phone side).
      */
     onDesktopState(callback: (state: DesktopState | null) => void): Unsubscribe {
+        let unsubFirestore: Unsubscribe = () => {};
         const ref = getRelayRef();
-        if (!ref) return () => { };
+        if (ref) {
+            unsubFirestore = onSnapshot(ref, (snapshot) => {
+                if (snapshot.exists()) {
+                    callback(snapshot.data() as DesktopState);
+                } else {
+                    callback(null);
+                }
+            });
+        }
 
-        return onSnapshot(ref, (snapshot) => {
-            if (snapshot.exists()) {
-                callback(snapshot.data() as DesktopState);
-            } else {
-                callback(null);
-            }
-        });
+        this.localStateCallback = callback;
+
+        return () => {
+            unsubFirestore();
+            this.localStateCallback = null;
+        };
     }
 
     // -----------------------------------------------------------------------
@@ -314,29 +406,52 @@ class RemoteRelayService {
     onCommand(
         callback: (command: RemoteCommand & { id: string }) => void
     ): Unsubscribe {
+        let unsubFirestore: Unsubscribe = () => {};
         const ref = getCommandsRef();
         if (!ref) {
-            logger.warn('[RemoteRelay] No auth — cannot listen for commands');
-            return () => { };
+            logger.warn('[RemoteRelay] No Firestore auth — fallback to local WebSocket listener only');
+        } else {
+            logger.info('[RemoteRelay] 🖥️ Starting Firestore command listener...');
+            unsubFirestore = onSnapshot(ref, (snapshot) => {
+                snapshot.docChanges().forEach((change) => {
+                    if (change.type === 'added' || change.type === 'modified') {
+                        const data = change.doc.data() as RemoteCommand;
+                        if (data.status === 'pending') {
+                            logger.info(`[RemoteRelay] 📥 Pending command received: ${change.doc.id}`);
+                            callback({ ...data, id: change.doc.id });
+                        }
+                    }
+                });
+            }, (error) => {
+                logger.error('[RemoteRelay] Command listener error:', error);
+            });
         }
 
-        // Simple query — no compound index needed.
-        // Filter status=='pending' client-side to avoid missing composite index.
-        logger.info('[RemoteRelay] 🖥️ Starting command listener...');
-
-        return onSnapshot(ref, (snapshot) => {
-            snapshot.docChanges().forEach((change) => {
-                if (change.type === 'added' || change.type === 'modified') {
-                    const data = change.doc.data() as RemoteCommand;
-                    if (data.status === 'pending') {
-                        logger.info(`[RemoteRelay] 📥 Pending command received: ${change.doc.id}`);
-                        callback({ ...data, id: change.doc.id });
-                    }
+        // Local P2P WebSocket fallback listener
+        let localUnsub: (() => void) | null = null;
+        const api = (window as any).electronAPI;
+        if (api?.remote?.onMessageFromMobile) {
+            logger.info('[RemoteRelay] 🖥️ Starting P2P Local WebSocket IPC listener...');
+            localUnsub = api.remote.onMessageFromMobile((payload: any) => {
+                if (payload && payload.type === 'command' && payload.command) {
+                    logger.info(`[RemoteRelay] 📥 P2P Local command received over WebSocket: ${payload.command.text}`);
+                    callback({
+                        id: payload.command.id || `p2p-${Date.now()}`,
+                        text: payload.command.text,
+                        targetAgentId: payload.command.targetAgentId,
+                        metadata: payload.command.metadata,
+                        timestamp: Timestamp.fromMillis(payload.ts || Date.now()),
+                        status: 'pending',
+                        createdAt: Timestamp.fromMillis(payload.ts || Date.now()),
+                    });
                 }
             });
-        }, (error) => {
-            logger.error('[RemoteRelay] Command listener error:', error);
-        });
+        }
+
+        return () => {
+            unsubFirestore();
+            if (localUnsub) localUnsub();
+        };
     }
 
     /**
@@ -372,6 +487,23 @@ class RemoteRelayService {
         imageUrls?: string[],
         boardroomMessageId?: string
     ): Promise<void> {
+        // P2P Local WebSocket broadcast fallback
+        const api = (window as any).electronAPI;
+        if (api?.remote?.broadcast) {
+            api.remote.broadcast({
+                type: 'response',
+                response: {
+                    commandId,
+                    text,
+                    agentId,
+                    isStreaming,
+                    imageUrls,
+                    boardroomMessageId,
+                    timestamp: Date.now()
+                }
+            });
+        }
+
         const ref = getResponsesRef();
         if (!ref) return;
 
@@ -399,6 +531,16 @@ class RemoteRelayService {
      * Push desktop state (desktop side).
      */
     async pushDesktopState(state: Omit<DesktopState, 'timestamp'>): Promise<void> {
+        // P2P Local WebSocket broadcast fallback
+        const api = (window as any).electronAPI;
+        if (api?.remote?.broadcast) {
+            api.remote.broadcast({
+                type: 'sync',
+                payload: state,
+                ts: Date.now()
+            });
+        }
+
         if (isFirebaseE2EMockEnabled()) return;
         
         const ref = getRelayRef();

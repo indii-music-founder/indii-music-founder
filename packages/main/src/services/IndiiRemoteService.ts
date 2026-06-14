@@ -5,6 +5,7 @@ import ngrok from '@ngrok/ngrok';
 import { app as electronApp, BrowserWindow } from 'electron';
 import path from 'path';
 import crypto from 'crypto';
+import os from 'os';
 
 export interface RemoteConfig {
     port?: number;
@@ -158,7 +159,7 @@ class IndiiRemoteService {
             });
 
             // 3. Start listening
-            const listenHost = config?.ngrokToken ? '0.0.0.0' : '127.0.0.1';
+            const listenHost = '0.0.0.0';
             await new Promise<void>((resolve) => {
                 this.server!.listen(this.port, listenHost, () => {
                     resolve();
@@ -176,7 +177,19 @@ class IndiiRemoteService {
                 this.url = tunnel.url();
                 void 0;
             } else {
-                this.url = `http://${listenHost}:${this.port}`;
+                // Determine LAN IP address for P2P connection fallback
+                const interfaces = os.networkInterfaces();
+                let localIp = '127.0.0.1';
+                for (const name of Object.keys(interfaces)) {
+                    for (const iface of interfaces[name] || []) {
+                        if (iface.family === 'IPv4' && !iface.internal) {
+                            localIp = iface.address;
+                            break;
+                        }
+                    }
+                    if (localIp !== '127.0.0.1') break;
+                }
+                this.url = `http://${localIp}:${this.port}`;
                 void 0;
             }
 
