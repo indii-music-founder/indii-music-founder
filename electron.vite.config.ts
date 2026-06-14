@@ -224,6 +224,8 @@ export default defineConfig({
                 '@': resolve(__dirname, 'packages/renderer/src'),
                 '@agents': resolve(__dirname, 'agents'),
                 '@shared': resolve(__dirname, 'packages/shared/src'),
+                '@remotion/renderer': resolve(__dirname, 'packages/renderer/src/services/video/remotion-mock.ts'),
+                '@remotion/cloudrun/client': resolve(__dirname, 'packages/renderer/src/services/video/remotion-mock.ts'),
             },
         },
         server: {
