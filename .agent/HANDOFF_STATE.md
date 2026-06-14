@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-14 12:21 EDT
+**Updated:** 2026-06-14 12:32 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+f01d50016 fix(remote): implement P2P local pairing fallback and unified context event bus
+c3e9f9439 chore: session checkpoint [12:21]
 9182ef38f fix(conductor): resolve execution loop duplication by inheriting from BaseAgent
 51b293a29 refactor(agent): unify specialist execution loops by removing GeneralistAgent custom execute override
 73db8c0ac chore: session checkpoint [12:17]
@@ -12,13 +14,11 @@
 c80d94ec0 chore: session checkpoint [12:10]
 561b17716 chore: session checkpoint [12:08]
 d28a48806 chore: session checkpoint [12:05]
-cc629e2ed docs(ledger): append issues ISSUE-046 through ISSUE-049 to open issues ledger
-3ad1a176e chore: session checkpoint [12:04]
 ```
 
 ## Working State
 ```
- M python/tests/fixtures/e2e_interop/ts_to_py/envelope.json
+ M .agent/test_ledger/OPEN_ISSUES.md
 ```
 
 ## Decisions
