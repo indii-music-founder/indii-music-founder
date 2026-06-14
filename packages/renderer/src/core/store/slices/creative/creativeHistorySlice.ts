@@ -303,3 +303,10 @@ export function buildCreativeHistoryState(
         },
     };
 }
+
+export function resetCreativeHistoryListener() {
+    if (creativeHistoryUnsubscribe) {
+        creativeHistoryUnsubscribe();
+        creativeHistoryUnsubscribe = null;
+    }
+}

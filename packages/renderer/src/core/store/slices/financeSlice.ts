@@ -68,3 +68,10 @@ export const createFinanceSlice: StateCreator<FinanceSlice & ProfileSlice & Subs
 
 });
 
+export function resetFinanceListener() {
+    if (financeUnsubscribe) {
+        financeUnsubscribe();
+        financeUnsubscribe = null;
+    }
+}
+
