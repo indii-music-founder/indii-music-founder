@@ -995,7 +995,7 @@ export class BaseAgent implements SpecializedAgent {
                             });
                         }
                     } else {
-                        const { TOOL_REGISTRY } = await import('./tools/index');
+                        const { TOOL_REGISTRY } = await import('@/services/agent/tools');
                         if (TOOL_REGISTRY[name]) {
                             try {
                                 // Phase 3.5: Pass execution context to TOOL_REGISTRY tools
