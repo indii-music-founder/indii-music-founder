@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-14 09:15 EDT
+**Updated:** 2026-06-14 09:17 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+240fc69c6 chore: session checkpoint [09:15]
 0eb7e59a4 docs(ledger): document zustand subscription leak and preload typescript fixes in error ledger
 779133929 chore: session checkpoint [09:11]
 27a0ebb5e chore: session checkpoint [09:09]
@@ -13,12 +14,11 @@
 93ed26744 feat(infrastructure): refactor redeemption to use transaction and expand electron API types
 f710355e8 chore: session checkpoint [09:05]
 d4eadb2b7 feat(agent): support listener cleanups and recoupment doc overrides
-030a98094 fix(warnings): remove unused import and clean up eslint disable
 ```
 
 ## Working State
 ```
-clean working tree
+ M python/tests/fixtures/e2e_interop/ts_to_py/envelope.json
 ```
 
 ## Decisions
