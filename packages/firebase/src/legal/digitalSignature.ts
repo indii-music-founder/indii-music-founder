@@ -77,7 +77,7 @@ export const sendForDigitalSignature = functions
         const contractRef = db.doc(`users/${context.auth.uid}/contracts/${contractId}`);
         const existingSnap = await contractRef.get();
 
-        if (existingSnap.exists()) {
+        if (existingSnap.exists) {
             await contractRef.update({
                 status: "sent_for_signing",
                 signers: signers.map(s => ({
