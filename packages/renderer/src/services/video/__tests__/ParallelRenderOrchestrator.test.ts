@@ -4,15 +4,16 @@ import { renderService } from '../RenderService';
 
 // Mock the dependencies
 vi.mock('@/modules/creative/video/store/videoEditorStore', () => {
+    const mockStore = {
+        project: {
+            id: 'proj-1',
+            fps: 30,
+            durationInFrames: 1800 // 60 seconds
+        }
+    };
     return {
         useVideoEditorStore: {
-            getState: () => ({
-                project: {
-                    id: 'proj-1',
-                    fps: 30,
-                    durationInFrames: 1800 // 60 seconds
-                }
-            })
+            getState: () => mockStore
         }
     };
 });

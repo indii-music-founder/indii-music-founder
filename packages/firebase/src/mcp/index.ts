@@ -60,7 +60,6 @@ app.post('/message', async (req, res) => {
 
     await transport.handlePostMessage(req, res);
 });
-
 server.setRequestHandler(ListToolsRequestSchema, async () => {
     return {
         tools: [
@@ -77,6 +76,10 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
                             description: 'List of primary artists',
                         },
                         genre: { type: 'string' },
+                        isrc: { type: 'string', description: 'Optional Sound recording ISRC (12 characters)' },
+                        upc: { type: 'string', description: 'Optional Universal Product Code (12 or 13 digits)' },
+                        duration: { type: 'string', description: 'Optional ISO 8601 duration string (e.g., PT3M30S)' },
+                        releaseDate: { type: 'string', description: 'Optional release date in YYYY-MM-DD format' },
                     },
                     required: ['releaseTitle', 'artists', 'genre'],
                 },
@@ -91,10 +94,16 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             releaseTitle: string;
             artists: string[];
             genre: string;
+            isrc?: string;
+            upc?: string;
+            duration?: string;
+            releaseDate?: string;
         };
-        const upc = `19${Math.floor(1000000000 + Math.random() * 9000000000)}`;
+        const upcVal = args.upc || `19${Math.floor(1000000000 + Math.random() * 9000000000)}`;
+        const isrcVal = args.isrc || 'USABC1234567';
+        const durationVal = args.duration || 'PT3M30S';
         const messageId = `indii-msg-${Date.now()}`;
-        const releaseDate = new Date().toISOString().split('T')[0];
+        const releaseDateVal = args.releaseDate || new Date().toISOString().split('T')[0];
         
         const ddexXml = `<?xml version="1.0" encoding="utf-8"?>
 <ern:NewReleaseMessage xmlns:ern="http://ddex.net/xml/ern/411">
@@ -114,18 +123,18 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       <ResourceReference>A1</ResourceReference>
       <Type>Audio</Type>
       <SoundRecordingId>
-        <ISRC>USABC1234567</ISRC>
+        <ISRC>${isrcVal}</ISRC>
       </SoundRecordingId>
       <ReferenceTitle>
         <TitleText>${args.releaseTitle}</TitleText>
       </ReferenceTitle>
-      <Duration>PT3M30S</Duration>
+      <Duration>${durationVal}</Duration>
     </SoundRecording>
   </ResourceList>
   <ReleaseList>
     <Release>
       <ReleaseId>
-        <ICPN IsEan="false">${upc}</ICPN>
+        <ICPN IsEan="false">${upcVal}</ICPN>
       </ReleaseId>
       <ReferenceTitle>
         <TitleText>${args.releaseTitle}</TitleText>
@@ -148,7 +157,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         <Genre>
           <GenreText>${args.genre}</GenreText>
         </Genre>
-        <OriginalReleaseDate>${releaseDate}</OriginalReleaseDate>
+        <OriginalReleaseDate>${releaseDateVal}</OriginalReleaseDate>
       </ReleaseDetailsByTerritory>
     </Release>
   </ReleaseList>

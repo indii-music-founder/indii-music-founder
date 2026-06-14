@@ -12,14 +12,13 @@ async function bootstrap() {
             // Local-only mode: no Ngrok tunnel — avoids clobbering the user's phone session
         });
 
-        void 0;
         // Passcode is displayed in the desktop UI, not logged for security
 
         // Keep process alive
         process.stdin.resume();
 
     } catch (_e) {
-        void 0;
+        console.error('[launch_remote] Failed to bootstrap remote service:', _e);
         process.exit(1);
     }
 }

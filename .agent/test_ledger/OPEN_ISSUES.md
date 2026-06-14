@@ -5527,21 +5527,21 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-077: Leftover Debug/Compilation Artifacts (`void 0;`)
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟢 LOW
 - **Module:** Code Quality
 - **Summary:** Leftover compilation artifacts or empty statements `void 0;` remain in several files.
 - **Location:** `packages/main/src/services/APIService.ts`, `packages/main/src/launch_remote.ts`, `packages/main/src/menu.ts`
-- **Fix Direction:** Remove the `void 0;` expressions to clean up the code.
+- **Fix:** Removed empty `void 0;` lines from `APIService.ts` and `launch_remote.ts`, and replaced `void 0;` in `menu.ts` with explicit `console.error` error logging context.
 
 ---
 
 ### ISSUE-078: Hardcoded Metadata in Remote MCP Server Format Helper
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟢 LOW
 - **Module:** Firebase / MCP
 - **Summary:** The `format_dsp_metadata` tool inside the Remote MCP Server uses hardcoded placeholders for mock attributes like ISRC (`USABC1234567`) and Duration (`PT3M30S`).
 - **Location:** `packages/firebase/src/mcp/index.ts`
-- **Fix Direction:** Extract these attributes dynamically from the incoming request payload instead of using static mock values.
+- **Fix:** Expanded the tool's input schema to accept optional `isrc`, `upc`, `duration`, and `releaseDate` parameters and updated XML template interpolation to use incoming client values dynamically.
 
