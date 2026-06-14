@@ -368,3 +368,10 @@ export function buildAgentSessionState(
         },
     };
 }
+
+export function resetAgentSessionsListener() {
+    if (agentSessionsUnsubscribe) {
+        agentSessionsUnsubscribe();
+        agentSessionsUnsubscribe = null;
+    }
+}
