@@ -11,6 +11,7 @@ import { withServiceError } from '@/lib/errors';
 import { styleMemoryStore } from './StyleMemoryStore';
 import { energyMapService } from './EnergyMapService';
 import { autoCopywriter } from '@/services/marketing/AutoCopywriter';
+import { syncMetadataTaggingService } from '@/services/licensing/SyncMetadataTaggingService';
 
 
 const SEMANTIC_SCHEMA: Schema = {
@@ -203,6 +204,11 @@ export class AudioIntelligenceService {
             // 8. Save to Firestore/Music Library Cache
             // (Note: We pass profile.semantic here for backward compatibility, but ideally we'd pass the whole profile or update MusicLibraryService)
             await musicLibraryService.saveAnalysis(id, filename, technical, id, semantic);
+
+            // 8b. Sync AI-driven tags to release catalog (non-blocking, fail-safe)
+            syncMetadataTaggingService.syncTagsByFingerprint(id, profile).catch((syncErr) => {
+                Logger.warn('AudioIntelligence', `Sync metadata tagging failed (non-fatal): ${String(syncErr)}`);
+            });
 
             // 9. Auto-register in Neural Cortex (non-blocking, fail-safe)
             //    Generates embeddings for targetPrompts and stores for visual drift detection.

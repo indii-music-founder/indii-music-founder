@@ -173,6 +173,27 @@ describe('RemoteIntelligenceConfig & Dynamic Switching', () => {
             expect(service.getModelName('image-generation')).toBe('imagen-next-gen');
         });
 
+        it('should route specialized capabilities to unified model if supportsUnifiedMultimodal is true', async () => {
+            const config = {
+                overrides: {
+                    TEXT_AGENT: 'gemini-omni-unified'
+                },
+                pricing: {},
+                config: {
+                    supportsUnifiedMultimodal: true
+                }
+            };
+            mockRemoteConfigValue.mockImplementation((key) => {
+                if (key === 'ai_system_config') return JSON.stringify(config);
+                return '';
+            });
+
+            await service.bootstrap();
+
+            expect(service.getModelName('audio-transcription')).toBe('gemini-omni-unified');
+            expect(service.getModelName('video-understanding')).toBe('gemini-omni-unified');
+        });
+
         it('should fallback to candidate model if capability or model is unrecognized', () => {
             expect(service.getModelName('some-unknown-capability-or-model')).toBe('some-unknown-capability-or-model');
         });

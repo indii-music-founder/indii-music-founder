@@ -13,6 +13,8 @@ import {
 } from 'firebase/firestore';
 import { logger } from '@/utils/logger';
 import { v4 as uuidv4 } from 'uuid';
+import { predictiveRoyaltyService } from './PredictiveRoyaltyService';
+
 
 /**
  * Item 312: Label Deal Recoupment Tracking
@@ -171,17 +173,22 @@ class LabelDealRecoupmentService {
             ? Math.min(100, (totalRecouped / deal.recoupmentThreshold) * 100)
             : 100;
 
-        // Estimate recoupment date based on average monthly earnings
+        // Estimate recoupment date based on predictive regression forecast
         let estimatedRecoupmentDate: string | null = null;
         if (!deal.status.includes('recouped') && transactions.length >= 3) {
-            const recentTotal = transactions.slice(0, 6).reduce((sum, t) => sum + t.amount, 0);
-            const avgMonthly = recentTotal / Math.min(6, transactions.length);
-            if (avgMonthly > 0) {
-                const monthsRemaining = remainingToRecoup / avgMonthly;
-                const estimated = new Date();
-                estimated.setMonth(estimated.getMonth() + Math.ceil(monthsRemaining));
-                estimatedRecoupmentDate = estimated.toISOString().split('T')[0]!;
-            }
+            const historicalEarnings = transactions.map(t => ({
+                date: t.periodStart || new Date(t.createdAt?.seconds ? t.createdAt.seconds * 1000 : Date.now()).toISOString().split('T')[0]!,
+                amount: t.amount
+            }));
+            const horizon = predictiveRoyaltyService.calculateHorizon(
+                historicalEarnings,
+                deal.recoupmentThreshold,
+                deal.currentRecouped,
+                deal.escalators,
+                deal.royaltyRatePreRecoup,
+                deal.royaltyRatePostRecoup
+            );
+            estimatedRecoupmentDate = horizon.estimatedRecoupmentDate;
         }
 
         // Determine effective royalty rate based on escalators
