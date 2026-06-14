@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-14 09:20 EDT
+**Updated:** 2026-06-14 09:25 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+155d88fc5 chore: session checkpoint [09:20]
 50d0c9117 chore: session checkpoint [09:17]
 240fc69c6 chore: session checkpoint [09:15]
 0eb7e59a4 docs(ledger): document zustand subscription leak and preload typescript fixes in error ledger
@@ -13,7 +14,6 @@
 046ba1bb2 refactor(remotion): dynamically import remotion renderer to avoid environment import conflicts
 425a792a0 chore: session checkpoint [09:06]
 93ed26744 feat(infrastructure): refactor redeemption to use transaction and expand electron API types
-f710355e8 chore: session checkpoint [09:05]
 ```
 
 ## Working State
