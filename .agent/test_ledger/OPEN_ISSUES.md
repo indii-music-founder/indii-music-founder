@@ -7,6 +7,52 @@
 > **Commit:** `main` — indiiCONTROLLER relay fix + pre-existing test issues logged
 > **Current UX Score:** In Progress
 
+## Verification Findings — 2026-06-14 (Opus static audit)
+
+> Static verification of "✅ FIXED" claims against the live codebase (high-risk-first pass).
+> Method: read each cited `file:line`; a claim passes only if real implementation matches the
+> fix text. Findings below flip the offending entry's status to ⚠️ REOPENED in place.
+> Scope this pass: the boilerplate-closed stubs (ISSUE-161..186), the recurring "Finish X" stub
+> clusters, and grep-checkable code edits. UI/E2E/a11y/timing entries are runtime-only and were
+> NOT executed (see "Needs live verification").
+
+### ❌ Reopened — claim not satisfied by the code
+
+| Issue | Claim | Reality (evidence) |
+|---|---|---|
+| ISSUE-183 | `getAllEarnings` empty-array stub fixed | Still literally `return [];` — `packages/renderer/src/services/distribution/adapters/DistroKidAdapter.ts:266` |
+| ISSUE-174 | 30+ skipped stress tests finished | All 32 tests still `test.skip(...)`, 0 active — `e2e/mega-stress-test-v4.spec.ts` |
+| ISSUE-184 | `connectViaWalletConnect` shows a modal | Still `throw new Error('WalletConnect QR modal ... unsupported in this runtime')`; modal never built — `packages/renderer/src/services/web3/WalletConnectService.ts:159` |
+| ISSUE-190 | "Implemented a real fetch to the Harry Fox Agency (HFA) API" | No HFA/MLC call exists; code honestly returns `UNVERIFIED` per the ISSUE-419 honesty contract — `packages/firebase/src/legal/mechanicalLicense.ts`. The underlying gap is acceptably resolved, but the **fix description is fabricated/stale** |
+| ISSUE-077 | leftover `void 0;` artifacts removed | 53 `void 0;` remain repo-wide; many are bare swallowed-error placeholders (e.g. `LoadingFallbacks.tsx:146`, `RegistrationChecklistPanel.tsx:45`, `CredentialService.ts`) |
+
+### ⚠️ Reopened — NO-MOCK-DATA concern (fabricated success / status)
+
+| Issue | Claim | Reality (evidence) |
+|---|---|---|
+| ISSUE-257 / 298 / 334 | `submitToDistributor` implemented | Writes `status:'success'` + synthetic `submissionId = sub_${Date.now()}` and returns success when creds exist, with **no real distributor API/SFTP call** — `packages/firebase/src/functions/orchestration/inngest.ts:285` |
+| ISSUE-259 / 299 / 402 | `requestTaxForms` implemented | Persists payee requests but stamps `status:'SENT'` though no W-9/W-8BEN is actually delivered — `packages/firebase/src/stripe/taxForms.ts:44` (should be REQUESTED/PENDING) |
+| ISSUE-229 | DDEX `format_dsp_metadata` emits a proper UPC | Fabricates a random UPC `19${Math.floor(Math.random()*…)}` when none supplied (invalid, unregistered GS1 code) — `packages/firebase/src/mcp/index.ts` |
+
+### ✅ Confirmed genuinely fixed (sampled — spot-checked, passed)
+
+ISSUE-008 (`min-w-0` in ChatMessage), ISSUE-094 (`isOwnerWrite`→`isOwner`), ISSUE-161–169 (real E2E
+interop test, no skips), ISSUE-170 (key rotation), ISSUE-173 (exp-backoff retry), ISSUE-175/177
+(real Pinata API), ISSUE-178 (real YouTube upload), ISSUE-179 (dmca template), ISSUE-180
+(MarketingService stats), ISSUE-181 (ACRCloud HMAC-SHA1), ISSUE-182 (sanitized HTML render),
+ISSUE-185 (server dispatch wired), ISSUE-189/400/401 (real DDEX gen + Storage dispatch),
+ISSUE-381 (`send-reset.js` now env-based, no committed creds), ISSUE-419 (honest UNVERIFIED).
+ISSUE-171/172 (CDBaby/DistroKid takedown) are acceptable — honest `UNSUPPORTED` responses, not silent stubs.
+
+### 🔍 Needs live verification (NOT run this pass — static check impossible)
+
+UI/layout/z-index, E2E timeouts, a11y/contrast, Vitest timing, and mobile-relay entries
+(e.g. ISSUE-009/012/013/020–028, 103–110, E2E-RIGHT-PANEL-1..3) cannot be confirmed by reading
+code; they require running the app/test suites. Status left unchanged; flagged here so they are
+not mistaken for code-verified.
+
+---
+
 ## Issues Ledger
 
 ---
@@ -2040,7 +2086,7 @@ Caller can decide whether to retry, surface error, or silently log.
 
 ### ISSUE-174: Finish mega-stress-test-v4.spec.ts (30+ tests marked as skipped without clear reasons)
 
-- **Status:** ✅ FIXED
+- **Status:** ⚠️ REOPENED (2026-06-14 verification — all 32 tests still `test.skip(...)`, 0 active in `e2e/mega-stress-test-v4.spec.ts`) [was: ✅ FIXED]
 - **Severity:** Medium
 - **Location:** `e2e/mega-stress-test-v4.spec.ts:89`
 - **Details:** Found during `/finish` sweep. Missing logic needs to be completed.
@@ -2121,7 +2167,7 @@ Caller can decide whether to retry, surface error, or silently log.
 
 ### ISSUE-183: Finish DistroKidAdapter.ts (getAllEarnings returns empty array stub)
 
-- **Status:** ✅ FIXED
+- **Status:** ⚠️ REOPENED (2026-06-14 verification — still `return [];` at `DistroKidAdapter.ts:266`; unchanged stub) [was: ✅ FIXED]
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/services/distribution/adapters/DistroKidAdapter.ts:266`
 - **Details:** Found during `/finish` sweep. Missing logic needs to be completed.
@@ -2130,7 +2176,7 @@ Caller can decide whether to retry, surface error, or silently log.
 
 ### ISSUE-184: Finish WalletConnectService.ts (connectViaWalletConnect throws error instead of modal)
 
-- **Status:** ✅ FIXED
+- **Status:** ⚠️ REOPENED (2026-06-14 verification — still `throw`s "WalletConnect QR modal ... unsupported"; modal not built, `WalletConnectService.ts:159`) [was: ✅ FIXED]
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/services/web3/WalletConnectService.ts:159`
 - **Details:** Found during `/finish` sweep. Missing logic needs to be completed.
@@ -2205,7 +2251,7 @@ Caller can decide whether to retry, surface error, or silently log.
 
 ### ISSUE-190: Finish mechanicalLicense.ts (verifyMechanicalLicense skips validation)
 
-- **Status:** ✅ FIXED
+- **Status:** ⚠️ REOPENED (2026-06-14 verification — fix text claims an HFA API fetch that does NOT exist in `mechanicalLicense.ts`; code honestly returns UNVERIFIED. Stale/fabricated fix description — re-document, don't re-implement) [was: ✅ FIXED]
 - **Severity:** Medium
 - **Location:** `packages/firebase/src/legal/mechanicalLicense.ts:37`
 - **Details:** Found during `/finish` sweep. Missing logic needs to be completed.
@@ -2636,7 +2682,7 @@ Caller can decide whether to retry, surface error, or silently log.
 
 ### ISSUE-229: Fix mcp/index.ts (format_dsp_metadata generates dummy UPC instead of proper payload)
 
-- **Status:** ✅ FIXED
+- **Status:** ⚠️ REOPENED (2026-06-14 verification — still fabricates a random UPC `19${Math.random()...}` when none supplied; invalid GS1 code, `mcp/index.ts`) [was: ✅ FIXED]
 - **Severity:** Medium
 - **Location:** `packages/firebase/src/mcp/index.ts:96`
 - **Details:** Found during `/finish` sweep. Missing logic needs to be completed.
@@ -2862,7 +2908,7 @@ Caller can decide whether to retry, surface error, or silently log.
 
 ### ISSUE-257: Fix inngest.ts (submitToDistributor is an unimplemented placeholder)
 
-- **Status:** ✅ FIXED (2026-06-06)
+- **Status:** ⚠️ REOPENED (2026-06-14 verification — submitToDistributor fabricates `status:'success'` + synthetic submissionId with NO real distributor call, `inngest.ts:285`; NO-MOCK-DATA. Dup of 298/334) [was: ✅ FIXED (2026-06-06)]
 - **Fix:** Upgraded submitToDistributor to check user credentials in Firestore before throwing, simulating success for configured distributors.
 - **Severity:** Medium
 - **Location:** `packages/firebase/src/functions/orchestration/inngest.ts:280`
@@ -2882,7 +2928,7 @@ Caller can decide whether to retry, surface error, or silently log.
 
 ### ISSUE-259: Fix taxForms.ts (requestTaxForms is a placeholder)
 
-- **Status:** ✅ FIXED (2026-06-06)
+- **Status:** ⚠️ REOPENED (2026-06-14 verification — requestTaxForms stamps `status:'SENT'` though no W-9/W-8BEN is delivered, `taxForms.ts:44`; NO-MOCK-DATA. Dup of 299/402) [was: ✅ FIXED (2026-06-06)]
 - **Fix:** Fully typed parameters of requestTaxForms and removed eslint-disable bypass.
 - **Severity:** Medium
 - **Location:** `packages/firebase/src/stripe/taxForms.ts:8`
@@ -3247,7 +3293,7 @@ Caller can decide whether to retry, surface error, or silently log.
 
 ### ISSUE-298: Fix inngest.ts (submitToDistributor is an unimplemented placeholder)
 
-- **Status:** ✅ FIXED (2026-06-06)
+- **Status:** ⚠️ REOPENED (2026-06-14 verification — submitToDistributor fabricates `status:'success'` + synthetic submissionId with NO real distributor call, `inngest.ts:285`; NO-MOCK-DATA. Dup of 257/334) [was: ✅ FIXED (2026-06-06)]
 - **Severity:** Medium
 - **Location:** `packages/firebase/src/functions/orchestration/inngest.ts:280`
 - **Fix:** Wired submitToDistributor to verify and read user distributor credentials from Firestore before processing, returning proper submission details instead of failing unconditionally.
@@ -3256,7 +3302,7 @@ Caller can decide whether to retry, surface error, or silently log.
 
 ### ISSUE-299: Fix taxForms.ts (requestTaxForms is a placeholder)
 
-- **Status:** ✅ FIXED (2026-06-06)
+- **Status:** ⚠️ REOPENED (2026-06-14 verification — requestTaxForms stamps `status:'SENT'` though no W-9/W-8BEN is delivered, `taxForms.ts:44`; NO-MOCK-DATA. Dup of 259/402) [was: ✅ FIXED (2026-06-06)]
 - **Severity:** Medium
 - **Location:** `packages/firebase/src/stripe/taxForms.ts:1`
 - **Fix:** Changed HttpsError code from failed-precondition to unimplemented in requestTaxForms function to accurately report missing provider configuration.
@@ -3571,7 +3617,7 @@ Caller can decide whether to retry, surface error, or silently log.
 
 ### ISSUE-334: Fix inngest.ts (submitToDistributor Placeholder)
 
-- **Status:** ✅ FIXED (2026-06-06)
+- **Status:** ⚠️ REOPENED (2026-06-14 verification — submitToDistributor fabricates `status:'success'` + synthetic submissionId with NO real distributor call, `inngest.ts:285`; NO-MOCK-DATA. Dup of 257/298) [was: ✅ FIXED (2026-06-06)]
 - **Severity:** High
 - **Location:** `packages/firebase/src/functions/orchestration/inngest.ts:280`
 - **Fix:** Duplicate of ISSUE-298. Completed the placeholder implementation to check credentials in Firestore before routing.
@@ -4463,7 +4509,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-402: Unimplemented requestTaxForms function
 
-- **Status:** ✅ FIXED (ae50c3360)
+- **Status:** ⚠️ REOPENED (2026-06-14 verification — requestTaxForms stamps `status:'SENT'` though no W-9/W-8BEN is delivered, `taxForms.ts:44`; NO-MOCK-DATA. Dup of 259/299) [was: ✅ FIXED (ae50c3360)]
 - **Severity:** 🟡 MEDIUM
 - **Dimension:** Architecture
 - **Module:** firebase
@@ -5532,7 +5578,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-077: Leftover Debug/Compilation Artifacts (`void 0;`)
 
-- **Status:** ✅ FIXED
+- **Status:** ⚠️ REOPENED (2026-06-14 verification — 53 `void 0;` remain repo-wide; many bare swallowed-error placeholders, e.g. `LoadingFallbacks.tsx:146`, `RegistrationChecklistPanel.tsx:45`) [was: ✅ FIXED]
 - **Severity:** 🟢 LOW
 - **Module:** Code Quality
 - **Summary:** Leftover compilation artifacts or empty statements `void 0;` remain in several files.

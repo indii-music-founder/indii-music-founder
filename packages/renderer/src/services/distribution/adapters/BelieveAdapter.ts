@@ -329,10 +329,10 @@ export class BelieveAdapter extends BaseDistributorAdapter {
             }
             if (cReq.allowedFormats) {
                 const ext = url.split('.').pop()?.toLowerCase();
-                if (!ext || !cReq.allowedFormats.includes(ext)) {
+                if (!ext || !(cReq.allowedFormats as string[]).includes(ext)) {
                     errors.push({
                         code: 'COVER_FORMAT_INVALID',
-                        message: `Cover art format must be one of: ${cReq.allowedFormats.join(', ')}`,
+                        message: `Cover art format must be one of: ${(cReq.allowedFormats as string[]).join(', ')}`,
                         field: 'coverArt',
                         severity: 'error'
                     });
