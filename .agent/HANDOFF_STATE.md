@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-14 10:30 EDT
+**Updated:** 2026-06-14 10:35 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+cbf352f9e chore: session checkpoint [10:30]
 e0fe5fc8f chore: session checkpoint [10:25]
 020bb55e3 chore: session checkpoint [10:20]
 59b873f5e chore: session checkpoint [10:15]
@@ -13,7 +14,6 @@ e0fe5fc8f chore: session checkpoint [10:25]
 18ade9382 chore: session checkpoint [10:03]
 73c2cb00b feat(api): harden API router with resource existence checks and input sanitization
 240420d7a chore: session checkpoint [10:00]
-20e7fbb3c feat(api): add helper functions for extracting resource IDs and mapping firebase errors
 ```
 
 ## Working State
