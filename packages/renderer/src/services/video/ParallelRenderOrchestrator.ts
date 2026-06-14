@@ -1,6 +1,6 @@
 import { logger } from '@/utils/logger';
 import { renderService, RenderConfig } from './RenderService';
-import { useStore } from '@/core/store';
+import { useVideoEditorStore } from '@/modules/creative/video/store/videoEditorStore';
 
 export interface ParallelRenderOptions {
     projectId: string;
@@ -19,7 +19,7 @@ export class ParallelRenderOrchestrator {
         options: ParallelRenderOptions,
         onProgress?: (pct: number) => void
     ): Promise<{ outputUrl: string; ffmpegStitchCommand: string }> {
-        const store = useStore.getState();
+        const store = useVideoEditorStore.getState();
         const project = store.project;
         if (!project) {
             throw new Error('No active project found to render');

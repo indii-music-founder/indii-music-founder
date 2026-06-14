@@ -25,7 +25,7 @@ export class VideoIngestionPipeline {
     ): Promise<string> {
         logger.info(`[VideoIngestionPipeline] Ingesting asset: ${asset.name} (${asset.type})`);
         
-        const store = useStore.getState();
+        const store = useVideoEditorStore.getState();
         const fps = store.project?.fps || 30;
         
         // Ensure corresponding track exists
