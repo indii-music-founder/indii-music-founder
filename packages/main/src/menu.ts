@@ -29,7 +29,7 @@ export function setupMenu(mainWindow: BrowserWindow) {
                             try {
                                 mainWindow.webContents.send('menu:save-triggered');
                             } catch (_err) {
-                                void 0;
+                                console.error('[Menu] Failed to send menu:save-triggered:', _err);
                             }
                         }
                     }

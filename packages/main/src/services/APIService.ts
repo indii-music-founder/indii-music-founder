@@ -9,11 +9,8 @@ interface SongMetadata {
 
 export class APIService {
     async getSongMetadata(hash: string, token?: string): Promise<SongMetadata | null> {
-        void 0;
-
         const lookupUrl = process.env.METADATA_LOOKUP_URL;
         if (!lookupUrl) {
-            void 0;
             return null;
         }
 
