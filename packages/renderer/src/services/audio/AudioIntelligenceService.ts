@@ -137,7 +137,7 @@ export class AudioIntelligenceService {
             Logger.info('AudioIntelligence', 'Running semantic and energy map analysis in parallel...');
 
             let semanticPromise: Promise<AudioSemanticData>;
-            let energyMapPromise: Promise<unknown>;
+            let energyMapPromise: Promise<any>;
 
             const isOnline = navigator.onLine;
             if (!isOnline) {

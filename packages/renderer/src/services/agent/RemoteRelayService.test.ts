@@ -53,13 +53,13 @@ describe('isFreshDesktopState', () => {
 
   it('is stale when the heartbeat is older than the window (including skew tolerance)', () => {
     const now = 1_700_000_000_000;
-    // 60000ms is the CLOCK_SKEW_TOLERANCE_MS added in RemoteRelayService
-    expect(isFreshDesktopState(stateAt(true, DESKTOP_HEARTBEAT_STALE_MS + 60000 + 1, now), now)).toBe(false);
+    // 600000ms (10m) is the CLOCK_SKEW_TOLERANCE_MS added in RemoteRelayService
+    expect(isFreshDesktopState(stateAt(true, DESKTOP_HEARTBEAT_STALE_MS + 600000 + 1, now), now)).toBe(false);
   });
 
   it('is exactly at the boundary inclusive', () => {
     const now = 1_700_000_000_000;
-    expect(isFreshDesktopState(stateAt(true, DESKTOP_HEARTBEAT_STALE_MS + 60000, now), now)).toBe(true);
+    expect(isFreshDesktopState(stateAt(true, DESKTOP_HEARTBEAT_STALE_MS + 600000, now), now)).toBe(true);
   });
 
   it('is never fresh when offline, regardless of recency', () => {
