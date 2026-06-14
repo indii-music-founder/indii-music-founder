@@ -164,10 +164,13 @@ describe('StudioControlsPanel', () => {
 
     it('toggles the right panel when close button is clicked', () => {
         render(<StudioControlsPanel toggleRightPanel={mockToggleRightPanel} />);
-        const closeBtn = screen.getByRole('button', { name: '' }).parentElement?.querySelector('.lucide-chevron-right')?.parentElement;
-        if (closeBtn) {
-            fireEvent.click(closeBtn);
-        }
+        
+        // Find close button using the mocked Lucide ChevronRight icon
+        const closeIcon = screen.getByTestId('icon-ChevronRight');
+        const closeBtn = closeIcon.closest('button');
+        expect(closeBtn).toBeInTheDocument();
+        
+        fireEvent.click(closeBtn!);
         expect(mockToggleRightPanel).toHaveBeenCalled();
     });
 
