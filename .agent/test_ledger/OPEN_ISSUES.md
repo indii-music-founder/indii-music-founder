@@ -5068,7 +5068,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-047: Swarm Conductor Execution Loop Duplication
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (v1.64.4)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Boardroom Conductor / Specialist Agents
 - **Summary:** `GeneralistAgent` overrides the full `execute()` loop for native function calling, while other agents inherit from `BaseAgent`. This duplication is fragile and historically caused state and history mapping mismatches.
