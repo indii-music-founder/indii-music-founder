@@ -5157,3 +5157,54 @@ Therefore, no fix can be proposed or implemented.
 - **Summary:** Songwriting and master splits agreed upon in the studio are not backed by e-signed legal split sheets, leading to potential disputes during registration.
 - **Fix Direction:** Integrate a lightweight e-signature flow (using DocuSign or HelloSign APIs, or standard signature canvas) that generates a legally binding, signed PDF split sheet automatically.
 
+---
+
+### ISSUE-056: AI-Driven Sync Metadata Tagging
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Licensing Department / AI Stack
+- **Summary:** Extracted audio metadata (BPM, key, spectral characteristics) is not integrated into a structured tagging loop that outputs supervisor-friendly sync labels (moods, styles, descriptions).
+- **Fix Direction:** Pipe Essentia/YAMNet outputs to Gemini models to generate contextual descriptive metadata and save them to the Firestore asset database.
+
+---
+
+### ISSUE-057: Live Electronic Press Kit (EPK) Generator
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Creative Director / Memory Agent
+- **Summary:** High-quality biography elements, social media snapshots, and release catalog facts stored in the Memory Agent are not compiled into a shareable public EPK website.
+- **Fix Direction:** Build a dashboard generator in the Creative module that compiles these assets into an optimized, public-facing, responsive web page.
+
+---
+
+### ISSUE-058: Pre-built Release & Tour Playbooks
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Workflow Builder / Automation
+- **Summary:** Artists must construct automations and connection charts manually from scratch, increasing friction during planning.
+- **Fix Direction:** Build pre-configured workflow templates (e.g., Single Release Playbook, Regional Tour Booking Playbook) directly into the Workflow module.
+
+---
+
+### ISSUE-059: Predictive Royalty & Recoupment Horizon Modeling
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Finance Department / Analytics
+- **Summary:** Revenue analytics only show historical records, preventing labels and artists from predicting break-even points for deals and marketing spend.
+- **Fix Direction:** Add a predictive regression component to the Analytics service that forecasts future earnings and recoupment dates based on streaming growth trends.
+
+---
+
+### ISSUE-060: Local Print Dispatch & DJ Promoter Email Promotion
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Art & Merch Dept / Marketing
+- **Summary:** DJ/artists who design flyers, posters, or digital promo assets have no way to dispatch print files directly to local printing services or trigger promotional email outreach to local nightclub promoters.
+- **Fix Direction:** Add a "Print & Promote" pipeline in the Art & Merch dashboard allowing the dispatch of PDF assets via email/API to local print shops, and hook up automated promoter email outreach.
+
+
