@@ -99,6 +99,8 @@ import { configureSecurity, auditSessionCookies } from './security';
 import { applyCSP } from './security/csp';
 import { mcpClientService } from './services/mcp/MCPClientService';
 import { setupAutoUpdater, registerUpdaterHandlers } from './updater';
+import { registerWeb3Handlers } from './handlers/web3';
+import { registerPinataHandlers } from './handlers/pinata';
 import Store from 'electron-store';
 
 let tray: Tray | null = null;
@@ -487,6 +489,8 @@ if (!gotTheLock) {
         registerVideoHandlers();
         registerSonicBridgeHandlers();
         registerDawHandlers();
+        registerWeb3Handlers();
+        registerPinataHandlers();
 
         // Register Sidecar Handlers (Removed)
 
@@ -515,6 +519,8 @@ if (!gotTheLock) {
             'updater:check', 'updater:install', 'updater:set-channel', 'updater:set-source', 'updater:get-config',
             'scheduler:register', 'scheduler:cancel', 'scheduler:set-enabled', 'scheduler:status', 'scheduler:get',
             'test:browser-agent', 'show-notification',
+            'web3:execute-transaction', 'web3:get-provider-metadata', 'web3:set-rpc-url', 'web3:get-balance',
+            'web3:pinata-upload',
         ]);
         log.info(`[IPC Allowlist] ${KNOWN_IPC_CHANNELS.size} known channels registered`);
 
