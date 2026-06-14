@@ -1,7 +1,7 @@
 import { logger } from '@/utils/logger';
 import { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import { db } from '@/services/firebase';
-import { Timestamp, FieldValue, collection, doc, runTransaction, addDoc, serverTimestamp } from 'firebase/firestore';
+import { Timestamp, FieldValue, collection, doc, runTransaction, addDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 
 export interface RevenueReportItem {
     transactionId: string;
@@ -178,7 +178,7 @@ export class RoyaltyService {
      * Manual override or initialization of recoupment balance.
      */
     static async setRecoupmentBalance(releaseId: string, amount: number): Promise<void> {
-        await addDoc(collection(db, this.RECOUPMENT_COLLECTION), {
+        await setDoc(doc(db, this.RECOUPMENT_COLLECTION, releaseId), {
             releaseId,
             balance: amount,
             totalExpense: amount,

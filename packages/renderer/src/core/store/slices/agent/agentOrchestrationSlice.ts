@@ -157,3 +157,16 @@ export const buildAgentOrchestrationState: (
         set({ activeGraphExecution: null });
     }
 });
+
+export function resetGraphListeners() {
+    Object.keys(graphListeners).forEach(key => {
+        if (graphListeners[key]) {
+            graphListeners[key]!();
+            delete graphListeners[key];
+        }
+    });
+    if (executionUnsubscribe) {
+        executionUnsubscribe();
+        executionUnsubscribe = null;
+    }
+}
