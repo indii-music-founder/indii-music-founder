@@ -5428,11 +5428,12 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-068: Future-Proof Multimodal API Routing (Google Omni Flash & Next-Gen Video/Image Models)
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟡 MEDIUM
 - **Module:** AI Stack / Service Layer
 - **Summary:** The AI service layer is tightly coupled to specific text/image/video model configurations, which will cause obsolescence as next-generation models (e.g., Google Omni Flash, which accepts video+audio+image inputs natively) become available.
-- **Fix Direction:** Refactor `AIService` and model gateways to use a decoupled, capability-based router. This allows the seamless hot-swapping of next-gen multimodal APIs without breaking downstream agent reasoning loops or UI components.
+- **Fix:** Refactored `getModelName` in `FirebaseIntelligenceService` to use a decoupled, capability-based router mapping logical capability names to actual model IDs and overrides.
+- **Files:** `packages/renderer/src/services/intelligence/FirebaseIntelligenceService.ts`
 
 ---
 
