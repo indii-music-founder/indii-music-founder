@@ -1,4 +1,5 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import CreativeNavbar from './CreativeNavbar';
 import { useStore } from '@/core/store';
@@ -6,18 +7,26 @@ import { useToast, ToastProvider } from '@/core/context/ToastContext';
 import { ScreenControl } from '@/services/screen/ScreenControlService';
 
 // Mock dependencies
-vi.mock('@/core/store');
-vi.mock('@/services/video/VideoGenerationService');
-vi.mock('@/services/image/ImageGenerationService');
+vi.mock('@/core/store', () => {
+    const mockUseStore = vi.fn();
+    (mockUseStore as any).setState = vi.fn();
+    (mockUseStore as any).getState = vi.fn(() => ({
+        setGenerationMode: vi.fn(),
+    }));
+    return { useStore: mockUseStore };
+});
+
 vi.mock('@/services/screen/ScreenControlService');
+
 vi.mock('@/core/context/ToastContext', () => ({
     useToast: vi.fn(() => ({
         success: vi.fn(),
         error: vi.fn(),
         info: vi.fn(),
     })),
-    ToastProvider: ({ children }: { children: React.ReactNode }) => children,
+    ToastProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
+
 vi.mock('@/services/firebase', () => ({
     auth: {
         currentUser: { uid: 'test-user-id' }
@@ -33,11 +42,28 @@ vi.mock('@/services/firebase', () => ({
     messaging: { getToken: vi.fn() }
 }));
 
+// Mock framer-motion to simplify DOM transitions in JSDOM tests
+vi.mock('framer-motion', () => ({
+    motion: {
+        div: ({ children, ...props }: any) => {
+            const cleanProps = { ...props };
+            delete cleanProps.initial;
+            delete cleanProps.animate;
+            delete cleanProps.exit;
+            delete cleanProps.transition;
+            return <div {...cleanProps}>{children}</div>;
+        }
+    },
+    AnimatePresence: ({ children }: any) => <>{children}</>,
+}));
+
 // Mock child components to simplify testing
 vi.mock('./IntelligencePromptBuilder', () => ({
-    default: ({ onAddTag }: { onAddTag: (tag: string) => void }) => (
+    default: ({ onAddTag, currentPrompt, onSetPrompt }: { onAddTag: (tag: string) => void; currentPrompt: string; onSetPrompt: (prompt: string) => void }) => (
         <div data-testid="prompt-builder">
+            <span>Current Prompt: {currentPrompt}</span>
             <button onClick={() => onAddTag('test tag')}>Add Tag</button>
+            <button onClick={() => onSetPrompt('new prompt')}>Set Prompt</button>
         </div>
     )
 }));
@@ -50,21 +76,46 @@ vi.mock('./BrandAssetsDrawer', () => ({
     )
 }));
 
-vi.mock('./ImageSubMenu', () => ({
-    default: ({ onShowBrandAssets }: any) => (
-        <div data-testid="image-sub-menu">
-            <button onClick={onShowBrandAssets}>Toggle Brand Assets</button>
+vi.mock('./PromptHistoryDrawer', () => ({
+    default: ({ onClose }: { onClose: () => void }) => (
+        <div data-testid="prompt-history-drawer">
+            <button onClick={onClose}>Close History</button>
         </div>
     )
 }));
 
-vi.mock('../../video/components/FrameSelectionModal', () => ({
-    default: ({ isOpen, onClose, onSelect }: any) => isOpen ? (
-        <div data-testid="frame-selection-modal">
+vi.mock('./DesignHistoryDrawer', () => ({
+    default: ({ onClose }: { onClose: () => void }) => (
+        <div data-testid="design-history-drawer">
+            <button onClick={onClose}>Close Design History</button>
+        </div>
+    )
+}));
+
+vi.mock('./AgentCapabilityRegistry', () => ({
+    default: ({ onClose }: { onClose: () => void }) => (
+        <div data-testid="agent-capability-registry">
+            <button onClick={onClose}>Close Swarm Registry</button>
+        </div>
+    )
+}));
+
+vi.mock('../video/components/FrameSelectionModal', () => ({
+    default: ({ isOpen, onClose, onSelect, target }: any) => isOpen ? (
+        <div data-testid="frame-selection-modal" data-target={target}>
             <button onClick={onClose}>Close Modal</button>
             <button onClick={() => onSelect({ url: 'test-frame.png' })}>Select Frame</button>
         </div>
     ) : null
+}));
+
+vi.mock('./DaisyChainControls', () => ({
+    default: ({ onOpenFrameModal }: { onOpenFrameModal: (target: 'firstFrame' | 'lastFrame') => void }) => (
+        <div data-testid="daisy-chain-controls">
+            <button onClick={() => onOpenFrameModal('firstFrame')}>Trigger First Frame</button>
+            <button onClick={() => onOpenFrameModal('lastFrame')}>Trigger Last Frame</button>
+        </div>
+    )
 }));
 
 describe('CreativeNavbar', () => {
@@ -73,20 +124,33 @@ describe('CreativeNavbar', () => {
     const mockSetVideoInput = vi.fn();
     const mockAddToHistory = vi.fn();
     const mockSetPrompt = vi.fn();
+    const mockSetCreativePrompt = vi.fn();
     const mockToggleAgentWindow = vi.fn();
-    const mockToast = { success: vi.fn(), error: vi.fn() };
+    const mockTogglePromptBuilder = vi.fn();
+    const mockEnableAndromedaMode = vi.fn();
+    const mockDisableAndromedaMode = vi.fn();
+    const mockSetViewMode = vi.fn();
+    
+    const mockToast = {
+        success: vi.fn(),
+        error: vi.fn(),
+        info: vi.fn(),
+    };
 
-    const defaultStore = {
+    const defaultState = {
         currentProjectId: 'test-project',
         addToHistory: mockAddToHistory,
         studioControls: {
             resolution: '1K',
             aspectRatio: '16:9',
             negativePrompt: '',
-            seed: ''
+            seed: '',
+            isAndromedaMode: false
         },
         generationMode: 'image',
         setGenerationMode: mockSetGenerationMode,
+        viewMode: 'direct',
+        setViewMode: mockSetViewMode,
         videoInputs: {
             firstFrame: null,
             lastFrame: null,
@@ -98,14 +162,15 @@ describe('CreativeNavbar', () => {
         generatedHistory: [],
         setSelectedItem: vi.fn(),
         setActiveReferenceImage: vi.fn(),
-        setViewMode: vi.fn(),
         prompt: '',
         setPrompt: mockSetPrompt,
-        creativePrompt: '',
-        setCreativePrompt: mockSetPrompt,
+        creativePrompt: 'initial prompt text',
+        setCreativePrompt: mockSetCreativePrompt,
         isPromptBuilderOpen: false,
-        togglePromptBuilder: vi.fn(),
+        togglePromptBuilder: mockTogglePromptBuilder,
         toggleAgentWindow: mockToggleAgentWindow,
+        enableAndromedaMode: mockEnableAndromedaMode,
+        disableAndromedaMode: mockDisableAndromedaMode,
         userProfile: {
             brandKit: {
                 colors: ['#000000'],
@@ -118,45 +183,171 @@ describe('CreativeNavbar', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
-        (useStore as unknown as import("vitest").Mock).mockReturnValue(defaultStore);
-        (useStore as any).getState = () => defaultStore;
-        (useToast as unknown as import("vitest").Mock).mockReturnValue(mockToast);
+        (useStore as unknown as import('vitest').Mock).mockImplementation((selector: any) => {
+            if (selector) return selector(defaultState);
+            return defaultState;
+        });
+        (useStore as any).getState = () => defaultState;
+        (useToast as unknown as import('vitest').Mock).mockReturnValue(mockToast);
     });
 
-    it('renders correctly', () => {
+    it('renders correctly and matches active status text', () => {
         render(
             <ToastProvider>
                 <CreativeNavbar />
             </ToastProvider>
         );
-        // The mode dropdown was replaced by a static "Creative Studio" label
         expect(screen.getByText('Studio')).toBeInTheDocument();
+        expect(screen.getByText('ONLINE')).toBeInTheDocument();
     });
 
-    it('opens and closes brand assets drawer', async () => {
+    it('opens and closes brand assets drawer', () => {
         render(
             <ToastProvider>
                 <CreativeNavbar />
             </ToastProvider>
         );
 
-        // Click the Brand button (text "Brand" with icon)
         const toggleButton = screen.getByText('Brand');
         fireEvent.click(toggleButton);
 
-        // Check if drawer is opened
         expect(screen.getByTestId('brand-assets-drawer')).toBeInTheDocument();
 
-        // Close it
         const closeButton = screen.getByText('Close Drawer');
         fireEvent.click(closeButton);
 
-        // Check if drawer is closed
         expect(screen.queryByTestId('brand-assets-drawer')).not.toBeInTheDocument();
     });
 
-    it('opens projector window', async () => {
-        (ScreenControl.requestPermission as import("vitest").Mock).mockResolvedValue(true);
+    it('opens and closes prompt history drawer', () => {
+        render(
+            <ToastProvider>
+                <CreativeNavbar />
+            </ToastProvider>
+        );
+
+        const toggleButton = screen.getByText('History');
+        fireEvent.click(toggleButton);
+
+        expect(screen.getByTestId('prompt-history-drawer')).toBeInTheDocument();
+
+        const closeButton = screen.getByText('Close History');
+        fireEvent.click(closeButton);
+
+        expect(screen.queryByTestId('prompt-history-drawer')).not.toBeInTheDocument();
+    });
+
+    it('opens and closes design history drawer', () => {
+        render(
+            <ToastProvider>
+                <CreativeNavbar />
+            </ToastProvider>
+        );
+
+        const toggleButton = screen.getByText('Versions');
+        fireEvent.click(toggleButton);
+
+        expect(screen.getByTestId('design-history-drawer')).toBeInTheDocument();
+
+        const closeButton = screen.getByText('Close Design History');
+        fireEvent.click(closeButton);
+
+        expect(screen.queryByTestId('design-history-drawer')).not.toBeInTheDocument();
+    });
+
+    it('opens and closes swarm capability registry drawer', () => {
+        render(
+            <ToastProvider>
+                <CreativeNavbar />
+            </ToastProvider>
+        );
+
+        const toggleButton = screen.getByText('Swarm');
+        fireEvent.click(toggleButton);
+
+        expect(screen.getByTestId('agent-capability-registry')).toBeInTheDocument();
+
+        const closeButton = screen.getByText('Close Swarm Registry');
+        fireEvent.click(closeButton);
+
+        expect(screen.queryByTestId('agent-capability-registry')).not.toBeInTheDocument();
+    });
+
+    it('toggles prompt builder using mock toggle in store and renders it when open', () => {
+        const openState = {
+            ...defaultState,
+            isPromptBuilderOpen: true
+        };
+        (useStore as unknown as import('vitest').Mock).mockImplementation((selector: any) => {
+            if (selector) return selector(openState);
+            return openState;
+        });
+
+        render(
+            <ToastProvider>
+                <CreativeNavbar />
+            </ToastProvider>
+        );
+
+        // Verify PromptBuilder renders when isPromptBuilderOpen is true
+        expect(screen.getByTestId('prompt-builder')).toBeInTheDocument();
+        expect(screen.getByText('Current Prompt: initial prompt text')).toBeInTheDocument();
+
+        // Clicking builder toggle button calls togglePromptBuilder
+        const builderButton = screen.getByTestId('builder-btn');
+        fireEvent.click(builderButton);
+        expect(mockTogglePromptBuilder).toHaveBeenCalled();
+
+        // Clicking add tag calls setCreativePrompt with tag
+        const addTagButton = screen.getByText('Add Tag');
+        fireEvent.click(addTagButton);
+        expect(mockSetCreativePrompt).toHaveBeenCalledWith('initial prompt text, test tag');
+
+        // Clicking set prompt updates prompt directly
+        const setPromptButton = screen.getByText('Set Prompt');
+        fireEvent.click(setPromptButton);
+        expect(mockSetCreativePrompt).toHaveBeenCalledWith('new prompt');
+    });
+
+    it('activates and deactivates Andromeda Mode and displays corresponding toast', () => {
+        const { rerender } = render(
+            <ToastProvider>
+                <CreativeNavbar />
+            </ToastProvider>
+        );
+
+        const andromedaButton = screen.getByTitle('Enable Andromeda Pipeline');
+        fireEvent.click(andromedaButton);
+        expect(mockEnableAndromedaMode).toHaveBeenCalled();
+        expect(mockToast.success).toHaveBeenCalledWith('Andromeda Mode activated: Ready to generate 15 ad variants');
+
+        // Simulate active Andromeda mode state
+        const activeAndromedaState = {
+            ...defaultState,
+            studioControls: {
+                ...defaultState.studioControls,
+                isAndromedaMode: true
+            }
+        };
+        (useStore as unknown as import('vitest').Mock).mockImplementation((selector: any) => {
+            if (selector) return selector(activeAndromedaState);
+            return activeAndromedaState;
+        });
+
+        rerender(
+            <ToastProvider>
+                <CreativeNavbar />
+            </ToastProvider>
+        );
+
+        const disableButton = screen.getByTitle('Disable Andromeda Pipeline');
+        fireEvent.click(disableButton);
+        expect(mockDisableAndromedaMode).toHaveBeenCalled();
+        expect(mockToast.success).toHaveBeenCalledWith('Andromeda Mode deactivated');
+    });
+
+    it('opens projector window when permission is granted', async () => {
+        (ScreenControl.requestPermission as import('vitest').Mock).mockResolvedValue(true);
         render(
             <ToastProvider>
                 <CreativeNavbar />
@@ -169,5 +360,103 @@ describe('CreativeNavbar', () => {
         await waitFor(() => {
             expect(ScreenControl.openProjectorWindow).toHaveBeenCalled();
         });
+    });
+
+    it('fails to open projector window when permission is denied', async () => {
+        (ScreenControl.requestPermission as import('vitest').Mock).mockResolvedValue(false);
+        render(
+            <ToastProvider>
+                <CreativeNavbar />
+            </ToastProvider>
+        );
+
+        const projectorButton = screen.getByTitle('Open Projector');
+        fireEvent.click(projectorButton);
+
+        await waitFor(() => {
+            expect(ScreenControl.openProjectorWindow).not.toHaveBeenCalled();
+            expect(mockToast.error).toHaveBeenCalledWith('Screen Control API not supported or permission denied.');
+        });
+    });
+
+    it('navigates viewModes and setGenerationModes on tab selection clicks', () => {
+        render(
+            <ToastProvider>
+                <CreativeNavbar />
+            </ToastProvider>
+        );
+
+        // Click Video tab
+        const videoTab = screen.getByTestId('director-view-btn');
+        fireEvent.click(videoTab);
+        expect(mockSetViewMode).toHaveBeenCalledWith('video_production');
+        expect(mockSetGenerationMode).toHaveBeenCalledWith('video');
+
+        // Click Omni tab
+        const omniTab = screen.getByTestId('omni-view-btn');
+        fireEvent.click(omniTab);
+        expect(mockSetViewMode).toHaveBeenCalledWith('omni');
+        expect(mockSetGenerationMode).toHaveBeenCalledWith('video');
+
+        // Click Generate tab
+        const generateTab = screen.getByTestId('direct-view-btn');
+        fireEvent.click(generateTab);
+        expect(mockSetViewMode).toHaveBeenCalledWith('direct');
+        expect(mockSetGenerationMode).toHaveBeenCalledWith('image');
+
+        // Click Canvas tab
+        const canvasTab = screen.getByTestId('canvas-view-btn');
+        fireEvent.click(canvasTab);
+        expect(mockSetViewMode).toHaveBeenCalledWith('canvas');
+        expect(mockSetGenerationMode).toHaveBeenCalledWith('image');
+
+        // Click Showroom tab
+        const showroomTab = screen.getByTestId('showroom-view-btn');
+        fireEvent.click(showroomTab);
+        expect(mockSetViewMode).toHaveBeenCalledWith('showroom');
+        expect(mockSetGenerationMode).toHaveBeenCalledWith('image');
+
+        // Click Keyframes tab
+        const keyframesTab = screen.getByTestId('lab-view-btn');
+        fireEvent.click(keyframesTab);
+        expect(mockSetViewMode).toHaveBeenCalledWith('lab');
+        // Keyframes does not update generation mode, only viewMode
+    });
+
+    it('renders DaisyChainControls when generationMode is video and opens FrameSelectionModal', () => {
+        const videoState = {
+            ...defaultState,
+            generationMode: 'video'
+        };
+        (useStore as unknown as import('vitest').Mock).mockImplementation((selector: any) => {
+            if (selector) return selector(videoState);
+            return videoState;
+        });
+
+        render(
+            <ToastProvider>
+                <CreativeNavbar />
+            </ToastProvider>
+        );
+
+        // Verify DaisyChainControls renders instead of image right buttons
+        expect(screen.getByTestId('daisy-chain-controls')).toBeInTheDocument();
+        expect(screen.queryByText('Brand')).not.toBeInTheDocument();
+
+        // Trigger First Frame selection
+        const triggerFirstFrameBtn = screen.getByText('Trigger First Frame');
+        fireEvent.click(triggerFirstFrameBtn);
+
+        // Modal should render with target firstFrame
+        const modal = screen.getByTestId('frame-selection-modal');
+        expect(modal).toBeInTheDocument();
+        expect(modal).toHaveAttribute('data-target', 'firstFrame');
+
+        // Select frame
+        const selectBtn = screen.getByText('Select Frame');
+        fireEvent.click(selectBtn);
+
+        // Verify setVideoInput is called
+        expect(mockSetVideoInput).toHaveBeenCalledWith('firstFrame', { url: 'test-frame.png' });
     });
 });
