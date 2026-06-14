@@ -17,6 +17,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BaseAgent } from '../BaseAgent';
 import type { AgentConfig, ValidAgentId } from '../types';
+import { MembershipService } from '@/services/MembershipService';
 import { SPOKE_AGENT_IDS, HUB_ONLY_TOOLS } from './AgentStressTest.harness';
 
 // ============================================================================
@@ -52,7 +53,17 @@ const mockGenerateContent = vi.fn();
 vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
     AutonomousIntelligence: {
         generateContent: mockGenerateContent,
-        generateContentStream: vi.fn(),
+        generateContentStream: vi.fn().mockImplementation(async (...args: any[]) => {
+            const result = await mockGenerateContent(...args);
+            return {
+                stream: {
+                    [Symbol.asyncIterator]: async function* () {
+                        yield { text: () => result?.response?.text?.() || '' };
+                    }
+                },
+                response: Promise.resolve(result)
+            };
+        }),
         generateSpeech: vi.fn(),
     },
 }));
@@ -204,6 +215,7 @@ describe('BaseAgent Runtime Tool Authorization', () => {
 
     beforeEach(() => {
         mockGenerateContent.mockReset();
+        vi.mocked(MembershipService.checkBudget).mockResolvedValue({ allowed: true, remainingBudget: 9999, requiresApproval: false });
     });
 
     // --------------------------------------------------------------------------

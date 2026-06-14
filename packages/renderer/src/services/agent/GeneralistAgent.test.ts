@@ -9,12 +9,28 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GeneralistAgent } from './specialists/GeneralistAgent';
 import { useStore } from '@/core/store';
 import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
-import { TOOL_REGISTRY } from './tools';
+import { TOOL_REGISTRY } from './tools/index';
 
 // Mock dependencies
 vi.mock('@/core/store');
-vi.mock('@/services/intelligence/AutonomousIntelligence');
-vi.mock('./tools', () => ({
+vi.mock('@/services/intelligence/AutonomousIntelligence', () => {
+    const generateContentStream = vi.fn();
+    const generateContent = vi.fn().mockImplementation(async (...args: any[]) => {
+        const streamResult = await generateContentStream(...args);
+        if (streamResult && streamResult.response && typeof streamResult.response.then === 'function') {
+            const resolvedResponse = await streamResult.response;
+            return { ...streamResult, response: resolvedResponse };
+        }
+        return streamResult;
+    });
+    return {
+        AutonomousIntelligence: {
+            generateContentStream,
+            generateContent
+        }
+    };
+});
+vi.mock('@/services/agent/tools/index', () => ({
     TOOL_REGISTRY: {
         test_tool: vi.fn().mockResolvedValue('Tool executed successfully'),
         generate_image: vi.fn().mockResolvedValue({ success: true, message: 'Image generated' })
@@ -30,8 +46,13 @@ const mockTextResponse = (text: string) => ({
         }
     },
     response: Promise.resolve({
+        response: {
+            text: () => text,
+            functionCalls: () => null,
+            usageMetadata: { totalTokenCount: 100 }
+        },
         text: () => text,
-        functionCalls: () => null, // No function calls
+        functionCalls: () => null,
         usage: () => ({ totalTokens: 100 })
     })
 });
@@ -44,6 +65,18 @@ const mockFunctionCallResponse = (name: string, args: Record<string, unknown>) =
         }
     },
     response: Promise.resolve({
+        response: {
+            text: () => `Calling tool ${name}...`,
+            functionCalls: () => [{ name, args }],
+            usageMetadata: { totalTokenCount: 100 },
+            candidates: [
+                {
+                    content: {
+                        parts: [{ functionCall: { name, args } }]
+                    }
+                }
+            ]
+        },
         text: () => `Calling tool ${name}...`,
         functionCalls: () => [{ name, args }],
         usage: () => ({ totalTokens: 100 })
@@ -58,6 +91,7 @@ describe('GeneralistAgent', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         generalistAgent = new GeneralistAgent();
+        generalistAgent['authorizedTools'] = ['test_tool', 'generate_image'];
 
         vi.mocked(useStore.getState).mockReturnValue({
             agentHistory: [],
@@ -65,7 +99,8 @@ describe('GeneralistAgent', () => {
             updateAgentMessage: mockUpdateAgentMessage,
             currentOrganizationId: 'org1',
             currentProjectId: 'proj1',
-            uploadedImages: []
+            uploadedImages: [],
+            userProfile: { id: 'test-user', uid: 'test-user', email: 'test@example.com' }
         } as unknown as ReturnType<typeof useStore.getState>);
     });
 
@@ -127,7 +162,7 @@ describe('GeneralistAgent', () => {
 
         expect(AI.generateContentStream).toHaveBeenCalledTimes(1);
         expect(result.error).toContain('Rate limit exceeded');
-        expect(result.text).toContain('System Error: Rate limit exceeded');
+        expect(result.text).toContain('Error: Rate limit exceeded');
     });
 
     it('has proper tool declarations for native function calling', async () => {

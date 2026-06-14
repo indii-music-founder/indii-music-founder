@@ -664,3 +664,48 @@ vi.mock('@tanstack/react-virtual', () => ({
         measureElement: vi.fn(),
     }),
 }));
+
+// Mock MembershipService globally to prevent authentication/budget exceptions in unit tests
+vi.mock('@/services/MembershipService', () => ({
+    MembershipService: {
+        checkBudget: vi.fn().mockResolvedValue({ allowed: true, remainingBudget: 100, requiresApproval: false }),
+        checkQuota: vi.fn().mockResolvedValue({ allowed: true, currentUsage: 0, maxAllowed: 100 }),
+        recordSpend: vi.fn().mockResolvedValue(undefined),
+        getCurrentTier: vi.fn().mockResolvedValue('founder'),
+        isBuilderAccount: vi.fn().mockResolvedValue(true),
+        getMaxVideoDurationFrames: vi.fn((tier, fps = 30) => {
+            const limits = { free: 8 * 60, pro: 60 * 60, founder: 60 * 60, enterprise: 4 * 60 * 60 };
+            const s = limits[tier as 'free' | 'pro' | 'founder' | 'enterprise'] || limits.free;
+            return s * fps;
+        }),
+        getMaxVideoDurationSeconds: vi.fn((tier) => {
+            const limits = { free: 8 * 60, pro: 60 * 60, founder: 60 * 60, enterprise: 4 * 60 * 60 };
+            return limits[tier as 'free' | 'pro' | 'founder' | 'enterprise'] || limits.free;
+        }),
+        formatDuration: vi.fn((secs) => {
+            if (secs === 480) return '8 minutes';
+            if (secs === 3600) return '60 minutes';
+            return `${secs} seconds`;
+        }),
+        getTierDisplayName: vi.fn((tier) => {
+            const names = { free: 'Free', pro: 'Pro', founder: 'Founder', enterprise: 'Enterprise' };
+            return names[tier as 'free' | 'pro' | 'founder' | 'enterprise'] || 'Free';
+        }),
+        getUpgradeMessage: vi.fn(() => 'Upgrade to Pro for longer video durations')
+    }
+}));
+
+// Mock ModelArmor globally to prevent prompt rejections
+vi.mock('@/services/agent/governance/ModelArmor', () => ({
+    ModelArmor: {
+        scanInput: vi.fn().mockResolvedValue({ allowed: true, violations: [] }),
+        scanOutput: vi.fn().mockResolvedValue({ allowed: true, violations: [] })
+    },
+    getDefaultPolicy: vi.fn().mockReturnValue({
+        blockedInputPatterns: [],
+        outputRedactionPatterns: [],
+        contentSafetyThresholds: {},
+        enableDLP: false
+    })
+}));
+

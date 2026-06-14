@@ -33,8 +33,8 @@ export const createOneTimeCheckout = onCall({
     memory: '256MiB',
     enforceAppCheck: true,
 }, async (request) => {
-    const { userId, items, successUrl, cancelUrl, customerEmail, metadata } =
-        request.data as OneTimeCheckoutParams;
+    const { userId, items, successUrl, cancelUrl, customerEmail, metadata, applySurcharge } =
+        request.data as OneTimeCheckoutParams & { applySurcharge?: boolean };
 
     if (!request.auth?.uid || request.auth.uid !== userId) {
         throw new HttpsError('unauthenticated', 'User must be signed in.');
@@ -45,22 +45,43 @@ export const createOneTimeCheckout = onCall({
     }
 
     try {
+        const lineItems = items.map((item) => ({
+            price_data: {
+                currency: 'usd',
+                unit_amount: item.amount,
+                product_data: {
+                    name: item.name,
+                    description: item.description,
+                    metadata: item.metadata,
+                },
+            },
+            quantity: item.quantity,
+        }));
+
+        if (applySurcharge) {
+            const totalBaseAmount = items.reduce((sum, item) => sum + (item.amount * item.quantity), 0);
+            if (totalBaseAmount > 0) {
+                // Surcharge calculation: (totalBaseAmount + 30 cents) / (1 - 0.029) - totalBaseAmount
+                const surchargeAmount = Math.ceil((totalBaseAmount + 30) / (1 - 0.029)) - totalBaseAmount;
+                lineItems.push({
+                    price_data: {
+                        currency: 'usd',
+                        unit_amount: surchargeAmount,
+                        product_data: {
+                            name: 'Processing & Administration Surcharge',
+                            description: 'Card transaction processing fee',
+                        },
+                    },
+                    quantity: 1,
+                });
+            }
+        }
+
         const session = await stripe.checkout.sessions.create({
             mode: 'payment',
             payment_method_types: ['card'],
             customer_email: customerEmail || request.auth.token?.email || undefined,
-            line_items: items.map((item) => ({
-                price_data: {
-                    currency: 'usd',
-                    unit_amount: item.amount,
-                    product_data: {
-                        name: item.name,
-                        description: item.description,
-                        metadata: item.metadata,
-                    },
-                },
-                quantity: item.quantity,
-            })),
+            line_items: lineItems,
             success_url: successUrl,
             cancel_url: cancelUrl,
             allow_promotion_codes: true,

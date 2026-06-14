@@ -5207,4 +5207,99 @@ Therefore, no fix can be proposed or implemented.
 - **Summary:** DJ/artists who design flyers, posters, or digital promo assets have no way to dispatch print files directly to local printing services or trigger promotional email outreach to local nightclub promoters.
 - **Fix Direction:** Add a "Print & Promote" pipeline in the Art & Merch dashboard allowing the dispatch of PDF assets via email/API to local print shops, and hook up automated promoter email outreach.
 
+---
+
+### ISSUE-061: Dynamic Career Profiles & Agent Seating in Onboarding
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Onboarding / Agent Fleet
+- **Summary:** The onboarding flow has a static conversation progression and lacks the ability to let artists select distinct career profiles (e.g., DJ, sync producer, touring band, label manager) at start. Consequently, all 21 agents are seated by default rather than dynamically seating only the relevant specialist agents based on the user's career profile.
+- **Fix Direction:** Update `onboardingService.ts` and `OnboardingPage.tsx` to support a profile selection step that dynamically configures the initial seated agents registry and sets corresponding operational override rules in the Memory Agent.
+
+---
+
+### ISSUE-062: Audio-Driven Music Visualizer & Listener-Facing Player Website
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Creative Director / Audio Analyzer / Landing Page
+- **Summary:** The system does not integrate the extracted transients/BPM features from the Audio Analyzer into automated Remotion visualizer render scripts. Additionally, artists need a listener-facing public website that hosts these interactive visualizer players (reviving the original audio visualizer elements from the landing page repository) where fans can play tracks.
+- **Fix Direction:** Connect `AudioIntelligenceService` output parameters to Remotion video templates for auto-rendering visualizer clips, and build a public listener portal within `packages/landing` incorporating interactive Web Audio API visualizer themes.
+
+---
+
+### ISSUE-063: Interactive Boardroom Swarm Collaboration Workspace
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Boardroom HQ / Agent Fleet
+- **Summary:** The user has no visibility into the behind-the-scenes negotiations, edits, and reasoning cycles when specialist agents collaborate (e.g., Creative passing layout assets to Brand or Marketing).
+- **Fix Direction:** Build an interactive "Boardroom feed" UI component showing the agent-to-agent (A2A) consultation transcript, complete with user approval/revision gates for key collaboration handoffs.
+
+---
+
+### ISSUE-064: Ghost Capture Mobile Audio-to-MIDI Transcription
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Onboarding / Memory Agent
+- **Summary:** The mobile quick-capture interface (Ghost Capture PWA) is limited to voice memo storage and lacks a local audio-to-MIDI transcription pipeline to log melodic ideas directly into the artist's digital workspace.
+- **Fix Direction:** Implement a pitch-tracking algorithm in the client-side recorder that converts voice/hum inputs into basic MIDI files, automatically saving them as composition drafts in the Memory Agent.
+
+---
+
+### ISSUE-065: Creator-Friendly Sync Licensing Fee Surcharge Model
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Licensing Department / Finance Department
+- **Summary:** Sync licensing transactions currently lack a buyer-pays-fee billing structure. To protect artist revenue, the platform needs a surcharge model where the purchaser of the license pays the transaction fee on top of the artist's set price (ensuring the artist receives exactly 100% of their set price, and the platform collects the surcharge fee from the buyer).
+- **Fix Direction:** Update `LicensingService` and Stripe payment integrations to support buyer-side surcharge fee calculation and split payout processing, ensuring the artist's payout matches their exact listed license price.
+
+---
+
+### ISSUE-066: AI-Powered Image Outpainting, Inpainting, & Multi-Format Layout Adaptations
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Creative Director / Fabric.js Canvas
+- **Summary:** Artists lack the ability to adapt a single piece of cover artwork into multiple packaging layouts (CD booklets, Vinyl center labels, Cassette J-cards), social formats (9:16 vertical stories), or merchandise templates (T-shirt front mockups) without stretching or cropping. This requires generative image inpainting and outpainting (border-expansion) tools directly in the Canvas.
+- **Fix Direction:** Integrate generative inpainting and outpainting tools into the Fabric.js Canvas service layer using Google Vertex AI / Imagen image editor API endpoints, and create standardized dimension layout export filters.
+
+---
+
+### ISSUE-067: Multimodal Video Assembler and Asset Ingestion Pipeline
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Creative Director / Remotion / Video Daisy Chain
+- **Summary:** There is no unified video sequencer/assembler that takes user-uploaded clips, generated B-roll scenes, and analyzed audio tracks and weaves them into structured multi-scene Remotion compositions.
+- **Fix Direction:** Build a multi-track visual timeline inside the video studio that ingests external video/image uploads, applies transitional effects, and compiles them via the video daisy-chain renderer.
+
+---
+
+### ISSUE-068: Future-Proof Multimodal API Routing (Google Omni Flash & Next-Gen Video/Image Models)
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** AI Stack / Service Layer
+- **Summary:** The AI service layer is tightly coupled to specific text/image/video model configurations, which will cause obsolescence as next-generation models (e.g., Google Omni Flash, which accepts video+audio+image inputs natively) become available.
+- **Fix Direction:** Refactor `AIService` and model gateways to use a decoupled, capability-based router. This allows the seamless hot-swapping of next-gen multimodal APIs without breaking downstream agent reasoning loops or UI components.
+
+---
+
+### ISSUE-069: Long-Form Video Rendering Pipeline (Parallel Remotion & FFmpeg Stitching)
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Creative Director / Remotion / Electron Main
+- **Summary:** Generating and rendering full-song music videos (up to 7-8 minutes) in a single monolithic render job causes memory crashes and browser timeouts. The system needs a parallel rendering and stitching pipeline.
+- **Fix Direction:** Implement horizontal parallel scene rendering via Remotion Lambda/Cloud Functions, stitch the rendered clips using a fast FFmpeg concat filter on the backend (using MP3 audio encoding to speed up alignment and prevent pops), and ensure the architecture is ready to route direct 7-minute outputs when next-gen long-context video models (like Omni Flash) release.
+
+
+
+
+
+
 

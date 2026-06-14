@@ -63,6 +63,7 @@ export interface UpdateProfileArgs {
     pro_affiliation?: string;
     distributor?: string;
     career_stage?: string;
+    career_profile?: string;
     goals?: string[];
 }
 

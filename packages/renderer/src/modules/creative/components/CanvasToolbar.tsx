@@ -1,6 +1,5 @@
 import React from 'react';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { Square, Circle as CircleIcon, Type, Wand2, Scan, Eraser, Crop, Trash2, MousePointer2, Minus, Pentagon, Undo2, Redo2 } from 'lucide-react';
+import { Type, Wand2, MousePointer2, Undo2, Redo2 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface CanvasToolbarProps {
@@ -19,7 +18,9 @@ interface CanvasToolbarProps {
 }
 
 export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     addRectangle,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     addCircle,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     addText,
@@ -29,7 +30,9 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
     canUndo,
     canRedo,
     activeTool,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     handleDetectObjects,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     handleClearDetections,
     orientation = 'horizontal',
 }) => {
@@ -65,67 +68,11 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
 
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <button onClick={() => setTool('line')} className={getActiveButtonClass('line')} aria-label="Line Tool">
-                            <Minus size={18} />
-                        </button>
-                    </TooltipTrigger>
-                    <TooltipContent side={tooltipSide}>Line Tool (Shift for angles)</TooltipContent>
-                </Tooltip>
-
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <button onClick={() => setTool('polygon')} className={getActiveButtonClass('polygon')} aria-label="Polygon Tool">
-                            <Pentagon size={18} />
-                        </button>
-                    </TooltipTrigger>
-                    <TooltipContent side={tooltipSide}>Polygon Tool (Double click to finish)</TooltipContent>
-                </Tooltip>
-
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <button onClick={addRectangle} className={baseButtonClass} aria-label="Add Rectangle">
-                            <Square size={18} />
-                        </button>
-                    </TooltipTrigger>
-                    <TooltipContent side={tooltipSide}>Add Rectangle</TooltipContent>
-                </Tooltip>
-                
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <button onClick={addCircle} className={baseButtonClass} aria-label="Add Circle">
-                            <CircleIcon size={18} />
-                        </button>
-                    </TooltipTrigger>
-                    <TooltipContent side={tooltipSide}>Add Circle</TooltipContent>
-                </Tooltip>
-
-                <Tooltip>
-                    <TooltipTrigger asChild>
                         <button onClick={() => setTool('text')} className={getActiveButtonClass('text')} aria-label="Add Text">
                             <Type size={18} />
                         </button>
                     </TooltipTrigger>
                     <TooltipContent side={tooltipSide}>Add Text</TooltipContent>
-                </Tooltip>
-
-                <div className={separatorClass} />
-
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <button onClick={handleDetectObjects} className={baseButtonClass} aria-label="Detect Objects">
-                            <Scan size={18} />
-                        </button>
-                    </TooltipTrigger>
-                    <TooltipContent side={tooltipSide}>Intelligence Object Detection</TooltipContent>
-                </Tooltip>
-
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <button onClick={handleClearDetections} className={baseButtonClass} aria-label="Clear All">
-                            <Trash2 size={18} />
-                        </button>
-                    </TooltipTrigger>
-                    <TooltipContent side={tooltipSide}>Clear All Detections</TooltipContent>
                 </Tooltip>
 
                 <div className={separatorClass} />
@@ -151,3 +98,4 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
         </TooltipProvider>
     );
 };
+

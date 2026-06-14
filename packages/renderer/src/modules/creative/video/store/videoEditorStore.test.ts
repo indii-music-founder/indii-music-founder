@@ -3,6 +3,7 @@ import { useVideoEditorStore } from './videoEditorStore';
 import { vi } from 'vitest';
 
 vi.unmock('@/modules/creative/video/store/videoEditorStore');
+vi.unmock('@/services/MembershipService');
 
 describe('useVideoEditorStore', () => {
     beforeEach(() => {

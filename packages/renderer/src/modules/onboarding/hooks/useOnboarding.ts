@@ -57,11 +57,13 @@ export interface UseOnboardingOptions {
 }
 
 export function useOnboarding(options: UseOnboardingOptions = {}) {
-    const { userProfile, setUserProfile, setModule } = useStore(
+    const { userProfile, setUserProfile, setModule, addActiveAgent, removeActiveAgent } = useStore(
         useShallow(state => ({
             userProfile: state.userProfile,
             setUserProfile: state.setUserProfile,
-            setModule: state.setModule
+            setModule: state.setModule,
+            addActiveAgent: state.addActiveAgent,
+            removeActiveAgent: state.removeActiveAgent
         }))
     );
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -219,6 +221,17 @@ export function useOnboarding(options: UseOnboardingOptions = {}) {
             if (functionCalls && functionCalls.length > 0) {
                 const { updatedProfile, isFinished, updates } = processFunctionCalls(functionCalls, userProfile, currentFiles);
                 setUserProfile(updatedProfile);
+
+                if (updatedProfile.careerProfile && updatedProfile.careerProfile !== userProfile.careerProfile) {
+                    const seatingMap: Record<string, string[]> = {
+                        dj: ['generalist', 'marketing', 'social', 'creative'],
+                        sync_producer: ['generalist', 'legal', 'licensing', 'publishing'],
+                        touring_band: ['generalist', 'road', 'marketing', 'merchandise', 'finance'],
+                        label_manager: ['generalist', 'legal', 'finance', 'distribution', 'publishing']
+                    };
+                    const agentsToSeat = seatingMap[updatedProfile.careerProfile] || ['generalist'];
+                    agentsToSeat.forEach(agentId => addActiveAgent(agentId));
+                }
 
                 if (shouldTrackAnalytics) {
                     for (const update of updates) {
@@ -422,6 +435,8 @@ export function useOnboarding(options: UseOnboardingOptions = {}) {
         handleEditBio,
         handleSaveBio,
         handleCancelEdit,
-        handleRegenerateBio
+        handleRegenerateBio,
+        addActiveAgent,
+        setUserProfile
     };
 }

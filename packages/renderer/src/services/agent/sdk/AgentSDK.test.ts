@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createAgent } from './AgentBuilder';
-import { AgentTestHarness } from './test/AgentTestHarness';
 import { PromptService } from './PromptService';
+import { MembershipService } from '@/services/MembershipService';
+import { AgentTestHarness } from './test/AgentTestHarness';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
 
@@ -19,13 +20,27 @@ vi.mock('@/services/firebase', () => ({
     messaging: { getToken: vi.fn() }
 }));
 
-vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
-    AutonomousIntelligence: {
-        generateContent: vi.fn(),
-        embedContent: vi.fn(),
-        generateContentStream: vi.fn()
-    }
-}));
+vi.mock('@/services/intelligence/AutonomousIntelligence', () => {
+    const generateContent = vi.fn();
+    const generateContentStream = vi.fn().mockImplementation(async (...args: any[]) => {
+        const result = await generateContent(...args);
+        return {
+            stream: {
+                [Symbol.asyncIterator]: async function* () {
+                    yield { text: () => result?.response?.text?.() || '' };
+                }
+            },
+            response: Promise.resolve(result)
+        };
+    });
+    return {
+        AutonomousIntelligence: {
+            generateContent,
+            generateContentStream,
+            embedContent: vi.fn()
+        }
+    };
+});
 
 vi.mock('@/services/MembershipService', () => ({
     MembershipService: {
@@ -47,6 +62,7 @@ describe('Agent SDK Integration', () => {
     beforeEach(() => {
         PromptService.clear();
         vi.clearAllMocks();
+        vi.mocked(MembershipService.checkBudget).mockResolvedValue({ allowed: true, remainingBudget: 100, requiresApproval: false });
     });
 
     it('should build and execute an agent using the SDK', async () => {
@@ -93,6 +109,18 @@ describe('Agent SDK Integration', () => {
         // Mock sequence for generateContent (Tool Call -> Final Result)
         const { AutonomousIntelligence } = await import('@/services/intelligence/AutonomousIntelligence');
         const aiSpy = vi.mocked(AutonomousIntelligence.generateContent);
+        
+        vi.mocked(AutonomousIntelligence.generateContentStream).mockImplementation(async (...args: any[]) => {
+            const result = await aiSpy(args[0], args[1], args[2], args[3], args[4], args[5]);
+            return {
+                stream: {
+                    [Symbol.asyncIterator]: async function* () {
+                        yield { text: () => result?.response?.text?.() || '' };
+                    }
+                },
+                response: Promise.resolve(result)
+            } as any;
+        });
 
         // 1. First call: Autonomous requests tool execution
         aiSpy.mockResolvedValueOnce({
@@ -119,6 +147,7 @@ describe('Agent SDK Integration', () => {
         } as unknown as Awaited<ReturnType<typeof AutonomousIntelligence.generateContent>>);
 
         const result = await harness.run('Do work');
+        console.log('DIAGNOSTIC - SDK result:', result);
 
         expect(mockTool).toHaveBeenCalled();
         expect(result.text).toBe('Task completed successfully');

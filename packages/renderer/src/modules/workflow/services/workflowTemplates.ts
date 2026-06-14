@@ -171,5 +171,143 @@ export const WORKFLOW_TEMPLATES: SavedWorkflow[] = [
             { id: 'e3', source: 'art-1', target: 'end', sourceHandle: 'trigger_out', targetHandle: 'trigger' },
             { id: 'e4', source: 'marketing-1', target: 'end', sourceHandle: 'trigger_out', targetHandle: 'trigger' }
         ]
+    },
+    {
+        id: 'template-single-release-waterfall',
+        name: 'Single Release Waterfall Playbook',
+        description: 'Automated waterfall single campaign. Generates cover art, marketing copy, social posts, and routing checklist.',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        viewport: { x: 0, y: 0, zoom: 0.85 },
+        nodes: [
+            {
+                id: 'start',
+                type: 'inputNode',
+                position: { x: 50, y: 250 },
+                data: {
+                    nodeType: 'input',
+                    prompt: 'New electronic single "Hyperdrive"',
+                    status: Status.PENDING
+                }
+            },
+            {
+                id: 'art-1',
+                type: 'departmentNode',
+                position: { x: 300, y: 150 },
+                data: {
+                    nodeType: 'department',
+                    departmentName: 'Art Department',
+                    selectedJobId: 'art-department-job-0',
+                    status: Status.PENDING
+                }
+            },
+            {
+                id: 'marketing-1',
+                type: 'departmentNode',
+                position: { x: 300, y: 350 },
+                data: {
+                    nodeType: 'department',
+                    departmentName: 'Marketing Department',
+                    selectedJobId: 'marketing-department-job-0',
+                    status: Status.PENDING
+                }
+            },
+            {
+                id: 'social-1',
+                type: 'departmentNode',
+                position: { x: 550, y: 350 },
+                data: {
+                    nodeType: 'department',
+                    departmentName: 'Social Media Department',
+                    selectedJobId: 'social-media-department-job-0',
+                    status: Status.PENDING
+                }
+            },
+            {
+                id: 'end',
+                type: 'outputNode',
+                position: { x: 800, y: 250 },
+                data: {
+                    nodeType: 'output',
+                    status: Status.PENDING
+                }
+            }
+        ],
+        edges: [
+            { id: 'e1', source: 'start', target: 'art-1', sourceHandle: 'trigger', targetHandle: 'trigger' },
+            { id: 'e2', source: 'start', target: 'marketing-1', sourceHandle: 'trigger', targetHandle: 'trigger' },
+            { id: 'e3', source: 'marketing-1', target: 'social-1', sourceHandle: 'trigger_out', targetHandle: 'trigger' },
+            { id: 'e4', source: 'art-1', target: 'end', sourceHandle: 'trigger_out', targetHandle: 'trigger' },
+            { id: 'e5', source: 'social-1', target: 'end', sourceHandle: 'trigger_out', targetHandle: 'trigger' }
+        ]
+    },
+    {
+        id: 'template-regional-tour-booking',
+        name: 'Regional Tour Booking Playbook',
+        description: 'Automation for planning regional tours. Drafts pitch letters to venues, constructs routes, and designs flyers.',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        viewport: { x: 0, y: 0, zoom: 0.8 },
+        nodes: [
+            {
+                id: 'start',
+                type: 'inputNode',
+                position: { x: 50, y: 250 },
+                data: {
+                    nodeType: 'input',
+                    prompt: 'Regional East Coast tour planning',
+                    status: Status.PENDING
+                }
+            },
+            {
+                id: 'booking-1',
+                type: 'departmentNode',
+                position: { x: 300, y: 150 },
+                data: {
+                    nodeType: 'department',
+                    departmentName: 'Live & Booking Department',
+                    selectedJobId: 'custom',
+                    status: Status.PENDING
+                }
+            },
+            {
+                id: 'marketing-1',
+                type: 'departmentNode',
+                position: { x: 300, y: 350 },
+                data: {
+                    nodeType: 'department',
+                    departmentName: 'Marketing Department',
+                    selectedJobId: 'marketing-department-job-0',
+                    status: Status.PENDING
+                }
+            },
+            {
+                id: 'art-1',
+                type: 'departmentNode',
+                position: { x: 550, y: 350 },
+                data: {
+                    nodeType: 'department',
+                    departmentName: 'Art Department',
+                    selectedJobId: 'art-department-job-0',
+                    status: Status.PENDING
+                }
+            },
+            {
+                id: 'end',
+                type: 'outputNode',
+                position: { x: 800, y: 250 },
+                data: {
+                    nodeType: 'output',
+                    status: Status.PENDING
+                }
+            }
+        ],
+        edges: [
+            { id: 'e1', source: 'start', target: 'booking-1', sourceHandle: 'trigger', targetHandle: 'trigger' },
+            { id: 'e2', source: 'start', target: 'marketing-1', sourceHandle: 'trigger', targetHandle: 'trigger' },
+            { id: 'e3', source: 'marketing-1', target: 'art-1', sourceHandle: 'trigger_out', targetHandle: 'trigger' },
+            { id: 'e4', source: 'booking-1', target: 'end', sourceHandle: 'trigger_out', targetHandle: 'trigger' },
+            { id: 'e5', source: 'art-1', target: 'end', sourceHandle: 'trigger_out', targetHandle: 'trigger' }
+        ]
     }
 ];
