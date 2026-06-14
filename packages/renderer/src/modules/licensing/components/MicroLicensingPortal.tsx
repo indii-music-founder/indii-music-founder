@@ -133,7 +133,7 @@ export function MicroLicensingPortal() {
             const checkoutUrl = await licensingService.initiateLicensePurchase({
                 userId: userProfile.id,
                 trackTitle: form.trackTitle,
-                artist: userProfile.name || 'indii Artist',
+                artist: userProfile.displayName || 'indii Artist',
                 price: priceInCents,
                 connectedAccountId,
             });
@@ -322,14 +322,24 @@ export function MicroLicensingPortal() {
                         </div>
                     </div>
 
-                    <button
-                        onClick={handleGenerate}
-                        disabled={!form.trackTitle.trim()}
-                        className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold uppercase tracking-widest rounded-lg transition-colors flex items-center justify-center gap-2"
-                    >
-                        <FileText size={14} />
-                        Generate Contract
-                    </button>
+                    <div className="grid grid-cols-2 gap-3">
+                        <button
+                            onClick={handleGenerate}
+                            disabled={!form.trackTitle.trim()}
+                            className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-[11px] font-bold uppercase tracking-widest rounded-lg transition-colors flex items-center justify-center gap-2"
+                        >
+                            <FileText size={14} />
+                            Generate Contract
+                        </button>
+                        <button
+                            onClick={handlePurchase}
+                            disabled={!form.trackTitle.trim() || !form.price || purchasing}
+                            className="w-full py-2.5 bg-amber-600 hover:bg-amber-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-[11px] font-bold uppercase tracking-widest rounded-lg transition-colors flex items-center justify-center gap-2"
+                        >
+                            {purchasing ? <Loader2 size={14} className="animate-spin" /> : <CreditCard size={14} />}
+                            Purchase License
+                        </button>
+                    </div>
                 </div>
 
                 {/* Contract Preview */}
