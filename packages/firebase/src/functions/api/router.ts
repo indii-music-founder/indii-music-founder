@@ -80,6 +80,74 @@ async function rejectIfArcjetDenied(
   return true;
 }
 
+// Extract last resource ID segment from path, ignoring trailing slashes
+function extractResourceId(pathString: string): string | undefined {
+  if (!pathString) return undefined;
+  const segments = pathString.split('/').filter(Boolean);
+  return segments.pop();
+}
+
+// Extract parent resource ID segment (e.g. extracts "123" from "/api/distributions/123/submit")
+function extractParentResourceId(pathString: string, suffixSegment: string): string | undefined {
+  if (!pathString) return undefined;
+  const segments = pathString.split('/').filter(Boolean);
+  const suffixIdx = segments.indexOf(suffixSegment);
+  if (suffixIdx > 0) {
+    return segments[suffixIdx - 1];
+  }
+  return undefined;
+}
+
+// Maps Firebase HttpsError status codes to standard HTTP status codes
+function sendHttpErrorResponse(err: unknown, res: express.Response, requestId: string): void {
+  if (err instanceof HttpsError) {
+    let status = 500;
+    let code = 'INTERNAL_ERROR';
+
+    switch (err.code) {
+      case 'invalid-argument':
+        status = 400;
+        code = 'INVALID_ARGUMENT';
+        break;
+      case 'unauthenticated':
+        status = 401;
+        code = 'UNAUTHENTICATED';
+        break;
+      case 'permission-denied':
+        status = 403;
+        code = 'PERMISSION_DENIED';
+        break;
+      case 'not-found':
+        status = 404;
+        code = 'NOT_FOUND';
+        break;
+      case 'already-exists':
+        status = 409;
+        code = 'ALREADY_EXISTS';
+        break;
+      case 'resource-exhausted':
+        status = 429;
+        code = 'RESOURCE_EXHAUSTED';
+        break;
+      case 'failed-precondition':
+        status = 412;
+        code = 'FAILED_PRECONDITION';
+        break;
+      case 'unimplemented':
+        status = 501;
+        code = 'UNIMPLEMENTED';
+        break;
+      case 'unavailable':
+        status = 503;
+        code = 'UNAVAILABLE';
+        break;
+    }
+    res.status(status).json(errorResponse(code, err.message, requestId));
+  } else {
+    res.status(500).json(errorResponse('INTERNAL_ERROR', 'Internal server error', requestId));
+  }
+}
+
 // GET /api/tracks/:id - Get track details
 export const getTrack = onRequest(async (req: Request, res: express.Response) => {
   const requestId = generateRequestId();
