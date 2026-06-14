@@ -144,6 +144,39 @@ describe('RemoteIntelligenceConfig & Dynamic Switching', () => {
             model: APPROVED_MODELS.TEXT_AGENT
         }));
     });
+
+    describe('Capability-Based Routing', () => {
+        it('should resolve capability names to default approved models', () => {
+            // No overrides
+            expect(service.getModelName('text-agent')).toBe(APPROVED_MODELS.TEXT_AGENT);
+            expect(service.getModelName('image-generation')).toBe(APPROVED_MODELS.IMAGE_GEN);
+            expect(service.getModelName('video-generation')).toBe(APPROVED_MODELS.VIDEO_PRO);
+        });
+
+        it('should resolve capability names with remote config overrides', async () => {
+            const config = {
+                overrides: {
+                    TEXT_AGENT: 'gemini-4-ultra',
+                    IMAGE_GEN: 'imagen-next-gen'
+                },
+                pricing: {},
+                config: {}
+            };
+            mockRemoteConfigValue.mockImplementation((key) => {
+                if (key === 'ai_system_config') return JSON.stringify(config);
+                return '';
+            });
+
+            await service.bootstrap();
+
+            expect(service.getModelName('text-agent')).toBe('gemini-4-ultra');
+            expect(service.getModelName('image-generation')).toBe('imagen-next-gen');
+        });
+
+        it('should fallback to candidate model if capability or model is unrecognized', () => {
+            expect(service.getModelName('some-unknown-capability-or-model')).toBe('some-unknown-capability-or-model');
+        });
+    });
 });
 
 describe('CostPredictor Dynamic Pricing', () => {
