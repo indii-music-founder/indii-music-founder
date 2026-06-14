@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-14 09:11 EDT
+**Updated:** 2026-06-14 09:15 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+0eb7e59a4 docs(ledger): document zustand subscription leak and preload typescript fixes in error ledger
+779133929 chore: session checkpoint [09:11]
 27a0ebb5e chore: session checkpoint [09:09]
 6c1b12d84 build: mock remotion dependencies in electron vite configuration
 046ba1bb2 refactor(remotion): dynamically import remotion renderer to avoid environment import conflicts
@@ -12,13 +14,11 @@
 f710355e8 chore: session checkpoint [09:05]
 d4eadb2b7 feat(agent): support listener cleanups and recoupment doc overrides
 030a98094 fix(warnings): remove unused import and clean up eslint disable
-c32185373 test: add DevOpsAgent and SecurityAgent unit test suites
-2cdbfbace test: add unit test suite for CreativeAgent definitions
 ```
 
 ## Working State
 ```
- M python/tests/fixtures/e2e_interop/ts_to_py/envelope.json
+clean working tree
 ```
 
 ## Decisions
