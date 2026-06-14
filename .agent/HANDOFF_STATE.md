@@ -1,26 +1,33 @@
 # Handoff State
-**Updated:** 2026-06-14 13:31 EDT
+**Updated:** 2026-06-14 19:12 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
-706fe2338 test(member): add relative unmock for MembershipService to test suites
-e8f0c1231 test(member): fix membership mock pollution
-2e1fed636 chore: session checkpoint [13:15]
-4d1fad2d8 chore: session checkpoint [13:00]
-38476ad05 chore: session checkpoint [12:53]
-1c9bd07d5 chore: session checkpoint [12:51]
-4b6b14665 chore: session checkpoint [12:44]
-7f8dca8fa chore: session checkpoint [12:40]
-08d1b7834 test: align GeneralistAgentRouting test mock imports and fix spy assertions
-15605bc2c chore: session checkpoint [12:32]
+cb3d43ddc feat(crm): add CRM slice, dashboard tests, and update web3 handlers and distribution adapters
+f45c702e0 test(right-panel): add unit tests for Project AssetsPanel
+62f5803fa test(creative): expand coverage for CreativeNavbar components
+78f1365ad test: add unit tests for right-panel StudioControlsPanel
+82849f6ba fix(quality): remove void 0 placeholders, support dynamic MCP fields, and update test mocks
+882e1257a docs(issues): mark issues 056, 059, 066-069 as fixed
+6b1a9a44f fix(mcp): resolve leftover empty void expressions and extract dsp metadata attributes dynamically
+9acb2d6a6 fix(video): mock useVideoEditorStore in ParallelRenderOrchestrator test
+0d7aa18ee test(fixture): update envelope.json again
+df1eabb8a fix(video): fix video editor store imports
 ```
 
 ## Working State
 ```
- M .agent/test_ledger/OPEN_ISSUES.md
- M packages/renderer/src/services/MembershipService.ledger_transaction.test.ts
- M python/tests/fixtures/e2e_interop/ts_to_py/envelope.json
+M  .agent/test_ledger/OPEN_ISSUES.md
+M  packages/renderer/src/core/store/index.ts
+M  packages/renderer/src/core/store/slices/crmSlice.ts
+M  packages/renderer/src/services/FirestoreService.ts
+M  packages/renderer/src/services/agent/tools/UniversalTools.ts
+M  packages/renderer/src/services/distribution/adapters/BelieveAdapter.ts
+M  packages/renderer/src/services/distribution/adapters/OnerpmAdapter.ts
+M  packages/renderer/src/services/distribution/adapters/SymphonicAdapter.ts
+M  packages/renderer/src/services/distribution/adapters/UnitedMastersAdapter.ts
+M  python/tests/fixtures/e2e_interop/ts_to_py/envelope.json
 ```
 
 ## Decisions
