@@ -5433,8 +5433,8 @@ Therefore, no fix can be proposed or implemented.
 - **Severity:** 🟡 MEDIUM
 - **Module:** AI Stack / Service Layer
 - **Summary:** The AI service layer is tightly coupled to specific text/image/video model configurations, which will cause obsolescence as next-generation models (e.g., Google Omni Flash, which accepts video+audio+image inputs natively) become available.
-- **Fix:** Refactored `getModelName` in `FirebaseIntelligenceService` to use a decoupled, capability-based router mapping logical capability names to actual model IDs and overrides.
-- **Files:** `packages/renderer/src/services/intelligence/FirebaseIntelligenceService.ts`
+- **Fix:** Refactored `getModelName` in `FirebaseIntelligenceService` to use a decoupled, capability-based router mapping logical capability names to actual model IDs and overrides. Extended `RemoteIntelligenceConfigSchema` and routing logic to support `supportsUnifiedMultimodal` dynamic routing to direct specialized content modalities (like audio/video understanding) to primary omni-capable models.
+- **Files:** `packages/renderer/src/services/intelligence/FirebaseIntelligenceService.ts`, `packages/renderer/src/services/intelligence/config/RemoteIntelligenceConfig.ts`
 
 ---
 
