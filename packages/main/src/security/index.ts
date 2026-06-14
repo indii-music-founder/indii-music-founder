@@ -75,14 +75,14 @@ export function configureSecurity(session: Session) {
         if (allowedPermissions.includes(permission)) {
             callback(true);
         } else {
-            void 0;
+            console.warn(`[Security] Blocked permission request: ${permission}`);
             callback(false);
         }
     });
 
     // 3. Block Permission Checks
-    session.setPermissionCheckHandler((_webContents, _permission) => {
-        void 0;
+    session.setPermissionCheckHandler((_webContents, permission) => {
+        console.warn(`[Security] Blocked permission check: ${permission}`);
         return false;
     });
 
