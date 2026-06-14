@@ -15,7 +15,7 @@ import { getFirebaseAI, remoteConfig } from '@/services/firebase';
 import { fetchAndActivate, getValue } from 'firebase/remote-config';
 import { AppErrorCode, AppException } from '@/shared/types/errors';
 import { safeJsonParse } from '@/services/utils/json';
-import { INTELLIGENCE_MODELS, getModelKey } from '@/core/config/intelligence-models';
+import { APPROVED_MODELS, INTELLIGENCE_MODELS, getModelKey } from '@/core/config/intelligence-models';
 import { RemoteIntelligenceConfigSchema, DEFAULT_REMOTE_CONFIG, RemoteIntelligenceConfig } from './config/RemoteIntelligenceConfig';
 import {
     FunctionCallPart,
@@ -239,26 +239,54 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
      * Get the model name, either from remote config or fallback
      * Handles DYNAMIC INTERCEPTION/REPLACEMENT of models.
      */
-    public getModelName(modelOverride?: string): string {
-        // If the user provided a specific override, checking if WE want to override THAT.
-        // But usually, an explicit override in code means "I need this specific model".
-        // HOWEVER, for "system" defined constants, we might want to swap them too.
+    /**
+     * Decoupled, Capability-based Router and model resolver.
+     * Resolves a capability name (e.g. 'text-agent'), model key (e.g. 'TEXT_AGENT'),
+     * or model ID (e.g. 'gemini-3.1-pro-preview') to the active model ID,
+     * respecting any Remote Config overrides.
+     */
+    public getModelName(modelOrCapability?: string): string {
+        const candidate = modelOrCapability || this.model?.model || FALLBACK_MODEL;
 
-        const candidateModel = modelOverride || this.model?.model || FALLBACK_MODEL;
+        const CAPABILITY_TO_MODEL_KEY: Record<string, string> = {
+            'text-agent': 'TEXT_AGENT',
+            'text-fast': 'TEXT_FAST',
+            'text-lite': 'TEXT_LITE',
+            'image-generation': 'IMAGE_GEN',
+            'image-fast': 'IMAGE_FAST',
+            'video-generation': 'VIDEO_PRO',
+            'video-fast': 'VIDEO_FAST',
+            'video-lite': 'VIDEO_LITE',
+            'audio-transcription': 'AUDIO_PRO',
+            'audio-tts': 'AUDIO_TTS',
+            'embedding': 'EMBEDDING_DEFAULT'
+        };
 
-        // Try to reverse-lookup the key (e.g. "gemini-3.1-pro-preview" -> "TEXT_AGENT")
-        const configKey = getModelKey(candidateModel);
+        let modelKey: string | undefined;
 
-        if (configKey) {
-            // Check if we have a remote override for this key
-            const remoteOverride = this.remoteConfig.overrides[configKey];
-            if (remoteOverride) {
-                // logger.debug(`[FirebaseIntelligenceService] Swapping ${configKey}: ${candidateModel} -> ${remoteOverride}`);
-                return remoteOverride;
-            }
+        // 1. Check if the candidate is directly a mapped capability
+        const normalized = candidate.trim().toLowerCase();
+        if (normalized in CAPABILITY_TO_MODEL_KEY) {
+            modelKey = CAPABILITY_TO_MODEL_KEY[normalized];
+        } else if (candidate in APPROVED_MODELS) {
+            // 2. Check if the candidate is directly a model key (e.g., 'TEXT_AGENT')
+            modelKey = candidate;
+        } else {
+            // 3. Otherwise try to reverse-lookup the model key from the model ID
+            modelKey = getModelKey(candidate);
         }
 
-        return candidateModel;
+        // 4. Resolve overrides or fallback to APPROVED_MODELS default
+        if (modelKey && modelKey in APPROVED_MODELS) {
+            const remoteOverride = this.remoteConfig.overrides[modelKey as keyof typeof APPROVED_MODELS];
+            if (remoteOverride) {
+                return remoteOverride;
+            }
+            return APPROVED_MODELS[modelKey as keyof typeof APPROVED_MODELS];
+        }
+
+        // 5. Fallback if not recognized as a capability or approved model
+        return candidate;
     }
 
     async rawGenerateContent(
