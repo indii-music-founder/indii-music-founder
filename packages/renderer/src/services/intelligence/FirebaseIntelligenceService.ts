@@ -259,13 +259,33 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
             'video-lite': 'VIDEO_LITE',
             'audio-transcription': 'AUDIO_PRO',
             'audio-tts': 'AUDIO_TTS',
-            'embedding': 'EMBEDDING_DEFAULT'
+            'embedding': 'EMBEDDING_DEFAULT',
+            'image-understanding': 'TEXT_AGENT',
+            'video-understanding': 'TEXT_AGENT',
+            'omni-multimodal': 'TEXT_AGENT'
         };
+
+        const normalized = candidate.trim().toLowerCase();
+
+        // If unified multimodal capability is enabled via config, route media analysis capabilities to the main agent model
+        if (this.remoteConfig.config?.supportsUnifiedMultimodal) {
+            if (
+                normalized === 'audio-transcription' ||
+                normalized === 'image-understanding' ||
+                normalized === 'video-understanding' ||
+                normalized === 'omni-multimodal'
+            ) {
+                const unifiedModelKey = 'TEXT_AGENT';
+                const remoteOverride = this.remoteConfig.overrides[unifiedModelKey];
+                const resolvedModel = remoteOverride || APPROVED_MODELS[unifiedModelKey];
+                logger.info(`[FirebaseIntelligenceService] Routing multimodal capability "${normalized}" to unified model: ${resolvedModel}`);
+                return resolvedModel;
+            }
+        }
 
         let modelKey: string | undefined;
 
         // 1. Check if the candidate is directly a mapped capability
-        const normalized = candidate.trim().toLowerCase();
         if (normalized in CAPABILITY_TO_MODEL_KEY) {
             modelKey = CAPABILITY_TO_MODEL_KEY[normalized];
         } else if (candidate in APPROVED_MODELS) {

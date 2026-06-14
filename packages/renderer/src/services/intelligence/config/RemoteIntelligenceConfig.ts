@@ -28,7 +28,8 @@ export const RemoteIntelligenceConfigSchema = z.object({
     // Global config overrides
     config: z.object({
         video_timeout_ms: z.number().optional(),
-        think_budget_multiplier: z.number().optional().default(1.0)
+        think_budget_multiplier: z.number().optional().default(1.0),
+        supportsUnifiedMultimodal: z.boolean().optional().default(false)
     }).optional().default({})
 });
 
