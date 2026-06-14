@@ -3838,10 +3838,9 @@ Caller can decide whether to retry, surface error, or silently log.
   - `e2e/mobile-remote.spec.ts`
 - **Next Steps:** Use the `//issue` workflow so the Fix Agent can triage and resolve these failures.
 
-
 --- Content imported from .agent/PREEXISTING_ISSUES.md ---
 
-# Pre-existing Test Infrastructure Issues
+## Pre-existing Test Infrastructure Issues
 
 **Status:** Documented 2026-06-03 during PR #136 (Firebase initialization fixes)
 **Related PR:** #136 — Firebase module-level initialization fix
@@ -3855,16 +3854,18 @@ Caller can decide whether to retry, surface error, or silently log.
 **File:** `packages/firebase/src/functions/creative/__tests__/gateway.integration.test.ts`
 **Error:** `Bucket name not specified or invalid. Specify a valid bucket name via the storageBucket option when initializing the app, or specify the bucket name explicitly when calling the getBucket() method.`
 
-### Root Cause
+**Root Cause**
 The test setup in `packages/firebase/src/test/integration.setup.ts` initializes Firestore but does not configure Firebase Storage with a valid `storageBucket` option. The `gateway.ts` function calls `getStorage().bucket()` without arguments, which requires a default bucket to be configured.
 
-### Fix Direction
+**Fix Direction**
+
 1. Update `integration.setup.ts` to pass `storageBucket` in the `admin.initializeApp()` config
 2. Use a test-safe bucket name (e.g., `test-bucket` or mock the storage service)
 3. Verify the test setup provides both `db` (Firestore) and `storage` references
 4. Rerun `npm test -- --run` to confirm gateway.integration.test.ts passes
 
-### Files to Touch
+**Files to Touch**
+
 - `packages/firebase/src/test/integration.setup.ts`
 - `packages/firebase/src/functions/creative/__tests__/gateway.integration.test.ts` (if needed for mock assertions)
 
@@ -3876,17 +3877,19 @@ The test setup in `packages/firebase/src/test/integration.setup.ts` initializes 
 **File:** `packages/renderer/src/services/agent/specialists/GeneralistAgent.ts` (line 642)
 **Error:** `TypeError: Cannot read properties of undefined (reading 'filter')`
 
-### Root Cause
+**Root Cause**
 In `GeneralistAgent.execute()`, a chain call attempts to filter an undefined value. This appears to be in a message history or content extraction path where a variable is not initialized or a prior operation returned `undefined`.
 
-### Fix Direction
+**Fix Direction**
+
 1. Inspect `GeneralistAgent.ts` line 642 and surrounding context to identify which variable is undefined
 2. Add null-coalescing or optional-chaining (`?.`) before the `.filter()` call
 3. Add a guard clause to verify the value exists before filtering
 4. Add a unit test for the edge case that triggers this error
 5. Rerun `npm test -- --run` to confirm the test passes
 
-### Files to Touch
+**Files to Touch**
+
 - `packages/renderer/src/services/agent/specialists/GeneralistAgent.ts`
 - `packages/renderer/src/services/agent/__tests__/AgentExecutor.integration.test.ts` (for test harness context)
 
@@ -3917,30 +3920,32 @@ In `GeneralistAgent.execute()`, a chain call attempts to filter an undefined val
 - **ERROR_LEDGER Entry:** Added to `.agent/skills/error_memory/ERROR_LEDGER.md` under "2026-06-03 Pre-existing Integration Test Failures"
 - **Token Status:** Created 2026-06-03 11:07 EDT — handoff at ~165k tokens used
 
-
 --- Content imported from memory/BROWSER_ISSUES.md ---
 
-# Browser Interaction Log - Copyright Office Portal
-**Target:** https://publicrecords.copyright.gov/
+## Browser Interaction Log - Copyright Office Portal
+
+**Target:** <https://publicrecords.copyright.gov/>
 **Last Attempt:** 2026-02-03 11:15 AM EST
 
 ## Issues Encountered
+
 - **CDP Bridge Instability:** Repeated "tab not found" errors even when the tab is visible in the `tabs` list.
 - **Service Timeouts:** The `browser.act` tool timed out (20s) when trying to `fill` or `type` into the search box [ref=e43].
 - **Anti-Bot/Complex UI:** The site uses multiple nested iframes (demdex.net) and heavy JavaScript, which appears to be interfering with the CDP execution thread.
 
 ## Insights
+
 - Standard CDP `fill` actions are failing; the site might be intercepting high-level events.
 - Window management on this portal is non-standard (opens secondary windows for results), which likely breaks the session attachment for the browser tool.
 - **Bypass Strategy:** Offload browser execution to external automation (Antigravity ID) via markdown file handoff.
 
-## Conclusion
-Paused browser-based attempts for this portal. Moving to code-side logic and documentation prep.
+### Conclusion (Docs)
 
+Paused browser-based attempts for this portal. Moving to code-side logic and documentation prep.
 
 --- Content imported from artifacts/mega_test_audio_loop_2026-06-06_14-36-22_issue-187-regression.md ---
 
-# MegaTestAudioLoop Audio Harness + Browser Regression Reconfirm
+## MegaTestAudioLoop Audio Harness + Browser Regression Reconfirm
 
 **Date:** 2026-06-06T14:36:22Z  
 **Plan:** `.agent/workflows/mega-test.md` scoped to audio systems / `.agent/test_ledger/MEGA_STRESS_TEST_V11.md` Routine 113 context  
@@ -3978,12 +3983,11 @@ This run remained observational and did not modify product code. The scoped audi
 
 No new meaningful UI screenshot could be captured in this run. The in-app browser rejected both target routes before navigation, so no page state rendered for screenshotting.
 
-
 --- Content imported from archive/analysis/issue_analysis.md ---
 
-# Issue Analysis: AudioAnalysisService Patch Extraction Bug
+## Issue Analysis: AudioAnalysisService Patch Extraction Bug (Archive)
 
-## Investigation
+### Investigation (Archive)
 
 A potential off-by-one error was reported in `src/services/audio/AudioAnalysisService.ts` at line 232, involving a loop condition `start + PATCH_frames < melSpectrogram.length`.
 
@@ -4002,42 +4006,43 @@ A potential off-by-one error was reported in `src/services/audio/AudioAnalysisSe
 
 3. **Related Files**: Checked other audio services (`AudioIntelligenceService.ts`, `AudioService.ts`, `FingerprintService.ts`, `AudioFidelityFeature.ts`, `audio_forensics.py`). None contain the described code pattern. `audio_forensics.py` uses `librosa` but does not match the described logic.
 
-## Conclusion
+### Conclusion (Archive)
 
 The reported issue is **Invalid**. The code referenced in the issue description (specifically the patch extraction loop and the `PATCH_frames` variable) does not exist in the current codebase. It is likely that the report refers to a different version of the code, a missing feature, or is hallucinated.
 
 Therefore, no fix can be proposed or implemented.
-
 
 --- Content imported from docs/issue_analysis.md ---
 
-# Issue Analysis: AudioAnalysisService Patch Extraction Bug
+## Issue Analysis: AudioAnalysisService Patch Extraction Bug (Docs)
 
-## Investigation
+### Investigation (Docs)
+
 A potential off-by-one error was reported in `src/services/audio/AudioAnalysisService.ts` at line 232, involving a loop condition `start + PATCH_frames < melSpectrogram.length`.
 
-### Steps Taken:
-1.  **File Inspection**: Read `src/services/audio/AudioAnalysisService.ts`.
-    -   The file has approximately 222 lines.
-    -   It uses `essentia.js` for feature extraction.
-    -   It does not contain any code related to `melSpectrogram`, `PATCH_frames`, or "patch extraction".
-    -   The referenced line 232 does not exist.
+**Steps Taken**
 
-2.  **Codebase Search**: Performed `grep` searches for key terms:
-    -   `PATCH_frames`: 0 results.
-    -   `melSpectrogram`: 0 results.
-    -   `"Audio too short"`: 0 results.
+1. **File Inspection**: Read `src/services/audio/AudioAnalysisService.ts`.
+    - The file has approximately 222 lines.
+    - It uses `essentia.js` for feature extraction.
+    - It does not contain any code related to `melSpectrogram`, `PATCH_frames`, or "patch extraction".
+    - The referenced line 232 does not exist.
 
-3.  **Related Files**: Checked other audio services (`AudioIntelligenceService.ts`, `AudioService.ts`, `FingerprintService.ts`, `AudioFidelityFeature.ts`, `audio_forensics.py`). None contain the described code pattern. `audio_forensics.py` uses `librosa` but does not match the described logic.
+2. **Codebase Search**: Performed `grep` searches for key terms:
+    - `PATCH_frames`: 0 results.
+    - `melSpectrogram`: 0 results.
+    - `"Audio too short"`: 0 results.
 
-## Conclusion
+3. **Related Files**: Checked other audio services (`AudioIntelligenceService.ts`, `AudioService.ts`, `FingerprintService.ts`, `AudioFidelityFeature.ts`, `audio_forensics.py`). None contain the described code pattern. `audio_forensics.py` uses `librosa` but does not match the described logic.
+
+### Conclusion (Docs)
+
 The reported issue is **Invalid**. The code referenced in the issue description (specifically the patch extraction loop and the `PATCH_frames` variable) does not exist in the current codebase. It is likely that the report refers to a different version of the code, a missing feature, or is hallucinated.
 
 Therefore, no fix can be proposed or implemented.
 
-
-
 ### ISSUE-367: Webhook queue lookup derives userId from webhookId
+
 - **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Module:** webhooks
@@ -4045,9 +4050,11 @@ Therefore, no fix can be proposed or implemented.
 - **Target Coordinates:** `packages/firebase/src/functions/webhooks/dispatcher.ts:274-283` (processWebhookQueue)
 - **Summary:** `event.webhookId.split('-')[0]` is used as the users-doc id, but webhookId is a Firestore auto-id that never encodes userId. This causes lookup to fail and queued webhooks to be incorrectly deleted as "not found".
 - **Builder Directive:** Store userId on the WebhookEvent at queue time (:222-230) and use it for the lookup.
+
 ---
 
 ### ISSUE-368: Queued webhook events never match the queue query
+
 - **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Module:** webhooks
@@ -4055,9 +4062,11 @@ Therefore, no fix can be proposed or implemented.
 - **Target Coordinates:** `packages/firebase/src/functions/webhooks/dispatcher.ts:222-230, 260-264`
 - **Summary:** Events are queued without a `nextRetry` field, but the query excludes missing fields (`where('nextRetry','<=',now)`). Thus, initial delivery never triggers.
 - **Builder Directive:** Set `nextRetry` to `now` at enqueue.
+
 ---
 
 ### ISSUE-369: createWebhook endpoint has no authentication
+
 - **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Module:** webhooks
@@ -4065,9 +4074,11 @@ Therefore, no fix can be proposed or implemented.
 - **Target Coordinates:** `packages/firebase/src/functions/webhooks/dispatcher.ts:302-328`
 - **Summary:** Anyone can POST and register a webhook for an arbitrary userId, exfiltrating that user's event payloads.
 - **Builder Directive:** Require verified ID token; derive userId from token.
+
 ---
 
 ### ISSUE-370: verifySignature throws on length mismatch
+
 - **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Module:** webhooks
@@ -4075,9 +4086,11 @@ Therefore, no fix can be proposed or implemented.
 - **Target Coordinates:** `packages/firebase/src/functions/webhooks/dispatcher.ts:55-58`
 - **Summary:** `crypto.timingSafeEqual` throws when buffer lengths differ.
 - **Builder Directive:** Length-check first, return false.
+
 ---
 
 ### ISSUE-371: Firestore rules — cross-user read/write on agent collections
+
 - **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Module:** firestore
@@ -4085,9 +4098,11 @@ Therefore, no fix can be proposed or implemented.
 - **Target Coordinates:** `packages/firebase/firestore.rules:633-638` (agent_traces, agent_tasks/{traceId}/**)
 - **Summary:** Rule uses `isAuthenticated()` only, with no ownership predicate.
 - **Builder Directive:** Add ownership predicate to ensure users only access their own documents.
+
 ---
 
 ### ISSUE-372: Firestore rules — cross-user access on distribution/marketing collections
+
 - **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Module:** firestore
@@ -4095,9 +4110,11 @@ Therefore, no fix can be proposed or implemented.
 - **Target Coordinates:** `packages/firebase/firestore.rules:545-549`, `:550-552`, `:553-555`, `:556-559`, `:564-567`, `:572-574`, `:594-596`, `:606-609`
 - **Summary:** Any authenticated user can read/mutate any user's docs (distribution_audit, distribution_tasks, distribution_takedowns, isrc_pool, upc_pool, campaigns, bountyLinks, legal_audit_ledger). Pools are drainable.
 - **Builder Directive:** Add proper ownership and role-based access predicates.
+
 ---
 
 ### ISSUE-373: Module-switch subscription teardown is dead code
+
 - **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Module:** core/store
@@ -4105,9 +4122,11 @@ Therefore, no fix can be proposed or implemented.
 - **Target Coordinates:** `packages/renderer/src/core/store/slices/appSlice.ts:110-131` (setModule)
 - **Summary:** The `.then()` resolves after the synchronous `set()` at :133, so `get().currentModule` already equals the new module. The `currentModule !== module` guard is always false, and `clearSubscriptionsByPrefix` never runs.
 - **Builder Directive:** Capture the outgoing module synchronously before `set()` and pass it into the async cleanup.
+
 ---
 
 ### ISSUE-374: Null deref + permanently wedged agent on store-import failure
+
 - **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Module:** agent
@@ -4115,9 +4134,11 @@ Therefore, no fix can be proposed or implemented.
 - **Target Coordinates:** `packages/renderer/src/services/agent/AgentService.ts:84-94, 120` (sendMessage)
 - **Summary:** Import failure silently caught leaves `useStore` null. `useStore.getState()` at :120 then throws outside the try at :174, so `this.isProcessing` is never reset, rejecting all subsequent messages.
 - **Builder Directive:** Fail fast or guard all uses; reset `isProcessing` in a finally block.
+
 ---
 
 ### ISSUE-375: Unmemoized object selector → infinite re-render under Zustand 5
+
 - **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Module:** founders
@@ -4125,9 +4146,11 @@ Therefore, no fix can be proposed or implemented.
 - **Target Coordinates:** `packages/renderer/src/modules/founders/FoundersPortal.tsx:9-12`
 - **Summary:** Selector returns a fresh object each call without `useShallow`. Zustand 5 uses `Object.is` resulting in a `useSyncExternalStore` re-render loop (“maximum update depth”).
 - **Builder Directive:** Wrap selector in `useShallow` (pattern: DesktopDashboard.tsx:10-15).
+
 ---
 
 ### ISSUE-376: Handoff code endpoint: no format validation, no rate limit
+
 - **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Module:** auth
@@ -4135,9 +4158,11 @@ Therefore, no fix can be proposed or implemented.
 - **Target Coordinates:** `packages/firebase/src/functions/auth/handoff.ts:59-70` (redeemHandoffCode)
 - **Summary:** Handoff code is only truthiness-checked, CORS-open, with unlimited attempts against token-bearing `auth_handoffs` docs.
 - **Builder Directive:** Validate 64-hex format, add per-IP rate limiting.
+
 ---
 
 ### ISSUE-377: Desktop broadcasts online:false on every module switch / agent toggle
+
 - **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Module:** mobile-remote
@@ -4145,9 +4170,11 @@ Therefore, no fix can be proposed or implemented.
 - **Target Coordinates:** `packages/renderer/src/hooks/useRemoteCommandListener.ts:219-255`
 - **Summary:** The `useFirestoreRelay` state-push effect dependencies run the unmount cleanup on every navigation, writing `online:false` to the relay doc, followed by `online:true`. Phone reacts by un-pairing and re-pairing constantly.
 - **Builder Directive:** Split into a mount-once heartbeat effect with offline-write only on true unmount; phone side should debounce/grace-window offline transitions.
+
 ---
 
 ### ISSUE-378: Phone auth check is non-reactive — subscription never starts on cold load
+
 - **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Module:** mobile-remote
@@ -4155,9 +4182,11 @@ Therefore, no fix can be proposed or implemented.
 - **Target Coordinates:** `packages/renderer/src/modules/mobile-remote/MobileRemote.tsx:143-148`
 - **Summary:** `remoteRelayService.isAuthenticated()` evaluated during render, not subscribed. On cold start, `isAuth` is false and never re-renders when auth completes, leaving the app stuck on disconnect screen.
 - **Builder Directive:** Track auth via `onAuthStateChanged` state (pattern: useRemoteCommandListener.ts:590-599).
+
 ---
 
 ### ISSUE-379: Commands silently dropped when relay is busy
+
 - **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Module:** mobile-remote
@@ -4165,9 +4194,11 @@ Therefore, no fix can be proposed or implemented.
 - **Target Coordinates:** `packages/renderer/src/hooks/useRemoteCommandListener.ts:276-279`
 - **Summary:** A command arriving while `isProcessing.current` is true is skipped and stays pending forever (onSnapshot won’t re-fire). Phone waits indefinitely.
 - **Builder Directive:** Queue skipped commands or re-scan pending docs after each completion.
+
 ---
 
 ### ISSUE-380: online flag is trust-forever boolean — stale state after desktop crash
+
 - **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Module:** mobile-remote
@@ -4175,9 +4206,11 @@ Therefore, no fix can be proposed or implemented.
 - **Target Coordinates:** `packages/renderer/src/services/agent/RemoteRelayService.ts:67-73, 315-323`, `packages/renderer/src/modules/mobile-remote/MobileRemote.tsx:62-69`
 - **Summary:** Crashed desktop stays “online”. QR carries no payload and implicitly requires the phone to be signed into the same Firebase account with no error surfaced when it isn't.
 - **Builder Directive:** Phone should treat timestamp older than ~15s as offline; QR should carry a handoff/pairing token; add error callback + signed-out messaging.
+
 ---
 
 ### ISSUE-381: Committed auth export with credentials
+
 - **Status:** ✅ COMPLETED
 - **Severity:** 🟡 MEDIUM
 - **Module:** security
@@ -4185,9 +4218,11 @@ Therefore, no fix can be proposed or implemented.
 - **Target Coordinates:** `users.json` (repo root)
 - **Summary:** File contains 25 passwordHash + salt entries, 50 emails.
 - **Builder Directive:** Remove, gitignore, rotate affected accounts.
+
 ---
 
 ### ISSUE-382: Path traversal in PythonBridge
+
 - **Status:** ✅ FIXED
 - **Severity:** 🟡 MEDIUM
 - **Module:** main/python
@@ -4195,9 +4230,11 @@ Therefore, no fix can be proposed or implemented.
 - **Target Coordinates:** `packages/main/src/utils/python-bridge.ts:13-19, 46` (runScript)
 - **Summary:** `category/scriptName` joined unvalidated. `../` escapes execution directory, leading to arbitrary script execution if reachable from IPC.
 - **Builder Directive:** Validate segments against an allowlist/regex and verify resolved path stays under base dir.
+
 ---
 
 ### ISSUE-383: Shell interpolation in rotation script
+
 - **Status:** ✅ FIXED
 - **Severity:** 🟡 MEDIUM
 - **Module:** scripts
@@ -4205,9 +4242,11 @@ Therefore, no fix can be proposed or implemented.
 - **Target Coordinates:** `scripts/rotate-keys.ts:42, 46` (rotateServiceAccountKey)
 - **Summary:** `execSync` is used with template-interpolated CLI input.
 - **Builder Directive:** Use `execFileSync` with arg arrays.
+
 ---
 
 ### ISSUE-384: No timeout on Gemini step
+
 - **Status:** ✅ FIXED
 - **Severity:** 🟡 MEDIUM
 - **Module:** timeline
@@ -4215,9 +4254,11 @@ Therefore, no fix can be proposed or implemented.
 - **Target Coordinates:** `packages/firebase/src/timeline/milestone_execution.ts:179-235` (call-gemini-agent step)
 - **Summary:** `generateContent` has no AbortSignal/timeout. A hung call blocks until function-level timeout.
 - **Builder Directive:** Add abort timeout consistent with deliverScheduledPosts pattern.
+
 ---
 
 ### ISSUE-385: Inngest key from raw env with silent empty fallback
+
 - **Status:** ✅ FIXED
 - **Severity:** 🟡 MEDIUM
 - **Module:** timeline
@@ -4225,9 +4266,11 @@ Therefore, no fix can be proposed or implemented.
 - **Target Coordinates:** `packages/firebase/src/timeline/pollTimelineMilestones.ts:66-70` (getInngest)
 - **Summary:** `process.env.INNGEST_EVENT_KEY || ''` silently builds an unauthenticated client.
 - **Builder Directive:** Use `defineSecret`; throw on missing key.
+
 ---
 
 ### ISSUE-386: console.log/PII in Cloud Functions logs
+
 - **Status:** ✅ FIXED
 - **Severity:** 🟡 MEDIUM
 - **Module:** cloud-functions
@@ -4235,9 +4278,11 @@ Therefore, no fix can be proposed or implemented.
 - **Target Coordinates:** `packages/firebase/src/stripe/webhookHandler.ts:55,101,126,240,283`, `packages/firebase/src/functions/webhooks/dispatcher.ts:137,153,174,212,240`
 - **Summary:** Raw console calls are dumping `userIds` to logs.
 - **Builder Directive:** Switch to `firebase-functions/logger`, redact identifiers.
+
 ---
 
 ### ISSUE-387: Broad prod connect-src
+
 - **Status:** ✅ FIXED
 - **Severity:** 🟢 LOW
 - **Module:** security
@@ -4245,9 +4290,11 @@ Therefore, no fix can be proposed or implemented.
 - **Target Coordinates:** `packages/main/src/security/index.ts:43`
 - **Summary:** Wildcard `https://*.cloudfunctions.net` allows any GCP project's functions.
 - **Builder Directive:** Pin to project-specific Cloud Functions/Run origins.
+
 ---
 
 ### ISSUE-388: Fire-and-forget queue persistence
+
 - **Status:** ✅ FIXED
 - **Severity:** 🟡 MEDIUM
 - **Module:** agent
@@ -4255,9 +4302,11 @@ Therefore, no fix can be proposed or implemented.
 - **Target Coordinates:** `packages/renderer/src/core/store/slices/agent/agentTaskSlice.ts:56-60` (addBatchTask)
 - **Summary:** `persistQueueToFirestore()` is un-awaited. Failures log internally, meaning restart guarantees are silently broken.
 - **Builder Directive:** Surface failures (retry or user-visible state).
+
 ---
 
 ### ISSUE-389: No retry on profile persistence
+
 - **Status:** ✅ FIXED
 - **Severity:** 🟡 MEDIUM
 - **Module:** profile
@@ -4265,9 +4314,11 @@ Therefore, no fix can be proposed or implemented.
 - **Target Coordinates:** `packages/renderer/src/core/store/slices/profileSlice.ts:85,94,103,158,249,259`
 - **Summary:** `saveProfileToStorage(...).catch(log)` silently loses profile changes on transient failure.
 - **Builder Directive:** Add bounded retry/backoff and failure surfacing.
+
 ---
 
 ### ISSUE-390: Side effects inside set() updater
+
 - **Status:** ✅ FIXED
 - **Severity:** 🟢 LOW
 - **Module:** core/store
@@ -4275,9 +4326,11 @@ Therefore, no fix can be proposed or implemented.
 - **Target Coordinates:** `packages/renderer/src/core/store/slices/subscriptionSlice.ts:77-85` (clearSubscriptionsByPrefix)
 - **Summary:** Unsubscribe functions invoked inside the updater. This works but breaks updater purity.
 - **Builder Directive:** Execute unsubscribes before set(), mirroring `clearSubscription`.
+
 ---
 
 ### ISSUE-391: In-place mutation of state array
+
 - **Status:** ✅ FIXED
 - **Severity:** 🟡 MEDIUM
 - **Module:** core/store
@@ -4285,9 +4338,11 @@ Therefore, no fix can be proposed or implemented.
 - **Target Coordinates:** `packages/renderer/src/core/store/slices/appSlice.ts:102-106` (setModule, _navigationHistory)
 - **Summary:** `history.push(module)` mutates the array held in state before set() re-commits the same reference, breaking reference-equality subscribers.
 - **Builder Directive:** Copy-on-write the history array.
+
 ---
 
 ### ISSUE-392: Blocking window.confirm in store action
+
 - **Status:** ✅ FIXED
 - **Severity:** 🟡 MEDIUM
 - **Module:** core/store
@@ -4295,9 +4350,11 @@ Therefore, no fix can be proposed or implemented.
 - **Target Coordinates:** `packages/renderer/src/core/store/slices/appSlice.ts:93-99` (setModule)
 - **Summary:** Synchronous native dialog inside a state setter blocks the renderer.
 - **Builder Directive:** Route through async modal/confirmation state.
+
 ---
 
 ### ISSUE-393: useStore: any + as any[] in agent critical path
+
 - **Status:** ✅ FIXED
 - **Severity:** 🟡 MEDIUM
 - **Module:** agent
@@ -4305,9 +4362,11 @@ Therefore, no fix can be proposed or implemented.
 - **Target Coordinates:** `packages/renderer/src/services/agent/AgentService.ts:84, 213-214` (also :420,602,713,1280,1312,1356)
 - **Summary:** Defeats type checking on message dispatch.
 - **Builder Directive:** Type the dynamic store import via `typeof import('@/core/store')`.
+
 ---
 
 ### ISSUE-394: Uncached dynamic store imports
+
 - **Status:** ✅ FIXED
 - **Severity:** 🟢 LOW
 - **Module:** agent
@@ -4315,9 +4374,11 @@ Therefore, no fix can be proposed or implemented.
 - **Target Coordinates:** `packages/renderer/src/services/agent/AgentService.ts:86`
 - **Summary:** `sendMessage` bypasses the existing module cache.
 - **Builder Directive:** Reuse `moduleImportCache` for all dynamic imports in this service.
+
 ---
 
 ### ISSUE-395: Emoji in production logs
+
 - **Status:** ✅ FIXED
 - **Severity:** 🟢 LOW
 - **Module:** agent
@@ -4325,9 +4386,11 @@ Therefore, no fix can be proposed or implemented.
 - **Target Coordinates:** `packages/renderer/src/services/agent/AgentService.ts:105,146`
 - **Summary:** 🔒/⚡ in logger output breaks log hygiene standards.
 - **Builder Directive:** Replace with ASCII tags.
+
 ---
 
 ### ISSUE-396: Legacy repo fallback
+
 - **Status:** ✅ FIXED
 - **Severity:** 🟡 MEDIUM
 - **Module:** agent
@@ -4335,9 +4398,11 @@ Therefore, no fix can be proposed or implemented.
 - **Target Coordinates:** `packages/firebase/src/functions/agent/reportBugFn.ts:99`
 - **Summary:** `GITHUB_REPO` falls back to new-detroit-music-llc/indiiOS-Alpha-Electron; bug reports file against wrong repo when env unset.
 - **Builder Directive:** Require env; fail loudly.
+
 ---
 
 ### ISSUE-397: Orphaned test file
+
 - **Status:** ✅ FIXED
 - **Severity:** 🟢 LOW
 - **Module:** testing
@@ -4345,9 +4410,11 @@ Therefore, no fix can be proposed or implemented.
 - **Target Coordinates:** `e2e_interop.test.ts` (repo root)
 - **Summary:** Imports vitest but matches no vitest.workspace.ts include glob, so it never runs.
 - **Builder Directive:** Relocate into packages/renderer/src/** or add include.
+
 ---
 
 ### ISSUE-398: Dead root artifacts
+
 - **Status:** ✅ FIXED
 - **Severity:** 🟢 LOW
 - **Module:** repository
@@ -4355,9 +4422,11 @@ Therefore, no fix can be proposed or implemented.
 - **Target Coordinates:** `ReceiptOCR.tsx`, `patch.js/patch.cjs`, `test-fabric-img.ts`, `test-puppeteer.cjs`, `test-pw.mjs`, `get_github_log.js`, `parse_eslint.py`, `parse_fatal.py`, `settings.json`, `state.json`, `tsc_output*.txt`, `test-output*.txt`, `ci_*` logs.
 - **Summary:** Dead duplicate files, old CI logs, and test artifacts clutter the root.
 - **Builder Directive:** Delete or archive.
+
 ---
 
 ### ISSUE-399: Commented-out dsp-engine profiling dispatch logic
+
 - **Status:** ✅ FIXED (ae50c3360)
 - **Severity:** 🟡 MEDIUM
 - **Dimension:** Architecture
@@ -4369,6 +4438,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-400: Stubbed dispatches in unified-distribution
+
 - **Status:** ✅ FIXED (ae50c3360)
 - **Severity:** 🟡 MEDIUM
 - **Dimension:** Architecture
@@ -4380,6 +4450,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-401: Hardcoded duration and stubs in ddex-generator
+
 - **Status:** ✅ FIXED (ae50c3360)
 - **Severity:** 🟡 MEDIUM
 - **Dimension:** Architecture
@@ -4391,6 +4462,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-402: Unimplemented requestTaxForms function
+
 - **Status:** ✅ FIXED (ae50c3360)
 - **Severity:** 🟡 MEDIUM
 - **Dimension:** Architecture
@@ -4402,6 +4474,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-403: Disabled verifyMechanicalLicense function
+
 - **Status:** ✅ FIXED (ae50c3360)
 - **Severity:** 🟡 MEDIUM
 - **Dimension:** Architecture
@@ -4413,6 +4486,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-404: Redundant status ternary in deliverScheduledPosts
+
 - **Status:** ✅ FIXED (ae50c3360)
 - **Severity:** 🟢 LOW
 - **Dimension:** Console
@@ -4424,6 +4498,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-405: LLM slop in format_dsp_metadata mock XML
+
 - **Status:** ✅ FIXED (ae50c3360)
 - **Severity:** 🟢 LOW
 - **Dimension:** Architecture
@@ -4435,6 +4510,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-406: Unused Cloud Function wrappers in factory.ts
+
 - **Status:** ✅ FIXED (ae50c3360)
 - **Severity:** 🟢 LOW
 - **Dimension:** Architecture
@@ -4446,6 +4522,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-407: Ignored timeoutMs in circuit-breaker wrapper
+
 - **Status:** ✅ FIXED (ae50c3360)
 - **Severity:** 🟡 MEDIUM
 - **Dimension:** Performance
@@ -4457,6 +4534,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-408: Duplicate Connect onboarding functions
+
 - **Status:** ✅ FIXED (ae50c3360)
 - **Severity:** 🟢 LOW
 - **Dimension:** Architecture
@@ -4468,6 +4546,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-409: Admin UID logged as Artist UID in createTransfer
+
 - **Status:** ✅ FIXED (ae50c3360)
 - **Severity:** 🟡 MEDIUM
 - **Dimension:** Architecture
@@ -4479,6 +4558,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-410: Fragile webhook polling in telegramWebhook.ts
+
 - **Status:** ✅ FIXED (ae50c3360)
 - **Severity:** 🟡 MEDIUM
 - **Dimension:** Performance
@@ -4490,6 +4570,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-411: Missing crypto imports in firebase src files
+
 - **Status:** ✅ FIXED (ae50c3360)
 - **Severity:** 🟢 LOW
 - **Dimension:** Architecture
@@ -4501,6 +4582,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-412: Fragile AI JSON cleanup in touring.ts
+
 - **Status:** ✅ FIXED (ae50c3360)
 - **Severity:** 🟡 MEDIUM
 - **Dimension:** Architecture
@@ -4512,6 +4594,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-413: Overly aggressive blacklisting in retention-daemon.ts
+
 - **Status:** ✅ FIXED (ae50c3360)
 - **Severity:** 🟡 MEDIUM
 - **Dimension:** Architecture
@@ -4523,6 +4606,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-414: Missing distribution:package-spotify IPC handler
+
 - **Status:** ✅ FIXED (e94f12aa4)
 - **Severity:** 🔴 HIGH
 - **Dimension:** Architecture
@@ -4536,6 +4620,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-415: Missing distribution:deliver-apple IPC handler
+
 - **Status:** ✅ FIXED (e94f12aa4)
 - **Severity:** 🔴 HIGH
 - **Dimension:** Architecture
@@ -4549,6 +4634,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-416: Missing distribution:validate-xsd IPC handler
+
 - **Status:** ✅ FIXED (e94f12aa4)
 - **Severity:** 🔴 HIGH
 - **Dimension:** Architecture
@@ -4562,6 +4648,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-417: Missing agent:capture-state IPC handler
+
 - **Status:** ✅ FIXED (e94f12aa4)
 - **Severity:** 🔴 HIGH
 - **Dimension:** Architecture
@@ -4575,6 +4662,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-418: Stale ElectronSidecarAPI.restart interface signature
+
 - **Status:** ✅ FIXED (ae50c3360)
 - **Severity:** 🟢 LOW
 - **Dimension:** Architecture
@@ -4585,8 +4673,8 @@ Therefore, no fix can be proposed or implemented.
 
 ---
 
-
 ### ISSUE-422: Stage 2 — Prompt + skills elevation for 12 wired agent folders
+
 - **Status:** ✅ FIXED (2026-06-13 — Phase B content audit and Phase C skills gap analysis completed for all 12 folders.)
 - **Severity:** 🟡 MEDIUM
 - **Dimension:** Agent Quality
@@ -4597,6 +4685,7 @@ Therefore, no fix can be proposed or implemented.
 - **Fix Direction:** One folder = one atomic commit following the checklist Phases B+C+E. Conductor's prompt is shared by GeneralistAgent — flag changes for extra review.
 
 ### ISSUE-423: Generalist agent has no prompt of its own
+
 - **Status:** ✅ FIXED (2026-06-12, feat/agent-elevation-stage-0) — resolved differently than filed: per agents/generalist/AGENTS.md charter, GeneralistAgent IS the indii Conductor, so borrowing conductor's prompt/card is BY DESIGN, not a gap. The real defect was the folder's dead misleading files. agents/generalist/prompt.md is now an explicit pointer doc ("not loaded at runtime — edit conductor's prompt; affects both agents") and agent_card.json is self-describing as a conductor alias.
 - **Severity:** 🟡 MEDIUM
 - **Dimension:** Agent Quality
@@ -4607,6 +4696,7 @@ Therefore, no fix can be proposed or implemented.
 - **Fix Direction:** Write a real `agents/generalist/prompt.md` (checklist Phase B), populate its card, and point GeneralistAgent + CARD_REGISTRY at the generalist assets instead of conductor's.
 
 ### ISSUE-424: Merchandise agent card elevated but no TS definition wires it to runtime
+
 - **Status:** ❌ INVALID (2026-06-12) — recon error: MerchandiseAgent.ts exists at packages/renderer/src/services/agent/MerchandiseAgent.ts (services root, not definitions/), imports @agents/merchandise/prompt.md?raw, declares all 6 card capabilities with Zod schemas, and is registered at registry.ts:80. Merchandise is fully wired; no fix needed.
 - **Severity:** 🟡 MEDIUM
 - **Dimension:** Architecture
@@ -4617,6 +4707,7 @@ Therefore, no fix can be proposed or implemented.
 - **Fix Direction:** Checklist Phase D — create `MerchandiseAgent.ts` copying the AnalyticsAgent.ts pattern (?raw prompt import, tools matching the card's 6 capabilities), register it, verify capability↔tool 1:1.
 
 ### ISSUE-425: indii_executor card declares riskTier 'destructive' with 0 capabilities and no review
+
 - **Status:** ✅ FIXED (2026-06-12, feat/agent-elevation-stage-0)
 - **Fix:** Card now enumerates all 7 capabilities (incl. media_postprocess_terminal — the reason for the destructive tier), adds harness governance (approvalAuthority: user_required; 6 blockedActions incl. out-of-workspace deletion, master overwrite, credential modification), roster, costModel, promptVersion, trainingModel. Prompt rewritten: blanket "Do not ask for permission" replaced with explicit Authority Boundaries mirroring the harness; stale Agent Zero path /a0/usr/projects/ removed; strike-ladder failure behavior + honesty rules added; ritual footer stripped. Note: indii_executor is referenced nowhere at runtime (not in CardRegistry, never dispatched) — the card is the governance contract required BEFORE any future wiring.
 - **Severity:** 🔴 HIGH
@@ -4628,6 +4719,7 @@ Therefore, no fix can be proposed or implemented.
 - **Fix Direction:** Checklist Phases A+B with security review: enumerate real capabilities, populate `harness.blockedActions` + `approvalAuthority`, document failure behavior; or downgrade riskTier if destructive operations are not actually exposed.
 
 ### ISSUE-426: Stage 3 orchestration-tier prompts unaudited (conductor, default, curriculum, executor)
+
 - **Status:** ✅ FIXED (2026-06-13 — Phase B content audit completed for conductor, default, and indii_curriculum.)
 - **Severity:** 🟢 LOW
 - **Dimension:** Agent Quality
@@ -4640,6 +4732,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-419: verifyMechanicalLicense fabricates verification results (NO-MOCK-DATA violation)
+
 - **Status:** ✅ FIXED (2026-06-12, feat/agent-elevation-stage-0)
 - **Severity:** 🔴 HIGH
 - **Dimension:** Data Integrity / Legal
@@ -4651,10 +4744,10 @@ Therefore, no fix can be proposed or implemented.
 - **Fix:** Option (b) implemented. Function now always returns `UNVERIFIED` + `requiresClearance: true` with null publisher/songCode, accurate statutory-rate context (CRB Phonorecords IV, physical/downloads only), and real clearance guidance (SongFile + The MLC links). Honest audit rows persisted. Renderer `LegalTools.verify_mechanical_license` success-path types/message aligned. Honesty contract documented in the function docstring — VERIFIED may only ever come from a real licensing API response.
 - **Files:** `packages/firebase/src/legal/mechanicalLicense.ts`, `packages/renderer/src/services/agent/tools/LegalTools.ts`
 
-
 ---
 
 ### ISSUE-420: Walkthrough validation proof omitted packages/firebase from typecheck command
+
 - **Status:** ✅ CLOSED (2026-06-12 — retroactive `cd packages/firebase && npx tsc --noEmit` exit 0; no code defect)
 - **Status:** ✅ VERIFIED-RETROACTIVELY (no code defect)
 - **Severity:** 🟡 MEDIUM (process)
@@ -4668,6 +4761,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-421: Walkthrough test-count claim contradicts its own output (4,081 vs 1,070)
+
 - **Status:** ✅ CLOSED (2026-06-12 — full suite re-run: 659 files, 4,142 tests, 4,141 pass; sole failure is pre-existing environmental `AgentExecutor.integration.test.ts` requiring live VITE_API_KEY, confirmed failing on clean tree via git stash)
 - **Severity:** 🟡 MEDIUM (process)
 - **Dimension:** Verification Integrity
@@ -4680,6 +4774,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-422: Missing Mermaid Diagram for API Endpoints
+
 - **Status:** ✅ FIXED
 - **Severity:** 🟢 LOW
 - **UX Dimension:** Action Discoverability
@@ -4697,6 +4792,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-423: Creative Pipeline API Error - Google Generation Service Internal Error
+
 - **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **UX Dimension:** Error Communication
@@ -4714,6 +4810,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-424: Workflow Orchestrator Indefinite Hang on Template Execution
+
 - **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **UX Dimension:** Error Communication
@@ -4732,6 +4829,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-425: Finance Receipt OCR Fetch Error to Gemini AI
+
 - **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **UX Dimension:** Error Communication
@@ -4749,6 +4847,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-426: Distribution Department Fails to Load Releases (Permission Denied)
+
 - **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **UX Dimension:** Error Communication
@@ -4786,6 +4885,7 @@ Therefore, no fix can be proposed or implemented.
   - `packages/renderer/src/modules/mobile-remote/MobileRemote.tsx` (lines 343-372, 298-312)
 
 ### ISSUE-VAL-001: RemoteRelayService Unit Tests Fail due to Timestamp mock
+
 - **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Module:** RemoteRelayService
@@ -4797,7 +4897,9 @@ Therefore, no fix can be proposed or implemented.
 - **Fix:** Remove the `instanceof Timestamp` check in `packages/renderer/src/services/agent/RemoteRelayService.ts` and rely on duck-typing `typeof ts.toMillis === 'function'` instead.
 
 ---
+
 ### ISSUE-GAP-BRAND: Phase C Skills Gap Analysis for brand
+
 - **Status:** ✅ FIXED
 - **Severity:** 🟢 LOW
 - **Module:** agents/brand
@@ -4805,6 +4907,7 @@ Therefore, no fix can be proposed or implemented.
 - **Fix Direction:** Implement these tools natively in BrandAgent.ts or as Layer 3 execution scripts.
 
 ### ISSUE-GAP-CREATIVE: Phase C Skills Gap Analysis for creative
+
 - **Status:** ✅ FIXED
 - **Severity:** 🟢 LOW
 - **Module:** agents/creative
@@ -4813,6 +4916,7 @@ Therefore, no fix can be proposed or implemented.
 - **Fix:** Implemented `generate_moodboard` and `analyze_visual_trends` in `DirectorTools.ts` and added schema bindings to `CreativeAgent.ts`.
 
 ### ISSUE-GAP-DISTRIBUTION: Phase C Skills Gap Analysis for distribution
+
 - **Status:** ✅ FIXED (6d36bfd)
 - **Severity:** 🟢 LOW
 - **Module:** agents/distribution
@@ -4823,6 +4927,7 @@ Therefore, no fix can be proposed or implemented.
 - **UX Impact:** Distribution Agent now possesses native tools for checking DSP delivery status and validating metadata readiness.
 
 ### ISSUE-GAP-LEGAL: Phase C Skills Gap Analysis for legal
+
 - **Status:** ✅ FIXED
 - **Severity:** 🟢 LOW
 - **Module:** agents/legal
@@ -4830,6 +4935,7 @@ Therefore, no fix can be proposed or implemented.
 - **Fix Direction:** Implement these tools natively in LegalAgent.ts or as Layer 3 execution scripts.
 
 ### ISSUE-GAP-LICENSING: Phase C Skills Gap Analysis for licensing
+
 - **Status:** ✅ FIXED
 - **Severity:** 🟢 LOW
 - **Module:** agents/licensing
@@ -4839,6 +4945,7 @@ Therefore, no fix can be proposed or implemented.
 - **Files:** `packages/renderer/src/services/agent/definitions/LicensingAgent.ts`, `packages/renderer/src/services/agent/definitions/LicensingAgent.test.ts`
 
 ### ISSUE-GAP-MARKETING: Phase C Skills Gap Analysis for marketing
+
 - **Status:** ✅ FIXED
 - **Severity:** 🟢 LOW
 - **Module:** agents/marketing
@@ -4846,6 +4953,7 @@ Therefore, no fix can be proposed or implemented.
 - **Fix Direction:** Implement these tools natively in MarketingAgent.ts or as Layer 3 execution scripts.
 
 ### ISSUE-GAP-MUSIC: Phase C Skills Gap Analysis for music
+
 - **Status:** ✅ FIXED
 - **Severity:** 🟢 LOW
 - **Module:** agents/music
@@ -4856,6 +4964,7 @@ Therefore, no fix can be proposed or implemented.
 - **UX Impact:** Music agent now has specialized, fast tools for isolating stem analysis and extracting purely technical features like BPM and Key without the overhead of full semantic generation.
 
 ### ISSUE-GAP-PUBLICIST: Phase C Skills Gap Analysis for publicist
+
 - **Status:** ✅ FIXED
 - **Severity:** 🟢 LOW
 - **Module:** agents/publicist
@@ -4863,6 +4972,7 @@ Therefore, no fix can be proposed or implemented.
 - **Fix Direction:** Implement these tools natively in PublicistAgent.ts or as Layer 3 execution scripts.
 
 ### ISSUE-E2E-RIGHT-PANEL-1: Timeout rendering Context Controls for Creative Director
+
 - **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Module:** e2e/right-panel.spec.ts
@@ -4870,6 +4980,7 @@ Therefore, no fix can be proposed or implemented.
 - **Fix Direction:** Investigate why the creative director route `/creative` is hanging or failing to render the main container. Check for unhandled exceptions or missing mocks in the E2E environment.
 
 ### ISSUE-E2E-RIGHT-PANEL-2: Timeout interacting with filters and search in Project Assets tab
+
 - **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Module:** e2e/right-panel.spec.ts
@@ -4877,6 +4988,7 @@ Therefore, no fix can be proposed or implemented.
 - **Fix Direction:** Check the root route `/` rendering in the test environment. Ensure the app container is visible within 15 seconds.
 
 ### ISSUE-E2E-RIGHT-PANEL-3: Timeout rendering Context Controls for Marketing
+
 - **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Module:** e2e/right-panel.spec.ts
@@ -4884,6 +4996,7 @@ Therefore, no fix can be proposed or implemented.
 - **Fix Direction:** Check the marketing route `/marketing`. Determine why the container fails to appear, similar to the creative director route.
 
 ### ISSUE-GAP-PUBLISHING: Phase C Skills Gap Analysis for publishing
+
 - **Status:** ✅ FIXED
 - **Severity:** 🟢 LOW
 - **Module:** agents/publishing
@@ -4891,6 +5004,7 @@ Therefore, no fix can be proposed or implemented.
 - **Fix Direction:** Implement these tools natively in PublishingAgent.ts or as Layer 3 execution scripts.
 
 ### ISSUE-GAP-ROAD: Phase C Skills Gap Analysis for road
+
 - **Status:** ✅ FIXED
 - **Severity:** 🟢 LOW
 - **Module:** agents/road
@@ -4898,6 +5012,7 @@ Therefore, no fix can be proposed or implemented.
 - **Fix Direction:** Implement these tools natively in RoadAgent.ts or as Layer 3 execution scripts.
 
 ### ISSUE-GAP-SOCIAL: Phase C Skills Gap Analysis for social
+
 - **Status:** ✅ FIXED
 - **Severity:** 🟢 LOW
 - **Module:** agents/social
@@ -4905,14 +5020,15 @@ Therefore, no fix can be proposed or implemented.
 - **Fix Direction:** Implement these tools natively in SocialAgent.ts or as Layer 3 execution scripts.
 
 ### ISSUE-GAP-VIDEO: Phase C Skills Gap Analysis for video
+
 - **Status:** ✅ FIXED
 - **Severity:** 🟢 LOW
 - **Module:** agents/video
 - **Summary:** As part of the Phase C agent elevation, the following skills were identified as highly valuable for the video agent but are currently missing: generate_storyboard, draft_video_budget.
 - **Fix Direction:** Implement these tools natively in VideoAgent.ts or as Layer 3 execution scripts.
 
-
 ### ISSUE-HUNTER-1: process.env used in browser context instead of import.meta.env
+
 - **Status:** ✅ FIXED
 - **Severity:** High
 - **Module:** packages/renderer/src/utils/e2eMode.ts
@@ -4920,6 +5036,7 @@ Therefore, no fix can be proposed or implemented.
 - **Fix:** Removed references to `process.env.VITE_E2E` and `process.env.VITE_FIREBASE_E2E_MOCK` in `e2eMode.ts` to prevent runtime crashes in browser environments. Vite's native `import.meta.env` is already handling these values.
 
 ### ISSUE-HUNTER-2: Event Listener Count Mismatch (Potential Memory Leak)
+
 - **Status:** ✅ FIXED
 - **Severity:** Medium
 - **Module:** Global
@@ -4927,6 +5044,7 @@ Therefore, no fix can be proposed or implemented.
 - **Fix:** Audited all `addEventListener` usages. The mismatch is entirely accounted for by singletons, services (e.g. `NetworkQualityMonitor.ts`), and global bootstrapper files (e.g. `main.tsx`) which intentionally register application-lifetime listeners without unregistering them. No React components were found missing `removeEventListener` cleanup logic. Resolved as false positive.
 
 ### ISSUE-HUNTER-3: Unhandled Firestore onSnapshot Subscriptions
+
 - **Status:** ✅ FIXED
 - **Severity:** Medium
 - **Module:** Firebase / Store Slices
@@ -4934,6 +5052,7 @@ Therefore, no fix can be proposed or implemented.
 - **Fix Direction:** For each leaked `onSnapshot` in a Zustand slice, store the unsubscribe function via `registerSubscription()` or manage it carefully if it's within a React `useEffect`.
 
 ### ISSUE-HUNTER-4: Loading State Traps blocking UI with no fallback
+
 - **Status:** ✅ FIXED
 - **Severity:** High
 - **Module:** UI Components
@@ -4941,6 +5060,7 @@ Therefore, no fix can be proposed or implemented.
 - **Fix:** Implemented a robust 10-second `setTimeout` failsafe inside the global `<LoadingFallback />` and inside `ChatMessage.tsx`'s `LivingPlanToolRenderer`. If these components spin for more than 10 seconds due to a silent network error or stuck loading state, they now transition to an actionable error UI allowing the user to reload the app or navigate back to the dashboard.
 
 ### ISSUE-HUNTER-5: Swallowed Errors in Catch Blocks
+
 - **Status:** ✅ FIXED
 - **Severity:** Medium
 - **Module:** Services
@@ -4948,6 +5068,7 @@ Therefore, no fix can be proposed or implemented.
 - **Fix:** Replaced empty catch blocks with structured `logger.error` logging in `AgentService.ts`. Converted all silent `.catch(() => ({}))` JSON parse errors in `SocialPlatformService.ts` to log proper warnings. Replaced raw `console.log` calls with `logger.debug` in `GeminiRetrievalService.ts`.
 
 ### ISSUE-HUNTER-6: Missing Retry Logic and Specific HTTP Error Handling for fetch()
+
 - **Status:** ✅ FIXED
 - **Severity:** Medium
 - **Module:** Services / API integrations
@@ -4955,6 +5076,7 @@ Therefore, no fix can be proposed or implemented.
 - **Fix:** Created a robust `fetchWithRetry` utility in `packages/renderer/src/utils/async.ts` with exponential backoff for 429 and 5xx errors, and support for `Retry-After` headers. Refactored `YouTubeDataService.ts`, `OpenSeaService.ts`, and `PinataService.ts` to use this new utility for all external API calls.
 
 ### ISSUE-HUNTER-7: Impure Render Functions (Date.now() in render)
+
 - **Status:** ✅ FIXED
 - **Severity:** Low
 - **Module:** UI Components
@@ -4962,6 +5084,7 @@ Therefore, no fix can be proposed or implemented.
 - **Fix Direction:** Move `Date.now()` calculations to a `useEffect`, `useMemo`, or an event handler to keep render functions pure.
 
 ### ISSUE-HUNTER-8: Floating Point Arithmetic for Financial Calculations
+
 - **Status:** ✅ FIXED
 - **Severity:** High
 - **Module:** Finance
@@ -4969,6 +5092,7 @@ Therefore, no fix can be proposed or implemented.
 - **Fix:** Converted all floating-point money calculations in `FinanceTools.ts` to use integer cents (`Math.round(amount * 100)`) before any operations. Calculations are done in cents and divided by 100 before outputting.
 
 ### ISSUE-HUNTER-9: Missing Explicit Locales in toLocaleDateString
+
 - **Status:** ✅ FIXED
 - **Severity:** Low
 - **Module:** Localization / Dates
@@ -4976,6 +5100,7 @@ Therefore, no fix can be proposed or implemented.
 - **Fix Direction:** Audit all date formatting and add explicit `'en-US'` locale: `.toLocaleDateString('en-US', { ... })`. For DDEX/ISO dates, use `.toISOString()`.
 
 ### ISSUE-HUNTER-106: Floating Point Currency Math in MechanicalRoyaltyService and CostPredictor
+
 - **Status:** ✅ FIXED (cf4ff72f6)
 - **Severity:** 🔴 HIGH
 - **Module:** Publishing / Intelligence
@@ -4985,6 +5110,7 @@ Therefore, no fix can be proposed or implemented.
 - **UX Impact:** Money calculations are precise without drifting due to floating point string parsing errors.
 
 ### ISSUE-HUNTER-104: Impure Render Functions (Date.now() in render)
+
 - **Status:** ✅ FIXED
 - **Severity:** 🟢 LOW
 - **Module:** UI Components
@@ -4995,6 +5121,7 @@ Therefore, no fix can be proposed or implemented.
 - [x] **ISSUE-HUNTER-101** `packages/renderer/src/core/store/slices/authSlice.ts` - Unsafe authLoading Early Returns leaked electron listeners. Fixed.
 
 ### ISSUE-AUDIT-001: 26 High Severity Dependency Vulnerabilities
+
 - **Status:** ✅ FIXED (Agent C)
 - **Severity:** P0
 - **Module:** Global / Dependencies
@@ -5002,6 +5129,7 @@ Therefore, no fix can be proposed or implemented.
 - **Fix Direction:** Run `npm audit fix` and upgrade dependencies carefully, ensuring the application still builds and runs correctly.
 
 ### ISSUE-AUDIT-002: 125 Linting Problems (25 Errors, 100 Warnings)
+
 - **Status:** ✅ FIXED
 - **Severity:** P1
 - **Module:** Code Quality
@@ -5010,6 +5138,7 @@ Therefore, no fix can be proposed or implemented.
 - **Fix:** Fixed unused vars and explicit any across the codebase using exact manual replacements. Evaluated using ESLint.
 
 ### ISSUE-AUDIT-003: Missing Agent Training Data
+
 - **Status:** ✅ FIXED (pending)
 - **Severity:** P1
 - **Module:** Agent Fleet
@@ -5020,6 +5149,7 @@ Therefore, no fix can be proposed or implemented.
 - **UX Impact:** Agents now have foundational training data to guide fine-tuning or system prompts.
 
 ### ISSUE-AUDIT-004: Security Hygiene (Console Logs & Localhost References)
+
 - **Status:** ✅ FIXED
 - **Severity:** P1
 - **Module:** Security / Global
@@ -5028,6 +5158,7 @@ Therefore, no fix can be proposed or implemented.
 - **Fix:** Removed 61 `console.log/warn/error` calls across `packages/main/src` and `packages/renderer/src` via AST-like replacement, and replaced localhost string with empty string in `A2AConfig.ts`.
 
 ### ISSUE-AUDIT-005: Technical Debt (TODOs)
+
 - **Status:** 🟢 FIXED
 - **Severity:** P1
 - **Module:** Tech Debt
@@ -5035,6 +5166,7 @@ Therefore, no fix can be proposed or implemented.
 - **Fix Direction:** Review and resolve the 26 TODOs or convert them into tracked GitHub issues if they require larger architectural changes.
 
 ### ISSUE-AUDIT-006: Anti-AI Slop (Boilerplate)
+
 - **Status:** ✅ FIXED
 - **Severity:** P1
 - **Module:** Code Quality
@@ -5042,6 +5174,7 @@ Therefore, no fix can be proposed or implemented.
 - **Fix Direction:** Remove the AI conversational boilerplate from the codebase.
 
 ### ISSUE-HUNTER-105: Store Selectors Missing useShallow (230 instances)
+
 - **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Module:** Store Slices / Components
@@ -5050,6 +5183,7 @@ Therefore, no fix can be proposed or implemented.
 - **Files:** Modified 186 files across `packages/renderer/src`.
 
 ### ISSUE-HUNTER-103: Missing HTTP Retry & Status Handling
+
 - [x] **Description**: Replaced raw fetch calls with a central robust `fetchWithRetry` utility. Handled test timeout leak with `AbortSignal`. Updated `QCPanel.test.tsx` regex matching.
 - [x] **Status**: FIXED
 
@@ -5296,10 +5430,3 @@ Therefore, no fix can be proposed or implemented.
 - **Module:** Creative Director / Remotion / Electron Main
 - **Summary:** Generating and rendering full-song music videos (up to 7-8 minutes) in a single monolithic render job causes memory crashes and browser timeouts. The system needs a parallel rendering and stitching pipeline.
 - **Fix Direction:** Implement horizontal parallel scene rendering via Remotion Lambda/Cloud Functions, stitch the rendered clips using a fast FFmpeg concat filter on the backend (using MP3 audio encoding to speed up alignment and prevent pops), and ensure the architecture is ready to route direct 7-minute outputs when next-gen long-context video models (like Omni Flash) release.
-
-
-
-
-
-
-
