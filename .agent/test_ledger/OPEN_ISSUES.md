@@ -5057,7 +5057,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-046: Unified Event Bus for Swarm Context Synchronization
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (v1.64.5)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Boardroom HQ / Context Management
 - **Summary:** Seated agents are blind to other modules' actions until a manual handshake hook (`useBoardroomContextHandshake`) pulls from Zustand on mount. This is pull-based and ad-hoc.
@@ -5079,7 +5079,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-048: indiiREMOTE Local Peer-to-Peer Sync Fallback
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (v1.64.6)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Mobile Remote / WebSocket Relay
 - **Summary:** `indiiREMOTE` sync entirely depends on WAN-relayed Firebase Cloud Functions. If WAN latency is high or connections drop, remote pairing and control fail despite devices being on the same local Wi-Fi network.
@@ -5096,3 +5096,64 @@ Therefore, no fix can be proposed or implemented.
 - **Summary:** Budget breaker checks cost-breaker thresholds on Firestore ledgers, but client-side offline execution (PWA) queues Firestore updates. A user executing rapid offline agent loops could run up significant API token debt before sync reconciles the budget.
 - **Fix:** Enforce local budget allocation bounds using `localStorage` spend accumulation when offline (`!navigator.onLine`). Automatically flushes and syncs accumulated offline spend to the Firestore daily spend ledger upon transitioning online.
 - **Files:** `packages/renderer/src/services/MembershipService.ts`
+
+---
+
+### ISSUE-050: Sync Pitching & Music Supervisor Portal
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Licensing Department
+- **Summary:** The licensing department lacks an integrated workspace for pitching music to music supervisors, tracking sync briefs, hosting pre-cleared assets, and auto-compiling cue sheets.
+- **Fix Direction:** Build a Pitch Tracker board, integrate a pre-cleared audio download repository with metadata headers, and add a cue sheet compiler for broadcast reports.
+
+---
+
+### ISSUE-051: Neighboring Rights Master Owner Registration & LOA
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Publishing Department / Rights
+- **Summary:** The platform lacks a neighboring rights registration pipeline for master recording owners to collect digital performance royalties globally (e.g., SoundExchange, PPL, GVL).
+- **Fix Direction:** Add SoundExchange/PPL registry form integration and generate a standard Letter of Authority (LoA) to collect retroactive royalties on master tracks.
+
+---
+
+### ISSUE-052: PRO Live Setlist Performance Royalty Submission
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Road Manager / Finance
+- **Summary:** Artists cannot submit live show setlists directly to performing rights organizations (PROs like ASCAP, BMI, PRS) to collect live performance royalties.
+- **Fix Direction:** Add a "Submit Setlist to PRO" action in the Road Manager dashboard that maps the tour itinerary dates and songs to PRO format exports.
+
+---
+
+### ISSUE-053: Print-On-Demand Merch Integration
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Art & Merch Dept / Finance
+- **Summary:** Designing merch inside the Art & Merch module does not connect to automated print-on-demand fulfillment API services (e.g., Printful, Prodigi) or e-commerce shop integrations.
+- **Fix Direction:** Connect the merch dashboard with Shopify/Bandcamp storefront APIs and Print-on-Demand fulfillment APIs to automate checkout fulfillment.
+
+---
+
+### ISSUE-054: Vinyl on Demand / Short Run Record Pressing API Integration
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Art & Merch Dept / Distribution
+- **Summary:** Independent artists have no native avenue to launch crowdfunding campaigns or short-run pressing orders for physical vinyl records through API-driven pressers (e.g., Qrates, Diggers Factory).
+- **Fix Direction:** Build an integration module within the Art & Merch / Distribution pipelines connecting to vinyl pressing APIs to allow campaign setup and order tracking.
+
+---
+
+### ISSUE-055: Multi-Party Split Sheets and E-Signatures
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Legal Department / Publishing
+- **Summary:** Songwriting and master splits agreed upon in the studio are not backed by e-signed legal split sheets, leading to potential disputes during registration.
+- **Fix Direction:** Integrate a lightweight e-signature flow (using DocuSign or HelloSign APIs, or standard signature canvas) that generates a legally binding, signed PDF split sheet automatically.
+

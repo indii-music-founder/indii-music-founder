@@ -129,6 +129,21 @@ export const useStore = create<StoreState>()(
     )
 );
 
+// Centralized event-driven context publisher to synchronize boardroom referenced assets
+useStore.subscribe((state, prevState) => {
+    if (state.generatedHistory === prevState.generatedHistory && 
+        state.distribution?.releases === prevState.distribution?.releases) {
+        return;
+    }
+
+    // Dynamic import to break circular dependency cycle
+    import('@/hooks/useBoardroomContextHandshake').then(({ publishBoardroomContextUpdate }) => {
+        publishBoardroomContextUpdate(state);
+    }).catch(err => {
+        console.error('Failed to import publishBoardroomContextUpdate dynamically', err);
+    });
+});
+
 // Expose store for testing purposes
 if (typeof window !== 'undefined') {
     window.useStore = useStore;
