@@ -45,6 +45,7 @@ export const createMicroTransaction = onCall({
         metadata: { userId }
       }, { idempotencyKey: `create_customer_mt_${userId}` });
       stripeCustomerId = customer.id;
+      await db.collection('subscriptions').doc(userId).set({ stripeCustomerId }, { merge: true });
     }
 
     const priceId = process.env.STRIPE_PRICE_CREDIT_PACK;
