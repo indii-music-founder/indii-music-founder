@@ -16,7 +16,7 @@ export interface Campaign {
     updatedAt?: any;
 }
 
-export interface CrmSlice {
+export interface CRMSlice {
     crm: {
         campaigns: Campaign[];
         loading: boolean;
@@ -30,7 +30,7 @@ export interface CrmSlice {
 
 const campaignFirestoreService = new FirestoreService<Campaign>('campaigns');
 
-export const createCrmSlice: StateCreator<CrmSlice> = (set, get) => ({
+export const createCRMSlice: StateCreator<CRMSlice> = (set, get) => ({
     crm: {
         campaigns: [],
         loading: false,
