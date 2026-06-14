@@ -206,7 +206,6 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
             try {
                 const { db } = await import('@/services/firebase');
                 const { doc, onSnapshot } = await import('firebase/firestore');
-                const { useStore } = await import('@/core/store');
 
                 const userRef = doc(db, 'users', uid);
                 

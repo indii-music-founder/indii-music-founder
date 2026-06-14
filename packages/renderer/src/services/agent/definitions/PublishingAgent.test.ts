@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { PublishingAgent } from './PublishingAgent';
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const _autoIntel = AutonomousIntelligence;
 
 // Mock the prompt import which uses Vite's ?raw
