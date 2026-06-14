@@ -5,6 +5,7 @@ import { FirestoreService } from '../FirestoreService';
 import { License, LicenseRequest } from './types';
 import { query, where, orderBy, limit, Unsubscribe, collection, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
 import { useStore } from '@/core/store';
+import { createOneTimePayment } from '@/services/payment/PaymentService';
 
 // ── Types for SyncBriefMatcher ────────────────────────────────────────────────
 
@@ -110,6 +111,39 @@ export class LicensingService {
             ...request,
             status: request.status || 'checking'
         } as unknown as LicenseRequest);
+    }
+
+    /**
+     * Initiate a license purchase checkout session.
+     */
+    async initiateLicensePurchase(params: {
+        userId: string;
+        trackTitle: string;
+        artist: string;
+        price: number; // in cents
+        connectedAccountId: string;
+        metadata?: Record<string, string>;
+    }): Promise<string> {
+        const { userId, trackTitle, artist, price, connectedAccountId, metadata } = params;
+
+        return createOneTimePayment({
+            userId,
+            items: [{
+                name: `Sync License - ${trackTitle}`,
+                description: `Sync license agreement for ${trackTitle} by ${artist}`,
+                amount: price,
+                quantity: 1,
+            }],
+            applySurcharge: true,
+            metadata: {
+                type: 'licensing_purchase',
+                trackTitle,
+                artist,
+                connectedAccountId,
+                artistAmount: String(price),
+                ...metadata,
+            }
+        });
     }
 
     /**
