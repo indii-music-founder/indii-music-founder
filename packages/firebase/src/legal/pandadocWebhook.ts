@@ -110,7 +110,7 @@ export const pandadocWebhook = functions
                 // Multi-signer tracking updates
                 const contractRef = db.doc(`users/${userId}/contracts/${event.id}`);
                 const contractSnap = await contractRef.get();
-                if (contractSnap.exists() && event.recipients) {
+                if (contractSnap.exists && event.recipients) {
                     const allSigned = event.recipients.every(r => r.has_completed);
                     const someSigned = event.recipients.some(r => r.has_completed);
                     const contractStatus = allSigned ? "signed" : (someSigned ? "partially_signed" : "sent_for_signing");
