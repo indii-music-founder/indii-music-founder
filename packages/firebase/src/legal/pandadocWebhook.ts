@@ -92,11 +92,6 @@ export const pandadocWebhook = functions
             for (const event of payload.data) {
                 console.log(`[PandaDoc Webhook] Event: ${event.status} for doc: ${event.id}`);
 
-                // Only process completed documents
-                if (event.status !== "document.completed") {
-                    continue;
-                }
-
                 // Extract metadata tokens (artist info, track info, etc.)
                 const tokens: Record<string, string> = {};
                 if (event.tokens) {
@@ -111,6 +106,33 @@ export const pandadocWebhook = functions
                     console.warn(`[PandaDoc Webhook] No userId found for doc ${event.id}. Skipping.`);
                     continue;
                 }
+
+                // Multi-signer tracking updates
+                const contractRef = db.doc(`users/${userId}/contracts/${event.id}`);
+                const contractSnap = await contractRef.get();
+                if (contractSnap.exists() && event.recipients) {
+                    const allSigned = event.recipients.every(r => r.has_completed);
+                    const someSigned = event.recipients.some(r => r.has_completed);
+                    const contractStatus = allSigned ? "signed" : (someSigned ? "partially_signed" : "sent_for_signing");
+
+                    await contractRef.update({
+                        status: contractStatus,
+                        signers: event.recipients.map(r => ({
+                            name: `${r.first_name} ${r.last_name}`,
+                            email: r.email,
+                            status: r.has_completed ? "signed" : "pending",
+                            signedAt: r.has_completed ? new Date().toISOString() : null
+                        })),
+                        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+                    });
+                    console.log(`[PandaDoc Webhook] Updated contract ${event.id} status to ${contractStatus}`);
+                }
+
+                // Only process completed documents for career events
+                if (event.status !== "document.completed") {
+                    continue;
+                }
+
 
                 // Record career event
                 const careerEvent = {

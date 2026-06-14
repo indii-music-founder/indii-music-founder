@@ -105,6 +105,15 @@ export class PODCredentialService {
                     );
                     return res.ok;
                 }
+                case 'prodigi': {
+                    const res = await fetchWithTimeout('https://api.prodigi.com/v1.0/orders?limit=1', {
+                        headers: {
+                            'X-API-Key': apiKey,
+                            'Content-Type': 'application/json'
+                        }
+                    }, 10_000);
+                    return res.ok;
+                }
                 default:
                     return false;
             }

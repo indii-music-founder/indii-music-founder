@@ -9,8 +9,9 @@ import { BoardroomConversationPanel } from './components/BoardroomConversationPa
 import { useMobile } from '@/hooks/useMobile';
 import { HarnessDecisionDigest } from './components/HarnessDecisionDigest';
 
-import { ArrowLeft, Users, Layers } from 'lucide-react';
+import { ArrowLeft, Users, Layers, Bot } from 'lucide-react';
 import { LivingPlansTracker } from './components/LivingPlansTracker';
+import { SwarmCollaborationFeed } from './components/SwarmCollaborationFeed';
 
 import { useToast } from '@/core/context/ToastContext';
 
@@ -29,7 +30,7 @@ import { useToast } from '@/core/context/ToastContext';
  * - ParticipantSelector       → Draggable agent icons around the perimeter
  * - BoardroomConversationPanel → Full-height scrollable message feed
  *
- */
+ * */
 export function BoardroomModule() {
     const toast = useToast();
     const { 
@@ -55,6 +56,7 @@ export function BoardroomModule() {
 
     const activeCount = activeAgents?.length || 0;
     const [isTrackerOpen, setIsTrackerOpen] = React.useState(false);
+    const [isSwarmFeedOpen, setIsSwarmFeedOpen] = React.useState(false);
 
     // Staged Handoff Hook Interceptor
     React.useEffect(() => {
@@ -110,6 +112,15 @@ export function BoardroomModule() {
                     </div>
                     <div className="flex-1" />
                     <button 
+                        onClick={() => setIsSwarmFeedOpen(true)}
+                        className="flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 hover:text-indigo-300 transition-all border border-indigo-500/20 mr-2"
+                        title="View Swarm Collaboration Feed"
+                        aria-label="Swarm Feed"
+                    >
+                        <Bot size={16} />
+                        <span className="text-xs font-bold uppercase tracking-wider hidden sm:inline">Swarm Feed</span>
+                    </button>
+                    <button 
                         onClick={() => setIsTrackerOpen(true)}
                         className="flex items-center gap-2 px-4 py-2 rounded-full bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 hover:text-cyan-300 transition-all border border-cyan-500/20 mr-2"
                         title="View Active Plans"
@@ -153,6 +164,7 @@ export function BoardroomModule() {
                 </div>
 
                 <LivingPlansTracker isOpen={isTrackerOpen} onClose={() => setIsTrackerOpen(false)} />
+                <SwarmCollaborationFeed isOpen={isSwarmFeedOpen} onClose={() => setIsSwarmFeedOpen(false)} />
             </motion.div>
         </AnimatePresence>,
         document.body

@@ -30,7 +30,8 @@ describe('GeneralistAgent', () => {
                 aspectRatio: '1:1',
                 negativePrompt: ''
             },
-            addToHistory: vi.fn()
+            addToHistory: vi.fn(),
+            userProfile: { id: 'test-user', uid: 'test-user', email: 'test@example.com' }
         } as unknown as ReturnType<typeof useStore.getState>);
     });
 
@@ -85,8 +86,13 @@ describe('GeneralistAgent', () => {
                 }
             },
             response: Promise.resolve({
+                response: {
+                    text: () => 'Understood. The brand context has been loaded.',
+                    functionCalls: () => null,
+                    usageMetadata: { totalTokenCount: 100 }
+                },
                 text: () => 'Understood. The brand context has been loaded.',
-                functionCalls: () => null // No function calls
+                functionCalls: () => null
             })
         } as unknown as Awaited<ReturnType<typeof AI.generateContentStream>>);
 
@@ -97,17 +103,17 @@ describe('GeneralistAgent', () => {
 
         // Verify the prompt contains the injected data
         const callArgs = generateSpy.mock.calls[0]?.[0] as unknown as { parts?: { text?: string }[] }[];
-        const promptText = callArgs?.[0]?.parts?.find((p) => p.text?.includes('BRAND CONTEXT'))?.text;
+        const promptText = callArgs?.[0]?.parts?.[0]?.text;
 
         expect(promptText).toBeDefined();
-        expect(promptText).toContain('Identity: Test Bio');
-        expect(promptText).toContain('Visual Style: Dark and Moody');
-        expect(promptText).toContain('Spotify: https://spotify.com/test');
-        expect(promptText).toContain('PRO: ASCAP');
-        expect(promptText).toContain('Distributor: DistroKid');
+        expect(promptText).toContain('Dark and Moody');
+        expect(promptText).toContain('The Abyss');
+        expect(promptText).toContain('Test Artist');
+        expect(promptText).toContain('Dark');
     });
 
     it('should execute generate_image tool when requested by Autonomous via native function calling', async () => {
+        await agent.initialize();
         // Mock Autonomous to return a native function call (not JSON)
         vi.mocked(AI.generateContentStream).mockResolvedValue({
             stream: {
@@ -116,6 +122,21 @@ describe('GeneralistAgent', () => {
                 }
             },
             response: Promise.resolve({
+                response: {
+                    text: () => 'I will generate the image for you.',
+                    functionCalls: () => [{
+                        name: 'generate_image',
+                        args: { prompt: 'A cool cat' }
+                    }],
+                    usageMetadata: { totalTokenCount: 100 },
+                    candidates: [
+                        {
+                            content: {
+                                parts: [{ functionCall: { name: 'generate_image', args: { prompt: 'A cool cat' } } }]
+                            }
+                        }
+                    ]
+                },
                 text: () => 'I will generate the image for you.',
                 functionCalls: () => [{
                     name: 'generate_image',

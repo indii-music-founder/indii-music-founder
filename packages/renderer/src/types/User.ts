@@ -160,6 +160,7 @@ export interface UserProfile {
     knowledgeBase?: KnowledgeDocument[];
     savedWorkflows?: SavedWorkflow[];
     careerStage?: string;
+    careerProfile?: string;
     artistType?: 'Solo' | 'Band' | 'Collective';
     goals?: string[];
     location?: string; // User's city/region (e.g., "Detroit, MI") — powers spatial awareness in agent prompts

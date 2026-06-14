@@ -1,7 +1,10 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+vi.unmock('@/services/MembershipService');
 import { MembershipService } from './MembershipService';
 import { getDoc } from 'firebase/firestore';
+
+
 
 // -----------------------------------------------------------------------------
 // LEDGER'S TEST SUITE: APPROVAL GATES

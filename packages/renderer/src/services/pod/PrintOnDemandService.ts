@@ -78,7 +78,7 @@ export interface PrintfulOrderResponse {
 // Types & Schemas
 // ============================================================================
 
-export const PODProviderSchema = z.enum(['printful', 'printify', 'gooten', 'internal']);
+export const PODProviderSchema = z.enum(['printful', 'printify', 'gooten', 'prodigi', 'internal']);
 export type PODProvider = z.infer<typeof PODProviderSchema>;
 
 export const PODProductSchema = z.object({
@@ -668,6 +668,188 @@ class InternalProvider implements PODProviderAdapter {
 }
 
 // ============================================================================
+// Prodigi Provider Implementation
+// ============================================================================
+
+class ProdigiProvider implements PODProviderAdapter {
+    name: PODProvider = 'prodigi';
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    private async callFunction<T>(name: string, data?: any): Promise<T> {
+        try {
+            const { httpsCallable } = await import('firebase/functions');
+            const { functions } = await import('@/services/firebase');
+            const fn = httpsCallable(functions, `pod_${name}`);
+            const result = await fn(data);
+            return result.data as T;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } catch (error: any) {
+            logger.error(`[ProdigiProvider] Cloud Function pod_${name} failed:`, error);
+            throw new Error(`Prodigi operation failed: ${error.message}`);
+        }
+    }
+
+    async getProducts(): Promise<PODProduct[]> {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const products = await this.callFunction<any[]>('prodigiGetProducts');
+        return products.map(p => this.mapProduct(p));
+    }
+
+    async getProduct(productId: string): Promise<PODProduct | null> {
+        try {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const product = await this.callFunction<any>('prodigiGetProduct', { productId });
+            return this.mapProduct(product);
+        } catch {
+            return null;
+        }
+    }
+
+    async searchProducts(query: string, type?: string): Promise<PODProduct[]> {
+        const products = await this.getProducts();
+        return products.filter(p => {
+            const matchesQuery = p.name.toLowerCase().includes(query.toLowerCase());
+            const matchesType = !type || p.type.toLowerCase() === type.toLowerCase();
+            return matchesQuery && matchesType;
+        });
+    }
+
+    async calculatePrice(items: PODOrderItem[]): Promise<{ subtotal: number; breakdown: { itemId: string; price: number }[] }> {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const result = await this.callFunction<any>('prodigiCalculatePrice', { items });
+        return {
+            subtotal: result.subtotal || 0,
+            breakdown: items.map((item, i) => ({
+                itemId: item.productId,
+                price: result.breakdown?.[i]?.cost || 0
+            }))
+        };
+    }
+
+    async getShippingRates(address: PODShippingAddress, items: PODOrderItem[]): Promise<PODShippingRate[]> {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const result = await this.callFunction<any[]>('prodigiGetShippingRates', { address, items });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return result.map((rate: any) => ({
+            id: rate.id,
+            name: rate.name,
+            rate: parseFloat(rate.rate),
+            currency: rate.currency,
+            estimatedDays: rate.estimatedDays || '3-5 business days'
+        }));
+    }
+
+    async createOrder(items: PODOrderItem[], address: PODShippingAddress, shippingMethod = 'STANDARD'): Promise<PODOrder> {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const result = await this.callFunction<any>('prodigiCreateOrder', { items, address, shippingMethod });
+        const mappedOrder = this.mapOrder(result);
+
+        try {
+            const uid = auth.currentUser?.uid;
+            if (!uid) {
+                throw new Error('Authenticated user is required to persist POD orders.');
+            }
+            const orderRef = doc(collection(db, 'users', uid, 'pod_orders'), mappedOrder.id);
+            await setDoc(orderRef, mappedOrder);
+        } catch (e: unknown) {
+            logger.error('[ProdigiProvider] Failed to persist order to Firestore:', e);
+        }
+
+        return mappedOrder;
+    }
+
+    async getOrder(orderId: string): Promise<PODOrder | null> {
+        try {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const result = await this.callFunction<any>('prodigiGetOrder', { orderId });
+            return this.mapOrder(result);
+        } catch {
+            return null;
+        }
+    }
+
+    async cancelOrder(orderId: string): Promise<boolean> {
+        try {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            await this.callFunction<any>('prodigiCancelOrder', { orderId });
+            return true;
+        } catch {
+            return false;
+        }
+    }
+
+    async generateMockup(productId: string, variantId: string, designUrl: string, printArea = 'front'): Promise<string> {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const result = await this.callFunction<any>('prodigiGenerateMockup', { productId, variantId, designUrl, printArea });
+        return result;
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    private mapProduct(raw: any): PODProduct {
+        return {
+            id: String(raw.id),
+            externalId: String(raw.externalId || raw.id),
+            provider: 'prodigi',
+            name: raw.name,
+            description: raw.description,
+            type: raw.type || 'Unknown',
+            basePrice: raw.basePrice || 0,
+            currency: 'USD',
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            variants: (raw.variants || []).map((v: any) => ({
+                id: String(v.id),
+                name: v.name,
+                size: v.size,
+                color: v.color,
+                colorHex: v.colorHex,
+                price: v.price || raw.basePrice || 0,
+                inStock: v.inStock !== false
+            })),
+            printAreas: raw.printAreas || [
+                { id: 'front', name: 'Front', width: 4500, height: 5400 }
+            ],
+            imageUrl: raw.imageUrl
+        };
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    private mapOrder(raw: any): PODOrder {
+        return {
+            id: String(raw.id),
+            externalId: raw.externalId,
+            provider: 'prodigi',
+            status: raw.status || 'pending',
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            items: (raw.items || []).map((item: any) => ({
+                productId: String(item.productId),
+                variantId: String(item.variantId),
+                quantity: item.quantity || 1,
+                designUrl: item.designUrl || '',
+                printArea: item.printArea || 'front'
+            })),
+            shippingAddress: {
+                name: raw.shippingAddress?.name || '',
+                address1: raw.shippingAddress?.address1 || '',
+                city: raw.shippingAddress?.city || '',
+                stateCode: raw.shippingAddress?.stateCode || '',
+                countryCode: raw.shippingAddress?.countryCode || '',
+                postalCode: raw.shippingAddress?.postalCode || ''
+            },
+            shippingMethod: raw.shippingMethod || 'STANDARD',
+            subtotal: raw.subtotal || 0,
+            shippingCost: raw.shippingCost || 0,
+            tax: raw.tax || 0,
+            total: raw.total || 0,
+            currency: 'USD',
+            trackingNumber: raw.trackingNumber,
+            trackingUrl: raw.trackingUrl,
+            createdAt: raw.createdAt || new Date().toISOString(),
+            updatedAt: raw.updatedAt || new Date().toISOString()
+        };
+    }
+}
+
+// ============================================================================
 // Main Service (Provider Orchestration)
 // ============================================================================
 
@@ -685,6 +867,9 @@ class PrintOnDemandServiceClass {
 
         // Printful provider uses Cloud Functions for secure API communication
         this.registerProvider(new PrintfulProvider());
+
+        // Prodigi provider registration
+        this.registerProvider(new ProdigiProvider());
     }
 
     registerProvider(provider: PODProviderAdapter): void {
