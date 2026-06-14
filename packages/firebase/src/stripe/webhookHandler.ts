@@ -66,12 +66,75 @@ async function handleMicroTransactionCheckoutCompleted(session: Stripe.Checkout.
   logger.info(`[handleMicroTransaction] Added ${credits} credits to user ${maskId(userId)}`);
 }
 
+async function handleLicensingCheckoutCompleted(session: Stripe.Checkout.Session): Promise<void> {
+  const userId = session.metadata?.userId;
+  const connectedAccountId = session.metadata?.connectedAccountId;
+  const artistAmountStr = session.metadata?.artistAmount;
+  const trackTitle = session.metadata?.trackTitle || 'Sync License';
+  const artist = session.metadata?.artist || 'indii Artist';
+
+  if (!userId || !connectedAccountId || !artistAmountStr) {
+    logger.error('[handleLicensingCheckoutCompleted] Missing metadata for licensing purchase');
+    return;
+  }
+
+  const artistAmount = parseInt(artistAmountStr, 10);
+  if (isNaN(artistAmount) || artistAmount <= 0) {
+    logger.error('[handleLicensingCheckoutCompleted] Invalid artist amount');
+    return;
+  }
+
+  // Execute Stripe transfer to connected account
+  try {
+    const transfer = await stripe.transfers.create({
+      amount: artistAmount,
+      currency: 'usd',
+      destination: connectedAccountId,
+      description: `indii Sync License payout - Session: ${session.id}`,
+    });
+    logger.info(`[handleLicensingCheckoutCompleted] Transferred ${artistAmount} cents to connected account ${connectedAccountId}, transferId: ${transfer.id}`);
+  } catch (err: any) {
+    logger.error(`[handleLicensingCheckoutCompleted] Stripe transfer failed for session ${session.id}:`, err);
+    throw err; // Throw to trigger webhook retry
+  }
+
+  // Update or record the completed license in Firestore
+  const db = getFirestore();
+  await db.collection('licenses').add({
+    userId,
+    title: trackTitle,
+    artist,
+    licenseType: 'sync',
+    status: 'active',
+    amount: artistAmount,
+    stripeSessionId: session.id,
+    createdAt: FieldValue.serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp(),
+  });
+
+  // Log transaction entry in ledger
+  await db.collection(`users/${userId}/ledger`).add({
+    type: 'sync_license_sale',
+    amount: artistAmount,
+    currency: 'usd',
+    status: 'paid',
+    stripeSessionId: session.id,
+    createdAt: FieldValue.serverTimestamp(),
+  });
+}
+
 async function handleCheckoutCompleted(event: Stripe.Event): Promise<void> {
   const session = event.data.object as Stripe.Checkout.Session;
 
   // Route micro-transactions separately.
   if (session.metadata?.type === 'micro_transaction') {
     await handleMicroTransactionCheckoutCompleted(session);
+    return;
+  }
+
+  // Route licensing purchases separately.
+  if (session.metadata?.type === 'licensing_purchase') {
+    await handleLicensingCheckoutCompleted(session);
     return;
   }
 
