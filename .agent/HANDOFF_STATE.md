@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-14 09:05 EDT
+**Updated:** 2026-06-14 09:06 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+93ed26744 feat(infrastructure): refactor redeemption to use transaction and expand electron API types
+f710355e8 chore: session checkpoint [09:05]
 d4eadb2b7 feat(agent): support listener cleanups and recoupment doc overrides
 030a98094 fix(warnings): remove unused import and clean up eslint disable
 c32185373 test: add DevOpsAgent and SecurityAgent unit test suites
@@ -12,15 +14,11 @@ f01990db0 chore(e2e-interop): auto-sync envelope test fixture
 99123cb85 chore(e2e-interop): auto-sync envelope test fixture
 3e9a5794f chore(e2e-interop): auto-sync envelope test fixture
 eb46c08d7 chore(e2e-interop): auto-sync envelope test fixture
-2be0b637f chore(e2e-interop): auto-sync envelope test fixture
-2dee9e370 chore(e2e-interop): auto-sync envelope test fixture
 ```
 
 ## Working State
 ```
- M packages/firebase/src/functions/auth/handoff.ts
- M packages/firebase/src/subscription/createMicroTransaction.ts
- M python/tests/fixtures/e2e_interop/ts_to_py/envelope.json
+clean working tree
 ```
 
 ## Decisions
