@@ -4995,7 +4995,7 @@ Therefore, no fix can be proposed or implemented.
 - [x] **ISSUE-HUNTER-101** `packages/renderer/src/core/store/slices/authSlice.ts` - Unsafe authLoading Early Returns leaked electron listeners. Fixed.
 
 ### ISSUE-AUDIT-001: 26 High Severity Dependency Vulnerabilities
-- **Status:** 🟡 IN PROGRESS (Agent A)
+- **Status:** ✅ FIXED (Agent C)
 - **Severity:** P0
 - **Module:** Global / Dependencies
 - **Summary:** `npm audit` reports 26 high severity vulnerabilities. Several core packages are also outdated.
