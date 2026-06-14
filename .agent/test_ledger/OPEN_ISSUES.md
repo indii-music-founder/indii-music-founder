@@ -5052,3 +5052,47 @@ Therefore, no fix can be proposed or implemented.
 ### ISSUE-HUNTER-103: Missing HTTP Retry & Status Handling
 - [x] **Description**: Replaced raw fetch calls with a central robust `fetchWithRetry` utility. Handled test timeout leak with `AbortSignal`. Updated `QCPanel.test.tsx` regex matching.
 - [x] **Status**: FIXED
+
+---
+
+### ISSUE-046: Unified Event Bus for Swarm Context Synchronization
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Boardroom HQ / Context Management
+- **Summary:** Seated agents are blind to other modules' actions until a manual handshake hook (`useBoardroomContextHandshake`) pulls from Zustand on mount. This is pull-based and ad-hoc.
+- **Fix Direction:** Implement a centralized event-driven context publisher. When an asset is generated or updated (e.g. Creative, Distribution), the slice should publish a unified context update to the active agent memory directly.
+- **Files:** `packages/renderer/src/hooks/useBoardroomContextHandshake.ts`, `packages/renderer/src/core/store/`
+
+---
+
+### ISSUE-047: Swarm Conductor Execution Loop Duplication
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Boardroom Conductor / Specialist Agents
+- **Summary:** `GeneralistAgent` overrides the full `execute()` loop for native function calling, while other agents inherit from `BaseAgent`. This duplication is fragile and historically caused state and history mapping mismatches.
+- **Fix Direction:** Refactor the executor loop to unify context building and prompt injections within `BaseAgent.ts`. `GeneralistAgent.ts` should only override tool definition routing rather than the entire execution orchestration.
+- **Files:** `packages/renderer/src/services/agent/specialists/GeneralistAgent.ts`, `packages/renderer/src/services/agent/BaseAgent.ts`
+
+---
+
+### ISSUE-048: indiiREMOTE Local Peer-to-Peer Sync Fallback
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Mobile Remote / WebSocket Relay
+- **Summary:** `indiiREMOTE` sync entirely depends on WAN-relayed Firebase Cloud Functions. If WAN latency is high or connections drop, remote pairing and control fail despite devices being on the same local Wi-Fi network.
+- **Fix Direction:** Implement local network service discovery (mDNS/UDP) in the Electron desktop shell. Fall back to local peer-to-peer WebSockets if mobile and desktop detect same LAN.
+- **Files:** `packages/renderer/src/services/agent/RemoteRelayService.ts`, `packages/main/src/`
+
+---
+
+### ISSUE-049: Offline Token Budget Ledger Security Gate
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** Security / Finance
+- **Summary:** Budget breaker checks cost-breaker thresholds on Firestore ledgers, but client-side offline execution (PWA) queues Firestore updates. A user executing rapid offline agent loops could run up significant API token debt before sync reconciles the budget.
+- **Fix Direction:** Enforce local budget allocation bounds. Maintain active token spending limits inside `IndexedDB` that decrement immediately on execution, blocking token-heavy operations when offline quotas are exhausted.
+- **Files:** `packages/renderer/src/services/MembershipService.ts`
