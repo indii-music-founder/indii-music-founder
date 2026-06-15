@@ -163,7 +163,10 @@ After applying the fix:
 1. **Type-check:** Run `npm run typecheck` to ensure no TypeScript errors
 2. **Lint:** Run `npm run lint` to ensure no ESLint violations
 3. **Unit tests:** Run `npm test -- --run` to ensure no test regressions
-4. **Browser verify (if applicable):** Use `browser_subagent` to reproduce
+4. **Static Verification Gate (MANDATORY):** Review the `git diff` of the files you modified. You must confirm that:
+   - The changes contain real logic and are not placeholders, empty array returns, or mocked `success` responses.
+   - The `Fix` text in your open issues ledger update accurately describes the *actual* code added. Fake description tags are terminal violations.
+5. **Browser verify (if applicable):** Use `browser_subagent` to reproduce
    the original steps and confirm the issue is resolved
 
 ### 3.5 Update .agent/test_ledger/OPEN_ISSUES.md
