@@ -210,9 +210,25 @@ async function executeSync() {
         logMessage('Checking GitHub Actions for failed workflows...');
         try {
             // Check authentication cleanly before proceeding
+            let authSuccess = false;
             try {
                 execSync('gh auth status', { stdio: 'ignore' });
+                authSuccess = true;
             } catch (authError) {
+                if (process.env.GITHUB_TOKEN) {
+                    logMessage('gh auth status failed with GITHUB_TOKEN set. Retrying with cleared GITHUB_TOKEN...');
+                    const originalToken = process.env.GITHUB_TOKEN;
+                    delete process.env.GITHUB_TOKEN;
+                    try {
+                        execSync('gh auth status', { stdio: 'ignore' });
+                        authSuccess = true;
+                    } catch (retryError) {
+                        process.env.GITHUB_TOKEN = originalToken; // restore if it still fails
+                    }
+                }
+            }
+
+            if (!authSuccess) {
                 logMessage('Warning: GitHub CLI (gh) is not authenticated or not installed. Run `gh auth login` to enable CI pipeline monitoring. Skipping.');
                 return;
             }
