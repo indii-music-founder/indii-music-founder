@@ -64,7 +64,7 @@ export class CredentialService {
                         throw new Error('safeStorage not available for decryption');
                     }
                 } catch (_e) {
-                    void 0;
+                    console.error('[CredentialService] SafeStorage decryption failed:', _e);
                     // If it's not JSON and decryption failed, we can't use it
                     if (storedPayload.trim().startsWith('{')) return JSON.parse(storedPayload);
                     return null;
@@ -73,7 +73,7 @@ export class CredentialService {
 
             return JSON.parse(decryptedPayload) as Credentials;
         } catch (_error) {
-            void 0;
+            console.error('[CredentialService] getCredentials failed:', _error);
             return null;
         }
     }
@@ -85,7 +85,7 @@ export class CredentialService {
         try {
             return await keytar.deletePassword(SERVICE_NAME, distributorId);
         } catch (_error) {
-            void 0;
+            console.error('[CredentialService] deleteCredentials failed:', _error);
             return false;
         }
     }

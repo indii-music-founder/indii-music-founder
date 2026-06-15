@@ -76,12 +76,12 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
                             description: 'List of primary artists',
                         },
                         genre: { type: 'string' },
-                        isrc: { type: 'string', description: 'Optional Sound recording ISRC (12 characters)' },
-                        upc: { type: 'string', description: 'Optional Universal Product Code (12 or 13 digits)' },
+                        isrc: { type: 'string', description: 'Sound recording ISRC (12 characters)' },
+                        upc: { type: 'string', description: 'Universal Product Code (12 or 13 digits)' },
                         duration: { type: 'string', description: 'Optional ISO 8601 duration string (e.g., PT3M30S)' },
                         releaseDate: { type: 'string', description: 'Optional release date in YYYY-MM-DD format' },
                     },
-                    required: ['releaseTitle', 'artists', 'genre'],
+                    required: ['releaseTitle', 'artists', 'genre', 'upc', 'isrc'],
                 },
             },
         ],
@@ -94,13 +94,22 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             releaseTitle: string;
             artists: string[];
             genre: string;
-            isrc?: string;
-            upc?: string;
+            isrc: string;
+            upc: string;
             duration?: string;
             releaseDate?: string;
         };
-        const upcVal = args.upc || `19${Math.floor(1000000000 + Math.random() * 9000000000)}`;
-        const isrcVal = args.isrc || 'USABC1234567';
+
+        if (!args.upc || !/^\d{12,13}$/.test(args.upc)) {
+            throw new McpError(ErrorCode.InvalidParams, 'Invalid or missing UPC. Must be a 12 or 13 digit number.');
+        }
+
+        if (!args.isrc || !/^[A-Z]{2}[A-Z0-9]{3}\d{7}$/i.test(args.isrc)) {
+            throw new McpError(ErrorCode.InvalidParams, 'Invalid or missing ISRC. Must be a standard 12-character alphanumeric code.');
+        }
+
+        const upcVal = args.upc;
+        const isrcVal = args.isrc;
         const durationVal = args.duration || 'PT3M30S';
         const messageId = `indii-msg-${Date.now()}`;
         const releaseDateVal = args.releaseDate || new Date().toISOString().split('T')[0];
