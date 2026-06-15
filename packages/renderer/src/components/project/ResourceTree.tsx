@@ -14,6 +14,7 @@ import { FileTreeNode } from './FileTreeNode';
 import { processForKnowledgeBase } from '@/services/rag/ragService';
 import { logger } from '@/utils/logger';
 import { Modal } from '@/components/ui/Modal';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 interface ResourceTreeProps {
     className?: string;
@@ -59,7 +60,6 @@ export const ResourceTree: React.FC<ResourceTreeProps> = ({ className }) => {
     // Rename State
     const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
     const [uploadTargetId, setUploadTargetId] = useState<string | null>(null); // Folder to upload to
-    const [deletingNode, setDeletingNode] = useState<FileNode | null>(null);
 
     useEffect(() => {
         if (currentProjectId) {
@@ -213,9 +213,24 @@ export const ResourceTree: React.FC<ResourceTreeProps> = ({ className }) => {
         setEditingNodeId(null);
     }, []);
 
-    const handleDelete = useCallback((node: FileNode) => {
-        setDeletingNode(node);
-    }, []);
+    const handleDelete = useCallback(async (node: FileNode) => {
+        const ok = await ConfirmDialog.call({
+            title: "Delete File/Folder",
+            message: `Are you sure you want to delete "${node.name}"? This action cannot be undone.`,
+            confirmText: "Delete",
+            variant: "destructive"
+        });
+        
+        if (ok) {
+            try {
+                await deleteNode(node.id);
+                toast.success(`Deleted: ${node.name}`);
+            } catch (err) {
+                logger.error('Failed to delete node:', err);
+                toast.error('Failed to delete node.');
+            }
+        }
+    }, [deleteNode, toast]);
 
     const handleCreateFolder = useCallback(async (node: FileNode) => {
         if (currentProjectId && userProfile?.id) {
@@ -329,46 +344,6 @@ export const ResourceTree: React.FC<ResourceTreeProps> = ({ className }) => {
                 onChange={handleFileInputChange}
                 aria-label="Upload files"
             />
-
-            <Modal
-                isOpen={deletingNode !== null}
-                onClose={() => setDeletingNode(null)}
-                titleId="delete-node-title"
-                maxWidth="max-w-md"
-            >
-                <div className="p-6">
-                    <h2 id="delete-node-title" className="text-lg font-bold text-white mb-2">Delete File/Folder</h2>
-                    <p className="text-sm text-gray-400 mb-6">
-                        Are you sure you want to delete "{deletingNode?.name}"? This action cannot be undone.
-                    </p>
-                    <div className="flex justify-end gap-3">
-                        <button
-                            onClick={() => setDeletingNode(null)}
-                            className="px-4 py-2 rounded-lg bg-zinc-800 text-gray-300 hover:bg-zinc-700 transition-colors text-xs font-semibold"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            onClick={async () => {
-                                if (deletingNode) {
-                                    try {
-                                        await deleteNode(deletingNode.id);
-                                        toast.success(`Deleted: ${deletingNode.name}`);
-                                    } catch (err) {
-                                        logger.error('Failed to delete node:', err);
-                                        toast.error('Failed to delete node.');
-                                    } finally {
-                                        setDeletingNode(null);
-                                    }
-                                }
-                            }}
-                            className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors text-xs font-semibold"
-                        >
-                            Delete
-                        </button>
-                    </div>
-                </div>
-            </Modal>
         </div>
     );
 };
