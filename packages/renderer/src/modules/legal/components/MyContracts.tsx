@@ -89,7 +89,7 @@ export function MyContracts({ onNewContract }: MyContractsProps) {
 
         if (ok) {
             try {
-                await LegalService.deleteContract(contract.id);
+                await LegalService.updateContract(contract.id, { status: ContractStatus.DRAFT });
                 setContracts(prev => prev.filter(c => c.id !== contract.id));
                 toast.success(`Deleted: ${contract.title}`);
             } catch (error: unknown) {
