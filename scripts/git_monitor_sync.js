@@ -155,8 +155,7 @@ async function executeSync() {
             runCommand('npm run typecheck');
 
             logMessage('Running tests validation...');
-            // Running specific workspace or fast sharded validation to prevent long-running timeouts
-            runCommand('npm test -- --run --pool=threads --poolOptions.threads.isolate=false');
+            runCommand('npm test -- --run --pool=threads');
             
             logMessage('Validation successful. Pushing local commits to origin...');
             runCommand(`git push origin ${branchName}`);
