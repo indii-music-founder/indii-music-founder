@@ -16,8 +16,13 @@ test.describe('Boardroom Strategic Workflow Scenario', () => {
                     return;
                 }
 
-                const postData = route.request().postData() || "";
+                const postData = route.request().postData() || '';
                 console.log(`[E2E:MockAI] Intercepted request. Payload size: ${postData.length} chars.`);
+
+                if (!postData) {
+                    await route.continue();
+                    return;
+                }
 
                 // Parse the user message from the payload to avoid matching prompt history keywords
                 let userMessage = "";
