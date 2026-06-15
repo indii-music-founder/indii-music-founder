@@ -1,24 +1,24 @@
 # Handoff State
-**Updated:** 2026-06-15 00:33 EDT
+**Updated:** 2026-06-15 00:52 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+93bacf902 docs(issues): mark issue 427 in progress
+ed69dc1dc fix: delete orphaned scripts/fix_void.cjs (ISSUE-OPUS-001)
+2382de2ff chore(test): update test screenshots
+334618569 chore: session checkpoint [00:33]
 3a59f4071 docs(workflow): harden ABC Conflict Avoidance (append+commit-immediately) per ISSUE-OPUS-002
 9e4cf1e1f chore: push workflows and visual verification artifacts
 7d643c071 test(ledger): file ISSUE-OPUS-001/002 (fix_void cleanup + ledger write-collision finding)
 e1b843b55 test(ledger): log ISSUE-428..430 for Playwright E2E failures
 abf7a44f7 chore: session checkpoint [00:00]
 0cac4c449 chore: session checkpoint [23:53]
-cce7ce820 test(ledger): log ISSUE-427 for GitHub CLI Auth failure
-19b9f1f31 chore: session checkpoint [23:50]
-44ca92693 chore: sync workflow guidelines and envelope json
-d8d64b44f chore: session checkpoint [23:47]
 ```
 
 ## Working State
 ```
-clean working tree
+ M scripts/git_monitor_sync.js
 ```
 
 ## Decisions
