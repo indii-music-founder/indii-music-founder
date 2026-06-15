@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-15 08:57 EDT
+**Updated:** 2026-06-15 08:58 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+691ed2811 chore: session checkpoint [08:57]
 dbfbbf9e3 chore: session checkpoint [08:56]
 12e7534aa fix(ledger): remove ISSUE-077 from STILL FAILING
 6e5a025aa chore: claim ISSUE-077 in ledger
@@ -13,7 +14,6 @@ aea28cc20 build(renderer): install @reown/appkit and ethers for WalletConnect su
 8e53423de style(mobile): upgrade MobileRemote styles to Tailwind v4 syntax
 72d7c30e8 chore(ledger): claim ISSUE-184 in progress (Agent B)
 bec5aaac9 test(ledger): verify OPUS-006, A-003, D-002
-547eabf7e test(publishing): mock ConfirmDialog and fix dashboard bulk action test failures
 ```
 
 ## Working State
