@@ -25,7 +25,7 @@ class SFTPService {
 
     async connect(config: SFTPConfig): Promise<void> {
         try {
-            void 0;
+            console.log('[SFTPService] Connecting to SFTP host:', config.host);
             await this.client.connect({
                 host: config.host,
                 port: config.port || 22,
@@ -34,10 +34,10 @@ class SFTPService {
                 privateKey: config.privateKey,
             });
             this.connected = true;
-            void 0;
+            console.log('[SFTPService] SFTP connection established successfully.');
         } catch (error: unknown) {
             const msg = error instanceof Error ? error.message : String(error);
-            void 0;
+            console.error('[SFTPService] SFTP connection failed:', msg);
             throw new SFTPError('CONNECTION_FAILED', `Failed to connect to SFTP: ${msg}`, error);
         }
     }
@@ -45,7 +45,7 @@ class SFTPService {
     async uploadDirectory(localPath: string, remotePath: string): Promise<string[]> {
         if (!this.connected) throw new SFTPError('NOT_CONNECTED', 'SFTP client not connected');
 
-        void 0;
+        console.log(`[SFTPService] Beginning directory upload from ${localPath} to ${remotePath}...`);
         const uploadedFiles: string[] = [];
 
         try {
