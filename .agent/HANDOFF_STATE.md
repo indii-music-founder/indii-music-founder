@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-14 23:47 EDT
+**Updated:** 2026-06-14 23:50 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+44ca92693 chore: sync workflow guidelines and envelope json
+d8d64b44f chore: session checkpoint [23:47]
 98591a4d1 chore: session checkpoint [23:46]
 42692bd2d docs(workflow): sync a.md
 8b4513a3c chore: session checkpoint [23:39]
@@ -12,13 +14,11 @@
 da244bdd9 chore: session checkpoint [23:29]
 c45dac07a test: sync envelope json timestamps
 318832f6c chore: session checkpoint [23:24]
-fe7d04acd fix(web3): remove fake walletconnect modal and restore honest throw to comply with NO-MOCK-DATA rule
-ee901b6a0 chore: session checkpoint [23:19]
 ```
 
 ## Working State
 ```
- M .agent/workflows/a.md
+clean working tree
 ```
 
 ## Decisions
