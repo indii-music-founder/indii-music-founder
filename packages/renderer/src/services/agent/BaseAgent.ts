@@ -1002,91 +1002,67 @@ export class BaseAgent implements SpecializedAgent {
                     }
                 }
 
-                const functionCall = response.functionCalls()?.[0];
+                const functionCalls = response.functionCalls() || [];
 
-                if (functionCall) {
-                    const { name, args } = functionCall;
+                if (functionCalls.length > 0) {
+                    for (const functionCall of functionCalls) {
+                        const { name, args } = functionCall;
 
-                    // Phase 2: Advanced loop detection
-                    const loopCheck = await this.loopDetector.detectLoop(name, args);
-                    if (loopCheck.isLoop) {
-                        logger.warn(`[BaseAgent] Loop detected in ${this.id}: ${loopCheck.reason}`);
-                        logger.warn(`[BaseAgent] Pattern: ${loopCheck.pattern}`);
-                        await executionContext.rollback();
-                        return {
-                            text: `Task ended: ${loopCheck.reason}`,
-                            error: 'Loop detected',
-                            toolCalls
-                        };
-                    }
-
-                    // Record this tool call for future loop detection
-                    this.loopDetector.recordToolCall(name, args);
-
-                    // Runtime tool authorization enforcement
-                    // Build the allowed set: explicit authorizedTools > declared functionDeclarations > allow-all
-                    const declaredToolNames = this.tools.flatMap(
-                        (t: ToolDefinition) => t.functionDeclarations.map((d: FunctionDeclaration) => d.name)
-                    );
-                    const authorizedTools: string[] | undefined = this.authorizedTools ?? (
-                        declaredToolNames.length > 0 ? declaredToolNames : undefined
-                    );
-                    if (authorizedTools !== undefined && !authorizedTools.includes(name)) {
-                        logger.warn(`[BaseAgent] SECURITY: Agent '${this.id}' attempted unauthorized tool call: '${name}'`);
-                        const blockedResult: ToolFunctionResult = {
-                            success: false,
-                            error: `Tool '${name}' is not authorized for agent '${this.id}'.`
-                        };
-                        toolCalls.push({ name, args, result: blockedResult });
-                        lastToolResult = blockedResult;
-                        // Inject block notice into conversation and continue loop
-                        fullPrompt += `\n[Tool Call: ${name}(${JSON.stringify(args)})] Result: Error: Tool '${name}' is not authorized for agent '${this.id}'.\n`;
-                        continue;
-                    }
-
-                    const argsStr = JSON.stringify(args);
-                    onProgress?.({ type: 'tool', toolName: name, content: `Executing ${name}...` });
-
-                    // EVENT: Tool Execution Start
-                    const startTime = Date.now();
-                    AgentEventBus.emitToolEvent('TOOL_EXECUTION_START', {
-                        agentId: this.id,
-                        toolName: name,
-                        timestamp: startTime
-                    });
-
-                    let result: ToolFunctionResult;
-                    if (this.functions[name]) {
-                        try {
-                            const schema = this.toolSchemas.get(name);
-                            if (schema) schema.parse(args);
-                            // Phase 3.5: Pass execution context to tools for isolated state access
-                            result = await this.functions[name](args, enrichedContext, toolContext);
-
-                            AgentEventBus.emitToolEvent('TOOL_EXECUTION_COMPLETE', {
-                                agentId: this.id,
-                                toolName: name,
-                                timestamp: Date.now(),
-                                durationMs: Date.now() - startTime
-                            });
-                        } catch (err: unknown) {
-                            const msg = err instanceof Error ? err.message : String(err);
-                            result = { success: false, error: msg };
-
-                            AgentEventBus.emitToolEvent('TOOL_EXECUTION_FAILED', {
-                                agentId: this.id,
-                                toolName: name,
-                                timestamp: Date.now(),
-                                durationMs: Date.now() - startTime,
-                                errorMessage: msg
-                            });
+                        // Phase 2: Advanced loop detection
+                        const loopCheck = await this.loopDetector.detectLoop(name, args);
+                        if (loopCheck.isLoop) {
+                            logger.warn(`[BaseAgent] Loop detected in ${this.id}: ${loopCheck.reason}`);
+                            logger.warn(`[BaseAgent] Pattern: ${loopCheck.pattern}`);
+                            await executionContext.rollback();
+                            return {
+                                text: `Task ended: ${loopCheck.reason}`,
+                                error: 'Loop detected',
+                                toolCalls
+                            };
                         }
-                    } else {
-                        const { TOOL_REGISTRY } = await import('@/services/agent/tools');
-                        if (TOOL_REGISTRY[name]) {
+
+                        // Record this tool call for future loop detection
+                        this.loopDetector.recordToolCall(name, args);
+
+                        // Runtime tool authorization enforcement
+                        // Build the allowed set: explicit authorizedTools > declared functionDeclarations > allow-all
+                        const declaredToolNames = this.tools.flatMap(
+                            (t: ToolDefinition) => t.functionDeclarations.map((d: FunctionDeclaration) => d.name)
+                        );
+                        const authorizedTools: string[] | undefined = this.authorizedTools ?? (
+                            declaredToolNames.length > 0 ? declaredToolNames : undefined
+                        );
+                        if (authorizedTools !== undefined && !authorizedTools.includes(name)) {
+                            logger.warn(`[BaseAgent] SECURITY: Agent '${this.id}' attempted unauthorized tool call: '${name}'`);
+                            const blockedResult: ToolFunctionResult = {
+                                success: false,
+                                error: `Tool '${name}' is not authorized for agent '${this.id}'.`
+                            };
+                            toolCalls.push({ name, args, result: blockedResult });
+                            lastToolResult = blockedResult;
+                            // Inject block notice into conversation and continue loop
+                            fullPrompt += `\n[Tool Call: ${name}(${JSON.stringify(args)})] Result: Error: Tool '${name}' is not authorized for agent '${this.id}'.\n`;
+                            continue;
+                        }
+
+                        const argsStr = JSON.stringify(args);
+                        onProgress?.({ type: 'tool', toolName: name, content: `Executing ${name}...` });
+
+                        // EVENT: Tool Execution Start
+                        const startTime = Date.now();
+                        AgentEventBus.emitToolEvent('TOOL_EXECUTION_START', {
+                            agentId: this.id,
+                            toolName: name,
+                            timestamp: startTime
+                        });
+
+                        let result: ToolFunctionResult;
+                        if (this.functions[name]) {
                             try {
-                                // Phase 3.5: Pass execution context to TOOL_REGISTRY tools
-                                result = await (TOOL_REGISTRY[name] as AnyToolFunction)(args, enrichedContext, toolContext);
+                                const schema = this.toolSchemas.get(name);
+                                if (schema) schema.parse(args);
+                                // Phase 3.5: Pass execution context to tools for isolated state access
+                                result = await this.functions[name](args, enrichedContext, toolContext);
 
                                 AgentEventBus.emitToolEvent('TOOL_EXECUTION_COMPLETE', {
                                     agentId: this.id,
@@ -1107,73 +1083,100 @@ export class BaseAgent implements SpecializedAgent {
                                 });
                             }
                         } else {
-                            result = { success: false, error: `Tool '${name}' not found.` };
-                            AgentEventBus.emitToolEvent('TOOL_EXECUTION_FAILED', {
-                                agentId: this.id,
-                                toolName: name,
-                                timestamp: Date.now(),
-                                durationMs: Date.now() - startTime,
-                                errorMessage: `Tool '${name}' not found.`
-                            });
+                            const { TOOL_REGISTRY } = await import('@/services/agent/tools');
+                            if (TOOL_REGISTRY[name]) {
+                                try {
+                                    // Phase 3.5: Pass execution context to TOOL_REGISTRY tools
+                                    result = await (TOOL_REGISTRY[name] as AnyToolFunction)(args, enrichedContext, toolContext);
+
+                                    AgentEventBus.emitToolEvent('TOOL_EXECUTION_COMPLETE', {
+                                        agentId: this.id,
+                                        toolName: name,
+                                        timestamp: Date.now(),
+                                        durationMs: Date.now() - startTime
+                                    });
+                                } catch (err: unknown) {
+                                    const msg = err instanceof Error ? err.message : String(err);
+                                    result = { success: false, error: msg };
+
+                                    AgentEventBus.emitToolEvent('TOOL_EXECUTION_FAILED', {
+                                        agentId: this.id,
+                                        toolName: name,
+                                        timestamp: Date.now(),
+                                        durationMs: Date.now() - startTime,
+                                        errorMessage: msg
+                                    });
+                                }
+                            } else {
+                                result = { success: false, error: `Tool '${name}' not found.` };
+                                AgentEventBus.emitToolEvent('TOOL_EXECUTION_FAILED', {
+                                    agentId: this.id,
+                                    toolName: name,
+                                    timestamp: Date.now(),
+                                    durationMs: Date.now() - startTime,
+                                    errorMessage: `Tool '${name}' not found.`
+                                });
+                            }
                         }
-                    }
 
-                    // Store tool call and result
-                    lastToolResult = result;
-                    toolCalls.push({ name, args, result });
+                        // Store tool call and result
+                        lastToolResult = result;
+                        toolCalls.push({ name, args, result });
 
-                    // Item 406: Write async tool audit record (fire-and-forget, non-blocking)
-                    if (enrichedContext.userId) {
-                        const auditCol = collection(db, 'users', enrichedContext.userId, 'agent_audit');
-                        addDoc(auditCol, {
+                        // Item 406: Write async tool audit record (fire-and-forget, non-blocking)
+                        if (enrichedContext.userId) {
+                            const auditCol = collection(db, 'users', enrichedContext.userId, 'agent_audit');
+                            addDoc(auditCol, {
+                                toolName: name,
+                                agentId: this.id,
+                                timestamp: serverTimestamp(),
+                                success: typeof result === 'object' && result !== null ? (result as unknown as Record<string, unknown>).success !== false : true,
+                                // GEAP: Cryptographic provenance for tool execution audit trail
+                                ...(this.identityCard ? {
+                                    agentInstanceId: this.identityCard.instanceId,
+                                    agentFingerprint: this.identityCard.fingerprint,
+                                } : {}),
+                            }).catch(() => { /* audit is best-effort */ });
+                        }
+
+                        const outputText = typeof result === 'string'
+                            ? result
+                            : (result.success === false
+                                ? `Error: ${result.error || result.message}`
+                                : (result.message
+                                    ? `Success: ${result.message}\n\n[SYSTEM ONLY - DO NOT REPEAT THIS JSON TO THE USER]: ${JSON.stringify(result.data || result)}`
+                                    : `Success: ${JSON.stringify(result.data || result)}`));
+
+                        // Update prompt with tool result for next iteration
+                        fullPrompt += `\n[Tool Call: ${name}(${argsStr})] Result: ${outputText}\n`;
+
+                        // Emit tool result for UI/Persistence
+                        onProgress?.({
+                            type: 'tool_result',
                             toolName: name,
-                            agentId: this.id,
-                            timestamp: serverTimestamp(),
-                            success: typeof result === 'object' && result !== null ? (result as unknown as Record<string, unknown>).success !== false : true,
-                            // GEAP: Cryptographic provenance for tool execution audit trail
-                            ...(this.identityCard ? {
-                                agentInstanceId: this.identityCard.instanceId,
-                                agentFingerprint: this.identityCard.fingerprint,
-                            } : {}),
-                        }).catch(() => { /* audit is best-effort */ });
-                    }
+                            content: outputText
+                        });
 
-                    const outputText = typeof result === 'string'
-                        ? result
-                        : (result.success === false
-                            ? `Error: ${result.error || result.message}`
-                            : (result.message
-                                ? `Success: ${result.message}\n\n[SYSTEM ONLY - DO NOT REPEAT THIS JSON TO THE USER]: ${JSON.stringify(result.data || result)}`
-                                : `Success: ${JSON.stringify(result.data || result)}`));
+                        // Phase 2: DNA Infusion - Planning Mode Halting
+                        const resultStatus = result && typeof result === 'object'
+                            ? (result as { status?: unknown }).status
+                            : undefined;
+                        if (resultStatus === 'AWAITING_HUMAN' || resultStatus === 'awaiting_approval') {
+                            logger.info(`[BaseAgent] Tool ${name} requested user approval. Halting execution loop.`);
+                            await executionContext.rollback();
+                            return {
+                                text: `Execution paused: The agent drafted an artifact or plan and is awaiting your explicit approval to proceed.`,
+                                toolCalls,
+                                error: 'AWAITING_USER_APPROVAL'
+                            };
+                        }
 
-                    // Update prompt with tool result for next iteration
-                    fullPrompt += `\n[Tool Call: ${name}(${argsStr})] Result: ${outputText}\n`;
+                        if (name === 'speak') {
+                            // Keep going - don't let speak terminate the agent turn
+                            continue;
+                        }
 
-                    // Emit tool result for UI/Persistence
-                    onProgress?.({
-                        type: 'tool_result',
-                        toolName: name,
-                        content: outputText
-                    });
-
-                    // Phase 2: DNA Infusion - Planning Mode Halting
-                    const resultStatus = result && typeof result === 'object'
-                        ? (result as { status?: unknown }).status
-                        : undefined;
-                    if (resultStatus === 'AWAITING_HUMAN' || resultStatus === 'awaiting_approval') {
-                        logger.info(`[BaseAgent] Tool ${name} requested user approval. Halting execution loop.`);
-                        await executionContext.rollback();
-                        return {
-                            text: `Execution paused: The agent drafted an artifact or plan and is awaiting your explicit approval to proceed.`,
-                            toolCalls,
-                            error: 'AWAITING_USER_APPROVAL'
-                        };
-                    }
-
-                    if (name === 'speak') {
-                        // Keep going - don't let speak terminate the agent turn
-                        continue;
-                    }
+                    } // end for loop over function calls
 
                     // For most tools, we continue to let the Autonomous process the result
                     continue;
