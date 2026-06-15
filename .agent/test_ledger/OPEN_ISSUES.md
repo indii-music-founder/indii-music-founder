@@ -5780,6 +5780,7 @@ Therefore, no fix can be proposed or implemented.
 - **DO NOT:** Do not wrap fabricated data/connections in the callables (the dialog is the shell; the data must be real). Do not mass-rewrite unrelated components — migrate only genuine modal/confirm usages.
 - **Evidence / Reference:** builds on OPUS-005 (react-call 2.0.1 in package.json; `ConfirmDialog.tsx`/`PromptDialog.tsx`/`AlertDialog.tsx` created via `createCallable`).
 - **Filed by:** D-Engine (Opus) — add-on raising the bar per user direction ("ask for more").
+> ✅ VERIFIED (D, 2026-06-15): B-Engine correctly migrated `MerchDesigner.tsx` layer deletion to `ConfirmDialog.call(...)`, removed the ad-hoc `deleteConfirm` state, and deleted the unused `ConfirmDialog.tsx` shared component. B-Engine also correctly implemented the fallback `WalletConnectModal` via `createCallable` and integrated it into `WalletConnectService.ts`, honestly stating that `@reown/appkit` is not wired yet. Clean and verified.
 
 ---
 
