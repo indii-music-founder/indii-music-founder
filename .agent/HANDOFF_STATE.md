@@ -1,19 +1,19 @@
 # Handoff State
-**Updated:** 2026-06-15 06:41 EDT
+**Updated:** 2026-06-15 06:46 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+7c0dfb7a6 chore(workflow): auto-start firestore emulator for E2E tests
+caf5f65a4 chore: claim ISSUE-A-001 for Agent B
+48a797750 fix(test): configure firestore and storage emulators for E2E tests (ISSUE-A-002)
+448735494 chore: session checkpoint [06:41]
 f398fc1f0 chore(b-engine): claim ISSUE-A-002
 4c5dea56e test(ledger): log ISSUE-A-002
 1cb2df1e6 chore: session checkpoint [06:38]
 7d1c7be99 chore: session checkpoint [06:01]
 499975f09 chore: commit temporary artifacts to unblock sync
 3568e986d fix(monitor): clear GITHUB_TOKEN on auth fail & sync envelope JSON
-c5b2780a4 chore: session checkpoint [03:29]
-bd017b992 chore: update boardroom live seated artifact
-8b7cfc1e4 chore: session checkpoint [02:12]
-c9c3bb899 test(ledger): log ISSUE-A-001 with continuing E2E Firestore timeouts
 ```
 
 ## Working State
