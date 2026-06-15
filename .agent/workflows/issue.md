@@ -89,6 +89,8 @@ If invoked as `/issue sync`:
    - **Severity:** 🟡 MEDIUM (or 🔴 HIGH if labeled 'severity:critical'/'severity:major', etc.)
    - **Link:** <html_url>
    - **Summary:** <brief excerpt of body>
+   - **Expected (acceptance):** <what "done" looks like — derive from the issue body; if unclear, say "underspecified — confirm before fixing">
+   - **Honest fallback:** <if it can't be built now: clear error / "unavailable" state or WONTFIX — never fabricate data/success/UI to fake it. No mock data, ever.>
    ```
 5. Once appended, proceed to Step 2.
 

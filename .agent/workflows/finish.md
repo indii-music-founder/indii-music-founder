@@ -57,15 +57,26 @@ Present the aggregated list of findings to the human-in-the-loop directly in the
 ---
 
 ### Step 5 — Auto-Transfer to .agent/test_ledger/OPEN_ISSUES.md
-Immediately append **all** discovered items to `.agent/test_ledger/OPEN_ISSUES.md` following the standard issue protocol format:
+Immediately append **all** discovered items to `.agent/test_ledger/OPEN_ISSUES.md`.
+
+> **Write entries a fixer can act on correctly — terse stubs cause wrong fixes.** The bare
+> "Missing logic needs to be completed" boilerplate produced 26 mis-fixed issues, incl. ISSUE-184
+> where the title "throws error instead of modal" led an agent to fabricate a fake wallet. Every
+> entry MUST carry an **Expected (acceptance)** line and an **Honest fallback** line so the fixer
+> knows what "done" is AND what to do when it can't be built — instead of faking it.
 
 ```markdown
-## ISSUE-NNN: Finish <Description>
-- **Status:** OPEN
-- **Severity:** Medium
-- **Location:** `<file-path>`
-- **Details:** Found during `/finish` sweep. Missing logic or AI slop needs to be completed/removed.
+### ISSUE-NNN: Finish <Description>
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH | 🟡 MEDIUM | 🟢 LOW
+- **Location:** `<file-path:line>`
+- **Details:** What the placeholder/stub is now (the actual current behavior, e.g. "returns []", "throws 'not implemented'", "// coming soon").
+- **Expected (acceptance):** What "done" looks like concretely — the real behavior a reviewer can confirm at that file:line.
+- **Honest fallback:** If it genuinely cannot be built now (no API/SDK/credentials/upstream support), the correct outcome is a clear thrown error / "unavailable" state, or `WONTFIX — <reason>`. **NEVER fabricate data, a success status, an ID/UPC/address, or fake UI to make it look done.** (No mock data, ever.)
+- **DO NOT:** The specific fabrication trap to avoid for this item (e.g. "do not invent a wallet address", "do not stamp status:'SENT'", "do not `Math.random()` a UPC", "do not `test.skip` to make it green").
 ```
+
+**Filling `Expected` + `Honest fallback` is mandatory — do not leave them blank or generic.** If you cannot state what "done" looks like, the item is under-specified: say so in `Details` rather than emitting a vague stub the fixer will guess at.
 
 ### Step 6 — Clear the Ledger
 Since all items are autonomously transferred to the open issues list, clear the `.agent/test_ledger/UNFINISHED_WORK.md` staging document and leave a note that the sweep is complete.
