@@ -2,6 +2,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { buildCreativeHistoryState, CanvasImage, CreativeHistorySlice } from '../creativeHistorySlice';
+import type { StoreState } from '@/core/store';
 
 vi.mock('@/core/store', () => ({
     useStore: {
@@ -42,10 +43,10 @@ describe('creativeHistorySlice — openImageInStudio', () => {
         vi.clearAllMocks();
         slice = buildCreativeHistoryState(
             (updater) => {
-                const update = typeof updater === 'function' ? updater(slice) : updater;
+                const update = typeof updater === 'function' ? updater(slice as unknown as StoreState) : updater;
                 Object.assign(slice, update);
             },
-            () => slice
+            () => slice as unknown as StoreState
         );
     });
 

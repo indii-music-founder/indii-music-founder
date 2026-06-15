@@ -1,6 +1,7 @@
 import { StateCreator } from 'zustand';
 import { HistoryItem } from '@/core/types/history';
 import { logger } from '@/utils/logger';
+import { StoreState } from '@/core/store';
 
 let creativeHistoryUnsubscribe: (() => void) | null = null;
 
@@ -61,8 +62,8 @@ export interface CreativeHistorySlice {
 }
 
 export function buildCreativeHistoryState(
-    set: Parameters<StateCreator<CreativeHistorySlice>>[0],
-    _get: Parameters<StateCreator<CreativeHistorySlice>>[1]
+    set: Parameters<StateCreator<StoreState, [], [], CreativeHistorySlice>>[0],
+    _get: Parameters<StateCreator<StoreState, [], [], CreativeHistorySlice>>[1]
 ): CreativeHistorySlice {
     return {
         generatedHistory: [],
