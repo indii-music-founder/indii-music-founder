@@ -41,7 +41,7 @@ export const requestTaxForms = defineCallable<{ payees?: Payee[] }, { requests: 
                 name: payee.name,
                 email: payee.email,
                 formTypeRequested,
-                status: "SENT"
+                status: "REQUESTED"
             };
         });
 
@@ -53,7 +53,7 @@ export const requestTaxForms = defineCallable<{ payees?: Payee[] }, { requests: 
                 name: req.name,
                 email: req.email,
                 formTypeRequested: req.formTypeRequested,
-                status: 'SENT',
+                status: 'REQUESTED',
                 requestedAt: new Date().toISOString(),
                 validated: false
             }, { merge: true });

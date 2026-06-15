@@ -143,7 +143,7 @@ export function LoadingFallback() {
         // 10s failsafe timeout to prevent infinite loading spinners
         const failsafe = setTimeout(() => {
             setIsTimedOut(true);
-            void 0;
+            console.warn(`[LoadingFallbacks] Module loading timed out for: ${currentModule}`);
         }, 10000);
 
         return () => {
