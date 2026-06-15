@@ -5604,3 +5604,15 @@ Therefore, no fix can be proposed or implemented.
 - **Location:** `packages/firebase/src/mcp/index.ts`
 - **Fix:** Expanded the tool's input schema to accept optional `isrc`, `upc`, `duration`, and `releaseDate` parameters and updated XML template interpolation to use incoming client values dynamically.
 
+---
+
+### ISSUE-427: GitHub CLI Authentication Failure in git_monitor_sync.js
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Location:** `scripts/git_monitor_sync.js`
+- **Details:** The git monitor sync script fails to check GitHub Actions due to a `gh` CLI 401 Bad Credentials error.
+- **Expected (acceptance):** The script successfully retrieves GitHub Actions runs without throwing an authentication error. `gh` is properly authenticated in the environment.
+- **Honest fallback:** Catch the error explicitly and log a clean warning if credentials aren't provided, instead of a raw 401 crash stack.
+- **DO NOT:** Do not hardcode a personal access token into the script.
+- **Evidence:** `failed to get runs: HTTP 401: Bad credentials (https://api.github.com/repos/indii-music-founder/indii-music-founder/actions/runs?per_page=10&exclude_pull_requests=true)`
+
