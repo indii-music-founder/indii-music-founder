@@ -45,7 +45,7 @@ Your job: **run the tests, find the bugs, and write them to the ledger as clean,
 ### 3.1 Background tests (non-blocking)
 - Run the suites in the background and keep cycling — don't block the loop, collect results when they finish:
   - `npm test -- --run` — Vitest unit suite
-  - `npm run test:e2e` — Playwright E2E (the left/right nav-bar specs and every other `e2e/*.spec.ts`)
+  - `npx firebase emulators:exec --only firestore "npm run test:e2e"` — Playwright E2E with Firestore emulator automatically managed
   - `npm run typecheck` — compile errors are findings too
 - A red suite is your signal. Capture the **failing test name + assertion diff** — that is your evidence.
 
