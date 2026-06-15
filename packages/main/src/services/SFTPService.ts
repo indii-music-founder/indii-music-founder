@@ -64,11 +64,9 @@ class SFTPService {
             const list = await this.client.list(remotePath);
             uploadedFiles.push(...list.map(item => item.name));
 
-            void 0;
             return uploadedFiles;
         } catch (error: unknown) {
             const msg = error instanceof Error ? error.message : String(error);
-            void 0;
             throw new SFTPError('UPLOAD_FAILED', `Failed to upload directory: ${msg}`, error);
         }
     }
@@ -99,7 +97,6 @@ class SFTPService {
         if (this.connected) {
             await this.client.end();
             this.connected = false;
-            void 0;
         }
     }
 
