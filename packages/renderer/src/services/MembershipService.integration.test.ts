@@ -16,6 +16,7 @@ vi.mock('firebase/firestore', () => ({
     setDoc: vi.fn(),
     updateDoc: vi.fn(),
     addDoc: vi.fn(),
+    increment: vi.fn((n) => n),
     runTransaction: vi.fn().mockImplementation((db, callback) => callback({
         get: vi.fn().mockResolvedValue({ exists: () => true, data: () => ({ credits: 100 }) }),
         update: vi.fn()

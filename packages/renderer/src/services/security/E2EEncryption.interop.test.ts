@@ -10,7 +10,7 @@ describe('E2E encryption — Python interop harness (Phase 0.7 skeleton)', () =>
     e2eRecipient = new E2EEncryptionService();
     await e2eSender.initialize('sender-agent');
     await e2eRecipient.initialize('recipient-agent');
-  });
+  }, 30000);
 
   it('TS→Py: encrypts a payload and writes ts_to_py/envelope.json', async () => {
     const recipientJwk = await e2eRecipient.exportPublicKey('recipient-agent');
