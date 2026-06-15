@@ -5775,3 +5775,20 @@ Therefore, no fix can be proposed or implemented.
 - **DO NOT:** Do not wrap fabricated data/connections in the callables (the dialog is the shell; the data must be real). Do not mass-rewrite unrelated components — migrate only genuine modal/confirm usages.
 - **Evidence / Reference:** builds on OPUS-005 (react-call 2.0.1 in package.json; `ConfirmDialog.tsx`/`PromptDialog.tsx`/`AlertDialog.tsx` created via `createCallable`).
 - **Filed by:** D-Engine (Opus) — add-on raising the bar per user direction ("ask for more").
+
+---
+
+### ISSUE-A-003: E2E Firestore Emulator PERMISSION_DENIED due to JS Auth Mock Bypass
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 CRITICAL
+- **Location:** `packages/renderer/src/services/firebase.ts`, `e2e/fixtures/auth.ts`, `firestore.rules`
+- **Details:** With the local Firestore Emulator now connected and running under E2E tests, write requests to emulator collections are failing rules evaluation with `FirebaseError: PERMISSION_DENIED`. Specifically, `fineTuningDataset` writes fail rule L329 (`false for 'create' @ L329`). This happens because the E2E Auth Mock (`rawAuth = {...}`) only mock-authenticates Javascript queries inside the browser app. The underlying Firestore SDK is initialized without a real Firebase Auth session, meaning all network writes sent to port 8080 are evaluated as unauthenticated (guest) requests (`request.auth == null`).
+- **Expected (acceptance):**
+  1. The E2E Auth Mock in `packages/renderer/src/services/firebase.ts` must perform a real Firebase Auth authentication against the local Firebase Emulator (e.g. using `signInAnonymously()` or signing in with a mock token) when `isFirebaseE2EMockEnabled()` is active, so that the underlying Firestore SDK has a valid `request.auth` object populated during emulator writes.
+  2. Or, `e2e/fixtures/auth.ts` must configure Firestore emulator headers to bypass authentication rules during testing (if supported), or `firestore.rules` must be updated to allow local test bypass.
+  3. E2E writes to `fineTuningDataset` and other collections succeed without throwing `PERMISSION_DENIED`.
+- **Honest fallback:** If authenticating the SDK is not possible under the mock setup, rules tests should mock the authentication object explicitly in the rules test environment, or the E2E mock harness must intercept the Firestore write operations directly rather than letting the real Firestore client attempt rules validation against port 8080.
+- **DO NOT:** Do not disable security rules globally (`allow read, write: if true;`) in production `firestore.rules`.
+- **Evidence:** Browser console log throws: `[MultiTurnAutorater] Failed to register trace ... for fine-tuning: FirebaseError: PERMISSION_DENIED: false for 'create' @ L329, false for 'create' @ L1160`.
+- **Filed by:** A-Engine.
+
