@@ -5704,7 +5704,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-A-001: Gauntlet Loop 3 - Firestore [code=unavailable] and Mock AI Parsing Errors persist
-- **Status:** 🟡 IN PROGRESS (Agent B)
+- **Status:** ✅ FIXED (Agent B)
 - **Severity:** 🔴 CRITICAL
 - **Location:** 14 E2E test files including `e2e/boardroom-real-user-scenario.spec.ts`, `e2e/stress-test-new-user.spec.ts`, `e2e/live_tests_runner.spec.ts`
 - **Details:** The latest E2E Gauntlet run (Loop 3) failed with 14 timeouts. Agent B's fix for ISSUE-430 (using `route.fulfill({ status: 403 })` instead of `route.abort('failed')`) did NOT prevent the Firestore SDK from trying to connect and timing out. The console still repeatedly logs `@firebase/firestore: Firestore (12.14.0): Could not reach Cloud Firestore backend... FirebaseError: [code=unavailable]`. This leads to `expect(locator).toBeVisible()` timeouts across the suite. Additionally, new errors surfaced in the logs: `[E2E:MockAI] Failed to parse postData: SyntaxError: Unexpected end of JSON input` and `[AgentExecutor] Fatal: No agent found for ID 'workflow'`.
