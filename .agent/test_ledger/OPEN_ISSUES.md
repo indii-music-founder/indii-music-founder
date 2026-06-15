@@ -5616,3 +5616,33 @@ Therefore, no fix can be proposed or implemented.
 - **DO NOT:** Do not hardcode a personal access token into the script.
 - **Evidence:** `failed to get runs: HTTP 401: Bad credentials (https://api.github.com/repos/indii-music-founder/indii-music-founder/actions/runs?per_page=10&exclude_pull_requests=true)`
 
+---
+
+### ISSUE-428: Playwright Strict Mode Violation in conductor-consult-streaming.spec.ts
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Location:** `e2e/conductor-consult-streaming.spec.ts`
+- **Details:** The E2E test fails due to a strict mode violation where `getByText('MARKETING_SPECIALIST_REPLY_42')` resolves to 2 elements.
+- **Expected (acceptance):** The test locates a unique instance of the specialist reply or targets the correct selector without throwing a strict mode violation.
+- **Evidence:** `Error: strict mode violation: getByText('MARKETING_SPECIALIST_REPLY_42') resolved to 2 elements`
+
+---
+
+### ISSUE-429: Playwright Strict Mode Violation in indii-macro-flywheel.spec.ts
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Location:** `e2e/indii-macro-flywheel.spec.ts`
+- **Details:** The E2E test fails due to a strict mode violation where `locator('text=Superfan CRM').or(locator('text=Audience'))` resolves to 2 elements (a span and an h1).
+- **Expected (acceptance):** The test specifies a more precise selector to verify the visibility of the "Superfan CRM" section.
+- **Evidence:** `Error: strict mode violation: locator('text=Superfan CRM').or(locator('text=Audience')) resolved to 2 elements`
+
+---
+
+### ISSUE-430: Mass E2E Visibility and Timeout Failures (Suspected Network/Firestore Issue)
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 CRITICAL
+- **Location:** 11 files including `e2e/boardroom-real-user-scenario.spec.ts`, `e2e/mega-stress-test-v4.spec.ts`, `e2e/stress-test-new-user.spec.ts`, etc.
+- **Details:** 11 E2E tests failed due to timeouts while waiting for elements to be visible (e.g., `[data-testid="prompt-input"]`, `getByPlaceholder(/message/i)`). Browser console logs indicate `[code=unavailable]: The operation could not be completed` from Firestore, suggesting the tests are running in an environment without internet connectivity or failing to connect to the local emulators.
+- **Expected (acceptance):** Tests can successfully connect to the database/emulator and all UI elements render as expected within the timeout limits.
+- **Evidence:** `Error: expect(locator).toBeVisible() failed`, `Timeout: 10000ms`, `FirebaseError: [code=unavailable]: The operation could not be completed`
+
