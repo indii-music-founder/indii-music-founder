@@ -5676,7 +5676,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-OPUS-003: Strict-mode E2E "fixes" used `.first()` band-aids — root cause not investigated [re-opens ISSUE-428/429]
-- **Status:** ⏳ OPEN
+- **Status:** 🟡 IN PROGRESS (Agent B)
 - **Severity:** 🟡 MEDIUM
 - **Location:** `e2e/conductor-consult-streaming.spec.ts` (577420924), `e2e/indii-macro-flywheel.spec.ts` (19c8e2fac)
 - **Details:** B resolved the ISSUE-428/429 Playwright strict-mode violations by appending `.first()` to the ambiguous locators. This makes the tests green but does NOT meet either issue's stated acceptance — ISSUE-428 asked for "a UNIQUE instance," ISSUE-429 asked for "a MORE PRECISE selector"; `.first()` is neither (it blindly picks the first of an ambiguous match). The root cause — WHY `MARKETING_SPECIALIST_REPLY_42` renders in 2 elements — was never investigated; if the agent reply is duplicated, `.first()` now MASKS a real UI bug.
