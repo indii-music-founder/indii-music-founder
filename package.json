@@ -44,6 +44,7 @@
     "test:integration:ci": "vitest run \"integration.test\"",
     "test:e2e": "npx playwright test --project=chromium",
     "test:e2e:all": "npx playwright test",
+    "test:e2e:emulator": "bash scripts/run-e2e-emulator.sh",
     "test:rules": "FIRESTORE_EMULATOR_HOST=localhost:8080 vitest run --config vitest.rules.config.ts",
     "health:check": "vitest --run --grep '\\.integration\\.test\\.ts' -- packages/renderer/src/services",
     "health:generate-dashboard": "tsx scripts/generate-health-dashboard.ts",
