@@ -1,9 +1,12 @@
 # Handoff State
-**Updated:** 2026-06-15 07:31 EDT
+**Updated:** 2026-06-15 07:38 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+eb3072e55 test(ledger): verify OPUS-005, file ISSUE-D-002 to re-open OPUS-004 race condition
+63205b590 test(ledger): log ISSUE-A-003
+c4d84f1f4 chore: session checkpoint [07:31]
 bf37e9a5e chore: session checkpoint [07:29]
 dcfb3dfe0 test(ledger): file ISSUE-D-001 (add-on to OPUS-005 — use the react-call dialogs + ISSUE-184 shell)
 50055970e chore: session checkpoint [07:26]
@@ -11,13 +14,12 @@ dcfb3dfe0 test(ledger): file ISSUE-D-001 (add-on to OPUS-005 — use the react-c
 20d3a6694 fix(e2e): restore the commented boardroom assertions
 26a0eb5cf chore: session checkpoint [07:22]
 000376c51 fix(renderer): implement standard react-call dialogs [ISSUE-OPUS-005]
-24752dbd1 docs(issues): mark ISSUE-OPUS-005 in progress by Agent B
-bc7cc41fe chore: session checkpoint [07:12]
-2b257b751 test(ledger): file ISSUE-OPUS-006 (OPUS-004 real fix credited; restore the commented boardroom assertions)
 ```
 
 ## Working State
 ```
+ M packages/renderer/src/services/agent/LoopDetector.ts
+ M python/tests/fixtures/e2e_interop/ts_to_py/envelope.json
 ?? packages/renderer/python/
 ```
 
