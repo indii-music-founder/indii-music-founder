@@ -509,7 +509,7 @@ export default function MobileRemote() {
   };
 
   return (
-    <div className="min-h-screen bg-[#000] text-white flex flex-col font-sans selection:bg-blue-500/30 overflow-hidden relative pb-safe-bottom">
+    <div className="min-h-screen bg-black text-white flex flex-col font-sans selection:bg-blue-500/30 overflow-hidden relative pb-safe-bottom">
       {/* ─── Premium Background ────────────────────────────────────────── */}
       <div className="fixed inset-0 z-0 pointer-events-none">
         <div className="absolute inset-0 bg-[#0a0a0c]" />
@@ -533,7 +533,7 @@ export default function MobileRemote() {
             animate={{ opacity: 1, x: 0 }}
             className="flex items-center gap-3"
           >
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
+            <div className="w-8 h-8 rounded-xl bg-linear-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
               <Smartphone className="w-4 h-4 text-white" />
             </div>
             <h1 className="text-base font-bold text-white tracking-tight">
@@ -628,7 +628,7 @@ export default function MobileRemote() {
             <div 
               className={cn(
                 "rounded-full bg-white/10 flex items-center justify-center backdrop-blur-md shadow-lg border border-white/20 transition-all",
-                isRefreshing ? "w-10 h-10 animate-spin" : "w-8 h-8"
+                isRefreshing ? "size-10 animate-spin" : "size-8"
               )}
               style={{
                 transform: `scale(${Math.min(1, pullProgress / 60)}) rotate(${pullProgress * 3}deg)`
@@ -645,7 +645,7 @@ export default function MobileRemote() {
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                className="mb-6 p-4 rounded-[24px] bg-gradient-to-r from-amber-500/10 via-[#1c1c1e] to-amber-500/5 border border-amber-500/20 shadow-[0_15px_30px_rgba(245,158,11,0.08)] flex items-center justify-between"
+                className="mb-6 p-4 rounded-[24px] bg-linear-to-r from-amber-500/10 via-[#1c1c1e] to-amber-500/5 border border-amber-500/20 shadow-[0_15px_30px_rgba(245,158,11,0.08)] flex items-center justify-between"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-xl bg-amber-500/20 flex items-center justify-center">
@@ -726,11 +726,10 @@ export default function MobileRemote() {
         </div>
       </main>
 
-      {/* ─── Premium Bottom Navigation ──────────────────────────────────── */}
       <nav className="fixed bottom-0 inset-x-0 z-40 px-6 pb-safe-bottom mb-6 pointer-events-none">
-        <div className="max-w-md mx-auto h-[72px] bg-white/[0.03] backdrop-blur-3xl border border-white/10 rounded-[28px] shadow-[0_20px_40px_rgba(0,0,0,0.4)] flex items-center justify-around px-2 pointer-events-auto relative overflow-hidden">
+        <div className="max-w-md mx-auto h-[72px] bg-white/3 backdrop-blur-3xl border border-white/10 rounded-[28px] shadow-[0_20px_40px_rgba(0,0,0,0.4)] flex items-center justify-around px-2 pointer-events-auto relative overflow-hidden">
           {/* Subtle Inner Glow */}
-          <div className="absolute inset-0 bg-gradient-to-b from-white/[0.02] to-transparent pointer-events-none" />
+          <div className="absolute inset-0 bg-linear-to-b from-white/2 to-transparent pointer-events-none" />
           
           {TABS.map((tab) => {
             const isActive = activeTab === tab.id;
@@ -755,7 +754,7 @@ export default function MobileRemote() {
                   {isActive && (
                     <motion.div
                       layoutId="active-tab-bg"
-                      className="absolute inset-1.5 rounded-2xl bg-white/[0.05]"
+                      className="absolute inset-1.5 rounded-2xl bg-white/5"
                       initial={false}
                       transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
                     />
