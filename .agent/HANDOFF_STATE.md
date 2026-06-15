@@ -1,9 +1,12 @@
 # Handoff State
-**Updated:** 2026-06-15 07:44 EDT
+**Updated:** 2026-06-15 07:51 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+c73eb08ca docs(workflow): realign /c role to ABCD model (C ships green CI; D verifies)
+bf0442c2e chore(workflow): update workflows/skills to always pre-optimize Vite and run E2E with Firestore emulator
+c63d2be9b chore: session checkpoint [07:44]
 ed27e81bb docs(workflow): realign /b role to ABCD model + note D verifies (incentive to run the test first)
 dedfb4ed0 docs(workflow): harden /b (run the test before FIXED) + /a (aim-high acceptance) from observed swarm gaps
 485ab25ec chore: session checkpoint [07:38]
@@ -11,13 +14,11 @@ eb3072e55 test(ledger): verify OPUS-005, file ISSUE-D-002 to re-open OPUS-004 ra
 63205b590 test(ledger): log ISSUE-A-003
 c4d84f1f4 chore: session checkpoint [07:31]
 bf37e9a5e chore: session checkpoint [07:29]
-dcfb3dfe0 test(ledger): file ISSUE-D-001 (add-on to OPUS-005 — use the react-call dialogs + ISSUE-184 shell)
-50055970e chore: session checkpoint [07:26]
-429a28e63 feat(workflow): add /d — D-Engine (Verifier), the independent fix-audit + re-open loop
 ```
 
 ## Working State
 ```
+ M e2e/boardroom-real-user-scenario.spec.ts
  M packages/renderer/src/services/agent/LoopDetector.ts
  M python/tests/fixtures/e2e_interop/ts_to_py/envelope.json
 ?? packages/renderer/python/
