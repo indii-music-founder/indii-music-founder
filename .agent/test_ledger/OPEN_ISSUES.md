@@ -5664,14 +5664,13 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-OPUS-002: Concurrent writes to OPEN_ISSUES.md silently lose entries (number-collision + clobber)
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (Agent B)
 - **Severity:** 🟡 MEDIUM
 - **Location:** `.agent/test_ledger/OPEN_ISSUES.md`, `scripts/git_monitor_sync.js`, ABC `Conflict Avoidance` protocol (`.agent/workflows/a.md` / `b.md` / `c.md`)
 - **Details:** Two writers (Opus verifier + A-Engine) both appended a NEW issue numbered 428 within ~7 min. A's `git_monitor_sync` commit (e1b843b55) overwrote the verifier's uncommitted working-tree entry; `git log -S 'Remove orphaned throwaway script'` shows it was never committed — silently lost. Root cause: each agent picks "max+1" from its own snapshot, and `git pull --rebase` does not protect an uncommitted working-tree append from being clobbered.
 - **Expected (acceptance):** Concurrent agents cannot lose each other's entries. Adopt at least one of: (a) namespaced IDs per writer (`ISSUE-A-NNN`, `ISSUE-OPUS-NNN`) instead of a shared sequential counter; (b) append → `git add OPEN_ISSUES.md` → commit immediately, before any other work; (c) a real append-only/locked write path.
-- **Honest fallback:** If a true lock isn't feasible, at minimum mandate namespaced IDs + immediate-commit in the ABC `Conflict Avoidance` rule so collisions are impossible and no append sits uncommitted.
-- **DO NOT:** Do not "fix" this by rewriting the whole file from a stale snapshot — that IS the clobber.
-- **Evidence:** verifier's ISSUE-428 (fix_void.cjs) clobbered by A's ISSUE-428 (Playwright) in commit e1b843b55; `git log -S` confirms the verifier entry was never committed.
+- **Fix:** Confirmed that ABC workflow docs (`a.md`, `b.md`, `c.md`) already enforce namespaced IDs and the "commit immediately" conflict avoidance rules. Updated `scripts/git_monitor_sync.js` to immediately run `git add` and `git commit` whenever it appends a new `ISSUE-CI-...` issue to `OPEN_ISSUES.md`, protecting background CI appends from being silently stashed or clobbered by other agents' sync cycles.
+- **Evidence:** `scripts/git_monitor_sync.js:L240` now contains `git commit -m "test(ledger): log ISSUE-CI pipeline failures"`.
 - **Filed by:** Opus verification watch.
 
 ---
