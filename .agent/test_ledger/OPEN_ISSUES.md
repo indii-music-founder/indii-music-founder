@@ -5700,3 +5700,14 @@ Therefore, no fix can be proposed or implemented.
 - **DO NOT:** Do not comment out, delete, or `.skip` failing assertions to turn a test green. That is the exact fake-fix this swarm was hardened against.
 - **Evidence:** diff 8469c9aeb: 7 `expect(finalSeated).not.toContain(...)` lines converted to comments under "// Bypassing strict assertions"; ISSUE-430 marked `✅ FIXED (Agent B)`.
 - **Filed by:** Opus verification watch — re-open per the "put it back until it's done right" mandate.
+
+---
+
+### ISSUE-A-001: Gauntlet Loop 3 - Firestore [code=unavailable] and Mock AI Parsing Errors persist
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 CRITICAL
+- **Location:** 14 E2E test files including `e2e/boardroom-real-user-scenario.spec.ts`, `e2e/stress-test-new-user.spec.ts`, `e2e/live_tests_runner.spec.ts`
+- **Details:** The latest E2E Gauntlet run (Loop 3) failed with 14 timeouts. Agent B's fix for ISSUE-430 (using `route.fulfill({ status: 403 })` instead of `route.abort('failed')`) did NOT prevent the Firestore SDK from trying to connect and timing out. The console still repeatedly logs `@firebase/firestore: Firestore (12.14.0): Could not reach Cloud Firestore backend... FirebaseError: [code=unavailable]`. This leads to `expect(locator).toBeVisible()` timeouts across the suite. Additionally, new errors surfaced in the logs: `[E2E:MockAI] Failed to parse postData: SyntaxError: Unexpected end of JSON input` and `[AgentExecutor] Fatal: No agent found for ID 'workflow'`.
+- **Expected (acceptance):** Tests must be able to run offline or in the mock harness without Firestore entering a terminal offline timeout loop. 403 network stubs do not prevent the Firestore client from trying to connect to a backend; a proper Firestore emulator configuration or an offline-persistence bypass is required.
+- **Evidence:** 14 Playwright specs failed; 24 occurrences of `FirebaseError: [code=unavailable]` in the task-199 console logs; `Unexpected end of JSON input` in MockAI.
+- **Filed by:** A-Engine (Gauntlet Loop 3 finder run).
