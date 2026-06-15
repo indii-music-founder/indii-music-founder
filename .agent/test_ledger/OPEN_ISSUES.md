@@ -35,12 +35,10 @@ Opus re-checked every pass-1 finding against the current code. Most are genuinel
 
 | Issue | Reality (evidence) |
 |---|---|
-
-| **ISSUE-077** | 34 `void 0;` remain (down from 53); **31 are bare dead artifacts** from the log-strip sweep (e.g. `CredentialService.ts:31/36/38`, `IndiiRemoteService.ts:69`) plus one genuine swallowed error (`AssetSpotlight.tsx:139`). The "replaced with logging" claim is inaccurate. |
-
+| *All issues in this pass have been resolved.* |
 ### ✅ Confirmed genuinely fixed (sampled — spot-checked, passed)
 
-ISSUE-008 (`min-w-0` in ChatMessage), ISSUE-094 (`isOwnerWrite`→`isOwner`), ISSUE-161–169 (real E2E
+ISSUE-077 (`void 0;` artifacts and swallowed error removed), ISSUE-008 (`min-w-0` in ChatMessage), ISSUE-094 (`isOwnerWrite`→`isOwner`), ISSUE-161–169 (real E2E
 interop test, no skips), ISSUE-170 (key rotation), ISSUE-173 (exp-backoff retry), ISSUE-175/177
 (real Pinata API), ISSUE-178 (real YouTube upload), ISSUE-179 (dmca template), ISSUE-180
 (MarketingService stats), ISSUE-181 (ACRCloud HMAC-SHA1), ISSUE-182 (sanitized HTML render),
@@ -5585,7 +5583,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-077: Leftover Debug/Compilation Artifacts (`void 0;`)
 
-- **Status:** 🟡 IN PROGRESS (Agent B)
+- **Status:** ✅ FIXED (Agent B)
 - **Severity:** 🟢 LOW
 - **Module:** Code Quality
 - **Summary:** Leftover compilation artifacts or empty statements `void 0;` remain in several files.
