@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-14 23:09 EDT
+**Updated:** 2026-06-14 23:15 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+4de6318d9 chore(tests): update OPEN_ISSUES.md with verification results
+3e4c60bba chore: session checkpoint [23:09]
 dcc41a06f test: sync envelope json timestamps
 b6d378761 chore: session checkpoint [22:59]
 bf6c134ed docs(flowchart): commit next set of system architecture diagrams (04-12)
@@ -12,13 +14,25 @@ bf6c134ed docs(flowchart): commit next set of system architecture diagrams (04-1
 10ad8031b chore: session checkpoint [21:03]
 a651c791e chore: session checkpoint [20:57]
 f32c1f9b5 chore: add mandatory static verification gate to /issue workflow
-781b32fb8 docs(issues): document adapter fixes across all six adapters for issue 183
-944a5b913 chore: resolve static audit issues 077, 174, 183, 184, 190, 229, 257, 259
 ```
 
 ## Working State
 ```
  M .agent/test_ledger/OPEN_ISSUES.md
+ M .agent/workflows/a.md
+ M .agent/workflows/b.md
+ M .agent/workflows/c.md
+ M packages/main/src/services/AuthStorage.ts
+ M packages/main/src/services/BrowserAgentService.ts
+ M packages/main/src/services/CredentialService.ts
+ M packages/main/src/services/IndiiRemoteService.ts
+ M packages/main/src/services/SFTPService.ts
+ M packages/renderer/src/modules/analytics/components/CustomizableAnalyticsDashboard.tsx
+ M packages/renderer/src/modules/creative/video/editor/components/EditorAssetLibrary.tsx
+ M packages/renderer/src/modules/dashboard/components/AssetSpotlight.tsx
+ M packages/renderer/src/services/marketing/CampaignIntelligenceService.ts
+ M python/tests/fixtures/e2e_interop/ts_to_py/envelope.json
+?? scripts/fix_void.cjs
 ```
 
 ## Decisions
