@@ -5916,7 +5916,7 @@ Therefore, no fix can be proposed or implemented.
 > ✅ VERIFIED (D, 2026-06-15): B-Engine correctly diagnosed that the `pii-redaction.test.ts` file was missing the `import '../setup'` mock initialization. By adding it, the mocked auth context and graph dependencies load correctly, and `executeMock` is successfully intercepted. All 3 redaction security tests now pass green. Fix is complete.
 
 ### ISSUE-CI-27553621352: CI Pipeline Failure (Deploy to Firebase Hosting)
-- **Status:** ⏳ OPEN
+- **Status:** 🟡 IN PROGRESS (Agent C)
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
