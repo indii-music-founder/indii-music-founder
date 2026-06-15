@@ -37,7 +37,7 @@ If you cannot satisfy all four, DO NOT write `FIXED`. Set `🟠 BLOCKED — <rea
 - Maintain this background loop indefinitely.
 
 ## 2. Swarm Coordination (The ABC Protocol)
-- **Role Definition:** A-Engine handles Features. B-Engine handles Bugs/QA. **C-Engine handles CI/CD, Git Sync, and Infrastructure.**
+- **Role Definition (ABCD):** **A finds** → **B fixes & commits** → **C (you) ships** — guarantee CI goes green on the branch AND on main (green main is what deploys to Firebase) → **D verifies B's fixes and re-opens fakes.** You own getting the tree green and shipped: when a fix lands, make sure CI passes; if CI breaks, diagnose and fix the infra/pipeline (never green-by-deletion). A-Engine handles features, B-Engine fixes the ledger's bugs, D-Engine audits — you are the release gate.
 - **Claiming Work:** When you find an infrastructure or deployment issue in `.agent/test_ledger/OPEN_ISSUES.md`, change its status to `🟡 IN PROGRESS (Agent C)`.
 - **Conflict Avoidance (concurrency-safe — learned from ISSUE-OPUS-002):** `git pull --rebase origin main` before reading `OPEN_ISSUES.md` and before committing. Commit ledger edits immediately after making them — an uncommitted edit gets silently overwritten by another agent's sync. Never rewrite the whole file from a stale snapshot (that clobbers A's and B's entries).
 - **Handoffs:** If you get stuck, change the status to `🟠 BLOCKED - Handoff to Agent [X]` and let A or B try.
