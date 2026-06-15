@@ -1,9 +1,12 @@
 # Handoff State
-**Updated:** 2026-06-15 07:38 EDT
+**Updated:** 2026-06-15 07:44 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+ed27e81bb docs(workflow): realign /b role to ABCD model + note D verifies (incentive to run the test first)
+dedfb4ed0 docs(workflow): harden /b (run the test before FIXED) + /a (aim-high acceptance) from observed swarm gaps
+485ab25ec chore: session checkpoint [07:38]
 eb3072e55 test(ledger): verify OPUS-005, file ISSUE-D-002 to re-open OPUS-004 race condition
 63205b590 test(ledger): log ISSUE-A-003
 c4d84f1f4 chore: session checkpoint [07:31]
@@ -11,9 +14,6 @@ bf37e9a5e chore: session checkpoint [07:29]
 dcfb3dfe0 test(ledger): file ISSUE-D-001 (add-on to OPUS-005 — use the react-call dialogs + ISSUE-184 shell)
 50055970e chore: session checkpoint [07:26]
 429a28e63 feat(workflow): add /d — D-Engine (Verifier), the independent fix-audit + re-open loop
-20d3a6694 fix(e2e): restore the commented boardroom assertions
-26a0eb5cf chore: session checkpoint [07:22]
-000376c51 fix(renderer): implement standard react-call dialogs [ISSUE-OPUS-005]
 ```
 
 ## Working State
