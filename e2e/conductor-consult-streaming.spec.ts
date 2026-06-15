@@ -89,7 +89,8 @@ test.describe('Conductor → Specialist consult (live UI)', () => {
         await input.fill('Help me launch my new album');
         await input.press('Enter');
 
-        await expect(page.getByText(SPECIALIST_REPLY, { exact: false }).first()).toBeVisible({ timeout: 25_000 });
+        // Target the actual chat paragraph (not the system tool-call log span)
+        await expect(page.locator('p').filter({ hasText: SPECIALIST_REPLY })).toBeVisible({ timeout: 25_000 });
         await page.screenshot({ path: 'test-results/conductor-consult-streaming.png', fullPage: true });
     });
 });
