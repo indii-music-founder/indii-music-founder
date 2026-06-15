@@ -26,11 +26,13 @@ export type { CanvasImage } from './creativeHistorySlice';
 export type { ShotItem, WhiskCategory, TargetMedia, WhiskItem, WhiskState, SavedPrompt } from './creativeControlsSlice';
 export type { DesignVersion } from './designHistorySlice';
 
+import { StoreState } from '@/core/store';
+
 /**
  * Composed StateCreator that merges all creative sub-slices.
  * This is the single entry point consumed by the root store.
  */
-export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => {
+export const createCreativeSlice: StateCreator<StoreState, [], [], CreativeSlice> = (set, get) => {
     const historyState = buildCreativeHistoryState(set, get);
     const controlsState = buildCreativeControlsState(set, get);
     const designHistoryState = buildDesignHistoryState(set, get);
