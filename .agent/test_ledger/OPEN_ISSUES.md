@@ -5859,3 +5859,18 @@ Therefore, no fix can be proposed or implemented.
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
 - **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/27549181354)
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
+
+---
+
+### ISSUE-A-004: E2E Firestore Emulator Rules Error - Property userId is undefined on object. for 'list'
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Location:** `packages/firebase/firestore.rules` (specifically around L623-625)
+- **Details:** Under Playwright E2E tests executing against the Firestore Emulator, multiple tests fail with the console error: `[CreativeSlice] History subscription error: FirebaseError: Property userId is undefined on object. for 'list' @ L623, false for 'list' @ L1160`. This occurs because when querying the `history` collection, the security rules evaluate `resource.data.userId == request.auth.uid` before checking if the `userId` field exists. In Firestore emulator/SDK versions 13+, referencing a non-existent property throws a runtime evaluation exception (`Property userId is undefined on object`) instead of returning false.
+- **Expected (acceptance):**
+  1. Update `firestore.rules` at L624 and similar checks to verify property existence first (e.g. `'userId' in resource.data && resource.data.userId == request.auth.uid`).
+  2. All E2E tests, including onboarding tests, pass without rules engine exceptions on missing properties.
+- **Honest fallback:** Check all collections for potential missing properties in the rules file.
+- **DO NOT:** Do not disable rules or default to broad `allow read, write: if true`.
+- **Evidence:** Browser console throws: `[CreativeSlice] History subscription error: FirebaseError: Property userId is undefined on object. for 'list' @ L623, false for 'list' @ L1160`.
+
