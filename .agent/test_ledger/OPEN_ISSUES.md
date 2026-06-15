@@ -5711,3 +5711,20 @@ Therefore, no fix can be proposed or implemented.
 - **Expected (acceptance):** Tests must be able to run offline or in the mock harness without Firestore entering a terminal offline timeout loop. 403 network stubs do not prevent the Firestore client from trying to connect to a backend; a proper Firestore emulator configuration or an offline-persistence bypass is required.
 - **Evidence:** 14 Playwright specs failed; 24 occurrences of `FirebaseError: [code=unavailable]` in the task-199 console logs; `Unexpected end of JSON input` in MockAI.
 - **Filed by:** A-Engine (Gauntlet Loop 3 finder run).
+
+---
+
+### ISSUE-A-002: E2E Firestore Emulator Required for Local Testing
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 CRITICAL
+- **Location:** `packages/renderer/src/services/firebase.ts`, local test execution
+- **Details:** E2E test runs locally stall and time out due to a lack of local Firebase emulator execution and configuration. While functions emulator connection exists, Firestore and Storage emulators are never connected inside the browser app when running under local test mode. This causes the Firestore SDK in the browser to attempt to contact production `firestore.googleapis.com` endpoints, which get intercepted or return 403, putting Firestore into a terminal offline timeout loop and causing all UI assertions to timeout.
+- **Expected (acceptance):**
+  1. The local Firebase emulator (Firestore) is started prior to local E2E test execution.
+  2. The application configuration (`packages/renderer/src/services/firebase.ts`) is updated to call `connectFirestoreEmulator` and `connectStorageEmulator` when emulators are configured and the app is running in a dev/test environment.
+  3. All local E2E tests pass without hitting Firestore `[code=unavailable]` timeouts.
+- **Honest fallback:** If running the emulator is impossible in a headless CI/test environment, the E2E mock network interception layer in `e2e/fixtures/auth.ts` must fully mock the Firestore WebChannel protocol rather than returning a blank 200 `{}` JSON body, so that the Firestore client is aware it is mock-offline without entering a stream-error loop.
+- **DO NOT:** Do not hardcode connection to production Firestore or bypass security rules to fake green tests.
+- **Evidence:** 14 Playwright specs failed with `expect(locator).toBeVisible()` timeouts; console logs showing repeated `WebChannelConnection RPC 'Listen' stream transport errored` and `Could not reach Cloud Firestore backend`.
+- **Filed by:** A-Engine.
+
