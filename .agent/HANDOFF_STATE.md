@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-14 20:57 EDT
+**Updated:** 2026-06-14 21:03 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+a651c791e chore: session checkpoint [20:57]
 f32c1f9b5 chore: add mandatory static verification gate to /issue workflow
 781b32fb8 docs(issues): document adapter fixes across all six adapters for issue 183
 944a5b913 chore: resolve static audit issues 077, 174, 183, 184, 190, 229, 257, 259
@@ -13,7 +14,6 @@ ef1712839 fix(distribution): implement real earnings logic and walletconnect mod
 87467b610 test: mock crm slice in setup store mock
 199fd49f2 test(fixture): final update to envelope.json after test validation
 8247c3b47 docs(issues): update issue status for fixed issues 070-076
-905aac5ff test(crm): align test assertions with new CRM state shape and text
 ```
 
 ## Working State
