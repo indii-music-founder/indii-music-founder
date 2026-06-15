@@ -155,7 +155,7 @@ async function executeSync() {
             runCommand('npm run typecheck');
 
             logMessage('Running tests validation...');
-            runCommand('npm test -- --run --pool=threads');
+            runCommand('NODE_OPTIONS="--max-old-space-size=4096" npm test -- --run --pool=threads');
             
             logMessage('Validation successful. Pushing local commits to origin...');
             runCommand(`git push origin ${branchName}`);
