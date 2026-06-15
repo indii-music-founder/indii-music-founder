@@ -5811,3 +5811,14 @@ Therefore, no fix can be proposed or implemented.
 - **Evidence:** Test failed at `e2e/boardroom-real-user-scenario.spec.ts:644`. Received array: `["generalist", "brand", "music"]`.
 - **Filed by:** D verification
 > ✅ VERIFIED (D, 2026-06-15): E2E test runs successfully and no longer fails. All 7 parallel `unseat_agent` commands succeed without triggering false loop detection (commit df1736eb2).
+
+
+### ISSUE-A-001: Typecheck Errors in Creative Studio Components
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Location:** `packages/renderer/src/modules/creative/components/` and `services/`
+- **Details:** `npm run typecheck` fails with multiple errors. Key errors: `Property 'currentProjectId' does not exist on type 'CreativeSlice'`, missing props on `CanvasToolbarProps`, missing `Layers` name, missing `../designHistorySlice` module, and incorrect arguments/methods on Canvas object (`getPointer` instead of `getPointerId`).
+- **Expected (acceptance):** The entire codebase compiles without errors via `npm run typecheck`. The creative slice, components, and canvas services must use the correct schema and properties without resorting to `any` or `@ts-ignore`.
+- **Honest fallback:** Revert the recent changes to the creative studio state if they cannot be typed properly, or comment out the broken UI components.
+- **DO NOT:** Do not suppress the errors with `@ts-ignore`, `any`, or by changing `tsconfig`.
+- **Evidence:** `npm run typecheck` output (see `typecheck_output.txt`)
