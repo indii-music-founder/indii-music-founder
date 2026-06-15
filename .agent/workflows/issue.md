@@ -182,9 +182,12 @@ After applying the fix:
 1. **Type-check:** Run `npm run typecheck` to ensure no TypeScript errors
 2. **Lint:** Run `npm run lint` to ensure no ESLint violations
 3. **Unit tests:** Run `npm test -- --run` to ensure no test regressions
-4. **Static Verification Gate (MANDATORY):** Review the `git diff` of the files you modified. You must confirm that:
-   - The changes contain real logic and are not placeholders, empty array returns, or mocked `success` responses.
-   - The `Fix` text in your open issues ledger update accurately describes the *actual* code added. Fake description tags are terminal violations.
+4. **Static Verification Gate (MANDATORY — re-open the file, do not trust your diff alone):**
+   Open the cited `file:line` AFTER your change and read it. The issue stays OPEN/BLOCKED unless ALL of these are true:
+   - **No placeholder residue.** None of: `return []`, `return null`, `throw new Error('not implemented')`, `// coming soon`, bare `void 0;`, empty function body.
+   - **No fabricated values.** No `Math.random()`-generated IDs/UPCs/addresses, no hardcoded `status:'success'` / `'SENT'` / `'done'`, no fake UI that simulates a real connection/result. If the real thing can't be built, the honest output is an error/"unavailable" state — see Prime Rule 7.
+   - **Tests aren't faked green.** A `test.skip(...)` (even with a reason) is zero coverage, not a fix. A passing assertion that can never fail is not a test.
+   - **The `Fix:` text matches the actual code added**, and an `Evidence: file:line` is recorded. Fake/inaccurate fix descriptions are terminal violations.
 5. **Browser verify (if applicable):** Use `browser_subagent` to reproduce
    the original steps and confirm the issue is resolved
 
@@ -197,17 +200,21 @@ After a successful fix, update the issue entry:
 - **Status:** ✅ FIXED (<commit_hash>)
 - **Severity:** 🔴 HIGH
 - ... (keep all original fields)
-- **Fix:** <1-2 sentences describing the code change>
+- **Fix:** <1-2 sentences describing the REAL code change / mechanism>
+- **Evidence:** `<file.ts:line>` — <what a reviewer will see there proving it's done>
 - **Files:** `<file1.ts>`, `<file2.tsx>`
 - **UX Impact:** <updated to reflect the fixed state>
 ```
 
 **Rules:**
-- Change `Status` from `OPEN` to `✅ FIXED (<commit_hash>)`
-- Add a `Fix:` field with a concise description
-- Add a `Files:` field listing every file modified
-- Update `UX Impact:` to reflect the resolved state
-- Do NOT delete any original fields (Steps to Reproduce, Summary, etc.)
+- Change `Status` from `OPEN` to `✅ FIXED (<commit_hash>)` — **only after the §3.4 gate passes.**
+- Add a `Fix:` field with a concise description of the actual mechanism.
+- Add an **`Evidence:`** field with the exact `file:line` a reviewer can open (Prime Rule 8). No `file:line` → not FIXED.
+- Add a `Files:` field listing every file modified.
+- Update `UX Impact:` to reflect the resolved state.
+- Do NOT delete any original fields (Steps to Reproduce, Summary, etc.).
+- **Do NOT touch the `## Verification Findings` section or any `⚠️/🔴 REOPENED` note** (Prime Rule 9). If reopening a REOPENED issue, append your `Fix:`/`Evidence:` lines *below* the reviewer's note — never rewrite it, never self-mark "Verified."
+- If you cannot honestly reach FIXED, set `🟠 BLOCKED — <what's missing>` instead. Do not fabricate to close.
 
 ### 3.6 Print Progress
 
@@ -381,3 +388,8 @@ Output:
 | Refactoring an entire file to fix one bug | Surgical precision. Change the minimum lines needed. |
 | Ignoring the Error Ledger | Always check `.agent/skills/error_memory/ERROR_LEDGER.md` first. |
 | Fixing LOW issues before HIGH issues | Severity order is mandatory unless the user overrides. |
+| Faking data/success to make a stub "work" (random IDs, `status:'success'`, fake modal/wallet) | NO-MOCK-DATA hard rule. Honest error / "unavailable" / `WONTFIX` instead. This is the ISSUE-184 crime. |
+| Marking `FIXED` with no `Evidence: file:line` | Prime Rule 8. "Verified" with no clickable evidence is banned. |
+| Editing/upgrading the `Verification Findings` or a `REOPENED` note | Prime Rule 9. The audit trail is read-only; append below, never rewrite. Never self-grant "Verified." |
+| "Finishing" a test by `test.skip(...)` with a generic reason | A skipped test is zero coverage, not a fix. Write the real test or keep the issue OPEN. |
+| Closing a CI failure by deleting/skipping the test or loosening the assertion | Green-by-deletion is a fake FIXED. Find the root cause. |
