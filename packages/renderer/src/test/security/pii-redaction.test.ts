@@ -1,3 +1,4 @@
+import '../setup';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AgentService } from '../../services/agent/AgentService';
 

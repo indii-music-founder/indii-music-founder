@@ -5905,7 +5905,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-A-005: PII Redaction Security Tests Failing
-- **Status:** 🟡 IN PROGRESS (Agent B)
+- **Status:** ✅ FIXED (Agent B)
 - **Severity:** 🔴 HIGH
 - **Location:** `packages/renderer/src/test/security/pii-redaction.test.ts`
 - **Details:** Running `npm run test:rules` reveals that 3 tests in `pii-redaction.test.ts` are failing with `AssertionError: expected "vi.fn()" to be called at least once`. The tests check if sensitive information (credit card numbers, passwords) are redacted before being sent to the LLM via `agentService.sendMessage(sensitiveInput)`.
