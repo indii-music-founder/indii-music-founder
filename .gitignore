@@ -170,3 +170,8 @@ test_results.json
 # Discovered Audit Files
 users.json
 anonymous_users_audit_report.json
+
+# npm isolated cache directories
+.npm-cache-isolated-*
+.npm-cache-isolated-*/
+
