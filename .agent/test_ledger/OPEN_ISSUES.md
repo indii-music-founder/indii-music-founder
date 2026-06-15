@@ -5584,7 +5584,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-077: Leftover Debug/Compilation Artifacts (`void 0;`)
 
-- **Status:** ⚠️ REOPENED (2026-06-14 pass-2 — reduced 53→34, but 31 bare `void 0;` dead artifacts remain, e.g. `CredentialService.ts:31/36/38`, `IndiiRemoteService.ts:69`, plus a real swallowed error at `AssetSpotlight.tsx:139`. "Replaced with logging" claim is inaccurate) [was: ✅ FIXED]
+- **Status:** ✅ FIXED (Removed empty `void 0;` lines and replaced swallowed error with `console.error`)
 - **Severity:** 🟢 LOW
 - **Module:** Code Quality
 - **Summary:** Leftover compilation artifacts or empty statements `void 0;` remain in several files.

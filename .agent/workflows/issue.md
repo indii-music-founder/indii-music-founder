@@ -35,6 +35,25 @@ description: >
    a 1-line description of what you changed.
 6. **You do NOT delete or rewrite issues.** You only update the `Status` field
    and append fix notes.
+7. **No mock data, ever (project hard rule).** A fix is real behavior. If a capability
+   cannot be built right now (no API/SDK/credentials/upstream support), the ONLY honest
+   outcomes are a clear thrown error / "unavailable" state, or `WONTFIX — <reason>`. You
+   may NEVER fabricate data, success statuses, IDs, addresses, QR codes, or UI to make
+   something *appear* fixed. (On 2026-06-14 an agent "fixed" WalletConnect by faking a
+   wallet address — that is the exact crime this rule forbids.)
+8. **Evidence or it didn't happen.** A `FIXED` status requires a `Fix:` line (the real
+   mechanism) AND an `Evidence:` line with the exact `file:line` a reviewer can open. The
+   word "Verified" with no `file:line` is banned.
+9. **The audit trail is READ-ONLY.** Never edit, upgrade, or delete a `## Verification
+   Findings` section or any `⚠️/🔴 REOPENED` note — those are written by humans or a
+   verification pass. To move a REOPENED issue to FIXED, satisfy Rules 7–8 and APPEND your
+   evidence *below* the reviewer's note. Never self-grant "Verified."
+
+> **DEFINITION OF DONE:** an issue becomes `✅ FIXED` only when (1) the behavior is real,
+> not mock; (2) you re-opened the cited `file:line` and confirmed the placeholder is gone;
+> (3) `Fix:` + `Evidence: file:line` are in the entry; (4) `npm run typecheck` is green.
+> If you can't hit all four, set `🟠 BLOCKED — <reason>` and leave the honest state in code.
+> **A truthful BLOCKED is a success; a fake FIXED is a terminal violation.**
 
 ---
 

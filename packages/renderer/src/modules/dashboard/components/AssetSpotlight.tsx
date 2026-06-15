@@ -136,7 +136,7 @@ export default function AssetSpotlight() {
                                             e.currentTarget.play().catch((err: unknown) => {
                                                 // Browser aborted play (usually due to autoplay restrictions or navigation transitions)
                                                 if (err instanceof Error && err.name !== 'AbortError') {
-                                                    void 0;
+                                                    console.error('Asset video failed to play:', err);
                                                 }
                                             });
                                         }}

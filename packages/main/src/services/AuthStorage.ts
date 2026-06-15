@@ -45,7 +45,6 @@ export class AuthStorage {
         try {
             return await keytar.deletePassword(SERVICE_NAME, TOKEN_ACCOUNT);
         } catch (_error) {
-            void 0;
             return false;
         }
     }

@@ -373,7 +373,6 @@ Focus on dynamic movements, high-quality textures, and brand alignment.
             const gsUri = await CreativeStorageService.uploadReferenceMedia(userId, dataUrl, 'image');
             return await getDownloadURL(ref(storage, gsUri));
         } catch (_error: unknown) {
-            void 0;
             throw new Error('Failed to persist generated image to Cloud Storage.');
         }
     }

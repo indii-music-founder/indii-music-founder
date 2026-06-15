@@ -69,7 +69,6 @@ export class BrowserAgentService {
     async navigateTo(url: string): Promise<void> {
         if (!this.window) throw new Error('Session not started');
 
-        void 0;
 
         // Setup one-time fail handler
         const failParams = { url, errorCode: 0, errorDescription: '' };
@@ -104,7 +103,7 @@ export class BrowserAgentService {
         const screenshotBase64 = image.toDataURL(); // Returns props 'data:image/png;base64,...'
 
         // Extract Main Text via JS
-        const text = await this.window.webContents.executeJavaScript('document.body.innerText').catch(_e => { void 0; return ''; });
+        const text = await this.window.webContents.executeJavaScript('document.body.innerText').catch(_e => {  return ''; });
 
         return {
             title,
@@ -288,7 +287,6 @@ export class BrowserAgentService {
      */
     async closeSession(): Promise<void> {
         if (this.window) {
-            void 0;
             this.window.close(); // Close the window
             this.window = null;
         }

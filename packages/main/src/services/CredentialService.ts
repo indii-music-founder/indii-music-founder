@@ -19,25 +19,18 @@ export class CredentialService {
      * Uses Electron's safeStorage for platform-level encryption before storing in the keychain.
      */
     async saveCredentials(distributorId: DistributorId, credentials: Credentials): Promise<void> {
-        try {
-            const secretSerialized = JSON.stringify(credentials);
+        const secretSerialized = JSON.stringify(credentials);
 
-            // Phase 2 Security Enhancement: Encrypt the payload before keychain storage
-            let payloadToStore: string;
-            if (safeStorage.isEncryptionAvailable()) {
-                const encryptedBuffer = safeStorage.encryptString(secretSerialized);
-                payloadToStore = encryptedBuffer.toString('base64');
-            } else {
-                void 0;
-                throw new Error('Encryption is not available. Credentials cannot be stored securely.');
-            }
-
-            await keytar.setPassword(SERVICE_NAME, distributorId, payloadToStore);
-            void 0;
-        } catch (error) {
-            void 0;
-            throw error;
+        // Phase 2 Security Enhancement: Encrypt the payload before keychain storage
+        let payloadToStore: string;
+        if (safeStorage.isEncryptionAvailable()) {
+            const encryptedBuffer = safeStorage.encryptString(secretSerialized);
+            payloadToStore = encryptedBuffer.toString('base64');
+        } else {
+            throw new Error('Encryption is not available. Credentials cannot be stored securely.');
         }
+
+        await keytar.setPassword(SERVICE_NAME, distributorId, payloadToStore);
     }
 
     /**
