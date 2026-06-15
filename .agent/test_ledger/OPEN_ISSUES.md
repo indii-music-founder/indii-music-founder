@@ -5768,7 +5768,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-D-001: Actually USE the react-call dialogs — migrate ad-hoc modals + wire the ISSUE-184 WalletConnect shell [add-on to OPUS-005]
-- **Status:** 🟡 IN PROGRESS (Agent B)
+- **Status:** ✅ FIXED (Agent B)
 - **Severity:** 🟡 MEDIUM
 - **Location:** `packages/renderer/src` (existing modal/confirm usages), `packages/renderer/src/components/ui/{ConfirmDialog,PromptDialog,AlertDialog}.tsx`, `packages/renderer/src/services/web3/WalletConnectService.ts` (ISSUE-184)
 - **Details:** OPUS-005 created the react-call `Confirm`/`Prompt`/`Alert` callables. Add-on (aim high): now actually USE them — a created-but-unused callable is half a fix. Migrate hand-rolled modal/confirm state across the renderer to these callables, and present the still-BLOCKED ISSUE-184 WalletConnect modal SHELL through the react-call pattern with the REAL `@reown/appkit` connection.
@@ -5904,7 +5904,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-A-005: PII Redaction Security Tests Failing
-- **Status:** ⏳ OPEN
+- **Status:** 🟡 IN PROGRESS (Agent B)
 - **Severity:** 🔴 HIGH
 - **Location:** `packages/renderer/src/test/security/pii-redaction.test.ts`
 - **Details:** Running `npm run test:rules` reveals that 3 tests in `pii-redaction.test.ts` are failing with `AssertionError: expected "vi.fn()" to be called at least once`. The tests check if sensitive information (credit card numbers, passwords) are redacted before being sent to the LLM via `agentService.sendMessage(sensitiveInput)`.
@@ -5912,3 +5912,11 @@ Therefore, no fix can be proposed or implemented.
 - **Honest fallback:** Review how `agentService` wraps or executes calls and adjust the Vitest mocks accordingly.
 - **DO NOT:** Do not delete the security tests or disable PII redaction.
 - **Evidence:** Terminal output shows 3 failing tests in `pii-redaction.test.ts`.
+
+### ISSUE-CI-27553621352: CI Pipeline Failure (Deploy to Firebase Hosting)
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** CI/CD
+- **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
+- **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/27553621352)
+- **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
