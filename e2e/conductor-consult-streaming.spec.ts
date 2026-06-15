@@ -89,7 +89,7 @@ test.describe('Conductor → Specialist consult (live UI)', () => {
         await input.fill('Help me launch my new album');
         await input.press('Enter');
 
-        await expect(page.getByText(SPECIALIST_REPLY, { exact: false })).toBeVisible({ timeout: 25_000 });
+        await expect(page.getByText(SPECIALIST_REPLY, { exact: false }).first()).toBeVisible({ timeout: 25_000 });
         await page.screenshot({ path: 'test-results/conductor-consult-streaming.png', fullPage: true });
     });
 });
