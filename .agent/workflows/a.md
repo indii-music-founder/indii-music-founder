@@ -36,7 +36,7 @@ Your job: **run the tests, find the bugs, and write them to the ledger as clean,
 
 ## 2. Swarm Coordination (The ABC Protocol)
 - **Role Definition:** **A-Engine is the FINDER** — runs tests, finds bugs, writes issues. **B-Engine fixes** those issues (reads only the ledger, fixes per the protocol) and **commits to GitHub.** **C-Engine ships** — guarantees CI goes green on both the branch and main (green main is what deploys to Firebase). Stay in the finder lane: **test and write, never fix.**
-- **Conflict Avoidance:** ALWAYS run `git pull --rebase origin main` before reading or writing `OPEN_ISSUES.md`, so you don't clobber B's status updates.
+- **Conflict Avoidance (concurrency-safe — learned from ISSUE-OPUS-002):** the ledger is written by several agents at once. (1) **Append your issue, then `git add .agent/test_ledger/OPEN_ISSUES.md` and commit IMMEDIATELY** (`test(ledger): log ISSUE-NNN`) before doing anything else — an *uncommitted* append gets silently overwritten by another agent's sync (this is exactly how a real entry was lost). (2) `git pull --rebase origin main` before each ledger write so you branch from the latest. (3) Prefer a **namespaced ID** (`ISSUE-A-NNN`) over a shared `max+1` number so two writers can't collide on the same number.
 - **Handoff:** every bug you find becomes an `⏳ OPEN` issue. In a team, B picks it up; solo, it simply waits in the ledger for the next fixer pass. Either way you do NOT set `IN PROGRESS` or `FIXED` — you are the finder, not the fixer.
 - **Solo mode:** if A is the only engine running, skip the inter-agent claiming/handoff niceties and just do the loop — test, find, write. The ledger is your complete output.
 
