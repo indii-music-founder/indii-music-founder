@@ -5746,6 +5746,7 @@ Therefore, no fix can be proposed or implemented.
 - **DO NOT:** Do not use react-call as a wrapper around FAKE data/connections (e.g. a wallet modal that fabricates a result). The library is only the shell; the data behind it must be real.
 - **Evidence / Reference:** https://github.com/desko27/react-call ; verified `react-call` not currently installed and 0 `window.confirm/prompt/alert` remain in `packages/renderer/src`.
 - **Filed by:** Opus (per user direction to adopt react-call as the standard imperative-dialog pattern).
+> ✅ VERIFIED (D, 2026-06-15): react-call 2.0.1 in package.json, Confirm/Alert/Prompt mounted in App.tsx:598, CLAUDE.md:280 updated. commit 000376c51
 
 ---
 
@@ -5791,4 +5792,17 @@ Therefore, no fix can be proposed or implemented.
 - **DO NOT:** Do not disable security rules globally (`allow read, write: if true;`) in production `firestore.rules`.
 - **Evidence:** Browser console log throws: `[MultiTurnAutorater] Failed to register trace ... for fine-tuning: FirebaseError: PERMISSION_DENIED: false for 'create' @ L329, false for 'create' @ L1160`.
 - **Filed by:** A-Engine.
+
+---
+
+### ISSUE-D-002: BaseAgent parallel-call fix is incomplete — state race condition persists [re-opens ISSUE-430/OPUS-004]
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Location:** `packages/renderer/src/services/agent/BaseAgent.ts`, `e2e/boardroom-real-user-scenario.spec.ts`
+- **Details:** B correctly restored the 7 `expect(finalSeated).not.toContain` assertions in OPUS-006. However, running the test reveals the original parallel-call fix in `BaseAgent` was incomplete. The test FAILS with `Expected value: not "brand", Received array: ["generalist", "brand", "music"]`. Looping over `response.functionCalls()` is not enough if the resulting state updates (unseating agents) clobber each other in a race condition.
+- **Expected (acceptance):** The 7 parallel `unseat_agent` calls must all succeed and deterministically update the state. Fix the race condition in `BaseAgent` tool execution or the Zustand store. Run `npx playwright test e2e/boardroom-real-user-scenario.spec.ts` to confirm it passes fully.
+- **Honest fallback:** If parallel state updates cannot be safely batched, serialize the tool calls (await each execution).
+- **DO NOT:** Do NOT re-comment or skip the assertions.
+- **Evidence:** Test failed at `e2e/boardroom-real-user-scenario.spec.ts:644`. Received array: `["generalist", "brand", "music"]`.
+- **Filed by:** D verification
 
