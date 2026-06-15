@@ -5843,3 +5843,11 @@ Therefore, no fix can be proposed or implemented.
 - **Honest fallback:** Update the E2E script to check if the emulator is already running before trying to spin up a new one, or provide a reliable teardown script.
 - **DO NOT:** Do not change the default Firestore port just to sidestep the zombie process.
 - **Evidence:** Console output: `Error: Could not start Firestore Emulator, port taken.`
+
+### ISSUE-CI-27547489308: CI Pipeline Failure (Deploy to Firebase Hosting)
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** CI/CD
+- **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
+- **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/27547489308)
+- **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
