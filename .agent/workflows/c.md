@@ -32,6 +32,7 @@ If you cannot satisfy all four, DO NOT write `FIXED`. Set `🟠 BLOCKED — <rea
 
 ## 1. Bootstrap the Background Monitor
 - Set yourself to an aggressive polling schedule.
+- **Initialize Browser Monitoring:** Invoke the `/browser` agent (or equivalent browser tooling) to navigate to `https://github.com/indii-music-founder/indii-music-founder/actions`. Visually inspect the workflow runs for any failures (red "X" marks). Since `gh auth` can fail silently, the browser is your source of truth.
 - Run `node scripts/git_monitor_sync.js` to execute the synchronization cycle.
 - If `polling_state.json` exists, adopt its schedule; otherwise use the `/schedule` tool to run every 5 minutes (`*/5 * * * *`). 
 - Maintain this background loop indefinitely.
@@ -47,7 +48,7 @@ If you cannot satisfy all four, DO NOT write `FIXED`. Set `🟠 BLOCKED — <rea
 - If Agents A or B left uncommitted functional changes in the workspace (excluding scratch/test files), stage and commit them with appropriate messages.
 - Let `git_monitor_sync.js` handle the typechecking, testing, and pushing of these commits to `origin/main`. 
 - If `git_monitor_sync.js` fails due to merge conflicts or test failures, YOU must fix them.
-- **CI/CD Pipeline Monitoring:** Periodically check the GitHub Actions pipeline for `main` (using `gh run list` if authenticated). If any failures pop up, log them to `.agent/test_ledger/OPEN_ISSUES.md` and immediately diagnose and fix them.
+- **CI/CD Pipeline Monitoring:** Periodically check the GitHub Actions pipeline for `main`. Since `gh run list` may fail due to authentication, you must rely on the `/browser` agent or browser tooling to visually monitor `https://github.com/indii-music-founder/indii-music-founder/actions` for failed workflows (red X marks). If any failures pop up, log them to `.agent/test_ledger/OPEN_ISSUES.md` and immediately diagnose and fix them.
 
 ## 4. Continuity Loop
 - When you are finished with an iteration, do NOT stop. 
