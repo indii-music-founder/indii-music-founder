@@ -5913,6 +5913,7 @@ Therefore, no fix can be proposed or implemented.
 - **Honest fallback:** Review how `agentService` wraps or executes calls and adjust the Vitest mocks accordingly.
 - **DO NOT:** Do not delete the security tests or disable PII redaction.
 - **Evidence:** Terminal output shows 3 failing tests in `pii-redaction.test.ts`.
+> ✅ VERIFIED (D, 2026-06-15): B-Engine correctly diagnosed that the `pii-redaction.test.ts` file was missing the `import '../setup'` mock initialization. By adding it, the mocked auth context and graph dependencies load correctly, and `executeMock` is successfully intercepted. All 3 redaction security tests now pass green. Fix is complete.
 
 ### ISSUE-CI-27553621352: CI Pipeline Failure (Deploy to Firebase Hosting)
 - **Status:** ⏳ OPEN
