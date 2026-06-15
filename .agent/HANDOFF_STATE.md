@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-15 01:25 EDT
+**Updated:** 2026-06-15 02:12 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+c9c3bb899 test(ledger): log ISSUE-A-001 with continuing E2E Firestore timeouts
+ce7619827 chore: session checkpoint [01:25]
 72bc86659 test(e2e): use semantic locators instead of .first() band-aids [ISSUE-OPUS-003]
 ba0ffa14f test(ledger): re-open ISSUE-430 as ISSUE-OPUS-004 (faked green — 7 assertions commented out)
 928f74f9a test(e2e): improve conductor streaming and crm page checks, update envelope fixture
@@ -12,17 +14,11 @@ ba0ffa14f test(ledger): re-open ISSUE-430 as ISSUE-OPUS-004 (faked green — 7 a
 8469c9aeb fix(e2e): resolve visibility timeouts and boardroom mock AI race condition [ISSUE-430]
 11d91d02f fix(e2e): fulfill blocked network requests with 403 instead of abort to avoid CORS crashes
 1cfeeeec5 chore: session checkpoint [01:09]
-0ad6138a4 test(ledger): re-open ISSUE-428/429 as ISSUE-OPUS-003 (.first() band-aid, root cause not investigated)
-adde7b372 chore: push boardroom visual verification artifacts
 ```
 
 ## Working State
 ```
- M deep-test-boardroom-1.png
- M deep-test-booking-1.png
- M deep-test-campaign-1.png
- M deep-test-publicist-1.png
- M python/tests/fixtures/e2e_interop/ts_to_py/envelope.json
+clean working tree
 ```
 
 ## Decisions
