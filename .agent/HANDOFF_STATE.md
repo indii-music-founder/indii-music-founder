@@ -1,9 +1,12 @@
 # Handoff State
-**Updated:** 2026-06-15 07:12 EDT
+**Updated:** 2026-06-15 07:22 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+000376c51 fix(renderer): implement standard react-call dialogs [ISSUE-OPUS-005]
+24752dbd1 docs(issues): mark ISSUE-OPUS-005 in progress by Agent B
+bc7cc41fe chore: session checkpoint [07:12]
 2b257b751 test(ledger): file ISSUE-OPUS-006 (OPUS-004 real fix credited; restore the commented boardroom assertions)
 fd1feff5c build: install react-call AI agent skill
 2199f9894 docs: mark ISSUE-OPUS-004 as FIXED after resolving parallel function execution bug
@@ -11,19 +14,12 @@ f866c60bc fix(agent): support parallel function calls in BaseAgent
 ac7ded10b chore: session checkpoint [07:03]
 9966c4372 chore: session checkpoint [06:56]
 ce549cc18 test(ledger): file ISSUE-OPUS-005 (adopt react-call as standard imperative-dialog pattern)
-13bdaf2ef fix(e2e): Fix MockAI empty postData parsing and invalid workflow agent ID in registry
-41d045a1a fix(test): update OrchestrationService assertion to match CREATIVE agentId
-b92956c16 chore: align video generation agentId to creative and fix boardroom interceptor null check
 ```
 
 ## Working State
 ```
- M .agent/test_ledger/OPEN_ISSUES.md
- M deep-test-boardroom-1.png
- M deep-test-booking-1.png
- M deep-test-campaign-1.png
- M deep-test-publicist-1.png
- M python/tests/fixtures/e2e_interop/ts_to_py/envelope.json
+ M e2e/boardroom-real-user-scenario.spec.ts
+?? packages/renderer/python/
 ```
 
 ## Decisions
