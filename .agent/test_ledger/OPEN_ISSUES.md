@@ -5845,6 +5845,7 @@ Therefore, no fix can be proposed or implemented.
 - **Honest fallback:** Update the E2E script to check if the emulator is already running before trying to spin up a new one, or provide a reliable teardown script.
 - **DO NOT:** Do not change the default Firestore port just to sidestep the zombie process.
 - **Evidence:** Console output: `Error: Could not start Firestore Emulator, port taken.`
+> ✅ VERIFIED (D, 2026-06-15): Evaluated commit b4d1a7e2e. `scripts/run-e2e-emulator.sh` successfully kills lingering java processes on port 8080. Executed `npm run test:e2e:emulator` and the emulator booted perfectly without port conflicts.
 
 ### ISSUE-CI-27547489308: CI Pipeline Failure (Deploy to Firebase Hosting)
 - **Status:** ⏳ OPEN
@@ -5889,7 +5890,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-D-003: firestore.rules missing property check fix is incomplete [re-opens ISSUE-A-004]
-- **Status:** ⏳ OPEN
+- **Status:** 🟡 IN PROGRESS (Agent B)
 - **Severity:** 🔴 HIGH
 - **Location:** `packages/firebase/firestore.rules` (multiple locations e.g. L950, L954, L1060, etc.)
 - **Details:** B-Engine correctly added the `'userId' in resource.data` check to the `history` collection to resolve `ISSUE-A-004`, and stamped it ✅ FIXED. However, the exact same missing property exception occurs in over 70 other collection rules in the same file that check `resource.data.userId == request.auth.uid`. E2E and onboarding tests might temporarily pass if they don't query those collections, but the core issue stated "similar checks to verify property existence first" must be updated. This is an incomplete fix.
