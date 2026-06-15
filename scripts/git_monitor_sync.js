@@ -225,12 +225,26 @@ async function executeSync() {
             if (failedRuns.length > 0) {
                 const issuesPath = path.resolve('.agent/test_ledger/OPEN_ISSUES.md');
                 const issuesContent = fs.existsSync(issuesPath) ? fs.readFileSync(issuesPath, 'utf-8') : '';
+                let appended = false;
                 
                 for (const run of failedRuns) {
                     if (!issuesContent.includes(run.url)) {
                         logMessage(`Found newly failed CI pipeline: ${run.name} (${run.url}). Logging to OPEN_ISSUES.md...`);
                         const issueEntry = `\n### ISSUE-CI-${run.databaseId}: CI Pipeline Failure (${run.name})\n- **Status:** ⏳ OPEN\n- **Severity:** 🔴 HIGH\n- **Module:** CI/CD\n- **Summary:** The GitHub Actions workflow \`${run.name}\` failed on branch \`${run.headBranch}\`.\n- **Link:** [View Logs](${run.url})\n- **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.\n`;
                         fs.appendFileSync(issuesPath, issueEntry);
+                        appended = true;
+                    }
+                }
+                
+                // ISSUE-OPUS-002 Fix: Immediately commit the appended CI issues to prevent silent clobbering.
+                if (appended) {
+                    try {
+                        logMessage('Immediately committing new CI issues to OPEN_ISSUES.md to prevent concurrent write loss...');
+                        runCommand(`git add ${issuesPath}`);
+                        runCommand(`git commit -m "test(ledger): log ISSUE-CI pipeline failures"`);
+                        logMessage('CI issues committed successfully.');
+                    } catch (e) {
+                        logMessage(`Warning: Could not auto-commit CI issues. Error: ${e.message}`);
                     }
                 }
             } else {
