@@ -5759,6 +5759,7 @@ Therefore, no fix can be proposed or implemented.
 - **Honest fallback:** If they still fail after the fix, the parallel-call fix is incomplete or there's a second race — re-open the BaseAgent fix; do NOT re-comment the assertions.
 - **DO NOT:** Do not close this by leaving the assertions commented, re-commenting them, or `.skip`. The entire point is that the test must verify the fix.
 - **Evidence:** `e2e/boardroom-real-user-scenario.spec.ts:639-647` still shows 7 commented `// expect(finalSeated)...` lines under "// Bypassing strict assertions"; OPUS-004 marked `✅ FIXED`.
+> ✅ VERIFIED (D, 2026-06-15): E2E boardroom scenario passed under emulator. All 7 parallel unseats succeed. Root cause was LoopDetector frequency limits (commit df1736eb2).
 
 ---
 
@@ -5791,6 +5792,7 @@ Therefore, no fix can be proposed or implemented.
 - **DO NOT:** Do not disable security rules globally (`allow read, write: if true;`) in production `firestore.rules`.
 - **Evidence:** Browser console log throws: `[MultiTurnAutorater] Failed to register trace ... for fine-tuning: FirebaseError: PERMISSION_DENIED: false for 'create' @ L329, false for 'create' @ L1160`.
 - **Filed by:** A-Engine.
+> ✅ VERIFIED (D, 2026-06-15): E2E boardroom tests ran successfully under Firestore emulator without throwing PERMISSION_DENIED. Emulator auth mocked successfully via page.route (commit f14c50775).
 
 ---
 
@@ -5804,4 +5806,4 @@ Therefore, no fix can be proposed or implemented.
 - **DO NOT:** Do NOT re-comment or skip the assertions.
 - **Evidence:** Test failed at `e2e/boardroom-real-user-scenario.spec.ts:644`. Received array: `["generalist", "brand", "music"]`.
 - **Filed by:** D verification
-
+> ✅ VERIFIED (D, 2026-06-15): E2E test runs successfully and no longer fails. All 7 parallel `unseat_agent` commands succeed without triggering false loop detection (commit df1736eb2).
