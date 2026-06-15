@@ -1,19 +1,19 @@
 # Handoff State
-**Updated:** 2026-06-15 00:00 EDT
+**Updated:** 2026-06-15 00:33 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+3a59f4071 docs(workflow): harden ABC Conflict Avoidance (append+commit-immediately) per ISSUE-OPUS-002
+9e4cf1e1f chore: push workflows and visual verification artifacts
+7d643c071 test(ledger): file ISSUE-OPUS-001/002 (fix_void cleanup + ledger write-collision finding)
+e1b843b55 test(ledger): log ISSUE-428..430 for Playwright E2E failures
+abf7a44f7 chore: session checkpoint [00:00]
 0cac4c449 chore: session checkpoint [23:53]
 cce7ce820 test(ledger): log ISSUE-427 for GitHub CLI Auth failure
 19b9f1f31 chore: session checkpoint [23:50]
 44ca92693 chore: sync workflow guidelines and envelope json
 d8d64b44f chore: session checkpoint [23:47]
-98591a4d1 chore: session checkpoint [23:46]
-42692bd2d docs(workflow): sync a.md
-8b4513a3c chore: session checkpoint [23:39]
-102678acb docs(workflows): commit updated swarm execution guidelines (finish, issue, real)
-105d8acdf chore: session checkpoint [23:31]
 ```
 
 ## Working State
