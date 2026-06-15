@@ -275,6 +275,15 @@ import { AgentDef } from '@agents/creative';             // agents/*
 - Module-specific components in `src/modules/<name>/components/`
 - Layout components in `src/components/layout/`
 
+### Dialogs and Modals
+
+- **Standardized on `react-call`**: Use this instead of hand-rolling modal state; never fake a modal.
+- Native `window.confirm`, `window.prompt`, and `window.alert` are banned.
+- Use the standard awaited dialogs from anywhere in the codebase:
+  - `const ok = await ConfirmDialog.call({ message: '...' })`
+  - `await AlertDialog.call({ message: '...' })`
+  - `const input = await PromptDialog.call({ message: '...' })`
+
 ### ESLint Rules
 
 - `@typescript-eslint/no-explicit-any`: warn (not error)

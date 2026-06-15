@@ -21,6 +21,9 @@ import LoginForm from './components/auth/LoginForm';
 
 import { ApprovalModal } from './components/ApprovalModal';
 import CostWarningModal from './components/CostWarningModal';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { AlertDialog } from '@/components/ui/AlertDialog';
+import { PromptDialog } from '@/components/ui/PromptDialog';
 import { BiometricGate } from './components/auth/BiometricGate';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { OfflineBanner } from './components/OfflineBanner';
@@ -590,6 +593,11 @@ function AppContent({ currentModule, showChrome, isDesktop, isAnyPhone, shortcut
                         <ChatOverlay onClose={toggleAgentWindow} />
                     </ErrorBoundary>
                 )}
+
+                {/* React Call Root Dialogs */}
+                <ConfirmDialog />
+                <AlertDialog />
+                <PromptDialog />
             </GlobalDropZone>
         </div>
     );
