@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Wallet, CheckCircle2, Copy, LogOut, Link2, Shield, AlertCircle } from 'lucide-react';
 import { walletConnectService } from '@/services/web3/WalletConnectService';
 import { logger } from '@/utils/logger';
+import { WalletConnectDialog } from '@/components/ui/WalletConnectDialog';
 
 const STORAGE_KEY = 'indii_wallet_address';
 const CHAIN_KEY = 'indii_wallet_chain';
@@ -216,50 +217,20 @@ export function WalletConnectPanel() {
                             Connect a wallet to unlock Web3 features
                         </p>
 
-                        {/* MetaMask */}
                         <button
-                            onClick={() => handleConnect('metamask')}
-                            disabled={!!connecting}
-                            className="w-full flex items-center gap-3 p-4 bg-white/[0.02] border border-white/5 rounded-xl hover:border-orange-400/30 hover:bg-orange-400/5 transition-all group disabled:opacity-50"
+                            onClick={async () => {
+                                const info = await WalletConnectDialog.call({});
+                                if (info) {
+                                    localStorage.setItem(STORAGE_KEY, info.address);
+                                    localStorage.setItem(CHAIN_KEY, `0x${info.chainId.toString(16)}`);
+                                    setAddress(info.address);
+                                    setChain(`0x${info.chainId.toString(16)}`);
+                                }
+                            }}
+                            className="w-full flex items-center justify-center gap-2 p-4 bg-white/10 border border-white/20 rounded-xl hover:bg-white/20 transition-all font-bold text-white"
                         >
-                            <div className="w-10 h-10 rounded-xl bg-orange-400/10 border border-orange-400/20 flex items-center justify-center text-lg flex-shrink-0">
-                                🦊
-                            </div>
-                            <div className="flex-1 text-left">
-                                <div className="text-sm font-bold text-white group-hover:text-orange-400 transition-colors">MetaMask</div>
-                                <div className="text-[11px] text-neutral-500">
-                                    {ethereum?.isMetaMask
-                                        ? 'Ready to connect'
-                                        : 'Browser extension wallet'}
-                                </div>
-                            </div>
-                            {connecting === 'metamask' ? (
-                                <div className="w-4 h-4 border-2 border-orange-400 border-t-transparent rounded-full animate-spin" />
-                            ) : (
-                                <Link2 size={14} className="text-neutral-600 group-hover:text-orange-400 transition-colors" />
-                            )}
-                        </button>
-
-                        {/* WalletConnect */}
-                        <button
-                            onClick={() => handleConnect('walletconnect')}
-                            disabled={!!connecting}
-                            className="w-full flex items-center gap-3 p-4 bg-white/[0.02] border border-white/5 rounded-xl hover:border-blue-400/30 hover:bg-blue-400/5 transition-all group disabled:opacity-50"
-                        >
-                            <div className="w-10 h-10 rounded-xl bg-blue-400/10 border border-blue-400/20 flex items-center justify-center text-lg flex-shrink-0">
-                                🔗
-                            </div>
-                            <div className="flex-1 text-left">
-                                <div className="text-sm font-bold text-white group-hover:text-blue-400 transition-colors">WalletConnect</div>
-                                <div className="text-[11px] text-neutral-500">
-                                    {walletConnectService.isConfigured() ? 'Scan QR with any mobile wallet' : 'Requires VITE_WALLETCONNECT_PROJECT_ID'}
-                                </div>
-                            </div>
-                            {connecting === 'walletconnect' ? (
-                                <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
-                            ) : (
-                                <Link2 size={14} className="text-neutral-600 group-hover:text-blue-400 transition-colors" />
-                            )}
+                            <Link2 size={16} />
+                            Connect Wallet
                         </button>
 
                         <p className="text-center text-[10px] text-neutral-700 pt-2">
