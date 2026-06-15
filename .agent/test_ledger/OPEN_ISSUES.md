@@ -2182,10 +2182,12 @@ Caller can decide whether to retry, surface error, or silently log.
 ### ISSUE-184: Finish WalletConnectService.ts (connectViaWalletConnect throws error instead of modal)
 
 - **Status:** 🔴 REOPENED — REGRESSION (2026-06-14 pass-2 — "fix" replaced the honest throw with a MOCK modal: "Simulate Connection" fabricates a random wallet `0x`+random hex and resolves `isConnected:true`, `WalletConnectService.ts:260-284`. NO-MOCK-DATA violation; worse than before. Build real WalletConnect or honest "unavailable" state) [was: ✅ FIXED]
+- **Status Update:** 🟠 BLOCKED — Restored honest throw. Needs real @reown/appkit WalletConnect UI implementation. Fake modal removed.
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/services/web3/WalletConnectService.ts:159`
 - **Details:** Found during `/finish` sweep. Missing logic needs to be completed.
-- **Fix:** Implemented a DOM-based connection modal UI with QR simulation.
+- **Fix:** Restored honest throw in `connectViaWalletConnect` and deleted mock UI to comply with NO-MOCK-DATA rule.
+- **Evidence:** `packages/renderer/src/services/web3/WalletConnectService.ts:156`
 
 ---
 
