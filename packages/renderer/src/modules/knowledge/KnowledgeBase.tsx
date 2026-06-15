@@ -1,12 +1,12 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Upload, Search, Loader2, Book, Sparkles, X } from 'lucide-react';
 import { EmptyState } from '@/components/shared/EmptyState';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useToast } from '@/core/context/ToastContext';
 import { knowledgeBaseService, KnowledgeDoc } from './services/KnowledgeBaseService';
 import { DocumentCard } from './components/DocumentCard';
 import { KnowledgeChat } from './components/KnowledgeChat';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
-import { Modal } from '@/components/ui/Modal';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -22,7 +22,6 @@ export default function KnowledgeBase() {
     const [isChatOpen, setIsChatOpen] = useState(false);
     const [activeChatDoc, setActiveChatDoc] = useState<KnowledgeDoc | null>(null);
     const [viewingDoc, setViewingDoc] = useState<KnowledgeDoc | null>(null);
-    const [deletingDoc, setDeletingDoc] = useState<KnowledgeDoc | null>(null);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -67,8 +66,23 @@ export default function KnowledgeBase() {
         }
     };
 
-    const handleDelete = (doc: KnowledgeDoc) => {
-        setDeletingDoc(doc);
+    const handleDelete = async (doc: KnowledgeDoc) => {
+        const ok = await ConfirmDialog.call({
+            title: "Delete Document",
+            message: `Are you sure you want to delete "${doc.title}"? This action cannot be undone.`,
+            confirmText: "Delete",
+            variant: "destructive"
+        });
+
+        if (ok) {
+            try {
+                await knowledgeBaseService.deleteDocument(doc.rawName);
+                toast.success('Document deleted');
+                await loadDocuments();
+            } catch (err) {
+                toast.error('Failed to delete document');
+            }
+        }
     };
 
     const handleChat = (doc: KnowledgeDoc) => {
@@ -229,46 +243,6 @@ export default function KnowledgeBase() {
                     </div>
                 )}
             </div>
-
-            <Modal
-                isOpen={deletingDoc !== null}
-                onClose={() => setDeletingDoc(null)}
-                titleId="delete-doc-title"
-                maxWidth="max-w-md"
-            >
-                <div className="p-6">
-                    <h2 id="delete-doc-title" className="text-lg font-bold text-white mb-2">Delete Document</h2>
-                    <p className="text-sm text-gray-400 mb-6">
-                        Are you sure you want to delete "{deletingDoc?.title}"? This action cannot be undone.
-                    </p>
-                    <div className="flex justify-end gap-3">
-                        <button
-                            onClick={() => setDeletingDoc(null)}
-                            className="px-4 py-2 rounded-lg bg-zinc-800 text-gray-300 hover:bg-zinc-700 transition-colors text-xs font-semibold"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            onClick={async () => {
-                                if (deletingDoc) {
-                                    try {
-                                        await knowledgeBaseService.deleteDocument(deletingDoc.rawName);
-                                        toast.success("Document deleted.");
-                                        await loadDocuments();
-                                    } catch (_err: unknown) {
-                                        toast.error("Failed to delete document.");
-                                    } finally {
-                                        setDeletingDoc(null);
-                                    }
-                                }
-                            }}
-                            className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors text-xs font-semibold"
-                        >
-                            Delete
-                        </button>
-                    </div>
-                </div>
-            </Modal>
         </ModuleErrorBoundary>
     );
 }
