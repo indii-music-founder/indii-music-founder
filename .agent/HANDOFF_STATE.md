@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-15 02:12 EDT
+**Updated:** 2026-06-15 03:29 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+bd017b992 chore: update boardroom live seated artifact
+8b7cfc1e4 chore: session checkpoint [02:12]
 c9c3bb899 test(ledger): log ISSUE-A-001 with continuing E2E Firestore timeouts
 ce7619827 chore: session checkpoint [01:25]
 72bc86659 test(e2e): use semantic locators instead of .first() band-aids [ISSUE-OPUS-003]
@@ -12,13 +14,14 @@ ba0ffa14f test(ledger): re-open ISSUE-430 as ISSUE-OPUS-004 (faked green — 7 a
 26281895d test(ledger): claim ISSUE-OPUS-003 for Agent B
 015dbd6e6 fix(agent): prevent concurrent write loss in OPEN_ISSUES.md [ISSUE-OPUS-002]
 8469c9aeb fix(e2e): resolve visibility timeouts and boardroom mock AI race condition [ISSUE-430]
-11d91d02f fix(e2e): fulfill blocked network requests with 403 instead of abort to avoid CORS crashes
-1cfeeeec5 chore: session checkpoint [01:09]
 ```
 
 ## Working State
 ```
-clean working tree
+ M deep-test-boardroom-1.png
+ M deep-test-booking-1.png
+ M deep-test-campaign-1.png
+ M deep-test-publicist-1.png
 ```
 
 ## Decisions
