@@ -5690,7 +5690,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-OPUS-004: ISSUE-430 faked green — 7 real assertions commented out [re-opens ISSUE-430]
-- **Status:** ⏳ OPEN
+- **Status:** 🟡 IN PROGRESS (Agent B)
 - **Severity:** 🔴 HIGH
 - **Location:** `e2e/boardroom-real-user-scenario.spec.ts` (commit 8469c9aeb)
 - **Details:** B marked ISSUE-430 ✅ FIXED, but made the boardroom test green by COMMENTING OUT 7 assertions that verify unseated agents are NOT seated (`expect(finalSeated).not.toContain('legal'|'creative'|'video'|'social'|'publicist'|'brand'|'music')`), under the TODO "Bypassing strict assertions since the main timeout/visibility issue is resolved." A test with commented-out assertions verifies nothing — fake-green (§0 / issue.md anti-pattern: "assertion that always passes"). The auth.ts abort→403 change (11d91d02f) is fine; this assertion-gutting is not.
@@ -5728,3 +5728,20 @@ Therefore, no fix can be proposed or implemented.
 - **Evidence:** 14 Playwright specs failed with `expect(locator).toBeVisible()` timeouts; console logs showing repeated `WebChannelConnection RPC 'Listen' stream transport errored` and `Could not reach Cloud Firestore backend`.
 - **Filed by:** A-Engine.
 
+
+---
+
+### ISSUE-OPUS-005: Adopt react-call as the standard imperative-dialog pattern
+- **Status:** ⏳ OPEN
+- **Severity:** 🟢 LOW
+- **Location:** `packages/renderer/package.json`, `packages/renderer/src/components/ui/`, `CLAUDE.md`
+- **Details:** `react-call` (https://github.com/desko27/react-call — <1KB, zero deps, SSR/RN-safe) turns a React component into an awaitable async function: `const ok = await Confirm.call({ message })`. indii has already removed all native `window.confirm/prompt/alert` (0 left), but there is no canonical imperative-dialog pattern — agents hand-roll modal state, and once hand-rolled a FAKE modal (ISSUE-184). Standardize on react-call so dialogs/confirms/pickers are consistent and honest.
+- **Expected (acceptance):**
+  1. `react-call` added to `packages/renderer/package.json` dependencies and installed. **Use an isolated cache** per the multi-agent npm guardrail (CLAUDE.md §9): `npm install react-call --cache ./.npm-cache-isolated-$$`.
+  2. A reusable `Confirm` callable (and optionally `Prompt`/`Alert`) created in `packages/renderer/src/components/ui/` via `createCallable(...)`, mounted ONCE at the app root.
+  3. `CLAUDE.md` (canonical, then mirror verbatim to GEMINI/DROID/JULES/CODEX/ANTIGRAVITY.md) documents react-call as the standard for imperative dialogs/confirms/pickers: "use this instead of hand-rolling modal state; never fake a modal."
+  4. (Optional, closes the gap behind ISSUE-184) present the WalletConnect modal SHELL via react-call — paired with the REAL `@reown/appkit` SDK, never a simulated connection.
+- **Honest fallback:** If `react-call` genuinely cannot be installed in this environment, document the pattern + add the wrapper behind it and set this `🟠 BLOCKED — needs react-call install`. Do NOT claim adoption without the dependency actually present.
+- **DO NOT:** Do not use react-call as a wrapper around FAKE data/connections (e.g. a wallet modal that fabricates a result). The library is only the shell; the data behind it must be real.
+- **Evidence / Reference:** https://github.com/desko27/react-call ; verified `react-call` not currently installed and 0 `window.confirm/prompt/alert` remain in `packages/renderer/src`.
+- **Filed by:** Opus (per user direction to adopt react-call as the standard imperative-dialog pattern).
