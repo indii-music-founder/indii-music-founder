@@ -1,9 +1,12 @@
 # Handoff State
-**Updated:** 2026-06-15 07:22 EDT
+**Updated:** 2026-06-15 07:26 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+429a28e63 feat(workflow): add /d — D-Engine (Verifier), the independent fix-audit + re-open loop
+20d3a6694 fix(e2e): restore the commented boardroom assertions
+26a0eb5cf chore: session checkpoint [07:22]
 000376c51 fix(renderer): implement standard react-call dialogs [ISSUE-OPUS-005]
 24752dbd1 docs(issues): mark ISSUE-OPUS-005 in progress by Agent B
 bc7cc41fe chore: session checkpoint [07:12]
@@ -11,14 +14,10 @@ bc7cc41fe chore: session checkpoint [07:12]
 fd1feff5c build: install react-call AI agent skill
 2199f9894 docs: mark ISSUE-OPUS-004 as FIXED after resolving parallel function execution bug
 f866c60bc fix(agent): support parallel function calls in BaseAgent
-ac7ded10b chore: session checkpoint [07:03]
-9966c4372 chore: session checkpoint [06:56]
-ce549cc18 test(ledger): file ISSUE-OPUS-005 (adopt react-call as standard imperative-dialog pattern)
 ```
 
 ## Working State
 ```
- M e2e/boardroom-real-user-scenario.spec.ts
 ?? packages/renderer/python/
 ```
 
