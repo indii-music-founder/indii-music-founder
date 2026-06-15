@@ -7,7 +7,7 @@ import { DesignCanvas, useCanvasControls, CanvasObject } from './components/Desi
 import { AssetLibrary } from './components/AssetLibrary';
 import { LayersPanel } from './components/LayersPanel';
 import { AutonomousGenerationDialog } from './components/AutonomousGenerationDialog';
-import { ConfirmDialog } from './components/ConfirmDialog';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { ExportDialog } from './components/ExportDialog';
 import EnhancedShowroom from './components/EnhancedShowroom';
 import { TemplatePicker } from './components/TemplatePicker';
@@ -77,7 +77,6 @@ export default function MerchDesigner() {
     const [showExportDialog, setShowExportDialog] = useState(false);
     const [showTemplates, setShowTemplates] = useState(false);
     const [showHistory, setShowHistory] = useState(false);
-    const [deleteConfirm, setDeleteConfirm] = useState<CanvasObject[]>([]);
 
     const toast = useToast();
 
@@ -223,31 +222,47 @@ export default function MerchDesigner() {
         setLayers(newLayers);
     }, [layers]);
 
-    const handleDeleteLayer = useCallback((layer: CanvasObject) => {
-        // Show confirmation dialog for single layer
-        setDeleteConfirm([layer]);
-    }, []);
-
-    const handleDeleteLayers = useCallback((objects: CanvasObject[]) => {
-        // Show confirmation dialog for multiple layers (keyboard delete)
-        setDeleteConfirm(objects);
-    }, []);
-
-    const confirmDelete = useCallback(() => {
-        if (deleteConfirm.length === 0) return;
-
-        // Delete all objects in the confirmation list
-        deleteConfirm.forEach(obj => {
-            fabricCanvasRef.current?.remove(obj.fabricObject);
+    const handleDeleteLayer = useCallback(async (layer: CanvasObject) => {
+        const ok = await ConfirmDialog.call({
+            title: "Delete Layer?",
+            message: `Are you sure you want to delete "${layer.name}"? This action cannot be undone.`,
+            confirmText: "Delete",
+            cancelText: "Cancel",
+            variant: "destructive"
         });
+        if (ok) {
+            fabricCanvasRef.current?.remove(layer.fabricObject);
+            fabricCanvasRef.current?.discardActiveObject();
+            fabricCanvasRef.current?.renderAll();
+            toast.success(`1 layer deleted`);
+        }
+    }, [toast]);
 
-        fabricCanvasRef.current?.discardActiveObject();
-        fabricCanvasRef.current?.renderAll();
-        setDeleteConfirm([]);
-
-        const count = deleteConfirm.length;
-        toast.success(`${count} ${count === 1 ? 'layer' : 'layers'} deleted`);
-    }, [deleteConfirm, toast]);
+    const handleDeleteLayers = useCallback(async (objects: CanvasObject[]) => {
+        if (objects.length === 0) return;
+        const count = objects.length;
+        const title = count === 1 ? "Delete Layer?" : "Delete Layers?";
+        const message = count === 1 
+            ? `Are you sure you want to delete "${objects[0]!.name}"? This action cannot be undone.`
+            : `Are you sure you want to delete ${count} layers? This action cannot be undone.`;
+            
+        const ok = await ConfirmDialog.call({
+            title,
+            message,
+            confirmText: "Delete",
+            cancelText: "Cancel",
+            variant: "destructive"
+        });
+        
+        if (ok) {
+            objects.forEach(obj => {
+                fabricCanvasRef.current?.remove(obj.fabricObject);
+            });
+            fabricCanvasRef.current?.discardActiveObject();
+            fabricCanvasRef.current?.renderAll();
+            toast.success(`${count} ${count === 1 ? 'layer' : 'layers'} deleted`);
+        }
+    }, [toast]);
 
     const handleReorderLayer = useCallback((layer: CanvasObject, direction: 'up' | 'down') => {
         if (!fabricCanvasRef.current) return;
@@ -732,23 +747,6 @@ export default function MerchDesigner() {
                         <EnhancedShowroom initialAsset={exportedDesign} />
                     </div>
                 </div>
-            )}
-
-            {/* Delete Confirmation Dialog */}
-            {deleteConfirm.length > 0 && (
-                <ConfirmDialog
-                    title={deleteConfirm.length === 1 ? "Delete Layer?" : "Delete Layers?"}
-                    message={
-                        deleteConfirm.length === 1
-                            ? `Are you sure you want to delete "${deleteConfirm[0]!.name}"? This action cannot be undone.`
-                            : `Are you sure you want to delete ${deleteConfirm.length} layers? This action cannot be undone.`
-                    }
-                    confirmLabel="Delete"
-                    cancelLabel="Cancel"
-                    variant="danger"
-                    onConfirm={confirmDelete}
-                    onCancel={() => setDeleteConfirm([])}
-                />
             )}
 
             {/* Export Format Dialog */}
