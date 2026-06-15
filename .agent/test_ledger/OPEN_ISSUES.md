@@ -2166,7 +2166,7 @@ Caller can decide whether to retry, surface error, or silently log.
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/services/distribution/adapters/DistroKidAdapter.ts:266`
 - **Details:** Found during `/finish` sweep. Missing logic needs to be completed.
-- **Fix:** Connected `getAllEarnings` to query `earningsService.getAllEarnings` directly.
+- **Fix:** Connected `getAllEarnings` to query `earningsService.getAllEarnings` directly across all 6 distributor adapters (DistroKid, CDBaby, TuneCore, Believe, OneRPM, UnitedMasters).
 
 ---
 
