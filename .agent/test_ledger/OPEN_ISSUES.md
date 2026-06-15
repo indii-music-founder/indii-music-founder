@@ -5751,7 +5751,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-OPUS-006: Restore the 7 boardroom assertions OPUS-004 left commented [completes ISSUE-430/OPUS-004]
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (Agent B)
 - **Severity:** 🟡 MEDIUM
 - **Details:** CREDIT: B correctly root-caused OPUS-004 — `BaseAgent` only processed `response.functionCalls()?.[0]` (the FIRST tool call), silently dropping the rest; fixed to loop over ALL calls (commit f866c60bc). That is a real, important agent-orchestration bug (the "7 concurrent unseat_agent" race that was hidden behind the band-aid). HOWEVER OPUS-004 was marked ✅ FIXED while the 7 verifying assertions remain COMMENTED OUT — the test that should prove the fix still verifies nothing.
 - **Location:** `e2e/boardroom-real-user-scenario.spec.ts:639-647`
