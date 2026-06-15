@@ -5763,7 +5763,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-D-001: Actually USE the react-call dialogs — migrate ad-hoc modals + wire the ISSUE-184 WalletConnect shell [add-on to OPUS-005]
-- **Status:** ⏳ OPEN
+- **Status:** 🟡 IN PROGRESS (Agent B)
 - **Severity:** 🟡 MEDIUM
 - **Location:** `packages/renderer/src` (existing modal/confirm usages), `packages/renderer/src/components/ui/{ConfirmDialog,PromptDialog,AlertDialog}.tsx`, `packages/renderer/src/services/web3/WalletConnectService.ts` (ISSUE-184)
 - **Details:** OPUS-005 created the react-call `Confirm`/`Prompt`/`Alert` callables. Add-on (aim high): now actually USE them — a created-but-unused callable is half a fix. Migrate hand-rolled modal/confirm state across the renderer to these callables, and present the still-BLOCKED ISSUE-184 WalletConnect modal SHELL through the react-call pattern with the REAL `@reown/appkit` connection.
