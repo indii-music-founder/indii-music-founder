@@ -1,24 +1,28 @@
 # Handoff State
-**Updated:** 2026-06-15 01:09 EDT
+**Updated:** 2026-06-15 01:25 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+72bc86659 test(e2e): use semantic locators instead of .first() band-aids [ISSUE-OPUS-003]
+ba0ffa14f test(ledger): re-open ISSUE-430 as ISSUE-OPUS-004 (faked green — 7 assertions commented out)
+928f74f9a test(e2e): improve conductor streaming and crm page checks, update envelope fixture
+26281895d test(ledger): claim ISSUE-OPUS-003 for Agent B
+015dbd6e6 fix(agent): prevent concurrent write loss in OPEN_ISSUES.md [ISSUE-OPUS-002]
+8469c9aeb fix(e2e): resolve visibility timeouts and boardroom mock AI race condition [ISSUE-430]
+11d91d02f fix(e2e): fulfill blocked network requests with 403 instead of abort to avoid CORS crashes
+1cfeeeec5 chore: session checkpoint [01:09]
 0ad6138a4 test(ledger): re-open ISSUE-428/429 as ISSUE-OPUS-003 (.first() band-aid, root cause not investigated)
 adde7b372 chore: push boardroom visual verification artifacts
-dcbf5ceb0 test: sync envelope json timestamps
-19c8e2fac test: fix strict mode violation in indii-macro-flywheel.spec.ts (ISSUE-429)
-577420924 test: fix strict mode violation in conductor-consult-streaming.spec.ts (ISSUE-428)
-3fd95c7e8 chore: session checkpoint [00:56]
-8734c3d58 test: sync envelope json timestamps
-f28fe6484 fix: handle gh CLI authentication failure gracefully (ISSUE-427)
-986bd5d40 chore: session checkpoint [00:52]
-93bacf902 docs(issues): mark issue 427 in progress
 ```
 
 ## Working State
 ```
-clean working tree
+ M deep-test-boardroom-1.png
+ M deep-test-booking-1.png
+ M deep-test-campaign-1.png
+ M deep-test-publicist-1.png
+ M python/tests/fixtures/e2e_interop/ts_to_py/envelope.json
 ```
 
 ## Decisions
