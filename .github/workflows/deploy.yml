@@ -120,7 +120,7 @@ jobs:
 
       - name: Run unit tests (shard ${{ matrix.shard }}/4)
         timeout-minutes: 15
-        run: NODE_OPTIONS="--max-old-space-size=4096" npm test -- --run --reporter=verbose --pool=threads --testTimeout=30000 --bail=3 --shard=${{ matrix.shard }}/4
+        run: NODE_OPTIONS="--max-old-space-size=4096" npm test -- --run --reporter=verbose --pool=forks --testTimeout=30000 --bail=3 --shard=${{ matrix.shard }}/4
         env:
           VITE_API_KEY: ${{ secrets.VITE_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.VITE_API_KEY }}
