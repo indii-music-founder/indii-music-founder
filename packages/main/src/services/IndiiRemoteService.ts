@@ -36,18 +36,18 @@ class IndiiRemoteService {
     private password = '';
 
     constructor() {
-        void 0;
+        console.log('[IndiiRemoteService] Service instantiated.');
     }
 
     public async start(config: RemoteConfig): Promise<string> {
         if (this.isRunning) {
-            void 0;
+            console.log('[IndiiRemoteService] Remote service is already running on URL:', this.url);
             return this.url!;
         }
 
         // Mutex: if a startup is already in progress, return the pending promise
         if (this.pendingStart) {
-            void 0;
+            console.log('[IndiiRemoteService] Startup already in progress, awaiting...');
             return this.pendingStart;
         }
 

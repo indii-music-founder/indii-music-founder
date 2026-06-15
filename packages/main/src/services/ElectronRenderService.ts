@@ -2,7 +2,7 @@
 
 export const electronRenderService = {
     async render(config: { compositionId: string; outputLocation: string; inputProps?: Record<string, unknown> }) {
-        void 0;
+        console.log('[ElectronRenderService] Rendering composition:', config.compositionId);
         
         try {
             // Dynamically import @remotion/renderer so that it doesn't break if not available
@@ -26,10 +26,10 @@ export const electronRenderService = {
                 outputLocation: config.outputLocation,
             } as RenderMediaParams);
             
-            void 0;
+            console.log('[ElectronRenderService] Rendering complete:', config.outputLocation);
             return config.outputLocation;
         } catch (error) {
-            void 0;
+            console.error('[ElectronRenderService] Rendering failed:', error);
             throw error;
         }
     }
