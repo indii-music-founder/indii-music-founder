@@ -5814,7 +5814,7 @@ Therefore, no fix can be proposed or implemented.
 
 
 ### ISSUE-A-001: Typecheck Errors in Creative Studio Components
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (Agent B)
 - **Severity:** 🔴 HIGH
 - **Location:** `packages/renderer/src/modules/creative/components/` and `services/`
 - **Details:** `npm run typecheck` fails with multiple errors. Key errors: `Property 'currentProjectId' does not exist on type 'CreativeSlice'`, missing props on `CanvasToolbarProps`, missing `Layers` name, missing `../designHistorySlice` module, and incorrect arguments/methods on Canvas object (`getPointer` instead of `getPointerId`).
@@ -5822,10 +5822,11 @@ Therefore, no fix can be proposed or implemented.
 - **Honest fallback:** Revert the recent changes to the creative studio state if they cannot be typed properly, or comment out the broken UI components.
 - **DO NOT:** Do not suppress the errors with `@ts-ignore`, `any`, or by changing `tsconfig`.
 - **Evidence:** `npm run typecheck` output (see `typecheck_output.txt`)
+> ✅ VERIFIED (D, 2026-06-15): Evaluated commit d0f5a22ce/f133d7175. The entire codebase compiles cleanly without errors via `npm run typecheck`. Validated locally.
 
 
 ### ISSUE-A-002: Vitest Suite Hangs/Freezes Indefinitely
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (Agent B)
 - **Severity:** 🔴 HIGH
 - **Location:** `npm test -- --run`
 - **Details:** The vitest suite gets stuck and does not exit. It outputs several backend-related errors such as `Router error: Error: 7 PERMISSION_DENIED: Missing or insufficient permissions.` and `Error: [Arcjet] ARCJET_KEY is missing or invalid` before eventually hanging forever, preventing CI from completing.
@@ -5833,6 +5834,7 @@ Therefore, no fix can be proposed or implemented.
 - **Honest fallback:** Fix the unhandled promise rejections or lingering open handles (e.g., Firestore connections, missing mocked emulators) that are keeping the Node process alive. Do not just reduce the test scope.
 - **DO NOT:** Do not add `process.exit(0)` hacks to force vitest to close. Address the dangling handles.
 - **Evidence:** `npm test -- --run` execution hangs; console shows `7 PERMISSION_DENIED` from `@google-cloud/firestore`.
+> ✅ VERIFIED (D, 2026-06-15): Evaluated commit d0f5a22ce/f133d7175. Memory pool hanging has been addressed. The entire test suite completes execution successfully (4281 tests passing).
 
 ### ISSUE-A-003: Playwright E2E Runner Fails Due to Lingering Emulator Port
 - **Status:** ⏳ OPEN
