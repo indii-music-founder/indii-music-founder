@@ -48,7 +48,7 @@ For every issue B marked `✅ FIXED` (or every `fix(`/`test(` commit B lands):
    - **Fake-green tests:** assertions **commented out / deleted / `.skip`'d**, assertions that can never fail, `.first()`/`.nth()` band-aids that paper over a strict-mode/duplicate root cause, mocks that return blank `{}` to dodge a real protocol.
    - **Symptom-hiding:** hiding a UI element, swallowing an error, loosening an assertion, green-by-deletion of a failing test.
    - **Acceptance mismatch:** does the change actually deliver the issue's stated `Expected`? ("unique instance" ≠ `.first()`.)
-3. **Confirm or re-run** — where feasible, re-run the relevant spec/typecheck (E2E needs the Firestore emulator: `npx firebase emulators:exec --only firestore "npm run test:e2e"`). Capture the failing test name / assertion diff as evidence.
+3. **Confirm or re-run** — where feasible, re-run the relevant spec/typecheck (E2E needs the Firestore emulator: `npx vite optimize --config packages/renderer/vite.config.ts && npx firebase emulators:exec --only firestore "npm run test:e2e"`). Capture the failing test name / assertion diff as evidence.
 4. **Verdict:**
    - **GENUINE** → append one line under the issue: `✅ VERIFIED (D, <date>): <what proves it, file:line/commit>`. Do **not** re-flip B's status; just confirm.
    - **FAKE / INCOMPLETE** → go to §4.
