@@ -1,7 +1,7 @@
 import { logger } from '@/utils/logger';
 import { initializeApp } from 'firebase/app';
-import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, setDoc } from 'firebase/firestore';
-import { getStorage } from 'firebase/storage';
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, setDoc, connectFirestoreEmulator } from 'firebase/firestore';
+import { getStorage, connectStorageEmulator } from 'firebase/storage';
 import { initializeAuth, browserLocalPersistence, browserSessionPersistence, indexedDBLocalPersistence } from 'firebase/auth';
 import { getAI, VertexAIBackend, AI as Autonomous } from 'firebase/ai';
 
@@ -108,8 +108,12 @@ try {
         try {
             connectFunctionsEmulator(functions, '127.0.0.1', 5001);
             logger.debug('[Firebase] Connected to Functions emulator on port 5001');
+            connectFirestoreEmulator(db, '127.0.0.1', 8080);
+            logger.debug('[Firebase] Connected to Firestore emulator on port 8080');
+            connectStorageEmulator(storage, '127.0.0.1', 9199);
+            logger.debug('[Firebase] Connected to Storage emulator on port 9199');
         } catch (e: unknown) {
-            logger.warn('[Firebase] Functions emulator connection skipped:', e);
+            logger.warn('[Firebase] Emulators connection skipped:', e);
         }
     }
 } catch (e) {
