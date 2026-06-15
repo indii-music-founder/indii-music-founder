@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron';
 
-void 0;
+console.log('[preload] Preload script loaded.');
 
 // Type definitions for IPC communication
 interface Credentials {

@@ -22,7 +22,7 @@ export class BrowserAgentService {
 
         try {
             this.isInitializing = true;
-            void 0;
+            console.log('[BrowserAgentService] Initializing headless window session...');
 
             // Create a unique partition for each session to isolate data
             const partition = `persist:browser_agent_${Date.now()}`;
