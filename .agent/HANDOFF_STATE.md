@@ -1,33 +1,24 @@
 # Handoff State
-**Updated:** 2026-06-14 19:12 EDT
+**Updated:** 2026-06-14 20:57 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
-cb3d43ddc feat(crm): add CRM slice, dashboard tests, and update web3 handlers and distribution adapters
-f45c702e0 test(right-panel): add unit tests for Project AssetsPanel
-62f5803fa test(creative): expand coverage for CreativeNavbar components
-78f1365ad test: add unit tests for right-panel StudioControlsPanel
-82849f6ba fix(quality): remove void 0 placeholders, support dynamic MCP fields, and update test mocks
-882e1257a docs(issues): mark issues 056, 059, 066-069 as fixed
-6b1a9a44f fix(mcp): resolve leftover empty void expressions and extract dsp metadata attributes dynamically
-9acb2d6a6 fix(video): mock useVideoEditorStore in ParallelRenderOrchestrator test
-0d7aa18ee test(fixture): update envelope.json again
-df1eabb8a fix(video): fix video editor store imports
+f32c1f9b5 chore: add mandatory static verification gate to /issue workflow
+781b32fb8 docs(issues): document adapter fixes across all six adapters for issue 183
+944a5b913 chore: resolve static audit issues 077, 174, 183, 184, 190, 229, 257, 259
+7da31df92 fix(issues): resolve status code fabrications and void 0 placeholders
+469f99b25 feat(distribution): implement getAllEarnings in distributor adapters
+ef1712839 fix(distribution): implement real earnings logic and walletconnect modal
+87467b610 test: mock crm slice in setup store mock
+199fd49f2 test(fixture): final update to envelope.json after test validation
+8247c3b47 docs(issues): update issue status for fixed issues 070-076
+905aac5ff test(crm): align test assertions with new CRM state shape and text
 ```
 
 ## Working State
 ```
-M  .agent/test_ledger/OPEN_ISSUES.md
-M  packages/renderer/src/core/store/index.ts
-M  packages/renderer/src/core/store/slices/crmSlice.ts
-M  packages/renderer/src/services/FirestoreService.ts
-M  packages/renderer/src/services/agent/tools/UniversalTools.ts
-M  packages/renderer/src/services/distribution/adapters/BelieveAdapter.ts
-M  packages/renderer/src/services/distribution/adapters/OnerpmAdapter.ts
-M  packages/renderer/src/services/distribution/adapters/SymphonicAdapter.ts
-M  packages/renderer/src/services/distribution/adapters/UnitedMastersAdapter.ts
-M  python/tests/fixtures/e2e_interop/ts_to_py/envelope.json
+clean working tree
 ```
 
 ## Decisions
