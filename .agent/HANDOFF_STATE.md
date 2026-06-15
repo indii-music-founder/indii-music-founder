@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-14 23:19 EDT
+**Updated:** 2026-06-14 23:24 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+fe7d04acd fix(web3): remove fake walletconnect modal and restore honest throw to comply with NO-MOCK-DATA rule
+ee901b6a0 chore: session checkpoint [23:19]
 e16ea75a9 chore: push user void 0; cleanups and final ledger status
 75d6f7302 fix(quality): resolve ISSUE-077 by removing bare void 0 artifacts and fixing swallowed errors
 ea913a7d7 chore: session checkpoint [23:15]
@@ -12,13 +14,11 @@ ea913a7d7 chore: session checkpoint [23:15]
 dcc41a06f test: sync envelope json timestamps
 b6d378761 chore: session checkpoint [22:59]
 bf6c134ed docs(flowchart): commit next set of system architecture diagrams (04-12)
-28f60fb2a docs(flowchart): commit newly generated flowcharts and diagrams
-1e0d12a91 test: sync envelope json interop timestamps
 ```
 
 ## Working State
 ```
-clean working tree
+ M python/tests/fixtures/e2e_interop/ts_to_py/envelope.json
 ```
 
 ## Decisions
