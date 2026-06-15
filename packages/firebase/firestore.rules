@@ -621,8 +621,8 @@ service cloud.firestore {
     match /history/{historyId} {
       // Users can read their own history or org history
       allow read: if (isAuthenticated() &&
-        (resource.data.userId == request.auth.uid ||
-         (('orgId' in resource.data) && resource.data.orgId != null && isOrgMember(resource.data.orgId)))) || (isGuest() && resource.data.userId == 'founder-demo-uid');
+        (('userId' in resource.data && resource.data.userId == request.auth.uid) ||
+         (('orgId' in resource.data) && resource.data.orgId != null && isOrgMember(resource.data.orgId)))) || (isGuest() && ('userId' in resource.data && resource.data.userId == 'founder-demo-uid'));
       
       // Users can create history entries
       allow create: if (isVerifiedUser() &&
@@ -630,11 +630,11 @@ service cloud.firestore {
       
       // Users can update their own history
       allow update: if (isVerifiedUser() &&
-        resource.data.userId == request.auth.uid) || (isGuest() && resource.data.userId == 'founder-demo-uid');
+        ('userId' in resource.data && resource.data.userId == request.auth.uid)) || (isGuest() && ('userId' in resource.data && resource.data.userId == 'founder-demo-uid'));
       
       // Users can delete their own history
       allow delete: if (isVerifiedUser() &&
-        resource.data.userId == request.auth.uid) || (isGuest() && resource.data.userId == 'founder-demo-uid');
+        ('userId' in resource.data && resource.data.userId == request.auth.uid)) || (isGuest() && ('userId' in resource.data && resource.data.userId == 'founder-demo-uid'));
     }
 
     match /design_versions/{versionId} {
