@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-14 23:31 EDT
+**Updated:** 2026-06-14 23:39 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+102678acb docs(workflows): commit updated swarm execution guidelines (finish, issue, real)
+105d8acdf chore: session checkpoint [23:31]
 da244bdd9 chore: session checkpoint [23:29]
 c45dac07a test: sync envelope json timestamps
 318832f6c chore: session checkpoint [23:24]
@@ -12,13 +14,12 @@ ee901b6a0 chore: session checkpoint [23:19]
 e16ea75a9 chore: push user void 0; cleanups and final ledger status
 75d6f7302 fix(quality): resolve ISSUE-077 by removing bare void 0 artifacts and fixing swallowed errors
 ea913a7d7 chore: session checkpoint [23:15]
-4de6318d9 chore(tests): update OPEN_ISSUES.md with verification results
-3e4c60bba chore: session checkpoint [23:09]
 ```
 
 ## Working State
 ```
-clean working tree
+ M .agent/workflows/a.md
+ M .agent/workflows/mega.md
 ```
 
 ## Decisions
