@@ -82,7 +82,7 @@ export const CustomizableAnalyticsDashboard: React.FC = () => {
             setIsRealData(hasData);
 
         } catch (_error) {
-            void 0;
+            console.error('Analytics dashboard refresh failed:', _error);
         } finally {
             setLoading(false);
             setRefreshing(false);
