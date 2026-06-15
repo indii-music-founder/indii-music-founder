@@ -1,9 +1,12 @@
 # Handoff State
-**Updated:** 2026-06-15 00:52 EDT
+**Updated:** 2026-06-15 00:56 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+8734c3d58 test: sync envelope json timestamps
+f28fe6484 fix: handle gh CLI authentication failure gracefully (ISSUE-427)
+986bd5d40 chore: session checkpoint [00:52]
 93bacf902 docs(issues): mark issue 427 in progress
 ed69dc1dc fix: delete orphaned scripts/fix_void.cjs (ISSUE-OPUS-001)
 2382de2ff chore(test): update test screenshots
@@ -11,14 +14,12 @@ ed69dc1dc fix: delete orphaned scripts/fix_void.cjs (ISSUE-OPUS-001)
 3a59f4071 docs(workflow): harden ABC Conflict Avoidance (append+commit-immediately) per ISSUE-OPUS-002
 9e4cf1e1f chore: push workflows and visual verification artifacts
 7d643c071 test(ledger): file ISSUE-OPUS-001/002 (fix_void cleanup + ledger write-collision finding)
-e1b843b55 test(ledger): log ISSUE-428..430 for Playwright E2E failures
-abf7a44f7 chore: session checkpoint [00:00]
-0cac4c449 chore: session checkpoint [23:53]
 ```
 
 ## Working State
 ```
- M scripts/git_monitor_sync.js
+ M .agent/test_ledger/OPEN_ISSUES.md
+ M e2e/conductor-consult-streaming.spec.ts
 ```
 
 ## Decisions
