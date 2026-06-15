@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-14 23:39 EDT
+**Updated:** 2026-06-14 23:46 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+42692bd2d docs(workflow): sync a.md
+8b4513a3c chore: session checkpoint [23:39]
 102678acb docs(workflows): commit updated swarm execution guidelines (finish, issue, real)
 105d8acdf chore: session checkpoint [23:31]
 da244bdd9 chore: session checkpoint [23:29]
@@ -12,14 +14,11 @@ c45dac07a test: sync envelope json timestamps
 fe7d04acd fix(web3): remove fake walletconnect modal and restore honest throw to comply with NO-MOCK-DATA rule
 ee901b6a0 chore: session checkpoint [23:19]
 e16ea75a9 chore: push user void 0; cleanups and final ledger status
-75d6f7302 fix(quality): resolve ISSUE-077 by removing bare void 0 artifacts and fixing swallowed errors
-ea913a7d7 chore: session checkpoint [23:15]
 ```
 
 ## Working State
 ```
  M .agent/workflows/a.md
- M .agent/workflows/mega.md
 ```
 
 ## Decisions
