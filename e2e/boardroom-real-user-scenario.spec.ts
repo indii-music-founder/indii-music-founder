@@ -40,6 +40,11 @@ test.describe('Boardroom Real User Multi-Turn Scenario', () => {
                 const postData = route.request().postData() || '';
                 console.log(`[E2E:MockAI] Intercepted request. Payload size: ${postData.length} chars.`);
 
+                if (!postData) {
+                    await route.continue();
+                    return;
+                }
+
                 // Parse the user message, system instruction, and agent ID from the payload
                 let userMessage = '';
                 let systemInstructionText = '';
