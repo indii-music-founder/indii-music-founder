@@ -5876,3 +5876,11 @@ Therefore, no fix can be proposed or implemented.
 - **DO NOT:** Do not disable rules or default to broad `allow read, write: if true`.
 - **Evidence:** Browser console throws: `[CreativeSlice] History subscription error: FirebaseError: Property userId is undefined on object. for 'list' @ L623, false for 'list' @ L1160`.
 
+
+### ISSUE-CI-27551057594: CI Pipeline Failure (Deploy to Firebase Hosting)
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** CI/CD
+- **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
+- **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/27551057594)
+- **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
