@@ -1,25 +1,24 @@
 # Handoff State
-**Updated:** 2026-06-15 00:56 EDT
+**Updated:** 2026-06-15 01:09 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+0ad6138a4 test(ledger): re-open ISSUE-428/429 as ISSUE-OPUS-003 (.first() band-aid, root cause not investigated)
+adde7b372 chore: push boardroom visual verification artifacts
+dcbf5ceb0 test: sync envelope json timestamps
+19c8e2fac test: fix strict mode violation in indii-macro-flywheel.spec.ts (ISSUE-429)
+577420924 test: fix strict mode violation in conductor-consult-streaming.spec.ts (ISSUE-428)
+3fd95c7e8 chore: session checkpoint [00:56]
 8734c3d58 test: sync envelope json timestamps
 f28fe6484 fix: handle gh CLI authentication failure gracefully (ISSUE-427)
 986bd5d40 chore: session checkpoint [00:52]
 93bacf902 docs(issues): mark issue 427 in progress
-ed69dc1dc fix: delete orphaned scripts/fix_void.cjs (ISSUE-OPUS-001)
-2382de2ff chore(test): update test screenshots
-334618569 chore: session checkpoint [00:33]
-3a59f4071 docs(workflow): harden ABC Conflict Avoidance (append+commit-immediately) per ISSUE-OPUS-002
-9e4cf1e1f chore: push workflows and visual verification artifacts
-7d643c071 test(ledger): file ISSUE-OPUS-001/002 (fix_void cleanup + ledger write-collision finding)
 ```
 
 ## Working State
 ```
- M .agent/test_ledger/OPEN_ISSUES.md
- M e2e/conductor-consult-streaming.spec.ts
+clean working tree
 ```
 
 ## Decisions
