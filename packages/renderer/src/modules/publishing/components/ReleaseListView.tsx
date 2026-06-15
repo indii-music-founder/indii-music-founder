@@ -9,10 +9,10 @@ import {
     LayoutGrid, List as ListIcon, Trash2, Archive, ExternalLink
 } from 'lucide-react';
 import { ReleaseStatusCard } from './ReleaseStatusCard';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useReleaseList } from '../hooks/useReleaseList';
 import { ClientReleaseRecord } from '../hooks/useReleases';
 import { VirtuosoGrid, TableVirtuoso } from 'react-virtuoso';
-import { Modal } from '@/components/ui/Modal';
 
 interface ReleaseListViewProps {
     onNewRelease: () => void;
@@ -36,7 +36,6 @@ export const ReleaseListView: React.FC<ReleaseListViewProps> = ({ onNewRelease, 
 
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
-    const [bulkAction, setBulkAction] = useState<'delete' | 'archive' | null>(null);
 
     const toggleSelection = (id: string) => {
         setSelectedIds(prev =>
@@ -44,17 +43,19 @@ export const ReleaseListView: React.FC<ReleaseListViewProps> = ({ onNewRelease, 
         );
     };
 
-    const handleBulkDelete = () => {
-        setBulkAction('delete');
-    };
+    const handleBulkAction = async (action: 'delete' | 'archive') => {
+        if (selectedIds.length === 0) return;
+        
+        const ok = await ConfirmDialog.call({
+            title: `${action === 'delete' ? 'Delete' : 'Archive'} Releases`,
+            message: `Are you sure you want to ${action} ${selectedIds.length} selected releases? This action cannot be undone.`,
+            confirmText: "Confirm",
+            variant: action === 'delete' ? "destructive" : "default"
+        });
 
-    const handleBulkArchive = () => {
-        setBulkAction('archive');
-    };
+        if (!ok) return;
 
-    const commitBulkAction = async () => {
-        if (!bulkAction) return;
-        if (bulkAction === 'delete') {
+        if (action === 'delete') {
             await toast.promise(
                 Promise.all(selectedIds.map(id => deleteRelease(id))),
                 {
@@ -63,7 +64,7 @@ export const ReleaseListView: React.FC<ReleaseListViewProps> = ({ onNewRelease, 
                     error: 'Failed to delete releases'
                 }
             );
-        } else if (bulkAction === 'archive') {
+        } else if (action === 'archive') {
             await toast.promise(
                 Promise.all(selectedIds.map(id => archiveRelease(id))),
                 {
@@ -74,7 +75,6 @@ export const ReleaseListView: React.FC<ReleaseListViewProps> = ({ onNewRelease, 
             );
         }
         setSelectedIds([]);
-        setBulkAction(null);
     };
 
     return (
@@ -162,13 +162,13 @@ export const ReleaseListView: React.FC<ReleaseListViewProps> = ({ onNewRelease, 
                         </span>
                         <div className="flex items-center gap-3">
                             <button
-                                onClick={handleBulkDelete}
+                                onClick={() => handleBulkAction('delete')}
                                 className="flex items-center gap-2 px-4 py-1.5 bg-red-500/20 text-red-500 rounded-lg text-xs font-bold hover:bg-red-500/30 transition-colors"
                             >
                                 <Trash2 size={14} /> Delete
                             </button>
                             <button
-                                onClick={handleBulkArchive}
+                                onClick={() => handleBulkAction('archive')}
                                 className="flex items-center gap-2 px-4 py-1.5 bg-gray-800 text-gray-300 rounded-lg text-xs font-bold hover:bg-gray-700 transition-colors"
                             >
                                 <Archive size={14} /> Archive
@@ -337,38 +337,6 @@ export const ReleaseListView: React.FC<ReleaseListViewProps> = ({ onNewRelease, 
                     </div>
                 )}
             </div>
-
-            <Modal
-                isOpen={bulkAction !== null}
-                onClose={() => setBulkAction(null)}
-                titleId="bulk-action-title"
-                maxWidth="max-w-md"
-            >
-                <div className="p-6">
-                    <h2 id="bulk-action-title" className="text-lg font-bold text-white mb-2 capitalize">
-                        {bulkAction} Releases
-                    </h2>
-                    <p className="text-sm text-gray-400 mb-6">
-                        Are you sure you want to {bulkAction} {selectedIds.length} selected releases? This action cannot be undone.
-                    </p>
-                    <div className="flex justify-end gap-3">
-                        <button
-                            onClick={() => setBulkAction(null)}
-                            className="px-4 py-2 rounded-lg bg-zinc-800 text-gray-300 hover:bg-zinc-700 transition-colors text-xs font-semibold"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            onClick={commitBulkAction}
-                            className={`px-4 py-2 rounded-lg text-white transition-colors text-xs font-semibold ${
-                                bulkAction === 'delete' ? 'bg-red-600 hover:bg-red-700' : 'bg-amber-600 hover:bg-amber-700'
-                            }`}
-                        >
-                            Confirm
-                        </button>
-                    </div>
-                </div>
-            </Modal>
         </div>
     );
 };
