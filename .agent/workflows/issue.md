@@ -395,3 +395,4 @@ Output:
 | Editing/upgrading the `Verification Findings` or a `REOPENED` note | Prime Rule 9. The audit trail is read-only; append below, never rewrite. Never self-grant "Verified." |
 | "Finishing" a test by `test.skip(...)` with a generic reason | A skipped test is zero coverage, not a fix. Write the real test or keep the issue OPEN. |
 | Closing a CI failure by deleting/skipping the test or loosening the assertion | Green-by-deletion is a fake FIXED. Find the root cause. |
+| Resolving strict-mode violations with `.first()`/`.last()`/`.nth()` | Strict-mode violation means elements are duplicated in UI. Resolve duplicates, don't paper over them with `.first()`. |

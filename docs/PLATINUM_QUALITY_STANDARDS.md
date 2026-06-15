@@ -47,7 +47,12 @@ Meet all seven: **Platinum**. Miss one: **NO-GO**.
 **Detect:** `git diff HEAD --summary`
 **Enforce:** Scripts (`.sh`, `.py`, `.mjs`) must retain `100755`. Force with `git update-index --chmod=+x <path>`.
 
-### 7. Staged Runtime Junk
+### 7. Test Quality & Assertion Safety
+**Rule:** Zero commented-out assertions or strict-mode selector workarounds (e.g. `.first()`, `.last()`, `.nth()`) without comment-based justifications (`// bypass-strict`).
+**Detect:** `node scripts/check-test-quality.js`
+**Enforce:** Fix the selector root cause (e.g. resolve duplicates in markup) rather than silencing the linter or Playwright locator.
+
+### 8. Staged Runtime Junk
 **Rule:** Zero runtime artifacts committed to version control.
 **Detect:** `git diff --cached --name-only | grep -E '\.(lock|tsbuildinfo|log|cache)$|\.DS_Store|HANDOFF|CHECKPOINT'`
 **Enforce:** Add to `.gitignore` before committing.
@@ -72,7 +77,10 @@ for f in $(git diff --cached --name-only | grep -E '\.(sh|py|mjs)$'); do git ls-
 # 4. Revert Gate (Check last 5 commits for "fix"/PR#)
 for f in $(git diff --cached --name-only); do echo "=== $f ==="; git log --oneline -5 -- "$f"; done
 
-# 5. Build Gate (Must pass)
+# 5. Test Quality & Anti-Pattern Scan (Must pass)
+node scripts/check-test-quality.js
+
+# 6. Build Gate (Must pass)
 npm run typecheck && npm run lint && npm test -- --run && npm run build
 ```
 
