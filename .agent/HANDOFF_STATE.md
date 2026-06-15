@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-15 07:26 EDT
+**Updated:** 2026-06-15 07:29 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+dcfb3dfe0 test(ledger): file ISSUE-D-001 (add-on to OPUS-005 — use the react-call dialogs + ISSUE-184 shell)
+50055970e chore: session checkpoint [07:26]
 429a28e63 feat(workflow): add /d — D-Engine (Verifier), the independent fix-audit + re-open loop
 20d3a6694 fix(e2e): restore the commented boardroom assertions
 26a0eb5cf chore: session checkpoint [07:22]
@@ -12,12 +14,14 @@
 bc7cc41fe chore: session checkpoint [07:12]
 2b257b751 test(ledger): file ISSUE-OPUS-006 (OPUS-004 real fix credited; restore the commented boardroom assertions)
 fd1feff5c build: install react-call AI agent skill
-2199f9894 docs: mark ISSUE-OPUS-004 as FIXED after resolving parallel function execution bug
-f866c60bc fix(agent): support parallel function calls in BaseAgent
 ```
 
 ## Working State
 ```
+ M artifacts/boardroom_live_home.png
+ M artifacts/boardroom_live_seated.png
+ M artifacts/boardroom_result.png
+ M python/tests/fixtures/e2e_interop/ts_to_py/envelope.json
 ?? packages/renderer/python/
 ```
 
