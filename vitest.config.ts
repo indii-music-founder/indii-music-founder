@@ -49,7 +49,14 @@ export default defineConfig({
     testTimeout: 30000,
     teardownTimeout: 1000,
     hookTimeout: 30000,
-    pool: 'forks',
+    pool: 'threads',
+    poolOptions: {
+      threads: {
+        isolate: false,
+        minThreads: 1,
+        maxThreads: 2
+      }
+    },
     // Test discovery is now handled by vitest.workspace.ts
     // Item 282: Coverage thresholds — build fails if coverage drops below these
     coverage: {
