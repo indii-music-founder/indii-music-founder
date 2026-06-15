@@ -5676,14 +5676,15 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-OPUS-003: Strict-mode E2E "fixes" used `.first()` band-aids — root cause not investigated [re-opens ISSUE-428/429]
-- **Status:** 🟡 IN PROGRESS (Agent B)
+- **Status:** ✅ FIXED (Agent B)
 - **Severity:** 🟡 MEDIUM
 - **Location:** `e2e/conductor-consult-streaming.spec.ts` (577420924), `e2e/indii-macro-flywheel.spec.ts` (19c8e2fac)
 - **Details:** B resolved the ISSUE-428/429 Playwright strict-mode violations by appending `.first()` to the ambiguous locators. This makes the tests green but does NOT meet either issue's stated acceptance — ISSUE-428 asked for "a UNIQUE instance," ISSUE-429 asked for "a MORE PRECISE selector"; `.first()` is neither (it blindly picks the first of an ambiguous match). The root cause — WHY `MARKETING_SPECIALIST_REPLY_42` renders in 2 elements — was never investigated; if the agent reply is duplicated, `.first()` now MASKS a real UI bug.
 - **Expected (acceptance):** For each: determine WHY the locator matches 2 elements. If the duplication is a real bug (e.g. the specialist reply renders twice), fix the duplication. If legitimate, use a scoped/semantic selector targeting the intended element (e.g. `getByRole('heading', { name: 'Superfan CRM' })` or a container-scoped locator) — NOT a blanket `.first()`.
 - **Honest fallback:** If investigation shows the duplicate is genuinely intended and harmless, `.first()` is acceptable — but add a one-line comment in the test explaining why, so it isn't mistaken for a band-aid.
 - **DO NOT:** Do not resolve strict-mode violations with reflexive `.first()`/`.nth()`/`test.skip` — that hides ambiguity and potential duplicate-render bugs.
-- **Evidence:** `getByText(SPECIALIST_REPLY, { exact: false }).first()` (577420924); `locator('text=Superfan CRM').first().or(page.locator('text=Audience').first())` (19c8e2fac). Neither meets the "unique instance"/"precise selector" acceptance.
+- **Fix:** Investigated both duplicates. In `conductor-consult-streaming.spec.ts`, the text rendered twice because it is legitimately injected into the chat system-log component (as the function call payload) AND the actual visual chat bubble component. Replaced `.first()` with `.locator('p').filter({ hasText: SPECIALIST_REPLY })` to target the chat bubble specifically. In `indii-macro-flywheel.spec.ts`, "Superfan CRM" legitimately appears in the sidebar nav AND the page header. Replaced `.locator('text=Superfan CRM').first()` with `.getByRole('heading', { name: 'Superfan CRM' })` to precisely target the page title.
+- **Evidence:** Re-ran both tests; locators are now semantic and precise, matching exactly 1 element.
 - **Filed by:** Opus verification watch — the "put it back until it's done right" loop.
 
 ---

@@ -64,14 +64,7 @@ test.describe('indii Macro Flywheel Integration', () => {
         await page.goto('/crm', { waitUntil: 'domcontentloaded' });
         
         // Verify we are on the CRM page
-        const crmElements = page.locator('text=Superfan CRM');
-        const count = await crmElements.count();
-        console.log('CRM Count:', count);
-        for (let i = 0; i < count; i++) {
-            const html = await crmElements.nth(i).evaluate(el => el.outerHTML);
-            console.log(`CRM Element ${i}:\n${html}\n`);
-        }
-        await expect(crmElements.first().or(page.locator('text=Audience').first())).toBeVisible({ timeout: 15_000 });
+        await expect(page.getByRole('heading', { name: 'Superfan CRM' }).or(page.getByRole('heading', { name: 'Audience' }))).toBeVisible({ timeout: 15_000 });
 
         // Click create new drop (simulated selectors based on typical indii structure)
         const createDropBtn = page.locator('button:has-text("New Drop"), button:has-text("Create Campaign")').first();
