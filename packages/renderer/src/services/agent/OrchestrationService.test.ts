@@ -181,7 +181,7 @@ describe('OrchestrationService', () => {
         );
 
         expect(result).toContain('Workflow Report: indii Growth Protocol');
-        expect(result).toContain('Step: video_generation [WORKFLOW]');
+        expect(result).toContain('Step: video_generation [CREATIVE]');
         expect(workflowStateService.createExecution).toHaveBeenCalledWith(
             'test-user',
             'INDII_GROWTH_PROTOCOL',
