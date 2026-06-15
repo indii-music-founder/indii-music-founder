@@ -302,12 +302,12 @@ async function submitToDistributor(
       .set({
         distributor,
         trackCount: tracks.length,
-        status: 'success',
+        status: 'pending_desktop_sync',
         submissionId,
         updatedAt: new Date().toISOString(),
       }, { merge: true });
 
-    return { distributor, status: 'success', submissionId };
+    return { distributor, status: 'pending_desktop_sync', submissionId };
   }
 
   await db
