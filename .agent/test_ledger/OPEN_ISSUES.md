@@ -5865,7 +5865,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-A-004: E2E Firestore Emulator Rules Error - Property userId is undefined on object. for 'list'
-- **Status:** ⏳ OPEN
+- **Status:** 🟡 IN PROGRESS (Agent B)
 - **Severity:** 🔴 HIGH
 - **Location:** `packages/firebase/firestore.rules` (specifically around L623-625)
 - **Details:** Under Playwright E2E tests executing against the Firestore Emulator, multiple tests fail with the console error: `[CreativeSlice] History subscription error: FirebaseError: Property userId is undefined on object. for 'list' @ L623, false for 'list' @ L1160`. This occurs because when querying the `history` collection, the security rules evaluate `resource.data.userId == request.auth.uid` before checking if the `userId` field exists. In Firestore emulator/SDK versions 13+, referencing a non-existent property throws a runtime evaluation exception (`Property userId is undefined on object`) instead of returning false.
