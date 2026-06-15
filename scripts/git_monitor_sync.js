@@ -209,6 +209,14 @@ async function executeSync() {
     function checkGitHubActions() {
         logMessage('Checking GitHub Actions for failed workflows...');
         try {
+            // Check authentication cleanly before proceeding
+            try {
+                execSync('gh auth status', { stdio: 'ignore' });
+            } catch (authError) {
+                logMessage('Warning: GitHub CLI (gh) is not authenticated or not installed. Run `gh auth login` to enable CI pipeline monitoring. Skipping.');
+                return;
+            }
+
             const ghOutput = runCommand('gh run list --limit 10 --json status,conclusion,name,url,createdAt,headBranch,databaseId');
             const runs = JSON.parse(ghOutput);
             
@@ -221,7 +229,7 @@ async function executeSync() {
                 for (const run of failedRuns) {
                     if (!issuesContent.includes(run.url)) {
                         logMessage(`Found newly failed CI pipeline: ${run.name} (${run.url}). Logging to OPEN_ISSUES.md...`);
-                        const issueEntry = `\n### ISSUE-CI-${run.databaseId}: CI Pipeline Failure (${run.name})\n- **Status:** OPEN\n- **Severity:** 🔴 HIGH\n- **Module:** CI/CD\n- **Summary:** The GitHub Actions workflow \`${run.name}\` failed on branch \`${run.headBranch}\`.\n- **Link:** [View Logs](${run.url})\n- **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.\n`;
+                        const issueEntry = `\n### ISSUE-CI-${run.databaseId}: CI Pipeline Failure (${run.name})\n- **Status:** ⏳ OPEN\n- **Severity:** 🔴 HIGH\n- **Module:** CI/CD\n- **Summary:** The GitHub Actions workflow \`${run.name}\` failed on branch \`${run.headBranch}\`.\n- **Link:** [View Logs](${run.url})\n- **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.\n`;
                         fs.appendFileSync(issuesPath, issueEntry);
                     }
                 }
@@ -229,7 +237,7 @@ async function executeSync() {
                 logMessage('No recent failed workflows found.');
             }
         } catch (e) {
-            logMessage(`Warning: Could not check GitHub Actions. Is gh CLI installed and authenticated? Error: ${e.message}`);
+            logMessage(`Warning: Could not check GitHub Actions. Error: ${e.message}`);
         }
     }
 
