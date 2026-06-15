@@ -1,16 +1,15 @@
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { StateCreator } from 'zustand';
 import { logger } from '@/utils/logger';
 import { CanvasImage } from './creativeHistorySlice';
-import { WhiskState } from './creativeControlsSlice';
+import { WhiskState, CreativeControlsSlice } from './creativeControlsSlice';
+import { HistoryItem } from '@/core/types/history';
+import { StoreState } from '@/core/store';
 
 export interface DesignVersionState {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    studioControls: any;
+    studioControls: CreativeControlsSlice['studioControls'];
     canvasImages: CanvasImage[];
     whiskState: WhiskState;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    characterReferences: Array<{ image: any; referenceType: 'subject' | 'style' | 'reference'; name?: string }>;
+    characterReferences: Array<{ image: HistoryItem; referenceType: 'subject' | 'style' | 'reference'; name?: string }>;
     creativePrompt: string;
 }
 
@@ -32,10 +31,8 @@ export interface DesignHistorySlice {
 }
 
 export function buildDesignHistoryState(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    set: any,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    get: any
+    set: Parameters<StateCreator<StoreState, [], [], DesignHistorySlice>>[0],
+    get: Parameters<StateCreator<StoreState, [], [], DesignHistorySlice>>[1]
 ): DesignHistorySlice {
     return {
         designVersions: [],
@@ -70,8 +67,7 @@ export function buildDesignHistoryState(
                 }
             };
 
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            set((state: any) => ({
+            set((state: StoreState) => ({
                 designVersions: [newVersion, ...state.designVersions]
             }));
 
@@ -87,9 +83,7 @@ export function buildDesignHistoryState(
         },
 
         restoreDesignVersion: (version) => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            set((state: any) => ({
-                ...state,
+            set((state: StoreState) => ({
                 studioControls: { ...state.studioControls, ...version.state.studioControls },
                 canvasImages: [...version.state.canvasImages],
                 whiskState: { ...state.whiskState, ...version.state.whiskState },
@@ -100,10 +94,8 @@ export function buildDesignHistoryState(
         },
 
         deleteDesignVersion: async (id) => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            set((state: any) => ({
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                designVersions: state.designVersions.filter((v: any) => v.id !== id)
+            set((state: StoreState) => ({
+                designVersions: state.designVersions.filter((v) => v.id !== id)
             }));
 
             try {
@@ -148,3 +140,4 @@ export function buildDesignHistoryState(
         }
     };
 }
+
