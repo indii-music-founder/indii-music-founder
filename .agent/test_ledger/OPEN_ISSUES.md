@@ -5619,7 +5619,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-428: Playwright Strict Mode Violation in conductor-consult-streaming.spec.ts
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Location:** `e2e/conductor-consult-streaming.spec.ts`
 - **Details:** The E2E test fails due to a strict mode violation where `getByText('MARKETING_SPECIALIST_REPLY_42')` resolves to 2 elements.
