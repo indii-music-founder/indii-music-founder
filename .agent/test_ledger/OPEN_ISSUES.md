@@ -5629,7 +5629,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-429: Playwright Strict Mode Violation in indii-macro-flywheel.spec.ts
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Location:** `e2e/indii-macro-flywheel.spec.ts`
 - **Details:** The E2E test fails due to a strict mode violation where `locator('text=Superfan CRM').or(locator('text=Audience'))` resolves to 2 elements (a span and an h1).
