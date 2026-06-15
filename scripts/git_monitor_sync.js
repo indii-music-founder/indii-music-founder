@@ -256,7 +256,7 @@ async function executeSync() {
                 if (appended) {
                     try {
                         logMessage('Immediately committing new CI issues to OPEN_ISSUES.md to prevent concurrent write loss...');
-                        runCommand(`git add ${issuesPath}`);
+                        runCommand(`git add "${issuesPath}"`);
                         runCommand(`git commit -m "test(ledger): log ISSUE-CI pipeline failures"`);
                         logMessage('CI issues committed successfully.');
                     } catch (e) {
