@@ -5646,3 +5646,29 @@ Therefore, no fix can be proposed or implemented.
 - **Expected (acceptance):** Tests can successfully connect to the database/emulator and all UI elements render as expected within the timeout limits.
 - **Evidence:** `Error: expect(locator).toBeVisible() failed`, `Timeout: 10000ms`, `FirebaseError: [code=unavailable]: The operation could not be completed`
 
+
+---
+
+### ISSUE-OPUS-001: Remove orphaned throwaway script scripts/fix_void.cjs
+- **Status:** ⏳ OPEN
+- **Severity:** 🟢 LOW
+- **Location:** `scripts/fix_void.cjs`
+- **Details:** One-off throwaway from the ISSUE-077 void-0 cleanup; blindly runs `content.replace(/void 0;/g, '')` with no brace/AST awareness (it corrupted CredentialService.ts braces in commit 75d6f7302). Job done (0 bare `void 0;` remain), referenced nowhere else in the repo.
+- **Expected (acceptance):** `scripts/fix_void.cjs` deleted; `git grep fix_void` returns nothing; no script/workflow references it.
+- **Honest fallback:** N/A — clean deletion. If anything references it, convert that caller first, then delete.
+- **DO NOT:** Do not keep the blind `replace(/void 0;/g,'')` regex; never reuse a non-AST text-mangler on source. Delete the file.
+- **Evidence:** 23-line blind `replace(/void 0;/g,'')`; broke braces in 75d6f7302; `grep -rl fix_void` finds no other references.
+- **Filed by:** Opus verification watch (namespaced ID — my first attempt as ISSUE-428 was clobbered by A's concurrent write; see ISSUE-OPUS-002).
+
+---
+
+### ISSUE-OPUS-002: Concurrent writes to OPEN_ISSUES.md silently lose entries (number-collision + clobber)
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Location:** `.agent/test_ledger/OPEN_ISSUES.md`, `scripts/git_monitor_sync.js`, ABC `Conflict Avoidance` protocol (`.agent/workflows/a.md` / `b.md` / `c.md`)
+- **Details:** Two writers (Opus verifier + A-Engine) both appended a NEW issue numbered 428 within ~7 min. A's `git_monitor_sync` commit (e1b843b55) overwrote the verifier's uncommitted working-tree entry; `git log -S 'Remove orphaned throwaway script'` shows it was never committed — silently lost. Root cause: each agent picks "max+1" from its own snapshot, and `git pull --rebase` does not protect an uncommitted working-tree append from being clobbered.
+- **Expected (acceptance):** Concurrent agents cannot lose each other's entries. Adopt at least one of: (a) namespaced IDs per writer (`ISSUE-A-NNN`, `ISSUE-OPUS-NNN`) instead of a shared sequential counter; (b) append → `git add OPEN_ISSUES.md` → commit immediately, before any other work; (c) a real append-only/locked write path.
+- **Honest fallback:** If a true lock isn't feasible, at minimum mandate namespaced IDs + immediate-commit in the ABC `Conflict Avoidance` rule so collisions are impossible and no append sits uncommitted.
+- **DO NOT:** Do not "fix" this by rewriting the whole file from a stale snapshot — that IS the clobber.
+- **Evidence:** verifier's ISSUE-428 (fix_void.cjs) clobbered by A's ISSUE-428 (Playwright) in commit e1b843b55; `git log -S` confirms the verifier entry was never committed.
+- **Filed by:** Opus verification watch.
