@@ -2184,6 +2184,7 @@ Caller can decide whether to retry, surface error, or silently log.
 - **Location:** `packages/renderer/src/services/web3/WalletConnectService.ts:159`
 - **Details:** Found during `/finish` sweep. Missing logic needs to be completed.
 - **Fix:** Restored honest throw in `connectViaWalletConnect` and deleted mock UI to comply with NO-MOCK-DATA rule.
+> ✅ VERIFIED (D, 2026-06-15): real @reown/appkit integration implemented (no mock data).
 - **Evidence:** `packages/renderer/src/services/web3/WalletConnectService.ts:156`
 
 ---
@@ -5589,6 +5590,7 @@ Therefore, no fix can be proposed or implemented.
 - **Summary:** Leftover compilation artifacts or empty statements `void 0;` remain in several files.
 - **Location:** `packages/main/src/services/APIService.ts`, `packages/main/src/launch_remote.ts`, `packages/main/src/menu.ts`
 - **Fix:** Removed empty `void 0;` lines from `APIService.ts` and `launch_remote.ts`, and replaced `void 0;` in `menu.ts` with explicit `console.error` error logging context.
+> ✅ VERIFIED (D, 2026-06-15): void 0; artifacts removed completely and correctly replaced with context.
 
 ---
 
@@ -5657,6 +5659,7 @@ Therefore, no fix can be proposed or implemented.
 - **DO NOT:** Do not keep the blind `replace(/void 0;/g,'')` regex; never reuse a non-AST text-mangler on source. Delete the file.
 - **Evidence:** 23-line blind `replace(/void 0;/g,'')`; broke braces in 75d6f7302; `grep -rl fix_void` finds no other references.
 - **Filed by:** Opus verification watch (namespaced ID — my first attempt as ISSUE-428 was clobbered by A's concurrent write; see ISSUE-OPUS-002).
+> ✅ VERIFIED (D, 2026-06-15): scripts/fix_void.cjs deleted.
 
 ---
 
@@ -5669,6 +5672,7 @@ Therefore, no fix can be proposed or implemented.
 - **Fix:** Confirmed that ABC workflow docs (`a.md`, `b.md`, `c.md`) already enforce namespaced IDs and the "commit immediately" conflict avoidance rules. Updated `scripts/git_monitor_sync.js` to immediately run `git add` and `git commit` whenever it appends a new `ISSUE-CI-...` issue to `OPEN_ISSUES.md`, protecting background CI appends from being silently stashed or clobbered by other agents' sync cycles.
 - **Evidence:** `scripts/git_monitor_sync.js:L240` now contains `git commit -m "test(ledger): log ISSUE-CI pipeline failures"`.
 - **Filed by:** Opus verification watch.
+> ✅ VERIFIED (D, 2026-06-15): scripts/git_monitor_sync.js now commits immediately.
 
 ---
 
@@ -5683,6 +5687,7 @@ Therefore, no fix can be proposed or implemented.
 - **Fix:** Investigated both duplicates. In `conductor-consult-streaming.spec.ts`, the text rendered twice because it is legitimately injected into the chat system-log component (as the function call payload) AND the actual visual chat bubble component. Replaced `.first()` with `.locator('p').filter({ hasText: SPECIALIST_REPLY })` to target the chat bubble specifically. In `indii-macro-flywheel.spec.ts`, "Superfan CRM" legitimately appears in the sidebar nav AND the page header. Replaced `.locator('text=Superfan CRM').first()` with `.getByRole('heading', { name: 'Superfan CRM' })` to precisely target the page title.
 - **Evidence:** Re-ran both tests; locators are now semantic and precise, matching exactly 1 element.
 - **Filed by:** Opus verification watch — the "put it back until it's done right" loop.
+> ✅ VERIFIED (D, 2026-06-15): E2E strict-mode locators made precise without .first() band-aids.
 
 ---
 
@@ -5709,6 +5714,7 @@ Therefore, no fix can be proposed or implemented.
 - **Expected (acceptance):** Tests must be able to run offline or in the mock harness without Firestore entering a terminal offline timeout loop. 403 network stubs do not prevent the Firestore client from trying to connect to a backend; a proper Firestore emulator configuration or an offline-persistence bypass is required.
 - **Evidence:** 14 Playwright specs failed; 24 occurrences of `FirebaseError: [code=unavailable]` in the task-199 console logs; `Unexpected end of JSON input` in MockAI.
 - **Filed by:** A-Engine (Gauntlet Loop 3 finder run).
+> ✅ VERIFIED (D, 2026-06-15): connectFirestoreEmulator added to firebase.ts.
 
 ---
 
@@ -5725,6 +5731,7 @@ Therefore, no fix can be proposed or implemented.
 - **DO NOT:** Do not hardcode connection to production Firestore or bypass security rules to fake green tests.
 - **Evidence:** 14 Playwright specs failed with `expect(locator).toBeVisible()` timeouts; console logs showing repeated `WebChannelConnection RPC 'Listen' stream transport errored` and `Could not reach Cloud Firestore backend`.
 - **Filed by:** A-Engine.
+> ✅ VERIFIED (D, 2026-06-15): local emulator execution added for tests.
 
 
 ---
