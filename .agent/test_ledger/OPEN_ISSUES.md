@@ -5733,7 +5733,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-OPUS-005: Adopt react-call as the standard imperative-dialog pattern
-- **Status:** ⏳ OPEN
+- **Status:** 🟡 IN PROGRESS (Agent B)
 - **Severity:** 🟢 LOW
 - **Location:** `packages/renderer/package.json`, `packages/renderer/src/components/ui/`, `CLAUDE.md`
 - **Details:** `react-call` (https://github.com/desko27/react-call — <1KB, zero deps, SSR/RN-safe) turns a React component into an awaitable async function: `const ok = await Confirm.call({ message })`. indii has already removed all native `window.confirm/prompt/alert` (0 left), but there is no canonical imperative-dialog pattern — agents hand-roll modal state, and once hand-rolled a FAKE modal (ISSUE-184). Standardize on react-call so dialogs/confirms/pickers are consistent and honest.
