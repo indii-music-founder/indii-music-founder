@@ -177,11 +177,11 @@ export class OpenSeaService {
         const order = await buildRes.json() as { order: { parameters: unknown } };
 
         // Step 2: Sign with wallet (requires window.ethereum)
-        if (typeof window === 'undefined' || !window.ethereum) {
+        if (typeof window === 'undefined' || !(window as any).ethereum) {
             throw new Error('No wallet connected. Connect MetaMask or WalletConnect to create listings.');
         }
 
-        const signature = await window.ethereum.request({
+        const signature = await (window as any).ethereum.request({
             method: 'eth_signTypedData_v4',
             params: [sellerAddress, JSON.stringify(order.order)],
         }) as string;

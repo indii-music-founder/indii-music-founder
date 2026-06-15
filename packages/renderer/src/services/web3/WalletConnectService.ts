@@ -9,7 +9,9 @@
  */
 
 import { logger } from '@/utils/logger';
-import { WalletConnectModal } from '@/components/ui/WalletConnectModal';
+import { createAppKit } from '@reown/appkit';
+import { EthersAdapter } from '@reown/appkit-adapter-ethers';
+import { mainnet, polygon, arbitrum, base } from '@reown/appkit/networks';
 
 export interface WalletInfo {
     address: string;
@@ -44,6 +46,7 @@ export class WalletConnectService {
     private projectId: string;
     private connectedWallet: WalletInfo | null = null;
     private listeners: Map<string, Set<(...args: unknown[]) => void>> = new Map();
+    private appKitModal: any = null;
 
     constructor() {
         this.projectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || '';
@@ -112,7 +115,7 @@ export class WalletConnectService {
 
         try {
             // Request account access — this triggers the MetaMask popup
-            const accounts = await window.ethereum!.request({
+            const accounts = await (window.ethereum as any).request({
                 method: 'eth_requestAccounts'
             }) as string[];
 
@@ -121,7 +124,7 @@ export class WalletConnectService {
             }
 
             // Get the current chain ID
-            const chainIdHex = await window.ethereum!.request({
+            const chainIdHex = await (window.ethereum as any).request({
                 method: 'eth_chainId'
             }) as string;
             const chainId = parseInt(chainIdHex, 16);
@@ -154,9 +157,64 @@ export class WalletConnectService {
     private async connectViaWalletConnect(): Promise<WalletInfo> {
         logger.info('[WalletConnect] Initiating WalletConnect modal with projectId:', this.projectId.substring(0, 8) + '...');
 
-        await WalletConnectModal.call({ projectId: this.projectId });
-        
-        throw new Error('WalletConnect UI (@reown/appkit) is not implemented yet. Cannot connect to real wallets in this environment.');
+        if (!this.appKitModal) {
+            const metadata = {
+                name: 'indii',
+                description: 'indii studio - The OS for Independent Music',
+                url: window.location.origin,
+                icons: ['https://indii.studio/favicon.ico']
+            };
+
+            this.appKitModal = createAppKit({
+                adapters: [new EthersAdapter()],
+                networks: [mainnet, polygon, arbitrum, base],
+                metadata,
+                projectId: this.projectId,
+                features: {
+                    analytics: true,
+                    email: false,
+                    socials: []
+                }
+            });
+        }
+
+        return new Promise<WalletInfo>((resolve, reject) => {
+            const unsubs: { state?: () => void; account?: () => void } = {};
+
+            const cleanup = () => {
+                if (unsubs.state) unsubs.state();
+                if (unsubs.account) unsubs.account();
+            };
+
+            unsubs.state = this.appKitModal.subscribeState((state: any) => {
+                if (!state.open) {
+                    cleanup();
+                    const _accountState = this.appKitModal.getState();
+                    if (!this.appKitModal.getIsConnectedState()) {
+                        reject(new Error('User rejected the connection request.'));
+                    }
+                }
+            });
+
+            unsubs.account = this.appKitModal.subscribeAccount((state: any) => {
+                if (state.isConnected && state.address) {
+                    cleanup();
+                    const chainId = this.appKitModal.getChainIdState() || 1;
+                    const chainName = CHAIN_NAMES[chainId] || `Chain ${chainId}`;
+                    this.connectedWallet = {
+                        address: state.address,
+                        chainId,
+                        chainName,
+                        isConnected: true
+                    };
+                    this.emit('connect', this.connectedWallet);
+                    logger.info(`[WalletConnect] Connected via Reown AppKit: ${state.address}`);
+                    resolve(this.connectedWallet);
+                }
+            });
+
+            this.appKitModal.open();
+        });
     }
 
     /**
@@ -165,7 +223,7 @@ export class WalletConnectService {
     private setupProviderListeners(): void {
         if (!window.ethereum) return;
 
-        window.ethereum.on?.('accountsChanged', (...args: unknown[]) => {
+        (window.ethereum as any).on?.('accountsChanged', (...args: unknown[]) => {
             const accounts = args[0] as string[];
             if (accounts.length === 0) {
                 this.connectedWallet = null;
@@ -179,7 +237,7 @@ export class WalletConnectService {
             }
         });
 
-        window.ethereum.on?.('chainChanged', (...args: unknown[]) => {
+        (window.ethereum as any).on?.('chainChanged', (...args: unknown[]) => {
             const chainIdHex = args[0] as string;
             const chainId = parseInt(chainIdHex, 16);
             const chainName = CHAIN_NAMES[chainId] || `Chain ${chainId}`;
