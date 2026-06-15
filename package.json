@@ -48,7 +48,7 @@
     "health:check": "vitest --run --grep '\\.integration\\.test\\.ts' -- packages/renderer/src/services",
     "health:generate-dashboard": "tsx scripts/generate-health-dashboard.ts",
     "clean": "rm -rf dist dist-electron packages/*/dist .firebase .genkit coverage test-results playwright-report",
-    "validate": "npm run lint && npm run typecheck && npm run test -- --run",
+    "validate": "node scripts/check-test-quality.js && npm run lint && npm run typecheck && npm run test -- --run",
     "nuke": "rm -rf node_modules packages/*/node_modules package-lock.json && npm install",
     "build:desktop": "npm run preflight:prod && electron-vite build && electron-builder --publish never",
     "build:desktop:mac": "npm run preflight:prod && electron-vite build && electron-builder --mac --publish never",

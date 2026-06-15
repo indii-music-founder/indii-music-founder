@@ -39,7 +39,7 @@ Check the branch diff against the Seven Anti-Patterns:
 ### Phase 5: Build Gate
 Run sequentially. Stop on first failure.
 ```bash
-npm run typecheck && npm run lint && npm test -- --run && npm run build
+node scripts/check-test-quality.js && npm run typecheck && npm run lint && npm test -- --run && npm run build
 ```
 
 ### Phase 6: Ledger Cross-Reference
