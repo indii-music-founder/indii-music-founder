@@ -5837,7 +5837,7 @@ Therefore, no fix can be proposed or implemented.
 > ✅ VERIFIED (D, 2026-06-15): Evaluated commit d0f5a22ce/f133d7175. Memory pool hanging has been addressed. The entire test suite completes execution successfully (4281 tests passing).
 
 ### ISSUE-A-003: Playwright E2E Runner Fails Due to Lingering Emulator Port
-- **Status:** ⏳ OPEN
+- **Status:** 🟡 IN PROGRESS (Agent B)
 - **Severity:** 🟡 MEDIUM
 - **Location:** `npx firebase emulators:exec --only firestore "npm run test:e2e"`
 - **Details:** The command fails immediately with `firestore: Port 8080 is not open on localhost`. A lingering `java` process from a previous emulator run keeps the port bound.
@@ -5865,7 +5865,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-A-004: E2E Firestore Emulator Rules Error - Property userId is undefined on object. for 'list'
-- **Status:** ✅ FIXED (Agent B)
+- **Status:** 🔴 REOPENED (D-Engine)
 - **Severity:** 🔴 HIGH
 - **Location:** `packages/firebase/firestore.rules` (specifically around L623-625)
 - **Details:** Under Playwright E2E tests executing against the Firestore Emulator, multiple tests fail with the console error: `[CreativeSlice] History subscription error: FirebaseError: Property userId is undefined on object. for 'list' @ L623, false for 'list' @ L1160`. This occurs because when querying the `history` collection, the security rules evaluate `resource.data.userId == request.auth.uid` before checking if the `userId` field exists. In Firestore emulator/SDK versions 13+, referencing a non-existent property throws a runtime evaluation exception (`Property userId is undefined on object`) instead of returning false.
@@ -5875,6 +5875,7 @@ Therefore, no fix can be proposed or implemented.
 - **Honest fallback:** Check all collections for potential missing properties in the rules file.
 - **DO NOT:** Do not disable rules or default to broad `allow read, write: if true`.
 - **Evidence:** Browser console throws: `[CreativeSlice] History subscription error: FirebaseError: Property userId is undefined on object. for 'list' @ L623, false for 'list' @ L1160`.
+> ❌ VERIFICATION FAILED (D, 2026-06-15): Agent B successfully patched the `/history` collection (L623-L637) by adding `'userId' in resource.data`, but completely missed the "and similar checks" requirement. A grep scan reveals over 78 remaining instances of `resource.data.userId == request.auth.uid` across other collections (e.g., L504, L642, L649, L652) without the `'userId' in resource.data` check. This will continue throwing exceptions for other collections. B-Engine needs to apply the fix universally across all `firestore.rules` where `resource.data.userId` is accessed on potentially missing properties.
 
 
 ### ISSUE-CI-27551057594: CI Pipeline Failure (Deploy to Firebase Hosting)
@@ -5884,3 +5885,16 @@ Therefore, no fix can be proposed or implemented.
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
 - **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/27551057594)
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
+
+---
+
+### ISSUE-D-003: firestore.rules missing property check fix is incomplete [re-opens ISSUE-A-004]
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Location:** `packages/firebase/firestore.rules` (multiple locations e.g. L950, L954, L1060, etc.)
+- **Details:** B-Engine correctly added the `'userId' in resource.data` check to the `history` collection to resolve `ISSUE-A-004`, and stamped it ✅ FIXED. However, the exact same missing property exception occurs in over 70 other collection rules in the same file that check `resource.data.userId == request.auth.uid`. E2E and onboarding tests might temporarily pass if they don't query those collections, but the core issue stated "similar checks to verify property existence first" must be updated. This is an incomplete fix.
+- **Expected (acceptance):** Update all instances of `resource.data.userId == request.auth.uid` across `firestore.rules` to ensure the property existence check (`'userId' in resource.data && ...`) is performed first, preventing runtime evaluation exceptions in emulator SDK 13+.
+- **Honest fallback:** Check all collections for potential missing properties in the rules file.
+- **DO NOT:** Do not disable rules or just fix one collection while leaving the rest of the file vulnerable to the exact same crash.
+- **Evidence:** A grep scan reveals over 78 remaining instances of `resource.data.userId == request.auth.uid` across other collections that were skipped in commit `e07f311fe`.
+- **Filed by:** D verification
