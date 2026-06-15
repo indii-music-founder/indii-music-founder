@@ -252,7 +252,7 @@ export const test = base.extend<AuthFixtures>({
         url.includes("/Write/") ||
         url.includes("channel?")
       ) {
-        await route.abort('failed');
+        await route.fulfill({ status: 403, headers: corsHeaders, body: "{}" });
         return;
       }
 
