@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-15 07:29 EDT
+**Updated:** 2026-06-15 07:31 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+bf37e9a5e chore: session checkpoint [07:29]
 dcfb3dfe0 test(ledger): file ISSUE-D-001 (add-on to OPUS-005 — use the react-call dialogs + ISSUE-184 shell)
 50055970e chore: session checkpoint [07:26]
 429a28e63 feat(workflow): add /d — D-Engine (Verifier), the independent fix-audit + re-open loop
@@ -13,15 +14,10 @@ dcfb3dfe0 test(ledger): file ISSUE-D-001 (add-on to OPUS-005 — use the react-c
 24752dbd1 docs(issues): mark ISSUE-OPUS-005 in progress by Agent B
 bc7cc41fe chore: session checkpoint [07:12]
 2b257b751 test(ledger): file ISSUE-OPUS-006 (OPUS-004 real fix credited; restore the commented boardroom assertions)
-fd1feff5c build: install react-call AI agent skill
 ```
 
 ## Working State
 ```
- M artifacts/boardroom_live_home.png
- M artifacts/boardroom_live_seated.png
- M artifacts/boardroom_result.png
- M python/tests/fixtures/e2e_interop/ts_to_py/envelope.json
 ?? packages/renderer/python/
 ```
 
