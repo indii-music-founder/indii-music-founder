@@ -9,6 +9,7 @@
  */
 
 import { logger } from '@/utils/logger';
+import { WalletConnectModal } from '@/components/ui/WalletConnectModal';
 
 export interface WalletInfo {
     address: string;
@@ -153,6 +154,8 @@ export class WalletConnectService {
     private async connectViaWalletConnect(): Promise<WalletInfo> {
         logger.info('[WalletConnect] Initiating WalletConnect modal with projectId:', this.projectId.substring(0, 8) + '...');
 
+        await WalletConnectModal.call({ projectId: this.projectId });
+        
         throw new Error('WalletConnect UI (@reown/appkit) is not implemented yet. Cannot connect to real wallets in this environment.');
     }
 
