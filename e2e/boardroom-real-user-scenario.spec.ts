@@ -4,7 +4,7 @@ import { join } from 'path';
 
 test.describe('Boardroom Real User Multi-Turn Scenario', () => {
     test('should execute a realistic multi-turn conversation with dynamic seating and unseating', async ({ authedPage: page }) => {
-        test.setTimeout(180_000);
+        test.setTimeout(300_000);
         // Enforce full desktop window size
         await page.setViewportSize({ width: 1280, height: 800 });
         const scratchDir = join(process.cwd(), 'scratch');

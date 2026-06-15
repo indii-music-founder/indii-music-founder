@@ -92,7 +92,7 @@ export class LoopDetector {
         // Check 3: Tool frequency (same tool called too many times)
         const recentCalls = this.toolCallHistory.slice(-10); // Last 10 calls
         const sameToolCount = recentCalls.filter(call => call.name === name).length;
-        const MAX_SAME_TOOL_FREQUENCY = 5; // Max 5 times in last 10 calls
+        const MAX_SAME_TOOL_FREQUENCY = (name === 'unseat_agent' || name === 'seat_agent') ? 10 : 5; // Max 5 times in last 10 calls (10 for agent seating)
 
         if (sameToolCount >= MAX_SAME_TOOL_FREQUENCY) {
             return {
@@ -109,11 +109,16 @@ export class LoopDetector {
             const sequence2 = last6.slice(3, 6).map(c => c.name).join('→');
 
             if (sequence1 === sequence2) {
-                return {
-                    isLoop: true,
-                    reason: 'Repeating sequence detected',
-                    pattern: `${sequence1} → ${sequence2}`
-                };
+                // Ignore sequences composed entirely of seating/unseating commands, as these often happen in large batches
+                const isOnlySeatingCommands = sequence1.split('→').every(n => n === 'seat_agent' || n === 'unseat_agent');
+                
+                if (!isOnlySeatingCommands) {
+                    return {
+                        isLoop: true,
+                        reason: 'Repeating sequence detected',
+                        pattern: `${sequence1} → ${sequence2}`
+                    };
+                }
             }
         }
 
