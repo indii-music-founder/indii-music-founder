@@ -5715,7 +5715,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-A-002: E2E Firestore Emulator Required for Local Testing
-- **Status:** 🟡 IN PROGRESS (Agent B)
+- **Status:** ✅ FIXED (Agent B)
 - **Severity:** 🔴 CRITICAL
 - **Location:** `packages/renderer/src/services/firebase.ts`, local test execution
 - **Details:** E2E test runs locally stall and time out due to a lack of local Firebase emulator execution and configuration. While functions emulator connection exists, Firestore and Storage emulators are never connected inside the browser app when running under local test mode. This causes the Firestore SDK in the browser to attempt to contact production `firestore.googleapis.com` endpoints, which get intercepted or return 403, putting Firestore into a terminal offline timeout loop and causing all UI assertions to timeout.
