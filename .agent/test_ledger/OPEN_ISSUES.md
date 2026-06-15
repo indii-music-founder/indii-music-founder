@@ -5822,3 +5822,24 @@ Therefore, no fix can be proposed or implemented.
 - **Honest fallback:** Revert the recent changes to the creative studio state if they cannot be typed properly, or comment out the broken UI components.
 - **DO NOT:** Do not suppress the errors with `@ts-ignore`, `any`, or by changing `tsconfig`.
 - **Evidence:** `npm run typecheck` output (see `typecheck_output.txt`)
+
+
+### ISSUE-A-002: Vitest Suite Hangs/Freezes Indefinitely
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Location:** `npm test -- --run`
+- **Details:** The vitest suite gets stuck and does not exit. It outputs several backend-related errors such as `Router error: Error: 7 PERMISSION_DENIED: Missing or insufficient permissions.` and `Error: [Arcjet] ARCJET_KEY is missing or invalid` before eventually hanging forever, preventing CI from completing.
+- **Expected (acceptance):** `npm test -- --run` executes the entire unit test suite and exits cleanly (success or failure) within a reasonable timeframe (1-2 minutes).
+- **Honest fallback:** Fix the unhandled promise rejections or lingering open handles (e.g., Firestore connections, missing mocked emulators) that are keeping the Node process alive. Do not just reduce the test scope.
+- **DO NOT:** Do not add `process.exit(0)` hacks to force vitest to close. Address the dangling handles.
+- **Evidence:** `npm test -- --run` execution hangs; console shows `7 PERMISSION_DENIED` from `@google-cloud/firestore`.
+
+### ISSUE-A-003: Playwright E2E Runner Fails Due to Lingering Emulator Port
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Location:** `npx firebase emulators:exec --only firestore "npm run test:e2e"`
+- **Details:** The command fails immediately with `firestore: Port 8080 is not open on localhost`. A lingering `java` process from a previous emulator run keeps the port bound.
+- **Expected (acceptance):** The E2E test script handles the emulator environment robustly — either reusing an already running emulator gracefully or ensuring strict teardown of the java process between runs so the port is free.
+- **Honest fallback:** Update the E2E script to check if the emulator is already running before trying to spin up a new one, or provide a reliable teardown script.
+- **DO NOT:** Do not change the default Firestore port just to sidestep the zombie process.
+- **Evidence:** Console output: `Error: Could not start Firestore Emulator, port taken.`
