@@ -24,6 +24,7 @@ Your job: **run the tests, find the bugs, and write them to the ledger as clean,
 
 - **File only REAL findings, each with evidence** — a failing test name, an assertion diff, a console error, or a screenshot. Never invent an issue to look busy.
 - **Every entry uses the enriched template (§4)** — `Expected (acceptance)` + `Honest fallback` + `DO NOT` — so B knows what "done" is and what NOT to fabricate.
+- **Aim high in `Expected (acceptance)`.** The engines deliver more than the literal ask (OPUS-005 asked for a `Confirm` dialog; B shipped Confirm+Prompt+Alert). So write the bar at the *complete, proper* outcome — all related cases, the root cause, the test that proves it — not the minimum that quiets the symptom. A lowball spec invites a lowball fix.
 - **Append-only. Number sequentially.** Never delete or rewrite existing issues.
 - **The audit trail is read-only** — never edit a `## Verification Findings` section or a `⚠️/🔴 REOPENED` note. If a re-run confirms a fix held, append a one-line confirmation under the issue; if it broke again, file a NEW `[REGRESSION]` issue.
 - **You do not fix.** Even if the fix looks obvious, write the issue and let B own it. The Definition of Done for *closing* issues lives in `/b` and `/issue`.
