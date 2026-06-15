@@ -144,6 +144,39 @@ export const test = base.extend<AuthFixtures>({
       });
     });
 
+    // Mock Firestore Authentication Headers for E2E
+    // The Firestore emulator accepts unverified JWTs as authorization headers.
+    await page.route("http://127.0.0.1:8080/**", async (route) => {
+      const headers = { ...route.request().headers() };
+      
+      // If we aren't already passing an Authorization header...
+      if (!headers['authorization']) {
+          // Unverified JWT format for emulator: header.payload.signature
+          // Payload must match FIREBASE_USER_MOCK (sub: "test-user-uid-e2e")
+          const jwtHeader = Buffer.from(JSON.stringify({ alg: "none", type: "JWT" })).toString('base64url');
+          const jwtPayload = Buffer.from(JSON.stringify({ 
+              sub: "test-user-uid-e2e",
+              iss: "https://securetoken.google.com/indii-music-founder",
+              aud: "indii-music-founder",
+              auth_time: Math.floor(Date.now() / 1000),
+              user_id: "test-user-uid-e2e",
+              iat: Math.floor(Date.now() / 1000),
+              exp: Math.floor(Date.now() / 1000) + 3600,
+              email: "testuser@example.com",
+              email_verified: true,
+              firebase: {
+                  sign_in_provider: "custom",
+                  identities: {}
+              }
+          })).toString('base64url');
+          const fakeJwt = `${jwtHeader}.${jwtPayload}.unsigned`;
+          
+          headers['authorization'] = `Bearer ${fakeJwt}`;
+      }
+      
+      await route.continue({ headers });
+    });
+
     const handleCloudFunction = async (route: Route) => {
       const url = route.request().url();
       console.log(

@@ -5759,7 +5759,6 @@ Therefore, no fix can be proposed or implemented.
 - **Honest fallback:** If they still fail after the fix, the parallel-call fix is incomplete or there's a second race — re-open the BaseAgent fix; do NOT re-comment the assertions.
 - **DO NOT:** Do not close this by leaving the assertions commented, re-commenting them, or `.skip`. The entire point is that the test must verify the fix.
 - **Evidence:** `e2e/boardroom-real-user-scenario.spec.ts:639-647` still shows 7 commented `// expect(finalSeated)...` lines under "// Bypassing strict assertions"; OPUS-004 marked `✅ FIXED`.
-- **Filed by:** Opus verification watch — real fix credited; verification gap put back per the mandate.
 
 ---
 
@@ -5780,7 +5779,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-A-003: E2E Firestore Emulator PERMISSION_DENIED due to JS Auth Mock Bypass
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (Agent B)
 - **Severity:** 🔴 CRITICAL
 - **Location:** `packages/renderer/src/services/firebase.ts`, `e2e/fixtures/auth.ts`, `firestore.rules`
 - **Details:** With the local Firestore Emulator now connected and running under E2E tests, write requests to emulator collections are failing rules evaluation with `FirebaseError: PERMISSION_DENIED`. Specifically, `fineTuningDataset` writes fail rule L329 (`false for 'create' @ L329`). This happens because the E2E Auth Mock (`rawAuth = {...}`) only mock-authenticates Javascript queries inside the browser app. The underlying Firestore SDK is initialized without a real Firebase Auth session, meaning all network writes sent to port 8080 are evaluated as unauthenticated (guest) requests (`request.auth == null`).
@@ -5796,7 +5795,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-D-002: BaseAgent parallel-call fix is incomplete — state race condition persists [re-opens ISSUE-430/OPUS-004]
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (Agent B)
 - **Severity:** 🔴 HIGH
 - **Location:** `packages/renderer/src/services/agent/BaseAgent.ts`, `e2e/boardroom-real-user-scenario.spec.ts`
 - **Details:** B correctly restored the 7 `expect(finalSeated).not.toContain` assertions in OPUS-006. However, running the test reveals the original parallel-call fix in `BaseAgent` was incomplete. The test FAILS with `Expected value: not "brand", Received array: ["generalist", "brand", "music"]`. Looping over `response.functionCalls()` is not enough if the resulting state updates (unseating agents) clobber each other in a race condition.
