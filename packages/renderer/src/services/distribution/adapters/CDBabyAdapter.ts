@@ -1,6 +1,7 @@
 import {
     BaseDistributorAdapter
 } from './BaseDistributorAdapter';
+import { earningsService } from '../EarningsService';
 import {
     DistributorId,
     DistributorRequirements,
@@ -259,8 +260,12 @@ export class CDBabyAdapter extends BaseDistributorAdapter {
         return baseEarnings;
     }
 
-    async getAllEarnings(_period: DateRange): Promise<DistributorEarnings[]> {
-        return [];
+    async getAllEarnings(period: DateRange): Promise<DistributorEarnings[]> {
+        const isConnected = await this.isConnected();
+        if (!isConnected) {
+            throw new Error('Not connected to CDBaby');
+        }
+        return await earningsService.getAllEarnings(this.id, period);
     }
 
     async validateMetadata(metadata: ExtendedGoldenMetadata): Promise<ValidationResult> {
