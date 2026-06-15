@@ -5650,7 +5650,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-OPUS-001: Remove orphaned throwaway script scripts/fix_void.cjs
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟢 LOW
 - **Location:** `scripts/fix_void.cjs`
 - **Details:** One-off throwaway from the ISSUE-077 void-0 cleanup; blindly runs `content.replace(/void 0;/g, '')` with no brace/AST awareness (it corrupted CredentialService.ts braces in commit 75d6f7302). Job done (0 bare `void 0;` remain), referenced nowhere else in the repo.
