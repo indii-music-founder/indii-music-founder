@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-14 22:59 EDT
+**Updated:** 2026-06-14 23:09 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+dcc41a06f test: sync envelope json timestamps
+b6d378761 chore: session checkpoint [22:59]
 bf6c134ed docs(flowchart): commit next set of system architecture diagrams (04-12)
 28f60fb2a docs(flowchart): commit newly generated flowcharts and diagrams
 1e0d12a91 test: sync envelope json interop timestamps
@@ -12,13 +14,11 @@ a651c791e chore: session checkpoint [20:57]
 f32c1f9b5 chore: add mandatory static verification gate to /issue workflow
 781b32fb8 docs(issues): document adapter fixes across all six adapters for issue 183
 944a5b913 chore: resolve static audit issues 077, 174, 183, 184, 190, 229, 257, 259
-7da31df92 fix(issues): resolve status code fabrications and void 0 placeholders
-469f99b25 feat(distribution): implement getAllEarnings in distributor adapters
 ```
 
 ## Working State
 ```
- M python/tests/fixtures/e2e_interop/ts_to_py/envelope.json
+ M .agent/test_ledger/OPEN_ISSUES.md
 ```
 
 ## Decisions
