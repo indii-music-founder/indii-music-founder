@@ -372,13 +372,25 @@ export const test = base.extend<AuthFixtures>({
         const postData = route.request().postData() || "";
         const hasUpdateProfileTool = postData.includes("updateProfile");
         const hasSeatFinanceTool = postData.toLowerCase().includes("financial department") || postData.toLowerCase().includes("finance");
+        const hasClearTable = postData.toLowerCase().includes("clear the table");
 
         const parts: Array<{
           text?: string;
           functionCall?: Record<string, unknown>;
         }> = [];
 
-        if (hasSeatFinanceTool) {
+        if (hasClearTable) {
+          parts.push({ text: "Clearing the table." });
+          const agentsToUnseat = ["creative", "video", "social", "publicist", "brand", "music", "legal", "generalist"];
+          for (const agent of agentsToUnseat) {
+            parts.push({
+              functionCall: {
+                name: "unseat_agent",
+                args: { targetAgentId: agent }
+              }
+            });
+          }
+        } else if (hasSeatFinanceTool) {
           parts.push({
             text: "Calling seat_agent for finance.",
           });
