@@ -26,18 +26,15 @@ function chainName(chainId: string): string {
     return chains[chainId] || `Chain ${parseInt(chainId, 16)}`;
 }
 
-declare global {
-    interface Window {
-        ethereum?: {
-            request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
-            isMetaMask?: boolean;
-            on?: (event: string, handler: (...args: unknown[]) => void) => void;
-            removeListener?: (event: string, handler: (...args: unknown[]) => void) => void;
-        };
-    }
+interface EthereumProvider {
+    request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
+    isMetaMask?: boolean;
+    on?: (event: string, handler: (...args: unknown[]) => void) => void;
+    removeListener?: (event: string, handler: (...args: unknown[]) => void) => void;
 }
 
 export function WalletConnectPanel() {
+    const ethereum = typeof window !== 'undefined' ? (window as any).ethereum as EthereumProvider | undefined : undefined;
     const [address, setAddress] = useState<string | null>(() => localStorage.getItem(STORAGE_KEY));
     const [chain, setChain] = useState<string>(() => localStorage.getItem(CHAIN_KEY) || '0x1');
     const [connecting, setConnecting] = useState<WalletProvider | null>(null);
@@ -46,7 +43,7 @@ export function WalletConnectPanel() {
 
     // Listen for MetaMask account/chain changes
     useEffect(() => {
-        if (typeof window === 'undefined' || !window.ethereum?.on) return;
+        if (!ethereum?.on) return;
 
         const onAccountsChanged = (...args: unknown[]) => {
             const accounts = args[0] as string[];
@@ -63,14 +60,14 @@ export function WalletConnectPanel() {
             setChain(id);
         };
 
-        window.ethereum.on('accountsChanged', onAccountsChanged);
-        window.ethereum.on('chainChanged', onChainChanged);
+        ethereum.on('accountsChanged', onAccountsChanged);
+        ethereum.on('chainChanged', onChainChanged);
 
         return () => {
-            window.ethereum?.removeListener?.('accountsChanged', onAccountsChanged);
-            window.ethereum?.removeListener?.('chainChanged', onChainChanged);
+            ethereum?.removeListener?.('accountsChanged', onAccountsChanged);
+            ethereum?.removeListener?.('chainChanged', onChainChanged);
         };
-    }, []);
+    }, [ethereum]);
 
     const handleConnect = async (provider: WalletProvider) => {
         setConnecting(provider);
@@ -78,12 +75,12 @@ export function WalletConnectPanel() {
 
         try {
             if (provider === 'metamask') {
-                if (typeof window === 'undefined' || !window.ethereum) {
+                if (!ethereum) {
                     throw new Error('MetaMask not installed. Please install the MetaMask browser extension.');
                 }
                 // Request account access via EIP-1193
-                const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' }) as string[];
-                const chainId = await window.ethereum.request({ method: 'eth_chainId' }) as string;
+                const accounts = await ethereum.request({ method: 'eth_requestAccounts' }) as string[];
+                const chainId = await ethereum.request({ method: 'eth_chainId' }) as string;
 
                 localStorage.setItem(STORAGE_KEY, accounts[0]!);
                 localStorage.setItem(CHAIN_KEY, chainId as string);
@@ -231,7 +228,7 @@ export function WalletConnectPanel() {
                             <div className="flex-1 text-left">
                                 <div className="text-sm font-bold text-white group-hover:text-orange-400 transition-colors">MetaMask</div>
                                 <div className="text-[11px] text-neutral-500">
-                                    {typeof window !== 'undefined' && window.ethereum?.isMetaMask
+                                    {ethereum?.isMetaMask
                                         ? 'Ready to connect'
                                         : 'Browser extension wallet'}
                                 </div>
