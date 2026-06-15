@@ -5899,3 +5899,16 @@ Therefore, no fix can be proposed or implemented.
 - **DO NOT:** Do not disable rules or just fix one collection while leaving the rest of the file vulnerable to the exact same crash.
 - **Evidence:** A grep scan reveals over 78 remaining instances of `resource.data.userId == request.auth.uid` across other collections that were skipped in commit `e07f311fe`.
 - **Filed by:** D verification
+> ✅ VERIFIED (D, 2026-06-15): Evaluated commit 98413803f. B-Engine replaced all `resource.data.userId == request.auth.uid` references across all collections with `resource.data.get('userId', null) == request.auth.uid`. This handles missing properties correctly in SDK 13+ without throwing runtime exceptions. Fix is complete and robust.
+
+---
+
+### ISSUE-A-005: PII Redaction Security Tests Failing
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Location:** `packages/renderer/src/test/security/pii-redaction.test.ts`
+- **Details:** Running `npm run test:rules` reveals that 3 tests in `pii-redaction.test.ts` are failing with `AssertionError: expected "vi.fn()" to be called at least once`. The tests check if sensitive information (credit card numbers, passwords) are redacted before being sent to the LLM via `agentService.sendMessage(sensitiveInput)`.
+- **Expected (acceptance):** The PII redaction tests should pass. The `executeMock` should be called properly, or the mocking strategy in the test suite needs to be aligned with the actual implementation of `agentService.sendMessage`.
+- **Honest fallback:** Review how `agentService` wraps or executes calls and adjust the Vitest mocks accordingly.
+- **DO NOT:** Do not delete the security tests or disable PII redaction.
+- **Evidence:** Terminal output shows 3 failing tests in `pii-redaction.test.ts`.
