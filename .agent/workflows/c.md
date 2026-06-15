@@ -39,7 +39,7 @@ If you cannot satisfy all four, DO NOT write `FIXED`. Set `🟠 BLOCKED — <rea
 ## 2. Swarm Coordination (The ABC Protocol)
 - **Role Definition:** A-Engine handles Features. B-Engine handles Bugs/QA. **C-Engine handles CI/CD, Git Sync, and Infrastructure.**
 - **Claiming Work:** When you find an infrastructure or deployment issue in `.agent/test_ledger/OPEN_ISSUES.md`, change its status to `🟡 IN PROGRESS (Agent C)`.
-- **Conflict Avoidance:** ALWAYS run `git pull --rebase origin main` before reading `OPEN_ISSUES.md` and before making commits to avoid overwriting Agents A and B.
+- **Conflict Avoidance (concurrency-safe — learned from ISSUE-OPUS-002):** `git pull --rebase origin main` before reading `OPEN_ISSUES.md` and before committing. Commit ledger edits immediately after making them — an uncommitted edit gets silently overwritten by another agent's sync. Never rewrite the whole file from a stale snapshot (that clobbers A's and B's entries).
 - **Handoffs:** If you get stuck, change the status to `🟠 BLOCKED - Handoff to Agent [X]` and let A or B try.
 
 ## 3. Manage Workspace Integrity (Your Prime Directive)
