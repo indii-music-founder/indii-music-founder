@@ -1,9 +1,12 @@
 # Handoff State
-**Updated:** 2026-06-15 06:38 EDT
+**Updated:** 2026-06-15 06:41 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+f398fc1f0 chore(b-engine): claim ISSUE-A-002
+4c5dea56e test(ledger): log ISSUE-A-002
+1cb2df1e6 chore: session checkpoint [06:38]
 7d1c7be99 chore: session checkpoint [06:01]
 499975f09 chore: commit temporary artifacts to unblock sync
 3568e986d fix(monitor): clear GITHUB_TOKEN on auth fail & sync envelope JSON
@@ -11,9 +14,6 @@ c5b2780a4 chore: session checkpoint [03:29]
 bd017b992 chore: update boardroom live seated artifact
 8b7cfc1e4 chore: session checkpoint [02:12]
 c9c3bb899 test(ledger): log ISSUE-A-001 with continuing E2E Firestore timeouts
-ce7619827 chore: session checkpoint [01:25]
-72bc86659 test(e2e): use semantic locators instead of .first() band-aids [ISSUE-OPUS-003]
-ba0ffa14f test(ledger): re-open ISSUE-430 as ISSUE-OPUS-004 (faked green — 7 assertions commented out)
 ```
 
 ## Working State
