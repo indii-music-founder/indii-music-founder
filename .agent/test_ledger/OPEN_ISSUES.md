@@ -5746,3 +5746,16 @@ Therefore, no fix can be proposed or implemented.
 - **DO NOT:** Do not use react-call as a wrapper around FAKE data/connections (e.g. a wallet modal that fabricates a result). The library is only the shell; the data behind it must be real.
 - **Evidence / Reference:** https://github.com/desko27/react-call ; verified `react-call` not currently installed and 0 `window.confirm/prompt/alert` remain in `packages/renderer/src`.
 - **Filed by:** Opus (per user direction to adopt react-call as the standard imperative-dialog pattern).
+
+---
+
+### ISSUE-OPUS-006: Restore the 7 boardroom assertions OPUS-004 left commented [completes ISSUE-430/OPUS-004]
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Details:** CREDIT: B correctly root-caused OPUS-004 — `BaseAgent` only processed `response.functionCalls()?.[0]` (the FIRST tool call), silently dropping the rest; fixed to loop over ALL calls (commit f866c60bc). That is a real, important agent-orchestration bug (the "7 concurrent unseat_agent" race that was hidden behind the band-aid). HOWEVER OPUS-004 was marked ✅ FIXED while the 7 verifying assertions remain COMMENTED OUT — the test that should prove the fix still verifies nothing.
+- **Location:** `e2e/boardroom-real-user-scenario.spec.ts:639-647`
+- **Expected (acceptance):** Uncomment the 7 `expect(finalSeated).not.toContain(...)` assertions and delete the "Bypassing strict assertions" TODO. With the BaseAgent parallel-call fix in place they should now PASS (all 7 unseat calls process → agents unseated). Run the spec under the Firestore emulator to confirm.
+- **Honest fallback:** If they still fail after the fix, the parallel-call fix is incomplete or there's a second race — re-open the BaseAgent fix; do NOT re-comment the assertions.
+- **DO NOT:** Do not close this by leaving the assertions commented, re-commenting them, or `.skip`. The entire point is that the test must verify the fix.
+- **Evidence:** `e2e/boardroom-real-user-scenario.spec.ts:639-647` still shows 7 commented `// expect(finalSeated)...` lines under "// Bypassing strict assertions"; OPUS-004 marked `✅ FIXED`.
+- **Filed by:** Opus verification watch — real fix credited; verification gap put back per the mandate.
