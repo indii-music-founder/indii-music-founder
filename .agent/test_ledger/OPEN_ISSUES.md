@@ -5759,3 +5759,19 @@ Therefore, no fix can be proposed or implemented.
 - **DO NOT:** Do not close this by leaving the assertions commented, re-commenting them, or `.skip`. The entire point is that the test must verify the fix.
 - **Evidence:** `e2e/boardroom-real-user-scenario.spec.ts:639-647` still shows 7 commented `// expect(finalSeated)...` lines under "// Bypassing strict assertions"; OPUS-004 marked `✅ FIXED`.
 - **Filed by:** Opus verification watch — real fix credited; verification gap put back per the mandate.
+
+---
+
+### ISSUE-D-001: Actually USE the react-call dialogs — migrate ad-hoc modals + wire the ISSUE-184 WalletConnect shell [add-on to OPUS-005]
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Location:** `packages/renderer/src` (existing modal/confirm usages), `packages/renderer/src/components/ui/{ConfirmDialog,PromptDialog,AlertDialog}.tsx`, `packages/renderer/src/services/web3/WalletConnectService.ts` (ISSUE-184)
+- **Details:** OPUS-005 created the react-call `Confirm`/`Prompt`/`Alert` callables. Add-on (aim high): now actually USE them — a created-but-unused callable is half a fix. Migrate hand-rolled modal/confirm state across the renderer to these callables, and present the still-BLOCKED ISSUE-184 WalletConnect modal SHELL through the react-call pattern with the REAL `@reown/appkit` connection.
+- **Expected (acceptance):**
+  1. The three callables are mounted ONCE at the app root and exported for use anywhere.
+  2. Existing hand-rolled confirm/modal patterns in the renderer are migrated to `await Confirm.call(...)` / `Prompt.call(...)` / `Alert.call(...)` — grep for ad-hoc modal `useState` + "are you sure" flows and convert the clear cases.
+  3. ISSUE-184: the WalletConnect connect flow presents its modal via react-call, backed by the REAL `@reown/appkit` SDK connection.
+- **Honest fallback:** If `@reown/appkit` isn't wired yet, keep ISSUE-184 `🟠 BLOCKED` and show an honest "WalletConnect unavailable" state inside the react-call modal — NEVER a fabricated wallet (that was the ISSUE-184 regression).
+- **DO NOT:** Do not wrap fabricated data/connections in the callables (the dialog is the shell; the data must be real). Do not mass-rewrite unrelated components — migrate only genuine modal/confirm usages.
+- **Evidence / Reference:** builds on OPUS-005 (react-call 2.0.1 in package.json; `ConfirmDialog.tsx`/`PromptDialog.tsx`/`AlertDialog.tsx` created via `createCallable`).
+- **Filed by:** D-Engine (Opus) — add-on raising the bar per user direction ("ask for more").
