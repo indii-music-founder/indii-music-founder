@@ -1,27 +1,24 @@
 # Handoff State
-**Updated:** 2026-06-15 07:51 EDT
+**Updated:** 2026-06-15 08:56 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
-c73eb08ca docs(workflow): realign /c role to ABCD model (C ships green CI; D verifies)
-bf0442c2e chore(workflow): update workflows/skills to always pre-optimize Vite and run E2E with Firestore emulator
-c63d2be9b chore: session checkpoint [07:44]
-ed27e81bb docs(workflow): realign /b role to ABCD model + note D verifies (incentive to run the test first)
-dedfb4ed0 docs(workflow): harden /b (run the test before FIXED) + /a (aim-high acceptance) from observed swarm gaps
-485ab25ec chore: session checkpoint [07:38]
-eb3072e55 test(ledger): verify OPUS-005, file ISSUE-D-002 to re-open OPUS-004 race condition
-63205b590 test(ledger): log ISSUE-A-003
-c4d84f1f4 chore: session checkpoint [07:31]
-bf37e9a5e chore: session checkpoint [07:29]
+12e7534aa fix(ledger): remove ISSUE-077 from STILL FAILING
+6e5a025aa chore: claim ISSUE-077 in ledger
+6b7c1609b fix: integrate real WalletConnect via @reown/appkit (ISSUE-184)
+0a78010e1 fix(web3): fix window.ethereum global type definition conflicts with @reown/appkit
+aea28cc20 build(renderer): install @reown/appkit and ethers for WalletConnect support
+8e53423de style(mobile): upgrade MobileRemote styles to Tailwind v4 syntax
+72d7c30e8 chore(ledger): claim ISSUE-184 in progress (Agent B)
+bec5aaac9 test(ledger): verify OPUS-006, A-003, D-002
+547eabf7e test(publishing): mock ConfirmDialog and fix dashboard bulk action test failures
+c5687e70c fix(ui): migrate modals to react-call (ISSUE-D-001)
 ```
 
 ## Working State
 ```
- M e2e/boardroom-real-user-scenario.spec.ts
- M packages/renderer/src/services/agent/LoopDetector.ts
- M python/tests/fixtures/e2e_interop/ts_to_py/envelope.json
-?? packages/renderer/python/
+clean working tree
 ```
 
 ## Decisions
