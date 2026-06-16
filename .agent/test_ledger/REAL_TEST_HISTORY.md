@@ -847,3 +847,10 @@
 - **Findings:** 3 new 🔴 HIGH issues filed: ISSUE-431 unresolved conflict marker blocks Audio Analyzer/dev/build; ISSUE-432 local Vite API/proxy routes return broad CORS/404/SPA HTML instead of usable audio pipeline APIs; ISSUE-433 dev-served modules expose secret-shaped `VITE_` values.
 - **Coverage Delta:** Scoped unit/integration and Python checks remain green, but live UI/API/deployment parity is now hard blocked by renderer compilation failure.
 - **Artifacts:** `artifacts/mega_audio_analyzer_2026-06-16_results.md`; screenshots in `artifacts/mega_audio_analyzer_2026-06-16_screenshots/`
+
+## 2026-06-16 - MegaTestAudioLoop Audio Analyzer Re-run
+- **Modules Tested:** Audio Analyzer ingestion, local technical analysis, Semantic Audio DNA, MusicLibrary persistence, Distribution metadata flow, downstream Creative/Video prompt handoff, Vite/API routing, build and preview parity
+- **Duration:** ~20 minutes
+- **Findings:** 1 new 🔴 HIGH issue filed: ISSUE-434 Vite dev server starts on `4243` but is killed with signal 9 during connected-route/API probing.
+- **Coverage Delta:** Scoped runner now fails 5/21 unit/integration files on the existing fine-tuned-models transform blocker and 8/17 E2E tests. `npm run build` now passes, and direct Vite preview of `dist/renderer` deep links loads the unauthenticated shell, but preview API probes still reproduce ISSUE-432 (`OPTIONS 204`, empty `POST 404`, `GET` SPA HTML). Firestore emulator refusal remains covered by existing E2E infrastructure issues.
+- **Artifacts:** `artifacts/mega_audio_analyzer_2026-06-16T1518_results.md`; screenshots in `artifacts/mega_audio_analyzer_2026-06-16T1514_screenshots/`
