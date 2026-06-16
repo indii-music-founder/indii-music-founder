@@ -1,24 +1,24 @@
 # Handoff State
-**Updated:** 2026-06-16 13:42 EDT
-**Branch:** `codex/branch-1`
+**Updated:** 2026-06-16 13:46 EDT
+**Branch:** `main`
 
 ## Recent Commits
 ```
+e56431dd7 fix(security): whitelist VITE_EXPOSE_ prefix and lazy-load DefaultAgents SDK client
+2a3c63e07 fix(audio): merge codex/branch-1 resolving api fallbacks and env exposures
+50e120283 chore: session checkpoint [13:42]
 8d2533653 fix(agent): configure VITE_EXPOSE_ whitelist and resolve cloud function API key
 4ad298c37 chore: session checkpoint [12:42]
 1632100c6 chore(docs): mark ISSUE-434, 435, 436, and 437 as FIXED in open issues ledger
 c45124de9 fix(security): sanitize API fallback and ignore watchers in Vite config
 404a11942 fix(ci): fix appcheck provider test failure and flowchart validation schema missing transition section
+ef5701a5e Merge pull request #167 from indii-music-founder/codex/branch-1
 dc9753894 chore: claim remaining open issues in ledger
-f3313a60b chore: session checkpoint [12:20]
-e278c3148 docs(agent): document CLI and MCP toolkit integration rules in agent instructions
-d32119bd5 fix(security): resolve VITE env secrets exposure regression (ISSUE-438)
-3b95b13f6 chore: claim ISSUE-438 in open issues ledger
 ```
 
 ## Working State
 ```
- M python/tests/fixtures/e2e_interop/ts_to_py/envelope.json
+clean working tree
 ```
 
 ## Decisions
