@@ -11,7 +11,7 @@ let globalProfileUnsubscribe: (() => void) | null = null;
 export interface Organization {
     id: string;
     name: string;
-    plan: 'free' | 'pro' | 'enterprise';
+    plan: 'free' | 'pro' | 'founder' | 'enterprise';
     members: string[];
     ownerId?: string;
     memberRoles?: Record<string, 'owner' | 'manager' | 'producer' | 'member'>;
@@ -192,8 +192,23 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
 
             if (profile) {
                 logger.info('[Profile] Loaded profile for:', uid);
-                // Ensure legacy profiles align with new schema if needed (runtime migration could go here)
-                set({ userProfile: profile });
+
+                // FOUNDER AUTO-GRANT: If the profile email matches the platform owner,
+                // ensure membership tier is always set to 'founder' regardless of Firestore state.
+                const FOUNDER_EMAILS = ['wiil@indii.music'];
+                const isFounderEmail = profile.email && FOUNDER_EMAILS.includes(profile.email.toLowerCase());
+                const resolvedProfile = isFounderEmail
+                    ? {
+                        ...profile,
+                        membership: { ...profile.membership, tier: 'founder' as const },
+                    }
+                    : profile;
+
+                if (isFounderEmail) {
+                    logger.info('[Profile] Founder email detected — auto-granting founder tier.');
+                }
+
+                set({ userProfile: resolvedProfile });
             } else {
                 logger.info('[Profile] No profile found, creating default for:', uid);
                 // Create a new profile for this user
