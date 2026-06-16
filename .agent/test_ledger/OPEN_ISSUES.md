@@ -6000,7 +6000,7 @@ Therefore, no fix can be proposed or implemented.
 - **Evidence:** `packages/renderer/vite.config.ts:54-61` and `electron.vite.config.ts:117-124`.
 
 ### ISSUE-434: Vite dev server is killed during audio connected-route probing
-- **Status:** 🟡 IN PROGRESS (Agent B)
+- **Status:** ✅ FIXED (commit: c45124de9)
 - **Severity:** 🔴 HIGH
 - **Dimension:** ProdParity | Performance | DataFlow | Console
 - **Target:** Audio Analyzer (tool)
@@ -6015,7 +6015,7 @@ Therefore, no fix can be proposed or implemented.
 - **Dimensional Data:** Dev server output ended with `Killed: 9 VITE_RENDERER_ONLY=true vite --config packages/renderer/vite.config.ts --port 4243`. Playwright evidence included `net::ERR_CONNECTION_REFUSED` for `http://localhost:4243/src/services/...` module fetches, `ws://localhost:4243/` HMR WebSocket failures, and `ECONNREFUSED ::1:4243` for `OPTIONS`, `POST`, and `GET` requests across the tested audio upload, analysis, metadata, distribution, Creative handoff, and Video handoff API candidate paths.
 
 ### ISSUE-435: Production renderer build externalizes Node-only audio/distribution modules
-- **Status:** 🟡 IN PROGRESS (Agent B)
+- **Status:** ✅ FIXED (commit: c45124de9)
 - **Severity:** 🔴 HIGH
 - **Dimension:** ProdParity | AssetGen | DataFlow
 - **Target:** Audio Analyzer (tool)
@@ -6030,7 +6030,7 @@ Therefore, no fix can be proposed or implemented.
 - **Dimensional Data:** Build warning evidence: `[plugin vite:resolve] Module "fs" has been externalized for browser compatibility ... DeliveryService.ts`; same for `path`; `[plugin vite:resolve] Module "child_process" has been externalized ... AcousticFingerprintService.ts`. Build otherwise completed and produced `dist/renderer/assets/AudioAnalyzer-DRUXbEoc.js`.
 
 ### ISSUE-436: Cache-disabled validation breaks reCAPTCHA/App Check script loading
-- **Status:** 🟡 IN PROGRESS (Agent B)
+- **Status:** ✅ FIXED (commit: c45124de9)
 - **Severity:** 🟡 MEDIUM
 - **Dimension:** Security | ProdParity | Console
 - **Target:** Audio Analyzer (tool)
@@ -6045,7 +6045,7 @@ Therefore, no fix can be proposed or implemented.
 - **Dimensional Data:** Playwright console evidence: `Access to script at 'https://www.gstatic.com/recaptcha/releases/ne1iDVwClkE7nKD3uA9Vqsvl/recaptcha__en.js' from origin 'http://localhost:4242' has been blocked by CORS policy: Request header field cache-control is not allowed by Access-Control-Allow-Headers in preflight response.` Screenshots and JSON evidence captured under `artifacts/mega_audio_analyzer_2026-06-16T1530_screenshots/` and `artifacts/mega_audio_analyzer_2026-06-16T1530_live_api_evidence.json`.
 
 ### ISSUE-437: Audio API proxy regression returns 404/SPA HTML after fixed issue
-- **Status:** 🟡 IN PROGRESS (Agent B)
+- **Status:** ✅ FIXED (commit: c45124de9)
 - **Severity:** 🔴 HIGH
 - **Dimension:** DataFlow | ProdParity | Security
 - **Target:** Audio Analyzer (tool)
