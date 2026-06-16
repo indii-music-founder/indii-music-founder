@@ -2,6 +2,7 @@ import { GoogleGenAI } from '@google/genai';
 import * as logger from 'firebase-functions/logger';
 import { AgentContext, PlannerAgent, GeneratorAgent, EvaluatorAgent, EvaluationResult } from './AgentTriad';
 import { getGeminiApiKey } from '../../config/secrets';
+import { FUNCTION_INTELLIGENCE_MODELS } from '../../config/models';
 
 // Helper to resolve the GenAI client using Google AI Studio (API Key)
 function getAiClient(): GoogleGenAI {
@@ -17,7 +18,7 @@ export class DefaultPlanner implements PlannerAgent {
         logger.info(`[DefaultPlanner] Planning for step ${context.stepId}`);
         const ai = getAiClient();
         const response = await ai.models.generateContent({
-            model: 'gemini-3-pro-preview',
+            model: FUNCTION_INTELLIGENCE_MODELS.TEXT.PRO,
             contents: `You are the Planner Agent. Your objective is: "${objective}". 
 Please provide a step-by-step plan to achieve this objective. Do not execute the plan, only outline the approach.`,
             config: {
@@ -46,7 +47,7 @@ Please execute this plan and provide the final output.`;
 
         const ai = getAiClient();
         const response = await ai.models.generateContent({
-            model: 'gemini-3-pro-preview',
+            model: FUNCTION_INTELLIGENCE_MODELS.TEXT.PRO,
             contents: prompt,
             config: {
                 temperature: 1.0,
@@ -64,7 +65,7 @@ export class DefaultEvaluator implements EvaluatorAgent {
         logger.info(`[DefaultEvaluator] Evaluating for step ${context.stepId}`);
         const ai = getAiClient();
         const response = await ai.models.generateContent({
-            model: 'gemini-3-flash-preview',
+            model: FUNCTION_INTELLIGENCE_MODELS.TEXT.FAST,
             contents: `You are the Evaluator Agent.
 Objective: "${objective}"
 Plan:
