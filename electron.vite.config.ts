@@ -42,6 +42,46 @@ const envSanitizerPlugin = () => ({
     }
 });
 
+const apiFallbackPlugin = () => ({
+    name: 'api-fallback',
+    configureServer(server) {
+        server.middlewares.use((req, res, next) => {
+            const url = req.url;
+            if (url && (url === '/api' || url.startsWith('/api/') || url.startsWith('/api?'))) {
+                res.statusCode = 404;
+                res.setHeader('Content-Type', 'application/json');
+                res.end(JSON.stringify({
+                    success: false,
+                    error: {
+                        code: 'NOT_FOUND',
+                        message: `API endpoint ${url} not found on local dev server. Use Firebase emulator or local main process instead.`
+                    }
+                }));
+                return;
+            }
+            next();
+        });
+    },
+    configurePreviewServer(server) {
+        server.middlewares.use((req, res, next) => {
+            const url = req.url;
+            if (url && (url === '/api' || url.startsWith('/api/') || url.startsWith('/api?'))) {
+                res.statusCode = 404;
+                res.setHeader('Content-Type', 'application/json');
+                res.end(JSON.stringify({
+                    success: false,
+                    error: {
+                        code: 'NOT_FOUND',
+                        message: `API endpoint ${url} not found on built preview server. Use Firebase hosting API routing in production.`
+                    }
+                }));
+                return;
+            }
+            next();
+        });
+    }
+});
+
 export default defineConfig({
     // ── Main Process (Node.js) ──────────────────────────────────────────────
     main: {
@@ -136,31 +176,13 @@ export default defineConfig({
             'VITE_RAG_',
             'VITE_ADMIN_PIN',
             'VITE_WALLETCONNECT_PROJECT_ID',
+            'VITE_EXPOSE_',
         ],
         plugins: [
             react(),
             tailwindcss(),
             envSanitizerPlugin(),
-            {
-                name: 'api-fallback',
-                configureServer(server) {
-                    server.middlewares.use((req, res, next) => {
-                        if (req.url && req.url.startsWith('/api/')) {
-                            res.statusCode = 404;
-                            res.setHeader('Content-Type', 'application/json');
-                            res.end(JSON.stringify({
-                                success: false,
-                                error: {
-                                    code: 'NOT_FOUND',
-                                    message: `API endpoint ${req.url} not found on local dev server. Use Firebase emulator or local main process instead.`
-                                }
-                            }));
-                            return;
-                        }
-                        next();
-                    });
-                }
-            }
+            apiFallbackPlugin()
         ],
         define: {
             'import.meta.env.VITE_PINATA_SECRET': '""',
@@ -176,6 +198,12 @@ export default defineConfig({
             // WO-14: Warn when any chunk exceeds 2.5 MB (unminified).
             chunkSizeWarningLimit: 2500,
             rollupOptions: {
+                external: [
+                    'fs',
+                    'path',
+                    'child_process',
+                    'util'
+                ],
                 input: {
                     index: resolve(__dirname, 'packages/renderer/index.html'),
                 },
@@ -307,6 +335,15 @@ export default defineConfig({
         server: {
             port: 4242,
             host: '127.0.0.1',
+            watch: {
+                ignored: [
+                    '**/node_modules/**',
+                    '**/.git/**',
+                    '**/.agent/**',
+                    '**/dist/**',
+                    '**/artifacts/**',
+                ],
+            },
         },
     },
 });
