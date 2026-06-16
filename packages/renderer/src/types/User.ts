@@ -135,7 +135,7 @@ export interface ShippingAddress {
 }
 
 export interface UserMembership {
-    tier: 'free' | 'pro' | 'enterprise';
+    tier: 'free' | 'pro' | 'founder' | 'enterprise';
     expiresAt: Timestamp | null;
 }
 
