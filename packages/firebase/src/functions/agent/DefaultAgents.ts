@@ -1,14 +1,21 @@
 import { GoogleGenAI } from '@google/genai';
 import * as logger from 'firebase-functions/logger';
 import { AgentContext, PlannerAgent, GeneratorAgent, EvaluatorAgent, EvaluationResult } from './AgentTriad';
+import { getGeminiApiKey } from '../../config/secrets';
 
-// Initialize the Gen AI SDK.
-// Ensure VITE_API_KEY or GOOGLE_GENAI_API_KEY is available in the environment.
-const ai = new GoogleGenAI({});
+// Helper to resolve the GenAI client using Google AI Studio (API Key)
+function getAiClient(): GoogleGenAI {
+    const apiKey = getGeminiApiKey();
+    if (apiKey) {
+        return new GoogleGenAI({ apiKey });
+    }
+    return new GoogleGenAI({});
+}
 
 export class DefaultPlanner implements PlannerAgent {
     async plan(context: AgentContext, objective: string): Promise<string> {
         logger.info(`[DefaultPlanner] Planning for step ${context.stepId}`);
+        const ai = getAiClient();
         const response = await ai.models.generateContent({
             model: 'gemini-3-pro-preview',
             contents: `You are the Planner Agent. Your objective is: "${objective}". 
@@ -37,6 +44,7 @@ Please execute this plan and provide the final output.`;
             prompt += `\n\nPrevious attempt failed with this feedback: ${feedback}\nPlease adjust your output to address this feedback.`;
         }
 
+        const ai = getAiClient();
         const response = await ai.models.generateContent({
             model: 'gemini-3-pro-preview',
             contents: prompt,
@@ -54,6 +62,7 @@ Please execute this plan and provide the final output.`;
 export class DefaultEvaluator implements EvaluatorAgent {
     async evaluate(context: AgentContext, objective: string, plan: string, result: string): Promise<EvaluationResult> {
         logger.info(`[DefaultEvaluator] Evaluating for step ${context.stepId}`);
+        const ai = getAiClient();
         const response = await ai.models.generateContent({
             model: 'gemini-3-flash-preview',
             contents: `You are the Evaluator Agent.
