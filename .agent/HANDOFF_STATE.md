@@ -1,25 +1,25 @@
 # Handoff State
-**Updated:** 2026-06-15 09:51 EDT
+**Updated:** 2026-06-15 20:47 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
-f133d7175 fix(store): correct CreativeSlice type signature to resolve TS2345; optimize vitest memory pool
-d0f5a22ce fix(store): correct CreativeSlice type signature to resolve TS2345; optimize vitest memory pool
-82f3fe910 test(ledger): log ISSUE-CI pipeline failures
-11efcb1c6 fix(sync): quote git add path to prevent space parsing errors
-3bd8ffa58 test(ledger): log ISSUE-A-002 (vitest hang) and ISSUE-A-003 (emulator port)
-fa5815a5a docs(workflows): update c-engine browser CI monitoring instructions
-5ed7d7ead feat(quality): integrate check-test-quality script and D-Engine verify rules
-da4e8241f test(ledger): log ISSUE-A-001 (typecheck errors)
-8b6c83c90 test(ledger): verify fixed issues by D-Engine
-04faa00fe chore: session checkpoint [08:58]
+80cae75ef docs(flowcharts): add founder access bypass tier resolution diagram
+b8852b90e feat(membership): grant Founder tier to platform owner wiil@indii.music
+64f13802b test(ledger): log ISSUE-CI pipeline failures
+27716bc55 fix(ci): increase sharding to 8 and flatten poolOptions to resolve worker OOM
+94aa4ba5f fix(ci): restore vitest fork pool in deploy workflow
+3e5c80d59 fix(agent): restore fine-tuned registry and slice typing
+4cd017344 fix(ci): apply vitest memory limits and thread pool configuration to github actions runner
+058a326ae test(ledger): verify ISSUE-A-005
+7cbd5d916 chore(test): optimize vitest memory pool in config
+9e194f826 fix(security): import setup mocks in pii-redaction tests to ensure auth context [completes ISSUE-A-005]
 ```
 
 ## Working State
 ```
- M .agent/test_ledger/OPEN_ISSUES.md
- M python/tests/fixtures/e2e_interop/ts_to_py/envelope.json
+?? artifacts/mega_test_audio_loop_2026-06-15_17-20-53_browser_policy_reconfirm.md
+?? artifacts/mega_test_audio_loop_2026-06-15_audio_runtime_reconfirm.md
 ```
 
 ## Decisions
