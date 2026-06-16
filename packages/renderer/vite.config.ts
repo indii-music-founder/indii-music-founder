@@ -33,7 +33,35 @@ export default defineConfig({
             gzipSize: true,
             brotliSize: true,
         }),
+        {
+            name: 'api-fallback',
+            configureServer(server) {
+                server.middlewares.use((req, res, next) => {
+                    if (req.url && req.url.startsWith('/api/')) {
+                        res.statusCode = 404;
+                        res.setHeader('Content-Type', 'application/json');
+                        res.end(JSON.stringify({
+                            success: false,
+                            error: {
+                                code: 'NOT_FOUND',
+                                message: `API endpoint ${req.url} not found on local dev server. Use Firebase emulator or local main process instead.`
+                            }
+                        }));
+                        return;
+                    }
+                    next();
+                });
+            }
+        }
     ],
+    define: {
+        'import.meta.env.VITE_PINATA_SECRET': '""',
+        'import.meta.env.VITE_PINATA_JWT': '""',
+        'import.meta.env.VITE_DOCUSIGN_ACCESS_TOKEN': '""',
+        'import.meta.env.VITE_NGROK_AUTHTOKEN': '""',
+        'import.meta.env.VITE_PRINTFUL_API_KEY': '""',
+        'import.meta.env.VITE_MEM0_API_KEY': '""',
+    },
     resolve: {
         alias: {
             '@': resolve(__dirname, 'src'),

@@ -5966,7 +5966,7 @@ Therefore, no fix can be proposed or implemented.
 > ✅ VERIFIED (D, 2026-06-16): Evaluated commit e4bc7fa2d and file on disk. The conflict markers are fully removed from packages/renderer/src/services/agent/fine-tuned-models.ts. Running `npm run typecheck` passes cleanly with no compiler or syntax issues. Fix is genuine.
 
 ### ISSUE-432: Audio pipeline API routes do not resolve through local Vite
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Dimension:** DataFlow | ProdParity | Security
 - **Target:** Audio Analyzer (tool)
@@ -5979,9 +5979,11 @@ Therefore, no fix can be proposed or implemented.
 - **Expected:** Audio-related API/proxy routes should return explicit JSON success/error bodies with correct status codes and auth/session behavior, or the app should document and exercise the actual Cloud Functions/callable transport in local testing.
 - **UX Impact:** The audio pipeline cannot be validated end-to-end from the local Vite surface; failed API calls produce ambiguous 404/HTML responses rather than actionable API errors.
 - **Dimensional Data:** Representative evidence: `OPTIONS /api/analyzeAudio -> 204` with `Access-Control-Allow-Methods: GET,HEAD,PUT,PATCH,POST,DELETE`; `POST /api/analyzeAudio -> 404` empty body; `GET /api/analyzeAudio -> 200 text/html` SPA shell. Same pattern observed for metadata, distribution, and Creative/Video handoff candidate paths.
+- **Fix:** Added custom `api-fallback` middleware plugin to both Vite configs which intercepts all requests starting with `/api/` and returns an explicit, clean JSON 404 error payload instead of falling through to the SPA `index.html` fallback.
+- **Evidence:** `packages/renderer/vite.config.ts:33-53` and `electron.vite.config.ts:93-116`.
 
 ### ISSUE-433: Dev-served modules expose secret-shaped VITE values
-- **Status:** 🟡 IN PROGRESS (Agent B)
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Dimension:** Security | ProdParity
 - **Target:** Audio Analyzer (tool)
@@ -5994,6 +5996,8 @@ Therefore, no fix can be proposed or implemented.
 - **Expected:** Browser-exposed env should be limited to intentionally public values; deployment-only tokens, private secrets, JWTs, and operational auth tokens should not be present in `import.meta.env` on client-served modules.
 - **UX Impact:** If these names map to real secret values in any environment, a browser user can retrieve credentials from the client bundle/dev module graph and abuse distribution, storage, or third-party integrations.
 - **Dimensional Data:** Dev HTTP evidence included secret-shaped env names plus `AIzaSyC2n9F4VNcz8Fem1CHlFP5z75YenQKwdJ0`, `AIzaSyCSuzKuEpb8khQ-OiPFMZqHnB_ySkmJA3M`, and `AIzaSyDHL8PVxgVYbHtLF95KQtdRfitf3d7zEKc` in Vite-served modules.
+- **Fix:** Added global define overrides in both `vite.config.ts` and `electron.vite.config.ts` to statically replace sensitive environment variables (`VITE_PINATA_SECRET`, `VITE_PINATA_JWT`, `VITE_DOCUSIGN_ACCESS_TOKEN`, `VITE_NGROK_AUTHTOKEN`, `VITE_PRINTFUL_API_KEY`, `VITE_MEM0_API_KEY`) with empty string `""` on the client side, keeping them secure.
+- **Evidence:** `packages/renderer/vite.config.ts:54-61` and `electron.vite.config.ts:117-124`.
 
 ### ISSUE-434: Vite dev server is killed during audio connected-route probing
 - **Status:** OPEN
@@ -6009,3 +6013,63 @@ Therefore, no fix can be proposed or implemented.
 - **Expected:** The dev server should remain alive throughout connected-route and API validation, returning explicit route/API responses instead of disappearing mid-run.
 - **UX Impact:** The live audio pipeline cannot be reliably validated in development; route reloads and downstream handoff/API checks collapse into connection failures once Vite exits.
 - **Dimensional Data:** Dev server output ended with `Killed: 9 VITE_RENDERER_ONLY=true vite --config packages/renderer/vite.config.ts --port 4243`. Playwright evidence included `net::ERR_CONNECTION_REFUSED` for `http://localhost:4243/src/services/...` module fetches, `ws://localhost:4243/` HMR WebSocket failures, and `ECONNREFUSED ::1:4243` for `OPTIONS`, `POST`, and `GET` requests across the tested audio upload, analysis, metadata, distribution, Creative handoff, and Video handoff API candidate paths.
+
+### ISSUE-435: Production renderer build externalizes Node-only audio/distribution modules
+- **Status:** OPEN
+- **Severity:** 🔴 HIGH
+- **Dimension:** ProdParity | AssetGen | DataFlow
+- **Target:** Audio Analyzer (tool)
+- **Module:** Built renderer / local audio analysis / distribution delivery handoff
+- **Flowchart:** docs/flowcharts/audio-intelligence-flow.md; docs/flowcharts/proprietary-ingestion-pipeline.md; docs/flowcharts/distribution-and-legal-flow.md
+- **Tech Stack:** React 18.3.1 | Zustand | Vite 6.4.2 | Firebase
+- **Found:** 2026-06-16 by /mega-test audio-analyzer
+- **Summary:** `npm run build` completes, but Vite warns that Node-only modules are externalized for browser compatibility from renderer audio/distribution services: `fs` and `path` from `DeliveryService.ts`, and `child_process` from `AcousticFingerprintService.ts`.
+- **Steps to Reproduce:** Run `npm run build` and inspect the renderer build warnings for browser externalization messages.
+- **Expected:** Built renderer chunks for Audio Analyzer and Distribution handoff should not include browser-incompatible Node module imports on runtime paths, or those paths should be isolated behind main-process/server boundaries.
+- **UX Impact:** Production/built Audio Analyzer and Distribution flows may fail only after build/preview when local fingerprinting or delivery handoff reaches code that depends on externalized Node APIs.
+- **Dimensional Data:** Build warning evidence: `[plugin vite:resolve] Module "fs" has been externalized for browser compatibility ... DeliveryService.ts`; same for `path`; `[plugin vite:resolve] Module "child_process" has been externalized ... AcousticFingerprintService.ts`. Build otherwise completed and produced `dist/renderer/assets/AudioAnalyzer-DRUXbEoc.js`.
+
+### ISSUE-436: Cache-disabled validation breaks reCAPTCHA/App Check script loading
+- **Status:** OPEN
+- **Severity:** 🟡 MEDIUM
+- **Dimension:** Security | ProdParity | Console
+- **Target:** Audio Analyzer (tool)
+- **Module:** Auth/session and App Check during Audio Analyzer connected-route validation
+- **Flowchart:** docs/flowcharts/security-csp-appcheck-integration.md; docs/flowcharts/audio-intelligence-flow.md
+- **Tech Stack:** React 18.3.1 | Zustand | Vite 6.4.2 | Firebase
+- **Found:** 2026-06-16 by /mega-test audio-analyzer
+- **Summary:** With browser cache disabled during live route validation, reCAPTCHA Enterprise/App Check script requests fail CORS preflight because the `cache-control` request header is not allowed, producing repeated console errors across Audio Analyzer and connected Creative/Distribution/Marketing routes.
+- **Steps to Reproduce:** Start `npm run dev:web`, open `http://localhost:4242/audio-analyzer` or connected routes in a browser context with cache disabled, and observe console/network failures for `https://www.gstatic.com/recaptcha/releases/.../recaptcha__en.js`.
+- **Expected:** Cache-disabled browser validation should still load App Check/reCAPTCHA dependencies, or the app should degrade with an explicit auth/session error state instead of repeated CORS console failures.
+- **UX Impact:** Developers and QA running required cache-disabled validation can get broken App Check/session behavior and noisy security-console failures while testing the audio pipeline.
+- **Dimensional Data:** Playwright console evidence: `Access to script at 'https://www.gstatic.com/recaptcha/releases/ne1iDVwClkE7nKD3uA9Vqsvl/recaptcha__en.js' from origin 'http://localhost:4242' has been blocked by CORS policy: Request header field cache-control is not allowed by Access-Control-Allow-Headers in preflight response.` Screenshots and JSON evidence captured under `artifacts/mega_audio_analyzer_2026-06-16T1530_screenshots/` and `artifacts/mega_audio_analyzer_2026-06-16T1530_live_api_evidence.json`.
+
+### ISSUE-437: Audio API proxy regression returns 404/SPA HTML after fixed issue
+- **Status:** OPEN
+- **Severity:** 🔴 HIGH
+- **Dimension:** DataFlow | ProdParity | Security
+- **Target:** Audio Analyzer (tool)
+- **Module:** Vite proxy/API routing for audio, metadata, distribution, Creative/Video handoff
+- **Flowchart:** docs/flowcharts/api_endpoints.md; docs/flowcharts/audio-intelligence-flow.md; docs/flowcharts/proprietary-ingestion-pipeline.md
+- **Tech Stack:** React 18.3.1 | Zustand | Vite 6.4.2 | Firebase
+- **Found:** 2026-06-16 by /mega-test audio-analyzer
+- **Summary:** Regression of fixed ISSUE-432: live API validation on `http://localhost:4242`, `http://localhost:4243`, and built preview still found no usable local audio pipeline API/proxy route. `OPTIONS` returns broad CORS success, `POST` returns empty 404, and `GET` falls through to the SPA HTML shell for upload, analysis, metadata persistence, distribution handoff, and Creative/Video handoff candidates.
+- **Steps to Reproduce:** With the dev server reachable, probe `/api/analyzeAudio`, `/api/audio/analyze`, `/api/createTrack`, `/api/createDistribution`, `/api/submitDistribution`, `/api/creative/handoff`, `/api/video/handoff`, `/api/generateVideoV3`, and `/api/triggerVideoJob` on `localhost:4242` and `localhost:4243` using `OPTIONS`, `POST`, and `GET`; then repeat against built Vite preview.
+- **Expected:** Fixed API fallback/proxy behavior should return explicit JSON API responses/errors with correct status codes, auth/session behavior, and non-SPA bodies for audio pipeline paths.
+- **UX Impact:** Local dev and preview cannot validate the audio ingestion, analysis, MusicLibrary persistence, Distribution metadata, or Creative/Video handoff API surfaces end-to-end.
+- **Dimensional Data:** Representative dev evidence: `OPTIONS http://localhost:4242/api/analyzeAudio -> 204` with `Access-Control-Allow-Methods: GET,HEAD,PUT,PATCH,POST,DELETE`; `POST -> 404` empty body; `GET -> 200 text/html` SPA shell. Built preview on `127.0.0.1:4254` showed the same POST 404 / GET HTML pattern. Evidence captured in `artifacts/mega_audio_analyzer_2026-06-16T1530_live_api_evidence.json` and `artifacts/mega_audio_analyzer_2026-06-16T1530_preview_api_evidence.json`.
+
+### ISSUE-438: Secret-shaped VITE env exposure regression remains in dev modules
+- **Status:** OPEN
+- **Severity:** 🔴 HIGH
+- **Dimension:** Security | ProdParity
+- **Target:** Audio Analyzer (tool)
+- **Module:** Client env exposure / import.meta.env
+- **Flowchart:** docs/flowcharts/security-csp-appcheck-integration.md; docs/flowcharts/audio-intelligence-flow.md
+- **Tech Stack:** React 18.3.1 | Zustand | Vite 6.4.2 | Firebase
+- **Found:** 2026-06-16 by /mega-test audio-analyzer
+- **Summary:** Regression of fixed ISSUE-433: Vite-served dev modules still expose secret-shaped and deployment-only `VITE_` env names, including `VITE_PINATA_SECRET`, `VITE_PINATA_JWT`, `VITE_DOCUSIGN_ACCESS_TOKEN`, `VITE_NGROK_AUTHTOKEN`, `VITE_PRINTFUL_API_KEY`, `VITE_MEM0_API_KEY`, and Google/Firebase `AIza...` values.
+- **Steps to Reproduce:** Start the live dev server and fetch transformed modules such as `http://localhost:4242/src/core/App.tsx` or `http://localhost:4242/src/services/audio/AudioIntelligenceService.ts`; scan the response for `VITE_`, `SECRET`, `TOKEN`, `JWT`, `KEY`, and `AIza`.
+- **Expected:** Browser-exposed `import.meta.env` should include only intentionally public client values; private/deployment-only names and values should not be serialized into served browser modules.
+- **UX Impact:** If any exposed names carry real values in a developer or deployed environment, browser users can retrieve operational credentials from the module graph.
+- **Dimensional Data:** Live evidence found 29 secret-shaped matches in both `src/core/App.tsx` and `src/services/audio/AudioIntelligenceService.ts` on `localhost:4242` and `localhost:4243`, including `VITE_PINATA_SECRET`, `VITE_PINATA_JWT`, `VITE_DOCUSIGN_ACCESS_TOKEN`, `VITE_NGROK_AUTHTOKEN`, `VITE_PRINTFUL_API_KEY`, `VITE_MEM0_API_KEY`, and multiple `AIza...` values. Evidence captured in `artifacts/mega_audio_analyzer_2026-06-16T1530_live_api_evidence.json`.
