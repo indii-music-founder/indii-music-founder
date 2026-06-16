@@ -1,24 +1,27 @@
 # Handoff State
-**Updated:** 2026-06-16 12:20 EDT
+**Updated:** 2026-06-16 12:42 EDT
 **Branch:** `codex/branch-1`
 
 ## Recent Commits
 ```
+1632100c6 chore(docs): mark ISSUE-434, 435, 436, and 437 as FIXED in open issues ledger
+c45124de9 fix(security): sanitize API fallback and ignore watchers in Vite config
+404a11942 fix(ci): fix appcheck provider test failure and flowchart validation schema missing transition section
+dc9753894 chore: claim remaining open issues in ledger
+f3313a60b chore: session checkpoint [12:20]
 e278c3148 docs(agent): document CLI and MCP toolkit integration rules in agent instructions
 d32119bd5 fix(security): resolve VITE env secrets exposure regression (ISSUE-438)
 3b95b13f6 chore: claim ISSUE-438 in open issues ledger
 ad54f26a3 fix(e2e): remove process.env.VITE_PLAYWRIGHT_E2E (undefined in browser, causes ReferenceError)
 09534ea5b fix(mcp+subscription+memory): build MCP server, fix useSubscription auth race, silence MEM0 noise
-b6546720d fix(founder): bypass 100k token circuit breaker for wiil@indii.music
-df85fc298 fix(env): fix emulator flags, token refresh, Pro→Flash downgrade
-3f547af32 fix(security): resolve ISSUE-432 and ISSUE-433 (redact env secrets and add api-fallback JSON error handling)
-8e9035462 Record Vite dev server kill during audio route probing
-7a16962cd test(ledger): verify ISSUE-431
 ```
 
 ## Working State
 ```
-clean working tree
+ M electron.vite.config.ts
+ M packages/firebase/src/functions/agent/DefaultAgents.ts
+ M packages/renderer/vite.config.ts
+ M python/tests/fixtures/e2e_interop/ts_to_py/envelope.json
 ```
 
 ## Decisions
