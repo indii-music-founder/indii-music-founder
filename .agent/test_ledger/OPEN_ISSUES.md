@@ -5946,3 +5946,48 @@ Therefore, no fix can be proposed or implemented.
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
 - **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/27554563590)
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
+
+### ISSUE-431: Audio Analyzer blocked by unresolved conflict marker
+- **Status:** OPEN
+- **Severity:** 🔴 HIGH
+- **Dimension:** ProdParity | Console | DataFlow
+- **Target:** Audio Analyzer (tool)
+- **Module:** Audio Analyzer / Creative handoff / renderer boot
+- **Flowchart:** docs/flowcharts/audio-intelligence-flow.md; docs/flowcharts/creative-video-image-integration-macro.md
+- **Tech Stack:** React 18.3.1 | Zustand | Vite 6.4.2 | Firebase
+- **Found:** 2026-06-16 by /mega-test audio-analyzer
+- **Summary:** `npm run dev:web` and `npm run build` both fail to transform `packages/renderer/src/services/agent/fine-tuned-models.ts` because conflict markers remain at line 80. The live browser shows the Vite error overlay instead of Audio Analyzer, blocking ingestion, local analysis, Semantic Audio DNA, MusicLibrary persistence, Distribution metadata flow, and Creative/Video handoff.
+- **Steps to Reproduce:** Run `npm run dev:web`, open `http://localhost:4243/audio-analyzer`, or run `npm run build`.
+- **Expected:** Audio Analyzer route should render the upload/drag surface and production build should complete so preview parity can be tested.
+- **UX Impact:** Audio Analyzer and connected handoff routes cannot be exercised in the live app; users see a fatal Vite overlay instead of the module.
+- **Dimensional Data:** Dev server transform error: `[plugin:vite:esbuild] Transform failed ... fine-tuned-models.ts:80:0: ERROR: Unexpected "<<"`; build error matches; screenshot captured at `artifacts/mega_audio_analyzer_2026-06-16_screenshots/audio-analyzer.png`.
+
+### ISSUE-432: Audio pipeline API routes do not resolve through local Vite
+- **Status:** OPEN
+- **Severity:** 🔴 HIGH
+- **Dimension:** DataFlow | ProdParity | Security
+- **Target:** Audio Analyzer (tool)
+- **Module:** Vite proxy/API routing for audio, metadata, distribution, Creative/Video handoff
+- **Flowchart:** docs/flowcharts/api_endpoints.md; docs/flowcharts/audio-intelligence-flow.md; docs/flowcharts/proprietary-ingestion-pipeline.md
+- **Tech Stack:** React 18.3.1 | Zustand | Vite 6.4.2 | Firebase
+- **Found:** 2026-06-16 by /mega-test audio-analyzer
+- **Summary:** Direct HTTP validation of documented audio-related API surfaces on the live Vite dev server found no usable local API/proxy route. `OPTIONS` returns broad 204 CORS success, `POST` returns empty 404, and `GET` falls through to the SPA HTML shell for upload/analysis, track persistence, distribution submission, and Creative/Video handoff candidate paths.
+- **Steps to Reproduce:** Start `npm run dev:web`, then probe `http://localhost:4243/api/analyzeAudio`, `/api/audio/analyze`, `/api/createTrack`, `/api/createDistribution`, `/api/submitDistribution`, `/api/generateVideoV3`, and `/api/triggerVideoJob` with `OPTIONS`, `POST`, and `GET`.
+- **Expected:** Audio-related API/proxy routes should return explicit JSON success/error bodies with correct status codes and auth/session behavior, or the app should document and exercise the actual Cloud Functions/callable transport in local testing.
+- **UX Impact:** The audio pipeline cannot be validated end-to-end from the local Vite surface; failed API calls produce ambiguous 404/HTML responses rather than actionable API errors.
+- **Dimensional Data:** Representative evidence: `OPTIONS /api/analyzeAudio -> 204` with `Access-Control-Allow-Methods: GET,HEAD,PUT,PATCH,POST,DELETE`; `POST /api/analyzeAudio -> 404` empty body; `GET /api/analyzeAudio -> 200 text/html` SPA shell. Same pattern observed for metadata, distribution, and Creative/Video handoff candidate paths.
+
+### ISSUE-433: Dev-served modules expose secret-shaped VITE values
+- **Status:** OPEN
+- **Severity:** 🔴 HIGH
+- **Dimension:** Security | ProdParity
+- **Target:** Audio Analyzer (tool)
+- **Module:** Client env exposure / import.meta.env
+- **Flowchart:** docs/flowcharts/security-csp-appcheck-integration.md; docs/flowcharts/audio-intelligence-flow.md
+- **Tech Stack:** React 18.3.1 | Zustand | Vite 6.4.2 | Firebase
+- **Found:** 2026-06-16 by /mega-test audio-analyzer
+- **Summary:** HTTP reads of Vite-served dev modules exposed a large set of `VITE_` deployment and secret-shaped values to the browser module graph, including values named `VITE_PINATA_SECRET`, `VITE_PINATA_JWT`, `VITE_DOCUSIGN_ACCESS_TOKEN`, `VITE_NGROK_AUTHTOKEN`, `VITE_PRINTFUL_API_KEY`, `VITE_MEM0_API_KEY`, and multiple Google/Firebase `AIza...` keys.
+- **Steps to Reproduce:** Start `npm run dev:web` and fetch transformed client modules such as `http://localhost:4243/src/core/App.tsx` or `http://localhost:4243/src/services/audio/AudioIntelligenceService.ts`, then scan for `VITE_`, `AIza`, `SECRET`, `TOKEN`, and `KEY`.
+- **Expected:** Browser-exposed env should be limited to intentionally public values; deployment-only tokens, private secrets, JWTs, and operational auth tokens should not be present in `import.meta.env` on client-served modules.
+- **UX Impact:** If these names map to real secret values in any environment, a browser user can retrieve credentials from the client bundle/dev module graph and abuse distribution, storage, or third-party integrations.
+- **Dimensional Data:** Dev HTTP evidence included secret-shaped env names plus `AIzaSyC2n9F4VNcz8Fem1CHlFP5z75YenQKwdJ0`, `AIzaSyCSuzKuEpb8khQ-OiPFMZqHnB_ySkmJA3M`, and `AIzaSyDHL8PVxgVYbHtLF95KQtdRfitf3d7zEKc` in Vite-served modules.
