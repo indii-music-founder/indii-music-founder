@@ -5981,7 +5981,7 @@ Therefore, no fix can be proposed or implemented.
 - **Dimensional Data:** Representative evidence: `OPTIONS /api/analyzeAudio -> 204` with `Access-Control-Allow-Methods: GET,HEAD,PUT,PATCH,POST,DELETE`; `POST /api/analyzeAudio -> 404` empty body; `GET /api/analyzeAudio -> 200 text/html` SPA shell. Same pattern observed for metadata, distribution, and Creative/Video handoff candidate paths.
 
 ### ISSUE-433: Dev-served modules expose secret-shaped VITE values
-- **Status:** OPEN
+- **Status:** 🟡 IN PROGRESS (Agent B)
 - **Severity:** 🔴 HIGH
 - **Dimension:** Security | ProdParity
 - **Target:** Audio Analyzer (tool)
@@ -5994,3 +5994,18 @@ Therefore, no fix can be proposed or implemented.
 - **Expected:** Browser-exposed env should be limited to intentionally public values; deployment-only tokens, private secrets, JWTs, and operational auth tokens should not be present in `import.meta.env` on client-served modules.
 - **UX Impact:** If these names map to real secret values in any environment, a browser user can retrieve credentials from the client bundle/dev module graph and abuse distribution, storage, or third-party integrations.
 - **Dimensional Data:** Dev HTTP evidence included secret-shaped env names plus `AIzaSyC2n9F4VNcz8Fem1CHlFP5z75YenQKwdJ0`, `AIzaSyCSuzKuEpb8khQ-OiPFMZqHnB_ySkmJA3M`, and `AIzaSyDHL8PVxgVYbHtLF95KQtdRfitf3d7zEKc` in Vite-served modules.
+
+### ISSUE-434: Vite dev server is killed during audio connected-route probing
+- **Status:** OPEN
+- **Severity:** 🔴 HIGH
+- **Dimension:** ProdParity | Performance | DataFlow | Console
+- **Target:** Audio Analyzer (tool)
+- **Module:** Vite dev server / Audio Analyzer connected routes / API validation
+- **Flowchart:** docs/flowcharts/audio-intelligence-flow.md; docs/flowcharts/api_endpoints.md; docs/flowcharts/creative-video-image-integration-macro.md; docs/flowcharts/distribution-and-legal-flow.md
+- **Tech Stack:** React 18.3.1 | Zustand | Vite 6.4.2 | Firebase
+- **Found:** 2026-06-16 by /mega-test audio-analyzer
+- **Summary:** `npm run dev:web` successfully started Vite on `http://localhost:4243`, but the Vite process was killed with signal 9 during direct live validation of Audio Analyzer and connected Creative/Distribution/Marketing routes. After the kill, route module fetches, HMR WebSocket connections, and all audio-related API probes against `4243` returned `ECONNREFUSED`.
+- **Steps to Reproduce:** Run `npm run dev:web`, open `http://localhost:4243/audio-analyzer`, then direct-navigate with cache disabled through `/distribution`, `/creative`, and `/marketing` while probing audio pipeline API candidates such as `/api/audio/analyze`, `/api/createTrack`, `/api/createDistribution`, `/api/submitDistribution`, `/api/creative/handoff`, `/api/video/handoff`, `/api/generateVideoV3`, and `/api/triggerVideoJob`.
+- **Expected:** The dev server should remain alive throughout connected-route and API validation, returning explicit route/API responses instead of disappearing mid-run.
+- **UX Impact:** The live audio pipeline cannot be reliably validated in development; route reloads and downstream handoff/API checks collapse into connection failures once Vite exits.
+- **Dimensional Data:** Dev server output ended with `Killed: 9 VITE_RENDERER_ONLY=true vite --config packages/renderer/vite.config.ts --port 4243`. Playwright evidence included `net::ERR_CONNECTION_REFUSED` for `http://localhost:4243/src/services/...` module fetches, `ws://localhost:4243/` HMR WebSocket failures, and `ECONNREFUSED ::1:4243` for `OPTIONS`, `POST`, and `GET` requests across the tested audio upload, analysis, metadata, distribution, Creative handoff, and Video handoff API candidate paths.
