@@ -1,25 +1,24 @@
 # Handoff State
-**Updated:** 2026-06-15 20:47 EDT
-**Branch:** `main`
+**Updated:** 2026-06-16 12:20 EDT
+**Branch:** `codex/branch-1`
 
 ## Recent Commits
 ```
-80cae75ef docs(flowcharts): add founder access bypass tier resolution diagram
-b8852b90e feat(membership): grant Founder tier to platform owner wiil@indii.music
-64f13802b test(ledger): log ISSUE-CI pipeline failures
-27716bc55 fix(ci): increase sharding to 8 and flatten poolOptions to resolve worker OOM
-94aa4ba5f fix(ci): restore vitest fork pool in deploy workflow
-3e5c80d59 fix(agent): restore fine-tuned registry and slice typing
-4cd017344 fix(ci): apply vitest memory limits and thread pool configuration to github actions runner
-058a326ae test(ledger): verify ISSUE-A-005
-7cbd5d916 chore(test): optimize vitest memory pool in config
-9e194f826 fix(security): import setup mocks in pii-redaction tests to ensure auth context [completes ISSUE-A-005]
+e278c3148 docs(agent): document CLI and MCP toolkit integration rules in agent instructions
+d32119bd5 fix(security): resolve VITE env secrets exposure regression (ISSUE-438)
+3b95b13f6 chore: claim ISSUE-438 in open issues ledger
+ad54f26a3 fix(e2e): remove process.env.VITE_PLAYWRIGHT_E2E (undefined in browser, causes ReferenceError)
+09534ea5b fix(mcp+subscription+memory): build MCP server, fix useSubscription auth race, silence MEM0 noise
+b6546720d fix(founder): bypass 100k token circuit breaker for wiil@indii.music
+df85fc298 fix(env): fix emulator flags, token refresh, Pro→Flash downgrade
+3f547af32 fix(security): resolve ISSUE-432 and ISSUE-433 (redact env secrets and add api-fallback JSON error handling)
+8e9035462 Record Vite dev server kill during audio route probing
+7a16962cd test(ledger): verify ISSUE-431
 ```
 
 ## Working State
 ```
-?? artifacts/mega_test_audio_loop_2026-06-15_17-20-53_browser_policy_reconfirm.md
-?? artifacts/mega_test_audio_loop_2026-06-15_audio_runtime_reconfirm.md
+clean working tree
 ```
 
 ## Decisions
