@@ -1,25 +1,24 @@
 # Handoff State
-**Updated:** 2026-06-15 20:47 EDT
-**Branch:** `main`
+**Updated:** 2026-06-16 13:42 EDT
+**Branch:** `codex/branch-1`
 
 ## Recent Commits
 ```
-80cae75ef docs(flowcharts): add founder access bypass tier resolution diagram
-b8852b90e feat(membership): grant Founder tier to platform owner wiil@indii.music
-64f13802b test(ledger): log ISSUE-CI pipeline failures
-27716bc55 fix(ci): increase sharding to 8 and flatten poolOptions to resolve worker OOM
-94aa4ba5f fix(ci): restore vitest fork pool in deploy workflow
-3e5c80d59 fix(agent): restore fine-tuned registry and slice typing
-4cd017344 fix(ci): apply vitest memory limits and thread pool configuration to github actions runner
-058a326ae test(ledger): verify ISSUE-A-005
-7cbd5d916 chore(test): optimize vitest memory pool in config
-9e194f826 fix(security): import setup mocks in pii-redaction tests to ensure auth context [completes ISSUE-A-005]
+8d2533653 fix(agent): configure VITE_EXPOSE_ whitelist and resolve cloud function API key
+4ad298c37 chore: session checkpoint [12:42]
+1632100c6 chore(docs): mark ISSUE-434, 435, 436, and 437 as FIXED in open issues ledger
+c45124de9 fix(security): sanitize API fallback and ignore watchers in Vite config
+404a11942 fix(ci): fix appcheck provider test failure and flowchart validation schema missing transition section
+dc9753894 chore: claim remaining open issues in ledger
+f3313a60b chore: session checkpoint [12:20]
+e278c3148 docs(agent): document CLI and MCP toolkit integration rules in agent instructions
+d32119bd5 fix(security): resolve VITE env secrets exposure regression (ISSUE-438)
+3b95b13f6 chore: claim ISSUE-438 in open issues ledger
 ```
 
 ## Working State
 ```
-?? artifacts/mega_test_audio_loop_2026-06-15_17-20-53_browser_policy_reconfirm.md
-?? artifacts/mega_test_audio_loop_2026-06-15_audio_runtime_reconfirm.md
+ M python/tests/fixtures/e2e_interop/ts_to_py/envelope.json
 ```
 
 ## Decisions

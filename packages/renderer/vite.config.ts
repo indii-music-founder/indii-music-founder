@@ -51,6 +51,46 @@ const envSanitizerPlugin = () => ({
     }
 });
 
+const apiFallbackPlugin = () => ({
+    name: 'api-fallback',
+    configureServer(server) {
+        server.middlewares.use((req, res, next) => {
+            const url = req.url;
+            if (url && (url === '/api' || url.startsWith('/api/') || url.startsWith('/api?'))) {
+                res.statusCode = 404;
+                res.setHeader('Content-Type', 'application/json');
+                res.end(JSON.stringify({
+                    success: false,
+                    error: {
+                        code: 'NOT_FOUND',
+                        message: `API endpoint ${url} not found on local dev server. Use Firebase emulator or local main process instead.`
+                    }
+                }));
+                return;
+            }
+            next();
+        });
+    },
+    configurePreviewServer(server) {
+        server.middlewares.use((req, res, next) => {
+            const url = req.url;
+            if (url && (url === '/api' || url.startsWith('/api/') || url.startsWith('/api?'))) {
+                res.statusCode = 404;
+                res.setHeader('Content-Type', 'application/json');
+                res.end(JSON.stringify({
+                    success: false,
+                    error: {
+                        code: 'NOT_FOUND',
+                        message: `API endpoint ${url} not found on built preview server. Use Firebase hosting API routing in production.`
+                    }
+                }));
+                return;
+            }
+            next();
+        });
+    }
+});
+
 export default defineConfig({
     root: __dirname,
     envDir: repoRoot,
@@ -70,6 +110,7 @@ export default defineConfig({
         'VITE_RAG_',
         'VITE_ADMIN_PIN',
         'VITE_WALLETCONNECT_PROJECT_ID',
+        'VITE_EXPOSE_',
     ],
     plugins: [
         react(),
@@ -82,26 +123,7 @@ export default defineConfig({
             brotliSize: true,
         }),
         envSanitizerPlugin(),
-        {
-            name: 'api-fallback',
-            configureServer(server) {
-                server.middlewares.use((req, res, next) => {
-                    if (req.url && req.url.startsWith('/api/')) {
-                        res.statusCode = 404;
-                        res.setHeader('Content-Type', 'application/json');
-                        res.end(JSON.stringify({
-                            success: false,
-                            error: {
-                                code: 'NOT_FOUND',
-                                message: `API endpoint ${req.url} not found on local dev server. Use Firebase emulator or local main process instead.`
-                            }
-                        }));
-                        return;
-                    }
-                    next();
-                });
-            }
-        }
+        apiFallbackPlugin()
     ],
     define: {
         'import.meta.env.VITE_PINATA_SECRET': '""',
@@ -126,12 +148,17 @@ export default defineConfig({
         port: 4243,
         host: 'localhost',
         strictPort: true,
-        // SPA fallback: any non-asset URL falls back to index.html. Vite already
-        // does this for the root, but explicit is safer if router routes change.
         fs: {
-            // Permit reading files outside the renderer package — the alias
-            // targets above point into the monorepo root.
             allow: [repoRoot],
+        },
+        watch: {
+            ignored: [
+                '**/node_modules/**',
+                '**/.git/**',
+                '**/.agent/**',
+                '**/dist/**',
+                '**/artifacts/**',
+            ],
         },
     },
     build: {
@@ -139,7 +166,15 @@ export default defineConfig({
         sourcemap: true,
         chunkSizeWarningLimit: 2500,
         rollupOptions: {
-            external: ['@remotion/renderer', '@remotion/cloudrun', '@remotion/cloudrun/client'],
+            external: [
+                '@remotion/renderer',
+                '@remotion/cloudrun',
+                '@remotion/cloudrun/client',
+                'fs',
+                'path',
+                'child_process',
+                'util'
+            ],
             input: {
                 index: resolve(__dirname, 'index.html'),
             },
