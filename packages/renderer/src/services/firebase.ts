@@ -96,18 +96,12 @@ try {
         experimentalForceLongPolling: true
     });
     storage = getStorage(app);
-    functions = getFunctions(app); // Default (us-central1)
-    // Legacy aliases kept for existing imports. They intentionally point to the
-    // primary us-central1 client so region drift cannot reappear through aliases.
-    functionsWest1 = functions;
 
     const isDev = env.DEV;
     const useEmulator = env.VITE_USE_FUNCTIONS_EMULATOR === 'true';
 
     if (isDev && useEmulator && typeof window !== 'undefined') {
         try {
-            connectFunctionsEmulator(functions, '127.0.0.1', 5001);
-            logger.debug('[Firebase] Connected to Functions emulator on port 5001');
             connectFirestoreEmulator(db, '127.0.0.1', 8080);
             logger.debug('[Firebase] Connected to Firestore emulator on port 8080');
             connectStorageEmulator(storage, '127.0.0.1', 9199);
@@ -237,6 +231,27 @@ const auth = new Proxy(rawAuth, {
 });
 
 export { auth };
+
+try {
+    functions = getFunctions(app); // Default (us-central1)
+    // Legacy aliases kept for existing imports. They intentionally point to the
+    // primary us-central1 client so region drift cannot reappear through aliases.
+    functionsWest1 = functions;
+
+    const isDev = env.DEV;
+    const useEmulator = env.VITE_USE_FUNCTIONS_EMULATOR === 'true';
+
+    if (isDev && useEmulator && typeof window !== 'undefined') {
+        try {
+            connectFunctionsEmulator(functions, '127.0.0.1', 5001);
+            logger.debug('[Firebase] Connected to Functions emulator on port 5001');
+        } catch (e: unknown) {
+            logger.warn('[Firebase] Functions emulator connection skipped:', e);
+        }
+    }
+} catch (e) {
+    logger.error('[Firebase] Failed to initialize Functions:', e);
+}
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let remoteConfig: any = null;

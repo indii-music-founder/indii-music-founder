@@ -20,9 +20,57 @@ import tailwindcss from '@tailwindcss/vite';
 
 const repoRoot = resolve(__dirname, '..', '..');
 
+const envSanitizerPlugin = () => ({
+    name: 'env-sanitizer',
+    configResolved(config) {
+        const secrets = [
+            'VITE_PINATA_SECRET',
+            'VITE_PINATA_JWT',
+            'VITE_DOCUSIGN_ACCESS_TOKEN',
+            'VITE_NGROK_AUTHTOKEN',
+            'VITE_PRINTFUL_API_KEY',
+            'VITE_MEM0_API_KEY',
+        ];
+        for (const key of secrets) {
+            if (key in config.env) {
+                config.env[key] = '';
+            }
+        }
+        const whitelist = new Set([
+            'VITE_FIREBASE_API_KEY',
+            'VITE_API_KEY',
+            'VITE_GOOGLE_MAPS_API_KEY',
+            'VITE_GOOGLE_MAPS_KEY',
+        ]);
+        for (const key of Object.keys(config.env)) {
+            const val = config.env[key];
+            if (typeof val === 'string' && val.includes('AIza') && !whitelist.has(key)) {
+                config.env[key] = '';
+            }
+        }
+    }
+});
+
 export default defineConfig({
     root: __dirname,
     envDir: repoRoot,
+    envPrefix: [
+        'VITE_FIREBASE_',
+        'VITE_API_KEY',
+        'VITE_GOOGLE_MAPS_',
+        'VITE_VERTEX_',
+        'VITE_FUNCTIONS_',
+        'VITE_USE_',
+        'VITE_INGESTION_',
+        'VITE_ENABLE_',
+        'VITE_SHOW_',
+        'VITE_SKIP_',
+        'VITE_A0_',
+        'VITE_APP_',
+        'VITE_RAG_',
+        'VITE_ADMIN_PIN',
+        'VITE_WALLETCONNECT_PROJECT_ID',
+    ],
     plugins: [
         react(),
         tailwindcss(),
@@ -33,7 +81,36 @@ export default defineConfig({
             gzipSize: true,
             brotliSize: true,
         }),
+        envSanitizerPlugin(),
+        {
+            name: 'api-fallback',
+            configureServer(server) {
+                server.middlewares.use((req, res, next) => {
+                    if (req.url && req.url.startsWith('/api/')) {
+                        res.statusCode = 404;
+                        res.setHeader('Content-Type', 'application/json');
+                        res.end(JSON.stringify({
+                            success: false,
+                            error: {
+                                code: 'NOT_FOUND',
+                                message: `API endpoint ${req.url} not found on local dev server. Use Firebase emulator or local main process instead.`
+                            }
+                        }));
+                        return;
+                    }
+                    next();
+                });
+            }
+        }
     ],
+    define: {
+        'import.meta.env.VITE_PINATA_SECRET': '""',
+        'import.meta.env.VITE_PINATA_JWT': '""',
+        'import.meta.env.VITE_DOCUSIGN_ACCESS_TOKEN': '""',
+        'import.meta.env.VITE_NGROK_AUTHTOKEN': '""',
+        'import.meta.env.VITE_PRINTFUL_API_KEY': '""',
+        'import.meta.env.VITE_MEM0_API_KEY': '""',
+    },
     resolve: {
         alias: {
             '@': resolve(__dirname, 'src'),

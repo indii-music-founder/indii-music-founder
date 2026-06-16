@@ -27,13 +27,14 @@ import { logger } from '@/utils/logger';
  * Update it whenever new preview models are added or old ones stabilize.
  */
 const DEVELOPER_API_MODEL_MAP: Record<string, string> = {
-    // Gemini 3 preview → Developer API stable equivalents
-    'gemini-3.1-pro-preview': 'gemini-3-flash-preview', // Quota bypass: map Pro preview to Flash preview on Free Tier
+    // Gemini 3 models — pass through as-is when already valid for the endpoint
     'gemini-3-flash-preview': 'gemini-3-flash-preview',
-    'gemini-3-pro-image-preview': 'gemini-3-flash-preview',
-    'gemini-3.1-flash-image-preview': 'gemini-3-flash-preview',
-    // Gemini 3.1 Flash-Lite (GA) → closest Developer API equivalent
-    'gemini-3.1-flash-lite': 'gemini-3-flash-preview',
+    'gemini-3.1-pro-preview': 'gemini-3.1-pro-preview',   // Vertex endpoint supports this natively
+    'gemini-3.1-flash-lite': 'gemini-3.1-flash-lite',     // Vertex endpoint supports this natively
+    'gemini-3-pro-image-preview': 'gemini-3-pro-image-preview',
+    'gemini-3.1-flash-image-preview': 'gemini-3.1-flash-image-preview',
+    // NOTE: Do NOT silently downgrade Pro→Flash. If a model is unavailable, throw so
+    // the circuit breaker can route to Vertex instead of degrading quality invisibly.
 };
 
 /**

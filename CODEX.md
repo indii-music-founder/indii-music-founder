@@ -543,6 +543,11 @@ Ignorance of a skill's purpose or absence from `WIIL-skill.md` is NOT grounds fo
 1. **Isolated Caches:** If you MUST run `npm install` (e.g., to fix `ERESOLVE` or missing types), you MUST append an isolated, randomized cache directory: `npm install --cache ./.npm-cache-isolated-$$`
 2. **Never Wipe Concurrently:** Never run `rm -rf node_modules` without checking if another agent or process is actively building the workspace. If you wipe it while another agent is compiling, you will break their build.
 
+### 10. SWARM CLI & MCP TOOLKIT INTEGRATION (MANDATORY)
+
+> [!IMPORTANT]
+> All agents in the swarm (including JULES, CODEX, Claude, Gemini, etc.) MUST actively utilize and coordinate via the native `firebase` CLI and the Google Cloud `gcloud` CLI for environment verification, function status checks, IAM policies, and logs. Additionally, all agents must remain aware of the active MCP tools (e.g., `firebase-mcp-server`, `cloudrun`, `sentry`, `genkit-mcp-server`) and call them to inspect/verify infrastructure rather than writing ad-hoc scripts.
+
 ## Key Files Quick Reference
 
 | File | Purpose |
