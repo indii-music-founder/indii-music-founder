@@ -34,6 +34,22 @@ export class SubscriptionService {
   private inFlightUsage: Map<string, Promise<UsageStats>> = new Map();
   private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
+  private async assertCurrentAuthUser(userId: string): Promise<void> {
+    const currentUser = auth.currentUser;
+
+    if (!currentUser) {
+      throw new Error('Firebase Auth session is not ready for subscription lookup.');
+    }
+
+    if (currentUser.uid !== userId) {
+      throw new Error('Subscription lookup user mismatch.');
+    }
+
+    if (typeof currentUser.getIdToken === 'function') {
+      await currentUser.getIdToken();
+    }
+  }
+
   private formatQuotaCheckError(error: unknown): string {
     const message = error instanceof Error ? error.message : String(error);
     const code = error && typeof error === 'object' && 'code' in error
@@ -88,6 +104,8 @@ export class SubscriptionService {
       };
     }
 
+    await this.assertCurrentAuthUser(userId);
+
     // Check cache
     if (!forceRefresh && this.subscriptionCache.has(userId)) {
       const cached = this.subscriptionCache.get(userId)!;
@@ -116,6 +134,10 @@ export class SubscriptionService {
 
       for (let attempt = 1; attempt <= maxRetries; attempt++) {
         try {
+          // Force a fresh ID token before calling the Cloud Function — prevents
+          // stale/unset token causing FirebaseError: unauthenticated on the server.
+          await this.assertCurrentAuthUser(userId);
+
           const getSubscriptionFn = httpsCallable(functions, 'getSubscription');
 
           const result = await getSubscriptionFn({ userId });
@@ -211,6 +233,8 @@ export class SubscriptionService {
         isFallback: true
       };
     }
+
+    await this.assertCurrentAuthUser(userId);
 
     // Check cache
     if (!forceRefresh && this.usageCache.has(userId)) {
