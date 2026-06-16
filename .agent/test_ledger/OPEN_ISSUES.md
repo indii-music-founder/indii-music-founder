@@ -5948,7 +5948,7 @@ Therefore, no fix can be proposed or implemented.
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
 
 ### ISSUE-431: Audio Analyzer blocked by unresolved conflict marker
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Dimension:** ProdParity | Console | DataFlow
 - **Target:** Audio Analyzer (tool)
@@ -5961,6 +5961,8 @@ Therefore, no fix can be proposed or implemented.
 - **Expected:** Audio Analyzer route should render the upload/drag surface and production build should complete so preview parity can be tested.
 - **UX Impact:** Audio Analyzer and connected handoff routes cannot be exercised in the live app; users see a fatal Vite overlay instead of the module.
 - **Dimensional Data:** Dev server transform error: `[plugin:vite:esbuild] Transform failed ... fine-tuned-models.ts:80:0: ERROR: Unexpected "<<"`; build error matches; screenshot captured at `artifacts/mega_audio_analyzer_2026-06-16_screenshots/audio-analyzer.png`.
+- **Fix:** Removed the `<<<<<<< ours` and `>>>>>>> theirs` markers from `packages/renderer/src/services/agent/fine-tuned-models.ts`, keeping the correct unified function implementation and removing the duplicated registry section.
+- **Evidence:** `packages/renderer/src/services/agent/fine-tuned-models.ts:77-96` is clean and passes typecheck.
 
 ### ISSUE-432: Audio pipeline API routes do not resolve through local Vite
 - **Status:** OPEN
