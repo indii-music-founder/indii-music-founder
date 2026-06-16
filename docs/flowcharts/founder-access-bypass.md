@@ -75,3 +75,11 @@ flowchart LR
 - `packages/renderer/src/services/MembershipService.ts` — Core bypass logic
 - `packages/renderer/src/core/store/slices/profileSlice.ts` — Auto-grant on load
 - `packages/renderer/src/types/User.ts` — Type union update
+
+## Transition Breakdown
+
+1. **Authentication State Init**: The flow begins when the user logs in. `profileSlice.loadUserProfile` fetches the user's profile.
+2. **Founder Check**: If the profile email matches `wiil@indii.music` (configured in `FOUNDER_EMAILS`), the Zustand store updates the user's membership tier directly to `'founder'`.
+3. **Current Tier Query**: When features query the active plan via `MembershipService.getCurrentTier()`, it performs a double-check against both raw Firebase Auth and the loaded store profile. If either contains `wiil@indii.music`, `'founder'` is resolved.
+4. **Bypass Checks**: In budget and quota validation layers (`checkBudget()` and `checkQuota()`), if `isBuilderAccount()` returns `true` (triggered by the founder email or god_mode claims), checks return `allowed: true` with limits set to `Infinity`, bypassing all standard tier caps.
+
