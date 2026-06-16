@@ -110,6 +110,7 @@ export default defineConfig({
         'VITE_RAG_',
         'VITE_ADMIN_PIN',
         'VITE_WALLETCONNECT_PROJECT_ID',
+        'VITE_EXPOSE_',
     ],
     plugins: [
         react(),
