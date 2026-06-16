@@ -6060,7 +6060,7 @@ Therefore, no fix can be proposed or implemented.
 - **Dimensional Data:** Representative dev evidence: `OPTIONS http://localhost:4242/api/analyzeAudio -> 204` with `Access-Control-Allow-Methods: GET,HEAD,PUT,PATCH,POST,DELETE`; `POST -> 404` empty body; `GET -> 200 text/html` SPA shell. Built preview on `127.0.0.1:4254` showed the same POST 404 / GET HTML pattern. Evidence captured in `artifacts/mega_audio_analyzer_2026-06-16T1530_live_api_evidence.json` and `artifacts/mega_audio_analyzer_2026-06-16T1530_preview_api_evidence.json`.
 
 ### ISSUE-438: Secret-shaped VITE env exposure regression remains in dev modules
-- **Status:** OPEN
+- **Status:** 🟡 IN PROGRESS (Agent B)
 - **Severity:** 🔴 HIGH
 - **Dimension:** Security | ProdParity
 - **Target:** Audio Analyzer (tool)
