@@ -7,8 +7,10 @@ import type { Subscription, UsageStats, SubscriptionTier } from '@/services/subs
 import { logger } from '@/utils/logger';
 
 export function useSubscription() {
-    const { userProfile } = useStore(useShallow(state => ({
-        userProfile: state.userProfile
+    const { userProfile, user, authLoading } = useStore(useShallow(state => ({
+        userProfile: state.userProfile,
+        user: state.user,
+        authLoading: state.authLoading
     })));
     const [subscription, setSubscription] = useState<Subscription | null>(null);
     const [usage, setUsage] = useState<UsageStats | null>(null);
@@ -26,15 +28,34 @@ export function useSubscription() {
     }, []);
 
     const fetchSubscriptionData = useCallback(async (forceRefresh = false) => {
-        if (!userProfile?.id || userProfile.id === 'pending') return;
+        if (authLoading) {
+            setLoading(true);
+            return;
+        }
+
+        if (!user?.uid) {
+            setSubscription(null);
+            setUsage(null);
+            setLoading(false);
+            setError(null);
+            return;
+        }
+
+        const billingUserId = user.uid;
+        if (userProfile?.id && userProfile.id !== 'pending' && userProfile.id !== billingUserId) {
+            logger.warn('[useSubscription] Ignoring stale userProfile id for billing lookup.', {
+                profileId: userProfile.id,
+                authUid: billingUserId
+            });
+        }
 
         setLoading(true);
         setError(null);
 
         try {
             const [subData, usageData] = await Promise.all([
-                subscriptionService.getSubscription(userProfile.id, forceRefresh),
-                subscriptionService.getUsageStats(userProfile.id, forceRefresh)
+                subscriptionService.getSubscription(billingUserId, forceRefresh),
+                subscriptionService.getUsageStats(billingUserId, forceRefresh)
             ]);
 
             if (!isMounted.current) return;
@@ -64,7 +85,7 @@ export function useSubscription() {
                 setLoading(false);
             }
         }
-    }, [userProfile?.id, toast]);
+    }, [authLoading, user?.uid, userProfile?.id, toast]);
 
     useEffect(() => {
         fetchSubscriptionData();

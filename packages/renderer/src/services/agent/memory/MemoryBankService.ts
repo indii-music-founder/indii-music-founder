@@ -19,9 +19,6 @@ class MemoryBankService {
 
     constructor() {
         this.apiKey = import.meta.env.VITE_MEM0_API_KEY || import.meta.env.MEM0_API_KEY || '';
-        if (!this.apiKey) {
-            logger.warn('[MemoryBank] MEM0_API_KEY is not set in environment.');
-        }
     }
 
     private get headers() {
