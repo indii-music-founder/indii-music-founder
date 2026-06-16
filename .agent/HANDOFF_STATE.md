@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-16 14:00 EDT
+**Updated:** 2026-06-16 14:32 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+cffc79f58 chore: session checkpoint [14:00]
 992ae6065 test(ledger): verify ISSUE-432 to ISSUE-438
 1cbbc789c chore: session checkpoint [13:47]
 6503cadfb chore: session checkpoint [13:46]
@@ -13,12 +14,13 @@ e56431dd7 fix(security): whitelist VITE_EXPOSE_ prefix and lazy-load DefaultAgen
 8d2533653 fix(agent): configure VITE_EXPOSE_ whitelist and resolve cloud function API key
 4ad298c37 chore: session checkpoint [12:42]
 1632100c6 chore(docs): mark ISSUE-434, 435, 436, and 437 as FIXED in open issues ledger
-c45124de9 fix(security): sanitize API fallback and ignore watchers in Vite config
 ```
 
 ## Working State
 ```
+ M .env.example
  M python/tests/fixtures/e2e_interop/ts_to_py/envelope.json
+?? client_secret_148015878263-pfcoueoik0p1cn744vdn2m1u1gjl119m.apps.googleusercontent.com.json
 ```
 
 ## Decisions
