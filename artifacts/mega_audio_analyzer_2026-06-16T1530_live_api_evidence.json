@@ -1,0 +1,5858 @@
+{
+  "startedAt": "2026-06-16T15:30:33.697Z",
+  "fixture": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/assets/audio/soul_test.wav",
+  "ports": [
+    {
+      "base": "http://localhost:4242",
+      "root": {
+        "url": "http://localhost:4242/",
+        "method": "GET",
+        "status": 200,
+        "ok": true,
+        "timingMs": 355,
+        "contentType": "text/html",
+        "cors": {
+          "allowOrigin": "",
+          "allowMethods": "",
+          "allowHeaders": ""
+        },
+        "bodySummary": "<!doctype html> <html lang=\"en\"> <head> <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\"; injectIntoGlobalHook(window); window.$RefreshReg$ = () => {}; window.$RefreshSig$ = () => (type) => type;</script> <script type=\"module\" src=\"/@vite/client\"></scr"
+      },
+      "audio": {
+        "url": "http://localhost:4242/audio-analyzer",
+        "method": "GET",
+        "status": 200,
+        "ok": true,
+        "timingMs": 7,
+        "contentType": "text/html",
+        "cors": {
+          "allowOrigin": "",
+          "allowMethods": "",
+          "allowHeaders": ""
+        },
+        "bodySummary": "<!doctype html> <html lang=\"en\"> <head> <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\"; injectIntoGlobalHook(window); window.$RefreshReg$ = () => {}; window.$RefreshSig$ = () => (type) => type;</script> <script type=\"module\" src=\"/@vite/client\"></scr"
+      }
+    },
+    {
+      "base": "http://localhost:4243",
+      "root": {
+        "url": "http://localhost:4243/",
+        "method": "GET",
+        "status": 200,
+        "ok": true,
+        "timingMs": 23,
+        "contentType": "text/html",
+        "cors": {
+          "allowOrigin": "",
+          "allowMethods": "",
+          "allowHeaders": ""
+        },
+        "bodySummary": "<!doctype html> <html lang=\"en\"> <head> <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\"; injectIntoGlobalHook(window); window.$RefreshReg$ = () => {}; window.$RefreshSig$ = () => (type) => type;</script> <script type=\"module\" src=\"/@vite/client\"></scr"
+      },
+      "audio": {
+        "url": "http://localhost:4243/audio-analyzer",
+        "method": "GET",
+        "status": 200,
+        "ok": true,
+        "timingMs": 14,
+        "contentType": "text/html",
+        "cors": {
+          "allowOrigin": "",
+          "allowMethods": "",
+          "allowHeaders": ""
+        },
+        "bodySummary": "<!doctype html> <html lang=\"en\"> <head> <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\"; injectIntoGlobalHook(window); window.$RefreshReg$ = () => {}; window.$RefreshSig$ = () => (type) => type;</script> <script type=\"module\" src=\"/@vite/client\"></scr"
+      }
+    }
+  ],
+  "ui": [
+    {
+      "route": "/audio-analyzer",
+      "url": "http://localhost:4242/audio-analyzer",
+      "status": "loaded",
+      "timingMs": 8842,
+      "title": "indii.music",
+      "visibleText": "indii.music\n\nFOUNDERS RELEASE • V1.0\n\nSign In\nCreate Account\nEMAIL ADDRESS\nPASSWORD\nSign In\nForgot Password?\nPRIVACY POLICY • TERMS OF SERVICE • © 2026 NEW DETROIT MUSIC LLC",
+      "errorsBefore": 0,
+      "screenshot": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/artifacts/mega_audio_analyzer_2026-06-16_screenshots/audio_analyzer_4242.png"
+    },
+    {
+      "route": "/distribution",
+      "url": "http://localhost:4242/distribution",
+      "status": "loaded",
+      "timingMs": 2866,
+      "title": "indii.music",
+      "visibleText": "indii.music\n\nFOUNDERS RELEASE • V1.0\n\nSign In\nCreate Account\nEMAIL ADDRESS\nPASSWORD\nSign In\nForgot Password?\nPRIVACY POLICY • TERMS OF SERVICE • © 2026 NEW DETROIT MUSIC LLC",
+      "errorsBefore": 59,
+      "screenshot": ""
+    },
+    {
+      "route": "/creative",
+      "url": "http://localhost:4242/creative",
+      "status": "loaded",
+      "timingMs": 1827,
+      "title": "indii.music",
+      "visibleText": "indii.music\n\nFOUNDERS RELEASE • V1.0\n\nSign In\nCreate Account\nEMAIL ADDRESS\nPASSWORD\nSign In\nForgot Password?\nPRIVACY POLICY • TERMS OF SERVICE • © 2026 NEW DETROIT MUSIC LLC",
+      "errorsBefore": 115,
+      "screenshot": ""
+    },
+    {
+      "route": "/marketing",
+      "url": "http://localhost:4242/marketing",
+      "status": "loaded",
+      "timingMs": 2159,
+      "title": "indii.music",
+      "visibleText": "indii.music\n\nFOUNDERS RELEASE • V1.0\n\nSign In\nCreate Account\nEMAIL ADDRESS\nPASSWORD\nSign In\nForgot Password?\nPRIVACY POLICY • TERMS OF SERVICE • © 2026 NEW DETROIT MUSIC LLC",
+      "errorsBefore": 171,
+      "screenshot": ""
+    },
+    {
+      "route": "/publishing",
+      "url": "http://localhost:4242/publishing",
+      "status": "loaded",
+      "timingMs": 1711,
+      "title": "indii.music",
+      "visibleText": "indii.music\n\nFOUNDERS RELEASE • V1.0\n\nSign In\nCreate Account\nEMAIL ADDRESS\nPASSWORD\nSign In\nForgot Password?\nPRIVACY POLICY • TERMS OF SERVICE • © 2026 NEW DETROIT MUSIC LLC",
+      "errorsBefore": 227,
+      "screenshot": ""
+    },
+    {
+      "route": "/legal",
+      "url": "http://localhost:4242/legal",
+      "status": "loaded",
+      "timingMs": 4576,
+      "title": "indii.music",
+      "visibleText": "indii.music\n\nFOUNDERS RELEASE • V1.0\n\nSign In\nCreate Account\nEMAIL ADDRESS\nPASSWORD\nSign In\nForgot Password?\nPRIVACY POLICY • TERMS OF SERVICE • © 2026 NEW DETROIT MUSIC LLC",
+      "errorsBefore": 283,
+      "screenshot": ""
+    },
+    {
+      "route": "/audio-analyzer reload",
+      "url": "http://localhost:4242/audio-analyzer",
+      "status": "loaded",
+      "visibleText": "indii.music\n\nFOUNDERS RELEASE • V1.0\n\nSign In\nCreate Account\nEMAIL ADDRESS\nPASSWORD\nSign In\nForgot Password?\nPRIVACY POLICY • TERMS OF SERVICE • © 2026 NEW DETROIT MUSIC LLC"
+    },
+    {
+      "route": "/audio-analyzer upload",
+      "fixture": "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/assets/audio/soul_test.wav",
+      "inputs": 0,
+      "status": "not-run"
+    }
+  ],
+  "api": [
+    {
+      "url": "http://localhost:4242/api/analyzeAudio",
+      "method": "OPTIONS",
+      "status": 204,
+      "ok": true,
+      "timingMs": 318,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "GET,HEAD,PUT,PATCH,POST,DELETE",
+        "allowHeaders": "content-type,authorization,x-firebase-appcheck"
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4242/api/analyzeAudio",
+      "method": "POST",
+      "status": 404,
+      "ok": false,
+      "timingMs": 12,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4242/api/analyzeAudio",
+      "method": "GET",
+      "status": 200,
+      "ok": true,
+      "timingMs": 16,
+      "contentType": "text/html",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": "<!doctype html> <html lang=\"en\"> <head> <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\"; injectIntoGlobalHook(window); window.$RefreshReg$ = () => {}; window.$RefreshSig$ = () => (type) => type;</script> <script type=\"module\" src=\"/@vite/client\"></scr"
+    },
+    {
+      "url": "http://localhost:4242/api/audio/analyze",
+      "method": "OPTIONS",
+      "status": 204,
+      "ok": true,
+      "timingMs": 3,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "GET,HEAD,PUT,PATCH,POST,DELETE",
+        "allowHeaders": "content-type,authorization,x-firebase-appcheck"
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4242/api/audio/analyze",
+      "method": "POST",
+      "status": 404,
+      "ok": false,
+      "timingMs": 6,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4242/api/audio/analyze",
+      "method": "GET",
+      "status": 200,
+      "ok": true,
+      "timingMs": 10,
+      "contentType": "text/html",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": "<!doctype html> <html lang=\"en\"> <head> <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\"; injectIntoGlobalHook(window); window.$RefreshReg$ = () => {}; window.$RefreshSig$ = () => (type) => type;</script> <script type=\"module\" src=\"/@vite/client\"></scr"
+    },
+    {
+      "url": "http://localhost:4242/api/generateAudioV3",
+      "method": "OPTIONS",
+      "status": 204,
+      "ok": true,
+      "timingMs": 3,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "GET,HEAD,PUT,PATCH,POST,DELETE",
+        "allowHeaders": "content-type,authorization,x-firebase-appcheck"
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4242/api/generateAudioV3",
+      "method": "POST",
+      "status": 404,
+      "ok": false,
+      "timingMs": 8,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4242/api/generateAudioV3",
+      "method": "GET",
+      "status": 200,
+      "ok": true,
+      "timingMs": 42,
+      "contentType": "text/html",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": "<!doctype html> <html lang=\"en\"> <head> <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\"; injectIntoGlobalHook(window); window.$RefreshReg$ = () => {}; window.$RefreshSig$ = () => (type) => type;</script> <script type=\"module\" src=\"/@vite/client\"></scr"
+    },
+    {
+      "url": "http://localhost:4242/api/createTrack",
+      "method": "OPTIONS",
+      "status": 204,
+      "ok": true,
+      "timingMs": 4,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "GET,HEAD,PUT,PATCH,POST,DELETE",
+        "allowHeaders": "content-type,authorization,x-firebase-appcheck"
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4242/api/createTrack",
+      "method": "POST",
+      "status": 404,
+      "ok": false,
+      "timingMs": 7,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4242/api/createTrack",
+      "method": "GET",
+      "status": 200,
+      "ok": true,
+      "timingMs": 9,
+      "contentType": "text/html",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": "<!doctype html> <html lang=\"en\"> <head> <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\"; injectIntoGlobalHook(window); window.$RefreshReg$ = () => {}; window.$RefreshSig$ = () => (type) => type;</script> <script type=\"module\" src=\"/@vite/client\"></scr"
+    },
+    {
+      "url": "http://localhost:4242/api/tracks",
+      "method": "OPTIONS",
+      "status": 204,
+      "ok": true,
+      "timingMs": 18,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "GET,HEAD,PUT,PATCH,POST,DELETE",
+        "allowHeaders": "content-type,authorization,x-firebase-appcheck"
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4242/api/tracks",
+      "method": "POST",
+      "status": 404,
+      "ok": false,
+      "timingMs": 4,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4242/api/tracks",
+      "method": "GET",
+      "status": 200,
+      "ok": true,
+      "timingMs": 13,
+      "contentType": "text/html",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": "<!doctype html> <html lang=\"en\"> <head> <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\"; injectIntoGlobalHook(window); window.$RefreshReg$ = () => {}; window.$RefreshSig$ = () => (type) => type;</script> <script type=\"module\" src=\"/@vite/client\"></scr"
+    },
+    {
+      "url": "http://localhost:4242/api/listTracks",
+      "method": "OPTIONS",
+      "status": 204,
+      "ok": true,
+      "timingMs": 6,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "GET,HEAD,PUT,PATCH,POST,DELETE",
+        "allowHeaders": "content-type,authorization,x-firebase-appcheck"
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4242/api/listTracks",
+      "method": "POST",
+      "status": 404,
+      "ok": false,
+      "timingMs": 8,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4242/api/listTracks",
+      "method": "GET",
+      "status": 200,
+      "ok": true,
+      "timingMs": 13,
+      "contentType": "text/html",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": "<!doctype html> <html lang=\"en\"> <head> <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\"; injectIntoGlobalHook(window); window.$RefreshReg$ = () => {}; window.$RefreshSig$ = () => (type) => type;</script> <script type=\"module\" src=\"/@vite/client\"></scr"
+    },
+    {
+      "url": "http://localhost:4242/api/createDistribution",
+      "method": "OPTIONS",
+      "status": 204,
+      "ok": true,
+      "timingMs": 7,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "GET,HEAD,PUT,PATCH,POST,DELETE",
+        "allowHeaders": "content-type,authorization,x-firebase-appcheck"
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4242/api/createDistribution",
+      "method": "POST",
+      "status": 404,
+      "ok": false,
+      "timingMs": 4,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4242/api/createDistribution",
+      "method": "GET",
+      "status": 200,
+      "ok": true,
+      "timingMs": 10,
+      "contentType": "text/html",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": "<!doctype html> <html lang=\"en\"> <head> <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\"; injectIntoGlobalHook(window); window.$RefreshReg$ = () => {}; window.$RefreshSig$ = () => (type) => type;</script> <script type=\"module\" src=\"/@vite/client\"></scr"
+    },
+    {
+      "url": "http://localhost:4242/api/submitDistribution",
+      "method": "OPTIONS",
+      "status": 204,
+      "ok": true,
+      "timingMs": 16,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "GET,HEAD,PUT,PATCH,POST,DELETE",
+        "allowHeaders": "content-type,authorization,x-firebase-appcheck"
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4242/api/submitDistribution",
+      "method": "POST",
+      "status": 404,
+      "ok": false,
+      "timingMs": 7,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4242/api/submitDistribution",
+      "method": "GET",
+      "status": 200,
+      "ok": true,
+      "timingMs": 10,
+      "contentType": "text/html",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": "<!doctype html> <html lang=\"en\"> <head> <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\"; injectIntoGlobalHook(window); window.$RefreshReg$ = () => {}; window.$RefreshSig$ = () => (type) => type;</script> <script type=\"module\" src=\"/@vite/client\"></scr"
+    },
+    {
+      "url": "http://localhost:4242/api/recordDistributionIdentifier",
+      "method": "OPTIONS",
+      "status": 204,
+      "ok": true,
+      "timingMs": 4,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "GET,HEAD,PUT,PATCH,POST,DELETE",
+        "allowHeaders": "content-type,authorization,x-firebase-appcheck"
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4242/api/recordDistributionIdentifier",
+      "method": "POST",
+      "status": 404,
+      "ok": false,
+      "timingMs": 5,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4242/api/recordDistributionIdentifier",
+      "method": "GET",
+      "status": 200,
+      "ok": true,
+      "timingMs": 10,
+      "contentType": "text/html",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": "<!doctype html> <html lang=\"en\"> <head> <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\"; injectIntoGlobalHook(window); window.$RefreshReg$ = () => {}; window.$RefreshSig$ = () => (type) => type;</script> <script type=\"module\" src=\"/@vite/client\"></scr"
+    },
+    {
+      "url": "http://localhost:4242/api/assignDistributionIdentifier",
+      "method": "OPTIONS",
+      "status": 204,
+      "ok": true,
+      "timingMs": 3,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "GET,HEAD,PUT,PATCH,POST,DELETE",
+        "allowHeaders": "content-type,authorization,x-firebase-appcheck"
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4242/api/assignDistributionIdentifier",
+      "method": "POST",
+      "status": 404,
+      "ok": false,
+      "timingMs": 3,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4242/api/assignDistributionIdentifier",
+      "method": "GET",
+      "status": 200,
+      "ok": true,
+      "timingMs": 12,
+      "contentType": "text/html",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": "<!doctype html> <html lang=\"en\"> <head> <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\"; injectIntoGlobalHook(window); window.$RefreshReg$ = () => {}; window.$RefreshSig$ = () => (type) => type;</script> <script type=\"module\" src=\"/@vite/client\"></scr"
+    },
+    {
+      "url": "http://localhost:4242/api/creative/handoff",
+      "method": "OPTIONS",
+      "status": 204,
+      "ok": true,
+      "timingMs": 2,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "GET,HEAD,PUT,PATCH,POST,DELETE",
+        "allowHeaders": "content-type,authorization,x-firebase-appcheck"
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4242/api/creative/handoff",
+      "method": "POST",
+      "status": 404,
+      "ok": false,
+      "timingMs": 2,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4242/api/creative/handoff",
+      "method": "GET",
+      "status": 200,
+      "ok": true,
+      "timingMs": 6,
+      "contentType": "text/html",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": "<!doctype html> <html lang=\"en\"> <head> <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\"; injectIntoGlobalHook(window); window.$RefreshReg$ = () => {}; window.$RefreshSig$ = () => (type) => type;</script> <script type=\"module\" src=\"/@vite/client\"></scr"
+    },
+    {
+      "url": "http://localhost:4242/api/video/handoff",
+      "method": "OPTIONS",
+      "status": 204,
+      "ok": true,
+      "timingMs": 3,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "GET,HEAD,PUT,PATCH,POST,DELETE",
+        "allowHeaders": "content-type,authorization,x-firebase-appcheck"
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4242/api/video/handoff",
+      "method": "POST",
+      "status": 404,
+      "ok": false,
+      "timingMs": 5,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4242/api/video/handoff",
+      "method": "GET",
+      "status": 200,
+      "ok": true,
+      "timingMs": 9,
+      "contentType": "text/html",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": "<!doctype html> <html lang=\"en\"> <head> <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\"; injectIntoGlobalHook(window); window.$RefreshReg$ = () => {}; window.$RefreshSig$ = () => (type) => type;</script> <script type=\"module\" src=\"/@vite/client\"></scr"
+    },
+    {
+      "url": "http://localhost:4242/api/generateVideoV3",
+      "method": "OPTIONS",
+      "status": 204,
+      "ok": true,
+      "timingMs": 3,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "GET,HEAD,PUT,PATCH,POST,DELETE",
+        "allowHeaders": "content-type,authorization,x-firebase-appcheck"
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4242/api/generateVideoV3",
+      "method": "POST",
+      "status": 404,
+      "ok": false,
+      "timingMs": 3,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4242/api/generateVideoV3",
+      "method": "GET",
+      "status": 200,
+      "ok": true,
+      "timingMs": 15,
+      "contentType": "text/html",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": "<!doctype html> <html lang=\"en\"> <head> <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\"; injectIntoGlobalHook(window); window.$RefreshReg$ = () => {}; window.$RefreshSig$ = () => (type) => type;</script> <script type=\"module\" src=\"/@vite/client\"></scr"
+    },
+    {
+      "url": "http://localhost:4242/api/triggerVideoJob",
+      "method": "OPTIONS",
+      "status": 204,
+      "ok": true,
+      "timingMs": 3,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "GET,HEAD,PUT,PATCH,POST,DELETE",
+        "allowHeaders": "content-type,authorization,x-firebase-appcheck"
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4242/api/triggerVideoJob",
+      "method": "POST",
+      "status": 404,
+      "ok": false,
+      "timingMs": 5,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4242/api/triggerVideoJob",
+      "method": "GET",
+      "status": 200,
+      "ok": true,
+      "timingMs": 5,
+      "contentType": "text/html",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": "<!doctype html> <html lang=\"en\"> <head> <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\"; injectIntoGlobalHook(window); window.$RefreshReg$ = () => {}; window.$RefreshSig$ = () => (type) => type;</script> <script type=\"module\" src=\"/@vite/client\"></scr"
+    },
+    {
+      "url": "http://localhost:4242/analyzeAudio",
+      "method": "OPTIONS",
+      "status": 204,
+      "ok": true,
+      "timingMs": 9,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "GET,HEAD,PUT,PATCH,POST,DELETE",
+        "allowHeaders": "content-type,authorization,x-firebase-appcheck"
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4242/analyzeAudio",
+      "method": "POST",
+      "status": 404,
+      "ok": false,
+      "timingMs": 16,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4242/analyzeAudio",
+      "method": "GET",
+      "status": 200,
+      "ok": true,
+      "timingMs": 12,
+      "contentType": "text/html",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": "<!doctype html> <html lang=\"en\"> <head> <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\"; injectIntoGlobalHook(window); window.$RefreshReg$ = () => {}; window.$RefreshSig$ = () => (type) => type;</script> <script type=\"module\" src=\"/@vite/client\"></scr"
+    },
+    {
+      "url": "http://localhost:4242/createTrack",
+      "method": "OPTIONS",
+      "status": 204,
+      "ok": true,
+      "timingMs": 4,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "GET,HEAD,PUT,PATCH,POST,DELETE",
+        "allowHeaders": "content-type,authorization,x-firebase-appcheck"
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4242/createTrack",
+      "method": "POST",
+      "status": 404,
+      "ok": false,
+      "timingMs": 4,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4242/createTrack",
+      "method": "GET",
+      "status": 200,
+      "ok": true,
+      "timingMs": 5,
+      "contentType": "text/html",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": "<!doctype html> <html lang=\"en\"> <head> <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\"; injectIntoGlobalHook(window); window.$RefreshReg$ = () => {}; window.$RefreshSig$ = () => (type) => type;</script> <script type=\"module\" src=\"/@vite/client\"></scr"
+    },
+    {
+      "url": "http://localhost:4242/createDistribution",
+      "method": "OPTIONS",
+      "status": 204,
+      "ok": true,
+      "timingMs": 4,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "GET,HEAD,PUT,PATCH,POST,DELETE",
+        "allowHeaders": "content-type,authorization,x-firebase-appcheck"
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4242/createDistribution",
+      "method": "POST",
+      "status": 404,
+      "ok": false,
+      "timingMs": 10,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4242/createDistribution",
+      "method": "GET",
+      "status": 200,
+      "ok": true,
+      "timingMs": 9,
+      "contentType": "text/html",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": "<!doctype html> <html lang=\"en\"> <head> <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\"; injectIntoGlobalHook(window); window.$RefreshReg$ = () => {}; window.$RefreshSig$ = () => (type) => type;</script> <script type=\"module\" src=\"/@vite/client\"></scr"
+    },
+    {
+      "url": "http://localhost:4242/submitDistribution",
+      "method": "OPTIONS",
+      "status": 204,
+      "ok": true,
+      "timingMs": 8,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "GET,HEAD,PUT,PATCH,POST,DELETE",
+        "allowHeaders": "content-type,authorization,x-firebase-appcheck"
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4242/submitDistribution",
+      "method": "POST",
+      "status": 404,
+      "ok": false,
+      "timingMs": 5,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4242/submitDistribution",
+      "method": "GET",
+      "status": 200,
+      "ok": true,
+      "timingMs": 5,
+      "contentType": "text/html",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": "<!doctype html> <html lang=\"en\"> <head> <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\"; injectIntoGlobalHook(window); window.$RefreshReg$ = () => {}; window.$RefreshSig$ = () => (type) => type;</script> <script type=\"module\" src=\"/@vite/client\"></scr"
+    },
+    {
+      "url": "http://localhost:4242/generateVideoV3",
+      "method": "OPTIONS",
+      "status": 204,
+      "ok": true,
+      "timingMs": 7,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "GET,HEAD,PUT,PATCH,POST,DELETE",
+        "allowHeaders": "content-type,authorization,x-firebase-appcheck"
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4242/generateVideoV3",
+      "method": "POST",
+      "status": 404,
+      "ok": false,
+      "timingMs": 4,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4242/generateVideoV3",
+      "method": "GET",
+      "status": 200,
+      "ok": true,
+      "timingMs": 4,
+      "contentType": "text/html",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": "<!doctype html> <html lang=\"en\"> <head> <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\"; injectIntoGlobalHook(window); window.$RefreshReg$ = () => {}; window.$RefreshSig$ = () => (type) => type;</script> <script type=\"module\" src=\"/@vite/client\"></scr"
+    },
+    {
+      "url": "http://localhost:4242/triggerVideoJob",
+      "method": "OPTIONS",
+      "status": 204,
+      "ok": true,
+      "timingMs": 3,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "GET,HEAD,PUT,PATCH,POST,DELETE",
+        "allowHeaders": "content-type,authorization,x-firebase-appcheck"
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4242/triggerVideoJob",
+      "method": "POST",
+      "status": 404,
+      "ok": false,
+      "timingMs": 2,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4242/triggerVideoJob",
+      "method": "GET",
+      "status": 200,
+      "ok": true,
+      "timingMs": 11,
+      "contentType": "text/html",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": "<!doctype html> <html lang=\"en\"> <head> <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\"; injectIntoGlobalHook(window); window.$RefreshReg$ = () => {}; window.$RefreshSig$ = () => (type) => type;</script> <script type=\"module\" src=\"/@vite/client\"></scr"
+    },
+    {
+      "url": "http://localhost:4243/api/analyzeAudio",
+      "method": "OPTIONS",
+      "status": 204,
+      "ok": true,
+      "timingMs": 12,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "GET,HEAD,PUT,PATCH,POST,DELETE",
+        "allowHeaders": "content-type,authorization,x-firebase-appcheck"
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4243/api/analyzeAudio",
+      "method": "POST",
+      "status": 404,
+      "ok": false,
+      "timingMs": 6,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4243/api/analyzeAudio",
+      "method": "GET",
+      "status": 200,
+      "ok": true,
+      "timingMs": 31,
+      "contentType": "text/html",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": "<!doctype html> <html lang=\"en\"> <head> <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\"; injectIntoGlobalHook(window); window.$RefreshReg$ = () => {}; window.$RefreshSig$ = () => (type) => type;</script> <script type=\"module\" src=\"/@vite/client\"></scr"
+    },
+    {
+      "url": "http://localhost:4243/api/audio/analyze",
+      "method": "OPTIONS",
+      "status": 204,
+      "ok": true,
+      "timingMs": 10,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "GET,HEAD,PUT,PATCH,POST,DELETE",
+        "allowHeaders": "content-type,authorization,x-firebase-appcheck"
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4243/api/audio/analyze",
+      "method": "POST",
+      "status": 404,
+      "ok": false,
+      "timingMs": 2,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4243/api/audio/analyze",
+      "method": "GET",
+      "status": 200,
+      "ok": true,
+      "timingMs": 12,
+      "contentType": "text/html",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": "<!doctype html> <html lang=\"en\"> <head> <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\"; injectIntoGlobalHook(window); window.$RefreshReg$ = () => {}; window.$RefreshSig$ = () => (type) => type;</script> <script type=\"module\" src=\"/@vite/client\"></scr"
+    },
+    {
+      "url": "http://localhost:4243/api/generateAudioV3",
+      "method": "OPTIONS",
+      "status": 204,
+      "ok": true,
+      "timingMs": 2,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "GET,HEAD,PUT,PATCH,POST,DELETE",
+        "allowHeaders": "content-type,authorization,x-firebase-appcheck"
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4243/api/generateAudioV3",
+      "method": "POST",
+      "status": 404,
+      "ok": false,
+      "timingMs": 3,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4243/api/generateAudioV3",
+      "method": "GET",
+      "status": 200,
+      "ok": true,
+      "timingMs": 16,
+      "contentType": "text/html",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": "<!doctype html> <html lang=\"en\"> <head> <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\"; injectIntoGlobalHook(window); window.$RefreshReg$ = () => {}; window.$RefreshSig$ = () => (type) => type;</script> <script type=\"module\" src=\"/@vite/client\"></scr"
+    },
+    {
+      "url": "http://localhost:4243/api/createTrack",
+      "method": "OPTIONS",
+      "status": 204,
+      "ok": true,
+      "timingMs": 3,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "GET,HEAD,PUT,PATCH,POST,DELETE",
+        "allowHeaders": "content-type,authorization,x-firebase-appcheck"
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4243/api/createTrack",
+      "method": "POST",
+      "status": 404,
+      "ok": false,
+      "timingMs": 2,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4243/api/createTrack",
+      "method": "GET",
+      "status": 200,
+      "ok": true,
+      "timingMs": 31,
+      "contentType": "text/html",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": "<!doctype html> <html lang=\"en\"> <head> <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\"; injectIntoGlobalHook(window); window.$RefreshReg$ = () => {}; window.$RefreshSig$ = () => (type) => type;</script> <script type=\"module\" src=\"/@vite/client\"></scr"
+    },
+    {
+      "url": "http://localhost:4243/api/tracks",
+      "method": "OPTIONS",
+      "status": 204,
+      "ok": true,
+      "timingMs": 3,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "GET,HEAD,PUT,PATCH,POST,DELETE",
+        "allowHeaders": "content-type,authorization,x-firebase-appcheck"
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4243/api/tracks",
+      "method": "POST",
+      "status": 404,
+      "ok": false,
+      "timingMs": 4,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4243/api/tracks",
+      "method": "GET",
+      "status": 200,
+      "ok": true,
+      "timingMs": 14,
+      "contentType": "text/html",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": "<!doctype html> <html lang=\"en\"> <head> <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\"; injectIntoGlobalHook(window); window.$RefreshReg$ = () => {}; window.$RefreshSig$ = () => (type) => type;</script> <script type=\"module\" src=\"/@vite/client\"></scr"
+    },
+    {
+      "url": "http://localhost:4243/api/listTracks",
+      "method": "OPTIONS",
+      "status": 204,
+      "ok": true,
+      "timingMs": 4,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "GET,HEAD,PUT,PATCH,POST,DELETE",
+        "allowHeaders": "content-type,authorization,x-firebase-appcheck"
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4243/api/listTracks",
+      "method": "POST",
+      "status": 404,
+      "ok": false,
+      "timingMs": 3,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4243/api/listTracks",
+      "method": "GET",
+      "status": 200,
+      "ok": true,
+      "timingMs": 12,
+      "contentType": "text/html",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": "<!doctype html> <html lang=\"en\"> <head> <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\"; injectIntoGlobalHook(window); window.$RefreshReg$ = () => {}; window.$RefreshSig$ = () => (type) => type;</script> <script type=\"module\" src=\"/@vite/client\"></scr"
+    },
+    {
+      "url": "http://localhost:4243/api/createDistribution",
+      "method": "OPTIONS",
+      "status": 204,
+      "ok": true,
+      "timingMs": 2,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "GET,HEAD,PUT,PATCH,POST,DELETE",
+        "allowHeaders": "content-type,authorization,x-firebase-appcheck"
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4243/api/createDistribution",
+      "method": "POST",
+      "status": 404,
+      "ok": false,
+      "timingMs": 3,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4243/api/createDistribution",
+      "method": "GET",
+      "status": 200,
+      "ok": true,
+      "timingMs": 6,
+      "contentType": "text/html",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": "<!doctype html> <html lang=\"en\"> <head> <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\"; injectIntoGlobalHook(window); window.$RefreshReg$ = () => {}; window.$RefreshSig$ = () => (type) => type;</script> <script type=\"module\" src=\"/@vite/client\"></scr"
+    },
+    {
+      "url": "http://localhost:4243/api/submitDistribution",
+      "method": "OPTIONS",
+      "status": 204,
+      "ok": true,
+      "timingMs": 1,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "GET,HEAD,PUT,PATCH,POST,DELETE",
+        "allowHeaders": "content-type,authorization,x-firebase-appcheck"
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4243/api/submitDistribution",
+      "method": "POST",
+      "status": 404,
+      "ok": false,
+      "timingMs": 6,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4243/api/submitDistribution",
+      "method": "GET",
+      "status": 200,
+      "ok": true,
+      "timingMs": 51,
+      "contentType": "text/html",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": "<!doctype html> <html lang=\"en\"> <head> <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\"; injectIntoGlobalHook(window); window.$RefreshReg$ = () => {}; window.$RefreshSig$ = () => (type) => type;</script> <script type=\"module\" src=\"/@vite/client\"></scr"
+    },
+    {
+      "url": "http://localhost:4243/api/recordDistributionIdentifier",
+      "method": "OPTIONS",
+      "status": 204,
+      "ok": true,
+      "timingMs": 2,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "GET,HEAD,PUT,PATCH,POST,DELETE",
+        "allowHeaders": "content-type,authorization,x-firebase-appcheck"
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4243/api/recordDistributionIdentifier",
+      "method": "POST",
+      "status": 404,
+      "ok": false,
+      "timingMs": 1,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4243/api/recordDistributionIdentifier",
+      "method": "GET",
+      "status": 200,
+      "ok": true,
+      "timingMs": 9,
+      "contentType": "text/html",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": "<!doctype html> <html lang=\"en\"> <head> <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\"; injectIntoGlobalHook(window); window.$RefreshReg$ = () => {}; window.$RefreshSig$ = () => (type) => type;</script> <script type=\"module\" src=\"/@vite/client\"></scr"
+    },
+    {
+      "url": "http://localhost:4243/api/assignDistributionIdentifier",
+      "method": "OPTIONS",
+      "status": 204,
+      "ok": true,
+      "timingMs": 2,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "GET,HEAD,PUT,PATCH,POST,DELETE",
+        "allowHeaders": "content-type,authorization,x-firebase-appcheck"
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4243/api/assignDistributionIdentifier",
+      "method": "POST",
+      "status": 404,
+      "ok": false,
+      "timingMs": 2,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4243/api/assignDistributionIdentifier",
+      "method": "GET",
+      "status": 200,
+      "ok": true,
+      "timingMs": 8,
+      "contentType": "text/html",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": "<!doctype html> <html lang=\"en\"> <head> <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\"; injectIntoGlobalHook(window); window.$RefreshReg$ = () => {}; window.$RefreshSig$ = () => (type) => type;</script> <script type=\"module\" src=\"/@vite/client\"></scr"
+    },
+    {
+      "url": "http://localhost:4243/api/creative/handoff",
+      "method": "OPTIONS",
+      "status": 204,
+      "ok": true,
+      "timingMs": 2,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "GET,HEAD,PUT,PATCH,POST,DELETE",
+        "allowHeaders": "content-type,authorization,x-firebase-appcheck"
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4243/api/creative/handoff",
+      "method": "POST",
+      "status": 404,
+      "ok": false,
+      "timingMs": 2,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4243/api/creative/handoff",
+      "method": "GET",
+      "status": 200,
+      "ok": true,
+      "timingMs": 9,
+      "contentType": "text/html",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": "<!doctype html> <html lang=\"en\"> <head> <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\"; injectIntoGlobalHook(window); window.$RefreshReg$ = () => {}; window.$RefreshSig$ = () => (type) => type;</script> <script type=\"module\" src=\"/@vite/client\"></scr"
+    },
+    {
+      "url": "http://localhost:4243/api/video/handoff",
+      "method": "OPTIONS",
+      "status": 204,
+      "ok": true,
+      "timingMs": 9,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "GET,HEAD,PUT,PATCH,POST,DELETE",
+        "allowHeaders": "content-type,authorization,x-firebase-appcheck"
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4243/api/video/handoff",
+      "method": "POST",
+      "status": 404,
+      "ok": false,
+      "timingMs": 4,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4243/api/video/handoff",
+      "method": "GET",
+      "status": 200,
+      "ok": true,
+      "timingMs": 15,
+      "contentType": "text/html",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": "<!doctype html> <html lang=\"en\"> <head> <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\"; injectIntoGlobalHook(window); window.$RefreshReg$ = () => {}; window.$RefreshSig$ = () => (type) => type;</script> <script type=\"module\" src=\"/@vite/client\"></scr"
+    },
+    {
+      "url": "http://localhost:4243/api/generateVideoV3",
+      "method": "OPTIONS",
+      "status": 204,
+      "ok": true,
+      "timingMs": 24,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "GET,HEAD,PUT,PATCH,POST,DELETE",
+        "allowHeaders": "content-type,authorization,x-firebase-appcheck"
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4243/api/generateVideoV3",
+      "method": "POST",
+      "status": 404,
+      "ok": false,
+      "timingMs": 10,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4243/api/generateVideoV3",
+      "method": "GET",
+      "status": 200,
+      "ok": true,
+      "timingMs": 28,
+      "contentType": "text/html",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": "<!doctype html> <html lang=\"en\"> <head> <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\"; injectIntoGlobalHook(window); window.$RefreshReg$ = () => {}; window.$RefreshSig$ = () => (type) => type;</script> <script type=\"module\" src=\"/@vite/client\"></scr"
+    },
+    {
+      "url": "http://localhost:4243/api/triggerVideoJob",
+      "method": "OPTIONS",
+      "status": 204,
+      "ok": true,
+      "timingMs": 8,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "GET,HEAD,PUT,PATCH,POST,DELETE",
+        "allowHeaders": "content-type,authorization,x-firebase-appcheck"
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4243/api/triggerVideoJob",
+      "method": "POST",
+      "status": 404,
+      "ok": false,
+      "timingMs": 5,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4243/api/triggerVideoJob",
+      "method": "GET",
+      "status": 200,
+      "ok": true,
+      "timingMs": 12,
+      "contentType": "text/html",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": "<!doctype html> <html lang=\"en\"> <head> <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\"; injectIntoGlobalHook(window); window.$RefreshReg$ = () => {}; window.$RefreshSig$ = () => (type) => type;</script> <script type=\"module\" src=\"/@vite/client\"></scr"
+    },
+    {
+      "url": "http://localhost:4243/analyzeAudio",
+      "method": "OPTIONS",
+      "status": 204,
+      "ok": true,
+      "timingMs": 5,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "GET,HEAD,PUT,PATCH,POST,DELETE",
+        "allowHeaders": "content-type,authorization,x-firebase-appcheck"
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4243/analyzeAudio",
+      "method": "POST",
+      "status": 404,
+      "ok": false,
+      "timingMs": 3,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4243/analyzeAudio",
+      "method": "GET",
+      "status": 200,
+      "ok": true,
+      "timingMs": 24,
+      "contentType": "text/html",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": "<!doctype html> <html lang=\"en\"> <head> <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\"; injectIntoGlobalHook(window); window.$RefreshReg$ = () => {}; window.$RefreshSig$ = () => (type) => type;</script> <script type=\"module\" src=\"/@vite/client\"></scr"
+    },
+    {
+      "url": "http://localhost:4243/createTrack",
+      "method": "OPTIONS",
+      "status": 204,
+      "ok": true,
+      "timingMs": 13,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "GET,HEAD,PUT,PATCH,POST,DELETE",
+        "allowHeaders": "content-type,authorization,x-firebase-appcheck"
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4243/createTrack",
+      "method": "POST",
+      "status": 404,
+      "ok": false,
+      "timingMs": 8,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4243/createTrack",
+      "method": "GET",
+      "status": 200,
+      "ok": true,
+      "timingMs": 12,
+      "contentType": "text/html",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": "<!doctype html> <html lang=\"en\"> <head> <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\"; injectIntoGlobalHook(window); window.$RefreshReg$ = () => {}; window.$RefreshSig$ = () => (type) => type;</script> <script type=\"module\" src=\"/@vite/client\"></scr"
+    },
+    {
+      "url": "http://localhost:4243/createDistribution",
+      "method": "OPTIONS",
+      "status": 204,
+      "ok": true,
+      "timingMs": 3,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "GET,HEAD,PUT,PATCH,POST,DELETE",
+        "allowHeaders": "content-type,authorization,x-firebase-appcheck"
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4243/createDistribution",
+      "method": "POST",
+      "status": 404,
+      "ok": false,
+      "timingMs": 5,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4243/createDistribution",
+      "method": "GET",
+      "status": 200,
+      "ok": true,
+      "timingMs": 16,
+      "contentType": "text/html",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": "<!doctype html> <html lang=\"en\"> <head> <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\"; injectIntoGlobalHook(window); window.$RefreshReg$ = () => {}; window.$RefreshSig$ = () => (type) => type;</script> <script type=\"module\" src=\"/@vite/client\"></scr"
+    },
+    {
+      "url": "http://localhost:4243/submitDistribution",
+      "method": "OPTIONS",
+      "status": 204,
+      "ok": true,
+      "timingMs": 3,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "GET,HEAD,PUT,PATCH,POST,DELETE",
+        "allowHeaders": "content-type,authorization,x-firebase-appcheck"
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4243/submitDistribution",
+      "method": "POST",
+      "status": 404,
+      "ok": false,
+      "timingMs": 2,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4243/submitDistribution",
+      "method": "GET",
+      "status": 200,
+      "ok": true,
+      "timingMs": 8,
+      "contentType": "text/html",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": "<!doctype html> <html lang=\"en\"> <head> <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\"; injectIntoGlobalHook(window); window.$RefreshReg$ = () => {}; window.$RefreshSig$ = () => (type) => type;</script> <script type=\"module\" src=\"/@vite/client\"></scr"
+    },
+    {
+      "url": "http://localhost:4243/generateVideoV3",
+      "method": "OPTIONS",
+      "status": 204,
+      "ok": true,
+      "timingMs": 3,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "GET,HEAD,PUT,PATCH,POST,DELETE",
+        "allowHeaders": "content-type,authorization,x-firebase-appcheck"
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4243/generateVideoV3",
+      "method": "POST",
+      "status": 404,
+      "ok": false,
+      "timingMs": 5,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4243/generateVideoV3",
+      "method": "GET",
+      "status": 200,
+      "ok": true,
+      "timingMs": 9,
+      "contentType": "text/html",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": "<!doctype html> <html lang=\"en\"> <head> <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\"; injectIntoGlobalHook(window); window.$RefreshReg$ = () => {}; window.$RefreshSig$ = () => (type) => type;</script> <script type=\"module\" src=\"/@vite/client\"></scr"
+    },
+    {
+      "url": "http://localhost:4243/triggerVideoJob",
+      "method": "OPTIONS",
+      "status": 204,
+      "ok": true,
+      "timingMs": 55,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "GET,HEAD,PUT,PATCH,POST,DELETE",
+        "allowHeaders": "content-type,authorization,x-firebase-appcheck"
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4243/triggerVideoJob",
+      "method": "POST",
+      "status": 404,
+      "ok": false,
+      "timingMs": 8,
+      "contentType": "",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": ""
+    },
+    {
+      "url": "http://localhost:4243/triggerVideoJob",
+      "method": "GET",
+      "status": 200,
+      "ok": true,
+      "timingMs": 31,
+      "contentType": "text/html",
+      "cors": {
+        "allowOrigin": "http://localhost:4242",
+        "allowMethods": "",
+        "allowHeaders": ""
+      },
+      "bodySummary": "<!doctype html> <html lang=\"en\"> <head> <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\"; injectIntoGlobalHook(window); window.$RefreshReg$ = () => {}; window.$RefreshSig$ = () => (type) => type;</script> <script type=\"module\" src=\"/@vite/client\"></scr"
+    }
+  ],
+  "envExposure": [
+    {
+      "base": "http://localhost:4242",
+      "path": "/",
+      "status": 200,
+      "contentType": "text/html",
+      "matchCount": 0,
+      "matches": [],
+      "bodySummary": "<!doctype html> <html lang=\"en\"> <head> <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\"; injectIntoGlobalHook(window); window.$RefreshReg$ = () => {}; window.$RefreshSig$ = () => (type) => type;</script> <script type=\"module\" src=\"/@vite/client\"></scr"
+    },
+    {
+      "base": "http://localhost:4242",
+      "path": "/audio-analyzer",
+      "status": 200,
+      "contentType": "text/html",
+      "matchCount": 0,
+      "matches": [],
+      "bodySummary": "<!doctype html> <html lang=\"en\"> <head> <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\"; injectIntoGlobalHook(window); window.$RefreshReg$ = () => {}; window.$RefreshSig$ = () => (type) => type;</script> <script type=\"module\" src=\"/@vite/client\"></scr"
+    },
+    {
+      "base": "http://localhost:4242",
+      "path": "/src/core/App.tsx",
+      "status": 200,
+      "contentType": "text/javascript",
+      "matchCount": 29,
+      "matches": [
+        "VITE_A0_AUTH_LOGIN",
+        "VITE_A0_AUTH_PASSWORD",
+        "VITE_ALCHEMY_API_KEY",
+        "VITE_API_KEY",
+        "AIzaSyC2n9F4VNcz8Fem1CHlFP5z75YenQKwdJ0",
+        "VITE_APPLE_MUSIC_DEV_TOKEN",
+        "VITE_DOCUSIGN_ACCESS_TOKEN",
+        "VITE_FCM_VAPID_KEY",
+        "VITE_FIREBASE_API_KEY",
+        "AIzaSyDHL8PVxgVYbHtLF95KQtdRfitf3d7zEKc",
+        "VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN",
+        "VITE_FIREBASE_APP_CHECK_KEY",
+        "VITE_FIREBASE_AUTH_DOMAIN",
+        "VITE_FIREBASE_VAPID_KEY",
+        "VITE_GOOGLE_DEVKNOWLEDGE_API_KEY",
+        "VITE_GOOGLE_MAPS_API_KEY",
+        "AIzaSyCSuzKuEpb8khQ-OiPFMZqHnB_ySkmJA3M",
+        "VITE_GOOGLE_MAPS_KEY",
+        "VITE_GOOGLE_OAUTH_CLIENT_ID",
+        "VITE_MEM0_API_KEY",
+        "VITE_NGROK_AUTHTOKEN",
+        "VITE_NOTARIZE_API_KEY",
+        "VITE_OPENSEA_API_KEY",
+        "VITE_PINATA_API_KEY",
+        "VITE_PINATA_JWT",
+        "VITE_PINATA_SECRET",
+        "VITE_PRINTFUL_API_KEY",
+        "VITE_TIKTOK_CLIENT_KEY",
+        "VITE_UD_API_KEY"
+      ],
+      "bodySummary": "import { createHotContext as __vite__createHotContext } from \"/@vite/client\";import.meta.hot = __vite__createHotContext(\"/src/core/App.tsx\");import.meta.env = {\"BASE_URL\": \"/\", \"DEV\": true, \"MODE\": \"development\", \"PROD\": false, \"SSR\": false, \"VITE_A0_AUTH_LOGIN\": \"\", \"VITE_A0_AUT"
+    },
+    {
+      "base": "http://localhost:4242",
+      "path": "/src/modules/tools/AudioAnalyzer.tsx",
+      "status": 200,
+      "contentType": "text/javascript",
+      "matchCount": 0,
+      "matches": [],
+      "bodySummary": "import { createHotContext as __vite__createHotContext } from \"/@vite/client\";import.meta.hot = __vite__createHotContext(\"/src/modules/tools/AudioAnalyzer.tsx\");import __vite__cjsImport0_react_jsxDevRuntime from \"/node_modules/.vite/deps/react_jsx-dev-runtime.js?v=61667b25\"; const"
+    },
+    {
+      "base": "http://localhost:4242",
+      "path": "/src/services/audio/AudioIntelligenceService.ts",
+      "status": 200,
+      "contentType": "text/javascript",
+      "matchCount": 29,
+      "matches": [
+        "VITE_A0_AUTH_LOGIN",
+        "VITE_A0_AUTH_PASSWORD",
+        "VITE_ALCHEMY_API_KEY",
+        "VITE_API_KEY",
+        "AIzaSyC2n9F4VNcz8Fem1CHlFP5z75YenQKwdJ0",
+        "VITE_APPLE_MUSIC_DEV_TOKEN",
+        "VITE_DOCUSIGN_ACCESS_TOKEN",
+        "VITE_FCM_VAPID_KEY",
+        "VITE_FIREBASE_API_KEY",
+        "AIzaSyDHL8PVxgVYbHtLF95KQtdRfitf3d7zEKc",
+        "VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN",
+        "VITE_FIREBASE_APP_CHECK_KEY",
+        "VITE_FIREBASE_AUTH_DOMAIN",
+        "VITE_FIREBASE_VAPID_KEY",
+        "VITE_GOOGLE_DEVKNOWLEDGE_API_KEY",
+        "VITE_GOOGLE_MAPS_API_KEY",
+        "AIzaSyCSuzKuEpb8khQ-OiPFMZqHnB_ySkmJA3M",
+        "VITE_GOOGLE_MAPS_KEY",
+        "VITE_GOOGLE_OAUTH_CLIENT_ID",
+        "VITE_MEM0_API_KEY",
+        "VITE_NGROK_AUTHTOKEN",
+        "VITE_NOTARIZE_API_KEY",
+        "VITE_OPENSEA_API_KEY",
+        "VITE_PINATA_API_KEY",
+        "VITE_PINATA_JWT",
+        "VITE_PINATA_SECRET",
+        "VITE_PRINTFUL_API_KEY",
+        "VITE_TIKTOK_CLIENT_KEY",
+        "VITE_UD_API_KEY"
+      ],
+      "bodySummary": "import.meta.env = {\"BASE_URL\": \"/\", \"DEV\": true, \"MODE\": \"development\", \"PROD\": false, \"SSR\": false, \"VITE_A0_AUTH_LOGIN\": \"\", \"VITE_A0_AUTH_PASSWORD\": \"\", \"VITE_A0_BASE_URL\": \"\", \"VITE_A0_RUNTIME_ID\": \"\", \"VITE_ADMIN_PIN\": \"1234\", \"VITE_ALCHEMY_API_KEY\": \"\", \"VITE_AMAZON_SFTP_HO"
+    },
+    {
+      "base": "http://localhost:4242",
+      "path": "/src/services/audio/AudioAnalysisService.ts",
+      "status": 200,
+      "contentType": "text/javascript",
+      "matchCount": 0,
+      "matches": [],
+      "bodySummary": "import { musicLibraryService } from \"/src/services/music/MusicLibraryService.ts\"; import { metadataPersistenceService } from \"/src/services/persistence/MetadataPersistenceService.ts\"; import { logger } from \"/src/utils/logger.ts\"; import { DSPComplianceValidator } from \"/src/serv"
+    },
+    {
+      "base": "http://localhost:4242",
+      "path": "/src/services/music/MusicLibraryService.ts",
+      "status": 200,
+      "contentType": "text/javascript",
+      "matchCount": 0,
+      "matches": [],
+      "bodySummary": "import { db, auth } from \"/src/services/firebase.ts\"; import { collection, doc, setDoc, getDoc, query, where, getDocs } from \"/node_modules/.vite/deps/firebase_firestore.js?v=fd390853\"; import { logger } from \"/src/utils/logger.ts\"; import { isFirebaseE2EMockEnabled } from \"/src/"
+    },
+    {
+      "base": "http://localhost:4243",
+      "path": "/",
+      "status": 200,
+      "contentType": "text/html",
+      "matchCount": 0,
+      "matches": [],
+      "bodySummary": "<!doctype html> <html lang=\"en\"> <head> <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\"; injectIntoGlobalHook(window); window.$RefreshReg$ = () => {}; window.$RefreshSig$ = () => (type) => type;</script> <script type=\"module\" src=\"/@vite/client\"></scr"
+    },
+    {
+      "base": "http://localhost:4243",
+      "path": "/audio-analyzer",
+      "status": 200,
+      "contentType": "text/html",
+      "matchCount": 0,
+      "matches": [],
+      "bodySummary": "<!doctype html> <html lang=\"en\"> <head> <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\"; injectIntoGlobalHook(window); window.$RefreshReg$ = () => {}; window.$RefreshSig$ = () => (type) => type;</script> <script type=\"module\" src=\"/@vite/client\"></scr"
+    },
+    {
+      "base": "http://localhost:4243",
+      "path": "/src/core/App.tsx",
+      "status": 200,
+      "contentType": "text/javascript",
+      "matchCount": 29,
+      "matches": [
+        "VITE_A0_AUTH_LOGIN",
+        "VITE_A0_AUTH_PASSWORD",
+        "VITE_ALCHEMY_API_KEY",
+        "VITE_API_KEY",
+        "AIzaSyC2n9F4VNcz8Fem1CHlFP5z75YenQKwdJ0",
+        "VITE_APPLE_MUSIC_DEV_TOKEN",
+        "VITE_DOCUSIGN_ACCESS_TOKEN",
+        "VITE_FCM_VAPID_KEY",
+        "VITE_FIREBASE_API_KEY",
+        "AIzaSyDHL8PVxgVYbHtLF95KQtdRfitf3d7zEKc",
+        "VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN",
+        "VITE_FIREBASE_APP_CHECK_KEY",
+        "VITE_FIREBASE_AUTH_DOMAIN",
+        "VITE_FIREBASE_VAPID_KEY",
+        "VITE_GOOGLE_DEVKNOWLEDGE_API_KEY",
+        "VITE_GOOGLE_MAPS_API_KEY",
+        "AIzaSyCSuzKuEpb8khQ-OiPFMZqHnB_ySkmJA3M",
+        "VITE_GOOGLE_MAPS_KEY",
+        "VITE_GOOGLE_OAUTH_CLIENT_ID",
+        "VITE_MEM0_API_KEY",
+        "VITE_NGROK_AUTHTOKEN",
+        "VITE_NOTARIZE_API_KEY",
+        "VITE_OPENSEA_API_KEY",
+        "VITE_PINATA_API_KEY",
+        "VITE_PINATA_JWT",
+        "VITE_PINATA_SECRET",
+        "VITE_PRINTFUL_API_KEY",
+        "VITE_TIKTOK_CLIENT_KEY",
+        "VITE_UD_API_KEY"
+      ],
+      "bodySummary": "import { createHotContext as __vite__createHotContext } from \"/@vite/client\";import.meta.hot = __vite__createHotContext(\"/src/core/App.tsx\");import.meta.env = {\"BASE_URL\": \"/\", \"DEV\": true, \"MODE\": \"development\", \"PROD\": false, \"SSR\": false, \"VITE_A0_AUTH_LOGIN\": \"\", \"VITE_A0_AUT"
+    },
+    {
+      "base": "http://localhost:4243",
+      "path": "/src/modules/tools/AudioAnalyzer.tsx",
+      "status": 200,
+      "contentType": "text/javascript",
+      "matchCount": 0,
+      "matches": [],
+      "bodySummary": "import { createHotContext as __vite__createHotContext } from \"/@vite/client\";import.meta.hot = __vite__createHotContext(\"/src/modules/tools/AudioAnalyzer.tsx\");import __vite__cjsImport0_react_jsxDevRuntime from \"/node_modules/.vite/deps/react_jsx-dev-runtime.js?v=8b724f59\"; const"
+    },
+    {
+      "base": "http://localhost:4243",
+      "path": "/src/services/audio/AudioIntelligenceService.ts",
+      "status": 200,
+      "contentType": "text/javascript",
+      "matchCount": 29,
+      "matches": [
+        "VITE_A0_AUTH_LOGIN",
+        "VITE_A0_AUTH_PASSWORD",
+        "VITE_ALCHEMY_API_KEY",
+        "VITE_API_KEY",
+        "AIzaSyC2n9F4VNcz8Fem1CHlFP5z75YenQKwdJ0",
+        "VITE_APPLE_MUSIC_DEV_TOKEN",
+        "VITE_DOCUSIGN_ACCESS_TOKEN",
+        "VITE_FCM_VAPID_KEY",
+        "VITE_FIREBASE_API_KEY",
+        "AIzaSyDHL8PVxgVYbHtLF95KQtdRfitf3d7zEKc",
+        "VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN",
+        "VITE_FIREBASE_APP_CHECK_KEY",
+        "VITE_FIREBASE_AUTH_DOMAIN",
+        "VITE_FIREBASE_VAPID_KEY",
+        "VITE_GOOGLE_DEVKNOWLEDGE_API_KEY",
+        "VITE_GOOGLE_MAPS_API_KEY",
+        "AIzaSyCSuzKuEpb8khQ-OiPFMZqHnB_ySkmJA3M",
+        "VITE_GOOGLE_MAPS_KEY",
+        "VITE_GOOGLE_OAUTH_CLIENT_ID",
+        "VITE_MEM0_API_KEY",
+        "VITE_NGROK_AUTHTOKEN",
+        "VITE_NOTARIZE_API_KEY",
+        "VITE_OPENSEA_API_KEY",
+        "VITE_PINATA_API_KEY",
+        "VITE_PINATA_JWT",
+        "VITE_PINATA_SECRET",
+        "VITE_PRINTFUL_API_KEY",
+        "VITE_TIKTOK_CLIENT_KEY",
+        "VITE_UD_API_KEY"
+      ],
+      "bodySummary": "import.meta.env = {\"BASE_URL\": \"/\", \"DEV\": true, \"MODE\": \"development\", \"PROD\": false, \"SSR\": false, \"VITE_A0_AUTH_LOGIN\": \"\", \"VITE_A0_AUTH_PASSWORD\": \"\", \"VITE_A0_BASE_URL\": \"\", \"VITE_A0_RUNTIME_ID\": \"\", \"VITE_ADMIN_PIN\": \"1234\", \"VITE_ALCHEMY_API_KEY\": \"\", \"VITE_AMAZON_SFTP_HO"
+    },
+    {
+      "base": "http://localhost:4243",
+      "path": "/src/services/audio/AudioAnalysisService.ts",
+      "status": 200,
+      "contentType": "text/javascript",
+      "matchCount": 0,
+      "matches": [],
+      "bodySummary": "import { musicLibraryService } from \"/src/services/music/MusicLibraryService.ts\"; import { metadataPersistenceService } from \"/src/services/persistence/MetadataPersistenceService.ts\"; import { logger } from \"/src/utils/logger.ts\"; import { DSPComplianceValidator } from \"/src/serv"
+    },
+    {
+      "base": "http://localhost:4243",
+      "path": "/src/services/music/MusicLibraryService.ts",
+      "status": 200,
+      "contentType": "text/javascript",
+      "matchCount": 0,
+      "matches": [],
+      "bodySummary": "import { db, auth } from \"/src/services/firebase.ts\"; import { collection, doc, setDoc, getDoc, query, where, getDocs } from \"/node_modules/.vite/deps/firebase_firestore.js?v=93c8ff7f\"; import { logger } from \"/src/utils/logger.ts\"; import { isFirebaseE2EMockEnabled } from \"/src/"
+    }
+  ],
+  "console": [
+    {
+      "type": "debug",
+      "text": "[vite] connecting...",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected.",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "log",
+      "text": "[indii.music][Env] Initialized: {hasMapsKey: true, mapsEnabled: true}",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[App Check] Initialized successfully",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[DistributorService] Registered adapter: DistroKid",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[DistributorService] Registered adapter: TuneCore",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[DistributorService] Registered adapter: CDBaby",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[DistributorService] Registered adapter: Symphonic",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "warning",
+      "text": "[MemoryBank] MEM0_API_KEY is not set in environment.",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[AgentRegistry] Pre-warming Generalist agent...",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[AgentRegistry] Loading agent 'generalist' (attempt 1)...",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay] Connecting local P2P WebSocket to ws://localhost:4242",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "log",
+      "text": "i18next: languageChanged en-US",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "log",
+      "text": "i18next: initialized {debug: true, initAsync: true, ns: Array(1), defaultNS: Array(1), fallbackLng: Array(1)}",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "indii.music",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "warning",
+      "text": "Lit is in dev mode. Not recommended for production! See https://lit.dev/msg/dev-mode for more information.",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "log",
+      "text": "App Check debug token: 342a22b8-af79-4f15-af67-8b946aabba75. You will need to add it to your app's App Check settings in the Firebase console for it to work.",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[Auth] Initializing Auth Listener...",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay] 🔐 Setting up auth listener...",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] returning null",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay/Firestore] 🔍 Command listener effect triggered, enabled=false",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay/Firestore] ⏸️ Not enabled — skipping command listener",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] returning null",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] returning null",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[Auth] Initializing Auth Listener...",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay] 🔐 Setting up auth listener...",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] returning null",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay/Firestore] 🔍 Command listener effect triggered, enabled=false",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay/Firestore] ⏸️ Not enabled — skipping command listener",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] returning null",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[Firebase] Performance Monitoring initialized",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "NetworkQualityMonitor: quality changed to 4g (1.6Mbps, 100ms RTT)",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "NetworkQualityMonitor: initialized",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[Phase 2] Memory and orchestration services initialized",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[OfflineSync] IndexedDB initialized",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "MediaCacheManager: IndexedDB initialized",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "MediaCacheManager: total cache size = 0.00MB",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[Phase 1] PWA and offline services initialized",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[WebVitals] Core Web Vitals monitoring initialized",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[Phase 3] Observability and performance monitoring initialized",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[Auth] onAuthStateChanged fired. User: null, lastKnownUser: null",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[Auth] Steady state reached. Setting authLoading to false. User: null",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay] 🔐 Auth state changed: SIGNED OUT",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[WebVitals] FCP: 904.0ms (good)",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[AgentRegistry] Agent 'generalist' loaded successfully",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[AgentRegistry] Generalist agent pre-warmed successfully",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] returning null",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "NetworkQualityMonitor: quality changed to 4g (1.4Mbps, 550ms RTT)",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "NetworkQualityMonitor: quality changed to 3g (1.4Mbps, 550ms RTT)",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "NetworkQualityMonitor: quality changed to 3g (1.4Mbps, 500ms RTT)",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[WebVitals] TTFB: 13.1ms (good)",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[WebVitals] CLS: 0.0ms (good)",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[WebVitals] LCP: 984.0ms (good)",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting...",
+      "url": "http://localhost:4242/distribution"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected.",
+      "url": "http://localhost:4242/distribution"
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold",
+      "url": "http://localhost:4242/distribution"
+    },
+    {
+      "type": "log",
+      "text": "[indii.music][Env] Initialized: {hasMapsKey: true, mapsEnabled: true}",
+      "url": "http://localhost:4242/distribution"
+    },
+    {
+      "type": "info",
+      "text": "[App Check] Initialized successfully",
+      "url": "http://localhost:4242/distribution"
+    },
+    {
+      "type": "info",
+      "text": "[DistributorService] Registered adapter: DistroKid",
+      "url": "http://localhost:4242/distribution"
+    },
+    {
+      "type": "info",
+      "text": "[DistributorService] Registered adapter: TuneCore",
+      "url": "http://localhost:4242/distribution"
+    },
+    {
+      "type": "info",
+      "text": "[DistributorService] Registered adapter: CDBaby",
+      "url": "http://localhost:4242/distribution"
+    },
+    {
+      "type": "info",
+      "text": "[DistributorService] Registered adapter: Symphonic",
+      "url": "http://localhost:4242/distribution"
+    },
+    {
+      "type": "warning",
+      "text": "[MemoryBank] MEM0_API_KEY is not set in environment.",
+      "url": "http://localhost:4242/distribution"
+    },
+    {
+      "type": "debug",
+      "text": "[AgentRegistry] Pre-warming Generalist agent...",
+      "url": "http://localhost:4242/distribution"
+    },
+    {
+      "type": "debug",
+      "text": "[AgentRegistry] Loading agent 'generalist' (attempt 1)...",
+      "url": "http://localhost:4242/distribution"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay] Connecting local P2P WebSocket to ws://localhost:4242",
+      "url": "http://localhost:4242/distribution"
+    },
+    {
+      "type": "info",
+      "text": "🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙",
+      "url": "http://localhost:4242/distribution"
+    },
+    {
+      "type": "log",
+      "text": "i18next: languageChanged en-US",
+      "url": "http://localhost:4242/distribution"
+    },
+    {
+      "type": "log",
+      "text": "i18next: initialized {debug: true, initAsync: true, ns: Array(1), defaultNS: Array(1), fallbackLng: Array(1)}",
+      "url": "http://localhost:4242/distribution"
+    },
+    {
+      "type": "debug",
+      "text": "indii.music",
+      "url": "http://localhost:4242/distribution"
+    },
+    {
+      "type": "warning",
+      "text": "Lit is in dev mode. Not recommended for production! See https://lit.dev/msg/dev-mode for more information.",
+      "url": "http://localhost:4242/distribution"
+    },
+    {
+      "type": "log",
+      "text": "App Check debug token: 342a22b8-af79-4f15-af67-8b946aabba75. You will need to add it to your app's App Check settings in the Firebase console for it to work.",
+      "url": "http://localhost:4242/distribution"
+    },
+    {
+      "type": "debug",
+      "text": "[Auth] Initializing Auth Listener...",
+      "url": "http://localhost:4242/distribution"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay] 🔐 Setting up auth listener...",
+      "url": "http://localhost:4242/distribution"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}",
+      "url": "http://localhost:4242/distribution"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] returning null",
+      "url": "http://localhost:4242/distribution"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay/Firestore] 🔍 Command listener effect triggered, enabled=false",
+      "url": "http://localhost:4242/distribution"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay/Firestore] ⏸️ Not enabled — skipping command listener",
+      "url": "http://localhost:4242/distribution"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}",
+      "url": "http://localhost:4242/distribution"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] returning null",
+      "url": "http://localhost:4242/distribution"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}",
+      "url": "http://localhost:4242/distribution"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] returning null",
+      "url": "http://localhost:4242/distribution"
+    },
+    {
+      "type": "debug",
+      "text": "[Auth] Initializing Auth Listener...",
+      "url": "http://localhost:4242/distribution"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay] 🔐 Setting up auth listener...",
+      "url": "http://localhost:4242/distribution"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}",
+      "url": "http://localhost:4242/distribution"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] returning null",
+      "url": "http://localhost:4242/distribution"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay/Firestore] 🔍 Command listener effect triggered, enabled=false",
+      "url": "http://localhost:4242/distribution"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay/Firestore] ⏸️ Not enabled — skipping command listener",
+      "url": "http://localhost:4242/distribution"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}",
+      "url": "http://localhost:4242/distribution"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] returning null",
+      "url": "http://localhost:4242/distribution"
+    },
+    {
+      "type": "info",
+      "text": "[Firebase] Performance Monitoring initialized",
+      "url": "http://localhost:4242/distribution"
+    },
+    {
+      "type": "debug",
+      "text": "NetworkQualityMonitor: quality changed to 3g (1.4Mbps, 650ms RTT)",
+      "url": "http://localhost:4242/distribution"
+    },
+    {
+      "type": "info",
+      "text": "NetworkQualityMonitor: initialized",
+      "url": "http://localhost:4242/distribution"
+    },
+    {
+      "type": "debug",
+      "text": "[OfflineSync] IndexedDB initialized",
+      "url": "http://localhost:4242/distribution"
+    },
+    {
+      "type": "info",
+      "text": "[Phase 3] Observability and performance monitoring initialized",
+      "url": "http://localhost:4242/distribution"
+    },
+    {
+      "type": "info",
+      "text": "MediaCacheManager: IndexedDB initialized",
+      "url": "http://localhost:4242/distribution"
+    },
+    {
+      "type": "info",
+      "text": "[WebVitals] Core Web Vitals monitoring initialized",
+      "url": "http://localhost:4242/distribution"
+    },
+    {
+      "type": "info",
+      "text": "[Phase 2] Memory and orchestration services initialized",
+      "url": "http://localhost:4242/distribution"
+    },
+    {
+      "type": "info",
+      "text": "[Phase 1] PWA and offline services initialized",
+      "url": "http://localhost:4242/distribution"
+    },
+    {
+      "type": "info",
+      "text": "MediaCacheManager: total cache size = 0.00MB",
+      "url": "http://localhost:4242/distribution"
+    },
+    {
+      "type": "info",
+      "text": "[Auth] onAuthStateChanged fired. User: null, lastKnownUser: null",
+      "url": "http://localhost:4242/distribution"
+    },
+    {
+      "type": "info",
+      "text": "[Auth] Steady state reached. Setting authLoading to false. User: null",
+      "url": "http://localhost:4242/distribution"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay] 🔐 Auth state changed: SIGNED OUT",
+      "url": "http://localhost:4242/distribution"
+    },
+    {
+      "type": "info",
+      "text": "[WebVitals] FCP: 472.0ms (good)",
+      "url": "http://localhost:4242/distribution"
+    },
+    {
+      "type": "debug",
+      "text": "[AgentRegistry] Agent 'generalist' loaded successfully",
+      "url": "http://localhost:4242/distribution"
+    },
+    {
+      "type": "debug",
+      "text": "[AgentRegistry] Generalist agent pre-warmed successfully",
+      "url": "http://localhost:4242/distribution"
+    },
+    {
+      "type": "info",
+      "text": "[WebVitals] TTFB: 11.4ms (good)",
+      "url": "http://localhost:4242/distribution"
+    },
+    {
+      "type": "info",
+      "text": "[WebVitals] CLS: 0.0ms (good)",
+      "url": "http://localhost:4242/distribution"
+    },
+    {
+      "type": "info",
+      "text": "[WebVitals] LCP: 472.0ms (good)",
+      "url": "http://localhost:4242/distribution"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting...",
+      "url": "http://localhost:4242/creative"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected.",
+      "url": "http://localhost:4242/creative"
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold",
+      "url": "http://localhost:4242/creative"
+    },
+    {
+      "type": "log",
+      "text": "[indii.music][Env] Initialized: {hasMapsKey: true, mapsEnabled: true}",
+      "url": "http://localhost:4242/creative"
+    },
+    {
+      "type": "info",
+      "text": "[App Check] Initialized successfully",
+      "url": "http://localhost:4242/creative"
+    },
+    {
+      "type": "info",
+      "text": "[DistributorService] Registered adapter: DistroKid",
+      "url": "http://localhost:4242/creative"
+    },
+    {
+      "type": "info",
+      "text": "[DistributorService] Registered adapter: TuneCore",
+      "url": "http://localhost:4242/creative"
+    },
+    {
+      "type": "info",
+      "text": "[DistributorService] Registered adapter: CDBaby",
+      "url": "http://localhost:4242/creative"
+    },
+    {
+      "type": "info",
+      "text": "[DistributorService] Registered adapter: Symphonic",
+      "url": "http://localhost:4242/creative"
+    },
+    {
+      "type": "warning",
+      "text": "[MemoryBank] MEM0_API_KEY is not set in environment.",
+      "url": "http://localhost:4242/creative"
+    },
+    {
+      "type": "debug",
+      "text": "[AgentRegistry] Pre-warming Generalist agent...",
+      "url": "http://localhost:4242/creative"
+    },
+    {
+      "type": "debug",
+      "text": "[AgentRegistry] Loading agent 'generalist' (attempt 1)...",
+      "url": "http://localhost:4242/creative"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay] Connecting local P2P WebSocket to ws://localhost:4242",
+      "url": "http://localhost:4242/creative"
+    },
+    {
+      "type": "info",
+      "text": "🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙",
+      "url": "http://localhost:4242/creative"
+    },
+    {
+      "type": "log",
+      "text": "i18next: languageChanged en-US",
+      "url": "http://localhost:4242/creative"
+    },
+    {
+      "type": "log",
+      "text": "i18next: initialized {debug: true, initAsync: true, ns: Array(1), defaultNS: Array(1), fallbackLng: Array(1)}",
+      "url": "http://localhost:4242/creative"
+    },
+    {
+      "type": "debug",
+      "text": "indii.music",
+      "url": "http://localhost:4242/creative"
+    },
+    {
+      "type": "warning",
+      "text": "Lit is in dev mode. Not recommended for production! See https://lit.dev/msg/dev-mode for more information.",
+      "url": "http://localhost:4242/creative"
+    },
+    {
+      "type": "log",
+      "text": "App Check debug token: 342a22b8-af79-4f15-af67-8b946aabba75. You will need to add it to your app's App Check settings in the Firebase console for it to work.",
+      "url": "http://localhost:4242/creative"
+    },
+    {
+      "type": "debug",
+      "text": "[Auth] Initializing Auth Listener...",
+      "url": "http://localhost:4242/creative"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay] 🔐 Setting up auth listener...",
+      "url": "http://localhost:4242/creative"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}",
+      "url": "http://localhost:4242/creative"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] returning null",
+      "url": "http://localhost:4242/creative"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay/Firestore] 🔍 Command listener effect triggered, enabled=false",
+      "url": "http://localhost:4242/creative"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay/Firestore] ⏸️ Not enabled — skipping command listener",
+      "url": "http://localhost:4242/creative"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}",
+      "url": "http://localhost:4242/creative"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] returning null",
+      "url": "http://localhost:4242/creative"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}",
+      "url": "http://localhost:4242/creative"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] returning null",
+      "url": "http://localhost:4242/creative"
+    },
+    {
+      "type": "debug",
+      "text": "[Auth] Initializing Auth Listener...",
+      "url": "http://localhost:4242/creative"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay] 🔐 Setting up auth listener...",
+      "url": "http://localhost:4242/creative"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}",
+      "url": "http://localhost:4242/creative"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] returning null",
+      "url": "http://localhost:4242/creative"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay/Firestore] 🔍 Command listener effect triggered, enabled=false",
+      "url": "http://localhost:4242/creative"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay/Firestore] ⏸️ Not enabled — skipping command listener",
+      "url": "http://localhost:4242/creative"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}",
+      "url": "http://localhost:4242/creative"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] returning null",
+      "url": "http://localhost:4242/creative"
+    },
+    {
+      "type": "info",
+      "text": "[Firebase] Performance Monitoring initialized",
+      "url": "http://localhost:4242/creative"
+    },
+    {
+      "type": "debug",
+      "text": "NetworkQualityMonitor: quality changed to 3g (1.4Mbps, 650ms RTT)",
+      "url": "http://localhost:4242/creative"
+    },
+    {
+      "type": "info",
+      "text": "NetworkQualityMonitor: initialized",
+      "url": "http://localhost:4242/creative"
+    },
+    {
+      "type": "info",
+      "text": "[Phase 3] Observability and performance monitoring initialized",
+      "url": "http://localhost:4242/creative"
+    },
+    {
+      "type": "debug",
+      "text": "[OfflineSync] IndexedDB initialized",
+      "url": "http://localhost:4242/creative"
+    },
+    {
+      "type": "info",
+      "text": "MediaCacheManager: IndexedDB initialized",
+      "url": "http://localhost:4242/creative"
+    },
+    {
+      "type": "info",
+      "text": "[WebVitals] Core Web Vitals monitoring initialized",
+      "url": "http://localhost:4242/creative"
+    },
+    {
+      "type": "info",
+      "text": "[Phase 2] Memory and orchestration services initialized",
+      "url": "http://localhost:4242/creative"
+    },
+    {
+      "type": "info",
+      "text": "MediaCacheManager: total cache size = 0.00MB",
+      "url": "http://localhost:4242/creative"
+    },
+    {
+      "type": "info",
+      "text": "[Auth] onAuthStateChanged fired. User: null, lastKnownUser: null",
+      "url": "http://localhost:4242/creative"
+    },
+    {
+      "type": "info",
+      "text": "[Auth] Steady state reached. Setting authLoading to false. User: null",
+      "url": "http://localhost:4242/creative"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay] 🔐 Auth state changed: SIGNED OUT",
+      "url": "http://localhost:4242/creative"
+    },
+    {
+      "type": "info",
+      "text": "[WebVitals] FCP: 500.0ms (good)",
+      "url": "http://localhost:4242/creative"
+    },
+    {
+      "type": "info",
+      "text": "[Phase 1] PWA and offline services initialized",
+      "url": "http://localhost:4242/creative"
+    },
+    {
+      "type": "debug",
+      "text": "[AgentRegistry] Agent 'generalist' loaded successfully",
+      "url": "http://localhost:4242/creative"
+    },
+    {
+      "type": "debug",
+      "text": "[AgentRegistry] Generalist agent pre-warmed successfully",
+      "url": "http://localhost:4242/creative"
+    },
+    {
+      "type": "info",
+      "text": "[WebVitals] TTFB: 21.9ms (good)",
+      "url": "http://localhost:4242/creative"
+    },
+    {
+      "type": "info",
+      "text": "[WebVitals] CLS: 0.0ms (good)",
+      "url": "http://localhost:4242/creative"
+    },
+    {
+      "type": "info",
+      "text": "[WebVitals] LCP: 620.0ms (good)",
+      "url": "http://localhost:4242/creative"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting...",
+      "url": "http://localhost:4242/marketing"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected.",
+      "url": "http://localhost:4242/marketing"
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold",
+      "url": "http://localhost:4242/marketing"
+    },
+    {
+      "type": "log",
+      "text": "[indii.music][Env] Initialized: {hasMapsKey: true, mapsEnabled: true}",
+      "url": "http://localhost:4242/marketing"
+    },
+    {
+      "type": "info",
+      "text": "[App Check] Initialized successfully",
+      "url": "http://localhost:4242/marketing"
+    },
+    {
+      "type": "info",
+      "text": "[DistributorService] Registered adapter: DistroKid",
+      "url": "http://localhost:4242/marketing"
+    },
+    {
+      "type": "info",
+      "text": "[DistributorService] Registered adapter: TuneCore",
+      "url": "http://localhost:4242/marketing"
+    },
+    {
+      "type": "info",
+      "text": "[DistributorService] Registered adapter: CDBaby",
+      "url": "http://localhost:4242/marketing"
+    },
+    {
+      "type": "info",
+      "text": "[DistributorService] Registered adapter: Symphonic",
+      "url": "http://localhost:4242/marketing"
+    },
+    {
+      "type": "warning",
+      "text": "[MemoryBank] MEM0_API_KEY is not set in environment.",
+      "url": "http://localhost:4242/marketing"
+    },
+    {
+      "type": "debug",
+      "text": "[AgentRegistry] Pre-warming Generalist agent...",
+      "url": "http://localhost:4242/marketing"
+    },
+    {
+      "type": "debug",
+      "text": "[AgentRegistry] Loading agent 'generalist' (attempt 1)...",
+      "url": "http://localhost:4242/marketing"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay] Connecting local P2P WebSocket to ws://localhost:4242",
+      "url": "http://localhost:4242/marketing"
+    },
+    {
+      "type": "info",
+      "text": "🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙",
+      "url": "http://localhost:4242/marketing"
+    },
+    {
+      "type": "log",
+      "text": "i18next: languageChanged en-US",
+      "url": "http://localhost:4242/marketing"
+    },
+    {
+      "type": "log",
+      "text": "i18next: initialized {debug: true, initAsync: true, ns: Array(1), defaultNS: Array(1), fallbackLng: Array(1)}",
+      "url": "http://localhost:4242/marketing"
+    },
+    {
+      "type": "debug",
+      "text": "indii.music",
+      "url": "http://localhost:4242/marketing"
+    },
+    {
+      "type": "warning",
+      "text": "Lit is in dev mode. Not recommended for production! See https://lit.dev/msg/dev-mode for more information.",
+      "url": "http://localhost:4242/marketing"
+    },
+    {
+      "type": "log",
+      "text": "App Check debug token: 342a22b8-af79-4f15-af67-8b946aabba75. You will need to add it to your app's App Check settings in the Firebase console for it to work.",
+      "url": "http://localhost:4242/marketing"
+    },
+    {
+      "type": "debug",
+      "text": "[Auth] Initializing Auth Listener...",
+      "url": "http://localhost:4242/marketing"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay] 🔐 Setting up auth listener...",
+      "url": "http://localhost:4242/marketing"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}",
+      "url": "http://localhost:4242/marketing"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] returning null",
+      "url": "http://localhost:4242/marketing"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay/Firestore] 🔍 Command listener effect triggered, enabled=false",
+      "url": "http://localhost:4242/marketing"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay/Firestore] ⏸️ Not enabled — skipping command listener",
+      "url": "http://localhost:4242/marketing"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}",
+      "url": "http://localhost:4242/marketing"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] returning null",
+      "url": "http://localhost:4242/marketing"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}",
+      "url": "http://localhost:4242/marketing"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] returning null",
+      "url": "http://localhost:4242/marketing"
+    },
+    {
+      "type": "debug",
+      "text": "[Auth] Initializing Auth Listener...",
+      "url": "http://localhost:4242/marketing"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay] 🔐 Setting up auth listener...",
+      "url": "http://localhost:4242/marketing"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}",
+      "url": "http://localhost:4242/marketing"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] returning null",
+      "url": "http://localhost:4242/marketing"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay/Firestore] 🔍 Command listener effect triggered, enabled=false",
+      "url": "http://localhost:4242/marketing"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay/Firestore] ⏸️ Not enabled — skipping command listener",
+      "url": "http://localhost:4242/marketing"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}",
+      "url": "http://localhost:4242/marketing"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] returning null",
+      "url": "http://localhost:4242/marketing"
+    },
+    {
+      "type": "info",
+      "text": "[Firebase] Performance Monitoring initialized",
+      "url": "http://localhost:4242/marketing"
+    },
+    {
+      "type": "debug",
+      "text": "NetworkQualityMonitor: quality changed to 3g (1.4Mbps, 650ms RTT)",
+      "url": "http://localhost:4242/marketing"
+    },
+    {
+      "type": "info",
+      "text": "NetworkQualityMonitor: initialized",
+      "url": "http://localhost:4242/marketing"
+    },
+    {
+      "type": "debug",
+      "text": "[OfflineSync] IndexedDB initialized",
+      "url": "http://localhost:4242/marketing"
+    },
+    {
+      "type": "info",
+      "text": "MediaCacheManager: IndexedDB initialized",
+      "url": "http://localhost:4242/marketing"
+    },
+    {
+      "type": "info",
+      "text": "[Phase 3] Observability and performance monitoring initialized",
+      "url": "http://localhost:4242/marketing"
+    },
+    {
+      "type": "info",
+      "text": "[WebVitals] Core Web Vitals monitoring initialized",
+      "url": "http://localhost:4242/marketing"
+    },
+    {
+      "type": "info",
+      "text": "[Phase 2] Memory and orchestration services initialized",
+      "url": "http://localhost:4242/marketing"
+    },
+    {
+      "type": "info",
+      "text": "MediaCacheManager: total cache size = 0.00MB",
+      "url": "http://localhost:4242/marketing"
+    },
+    {
+      "type": "info",
+      "text": "[Auth] onAuthStateChanged fired. User: null, lastKnownUser: null",
+      "url": "http://localhost:4242/marketing"
+    },
+    {
+      "type": "info",
+      "text": "[Auth] Steady state reached. Setting authLoading to false. User: null",
+      "url": "http://localhost:4242/marketing"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay] 🔐 Auth state changed: SIGNED OUT",
+      "url": "http://localhost:4242/marketing"
+    },
+    {
+      "type": "info",
+      "text": "[Phase 1] PWA and offline services initialized",
+      "url": "http://localhost:4242/marketing"
+    },
+    {
+      "type": "info",
+      "text": "[WebVitals] FCP: 628.0ms (good)",
+      "url": "http://localhost:4242/marketing"
+    },
+    {
+      "type": "debug",
+      "text": "[AgentRegistry] Agent 'generalist' loaded successfully",
+      "url": "http://localhost:4242/marketing"
+    },
+    {
+      "type": "debug",
+      "text": "[AgentRegistry] Generalist agent pre-warmed successfully",
+      "url": "http://localhost:4242/marketing"
+    },
+    {
+      "type": "info",
+      "text": "[WebVitals] TTFB: 33.7ms (good)",
+      "url": "http://localhost:4242/marketing"
+    },
+    {
+      "type": "info",
+      "text": "[WebVitals] CLS: 0.0ms (good)",
+      "url": "http://localhost:4242/marketing"
+    },
+    {
+      "type": "info",
+      "text": "[WebVitals] LCP: 628.0ms (good)",
+      "url": "http://localhost:4242/marketing"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting...",
+      "url": "http://localhost:4242/publishing"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected.",
+      "url": "http://localhost:4242/publishing"
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold",
+      "url": "http://localhost:4242/publishing"
+    },
+    {
+      "type": "log",
+      "text": "[indii.music][Env] Initialized: {hasMapsKey: true, mapsEnabled: true}",
+      "url": "http://localhost:4242/publishing"
+    },
+    {
+      "type": "info",
+      "text": "[App Check] Initialized successfully",
+      "url": "http://localhost:4242/publishing"
+    },
+    {
+      "type": "info",
+      "text": "[DistributorService] Registered adapter: DistroKid",
+      "url": "http://localhost:4242/publishing"
+    },
+    {
+      "type": "info",
+      "text": "[DistributorService] Registered adapter: TuneCore",
+      "url": "http://localhost:4242/publishing"
+    },
+    {
+      "type": "info",
+      "text": "[DistributorService] Registered adapter: CDBaby",
+      "url": "http://localhost:4242/publishing"
+    },
+    {
+      "type": "info",
+      "text": "[DistributorService] Registered adapter: Symphonic",
+      "url": "http://localhost:4242/publishing"
+    },
+    {
+      "type": "warning",
+      "text": "[MemoryBank] MEM0_API_KEY is not set in environment.",
+      "url": "http://localhost:4242/publishing"
+    },
+    {
+      "type": "debug",
+      "text": "[AgentRegistry] Pre-warming Generalist agent...",
+      "url": "http://localhost:4242/publishing"
+    },
+    {
+      "type": "debug",
+      "text": "[AgentRegistry] Loading agent 'generalist' (attempt 1)...",
+      "url": "http://localhost:4242/publishing"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay] Connecting local P2P WebSocket to ws://localhost:4242",
+      "url": "http://localhost:4242/publishing"
+    },
+    {
+      "type": "info",
+      "text": "🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙",
+      "url": "http://localhost:4242/publishing"
+    },
+    {
+      "type": "log",
+      "text": "i18next: languageChanged en-US",
+      "url": "http://localhost:4242/publishing"
+    },
+    {
+      "type": "log",
+      "text": "i18next: initialized {debug: true, initAsync: true, ns: Array(1), defaultNS: Array(1), fallbackLng: Array(1)}",
+      "url": "http://localhost:4242/publishing"
+    },
+    {
+      "type": "debug",
+      "text": "indii.music",
+      "url": "http://localhost:4242/publishing"
+    },
+    {
+      "type": "warning",
+      "text": "Lit is in dev mode. Not recommended for production! See https://lit.dev/msg/dev-mode for more information.",
+      "url": "http://localhost:4242/publishing"
+    },
+    {
+      "type": "log",
+      "text": "App Check debug token: 342a22b8-af79-4f15-af67-8b946aabba75. You will need to add it to your app's App Check settings in the Firebase console for it to work.",
+      "url": "http://localhost:4242/publishing"
+    },
+    {
+      "type": "debug",
+      "text": "[Auth] Initializing Auth Listener...",
+      "url": "http://localhost:4242/publishing"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay] 🔐 Setting up auth listener...",
+      "url": "http://localhost:4242/publishing"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}",
+      "url": "http://localhost:4242/publishing"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] returning null",
+      "url": "http://localhost:4242/publishing"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay/Firestore] 🔍 Command listener effect triggered, enabled=false",
+      "url": "http://localhost:4242/publishing"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay/Firestore] ⏸️ Not enabled — skipping command listener",
+      "url": "http://localhost:4242/publishing"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}",
+      "url": "http://localhost:4242/publishing"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] returning null",
+      "url": "http://localhost:4242/publishing"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}",
+      "url": "http://localhost:4242/publishing"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] returning null",
+      "url": "http://localhost:4242/publishing"
+    },
+    {
+      "type": "debug",
+      "text": "[Auth] Initializing Auth Listener...",
+      "url": "http://localhost:4242/publishing"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay] 🔐 Setting up auth listener...",
+      "url": "http://localhost:4242/publishing"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}",
+      "url": "http://localhost:4242/publishing"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] returning null",
+      "url": "http://localhost:4242/publishing"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay/Firestore] 🔍 Command listener effect triggered, enabled=false",
+      "url": "http://localhost:4242/publishing"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay/Firestore] ⏸️ Not enabled — skipping command listener",
+      "url": "http://localhost:4242/publishing"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}",
+      "url": "http://localhost:4242/publishing"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] returning null",
+      "url": "http://localhost:4242/publishing"
+    },
+    {
+      "type": "info",
+      "text": "[Firebase] Performance Monitoring initialized",
+      "url": "http://localhost:4242/publishing"
+    },
+    {
+      "type": "debug",
+      "text": "NetworkQualityMonitor: quality changed to 3g (1.4Mbps, 650ms RTT)",
+      "url": "http://localhost:4242/publishing"
+    },
+    {
+      "type": "info",
+      "text": "NetworkQualityMonitor: initialized",
+      "url": "http://localhost:4242/publishing"
+    },
+    {
+      "type": "info",
+      "text": "[Phase 3] Observability and performance monitoring initialized",
+      "url": "http://localhost:4242/publishing"
+    },
+    {
+      "type": "debug",
+      "text": "[OfflineSync] IndexedDB initialized",
+      "url": "http://localhost:4242/publishing"
+    },
+    {
+      "type": "info",
+      "text": "MediaCacheManager: IndexedDB initialized",
+      "url": "http://localhost:4242/publishing"
+    },
+    {
+      "type": "info",
+      "text": "[WebVitals] Core Web Vitals monitoring initialized",
+      "url": "http://localhost:4242/publishing"
+    },
+    {
+      "type": "info",
+      "text": "[Phase 2] Memory and orchestration services initialized",
+      "url": "http://localhost:4242/publishing"
+    },
+    {
+      "type": "info",
+      "text": "MediaCacheManager: total cache size = 0.00MB",
+      "url": "http://localhost:4242/publishing"
+    },
+    {
+      "type": "info",
+      "text": "[Auth] onAuthStateChanged fired. User: null, lastKnownUser: null",
+      "url": "http://localhost:4242/publishing"
+    },
+    {
+      "type": "info",
+      "text": "[Auth] Steady state reached. Setting authLoading to false. User: null",
+      "url": "http://localhost:4242/publishing"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay] 🔐 Auth state changed: SIGNED OUT",
+      "url": "http://localhost:4242/publishing"
+    },
+    {
+      "type": "info",
+      "text": "[Phase 1] PWA and offline services initialized",
+      "url": "http://localhost:4242/publishing"
+    },
+    {
+      "type": "info",
+      "text": "[WebVitals] FCP: 488.0ms (good)",
+      "url": "http://localhost:4242/publishing"
+    },
+    {
+      "type": "debug",
+      "text": "[AgentRegistry] Agent 'generalist' loaded successfully",
+      "url": "http://localhost:4242/publishing"
+    },
+    {
+      "type": "debug",
+      "text": "[AgentRegistry] Generalist agent pre-warmed successfully",
+      "url": "http://localhost:4242/publishing"
+    },
+    {
+      "type": "info",
+      "text": "[WebVitals] TTFB: 19.4ms (good)",
+      "url": "http://localhost:4242/publishing"
+    },
+    {
+      "type": "info",
+      "text": "[WebVitals] CLS: 0.0ms (good)",
+      "url": "http://localhost:4242/publishing"
+    },
+    {
+      "type": "info",
+      "text": "[WebVitals] LCP: 488.0ms (good)",
+      "url": "http://localhost:4242/publishing"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting...",
+      "url": "http://localhost:4242/legal"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected.",
+      "url": "http://localhost:4242/legal"
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold",
+      "url": "http://localhost:4242/legal"
+    },
+    {
+      "type": "log",
+      "text": "[indii.music][Env] Initialized: {hasMapsKey: true, mapsEnabled: true}",
+      "url": "http://localhost:4242/legal"
+    },
+    {
+      "type": "info",
+      "text": "[App Check] Initialized successfully",
+      "url": "http://localhost:4242/legal"
+    },
+    {
+      "type": "info",
+      "text": "[DistributorService] Registered adapter: DistroKid",
+      "url": "http://localhost:4242/legal"
+    },
+    {
+      "type": "info",
+      "text": "[DistributorService] Registered adapter: TuneCore",
+      "url": "http://localhost:4242/legal"
+    },
+    {
+      "type": "info",
+      "text": "[DistributorService] Registered adapter: CDBaby",
+      "url": "http://localhost:4242/legal"
+    },
+    {
+      "type": "info",
+      "text": "[DistributorService] Registered adapter: Symphonic",
+      "url": "http://localhost:4242/legal"
+    },
+    {
+      "type": "warning",
+      "text": "[MemoryBank] MEM0_API_KEY is not set in environment.",
+      "url": "http://localhost:4242/legal"
+    },
+    {
+      "type": "debug",
+      "text": "[AgentRegistry] Pre-warming Generalist agent...",
+      "url": "http://localhost:4242/legal"
+    },
+    {
+      "type": "debug",
+      "text": "[AgentRegistry] Loading agent 'generalist' (attempt 1)...",
+      "url": "http://localhost:4242/legal"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay] Connecting local P2P WebSocket to ws://localhost:4242",
+      "url": "http://localhost:4242/legal"
+    },
+    {
+      "type": "info",
+      "text": "🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙",
+      "url": "http://localhost:4242/legal"
+    },
+    {
+      "type": "log",
+      "text": "i18next: languageChanged en-US",
+      "url": "http://localhost:4242/legal"
+    },
+    {
+      "type": "log",
+      "text": "i18next: initialized {debug: true, initAsync: true, ns: Array(1), defaultNS: Array(1), fallbackLng: Array(1)}",
+      "url": "http://localhost:4242/legal"
+    },
+    {
+      "type": "debug",
+      "text": "indii.music",
+      "url": "http://localhost:4242/legal"
+    },
+    {
+      "type": "warning",
+      "text": "Lit is in dev mode. Not recommended for production! See https://lit.dev/msg/dev-mode for more information.",
+      "url": "http://localhost:4242/legal"
+    },
+    {
+      "type": "log",
+      "text": "App Check debug token: 342a22b8-af79-4f15-af67-8b946aabba75. You will need to add it to your app's App Check settings in the Firebase console for it to work.",
+      "url": "http://localhost:4242/legal"
+    },
+    {
+      "type": "debug",
+      "text": "[Auth] Initializing Auth Listener...",
+      "url": "http://localhost:4242/legal"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay] 🔐 Setting up auth listener...",
+      "url": "http://localhost:4242/legal"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}",
+      "url": "http://localhost:4242/legal"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] returning null",
+      "url": "http://localhost:4242/legal"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay/Firestore] 🔍 Command listener effect triggered, enabled=false",
+      "url": "http://localhost:4242/legal"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay/Firestore] ⏸️ Not enabled — skipping command listener",
+      "url": "http://localhost:4242/legal"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}",
+      "url": "http://localhost:4242/legal"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] returning null",
+      "url": "http://localhost:4242/legal"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}",
+      "url": "http://localhost:4242/legal"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] returning null",
+      "url": "http://localhost:4242/legal"
+    },
+    {
+      "type": "debug",
+      "text": "[Auth] Initializing Auth Listener...",
+      "url": "http://localhost:4242/legal"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay] 🔐 Setting up auth listener...",
+      "url": "http://localhost:4242/legal"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}",
+      "url": "http://localhost:4242/legal"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] returning null",
+      "url": "http://localhost:4242/legal"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay/Firestore] 🔍 Command listener effect triggered, enabled=false",
+      "url": "http://localhost:4242/legal"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay/Firestore] ⏸️ Not enabled — skipping command listener",
+      "url": "http://localhost:4242/legal"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}",
+      "url": "http://localhost:4242/legal"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] returning null",
+      "url": "http://localhost:4242/legal"
+    },
+    {
+      "type": "info",
+      "text": "[Firebase] Performance Monitoring initialized",
+      "url": "http://localhost:4242/legal"
+    },
+    {
+      "type": "debug",
+      "text": "NetworkQualityMonitor: quality changed to 3g (1.4Mbps, 650ms RTT)",
+      "url": "http://localhost:4242/legal"
+    },
+    {
+      "type": "info",
+      "text": "NetworkQualityMonitor: initialized",
+      "url": "http://localhost:4242/legal"
+    },
+    {
+      "type": "debug",
+      "text": "[OfflineSync] IndexedDB initialized",
+      "url": "http://localhost:4242/legal"
+    },
+    {
+      "type": "info",
+      "text": "[Phase 3] Observability and performance monitoring initialized",
+      "url": "http://localhost:4242/legal"
+    },
+    {
+      "type": "info",
+      "text": "MediaCacheManager: IndexedDB initialized",
+      "url": "http://localhost:4242/legal"
+    },
+    {
+      "type": "info",
+      "text": "[WebVitals] Core Web Vitals monitoring initialized",
+      "url": "http://localhost:4242/legal"
+    },
+    {
+      "type": "info",
+      "text": "[Phase 2] Memory and orchestration services initialized",
+      "url": "http://localhost:4242/legal"
+    },
+    {
+      "type": "info",
+      "text": "MediaCacheManager: total cache size = 0.00MB",
+      "url": "http://localhost:4242/legal"
+    },
+    {
+      "type": "info",
+      "text": "[Auth] onAuthStateChanged fired. User: null, lastKnownUser: null",
+      "url": "http://localhost:4242/legal"
+    },
+    {
+      "type": "info",
+      "text": "[Auth] Steady state reached. Setting authLoading to false. User: null",
+      "url": "http://localhost:4242/legal"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay] 🔐 Auth state changed: SIGNED OUT",
+      "url": "http://localhost:4242/legal"
+    },
+    {
+      "type": "info",
+      "text": "[WebVitals] FCP: 432.0ms (good)",
+      "url": "http://localhost:4242/legal"
+    },
+    {
+      "type": "info",
+      "text": "[Phase 1] PWA and offline services initialized",
+      "url": "http://localhost:4242/legal"
+    },
+    {
+      "type": "debug",
+      "text": "[AgentRegistry] Agent 'generalist' loaded successfully",
+      "url": "http://localhost:4242/legal"
+    },
+    {
+      "type": "debug",
+      "text": "[AgentRegistry] Generalist agent pre-warmed successfully",
+      "url": "http://localhost:4242/legal"
+    },
+    {
+      "type": "info",
+      "text": "[WebVitals] TTFB: 7.4ms (good)",
+      "url": "http://localhost:4242/legal"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}",
+      "url": "http://localhost:4242/legal"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] returning null",
+      "url": "http://localhost:4242/legal"
+    },
+    {
+      "type": "info",
+      "text": "[WebVitals] CLS: 0.0ms (good)",
+      "url": "http://localhost:4242/legal"
+    },
+    {
+      "type": "info",
+      "text": "[WebVitals] LCP: 532.0ms (good)",
+      "url": "http://localhost:4242/legal"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting...",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected.",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "log",
+      "text": "[indii.music][Env] Initialized: {hasMapsKey: true, mapsEnabled: true}",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[App Check] Initialized successfully",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[DistributorService] Registered adapter: DistroKid",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[DistributorService] Registered adapter: TuneCore",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[DistributorService] Registered adapter: CDBaby",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[DistributorService] Registered adapter: Symphonic",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "warning",
+      "text": "[MemoryBank] MEM0_API_KEY is not set in environment.",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[AgentRegistry] Pre-warming Generalist agent...",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[AgentRegistry] Loading agent 'generalist' (attempt 1)...",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay] Connecting local P2P WebSocket to ws://localhost:4242",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "log",
+      "text": "i18next: languageChanged en-US",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "log",
+      "text": "i18next: initialized {debug: true, initAsync: true, ns: Array(1), defaultNS: Array(1), fallbackLng: Array(1)}",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "indii.music",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "warning",
+      "text": "Lit is in dev mode. Not recommended for production! See https://lit.dev/msg/dev-mode for more information.",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "log",
+      "text": "App Check debug token: 342a22b8-af79-4f15-af67-8b946aabba75. You will need to add it to your app's App Check settings in the Firebase console for it to work.",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[Auth] Initializing Auth Listener...",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay] 🔐 Setting up auth listener...",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] returning null",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay/Firestore] 🔍 Command listener effect triggered, enabled=false",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay/Firestore] ⏸️ Not enabled — skipping command listener",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] returning null",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] returning null",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[Auth] Initializing Auth Listener...",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay] 🔐 Setting up auth listener...",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] returning null",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay/Firestore] 🔍 Command listener effect triggered, enabled=false",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay/Firestore] ⏸️ Not enabled — skipping command listener",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] returning null",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[Firebase] Performance Monitoring initialized",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[OfflineSync] IndexedDB initialized",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[Auth] onAuthStateChanged fired. User: null, lastKnownUser: null",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[Auth] Steady state reached. Setting authLoading to false. User: null",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay] 🔐 Auth state changed: SIGNED OUT",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "NetworkQualityMonitor: quality changed to 3g (1.4Mbps, 650ms RTT)",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "NetworkQualityMonitor: initialized",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "MediaCacheManager: IndexedDB initialized",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "MediaCacheManager: total cache size = 0.00MB",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[Phase 2] Memory and orchestration services initialized",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting...",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected.",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "log",
+      "text": "[indii.music][Env] Initialized: {hasMapsKey: true, mapsEnabled: true}",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[App Check] Initialized successfully",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[DistributorService] Registered adapter: DistroKid",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[DistributorService] Registered adapter: TuneCore",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[DistributorService] Registered adapter: CDBaby",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[DistributorService] Registered adapter: Symphonic",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "warning",
+      "text": "[MemoryBank] MEM0_API_KEY is not set in environment.",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[AgentRegistry] Pre-warming Generalist agent...",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[AgentRegistry] Loading agent 'generalist' (attempt 1)...",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay] Connecting local P2P WebSocket to ws://localhost:4242",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "log",
+      "text": "i18next: languageChanged en-US",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "log",
+      "text": "i18next: initialized {debug: true, initAsync: true, ns: Array(1), defaultNS: Array(1), fallbackLng: Array(1)}",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "indii.music",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "warning",
+      "text": "Lit is in dev mode. Not recommended for production! See https://lit.dev/msg/dev-mode for more information.",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "log",
+      "text": "App Check debug token: 342a22b8-af79-4f15-af67-8b946aabba75. You will need to add it to your app's App Check settings in the Firebase console for it to work.",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[Auth] Initializing Auth Listener...",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay] 🔐 Setting up auth listener...",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] returning null",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay/Firestore] 🔍 Command listener effect triggered, enabled=false",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay/Firestore] ⏸️ Not enabled — skipping command listener",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] returning null",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] returning null",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[Auth] Initializing Auth Listener...",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay] 🔐 Setting up auth listener...",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] returning null",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay/Firestore] 🔍 Command listener effect triggered, enabled=false",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay/Firestore] ⏸️ Not enabled — skipping command listener",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] returning null",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[Firebase] Performance Monitoring initialized",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "NetworkQualityMonitor: quality changed to 3g (1.4Mbps, 650ms RTT)",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "NetworkQualityMonitor: initialized",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[OfflineSync] IndexedDB initialized",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "MediaCacheManager: IndexedDB initialized",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "MediaCacheManager: total cache size = 0.00MB",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[Phase 2] Memory and orchestration services initialized",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[Auth] onAuthStateChanged fired. User: null, lastKnownUser: null",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[Auth] Steady state reached. Setting authLoading to false. User: null",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay] 🔐 Auth state changed: SIGNED OUT",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[Phase 1] PWA and offline services initialized",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[Phase 3] Observability and performance monitoring initialized",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[WebVitals] Core Web Vitals monitoring initialized",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[WebVitals] FCP: 976.0ms (good)",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[WebVitals] CLS: 0.0ms (good)",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[WebVitals] LCP: 976.0ms (good)",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting...",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected.",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "log",
+      "text": "[indii.music][Env] Initialized: {hasMapsKey: true, mapsEnabled: true}",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[App Check] Initialized successfully",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[DistributorService] Registered adapter: DistroKid",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[DistributorService] Registered adapter: TuneCore",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[DistributorService] Registered adapter: CDBaby",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[DistributorService] Registered adapter: Symphonic",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "warning",
+      "text": "[MemoryBank] MEM0_API_KEY is not set in environment.",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[AgentRegistry] Pre-warming Generalist agent...",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[AgentRegistry] Loading agent 'generalist' (attempt 1)...",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay] Connecting local P2P WebSocket to ws://localhost:4242",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "log",
+      "text": "i18next: languageChanged en-US",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "log",
+      "text": "i18next: initialized {debug: true, initAsync: true, ns: Array(1), defaultNS: Array(1), fallbackLng: Array(1)}",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "indii.music",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "warning",
+      "text": "Lit is in dev mode. Not recommended for production! See https://lit.dev/msg/dev-mode for more information.",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "log",
+      "text": "App Check debug token: 342a22b8-af79-4f15-af67-8b946aabba75. You will need to add it to your app's App Check settings in the Firebase console for it to work.",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[Auth] Initializing Auth Listener...",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay] 🔐 Setting up auth listener...",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] returning null",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay/Firestore] 🔍 Command listener effect triggered, enabled=false",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay/Firestore] ⏸️ Not enabled — skipping command listener",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] returning null",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] returning null",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[Auth] Initializing Auth Listener...",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay] 🔐 Setting up auth listener...",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] returning null",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay/Firestore] 🔍 Command listener effect triggered, enabled=false",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay/Firestore] ⏸️ Not enabled — skipping command listener",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] returning null",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[Firebase] Performance Monitoring initialized",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "NetworkQualityMonitor: quality changed to 3g (1.4Mbps, 650ms RTT)",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "NetworkQualityMonitor: initialized",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[OfflineSync] IndexedDB initialized",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "MediaCacheManager: IndexedDB initialized",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "MediaCacheManager: total cache size = 0.00MB",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[Phase 3] Observability and performance monitoring initialized",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[WebVitals] Core Web Vitals monitoring initialized",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[Phase 2] Memory and orchestration services initialized",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[Phase 1] PWA and offline services initialized",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[Auth] onAuthStateChanged fired. User: null, lastKnownUser: null",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[Auth] Steady state reached. Setting authLoading to false. User: null",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[RemoteRelay] 🔐 Auth state changed: SIGNED OUT",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[WebVitals] FCP: 700.0ms (good)",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[AgentRegistry] Agent 'generalist' loaded successfully",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[AgentRegistry] Generalist agent pre-warmed successfully",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "debug",
+      "text": "[AuthProxy] returning null",
+      "url": "http://localhost:4242/audio-analyzer"
+    },
+    {
+      "type": "info",
+      "text": "[WebVitals] TTFB: 13.2ms (good)",
+      "url": "http://localhost:4242/audio-analyzer"
+    }
+  ],
+  "requests": [
+    {
+      "type": "response",
+      "url": "http://localhost:4242/src/services/firebase.ts",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_auth.js?v=2c43b4f1",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_firestore.js?v=fd390853",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_messaging.js?v=df88372d",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/src/services/FirestoreService.ts",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_app.js?v=aa00e77c",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_storage.js?v=a36f0c94",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_app-check.js?v=890c5cff",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_remote-config.js?v=232a0200",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_functions.js?v=f4528e03",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/src/services/agent/AgentFirebaseConnector.ts",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_ai.js?v=2fd1ac4c",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/src/services/intelligence/FirebaseIntelligenceService.ts",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/src/services/utils/firebase.ts",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_performance.js?v=13f95303",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "https://www.google.com/recaptcha/enterprise.js",
+      "method": "GET",
+      "status": 200,
+      "statusText": ""
+    },
+    {
+      "type": "response",
+      "url": "https://content-firebaseappcheck.googleapis.com/v1/projects/indii-music-founder/apps/1:148015878263:web:febc76c0bd56f28cdbb672:exchangeDebugToken?key=AIzaSyDHL8PVxgVYbHtLF95KQtdRfitf3d7zEKc",
+      "method": "POST",
+      "status": 200,
+      "statusText": ""
+    },
+    {
+      "type": "response",
+      "url": "https://www.gstatic.com/recaptcha/releases/ne1iDVwClkE7nKD3uA9Vqsvl/recaptcha__en.js",
+      "method": "GET",
+      "status": 200,
+      "statusText": ""
+    },
+    {
+      "type": "response",
+      "url": "https://www.google.com/recaptcha/enterprise/anchor?ar=1&k=6LdAqPcsAAAAAFdvFbYO2oXeP8uuTdE3js-LG6Yx&co=aHR0cDovL2xvY2FsaG9zdDo0MjQy&hl=en&v=ne1iDVwClkE7nKD3uA9Vqsvl&size=invisible&anchor-ms=20000&execute-ms=30000&cb=nuzt79fpx645",
+      "method": "GET",
+      "status": 200,
+      "statusText": ""
+    },
+    {
+      "type": "response",
+      "url": "https://www.gstatic.com/recaptcha/releases/ne1iDVwClkE7nKD3uA9Vqsvl/styles__ltr.css",
+      "method": "GET",
+      "status": 200,
+      "statusText": ""
+    },
+    {
+      "type": "response",
+      "url": "https://www.gstatic.com/recaptcha/releases/ne1iDVwClkE7nKD3uA9Vqsvl/recaptcha__en.js",
+      "method": "GET",
+      "status": 200,
+      "statusText": ""
+    },
+    {
+      "type": "failed",
+      "url": "https://firebaseinstallations.googleapis.com/v1/projects/indii-music-founder/installations",
+      "method": "POST",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_auth.js?v=2c43b4f1",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_firestore.js?v=fd390853",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_messaging.js?v=df88372d",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/src/services/firebase.ts",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_app.js?v=aa00e77c",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_storage.js?v=a36f0c94",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_ai.js?v=2fd1ac4c",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_functions.js?v=f4528e03",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_app-check.js?v=890c5cff",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_remote-config.js?v=232a0200",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/src/services/FirestoreService.ts",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/src/services/agent/AgentFirebaseConnector.ts",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/src/services/intelligence/FirebaseIntelligenceService.ts",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/src/services/utils/firebase.ts",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_performance.js?v=13f95303",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "https://www.google.com/recaptcha/enterprise.js",
+      "method": "GET",
+      "status": 200,
+      "statusText": ""
+    },
+    {
+      "type": "response",
+      "url": "https://www.gstatic.com/recaptcha/releases/ne1iDVwClkE7nKD3uA9Vqsvl/recaptcha__en.js",
+      "method": "GET",
+      "status": 200,
+      "statusText": ""
+    },
+    {
+      "type": "response",
+      "url": "https://www.google.com/recaptcha/enterprise/anchor?ar=1&k=6LdAqPcsAAAAAFdvFbYO2oXeP8uuTdE3js-LG6Yx&co=aHR0cDovL2xvY2FsaG9zdDo0MjQy&hl=en&v=ne1iDVwClkE7nKD3uA9Vqsvl&size=invisible&anchor-ms=20000&execute-ms=30000&cb=l71l2ylbav9l",
+      "method": "GET",
+      "status": 200,
+      "statusText": ""
+    },
+    {
+      "type": "response",
+      "url": "https://www.gstatic.com/recaptcha/releases/ne1iDVwClkE7nKD3uA9Vqsvl/styles__ltr.css",
+      "method": "GET",
+      "status": 200,
+      "statusText": ""
+    },
+    {
+      "type": "response",
+      "url": "https://www.gstatic.com/recaptcha/releases/ne1iDVwClkE7nKD3uA9Vqsvl/recaptcha__en.js",
+      "method": "GET",
+      "status": 200,
+      "statusText": ""
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_messaging.js?v=df88372d",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_auth.js?v=2c43b4f1",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_firestore.js?v=fd390853",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/src/services/firebase.ts",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_app.js?v=aa00e77c",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_storage.js?v=a36f0c94",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_ai.js?v=2fd1ac4c",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_functions.js?v=f4528e03",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_app-check.js?v=890c5cff",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_remote-config.js?v=232a0200",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/src/services/FirestoreService.ts",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/src/services/agent/AgentFirebaseConnector.ts",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/src/services/intelligence/FirebaseIntelligenceService.ts",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/src/services/utils/firebase.ts",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_performance.js?v=13f95303",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "https://www.google.com/recaptcha/enterprise.js",
+      "method": "GET",
+      "status": 200,
+      "statusText": ""
+    },
+    {
+      "type": "response",
+      "url": "https://www.gstatic.com/recaptcha/releases/ne1iDVwClkE7nKD3uA9Vqsvl/recaptcha__en.js",
+      "method": "GET",
+      "status": 200,
+      "statusText": ""
+    },
+    {
+      "type": "response",
+      "url": "https://www.google.com/recaptcha/enterprise/anchor?ar=1&k=6LdAqPcsAAAAAFdvFbYO2oXeP8uuTdE3js-LG6Yx&co=aHR0cDovL2xvY2FsaG9zdDo0MjQy&hl=en&v=ne1iDVwClkE7nKD3uA9Vqsvl&size=invisible&anchor-ms=20000&execute-ms=30000&cb=b5f7hb4r4g3t",
+      "method": "GET",
+      "status": 200,
+      "statusText": ""
+    },
+    {
+      "type": "response",
+      "url": "https://www.gstatic.com/recaptcha/releases/ne1iDVwClkE7nKD3uA9Vqsvl/styles__ltr.css",
+      "method": "GET",
+      "status": 200,
+      "statusText": ""
+    },
+    {
+      "type": "response",
+      "url": "https://www.gstatic.com/recaptcha/releases/ne1iDVwClkE7nKD3uA9Vqsvl/recaptcha__en.js",
+      "method": "GET",
+      "status": 200,
+      "statusText": ""
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_messaging.js?v=df88372d",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_auth.js?v=2c43b4f1",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_firestore.js?v=fd390853",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/src/services/firebase.ts",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_app.js?v=aa00e77c",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_storage.js?v=a36f0c94",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_ai.js?v=2fd1ac4c",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_functions.js?v=f4528e03",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_app-check.js?v=890c5cff",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_remote-config.js?v=232a0200",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/src/services/FirestoreService.ts",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/src/services/agent/AgentFirebaseConnector.ts",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/src/services/intelligence/FirebaseIntelligenceService.ts",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/src/services/utils/firebase.ts",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_performance.js?v=13f95303",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "https://www.google.com/recaptcha/enterprise.js",
+      "method": "GET",
+      "status": 200,
+      "statusText": ""
+    },
+    {
+      "type": "response",
+      "url": "https://www.gstatic.com/recaptcha/releases/ne1iDVwClkE7nKD3uA9Vqsvl/recaptcha__en.js",
+      "method": "GET",
+      "status": 200,
+      "statusText": ""
+    },
+    {
+      "type": "response",
+      "url": "https://www.google.com/recaptcha/enterprise/anchor?ar=1&k=6LdAqPcsAAAAAFdvFbYO2oXeP8uuTdE3js-LG6Yx&co=aHR0cDovL2xvY2FsaG9zdDo0MjQy&hl=en&v=ne1iDVwClkE7nKD3uA9Vqsvl&size=invisible&anchor-ms=20000&execute-ms=30000&cb=1toxnn1daiom",
+      "method": "GET",
+      "status": 200,
+      "statusText": ""
+    },
+    {
+      "type": "response",
+      "url": "https://www.gstatic.com/recaptcha/releases/ne1iDVwClkE7nKD3uA9Vqsvl/styles__ltr.css",
+      "method": "GET",
+      "status": 200,
+      "statusText": ""
+    },
+    {
+      "type": "response",
+      "url": "https://www.gstatic.com/recaptcha/releases/ne1iDVwClkE7nKD3uA9Vqsvl/recaptcha__en.js",
+      "method": "GET",
+      "status": 200,
+      "statusText": ""
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_auth.js?v=2c43b4f1",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_firestore.js?v=fd390853",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_messaging.js?v=df88372d",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_functions.js?v=f4528e03",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_storage.js?v=a36f0c94",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/src/services/firebase.ts",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_app.js?v=aa00e77c",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_ai.js?v=2fd1ac4c",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_app-check.js?v=890c5cff",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_remote-config.js?v=232a0200",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/src/services/FirestoreService.ts",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/src/services/agent/AgentFirebaseConnector.ts",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/src/services/intelligence/FirebaseIntelligenceService.ts",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/src/services/utils/firebase.ts",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_performance.js?v=13f95303",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "https://www.google.com/recaptcha/enterprise.js",
+      "method": "GET",
+      "status": 200,
+      "statusText": ""
+    },
+    {
+      "type": "response",
+      "url": "https://www.gstatic.com/recaptcha/releases/ne1iDVwClkE7nKD3uA9Vqsvl/recaptcha__en.js",
+      "method": "GET",
+      "status": 200,
+      "statusText": ""
+    },
+    {
+      "type": "response",
+      "url": "https://www.google.com/recaptcha/enterprise/anchor?ar=1&k=6LdAqPcsAAAAAFdvFbYO2oXeP8uuTdE3js-LG6Yx&co=aHR0cDovL2xvY2FsaG9zdDo0MjQy&hl=en&v=ne1iDVwClkE7nKD3uA9Vqsvl&size=invisible&anchor-ms=20000&execute-ms=30000&cb=fub1dqccyvya",
+      "method": "GET",
+      "status": 200,
+      "statusText": ""
+    },
+    {
+      "type": "response",
+      "url": "https://www.gstatic.com/recaptcha/releases/ne1iDVwClkE7nKD3uA9Vqsvl/styles__ltr.css",
+      "method": "GET",
+      "status": 200,
+      "statusText": ""
+    },
+    {
+      "type": "response",
+      "url": "https://www.gstatic.com/recaptcha/releases/ne1iDVwClkE7nKD3uA9Vqsvl/recaptcha__en.js",
+      "method": "GET",
+      "status": 200,
+      "statusText": ""
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_auth.js?v=2c43b4f1",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_firestore.js?v=fd390853",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_messaging.js?v=df88372d",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/src/services/firebase.ts",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_app.js?v=aa00e77c",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_storage.js?v=a36f0c94",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_ai.js?v=2fd1ac4c",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_functions.js?v=f4528e03",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_app-check.js?v=890c5cff",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_remote-config.js?v=232a0200",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/src/services/FirestoreService.ts",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/src/services/agent/AgentFirebaseConnector.ts",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/src/services/intelligence/FirebaseIntelligenceService.ts",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/src/services/utils/firebase.ts",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_performance.js?v=13f95303",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "https://www.google.com/recaptcha/enterprise.js",
+      "method": "GET",
+      "status": 200,
+      "statusText": ""
+    },
+    {
+      "type": "response",
+      "url": "https://www.gstatic.com/recaptcha/releases/ne1iDVwClkE7nKD3uA9Vqsvl/recaptcha__en.js",
+      "method": "GET",
+      "status": 200,
+      "statusText": ""
+    },
+    {
+      "type": "response",
+      "url": "https://www.google.com/recaptcha/enterprise/anchor?ar=1&k=6LdAqPcsAAAAAFdvFbYO2oXeP8uuTdE3js-LG6Yx&co=aHR0cDovL2xvY2FsaG9zdDo0MjQy&hl=en&v=ne1iDVwClkE7nKD3uA9Vqsvl&size=invisible&anchor-ms=20000&execute-ms=30000&cb=4ue3tt2lru7h",
+      "method": "GET",
+      "status": 200,
+      "statusText": ""
+    },
+    {
+      "type": "response",
+      "url": "https://www.gstatic.com/recaptcha/releases/ne1iDVwClkE7nKD3uA9Vqsvl/styles__ltr.css",
+      "method": "GET",
+      "status": 200,
+      "statusText": ""
+    },
+    {
+      "type": "response",
+      "url": "https://www.gstatic.com/recaptcha/releases/ne1iDVwClkE7nKD3uA9Vqsvl/recaptcha__en.js",
+      "method": "GET",
+      "status": 200,
+      "statusText": ""
+    },
+    {
+      "type": "response",
+      "url": "https://firebaseinstallations.googleapis.com/v1/projects/indii-music-founder/installations",
+      "method": "POST",
+      "status": 200,
+      "statusText": ""
+    },
+    {
+      "type": "response",
+      "url": "https://firebaseremoteconfig.googleapis.com/v1/projects/indii-music-founder/namespaces/fireperf:fetch?key=AIzaSyDHL8PVxgVYbHtLF95KQtdRfitf3d7zEKc",
+      "method": "POST",
+      "status": 200,
+      "statusText": ""
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/src/services/firebase.ts",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_auth.js?v=2c43b4f1",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_firestore.js?v=fd390853",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_messaging.js?v=df88372d",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/src/services/FirestoreService.ts",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/src/services/agent/AgentFirebaseConnector.ts",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_app.js?v=aa00e77c",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_functions.js?v=f4528e03",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_ai.js?v=2fd1ac4c",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_storage.js?v=a36f0c94",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_remote-config.js?v=232a0200",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_app-check.js?v=890c5cff",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/src/services/intelligence/FirebaseIntelligenceService.ts",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/src/services/utils/firebase.ts",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_performance.js?v=13f95303",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "failed",
+      "url": "http://localhost:4242/node_modules/.vite/deps/web-vitals.js?v=8500ea1d",
+      "method": "GET",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "type": "failed",
+      "url": "http://localhost:4242/src/services/agent/AgentStreamingService.ts",
+      "method": "GET",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "type": "failed",
+      "url": "http://localhost:4242/src/services/agent/context/AgentExecutionContext.ts",
+      "method": "GET",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "type": "failed",
+      "url": "http://localhost:4242/src/services/sync/BackgroundSyncManager.ts",
+      "method": "GET",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "type": "failed",
+      "url": "http://localhost:4242/src/services/agent/ToolExecutionContext.ts",
+      "method": "GET",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "type": "failed",
+      "url": "http://localhost:4242/src/services/agent/builders/AgentPromptBuilder.ts",
+      "method": "GET",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "type": "failed",
+      "url": "https://www.google.com/recaptcha/enterprise.js",
+      "method": "GET",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "type": "failed",
+      "url": "http://localhost:4242/src/services/agent/governance/ToolPoolAssembler.ts",
+      "method": "GET",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "type": "failed",
+      "url": "http://localhost:4242/src/services/agent/governance/AgentIdentity.ts",
+      "method": "GET",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_messaging.js?v=df88372d",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_auth.js?v=2c43b4f1",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/src/services/firebase.ts",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_firestore.js?v=fd390853",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_app.js?v=aa00e77c",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_storage.js?v=a36f0c94",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_functions.js?v=f4528e03",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_ai.js?v=2fd1ac4c",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_app-check.js?v=890c5cff",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_remote-config.js?v=232a0200",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/src/services/FirestoreService.ts",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/src/services/agent/AgentFirebaseConnector.ts",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/src/services/intelligence/FirebaseIntelligenceService.ts",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/src/services/utils/firebase.ts",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_performance.js?v=13f95303",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "failed",
+      "url": "https://www.google.com/recaptcha/enterprise.js",
+      "method": "GET",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "type": "failed",
+      "url": "http://localhost:4242/src/services/agent/builders/SpecialistAgentFactory.ts",
+      "method": "GET",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_messaging.js?v=df88372d",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_auth.js?v=2c43b4f1",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/src/services/firebase.ts",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_firestore.js?v=fd390853",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_app.js?v=aa00e77c",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_storage.js?v=a36f0c94",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_functions.js?v=f4528e03",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_app-check.js?v=890c5cff",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_ai.js?v=2fd1ac4c",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_remote-config.js?v=232a0200",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/src/services/FirestoreService.ts",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/src/services/agent/AgentFirebaseConnector.ts",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/src/services/intelligence/FirebaseIntelligenceService.ts",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/src/services/utils/firebase.ts",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "http://localhost:4242/node_modules/.vite/deps/firebase_performance.js?v=13f95303",
+      "method": "GET",
+      "status": 200,
+      "statusText": "OK"
+    },
+    {
+      "type": "response",
+      "url": "https://www.google.com/recaptcha/enterprise.js",
+      "method": "GET",
+      "status": 200,
+      "statusText": ""
+    },
+    {
+      "type": "response",
+      "url": "https://www.gstatic.com/recaptcha/releases/ne1iDVwClkE7nKD3uA9Vqsvl/recaptcha__en.js",
+      "method": "GET",
+      "status": 200,
+      "statusText": ""
+    },
+    {
+      "type": "response",
+      "url": "https://www.google.com/recaptcha/enterprise/anchor?ar=1&k=6LdAqPcsAAAAAFdvFbYO2oXeP8uuTdE3js-LG6Yx&co=aHR0cDovL2xvY2FsaG9zdDo0MjQy&hl=en&v=ne1iDVwClkE7nKD3uA9Vqsvl&size=invisible&anchor-ms=20000&execute-ms=30000&cb=snoqe5s89824",
+      "method": "GET",
+      "status": 200,
+      "statusText": ""
+    },
+    {
+      "type": "response",
+      "url": "https://www.gstatic.com/recaptcha/releases/ne1iDVwClkE7nKD3uA9Vqsvl/styles__ltr.css",
+      "method": "GET",
+      "status": 200,
+      "statusText": ""
+    },
+    {
+      "type": "response",
+      "url": "https://www.gstatic.com/recaptcha/releases/ne1iDVwClkE7nKD3uA9Vqsvl/recaptcha__en.js",
+      "method": "GET",
+      "status": 200,
+      "statusText": ""
+    }
+  ],
+  "screenshots": [
+    "/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/artifacts/mega_audio_analyzer_2026-06-16_screenshots/audio_analyzer_4242.png"
+  ],
+  "finishedAt": "2026-06-16T15:31:07.945Z"
+}
