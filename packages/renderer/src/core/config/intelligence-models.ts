@@ -10,22 +10,22 @@ import { logger } from '@/utils/logger';
 
 // Approved model categories and IDs
 export const APPROVED_MODELS = {
-    TEXT_AGENT: 'gemini-3.1-pro-preview',
-    TEXT_FAST: 'gemini-3.1-flash-lite',
-    TEXT_LITE: 'gemini-3.1-flash-lite',
-    IMAGE_GEN: 'gemini-3-pro-image-preview',           // Native image gen via responseModalities
-    IMAGE_FAST: 'gemini-3.1-flash-image-preview',         // Fast image gen via responseModalities
+    TEXT_AGENT: 'gemini-3.1-pro-preview',        // Complex reasoning — per MODEL_POLICY.md
+    TEXT_FAST: 'gemini-3-flash-preview',          // Fast tasks — per MODEL_POLICY.md
+    TEXT_LITE: 'gemini-3.1-flash-lite',           // Budget tier — per MODEL_POLICY.md
+    IMAGE_GEN: 'gemini-3-pro-image-preview',      // Native image gen via responseModalities
+    IMAGE_FAST: 'gemini-3-flash-preview',         // Fast image gen via responseModalities
     // Direct mode — bleeding-edge preview models for client-side SDK calls
-    DIRECT_PRO: 'gemini-3-pro-image-preview',      // Nano Banana Pro — highest quality, 4K, 14 ref images
-    DIRECT_FAST: 'gemini-3.1-flash-image-preview',  // Nano Banana 2 — fast + Pro quality, 4K, grounding
-    DIRECT_LEGACY: 'gemini-3.1-flash-image-preview',        // Nano Banana OG — high-volume, low-latency
+    DIRECT_PRO: 'gemini-3-pro-image-preview',     // Nano Banana Pro — highest quality, 4K, 14 ref images
+    DIRECT_FAST: 'gemini-3-flash-preview',        // Nano Banana 2 — fast + Pro quality
+    DIRECT_LEGACY: 'gemini-3-flash-preview',      // Nano Banana OG — high-volume, low-latency
     AUDIO_PRO: 'gemini-3.1-pro-preview',
     AUDIO_FLASH: 'gemini-3-flash-preview',
     AUDIO_TTS: 'gemini-2.5-pro-tts',
     VIDEO_PRO: 'veo-3.1-generate-preview',
-    VIDEO_FAST: 'veo-3.1-fast-generate-preview',   // Fast mode — lower latency, lower cost
-    VIDEO_LITE: 'veo-3.1-lite-generate-preview',   // Lite mode — lowest cost, good quality
-    VIDEO_GEN: 'veo-3.1-generate-preview',    // Alias for backward compatibility
+    VIDEO_FAST: 'veo-3.1-fast-generate-preview',  // Fast mode — lower latency, lower cost
+    VIDEO_LITE: 'veo-3.1-lite-generate-preview',  // Lite mode — lowest cost, good quality
+    VIDEO_GEN: 'veo-3.1-generate-preview',        // Alias for backward compatibility
     BROWSER_AGENT: 'gemini-3.1-pro-preview',
     EMBEDDING_DEFAULT: 'gemini-embedding-001'
 } as const;
