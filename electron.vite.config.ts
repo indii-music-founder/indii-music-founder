@@ -11,6 +11,36 @@ import { defineConfig, externalizeDepsPlugin } from 'electron-vite';
 import { resolve } from 'path';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
+const envSanitizerPlugin = () => ({
+    name: 'env-sanitizer',
+    configResolved(config) {
+        const secrets = [
+            'VITE_PINATA_SECRET',
+            'VITE_PINATA_JWT',
+            'VITE_DOCUSIGN_ACCESS_TOKEN',
+            'VITE_NGROK_AUTHTOKEN',
+            'VITE_PRINTFUL_API_KEY',
+            'VITE_MEM0_API_KEY',
+        ];
+        for (const key of secrets) {
+            if (key in config.env) {
+                config.env[key] = '';
+            }
+        }
+        const whitelist = new Set([
+            'VITE_FIREBASE_API_KEY',
+            'VITE_API_KEY',
+            'VITE_GOOGLE_MAPS_API_KEY',
+            'VITE_GOOGLE_MAPS_KEY',
+        ]);
+        for (const key of Object.keys(config.env)) {
+            const val = config.env[key];
+            if (typeof val === 'string' && val.includes('AIza') && !whitelist.has(key)) {
+                config.env[key] = '';
+            }
+        }
+    }
+});
 
 export default defineConfig({
     // ── Main Process (Node.js) ──────────────────────────────────────────────
@@ -90,9 +120,27 @@ export default defineConfig({
     // ── Renderer Process (DOM / React) ──────────────────────────────────────
     renderer: {
         root: resolve(__dirname, 'packages/renderer'),
+        envPrefix: [
+            'VITE_FIREBASE_',
+            'VITE_API_KEY',
+            'VITE_GOOGLE_MAPS_',
+            'VITE_VERTEX_',
+            'VITE_FUNCTIONS_',
+            'VITE_USE_',
+            'VITE_INGESTION_',
+            'VITE_ENABLE_',
+            'VITE_SHOW_',
+            'VITE_SKIP_',
+            'VITE_A0_',
+            'VITE_APP_',
+            'VITE_RAG_',
+            'VITE_ADMIN_PIN',
+            'VITE_WALLETCONNECT_PROJECT_ID',
+        ],
         plugins: [
             react(),
             tailwindcss(),
+            envSanitizerPlugin(),
             {
                 name: 'api-fallback',
                 configureServer(server) {
