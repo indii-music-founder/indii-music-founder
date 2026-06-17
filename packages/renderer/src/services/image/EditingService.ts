@@ -46,13 +46,10 @@ export class EditingService {
     }
 
     /**
-     * Edit a single image using the Direct SDK Pipeline (original + binary mask).
+     * Edit a single image through the secured Cloud Function pipeline.
      * 
-     * Calls Gemini SDK directly via DirectImageEditor, bypassing Cloud Functions.
-     * This eliminates AppCheck 401 errors and provides lower latency.
-     * 
-     * Pro (High Fidelity): Uses gemini-3-pro-image-preview with IMAGE responseModality.
-     * Flash (High Speed): Uses gemini-3.1-flash-image-preview with IMAGE responseModality.
+     * The legacy DirectImageEditor export now routes to the backend. Browser
+     * code must not call Gemini directly with raw API keys.
      */
     async editImage(options: {
         image: { mimeType: string; data: string };
@@ -65,7 +62,7 @@ export class EditingService {
         thoughtSignature?: string;
         useSemanticMap?: boolean;
     }): Promise<{ id: string; url: string; prompt: string; thoughtSignature?: string } | null> {
-        logger.info('[EditingService] editImage called — using Direct SDK path', {
+        logger.info('[EditingService] editImage called — using secured backend path', {
             hasMask: !!options.mask,
             hasReference: !!options.referenceImage,
             model: options.model,

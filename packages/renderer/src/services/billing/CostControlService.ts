@@ -176,13 +176,12 @@ export class CostControlService {
       // Fail-closed in every runtime. Local development must use the E2E harness
       // or a real cost ledger so spend is never silently untracked.
       if (import.meta.env.DEV) {
-        // ALLOW bypass if we have a local fallback API key (which means we aren't using Firebase Intelligence Services billable endpoints)
-        // or if we are in an E2E environment.
-        if (import.meta.env.VITE_API_KEY || import.meta.env.VITE_E2E_MOCK === 'true' || import.meta.env.VITE_PLAYWRIGHT_E2E === 'true') {
-          logger.warn('[CostControl] Local dev cost ledger unavailable. Bypassing because local API key or E2E mock is present.');
+        // ALLOW bypass only in explicit E2E environments.
+        if (import.meta.env.VITE_E2E_MOCK === 'true' || import.meta.env.VITE_PLAYWRIGHT_E2E === 'true') {
+          logger.warn('[CostControl] Local dev cost ledger unavailable. Bypassing because E2E mock mode is present.');
           return {
             allowed: true,
-            reason: 'Bypassed cost control: local API key or E2E environment detected.',
+            reason: 'Bypassed cost control: E2E environment detected.',
             remainingBudget: 999999,
             dailyUsed: 0,
             monthlyUsed: 0,
@@ -192,7 +191,7 @@ export class CostControlService {
         logger.warn('[CostControl] Local dev cost ledger unavailable. Blocking operation.');
         return {
           allowed: false,
-          reason: 'Cost control ledger unavailable. Run an explicit VITE_E2E test harness, set VITE_API_KEY, or configure Firestore.',
+          reason: 'Cost control ledger unavailable. Run an explicit VITE_E2E test harness or configure Firestore.',
           remainingBudget: 0,
           dailyUsed: 0,
           monthlyUsed: 0,
