@@ -530,6 +530,7 @@ jobs:
         env:
           INFLUENCER_BOUNTY_BASE_URL: https://app.indii.music
         run: |
+          printf 'INFLUENCER_BOUNTY_BASE_URL=%s\n' "$INFLUENCER_BOUNTY_BASE_URL" > packages/firebase/.env.indii-music-founder
           npm run build -w packages/firebase
           npx firebase deploy --only functions --project indii-music-founder --non-interactive --force
 
