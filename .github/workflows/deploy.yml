@@ -443,7 +443,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          gcloud services enable apikeys.googleapis.com \
+          gcloud services enable apikeys.googleapis.com cloudbilling.googleapis.com \
             --project indii-music-founder \
             --quiet
 
