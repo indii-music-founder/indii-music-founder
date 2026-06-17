@@ -492,7 +492,10 @@ jobs:
           for (let attempt = 1; attempt <= 12; attempt += 1) {
             const response = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${encodeURIComponent(apiKey)}`, {
               method: 'POST',
-              headers: { 'content-type': 'application/json' },
+              headers: {
+                'content-type': 'application/json',
+                referer: 'https://app.indii.music/',
+              },
               body: JSON.stringify({
                 email: 'ci-auth-probe@example.invalid',
                 password: 'not-a-real-password',
