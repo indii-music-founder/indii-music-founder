@@ -1,19 +1,19 @@
 /**
  * BrowserAgentService — Gemini Computer Use Integration
  *
- * Core orchestrator for Autonomous browser automation using Google's
- * Gemini Computer Use API. Enables portal automation for services
+ * Core orchestrator for Autonomous browser automation through the secured
+ * Firebase AI proxy. Enables portal automation for services
  * that have no public APIs (ASCAP, BMI, SoundExchange, etc.).
  *
  * Architecture:
  *   1. Playwright controls a headless Chromium browser (Electron main process via IPC)
- *   2. Screenshots are sent to Gemini Computer Use model
+ *   2. Screenshots are sent to the backend-routed Computer Use model
  *   3. Model returns UI actions (click, type, scroll, wait)
  *   4. Actions are executed by Playwright (or DOM in web dev mode)
  *   5. Loop until task complete or max steps reached
  *
  * Model: gemini-2.5-computer-use-preview-10-2025
- * SDK: @google/genai
+ * SDK: Firebase AI proxy
  * Runtime: Electron main process (Node.js) via IPC for production
  *          Web renderer (DOM-based) for dev/testing
  */
@@ -103,24 +103,17 @@ const HIGH_RISK_KEYWORDS = [
 export class BrowserAgentService {
     private config: BrowserAgentConfig;
     private currentTask: AgentTask | null = null;
-    private apiKey: string;
-    private genAI: any = null;
     private listeners: Map<string, Set<(step: AgentStep) => void>> = new Map();
 
     constructor(config: Partial<BrowserAgentConfig> = {}) {
         this.config = { ...DEFAULT_CONFIG, ...config };
-        this.apiKey = import.meta.env.VITE_API_KEY || '';
-
-        if (this.apiKey) {
-            this.genAI = true; // Flag that it is configured
-        }
     }
 
     /**
      * Check if the service is ready to run.
      */
     isConfigured(): boolean {
-        return this.apiKey.length > 0 && this.genAI !== null;
+        return true;
     }
 
     /**
@@ -140,7 +133,7 @@ export class BrowserAgentService {
         credentials?: PortalCredentials
     ): Promise<AgentTask> {
         if (!this.isConfigured()) {
-            throw new Error('API key not configured for browser agent');
+            throw new Error('Browser agent is not configured');
         }
 
         const task: AgentTask = {
@@ -328,7 +321,7 @@ Respond with a JSON object describing your next action. Use one of these types:
     /**
      * Send screenshot to Gemini Computer Use and get next action.
      *
-     * Uses the @google/genai SDK to call the Gemini Computer Use model.
+     * Uses the Firebase AI proxy to call the Computer Use model.
      * The model analyzes the screenshot and returns the next UI action.
      */
     private async getNextAction(
@@ -339,10 +332,6 @@ Respond with a JSON object describing your next action. Use one of these types:
         }>,
         screenshot: string
     ): Promise<BrowserAction> {
-        if (!this.isConfigured()) {
-            return { type: 'done', result: 'Gemini API not initialized — missing VITE_API_KEY' };
-        }
-
         // If no screenshot available (e.g., web mode without html2canvas), return done
         if (!screenshot) {
             return { type: 'done', result: 'Screenshot capture not available in this environment. Use Electron desktop app for full browser automation.' };

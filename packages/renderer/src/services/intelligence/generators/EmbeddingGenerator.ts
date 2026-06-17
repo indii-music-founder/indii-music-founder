@@ -1,9 +1,8 @@
 /**
  * EmbeddingGenerator — Extracted embedding logic from FirebaseIntelligenceService.
  *
- * Handles text embeddings using both Firebase Autonomous SDK (normal mode)
- * and direct @google/genai SDK (fallback mode). Supports single
- * and batch embedding operations.
+ * Handles text embeddings through Firebase AI. Supports single and batch
+ * embedding operations.
  */
 
 import { getGenerativeModel } from 'firebase/ai';
@@ -28,31 +27,16 @@ export async function embedContent(
     return ctx.auxBreaker.execute(async () => {
         await ctx.ensureInitialized();
 
-        // FALLBACK MODE: Use direct Gemini SDK (new @google/genai)
+        // Raw browser fallback is disabled.
         if (ctx.useFallbackMode && ctx.fallbackClient) {
-            try {
-                // Extract text from content parts
-                const text = options.content.parts.map(p => 'text' in p ? p.text : '').join(' ');
-                const result = await ctx.fallbackClient.models.embedContent({
-                    model: options.model,
-                    contents: [{ role: 'user', parts: [{ text }] }] as unknown as Record<string, unknown>[],
-                    config: { outputDimensionality: INTELLIGENCE_CONFIG.EMBEDDING.DIMENSIONS }
-                });
-                const embedResult = result as unknown as AutonomousIntelligenceEmbedResult;
-                return { values: embedResult.embeddings?.[0]?.values || embedResult.embedding?.values || [] };
-            } catch (error: unknown) {
-                throw ctx.handleError(error);
-            }
+            throw new AppException(AppErrorCode.UNAUTHORIZED, 'Raw embedding fallback is disabled in the browser.');
         }
 
         // NORMAL MODE: Use Firebase Autonomous SDK
         const firebaseAI = getFirebaseAI();
 
-        // Auto-switch to fallback if Firebase Autonomous is missing
         if (!firebaseAI) {
-            logger.warn('[EmbeddingGenerator] Firebase Autonomous not available for embeddings, switching to fallback');
-            await ctx.initializeFallbackMode();
-            return embedContent(ctx, options);
+            throw new AppException(AppErrorCode.INTERNAL_ERROR, 'Firebase AI is not available for embeddings.');
         }
 
         const modelCallback = getGenerativeModel(firebaseAI, {
@@ -67,19 +51,14 @@ export async function embedContent(
 
             // Defensive check: Firebase SDK model may not expose embedContent
             if (typeof modelWithEmbed.embedContent !== 'function') {
-                logger.warn('[EmbeddingGenerator] Firebase SDK model lacks embedContent, switching to fallback');
-                await ctx.initializeFallbackMode();
-                return embedContent(ctx, options);
+                throw new AppException(AppErrorCode.INTERNAL_ERROR, 'Firebase AI model does not support embedContent.');
             }
 
             const result = await modelWithEmbed.embedContent({ content: options.content });
             return { values: result.embedding.values };
         } catch (error: unknown) {
-            // If we hit an App Check error during normal mode, switch to fallback
             if (isAppCheckError(error) && !ctx.useFallbackMode) {
-                logger.warn('[EmbeddingGenerator] App Check error during embedding, switching to fallback mode');
-                await ctx.initializeFallbackMode();
-                return embedContent(ctx, options);
+                logger.warn('[EmbeddingGenerator] App Check error during embedding');
             }
             throw ctx.handleError(error);
         }
@@ -112,28 +91,15 @@ export async function batchEmbedContents(
 
         const modelName = modelOverride || APPROVED_MODELS.EMBEDDING_DEFAULT;
 
-        // FALLBACK MODE: Use direct Gemini SDK (new @google/genai)
+        // Raw browser fallback is disabled.
         if (ctx.useFallbackMode && ctx.fallbackClient) {
-            const promises = contents.map(async (c) => {
-                // Extract text from content parts
-                const text = c.parts.map(p => 'text' in p ? p.text : '').join(' ');
-                const result = await ctx.fallbackClient!.models.embedContent({
-                    model: modelName,
-                    contents: [{ role: 'user', parts: [{ text }] }] as unknown as Record<string, unknown>[],
-                    config: { outputDimensionality: INTELLIGENCE_CONFIG.EMBEDDING.DIMENSIONS }
-                });
-                const embedResult = result as unknown as AutonomousIntelligenceEmbedResult;
-                return embedResult.embeddings?.[0]?.values || embedResult.embedding?.values || [];
-            });
-            return Promise.all(promises);
+            throw new AppException(AppErrorCode.UNAUTHORIZED, 'Raw embedding fallback is disabled in the browser.');
         }
 
         // NORMAL MODE: Use Firebase Autonomous SDK
         const firebaseAI = getFirebaseAI();
         if (!firebaseAI) {
-            logger.warn('[EmbeddingGenerator] Firebase Autonomous not available for embeddings (batch), switching to fallback');
-            await ctx.initializeFallbackMode();
-            return batchEmbedContents(ctx, contents, modelOverride);
+            throw new AppException(AppErrorCode.INTERNAL_ERROR, 'Firebase AI is not available for embeddings.');
         }
 
         const modelCallback = getGenerativeModel(firebaseAI, { model: modelName });
