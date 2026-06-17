@@ -148,25 +148,21 @@ class LikenessServiceImpl {
      */
     async assessQuality(dataUrl: string): Promise<{ score: LikenessImage['qualityScore']; notes: string }> {
         try {
-            const { GoogleGenAI: GoogleAutonomousIntelligence } = await import('@google/genai');
-            const ai = new GoogleAutonomousIntelligence({ apiKey: import.meta.env.VITE_API_KEY });
+            const { firebaseAI } = await import('@/services/intelligence/FirebaseIntelligenceService');
 
             const base64Data = dataUrl.split(',')[1] || '';
             const mimeType = dataUrl.split(':')[1]?.split(';')[0] || 'image/jpeg';
 
-            const response = await ai.models.generateContent({
-                model: INTELLIGENCE_MODELS.TEXT.FAST,
-                contents: [{
-                    role: 'user',
-                    parts: [
-                        {
-                            inlineData: {
-                                mimeType,
-                                data: base64Data,
-                            },
+            const response = await firebaseAI.generateContent(
+                [
+                    {
+                        inlineData: {
+                            mimeType,
+                            data: base64Data,
                         },
-                        {
-                            text: `You are an image quality assessor for Intelligence character consistency.
+                    },
+                    {
+                        text: `You are an image quality assessor for Intelligence character consistency.
 Evaluate this selfie/portrait for use as an Intelligence likeness reference.
 
 Rate on these criteria:
@@ -181,16 +177,16 @@ Respond in EXACTLY this JSON format:
 - "good" = excellent reference, clear face, good lighting
 - "acceptable" = usable but could be better
 - "low" = significant issues (blurry, face not visible, very dark)`,
-                        },
-                    ],
-                }],
-                config: {
+                    },
+                ] as any,
+                INTELLIGENCE_MODELS.TEXT.FAST,
+                {
                     temperature: 0.1,
                     maxOutputTokens: 200,
-                },
-            });
+                }
+            );
 
-            const text = response.text?.trim() || '';
+            const text = response.response.text() || '';
             // Try to parse JSON from the response
             const jsonMatch = text.match(/\{[\s\S]*\}/);
             if (jsonMatch) {

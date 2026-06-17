@@ -19,7 +19,7 @@
  */
 
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
-import { GoogleGenAI as GoogleAutonomousIntelligence } from '@google/genai';
+
 import { logger } from '@/utils/logger';
 import { secureRandomHex } from '@/utils/crypto-random';
 
@@ -104,7 +104,7 @@ export class BrowserAgentService {
     private config: BrowserAgentConfig;
     private currentTask: AgentTask | null = null;
     private apiKey: string;
-    private genAI: GoogleAutonomousIntelligence | null = null;
+    private genAI: any = null;
     private listeners: Map<string, Set<(step: AgentStep) => void>> = new Map();
 
     constructor(config: Partial<BrowserAgentConfig> = {}) {
@@ -112,7 +112,7 @@ export class BrowserAgentService {
         this.apiKey = import.meta.env.VITE_API_KEY || '';
 
         if (this.apiKey) {
-            this.genAI = new GoogleAutonomousIntelligence({ apiKey: this.apiKey });
+            this.genAI = true; // Flag that it is configured
         }
     }
 
@@ -339,7 +339,7 @@ Respond with a JSON object describing your next action. Use one of these types:
         }>,
         screenshot: string
     ): Promise<BrowserAction> {
-        if (!this.genAI) {
+        if (!this.isConfigured()) {
             return { type: 'done', result: 'Gemini API not initialized — missing VITE_API_KEY' };
         }
 
@@ -349,6 +349,7 @@ Respond with a JSON object describing your next action. Use one of these types:
         }
 
         try {
+            const { firebaseAI } = await import('@/services/intelligence/FirebaseIntelligenceService');
             // Build the contents array with conversation history and current screenshot
             const contents = [
                 ...conversationHistory,
@@ -361,16 +362,16 @@ Respond with a JSON object describing your next action. Use one of these types:
                 },
             ];
 
-            const response = await this.genAI.models.generateContent({
-                model: COMPUTER_USE_MODEL,
-                contents,
-                config: {
+            const response = await firebaseAI.generateContent(
+                contents as any,
+                COMPUTER_USE_MODEL,
+                {
                     systemInstruction: systemPrompt,
                     temperature: 1.0,
-                },
-            });
+                }
+            );
 
-            const text = response.text?.trim() || '';
+            const text = response.response.text() || '';
             logger.info(`[BrowserAgent] Model response: ${text.substring(0, 200)}`);
 
             // Parse the JSON action from the model response
