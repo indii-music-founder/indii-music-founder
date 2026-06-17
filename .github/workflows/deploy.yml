@@ -443,6 +443,10 @@ jobs:
         run: |
           set -euo pipefail
 
+          gcloud services enable apikeys.googleapis.com \
+            --project indii-music-founder \
+            --quiet
+
           KEY_RESOURCE=$(gcloud services api-keys lookup "$VITE_FIREBASE_API_KEY" \
             --project indii-music-founder \
             --format='value(name)')
