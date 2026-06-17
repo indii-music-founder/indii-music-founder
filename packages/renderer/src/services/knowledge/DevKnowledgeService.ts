@@ -8,11 +8,9 @@
  * API Reference: https://developers.google.com/knowledge/api
  * Quickstart: https://developers.google.com/knowledge/quickstart
  *
- * Requires: VITE_GOOGLE_DEVKNOWLEDGE_API_KEY env var
- * (or falls back to VITE_API_KEY if available)
+ * Requires: VITE_GOOGLE_DEVKNOWLEDGE_API_KEY env var.
  */
 
-import { env } from '@/config/env';
 import { Logger } from '@/core/logger/Logger';
 
 const BASE_URL = 'https://developerknowledge.googleapis.com/v1alpha';
@@ -57,9 +55,7 @@ class DevKnowledgeService {
     private readonly CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes
 
     constructor() {
-        // Use dedicated key if available, otherwise fall back to general API key
-        this.apiKey = (import.meta.env.VITE_GOOGLE_DEVKNOWLEDGE_API_KEY as string)
-            || env.VITE_API_KEY;
+        this.apiKey = import.meta.env.VITE_GOOGLE_DEVKNOWLEDGE_API_KEY as string;
     }
 
     /**

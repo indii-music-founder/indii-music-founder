@@ -38,7 +38,6 @@ const envSanitizerPlugin = () => ({
         }
         const whitelist = new Set([
             'VITE_FIREBASE_API_KEY',
-            'VITE_API_KEY',
             'VITE_GOOGLE_MAPS_API_KEY',
             'VITE_GOOGLE_MAPS_KEY',
         ]);
@@ -96,7 +95,6 @@ export default defineConfig({
     envDir: repoRoot,
     envPrefix: [
         'VITE_FIREBASE_',
-        'VITE_API_KEY',
         'VITE_GOOGLE_MAPS_',
         'VITE_VERTEX_',
         'VITE_FUNCTIONS_',
@@ -132,6 +130,7 @@ export default defineConfig({
         'import.meta.env.VITE_NGROK_AUTHTOKEN': '""',
         'import.meta.env.VITE_PRINTFUL_API_KEY': '""',
         'import.meta.env.VITE_MEM0_API_KEY': '""',
+        'import.meta.env.VITE_API_KEY': '""',
     },
     resolve: {
         alias: {

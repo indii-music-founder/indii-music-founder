@@ -2,8 +2,7 @@
  * SpeechGenerator — Extracted TTS generation logic from FirebaseIntelligenceService.
  *
  * Handles text-to-speech via the gemini-2.5-pro-preview-tts model.
- * Supports both Firebase Autonomous SDK (normal mode) and direct @google/genai
- * SDK (fallback mode).
+ * Supports Firebase AI with App Check.
  */
 
 import { getGenerativeModel } from 'firebase/ai';
@@ -19,8 +18,7 @@ import { logger } from '@/utils/logger';
 /**
  * Generate speech from text using gemini-2.5-pro-preview-tts.
  *
- * Supports both Firebase Autonomous SDK (with App Check) and direct @google/genai
- * SDK (fallback mode when App Check is unavailable).
+ * Supports Firebase AI with App Check.
  */
 export async function generateSpeech(
     ctx: IntelligenceContext,
@@ -48,49 +46,16 @@ export async function generateSpeech(
             }
         };
 
-        // FALLBACK MODE: Use direct Gemini SDK (new @google/genai)
+        // Raw browser fallback is disabled.
         if (ctx.useFallbackMode && ctx.fallbackClient) {
-            try {
-                const result = await ctx.fallbackClient.models.generateContent({
-                    model: modelName,
-                    contents: [{ role: 'user', parts: [{ text }] }] as unknown as Record<string, unknown>[],
-                    config: config as unknown as Record<string, unknown>
-                });
-
-                const candidates = result.candidates;
-
-                if (!candidates || candidates.length === 0) {
-                    throw new Error('No candidates returned from TTS fallback model');
-                }
-
-                const parts = (candidates[0]!.content?.parts || []) as ContentPart[];
-                const audioPart = parts.find(p => 'inlineData' in p && p.inlineData?.mimeType.startsWith('audio/'));
-
-                if (!audioPart || !('inlineData' in audioPart)) {
-                    throw new Error('No audio data found in fallback response parts');
-                }
-
-                return {
-                    audio: {
-                        inlineData: {
-                            mimeType: audioPart.inlineData.mimeType,
-                            data: audioPart.inlineData.data
-                        }
-                    }
-                };
-            } catch (error: unknown) {
-                throw ctx.handleError(error);
-            }
+            throw new AppException(AppErrorCode.UNAUTHORIZED, 'Raw speech generation fallback is disabled in the browser.');
         }
 
         // NORMAL MODE: Use Firebase Autonomous SDK
         const firebaseAI = getFirebaseAI();
 
-        // Auto-switch to fallback if Firebase Autonomous is missing
         if (!firebaseAI) {
-            logger.warn('[SpeechGenerator] Firebase Autonomous not available for speech, switching to fallback');
-            await ctx.initializeFallbackMode();
-            return generateSpeech(ctx, text, voice, modelOverride);
+            throw new AppException(AppErrorCode.INTERNAL_ERROR, 'Firebase AI is not available for speech generation.');
         }
 
         const modelCallback = getGenerativeModel(firebaseAI, {
@@ -121,11 +86,8 @@ export async function generateSpeech(
                 }
             };
         } catch (error: unknown) {
-            // If we hit an App Check error during normal mode, switch to fallback
             if (isAppCheckError(error) && !ctx.useFallbackMode) {
-                logger.warn('[SpeechGenerator] App Check error during speech, switching to fallback mode');
-                await ctx.initializeFallbackMode();
-                return generateSpeech(ctx, text, voice, modelOverride);
+                logger.warn('[SpeechGenerator] App Check error during speech generation');
             }
             throw ctx.handleError(error);
         }

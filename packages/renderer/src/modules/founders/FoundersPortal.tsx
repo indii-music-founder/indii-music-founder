@@ -3,9 +3,10 @@ import { Logger } from '@/core/logger/Logger';
 import { motion } from 'framer-motion';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import { Download, Monitor, Apple, ArrowLeft, Loader2, Key } from 'lucide-react';
+import { Download, Monitor, Apple, ArrowLeft, Loader2, Key, Mail } from 'lucide-react';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '@/services/firebase';
+import InboxTab from '@/modules/agent/components/InboxTab';
 
 export default function FoundersPortal() {
     const { userProfile, setModule } = useStore(
@@ -18,6 +19,7 @@ export default function FoundersPortal() {
     const [isMacLoading, setIsMacLoading] = useState(false);
     const [isWinLoading, setIsWinLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [activeTab, setActiveTab] = useState<'downloads' | 'inbox'>('downloads');
 
     const isFounder = userProfile?.subscriptionTier === 'founder' || userProfile?.tier === 'founder' || userProfile?.isFounder === true;
 
@@ -88,71 +90,103 @@ export default function FoundersPortal() {
                     </div>
                 ) : (
                     <>
-                        <p className="text-gray-400 text-lg max-w-2xl mx-auto leading-relaxed mb-16">
-                            Welcome back. Download the latest builds for your operating system. These installers are exclusively available to verified Founders.
-                        </p>
-
-                        {error && (
-                            <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-xl text-sm mb-8 max-w-2xl mx-auto">
-                                {error}
-                            </div>
-                        )}
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto text-left mb-16">
-                            {/* Mac Download */}
-                            <div className="bg-white/[0.02] border border-white/10 rounded-3xl p-8 hover:border-amber-500/30 transition-colors relative overflow-hidden group flex flex-col">
-                                <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 group-hover:scale-110 transition-all pointer-events-none">
-                                    <Apple size={80} className="text-amber-500" />
-                                </div>
-                                <div className="w-12 h-12 bg-white/5 text-white rounded-xl flex items-center justify-center mb-6">
-                                    <Apple size={24} />
-                                </div>
-                                <h3 className="text-2xl font-bold text-white mb-2">macOS</h3>
-                                <p className="text-gray-400 text-sm mb-8 flex-1">Apple Silicon (M1/M2/M3) and Intel Macs.</p>
-                                
-                                <button
-                                    onClick={() => handleDownload('mac')}
-                                    disabled={isMacLoading || isWinLoading}
-                                    className="w-full flex items-center justify-center gap-3 bg-amber-500 text-black font-bold py-4 rounded-xl hover:bg-amber-400 transition-colors disabled:opacity-50"
-                                >
-                                    {isMacLoading ? (
-                                        <Loader2 size={18} className="animate-spin" />
-                                    ) : (
-                                        <Download size={18} />
-                                    )}
-                                    Download .dmg
-                                </button>
-                            </div>
-
-                            {/* Windows Download */}
-                            <div className="bg-white/[0.02] border border-white/10 rounded-3xl p-8 hover:border-amber-500/30 transition-colors relative overflow-hidden group flex flex-col">
-                                <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 group-hover:scale-110 transition-all pointer-events-none">
-                                    <Monitor size={80} className="text-amber-500" />
-                                </div>
-                                <div className="w-12 h-12 bg-blue-500/10 text-blue-400 rounded-xl flex items-center justify-center mb-6">
-                                    <Monitor size={24} />
-                                </div>
-                                <h3 className="text-2xl font-bold text-white mb-2">Windows</h3>
-                                <p className="text-gray-400 text-sm mb-8 flex-1">Windows 10 / 11 (64-bit).</p>
-                                
-                                <button
-                                    onClick={() => handleDownload('windows')}
-                                    disabled={isMacLoading || isWinLoading}
-                                    className="w-full flex items-center justify-center gap-3 bg-white/10 text-white font-bold py-4 rounded-xl hover:bg-white/20 transition-colors disabled:opacity-50"
-                                >
-                                    {isWinLoading ? (
-                                        <Loader2 size={18} className="animate-spin" />
-                                    ) : (
-                                        <Download size={18} />
-                                    )}
-                                    Download .exe
-                                </button>
-                            </div>
+                        {/* Navigation Tabs */}
+                        <div className="flex justify-center gap-4 mb-12">
+                            <button
+                                onClick={() => setActiveTab('downloads')}
+                                className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-colors ${
+                                    activeTab === 'downloads'
+                                        ? 'bg-amber-500 text-black'
+                                        : 'bg-white/5 text-white hover:bg-white/10'
+                                }`}
+                            >
+                                <Download size={18} /> Downloads
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('inbox')}
+                                className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-colors ${
+                                    activeTab === 'inbox'
+                                        ? 'bg-amber-500 text-black'
+                                        : 'bg-white/5 text-white hover:bg-white/10'
+                                }`}
+                            >
+                                <Mail size={18} /> Inbox
+                            </button>
                         </div>
 
-                        <p className="mt-8 text-gray-500 text-xs font-mono">
-                            By downloading indii, you agree to the Founders Agreement and Alpha Testing terms.
-                        </p>
+                        {activeTab === 'downloads' ? (
+                            <>
+                                <p className="text-gray-400 text-lg max-w-2xl mx-auto leading-relaxed mb-16">
+                                    Welcome back. Download the latest builds for your operating system. These installers are exclusively available to verified Founders.
+                                </p>
+
+                                {error && (
+                                    <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-xl text-sm mb-8 max-w-2xl mx-auto">
+                                        {error}
+                                    </div>
+                                )}
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto text-left mb-16">
+                                    {/* Mac Download */}
+                                    <div className="bg-white/[0.02] border border-white/10 rounded-3xl p-8 hover:border-amber-500/30 transition-colors relative overflow-hidden group flex flex-col">
+                                        <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 group-hover:scale-110 transition-all pointer-events-none">
+                                            <Apple size={80} className="text-amber-500" />
+                                        </div>
+                                        <div className="w-12 h-12 bg-white/5 text-white rounded-xl flex items-center justify-center mb-6">
+                                            <Apple size={24} />
+                                        </div>
+                                        <h3 className="text-2xl font-bold text-white mb-2">macOS</h3>
+                                        <p className="text-gray-400 text-sm mb-8 flex-1">Apple Silicon (M1/M2/M3) and Intel Macs.</p>
+                                        
+                                        <button
+                                            onClick={() => handleDownload('mac')}
+                                            disabled={isMacLoading || isWinLoading}
+                                            className="w-full flex items-center justify-center gap-3 bg-amber-500 text-black font-bold py-4 rounded-xl hover:bg-amber-400 transition-colors disabled:opacity-50"
+                                        >
+                                            {isMacLoading ? (
+                                                <Loader2 size={18} className="animate-spin" />
+                                            ) : (
+                                                <Download size={18} />
+                                            )}
+                                            Download .dmg
+                                        </button>
+                                    </div>
+
+                                    {/* Windows Download */}
+                                    <div className="bg-white/[0.02] border border-white/10 rounded-3xl p-8 hover:border-amber-500/30 transition-colors relative overflow-hidden group flex flex-col">
+                                        <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 group-hover:scale-110 transition-all pointer-events-none">
+                                            <Monitor size={80} className="text-amber-500" />
+                                        </div>
+                                        <div className="w-12 h-12 bg-blue-500/10 text-blue-400 rounded-xl flex items-center justify-center mb-6">
+                                            <Monitor size={24} />
+                                        </div>
+                                        <h3 className="text-2xl font-bold text-white mb-2">Windows</h3>
+                                        <p className="text-gray-400 text-sm mb-8 flex-1">Windows 10 / 11 (64-bit).</p>
+                                        
+                                        <button
+                                            onClick={() => handleDownload('windows')}
+                                            disabled={isMacLoading || isWinLoading}
+                                            className="w-full flex items-center justify-center gap-3 bg-white/10 text-white font-bold py-4 rounded-xl hover:bg-white/20 transition-colors disabled:opacity-50"
+                                        >
+                                            {isWinLoading ? (
+                                                <Loader2 size={18} className="animate-spin" />
+                                            ) : (
+                                                <Download size={18} />
+                                            )}
+                                            Download .exe
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <p className="mt-8 text-gray-500 text-xs font-mono">
+                                    By downloading indii, you agree to the Founders Agreement and Alpha Testing terms.
+                                </p>
+                            </>
+                        ) : (
+                            <div className="max-w-4xl mx-auto h-[600px] bg-slate-950 border border-slate-800 rounded-3xl overflow-hidden relative text-left">
+                                <InboxTab />
+                            </div>
+                        )}
                     </>
                 )}
             </motion.div>
