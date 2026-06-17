@@ -50,8 +50,14 @@ vi.mock('firebase/remote-config', () => ({
 vi.mock('@/config/env', () => ({
     env: {
         VITE_API_KEY: 'mock-key',
-        apiKey: 'mock-key'
+        apiKey: 'mock-key',
+        appCheckKey: 'test-app-check-key'
     }
+}));
+
+vi.mock('../appcheck', () => ({
+    isAppCheckConfigured: () => true,
+    isAppCheckError: vi.fn()
 }));
 
 vi.mock('../billing/TokenUsageService', () => ({
