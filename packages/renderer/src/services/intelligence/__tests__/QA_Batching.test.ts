@@ -37,6 +37,11 @@ vi.mock('@/services/firebase', () => ({
     messaging: { getToken: vi.fn() }
 }));
 
+vi.mock('../appcheck', () => ({
+    isAppCheckConfigured: vi.fn(() => true),
+    isAppCheckError: vi.fn(() => false)
+}));
+
 vi.mock('firebase/firestore', () => ({
     doc: vi.fn(),
     setDoc: vi.fn(),
@@ -85,7 +90,7 @@ describe('Request Batching QA', () => {
     });
 
     describe('FirebaseIntelligenceService.batchEmbedContents (Polyfill)', () => {
-        it('should fallback to concurrent embedContent requests', async () => {
+        it('should use concurrent embedContent requests when App Check is configured', async () => {
             mockEmbedContent.mockResolvedValue({ embedding: { values: [1, 2, 3] } });
 
             const results = await service.batchEmbedContents([
