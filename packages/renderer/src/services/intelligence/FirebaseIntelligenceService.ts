@@ -10,7 +10,6 @@ import {
     Tool,
     SafetySetting as FirebaseSafetySetting
 } from 'firebase/ai';
-import { GoogleGenAI } from '@google/genai';
 import { getFirebaseAI, remoteConfig } from '@/services/firebase';
 import { fetchAndActivate, getValue } from 'firebase/remote-config';
 import { AppErrorCode, AppException } from '@/shared/types/errors';
@@ -50,11 +49,9 @@ import { getFineTunedModel } from '@/services/agent/fine-tuned-models';
 // Extracted sub-modules
 import { isAppCheckError, isAppCheckConfigured } from './appcheck';
 import {
-    initializeFallbackClient,
     generateWithFallback as fallbackGenerate,
     streamWithFallback as fallbackStream,
 } from './fallback/FallbackClient';
-import { generateVideo as mediaGenerateVideo } from './generators/MediaGenerator';
 import {
     generateText as hlGenerateText,
     generateStructuredData as hlGenerateStructuredData,
@@ -96,8 +93,7 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
     private isInitialized = false;
     public defaultConfig: GenerationConfig = {};
 
-    // Fallback mode: use direct Gemini SDK when App Check is not available
-    public fallbackClient: GoogleGenAI | null = null;
+    public fallbackClient: any | null = null;
     public useFallbackMode = false;
     public activeRequests: Map<string, Promise<GenerateContentResult>> = new Map();
 
@@ -116,41 +112,41 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
     public remoteConfig: RemoteIntelligenceConfig = DEFAULT_REMOTE_CONFIG;
 
     /**
-     * Permanently switches the service to direct Gemini SDK for the current session.
-     * This prevents infinite "AI Verification Failed" loops.
+     * Fallback is intentionally disabled in the renderer. If Firebase AI/App Check
+     * fails, the request must fail closed instead of using a raw browser API key.
      */
     private async triggerGlobalFallback(): Promise<void> {
-        if (!this.useFallbackMode) {
-            logger.warn('[FirebaseIntelligenceService] Global fallback triggered (App Check non-responsive or failing)');
-            await this.initializeFallbackMode();
-        }
+        throw new AppException(AppErrorCode.UNAUTHORIZED, 'AI Verification Failed (App Check/Auth)', { retryable: false });
     }
 
     constructor() { }
 
     /**
      * Bootstrap the Intelligence service:
-     * 1. Check if App Check is configured - if not, use direct Gemini SDK
+     * 1. Check if App Check is configured.
      * 2. Fetch Remote Config to get the latest model name.
      * 3. Initialize the GenerativeModel using the pre-configured Autonomous instance.
      */
     async bootstrap(): Promise<void> {
         if (this.isInitialized) return;
 
-        // Check if App Check is configured - if not, use direct Gemini SDK
+        // Check if App Check is configured. Do not fall back to raw browser keys.
         if (!isAppCheckConfigured()) {
-            logger.warn('[FirebaseIntelligenceService] App Check not configured, using direct Gemini SDK fallback');
-            await this.initializeFallbackMode();
-            return;
+            throw new AppException(
+                AppErrorCode.UNAUTHORIZED,
+                'AI Verification Failed (App Check is not configured)',
+                { retryable: false }
+            );
         }
 
         try {
             // 1. Get Firebase Autonomous instance (lazy initialized)
             const firebaseAI = getFirebaseAI();
             if (!firebaseAI) {
-                logger.warn('[FirebaseIntelligenceService] Firebase Autonomous not available, using fallback');
-                await this.initializeFallbackMode();
-                return;
+                throw new AppException(
+                    AppErrorCode.INTERNAL_ERROR,
+                    'Firebase AI is not available in this runtime.'
+                );
             }
 
             // 2. Fetch Remote Config (Safe Mode) - NOW WITH DYNAMIC SCHEMA
@@ -203,36 +199,34 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
             logger.info('[FirebaseIntelligenceService] Initialized with Firebase Autonomous SDK');
 
         } catch (error: unknown) {
-            logger.error('[FirebaseIntelligenceService] Bootstrap failed, attempting fallback:', error);
-            // If we hit an App Check error OR ANY initialization error, fall back to direct Gemini SDK
-            try {
-                await this.initializeFallbackMode();
-            } catch (fallbackError: unknown) {
-                throw this.handleError(fallbackError);
-            }
+            logger.error('[FirebaseIntelligenceService] Bootstrap failed:', error);
+            throw this.handleError(error);
         }
     }
 
     /**
-     * Initialize fallback mode using direct Gemini SDK (no App Check required).
-     * This is used in development or when App Check is not configured.
-     * Delegates to the extracted FallbackClient module.
+     * Renderer fallback mode is disabled. All AI requests must go through
+     * Firebase AI or callable backend routes.
      */
     public async initializeFallbackMode(): Promise<void> {
-        this.fallbackClient = await initializeFallbackClient();
-        this.useFallbackMode = true;
-        this.isInitialized = true;
+        this.fallbackClient = null;
+        this.useFallbackMode = false;
+        throw new AppException(
+            AppErrorCode.UNAUTHORIZED,
+            'AI Verification Failed (raw client fallback disabled)',
+            { retryable: false }
+        );
     }
 
     /**
-     * Lazy-initializes the fallback client for direct Developer API calls (e.g. image/video)
-     * without setting the global useFallbackMode to true, keeping text/agent routing on Vertex AI.
+     * Raw client fallback is disabled in the renderer.
      */
-    public async ensureFallbackClient(): Promise<GoogleGenAI> {
-        if (!this.fallbackClient) {
-            this.fallbackClient = await initializeFallbackClient();
-        }
-        return this.fallbackClient;
+    public async ensureFallbackClient(): Promise<any> {
+        throw new AppException(
+            AppErrorCode.UNAUTHORIZED,
+            'Raw Gemini client fallback is disabled in the browser.',
+            { retryable: false }
+        );
     }
 
     /**
@@ -737,7 +731,7 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                         }
                     }
 
-                    // 4. Case analysis for Normal vs Fallback
+                    // 4. Case analysis for normal Firebase AI execution.
                     if (this.useFallbackMode && this.fallbackClient) {
                         let fallbackModelName = modelName;
                         if (isVertexFineTunedEndpoint(modelName)) {
@@ -818,9 +812,14 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                                         chunks.push(chunk as unknown as GenerateContentResponse);
                                         const part = chunk.candidates?.[0]?.content?.parts?.[0] || chunk;
                                         const partWithText = part as unknown as { text?: string | (() => string) };
-                                        const chunkText = typeof partWithText.text === 'function'
-                                            ? partWithText.text()
-                                            : (partWithText.text || '');
+                                        let chunkText = '';
+                                        try {
+                                            chunkText = typeof partWithText.text === 'function'
+                                                ? partWithText.text()
+                                                : (partWithText.text || '');
+                                        } catch (chunkError: unknown) {
+                                            logger.warn('[FirebaseIntelligenceService] Stream chunk text extraction failed:', chunkError);
+                                        }
                                         finalText += chunkText;
 
                                         const firstPart = chunk.candidates?.[0]?.content?.parts?.[0] as ContentPart | undefined;
@@ -1103,51 +1102,23 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
     }
 
     /**
-     * HIGH LEVEL: Generate video using @google/genai SDK directly (client-side Veo 3.1).
-     * 
-     * This bypasses Cloud Functions entirely by calling models.generateVideos()
-     * from the @google/genai SDK, then polling the returned operation until done.
-     * Matches the pattern used by image generation (direct SDK call, no backend proxy).
+     * Browser-side direct video generation is disabled. Use
+     * VideoGenerationService, which routes through the secured generateVideoV3
+     * callable Cloud Function.
      */
     async generateVideo(options: GenerateVideoRequest & { 
         timeoutMs?: number; 
         onProgress?: (status: 'queued' | 'processing', attempt: number, maxAttempts: number) => void;
     }): Promise<string> {
-        logger.info('[FirebaseAI] generateVideo() — entering circuit breaker...', {
+        logger.warn('[FirebaseAI] Blocked browser-side direct video generation request.', {
             model: options.model || '(default)',
             promptLength: options.prompt?.length ?? 0,
-            breakerState: this.mediaBreaker?.getState() ?? 'unknown',
         });
-
-        try {
-            const result = await this.mediaBreaker.execute(async () => {
-                await this.ensureInitialized();
-
-                // Ensure we have the fallback client (direct @google/genai SDK) without poisoning global text agent state
-                const fallbackClient = await this.ensureFallbackClient();
-
-                if (!fallbackClient) {
-                    throw new AppException(
-                        AppErrorCode.INTERNAL_ERROR,
-                        'Video generation requires the Google AutonomousIntelligence SDK. Please configure VITE_API_KEY.'
-                    );
-                }
-
-                logger.info('[FirebaseAI] Delegating to MediaGenerator...');
-                return mediaGenerateVideo(fallbackClient, options);
-            });
-
-            logger.info('[FirebaseAI] generateVideo() — success. URL length:', result?.length ?? 0);
-            return result;
-        } catch (error: unknown) {
-            const msg = error instanceof Error ? error.message : String(error);
-            logger.error('[FirebaseAI] generateVideo() — circuit breaker caught error:', {
-                errorMessage: msg,
-                errorType: error?.constructor?.name || 'unknown',
-                breakerState: this.mediaBreaker?.getState() ?? 'unknown',
-            });
-            throw error;
-        }
+        throw new AppException(
+            AppErrorCode.UNAUTHORIZED,
+            'Client-side video generation is disabled. Use the secured generateVideoV3 Cloud Function gateway.',
+            { retryable: false }
+        );
     }
 
     /**
@@ -1230,7 +1201,7 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
             if (this.useFallbackMode) {
                 return new AppException(
                     AppErrorCode.UNAUTHORIZED,
-                    'AI API Key Invalid or Restricted. Check VITE_API_KEY permissions.',
+                    'AI verification failed. Raw browser API-key fallback is disabled.',
                     { retryable: false }
                 );
             }
