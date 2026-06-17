@@ -302,13 +302,16 @@ describe('FirebaseIntelligenceService', () => {
         }));
     });
 
-    it('should fall back to direct SDK on App Check failure', async () => {
+    it('should fail closed on App Check failure', async () => {
         // Force primary model to fail with App Check error during bootstrap
         const { fetchAndActivate } = await import('firebase/remote-config');
         vi.mocked(fetchAndActivate).mockRejectedValueOnce(new Error('firebase-app-check-token-invalid'));
 
-        await service.bootstrap();
-        expect(service['useFallbackMode']).toBe(true);
+        await expect(service.bootstrap()).rejects.toMatchObject({
+            code: 'UNAUTHORIZED'
+        });
+        expect(service['useFallbackMode']).toBe(false);
+        expect(service['fallbackClient']).toBeNull();
     });
 
     it('should handle content streams', async () => {
@@ -320,56 +323,39 @@ describe('FirebaseIntelligenceService', () => {
         expect(text).toBe('Stream');
     });
 
-    it('should falling back if bootstrap fails (Resilience)', async () => {
+    it('should not fall back if bootstrap fails (Resilience)', async () => {
         const { fetchAndActivate } = await import('firebase/remote-config');
         vi.mocked(fetchAndActivate).mockRejectedValueOnce(new Error('firebase-app-check-token-invalid'));
 
-        // Should NOT throw, but enter fallback mode
-        await service.bootstrap();
-        expect(service['useFallbackMode']).toBe(true);
+        await expect(service.bootstrap()).rejects.toMatchObject({
+            code: 'UNAUTHORIZED'
+        });
+        expect(service['useFallbackMode']).toBe(false);
     });
 
-    it('should throw if BOTH primary and fallback fail', async () => {
-        // Force fallback mode, but with a broken client
+    it('should throw without initializing a raw fallback client when bootstrap fails', async () => {
         const { fetchAndActivate } = await import('firebase/remote-config');
         vi.mocked(fetchAndActivate).mockRejectedValueOnce(new Error('firebase-app-check-token-invalid'));
 
-        // Corrupt the fallback client to simulate total failure
-        await service.bootstrap();
-        service['fallbackClient'] = null;
-
-        await expect(service.generateText('test')).rejects.toThrow('Intelligence Service not properly initialized');
+        await expect(service.bootstrap()).rejects.toMatchObject({
+            code: 'UNAUTHORIZED'
+        });
+        await expect(service.initializeFallbackMode()).rejects.toMatchObject({
+            code: 'UNAUTHORIZED'
+        });
+        expect(service['fallbackClient']).toBeNull();
     });
 
-    it('should handle generateVideo with polling', async () => {
-        // Bootstrap with real timers to avoid freezing async init
-        await service.bootstrap();
-        service['useFallbackMode'] = true;
-        await service['initializeFallbackMode']();
-
-        // Mock fetch to reject immediately so the fallback URI path is taken
-        // (the real fetch would require authentication and hang in test env)
-        const fetchSpy = vi.spyOn(global, 'fetch').mockRejectedValue(new Error('fetch unavailable in tests'));
-
-        vi.useFakeTimers();
-
-        const generatePromise = service.generateVideo({
+    it('should block renderer-side direct video generation', async () => {
+        await expect(service.generateVideo({
             prompt: 'Cinematic video',
             model: 'veo-v1',
             config: { durationSeconds: 5 },
-            timeoutMs: 60000 // large enough to pass the maxAttempts check
+            timeoutMs: 60000
+        })).rejects.toMatchObject({
+            code: 'UNAUTHORIZED'
         });
-
-        // MediaGenerator.ts uses a 10s poll interval — advance enough to trigger polling
-        await vi.advanceTimersByTimeAsync(15000);
-
-        const result = await generatePromise;
-
-        expect(result).toBe('http://video.mp4');
-
-        vi.useRealTimers();
-        fetchSpy.mockRestore();
-    }, 30000);
+    });
 
     it('should retry on transient errors', async () => {
         vi.useFakeTimers();
@@ -415,14 +401,17 @@ describe('FirebaseIntelligenceService', () => {
         vi.useRealTimers();
     });
 
-    it('should fallback on Firebase Installations API errors', async () => {
+    it('should fail closed on Firebase Installations API errors', async () => {
         // Mock a failure that resembles the Installations error
         const errMsg = 'Installations: Create Installation request failed with error "403 PERMISSION_DENIED"';
         const { fetchAndActivate } = await import('firebase/remote-config');
         vi.mocked(fetchAndActivate).mockRejectedValueOnce(new Error(errMsg));
 
-        // Should NOT throw
-        await service.bootstrap();
-        expect(service['useFallbackMode']).toBe(true);
+        await expect(service.bootstrap()).rejects.toMatchObject({
+            code: 'INTERNAL_ERROR',
+            message: 'Firebase Installations API is disabled or restricted. Please enable it in Google Cloud Console.'
+        });
+        expect(service['useFallbackMode']).toBe(false);
+        expect(service['fallbackClient']).toBeNull();
     });
 });

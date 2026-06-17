@@ -1,21 +1,12 @@
 /**
- * Direct Image Editor — Client-side image editing via Gemini SDK.
+ * Direct Image Editor — secured callable image editing adapter.
  *
- * This module bypasses Firebase Cloud Functions entirely. It uses the
- * @google/genai SDK directly from the client to perform image editing
- * (inpainting, outpainting, targeted modifications) using Gemini 3
- * image models with responseModalities: ['IMAGE'].
- *
- * Architecture note: This mirrors DirectImageGenerator's pattern.
- * The Cloud Function path (editImageFn) still exists for production
- * environments with AppCheck, but this direct path is the primary
- * editing pipeline to avoid 401 errors in dev and provide lower latency.
+ * Raw browser SDK access is intentionally disabled. This legacy export name is
+ * kept for compatibility, but it routes to the secured `editImage` Cloud
+ * Function.
  */
 
-import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { AppErrorCode, AppException } from '@/shared/types/errors';
-import { InputSanitizer } from '@/services/intelligence/utils/InputSanitizer';
-import { IntelligenceImagePromptService } from '@/services/image/IntelligenceImagePromptService';
 import { logger } from '@/utils/logger';
 
 export interface DirectEditOptions {
@@ -45,17 +36,10 @@ export interface DirectEditResult {
 }
 
 /**
- * Edit an image directly via the Gemini SDK, bypassing Cloud Functions.
- *
- * Supports:
- * - Source image + text instruction (remix)
- * - Source image + binary mask + instruction (inpainting)
- * - Source image + semantic mask + instruction (multi-region editing)
- * - Reference image for composition guidance
- * - Thought signature circulation for chained edits
+ * Edit an image through the secured Cloud Function.
  */
 export async function editImageDirectly(options: DirectEditOptions): Promise<DirectEditResult | null> {
-    logger.info('[DirectImageEditor] Proxying edit request to Cloud Function (direct API disabled for security).');
+    logger.info('[DirectImageEditor] Routing edit request to Cloud Function.');
     const { functions } = await import('@/services/firebase');
     const { httpsCallable } = await import('firebase/functions');
     
@@ -68,12 +52,12 @@ export async function editImageDirectly(options: DirectEditOptions): Promise<Dir
 
     } catch (error: unknown) {
         const msg = error instanceof Error ? error.message : String(error);
-        logger.error('[DirectImageEditor] Direct image editing failed:', msg);
+        logger.error('[DirectImageEditor] Cloud Function image editing failed:', msg);
 
         if (msg.includes('403') || msg.includes('API_KEY_INVALID')) {
             throw new AppException(
                 AppErrorCode.UNAUTHORIZED,
-                'Invalid Gemini API Key. Direct editing requires a valid VITE_API_KEY in your environment.'
+                'Image editing is not authorized by the secured backend.'
             );
         }
 
@@ -94,7 +78,7 @@ export async function editImageDirectly(options: DirectEditOptions): Promise<Dir
 
         throw new AppException(
             AppErrorCode.INTERNAL_ERROR,
-            `Direct image editing failed: ${msg}`
+            `Image editing failed: ${msg}`
         );
     }
 }

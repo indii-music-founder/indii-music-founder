@@ -35,8 +35,10 @@ vi.mock('firebase/remote-config', () => ({
 
 vi.mock('@/config/env', () => ({
     env: {
-        VITE_API_KEY: 'mock-key',
-        apiKey: 'mock-key'
+        VITE_API_KEY: '',
+        apiKey: '',
+        appCheckKey: 'mock-app-check-key',
+        appCheckDebugToken: 'mock-debug-token'
     }
 }));
 
@@ -48,16 +50,10 @@ vi.mock('../billing/TokenUsageService', () => ({
     }
 }));
 
-// Mock Google AutonomousIntelligence SDK (Fallback) - new @google/genai package
+// Raw Google client fallback must stay unused in renderer tests.
 vi.mock('@google/genai', () => ({
-    GoogleGenAI: vi.fn(function () {
-        return {
-            models: {
-                generateContent: mockGenerateContent,
-                generateContentStream: mockGenerateContentStream,
-                embedContent: vi.fn()
-            }
-        };
+    GoogleGenAI: vi.fn(() => {
+        throw new Error('Raw Google client fallback must not be constructed');
     })
 }));
 
@@ -78,13 +74,6 @@ describe('Streaming QA', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         service = new FirebaseIntelligenceService();
-        service.useFallbackMode = true;
-        service.fallbackClient = {
-            models: {
-                generateContent: mockGenerateContent,
-                generateContentStream: mockGenerateContentStream
-            }
-        } as any;
     });
 
     it('should pass AbortSignal to SDK', async () => {
@@ -97,7 +86,13 @@ describe('Streaming QA', () => {
             }
         };
 
-        mockGenerateContentStream.mockResolvedValue(mockStream);
+        mockGenerateContentStream.mockResolvedValue({
+            stream: mockStream,
+            response: Promise.resolve({
+                candidates: [],
+                usageMetadata: { promptTokenCount: 1, candidatesTokenCount: 1 }
+            })
+        });
 
         const controller = new AbortController();
         const signal = controller.signal;
@@ -105,10 +100,9 @@ describe('Streaming QA', () => {
         await service.generateContentStream('prompt', undefined, {}, undefined, undefined, { signal });
 
         expect(mockGenerateContentStream).toHaveBeenCalledWith(
+            'prompt',
             expect.objectContaining({
-                config: expect.objectContaining({
-                    abortSignal: expect.anything()
-                })
+                signal: expect.any(AbortSignal)
             })
         );
     });
@@ -127,7 +121,13 @@ describe('Streaming QA', () => {
             }
         };
 
-        mockGenerateContentStream.mockResolvedValue(mockStream);
+        mockGenerateContentStream.mockResolvedValue({
+            stream: mockStream,
+            response: Promise.resolve({
+                candidates: [],
+                usageMetadata: { promptTokenCount: 1, candidatesTokenCount: 1 }
+            })
+        });
 
         const { stream } = await service.generateContentStream('prompt');
         const reader = stream.getReader();

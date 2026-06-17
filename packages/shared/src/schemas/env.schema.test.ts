@@ -13,11 +13,14 @@ describe('CommonEnvSchema', () => {
         expect(result.useVertex).toBe(false);
     });
 
-    it('should require apiKey and projectId', () => {
+    it('should allow missing raw AI apiKey and require projectId', () => {
         const data = {
             apiKey: '',
             projectId: ''
         };
         expect(() => CommonEnvSchema.parse(data)).toThrow();
+
+        const validWithoutRawKey = CommonEnvSchema.parse({ projectId: 'proj' });
+        expect(validWithoutRawKey.apiKey).toBe('');
     });
 });

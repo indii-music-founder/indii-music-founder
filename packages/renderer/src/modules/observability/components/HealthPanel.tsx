@@ -48,11 +48,9 @@ function checkWCP(): ServiceHealth {
 }
 
 async function checkGeminiAPI(): Promise<ServiceHealth> {
-    const hasKey = !!import.meta.env.VITE_API_KEY;
     return {
-        name: 'Gemini API',
-        status: hasKey ? 'healthy' : 'degraded',
-        error: hasKey ? undefined : 'VITE_API_KEY not configured',
+        name: 'Firebase AI',
+        status: 'healthy',
     };
 }
 
@@ -60,7 +58,7 @@ export const HealthPanel: React.FC = () => {
     const [services, setServices] = useState<ServiceHealth[]>([
         { name: 'Firestore', status: 'checking' },
         { name: 'Control Plane (WCP)', status: 'checking' },
-        { name: 'Gemini API', status: 'checking' },
+        { name: 'Firebase AI', status: 'checking' },
     ]);
     const [lastChecked, setLastChecked] = useState<Date | null>(null);
 
