@@ -1,34 +1,25 @@
 # Handoff State
-**Updated:** 2026-06-17 09:51 EDT
-**Branch:** `codex/firebase-only-renderer-ai-boundary`
+**Updated:** 2026-06-17 15:59 UTC
+**Branch:** `claude/ci-failure-main-wxyof9`
 
 ## Recent Commits
 ```
-27a43c4b9 fix: enforce firebase-only renderer ai boundary
-18b059305 chore(ai): completely strip @google/genai and disable client-side AI proxy bypasses
-2286fe19c chore: session checkpoint [14:32]
-cffc79f58 chore: session checkpoint [14:00]
-992ae6065 test(ledger): verify ISSUE-432 to ISSUE-438
-1cbbc789c chore: session checkpoint [13:47]
-6503cadfb chore: session checkpoint [13:46]
-e56431dd7 fix(security): whitelist VITE_EXPOSE_ prefix and lazy-load DefaultAgents SDK client
-2a3c63e07 fix(audio): merge codex/branch-1 resolving api fallbacks and env exposures
-50e120283 chore: session checkpoint [13:42]
+409fc1b fix: configure App Check in FirebaseIntelligenceService security test
+cc1c951 Merge pull request #169 from indii-music-founder/codex/firebase-only-renderer-ai-boundary
+511ff5d test: align security boundary expectations
+e37cb85 chore: session checkpoint [09:51]
+490d39a fix: enforce firebase-only renderer ai boundary
+27a43c4 fix: enforce firebase-only renderer ai boundary
+18b0593 chore(ai): completely strip @google/genai and disable client-side AI proxy bypasses
+2286fe1 chore: session checkpoint [14:32]
+cffc79f chore: session checkpoint [14:00]
+992ae60 test(ledger): verify ISSUE-432 to ISSUE-438
 ```
 
 ## Working State
 ```
- M .env.example
- M .github/workflows/deploy.yml
  M package-lock.json
- M packages/firebase/src/index.ts
- M packages/renderer/src/services/video/__tests__/VideoGenerationService.test.ts
  M python/tests/fixtures/e2e_interop/ts_to_py/envelope.json
-?? .new_gemini_key.txt
-?? .new_maps_key.txt
-?? client_secret_148015878263-pfcoueoik0p1cn744vdn2m1u1gjl119m.apps.googleusercontent.com.json
-?? docs/COMPANY_EMAILS.md
-?? docs/flowcharts/api-secret-architecture-and-caching.md
 ```
 
 ## Decisions
