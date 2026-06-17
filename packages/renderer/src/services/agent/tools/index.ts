@@ -53,6 +53,7 @@ import { HarnessTools } from './HarnessTools';
 import { consult_specialist, seat_agent, unseat_agent } from './SwarmTools';
 import { FoundationalTools } from './FoundationalTools';
 import { BillingTools } from './BillingTools';
+import { EmailTools } from './EmailTools';
 import { AnyToolFunction } from '../types';
 
 export const TOOL_REGISTRY: Record<string, AnyToolFunction> = {
@@ -118,6 +119,7 @@ export const TOOL_REGISTRY: Record<string, AnyToolFunction> = {
     ...ReleaseHarnessTools,
     ...CreatorProtectionTools,
     ...HarnessTools,
+    ...EmailTools,
 };
 
 
@@ -268,4 +270,9 @@ AVAILABLE TOOLS:
 119. update_agent_memory(agentId: string, action: 'add'|'remove', knowledge: string) - Permanently update an agent's procedural instructions.
 120. create_artifact(filename: string, content: string, artifactType?: string, requestFeedback?: boolean) - Create an artifact document to present structured information to the user.
 121. multi_replace_file_content(targetFile: string, instruction: string, description: string, replacementChunks: array) - Modify multiple non-contiguous blocks of text in a single file.
+--- EMAIL ---
+271. list_email_accounts() - List connected email accounts for the user.
+272. read_emails(provider: string, forceSync?: boolean, maxResults?: number) - Read recent emails from a connected provider (e.g. 'gmail').
+273. send_email(accountId: string, to: string, subject: string, body: string) - Send an email from a connected account.
+274. reply_to_email(accountId: string, to: string, subject: string, body: string, threadId: string, inReplyTo: string) - Reply to an existing email thread.
 `;
