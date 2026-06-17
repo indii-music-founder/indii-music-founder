@@ -582,14 +582,10 @@ export class ImageGenerationService {
 
     async remixImage(options: RemixOptions): Promise<{ url: string } | null> {
         return withServiceError('ImageGeneration', 'remixImage', async () => {
-            // ── Direct SDK Pipeline ────────────────────────────────────────────
-            // Uses editImageDirectly (Gemini SDK) instead of Cloud Functions.
-            // This eliminates the Firebase Auth dependency that caused
-            // "Unauthenticated" errors when sessions expire or users aren't
-            // signed in. Matches the EditingService pattern.
+            // The legacy editImageDirectly export routes to the secured backend.
             const { editImageDirectly } = await import('@/services/intelligence/generators/DirectImageEditor');
 
-            logger.info('[ImageGen] remixImage: using Direct SDK path', {
+            logger.info('[ImageGen] remixImage: using secured backend path', {
                 hasContent: !!options.contentImage,
                 hasStyle: !!options.styleImage,
                 promptSnippet: (options.prompt || '').substring(0, 60),

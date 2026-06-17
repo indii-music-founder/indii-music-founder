@@ -12,7 +12,6 @@ interface AgentHeaderProps {
 
 export function AgentHeader({ uptime, isProcessing }: AgentHeaderProps) {
     const isOffline = useStore(useShallow((state: StoreState) => state.isOffline));
-    const hasApiKey = !!import.meta.env.VITE_API_KEY;
 
     return (
         <header className="h-20 flex-shrink-0 border-b border-white/5 bg-black/20 backdrop-blur-xl px-10 flex items-center justify-between z-40">
@@ -27,11 +26,6 @@ export function AgentHeader({ uptime, isProcessing }: AgentHeaderProps) {
                             <div className="px-2 py-0.5 rounded-full bg-red-500/10 border border-red-500/20 flex items-center gap-1.5" title="No Internet Connection">
                                 <div className="w-1.5 h-1.5 rounded-full bg-red-400" />
                                 <span className="text-[10px] font-medium text-red-400 uppercase tracking-widest">Offline</span>
-                            </div>
-                        ) : !hasApiKey ? (
-                            <div className="px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center gap-1.5" title="Missing Gemini API Key">
-                                <div className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                                <span className="text-[10px] font-medium text-amber-400 uppercase tracking-widest">API Missing</span>
                             </div>
                         ) : (
                             <div className="px-2 py-0.5 rounded-full bg-dept-creative/10 border border-dept-creative/20 flex items-center gap-1.5" title="Intelligence Engine Connected">

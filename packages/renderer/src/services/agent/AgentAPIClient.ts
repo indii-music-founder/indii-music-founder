@@ -27,7 +27,7 @@ export class AgentAPIClient {
 
     /**
      * Triggers a remote specialized agent with retry support and robust error logging.
-     * Can trigger standard GCP Cloud Functions or direct GenAI APIs.
+     * Can trigger standard GCP Cloud Functions.
      */
     static async triggerAgent(
         agentId: string,
@@ -59,7 +59,6 @@ export class AgentAPIClient {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${env.VITE_API_KEY || ''}`
                 },
                 body: JSON.stringify(payload),
                 maxRetries: retries - 1, // triggerAgent retries logic passed 'retries' as total attempts, fetchWithRetry takes max retries
