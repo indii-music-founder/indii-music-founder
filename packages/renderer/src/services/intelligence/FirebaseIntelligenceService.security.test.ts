@@ -54,7 +54,12 @@ vi.mock('firebase/functions', () => ({
 }));
 
 vi.mock('@/config/env', () => ({
-    env: { apiKey: 'test-key' }
+    env: { apiKey: 'test-key', appCheckKey: 'test-app-check-key' }
+}));
+
+vi.mock('./appcheck', () => ({
+    isAppCheckConfigured: () => true,
+    isAppCheckError: vi.fn()
 }));
 
 vi.mock('./billing/TokenUsageService', () => ({
