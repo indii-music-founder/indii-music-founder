@@ -10,7 +10,6 @@ import {
     Tool,
     SafetySetting as FirebaseSafetySetting
 } from 'firebase/ai';
-import { GoogleGenAI } from '@google/genai';
 import { getFirebaseAI, remoteConfig } from '@/services/firebase';
 import { fetchAndActivate, getValue } from 'firebase/remote-config';
 import { AppErrorCode, AppException } from '@/shared/types/errors';
@@ -96,8 +95,7 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
     private isInitialized = false;
     public defaultConfig: GenerationConfig = {};
 
-    // Fallback mode: use direct Gemini SDK when App Check is not available
-    public fallbackClient: GoogleGenAI | null = null;
+    public fallbackClient: any | null = null;
     public useFallbackMode = false;
     public activeRequests: Map<string, Promise<GenerateContentResult>> = new Map();
 
@@ -228,7 +226,7 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
      * Lazy-initializes the fallback client for direct Developer API calls (e.g. image/video)
      * without setting the global useFallbackMode to true, keeping text/agent routing on Vertex AI.
      */
-    public async ensureFallbackClient(): Promise<GoogleGenAI> {
+    public async ensureFallbackClient(): Promise<any> {
         if (!this.fallbackClient) {
             this.fallbackClient = await initializeFallbackClient();
         }

@@ -9,7 +9,7 @@
  * They never modify the context — it's a read-only contract.
  */
 
-import type { GoogleGenAI } from '@google/genai';
+
 import type { GenerateContentResult, Content, Tool } from 'firebase/ai';
 import type { CircuitBreaker } from './utils/CircuitBreaker';
 import type { RateLimiter } from './RateLimiter';
@@ -26,7 +26,7 @@ import type { ExtendedGenerativeModel } from './types';
 
 export interface IntelligenceContext {
     // ── State ──────────────────────────────────────────────────────────
-    fallbackClient: GoogleGenAI | null;
+    fallbackClient: any | null;
     useFallbackMode: boolean;
     defaultConfig: GenerationConfig;
     model: ExtendedGenerativeModel | null;
@@ -44,7 +44,7 @@ export interface IntelligenceContext {
     // ── Infrastructure Methods ────────────────────────────────────────
     ensureInitialized(): Promise<void>;
     initializeFallbackMode(): Promise<void>;
-    ensureFallbackClient(): Promise<GoogleGenAI>;
+    ensureFallbackClient(): Promise<any>;
     handleError(error: unknown): AppException;
     sanitizePrompt(prompt: string | Content[]): string | Content[];
     getModelName(override?: string): string;
