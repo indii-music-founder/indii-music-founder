@@ -284,78 +284,10 @@ describe('VideoGenerationService', () => {
             });
         });
 
-        it('should handle gs:// URIs and HTTP URLs in MediaGenerator', async () => {
+        it('should reject client-side MediaGenerator usage', async () => {
             const { generateVideo } = await import('../../intelligence/generators/MediaGenerator');
             
-            // Mock global fetch
-            const mockFetchResponse = {
-                ok: true,
-                blob: vi.fn().mockResolvedValue({
-                    type: 'image/png',
-                    arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(8))
-                })
-            };
-            const originalFetch = global.fetch;
-            global.fetch = vi.fn().mockResolvedValue(mockFetchResponse);
-
-            try {
-                const mockClient = {
-                    models: {
-                        generateVideos: vi.fn().mockResolvedValue({
-                            name: 'mock-op-name',
-                            done: true,
-                            response: {
-                                generatedVideos: [{
-                                    video: {
-                                        uri: 'https://mock-uri',
-                                        mimeType: 'video/mp4'
-                                    }
-                                }]
-                            }
-                        })
-                    }
-                } as any;
-
-                // 1. Test gs:// URI input
-                await generateVideo(mockClient, {
-                    prompt: 'test',
-                    image: { imageBytes: 'gs://bucket/frame.png', mimeType: 'image/png' },
-                    config: {
-                        lastFrame: 'gs://bucket/last.png',
-                        referenceImages: [
-                            { image: { uri: 'gs://bucket/ref.png' }, referenceType: 'asset' }
-                        ]
-                    }
-                });
-
-                expect(mockClient.models.generateVideos).toHaveBeenLastCalledWith({
-                    model: expect.any(String),
-                    prompt: 'test',
-                    image: { gcsUri: 'gs://bucket/frame.png' },
-                    config: expect.objectContaining({
-                        lastFrame: { gcsUri: 'gs://bucket/last.png' },
-                        referenceImages: [
-                            { image: { gcsUri: 'gs://bucket/ref.png' }, referenceType: 'asset' }
-                        ]
-                    })
-                });
-
-                // 2. Test HTTP URL input
-                await generateVideo(mockClient, {
-                    prompt: 'test',
-                    image: { imageBytes: 'https://example.com/frame.png', mimeType: 'image/png' }
-                });
-
-                expect(global.fetch).toHaveBeenCalledWith('https://example.com/frame.png');
-                expect(mockClient.models.generateVideos).toHaveBeenLastCalledWith({
-                    model: expect.any(String),
-                    prompt: 'test',
-                    image: { imageBytes: expect.any(String), mimeType: 'image/png' },
-                    config: expect.any(Object)
-                });
-            } finally {
-                global.fetch = originalFetch;
-            }
+            await expect(generateVideo(null, {})).rejects.toThrow(/Client-side video generation is disabled/);
         });
     });
 
@@ -409,4 +341,3 @@ describe('VideoGenerationService', () => {
         });
     });
 });
-
