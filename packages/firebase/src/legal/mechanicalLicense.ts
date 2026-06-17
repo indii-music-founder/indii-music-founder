@@ -1,4 +1,4 @@
-import { defineCallable, HttpsError } from '../factory';
+import * as functions from 'firebase-functions/v1';
 import { getFirestore } from 'firebase-admin/firestore';
 
 export interface MechanicalLicenseRequest {
@@ -27,21 +27,22 @@ export interface MechanicalLicenseResponse {
  * is legal exposure for the artist. When a real licensing API is integrated,
  * a VERIFIED status may only be returned from that API's actual response.
  */
-export const verifyMechanicalLicense = defineCallable<MechanicalLicenseRequest, MechanicalLicenseResponse>(
-    { region: 'us-central1', memory: '256MiB', timeoutSeconds: 60 },
-    async (request) => {
-        if (!request.auth) {
-            throw new HttpsError(
+export const verifyMechanicalLicense = functions
+    .region('us-central1')
+    .runWith({ memory: '256MB', timeoutSeconds: 60 })
+    .https.onCall(async (data: MechanicalLicenseRequest, context: functions.https.CallableContext): Promise<MechanicalLicenseResponse> => {
+        if (!context.auth) {
+            throw new functions.https.HttpsError(
                 'unauthenticated',
                 'User must be authenticated to run verification.'
             );
         }
 
-        const { trackTitle, originalArtist } = request.data;
+        const { trackTitle, originalArtist } = data;
 
         if (!trackTitle || typeof trackTitle !== 'string' || trackTitle.trim().length === 0 ||
             !originalArtist || typeof originalArtist !== 'string' || originalArtist.trim().length === 0) {
-            throw new HttpsError(
+            throw new functions.https.HttpsError(
                 'invalid-argument',
                 "Missing or invalid 'trackTitle' or 'originalArtist'."
             );
@@ -71,10 +72,10 @@ export const verifyMechanicalLicense = defineCallable<MechanicalLicenseRequest, 
         // Persist the honest audit trail — records that a check was REQUESTED
         // and clearance is outstanding, not that anything was verified.
         const db = getFirestore();
-        const requestId = `${request.auth.uid}-${Date.now()}`;
+        const requestId = `${context.auth.uid}-${Date.now()}`;
         const verificationRef = db.collection('mechanical_license_verifications').doc(requestId);
         await verificationRef.set({
-            userId: request.auth.uid,
+            userId: context.auth.uid,
             trackTitle,
             originalArtist,
             status: 'UNVERIFIED',
@@ -86,5 +87,4 @@ export const verifyMechanicalLicense = defineCallable<MechanicalLicenseRequest, 
         }, { merge: true });
 
         return response;
-    }
-);
+    });
