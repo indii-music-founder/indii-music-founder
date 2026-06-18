@@ -523,6 +523,21 @@ jobs:
           throw new Error('Firebase Auth password sign-in API is still blocked for the deployed web API key.');
           NODE
 
+      - name: Sync Gemini backend secret
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${GEMINI_API_KEY:-}" ]; then
+            echo "::warning::GEMINI_API_KEY GitHub secret is not configured; keeping existing Secret Manager version."
+            exit 0
+          fi
+
+          printf '%s' "$GEMINI_API_KEY" | gcloud secrets versions add GEMINI_API_KEY \
+            --project indii-music-founder \
+            --data-file=-
+
       - name: Deploy landing page to Firebase Hosting
         run: npx firebase deploy --only hosting:landing --project indii-music-founder --non-interactive
 
