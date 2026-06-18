@@ -1,8 +1,8 @@
 import * as functions from "firebase-functions/v1";
 import { z } from "zod";
-import { getGeminiApiKey, geminiApiKey } from "../config/secrets";
 import { FUNCTION_INTELLIGENCE_MODELS } from "../config/models";
 import { enforceRateLimit } from "./rateLimit";
+import { getVertexAIClient } from "./vertexClient";
 
 export const GenerateSpeechRequestSchema = z.object({
     text: z.string().min(1, "Text is required"),
@@ -37,8 +37,7 @@ Return ONLY a JSON object that adheres to the following schema:
  */
 export const analyzeAudioFn = () => functions
     .region("us-central1")
-    .runWith({ enforceAppCheck: true, 
-        secrets: [geminiApiKey],
+    .runWith({ enforceAppCheck: true,
         timeoutSeconds: 120,
         memory: "512MB"
      })
@@ -68,7 +67,6 @@ export const analyzeAudioFn = () => functions
         const { audioUrl, mimeType } = validation.data;
 
         try {
-            const apiKey = getGeminiApiKey();
             const modelId = FUNCTION_INTELLIGENCE_MODELS.AUDIO.ANALYSIS;
 
             console.log(`[analyzeAudio] Using model: ${modelId} for track: ${audioUrl}`);
@@ -90,38 +88,28 @@ export const analyzeAudioFn = () => functions
                 audioBase64 = Buffer.from(buffer).toString('base64');
             }
 
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`;
-
-            const response = await fetch(apiUrl, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    contents: [{
-                        role: "user",
-                        parts: [
-                            { text: SONIC_PROFILE_PROMPT },
-                            {
-                                inlineData: {
-                                    mimeType: mimeType,
-                                    data: audioBase64
-                                }
+            // Use Vertex AI SDK (ADC auth, no API key)
+            const genai = getVertexAIClient();
+            const result = await genai.models.generateContent({
+                model: modelId,
+                contents: [{
+                    role: "user",
+                    parts: [
+                        { text: SONIC_PROFILE_PROMPT },
+                        {
+                            inlineData: {
+                                mimeType: mimeType,
+                                data: audioBase64
                             }
-                        ]
-                    }],
-                    generationConfig: {
-                        temperature: 0.1,
-                        responseMimeType: "application/json"
-                    }
-                })
-            });
+                        }
+                    ]
+                }],
+                temperature: 0.1,
+                responseMimeType: "application/json"
+            } as any);
 
-            if (!response.ok) {
-                const errText = await response.text();
-                throw new Error(`Gemini API Error: ${response.status} ${errText}`);
-            }
-
-            const result = await response.json();
-            const analysisText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+            const part = result?.candidates?.[0]?.content?.parts?.[0];
+            const analysisText = part && 'text' in part ? (part as any).text : null;
 
             if (!analysisText) {
                 throw new Error("No analysis data returned from model.");
