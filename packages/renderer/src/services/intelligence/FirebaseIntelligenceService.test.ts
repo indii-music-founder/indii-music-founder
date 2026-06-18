@@ -310,8 +310,6 @@ describe('FirebaseIntelligenceService', () => {
         await expect(service.bootstrap()).rejects.toMatchObject({
             code: 'UNAUTHORIZED'
         });
-        expect(service['useFallbackMode']).toBe(false);
-        expect(service['fallbackClient']).toBeNull();
     });
 
     it('should handle content streams', async () => {
@@ -330,20 +328,6 @@ describe('FirebaseIntelligenceService', () => {
         await expect(service.bootstrap()).rejects.toMatchObject({
             code: 'UNAUTHORIZED'
         });
-        expect(service['useFallbackMode']).toBe(false);
-    });
-
-    it('should throw without initializing a raw fallback client when bootstrap fails', async () => {
-        const { fetchAndActivate } = await import('firebase/remote-config');
-        vi.mocked(fetchAndActivate).mockRejectedValueOnce(new Error('firebase-app-check-token-invalid'));
-
-        await expect(service.bootstrap()).rejects.toMatchObject({
-            code: 'UNAUTHORIZED'
-        });
-        await expect(service.initializeFallbackMode()).rejects.toMatchObject({
-            code: 'UNAUTHORIZED'
-        });
-        expect(service['fallbackClient']).toBeNull();
     });
 
     it('should block renderer-side direct video generation', async () => {
@@ -411,7 +395,5 @@ describe('FirebaseIntelligenceService', () => {
             code: 'INTERNAL_ERROR',
             message: 'Firebase Installations API is disabled or restricted. Please enable it in Google Cloud Console.'
         });
-        expect(service['useFallbackMode']).toBe(false);
-        expect(service['fallbackClient']).toBeNull();
     });
 });

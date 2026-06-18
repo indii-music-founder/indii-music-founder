@@ -46,12 +46,6 @@ export async function generateSpeech(
             }
         };
 
-        // Raw browser fallback is disabled.
-        if (ctx.useFallbackMode && ctx.fallbackClient) {
-            throw new AppException(AppErrorCode.UNAUTHORIZED, 'Raw speech generation fallback is disabled in the browser.');
-        }
-
-        // NORMAL MODE: Use Firebase Autonomous SDK
         const firebaseAI = getFirebaseAI();
 
         if (!firebaseAI) {
@@ -86,7 +80,7 @@ export async function generateSpeech(
                 }
             };
         } catch (error: unknown) {
-            if (isAppCheckError(error) && !ctx.useFallbackMode) {
+            if (isAppCheckError(error)) {
                 logger.warn('[SpeechGenerator] App Check error during speech generation');
             }
             throw ctx.handleError(error);

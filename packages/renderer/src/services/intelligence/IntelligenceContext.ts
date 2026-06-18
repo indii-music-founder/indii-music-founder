@@ -26,8 +26,6 @@ import type { ExtendedGenerativeModel } from './types';
 
 export interface IntelligenceContext {
     // ── State ──────────────────────────────────────────────────────────
-    fallbackClient: any | null;
-    useFallbackMode: boolean;
     defaultConfig: GenerationConfig;
     model: ExtendedGenerativeModel | null;
     remoteConfig: RemoteIntelligenceConfig;
@@ -43,8 +41,6 @@ export interface IntelligenceContext {
 
     // ── Infrastructure Methods ────────────────────────────────────────
     ensureInitialized(): Promise<void>;
-    initializeFallbackMode(): Promise<void>;
-    ensureFallbackClient(): Promise<any>;
     handleError(error: unknown): AppException;
     sanitizePrompt(prompt: string | Content[]): string | Content[];
     getModelName(override?: string): string;
