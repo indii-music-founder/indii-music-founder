@@ -112,7 +112,7 @@ export const analyzeAudioFn = () => functions
             const analysisText = part && 'text' in part ? (part as any).text : null;
 
             if (!analysisText) {
-                throw new Error("No analysis data returned from model.");
+                throw new Error("Model returned no analysis data. Ensure audio is valid and try again.");
             }
 
             return JSON.parse(analysisText);
@@ -120,6 +120,7 @@ export const analyzeAudioFn = () => functions
         } catch (error: unknown) {
             console.error("[analyzeAudio] Error:", error);
             if (error instanceof functions.https.HttpsError) throw error;
-            throw new functions.https.HttpsError("internal", (error as Error).message || "Audio analysis failed");
+            const msg = error instanceof Error ? error.message : "Unknown error during audio analysis";
+            throw new functions.https.HttpsError("internal", `Audio analysis failed: ${msg}`);
         }
     });
