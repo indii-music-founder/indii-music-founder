@@ -7,9 +7,7 @@
  * ENS resolution uses eth_call directly to the ENS public resolver via JSON-RPC.
  * Unstoppable Domains uses their Resolution API.
  *
- * Env:
- *   VITE_ETH_RPC_URL   — Ethereum JSON-RPC endpoint (Alchemy/Infura/public)
- *   VITE_UD_API_KEY    — Unstoppable Domains Resolution API key
+ * Provider-token resolution must be routed through a secured backend gateway.
  */
 
 import { db } from '@/services/firebase';
@@ -30,15 +28,11 @@ const ENS_REGISTRY = '0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e';
 // namehash is always computed on-chain; we use eth_call to do it
 
 const DEFAULT_RPC = 'https://cloudflare-eth.com'; // Public Cloudflare ETH gateway
-const UD_API = 'https://resolve.unstoppabledomains.com';
-
 export class ENSIdentityService {
     private rpcUrl: string;
-    private udApiKey: string;
 
     constructor() {
-        this.rpcUrl = import.meta.env.VITE_ETH_RPC_URL || DEFAULT_RPC;
-        this.udApiKey = import.meta.env.VITE_UD_API_KEY || '';
+        this.rpcUrl = DEFAULT_RPC;
     }
 
     /**
@@ -116,42 +110,8 @@ export class ENSIdentityService {
      * Resolve Unstoppable Domains (.nft, .crypto, .wallet) via Resolution API.
      */
     async resolveUnstoppable(domain: string): Promise<DomainIdentity> {
-        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-        if (this.udApiKey) {
-            headers['Authorization'] = `Bearer ${this.udApiKey}`;
-        }
-
-        const res = await fetch(`${UD_API}/domains/${encodeURIComponent(domain)}`, { headers });
-
-        if (res.status === 404) {
-            throw new Error(`Unstoppable Domain ${domain} not found or not registered`);
-        }
-        if (!res.ok) {
-            const err = await res.text();
-            throw new Error(`Unstoppable Domains resolution failed (${res.status}): ${err}`);
-        }
-
-        const data = await res.json() as {
-            records: Record<string, string>;
-            meta: { owner: string; domain: string };
-        };
-
-        const walletAddress = data.meta.owner ||
-            data.records['crypto.ETH.address'] ||
-            data.records['crypto.MATIC.address'] || '';
-
-        if (!walletAddress) {
-            throw new Error(`No wallet address found for ${domain}`);
-        }
-
-        return {
-            domain,
-            type: 'unstoppable',
-            walletAddress,
-            avatar: data.records['social.picture.value'],
-            twitter: data.records['social.twitter.username'],
-            resolvedAt: new Date().toISOString(),
-        };
+        void domain;
+        throw new Error('Unstoppable Domains resolution is backend-only in the web renderer.');
     }
 
     /**

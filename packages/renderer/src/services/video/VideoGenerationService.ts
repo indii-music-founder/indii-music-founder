@@ -302,7 +302,7 @@ export class VideoGenerationService {
     /**
      * Triggers a standard (atomic) video generation job.
      * Enriches the prompt, analyzes temporal context, and calls the
-     * @google/genai SDK directly via FirebaseIntelligenceService (no Cloud Functions).
+     * secured generateVideoV3 Firebase Cloud Function.
      * Writes results to Firestore for UI subscription compatibility.
      * 
      * @param options - Configuration for the video generation request.
@@ -848,4 +848,3 @@ export class VideoGenerationService {
 }
 
 export const VideoGeneration = new VideoGenerationService();
-

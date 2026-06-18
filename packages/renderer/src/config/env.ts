@@ -160,7 +160,6 @@ if (import.meta.env.DEV) {
 
 export const env = {
     ...runtimeEnv,
-    VITE_API_KEY: '',
     VITE_VERTEX_PROJECT_ID: runtimeEnv.projectId,
     VITE_VERTEX_LOCATION: runtimeEnv.location,
     VITE_FUNCTIONS_REGION: runtimeEnv.functionsRegion,
