@@ -1,8 +1,22 @@
 import { logger } from '@/utils/logger';
+
+// CRITICAL: Set App Check debug token BEFORE any Firebase SDK initialization
+// This must happen in the module scope before any Firebase services load
+if (typeof window !== 'undefined') {
+    const debugToken = import.meta.env.VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN;
+    if (debugToken) {
+        (window as any).FIREBASE_APPCHECK_DEBUG_TOKEN = debugToken;
+        (self as any).FIREBASE_APPCHECK_DEBUG_TOKEN = debugToken;
+    } else if (import.meta.env.DEV) {
+        (window as any).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+        (self as any).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+    }
+}
+
 import { initializeApp } from 'firebase/app';
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, setDoc, connectFirestoreEmulator } from 'firebase/firestore';
 import { getStorage, connectStorageEmulator } from 'firebase/storage';
-import { initializeAuth, browserLocalPersistence, browserSessionPersistence, indexedDBLocalPersistence } from 'firebase/auth';
+import { initializeAuth, browserLocalPersistence, browserSessionPersistence, indexedDBLocalPersistence, connectAuthEmulator } from 'firebase/auth';
 import { getAI, VertexAIBackend, AI as Autonomous } from 'firebase/ai';
 
 import { firebaseConfig, env } from '@/config/env';
@@ -179,6 +193,16 @@ if (isFirebaseE2EMockEnabled()) {
         rawAuth = initializeAuth(app, {
             persistence: [indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence]
         });
+
+        // Connect to Auth emulator in dev mode
+        if (env.DEV && env.VITE_USE_FUNCTIONS_EMULATOR === 'true' && typeof window !== 'undefined') {
+            try {
+                connectAuthEmulator(rawAuth, 'http://127.0.0.1:9099', { disableWarnings: true });
+                logger.debug('[Firebase] Connected to Auth emulator on port 9099');
+            } catch (e: unknown) {
+                logger.warn('[Firebase] Auth emulator connection skipped:', e);
+            }
+        }
     } catch (e: unknown) {
         logger.error('[Firebase] Failed to initialize Auth (likely missing API key):', e);
         rawAuth = {
@@ -337,23 +361,13 @@ if (typeof window !== 'undefined') {
 // Initialize App Check
 let appCheck = null;
 if (typeof window !== 'undefined') {
-    // Debug token for local development AND headless CI (e2e against deployed staging).
-    //
-    // An explicit debug token (VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN) is a deliberate,
-    // secret-controlled value. When present we apply it regardless of DEV/PROD so that
-    // a deployed staging build can pass App Check from a headless browser (which cannot
-    // solve a reCAPTCHA challenge). This does NOT weaken security: the token only lets
-    // App Check accept the request — Firestore/Storage Security Rules still enforce all
-    // real authorization. Production end-user builds simply won't have this token set.
-    //
-    // The auto-generate fallback (`= true`) stays DEV-only: it prompts the SDK to log a
-    // fresh token to the console for local registration, which must never happen in prod.
+    // Debug token is already set at module scope (see top of file)
+    // This ensures the Installations API uses the debug token before any Firebase service loads
+
     if (env.appCheckDebugToken) {
-        window.FIREBASE_APPCHECK_DEBUG_TOKEN = env.appCheckDebugToken;
-        self.FIREBASE_APPCHECK_DEBUG_TOKEN = env.appCheckDebugToken;
+        logger.debug(`[App Check] Debug token already set at module scope: ${env.appCheckDebugToken}`);
     } else if (env.DEV) {
-        window.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
-        self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+        logger.debug('[App Check] Auto-debug mode enabled (check console for debug token)');
     }
 
     // SECURITY: Warn in production if App Check is not configured
@@ -369,17 +383,21 @@ if (typeof window !== 'undefined') {
     const isElectron = !!window.electronAPI;
     const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
 
-    // Logic: 
+    // Logic:
     // 1. Must have a key.
     // 2. If Electron, must have a debug token (unless in DEV, where we want to trigger the prompt).
-    // 3. If in DEV, we initialize even without a debug token so the SDK logs the "Missing debug token" message to the console.
-    const shouldInitAppCheck = !!env.appCheckKey && (
+    // 3. CRITICAL: In DEV mode with Functions emulator, skip App Check entirely to avoid Installations API blocking.
+    //    The emulator doesn't need App Check validation - Firestore/Storage rules enforce authorization.
+    const skipAppCheckInEmulator = env.DEV && env.VITE_USE_FUNCTIONS_EMULATOR === 'true';
+    const shouldInitAppCheck = !skipAppCheckInEmulator && !!env.appCheckKey && (
         !isElectron || env.appCheckDebugToken || env.DEV
     );
 
-    if (shouldInitAppCheck) {
+    if (skipAppCheckInEmulator) {
+        logger.info('[App Check] Skipped in emulator mode (dev: true, emulator: true). Auth/Firestore will work without App Check validation.');
+    } else if (shouldInitAppCheck) {
         if (env.DEV && !env.appCheckDebugToken && isLocalhost) {
-            Logger.warn(TAG, 
+            Logger.warn(TAG,
                 '[indii][AppCheck] Running on localhost without a debug token.\n' +
                 'Google Maps and other protected services will fail until you:\n' +
                 '1. Check the console for "App Check debug token: XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"\n' +
