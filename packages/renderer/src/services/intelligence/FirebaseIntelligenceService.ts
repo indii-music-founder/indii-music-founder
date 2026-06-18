@@ -85,8 +85,6 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
     private isInitialized = false;
     public defaultConfig: GenerationConfig = {};
 
-    public fallbackClient: any | null = null;
-    public useFallbackMode = false;
     public activeRequests: Map<string, Promise<GenerateContentResult>> = new Map();
 
     // File Service (Gemini API 2GB limit)
@@ -103,13 +101,6 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
     // Dynamic Configuration
     public remoteConfig: RemoteIntelligenceConfig = DEFAULT_REMOTE_CONFIG;
 
-    /**
-     * Fallback is intentionally disabled in the renderer. If Firebase AI/App Check
-     * fails, the request must fail closed instead of using a raw browser API key.
-     */
-    private async triggerGlobalFallback(): Promise<void> {
-        throw new AppException(AppErrorCode.UNAUTHORIZED, 'AI Verification Failed (App Check/Auth)', { retryable: false });
-    }
 
     constructor() { }
 
@@ -194,31 +185,6 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
             logger.error('[FirebaseIntelligenceService] Bootstrap failed:', error);
             throw this.handleError(error);
         }
-    }
-
-    /**
-     * Renderer fallback mode is disabled. All AI requests must go through
-     * Firebase AI or callable backend routes.
-     */
-    public async initializeFallbackMode(): Promise<void> {
-        this.fallbackClient = null;
-        this.useFallbackMode = false;
-        throw new AppException(
-            AppErrorCode.UNAUTHORIZED,
-            'AI Verification Failed (raw client fallback disabled)',
-            { retryable: false }
-        );
-    }
-
-    /**
-     * Raw client fallback is disabled in the renderer.
-     */
-    public async ensureFallbackClient(): Promise<any> {
-        throw new AppException(
-            AppErrorCode.UNAUTHORIZED,
-            'Raw Gemini client fallback is disabled in the browser.',
-            { retryable: false }
-        );
     }
 
     /**
@@ -419,8 +385,8 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                             if (!costCheck.allowed) {
                                 const isInfraFailure = costCheck.reason?.includes('unavailable') || costCheck.reason?.includes('permission/auth check failed');
                                 if (isInfraFailure) {
-                                    logger.warn('[FirebaseIntelligenceService] Cost ledger infra failure; failing closed because raw browser fallback is disabled.', { reason: costCheck.reason });
-                                    await this.triggerGlobalFallback();
+                                    logger.error('[FirebaseIntelligenceService] Cost check infrastructure failure. Failing closed.', { reason: costCheck.reason });
+                                    throw new AppException(AppErrorCode.INTERNAL_ERROR, 'AI service temporarily unavailable');
                                 } else {
                                     throw new AppException(AppErrorCode.QUOTA_EXCEEDED, costCheck.reason || 'Budget limit reached');
                                 }
@@ -520,7 +486,7 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                             } catch (error: unknown) {
                                 const isTimeout = internalSignal.aborted && internalSignal.reason === 'TIMEOUT';
                                 if (isAppCheckError(error) || isTimeout) {
-                                    await this.triggerGlobalFallback();
+                                    throw new AppException(AppErrorCode.UNAUTHORIZED, 'AI Verification Failed (App Check/Auth)', { retryable: false });
                                 }
                                 throw this.handleError(error);
                             }
@@ -654,13 +620,7 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                         });
 
                         if (!costCheck.allowed) {
-                            const isInfraFailure = costCheck.reason?.includes('unavailable') || costCheck.reason?.includes('permission/auth check failed');
-                            if (isInfraFailure) {
-                                logger.warn('[FirebaseIntelligenceService] Cost ledger infra failure; failing closed because raw browser fallback is disabled.', { reason: costCheck.reason });
-                                await this.triggerGlobalFallback();
-                            } else {
-                                throw new AppException(AppErrorCode.QUOTA_EXCEEDED, costCheck.reason || 'Budget limit reached');
-                            }
+                            throw new AppException(AppErrorCode.INTERNAL_ERROR, costCheck.reason || 'Cost ledger check failed');
                         }
                     }
 
@@ -814,10 +774,6 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
 
                         return { stream: transformedStream, response: wrappedResponsePromise };
                     } catch (error: unknown) {
-                        const isTimeout = internalSignal.aborted && internalSignal.reason === 'TIMEOUT';
-                        if (isAppCheckError(error) || isTimeout) {
-                            await this.triggerGlobalFallback();
-                        }
                         throw this.handleError(error);
                     }
                 }, 3, 1000, internalSignal);
@@ -978,14 +934,6 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
     async getLiveModel(systemInstruction?: string): Promise<LiveGenerativeModel> {
         await this.ensureInitialized();
 
-        // Live API is Firebase-specific and not available in fallback mode
-        if (this.useFallbackMode) {
-            throw new AppException(
-                AppErrorCode.INTERNAL_ERROR,
-                'Live API is not available without App Check configuration. Please configure VITE_FIREBASE_APP_CHECK_KEY.'
-            );
-        }
-
         const firebaseAI = getFirebaseAI();
         if (!firebaseAI) {
             throw new AppException(
@@ -1063,7 +1011,7 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
         if (!this.isInitialized) {
             await this.bootstrap();
         }
-        if (!this.model && !this.fallbackClient) {
+        if (!this.model) {
             throw new AppException(AppErrorCode.INTERNAL_ERROR, 'Intelligence Service not properly initialized');
         }
     }
@@ -1097,13 +1045,6 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
             lowerMsg.includes('app-check-token') ||
             lowerMsg.includes('unauthorized')
         ) {
-            if (this.useFallbackMode) {
-                return new AppException(
-                    AppErrorCode.UNAUTHORIZED,
-                    'AI verification failed. Raw browser API-key fallback is disabled.',
-                    { retryable: false }
-                );
-            }
             return new AppException(AppErrorCode.UNAUTHORIZED, 'AI Verification Failed (App Check/Auth)', { retryable: false });
         }
         if (msg.includes('Recaptcha')) {
