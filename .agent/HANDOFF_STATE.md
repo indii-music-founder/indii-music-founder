@@ -4,6 +4,7 @@
 
 ## Recent Commits
 ```
+cab446baf chore: session checkpoint [09:44]
 0c4608530 chore: session checkpoint [09:43]
 536dc9146 chore: session checkpoint [09:43]
 caca733b7 chore: session checkpoint [09:43]
@@ -13,7 +14,6 @@ ab66f5ac5 chore: session checkpoint [09:43]
 a0f5f13e5 chore: session checkpoint [09:42]
 a904adf2b chore: session checkpoint [09:42]
 fe4ac98ec chore: session checkpoint [09:42]
-a51e9476e feat(ai): converge backend to Vertex+ADC (no API key dependency)
 ```
 
 ## Working State
