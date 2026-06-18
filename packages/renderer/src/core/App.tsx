@@ -18,6 +18,7 @@ import { ModuleAmbientBackground } from './components/ModuleAmbientBackground';
 import { MobileTabBar } from './components/MobileTabBar';
 import { MobileHeader } from './components/MobileHeader';
 import LoginForm from './components/auth/LoginForm';
+import { PrivacyPolicy, TermsOfService } from '@/modules/legal/pages/LegalPages';
 
 import { ApprovalModal } from './components/ApprovalModal';
 import CostWarningModal from './components/CostWarningModal';
@@ -405,6 +406,22 @@ function ModuleRenderer({
 // Main App Component
 // ============================================================================
 
+function PublicLegalPage({ type }: { type: 'privacy' | 'terms' }) {
+    return (
+        <div className="min-h-screen w-screen overflow-y-auto bg-black text-white">
+            <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-6 py-6">
+                <a href="/" className="text-sm font-semibold text-gray-400 transition-colors hover:text-white">
+                    indii.music
+                </a>
+                <a href="/login" className="text-sm font-semibold text-gray-400 transition-colors hover:text-white">
+                    Sign in
+                </a>
+            </div>
+            {type === 'privacy' ? <PrivacyPolicy /> : <TermsOfService />}
+        </div>
+    );
+}
+
 export default function App() {
     // ⚡ Bolt Optimization: useShallow
     const { currentModule, user, authLoading } = useStore(
@@ -425,6 +442,13 @@ export default function App() {
     // 📱 Remote Relay: Listen for phone commands and process them through the desktop's agent pipeline
     useRemoteCommandListener();
 
+    const publicLegalPage = useMemo(() => {
+        const path = window.location.pathname.replace(/\/+$/, '') || '/';
+        if (path === '/privacy' || path === '/legal/privacy') return 'privacy';
+        if (path === '/terms' || path === '/legal/terms') return 'terms';
+        return null;
+    }, []);
+
     // Determine if current module should show chrome (sidebar, command bar, etc.)
     const showChrome = useMemo(
         () => !STANDALONE_MODULES.includes(currentModule as ModuleId),
@@ -444,7 +468,9 @@ export default function App() {
 
     return (
         <AppInitializationProvider>
-            {authLoading ? (
+            {publicLegalPage ? (
+                <PublicLegalPage type={publicLegalPage} />
+            ) : authLoading ? (
                 <LoadingFallback />
             ) : !user ? (
                 <LoginForm />

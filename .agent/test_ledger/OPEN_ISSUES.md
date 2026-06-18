@@ -6080,3 +6080,72 @@ Therefore, no fix can be proposed or implemented.
 - **UX Impact:** If any exposed names carry real values in a developer or deployed environment, browser users can retrieve operational credentials from the module graph.
 - **Dimensional Data:** Live evidence found 29 secret-shaped matches in both `src/core/App.tsx` and `src/services/audio/AudioIntelligenceService.ts` on `localhost:4242` and `localhost:4243`, including `VITE_PINATA_SECRET`, `VITE_PINATA_JWT`, `VITE_DOCUSIGN_ACCESS_TOKEN`, `VITE_NGROK_AUTHTOKEN`, `VITE_PRINTFUL_API_KEY`, `VITE_MEM0_API_KEY`, and multiple `AIza...` values. Evidence captured in `artifacts/mega_audio_analyzer_2026-06-16T1530_live_api_evidence.json`.
 > ✅ VERIFIED (D, 2026-06-16): Verified fix logic. Secret variables are completely scrubbed in Vite-served bundles.
+
+### ISSUE-439: Missing Privacy Policy and Terms of Service pages
+- **Status:** ✅ FIXED (local, 2026-06-18)
+- **Severity:** 🔴 HIGH (Legal/Compliance)
+- **Dimension:** UX | Legal | Frontend
+- **Target:** Landing page (indii.music)
+- **Module:** Router | Auth/Legal pages
+- **Flowchart:** N/A
+- **Tech Stack:** React 18.3.1 | React Router | Firebase Hosting
+- **Found:** 2026-06-18 by /browse QA testing
+- **Summary:** Privacy Policy and Terms of Service links are clickable and route correctly to `/privacy` and `/terms`, but both routes render the login form instead of actual legal document content. This is a critical compliance issue — users cannot access required legal documents, and the site may not meet legal/regulatory requirements.
+- **Steps to Reproduce:**
+  1. Navigate to https://indii.music
+  2. Click "Privacy Policy" link → navigates to `/privacy` but shows login form
+  3. Click "Terms of Service" link → navigates to `/terms` but shows login form
+  4. Expected: Should display actual privacy policy / terms of service documents
+- **Expected:** `/privacy` and `/terms` routes should render complete legal documents with proper styling, not the authentication form.
+- **Actual:** Both routes show identical login form (Sign In / Create Account / Forgot Password).
+- **UX Impact:** Users cannot read privacy policy or terms of service; potential legal liability if site is in production.
+- **Dimensional Data:** Screenshots captured:
+  - `/privacy` page: `/tmp/privacy-page.png` (shows login form instead of policy)
+  - Responsive design tested: mobile/tablet/desktop all affected
+  - HTTP status: 200 OK (page loads, but wrong component)
+  - Browser console: No errors related to routing, issue is intentional component rendering
+- **Blocker:** Site should not go live without accessible legal pages.
+- **Fix:** Renderer app now treats `/privacy`, `/legal/privacy`, `/terms`, and `/legal/terms` as public legal routes before the unauthenticated login gate. These paths render the existing production legal document components instead of the auth form.
+- **Files:** `packages/renderer/src/core/App.tsx`
+- **Verification:** `npm run security:frontend-api-boundary`; `npm run typecheck`
+
+### ISSUE-440: Date of Birth field UX - format mismatch (YYYY-MM-DD vs MM/DD/YYYY)
+- **Status:** ✅ FIXED (local, 2026-06-18)
+- **Severity:** 🟡 MEDIUM (UX friction)
+- **Dimension:** UX | FormValidation | Frontend
+- **Target:** Create Account form
+- **Module:** AuthForm / DateInput
+- **Flowchart:** N/A
+- **Tech Stack:** React 18.3.1 | HTML5 date input
+- **Found:** 2026-06-18 by /browse QA testing
+- **Summary:** The "Date of Birth" field in the Create Account form requires `YYYY-MM-DD` format (ISO 8601) but users commonly expect `MM/DD/YYYY` format. When users enter the common format, the field rejects it silently with no user-facing validation message, only a console warning.
+- **Steps to Reproduce:**
+  1. Navigate to https://indii.music
+  2. Click "Create Account"
+  3. Try to fill Date of Birth with `01/15/1990` (common US format)
+  4. Observe: Field rejects value; console shows warning
+- **Expected:** Accept common date formats (MM/DD/YYYY, MM-DD-YYYY) or display clear placeholder/hint showing required format (`YYYY-MM-DD`).
+- **Actual:** Only accepts `YYYY-MM-DD`; no validation hint shown to user; only a silent browser console warning.
+- **Console Warning:** "The specified value '01/15/1990' does not conform to the required format, 'yyyy-MM-dd'."
+- **UX Impact:** Users might abandon account creation due to unclear date format requirement.
+- **Dimensional Data:** HTML5 `<input type="date">` element used; browser default validation applied.
+- **Fix:** Replaced the rigid browser date picker with a controlled text input that accepts `MM/DD/YYYY`, `MM-DD-YYYY`, and `YYYY-MM-DD`, validates impossible dates, and shows an inline format hint plus a clearer validation error.
+- **Files:** `packages/renderer/src/core/components/auth/LoginForm.tsx`
+- **Verification:** `npm run security:frontend-api-boundary`; `npm run typecheck`
+
+### ISSUE-441: HTTP 400 vs 401 semantics for failed signin attempt
+- **Status:** 🔵 UPSTREAM / NO PRODUCT FIX
+- **Severity:** 🟢 LOW (Semantic/Best practices)
+- **Dimension:** API | HTTPSemantics | ErrorHandling
+- **Target:** Firebase Identity Toolkit endpoint
+- **Module:** Auth / SignIn flow
+- **Flowchart:** N/A
+- **Tech Stack:** Firebase Identity Toolkit | Google Identity Platform
+- **Found:** 2026-06-18 by /browse QA testing (network inspection)
+- **Summary:** The signin endpoint (`POST /v1/accounts:signInWithPassword`) returns HTTP 400 Bad Request when credentials are invalid. This status code is controlled by Firebase Identity Toolkit / Google Identity Platform, not by the app. Frontend error handling is correct.
+- **API Call:** `POST https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=<Firebase web API key>`
+- **Current Response:** 400 (199ms, 224B)
+- **Expected Response:** 401 Unauthorized
+- **Impact:** Low — frontend handles error correctly and displays "Incorrect email or password. Please try again." but using the correct HTTP status code is best practice.
+- **Dimensional Data:** Network capture from /browse testing shows 400 status code on invalid credentials attempt.
+- **Resolution:** No code change. Do not proxy Firebase Auth just to remap a Google-controlled status code; that would weaken the standard Firebase Auth integration and add avoidable security/maintenance surface.
