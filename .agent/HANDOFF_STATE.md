@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-18 12:33 EDT
+**Updated:** 2026-06-18 12:34 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+330d3eac7 chore: session checkpoint [12:33]
 2573fb356 chore: session checkpoint [12:32]
 b9b5de17b chore: session checkpoint [12:31]
 00eb4b13b chore: session checkpoint [12:29]
@@ -13,7 +14,6 @@ c08382ec0 chore: session checkpoint [12:25]
 474a16e39 chore: session checkpoint [12:20]
 1f6366d01 chore: session checkpoint [12:20]
 e4a37e2dd chore: session checkpoint [12:18]
-919adff54 fix(auth): create user doc on signup and set authLoading false
 ```
 
 ## Working State
