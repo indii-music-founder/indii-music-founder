@@ -1,24 +1,28 @@
 # Handoff State
-**Updated:** 2026-06-17 16:14 UTC
-**Branch:** `claude/ci-failure-main-wxyof9`
+**Updated:** 2026-06-18 09:27 EDT
+**Branch:** `main`
 
 ## Recent Commits
 ```
-d2d91af chore: session checkpoint [16:14]
-32336b1 fix: configure App Check in QA_Voice tests
-4f309c9 chore: session checkpoint [16:00]
-59f7eec chore: session checkpoint [15:59]
-409fc1b fix: configure App Check in FirebaseIntelligenceService security test
-cc1c951 Merge pull request #169 from indii-music-founder/codex/firebase-only-renderer-ai-boundary
-511ff5d test: align security boundary expectations
-e37cb85 chore: session checkpoint [09:51]
-490d39a fix: enforce firebase-only renderer ai boundary
-27a43c4 fix: enforce firebase-only renderer ai boundary
+80f50edee chore: session checkpoint prior to AI rebuild phase 0
+95313714b Merge pull request #180 from indii-music-founder/codex/sync-gemini-secret
+fbb8d2e94 ci: sync gemini backend secret during deploy
+951327810 Merge pull request #179 from indii-music-founder/codex/backend-api-boundary
+dfee5a508 fix(api): enforce backend-only provider boundary
+952238ab6 Merge pull request #178 from indii-music-founder/codex/fix-gen1-cpu-mismatch
+f81097a6f fix(functions): pin legacy stripe callables runtime
+14da39189 Merge pull request #177 from indii-music-founder/codex/keep-legacy-callables-gen1
+49fbbb9ea fix(functions): keep legacy callables on gen1
+95f83c6e9 Merge pull request #176 from indii-music-founder/codex/fix-request-taxforms-gen1
 ```
 
 ## Working State
 ```
-clean working tree
+?? .new_gemini_key.txt
+?? .new_maps_key.txt
+?? client_secret_148015878263-pfcoueoik0p1cn744vdn2m1u1gjl119m.apps.googleusercontent.com.json
+?? docs/COMPANY_EMAILS.md
+?? docs/flowcharts/api-secret-architecture-and-caching.md
 ```
 
 ## Decisions
