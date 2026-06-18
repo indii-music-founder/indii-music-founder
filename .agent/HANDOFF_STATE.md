@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-18 12:11 EDT
+**Updated:** 2026-06-18 12:15 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+29e6eacd5 chore: session checkpoint [16:14]
+ddf6c85d2 chore: session checkpoint [12:11]
 532892de6 chore: session checkpoint [12:08]
 ffa6cd993 chore: session checkpoint [12:08]
 c03bf55be fix(qa): skip App Check in emulator mode to unblock Firebase Auth
@@ -12,13 +14,11 @@ c03bf55be fix(qa): skip App Check in emulator mode to unblock Firebase Auth
 7f5037065 chore: session checkpoint [12:00]
 f328cd737 chore: session checkpoint [11:58]
 7d5da1771 chore: session checkpoint [11:56]
-75e06a6ce chore: session checkpoint [11:55]
-8fb6f1b54 chore: session checkpoint [11:53]
 ```
 
 ## Working State
 ```
- M python/tests/fixtures/e2e_interop/ts_to_py/envelope.json
+clean working tree
 ```
 
 ## Decisions
