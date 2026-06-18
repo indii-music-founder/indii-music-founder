@@ -1,26 +1,24 @@
 # Handoff State
-**Updated:** 2026-06-18 13:17 EDT
+**Updated:** 2026-06-18 17:23 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+6cbc7786b fix(ai): enforce backend-only api boundary
+e5b163f81 fix: prevent debug env leakage in renderer bundle (#183)
+3fa80d1d3 ci: block app check debug token in deploy builds (#182)
+773ac4f91 Merge pull request #181 from indii-music-founder/codex/handle-open-issues-439-441
+f062f3211 fix: resolve open legal and signup issues
+2f6f66a7b chore: session checkpoint [13:17]
 8bf3ae5da chore: session checkpoint [13:16]
 ffbf1d48f chore: session checkpoint [13:16]
 3a0640ab9 chore: session checkpoint [13:14]
 7bbd9bb5e chore: session checkpoint [13:12]
-18b6cf2d9 chore: session checkpoint [13:11]
-f6f6395b1 chore: session checkpoint [13:06]
-5355f4976 chore: session checkpoint [13:04]
-e4edf4c8b chore: session checkpoint [13:02]
-2a3083bac chore: session checkpoint [13:01]
-b7c4b055c chore: session checkpoint [13:00]
 ```
 
 ## Working State
 ```
- M .agent/test_ledger/OPEN_ISSUES.md
- M packages/renderer/src/core/App.tsx
- M packages/renderer/src/core/components/auth/LoginForm.tsx
+ M python/tests/fixtures/e2e_interop/ts_to_py/envelope.json
 ```
 
 ## Decisions
