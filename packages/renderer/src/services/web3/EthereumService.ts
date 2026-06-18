@@ -4,8 +4,8 @@
  * Provides ethers.js integration for reading blockchain state,
  * deploying contracts, and interacting with smart contracts.
  *
- * Setup: Get a free API key from https://dashboard.alchemy.com/signup
- * Env: VITE_ALCHEMY_API_KEY
+ * Browser-side Alchemy API keys are disabled. Use a secured backend gateway
+ * for JSON-RPC calls that require provider credentials.
  * Free tier: 30M Compute Units/month, 25 req/sec
  */
 
@@ -29,39 +29,24 @@ export interface TokenMetadata {
     totalSupply: string;
 }
 
-const CHAIN_RPC_URLS: Record<number, string> = {
-    1: 'https://eth-mainnet.g.alchemy.com/v2/',
-    11155111: 'https://eth-sepolia.g.alchemy.com/v2/', // Sepolia testnet
-    137: 'https://polygon-mainnet.g.alchemy.com/v2/',
-    42161: 'https://arb-mainnet.g.alchemy.com/v2/',
-};
-
 export class EthereumService {
-    private apiKey: string;
-    private defaultChainId: number;
-
-    constructor(chainId: number = 11155111) { // Default to Sepolia testnet
-        this.apiKey = import.meta.env.VITE_ALCHEMY_API_KEY || '';
-        this.defaultChainId = chainId;
+    constructor(chainId: number = 11155111) {
+        void chainId;
     }
 
     /**
      * Check if the service is configured.
      */
     isConfigured(): boolean {
-        return this.apiKey.length > 0 && this.apiKey !== 'MOCK_KEY_DO_NOT_USE';
+        return false;
     }
 
     /**
      * Get the RPC URL for a given chain.
      */
     getRpcUrl(chainId?: number): string {
-        const chain = chainId || this.defaultChainId;
-        const baseUrl = CHAIN_RPC_URLS[chain];
-        if (!baseUrl) {
-            throw new Error(`Unsupported chain ID: ${chain}`);
-        }
-        return `${baseUrl}${this.apiKey}`;
+        void chainId;
+        throw new Error('Ethereum JSON-RPC provider access is backend-only in the web renderer.');
     }
 
     /**
@@ -69,7 +54,7 @@ export class EthereumService {
      */
     async rpcCall(method: string, params: unknown[] = [], chainId?: number): Promise<unknown> {
         if (!this.isConfigured()) {
-            throw new Error('Alchemy API key not configured. Set VITE_ALCHEMY_API_KEY in .env');
+            throw new Error('Ethereum JSON-RPC provider access is backend-only in the web renderer.');
         }
 
         const response = await fetch(this.getRpcUrl(chainId), {

@@ -49,10 +49,6 @@ import { getFineTunedModel } from '@/services/agent/fine-tuned-models';
 // Extracted sub-modules
 import { isAppCheckError, isAppCheckConfigured } from './appcheck';
 import {
-    generateWithFallback as fallbackGenerate,
-    streamWithFallback as fallbackStream,
-} from './fallback/FallbackClient';
-import {
     generateText as hlGenerateText,
     generateStructuredData as hlGenerateStructuredData,
     chat as hlChat,
@@ -84,10 +80,6 @@ export type { ChatMessage } from './types';
 
 // Default model if remote config fails
 const FALLBACK_MODEL = INTELLIGENCE_MODELS.TEXT.FAST;
-const isVertexFineTunedEndpoint = (modelName: string): boolean =>
-    modelName.startsWith('projects/') && modelName.includes('/endpoints/');
-
-
 export class FirebaseIntelligenceService implements IntelligenceContext {
     public model: ExtendedGenerativeModel | null = null;
     private isInitialized = false;
@@ -427,10 +419,8 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                             if (!costCheck.allowed) {
                                 const isInfraFailure = costCheck.reason?.includes('unavailable') || costCheck.reason?.includes('permission/auth check failed');
                                 if (isInfraFailure) {
-                                    logger.warn('[FirebaseIntelligenceService] Cost ledger infra failure. Bypassing cost check to allow fallback.', { reason: costCheck.reason });
-                                    if (!this.useFallbackMode) {
-                                        await this.triggerGlobalFallback();
-                                    }
+                                    logger.warn('[FirebaseIntelligenceService] Cost ledger infra failure; failing closed because raw browser fallback is disabled.', { reason: costCheck.reason });
+                                    await this.triggerGlobalFallback();
                                 } else {
                                     throw new AppException(AppErrorCode.QUOTA_EXCEEDED, costCheck.reason || 'Budget limit reached');
                                 }
@@ -472,19 +462,8 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                             mergedConfig.mediaResolution = 'MEDIA_RESOLUTION_HIGH';
                         }
 
-                        // 7. Normal vs Fallback Generation
+                        // 7. Normal Firebase AI generation
                         const result = await (async () => {
-                            // FALLBACK MODE
-                            if (this.useFallbackMode && this.fallbackClient) {
-                                let fallbackModelName = modelName;
-                                if (isVertexFineTunedEndpoint(modelName)) {
-                                    logger.warn(`[FirebaseIntelligenceService] Direct Gemini fallback cannot serve Vertex tuned endpoints; falling back to base model ${FALLBACK_MODEL}.`);
-                                    fallbackModelName = FALLBACK_MODEL;
-                                }
-                                const fallbackTools = tools ? JSON.parse(JSON.stringify(tools)) : undefined;
-                                return this.generateWithFallback(sanitizedPrompt, fallbackModelName, mergedConfig, systemInstruction, fallbackTools, options?.safetySettings, options?.toolConfig, { signal: internalSignal });
-                            }
-
                             // NORMAL MODE
                             let cachedContent = options?.cachedContent;
                             if (!cachedContent && systemInstruction && CachedContextService.shouldCache(systemInstruction)) {
@@ -540,15 +519,8 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                                 );
                             } catch (error: unknown) {
                                 const isTimeout = internalSignal.aborted && internalSignal.reason === 'TIMEOUT';
-                                if ((isAppCheckError(error) || isTimeout) && !this.useFallbackMode) {
-                                    let fallbackModelName = modelName;
-                                    if (isVertexFineTunedEndpoint(modelName)) {
-                                        const reason = error instanceof Error ? error.message : String(error);
-                                        logger.warn(`[FirebaseIntelligenceService] Fine-tuned endpoint call failed; falling back to base model ${FALLBACK_MODEL}. Reason: ${reason}`);
-                                        fallbackModelName = FALLBACK_MODEL;
-                                    }
+                                if (isAppCheckError(error) || isTimeout) {
                                     await this.triggerGlobalFallback();
-                                    return this.generateWithFallback(sanitizedPrompt, fallbackModelName, mergedConfig, systemInstruction, clonedTools || tools, options?.safetySettings, options?.toolConfig, { signal: internalSignal });
                                 }
                                 throw this.handleError(error);
                             }
@@ -590,31 +562,6 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
         });
 
         return requestPromise;
-    }
-
-    /**
-     * Generate content using direct Gemini SDK (fallback mode).
-     * This bypasses Firebase Autonomous SDK and App Check requirements.
-     * Uses the new @google/genai SDK (GA).
-     */
-    private async generateWithFallback(
-        prompt: string | Content[],
-        modelName: string,
-        config?: GenerationConfig,
-        systemInstruction?: string,
-        tools?: Tool[],
-        safetySettings?: SafetySetting[],
-        toolConfig?: ToolConfig,
-        options?: { signal?: AbortSignal }
-    ): Promise<GenerateContentResult> {
-        if (!this.fallbackClient) {
-            throw new AppException(AppErrorCode.INTERNAL_ERROR, 'Fallback client not initialized');
-        }
-        return fallbackGenerate(
-            this.fallbackClient, prompt, modelName, config,
-            systemInstruction, tools, safetySettings, toolConfig,
-            options, (e) => this.handleError(e)
-        );
     }
 
     /**
@@ -709,10 +656,8 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                         if (!costCheck.allowed) {
                             const isInfraFailure = costCheck.reason?.includes('unavailable') || costCheck.reason?.includes('permission/auth check failed');
                             if (isInfraFailure) {
-                                logger.warn('[FirebaseIntelligenceService] Cost ledger infra failure. Bypassing cost check to allow fallback.', { reason: costCheck.reason });
-                                if (!this.useFallbackMode) {
-                                    await this.triggerGlobalFallback();
-                                }
+                                logger.warn('[FirebaseIntelligenceService] Cost ledger infra failure; failing closed because raw browser fallback is disabled.', { reason: costCheck.reason });
+                                await this.triggerGlobalFallback();
                             } else {
                                 throw new AppException(AppErrorCode.QUOTA_EXCEEDED, costCheck.reason || 'Budget limit reached');
                             }
@@ -732,19 +677,6 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                     }
 
                     // 4. Case analysis for normal Firebase AI execution.
-                    if (this.useFallbackMode && this.fallbackClient) {
-                        let fallbackModelName = modelName;
-                        if (isVertexFineTunedEndpoint(modelName)) {
-                            logger.warn(`[FirebaseIntelligenceService] Direct Gemini streaming fallback cannot serve Vertex tuned endpoints; falling back to base model ${FALLBACK_MODEL}.`);
-                            fallbackModelName = FALLBACK_MODEL;
-                        }
-                        if (timeoutId) {
-                            clearTimeout(timeoutId);
-                            timeoutId = undefined;
-                        }
-                        return this.streamWithFallback(sanitizedPrompt, fallbackModelName, mergedConfig, systemInstruction, tools, { ...options, signal: internalSignal });
-                    }
-
                     // Normal Mode setup
                     let cachedContent: string | undefined = undefined;
                     if (systemInstruction && CachedContextService.shouldCache(systemInstruction)) {
@@ -883,19 +815,8 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                         return { stream: transformedStream, response: wrappedResponsePromise };
                     } catch (error: unknown) {
                         const isTimeout = internalSignal.aborted && internalSignal.reason === 'TIMEOUT';
-                        if ((isAppCheckError(error) || isTimeout) && !this.useFallbackMode) {
-                            let fallbackModelName = modelName;
-                            if (isVertexFineTunedEndpoint(modelName)) {
-                                const reason = error instanceof Error ? error.message : String(error);
-                                logger.warn(`[FirebaseIntelligenceService] Fine-tuned stream failed; falling back to base model ${FALLBACK_MODEL}. Reason: ${reason}`);
-                                fallbackModelName = FALLBACK_MODEL;
-                            }
+                        if (isAppCheckError(error) || isTimeout) {
                             await this.triggerGlobalFallback();
-                            if (timeoutId) {
-                                clearTimeout(timeoutId);
-                                timeoutId = undefined;
-                            }
-                            return this.streamWithFallback(sanitizedPrompt, fallbackModelName, mergedConfig, systemInstruction, tools, { ...options, signal: internalSignal });
                         }
                         throw this.handleError(error);
                     }
@@ -906,28 +827,6 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                 clearTimeout(timeoutId);
             }
         }
-    }
-
-    /**
-     * Stream content using direct Gemini SDK (fallback mode).
-     * This bypasses Firebase Autonomous SDK and App Check requirements.
-     * Uses the new @google/genai SDK (GA).
-     */
-    private async streamWithFallback(
-        prompt: string | Content[],
-        modelName: string,
-        config?: GenerationConfig,
-        systemInstruction?: string,
-        tools?: Tool[],
-        options?: { signal?: AbortSignal, safetySettings?: SafetySetting[], toolConfig?: ToolConfig }
-    ): Promise<{ stream: ReadableStream<StreamChunk>, response: Promise<WrappedResponse> }> {
-        if (!this.fallbackClient) {
-            throw new AppException(AppErrorCode.INTERNAL_ERROR, 'Fallback client not initialized');
-        }
-        return fallbackStream(
-            this.fallbackClient, prompt, modelName, config,
-            systemInstruction, tools, options
-        );
     }
 
     /**
@@ -1224,7 +1123,7 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
             return new AppException(AppErrorCode.NETWORK_ERROR, 'Intelligence Service Temporarily Unavailable or Internal Error', { retryable: true });
         }
 
-        // @google/genai ApiError — check HTTP status code directly
+        // Backend/provider API errors — check HTTP status code directly
         const httpStatus = (error as { status?: number })?.status;
         if (httpStatus === 404) {
             return new AppException(

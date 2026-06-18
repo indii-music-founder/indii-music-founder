@@ -5,7 +5,13 @@ import path from 'path';
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
-  envPrefix: ['VITE_', 'NEXT_PUBLIC_'],
+  envPrefix: [
+    'VITE_FIREBASE_',
+    'VITE_FOUNDER_MODE',
+    'VITE_AUTH_HANDOFF_URL',
+    'NEXT_PUBLIC_AUTH_HANDOFF_URL',
+    'VITE_STUDIO_URL',
+  ],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
