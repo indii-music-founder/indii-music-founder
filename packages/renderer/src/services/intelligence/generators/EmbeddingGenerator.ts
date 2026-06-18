@@ -27,12 +27,6 @@ export async function embedContent(
     return ctx.auxBreaker.execute(async () => {
         await ctx.ensureInitialized();
 
-        // Raw browser fallback is disabled.
-        if (ctx.useFallbackMode && ctx.fallbackClient) {
-            throw new AppException(AppErrorCode.UNAUTHORIZED, 'Raw embedding fallback is disabled in the browser.');
-        }
-
-        // NORMAL MODE: Use Firebase Autonomous SDK
         const firebaseAI = getFirebaseAI();
 
         if (!firebaseAI) {
@@ -57,7 +51,7 @@ export async function embedContent(
             const result = await modelWithEmbed.embedContent({ content: options.content });
             return { values: result.embedding.values };
         } catch (error: unknown) {
-            if (isAppCheckError(error) && !ctx.useFallbackMode) {
+            if (isAppCheckError(error)) {
                 logger.warn('[EmbeddingGenerator] App Check error during embedding');
             }
             throw ctx.handleError(error);
@@ -91,12 +85,6 @@ export async function batchEmbedContents(
 
         const modelName = modelOverride || APPROVED_MODELS.EMBEDDING_DEFAULT;
 
-        // Raw browser fallback is disabled.
-        if (ctx.useFallbackMode && ctx.fallbackClient) {
-            throw new AppException(AppErrorCode.UNAUTHORIZED, 'Raw embedding fallback is disabled in the browser.');
-        }
-
-        // NORMAL MODE: Use Firebase Autonomous SDK
         const firebaseAI = getFirebaseAI();
         if (!firebaseAI) {
             throw new AppException(AppErrorCode.INTERNAL_ERROR, 'Firebase AI is not available for embeddings.');
@@ -124,8 +112,8 @@ export async function batchEmbedContents(
                 throw new AppException(AppErrorCode.INTERNAL_ERROR, 'Model does not support embedding');
             }
         } catch (error: unknown) {
-            if (isAppCheckError(error) && !ctx.useFallbackMode) {
-                logger.warn('[EmbeddingGenerator] App Check error during batch embedding; raw browser fallback is disabled.');
+            if (isAppCheckError(error)) {
+                logger.warn('[EmbeddingGenerator] App Check error during batch embedding');
             }
             throw ctx.handleError(error);
         }
