@@ -24,7 +24,6 @@ const FrontendEnvSchema = CommonEnvSchema.extend({
 
     // App Check
     VITE_FIREBASE_APP_CHECK_KEY: z.string().optional(),
-    VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN: z.string().optional(),
 
     // Autonomous Sidecar
     VITE_A0_BASE_URL: z.string().url().optional(),
@@ -55,14 +54,6 @@ export const getEnv = (metaValue: string | boolean | undefined, processValue: st
 
     const val = (typeof metaValue === 'string' ? metaValue : undefined) || processValue;
     return val || undefined;
-};
-
-const getSafeMetaEnv = (key: string): string | boolean | undefined => {
-    try {
-        return (import.meta as unknown as { env?: Record<string, string | boolean | undefined> }).env?.[key];
-    } catch {
-        return undefined;
-    }
 };
 
 const getProcessEnv = (key: string): string | undefined => {
@@ -104,7 +95,6 @@ const processEnv = {
     firebaseStorageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || getProcessEnv('VITE_FIREBASE_STORAGE_BUCKET'),
     firebaseDatabaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL || getProcessEnv('VITE_FIREBASE_DATABASE_URL'),
     appCheckKey: import.meta.env.VITE_FIREBASE_APP_CHECK_KEY || getProcessEnv('VITE_FIREBASE_APP_CHECK_KEY'),
-    appCheckDebugToken: import.meta.env.VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN || getProcessEnv('VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN'),
     appId: import.meta.env.VITE_FIREBASE_APP_ID || getProcessEnv('VITE_FIREBASE_APP_ID'),
 
     skipOnboarding: toBoolean(import.meta.env.VITE_SKIP_ONBOARDING || getProcessEnv('VITE_SKIP_ONBOARDING')),
@@ -167,7 +157,6 @@ export const env = {
     VITE_GOOGLE_MAPS_API_KEY: runtimeEnv.googleMapsApiKey || runtimeEnv.VITE_GOOGLE_MAPS_API_KEY,
     enableGoogleMaps: runtimeEnv.enableGoogleMaps,
     appCheckKey: processEnv.appCheckKey,
-    appCheckDebugToken: processEnv.appCheckDebugToken,
 };
 
 // Firebase defaults
@@ -193,9 +182,9 @@ export const firebaseConfig = {
     databaseURL: firebaseEnv.firebaseDatabaseURL || "",
     projectId: firebaseEnv.firebaseProjectId || "",
     storageBucket: firebaseEnv.firebaseStorageBucket || "",
-    messagingSenderId: getEnv(getSafeMetaEnv('VITE_FIREBASE_MESSAGING_SENDER_ID'), getProcessEnv('VITE_FIREBASE_MESSAGING_SENDER_ID')) || "",
-    appId: firebaseEnv.appId || getEnv(getSafeMetaEnv('VITE_FIREBASE_APP_ID'), getProcessEnv('VITE_FIREBASE_APP_ID')) || "",
-    measurementId: getEnv(getSafeMetaEnv('VITE_FIREBASE_MEASUREMENT_ID'), getProcessEnv('VITE_FIREBASE_MEASUREMENT_ID')) || ""
+    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || getProcessEnv('VITE_FIREBASE_MESSAGING_SENDER_ID') || "",
+    appId: firebaseEnv.appId || import.meta.env.VITE_FIREBASE_APP_ID || getProcessEnv('VITE_FIREBASE_APP_ID') || "",
+    measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || getProcessEnv('VITE_FIREBASE_MEASUREMENT_ID') || ""
 };
 
 if (!firebaseConfig.apiKey || !firebaseConfig.projectId || !firebaseConfig.appId) {

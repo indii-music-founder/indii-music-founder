@@ -33,7 +33,6 @@ const envSchema = z.object({
 
   // App Check
   VITE_FIREBASE_APP_CHECK_KEY: z.string().optional(),
-  VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN: z.string().optional(),
 
   VITE_LANDING_PAGE_URL: z.string().optional(),
 
@@ -83,8 +82,6 @@ const processEnv = {
   VITE_FIREBASE_DATABASE_URL: process.env.VITE_FIREBASE_DATABASE_URL,
 
   VITE_FIREBASE_APP_CHECK_KEY: process.env.VITE_FIREBASE_APP_CHECK_KEY,
-  VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN:
-    process.env.VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN,
 
   VITE_LANDING_PAGE_URL: process.env.VITE_LANDING_PAGE_URL,
 
