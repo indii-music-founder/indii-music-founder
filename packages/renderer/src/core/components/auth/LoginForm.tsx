@@ -9,8 +9,41 @@ import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
  * Item 305: COPPA Age Gate Utility
  * Calculate age from date of birth string. Returns -1 if invalid.
  */
+function normalizeDateOfBirth(input: string): string | null {
+    const trimmed = input.trim();
+    const isoMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(trimmed);
+    const usMatch = /^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/.exec(trimmed);
+
+    const year = isoMatch?.[1] ?? usMatch?.[3];
+    const month = isoMatch?.[2] ?? usMatch?.[1];
+    const day = isoMatch?.[3] ?? usMatch?.[2];
+    if (!year || !month || !day) return null;
+
+    const monthNumber = Number(month);
+    const dayNumber = Number(day);
+    if (monthNumber < 1 || monthNumber > 12 || dayNumber < 1 || dayNumber > 31) {
+        return null;
+    }
+
+    const normalized = `${year}-${monthNumber.toString().padStart(2, '0')}-${dayNumber.toString().padStart(2, '0')}`;
+    const parsed = new Date(`${normalized}T00:00:00`);
+    if (
+        Number.isNaN(parsed.getTime()) ||
+        parsed.getFullYear() !== Number(year) ||
+        parsed.getMonth() + 1 !== monthNumber ||
+        parsed.getDate() !== dayNumber
+    ) {
+        return null;
+    }
+
+    return normalized;
+}
+
 function calculateAge(dateOfBirth: string): number {
-    const dob = new Date(dateOfBirth);
+    const normalizedDob = normalizeDateOfBirth(dateOfBirth);
+    if (!normalizedDob) return -1;
+
+    const dob = new Date(`${normalizedDob}T00:00:00`);
     if (isNaN(dob.getTime())) return -1;
     const today = new Date();
     let age = today.getFullYear() - dob.getFullYear();
@@ -95,9 +128,10 @@ export default function LoginForm() {
                 useStore.setState({ authError: 'Date of birth is required to create an account.' });
                 return;
             }
-            const age = calculateAge(dateOfBirth);
+            const normalizedDob = normalizeDateOfBirth(dateOfBirth);
+            const age = normalizedDob ? calculateAge(normalizedDob) : -1;
             if (age < 0) {
-                useStore.setState({ authError: 'Please enter a valid date of birth.' });
+                useStore.setState({ authError: 'Please enter a valid date of birth as MM/DD/YYYY or YYYY-MM-DD.' });
                 return;
             }
             if (age < 13) {
@@ -340,15 +374,18 @@ export default function LoginForm() {
                                                     <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                                                     <input
                                                         aria-label="date of birth"
-                                                        type="date"
+                                                        type="text"
+                                                        inputMode="numeric"
                                                         value={dateOfBirth}
                                                         onChange={(e) => setDateOfBirth(e.target.value)}
-                                                        max={new Date().toISOString().split('T')[0]}
+                                                        placeholder="MM/DD/YYYY"
+                                                        pattern="(\\d{1,2}[/-]\\d{1,2}[/-]\\d{4})|(\\d{4}-\\d{2}-\\d{2})"
+                                                        title="Use MM/DD/YYYY or YYYY-MM-DD"
                                                         className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl focus:border-green-500/50 focus:ring-1 focus:ring-green-500/50 outline-none transition-all text-white [color-scheme:dark]"
                                                         required
                                                     />
                                                 </div>
-                                                <p className="text-[10px] text-gray-500 ml-1">You must be 13 or older to create an account.</p>
+                                                <p className="text-[10px] text-gray-500 ml-1">Use MM/DD/YYYY or YYYY-MM-DD. You must be 13 or older to create an account.</p>
                                             </div>
                                         </motion.div>
                                     )}
