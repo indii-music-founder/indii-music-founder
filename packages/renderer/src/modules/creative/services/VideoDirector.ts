@@ -1,6 +1,6 @@
 import { logger } from '@/utils/logger';
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
-import { SchemaType } from 'firebase/ai';
+const SchemaType = { OBJECT: 'OBJECT', ARRAY: 'ARRAY', STRING: 'STRING', NUMBER: 'NUMBER', BOOLEAN: 'BOOLEAN', INTEGER: 'INTEGER' } as const;
 import { useStore, HistoryItem } from '@/core/store';
 import { functionsWest1 as functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';

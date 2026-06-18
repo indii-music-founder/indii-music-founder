@@ -76,59 +76,17 @@ describe('Streaming QA', () => {
         service = new FirebaseIntelligenceService();
     });
 
-    it('should pass AbortSignal to SDK', async () => {
-        const mockStream = {
-            [Symbol.asyncIterator]: async function* () {
-                yield {
-                    text: () => 'Chunk',
-                    candidates: [{ content: { parts: [{ text: 'Chunk' }] } }]
-                };
-            }
-        };
-
-        mockGenerateContentStream.mockResolvedValue({
-            stream: mockStream,
-            response: Promise.resolve({
-                candidates: [],
-                usageMetadata: { promptTokenCount: 1, candidatesTokenCount: 1 }
-            })
-        });
-
+    it('should pass AbortSignal to the backend gateway', async () => {
         const controller = new AbortController();
         const signal = controller.signal;
 
         await service.generateContentStream('prompt', undefined, {}, undefined, undefined, { signal });
 
-        expect(mockGenerateContentStream).toHaveBeenCalledWith(
-            'prompt',
-            expect.objectContaining({
-                signal: expect.any(AbortSignal)
-            })
-        );
+        const call = [...vi.mocked(fetch).mock.calls].reverse().find(([url]) => String(url).includes('cloudfunctions.net/generateContentStream'));
+        expect(call?.[1]?.signal).toBeInstanceOf(AbortSignal);
     });
 
-    it('should tolerate chunk errors', async () => {
-        const mockStream = {
-            [Symbol.asyncIterator]: async function* () {
-                yield {
-                    text: () => 'Good',
-                    candidates: [{ content: { parts: [{ text: 'Good' }] } }]
-                };
-                yield {
-                    text: () => { throw new Error('Bad'); },
-                    candidates: []
-                };
-            }
-        };
-
-        mockGenerateContentStream.mockResolvedValue({
-            stream: mockStream,
-            response: Promise.resolve({
-                candidates: [],
-                usageMetadata: { promptTokenCount: 1, candidatesTokenCount: 1 }
-            })
-        });
-
+    it('should read backend stream chunks', async () => {
         const { stream } = await service.generateContentStream('prompt');
         const reader = stream.getReader();
 
@@ -136,6 +94,6 @@ describe('Streaming QA', () => {
         expect(r1.value?.text()).toBe('Good');
 
         const r2 = await reader.read();
-        expect(r2.value?.text()).toBe(''); // Should catch error and return empty string
+        expect(r2.done).toBe(true);
     });
 });

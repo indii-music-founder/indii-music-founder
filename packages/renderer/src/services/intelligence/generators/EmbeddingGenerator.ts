@@ -1,80 +1,34 @@
 /**
- * EmbeddingGenerator — Extracted embedding logic from FirebaseIntelligenceService.
+ * EmbeddingGenerator — backend-only guard.
  *
- * Handles text embeddings through Firebase AI. Supports single and batch
- * embedding operations.
+ * The renderer must not initialize Firebase AI or call Vertex/Gemini directly.
+ * Until a secured embedding Cloud Function exists, embedding requests fail
+ * closed instead of reintroducing a browser-side Google API path.
  */
 
-import { getGenerativeModel } from 'firebase/ai';
-import type { Content } from 'firebase/ai';
-import { getFirebaseAI } from '@/services/firebase';
 import { auth } from '@/services/firebase';
 import type { IntelligenceContext } from '../IntelligenceContext';
+import type { Content } from '@/shared/types/ai.dto';
 import { AppErrorCode, AppException } from '@/shared/types/errors';
-import { INTELLIGENCE_CONFIG, APPROVED_MODELS } from '@/core/config/intelligence-models';
-import { isAppCheckError } from '../appcheck';
 import { TokenUsageService } from '../billing/TokenUsageService';
-import { logger } from '@/utils/logger';
-import type { AutonomousIntelligenceEmbedResult, ExtendedGenerativeModel } from '../types';
 
-/**
- * Embed a single content object and return the embedding values.
- */
+const EMBEDDING_BACKEND_MESSAGE = 'Embeddings require a secured backend embedding function; browser-side Firebase AI embeddings are disabled.';
+
 export async function embedContent(
     ctx: IntelligenceContext,
-    options: { model: string; content: Content }
+    _options: { model: string; content: Content }
 ): Promise<{ values: number[] }> {
     return ctx.auxBreaker.execute(async () => {
         await ctx.ensureInitialized();
-
-        const firebaseAI = getFirebaseAI();
-
-        if (!firebaseAI) {
-            throw new AppException(AppErrorCode.INTERNAL_ERROR, 'Firebase AI is not available for embeddings.');
-        }
-
-        const modelCallback = getGenerativeModel(firebaseAI, {
-            model: options.model
-        });
-
-        try {
-            interface GenerativeModelWithEmbed {
-                embedContent(request: { content: Content }): Promise<{ embedding: { values: number[] } }>;
-            }
-            const modelWithEmbed = modelCallback as unknown as GenerativeModelWithEmbed;
-
-            // Defensive check: Firebase SDK model may not expose embedContent
-            if (typeof modelWithEmbed.embedContent !== 'function') {
-                throw new AppException(AppErrorCode.INTERNAL_ERROR, 'Firebase AI model does not support embedContent.');
-            }
-
-            const result = await modelWithEmbed.embedContent({ content: options.content });
-            return { values: result.embedding.values };
-        } catch (error: unknown) {
-            if (isAppCheckError(error)) {
-                logger.warn('[EmbeddingGenerator] App Check error during embedding');
-            }
-            throw ctx.handleError(error);
-        }
+        throw new AppException(AppErrorCode.UNAUTHORIZED, EMBEDDING_BACKEND_MESSAGE, { retryable: false });
     });
 }
 
-/**
- * Embed multiple documents in parallel (batch embedding).
- */
 export async function batchEmbedContents(
     ctx: IntelligenceContext,
-    contentsOrStrings: Content[] | string[],
-    modelOverride?: string
+    _contentsOrStrings: Content[] | string[],
+    _modelOverride?: string
 ): Promise<number[][]> {
-    // Normalize input to Content[]
-    const contents: Content[] = contentsOrStrings.map(item => {
-        if (typeof item === 'string') {
-            return { role: 'user', parts: [{ text: item }] };
-        }
-        return item;
-    });
-
     return ctx.contentBreaker.execute(async () => {
         await ctx.ensureInitialized();
 
@@ -83,39 +37,6 @@ export async function batchEmbedContents(
             await TokenUsageService.checkQuota(userId);
         }
 
-        const modelName = modelOverride || APPROVED_MODELS.EMBEDDING_DEFAULT;
-
-        const firebaseAI = getFirebaseAI();
-        if (!firebaseAI) {
-            throw new AppException(AppErrorCode.INTERNAL_ERROR, 'Firebase AI is not available for embeddings.');
-        }
-
-        const modelCallback = getGenerativeModel(firebaseAI, { model: modelName });
-
-        try {
-            // If batchEmbedContents is available, use it
-            // Otherwise fall back to Promise.all
-            const modelExtended = modelCallback as ExtendedGenerativeModel;
-
-            if (typeof modelExtended.batchEmbedContents === 'function') {
-                const requests = contents.map(c => ({ content: c }));
-                const result = await modelExtended.batchEmbedContents({ requests });
-                return result.embeddings.map((e: { values: number[] }) => e.values);
-            } else {
-                // Polyfill: Run in parallel
-                const modelWithEmbed = modelCallback as unknown as { embedContent: (req: unknown) => Promise<{ embedding: { values: number[] } }> };
-                if (typeof modelWithEmbed.embedContent === 'function') {
-                    const promises = contents.map(c => modelWithEmbed.embedContent({ content: c }));
-                    const results = await Promise.all(promises);
-                    return results.map(r => r.embedding.values);
-                }
-                throw new AppException(AppErrorCode.INTERNAL_ERROR, 'Model does not support embedding');
-            }
-        } catch (error: unknown) {
-            if (isAppCheckError(error)) {
-                logger.warn('[EmbeddingGenerator] App Check error during batch embedding');
-            }
-            throw ctx.handleError(error);
-        }
+        throw new AppException(AppErrorCode.UNAUTHORIZED, EMBEDDING_BACKEND_MESSAGE, { retryable: false });
     });
 }

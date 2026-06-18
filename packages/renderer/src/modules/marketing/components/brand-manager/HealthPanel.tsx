@@ -4,7 +4,7 @@ import {
     CheckCircle, Sparkles, TrendingUp, History
 } from 'lucide-react';
 import { motion } from 'motion/react';
-import { Schema } from 'firebase/ai';
+import type { Schema } from '@/shared/types/ai.dto';
 import { useToast } from '@/core/context/ToastContext';
 import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
 import { TourMap } from '@/modules/touring/components/TourMap';

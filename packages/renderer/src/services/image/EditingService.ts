@@ -2,7 +2,7 @@ import { AutonomousIntelligence } from '../intelligence/AutonomousIntelligence';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { InputSanitizer } from '../intelligence/utils/InputSanitizer';
 import { logger } from '@/utils/logger';
-import { ContentPart } from '@/shared/types/ai.dto';
+import { ContentPart, Part } from '@/shared/types/ai.dto';
 import { editImageDirectly } from '@/services/intelligence/generators/DirectImageEditor';
 
 
@@ -214,7 +214,7 @@ export class EditingService {
         projectContext?: string;
         thoughtSignature?: string;
     }): Promise<{ id: string; url: string; prompt: string; thoughtSignature?: string } | null> {
-        const parts: import('firebase/ai').Part[] = [];
+        const parts: Part[] = [];
         options.images.forEach((img, idx) => {
             parts.push({ inlineData: { mimeType: img.mimeType, data: img.data } });
             parts.push({ text: `[Reference ${idx + 1}]` });
@@ -297,7 +297,7 @@ export class EditingService {
             }
 
             // Step 3: Generate Frame
-            const parts: import('firebase/ai').Part[] = [];
+            const parts: Part[] = [];
             if (previousImage) {
                 parts.push({ inlineData: { mimeType: previousImage.mimeType, data: previousImage.data } });
                 parts.push({ text: `[Reference Frame]` });
@@ -346,7 +346,7 @@ export class EditingService {
             ? INTELLIGENCE_MODELS.IMAGE.DIRECT_PRO
             : INTELLIGENCE_MODELS.IMAGE.DIRECT_FAST;
 
-        const parts: import('firebase/ai').Part[] = [
+        const parts: Part[] = [
             { text: options.prompt || 'Render the content image in the artistic style of the style reference. Preserve the subject and composition from the content image. Apply the colors, textures, lighting, and mood from the style reference.' },
             { inlineData: { mimeType: options.contentImage.mimeType, data: options.contentImage.data } },
             { text: '[Content Image - preserve this subject/composition]' },

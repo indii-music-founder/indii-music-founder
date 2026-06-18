@@ -12,7 +12,6 @@ import { initializeApp } from 'firebase/app';
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, setDoc, connectFirestoreEmulator } from 'firebase/firestore';
 import { getStorage, connectStorageEmulator } from 'firebase/storage';
 import { initializeAuth, browserLocalPersistence, browserSessionPersistence, indexedDBLocalPersistence, connectAuthEmulator } from 'firebase/auth';
-import { getAI, VertexAIBackend, AI as Autonomous } from 'firebase/ai';
 
 import { firebaseConfig, env } from '@/config/env';
 
@@ -21,7 +20,6 @@ import { getFunctions, connectFunctionsEmulator, httpsCallable } from 'firebase/
 import { initializeAppCheck, ReCaptchaV3Provider, ReCaptchaEnterpriseProvider } from 'firebase/app-check';
 import { getRemoteConfig } from 'firebase/remote-config';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
-import { isAppCheckConfigured } from '@/services/intelligence/appcheck';
 import { getE2EMockUser, isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 
 // If Firebase config is missing critical keys, log clearly and continue with empty config.
@@ -36,7 +34,7 @@ export const app = initializeApp(firebaseConfig);
 // LAZY Firebase Autonomous Initialization
 // Only initialize when App Check is configured to avoid Installations API errors
 // ============================================================================
-const _aiInstances = new Map<string, Autonomous>();
+export type Autonomous = never;
 
 /**
  * Get the Firebase Autonomous instance. Returns null if App Check is not configured,
@@ -44,30 +42,9 @@ const _aiInstances = new Map<string, Autonomous>();
  * Allows passing an optional location (e.g. 'us-central1') for dynamic Vertex routing.
  */
 export function getFirebaseAI(location?: string): Autonomous | null {
-    const targetLocation = location || import.meta.env.VITE_VERTEX_LOCATION || 'global';
-    if (_aiInstances.has(targetLocation)) {
-        return _aiInstances.get(targetLocation)!;
-    }
-
-    // Only initialize Firebase Autonomous if App Check is configured
-    // This prevents the Installations API error when App Check isn't set up
-    if (!isAppCheckConfigured()) {
-        logger.warn('[Firebase] App Check not configured, Firebase Autonomous will not be initialized (using fallback)');
-        return null;
-    }
-
-    try {
-        const instance = getAI(app, {
-            backend: new VertexAIBackend(targetLocation),
-            useLimitedUseAppCheckTokens: false
-        });
-        _aiInstances.set(targetLocation, instance);
-        logger.info(`[Firebase] Firebase Autonomous initialized with Vertex Autonomous backend (${targetLocation})`);
-        return instance;
-    } catch (error: unknown) {
-        logger.error(`[Firebase] Failed to initialize Firebase AI for location ${targetLocation}:`, error);
-        return null;
-    }
+    void location;
+    logger.debug('[Firebase] Browser Firebase AI SDK is disabled; AI requests must use backend Cloud Function gateways.');
+    return null;
 }
 
 // For backwards compatibility - lazy getter

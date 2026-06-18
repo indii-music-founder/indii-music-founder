@@ -38,7 +38,6 @@ check_key "VITE_FIREBASE_APP_ID" || ((required_missing++))
 echo ""
 echo "Optional Keys:"
 check_key "VITE_FIREBASE_MEASUREMENT_ID"
-check_key "VITE_GOOGLE_MAPS_API_KEY"
 
 echo ""
 echo "======================================"
