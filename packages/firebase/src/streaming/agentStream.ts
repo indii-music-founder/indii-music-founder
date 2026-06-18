@@ -11,8 +11,8 @@ import { onRequest } from "firebase-functions/v2/https";
 import { HttpsError } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
 import { Request, Response } from "express";
-import { GoogleGenAI } from "@google/genai";
 import { FUNCTION_INTELLIGENCE_MODELS } from "../config/models";
+import { getVertexAIClient } from "../lib/vertexClient";
 
 interface StreamToken {
   token: string;
@@ -51,9 +51,8 @@ interface AgentStreamRequest {
 export const agentStreamResponse = onRequest(
   {
     region: "us-central1",
-    timeoutSeconds: 600, // 10 minutes for long-running agent tasks
-    memory: "1GiB",
-    secrets: ["GEMINI_API_KEY"]
+    timeoutSeconds: 600,
+    memory: "1GiB"
   },
   async (req: Request, res: Response): Promise<void> => {
     // Handle CORS preflight
@@ -125,16 +124,8 @@ export const agentStreamResponse = onRequest(
         `[AgentStream] Starting stream for user=${userId}, agent=${agentId}`
       );
 
-      // Initialize Gemini API client
-      const apiKey = process.env.GEMINI_API_KEY;
-      if (!apiKey) {
-        throw new HttpsError(
-          "internal",
-          "GEMINI_API_KEY not configured"
-        );
-      }
-
-      const genai = new GoogleGenAI({ apiKey });
+      // Initialize Vertex AI client (ADC auth, no API key)
+      const genai = getVertexAIClient();
       let tokenIndex = 0;
 
       try {
