@@ -17,7 +17,6 @@ interface ImportMetaEnv {
     readonly VITE_FIREBASE_DATABASE_URL?: string
     readonly VITE_FIREBASE_APP_ID?: string
     readonly VITE_FIREBASE_APP_CHECK_KEY?: string
-    readonly VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN?: string
     readonly VITE_FIREBASE_VAPID_KEY?: string
     readonly VITE_FCM_VAPID_KEY?: string
 
