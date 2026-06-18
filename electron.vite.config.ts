@@ -170,7 +170,8 @@ export default defineConfig({
             'VITE_SHOW_',
             'VITE_SKIP_',
             'VITE_A0_',
-            'VITE_APP_',
+            'VITE_APP_TARGET',
+            'VITE_APP_VERSION',
             'VITE_RAG_',
             'VITE_ADMIN_PIN',
             'VITE_WALLETCONNECT_PROJECT_ID',
@@ -182,15 +183,6 @@ export default defineConfig({
             envSanitizerPlugin(),
             apiFallbackPlugin()
         ],
-        define: {
-            'import.meta.env.VITE_PINATA_SECRET': '""',
-            'import.meta.env.VITE_PINATA_JWT': '""',
-            'import.meta.env.VITE_DOCUSIGN_ACCESS_TOKEN': '""',
-            'import.meta.env.VITE_NGROK_AUTHTOKEN': '""',
-            'import.meta.env.VITE_PRINTFUL_API_KEY': '""',
-            'import.meta.env.VITE_MEM0_API_KEY': '""',
-            'import.meta.env.VITE_API_KEY': '""',
-        },
         build: {
             outDir: resolve(__dirname, 'dist/renderer'),
             sourcemap: true,
