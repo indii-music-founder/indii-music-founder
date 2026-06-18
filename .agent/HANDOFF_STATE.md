@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-18 09:32 EDT
+**Updated:** 2026-06-18 09:42 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+a51e9476e feat(ai): converge backend to Vertex+ADC (no API key dependency)
+e50887d70 chore: session checkpoint [09:32]
 e465dc121 chore: session checkpoint [09:30]
 2ab9af7d9 chore: session checkpoint [09:29]
 e20bdb61d chore: session checkpoint [09:27]
@@ -12,17 +14,11 @@ e20bdb61d chore: session checkpoint [09:27]
 fbb8d2e94 ci: sync gemini backend secret during deploy
 951327810 Merge pull request #179 from indii-music-founder/codex/backend-api-boundary
 dfee5a508 fix(api): enforce backend-only provider boundary
-952238ab6 Merge pull request #178 from indii-music-founder/codex/fix-gen1-cpu-mismatch
-f81097a6f fix(functions): pin legacy stripe callables runtime
 ```
 
 ## Working State
 ```
-?? .new_gemini_key.txt
-?? .new_maps_key.txt
-?? client_secret_148015878263-pfcoueoik0p1cn744vdn2m1u1gjl119m.apps.googleusercontent.com.json
-?? docs/COMPANY_EMAILS.md
-?? docs/flowcharts/api-secret-architecture-and-caching.md
+clean working tree
 ```
 
 ## Decisions
