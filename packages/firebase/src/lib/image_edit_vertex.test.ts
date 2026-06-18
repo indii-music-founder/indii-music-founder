@@ -1,13 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { GeminiImageService } from './image_generation';
 
-// Mock getGeminiApiKey
-vi.mock('../config/secrets', () => ({
-    getGeminiApiKey: vi.fn(() => 'mock-api-key'),
-    geminiApiKey: { value: vi.fn(() => 'mock-api-key') }
-}));
-
-// Mock GoogleGenAI
+// Mock getVertexAIClient
 const mockGenerateContent = vi.fn().mockResolvedValue({
     candidates: [{
         content: {
@@ -21,20 +15,16 @@ const mockGenerateContent = vi.fn().mockResolvedValue({
     }]
 });
 
-const mockConstructor = vi.fn();
+const mockVertexClient = {
+    models: {
+        generateContent: mockGenerateContent
+    }
+};
 
-vi.mock('@google/genai', () => {
-    return {
-        GoogleGenAI: class {
-            constructor(config: any) {
-                mockConstructor(config);
-            }
-            models = {
-                generateContent: mockGenerateContent
-            };
-        }
-    };
-});
+vi.mock('./vertexClient', () => ({
+    getVertexAIClient: vi.fn(() => mockVertexClient),
+    resetVertexAIClient: vi.fn()
+}));
 
 describe('GeminiImageService Dual-Client Logic', () => {
     let service: any;
@@ -49,7 +39,7 @@ describe('GeminiImageService Dual-Client Logic', () => {
         delete process.env.GCLOUD_PROJECT;
     });
 
-    it('should use standard client (API Key) when no mask is provided', async () => {
+    it('should use Vertex AI client when no mask is provided', async () => {
         const data = {
             prompt: 'test prompt',
             image: 'base64-source'
@@ -57,14 +47,11 @@ describe('GeminiImageService Dual-Client Logic', () => {
 
         await service.edit(data);
 
-        // Verify standard client was initialized
-        expect(mockConstructor).toHaveBeenCalledWith({
-            apiKey: 'mock-api-key'
-        });
+        // Verify generateContent was called from the Vertex AI client
         expect(mockGenerateContent).toHaveBeenCalled();
     });
 
-    it('should use the standard API-key client when mask is provided', async () => {
+    it('should use the Vertex AI client when mask is provided', async () => {
         const data = {
             prompt: 'test prompt',
             image: 'base64-source',
@@ -75,10 +62,7 @@ describe('GeminiImageService Dual-Client Logic', () => {
 
         await service.edit(data);
 
-        // The service uses a single apiKey-based client for all edit operations
-        expect(mockConstructor).toHaveBeenCalledWith(
-            expect.objectContaining({ apiKey: 'mock-api-key' })
-        );
+        // The service uses Vertex AI client with ADC for all edit operations
         expect(mockGenerateContent).toHaveBeenCalled();
     });
 });
