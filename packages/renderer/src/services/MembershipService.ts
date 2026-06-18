@@ -146,7 +146,7 @@ class MembershipServiceImpl {
         // ALWAYS bypass limits in local development so the team can test without hitting budget caps
         // IMPORTANT: Do NOT bypass in Vitest test runs — tests need to exercise real limit enforcement
         // OPTIONAL: Bypass via explicit environment variable if the developer chooses
-        if (import.meta.env && import.meta.env.VITE_BYPASS_BUDGET_LIMITS === 'true') {
+        if (import.meta.env.VITE_BYPASS_BUDGET_LIMITS === 'true') {
             return true;
         }
 
@@ -171,7 +171,7 @@ class MembershipServiceImpl {
         } catch {
             // STRICT SAFETY: No automatic bypass in DEV mode anymore.
             // Requires explicit opt-in via .env flag for high-cost testing.
-            return (import.meta.env && import.meta.env.VITE_BYPASS_BUDGET_LIMITS === 'true') || false;
+            return import.meta.env.VITE_BYPASS_BUDGET_LIMITS === 'true';
         }
     }
 
