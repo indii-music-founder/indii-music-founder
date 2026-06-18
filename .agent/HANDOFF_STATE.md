@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-18 09:52 EDT
+**Updated:** 2026-06-18 10:12 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+48bacc69f chore(phase-2): delete dead fallback client code from renderer
+da04b3c88 chore: session checkpoint [09:52]
 b9fff5bcb chore: session checkpoint [09:49]
 5cace4344 chore: session checkpoint [09:46]
 fea421dfc chore: session checkpoint [09:46]
@@ -12,13 +14,11 @@ fea421dfc chore: session checkpoint [09:46]
 c01795db4 chore: session checkpoint [09:45]
 c89a27690 chore: session checkpoint [09:45]
 773e22da1 chore: session checkpoint [09:45]
-7f79a07ea chore: session checkpoint [09:44]
-f2c304273 chore: session checkpoint [09:44]
 ```
 
 ## Working State
 ```
- M packages/renderer/src/services/intelligence/FirebaseIntelligenceService.ts
+ M python/tests/fixtures/e2e_interop/ts_to_py/envelope.json
 ```
 
 ## Decisions
