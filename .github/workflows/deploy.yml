@@ -80,6 +80,9 @@ jobs:
             fi
           fi
 
+      - name: Frontend API boundary guard
+        run: npm run security:frontend-api-boundary
+
 
 
   # ─── Unit Testing (Sharded) ────────────────────────────────────────────────
@@ -530,6 +533,11 @@ jobs:
         env:
           INFLUENCER_BOUNTY_BASE_URL: https://app.indii.music
         run: |
+          # Firebase Tools copies stale CPU metadata from existing gen1 endpoints
+          # during deploy validation. These two functions were created with bad
+          # remote metadata, so delete/recreate them before deploying all functions.
+          npx firebase functions:delete createStripeAccount --region us-central1 --project indii-music-founder --force --non-interactive || true
+          npx firebase functions:delete createTransfer --region us-central1 --project indii-music-founder --force --non-interactive || true
           printf 'INFLUENCER_BOUNTY_BASE_URL=%s\n' "$INFLUENCER_BOUNTY_BASE_URL" > packages/firebase/.env.indii-music-founder
           npm run build -w packages/firebase
           npx firebase deploy --only functions --project indii-music-founder --non-interactive --force

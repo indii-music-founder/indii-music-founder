@@ -124,11 +124,8 @@ export async function batchEmbedContents(
                 throw new AppException(AppErrorCode.INTERNAL_ERROR, 'Model does not support embedding');
             }
         } catch (error: unknown) {
-            // If we hit an App Check error during normal mode, switch to fallback
             if (isAppCheckError(error) && !ctx.useFallbackMode) {
-                logger.warn('[EmbeddingGenerator] App Check error during batch embedding, switching to fallback mode');
-                await ctx.initializeFallbackMode();
-                return batchEmbedContents(ctx, contents, modelOverride);
+                logger.warn('[EmbeddingGenerator] App Check error during batch embedding; raw browser fallback is disabled.');
             }
             throw ctx.handleError(error);
         }
