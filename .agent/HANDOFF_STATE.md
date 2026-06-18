@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-18 11:58 EDT
+**Updated:** 2026-06-18 12:00 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+f328cd737 chore: session checkpoint [11:58]
 7d5da1771 chore: session checkpoint [11:56]
 75e06a6ce chore: session checkpoint [11:55]
 8fb6f1b54 chore: session checkpoint [11:53]
@@ -13,11 +14,11 @@
 f593fdd30 fix(ci): disable client-side file operations, route through backend
 f9bf4af86 chore: session checkpoint [11:39]
 529de6e95 chore: session checkpoint [11:38]
-d94c4c12b chore: session checkpoint [11:37]
 ```
 
 ## Working State
 ```
+ M packages/renderer/src/services/firebase.ts
  M python/tests/fixtures/e2e_interop/ts_to_py/envelope.json
 ```
 
