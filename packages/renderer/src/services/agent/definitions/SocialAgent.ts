@@ -1,7 +1,7 @@
 import { AgentConfig } from "../types";
 import { freezeAgentConfig } from '../FreezeDiagnostic';
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
-import { Schema } from 'firebase/ai';
+import type { Schema } from '@/shared/types/ai.dto';
 import { SocialTools } from '../tools/SocialTools';
 import { UniversalTools } from '../tools/UniversalTools';
 import systemPrompt from '@agents/social/prompt.md?raw';

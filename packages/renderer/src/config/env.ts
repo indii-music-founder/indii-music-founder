@@ -12,7 +12,6 @@ const FrontendEnvSchema = CommonEnvSchema.extend({
     VITE_FUNCTIONS_REGION: z.string().optional(),
     VITE_FUNCTIONS_URL: z.string().url().optional(),
     VITE_RAG_PROXY_URL: z.union([z.string().url(), z.literal('')]).optional(),
-    VITE_GOOGLE_MAPS_API_KEY: z.string().optional(),
     VITE_ENABLE_GOOGLE_MAPS: z.string().optional(),
     DEV: z.boolean().default(false),
 
@@ -36,7 +35,7 @@ const FrontendEnvSchema = CommonEnvSchema.extend({
     VITE_EXPOSE_INTERNALS: z.string().optional(),
 
     skipOnboarding: z.boolean().default(false),
-    enableGoogleMaps: z.boolean().default(true),
+    enableGoogleMaps: z.boolean().default(false),
 });
 
 // Initial test env detection removed to fix duplicate declaration
@@ -75,12 +74,11 @@ const processEnv = {
     location: import.meta.env.VITE_VERTEX_LOCATION || getProcessEnv('VITE_VERTEX_LOCATION') || "global",
     functionsRegion: import.meta.env.VITE_FUNCTIONS_REGION || getProcessEnv('VITE_FUNCTIONS_REGION') || 'us-central1',
     useVertex: toBoolean(import.meta.env.VITE_USE_VERTEX || getProcessEnv('VITE_USE_VERTEX')),
-    googleMapsApiKey: (import.meta.env.VITE_GOOGLE_MAPS_API_KEY || import.meta.env.VITE_GOOGLE_MAPS_KEY || getProcessEnv('VITE_GOOGLE_MAPS_API_KEY') || getProcessEnv('VITE_GOOGLE_MAPS_KEY'))?.trim(),
-    VITE_GOOGLE_MAPS_API_KEY: (import.meta.env.VITE_GOOGLE_MAPS_API_KEY || import.meta.env.VITE_GOOGLE_MAPS_KEY || getProcessEnv('VITE_GOOGLE_MAPS_API_KEY') || getProcessEnv('VITE_GOOGLE_MAPS_KEY'))?.trim(),
+    googleMapsApiKey: undefined,
     VITE_ENABLE_GOOGLE_MAPS: import.meta.env.VITE_ENABLE_GOOGLE_MAPS || getProcessEnv('VITE_ENABLE_GOOGLE_MAPS'),
     enableGoogleMaps: (() => {
         const raw = import.meta.env.VITE_ENABLE_GOOGLE_MAPS || getProcessEnv('VITE_ENABLE_GOOGLE_MAPS');
-        return raw === undefined ? true : toBoolean(raw);
+        return raw === undefined ? false : toBoolean(raw);
     })(),
 
     VITE_FUNCTIONS_REGION: import.meta.env.VITE_FUNCTIONS_REGION || getProcessEnv('VITE_FUNCTIONS_REGION'),
@@ -123,10 +121,8 @@ if (!parsed.success && !isTest) {
     if (!processEnv.projectId) missingKeys.push('VITE_VERTEX_PROJECT_ID');
     if (!processEnv.firebaseApiKey) missingKeys.push('VITE_FIREBASE_API_KEY');
     
-    // Add Google Maps warning if missing but enabled
-    if (processEnv.enableGoogleMaps && !processEnv.googleMapsApiKey) {
-        console.warn('[indii.music][Env] Google Maps is enabled but VITE_GOOGLE_MAPS_API_KEY is missing. Map features will be disabled.');
-    }
+    // Browser-side Google Maps API keys are intentionally unsupported. Maps
+    // must be enabled only after a backend proxy is available.
 
     if (missingKeys.length > 0) {
         const msg = `[indii.music][Env] Missing required environment variables: ${missingKeys.join(', ')}. Copy .env.example to .env and fill in values.`;
@@ -154,7 +150,6 @@ export const env = {
     VITE_VERTEX_LOCATION: runtimeEnv.location,
     VITE_FUNCTIONS_REGION: runtimeEnv.functionsRegion,
     VITE_USE_VERTEX: runtimeEnv.useVertex,
-    VITE_GOOGLE_MAPS_API_KEY: runtimeEnv.googleMapsApiKey || runtimeEnv.VITE_GOOGLE_MAPS_API_KEY,
     enableGoogleMaps: runtimeEnv.enableGoogleMaps,
     appCheckKey: processEnv.appCheckKey,
 };

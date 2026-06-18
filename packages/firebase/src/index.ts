@@ -896,7 +896,8 @@ export const generateContentStream = functions
                     "gemini-2.5-pro-preview",
                 ];
 
-                if (!ALLOWED_MODELS.includes(modelId)) {
+                const isApprovedEndpoint = /^projects\/[^/]+\/locations\/[^/]+\/endpoints\/[^/]+$/.test(modelId);
+                if (!ALLOWED_MODELS.includes(modelId) && !isApprovedEndpoint) {
                     functions.logger.warn(`[Security] Blocked unauthorized model access: ${modelId}`);
                     res.status(400).send('Invalid or unauthorized model ID.');
                     return;
@@ -919,9 +920,23 @@ export const generateContentStream = functions
 
                 // Iterate over SDK Stream
                 for await (const chunk of result) {
-                    const text = chunk.text;
-                    if (text) {
-                        res.write(JSON.stringify({ text }) + '\n');
+                    const parts = chunk.candidates?.[0]?.content?.parts || [];
+                    const text = typeof chunk.text === 'string'
+                        ? chunk.text
+                        : parts
+                            .map((part: any) => typeof part.text === 'string' ? part.text : '')
+                            .join('');
+                    const functionCalls = parts
+                        .filter((part: any) => part.functionCall)
+                        .map((part: any) => part.functionCall);
+                    const thoughtSignature = parts.find((part: any) => part.thoughtSignature)?.thoughtSignature;
+
+                    if (text || functionCalls.length > 0 || thoughtSignature) {
+                        const payload: { text?: string; functionCalls?: any[]; thoughtSignature?: string } = {};
+                        if (text) payload.text = text;
+                        if (functionCalls.length > 0) payload.functionCalls = functionCalls;
+                        if (thoughtSignature) payload.thoughtSignature = thoughtSignature;
+                        res.write(JSON.stringify(payload) + '\n');
                     }
                 }
 
