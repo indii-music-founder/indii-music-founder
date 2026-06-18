@@ -8,7 +8,6 @@ dotenv.config();
 // Manually mapped to match env-schema.json
 const envSchema = z.object({
   VITE_API_KEY: z.string().min(1),
-  VITE_GOOGLE_MAPS_API_KEY: z.string().optional(),
   VITE_SKIP_ONBOARDING: z.enum(["true", "false"]).default("false").optional(),
   DEV: z.string().default("false").optional(),
 
@@ -58,7 +57,6 @@ console.log("Validating environment variables...");
 
 const processEnv = {
   VITE_API_KEY: process.env.VITE_API_KEY,
-  VITE_GOOGLE_MAPS_API_KEY: process.env.VITE_GOOGLE_MAPS_API_KEY,
   VITE_SKIP_ONBOARDING: process.env.VITE_SKIP_ONBOARDING,
   DEV: process.env.DEV,
 

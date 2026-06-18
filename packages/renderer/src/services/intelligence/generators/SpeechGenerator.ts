@@ -1,25 +1,23 @@
 /**
- * SpeechGenerator — Extracted TTS generation logic from FirebaseIntelligenceService.
+ * SpeechGenerator — backend-only TTS generation.
  *
- * Handles text-to-speech via the gemini-2.5-pro-preview-tts model.
- * Supports Firebase AI with App Check.
+ * Browser-side Firebase AI is disabled. Speech routes through the secured
+ * generateSpeech callable Cloud Function, which holds Google credentials on
+ * the server and enforces Auth/App Check.
  */
 
-import { getGenerativeModel } from 'firebase/ai';
-import type { InlineDataPart as FirebaseInlineDataPart } from 'firebase/ai';
-import { getFirebaseAI } from '@/services/firebase';
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '@/services/firebase';
 import type { IntelligenceContext } from '../IntelligenceContext';
-import type { GenerationConfig, ContentPart, GenerateSpeechResponse } from '@/shared/types/ai.dto';
+import type { GenerateSpeechResponse } from '@/shared/types/ai.dto';
 import { AppErrorCode, AppException } from '@/shared/types/errors';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
-import { isAppCheckError } from '../appcheck';
-import { logger } from '@/utils/logger';
 
-/**
- * Generate speech from text using gemini-2.5-pro-preview-tts.
- *
- * Supports Firebase AI with App Check.
- */
+interface GenerateSpeechCallableResponse {
+    audioContent?: string;
+    mimeType?: string;
+}
+
 export async function generateSpeech(
     ctx: IntelligenceContext,
     text: string,
@@ -33,56 +31,31 @@ export async function generateSpeech(
     return ctx.mediaBreaker.execute(async () => {
         await ctx.ensureInitialized();
 
-        const modelName = modelOverride || INTELLIGENCE_MODELS.AUDIO.PRO;
-
-        const config: GenerationConfig = {
-            responseModalities: ['AUDIO'],
-            speechConfig: {
-                voiceConfig: {
-                    prebuiltVoiceConfig: {
-                        voiceName: voice
-                    }
-                }
-            }
-        };
-
-        const firebaseAI = getFirebaseAI();
-
-        if (!firebaseAI) {
-            throw new AppException(AppErrorCode.INTERNAL_ERROR, 'Firebase AI is not available for speech generation.');
-        }
-
-        const modelCallback = getGenerativeModel(firebaseAI, {
-            model: modelName,
-            generationConfig: config as unknown as Record<string, unknown>
-        });
+        const generateSpeechFn = httpsCallable<
+            { text: string; voice: string; model: string },
+            GenerateSpeechCallableResponse
+        >(functions, 'generateSpeech');
 
         try {
-            const result = await modelCallback.generateContent(text);
-            const candidates = result.response.candidates;
+            const result = await generateSpeechFn({
+                text,
+                voice,
+                model: modelOverride || INTELLIGENCE_MODELS.AUDIO.PRO,
+            });
 
-            if (!candidates || candidates.length === 0) {
-                throw new Error('No candidates returned from TTS model');
-            }
-
-            const audioPart = candidates[0]!.content?.parts?.find(p => p && 'inlineData' in p && p.inlineData?.mimeType.startsWith('audio/')) as FirebaseInlineDataPart | undefined;
-
-            if (!audioPart || !audioPart.inlineData) {
-                throw new Error('No audio data found in response parts');
+            if (!result.data.audioContent) {
+                throw new AppException(AppErrorCode.INTERNAL_ERROR, 'Speech backend returned no audio content');
             }
 
             return {
                 audio: {
                     inlineData: {
-                        mimeType: audioPart.inlineData.mimeType,
-                        data: audioPart.inlineData.data
-                    }
-                }
+                        mimeType: result.data.mimeType || 'audio/wav',
+                        data: result.data.audioContent,
+                    },
+                },
             };
         } catch (error: unknown) {
-            if (isAppCheckError(error)) {
-                logger.warn('[SpeechGenerator] App Check error during speech generation');
-            }
             throw ctx.handleError(error);
         }
     });

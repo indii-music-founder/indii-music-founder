@@ -13,7 +13,7 @@
  */
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
-import { Schema } from 'firebase/ai';
+import type { Schema } from '@/shared/types/ai.dto';
 import { Logger } from '@/core/logger/Logger';
 import { withServiceError } from '@/lib/errors';
 import type { AudioFeatures } from './types';

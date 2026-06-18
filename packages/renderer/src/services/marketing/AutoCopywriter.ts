@@ -13,7 +13,7 @@
  */
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { getFineTunedModel } from '@/services/agent/fine-tuned-models';
-import { Schema } from 'firebase/ai';
+import type { Schema } from '@/shared/types/ai.dto';
 import { Logger } from '@/core/logger/Logger';
 import { withServiceError } from '@/lib/errors';
 import type { AudioSemanticData } from '@/services/audio/types';

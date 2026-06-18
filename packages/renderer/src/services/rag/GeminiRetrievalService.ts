@@ -43,8 +43,9 @@ export class GeminiRetrievalService {
         }
 
         this.baseUrl = configuredUrl || `${functionsUrl}/ragProxy/v1beta`;
-        if (this.baseUrl.includes('generativelanguage.googleapis.com')) {
-            throw new Error('Direct Gemini RAG endpoints are disabled in the browser. Configure VITE_RAG_PROXY_URL to the secured ragProxy backend.');
+        const parsedBaseUrl = new URL(this.baseUrl);
+        if (parsedBaseUrl.hostname.endsWith('googleapis.com')) {
+            throw new Error('Direct Google API RAG endpoints are disabled in the browser. Configure the secured ragProxy backend.');
         }
     }
 

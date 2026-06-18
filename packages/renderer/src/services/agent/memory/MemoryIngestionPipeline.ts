@@ -3,7 +3,7 @@ import { INTELLIGENCE_MODELS, APPROVED_MODELS } from '@/core/config/intelligence
 import { cleanPrompt } from '@/utils/prompt';
 import { RequestBatcher } from '@/utils/RequestBatcher';
 import { logger } from '@/utils/logger';
-import type { Content, GenerationConfig } from 'firebase/ai';
+import type { Content, GenerationConfig } from '@/shared/types/ai.dto';
 import { MemorySummarizer } from './MemorySummarizer';
 import { memoryBankService } from './MemoryBankService';
 import type {

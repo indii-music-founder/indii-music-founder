@@ -30,21 +30,22 @@ const envSanitizerPlugin = () => ({
             'VITE_NGROK_AUTHTOKEN',
             'VITE_PRINTFUL_API_KEY',
             'VITE_MEM0_API_KEY',
+            'VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN',
+            'VITE_GOOGLE_MAPS_API_KEY',
+            'VITE_GOOGLE_MAPS_KEY',
         ];
         for (const key of secrets) {
             if (key in config.env) {
-                config.env[key] = '';
+                delete config.env[key];
             }
         }
         const whitelist = new Set([
             'VITE_FIREBASE_API_KEY',
-            'VITE_GOOGLE_MAPS_API_KEY',
-            'VITE_GOOGLE_MAPS_KEY',
         ]);
         for (const key of Object.keys(config.env)) {
             const val = config.env[key];
             if (typeof val === 'string' && val.includes('AIza') && !whitelist.has(key)) {
-                config.env[key] = '';
+                delete config.env[key];
             }
         }
     }
@@ -95,7 +96,6 @@ export default defineConfig({
     envDir: repoRoot,
     envPrefix: [
         'VITE_FIREBASE_',
-        'VITE_GOOGLE_MAPS_',
         'VITE_VERTEX_',
         'VITE_FUNCTIONS_',
         'VITE_USE_',
@@ -210,10 +210,6 @@ export default defineConfig({
                     }
                     if (pkg === 'remotion' || pkg.startsWith('@remotion/')) {
                         return 'vendor-remotion';
-                    }
-                    // Google Gen AI SDK
-                    if (pkg === '@google/genai') {
-                        return 'vendor-genai';
                     }
                     // Internationalization (i18n)
                     if (pkg === 'i18next' || pkg === 'react-i18next' || pkg.startsWith('i18next-')) {
