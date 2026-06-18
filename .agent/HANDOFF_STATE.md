@@ -4,6 +4,7 @@
 
 ## Recent Commits
 ```
+1f6366d01 chore: session checkpoint [12:20]
 e4a37e2dd chore: session checkpoint [12:18]
 919adff54 fix(auth): create user doc on signup and set authLoading false
 55c9ca8f3 chore: session checkpoint [12:15]
@@ -13,7 +14,6 @@ ddf6c85d2 chore: session checkpoint [12:11]
 ffa6cd993 chore: session checkpoint [12:08]
 c03bf55be fix(qa): skip App Check in emulator mode to unblock Firebase Auth
 354117060 chore: session checkpoint [12:02]
-379d2a72f chore: session checkpoint [12:01]
 ```
 
 ## Working State
