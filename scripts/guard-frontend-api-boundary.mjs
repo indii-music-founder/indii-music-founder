@@ -50,6 +50,11 @@ const allowedTokenEnvNames = new Set([
   'VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN',
 ]);
 
+const forbiddenWorkflowEnvNames = new Set([
+  ...forbiddenEnvNames,
+  'VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN',
+]);
+
 const forbiddenProviderHosts = [
   'api.mem0.ai',
   'developerknowledge.googleapis.com',
@@ -161,7 +166,7 @@ for (const abs of workflowFiles) {
   const text = fs.readFileSync(abs, 'utf8');
   const file = { rel, text };
 
-  for (const name of forbiddenEnvNames) {
+  for (const name of forbiddenWorkflowEnvNames) {
     const index = text.indexOf(name);
     if (index !== -1) {
       report(file, index, `forbidden frontend secret/env injected by workflow: ${name}`);
