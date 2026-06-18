@@ -129,7 +129,6 @@ jobs:
           VITE_VERTEX_LOCATION: ${{ secrets.VITE_VERTEX_LOCATION }}
           VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
           VITE_FIREBASE_PROJECT_ID: indii-music-founder
-          VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN: ${{ secrets.VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN }}
 
       - name: Cleanup credentials
         if: always()
@@ -208,10 +207,6 @@ jobs:
           VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
           VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
           VITE_FIREBASE_APP_CHECK_KEY: ${{ secrets.VITE_FIREBASE_APP_CHECK_KEY }}
-          # Debug token lets the deployed staging build pass App Check from headless CI.
-          # Security: only grants App Check passage; Firestore/Storage Rules still enforce
-          # authorization. Set this secret in the repo; absent in real end-user builds.
-          VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN: ${{ secrets.VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN }}
           VITE_GOOGLE_MAPS_API_KEY: ${{ secrets.VITE_GOOGLE_MAPS_API_KEY }}
           VITE_USE_FINE_TUNED_AGENTS: "true"
           VITE_INGESTION_SYSTEM_IDENTIFIER: indii-studio
