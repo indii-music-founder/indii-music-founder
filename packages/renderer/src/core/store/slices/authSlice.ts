@@ -214,8 +214,22 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, _get) => ({
     signUpWithEmail: async (email: string, pass: string) => {
         try {
             set({ authLoading: true, authError: null });
-            await wrappedCreateUserWithEmailAndPassword(auth, email, pass);
-            // State update handled by listener — initializeAuthListener will create the user doc
+            const userCred = await wrappedCreateUserWithEmailAndPassword(auth, email, pass);
+
+            // Create user document in Firestore immediately (don't wait for listener)
+            if (userCred.user) {
+                const userDocRef = doc(db, 'users', userCred.user.uid);
+                await setDoc(userDocRef, {
+                    uid: userCred.user.uid,
+                    email: userCred.user.email,
+                    displayName: '',
+                    createdAt: serverTimestamp(),
+                    updatedAt: serverTimestamp(),
+                }, { merge: true });
+            }
+
+            set({ authLoading: false });
+            // State update handled by listener — onAuthStateChanged will update currentUser
         } catch (error: unknown) {
             const firebaseError = error as FirebaseAuthError;
             const errorMessage = getAuthErrorMessage(firebaseError);
