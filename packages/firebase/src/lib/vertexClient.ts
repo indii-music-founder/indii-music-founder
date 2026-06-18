@@ -1,11 +1,28 @@
 /**
- * Shared Vertex AI Client
+ * Shared Vertex AI Client (ADC Gateway)
  *
  * Singleton pattern for Vertex AI access via the @google/genai SDK with ADC auth.
- * No API keys — uses the Cloud Functions service account credentials automatically.
+ * No API keys required — uses Cloud Functions service account credentials automatically.
  *
- * This is the unified entry point for all backend AI operations (text, image, video, audio).
+ * This is the unified entry point for all backend AI operations:
+ * - Text generation (chat, streaming)
+ * - Image generation (Imagen, editing)
+ * - Audio synthesis (TTS)
+ * - Video generation (Veo)
+ * - Audio analysis (YAMNet)
+ *
+ * Architecture:
+ * - Client sends request to Cloud Function (Firebase Auth + App Check)
+ * - Function uses getVertexAIClient() to initialize
+ * - SDK uses Application Default Credentials (service account)
+ * - Credentials are never exposed to frontend
+ *
  * Pattern: new GoogleGenAI({ vertexai: true, project, location })
+ *
+ * Eliminates:
+ * - API key expiration risk
+ * - Unintended key leaks via network traffic
+ * - Client-side credential management complexity
  */
 
 import { GoogleGenAI } from "@google/genai";
