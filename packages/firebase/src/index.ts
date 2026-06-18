@@ -6,6 +6,10 @@ import { BigQuery } from "@google-cloud/bigquery";
 // Initialize Firebase Admin immediately to prevent race conditions during import analysis
 admin.initializeApp();
 
+import { setGlobalOptions } from "firebase-functions/v2";
+// Fix: Increase default memory limit to prevent OOM errors in heavy Genkit/GenAI functions
+setGlobalOptions({ memory: "512MiB" });
+
 // Phase 2a: Agent Streaming (v2 - SSE support for Phase 2 orchestration)
 export { agentStreamResponse, agentStreamHealth } from './streaming/agentStream';
 import { Inngest } from "inngest";
