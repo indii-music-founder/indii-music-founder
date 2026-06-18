@@ -1,6 +1,5 @@
 import { AppErrorCode, AppException } from '@/shared/types/errors';
 import { logger } from '@/utils/logger';
-import { initializeFallbackClient } from './fallback/FallbackClient';
 
 export interface GeminiFile {
     name: string;
@@ -31,14 +30,10 @@ export class GeminiFileService {
     }
 
     private async getClient() {
-        try {
-            return await initializeFallbackClient();
-        } catch (_error: unknown) {
-            throw new AppException(
-                AppErrorCode.INTERNAL_ERROR,
-                'Failed to initialize AI client for File Service.'
-            );
-        }
+        throw new AppException(
+            AppErrorCode.INTERNAL_ERROR,
+            'File operations must route through backend API. Use the fileUpload Cloud Function instead of direct client-side upload.'
+        );
     }
 
     /**
