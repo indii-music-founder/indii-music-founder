@@ -1,8 +1,26 @@
 /**
- * Agent Streaming Service
+ * Agent Streaming Service — Backend AI Gateway
  *
  * Cloud Function v2 - Server-Sent Events (SSE) support for agent response streaming.
  * This is the PRIMARY UNLOCKER for Phase 2 agent orchestration features.
+ *
+ * Architecture:
+ * - Client: POST /api/agents/stream with { userId, agentId, input, context }
+ * - Auth: Firebase ID token + App Check (verified in HTTP headers)
+ * - Backend: Uses Vertex AI via ADC (no API key in request)
+ * - Response: SSE stream of tokens { token, index, timestamp } until completion
+ *
+ * Credentials Flow:
+ * 1. Client sends Firebase ID token in Authorization header
+ * 2. Function verifies token (admin SDK)
+ * 3. Function calls getVertexAIClient() to initialize Vertex AI
+ * 4. Service account credentials are applied automatically (ADC)
+ * 5. Response tokens streamed to client as they arrive
+ *
+ * This design ensures:
+ * - No API keys in frontend code or network traffic
+ * - Streaming latency is minimized (direct backend-to-client SSE)
+ * - Cost tracking can happen server-side before/after request
  *
  * NOTE: This function uses v2 API and coexists with v1 functions during migration.
  */
