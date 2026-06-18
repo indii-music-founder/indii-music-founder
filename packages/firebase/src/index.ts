@@ -792,7 +792,7 @@ export const editImage = editImageFn();
 export const analyzeAudio = analyzeAudioFn();
 
 export const generateSpeech = functions
-    .runWith({ enforceAppCheck: ENFORCE_APP_CHECK, secrets: [geminiApiKey], timeoutSeconds: 60, memory: "512MB" })
+    .runWith({ enforceAppCheck: ENFORCE_APP_CHECK, timeoutSeconds: 60, memory: "512MB" })
     // Item 352: Explicit return type annotation
     .https.onCall(async (data: unknown, context): Promise<{ audioContent: string }> => {
         if (!context.auth) {
@@ -811,44 +811,34 @@ export const generateSpeech = functions
         try {
             functions.logger.log(`[generateSpeech] Generating speech with model: ${model}`);
             const modelId = model || FUNCTION_INTELLIGENCE_MODELS.SPEECH.GENERATION;
-            const apiKey = getGeminiApiKey();
 
-            // Use REST API for precise control over TTS config
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    contents: [{ parts: [{ text }] }],
-                    generationConfig: {
-                        responseModalities: ["AUDIO"],
-                        speechConfig: {
-                            voiceConfig: {
-                                prebuiltVoiceConfig: {
-                                    voiceName: voice
-                                }
-                            }
+            // Use Vertex AI SDK (ADC auth, no API key)
+            const { getVertexAIClient } = await import('./lib/vertexClient');
+            const genai = getVertexAIClient();
+
+            const result = await genai.models.generateContent({
+                model: modelId,
+                contents: [{ parts: [{ text }] }],
+                responseModalities: ["AUDIO"],
+                speechConfig: {
+                    voiceConfig: {
+                        prebuiltVoiceConfig: {
+                            voiceName: voice
                         }
                     }
-                })
-            });
+                }
+            } as any);
 
-            if (!response.ok) {
-                const errText = await response.text();
-                throw new Error(`Gemini TTS API Error: ${response.status} ${errText}`);
-            }
+            // Extract audio data from SDK response (direct candidates, no .response wrapper)
+            const part = result?.candidates?.[0]?.content?.parts?.[0];
+            const audioData = part && 'inlineData' in part ? (part as any).inlineData?.data : null;
 
-            const result = await response.json();
-
-            // Extract audio data (inlineData)
-            const part = result.candidates?.[0]?.content?.parts?.[0];
-            const audioContent = part?.inlineData?.data;
-
-            if (!audioContent) {
+            if (!audioData) {
                 functions.logger.error("[generateSpeech] Unexpected response structure:", JSON.stringify(result));
                 throw new Error("No audio content returned from API");
             }
 
-            return { audioContent };
+            return { audioContent: audioData };
 
         } catch (err: unknown) {
             const error = err instanceof Error ? err : new Error(String(err));
@@ -860,7 +850,6 @@ export const generateSpeech = functions
 export const generateContentStream = functions
     .runWith({
         enforceAppCheck: ENFORCE_APP_CHECK,
-        secrets: [geminiApiKey],
         timeoutSeconds: 300
     })
     .https.onRequest((req, res) => {
@@ -913,14 +902,9 @@ export const generateContentStream = functions
                     return;
                 }
 
-                // Initialize SDK Client (dynamic import — Item 335: reduces cold start)
-                const { GoogleGenAI } = await import("@google/genai");
-                const apiKey = getGeminiApiKey();
-                if (!apiKey) {
-                    res.status(500).send('Gemini API key is not configured.');
-                    return;
-                }
-                const client = new GoogleGenAI({ apiKey });
+                // Initialize Vertex AI Client (ADC auth, no API key)
+                const { getVertexAIClient } = await import("./lib/vertexClient");
+                const client = getVertexAIClient();
 
                 // Generate Content Stream
                 const result = await client.models.generateContentStream({
@@ -958,8 +942,10 @@ export const generateContentStream = functions
 export const ragProxy = functions
     .runWith({
         enforceAppCheck: false, // Fix CORS preflight: moved to manual check after corsHandler
-        secrets: [geminiApiKey],
         timeoutSeconds: 60
+        // NOTE: ragProxy uses the Generative AI Files API which requires GEMINI_API_KEY at runtime.
+        // This is the single remaining path that depends on the Developer API key.
+        // Future: migrate to Vertex AI file handling (Cloud Storage + Vertex Datasets).
     })
     .https.onRequest((req, res) => {
         corsHandler(req, res, async () => {
