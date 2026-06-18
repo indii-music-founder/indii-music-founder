@@ -27,8 +27,6 @@ interface ImportMetaEnv {
     readonly VITE_USE_FUNCTIONS_EMULATOR?: string
 
     // Google / Maps
-    readonly VITE_GOOGLE_MAPS_API_KEY?: string
-    readonly VITE_GOOGLE_MAPS_KEY?: string
     readonly VITE_GOOGLE_OAUTH_CLIENT_ID?: string
 
     // WebSocket / WCP

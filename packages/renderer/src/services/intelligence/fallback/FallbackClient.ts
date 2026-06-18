@@ -1,7 +1,7 @@
 /**
  * Fallback Client — Disabled for security.
  *
- * Previously used the direct @google/genai SDK when App Check failed.
+ * Previously used a direct Google Gen AI SDK path when App Check failed.
  * To prevent VITE_API_KEY leaks, this fallback is now disabled.
  * If App Check fails, requests will be blocked.
  */

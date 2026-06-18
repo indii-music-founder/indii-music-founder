@@ -695,8 +695,8 @@ export class BaseAgent implements SpecializedAgent {
             }
         );
 
-        // IMPORTANT: Tools must be deep-cloned on EACH iteration because the Firebase/Gemini
-        // SDK freezes (Object.freeze) tool declaration objects after the first getGenerativeModel() call.
+        // IMPORTANT: Tools must be deep-cloned on EACH iteration because model gateways may
+        // freeze (Object.freeze) tool declaration objects while normalizing requests.
         // Reusing frozen objects on subsequent iterations causes:
         //   "Cannot assign to read only property 'parameters' of object '#<Object>'"
         // Solution: Build a fresh deep-clone inside the loop (see below).

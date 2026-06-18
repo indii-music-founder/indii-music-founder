@@ -2,7 +2,7 @@ import { AgentConfig } from '../types';
 import { freezeAgentConfig } from '../FreezeDiagnostic';
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { Schema } from 'firebase/ai';
+import type { Schema } from '@/shared/types/ai.dto';
 
 export const SecurityAgent: AgentConfig = {
     id: 'security',

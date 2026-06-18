@@ -423,6 +423,7 @@ function PublicLegalPage({ type }: { type: 'privacy' | 'terms' }) {
 }
 
 export default function App() {
+    const location = useLocation();
     // ⚡ Bolt Optimization: useShallow
     const { currentModule, user, authLoading } = useStore(
         useShallow(state => ({
@@ -435,19 +436,20 @@ export default function App() {
     // Defer non-critical startup work to avoid blocking FCP
     useEffect(() => { cleanupLocalStorage(); }, []);
 
-    // URL sync: self-guards on authLoading internally, safe to call unconditionally here
-    useURLSync();
     const shortcutsModal = useGlobalShortcutsModal();
 
     // 📱 Remote Relay: Listen for phone commands and process them through the desktop's agent pipeline
     useRemoteCommandListener();
 
     const publicLegalPage = useMemo(() => {
-        const path = window.location.pathname.replace(/\/+$/, '') || '/';
+        const path = location.pathname.replace(/\/+$/, '') || '/';
         if (path === '/privacy' || path === '/legal/privacy') return 'privacy';
         if (path === '/terms' || path === '/legal/terms') return 'terms';
         return null;
-    }, []);
+    }, [location.pathname]);
+
+    // URL sync must not rewrite public legal routes back to a persisted module.
+    useURLSync({ disabled: !!publicLegalPage });
 
     // Determine if current module should show chrome (sidebar, command bar, etc.)
     const showChrome = useMemo(

@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { FirebaseIntelligenceService } from '../FirebaseIntelligenceService';
 
 // Hoist mocks
-const mockGenerateContent = vi.fn();
+const mockGenerateSpeech = vi.fn();
 
 // Mock Firebase Service
 vi.mock('@/services/firebase', () => ({
@@ -19,27 +19,8 @@ vi.mock('@/services/firebase', () => ({
     messaging: { getToken: vi.fn() }
 }));
 
-// Mock Google AutonomousIntelligence SDK (Fallback) - new @google/genai package
-vi.mock('@google/genai', () => ({
-    GoogleGenAI: vi.fn(function () {
-        return {
-            models: {
-                generateContent: mockGenerateContent,
-                generateContentStream: vi.fn(),
-                embedContent: vi.fn()
-            }
-        };
-    })
-}));
-
-// Mock firebase/ai
-vi.mock('firebase/ai', () => ({
-    __esModule: true,
-    getGenerativeModel: vi.fn(() => ({
-        generateContent: mockGenerateContent
-    })),
-    Schema: {},
-    Tool: {}
+vi.mock('firebase/functions', () => ({
+    httpsCallable: vi.fn(() => mockGenerateSpeech)
 }));
 
 vi.mock('firebase/remote-config', () => ({
@@ -73,6 +54,12 @@ describe('Voice Interface QA', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        mockGenerateSpeech.mockResolvedValue({
+            data: {
+                audioContent: 'base64audio',
+                mimeType: 'audio/mp3'
+            }
+        });
         service = new FirebaseIntelligenceService();
     });
 
@@ -82,40 +69,17 @@ describe('Voice Interface QA', () => {
     });
 
     it('should sanitize special characters', async () => {
-        mockGenerateContent.mockResolvedValue({
-            // Firebase AI SDK format
-            response: {
-                candidates: [{
-                    content: {
-                        parts: [{
-                            inlineData: {
-                                mimeType: 'audio/mp3',
-                                data: 'base64audio'
-                            }
-                        }]
-                    }
-                }]
-            },
-            // Direct @google/genai SDK format
-            candidates: [{
-                content: {
-                    parts: [{
-                        inlineData: {
-                            mimeType: 'audio/mp3',
-                            data: 'base64audio'
-                        }
-                    }]
-                }
-            }]
-        });
-
         const result = await service.generateSpeech('Hello 🌍! @#$%^&*()', 'Kore');
         expect(result).toBeDefined();
         expect(result.audio.inlineData.data).toBe('base64audio');
+        expect(mockGenerateSpeech).toHaveBeenCalledWith(expect.objectContaining({
+            text: 'Hello 🌍! @#$%^&*()',
+            voice: 'Kore'
+        }));
     });
 
     it('should throw error on API failure', async () => {
-        mockGenerateContent.mockRejectedValue(new Error('API Down'));
+        mockGenerateSpeech.mockRejectedValue(new Error('API Down'));
 
         await expect(service.generateSpeech('Hello', 'Kore'))
             .rejects.toThrow('API Down');
