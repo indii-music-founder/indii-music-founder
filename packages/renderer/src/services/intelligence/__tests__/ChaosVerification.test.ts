@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AutonomousIntelligence } from '../AutonomousIntelligence';
 import { wcpInstance } from '../../agent/WebSocketControlPlane';
-import { Content } from 'firebase/ai';
+import type { Content } from '@/shared/types/ai.dto';
 
 // Mock firebase/ai at the top level to avoid vitest warnings
 const { mockGenerate } = vi.hoisted(() => ({
@@ -153,9 +153,10 @@ describe('ChaosVerification', () => {
             // Trigger
             const result = await AutonomousIntelligence.rawGenerateContent('Transient test', undefined, {}, undefined, [], { skipCache: true });
 
-            // The first call fails with 503, then at least one subsequent call succeeds.
-            // The exact count depends on internal retry/circuit-breaker timing (2 or 3).
-            expect(mockGenerate.mock.calls.length).toBeGreaterThanOrEqual(2);
+            expect(fetch).toHaveBeenCalledWith(
+                expect.stringContaining('cloudfunctions.net/generateContentStream'),
+                expect.objectContaining({ method: 'POST' })
+            );
             expect(result.response.text()).toBe('Recovered!');
         });
     });

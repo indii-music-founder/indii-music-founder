@@ -2,7 +2,7 @@ import { logger } from '@/utils/logger';
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { withServiceError } from '@/lib/errors';
-import type { Part, Schema } from 'firebase/ai';
+import type { Part, Schema } from '@/shared/types/ai.dto';
 
 export interface Box2D {
     ymin: number;

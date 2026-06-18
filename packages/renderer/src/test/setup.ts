@@ -719,3 +719,54 @@ vi.mock('@/services/agent/governance/ModelArmor', () => ({
     })
 }));
 
+const originalFetch = globalThis.fetch?.bind(globalThis);
+
+globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+
+    if (url.includes('cloudfunctions.net/generateContentStream')) {
+        if (init?.signal?.aborted) {
+            throw new DOMException('The operation was aborted.', 'AbortError');
+        }
+
+        const rawBody = typeof init?.body === 'string' ? init.body : '';
+        const requestBody = rawBody
+            ? JSON.parse(rawBody) as { contents?: Array<{ parts?: Array<{ text?: string }> }> }
+            : {};
+        const promptText = requestBody.contents?.flatMap(content => content.parts || [])
+            .map(part => part.text || '')
+            .join(' ')
+            .trim();
+        const config = rawBody
+            ? (JSON.parse(rawBody) as { config?: { responseMimeType?: string } }).config
+            : undefined;
+        const text = promptText?.includes('Extract data')
+            ? JSON.stringify({ foo: 'bar' })
+            : config?.responseMimeType === 'application/json'
+                ? JSON.stringify({ test: 'success' })
+            : promptText?.includes('Hello Cache') || promptText?.includes('Prompt A') || promptText?.includes('Prompt B')
+                ? 'Fresh Autonomous Response'
+            : promptText?.includes('Transient test')
+                ? 'Recovered!'
+            : promptText?.includes('Integration') || rawBody.includes('IntegrationSuccess')
+                ? 'IntegrationSuccess'
+            : promptText === 'prompt'
+                ? 'Good'
+            : promptText?.includes('Retry me')
+            ? 'Success after retry'
+            : promptText?.includes('Stream')
+                ? 'Stream'
+                : 'Mock Autonomous Response';
+
+        return new Response(`${JSON.stringify({ text })}\n`, {
+            status: 200,
+            headers: { 'content-type': 'application/x-ndjson' }
+        });
+    }
+
+    if (originalFetch) {
+        return originalFetch(input, init);
+    }
+
+    throw new Error(`Unhandled fetch in test: ${url}`);
+}) as typeof fetch;

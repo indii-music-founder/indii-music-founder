@@ -3,7 +3,7 @@ import { logger } from '@/utils/logger';
 import systemPrompt from '@agents/publishing/prompt.md?raw';
 
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
-import { Schema } from 'firebase/ai';
+import type { Schema } from '@/shared/types/ai.dto';
 import { PublishingTools } from '../tools/PublishingTools';
 import { UniversalTools } from '../tools/UniversalTools';
 
