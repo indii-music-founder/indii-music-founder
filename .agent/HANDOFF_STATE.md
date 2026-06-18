@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-18 12:15 EDT
+**Updated:** 2026-06-18 12:18 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+919adff54 fix(auth): create user doc on signup and set authLoading false
+55c9ca8f3 chore: session checkpoint [12:15]
 29e6eacd5 chore: session checkpoint [16:14]
 ddf6c85d2 chore: session checkpoint [12:11]
 532892de6 chore: session checkpoint [12:08]
@@ -12,8 +14,6 @@ c03bf55be fix(qa): skip App Check in emulator mode to unblock Firebase Auth
 354117060 chore: session checkpoint [12:02]
 379d2a72f chore: session checkpoint [12:01]
 7f5037065 chore: session checkpoint [12:00]
-f328cd737 chore: session checkpoint [11:58]
-7d5da1771 chore: session checkpoint [11:56]
 ```
 
 ## Working State
