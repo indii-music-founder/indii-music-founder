@@ -14,7 +14,9 @@ import { logger } from '@/utils/logger';
  * 2. Automated Split Execution via Smart Contracts (real on-chain via window.ethereum)
  * 3. Tokenization (SongShares) — ERC-1155 mint
  *
- * Env: VITE_ETH_RPC_URL — Alchemy/Infura RPC (for non-wallet reads)
+ * Browser-side keyed RPC URLs are disabled. Wallet operations use
+ * `window.ethereum`; receipt polling uses the fixed public Cloudflare gateway
+ * until a secured backend resolver is available.
  */
 
 /**
@@ -120,7 +122,7 @@ export class SmartContractService {
      * Poll eth_getTransactionReceipt until the deployment transaction is mined.
      */
     private async waitForDeployment(txHash: string, maxAttempts = 20): Promise<string> {
-        const rpcUrl = import.meta.env.VITE_ETH_RPC_URL || 'https://cloudflare-eth.com';
+        const rpcUrl = 'https://cloudflare-eth.com';
 
         for (let i = 0; i < maxAttempts; i++) {
             await new Promise(r => setTimeout(r, 3000)); // 3s between polls
