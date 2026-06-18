@@ -33,14 +33,10 @@ export function isAppCheckError(error: unknown): boolean {
 
 /**
  * Check if App Check is configured in the environment.
- * If not, we should use direct Gemini SDK from the start.
  */
 export function isAppCheckConfigured(): boolean {
-    // Force fallback in dev mode unless a debug token is explicitly set
-    // This allows localhost to work without App Check emulation
     logger.debug('[FirebaseIntelligenceService] App Check Debug:', {
         DEV: env.DEV,
-        debugToken: env.appCheckDebugToken,
         key: env.appCheckKey
     });
 
@@ -56,9 +52,5 @@ export function isAppCheckConfigured(): boolean {
         return true;
     }
 
-    if (env.DEV && !env.appCheckDebugToken) {
-        logger.warn('[FirebaseIntelligenceService] DEV mode detected without Debug Token. Disabling App Check.');
-        return false;
-    }
-    return !!(env.appCheckKey || env.appCheckDebugToken);
+    return !!env.appCheckKey;
 }

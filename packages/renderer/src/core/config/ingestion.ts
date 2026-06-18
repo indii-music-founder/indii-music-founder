@@ -5,8 +5,18 @@
 
 import { isTestHarnessRuntime } from '../../utils/e2eMode';
 
+const ENV: Record<string, string | undefined> = {
+    VITE_INGESTION_SYSTEM_IDENTIFIER: import.meta.env.VITE_INGESTION_SYSTEM_IDENTIFIER,
+    VITE_INGESTION_ENTITY_NAME: import.meta.env.VITE_INGESTION_ENTITY_NAME,
+    VITE_INGESTION_TRADING_NAME: import.meta.env.VITE_INGESTION_TRADING_NAME,
+    VITE_INGESTION_CONTACT_NAME: import.meta.env.VITE_INGESTION_CONTACT_NAME,
+    VITE_INGESTION_CONTACT_EMAIL: import.meta.env.VITE_INGESTION_CONTACT_EMAIL,
+    VITE_INGESTION_CONTACT_ADDRESS: import.meta.env.VITE_INGESTION_CONTACT_ADDRESS,
+    VITE_INGESTION_CONTACT_PHONE: import.meta.env.VITE_INGESTION_CONTACT_PHONE,
+};
+
 const requiredEnv = (key: string): string => {
-    const value = (import.meta.env as Record<string, string | undefined>)[key]?.trim();
+    const value = ENV[key]?.trim();
     if (!value) {
         if (isTestHarnessRuntime()) {
             return `TEST_${key}`;

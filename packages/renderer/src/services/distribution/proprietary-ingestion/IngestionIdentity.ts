@@ -11,10 +11,16 @@ import { INGESTION_CONFIG } from '@/core/config/ingestion';
  * Values must come from deployment environment; placeholders are not accepted.
  */
 
-const recipientEnv = (key: string): string =>
-    import.meta.env[`VITE_INGESTION_SYSTEM_IDENTITY_${key}`]?.trim() ||
-    import.meta.env[`VITE_Ingestion_SystemIdentity_${key}`]?.trim() ||
-    '';
+const RECIPIENT_ENV: Record<string, string | undefined> = {
+    SPOTIFY: import.meta.env.VITE_INGESTION_SYSTEM_IDENTITY_SPOTIFY,
+    APPLE: import.meta.env.VITE_INGESTION_SYSTEM_IDENTITY_APPLE,
+    AMAZON: import.meta.env.VITE_INGESTION_SYSTEM_IDENTITY_AMAZON,
+    TIDAL: import.meta.env.VITE_INGESTION_SYSTEM_IDENTITY_TIDAL,
+    DEEZER: import.meta.env.VITE_INGESTION_SYSTEM_IDENTITY_DEEZER,
+    YOUTUBE: import.meta.env.VITE_INGESTION_SYSTEM_IDENTITY_YOUTUBE,
+};
+
+const recipientEnv = (key: string): string => RECIPIENT_ENV[key]?.trim() || '';
 
 /** Known DSP recipient registry.
  *
