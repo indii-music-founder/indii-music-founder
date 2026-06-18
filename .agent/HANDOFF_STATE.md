@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-18 12:02 EDT
+**Updated:** 2026-06-18 12:08 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+c03bf55be fix(qa): skip App Check in emulator mode to unblock Firebase Auth
+354117060 chore: session checkpoint [12:02]
 379d2a72f chore: session checkpoint [12:01]
 7f5037065 chore: session checkpoint [12:00]
 f328cd737 chore: session checkpoint [11:58]
@@ -12,13 +14,10 @@ f328cd737 chore: session checkpoint [11:58]
 8fb6f1b54 chore: session checkpoint [11:53]
 9c2727bbf chore: session checkpoint [11:50]
 0eab66527 chore: session checkpoint [11:49]
-0a531f143 chore: session checkpoint [11:48]
-f593fdd30 fix(ci): disable client-side file operations, route through backend
 ```
 
 ## Working State
 ```
- M packages/renderer/src/services/firebase.ts
  M python/tests/fixtures/e2e_interop/ts_to_py/envelope.json
 ```
 
