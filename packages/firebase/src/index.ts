@@ -849,7 +849,7 @@ export const generateSpeech = functions
 
 export const generateContentStream = functions
     .runWith({
-        enforceAppCheck: ENFORCE_APP_CHECK,
+        enforceAppCheck: false, // CORS preflight must pass; App Check is verified manually below.
         timeoutSeconds: 300
     })
     .https.onRequest((req, res) => {
@@ -875,6 +875,26 @@ export const generateContentStream = functions
             } catch (_error) {
                 res.status(403).send('Forbidden: Invalid Token');
                 return;
+            }
+
+            // Verify App Check manually after CORS preflight has passed.
+            if (ENFORCE_APP_CHECK) {
+                const appCheckToken = typeof req.header === 'function'
+                    ? req.header('x-firebase-appcheck')
+                    : typeof req.get === 'function'
+                        ? req.get('x-firebase-appcheck')
+                        : req.headers['x-firebase-appcheck'];
+                if (!appCheckToken) {
+                    res.status(401).send('Unauthorized: Missing App Check token');
+                    return;
+                }
+                try {
+                    await admin.appCheck().verifyToken(Array.isArray(appCheckToken) ? appCheckToken[0] : appCheckToken);
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                } catch (err) {
+                    res.status(401).send('Unauthorized: Invalid App Check token');
+                    return;
+                }
             }
 
             try {
