@@ -11,7 +11,7 @@ const landingPageConfigPath = path.join(__dirname, '../landing-page/app/lib/fire
 const landingPageContent = fs.readFileSync(landingPageConfigPath, 'utf8');
 
 const expectedKey = process.env.VITE_FIREBASE_API_KEY || "";
-const expectedAppId = "1:223837784072:web:3af738739465ea4095e9bd";
+const expectedAppId = "1:148015878263:web:febc76c0bd56f28cdbb672";
 
 console.log('1. Checking Electron App Config (src/config/env.ts):');
 console.log(`   - API Key: ${firebaseDefaultConfig.apiKey}`);

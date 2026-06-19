@@ -16,7 +16,7 @@ const firebaseConfig = {
     authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN || "indii-v-1-1.firebaseapp.com",
     projectId: process.env.VITE_FIREBASE_PROJECT_ID || "indii-v-1-1",
     storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET || "indii-alpha-electron",
-    appId: process.env.VITE_FIREBASE_APP_ID || "1:223837784072:web:28eabcf0c5dd985395e9bd"
+    appId: process.env.VITE_FIREBASE_APP_ID || "1:148015878263:web:febc76c0bd56f28cdbb672"
 };
 
 const app = initializeApp(firebaseConfig);

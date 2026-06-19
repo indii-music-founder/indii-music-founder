@@ -15,7 +15,7 @@ async function testSDK() {
 
   try {
     const res = await ai.models.generateContent({
-      model: 'projects/223837784072/locations/us-central1/models/5672388184277778432',
+      model: 'projects/148015878263/locations/us-central1/models/5672388184277778432',
       contents: [{ role: 'user', parts: [{ text: 'Hello, are you operational?' }] }]
     });
     console.log(res.text());

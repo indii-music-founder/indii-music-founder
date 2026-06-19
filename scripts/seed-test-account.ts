@@ -12,7 +12,7 @@ const firebaseConfig = {
     projectId: process.env.VITE_FIREBASE_PROJECT_ID || "indii-v-1-1",
     storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET || "gs://indii-alpha-electron",
     messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-    appId: process.env.VITE_FIREBASE_APP_ID || "1:223837784072:web:3af738739465ea4095e9bd"
+    appId: process.env.VITE_FIREBASE_APP_ID || "1:148015878263:web:febc76c0bd56f28cdbb672"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -78,7 +78,7 @@ const MERCH_PRODUCTS = [
     {
         title: "Neon Dreams Oversized Tee",
         price: "$35.00",
-        image: "https://firebasestorage.googleapis.com/v0/b/indii-v-1-1.appspot.com/o/merch%2Fstandard_tee.png?alt=media",
+        image: "https://firebasestorage.googleapis.com/v0/b/indii-music-founder.appspot.com/o/merch%2Fstandard_tee.png?alt=media",
         tags: ["Streetwear", "Oversized"],
         category: "standard",
         status: "available"
