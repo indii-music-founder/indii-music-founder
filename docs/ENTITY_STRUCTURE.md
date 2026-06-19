@@ -18,7 +18,7 @@
 |-------|-------|--------------|--------|
 | Proprietary Ingestion ID | New Detroit Music LLC | `PA-DPIDA-2025122604-E` | ✅ Active, verified |
 | indii Codebase | New Detroit Music LLC | GitHub: `the-walking-agency-det/indii-Alpha-Electron` | ✅ Verified |
-| Firebase Project | New Detroit Music LLC | GCP Project: `223837784072` (indii-v-1-1) | ✅ Verified |
+| Firebase Project | New Detroit Music LLC | GCP Project: `148015878263` (indii-music-founder) | ✅ Verified |
 | Stripe Connect Account | New Detroit Music LLC | — | ⚠️ <TBD by William> |
 | Domain Names | New Detroit Music LLC | — | ⚠️ <TBD by William> |
 

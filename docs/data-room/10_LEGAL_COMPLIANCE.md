@@ -67,8 +67,8 @@ For testing purposes, a separate Stripe test account exists with test API keys. 
 
 | Attribute | Value |
 |-----------|-------|
-| **GCP Project ID** | `indii-v-1-1` |
-| **Project Number** | `223837784072` |
+| **GCP Project ID** | `indii-music-founder` |
+| **Project Number** | `148015878263` |
 | **Billing Account** | [Confidential — William's personal account] |
 | **Services Active** | Cloud Functions, Firestore, Cloud Storage, Vertex AI, BigQuery, Secret Manager |
 | **Monthly Cost** | ~$800 |
@@ -88,7 +88,7 @@ For testing purposes, a separate Stripe test account exists with test API keys. 
 | **Ownership** | Account owner (William Roberts) owns all data and configurations | Post-acquisition, must transfer to acquirer's org |
 | **Data Residency** | US multi-region (nam5, eur3 optionally) | No data localization risk |
 | **Service Dependency** | Firebase is US-hosted; no reliance on legacy on-prem | Easy migration to acquirer's GCP account |
-| **Model Hosting** | Vertex AI endpoints in project `223837784072` | All 16 R7 fine-tuned models must be migrated or re-trained |
+| **Model Hosting** | Vertex AI endpoints in project `148015878263` | All 16 R7 fine-tuned models must be migrated or re-trained |
 | **Termination** | Acquirer can request data export and project deletion | 30-day grace period for data retrieval |
 | **Pricing** | Standard GCP pricing (no enterprise discount yet) | Acquirer may negotiate volume discount |
 
@@ -99,7 +99,7 @@ For testing purposes, a separate Stripe test account exists with test API keys. 
 **Cloud Storage:** Standard GCS export; files are standard formats (audio, JSON, etc.). Portable.
 
 **Vertex AI Models:** Fine-tuned models are tied to GCP project. Options post-acquisition:
-1. Keep models in project `223837784072` (William's project), migrate to acquirer's Vertex AI endpoints (requires API key sharing, ongoing cost to acquirer)
+1. Keep models in project `148015878263` (William's project), migrate to acquirer's Vertex AI endpoints (requires API key sharing, ongoing cost to acquirer)
 2. Export model weights and re-train on acquirer's Vertex AI (1–2 week effort, ~$10K training cost)
 3. Export model artifacts and use OpenAI fine-tuning instead (different implementation, requires model conversion)
 

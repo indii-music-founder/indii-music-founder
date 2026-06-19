@@ -22,7 +22,7 @@ _ssl_ctx = ssl.create_default_context()
 _ssl_ctx.check_hostname = False
 _ssl_ctx.verify_mode = ssl.CERT_NONE
 
-PROJECT = "223837784072"
+PROJECT = "148015878263"
 REGION = "us-central1"
 REGISTRY_FILE = "src/services/agent/fine-tuned-models.ts"
 

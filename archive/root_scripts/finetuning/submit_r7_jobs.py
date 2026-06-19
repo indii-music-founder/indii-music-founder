@@ -42,7 +42,7 @@ def submit_jobs():
             "tunedModelDisplayName": display_name
         }
 
-        url = "https://us-central1-aiplatform.googleapis.com/v1/projects/223837784072/locations/us-central1/tuningJobs"
+        url = "https://us-central1-aiplatform.googleapis.com/v1/projects/148015878263/locations/us-central1/tuningJobs"
 
         req = urllib.request.Request(
             url,
