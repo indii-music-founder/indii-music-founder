@@ -1,5 +1,6 @@
 import * as functions from 'firebase-functions/v2';
 import * as admin from 'firebase-admin';
+import { FieldValue } from 'firebase-admin/firestore';
 
 type OperationType = 'video' | 'image' | 'agent_stream';
 
@@ -38,6 +39,7 @@ const BUDGET_LIMITS: Record<string, { daily: number; monthly: number; hourly: nu
   free: { daily: 5, monthly: 50, hourly: 1 },
   pro: { daily: 25, monthly: 250, hourly: 5 },
   enterprise: { daily: 100, monthly: 1000, hourly: 20 },
+  founder: { daily: 1000, monthly: 10000, hourly: Number.POSITIVE_INFINITY },
 };
 
 /**
@@ -124,7 +126,7 @@ export async function checkOperationBudget(
           operationType,
           projectedCost: monthlyUsed + estimatedCost,
           limit: RUNAWAY_LIMIT,
-          timestamp: admin.firestore.FieldValue.serverTimestamp(),
+          timestamp: FieldValue.serverTimestamp(),
           action: 'BLOCKED',
           metadata: metadata || {},
         });
@@ -214,8 +216,8 @@ export async function checkOperationBudget(
       }
 
       const operationId = `op-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-      const increment = admin.firestore.FieldValue.increment;
-      const now = admin.firestore.FieldValue.serverTimestamp();
+      const increment = FieldValue.increment;
+      const now = FieldValue.serverTimestamp();
 
       tx.set(dailyRef, {
         date: today,

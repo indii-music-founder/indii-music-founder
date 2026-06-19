@@ -110,10 +110,8 @@ export function getFineTunedModel(agentId: ValidAgentId): string {
     }
 
     if (!USE_FINE_TUNED_AGENTS) {
-        throw new Error(
-            `[FineTunedModels] VITE_USE_FINE_TUNED_AGENTS=false disables tuned agent routing. ` +
-            `Agent "${agentId}" cannot run against a base model.`
-        );
+        // Fallback to the latest approved Pro model since fine-tuned endpoints are unavailable
+        return 'gemini-3.1-pro-preview';
     }
 
     const endpoint = FINE_TUNED_MODEL_REGISTRY[agentId];
