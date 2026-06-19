@@ -35,7 +35,7 @@ const clientsCache = new Map<string, GoogleGenAI>();
  * ADC (Application Default Credentials) auth is automatic in Cloud Functions.
  */
 export function getVertexAIClient(projectOverride?: string, locationOverride?: string): GoogleGenAI {
-  const projectId = projectOverride || process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT || 'indii-v-1-1';
+  const projectId = projectOverride || process.env.VITE_VERTEX_PROJECT_ID || process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT || 'indii-music-founder';
   const location = locationOverride || process.env.VITE_VERTEX_LOCATION || process.env.VERTEX_LOCATION || 'us-central1';
 
   const cacheKey = `${projectId}:${location}`;
