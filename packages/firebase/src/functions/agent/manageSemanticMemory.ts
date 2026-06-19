@@ -1,4 +1,4 @@
-import * as functions from 'firebase-functions';
+
 import * as admin from 'firebase-admin';
 import { getVertexAIClient } from '../../lib/vertexClient';
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
@@ -54,7 +54,7 @@ export const manageSemanticMemory = onCall({
             await newMemRef.set({
                 id: newMemRef.id,
                 memory: memory,
-                // @ts-expect-error FieldValue.vector is available in the latest firebase-admin
+                // FieldValue.vector is available in the latest firebase-admin
                 embedding: FieldValue.vector(embeddingVector),
                 created_at: FieldValue.serverTimestamp(),
                 updated_at: FieldValue.serverTimestamp()
@@ -88,7 +88,7 @@ export const manageSemanticMemory = onCall({
             const memoriesRef = db.collection('users').doc(userId).collection('memories');
             
             // Perform vector search
-            // @ts-expect-error findNearest is available in the latest firebase-admin SDK
+            // findNearest is available in the latest firebase-admin SDK
             const vectorQuery = memoriesRef.findNearest('embedding', FieldValue.vector(queryVector), {
                 limit: limit,
                 distanceMeasure: 'COSINE'

@@ -102,6 +102,12 @@
 
   </head>
   <body>
+    <!-- Enforce Custom Domain -->
+    <script>
+      if (window.location.hostname.endsWith('web.app') || window.location.hostname.endsWith('firebaseapp.com')) {
+        window.location.replace('https://indii.music' + window.location.pathname + window.location.search + window.location.hash);
+      }
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/startupWatchdog.ts"></script>
     <script type="module" src="/src/main.tsx"></script>
