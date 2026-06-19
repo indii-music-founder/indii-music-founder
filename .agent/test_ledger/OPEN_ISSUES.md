@@ -6149,3 +6149,35 @@ Therefore, no fix can be proposed or implemented.
 - **Impact:** Low — frontend handles error correctly and displays "Incorrect email or password. Please try again." but using the correct HTTP status code is best practice.
 - **Dimensional Data:** Network capture from /browse testing shows 400 status code on invalid credentials attempt.
 - **Resolution:** No code change. Do not proxy Firebase Auth just to remap a Google-controlled status code; that would weaken the standard Firebase Auth integration and add avoidable security/maintenance surface.
+
+---
+
+### ISSUE-442: Creative Director Direct Mode Image Generation Failure (401 Unauthorized)
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** Creative Director (Direct Generation Mode)
+- **Found:** 2026-06-19 by Browser Subagent Test
+- **Summary:** Clicking "Generate" in Direct Generation Mode fails to trigger asset generation and produces 401 Unauthorized errors in the console logs.
+- **Steps to Reproduce:**
+  1. Navigate to `/creative`.
+  2. Input a prompt in "Describe your image..." (Direct Generation Mode).
+  3. Notice the "Generate" button remains disabled (the state is unsynced until attributes are removed or input events are explicitly forced).
+  4. Force click or programmatic click the "Generate" button.
+  5. The console outputs multiple 401 Unauthorized requests to Firebase Auth / Backend API endpoints, and no generation starts.
+- **User Impact:** Users cannot generate creative assets directly, disabling a core capability of the app.
+
+---
+
+### ISSUE-443: Social Media Department Button Redirects to `/mobile-remote`
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Navigation / Social Media Department
+- **Found:** 2026-06-19 by Browser Subagent Test
+- **Summary:** Clicking the "Social Media Department" button in the sidebar redirects the desktop app to `/mobile-remote` instead of the expected `/social` module page.
+- **Steps to Reproduce:**
+  1. From any department or dashboard view, click the "Social Media Department" button in the sidebar (or button with `data-testid="nav-item-social"`).
+  2. Notice the desktop application is redirected to `/mobile-remote` route.
+  3. If you navigate directly to `https://indii-music-studio.web.app/social`, the Firebase authentication context is destroyed and you are redirected to the Login page.
+- **User Impact:** Users cannot easily access the Social Media Department from the sidebar, and direct navigation requires re-authenticating.
