@@ -11,9 +11,25 @@ vi.mock('firebase/storage', () => ({
     }))
 }));
 
+// Mock useStore
+let mockUploadQueue: any[] = [];
+vi.mock('@/core/store', () => ({
+    useStore: {
+        getState: () => ({
+            uploadQueue: mockUploadQueue,
+            addUploadItems: (items: any[]) => {
+                mockUploadQueue.push(...items);
+            },
+            updateUploadProgress: vi.fn(),
+            updateUploadStatus: vi.fn()
+        })
+    }
+}));
+
 describe('WhiteGloveIngestionService', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mockUploadQueue = [];
     });
 
     it('should enqueue an asset, update the queue slice, and return an uploadId', async () => {
@@ -59,5 +75,52 @@ describe('WhiteGloveIngestionService', () => {
 
         // We expect the 'state_changed' listener to be attached
         expect(mockOn).toHaveBeenCalledWith('state_changed', expect.any(Function), expect.any(Function), expect.any(Function));
+    });
+
+    it('should allow pausing an upload via the store slice', async () => {
+        // Arrange
+        const mockFile = new File(['dummy content'], 'master_track.wav', { type: 'audio/wav' });
+        const { uploadBytesResumable } = await import('firebase/storage');
+        const mockPause = vi.fn();
+        (uploadBytesResumable as ReturnType<typeof vi.fn>).mockReturnValueOnce({
+            on: vi.fn(),
+            pause: mockPause
+        });
+
+        const uploadId = await WhiteGloveIngestionService.enqueueAsset(mockFile, 'audio', 'artist_123');
+
+        // Act
+        WhiteGloveIngestionService.pauseUpload(uploadId);
+
+        // Assert
+        expect(mockPause).toHaveBeenCalled();
+    });
+
+    it('should allow resuming an upload via the store slice', async () => {
+        const mockFile = new File(['dummy content'], 'master_track.wav', { type: 'audio/wav' });
+        const { uploadBytesResumable } = await import('firebase/storage');
+        const mockResume = vi.fn();
+        (uploadBytesResumable as ReturnType<typeof vi.fn>).mockReturnValueOnce({
+            on: vi.fn(),
+            resume: mockResume
+        });
+
+        const uploadId = await WhiteGloveIngestionService.enqueueAsset(mockFile, 'audio', 'artist_123');
+        WhiteGloveIngestionService.resumeUpload(uploadId);
+        expect(mockResume).toHaveBeenCalled();
+    });
+
+    it('should allow canceling an upload via the store slice', async () => {
+        const mockFile = new File(['dummy content'], 'master_track.wav', { type: 'audio/wav' });
+        const { uploadBytesResumable } = await import('firebase/storage');
+        const mockCancel = vi.fn();
+        (uploadBytesResumable as ReturnType<typeof vi.fn>).mockReturnValueOnce({
+            on: vi.fn(),
+            cancel: mockCancel
+        });
+
+        const uploadId = await WhiteGloveIngestionService.enqueueAsset(mockFile, 'audio', 'artist_123');
+        WhiteGloveIngestionService.cancelUpload(uploadId);
+        expect(mockCancel).toHaveBeenCalled();
     });
 });
