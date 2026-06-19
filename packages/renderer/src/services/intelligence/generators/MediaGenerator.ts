@@ -1,6 +1,6 @@
 /**
  * Media Generator — Video generation logic extracted from FirebaseIntelligenceService.
- * Disabled for security (raw VITE_API_KEY removed). 
+ * Disabled for security (raw CLIENT_API_KEY removed). 
  * Use VideoGenerationService which routes through the secure generateVideoV3 Cloud Function.
  */
 
