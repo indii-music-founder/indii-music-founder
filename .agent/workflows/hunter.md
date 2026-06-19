@@ -98,6 +98,17 @@ grep -rn 'fetch(' packages/renderer/src/services/ --include='*.ts' | grep -v 're
 - Missing status check → Add `if (!response.ok)` with appropriate error handling
 - Missing retry → Wrap in retry logic for 429/5xx codes
 
+### 1.6 API System Integrity (NEW)
+```bash
+# Detect ghost test duplicates and legacy AI imports
+node scripts/verify-api-system-integrity.js
+```
+
+**AUTO-FIX:** For each finding:
+- Duplicate test files → Delete the redundant file that is in the incorrect location (prefer `__tests__/` for isolated tests, or standard paths).
+- Banned AI logic (`DirectImageEditor`, `FallbackClient`) → Refactor out and route through `httpsCallable` Firebase Cloud Functions.
+- `VITE_API_KEY` → Remove from client usage and route through Cloud Functions.
+
 ### 1.6 Vendor Chunk Conflicts
 ```bash
 # Check manualChunks (electron.vite.config.ts + packages/renderer/vite.config.ts) for React-dependent libs split from vendor-react

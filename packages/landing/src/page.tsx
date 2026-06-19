@@ -289,6 +289,41 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ═══════════════ 8.5 PROJECT WHITE GLOVE ═══════════════ */}
+      <section className="w-full max-w-5xl px-4 py-12 z-20 relative">
+        <div className="relative overflow-hidden rounded-[3rem] border border-white/10 bg-[#0a0a0a] shadow-2xl p-8 md:p-16">
+          <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
+            <Globe2 size={250} className="text-amber-500" strokeWidth={0.5} />
+          </div>
+          
+          <div className="relative z-10">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-gray-300 text-xs tracking-widest uppercase mb-8">
+              <ShieldCheck size={14} className="text-amber-500" />
+              Onboarding Protocol
+            </div>
+            
+            <h2 className="text-3xl md:text-5xl font-black tracking-tight text-white mb-6">
+              Project White Glove
+            </h2>
+            
+            <div className="space-y-6 text-gray-400 text-lg leading-relaxed font-light max-w-3xl">
+              <p>
+                When you join indii as a Founder, your journey begins with <strong className="text-white">Project White Glove</strong>. It is our specialized onboarding protocol designed to rescue artists from their scattered digital pasts.
+              </p>
+              <p>
+                A lifetime of making music leaves a fragmented trail: unorganized Dropbox links, undocumented split sheets, missing PRO registrations, and legacy Pro Tools sessions sitting on dying external hard drives. Project White Glove is how we fix it. 
+              </p>
+              <p>
+                You activate the protocol directly from your Conductor dashboard. Once engaged, the system systematically guides you through consolidating your entire catalog. We track down your stems, recover your masters, organize your metadata, and secure your digital footprint—from Spotify artist profiles to sync licenses—straight into the indii vault.
+              </p>
+              <p className="text-amber-400 font-medium italic mt-8 text-xl">
+                "We secure your legacy, so you can build your future."
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ═══════════════ 9. FOUNDERS COVENANT ═══════════════ */}
       <section id="invest" className="w-full max-w-5xl px-4 py-24 mb-24 z-20 relative">
         <div className="relative overflow-hidden rounded-[3rem] border border-amber-500/30 bg-gradient-to-b from-amber-900/20 to-[#0a0a0a] p-12 md:p-20 shadow-[0_0_100px_rgba(245,158,11,0.1)]">

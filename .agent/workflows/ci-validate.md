@@ -135,6 +135,7 @@ npm run ci
 ```
 
 **Unified CI Steps:**
+0. **API System Integrity Check:** Executes `node scripts/verify-api-system-integrity.js` to strictly enforce legacy API bans and purge ghost duplicate tests.
 1. **Duplicate Identifier Check:** Scans `appSlice.ts` for duplicate identifiers.
 2. **Missing Electron Mocks Check:** Ensures all main-process tests correctly mock Electron via `vi.mock('electron')`.
 3. **TypeScript Typecheck:** Executes `npm run typecheck` across all workspace targets.
