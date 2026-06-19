@@ -85,8 +85,13 @@ export function useMobile(): MobileState {
     const isTouchDevice = useMediaQuery('(pointer: coarse)');
     const isStandalone = useMediaQuery('(display-mode: standalone)');
 
-    // Derived: any phone-class device
-    const isAnyPhone = isPhone || isPhoneLg;
+    // Derived: any phone-class device (viewport width-based OR mobile phone user agent)
+    const isAnyPhone = useMemo(() => {
+        if (isPhone || isPhoneLg) return true;
+        if (typeof navigator === 'undefined') return false;
+        // Detect mobile phones via user agent (excluding tablets where possible)
+        return /iPhone|iPod|Android.*Mobile|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    }, [isPhone, isPhoneLg]);
 
     // Keyboard detection (imperative — not a media query)
     // Only runs the viewport resize listener when on a phone-class device
