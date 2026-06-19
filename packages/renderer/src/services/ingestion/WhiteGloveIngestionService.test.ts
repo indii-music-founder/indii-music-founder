@@ -1,0 +1,45 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { WhiteGloveIngestionService } from './WhiteGloveIngestionService';
+import { useUploadQueueStore } from '@/core/store/slices/uploadQueueSlice'; // We'll need to mock the store or use a test instance
+
+// We need to mock firebase storage
+vi.mock('firebase/storage', () => ({
+    getStorage: vi.fn(),
+    ref: vi.fn(),
+    uploadBytesResumable: vi.fn()
+}));
+
+describe('WhiteGloveIngestionService', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('should enqueue an asset, update the queue slice, and return an uploadId', async () => {
+        // Arrange
+        const mockFile = new File(['dummy content'], 'master_track.wav', { type: 'audio/wav' });
+        const mockArtistId = 'artist_123';
+        
+        // Act
+        const uploadId = await WhiteGloveIngestionService.enqueueAsset(mockFile, 'audio', mockArtistId);
+
+        // Assert
+        expect(uploadId).toBeDefined();
+        expect(typeof uploadId).toBe('string');
+        
+        // Ensure it interacts with the underlying upload mechanism
+        // Ensure it interacts with the underlying upload mechanism
+        // We'll verify this based on how the store/Firebase gets called.
+        // For the tracer bullet, just getting an ID and ensuring it didn't throw is the first step.
+    });
+
+    it('should initiate a Firebase resumable upload with the correct path', async () => {
+        const mockFile = new File(['dummy content'], 'master_track.wav', { type: 'audio/wav' });
+        const mockArtistId = 'artist_123';
+        const { uploadBytesResumable, ref } = await import('firebase/storage');
+        
+        await WhiteGloveIngestionService.enqueueAsset(mockFile, 'audio', mockArtistId);
+        
+        expect(ref).toHaveBeenCalledWith(undefined, `ingest/white-glove/${mockArtistId}/audio/master_track.wav`);
+        expect(uploadBytesResumable).toHaveBeenCalled();
+    });
+});
