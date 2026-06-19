@@ -1,6 +1,7 @@
 import React from 'react';
 import { ArrowLeft, Video, Loader2, Image as ImageIcon, Trash2, PenTool } from 'lucide-react';
 import { HistoryItem } from '@/core/store/slices/creative';
+import { VideoGeneration } from '@/services/video/VideoGenerationService';
 
 interface ReviewStepProps {
     finalPrompt: string;
@@ -14,6 +15,8 @@ interface ReviewStepProps {
     ingredients: HistoryItem[];
     onAddIngredient: () => void;
     onRemoveIngredient: (index: number) => void;
+    duration?: number;
+    model?: string;
 }
 
 const ReviewStep: React.FC<ReviewStepProps> = ({
@@ -27,8 +30,11 @@ const ReviewStep: React.FC<ReviewStepProps> = ({
     onClearFrame,
     ingredients,
     onAddIngredient,
-    onRemoveIngredient
+    onRemoveIngredient,
+    duration,
+    model
 }) => {
+    const estimatedCost = VideoGeneration.estimateVideoCost(duration || 6, model);
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="bg-gray-900/50 p-6 rounded-xl border border-gray-800">
@@ -180,7 +186,7 @@ const ReviewStep: React.FC<ReviewStepProps> = ({
                         </>
                     ) : (
                         <>
-                            <Video size={20} /> Generate Video
+                            <Video size={20} /> Generate Video (Est. Cost: ${estimatedCost.toFixed(2)})
                         </>
                     )}
                 </button>

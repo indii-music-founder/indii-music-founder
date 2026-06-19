@@ -18,6 +18,8 @@ import {
 type MediaKind = 'image' | 'video' | 'audio';
 type GatewayErrorCode = 'invalid-argument' | 'permission-denied' | 'failed-precondition' | 'not-found' | 'resource-exhausted' | 'deadline-exceeded' | 'unavailable' | 'internal';
 
+const ENFORCE_APP_CHECK = process.env.SKIP_APP_CHECK !== "true" && process.env.ENFORCE_APP_CHECK !== "false";
+
 interface GeminiInlineData {
   data?: string;
   mimeType?: string;
@@ -59,7 +61,9 @@ const VIDEO_MAX_POLLS = Number(process.env.VIDEO_MAX_POLLS || '54');
 
 // Helper to resolve the GenAI client using Google AI Studio (API Key) or Vertex AI (ADC).
 // This fully adheres to the secure proxy architecture, preferring global preview models.
-function getAiClient(forceVertex = false): GoogleGenAI {
+// Helper to resolve the GenAI client using Google AI Studio (API Key) or Vertex AI (ADC).
+// This fully adheres to the secure proxy architecture, preferring global preview models.
+function getRawAiClient(forceVertex = false): GoogleGenAI {
   let apiKey: string | null = null;
   try {
     apiKey = getGeminiApiKey();
@@ -83,6 +87,47 @@ function getAiClient(forceVertex = false): GoogleGenAI {
     project,
     location: process.env.VITE_VERTEX_LOCATION || 'us-central1',
   });
+}
+
+function wrapWithFallback(obj: any, forceVertex: boolean, fallbackFactory: () => any): any {
+  return new Proxy(obj, {
+    get(target, prop, receiver) {
+      const val = Reflect.get(target, prop, receiver);
+      if (typeof val === 'function') {
+        return async function (...args: any[]) {
+          try {
+            return await val.apply(target, args);
+          } catch (error: any) {
+            const errorMsg = error instanceof Error ? error.message : String(error);
+            const isApiKeyError = errorMsg.includes('API key expired') || 
+                                  errorMsg.includes('API_KEY_INVALID') || 
+                                  errorMsg.includes('API key not valid') ||
+                                  (errorMsg.includes('INVALID_ARGUMENT') && errorMsg.includes('API key'));
+            
+            if (isApiKeyError && !forceVertex) {
+              console.warn('[creativeGateway] API key error encountered. Retrying automatically with Vertex AI ADC...', errorMsg);
+              const fallbackObj = fallbackFactory();
+              const fallbackFn = fallbackObj[prop];
+              return await fallbackFn.apply(fallbackObj, args);
+            }
+            throw error;
+          }
+        };
+      } else if (val && typeof val === 'object') {
+        return wrapWithFallback(val, forceVertex, () => {
+          const nextFallback = fallbackFactory();
+          return nextFallback[prop];
+        });
+      }
+      return val;
+    }
+  });
+}
+
+function getAiClient(forceVertex = false): GoogleGenAI {
+  const client = getRawAiClient(forceVertex);
+  if (forceVertex) return client;
+  return wrapWithFallback(client, false, () => getRawAiClient(true));
 }
 
 // Defer firestore and storage initialization until first use (for test compatibility)
@@ -499,7 +544,7 @@ async function downloadGeneratedVideo(ai: GoogleGenAI, video: Video, jobId: stri
 /**
  * generateImageV3 - Routes to gemini-3-pro-image-preview
  */
-export const generateImageV3 = onCall({ timeoutSeconds: 120, memory: '1GiB', secrets: [geminiApiKey], enforceAppCheck: true }, async (request) => {
+export const generateImageV3 = onCall({ timeoutSeconds: 120, memory: '1GiB', secrets: [geminiApiKey], enforceAppCheck: ENFORCE_APP_CHECK }, async (request) => {
   if (!request.auth) throw new HttpsError('unauthenticated', 'User must be authenticated.');
   
   const parsed = GenerateImageSchema.safeParse(request.data);
@@ -588,7 +633,7 @@ export const generateImageV3 = onCall({ timeoutSeconds: 120, memory: '1GiB', sec
 /**
  * generateVideoV3 - Routes to Veo 3.1 via the long-running generateVideos API.
  */
-export const generateVideoV3 = onCall({ timeoutSeconds: 540, secrets: [geminiApiKey] , enforceAppCheck: true}, async (request) => {
+export const generateVideoV3 = onCall({ timeoutSeconds: 540, secrets: [geminiApiKey] , enforceAppCheck: ENFORCE_APP_CHECK}, async (request) => {
   if (!request.auth) throw new HttpsError('unauthenticated', 'User must be authenticated.');
   
   const parsed = GenerateVideoSchema.safeParse(request.data);
@@ -691,7 +736,7 @@ export const generateVideoV3 = onCall({ timeoutSeconds: 540, secrets: [geminiApi
  * Flow, and Shorts, with API access rolling out later. This callable is wired so
  * the UI can use the real backend path as soon as the API model ID is configured.
  */
-export const generateOmniRemixV3 = onCall({ timeoutSeconds: 540, secrets: [geminiApiKey] , enforceAppCheck: true}, async (request) => {
+export const generateOmniRemixV3 = onCall({ timeoutSeconds: 540, secrets: [geminiApiKey] , enforceAppCheck: ENFORCE_APP_CHECK}, async (request) => {
   if (!request.auth) throw new HttpsError('unauthenticated', 'User must be authenticated.');
 
   const parsed = GenerateOmniRemixSchema.safeParse(request.data);
@@ -782,7 +827,7 @@ export const generateOmniRemixV3 = onCall({ timeoutSeconds: 540, secrets: [gemin
 /**
  * generateAudioV3 - Routes to NB2
  */
-export const generateAudioV3 = onCall({ timeoutSeconds: 300, secrets: [geminiApiKey] , enforceAppCheck: true}, async (request) => {
+export const generateAudioV3 = onCall({ timeoutSeconds: 300, secrets: [geminiApiKey] , enforceAppCheck: ENFORCE_APP_CHECK}, async (request) => {
   if (!request.auth) throw new HttpsError('unauthenticated', 'User must be authenticated.');
   
   const parsed = GenerateAudioSchema.safeParse(request.data);
