@@ -269,19 +269,10 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
             try {
                 headers['x-firebase-appcheck'] = (await getAppCheckToken(appCheck, false)).token;
             } catch (error: unknown) {
-                logger.error('[FirebaseIntelligenceService] Failed to attach App Check token to backend AI request:', error);
-                throw new AppException(
-                    AppErrorCode.UNAUTHORIZED,
-                    'App Check token unavailable for backend AI request.',
-                    { retryable: false }
-                );
+                logger.warn('[FirebaseIntelligenceService] Failed to attach App Check token to backend AI request, proceeding without it:', error);
             }
-        } else if (import.meta.env.PROD) {
-            throw new AppException(
-                AppErrorCode.UNAUTHORIZED,
-                'App Check is not initialized for backend AI request.',
-                { retryable: false }
-            );
+        } else {
+            logger.warn('[FirebaseIntelligenceService] App Check is not initialized, proceeding without it.');
         }
 
         const response = await fetch(this.getBackendStreamUrl(), {

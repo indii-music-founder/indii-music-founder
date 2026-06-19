@@ -255,13 +255,14 @@ export class VideoGenerationService {
     }
 
 
-    /**
-     * Estimate the cost of video generation based on duration and model.
-     * Pricing: fast=$0.10/sec, pro=$0.40/sec
-     */
-    private estimateVideoCost(durationSeconds: number, model?: string): number {
+    public estimateVideoCost(durationSeconds: number, model?: string): number {
         const actualModel = model || DEFAULT_VIDEO_MODEL;
-        const rate = actualModel.includes('pro') ? 0.40 : 0.10;
+        let rate = 0.10; // Default/fast rate
+        if (actualModel.includes('pro') || actualModel === 'veo-3.1-generate-preview') {
+            rate = 0.40;
+        } else if (actualModel.includes('lite') || actualModel === 'veo-3.1-lite-generate-preview') {
+            rate = 0.05;
+        }
         return durationSeconds * rate;
     }
 
