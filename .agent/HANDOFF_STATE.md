@@ -1,24 +1,25 @@
 # Handoff State
-**Updated:** 2026-06-19 12:47 EDT
+**Updated:** 2026-06-19 17:11 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
-fe85f80f8 chore: session checkpoint [12:47]
-4e78248b8 fix(test): bypass canvas image compression in JSDOM testing to prevent timeout
-bc629b31c fix(security): restore arcjet fail-closed behavior in production
-b9b400ce2 chore: session checkpoint [11:46]
-9ff461608 fix(ai): resolve malformed endpoint and api key issues
-0041c1e5d chore: session checkpoint [09:42]
-ebf7bbd8a chore: session checkpoint [09:19]
-8ef494a6d docs: link workflows to strategic flowcharts and fix syntax issues
-8431b5291 docs: beautify flowcharts and update client device routing boundaries
-e969a9014 fix(mobile): harden phone detection and lock rendering to mobile-remote
+5a17c52e7 fix(ai): harden intelligence service fallback and resolve CI blocks
+17da50c10 feat(ai): implement persistent semantic memory via Firestore Vector Search and update architecture flowcharts
+1b3f06e8f docs: enshrine the McLear Rule (never declare victory)
+8268d525b docs(agents): embed ghost identity sweep protocol into core workflows
+620995ecc fix(docs): completely eradicate all historical references to indii-v-1-1 from documentation and archives
+30b9760d5 fix(chore): globally purge all remaining indii-v-1-1 hardcoded values from scripts and load-tests
+3a1552474 fix(scripts): purge suspended project numbers and old app IDs from utility scripts
+02bfa4961 fix(agents): replace suspended project number with new project number in fine-tuned model registry
+6bf29359e fix: remove all remaining legacy indii-v-1-1 project and sender id hardcodings
+b3d159cf5 fix(backend): use indii-music-founder instead of suspended indii-v-1-1 project fallback
 ```
 
 ## Working State
 ```
- M .agent/skills/error_memory/ERROR_LEDGER.md
+ M python/tests/fixtures/e2e_interop/ts_to_py/envelope.json
+?? docs/flowcharts/white-glove-ingestion.md
 ```
 
 ## Decisions
