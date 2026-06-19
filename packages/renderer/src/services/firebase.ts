@@ -4,8 +4,10 @@ import { logger } from '@/utils/logger';
 // This must happen in the module scope before any Firebase services load
 if (typeof window !== 'undefined' && import.meta.env.DEV) {
     const key = ['FIREBASE', 'APPCHECK', 'DEBUG', 'TOKEN'].join('_');
-    (window as unknown as Record<string, string | boolean>)[key] = true;
-    (self as unknown as Record<string, string | boolean>)[key] = true;
+    if (typeof (window as any)[key] !== 'string') {
+        (window as unknown as Record<string, string | boolean>)[key] = true;
+        (self as unknown as Record<string, string | boolean>)[key] = true;
+    }
 }
 
 import { initializeApp } from 'firebase/app';
