@@ -110,6 +110,24 @@ After auto-fixes, run the full-spectrum bug hunt. This covers:
 
 ---
 
+## Step 2.5 — CI/CD Pipeline Safety Audit (CRITICAL)
+
+Before pushing, you MUST verify that the GitHub Actions Secrets perfectly match the active project configuration. "The Illusion of the Surface Fix" means that clean local code can still deploy to a suspended/ghost project if the CI pipeline injects stale secrets.
+
+**Check the secrets:**
+```bash
+export GH_TOKEN=$(cat .env | grep GITHUB_CLI_PAT | cut -d '=' -f2)
+gh secret list
+```
+
+**Verify these critical keys:**
+- `VITE_FIREBASE_PROJECT_ID`
+- `VITE_VERTEX_PROJECT_ID` 
+
+If any secret belongs to an old/suspended project (e.g., `indii-v-1-1`), you MUST overwrite it using `gh secret set <KEY> -b "<VALUE>"` before proceeding to Step 3.
+
+---
+
 ## Step 3 — Run Unified CI Validation Script
 
 ```bash

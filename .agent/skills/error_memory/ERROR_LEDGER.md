@@ -1,5 +1,15 @@
-## 2026-06-19 JSDOM Image Onload Promise Hang in Vitest Unit Tests
+## 2026-06-19 The Illusion of the Surface Fix (Ghost Identity Leak in CI/CD)
 
+**SEVERITY:** Critical (causes "Project suspended" errors, blocks live functionality even when code is 100% clean)
+
+**MISTAKE:**
+- FILES: Codebase `.env`, hardcoded files, AND GitHub Action Secrets.
+- ERROR: `Project indii-v-1-1 is suspended`. The agent purged all references to `indii-v-1-1` from the codebase, but the CI/CD pipeline injected the old project ID via GitHub Secrets (`VITE_FIREBASE_PROJECT_ID`).
+- CAUSE: A clean local build can still compile with toxic configuration if the CI pipeline environment variables are outdated. The agent assumed changing the local `.env` and `grep`ing the code was enough, failing to realize that `deploy.yml` pulls from `secrets.VITE_FIREBASE_PROJECT_ID`.
+- FIX: After cleaning the code, MUST authenticate with `gh` CLI and execute `gh secret set <KEY> -b "<VALUE>"` for `VITE_FIREBASE_PROJECT_ID`, `VITE_VERTEX_PROJECT_ID`, etc., to sync the CI environment with the active `indii-music-founder` project.
+- PREVENTION: When changing core infrastructure identities (Project IDs, Database Names, Vertex Endpoints), you MUST audit both the code AND the deployment pipeline secrets. A surface fix in the code is an illusion if the build server injects the old identity.
+
+## 2026-06-19 JSDOM Image Onload Promise Hang in Vitest Unit Tests
 **SEVERITY:** High (causes Vitest unit test suite to hang and time out after 30s in CI/CD)
 
 **MISTAKE:**
