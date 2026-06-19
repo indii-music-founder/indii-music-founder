@@ -318,7 +318,8 @@ describe('VideoGenerationService', () => {
         });
 
         it('should forward reference images in generateLongFormVideo', async () => {
-            const spyGenerateVideo = vi.spyOn(AutonomousIntelligence, 'generateVideo').mockResolvedValue('https://storage.googleapis.com/segment-video.mp4');
+            const spyGenerateVideo = vi.spyOn(VideoGeneration, 'generateVideo').mockResolvedValue([{ id: 'mock-job-id', url: '', prompt: 'mock' }]);
+            const spyWaitForJob = vi.spyOn(VideoGeneration, 'waitForJob').mockResolvedValue({ id: 'mock-job-id', resultUrl: 'https://storage.googleapis.com/segment-video.mp4' } as any);
 
             await VideoGeneration.generateLongFormVideo({
                 prompt: 'long video with refs',
@@ -330,14 +331,13 @@ describe('VideoGenerationService', () => {
             });
 
             expect(spyGenerateVideo).toHaveBeenCalledWith(expect.objectContaining({
-                config: expect.objectContaining({
-                    referenceImages: [
-                        { image: { uri: 'gs://bucket/ref1.png' }, referenceType: 'asset' }
-                    ]
-                })
+                referenceImages: [
+                    { image: { uri: 'gs://bucket/ref1.png' }, referenceType: 'asset' }
+                ]
             }));
 
             spyGenerateVideo.mockRestore();
+            spyWaitForJob.mockRestore();
         });
     });
 });
