@@ -1,3 +1,14 @@
+## 2026-06-19 JSDOM Image Onload Promise Hang in Vitest Unit Tests
+
+**SEVERITY:** High (causes Vitest unit test suite to hang and time out after 30s in CI/CD)
+
+**MISTAKE:**
+- FILES: `packages/renderer/src/services/creative/CreativeStorageService.ts`
+- ERROR: Unit tests in `ImageGenerationService.test.ts` (specifically `should handle image uploads (reference images)`) hung indefinitely and timed out after 30000ms.
+- CAUSE: When uploading reference images, the code called `CreativeStorageService.compressImage`, which attempted to load the image onto a `new Image()` and awaited its `onload` event to perform canvas-based downscaling. In JSDOM (the Vitest test environment), `window` and `document` are defined, but the mock DOM implementation of `new Image()` does not load image data or fire the `onload` event, causing the promise to hang.
+- FIX: Modified `CreativeStorageService.compressImage` to detect the test environment (`process.env.VITEST || process.env.NODE_ENV === 'test'`) and immediately return the original uncompressed media, avoiding the image loading promise entirely.
+- PREVENTION: Always bypass or mock asynchronous browser-only APIs (like image loading, audio decoding, and canvas rendering) when running unit tests under JSDOM.
+
 ## 2026-06-14 Zustand Subscription Leaks on Logout
 
 **SEVERITY:** Medium (causes Firestore permission errors and memory leaks when switching users)

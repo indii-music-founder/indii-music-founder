@@ -258,8 +258,6 @@ const getAllowedOrigins = (): string[] => {
         'https://indii-music-founder.web.app',
         'https://indii-music-founder.firebaseapp.com',
         'https://indii-studio.firebaseapp.com',
-        'https://indii-v-1-1.web.app',
-        'https://indii-v-1-1.firebaseapp.com',
         'app://.',  // Electron app
     ];
 
