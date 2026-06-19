@@ -244,6 +244,9 @@ describe('VideoGenerationService - Distributor Integration', () => {
     describe('Long-form video generation', () => {
         it('applies distributor constraints to long-form videos', async () => {
             (subscriptionService.canPerformAction as import("vitest").Mock).mockResolvedValue({ allowed: true });
+            
+            const spyGenerate = vi.spyOn(VideoGeneration, 'generateVideo').mockResolvedValue([{ id: 'mock-job', url: '', prompt: '' }]);
+            const spyWait = vi.spyOn(VideoGeneration, 'waitForJob').mockResolvedValue({ id: 'mock-job', url: 'https://test.mp4', status: 'completed' } as any);
 
             await VideoGeneration.generateLongFormVideo({
                 prompt: 'A long video',
@@ -251,15 +254,19 @@ describe('VideoGenerationService - Distributor Integration', () => {
                 userProfile: createMockProfile('distrokid')
             });
 
-            // Long-form generates multiple segments, each calling AutonomousIntelligence.generateVideo
-            const calls = vi.mocked(AutonomousIntelligence.generateVideo).mock.calls;
+            // Long-form generates multiple segments, each calling VideoGeneration.generateVideo
+            expect(spyGenerate).toHaveBeenCalled();
+            const calls = spyGenerate.mock.calls;
             expect(calls.length).toBeGreaterThan(0);
 
             // Each segment should have 9:16 for DistroKid
             const firstCallArgs = calls[0]![0];
-            expect(firstCallArgs.config?.aspectRatio).toBe('9:16');
+            expect(firstCallArgs.aspectRatio).toBe('9:16');
             // Prompt segments should contain Canvas optimization
             expect(firstCallArgs.prompt).toContain('Optimized for Spotify Canvas');
+
+            spyGenerate.mockRestore();
+            spyWait.mockRestore();
         });
     });
 });

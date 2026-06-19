@@ -151,6 +151,9 @@ describe('VideoGenerationService', () => {
         });
 
         it('should handle long-form video generation', async () => {
+            const spyGenerate = vi.spyOn(VideoGeneration, 'generateVideo').mockResolvedValue([{ id: 'long_1', url: '', prompt: 'long video' }]);
+            const spyWait = vi.spyOn(VideoGeneration, 'waitForJob').mockResolvedValue({ id: 'long_1', url: 'https://test.mp4', status: 'completed' } as any);
+
             const result = await VideoGeneration.generateLongFormVideo({
                 prompt: 'long video',
                 totalDuration: 60
@@ -159,7 +162,10 @@ describe('VideoGenerationService', () => {
             expect(result).toHaveLength(1);
             expect(result[0]!.id).toMatch(/^long_/);
             // Long-form should also call generateVideo for each segment
-            expect(AutonomousIntelligence.generateVideo).toHaveBeenCalled();
+            expect(spyGenerate).toHaveBeenCalled();
+
+            spyGenerate.mockRestore();
+            spyWait.mockRestore();
         });
     });
 
@@ -319,7 +325,7 @@ describe('VideoGenerationService', () => {
 
         it('should forward reference images in generateLongFormVideo', async () => {
             const spyGenerateVideo = vi.spyOn(VideoGeneration, 'generateVideo').mockResolvedValue([{ id: 'mock-job-id', url: '', prompt: 'mock' }]);
-            const spyWaitForJob = vi.spyOn(VideoGeneration, 'waitForJob').mockResolvedValue({ id: 'mock-job-id', resultUrl: 'https://storage.googleapis.com/segment-video.mp4' } as any);
+            const spyWaitForJob = vi.spyOn(VideoGeneration, 'waitForJob').mockResolvedValue({ id: 'mock-job-id', url: 'https://storage.googleapis.com/segment-video.mp4', status: 'completed' } as any);
 
             await VideoGeneration.generateLongFormVideo({
                 prompt: 'long video with refs',
