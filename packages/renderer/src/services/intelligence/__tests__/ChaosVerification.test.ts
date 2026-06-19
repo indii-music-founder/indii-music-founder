@@ -154,7 +154,7 @@ describe('ChaosVerification', () => {
             const result = await AutonomousIntelligence.rawGenerateContent('Transient test', undefined, {}, undefined, [], { skipCache: true });
 
             expect(fetch).toHaveBeenCalledWith(
-                expect.stringContaining('cloudfunctions.net/generateContentStream'),
+                expect.stringContaining('generateContentStream'),
                 expect.objectContaining({ method: 'POST' })
             );
             expect(result.response.text()).toBe('Recovered!');

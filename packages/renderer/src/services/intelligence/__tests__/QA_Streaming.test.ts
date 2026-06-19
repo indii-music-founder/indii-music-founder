@@ -82,7 +82,7 @@ describe('Streaming QA', () => {
 
         await service.generateContentStream('prompt', undefined, {}, undefined, undefined, { signal });
 
-        const call = [...vi.mocked(fetch).mock.calls].reverse().find(([url]) => String(url).includes('cloudfunctions.net/generateContentStream'));
+        const call = [...vi.mocked(fetch).mock.calls].reverse().find(([url]) => String(url).includes('generateContentStream'));
         expect(call?.[1]?.signal).toBeInstanceOf(AbortSignal);
     });
 

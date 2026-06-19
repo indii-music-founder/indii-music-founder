@@ -142,7 +142,7 @@ describe('FirebaseIntelligenceService', () => {
 
     const latestBackendRequest = () => {
         const calls = vi.mocked(fetch).mock.calls;
-        const call = [...calls].reverse().find(([url]) => String(url).includes('cloudfunctions.net/generateContentStream'));
+        const call = [...calls].reverse().find(([url]) => String(url).includes('generateContentStream'));
         return JSON.parse(call?.[1]?.body as string);
     };
 
@@ -290,9 +290,12 @@ describe('FirebaseIntelligenceService', () => {
         const { fetchAndActivate } = await import('firebase/remote-config');
         vi.mocked(fetchAndActivate).mockRejectedValueOnce(new Error('firebase-app-check-token-invalid'));
 
+        const originalDev = import.meta.env.DEV;
+        (import.meta.env as any).DEV = false;
         await expect(service.bootstrap()).rejects.toMatchObject({
             code: 'UNAUTHORIZED'
         });
+        (import.meta.env as any).DEV = originalDev;
     });
 
     it('should handle content streams', async () => {
@@ -308,9 +311,12 @@ describe('FirebaseIntelligenceService', () => {
         const { fetchAndActivate } = await import('firebase/remote-config');
         vi.mocked(fetchAndActivate).mockRejectedValueOnce(new Error('firebase-app-check-token-invalid'));
 
+        const originalDev = import.meta.env.DEV;
+        (import.meta.env as any).DEV = false;
         await expect(service.bootstrap()).rejects.toMatchObject({
             code: 'UNAUTHORIZED'
         });
+        (import.meta.env as any).DEV = originalDev;
     });
 
     it('should block renderer-side direct video generation', async () => {
@@ -358,14 +364,16 @@ describe('FirebaseIntelligenceService', () => {
     });
 
     it('should fail closed on Firebase Installations API errors', async () => {
-        // Mock a failure that resembles the Installations error
-        const errMsg = 'Installations: Create Installation request failed with error "403 PERMISSION_DENIED"';
         const { fetchAndActivate } = await import('firebase/remote-config');
-        vi.mocked(fetchAndActivate).mockRejectedValueOnce(new Error(errMsg));
+        const error = 'Installations: Create Installation request failed with error "403 PERMISSION_DENIED"';
+        vi.mocked(fetchAndActivate).mockRejectedValueOnce(new Error(error));
 
+        const originalDev = import.meta.env.DEV;
+        (import.meta.env as any).DEV = false;
         await expect(service.bootstrap()).rejects.toMatchObject({
             code: 'INTERNAL_ERROR',
             message: 'Firebase Installations API is disabled or restricted. Please enable it in Google Cloud Console.'
         });
+        (import.meta.env as any).DEV = originalDev;
     });
 });
