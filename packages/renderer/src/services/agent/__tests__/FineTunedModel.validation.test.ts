@@ -58,7 +58,7 @@ vi.mock('@/services/firebase', () => ({
 const ENDPOINT_FORMAT = /^projects\/\d+\/locations\/[a-z0-9-]+\/endpoints\/\d+$/;
 
 /** Expected GCP project number (from the existing registry) */
-const EXPECTED_PROJECT_NUMBER = '223837784072';
+const EXPECTED_PROJECT_NUMBER = '148015878263';
 
 // ============================================================================
 // Test Suite
