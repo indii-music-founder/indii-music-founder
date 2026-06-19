@@ -3,7 +3,7 @@
 ## 1. The Mobile "Cycle" Problem (Root Cause)
 
 - **Symptom:** On iOS (iPhone/iPad), clicking Google Sign-In takes the user to Google but returns them to the login page without being authenticated.
-- **Cause:** Mobile browsers (Safari) block third-party cookies/storage. If the app is on `indii.music` and the `authDomain` is `indii-v-1-1.firebaseapp.com`, the state cannot be shared between the handshake domain and the app domain.
+- **Cause:** Mobile browsers (Safari) block third-party cookies/storage. If the app is on `indii.music` and the `authDomain` is `indii-music-founder.firebaseapp.com`, the state cannot be shared between the handshake domain and the app domain.
 - **Solution:** Set `authDomain` to match the app's hosting domain (`indii.music`).
 
 ## 2. Firebase Dynamic Links (FDL) Deprecation
@@ -25,7 +25,7 @@
 - **Finding:** The previously hardcoded API key (`AIzaSyDQ...`) was identified as deleted in the GCP Console.
 - **Resolution:**
   - Migrated to the active Firebase web API key. The literal key is intentionally redacted from repository docs.
-  - Updated `appId` to `1:223837784072:web:3af738739465ea4095e9bd` and `measurementId` to `G-T6V8WPE7Z7` to match the active configuration in project settings.
+  - Updated `appId` to `1:148015878263:web:3af738739465ea4095e9bd` and `measurementId` to `G-T6V8WPE7Z7` to match the active configuration in project settings.
   - This resolves the `auth/invalid-credential` error occurring despite physically correct email/passwords.
 
 ## 5. Implementation Details

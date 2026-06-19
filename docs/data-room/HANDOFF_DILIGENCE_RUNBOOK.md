@@ -97,7 +97,7 @@ npm run test:e2e             # Playwright
 
 - Proprietary Ingestion ID (DPID): `PA-DPIDA-2025122604-E` (in `src/core/config/ingestion.ts:6-26`)
 - Party ID registered to: **"New Detroit Music LLC"** ⚠️ (does not match `indii LLC` in CLAUDE.md — **this is intentional finding A.3**, do not "fix" it)
-- GCP project: `223837784072`
+- GCP project: `148015878263`
 - 16 R7 Vertex endpoints live, 1 undefined (`keeper`)
 
 ---
@@ -582,7 +582,7 @@ A signed PDF report with:
 ## Repo Access
 
 - Read-only collaborator on `the-walking-agency-det/indii-Alpha-Electron`.
-- GCP read-only IAM on project `223837784072` (for endpoint reachability tests only).
+- GCP read-only IAM on project `148015878263` (for endpoint reachability tests only).
 - Stripe test-mode dashboard access (no live-mode access).
 - Firebase test-project access (no production access).
 

@@ -7,7 +7,7 @@ echo ""
 
 curl -s \
   -H "Authorization: Bearer $(gcloud auth print-access-token)" \
-  "https://us-central1-aiplatform.googleapis.com/v1/projects/223837784072/locations/us-central1/tuningJobs?pageSize=25" \
+  "https://us-central1-aiplatform.googleapis.com/v1/projects/148015878263/locations/us-central1/tuningJobs?pageSize=25" \
   | python3 -c "
 import json, sys
 d = json.load(sys.stdin)
