@@ -8,7 +8,7 @@ async function testSDK() {
 
   const ai = new GoogleGenAI({
     vertexai: {
-      project: 'indii-v-1-1',
+      project: 'indii-music-founder',
       location: 'us-central1',
     }
   });
