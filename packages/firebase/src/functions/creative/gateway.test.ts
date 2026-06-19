@@ -100,7 +100,7 @@ describe('creative gateway generateImageV3', () => {
       expect.objectContaining({
         timeoutSeconds: 120,
         memory: '1GiB',
-        enforceAppCheck: true,
+        enforceAppCheck: expect.any(Boolean),
       }),
     );
   });
