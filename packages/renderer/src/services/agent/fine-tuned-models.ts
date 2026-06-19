@@ -101,22 +101,14 @@ export const FINE_TUNED_MODEL_REGISTRY: Record<ValidAgentId, string> = buildReso
  * drift is visible immediately.
  */
 export function getFineTunedModel(agentId: ValidAgentId): string {
-    const isE2E =
-        (typeof window !== 'undefined' && window.location?.search.includes('e2e=true')) ||
-        import.meta.env.VITE_PLAYWRIGHT_E2E === 'true';
-
-    if (isE2E) {
-        return 'gemini-3.1-flash-lite'; // E2E fallback
+    const endpoint = FINE_TUNED_MODEL_REGISTRY[agentId];
+    if (!endpoint) {
+        throw new Error(`[FineTunedModels] Missing fine-tuned endpoint for agent "${agentId}"`);
     }
 
     if (!USE_FINE_TUNED_AGENTS) {
         // Fallback to the latest approved Pro model since fine-tuned endpoints are unavailable
         return 'gemini-3.1-pro-preview';
-    }
-
-    const endpoint = FINE_TUNED_MODEL_REGISTRY[agentId];
-    if (!endpoint) {
-        throw new Error(`[FineTunedModels] Missing fine-tuned endpoint for agent "${agentId}"`);
     }
 
     return endpoint;
