@@ -17,8 +17,12 @@ export const APPROVED_MODELS = {
     IMAGE_FAST: 'gemini-3-flash-preview',         // Fast image gen via responseModalities
     // Direct mode — bleeding-edge preview models for client-side SDK calls
     DIRECT_PRO: 'gemini-3-pro-image-preview',     // Nano Banana Pro — highest quality, 4K, 14 ref images
-    DIRECT_FAST: 'gemini-3-flash-preview',        // Nano Banana 2 — fast + Pro quality
-    DIRECT_LEGACY: 'gemini-3-flash-preview',      // Nano Banana OG — high-volume, low-latency
+    DIRECT_FAST: 'gemini-3.1-flash-image-preview',// Nano Banana 2 — fast + Pro quality
+    DIRECT_LEGACY: 'gemini-2.5-flash-image',      // Nano Banana OG — high-volume, low-latency
+    // Imagen 4 specifically for backwards compatibility and fallback options
+    IMAGEN_ULTRA: 'imagen-4.0-ultra-generate-001',
+    IMAGEN_PRO: 'imagen-4.0-generate-001',
+    IMAGEN_FAST: 'imagen-4.0-fast-generate-001',
     AUDIO_PRO: 'gemini-3.1-pro-preview',
     AUDIO_FLASH: 'gemini-3-flash-preview',
     AUDIO_TTS: 'gemini-2.5-pro-tts',
@@ -42,6 +46,9 @@ export const INTELLIGENCE_MODELS = {
         DIRECT_PRO: APPROVED_MODELS.DIRECT_PRO,
         DIRECT_FAST: APPROVED_MODELS.DIRECT_FAST,
         DIRECT_LEGACY: APPROVED_MODELS.DIRECT_LEGACY,
+        IMAGEN_ULTRA: APPROVED_MODELS.IMAGEN_ULTRA,
+        IMAGEN_PRO: APPROVED_MODELS.IMAGEN_PRO,
+        IMAGEN_FAST: APPROVED_MODELS.IMAGEN_FAST,
     },
     AUDIO: {
         PRO: APPROVED_MODELS.AUDIO_PRO,
@@ -209,6 +216,10 @@ function validateModels(): void {
 export const MODEL_DISPLAY_NAMES: Record<string, string> = {
     [APPROVED_MODELS.DIRECT_PRO]: 'Nano Banana Pro',
     [APPROVED_MODELS.DIRECT_FAST]: 'Nano Banana 2',
+    [APPROVED_MODELS.DIRECT_LEGACY]: 'Nano Banana OG',
+    [APPROVED_MODELS.IMAGEN_ULTRA]: 'Imagen 4 Ultra',
+    [APPROVED_MODELS.IMAGEN_PRO]: 'Imagen 4',
+    [APPROVED_MODELS.IMAGEN_FAST]: 'Imagen 4 Fast',
     [APPROVED_MODELS.VIDEO_PRO]: 'Veo 3.1',
     [APPROVED_MODELS.VIDEO_FAST]: 'Veo 3.1 Fast',
     [APPROVED_MODELS.VIDEO_LITE]: 'Veo 3.1 Lite',

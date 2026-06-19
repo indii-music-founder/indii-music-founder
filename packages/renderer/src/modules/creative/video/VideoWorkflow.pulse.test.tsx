@@ -118,6 +118,7 @@ vi.mock('@/services/video/VideoGenerationService', () => ({
         generateLongFormVideo: vi.fn(() => new Promise((resolve) => {
             resolveGeneratePromise = resolve;
         })),
+        estimateVideoCost: vi.fn((duration) => duration * 0.1),
     },
 }));
 

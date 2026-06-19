@@ -27,34 +27,36 @@
 
 import { GoogleGenAI } from "@google/genai";
 
-let cachedClient: GoogleGenAI | null = null;
+const clientsCache = new Map<string, GoogleGenAI>();
 
 /**
  * Get or create the Vertex AI client.
- * Lazy initialization — created on first use, reused thereafter.
+ * Lazy initialization — cached by project and location, reused thereafter.
  * ADC (Application Default Credentials) auth is automatic in Cloud Functions.
  */
-export function getVertexAIClient(): GoogleGenAI {
-  if (cachedClient) {
-    return cachedClient;
+export function getVertexAIClient(projectOverride?: string, locationOverride?: string): GoogleGenAI {
+  const projectId = projectOverride || process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT || 'indii-v-1-1';
+  const location = locationOverride || process.env.VITE_VERTEX_LOCATION || process.env.VERTEX_LOCATION || 'us-central1';
+
+  const cacheKey = `${projectId}:${location}`;
+  if (clientsCache.has(cacheKey)) {
+    return clientsCache.get(cacheKey)!;
   }
 
-  const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT || 'indii-v-1-1';
-  const location = process.env.VITE_VERTEX_LOCATION || process.env.VERTEX_LOCATION || 'us-central1';
-
-  cachedClient = new GoogleGenAI({
+  const client = new GoogleGenAI({
     vertexai: true,
     project: projectId,
     location: location,
   });
 
+  clientsCache.set(cacheKey, client);
   console.info(`[VertexClient] Initialized Vertex AI SDK for project=${projectId}, location=${location}`);
-  return cachedClient;
+  return client;
 }
 
 /**
  * Reset the client (for testing or if credentials change).
  */
 export function resetVertexAIClient(): void {
-  cachedClient = null;
+  clientsCache.clear();
 }

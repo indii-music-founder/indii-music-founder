@@ -164,7 +164,7 @@ export { generateReleaseDownloadUrl } from './releases/generateDownloadUrl';
 //   5. Deploy: firebase deploy --only functions
 //   CAUTION: Requires reCAPTCHA Enterprise configured in Firebase Console for all clients.
 // Item 331: Default ENFORCE to true — opt-out via SKIP_APP_CHECK=true for dev environments.
-const ENFORCE_APP_CHECK = true;
+const ENFORCE_APP_CHECK = process.env.SKIP_APP_CHECK !== "true" && process.env.ENFORCE_APP_CHECK !== "false";
 
 /**
  * Security Helper: Validate Organization Access
@@ -926,11 +926,21 @@ export const generateContentStream = functions
 
                 // Initialize Vertex AI Client (ADC auth, no API key)
                 const { getVertexAIClient } = await import("./lib/vertexClient");
-                const client = getVertexAIClient();
+                let client = getVertexAIClient();
+                let finalModelId = modelId;
+
+                // Match fine-tuned endpoint resource paths: projects/{project}/locations/{location}/endpoints/{endpointId}
+                const match = modelId.match(/^projects\/([^/]+)\/locations\/([^/]+)\/(endpoints\/[^/]+)$/);
+                if (match) {
+                    const [, parsedProject, parsedLocation, parsedEndpoint] = match;
+                    client = getVertexAIClient(parsedProject, parsedLocation);
+                    finalModelId = parsedEndpoint;
+                    functions.logger.info(`[generateContentStream] Routing to fine-tuned endpoint: project=${parsedProject}, location=${parsedLocation}, endpoint=${parsedEndpoint}`);
+                }
 
                 // Generate Content Stream
                 const result = await client.models.generateContentStream({
-                    model: modelId,
+                    model: finalModelId,
                     contents: contents, // SDK accepts standard Content format
                     config: config
                 });

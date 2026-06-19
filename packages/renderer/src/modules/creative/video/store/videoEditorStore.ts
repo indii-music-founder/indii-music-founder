@@ -463,3 +463,7 @@ export const useVideoEditorStore = create<VideoEditorState>((_set, get) => {
         }),
     };
 });
+
+if (typeof window !== 'undefined') {
+    (window as any).useVideoEditorStore = useVideoEditorStore;
+}

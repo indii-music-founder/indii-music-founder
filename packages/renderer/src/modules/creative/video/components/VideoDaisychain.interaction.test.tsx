@@ -103,11 +103,13 @@ vi.mock('@/services/video/VideoGenerationService', () => ({
         generateVideo: vi.fn(),
         generateLongFormVideo: vi.fn(),
         subscribeToJob: vi.fn().mockReturnValue(vi.fn()), // Returns unsubscribe
+        estimateVideoCost: vi.fn((duration) => duration * 0.1),
     },
     VideoGenerationService: class {
         generateVideo = vi.fn();
         generateLongFormVideo = vi.fn();
         subscribeToJob = vi.fn().mockReturnValue(vi.fn());
+        estimateVideoCost = vi.fn((duration) => duration * 0.1);
     }
 }));
 
