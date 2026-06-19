@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { WhiteGloveIngestionService } from './WhiteGloveIngestionService';
-import { useUploadQueueStore } from '@/core/store/slices/uploadQueueSlice'; // We'll need to mock the store or use a test instance
 
 // We need to mock firebase storage
 vi.mock('firebase/storage', () => ({
