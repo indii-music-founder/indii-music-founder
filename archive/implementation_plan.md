@@ -917,7 +917,7 @@ Implement full authentication (email/password + Google OAuth) for indii, with au
 
 | Component | Status |
 |-----------|--------|
-| Firebase Project | `indii-v-1-1` (configured) |
+| Firebase Project | `indii-music-founder` (configured) |
 | Current Auth | Email/Pass + Google + Anon |
 | User Profiles | Firestore (`users` collection) |
 | Organizations | Firestore with `members[]` |

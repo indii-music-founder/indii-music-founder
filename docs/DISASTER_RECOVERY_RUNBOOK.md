@@ -109,7 +109,7 @@ This document covers the disaster recovery procedure for a full or partial data 
 2. Verify function deployment status:
 
    ```bash
-   gcloud functions list --project=indii-v-1-1
+   gcloud functions list --project=indii-music-founder
    ```
 
 3. Redeploy from last known good commit:
