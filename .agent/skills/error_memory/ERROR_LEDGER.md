@@ -1,3 +1,13 @@
+## 2026-06-19 Vitest Dynamic Import Mock Hoisting (editImageFn is not a function)
+**SEVERITY:** High (Causes full test suite crashes for Firebase Function wrappers)
+
+**MISTAKE:**
+- FILES: `EditingService.test.ts`, any file dynamically importing `firebase/functions`.
+- ERROR: `TypeError: editImageFn is not a function` during Vitest runs.
+- CAUSE: When dynamically importing `firebase/functions` inside the tested service, `vi.mock('firebase/functions')` in the test file initializes correctly. However, if the mock uses variables (e.g. `mockEditImageFn`) that are defined with `const` above `vi.mock`, Vitest's hoisting mechanism lifts `vi.mock` ABOVE the variable declaration. This causes the mock implementation to capture `undefined`, crashing the test when the mocked function is called.
+- FIX: Use `vi.hoisted()` to initialize mock state and functions before `vi.mock` captures them. Example: `const { mockFn } = vi.hoisted(() => ({ mockFn: vi.fn() }));`
+- PREVENTION: Whenever relying on local variables inside a `vi.mock` factory, always wrap the variable declarations in `vi.hoisted()` to guarantee correct initialization order.
+
 ## 2026-06-19 The Illusion of the Surface Fix (Ghost Identity Leak in CI/CD)
 
 **SEVERITY:** Critical (causes "Project suspended" errors, blocks live functionality even when code is 100% clean)
