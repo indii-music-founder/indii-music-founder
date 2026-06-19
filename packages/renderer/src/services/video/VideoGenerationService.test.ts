@@ -231,35 +231,50 @@ describe('VideoGenerationService (Veo 3.1 Pipeline)', () => {
         });
 
         it('should segment prompt into multiple blocks for long duration (Pro scenario)', async () => {
+            const spyGenerate = vi.spyOn(service, 'generateVideo').mockResolvedValue([{ id: 'mock-job', url: '', prompt: '' }]);
+            const spyWait = vi.spyOn(service, 'waitForJob').mockResolvedValue({ id: 'mock-job', resultUrl: 'https://test.mp4' } as any);
+
             // 20s duration with 8s block size = 3 blocks (8, 8, 4)
             await service.generateLongFormVideo({
                 prompt: 'Epic space battle',
                 totalDuration: 20
             });
 
-            // firebaseAI.generateVideo should be called 3 times (one per segment)
-            expect(mocks.firebaseAI.generateVideo).toHaveBeenCalledTimes(3);
+            // service.generateVideo should be called 3 times (one per segment)
+            expect(spyGenerate).toHaveBeenCalledTimes(3);
 
             // Verify prompt format for each segment
-            const calls = mocks.firebaseAI.generateVideo.mock.calls;
+            const calls = spyGenerate.mock.calls;
             expect(calls[0]![0].prompt).toContain('Epic space battle');
             expect(calls[0]![0].prompt).toContain('Part 1/3');
             expect(calls[1]![0].prompt).toContain('Part 2/3');
             expect(calls[2]![0].prompt).toContain('Part 3/3');
+
+            spyGenerate.mockRestore();
+            spyWait.mockRestore();
         });
 
         it('should generate single block for short duration (Flash scenario)', async () => {
+            const spyGenerate = vi.spyOn(service, 'generateVideo').mockResolvedValue([{ id: 'mock-job', url: '', prompt: '' }]);
+            const spyWait = vi.spyOn(service, 'waitForJob').mockResolvedValue({ id: 'mock-job', resultUrl: 'https://test.mp4' } as any);
+
             // 5s duration with 8s block size = 1 block
             await service.generateLongFormVideo({
                 prompt: 'Quick reaction',
                 totalDuration: 5
             });
 
-            expect(mocks.firebaseAI.generateVideo).toHaveBeenCalledTimes(1);
-            expect(mocks.firebaseAI.generateVideo.mock.calls[0]![0].prompt).toContain('Part 1/1');
+            expect(spyGenerate).toHaveBeenCalledTimes(1);
+            expect(spyGenerate.mock.calls[0]![0].prompt).toContain('Part 1/1');
+
+            spyGenerate.mockRestore();
+            spyWait.mockRestore();
         });
 
         it('should pass firstFrame image to the first segment only', async () => {
+            const spyGenerate = vi.spyOn(service, 'generateVideo').mockResolvedValue([{ id: 'mock-job', url: '', prompt: '' }]);
+            const spyWait = vi.spyOn(service, 'waitForJob').mockResolvedValue({ id: 'mock-job', resultUrl: 'https://test.mp4' } as any);
+
             const startImage = 'data:image/png;base64,abc';
             await service.generateLongFormVideo({
                 prompt: 'continuation',
@@ -269,18 +284,21 @@ describe('VideoGenerationService (Veo 3.1 Pipeline)', () => {
             });
 
             // Should be called 2 times (10s / 8s block = 2 blocks)
-            expect(mocks.firebaseAI.generateVideo).toHaveBeenCalledTimes(2);
+            expect(spyGenerate).toHaveBeenCalledTimes(2);
 
             // First segment should have the image
-            const firstCall = mocks.firebaseAI.generateVideo.mock.calls[0]![0];
+            const firstCall = spyGenerate.mock.calls[0]![0];
             expect(firstCall.image).toEqual({
                 imageBytes: startImage,
                 mimeType: 'image/jpeg'
             });
 
             // Second segment should NOT have the image
-            const secondCall = mocks.firebaseAI.generateVideo.mock.calls[1]![0];
+            const secondCall = spyGenerate.mock.calls[1]![0];
             expect(secondCall.image).toBeUndefined();
+
+            spyGenerate.mockRestore();
+            spyWait.mockRestore();
         });
     });
 });

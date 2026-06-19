@@ -13,6 +13,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=JetBrains+Mono:wght@100..800&display=swap" rel="stylesheet">
   </head>
   <body>
+    <!-- Enforce Custom Domain -->
+    <script>
+      if (window.location.hostname.endsWith('web.app') || window.location.hostname.endsWith('firebaseapp.com')) {
+        window.location.replace('https://founder.indii.music' + window.location.pathname + window.location.search + window.location.hash);
+      }
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

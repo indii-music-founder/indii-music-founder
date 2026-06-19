@@ -649,29 +649,37 @@ export class VideoGenerationService {
                 }
 
                 // Generate segment — with firstFrame from previous segment's last frame
-                // Uses withRetry for production-grade error recovery:
-                //   - Retries on 429, 503, network errors with exponential backoff + jitter
-                //   - Fails fast on 400, 401, 403, quota, safety violations
-                //   - Respects Retry-After headers when present
+                // Uses withRetry for production-grade error recovery
                 const videoUrl = await this.withRetry(
-                    () => AutonomousIntelligence.generateVideo({
-                        prompt: segmentPrompt,
-                        model: options.model || DEFAULT_VIDEO_MODEL,
-                        image: previousLastFrame
-                            ? { imageBytes: previousLastFrame, mimeType: 'image/jpeg' }
-                            : undefined,
-                        config: stripUndefined({
+                    async () => {
+                        const results = await this.generateVideo({
+                            prompt: segmentPrompt,
+                            model: options.model || DEFAULT_VIDEO_MODEL,
+                            image: previousLastFrame
+                                ? { imageBytes: previousLastFrame, mimeType: 'image/jpeg' }
+                                : undefined,
                             aspectRatio: targetAspectRatio || '16:9',
-                            resolution: options.resolution,
+                            resolution: options.resolution as "720p" | "1080p" | "4k",
                             durationSeconds: BLOCK_DURATION,
                             negativePrompt: options.negativePrompt,
                             seed: options.seed,
                             referenceImages: options.referenceImages,
-                        }),
-                    }),
+                        });
+                        
+                        const jobId = results[0]?.id;
+                        if (!jobId) throw new Error('Failed to get jobId from generateVideo');
+                        
+                        // Wait for the video job to complete via backend webhook/status update
+                        const completedJob = await this.waitForJob(jobId, 600000); // 10 min timeout per segment
+                        const jobResultUrl = completedJob?.output?.url || completedJob?.videoUrl || completedJob?.url;
+                        if (!completedJob || !jobResultUrl) {
+                            throw new Error('Video generation failed or timed out without returning a result URL.');
+                        }
+                        return jobResultUrl;
+                    },
                     `Segment ${i + 1}/${numBlocks}`,
                     3,   // maxRetries
-                    2000 // baseDelayMs — start at 2s since Veo jobs are inherently slow
+                    2000 // baseDelayMs
                 );
 
                 segmentUrls.push(videoUrl);
