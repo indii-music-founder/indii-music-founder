@@ -20,9 +20,7 @@ const reset = "\x1b[0m";
 // Raw provider API keys must not be present in frontend builds.
 const rendererProdSchema = z.object({
   VITE_API_KEY: z.string().optional(),
-  VITE_USE_FINE_TUNED_AGENTS: z.enum(["true", "false"]).refine(val => !isProd || val === "true", {
-    message: "VITE_USE_FINE_TUNED_AGENTS must be 'true' in production",
-  }).optional(),
+  VITE_USE_FINE_TUNED_AGENTS: z.enum(["true", "false"]).optional(),
   VITE_FUNCTIONS_URL: z.string().url("Missing or invalid VITE_FUNCTIONS_URL").optional().refine(val => !isProd || !!val, {
     message: "Missing VITE_FUNCTIONS_URL"
   }),

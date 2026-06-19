@@ -14,7 +14,7 @@ graph TD
     subgraph MemoryLayers ["The 5-Layer Architecture"]
         Layer1["1. Ephemeral / Background<br/>(`AlwaysOnMemoryEngine`)"]
         Layer2["2. Episodic / Session<br/>(`CaptainsLogService`)"]
-        Layer3["3. Long-term Vector<br/>(`DeepHiveService`)"]
+        Layer3["3. Semantic / Somatic<br/>(`MemoryBankService`)"]
         Layer4["4. User Alignment<br/>(`UserMemoryService`)"]
         Layer5["5. Authoritative Moat<br/>(`CoreVaultService`)"]
     end
@@ -22,8 +22,9 @@ graph TD
     %% Storage Backends
     subgraph Storage ["Storage / Integration Layer"]
         SessionState["Local Session State"]
-        GEAP_MemBank["GEAP Memory Bank (Managed API)"]
-        GEAP_Vector["GEAP Vector Search"]
+        FirebaseCallable["manageSemanticMemory (Cloud Function proxy)"]
+        VertexEmbeddings["Vertex AI text-embedding-004"]
+        FirestoreVector["Firestore Vector Search (Agent Memories)"]
         Hybrid["Hybrid / Memory Profiles"]
         Firestore["Firestore (Authoritative Facts)"]
     end
@@ -38,8 +39,10 @@ graph TD
     Orchestrator -->|"Commits unquestionable truth"| Layer5
 
     Layer1 -.->|"Distills into"| SessionState
-    Layer2 -.->|"Migrated to"| GEAP_MemBank
-    Layer3 -.->|"Powered by"| GEAP_Vector
+    Layer2 -.->|"Migrated to"| FirebaseCallable
+    Layer3 -.->|"Queries via"| FirebaseCallable
+    FirebaseCallable -.->|"Generates Vectors"| VertexEmbeddings
+    VertexEmbeddings -.->|"Stores/Searches"| FirestoreVector
     Layer4 -.->|"Persisted as"| Hybrid
     Layer5 -.->|"Locked in"| Firestore
 
@@ -59,8 +62,9 @@ graph TD
     style Layer4 fill:#8A2BE2,color:#FFF
     style Layer5 fill:#39FF14,color:#000
     
-    style GEAP_MemBank fill:#FF8C00,color:#000
-    style GEAP_Vector fill:#FF8C00,color:#000
+    style FirebaseCallable fill:#FF8C00,color:#000
+    style VertexEmbeddings fill:#FF8C00,color:#000
+    style FirestoreVector fill:#FF8C00,color:#000
     style Firestore fill:#39FF14,color:#000
     
     style Hierarchy fill:#FF3333,color:#FFF,stroke-dasharray: 5 5
@@ -70,7 +74,7 @@ graph TD
 
 1. **Orchestration:** Every interaction runs through the `BigBrainEngine`. Rather than forcing an agent to query multiple databases, the engine aggregates memory from 5 distinct layers to build the `memoryContext` injected into the agent's prompt.
 2. **Layer 1 (Always-On):** Handles the immediate, ephemeral context of the current background tasks and active window states.
-3. **Layer 2 (Captain's Log):** Handles episodic memory. Instead of a raw transcript, the system catalogs summaries of past sessions. This is migrated to Google's managed GEAP Memory Bank API for automatic curation.
-4. **Layer 3 (Deep Hive):** Handles long-term semantic knowledge. When a user asks a complex question that relates to something discussed weeks ago, the `DeepHiveService` uses GEAP's Vector Search to pull the highly relevant chunks back into context.
+3. **Layer 2 (Captain's Log):** Handles episodic memory. The system catalogs summaries of past sessions. Highly valuable episodic insights are actively indexed into semantic memory.
+4. **Layer 3 (Semantic/Somatic):** Handles long-term cross-agent knowledge. The `MemoryBankService` securely calls the `manageSemanticMemory` Firebase backend proxy. The proxy uses Vertex AI `text-embedding-004` to generate vectors and relies on native Firestore Vector Search to retrieve semantic chunks (e.g. "purchased 6 gold strings") and pull them into the prompt.
 5. **Layer 4 (User Alignment):** Explicitly tracks user preferences, risk tolerance, and creative style constraints. It combines implicit auto-extraction with explicit user-defined memory profiles.
 6. **Layer 5 (Core Vault):** The most critical layer. This stores authoritative facts—financial numbers, legal obligations, and confirmed metadata. The `CoreVaultService` is strictly deterministic, backed by Firestore, and its contents **always** override conflicting memories surfaced by the semantic or episodic layers.

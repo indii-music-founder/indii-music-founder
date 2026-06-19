@@ -1,4 +1,6 @@
 import { logger } from '@/utils/logger';
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '@/services/firebase';
 
 export interface MemoryBankResult {
     id: string;
@@ -37,21 +39,30 @@ class MemoryBankService {
      * Add a new memory for a user.
      */
     async addMemory(userId: string, content: string): Promise<MemoryBankResult[]> {
-        void userId;
-        void this.redactPII(content);
-        logger.warn('[MemoryBank] Mem0 browser API access is disabled; backend memory sync is not configured.');
-        return [];
+        const redactedContent = this.redactPII(content);
+        try {
+            const callable = httpsCallable<{ action: string; memory: string }, { results: MemoryBankResult[] }>(functions, 'manageSemanticMemory');
+            const result = await callable({ action: 'add', memory: redactedContent });
+            return result.data.results || [];
+        } catch (error) {
+            logger.error('[MemoryBank] Failed to add memory via manageSemanticMemory proxy', error);
+            return [];
+        }
     }
 
     /**
      * Search memories for a user based on a query.
      */
     async searchMemories(userId: string, query: string, limit: number = 5): Promise<MemoryBankResult[]> {
-        void userId;
-        void limit;
-        void this.redactPII(query);
-        logger.warn('[MemoryBank] Mem0 browser API access is disabled; backend memory search is not configured.');
-        return [];
+        const redactedQuery = this.redactPII(query);
+        try {
+            const callable = httpsCallable<{ action: string; query: string; limit: number }, { results: MemoryBankResult[] }>(functions, 'manageSemanticMemory');
+            const result = await callable({ action: 'search', query: redactedQuery, limit });
+            return result.data.results || [];
+        } catch (error) {
+            logger.error('[MemoryBank] Failed to search memories via manageSemanticMemory proxy', error);
+            return [];
+        }
     }
 
     /**
@@ -59,7 +70,7 @@ class MemoryBankService {
      */
     async getAllMemories(userId: string): Promise<MemoryBankResult[]> {
         void userId;
-        logger.warn('[MemoryBank] Mem0 browser API access is disabled; backend memory listing is not configured.');
+        logger.warn('[MemoryBank] getAllMemories is not supported by manageSemanticMemory proxy yet.');
         return [];
     }
 

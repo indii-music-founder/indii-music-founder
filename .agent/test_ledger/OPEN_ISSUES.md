@@ -6166,6 +6166,7 @@ Therefore, no fix can be proposed or implemented.
   4. Force click or programmatic click the "Generate" button.
   5. The console outputs multiple 401 Unauthorized requests to Firebase Auth / Backend API endpoints, and no generation starts.
 - **User Impact:** Users cannot generate creative assets directly, disabling a core capability of the app.
+- **Test Update (2026-06-19):** The 'Generate' button state issue is partially fixed (it enables when typed). However, clicking it results in `ERR_CONNECTION_REFUSED` because the local Functions emulator is not running on port 5001.
 
 ---
 
@@ -6181,3 +6182,78 @@ Therefore, no fix can be proposed or implemented.
   2. Notice the desktop application is redirected to `/mobile-remote` route.
   3. If you navigate directly to `https://indii-music-studio.web.app/social`, the Firebase authentication context is destroyed and you are redirected to the Login page.
 - **User Impact:** Users cannot easily access the Social Media Department from the sidebar, and direct navigation requires re-authenticating.
+
+
+---
+
+### ISSUE-444: Agent Chat Fails with Firebase Installations API Error
+- **Status:** OPEN
+- **Severity:** 🔴 HIGH
+- **UX Dimension:** Error Communication / Core Functionality
+- **Module:** Brand Manager / Agent Chat
+- **Found:** 2026-06-19 by Founder
+- **Steps to Reproduce:**
+  1. Navigate to Brand Manager.
+  2. In the right panel context chat, initiate /analyze-brand.
+  3. Provide an artist input and run the audit.
+  4. Wait for the agent to process.
+  5. The generation fails and the chat displays Error: Firebase Installations API is disabled or restricted.
+- **Expected (acceptance):** The AI should successfully process the prompt, consult the KB, and return the JSON/markdown audit results.
+- **Honest fallback:** If KB is offline or the AI fails, it should gracefully fall back to a user-friendly error message, not a raw GCP/Firebase configuration error.
+- **User Impact:** Users cannot generate critical intelligence briefs; the feature is completely unusable.
+- **Test Update (2026-06-19):** Tested locally. Still failing. Console shows `403 PERMISSION_DENIED: Requests from referer http://localhost:4242/ are blocked`. The GCP API Key restrictions are still blocking localhost.
+
+---
+
+### ISSUE-445: Image Generation Fails with Internal Error
+- **Status:** OPEN
+- **Severity:** 🔴 HIGH
+- **UX Dimension:** Core Functionality
+- **Module:** Creative Director
+- **Found:** 2026-06-19 by Founder
+- **Steps to Reproduce:**
+  1. Navigate to Creative Director.
+  2. Enter an image generation prompt.
+  3. Click GENERATE.
+  4. Wait for processing.
+  5. Error toast appears: Generation failed: The Google generation service returned an internal error.
+- **Expected (acceptance):** The generative image service successfully returns an image asset that is placed onto the canvas and saved to the project assets.
+- **Honest fallback:** Clear error describing why generation failed (e.g. quota, network, etc.) instead of generic 500 error.
+- **User Impact:** The core Creative Director image generation pipeline is completely blocked.
+- **Test Update (2026-06-19):** Tested locally. Still failing, but the root cause on local dev is `ERR_CONNECTION_REFUSED` on `127.0.0.1:5001`. The `package.json` dev scripts and `firebase emulators:start` command are skipping the Functions emulator, so `generateImageV3` cannot be reached.
+
+---
+
+### ISSUE-446: Missing 'ID' (Detect Objects) and Zoom/Layers in Canvas Tools
+- **Status:** OPEN
+- **Severity:** 🟡 MEDIUM
+- **UX Dimension:** Action Discoverability
+- **Module:** Creative Director
+- **Found:** 2026-06-19 by Founder
+- **Steps to Reproduce:**
+  1. Navigate to Creative Director.
+  2. Click the CANVAS tab/tools.
+  3. Observe the available tools: Pan, Select/Move, Generate/Outpaint, Adaptive Crop, Flatten, Delete.
+  4. Note the absence of the ID (Detect Objects) button, Zoom, and Layers.
+- **Expected (acceptance):** The canvas tool palette should include the requested functionality (ID/Detect Objects, Zoom, Layers) as described in the module requirements.
+- **Honest fallback:** If not yet implemented, a disabled placeholder or Coming Soon tooltip should be present to manage expectations.
+- **User Impact:** Power users cannot manage canvas objects or utilize the advanced AI vision tools.
+
+
+---
+
+### ISSUE-447: Audio Analyzer Deep Extraction Fails on Upload
+- **Status:** OPEN
+- **Severity:** 🔴 HIGH
+- **UX Dimension:** Core Functionality / Error Communication
+- **Module:** Audio Analyzer / Distribution QC
+- **Found:** 2026-06-19 by Founder
+- **Steps to Reproduce:**
+  1. Navigate to Audio Analyzer.
+  2. Upload a valid .wav file to the Load Audio Master input.
+  3. The UI indicates Executing full technical and semantic audio scan...
+  4. The extraction fails and throws a toast: Deep Extraction failed. Autonomous service limits or connectivity issues detected.
+- **Expected (acceptance):** The audio analyzer successfully extracts BPM, key, mood, and other metadata from the uploaded audio file and displays the results in the UI.
+- **Honest fallback:** If the backend limits are reached, the error should state the explicit limitation (e.g., quota exceeded) or prompt the user to upgrade. If the service is offline, it should gracefully fail.
+- **User Impact:** Users cannot extract data from their music, completely blocking the AI distribution and ingestion pipeline.
+- **Test Update (2026-06-19):** Tested locally with a valid 1s `.wav`. The extraction fails due to the same `Firebase Installations API` 403 error blocking `FirebaseIntelligenceService` bootstrap. Also blocked by the missing local Functions emulator on port 5001.
