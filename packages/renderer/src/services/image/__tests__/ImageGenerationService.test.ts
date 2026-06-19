@@ -56,10 +56,6 @@ vi.mock('@/services/intelligence/FirebaseIntelligenceService', () => {
     };
 });
 
-vi.mock("@/services/intelligence/generators/DirectImageEditor", () => ({
-  editImageDirectly: vi.fn(),
-}));
-
 // Mock SubscriptionService and UsageTracker
 vi.mock("@/services/subscription/SubscriptionService", () => ({
   subscriptionService: {
@@ -281,14 +277,16 @@ describe("ImageGenerationService", () => {
   });
 
   describe("remixImage", () => {
-    it("should remix images with style reference via Direct SDK", async () => {
-      const { editImageDirectly } = await import("@/services/intelligence/generators/DirectImageEditor");
-      
+    it("should remix images with style reference via Cloud Function", async () => {
       const mockDirectResponse = {
-        url: "data:image/png;base64,remixeddata",
+        data: {
+          id: 'mock-id',
+          url: "data:image/png;base64,remixeddata",
+          prompt: "Apply this style",
+        }
       };
 
-      vi.mocked(editImageDirectly).mockResolvedValue(mockDirectResponse as any);
+      mockGenerateImage.mockResolvedValue(mockDirectResponse);
 
       const result = await ImageGeneration.remixImage({
         contentImage: { mimeType: "image/jpeg", data: "contentdata" },
@@ -298,7 +296,7 @@ describe("ImageGenerationService", () => {
 
       expect(result).toHaveProperty("url");
       expect(result!.url).toMatch(/^data:image\/png;base64,/);
-      expect(editImageDirectly).toHaveBeenCalledWith(
+      expect(mockGenerateImage).toHaveBeenCalledWith(
         expect.objectContaining({
           prompt: "Apply this style",
           image: { mimeType: "image/jpeg", data: "contentdata" },
