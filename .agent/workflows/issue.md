@@ -153,6 +153,8 @@ Read the issue entry carefully. Extract:
 
 Use the reproduction steps and module information to find the relevant source files.
 
+- **Flowchart Alignment:** Before making modifications, cross-reference the affected area with the system flowcharts in `docs/flowcharts/` (specifically [01-grand-unified-macro.md](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/docs/flowcharts/01-grand-unified-macro.md), [backend-only-api-boundary.md](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/docs/flowcharts/backend-only-api-boundary.md), and [entire-app-architecture.md](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/docs/flowcharts/entire-app-architecture.md)). Trace the exact boundary routing, verifying that if the fix touches external integrations or client interfaces, it aligns with our strict device pathways and backend-only API boundaries.
+
 ```
 Search strategy:
 1. grep for the module name in src/modules/

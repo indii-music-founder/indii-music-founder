@@ -18,6 +18,7 @@ description: Universal drop-anywhere recursive loop for progress review, unstick
 - Read the active task ledger in this order: current user objective/thread goal, `.agent/artifacts/task.md`, then root `task.md` only if it clearly matches the current goal.
 - Read the active implementation plan in this order: current user objective/thread goal, `.agent/artifacts/implementation_plan.md`, then root `implementation_plan.md` only if it clearly matches the current goal.
 - Read `.agent/skills/error_memory/ERROR_LEDGER.md` — Inject CI-breaking pattern awareness
+- **Mental Map Align:** Cross-reference the active task with the system flowcharts in `docs/flowcharts/` (specifically [01-grand-unified-macro.md](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/docs/flowcharts/01-grand-unified-macro.md), [backend-only-api-boundary.md](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/docs/flowcharts/backend-only-api-boundary.md), and [entire-app-architecture.md](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/docs/flowcharts/entire-app-architecture.md)) to guarantee that routing boundaries, device gates, and backend-only API mappings are preserved.
 - **Audit:** Re-read ALL user prompts. Check: Acknowledged? Implemented? Verified?
 - **Stale Ledger Guard:** If `task.md` or `implementation_plan.md` describes an unrelated old task, do not use it as the source of truth. State that it is stale and proceed from the current user objective plus current worktree evidence.
 
