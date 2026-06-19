@@ -468,6 +468,9 @@ export default function App() {
         }
     }, [isAnyPhone, currentModule]);
 
+    const activeModule = isAnyPhone ? 'mobile-remote' : currentModule;
+    const activeShowChrome = isAnyPhone ? false : showChrome;
+
     return (
         <AppInitializationProvider>
             {publicLegalPage ? (
@@ -482,7 +485,13 @@ export default function App() {
                         <VoiceProvider>
                             <ThemeProvider>
                                 <ToastProvider>
-                                    <AppContent currentModule={currentModule} showChrome={showChrome} isDesktop={isDesktop} isAnyPhone={isAnyPhone} shortcutsModal={shortcutsModal} />
+                                    <AppContent 
+                                        currentModule={activeModule} 
+                                        showChrome={activeShowChrome} 
+                                        isDesktop={isDesktop} 
+                                        isAnyPhone={isAnyPhone} 
+                                        shortcutsModal={shortcutsModal} 
+                                    />
                                 </ToastProvider>
                             </ThemeProvider>
                         </VoiceProvider>
