@@ -672,6 +672,7 @@ export class VideoGenerationService {
                         // Wait for the video job to complete via backend webhook/status update
                         const completedJob = await this.waitForJob(jobId, 600000); // 10 min timeout per segment
                         const jobResultUrl = completedJob?.output?.url || completedJob?.videoUrl || completedJob?.url;
+                        console.log('DEBUG_LONG_FORM:', { jobId, completedJob, jobResultUrl });
                         if (!completedJob || !jobResultUrl) {
                             throw new Error('Video generation failed or timed out without returning a result URL.');
                         }
