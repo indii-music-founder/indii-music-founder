@@ -4,7 +4,7 @@
 # Part of PRODUCTION_100 Item 65
 
 # Configuration
-PROJECT_ID="indii-v-1-1"
+PROJECT_ID="indii-music-founder"
 BUCKET_NAME="gs://indii-alpha-electron-backups"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 BACKUP_PATH="${BUCKET_NAME}/${TIMESTAMP}"

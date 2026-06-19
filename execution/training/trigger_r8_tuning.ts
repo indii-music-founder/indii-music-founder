@@ -21,7 +21,7 @@ async function triggerTuningJob(agentId: string) {
     });
 
     const client = await auth.getClient();
-    const projectId = 'indii-v-1-1';
+    const projectId = 'indii-music-founder';
     const location = 'us-central1';
     const accessToken = await client.getAccessToken();
 

@@ -41,8 +41,8 @@ import { getFunctions, httpsCallable } from 'firebase/functions';
 
 const firebaseConfig = {
     apiKey: process.env.VITE_FIREBASE_API_KEY || process.env.VITE_API_KEY,
-    authDomain: "indii-v-1-1.firebaseapp.com",
-    projectId: "indii-v-1-1",
+    authDomain: "indii-music-founder.firebaseapp.com",
+    projectId: "indii-music-founder",
 };
 
 const app = initializeApp(firebaseConfig);
