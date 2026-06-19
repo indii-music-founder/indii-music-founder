@@ -1,25 +1,24 @@
 # Handoff State
-**Updated:** 2026-06-19 17:11 EDT
+**Updated:** 2026-06-19 19:33 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
-5a17c52e7 fix(ai): harden intelligence service fallback and resolve CI blocks
-17da50c10 feat(ai): implement persistent semantic memory via Firestore Vector Search and update architecture flowcharts
-1b3f06e8f docs: enshrine the McLear Rule (never declare victory)
-8268d525b docs(agents): embed ghost identity sweep protocol into core workflows
-620995ecc fix(docs): completely eradicate all historical references to indii-v-1-1 from documentation and archives
-30b9760d5 fix(chore): globally purge all remaining indii-v-1-1 hardcoded values from scripts and load-tests
-3a1552474 fix(scripts): purge suspended project numbers and old app IDs from utility scripts
-02bfa4961 fix(agents): replace suspended project number with new project number in fine-tuned model registry
-6bf29359e fix: remove all remaining legacy indii-v-1-1 project and sender id hardcodings
-b3d159cf5 fix(backend): use indii-music-founder instead of suspended indii-v-1-1 project fallback
+d9a34be68 test: fix mock hoisting in EditingService.test.ts
+6ada12af5 feat(domain): enforce custom domain redirection via JS shield and document architecture
+9fa168f12 test(ledger): log ISSUE-CI pipeline failures
+c0595c357 fix(ci): resolve typing errors in video service and unused imports in firebase
+c519c7628 feat(dashboard, ingestion): integrate cost estimator widget and resume upload functions
+6e0ad84a4 fix(test): remove unused import
+eee359b52 feat(ingestion): add resumability controls to ingestion service
+f07f524ac feat(ingestion): bind upload tasks to store slice
+7fdebc598 feat(ingestion): create WhiteGloveIngestionService with TDD tracer bullets
+5d5d43445 chore: session checkpoint [17:11]
 ```
 
 ## Working State
 ```
  M python/tests/fixtures/e2e_interop/ts_to_py/envelope.json
-?? docs/flowcharts/white-glove-ingestion.md
 ```
 
 ## Decisions
