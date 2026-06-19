@@ -175,3 +175,6 @@ anonymous_users_audit_report.json
 .npm-cache-isolated-*
 .npm-cache-isolated-*/
 
+
+# Python test fixtures
+python/tests/fixtures/
