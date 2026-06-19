@@ -249,17 +249,18 @@ const requireAdmin = (context: functions.https.CallableContext) => {
 const getAllowedOrigins = (): string[] => {
     const origins = [
         'https://indii.music',
+        'https://app.indii.music',
+        'https://founder.indii.music',
+        'https://www.indii.music',
+        'https://studio.indii.music',
+        'https://indii-music-studio.web.app',
+        'https://indii-music-studio.firebaseapp.com',
+        'https://indii-music-founder.web.app',
+        'https://indii-music-founder.firebaseapp.com',
         'https://indii-studio.firebaseapp.com',
         'https://indii-v-1-1.web.app',
         'https://indii-v-1-1.firebaseapp.com',
-        'https://studio.indii.music',
-        'https://indii.music',
-        'https://indii.music',
-        'https://www.indii.music',
-        'https://app.indii.music',
-        'https://studio.indii.music',
         'app://.',  // Electron app
-        
     ];
 
     // Add localhost origins in emulator/development mode
