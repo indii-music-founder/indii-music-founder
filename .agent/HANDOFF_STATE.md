@@ -1,9 +1,12 @@
 # Handoff State
-**Updated:** 2026-06-18 17:23 EDT
+**Updated:** 2026-06-18 23:26 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+61f9b83c7 fix(appcheck): allow deployed app domains
+028c22639 fix(functions): allow ai stream cors preflight
+18a50655b chore: session checkpoint [17:23]
 6cbc7786b fix(ai): enforce backend-only api boundary
 e5b163f81 fix: prevent debug env leakage in renderer bundle (#183)
 3fa80d1d3 ci: block app check debug token in deploy builds (#182)
@@ -11,14 +14,13 @@ e5b163f81 fix: prevent debug env leakage in renderer bundle (#183)
 f062f3211 fix: resolve open legal and signup issues
 2f6f66a7b chore: session checkpoint [13:17]
 8bf3ae5da chore: session checkpoint [13:16]
-ffbf1d48f chore: session checkpoint [13:16]
-3a0640ab9 chore: session checkpoint [13:14]
-7bbd9bb5e chore: session checkpoint [13:12]
 ```
 
 ## Working State
 ```
  M python/tests/fixtures/e2e_interop/ts_to_py/envelope.json
+?? docs/flowcharts/backend-only-api-boundary.md
+?? docs/flowcharts/session-start-context-check.md
 ```
 
 ## Decisions
