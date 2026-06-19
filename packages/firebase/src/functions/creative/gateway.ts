@@ -18,7 +18,7 @@ import {
 type MediaKind = 'image' | 'video' | 'audio';
 type GatewayErrorCode = 'invalid-argument' | 'permission-denied' | 'failed-precondition' | 'not-found' | 'resource-exhausted' | 'deadline-exceeded' | 'unavailable' | 'internal';
 
-const ENFORCE_APP_CHECK = process.env.SKIP_APP_CHECK !== "true" && process.env.ENFORCE_APP_CHECK !== "false";
+const ENFORCE_APP_CHECK = process.env.NODE_ENV === 'production' && process.env.SKIP_APP_CHECK !== "true" && process.env.ENFORCE_APP_CHECK !== "false";
 
 interface GeminiInlineData {
   data?: string;

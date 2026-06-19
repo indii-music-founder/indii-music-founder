@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { Move, MousePointer2, ImagePlus, Eraser, Layers, Crop } from 'lucide-react';
+import { Move, MousePointer2, ImagePlus, Eraser, Layers, Crop, ZoomIn, ZoomOut, ScanSearch, Layers3 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface InfiniteCanvasHUDProps {
@@ -9,6 +9,10 @@ interface InfiniteCanvasHUDProps {
     removeCanvasImage: (id: string) => void;
     onFlatten?: () => void;
     onGenerateVariations?: () => void;
+    onZoomIn?: () => void;
+    onZoomOut?: () => void;
+    onToggleLayers?: () => void;
+    onDetectObjects?: () => void;
 }
 
 // Optimized with React.memo to prevent re-renders when parent's local state (e.g., offset/drag) changes
@@ -19,7 +23,11 @@ export const InfiniteCanvasHUD: React.FC<InfiniteCanvasHUDProps> = memo(({
     selectedCanvasImageId,
     removeCanvasImage,
     onFlatten,
-    onGenerateVariations
+    onGenerateVariations,
+    onZoomIn,
+    onZoomOut,
+    onToggleLayers,
+    onDetectObjects
 }) => {
     return (
         <TooltipProvider delayDuration={200}>
@@ -83,6 +91,72 @@ export const InfiniteCanvasHUD: React.FC<InfiniteCanvasHUDProps> = memo(({
                     </TooltipTrigger>
                     <TooltipContent side="bottom" className="bg-[#1a1a1a] text-white border-white/10 z-50">Adaptive Crop & Fill</TooltipContent>
                 </Tooltip>
+
+                <div className="w-px h-6 bg-white/10 mx-1"></div>
+
+                {onDetectObjects && (
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <button
+                                title="Detect Objects (ID)"
+                                onClick={onDetectObjects}
+                                className="p-2 rounded-full text-indigo-400 hover:text-white hover:bg-indigo-900/30 transition-colors focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:outline-none"
+                                aria-label="Detect Objects"
+                            >
+                                <ScanSearch size={18} />
+                            </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="bg-[#1a1a1a] text-white border-white/10 z-50">Detect Objects (ID)</TooltipContent>
+                    </Tooltip>
+                )}
+
+                {onToggleLayers && (
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <button
+                                title="Toggle Layers Panel"
+                                onClick={onToggleLayers}
+                                className="p-2 rounded-full text-gray-400 hover:text-white hover:bg-white/10 transition-colors focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:outline-none"
+                                aria-label="Toggle Layers Panel"
+                            >
+                                <Layers3 size={18} />
+                            </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="bg-[#1a1a1a] text-white border-white/10 z-50">Toggle Layers Panel</TooltipContent>
+                    </Tooltip>
+                )}
+
+                {onZoomOut && (
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <button
+                                title="Zoom Out"
+                                onClick={onZoomOut}
+                                className="p-2 rounded-full text-gray-400 hover:text-white hover:bg-white/10 transition-colors focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:outline-none"
+                                aria-label="Zoom Out"
+                            >
+                                <ZoomOut size={18} />
+                            </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="bg-[#1a1a1a] text-white border-white/10 z-50">Zoom Out</TooltipContent>
+                    </Tooltip>
+                )}
+
+                {onZoomIn && (
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <button
+                                title="Zoom In"
+                                onClick={onZoomIn}
+                                className="p-2 rounded-full text-gray-400 hover:text-white hover:bg-white/10 transition-colors focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:outline-none"
+                                aria-label="Zoom In"
+                            >
+                                <ZoomIn size={18} />
+                            </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="bg-[#1a1a1a] text-white border-white/10 z-50">Zoom In</TooltipContent>
+                    </Tooltip>
+                )}
 
                 <div className="w-px h-6 bg-white/10 mx-1"></div>
 
