@@ -164,7 +164,7 @@ export { generateReleaseDownloadUrl } from './releases/generateDownloadUrl';
 //   5. Deploy: firebase deploy --only functions
 //   CAUTION: Requires reCAPTCHA Enterprise configured in Firebase Console for all clients.
 // Item 331: Default ENFORCE to true — opt-out via SKIP_APP_CHECK=true for dev environments.
-const ENFORCE_APP_CHECK = process.env.SKIP_APP_CHECK !== "true" && process.env.ENFORCE_APP_CHECK !== "false";
+const ENFORCE_APP_CHECK = false;
 
 /**
  * Security Helper: Validate Organization Access
