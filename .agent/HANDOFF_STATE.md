@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-19 19:42 EDT
+**Updated:** 2026-06-19 19:54 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+8a4c93f37 feat(ci): implement api integrity and duplicate test scanner
+f157664e2 chore: session checkpoint [19:42]
 c9111004a chore: session checkpoint [19:33]
 d9a34be68 test: fix mock hoisting in EditingService.test.ts
 6ada12af5 feat(domain): enforce custom domain redirection via JS shield and document architecture
@@ -12,14 +14,11 @@ c0595c357 fix(ci): resolve typing errors in video service and unused imports in 
 c519c7628 feat(dashboard, ingestion): integrate cost estimator widget and resume upload functions
 6e0ad84a4 fix(test): remove unused import
 eee359b52 feat(ingestion): add resumability controls to ingestion service
-f07f524ac feat(ingestion): bind upload tasks to store slice
-7fdebc598 feat(ingestion): create WhiteGloveIngestionService with TDD tracer bullets
 ```
 
 ## Working State
 ```
- M packages/landing/src/page.tsx
- M python/tests/fixtures/e2e_interop/ts_to_py/envelope.json
+clean working tree
 ```
 
 ## Decisions
