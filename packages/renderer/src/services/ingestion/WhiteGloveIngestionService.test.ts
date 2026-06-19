@@ -6,7 +6,9 @@ import { useUploadQueueStore } from '@/core/store/slices/uploadQueueSlice'; // W
 vi.mock('firebase/storage', () => ({
     getStorage: vi.fn(),
     ref: vi.fn(),
-    uploadBytesResumable: vi.fn()
+    uploadBytesResumable: vi.fn(() => ({
+        on: vi.fn()
+    }))
 }));
 
 describe('WhiteGloveIngestionService', () => {
@@ -41,5 +43,21 @@ describe('WhiteGloveIngestionService', () => {
         
         expect(ref).toHaveBeenCalledWith(undefined, `ingest/white-glove/${mockArtistId}/audio/master_track.wav`);
         expect(uploadBytesResumable).toHaveBeenCalled();
+    });
+
+    it('should bind the upload task progress events to the store slice', async () => {
+        const mockFile = new File(['dummy content'], 'master_track.wav', { type: 'audio/wav' });
+        const { uploadBytesResumable } = await import('firebase/storage');
+        
+        // Setup a mock upload task with an 'on' method
+        const mockOn = vi.fn();
+        (uploadBytesResumable as ReturnType<typeof vi.fn>).mockReturnValueOnce({
+            on: mockOn
+        });
+
+        await WhiteGloveIngestionService.enqueueAsset(mockFile, 'audio', 'artist_123');
+
+        // We expect the 'state_changed' listener to be attached
+        expect(mockOn).toHaveBeenCalledWith('state_changed', expect.any(Function), expect.any(Function), expect.any(Function));
     });
 });
