@@ -6257,3 +6257,27 @@ Therefore, no fix can be proposed or implemented.
 - **Honest fallback:** If the backend limits are reached, the error should state the explicit limitation (e.g., quota exceeded) or prompt the user to upgrade. If the service is offline, it should gracefully fail.
 - **User Impact:** Users cannot extract data from their music, completely blocking the AI distribution and ingestion pipeline.
 - **Test Update (2026-06-19):** Tested locally with a valid 1s `.wav`. The extraction fails due to the same `Firebase Installations API` 403 error blocking `FirebaseIntelligenceService` bootstrap. Also blocked by the missing local Functions emulator on port 5001.
+
+### ISSUE-CI-27852206294: CI Pipeline Failure (Deploy to Firebase Hosting)
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** CI/CD
+- **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
+- **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/27852206294)
+- **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
+
+### ISSUE-CI-27849480875: CI Pipeline Failure (Deploy to Firebase Hosting)
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** CI/CD
+- **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
+- **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/27849480875)
+- **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
+
+### ISSUE-CI-27848641949: CI Pipeline Failure (Deploy to Firebase Hosting)
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** CI/CD
+- **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
+- **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/27848641949)
+- **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
