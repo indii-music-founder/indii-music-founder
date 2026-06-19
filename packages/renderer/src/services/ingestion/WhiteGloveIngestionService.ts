@@ -66,4 +66,37 @@ export class WhiteGloveIngestionService {
         
         return uploadId;
     }
+
+    /**
+     * Pauses an active upload task.
+     * @param uploadId The unique ID of the upload to pause.
+     */
+    static pauseUpload(uploadId: string): void {
+        const item = useStore.getState().uploadQueue.find(i => i.id === uploadId);
+        if (item && item.uploadTask) {
+            item.uploadTask.pause();
+        }
+    }
+
+    /**
+     * Resumes a paused upload task.
+     * @param uploadId The unique ID of the upload to resume.
+     */
+    static resumeUpload(uploadId: string): void {
+        const item = useStore.getState().uploadQueue.find(i => i.id === uploadId);
+        if (item && item.uploadTask) {
+            item.uploadTask.resume();
+        }
+    }
+
+    /**
+     * Cancels an active or paused upload task.
+     * @param uploadId The unique ID of the upload to cancel.
+     */
+    static cancelUpload(uploadId: string): void {
+        const item = useStore.getState().uploadQueue.find(i => i.id === uploadId);
+        if (item && item.uploadTask) {
+            item.uploadTask.cancel();
+        }
+    }
 }
