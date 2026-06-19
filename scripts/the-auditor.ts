@@ -17,8 +17,8 @@ config({ path: path.join(__dirname, '../.env') });
 
 const firebaseConfig = {
     apiKey: process.env.VITE_FIREBASE_API_KEY || process.env.VITE_API_KEY,
-    authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN || "indii-v-1-1.firebaseapp.com",
-    projectId: process.env.VITE_FIREBASE_PROJECT_ID || "indii-v-1-1",
+    authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN || "indii-music-founder.firebaseapp.com",
+    projectId: process.env.VITE_FIREBASE_PROJECT_ID || "indii-music-founder",
     storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET || "indii-alpha-electron",
     appId: process.env.VITE_FIREBASE_APP_ID || "1:148015878263:web:febc76c0bd56f28cdbb672"
 };

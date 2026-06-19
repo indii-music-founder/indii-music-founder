@@ -224,7 +224,7 @@ npm run build:studio 2>&1 | tail -20
 cd packages/firebase && npx tsc --noEmit 2>&1 | tail -20 && cd ../..
 
 # Firestore rules (if modified)
-firebase firestore:rules validate --project indii-v-1-1
+firebase firestore:rules validate --project indii-music-founder
 ```
 
 If any check fails, fix the error and re-run. Apply the **Two-Strike Rule**: if a fix fails twice, stop, log extensively, and propose an alternative approach.
