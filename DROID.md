@@ -389,6 +389,13 @@ The `build` script runs three steps sequentially:
 
 ## Operating Principles
 
+### -1. THE MCLEAR RULE (NEVER DECLARE VICTORY)
+
+> **"Never ever ever declare victory ever."**
+
+Before asserting that a problem is fixed, you MUST rigorously verify it from the user's perspective. Do not say "everything is completely fixed" if there are secondary side effects (like wiped local data) that the user will immediately encounter. State the exact status of the fix, acknowledge any new caveats, and never use the word "victory" or its equivalents.
+
+
 ### 0. CAVEMAN MODE (COMMUNICATION EFFICIENCY)
 
 > Token efficiency applies to **communication only**, NEVER to code.
