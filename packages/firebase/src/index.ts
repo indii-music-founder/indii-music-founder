@@ -55,6 +55,7 @@ export { createHandoffCode, redeemHandoffCode } from './functions/auth/handoff';
 // Agent Functions (Bug Reporting)
 export { reportBugFn } from './functions/agent/reportBugFn';
 export { workflowOrchestrator } from './functions/agent/workflowOrchestrator';
+export { manageSemanticMemory } from './functions/agent/manageSemanticMemory';
 
 // Security Functions
 export { persistFraudAlert } from './functions/security/persistFraudAlert';
@@ -932,7 +933,7 @@ export const generateContentStream = functions
                 if (match) {
                     const [, parsedProject, parsedLocation, parsedEndpoint] = match;
                     client = getVertexAIClient(parsedProject, parsedLocation);
-                    finalModelId = parsedEndpoint;
+                    finalModelId = modelId; // Keep full path so SDK doesn't mangle it into publishers/endpoints/models/...
                     functions.logger.info(`[generateContentStream] Routing to fine-tuned endpoint: project=${parsedProject}, location=${parsedLocation}, endpoint=${parsedEndpoint}`);
                 }
 

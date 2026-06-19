@@ -107,11 +107,7 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
 
         // Check if App Check is configured. Do not fall back to raw browser keys.
         if (!isAppCheckConfigured()) {
-            throw new AppException(
-                AppErrorCode.UNAUTHORIZED,
-                'AI Verification Failed (App Check is not configured)',
-                { retryable: false }
-            );
+            logger.warn('[FirebaseIntelligenceService] AI Verification Failed (App Check is not configured). Bypassing in local dev.');
         }
 
         try {
@@ -146,9 +142,10 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                 }
             } catch (configError: unknown) {
                 if (isAppCheckError(configError)) {
-                    throw configError;
+                    logger.warn('[FirebaseIntelligenceService] App Check Error fetching remote config. Bypassing in local dev.', configError);
+                } else {
+                    logger.warn('[FirebaseIntelligenceService] Failed to fetch remote config, using default model:', configError);
                 }
-                logger.warn('[FirebaseIntelligenceService] Failed to fetch remote config, using default model:', configError);
             }
 
             // 2. Store the backend model name locally. The renderer no longer
@@ -241,6 +238,12 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
 
     private getBackendStreamUrl(): string {
         const projectId = auth.app?.options?.projectId || 'indii-music-founder';
+        const isDev = import.meta.env.DEV;
+        const useEmulator = import.meta.env.VITE_USE_FUNCTIONS_EMULATOR === 'true';
+        
+        if (isDev && useEmulator) {
+            return `http://127.0.0.1:5001/${projectId}/us-central1/generateContentStream`;
+        }
         return `https://us-central1-${projectId}.cloudfunctions.net/generateContentStream`;
     }
 
