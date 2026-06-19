@@ -868,3 +868,20 @@
 - **Findings:** Current ledger state for this run family: ISSUE-435 🔴 HIGH production renderer build externalizes Node-only audio/distribution modules; ISSUE-436 🟡 MEDIUM cache-disabled validation breaks reCAPTCHA/App Check script loading; ISSUE-437 🔴 HIGH audio API proxy regression returns 404/SPA HTML; ISSUE-438 🔴 HIGH secret-shaped VITE env exposure regression remains in dev modules.
 - **Coverage Delta:** Scoped runner stdout passed unit/Python checks, but generated Playwright artifacts showed 4 connected-route startup failures. API/env regressions are now tracked as ISSUE-437/438 after ISSUE-432/433 moved forward; `npm run build` completed; preview deep links and static assets were rechecked.
 - **Artifacts:** `artifacts/mega_audio_analyzer_2026-06-16T1530_results.md`; JSON evidence in `artifacts/mega_audio_analyzer_2026-06-16T1530_live_api_evidence.json` and `artifacts/mega_audio_analyzer_2026-06-16T1530_preview_api_evidence.json`.
+
+---
+
+## 2026-06-19 - Detroit Producer - Live Staging Scenario Test
+- **Modules Tested:** Creative Director (Direct Generation, Boardroom Chat), Video Producer, Social Media Department, Distribution Department, Finance Department, Workflow Lab, Booking Agent.
+- **Duration:** ~12 minutes
+- **Findings:** 2 new issues (1 HIGH, 1 MEDIUM)
+- **Key Issues:**
+  - ISSUE-230: Creative Director Direct Mode Image Generation fails with 401 Unauthorized API error.
+  - ISSUE-231: Social Media Department button in sidebar routes to `/mobile-remote` instead of `/social`.
+- **Coverage Delta:**
+  - ✅ Live App walk-through of all major departments.
+  - ✅ Re-authentication E2E validation.
+  - ✅ Prompt injection and generation triggers verification.
+- **UX Score:** 20/30
+- **Recording:** Available in the conversation artifacts.
+- **Issues Filed:** ISSUE-230 and ISSUE-231
