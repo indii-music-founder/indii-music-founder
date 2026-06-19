@@ -4,34 +4,35 @@ This flowchart maps the request routing, authentication gates, and execution env
 
 ```mermaid
 graph TD
-    subgraph Client [Client: React SPA / Electron]
-        UI[User UI Action] -->|Call Function| CF_Call[HTTPS Callable / SDK Client]
-        UI -->|SSE Stream| SSE_Call[POST /api/agents/stream]
-        CF_Call -.->|Firebase ID Token| AuthGate[Firebase Auth Gate]
+    subgraph Client ["🖥️ CLIENT LAYER (React SPA / Electron)"]
+        UI["User UI Interaction Trigger"] -->|Call Function| CF_Call["HTTPS Callable SDK Client"]
+        UI -->|SSE Stream| SSE_Call["POST /api/agents/stream"]
+        CF_Call -.->|Firebase ID Token| AuthGate["Firebase Auth Gateway"]
         SSE_Call -.->|Firebase ID Token| AuthGate
     end
 
-    subgraph Backend [Backend: Firebase Cloud Functions / Cloud Run]
-        AuthGate -->|Token Verified| Handler[Request Handler]
-        Handler -->|Verify App Check| AppCheck{App Check Token?}
-        AppCheck -- Valid --> ExecHandler[Execute Business Logic]
+    subgraph Backend ["⚙️ BACKEND SERVICES (Firebase Cloud Functions)"]
+        AuthGate -->|1. Token Verified| Handler["Secure Request Handler"]
+        Handler -->|2. Verify App Check| AppCheck{"App Check Token?"}
+        AppCheck -- Valid Client --> ExecHandler["Execute Business Logic"]
         AppCheck -- Invalid/Dev Bypass --> ExecHandler
         
-        ExecHandler -->|Lazy Load SDK| VertexClient[VertexClient.ts getVertexAIClient]
-        VertexClient -->|Read ADC Credentials| ADC[Application Default Credentials]
+        ExecHandler -->|3. Lazy Load SDK| VertexClient["VertexClient.ts getVertexAIClient()"]
+        VertexClient -->|4. Resolve Auth| ADC["Application Default Credentials (ADC)"]
     end
 
-    subgraph GCP [Google Cloud Platform / Vertex AI API]
-        ADC -->|Service Account Token| VertexAPI[Vertex AI / Gemini API Endpoints]
-        ADC -->|Service Account Token| GCS[Google Cloud Storage Bucket]
-        ADC -->|Service Account Token| Firestore[Firestore Database]
+    subgraph GCP ["☁️ SECURE CLOUD ENVIRONMENT (GCP / Vertex AI API)"]
+        ADC -->|5. Service Account Token| VertexAPI["Vertex AI / Gemini API Endpoints"]
+        ADC -->|5. Service Account Token| GCS["Google Cloud Storage Bucket"]
+        ADC -->|5. Service Account Token| Firestore["Firestore Database"]
     end
 
-    classDef clientStyle fill:#e6f7ff,stroke:#1890ff,stroke-width:2px;
-    classDef backendStyle fill:#f6ffed,stroke:#52c41a,stroke-width:2px;
-    classDef gcpStyle fill:#fff7e6,stroke:#ffa940,stroke-width:2px;
+    %% Premium Investor-ready HSL Color Styling
+    classDef clientStyle fill:#0F172A,stroke:#00D4FF,stroke-width:2px,color:#F8FAFC;
+    classDef backendStyle fill:#1E1B4B,stroke:#D946EF,stroke-width:2px,color:#F8FAFC;
+    classDef gcpStyle fill:#1C1917,stroke:#FB923C,stroke-width:2px,color:#F8FAFC;
     
-    class UI,CF_Call,SSE_Call clientStyle;
+    class UI,CF_Call,SSE_Call,AuthGate clientStyle;
     class Handler,AppCheck,ExecHandler,VertexClient,ADC backendStyle;
     class VertexAPI,GCS,Firestore gcpStyle;
 ```
@@ -43,3 +44,4 @@ graph TD
 3. **App Check Validation:** The request passes through Firebase App Check to verify that it originates from an authentic client application rather than an automated script or unauthorized third-party site.
 4. **Lazy Initialization of Vertex Client:** The backend handler lazily initializes the `GoogleGenAI` client using Application Default Credentials (ADC). No API keys are passed or stored in configuration files.
 5. **GCP Service Execution:** The authenticated service account requests resources from Vertex AI, Cloud Storage, or Firestore on behalf of the user, returning the results securely back to the client.
+
