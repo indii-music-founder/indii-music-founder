@@ -74,7 +74,15 @@ function missingArcjetKeyResult(): ArcjetProtectionResult {
         productionRuntime,
     });
 
-    // In early stages or when Arcjet is not yet configured, fail open instead of blocking all API traffic.
+    if (productionRuntime) {
+        return {
+            allowed: false,
+            status: 503,
+            code: "SECURITY_CONFIG_MISSING",
+            message: "Request protection is not configured.",
+        };
+    }
+
     return { allowed: true };
 }
 
