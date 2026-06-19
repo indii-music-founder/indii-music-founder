@@ -1,5 +1,8 @@
 import { v4 as uuidv4 } from 'uuid';
 
+import { useStore } from '@/core/store';
+import { UploadStatus } from '@/core/store/slices/uploadQueueSlice';
+
 export class WhiteGloveIngestionService {
     /**
      * Enqueues an asset for ingestion, setting up a resumable Firebase storage upload.
@@ -18,7 +21,48 @@ export class WhiteGloveIngestionService {
         // Initiate the resumable upload
         const uploadTask = uploadBytesResumable(storageRef, file);
         
-        // TODO: Wire up Zustand store push to track uploadTask progress
+        // Map the string to the correct type for UploadQueueItem
+        const queueType = ['image', 'video', 'music', 'document', 'archive'].includes(assetType) 
+            ? assetType as 'image' | 'video' | 'music' | 'document' | 'archive' 
+            : 'document';
+            
+        // Push initial task to the store
+        useStore.getState().addUploadItems([{
+            id: uploadId,
+            fileName: file.name,
+            fileSize: file.size,
+            progress: 0,
+            status: 'pending',
+            type: queueType,
+            uploadTask
+        }]);
+        
+        // Listen to state changes
+        uploadTask.on('state_changed', 
+            (snapshot) => {
+                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                useStore.getState().updateUploadProgress(uploadId, progress);
+                
+                let status: UploadStatus = 'uploading';
+                switch (snapshot.state) {
+                    case 'paused':
+                        status = 'paused';
+                        break;
+                    case 'running':
+                        status = 'uploading';
+                        break;
+                }
+                // Only update status if it's different to avoid unnecessary renders
+                // In a real implementation we might just push the update always
+                useStore.getState().updateUploadStatus(uploadId, status);
+            },
+            (error) => {
+                useStore.getState().updateUploadStatus(uploadId, 'error', error.message);
+            },
+            () => {
+                useStore.getState().updateUploadStatus(uploadId, 'post-processing');
+            }
+        );
         
         return uploadId;
     }
