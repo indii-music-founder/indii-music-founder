@@ -138,6 +138,16 @@ grep -rn 'Here is the.*code\|As an AI' packages/renderer/src/ --include='*.ts' -
 - Boilerplate text → Delete the text from the file completely.
 - Lazy placeholders (`// ... rest of code`) → You MUST read the original file, synthesize the missing logic, and implement it fully. NEVER just delete the placeholder without implementing the code.
 
+### 1.9 Infrastructure Identity Leaks (The Ghost Project Sweep)
+```bash
+# Suspended project IDs and old app credentials
+grep -rn 'indii-v-1-1\|223837784072' packages/ scripts/ execution/ load-tests/ --include='*.ts' --include='*.js' --include='*.sh' --include='*.py' | grep -v node_modules
+```
+
+**AUTO-FIX:** For each finding:
+- Ghost Project IDs → You MUST replace them with the active project `indii-music-founder` (and its active ID `148015878263`). 
+- Check the GitHub CLI `gh secret list` immediately. If the ghost ID leaked into the code, it probably leaked into the CI/CD pipeline secrets.
+
 ---
 
 ## Phase 2: Small Game (Deep Logic Read)
