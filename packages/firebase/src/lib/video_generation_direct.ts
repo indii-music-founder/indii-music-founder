@@ -86,7 +86,7 @@ export async function generateVideoDirect(params: DirectVideoGenerationParams): 
             : FUNCTION_INTELLIGENCE_MODELS.VIDEO.PRO;
 
         // Vertex AI for production — ADC handles auth automatically in Cloud Functions
-        const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT || 'indii-v-1-1';
+        const projectId = process.env.VITE_VERTEX_PROJECT_ID || process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT || 'indii-music-founder';
         const ai = new GoogleGenAI({
             vertexai: true,
             project: projectId,
