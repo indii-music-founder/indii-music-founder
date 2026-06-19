@@ -105,7 +105,7 @@ describe('FirebaseIntelligenceService Configuration Mapping', () => {
 
     const latestBackendRequest = () => {
         const calls = vi.mocked(fetch).mock.calls;
-        const call = [...calls].reverse().find(([url]) => String(url).includes('cloudfunctions.net/generateContentStream'));
+        const call = [...calls].reverse().find(([url]) => String(url).includes('generateContentStream'));
         return JSON.parse(call?.[1]?.body as string);
     };
 

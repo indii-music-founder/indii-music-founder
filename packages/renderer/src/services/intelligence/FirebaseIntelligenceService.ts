@@ -142,7 +142,12 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                 }
             } catch (configError: unknown) {
                 if (isAppCheckError(configError)) {
-                    logger.warn('[FirebaseIntelligenceService] App Check Error fetching remote config. Bypassing in local dev.', configError);
+                    if (import.meta.env.DEV) {
+                        logger.warn('[FirebaseIntelligenceService] App Check Error fetching remote config. Bypassing in local dev.', configError);
+                    } else {
+                        logger.error('[FirebaseIntelligenceService] App Check failed in production. Failing closed.', configError);
+                        throw configError;
+                    }
                 } else {
                     logger.warn('[FirebaseIntelligenceService] Failed to fetch remote config, using default model:', configError);
                 }

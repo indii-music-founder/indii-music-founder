@@ -724,7 +724,7 @@ const originalFetch = globalThis.fetch?.bind(globalThis);
 globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
 
-    if (url.includes('cloudfunctions.net/generateContentStream')) {
+    if (url.includes('generateContentStream')) {
         if (init?.signal?.aborted) {
             throw new DOMException('The operation was aborted.', 'AbortError');
         }
