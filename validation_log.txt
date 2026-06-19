@@ -444,7 +444,7 @@ i18next: initialized {
  [32m✓[39m packages/renderer/src/services/agent/AgentService.security.test.ts [2m([22m[2m33 tests[22m[2m)[22m[33m 932[2mms[22m[39m
      [33m[2m✓[22m[39m should redact Credit Card numbers before sending to LLM [33m 923[2mms[22m[39m
 [90mstdout[2m | packages/renderer/src/services/agent/AgentArchitecture.test.ts[2m > [22m[2mMulti-Agent Architecture Tests[2m > [22m[2m4. Specialist Agents Verification[2m > [22m[2mshould pass superpower tools to Autonomous when executing
-[22m[39m[marketing] Using fine-tuned endpoint: projects/223837784072/locations/us-central1/endpoints/2166662979079110656
+[22m[39m[marketing] Using fine-tuned endpoint: projects/148015878263/locations/us-central1/endpoints/2166662979079110656
 BaseAgent calling AutonomousIntelligence.generateContent for marketing, iteration 1
 
 [90mstdout[2m | packages/renderer/src/services/agent/AgentArchitecture.test.ts[2m > [22m[2mMulti-Agent Architecture Tests[2m > [22m[2m6. Direct Delegation Verification[2m > [22m[2mshould bypass orchestrator when forcedAgentId is provided
@@ -460,7 +460,7 @@ BaseAgent calling AutonomousIntelligence.generateContent for marketing, iteratio
 [22m[39m[AgentIdentity] Minted identity for Creative Director (director): instance=9e325b8a..., fingerprint=d398229f2052...
 
 [90mstdout[2m | packages/renderer/src/services/agent/AgentArchitecture.test.ts[2m > [22m[2mMulti-Agent Architecture Tests[2m > [22m[2m6. Direct Delegation Verification[2m > [22m[2mshould bypass orchestrator when forcedAgentId is provided
-[22m[39m[director] Using fine-tuned endpoint: projects/223837784072/locations/us-central1/endpoints/8584292448082067456
+[22m[39m[director] Using fine-tuned endpoint: projects/148015878263/locations/us-central1/endpoints/8584292448082067456
 BaseAgent calling AutonomousIntelligence.generateContent for director, iteration 1
 
 [90mstdout[2m | packages/renderer/src/services/agent/AgentArchitecture.test.ts[2m > [22m[2mMulti-Agent Architecture Tests[2m > [22m[2m7. Glass Box UI Verification[2m > [22m[2mshould update store with thoughts when onProgress is triggered
@@ -768,7 +768,7 @@ Check the render method of `PopChild`.
 [22m[39m[ModelArmor] Scanning input...
 
 [90mstdout[2m | packages/renderer/src/services/agent/specialists/verification.test.ts[2m > [22m[2mSpecialist Agent Fleet Verification[2m > [22m[2mMarketing Director should be executable
-[22m[39m[marketing] Using fine-tuned endpoint: projects/223837784072/locations/us-central1/endpoints/2166662979079110656
+[22m[39m[marketing] Using fine-tuned endpoint: projects/148015878263/locations/us-central1/endpoints/2166662979079110656
 BaseAgent calling AutonomousIntelligence.generateContent for marketing, iteration 1
 
 [90mstdout[2m | packages/renderer/src/services/agent/specialists/verification.test.ts[2m > [22m[2mSpecialist Agent Fleet Verification[2m > [22m[2mMarketing Director should be executable
@@ -833,7 +833,7 @@ You are a SPOKE agent. Strict rules:
 [22m[39m[ModelArmor] Scanning input...
 
 [90mstdout[2m | packages/renderer/src/services/agent/specialists/verification.test.ts[2m > [22m[2mSpecialist Agent Fleet Verification[2m > [22m[2mFinance Director should be executable
-[22m[39m[finance] Using fine-tuned endpoint: projects/223837784072/locations/us-central1/endpoints/3270044887784882176
+[22m[39m[finance] Using fine-tuned endpoint: projects/148015878263/locations/us-central1/endpoints/3270044887784882176
 BaseAgent calling AutonomousIntelligence.generateContent for finance, iteration 1
 
 [90mstdout[2m | packages/renderer/src/services/agent/specialists/verification.test.ts[2m > [22m[2mSpecialist Agent Fleet Verification[2m > [22m[2mFinance Director should be executable
@@ -855,7 +855,7 @@ BaseAgent calling AutonomousIntelligence.generateContent for finance, iteration 
 [22m[39m[ModelArmor] Scanning input...
 
 [90mstdout[2m | packages/renderer/src/services/agent/specialists/verification.test.ts[2m > [22m[2mSpecialist Agent Fleet Verification[2m > [22m[2mProduction Director should be executable
-[22m[39m[producer] Using fine-tuned endpoint: projects/223837784072/locations/us-central1/endpoints/8255529675284021248
+[22m[39m[producer] Using fine-tuned endpoint: projects/148015878263/locations/us-central1/endpoints/8255529675284021248
 BaseAgent calling AutonomousIntelligence.generateContent for producer, iteration 1
 
 [90mstdout[2m | packages/renderer/src/services/agent/specialists/verification.test.ts[2m > [22m[2mSpecialist Agent Fleet Verification[2m > [22m[2mProduction Director should be executable
@@ -877,7 +877,7 @@ BaseAgent calling AutonomousIntelligence.generateContent for producer, iteration
 [22m[39m[ModelArmor] Scanning input...
 
 [90mstdout[2m | packages/renderer/src/services/agent/specialists/verification.test.ts[2m > [22m[2mSpecialist Agent Fleet Verification[2m > [22m[2mCreative Director should be executable
-[22m[39m[director] Using fine-tuned endpoint: projects/223837784072/locations/us-central1/endpoints/8584292448082067456
+[22m[39m[director] Using fine-tuned endpoint: projects/148015878263/locations/us-central1/endpoints/8584292448082067456
 BaseAgent calling AutonomousIntelligence.generateContent for director, iteration 1
 
 [90mstdout[2m | packages/renderer/src/services/agent/specialists/verification.test.ts[2m > [22m[2mSpecialist Agent Fleet Verification[2m > [22m[2mCreative Director should be executable
@@ -901,7 +901,7 @@ BaseAgent calling AutonomousIntelligence.generateContent for director, iteration
 [22m[39m[ModelArmor] Scanning input...
 
 [90mstdout[2m | packages/renderer/src/services/agent/specialists/verification.test.ts[2m > [22m[2mSpecialist Agent Fleet Verification[2m > [22m[2mScreenwriting Director should be executable
-[22m[39m[screenwriter] Using fine-tuned endpoint: projects/223837784072/locations/us-central1/endpoints/453043320864636928
+[22m[39m[screenwriter] Using fine-tuned endpoint: projects/148015878263/locations/us-central1/endpoints/453043320864636928
 BaseAgent calling AutonomousIntelligence.generateContent for screenwriter, iteration 1
 
 [90mstdout[2m | packages/renderer/src/services/agent/specialists/verification.test.ts[2m > [22m[2mSpecialist Agent Fleet Verification[2m > [22m[2mScreenwriting Director should be executable
@@ -981,7 +981,7 @@ You are the **Social Media Director** for indii — the artist's voice on every 
 [22m[39m[ModelArmor] Scanning input...
 
 [90mstdout[2m | packages/renderer/src/services/agent/specialists/verification.test.ts[2m > [22m[2mSpecialist Agent Fleet Verification[2m > [22m[2mPublicist Director should be executable
-[22m[39m[publicist] Using fine-tuned endpoint: projects/223837784072/locations/us-central1/endpoints/6584694213529567232
+[22m[39m[publicist] Using fine-tuned endpoint: projects/148015878263/locations/us-central1/endpoints/6584694213529567232
 BaseAgent calling AutonomousIntelligence.generateContent for publicist, iteration 1
 
 [90mstdout[2m | packages/renderer/src/services/agent/specialists/verification.test.ts[2m > [22m[2mSpecialist Agent Fleet Verification[2m > [22m[2mPublicist Director should be executable
@@ -1003,7 +1003,7 @@ BaseAgent calling AutonomousIntelligence.generateContent for publicist, iteratio
 [22m[39m[ModelArmor] Scanning input...
 
 [90mstdout[2m | packages/renderer/src/services/agent/specialists/verification.test.ts[2m > [22m[2mSpecialist Agent Fleet Verification[2m > [22m[2mRoad Director should be executable
-[22m[39m[road] Using fine-tuned endpoint: projects/223837784072/locations/us-central1/endpoints/6548665416510603264
+[22m[39m[road] Using fine-tuned endpoint: projects/148015878263/locations/us-central1/endpoints/6548665416510603264
 BaseAgent calling AutonomousIntelligence.generateContent for road, iteration 1
 
 [90mstdout[2m | packages/renderer/src/services/agent/specialists/verification.test.ts[2m > [22m[2mSpecialist Agent Fleet Verification[2m > [22m[2mRoad Director should be executable
@@ -1025,7 +1025,7 @@ BaseAgent calling AutonomousIntelligence.generateContent for road, iteration 1
 [22m[39m[ModelArmor] Scanning input...
 
 [90mstdout[2m | packages/renderer/src/services/agent/specialists/verification.test.ts[2m > [22m[2mSpecialist Agent Fleet Verification[2m > [22m[2mPublishing Director should be executable
-[22m[39m[publishing] Using fine-tuned endpoint: projects/223837784072/locations/us-central1/endpoints/8962594816781189120
+[22m[39m[publishing] Using fine-tuned endpoint: projects/148015878263/locations/us-central1/endpoints/8962594816781189120
 BaseAgent calling AutonomousIntelligence.generateContent for publishing, iteration 1
 
 [90mstdout[2m | packages/renderer/src/services/agent/specialists/verification.test.ts[2m > [22m[2mSpecialist Agent Fleet Verification[2m > [22m[2mPublishing Director should be executable
@@ -1047,7 +1047,7 @@ BaseAgent calling AutonomousIntelligence.generateContent for publishing, iterati
 [22m[39m[ModelArmor] Scanning input...
 
 [90mstdout[2m | packages/renderer/src/services/agent/specialists/verification.test.ts[2m > [22m[2mSpecialist Agent Fleet Verification[2m > [22m[2mLicensing Director should be executable
-[22m[39m[licensing] Using fine-tuned endpoint: projects/223837784072/locations/us-central1/endpoints/1071443844697948160
+[22m[39m[licensing] Using fine-tuned endpoint: projects/148015878263/locations/us-central1/endpoints/1071443844697948160
 BaseAgent calling AutonomousIntelligence.generateContent for licensing, iteration 1
 
 [90mstdout[2m | packages/renderer/src/services/agent/specialists/verification.test.ts[2m > [22m[2mSpecialist Agent Fleet Verification[2m > [22m[2mLicensing Director should be executable
@@ -1104,7 +1104,7 @@ You are a SPOKE agent. The **indii Co..."
 [22m[39m[ModelArmor] Scanning input...
 
 [90mstdout[2m | packages/renderer/src/services/agent/specialists/verification.test.ts[2m > [22m[2mSpecialist Agent Fleet Verification[2m > [22m[2mDevOps Director should be executable
-[22m[39m[devops] Using fine-tuned endpoint: projects/223837784072/locations/us-central1/endpoints/4200038210836889600
+[22m[39m[devops] Using fine-tuned endpoint: projects/148015878263/locations/us-central1/endpoints/4200038210836889600
 BaseAgent calling AutonomousIntelligence.generateContent for devops, iteration 1
 
 [90mstdout[2m | packages/renderer/src/services/agent/specialists/verification.test.ts[2m > [22m[2mSpecialist Agent Fleet Verification[2m > [22m[2mDevOps Director should be executable
@@ -1126,7 +1126,7 @@ BaseAgent calling AutonomousIntelligence.generateContent for devops, iteration 1
 [22m[39m[ModelArmor] Scanning input...
 
 [90mstdout[2m | packages/renderer/src/services/agent/specialists/verification.test.ts[2m > [22m[2mSpecialist Agent Fleet Verification[2m > [22m[2mSecurity Director should be executable
-[22m[39m[security] Using fine-tuned endpoint: projects/223837784072/locations/us-central1/endpoints/3481714070271295488
+[22m[39m[security] Using fine-tuned endpoint: projects/148015878263/locations/us-central1/endpoints/3481714070271295488
 BaseAgent calling AutonomousIntelligence.generateContent for security, iteration 1
 
 [90mstdout[2m | packages/renderer/src/services/agent/specialists/verification.test.ts[2m > [22m[2mSpecialist Agent Fleet Verification[2m > [22m[2mSecurity Director should be executable
@@ -1148,7 +1148,7 @@ BaseAgent calling AutonomousIntelligence.generateContent for security, iteration
 [22m[39m[ModelArmor] Scanning input...
 
 [90mstdout[2m | packages/renderer/src/services/agent/specialists/verification.test.ts[2m > [22m[2mSpecialist Agent Fleet Verification[2m > [22m[2mDistribution Director should be executable
-[22m[39m[distribution] Using fine-tuned endpoint: projects/223837784072/locations/us-central1/endpoints/4566237155537453056
+[22m[39m[distribution] Using fine-tuned endpoint: projects/148015878263/locations/us-central1/endpoints/4566237155537453056
 BaseAgent calling AutonomousIntelligence.generateContent for distribution, iteration 1
 
 [90mstdout[2m | packages/renderer/src/services/agent/specialists/verification.test.ts[2m > [22m[2mSpecialist Agent Fleet Verification[2m > [22m[2mDistribution Director should be executable
@@ -3603,7 +3603,7 @@ This ensures that you're testing the behavior the user would see in the browser.
 [22m[39m[ModelArmor] Scanning input...
 
 [90mstdout[2m | packages/renderer/src/services/agent/__tests__/Keeper_AgentContext.test.ts[2m > [22m[2m📚 Keeper: Context & Persistence Integration[2m > [22m[2mshould truncate context AND persist history during message flow
-[22m[39m[generalist] Using fine-tuned endpoint: projects/223837784072/locations/us-central1/endpoints/8440177260006211584
+[22m[39m[generalist] Using fine-tuned endpoint: projects/148015878263/locations/us-central1/endpoints/8440177260006211584
 BaseAgent calling AutonomousIntelligence.generateContent for generalist, iteration 1
 
 [90mstdout[2m | packages/renderer/src/services/agent/__tests__/Keeper_AgentContext.test.ts[2m > [22m[2m📚 Keeper: Context & Persistence Integration[2m > [22m[2mshould truncate context AND persist history during message flow
@@ -3762,7 +3762,7 @@ BaseAgent calling AutonomousIntelligence.generateContent for generalist, iterati
 [22m[39m[ModelArmor] Scanning input...
 
 [90mstdout[2m | packages/renderer/src/services/agent/__tests__/AgentMultimodal.test.ts[2m > [22m[2mAgent Multimodal Support[2m > [22m[2mshould include attachments in Autonomous requests
-[22m[39m[video] Using fine-tuned endpoint: projects/223837784072/locations/us-central1/endpoints/4778750762953998336
+[22m[39m[video] Using fine-tuned endpoint: projects/148015878263/locations/us-central1/endpoints/4778750762953998336
 BaseAgent calling AutonomousIntelligence.generateContent for video, iteration 1
 
 [90mstdout[2m | packages/renderer/src/services/agent/__tests__/AgentMultimodal.test.ts[2m > [22m[2mAgent Multimodal Support[2m > [22m[2mshould include attachments in Autonomous requests
@@ -3797,7 +3797,7 @@ BaseAgent calling AutonomousIntelligence.generateContent for video, iteration 1
 [22m[39m[ModelArmor] Scanning input...
 
 [90mstdout[2m | packages/renderer/src/services/agent/BaseAgentValidation.test.ts[2m > [22m[2mBaseAgent Tool Validation[2m > [22m[2mshould execute tool when args are valid
-[22m[39m[generalist] Using fine-tuned endpoint: projects/223837784072/locations/us-central1/endpoints/8440177260006211584
+[22m[39m[generalist] Using fine-tuned endpoint: projects/148015878263/locations/us-central1/endpoints/8440177260006211584
 BaseAgent calling AutonomousIntelligence.generateContent for generalist, iteration 1
 
 [90mstdout[2m | packages/renderer/src/services/agent/BaseAgentValidation.test.ts[2m > [22m[2mBaseAgent Tool Validation[2m > [22m[2mshould execute tool when args are valid
@@ -3818,7 +3818,7 @@ BaseAgent calling AutonomousIntelligence.generateContent for generalist, iterati
 [22m[39m[ModelArmor] Scanning input...
 
 [90mstdout[2m | packages/renderer/src/services/agent/BaseAgentValidation.test.ts[2m > [22m[2mBaseAgent Tool Validation[2m > [22m[2mshould block tool execution when args are invalid
-[22m[39m[generalist] Using fine-tuned endpoint: projects/223837784072/locations/us-central1/endpoints/8440177260006211584
+[22m[39m[generalist] Using fine-tuned endpoint: projects/148015878263/locations/us-central1/endpoints/8440177260006211584
 BaseAgent calling AutonomousIntelligence.generateContent for generalist, iteration 1
 
 [90mstdout[2m | packages/renderer/src/services/agent/BaseAgentValidation.test.ts[2m > [22m[2mBaseAgent Tool Validation[2m > [22m[2mshould block tool execution when args are invalid
@@ -5083,7 +5083,7 @@ Not implemented: HTMLMediaElement's load() method
 [22m[39m[AgentIdentity] Minted identity for Brand Director (brand): instance=c5947fe0..., fingerprint=6513a22a016a...
 
 [90mstdout[2m | packages/renderer/src/services/agent/specialists/specialists.test.ts[2m > [22m[2mSpecialist Agents Connection[2m > [22m[2mshould inherit indii Conductor superpowers via BaseAgent
-[22m[39m[brand] Using fine-tuned endpoint: projects/223837784072/locations/us-central1/endpoints/1396547442798755840
+[22m[39m[brand] Using fine-tuned endpoint: projects/148015878263/locations/us-central1/endpoints/1396547442798755840
 BaseAgent calling AutonomousIntelligence.generateContent for brand, iteration 1
 
  [32m✓[39m packages/renderer/src/services/agent/specialists/specialists.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 123[2mms[22m[39m
@@ -5213,7 +5213,7 @@ BaseAgent calling AutonomousIntelligence.generateContent for brand, iteration 1
 (node:42261) Warning: `--localstorage-file` was provided without a valid path
 (Use `node --trace-warnings ...` to show where the warning was created)
 [90mstdout[2m | packages/renderer/src/services/agent/BaseAgentUsage.test.ts[2m > [22m[2mBaseAgent Usage Defenses[2m > [22m[2mshould handle response WITHOUT usage method gracefully
-[22m[39m[generalist] Using fine-tuned endpoint: projects/223837784072/locations/us-central1/endpoints/8440177260006211584
+[22m[39m[generalist] Using fine-tuned endpoint: projects/148015878263/locations/us-central1/endpoints/8440177260006211584
 BaseAgent calling AutonomousIntelligence.generateContent for generalist, iteration 1
 
 [90mstdout[2m | packages/renderer/src/services/agent/BaseAgentUsage.test.ts[2m > [22m[2mBaseAgent Usage Defenses[2m > [22m[2mshould handle response WITHOUT usage method gracefully
@@ -5226,7 +5226,7 @@ BaseAgent calling AutonomousIntelligence.generateContent for generalist, iterati
 [22m[39m[ModelArmor] Scanning input...
 
 [90mstdout[2m | packages/renderer/src/services/agent/BaseAgentUsage.test.ts[2m > [22m[2mBaseAgent Usage Defenses[2m > [22m[2mshould handle response WITH usage method
-[22m[39m[generalist] Using fine-tuned endpoint: projects/223837784072/locations/us-central1/endpoints/8440177260006211584
+[22m[39m[generalist] Using fine-tuned endpoint: projects/148015878263/locations/us-central1/endpoints/8440177260006211584
 BaseAgent calling AutonomousIntelligence.generateContent for generalist, iteration 1
 
 [90mstdout[2m | packages/renderer/src/services/agent/BaseAgentUsage.test.ts[2m > [22m[2mBaseAgent Usage Defenses[2m > [22m[2mshould handle response WITH usage method
@@ -6362,7 +6362,7 @@ This ensures that you're testing the behavior the user would see in the browser.
 [22m[39m[ModelArmor] Scanning input...
 
 [90mstdout[2m | packages/renderer/src/services/agent/sdk/AgentSDK.test.ts[2m > [22m[2mAgent SDK Integration[2m > [22m[2mshould build and execute an agent using the SDK
-[22m[39m[generalist] Using fine-tuned endpoint: projects/223837784072/locations/us-central1/endpoints/8440177260006211584
+[22m[39m[generalist] Using fine-tuned endpoint: projects/148015878263/locations/us-central1/endpoints/8440177260006211584
 BaseAgent calling AutonomousIntelligence.generateContent for generalist, iteration 1
 
 [90mstdout[2m | packages/renderer/src/services/agent/sdk/AgentSDK.test.ts[2m > [22m[2mAgent SDK Integration[2m > [22m[2mshould build and execute an agent using the SDK
@@ -6375,7 +6375,7 @@ BaseAgent calling AutonomousIntelligence.generateContent for generalist, iterati
 [22m[39m[ModelArmor] Scanning input...
 
 [90mstdout[2m | packages/renderer/src/services/agent/sdk/AgentSDK.test.ts[2m > [22m[2mAgent SDK Integration[2m > [22m[2mshould validate tool execution with Test Harness
-[22m[39m[generalist] Using fine-tuned endpoint: projects/223837784072/locations/us-central1/endpoints/8440177260006211584
+[22m[39m[generalist] Using fine-tuned endpoint: projects/148015878263/locations/us-central1/endpoints/8440177260006211584
 BaseAgent calling AutonomousIntelligence.generateContent for generalist, iteration 1
 
 [90mstdout[2m | packages/renderer/src/services/agent/sdk/AgentSDK.test.ts[2m > [22m[2mAgent SDK Integration[2m > [22m[2mshould validate tool execution with Test Harness
@@ -7110,7 +7110,7 @@ TypeError: Cannot read properties of undefined (reading 'length')
 [22m[39m[ModelArmor] Scanning input...
 
 [90mstdout[2m | packages/renderer/src/services/agent/__tests__/AgentCollaboration.test.ts[2m > [22m[2mAgent Collaboration[2m > [22m[2mshould delegate a task using delegate_task
-[22m[39m[generalist] Using fine-tuned endpoint: projects/223837784072/locations/us-central1/endpoints/8440177260006211584
+[22m[39m[generalist] Using fine-tuned endpoint: projects/148015878263/locations/us-central1/endpoints/8440177260006211584
 BaseAgent calling AutonomousIntelligence.generateContent for generalist, iteration 1
 
 [90mstdout[2m | packages/renderer/src/services/agent/__tests__/AgentCollaboration.test.ts[2m > [22m[2mAgent Collaboration[2m > [22m[2mshould delegate a task using delegate_task
@@ -7132,7 +7132,7 @@ BaseAgent calling AutonomousIntelligence.generateContent for generalist, iterati
 [22m[39m[ModelArmor] Scanning input...
 
 [90mstdout[2m | packages/renderer/src/services/agent/__tests__/AgentCollaboration.test.ts[2m > [22m[2mAgent Collaboration[2m > [22m[2mshould consult multiple experts in parallel using consult_experts
-[22m[39m[generalist] Using fine-tuned endpoint: projects/223837784072/locations/us-central1/endpoints/8440177260006211584
+[22m[39m[generalist] Using fine-tuned endpoint: projects/148015878263/locations/us-central1/endpoints/8440177260006211584
 BaseAgent calling AutonomousIntelligence.generateContent for generalist, iteration 1
 
 [90mstdout[2m | packages/renderer/src/services/agent/__tests__/AgentCollaboration.test.ts[2m > [22m[2mAgent Collaboration[2m > [22m[2mshould consult multiple experts in parallel using consult_experts
