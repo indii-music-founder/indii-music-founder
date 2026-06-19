@@ -14,11 +14,10 @@ export const APPROVED_MODELS = {
     TEXT_FAST: 'gemini-3-flash-preview',          // Fast tasks — per MODEL_POLICY.md
     TEXT_LITE: 'gemini-3.1-flash-lite',           // Budget tier — per MODEL_POLICY.md
     IMAGE_GEN: 'gemini-3-pro-image-preview',      // Native image gen via responseModalities
-    IMAGE_FAST: 'gemini-3-flash-preview',         // Fast image gen via responseModalities
+    IMAGE_FAST: 'gemini-3.1-flash-image-preview', // Nano Banana 2 — fast image gen
     // Direct mode — bleeding-edge preview models for client-side SDK calls
     DIRECT_PRO: 'gemini-3-pro-image-preview',     // Nano Banana Pro — highest quality, 4K, 14 ref images
     DIRECT_FAST: 'gemini-3.1-flash-image-preview',// Nano Banana 2 — fast + Pro quality
-    DIRECT_LEGACY: 'gemini-2.5-flash-image',      // Nano Banana OG — high-volume, low-latency
     // Imagen 4 specifically for backwards compatibility and fallback options
     IMAGEN_ULTRA: 'imagen-4.0-ultra-generate-001',
     IMAGEN_PRO: 'imagen-4.0-generate-001',
@@ -45,7 +44,6 @@ export const INTELLIGENCE_MODELS = {
         FAST: APPROVED_MODELS.IMAGE_FAST,
         DIRECT_PRO: APPROVED_MODELS.DIRECT_PRO,
         DIRECT_FAST: APPROVED_MODELS.DIRECT_FAST,
-        DIRECT_LEGACY: APPROVED_MODELS.DIRECT_LEGACY,
         IMAGEN_ULTRA: APPROVED_MODELS.IMAGEN_ULTRA,
         IMAGEN_PRO: APPROVED_MODELS.IMAGEN_PRO,
         IMAGEN_FAST: APPROVED_MODELS.IMAGEN_FAST,
@@ -154,8 +152,6 @@ export const MODEL_PRICING = {
     // Direct mode image models (token-based pricing, same tier as text)
     'gemini-3-pro-image-preview': { input: 1.25, output: 10.00 },
     'gemini-3.1-flash-image-preview': { input: 0.15, output: 0.60 },
-    // Nano Banana OG (legacy tier)
-    'gemini-2.5-flash-image': { input: 0.10, output: 0.40 },
     // New Imagen 4 models pricing (matches equivalent quality tiers)
     'imagen-4.0-ultra-generate-001': { input: 1.25, output: 10.00 },
     'imagen-4.0-generate-001': { input: 0.15, output: 0.60 },
@@ -177,10 +173,10 @@ export function calculateVideoTimeout(durationSeconds: number): number {
 
 const FORBIDDEN_PATTERNS: RegExp[] = [
     /gemini-1\./i,            // Block all legacy 1.x models
-    /gemini-2\.0/i,           // Block 2.0 models — allow 2.5.x (TTS + Nano Banana OG)
+    /gemini-2\.0/i,           // Block 2.0 models — allow 2.5.x (TTS only)
     /imagen(?!-4)/i,          // Block all older Imagen models (replaced by Nano Banana, permit only imagen-4.0-*)
-    // NOTE: gemini-2.5-flash-image (Nano Banana OG) is ALLOWED for high-volume/low-latency
-    // NOTE: gemini-3-pro-image-preview and gemini-3.1-flash-image-preview are ALLOWED (Direct mode)
+    /gemini-2\.5-flash-image/i, // Block Nano Banana OG (legacy)
+    // NOTE: gemini-3-pro-image-preview and gemini-3.1-flash-image-preview are ALLOWED
 ];
 
 function validateModels(): void {
@@ -216,7 +212,6 @@ function validateModels(): void {
 export const MODEL_DISPLAY_NAMES: Record<string, string> = {
     [APPROVED_MODELS.DIRECT_PRO]: 'Nano Banana Pro',
     [APPROVED_MODELS.DIRECT_FAST]: 'Nano Banana 2',
-    [APPROVED_MODELS.DIRECT_LEGACY]: 'Nano Banana OG',
     [APPROVED_MODELS.IMAGEN_ULTRA]: 'Imagen 4 Ultra',
     [APPROVED_MODELS.IMAGEN_PRO]: 'Imagen 4',
     [APPROVED_MODELS.IMAGEN_FAST]: 'Imagen 4 Fast',
