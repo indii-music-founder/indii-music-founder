@@ -57,10 +57,10 @@ graph TD
     Consolidate --> Reply
 
     %% Styling
-    style UserContext fill:#39FF14,color:#000
-    style Parent fill:#8A2BE2,color:#FFF
-    style Transport fill:#FF00FF,color:#FFF
-    style Children fill:#00D4FF,color:#000
+    style UserContext fill:#0F172A,stroke:#39FF14,stroke-width:2px,color:#F8FAFC
+    style Parent fill:#1E1B4B,stroke:#8A2BE2,stroke-width:2px,color:#F8FAFC
+    style Transport fill:#2E1035,stroke:#FF00FF,stroke-width:2px,color:#F8FAFC
+    style Children fill:#082F49,stroke:#00D4FF,stroke-width:2px,color:#F8FAFC
 ```
 
 ## Transition Breakdown
