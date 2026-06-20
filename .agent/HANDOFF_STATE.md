@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-20 08:09 EDT
+**Updated:** 2026-06-20 08:15 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+ee93fdf3e chore: session checkpoint [08:09]
 47bf11f44 fix(remote+appcheck): hold mobile pairing through bg throttle; restore env-driven App Check
 22e59ebbe chore: session checkpoint [08:08]
 6a21c3384 chore: session checkpoint [07:59]
@@ -13,7 +14,6 @@
 cbb690a94 fix: vertexClient ADC auth bypass and agentLoopCron ESM resolution
 6a4966a5e chore: commit staged items (ERROR_LEDGER and flowcharts)
 ef2879e53 test(ledger): log ISSUE-CI pipeline failures
-c69b57b56 chore: session checkpoint [20:40]
 ```
 
 ## Working State
