@@ -2,6 +2,7 @@ export * from './services/AuthService.js';
 export * from './schemas/api.js';
 export * from './schemas/env.schema.js';
 export * from './schemas/workflowState.js';
+export * from './schemas/agentLoopState.js';
 export * from './types/ai.dto.js';
 export * from './types/errors.js';
 export * from './ipc/electron-api.types.js';
