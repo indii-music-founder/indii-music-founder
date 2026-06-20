@@ -285,7 +285,11 @@ vi.mock('@/core/store', () => {
         clearCompletedBatchTasks: vi.fn(),
         addBatchingTask: vi.fn(),
         updateBatchingTask: vi.fn(),
-        dispatchBatchQueue: vi.fn()
+        dispatchBatchQueue: vi.fn(),
+        // Agent orchestration slice
+        activeLoops: {},
+        setActiveLoops: vi.fn(),
+        updateLoopExecution: vi.fn()
     };
 
     const useStoreMock = Object.assign(
