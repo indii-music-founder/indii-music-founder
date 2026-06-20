@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-20 08:24 EDT
+**Updated:** 2026-06-20 08:29 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+f622b34dc chore: session checkpoint [08:24]
 bc972b5bd chore: session checkpoint [08:17]
 57ced1a62 chore: session checkpoint [08:15]
 ee93fdf3e chore: session checkpoint [08:09]
@@ -13,7 +14,6 @@ ee93fdf3e chore: session checkpoint [08:09]
 86f6865f3 chore: session checkpoint [07:55]
 297fe14bc chore: session checkpoint [07:53]
 1cae3655f chore: session checkpoint [07:44]
-cbb690a94 fix: vertexClient ADC auth bypass and agentLoopCron ESM resolution
 ```
 
 ## Working State
