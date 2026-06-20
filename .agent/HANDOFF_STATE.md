@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-20 09:39 EDT
+**Updated:** 2026-06-20 10:23 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+3af86ac4c docs(ledger): log ISSUE-AGENTS-RETRAIN — fine-tuned Vertex endpoints deleted, on base-model fallback
+8df691f26 chore: session checkpoint [09:39]
 ce2274b8a chore: session checkpoint [09:18]
 7ba118ec4 chore: session checkpoint [09:15]
 df58d7221 fix(vertex): correct global host + fall back dead fine-tuned endpoints to base model
@@ -12,13 +14,10 @@ df58d7221 fix(vertex): correct global host + fall back dead fine-tuned endpoints
 981ac902f chore: session checkpoint [08:45]
 39e830d15 chore: session checkpoint [08:41]
 701d8bc0e chore: session checkpoint [08:39]
-cfe66c4db chore: session checkpoint [08:38]
-89beab807 chore: session checkpoint [08:31]
 ```
 
 ## Working State
 ```
- M .agent/test_ledger/OPEN_ISSUES.md
  M .agent/workflows/WIIL-skill.md
  M artifacts/boardroom_live_home.png
  M artifacts/boardroom_result.png
