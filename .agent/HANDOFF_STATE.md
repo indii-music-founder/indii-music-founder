@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-20 10:23 EDT
+**Updated:** 2026-06-20 17:11 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+af0daf26d chore: session checkpoint [10:23]
 3af86ac4c docs(ledger): log ISSUE-AGENTS-RETRAIN — fine-tuned Vertex endpoints deleted, on base-model fallback
 8df691f26 chore: session checkpoint [09:39]
 ce2274b8a chore: session checkpoint [09:18]
@@ -13,12 +14,16 @@ df58d7221 fix(vertex): correct global host + fall back dead fine-tuned endpoints
 6c526e1ee chore: session checkpoint [08:49]
 981ac902f chore: session checkpoint [08:45]
 39e830d15 chore: session checkpoint [08:41]
-701d8bc0e chore: session checkpoint [08:39]
 ```
 
 ## Working State
 ```
  M .agent/workflows/WIIL-skill.md
+ M .agent/workflows/better.md
+ M .agent/workflows/hunter.md
+ M .agent/workflows/issue.md
+ M .agent/workflows/middle.md
+ M .agent/workflows/start.md
  M artifacts/boardroom_live_home.png
  M artifacts/boardroom_result.png
  M artifacts/live-agent-daisy-chain/coordination-report.html
@@ -27,6 +32,51 @@ df58d7221 fix(vertex): correct global host + fall back dead fine-tuned endpoints
  M deep-test-booking-1.png
  M deep-test-campaign-1.png
  M deep-test-publicist-1.png
+ M docs/PLATINUM_QUALITY_STANDARDS.md
+ M execution/training/check_r8_tuning_status.ts
+ M execution/training/trigger_r8_tuning.ts
+ M ft_export/brand_eval.jsonl
+ M ft_export/brand_train.jsonl
+ M ft_export/curriculum_eval.jsonl
+ M ft_export/curriculum_train.jsonl
+ M ft_export/devops_eval.jsonl
+ M ft_export/devops_train.jsonl
+ M ft_export/director_eval.jsonl
+ M ft_export/director_train.jsonl
+ M ft_export/distribution_eval.jsonl
+ M ft_export/distribution_train.jsonl
+ M ft_export/finance_eval.jsonl
+ M ft_export/finance_train.jsonl
+ M ft_export/generalist_eval.jsonl
+ M ft_export/generalist_train.jsonl
+ M ft_export/legal_eval.jsonl
+ M ft_export/legal_train.jsonl
+ M ft_export/licensing_eval.jsonl
+ M ft_export/licensing_train.jsonl
+ M ft_export/marketing_eval.jsonl
+ M ft_export/marketing_train.jsonl
+ M ft_export/merchandise_eval.jsonl
+ M ft_export/merchandise_train.jsonl
+ M ft_export/music_eval.jsonl
+ M ft_export/music_train.jsonl
+ M ft_export/producer_eval.jsonl
+ M ft_export/producer_train.jsonl
+ M ft_export/publicist_eval.jsonl
+ M ft_export/publicist_train.jsonl
+ M ft_export/publishing_eval.jsonl
+ M ft_export/publishing_train.jsonl
+ M ft_export/road_eval.jsonl
+ M ft_export/road_train.jsonl
+ M ft_export/screenwriter_eval.jsonl
+ M ft_export/screenwriter_train.jsonl
+ M ft_export/security_eval.jsonl
+ M ft_export/security_train.jsonl
+ M ft_export/social_eval.jsonl
+ M ft_export/social_train.jsonl
+ M ft_export/video_eval.jsonl
+ M ft_export/video_train.jsonl
+ M packages/firebase/src/index.ts
+ M packages/firebase/src/lib/vertexClient.ts
 ?? .agent/workflows/api.md
 ?? docs/API_REGISTRY.md
 ?? test-indii-music.cjs
