@@ -43,13 +43,18 @@ export function getVertexAIClient(projectOverride?: string, locationOverride?: s
     return clientsCache.get(cacheKey)!;
   }
 
+  // The 'global' location is served from the unprefixed host (aiplatform.googleapis.com);
+  // regional locations use the LOCATION-prefixed host. Building `global-aiplatform...`
+  // yields a 404, which silently broke every base-model (non-fine-tuned) request.
+  const baseUrl = location === 'global'
+    ? 'https://aiplatform.googleapis.com'
+    : `https://${location}-aiplatform.googleapis.com`;
+
   const client = new GoogleGenAI({
     vertexai: true,
     project: projectId,
     location: location,
-    httpOptions: {
-      baseUrl: `https://${location}-aiplatform.googleapis.com`
-    }
+    httpOptions: { baseUrl }
   });
 
   clientsCache.set(cacheKey, client);
