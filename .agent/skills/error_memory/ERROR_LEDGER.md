@@ -1,3 +1,13 @@
+## 2026-06-20 Vitest Zustand Mock Property Missing (useStore.getState()... is not a function)
+**SEVERITY:** High (Causes test suite crashes in components accessing new Zustand slice methods)
+
+**MISTAKE:**
+- FILES: `packages/renderer/src/test/setup.ts`, any component test using `useStore`.
+- ERROR: `TypeError: useStore.getState(...).updateLoopExecution is not a function` during Vitest runs.
+- CAUSE: When adding new methods to a Zustand slice (e.g., `updateLoopExecution` in `agentOrchestrationSlice`), the `useStoreMock` object defined in `packages/renderer/src/test/setup.ts` must be manually updated to include a mock implementation (e.g., `updateLoopExecution: vi.fn()`). If omitted, tests rendering components that call these methods will throw a `TypeError` when the component mounts or the method is invoked.
+- FIX: Update `useStoreMock` in `packages/renderer/src/test/setup.ts` with all newly added state properties and functions from the respective Zustand slices.
+- PREVENTION: Whenever extending the Zustand store with new state or methods, ALWAYS update the `useStoreMock` object in `setup.ts` to ensure tests have access to the complete interface.
+
 ## 2026-06-19 Vitest Dynamic Import Mock Hoisting (editImageFn is not a function)
 **SEVERITY:** High (Causes full test suite crashes for Firebase Function wrappers)
 
