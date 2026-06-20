@@ -89,3 +89,11 @@ graph TD
    * Electron's main process intercepts all standard outbound Google API requests via `onBeforeSendHeaders` (`RefererInjector`).
    * For security matching, the injector attaches the required verification header (`Referer: http://localhost:4242`) directly to the request before it leaves the client machine.
    * Firestore validates the combined payload, returning authorized data safely to the user's dashboard interface.
+
+## 2026-06-20 Correction — Production Web Path & Enforcement Reality
+
+This chart was Electron/localhost-centric and under-documented the **production web** (`indii.music`) AI path. Corrections from a real outage:
+
+1. **The Boardroom Conductor's backend is `generateContentStream`** (an `onRequest` HTTP function in `packages/firebase/src/index.ts`), reached via `FirebaseIntelligenceService.getBackendStreamUrl()` → `https://us-central1-<project>.cloudfunctions.net/generateContentStream`. It is **not** the `gateway.ts` callable shown above. App Check is verified **manually** inside the handler (`if (ENFORCE_APP_CHECK) { admin.appCheck().verifyToken(...) }`), guarded so the CORS preflight can still pass.
+2. **Enforcement is env-driven, and the prod default must be ON.** `ENFORCE_APP_CHECK = process.env.SKIP_APP_CHECK !== 'true' && process.env.ENFORCE_APP_CHECK !== 'false'`. A regression once hardcoded this to `false` ("temporarily disabled for migration testing"), silently bypassing App Check on ~30 functions in production — a violation of this chart's intent. Bypass belongs in dev only (`SKIP_APP_CHECK=true` in local/CI env), never as a committed constant.
+3. **Cold-start hazard (the actual outage cause):** `agentLoopCron.ts` imported the unbundled monorepo workspace package `@indii/shared` at module top-level. Because `index.ts` loads it, every function (including `generateContentStream`) crashed cold-start with `Cannot find module '@indii/shared'`, leaving a stale App-Check-enforcing revision live and returning misleading `401 Missing App Check token`. Never import unbundled `@indii/*` workspace packages at the top level of deployed function code. See ERROR_LEDGER 2026-06-20.
