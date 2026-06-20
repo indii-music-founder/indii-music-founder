@@ -1,3 +1,31 @@
+## 2026-06-20 Chat Double-Broken — App Check Missing siteKey + Dead Fine-Tuned Endpoints + Wrong 'global' Vertex Host
+
+**SEVERITY:** Critical (Boardroom Conductor + all Vertex AI agents 500/404; three stacked root causes, each masking the next)
+
+**MISTAKE / CHAIN (peeled one at a time via prod logs + direct Vertex calls):**
+1. **App Check siteKey unset.** `firebaseappcheck...recaptchaEnterpriseConfig` for the web app had `tokenTtl`+`riskAnalysis` defaults but **no `siteKey`** → backend `verifyToken` rejected every client token → `401`. The reCAPTCHA Enterprise key (`6LdAqPcs…`) and its allowed domains (incl. `indii.music`) were fine; App Check just wasn't told which key to trust. FIX: `PATCH recaptchaEnterpriseConfig?updateMask=siteKey` with the site key. (Verify config via `GET …/recaptchaEnterpriseConfig` + `x-goog-user-project` header; ADC needs a quota project.)
+2. **Fine-tuned Vertex endpoints all undeployed.** `gcloud ai endpoints list --region=us-central1` → `[]`. The client registry (`packages/renderer/src/services/agent/fine-tuned-models.ts`) hardwires all 20 agents to `endpoints/<id>` that 404. `generateContentStream` passed them straight to Vertex → `404 Endpoint not found` → `500`. FIX: committed-code fallback in `index.ts` — any `endpoints/…` model routes to the base model `gemini-3.1-flash-lite` (what they were tuned from). Default-ON (`process.env.DISABLE_FINE_TUNED !== 'false'`) so it survives CI deploys with no `.env`. Set `DISABLE_FINE_TUNED=false` to restore real endpoints once redeployed.
+3. **`vertexClient.ts` built the wrong host for `location='global'`.** `https://${location}-aiplatform.googleapis.com` → `https://global-aiplatform.googleapis.com` = `404`. The correct global host is `https://aiplatform.googleapis.com` (no prefix). This silently broke EVERY base-model (non-fine-tuned) Vertex call. FIX: special-case `location === 'global'` → `https://aiplatform.googleapis.com`. Verified `gemini-3.1-flash-lite:streamGenerateContent` returns `200` at the correct host (and `404` at the wrong one). NOTE: `gemini-3.1-flash-lite` exists only in `global`, not `us-central1`; the fallback explicitly uses `getVertexAIClient(undefined, 'global')`.
+
+**DURABILITY TRAP:** All `packages/firebase/.env*` are gitignored, and CI (`deploy.yml`) DOES `firebase deploy --only functions` with no `.env`. So runtime flags set only in `.env` (e.g. `DISABLE_FINE_TUNED`, `SKIP_APP_CHECK`) do NOT survive a CI deploy, and CI hardcodes `VITE_USE_FINE_TUNED_AGENTS: "true"` (still sends dead endpoints). PREVENTION: fixes that must survive CI belong in **committed code defaults**, not gitignored `.env`. The fallback + global-host fixes are committed; App Check enforces by default (`SKIP_APP_CHECK !== 'true'`) which is correct now that the siteKey is bound.
+
+**PREVENTION (general):** When a request "fails", peel layers from the logs — App Check `401` masked a Vertex `404` masked a wrong-host `404`. Verify each external dependency DIRECTLY (curl Vertex with `gcloud auth print-access-token`) instead of inferring through the app. Webhooks (stripe/telegram/inngest/pandadoc) do NOT enforce App Check, so fleet-wide enforcement is safe.
+
+## 2026-06-20 App Check Re-Enable Blocked — Live Web Client Can't Mint a Token reCAPTCHA Accepts
+
+**SEVERITY:** High (re-enabling App Check enforcement 401s ALL real Boardroom chat traffic → AI down)
+
+**MISTAKE:**
+- FILES: `packages/firebase/.env` (`SKIP_APP_CHECK`), `packages/firebase/src/index.ts` (`ENFORCE_APP_CHECK`, manual verify in `generateContentStream`), client `packages/renderer/src/services/firebase.ts` (App Check init) + `services/intelligence/FirebaseIntelligenceService.ts` (attaches `x-firebase-appcheck`).
+- TEST: Canary — set `SKIP_APP_CHECK=false`, redeployed ONLY `generateContentStream`, sent one real Boardroom message from `indii.music`. Logs: CORS preflight `204`, then the real POST `401` (one attempt took 303ms = it actually called `admin.appCheck().verifyToken()` and the token FAILED; a follow-up was `401` in 6ms = no/again-invalid token).
+- CONCLUSION: The deployed web client cannot produce an App Check token the backend will accept. The CI secret `VITE_FIREBASE_APP_CHECK_KEY` IS set (so the client initializes App Check), so the failure is downstream: the reCAPTCHA **Enterprise** key almost certainly does not list `indii.music` (and/or the web app isn't registered to that exact key in Firebase Console → App Check, or the secret's key value ≠ the registered key). This matches the original "fix(security): bypass App Check ... mitigate frontend API key restrictions" regression — someone hit this same wall and hardcoded the bypass instead of fixing the Console config.
+- FIX (immediate): Rolled back — `SKIP_APP_CHECK=true`, redeployed `generateContentStream`. AI restored. App Check remains OFF pending Console config. **`index.ts` is now correctly env-driven, so once the Console is fixed, re-enabling is just `.env` `SKIP_APP_CHECK=false` + redeploy — no code change.**
+- PREVENTION / TO RE-ENABLE LATER (needs Console/owner, can't be done from code):
+  1. Firebase Console → App Check → Apps: confirm the **web** app is registered with the **reCAPTCHA Enterprise** provider and note the exact site key.
+  2. GCP Console → reCAPTCHA Enterprise → that key → **Domains**: add `indii.music` (and any other prod hostnames). This is the most likely missing piece.
+  3. Confirm GitHub secret `VITE_FIREBASE_APP_CHECK_KEY` value === that registered site key.
+  4. ONLY THEN run the canary again (`SKIP_APP_CHECK=false`, redeploy `generateContentStream`, send one message, expect `200`). Never flip the whole fleet before the single-function canary returns `200`.
+
 ## 2026-06-20 Mobile Remote "Handoff Won't Hold" — Background Timer Throttle Starves Heartbeat
 
 **SEVERITY:** High (iPhone indii-remote pairing flaps connected↔reconnecting and eventually unpairs while driving the studio)

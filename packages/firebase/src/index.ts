@@ -930,8 +930,28 @@ export const generateContentStream = functions
                 let client = getVertexAIClient();
                 let finalModelId = modelId;
 
+                // FALLBACK: the fine-tuned Vertex endpoints were undeployed (all
+                // us-central1 endpoints 404). When DISABLE_FINE_TUNED is set, route any
+                // fine-tuned endpoint path to the base model the tuned set was trained
+                // from, so every agent keeps working. Unset DISABLE_FINE_TUNED once the
+                // tuned endpoints are redeployed. See ERROR_LEDGER 2026-06-20.
+                // The fine-tuned Vertex endpoints were undeployed (every us-central1
+                // endpoint 404s). Default to routing any fine-tuned endpoint path to the
+                // base model the tuned set was trained from, served from the 'global'
+                // location (where the gemini-3.1 models live, via aiplatform.googleapis.com).
+                // This is committed-code default (not env-dependent) so it survives CI
+                // deploys. Set DISABLE_FINE_TUNED=false to restore real fine-tuned routing
+                // once the endpoints are redeployed. See ERROR_LEDGER 2026-06-20.
+                const FINE_TUNED_FALLBACK_MODEL = 'gemini-3.1-flash-lite';
+                const isFineTunedEndpoint = /^projects\/[^/]+\/locations\/[^/]+\/endpoints\/[^/]+$/.test(modelId);
+                if (process.env.DISABLE_FINE_TUNED !== 'false' && isFineTunedEndpoint) {
+                    functions.logger.warn(`[generateContentStream] Fine-tuned endpoints unavailable; falling back ${modelId} -> ${FINE_TUNED_FALLBACK_MODEL} (global)`);
+                    finalModelId = FINE_TUNED_FALLBACK_MODEL;
+                    client = getVertexAIClient(undefined, 'global');
+                }
+
                 // Match fine-tuned endpoint resource paths: projects/{project}/locations/{location}/endpoints/{endpointId}
-                const match = modelId.match(/^projects\/([^/]+)\/locations\/([^/]+)\/(endpoints\/[^/]+)$/);
+                const match = finalModelId.match(/^projects\/([^/]+)\/locations\/([^/]+)\/(endpoints\/[^/]+)$/);
                 if (match) {
                     const [, parsedProject, parsedLocation, parsedEndpoint] = match;
                     client = getVertexAIClient(parsedProject, parsedLocation);
