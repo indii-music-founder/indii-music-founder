@@ -5,8 +5,9 @@ import {
     AgentLoopStatusEnum,
     AgentLoopIteration
 } from '@indii/shared';
-import { AgentContext } from '../../types';
+import { AgentContext } from '../types';
 import { logger } from '@/utils/logger';
+import { useStore } from '@/core/store';
 import { maestroBatchingService } from '../MaestroBatchingService';
 import { FirebaseIntelligenceService } from '@/services/intelligence/FirebaseIntelligenceService';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
@@ -37,6 +38,7 @@ export class AgentLoopService {
         };
 
         this.executionStore.set(executionId, execution);
+        useStore.getState().updateLoopExecution(execution);
         logger.info(`[AgentLoop] Starting loop execution ${executionId} for definition ${definition.id}`);
 
         // Start processing asynchronously so it doesn't block
@@ -63,6 +65,7 @@ export class AgentLoopService {
         while (execution.currentIteration <= definition.maxIterations && !isSatisfied) {
             execution.status = AgentLoopStatusEnum.enum.EXECUTING;
             execution.updatedAt = Date.now();
+            useStore.getState().updateLoopExecution(execution);
 
             logger.info(`[AgentLoop] Iteration ${execution.currentIteration}/${definition.maxIterations} starting.`);
 
@@ -75,6 +78,7 @@ export class AgentLoopService {
             // 3. Evaluate Output (LLM as Judge)
             execution.status = AgentLoopStatusEnum.enum.EVALUATING;
             execution.updatedAt = Date.now();
+            useStore.getState().updateLoopExecution(execution);
 
             const evaluation = await this.evaluateOutcome(definition, actionResult);
 
@@ -97,6 +101,7 @@ export class AgentLoopService {
                 logger.info(`[AgentLoop] Iteration ${execution.currentIteration} failed evaluation: ${evaluation.feedback}`);
                 execution.currentIteration++;
             }
+            useStore.getState().updateLoopExecution(execution);
         }
 
         if (!isSatisfied) {
@@ -106,6 +111,7 @@ export class AgentLoopService {
 
         execution.updatedAt = Date.now();
         this.executionStore.set(execution.id, execution);
+        useStore.getState().updateLoopExecution(execution);
     }
 
     private buildIterationPrompt(definition: AgentLoopDefinition, execution: AgentLoopExecution): string {
@@ -131,9 +137,8 @@ export class AgentLoopService {
             // For now, mapping to Maestro batching for robust execution.
             const traceId = uuidv4();
             const results = await maestroBatchingService.executeBatch([{
-                agentId: 'assistant',
-                prompt,
-                description: 'Agent Loop Action',
+                agentId: 'generalist',
+                description: prompt,
                 params: { projectId: context.projectId, traceId },
                 context,
                 priority: 'HIGH',

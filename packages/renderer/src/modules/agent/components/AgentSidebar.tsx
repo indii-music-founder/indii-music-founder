@@ -1,8 +1,8 @@
 import React from 'react';
-import { Map, List, Mail, Globe, Settings, MessageSquare, ListTodo } from 'lucide-react';
+import { Map, List, Mail, Globe, Settings, MessageSquare, ListTodo, RotateCcw } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
-type AgentTab = 'scout' | 'campaigns' | 'inbox' | 'browser' | 'chat' | 'tasks';
+export type AgentTab = 'scout' | 'campaigns' | 'inbox' | 'browser' | 'chat' | 'tasks' | 'loops';
 
 interface AgentSidebarProps {
     activeTab: AgentTab;
@@ -15,6 +15,7 @@ const NAV_ITEMS: Array<{ id: AgentTab; icon: React.ComponentType<{ size?: string
     { id: 'chat', icon: MessageSquare, translationKey: 'agent.tabs.chat' },
     { id: 'tasks', icon: ListTodo, translationKey: 'agent.tabs.tasks' },
     { id: 'campaigns', icon: List, translationKey: 'agent.tabs.campaigns' },
+    { id: 'loops', icon: RotateCcw, translationKey: 'agent.tabs.loops' },
     { id: 'inbox', icon: Mail, translationKey: 'agent.tabs.inbox' },
 ];
 
