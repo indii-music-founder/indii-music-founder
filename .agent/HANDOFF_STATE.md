@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-20 08:17 EDT
+**Updated:** 2026-06-20 08:24 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+bc972b5bd chore: session checkpoint [08:17]
 57ced1a62 chore: session checkpoint [08:15]
 ee93fdf3e chore: session checkpoint [08:09]
 47bf11f44 fix(remote+appcheck): hold mobile pairing through bg throttle; restore env-driven App Check
@@ -13,11 +14,11 @@ ee93fdf3e chore: session checkpoint [08:09]
 297fe14bc chore: session checkpoint [07:53]
 1cae3655f chore: session checkpoint [07:44]
 cbb690a94 fix: vertexClient ADC auth bypass and agentLoopCron ESM resolution
-6a4966a5e chore: commit staged items (ERROR_LEDGER and flowcharts)
 ```
 
 ## Working State
 ```
+ M .agent/skills/error_memory/ERROR_LEDGER.md
  M .agent/test_ledger/OPEN_ISSUES.md
  M .agent/workflows/WIIL-skill.md
  M artifacts/boardroom_live_home.png
