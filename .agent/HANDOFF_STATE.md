@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-20 08:45 EDT
+**Updated:** 2026-06-20 08:49 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+981ac902f chore: session checkpoint [08:45]
 39e830d15 chore: session checkpoint [08:41]
 701d8bc0e chore: session checkpoint [08:39]
 cfe66c4db chore: session checkpoint [08:38]
@@ -13,7 +14,6 @@ f622b34dc chore: session checkpoint [08:24]
 bc972b5bd chore: session checkpoint [08:17]
 57ced1a62 chore: session checkpoint [08:15]
 ee93fdf3e chore: session checkpoint [08:09]
-47bf11f44 fix(remote+appcheck): hold mobile pairing through bg throttle; restore env-driven App Check
 ```
 
 ## Working State
