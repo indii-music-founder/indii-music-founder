@@ -76,11 +76,11 @@ To ensure 99.9% reliability in probabilistic AI workflows, indii operates on a r
 ├──────────────────────────────────────────────────────────────┤
 │  Layer 2: ORCHESTRATION (Intelligence)                       │
 │  A2A swarm protocol — reasons, routes, manages               │
-│  → agents/ + src/services/agent/                             │
+│  → agents/ + packages/renderer/src/services/agent/           │
 ├──────────────────────────────────────────────────────────────┤
 │  Layer 3: EXECUTION (Deterministic)                          │
 │  Hard-coded scripts for API calls, file ops, Proprietary Ingestion IP generation  │
-│  → execution/ + python/tools/                                │
+│  → execution/ + python/                                      │
 └──────────────────────────────────────────────────────────────┘
 
 **The Multiplier Effect:** By pushing complexity into deterministic execution layers, we avoid the "compound error" trap (where 90% accuracy over 5 biological steps leads to 59% overall success). Determinism at the base allows for reliability at the peak.
@@ -300,16 +300,16 @@ await timelineOrchestrator.activateTimeline('user-123', timeline.id);
 ### Architecture
 
 ```
-src/services/timeline/
+packages/renderer/src/services/timeline/
 ├── TimelineOrchestratorService.ts    # Core engine (creation, lifecycle, progress)
 ├── TimelinePhaseTemplates.ts         # 4 pre-built campaign templates
 ├── TimelineTypes.ts                  # Type definitions
 └── TimelineOrchestratorService.test.ts  # 25 unit tests
 
-src/services/agent/tools/
+packages/renderer/src/services/agent/tools/
 └── TimelineTools.ts                  # 9 agent tools (registered in TOOL_REGISTRY)
 
-functions/src/timeline/
+packages/firebase/src/timeline/
 ├── pollTimelineMilestones.ts         # Cloud Scheduler: finds due milestones
 └── milestone_execution.ts            # Inngest: Gemini server-side execution
 ```
@@ -384,7 +384,7 @@ All platform OAuth tokens are stored encrypted in Firestore (`users/{uid}/analyt
 ### Server-Side Token Security
 
 ```
-Cloud Functions (functions/src/analytics/platformTokenExchange.ts)
+Cloud Functions (packages/firebase/src/analytics/platformTokenExchange.ts)
 ├── analyticsExchangeToken   — code → token exchange (Spotify PKCE, TikTok, Instagram)
 ├── analyticsRefreshToken    — rotate expired tokens
 └── analyticsRevokeToken     — revoke + delete from Firestore
@@ -700,11 +700,12 @@ The project includes a rich catalog of 20+ automation scripts for environment se
 indii maintains a **"Zero-Regression"** policy with multi-layer testing:
 
 ```bash
-npm test                   # Vitest in watch mode
+npm test                   # Vitest in watch mode across all packages
 npm test -- --run          # Vitest once (CI mode)
+npm run test:renderer      # Run tests for a specific workspace package
 npm run test:e2e           # Playwright E2E (60+ specs)
-npm run lint               # ESLint check
-npm run typecheck          # TypeScript type checking
+npm run lint               # ESLint check across all packages
+npm run typecheck          # TypeScript type checking (all packages)
 ```
 
 | Layer | Tool | Coverage |
@@ -737,7 +738,7 @@ Push to main → Lint → Unit Tests → E2E Tests → Build Landing → Build S
 | Target | Platform | Hosting |
 |--------|----------|---------|
 | Studio App | Web (SPA) | Firebase Hosting → `dist/` |
-| Landing Page | Web | Firebase Hosting → `landing-page/dist/` |
+| Landing Page | Web | Firebase Hosting → `packages/landing/dist/` |
 | Desktop (macOS) | Electron | DMG/ZIP distribution |
 | Desktop (Windows) | Electron | NSIS installer |
 | Desktop (Linux) | Electron | AppImage |
@@ -749,25 +750,26 @@ Push to main → Lint → Unit Tests → E2E Tests → Build Landing → Build S
 
 ```
 indii-music-founder/
-├── src/                    # React application source
-│   ├── core/               # App infrastructure (store, contexts, themes)
-│   ├── modules/            # 36 lazy-loaded feature modules
-│   ├── services/           # 40+ business logic services
-│   ├── components/         # Shared UI components (Radix-based)
-│   ├── hooks/              # Custom React hooks
-│   ├── lib/                # Utility libraries
-│   ├── types/              # TypeScript type definitions
-│   └── config/             # App configuration
-├── agents/                 # 20 AI agent definitions (A2A swarm)
-├── execution/              # Deterministic scripts (Layer 3)
+├── packages/
+│   ├── renderer/               # Main React application source (indii studio)
+│   ├── main/                   # Electron desktop wrapper
+│   ├── firebase/               # Firebase Cloud Functions (Node.js 22, Gen 2)
+│   ├── shared/                 # Shared types and schemas
+│   ├── landing/                # Separate marketing site (React + Vite)
+│   ├── sdk/                    # SDKs
+│   ├── admin-dashboard/        # Admin dashboard
+│   ├── mcp-server-local/       # Local MCP server
+│   ├── mcp-server-harness/     # Harness MCP server
+│   └── engine-dsp/             # DSP Engine
+├── agents/                 # 20 AI agent definitions (A2A Swarm Protocol)
+├── execution/              # Deterministic scripts for agent tools (Layer 3)
 ├── directives/             # AI agent SOPs (Layer 1)
-├── python/                 # Python tools and API handlers
-├── functions/              # Firebase Cloud Functions (Gen 2)
-├── electron/               # Electron desktop wrapper
-├── e2e/                    # Playwright E2E tests (60+ specs)
-├── landing-page/           # Marketing site (React + Vite)
-├── docs/                   # Documentation
-└── scripts/                # Build and utility scripts
+├── e2e/                    # Playwright E2E tests (60+ spec files)
+├── docs/                   # Documentation (specs, plans, design, testing)
+├── .agent/                 # Agent system configuration and error memory
+├── scripts/                # Build and utility scripts
+├── python/                 # Python scripts
+└── python-functions/       # Python cloud functions
 ```
 
 ---
