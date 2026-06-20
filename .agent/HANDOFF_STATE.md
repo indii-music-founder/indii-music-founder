@@ -1,9 +1,12 @@
 # Handoff State
-**Updated:** 2026-06-19 19:56 EDT
+**Updated:** 2026-06-19 20:04 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+da3847fc1 test: untrack dynamic E2E encryption fixtures from git
+a58108acd feat: Integrate Project White Glove narrative into marketing page
+a772d61d7 chore: session checkpoint [19:56]
 768385a80 chore: session checkpoint [19:54]
 8a4c93f37 feat(ci): implement api integrity and duplicate test scanner
 f157664e2 chore: session checkpoint [19:42]
@@ -11,15 +14,11 @@ c9111004a chore: session checkpoint [19:33]
 d9a34be68 test: fix mock hoisting in EditingService.test.ts
 6ada12af5 feat(domain): enforce custom domain redirection via JS shield and document architecture
 9fa168f12 test(ledger): log ISSUE-CI pipeline failures
-c0595c357 fix(ci): resolve typing errors in video service and unused imports in firebase
-c519c7628 feat(dashboard, ingestion): integrate cost estimator widget and resume upload functions
-6e0ad84a4 fix(test): remove unused import
 ```
 
 ## Working State
 ```
- M .agent/skills/error_memory/ERROR_LEDGER.md
- M python/tests/fixtures/e2e_interop/ts_to_py/envelope.json
+clean working tree
 ```
 
 ## Decisions
