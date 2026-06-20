@@ -47,6 +47,9 @@ export function getVertexAIClient(projectOverride?: string, locationOverride?: s
     vertexai: true,
     project: projectId,
     location: location,
+    httpOptions: {
+      baseUrl: `https://${location}-aiplatform.googleapis.com`
+    }
   });
 
   clientsCache.set(cacheKey, client);
