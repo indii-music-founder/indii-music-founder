@@ -287,8 +287,23 @@ function useFirestoreRelay(enabled: boolean) {
         };
         loop();
 
+        // Background tabs throttle the 5s loop to ~1/min, so the phone can briefly see a
+        // stale heartbeat. Push immediately when the tab regains visibility so the phone
+        // reconnects instantly instead of waiting for the next throttled tick.
+        const onVisible = () => {
+            if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+                pushState();
+            }
+        };
+        if (typeof document !== 'undefined') {
+            document.addEventListener('visibilitychange', onVisible);
+        }
+
         return () => {
             active = false;
+            if (typeof document !== 'undefined') {
+                document.removeEventListener('visibilitychange', onVisible);
+            }
             remoteRelayService.pushDesktopState({
                 currentModule: currentModuleRef.current || 'dashboard',
                 isAgentProcessing: false,
