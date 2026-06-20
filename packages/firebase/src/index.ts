@@ -56,6 +56,7 @@ export { createHandoffCode, redeemHandoffCode } from './functions/auth/handoff';
 export { reportBugFn } from './functions/agent/reportBugFn';
 export { workflowOrchestrator } from './functions/agent/workflowOrchestrator';
 export { manageSemanticMemory } from './functions/agent/manageSemanticMemory';
+export { agentLoopCron } from './functions/agent/agentLoopCron';
 
 // Security Functions
 export { persistFraudAlert } from './functions/security/persistFraudAlert';
