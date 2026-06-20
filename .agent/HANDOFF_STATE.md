@@ -1,24 +1,37 @@
 # Handoff State
-**Updated:** 2026-06-19 20:40 EDT
+**Updated:** 2026-06-20 07:44 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+cbb690a94 fix: vertexClient ADC auth bypass and agentLoopCron ESM resolution
+6a4966a5e chore: commit staged items (ERROR_LEDGER and flowcharts)
+ef2879e53 test(ledger): log ISSUE-CI pipeline failures
+c69b57b56 chore: session checkpoint [20:40]
 dfbfcc14b fix: Update useStore mock for agent loop fields to fix CI failures
 5ff487b3b chore: session checkpoint [20:36]
 8b44f136c feat(agent): implement autonomous agent loops UI and CRON backend
 e43fbae2e feat: implement autonomous agent looping system core architecture
 2cbe0315f chore: session checkpoint [20:04]
 da3847fc1 test: untrack dynamic E2E encryption fixtures from git
-a58108acd feat: Integrate Project White Glove narrative into marketing page
-a772d61d7 chore: session checkpoint [19:56]
-768385a80 chore: session checkpoint [19:54]
-8a4c93f37 feat(ci): implement api integrity and duplicate test scanner
 ```
 
 ## Working State
 ```
  M .agent/skills/error_memory/ERROR_LEDGER.md
+ M .agent/test_ledger/OPEN_ISSUES.md
+ M .agent/workflows/WIIL-skill.md
+ M artifacts/boardroom_live_home.png
+ M artifacts/boardroom_result.png
+ M artifacts/live-agent-daisy-chain/coordination-report.html
+ M artifacts/live-agent-daisy-chain/latest.json
+ M deep-test-boardroom-1.png
+ M deep-test-booking-1.png
+ M deep-test-campaign-1.png
+ M deep-test-publicist-1.png
+?? .agent/workflows/api.md
+?? docs/API_REGISTRY.md
+?? test-indii-music.cjs
 ```
 
 ## Decisions
