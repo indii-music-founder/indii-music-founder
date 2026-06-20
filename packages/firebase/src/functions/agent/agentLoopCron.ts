@@ -1,7 +1,7 @@
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import * as admin from 'firebase-admin';
 import * as logger from 'firebase-functions/logger';
-import { AgentLoopStatusEnum } from '@indii/shared';
+
 
 const db = admin.firestore();
 
@@ -36,7 +36,7 @@ export const agentLoopCron = onSchedule(
                 batch.set(executionRef, {
                     id: executionRef.id,
                     loopId: doc.id,
-                    status: AgentLoopStatusEnum.enum.IDLE,
+                    status: 'IDLE',
                     currentIteration: 0,
                     history: [],
                     createdAt: Date.now(),
