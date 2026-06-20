@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-20 08:57 EDT
+**Updated:** 2026-06-20 09:15 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+df58d7221 fix(vertex): correct global host + fall back dead fine-tuned endpoints to base model
+3db9b4a41 chore: session checkpoint [08:57]
 6c526e1ee chore: session checkpoint [08:49]
 981ac902f chore: session checkpoint [08:45]
 39e830d15 chore: session checkpoint [08:41]
@@ -12,13 +14,10 @@ cfe66c4db chore: session checkpoint [08:38]
 89beab807 chore: session checkpoint [08:31]
 f53e5c2b5 chore: session checkpoint [08:29]
 f622b34dc chore: session checkpoint [08:24]
-bc972b5bd chore: session checkpoint [08:17]
-57ced1a62 chore: session checkpoint [08:15]
 ```
 
 ## Working State
 ```
- M .agent/skills/error_memory/ERROR_LEDGER.md
  M .agent/test_ledger/OPEN_ISSUES.md
  M .agent/workflows/WIIL-skill.md
  M artifacts/boardroom_live_home.png
@@ -29,7 +28,6 @@ bc972b5bd chore: session checkpoint [08:17]
  M deep-test-booking-1.png
  M deep-test-campaign-1.png
  M deep-test-publicist-1.png
- M packages/firebase/src/index.ts
 ?? .agent/workflows/api.md
 ?? docs/API_REGISTRY.md
 ?? test-indii-music.cjs
