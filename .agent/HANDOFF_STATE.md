@@ -1,31 +1,23 @@
 # Handoff State
-**Updated:** 2026-06-21 09:57 EDT
+**Updated:** 2026-06-21 09:59 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
-39d1cd6cd chore: session checkpoint [09:44]
-60eca2962 feat(agents): refresh fine-tuned endpoints & onboard hospitality + event-planner
-d6496f4a6 chore: session checkpoint [09:40]
-ee8043f73 chore: session checkpoint [09:40]
-9394a471f chore: session checkpoint [09:36]
-7e16bbafd chore: session checkpoint [09:36]
-5ed004813 chore: session checkpoint [09:25]
-76584fe25 chore: session checkpoint [09:24]
-d18668563 chore: session checkpoint [09:15]
-ac24ebd5f chore: session checkpoint [09:11]
+651711634 chore: session checkpoint [09:57]
+2e3471e90 chore: session checkpoint [09:44]
+54be85f18 feat(agents): refresh fine-tuned endpoints & onboard hospitality + event-planner
+22771530a chore: session checkpoint [09:40]
+b256a181a chore: session checkpoint [09:40]
+a12597b55 chore: session checkpoint [09:36]
+e3e0b0826 chore: session checkpoint [09:36]
+dd9d40771 chore: session checkpoint [09:25]
+2f7a8830c chore: session checkpoint [09:24]
+f39decbfb chore: session checkpoint [09:15]
 ```
 
 ## Working State
 ```
- M packages/firebase/firestore.rules
- M packages/main/src/main.ts
- M packages/renderer/src/hooks/useRemoteCommandListener.ts
- M packages/renderer/src/modules/mobile-remote/MobileRemote.tsx
- M packages/renderer/src/modules/mobile-remote/components/StatusDashboard.tsx
- M packages/renderer/src/modules/mobile-remote/components/TransportBar.tsx
- M packages/renderer/src/services/agent/RemoteRelayService.ts
- M packages/renderer/src/services/agent/specialists/GeneralistAgent.ts
 ?? docs/flowcharts/mobile-remote-ui.md
 ?? docs/flowcharts/remote-dispatch-macro.md
 ?? docs/schemas/
