@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-21 09:40 EDT
+**Updated:** 2026-06-21 09:44 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+60eca2962 feat(agents): refresh fine-tuned endpoints & onboard hospitality + event-planner
+d6496f4a6 chore: session checkpoint [09:40]
 ee8043f73 chore: session checkpoint [09:40]
 9394a471f chore: session checkpoint [09:36]
 7e16bbafd chore: session checkpoint [09:36]
@@ -12,35 +14,23 @@ ee8043f73 chore: session checkpoint [09:40]
 d18668563 chore: session checkpoint [09:15]
 ac24ebd5f chore: session checkpoint [09:11]
 90f2b8ecc docs(governance): codify 'no hardcoded infra IDs in frontend' rule
-07a1c0f19 fix(ai): self-heal fine-tuned routing + default to trying tuned endpoints
-76a04961d chore: session checkpoint [08:40]
 ```
 
 ## Working State
 ```
  M packages/firebase/firestore.rules
- M packages/firebase/src/relay/agentPrompts.ts
  M packages/main/src/main.ts
  M packages/renderer/src/hooks/useRemoteCommandListener.ts
  M packages/renderer/src/modules/mobile-remote/MobileRemote.tsx
  M packages/renderer/src/modules/mobile-remote/components/StatusDashboard.tsx
+ M packages/renderer/src/modules/mobile-remote/components/TransportBar.tsx
  M packages/renderer/src/services/agent/RemoteRelayService.ts
- M packages/renderer/src/services/agent/a2a/CardRegistry.ts
- M packages/renderer/src/services/agent/agentConfig.ts
- M packages/renderer/src/services/agent/departments.ts
- M packages/renderer/src/services/agent/fine-tuned-models.ts
  M packages/renderer/src/services/agent/specialists/GeneralistAgent.ts
- M packages/renderer/src/services/agent/types.ts
-?? agents/event-planner/
-?? agents/hospitality/
 ?? docs/flowcharts/mobile-remote-ui.md
 ?? docs/flowcharts/remote-dispatch-macro.md
 ?? docs/schemas/
 ?? packages/renderer/src/modules/mobile-remote/components/QuickCaptureView.tsx
-?? packages/renderer/src/services/agent/definitions/EventPlannerAgent.ts
-?? packages/renderer/src/services/agent/definitions/HospitalityAgent.ts
-?? packages/renderer/src/services/agent/fine-tuned-endpoints.generated.ts
-?? scripts/sync-fine-tuned-endpoints.mjs
+?? packages/renderer/src/modules/mobile-remote/components/StreamView.tsx
 ```
 
 ## Decisions
