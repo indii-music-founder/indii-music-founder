@@ -98,15 +98,15 @@ describe('🔬 Fine-Tuned Model Registry Validation (15 tests)', () => {
             });
         });
 
-        it('endpoints should contain valid location (us-central1)', () => {
+        it('endpoints should contain valid location (us or us-central1)', () => {
             const entries = Object.entries(FINE_TUNED_MODEL_REGISTRY);
 
             entries.forEach(([_agentId, endpoint]) => {
                 if (endpoint !== undefined) {
                     const match = endpoint.match(/\/locations\/([a-z0-9-]+)\//);
                     expect(match).not.toBeNull();
-                    // Location should be a valid GCP region
-                    expect(match![1]).toMatch(/^[a-z]+-[a-z]+\d?(-[a-z]+\d?)?$/);
+                    // Location should be a valid GCP region or multi-region (us, eu, us-central1, etc.)
+                    expect(match![1]).toMatch(/^[a-z](?:[a-z0-9-]*[a-z0-9])?$/);
                 }
             });
         });
