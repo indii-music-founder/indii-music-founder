@@ -638,12 +638,17 @@ function useFirestoreRelay(enabled: boolean) {
                     case 'voice_memo':
                     case 'quick_contact':
                     case 'receipt_log':
+                    case 'media_capture':
                     case 'agent_command': {
                         // Fallback simple handler for Phase 2: Route directly to agent
                         let text = task.payload.commandText || task.payload.transcription;
                         if (!text) {
                             if (task.type === 'receipt_log' && task.payload.imageUrl) {
                                 text = `Log this receipt image: ${task.payload.imageUrl}`;
+                            } else if (task.type === 'media_capture' && task.payload.imageUrl) {
+                                text = `Save this general photo to my library: ${task.payload.imageUrl}`;
+                            } else if (task.type === 'media_capture' && task.payload.videoUrl) {
+                                text = `Save this general video to my library: ${task.payload.videoUrl}`;
                             } else if ((task.type === 'voice_memo' || task.type === 'quick_contact') && task.payload.audioUrl) {
                                 text = `Process this voice audio file: ${task.payload.audioUrl}`;
                             } else {
@@ -652,6 +657,7 @@ function useFirestoreRelay(enabled: boolean) {
                         } else {
                             // If text is provided but it also has media attachments, append them
                             if (task.payload.imageUrl) text += `\n\nImage Attachment: ${task.payload.imageUrl}`;
+                            if (task.payload.videoUrl) text += `\n\nVideo Attachment: ${task.payload.videoUrl}`;
                             if (task.payload.audioUrl) text += `\n\nAudio Attachment: ${task.payload.audioUrl}`;
                         }
                         
