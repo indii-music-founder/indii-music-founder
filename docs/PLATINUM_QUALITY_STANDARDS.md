@@ -105,6 +105,22 @@ All agents (Claude, Gemini, Droid, Jules, Codex) are bound by this document.
 
 ---
 
+## The Ponytail Protocol (Lazy, Not Negligent)
+
+**Established:** 2026-06-20 (Enforced for all agents)
+
+**Rule:** Before writing or accepting any code, stop at the first rung that holds:
+1. Does this need to exist? → no: skip it (YAGNI)
+2. Stdlib does it? → use it
+3. Native platform feature? → use it
+4. Installed dependency? → use it
+5. One line? → one line
+6. Only then: the minimum that works
+
+*Lazy, not negligent: trust-boundary validation, data-loss handling, security, and accessibility are never on the chopping block.*
+
+---
+
 ## The Challenger Protocol
 
 **Established:** 2026-05-29 (Enforced for all agents)

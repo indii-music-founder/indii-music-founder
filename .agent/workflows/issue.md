@@ -178,6 +178,14 @@ Rules for fixing:
 - **Follow existing patterns.** Match the code style of the file you're editing.
 - **Boy Scout Rule.** Fix obvious lint errors or unused imports in the immediate
   vicinity of your changes. Delete zombie (commented-out) code blocks.
+- **The Ponytail Rule.** Before writing new logic, stop at the first rung that holds:
+  1. Does this need to exist? → no: skip it (YAGNI)
+  2. Stdlib does it? → use it
+  3. Native platform feature? → use it
+  4. Installed dependency? → use it
+  5. One line? → one line
+  6. Only then: the minimum that works
+  *(Lazy, not negligent: trust-boundary validation, data-loss handling, security, and accessibility are never on the chopping block.)*
 
 ### 3.4 Verify the Fix
 
@@ -192,8 +200,8 @@ After applying the fix:
    - **No fabricated values.** No `Math.random()`-generated IDs/UPCs/addresses, no hardcoded `status:'success'` / `'SENT'` / `'done'`, no fake UI that simulates a real connection/result. If the real thing can't be built, the honest output is an error/"unavailable" state — see Prime Rule 7.
    - **Tests aren't faked green.** A `test.skip(...)` (even with a reason) is zero coverage, not a fix. A passing assertion that can never fail is not a test.
    - **The `Fix:` text matches the actual code added**, and an `Evidence: file:line` is recorded. Fake/inaccurate fix descriptions are terminal violations.
-5. **Browser verify (if applicable):** Use `browser_subagent` to reproduce
-   the original steps and confirm the issue is resolved
+5. **Browser verify (if applicable):** Use the `chrome-devtools` MCP plugin to navigate,
+   take snapshots, and visually verify the UI state/console errors to confirm the issue is resolved
 
 ### 3.5 Update .agent/test_ledger/OPEN_ISSUES.md
 
