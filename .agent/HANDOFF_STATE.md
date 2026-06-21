@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-21 14:45 EDT
+**Updated:** 2026-06-21 14:48 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+1881441c2 fix(billing): add founder tier to video generation limits
+af7799cbe chore: session checkpoint [14:45]
 c2e3e21ac chore: session checkpoint [14:36]
 34305ead2 chore: session checkpoint [14:35]
 baec13945 chore: session checkpoint [14:29]
@@ -12,8 +14,6 @@ cbc2f7547 chore: session checkpoint [14:29]
 22d59d45c refactor(creative): replace any types in wrapWithFallback with generics
 b3824f6e4 chore: session checkpoint [14:27]
 d34df81a2 chore: session checkpoint [14:26]
-207da4e65 chore: session checkpoint [14:24]
-83a9a82dd chore: session checkpoint [14:24]
 ```
 
 ## Working State
@@ -25,7 +25,6 @@ d34df81a2 chore: session checkpoint [14:26]
  M GEMINI.md
  M JULES.md
  M docs/BACKEND_ONLY_API_DECLARATION.md
- M packages/firebase/src/index.ts
 ?? docs/flowcharts/agent-venue-research-macro.md
 ?? docs/handoff/
 ?? packages/renderer/src/modules/notes/
