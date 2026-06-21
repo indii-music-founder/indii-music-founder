@@ -1,24 +1,12 @@
 # Handoff State
-**Updated:** 2026-06-20 23:16 UTC
-**Branch:** `claude/ci-failure-main-wxyof9`
-
-## Recent Commits
-```
-d40e350 chore: session checkpoint [16:14]
-d2d91af chore: session checkpoint [16:14]
-32336b1 fix: configure App Check in QA_Voice tests
-4f309c9 chore: session checkpoint [16:00]
-59f7eec chore: session checkpoint [15:59]
-409fc1b fix: configure App Check in FirebaseIntelligenceService security test
-cc1c951 Merge pull request #169 from indii-music-founder/codex/firebase-only-renderer-ai-boundary
-511ff5d test: align security boundary expectations
-e37cb85 chore: session checkpoint [09:51]
-490d39a fix: enforce firebase-only renderer ai boundary
-**Updated:** 2026-06-21 08:40 EDT
+**Updated:** 2026-06-21 09:11 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+90f2b8ecc docs(governance): codify 'no hardcoded infra IDs in frontend' rule
+07a1c0f19 fix(ai): self-heal fine-tuned routing + default to trying tuned endpoints
+76a04961d chore: session checkpoint [08:40]
 49ffef13c chore: session checkpoint [08:33]
 1131cf105 chore: update agent workflows, api registry, testing docs, and mock runs
 a77b74a80 docs(flowchart): add technical flowchart for beat-synced performance video generation
@@ -26,14 +14,11 @@ a77b74a80 docs(flowchart): add technical flowchart for beat-synced performance v
 6911dd794 feat(video): implement beat-synced PerformanceVideoService and node graph templates
 74ce309f1 chore: session checkpoint [17:11]
 af0daf26d chore: session checkpoint [10:23]
-3af86ac4c docs(ledger): log ISSUE-AGENTS-RETRAIN — fine-tuned Vertex endpoints deleted, on base-model fallback
-8df691f26 chore: session checkpoint [09:39]
-ce2274b8a chore: session checkpoint [09:18]
 ```
 
 ## Working State
 ```
- M packages/firebase/src/index.ts
+clean working tree
 ```
 
 ## Decisions
