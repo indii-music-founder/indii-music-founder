@@ -162,10 +162,10 @@ const FEED_RECENCY_HOURS = 24;
 // Background browser tabs throttle setTimeout/setInterval to ~once per minute, so the
 // desktop's 5s heartbeat loop collapses to ~60s whenever the studio tab is not focused
 // (the common case while driving from a phone). A 15s window made the phone flap between
-// connected/reconnecting and eventually unpair. Tolerate one throttled beat (65s) so the
-// pairing holds while the desktop is merely backgrounded; a genuinely closed desktop is
-// still detected within ~65s.
-export const DESKTOP_HEARTBEAT_STALE_MS = 65_000;
+// connected/reconnecting and eventually unpair. Tolerate throttled beats so the
+// pairing holds while the desktop is backgrounded; a genuinely closed desktop is
+// still detected within 120s.
+export const DESKTOP_HEARTBEAT_STALE_MS = 120_000;
 
 function getFeedRecencyCutoff(): Timestamp {
     return Timestamp.fromMillis(Date.now() - FEED_RECENCY_HOURS * 60 * 60 * 1000);
