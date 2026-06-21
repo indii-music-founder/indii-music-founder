@@ -639,12 +639,18 @@ function useFirestoreRelay(enabled: boolean) {
                     case 'quick_contact':
                     case 'receipt_log':
                     case 'media_capture':
+                    case 'document_scan':
+                    case 'venue_log':
                     case 'agent_command': {
                         // Fallback simple handler for Phase 2: Route directly to agent
                         let text = task.payload.commandText || task.payload.transcription;
                         if (!text) {
                             if (task.type === 'receipt_log' && task.payload.imageUrl) {
                                 text = `Log this receipt image: ${task.payload.imageUrl}`;
+                            } else if (task.type === 'document_scan' && task.payload.imageUrl) {
+                                text = `Analyze and file this scanned document: ${task.payload.imageUrl}`;
+                            } else if (task.type === 'venue_log' && task.payload.lat && task.payload.lng) {
+                                text = `Log this venue visit. Location: Latitude ${task.payload.lat}, Longitude ${task.payload.lng}`;
                             } else if (task.type === 'media_capture' && task.payload.imageUrl) {
                                 text = `Save this general photo to my library: ${task.payload.imageUrl}`;
                             } else if (task.type === 'media_capture' && task.payload.videoUrl) {
