@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-21 14:18 EDT
+**Updated:** 2026-06-21 14:24 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+fa7466dcc fix(creative): accurate error when Gemini returns no image (NO_IMAGE)
+50c4a230d chore: session checkpoint [14:18]
 f5a91cdb5 chore: session checkpoint [14:12]
 451f08929 chore: session checkpoint [14:08]
 6d1211b84 chore: session checkpoint [13:57]
@@ -12,8 +14,6 @@ f5a91cdb5 chore: session checkpoint [14:12]
 8ee113540 fix: wire remote store types
 32cc49dbb chore: session checkpoint [12:14]
 74fb38328 feat(mobile-remote): INDII sleep mode + wake-from-mobile
-155646566 chore: session checkpoint [11:18]
-4ac2e246f chore: session checkpoint [11:17]
 ```
 
 ## Working State
