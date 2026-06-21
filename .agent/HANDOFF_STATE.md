@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-21 09:59 EDT
+**Updated:** 2026-06-21 10:03 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+b559c0eeb chore: session checkpoint [09:59]
 651711634 chore: session checkpoint [09:57]
 2e3471e90 chore: session checkpoint [09:44]
 54be85f18 feat(agents): refresh fine-tuned endpoints & onboard hospitality + event-planner
@@ -13,11 +14,18 @@ a12597b55 chore: session checkpoint [09:36]
 e3e0b0826 chore: session checkpoint [09:36]
 dd9d40771 chore: session checkpoint [09:25]
 2f7a8830c chore: session checkpoint [09:24]
-f39decbfb chore: session checkpoint [09:15]
 ```
 
 ## Working State
 ```
+ M packages/firebase/firestore.rules
+ M packages/main/src/main.ts
+ M packages/renderer/src/hooks/useRemoteCommandListener.ts
+ M packages/renderer/src/modules/mobile-remote/MobileRemote.tsx
+ M packages/renderer/src/modules/mobile-remote/components/StatusDashboard.tsx
+ M packages/renderer/src/modules/mobile-remote/components/TransportBar.tsx
+ M packages/renderer/src/services/agent/RemoteRelayService.ts
+ M packages/renderer/src/services/agent/specialists/GeneralistAgent.ts
 ?? docs/flowcharts/mobile-remote-ui.md
 ?? docs/flowcharts/remote-dispatch-macro.md
 ?? docs/schemas/
