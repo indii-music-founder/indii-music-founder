@@ -4,6 +4,7 @@
 
 ## Recent Commits
 ```
+dec29a46a chore: session checkpoint [10:25]
 46d928042 chore: session checkpoint [10:15]
 a075b207a chore: session checkpoint [10:14]
 4a3150b70 chore: session checkpoint [10:12]
@@ -13,7 +14,6 @@ abbc83342 chore: session checkpoint [10:03]
 b559c0eeb chore: session checkpoint [09:59]
 651711634 chore: session checkpoint [09:57]
 2e3471e90 chore: session checkpoint [09:44]
-54be85f18 feat(agents): refresh fine-tuned endpoints & onboard hospitality + event-planner
 ```
 
 ## Working State
