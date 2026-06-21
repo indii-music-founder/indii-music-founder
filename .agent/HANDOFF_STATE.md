@@ -1,85 +1,24 @@
 # Handoff State
-**Updated:** 2026-06-20 17:11 EDT
+**Updated:** 2026-06-21 08:31 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
-af0daf26d chore: session checkpoint [10:23]
-3af86ac4c docs(ledger): log ISSUE-AGENTS-RETRAIN — fine-tuned Vertex endpoints deleted, on base-model fallback
-8df691f26 chore: session checkpoint [09:39]
-ce2274b8a chore: session checkpoint [09:18]
-7ba118ec4 chore: session checkpoint [09:15]
-df58d7221 fix(vertex): correct global host + fall back dead fine-tuned endpoints to base model
-3db9b4a41 chore: session checkpoint [08:57]
-6c526e1ee chore: session checkpoint [08:49]
-981ac902f chore: session checkpoint [08:45]
-39e830d15 chore: session checkpoint [08:41]
+2bc4f1ecd docs(flowchart): add technical flowchart for beat-synced performance video generation
+64dc68687 chore: session checkpoint [08:22]
+ce5d81f1b chore: session checkpoint [08:21]
+cdbffd81c fix(training): fix duplicate scenario IDs in event-planner and hospitality datasets
+a0d9c6d37 fix(video): use singletons in PerformanceVideoService to prevent test mocking issues
+dc58a0f7e chore: session checkpoint [08:09]
+7a6b90e7f fix: make endpoint fallback default-ON to survive CI deploys
+3c5fb3b3f chore: update agent workflows, api registry, testing docs, and mock runs
+0eaeac902 feat(training): add synthetic training data and scripts for event-planner & hospitality tuning
+e067de9f9 feat(video): implement beat-synced PerformanceVideoService and node graph templates
 ```
 
 ## Working State
 ```
- M .agent/workflows/WIIL-skill.md
- M .agent/workflows/better.md
- M .agent/workflows/hunter.md
- M .agent/workflows/issue.md
- M .agent/workflows/middle.md
- M .agent/workflows/start.md
- M artifacts/boardroom_live_home.png
- M artifacts/boardroom_result.png
- M artifacts/live-agent-daisy-chain/coordination-report.html
- M artifacts/live-agent-daisy-chain/latest.json
- M deep-test-boardroom-1.png
- M deep-test-booking-1.png
- M deep-test-campaign-1.png
- M deep-test-publicist-1.png
- M docs/PLATINUM_QUALITY_STANDARDS.md
- M execution/training/check_r8_tuning_status.ts
- M execution/training/trigger_r8_tuning.ts
- M ft_export/brand_eval.jsonl
- M ft_export/brand_train.jsonl
- M ft_export/curriculum_eval.jsonl
- M ft_export/curriculum_train.jsonl
- M ft_export/devops_eval.jsonl
- M ft_export/devops_train.jsonl
- M ft_export/director_eval.jsonl
- M ft_export/director_train.jsonl
- M ft_export/distribution_eval.jsonl
- M ft_export/distribution_train.jsonl
- M ft_export/finance_eval.jsonl
- M ft_export/finance_train.jsonl
- M ft_export/generalist_eval.jsonl
- M ft_export/generalist_train.jsonl
- M ft_export/legal_eval.jsonl
- M ft_export/legal_train.jsonl
- M ft_export/licensing_eval.jsonl
- M ft_export/licensing_train.jsonl
- M ft_export/marketing_eval.jsonl
- M ft_export/marketing_train.jsonl
- M ft_export/merchandise_eval.jsonl
- M ft_export/merchandise_train.jsonl
- M ft_export/music_eval.jsonl
- M ft_export/music_train.jsonl
- M ft_export/producer_eval.jsonl
- M ft_export/producer_train.jsonl
- M ft_export/publicist_eval.jsonl
- M ft_export/publicist_train.jsonl
- M ft_export/publishing_eval.jsonl
- M ft_export/publishing_train.jsonl
- M ft_export/road_eval.jsonl
- M ft_export/road_train.jsonl
- M ft_export/screenwriter_eval.jsonl
- M ft_export/screenwriter_train.jsonl
- M ft_export/security_eval.jsonl
- M ft_export/security_train.jsonl
- M ft_export/social_eval.jsonl
- M ft_export/social_train.jsonl
- M ft_export/video_eval.jsonl
- M ft_export/video_train.jsonl
- M packages/firebase/src/index.ts
- M packages/firebase/src/lib/vertexClient.ts
-?? .agent/workflows/api.md
-?? docs/API_REGISTRY.md
-?? test-indii-music.cjs
+clean working tree
 ```
 
 ## Decisions

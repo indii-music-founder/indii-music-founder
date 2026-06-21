@@ -234,6 +234,7 @@ npm run typecheck 2>&1 | tail -5
 4. **Cross-Boundary Verification.** If you change a data shape, you MUST manually verify the consumer of that data expects the new shape. When interacting with external services (Firestore, Cloud Functions), you cannot rely purely on isolated/mocked tests.
 5. **Preserve comments and docs.** Never delete documentation that isn't directly contradicted by your change.
 6. **Boy Scout exits.** Fix obvious lint issues, unused imports, and formatting in the immediate vicinity. But don't reformulate the entire file.
+7. **The Ponytail Rule.** When writing or refactoring code, follow the lazy senior dev approach: skip if YAGNI, use stdlib/native features first, use existing dependencies, aim for one-liners, write the minimum that works. Never sacrifice security or accessibility.
 
 ### 3.3 Verification Gauntlet
 
@@ -247,7 +248,7 @@ npm run typecheck 2>&1 | tail -10
 npm test -- --run --related $(git diff --name-only | grep -E '\.(ts|tsx|js|jsx)$') 2>&1 | tail -20
 ```
 
-If the target was a UI component, use the browser tool to visually verify the component still renders correctly and the improvements are visible.
+If the target was a UI component, use the `chrome-devtools` MCP plugin to connect to the session, inspect the DOM, and capture screenshots to visually verify the component still renders correctly and the improvements are visible.
 
 ---
 

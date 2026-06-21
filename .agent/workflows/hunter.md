@@ -235,6 +235,11 @@ grep -rn 'toLocaleDateString\|toLocaleString\|toLocaleTimeString' packages/rende
 
 After ALL fixes are applied, run the full verification gauntlet:
 
+**For UI or Frontend Bugs:**
+- You MUST connect via the `chrome-devtools` MCP plugin.
+- Ensure no console errors remain.
+- Capture screenshots/DOM snapshots proving the UI renders without crashing and the bug is resolved.
+
 ```bash
 # Frontend
 npm run typecheck 2>&1 | tail -30
@@ -312,6 +317,7 @@ Do NOT commit, push, or log to Error Ledger/mem0 in AUDIT mode. The fixing agent
 4. **Verify after fixing.** Never commit code that doesn't pass typecheck and tests.
 5. **Log everything.** Every fix goes to Error Ledger AND mem0 for institutional memory.
 6. **Check deployed state.** If a bug involves configuration (API keys, env vars), verify the production deployment matches local config.
+7. **The Ponytail Rule.** Apply the simplest, most minimal fix possible. If a native platform feature or stdlib can do it, use it instead of writing custom logic.
 
 ### AUDIT Mode (find-only)
 
