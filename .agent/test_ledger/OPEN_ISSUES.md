@@ -6350,3 +6350,19 @@ Therefore, no fix can be proposed or implemented.
   5. Verify with one authenticated call per agent (mint ID token via anonymous `accounts:signUp` + App Check via `:exchangeDebugToken`, both with a `Referer: https://indii.music` header; expect `200`).
 - **Cost note:** keeping 20 tuned endpoints continuously deployed has real hosting cost — confirm the pricing/usage tradeoff (see AI cost instrumentation) before redeploying all of them; consider deploying only the high-traffic agents and leaving the rest on base-model fallback.
 - **Ref:** `.agent/skills/error_memory/ERROR_LEDGER.md` (2026-06-20 "Chat Double-Broken" entry).
+
+### ISSUE-CI-27910134272: CI Pipeline Failure (Deploy to Firebase Hosting)
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** CI/CD
+- **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
+- **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/27910134272)
+- **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
+
+### ISSUE-CI-27909388829: CI Pipeline Failure (Deploy to Firebase Hosting)
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** CI/CD
+- **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
+- **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/27909388829)
+- **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
