@@ -930,22 +930,20 @@ export const generateContentStream = functions
                 let client = getVertexAIClient();
                 let finalModelId = modelId;
 
-                // FALLBACK: the fine-tuned Vertex endpoints were undeployed (all
-                // us-central1 endpoints 404). When DISABLE_FINE_TUNED is set, route any
-                // fine-tuned endpoint path to the base model the tuned set was trained
-                // from, so every agent keeps working. Unset DISABLE_FINE_TUNED once the
-                // tuned endpoints are redeployed. See ERROR_LEDGER 2026-06-20.
-                // The fine-tuned Vertex endpoints were undeployed (every us-central1
-                // endpoint 404s). Default to routing any fine-tuned endpoint path to the
-                // base model the tuned set was trained from, served from the 'global'
-                // location (where the gemini-3.1 models live, via aiplatform.googleapis.com).
-                // This is committed-code default (not env-dependent) so it survives CI
-                // deploys. Set DISABLE_FINE_TUNED=false to restore real fine-tuned routing
-                // once the endpoints are redeployed. See ERROR_LEDGER 2026-06-20.
+                // KILL SWITCH (pre-emptive fallback): the tuned agents were redeployed
+                // 2026-06-21, so by DEFAULT we now TRY the fine-tuned endpoint and let the
+                // runtime auto-fallback below catch any straggler that is still spinning up.
+                // Setting DISABLE_FINE_TUNED=true forces every agent straight to the base
+                // model WITHOUT touching the endpoint at all — a manual kill switch for when
+                // the whole tuned set must be bypassed (e.g. a bad training run). It is OFF
+                // by default (only the literal 'true' triggers it) so CI deploys — where the
+                // gitignored .env is absent — route to the live tuned endpoints. The base
+                // model is served from the 'global' location (where the gemini-3.1 models
+                // live, via aiplatform.googleapis.com). See ERROR_LEDGER 2026-06-20/21.
                 const FINE_TUNED_FALLBACK_MODEL = 'gemini-3.1-flash-lite';
                 const isFineTunedEndpoint = /^projects\/[^/]+\/locations\/[^/]+\/endpoints\/[^/]+$/.test(modelId);
-                if (process.env.DISABLE_FINE_TUNED !== 'false' && isFineTunedEndpoint) {
-                    functions.logger.warn(`[generateContentStream] Fine-tuned endpoints unavailable; falling back ${modelId} -> ${FINE_TUNED_FALLBACK_MODEL} (global)`);
+                if (process.env.DISABLE_FINE_TUNED === 'true' && isFineTunedEndpoint) {
+                    functions.logger.warn(`[generateContentStream] DISABLE_FINE_TUNED kill switch active; routing ${modelId} -> ${FINE_TUNED_FALLBACK_MODEL} (global)`);
                     finalModelId = FINE_TUNED_FALLBACK_MODEL;
                     client = getVertexAIClient(undefined, 'global');
                 }
@@ -959,19 +957,58 @@ export const generateContentStream = functions
                     functions.logger.info(`[generateContentStream] Routing to fine-tuned endpoint: project=${parsedProject}, location=${parsedLocation}, endpoint=${parsedEndpoint}`);
                 }
 
-                // Generate Content Stream
-                const result = await client.models.generateContentStream({
-                    model: finalModelId,
-                    contents: contents, // SDK accepts standard Content format
-                    config: config
-                });
+                // Generate Content Stream.
+                // Self-heal on a missing fine-tuned endpoint: when DISABLE_FINE_TUNED=false
+                // routes us to a tuned endpoint that is still spinning up (or never
+                // redeployed), the request 404s. Rather than hard-fail that agent, pull the
+                // first chunk BEFORE sending response headers so we can retry once against the
+                // base model (global) on NOT_FOUND. Once the first chunk lands we know the
+                // endpoint is alive, so the rest streams normally. See ERROR_LEDGER 2026-06-20.
+                const openStream = (modelToUse: string, clientToUse: typeof client) =>
+                    clientToUse.models.generateContentStream({
+                        model: modelToUse,
+                        contents: contents, // SDK accepts standard Content format
+                        config: config
+                    });
+
+                type ContentStream = Awaited<ReturnType<typeof openStream>>;
+                type ContentChunk = ContentStream extends AsyncIterable<infer C> ? C : never;
+                let iterator: AsyncIterator<ContentChunk>;
+                let firstResult: IteratorResult<ContentChunk>;
+                try {
+                    const stream = await openStream(finalModelId, client);
+                    iterator = stream[Symbol.asyncIterator]();
+                    firstResult = await iterator.next();
+                } catch (streamErr: unknown) {
+                    const msg = streamErr instanceof Error ? streamErr.message : String(streamErr);
+                    const isNotFound = /NOT_FOUND|404|not found|does not exist|was not found/i.test(msg);
+                    if (isFineTunedEndpoint && isNotFound && finalModelId !== FINE_TUNED_FALLBACK_MODEL) {
+                        functions.logger.warn(`[generateContentStream] Fine-tuned endpoint ${finalModelId} unavailable (${msg}); auto-falling back to ${FINE_TUNED_FALLBACK_MODEL} (global)`);
+                        const fallbackClient = getVertexAIClient(undefined, 'global');
+                        const stream = await openStream(FINE_TUNED_FALLBACK_MODEL, fallbackClient);
+                        iterator = stream[Symbol.asyncIterator]();
+                        firstResult = await iterator.next();
+                    } else {
+                        throw streamErr;
+                    }
+                }
 
                 res.setHeader('Content-Type', 'text/plain');
                 res.setHeader('Cache-Control', 'no-cache');
                 res.setHeader('Connection', 'keep-alive');
 
+                // Replay the already-pulled first chunk, then drain the rest of the stream.
+                const replayStream = (async function* () {
+                    if (!firstResult.done) yield firstResult.value;
+                    while (true) {
+                        const next = await iterator.next();
+                        if (next.done) break;
+                        yield next.value;
+                    }
+                })();
+
                 // Iterate over SDK Stream
-                for await (const chunk of result) {
+                for await (const chunk of replayStream) {
                     const parts = chunk.candidates?.[0]?.content?.parts || [];
                     const text = typeof chunk.text === 'string'
                         ? chunk.text
