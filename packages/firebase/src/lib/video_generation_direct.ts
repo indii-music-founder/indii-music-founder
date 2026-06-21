@@ -12,6 +12,7 @@
 import * as admin from "firebase-admin";
 import { GoogleGenAI } from "@google/genai";
 import { FUNCTION_INTELLIGENCE_MODELS } from "../config/models";
+import { getVertexAIBaseUrl } from "./vertexClient";
 
 /**
  * Sleep helper.
@@ -86,11 +87,13 @@ export async function generateVideoDirect(params: DirectVideoGenerationParams): 
             : FUNCTION_INTELLIGENCE_MODELS.VIDEO.PRO;
 
         // Vertex AI for production — ADC handles auth automatically in Cloud Functions
-        const projectId = process.env.VITE_VERTEX_PROJECT_ID || process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT || 'indii-music-founder';
+        const projectId = process.env.VERTEX_PROJECT_ID || process.env.GOOGLE_CLOUD_PROJECT || process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT || 'indii-music-founder';
+        const location = process.env.VERTEX_VIDEO_LOCATION || process.env.VERTEX_LOCATION || 'us-central1';
         const ai = new GoogleGenAI({
             vertexai: true,
             project: projectId,
-            location: process.env.VITE_VERTEX_LOCATION || process.env.VERTEX_LOCATION || 'us-central1',
+            location,
+            httpOptions: { baseUrl: getVertexAIBaseUrl(location) },
         });
 
         console.log(`[VideoGenDirect] Using Vertex AI SDK with model: ${modelId}, project: ${projectId}`);

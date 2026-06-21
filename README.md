@@ -35,7 +35,7 @@ cd indii-music-founder
 make prime                  # installs deps, runs health check
 
 # 3. Configure secrets (3 min)
-cp .env.example .env        # then fill in your VITE_API_KEY + Firebase keys
+cp .env.example .env        # then fill in your Firebase keys
 
 # 4. Launch (30 sec)
 make dev-web                # Vite-only on :4243 — fastest iteration loop
@@ -612,7 +612,6 @@ cp .env.example .env
 
 | Variable | Purpose |
 |----------|---------|
-| `VITE_API_KEY` | Gemini / Google AI key |
 | `VITE_FIREBASE_API_KEY` | Firebase project identifier |
 | `VITE_FIREBASE_PROJECT_ID` | Firebase project ID |
 | `VITE_FIREBASE_AUTH_DOMAIN` | Firebase auth domain |
@@ -622,8 +621,10 @@ cp .env.example .env
 
 | Variable | Purpose |
 |----------|---------|
-| `VITE_VERTEX_PROJECT_ID` | Vertex AI project |
-| `VITE_VERTEX_LOCATION` | Vertex AI region |
+| `VERTEX_PROJECT_ID` | Backend Vertex AI project override |
+| `VERTEX_LOCATION` | Backend default Vertex AI location |
+| `VERTEX_IMAGE_LOCATION` | Backend image model location, defaults to `us` |
+| `VERTEX_VIDEO_LOCATION` | Backend video model location |
 | `VITE_GOOGLE_MAPS_API_KEY` | Google Maps |
 | `VITE_SKIP_ONBOARDING` | Skip onboarding in dev |
 | `VITE_FIREBASE_APP_CHECK_KEY` | App Check (required in prod) |

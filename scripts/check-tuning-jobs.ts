@@ -1,5 +1,12 @@
 import { GoogleAuth } from 'google-auth-library';
 
+function getVertexAIBaseUrl(location: string): string {
+  if (location === 'global' || location === 'us' || location === 'eu') {
+    return 'https://aiplatform.googleapis.com';
+  }
+  return `https://${location}-aiplatform.googleapis.com`;
+}
+
 async function checkVertexTuningJobs() {
   try {
     const auth = new GoogleAuth({
@@ -7,15 +14,15 @@ async function checkVertexTuningJobs() {
     });
 
     const client = await auth.getClient();
-    const projectId = 'indii-music-founder';
-    const location = 'us-central1';
+    const projectId = process.env.VERTEX_PROJECT_ID || process.env.GOOGLE_CLOUD_PROJECT || process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT || 'indii-music-founder';
+    const location = process.env.VERTEX_TUNING_LOCATION || 'us-central1';
     const accessToken = await client.getAccessToken();
 
     if (!accessToken.token) {
       throw new Error('Failed to obtain Google Cloud access token.');
     }
 
-    const url = `https://${location}-aiplatform.googleapis.com/v1beta1/projects/${projectId}/locations/${location}/tuningJobs`;
+    const url = `${getVertexAIBaseUrl(location)}/v1beta1/projects/${projectId}/locations/${location}/tuningJobs`;
 
     const res = await fetch(url, {
       method: 'GET',

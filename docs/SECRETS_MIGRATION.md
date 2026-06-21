@@ -8,7 +8,6 @@
 
 | Secret Name | Purpose | Used In |
 |---|---|---|
-| `VITE_API_KEY` | Gemini API key | unit-tests, build |
 | `VITE_FIREBASE_API_KEY` | Firebase project identifier | unit-tests, build, e2e |
 | `VITE_FIREBASE_PROJECT_ID` | Firebase project ID | unit-tests, build, e2e |
 | `VITE_FIREBASE_APP_ID` | Firebase app ID | build |
@@ -16,8 +15,10 @@
 | `VITE_FIREBASE_STORAGE_BUCKET` | Firebase storage bucket | build |
 | `VITE_FIREBASE_APP_CHECK_KEY` | App Check enforcement key | build |
 | `VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN` | App Check CI bypass token | unit-tests |
-| `VITE_VERTEX_PROJECT_ID` | Vertex AI project | unit-tests, build |
-| `VITE_VERTEX_LOCATION` | Vertex AI location (e.g. us-central1) | unit-tests, build |
+| `VERTEX_PROJECT_ID` | Backend Vertex AI project override | deploy-production |
+| `VERTEX_LOCATION` | Backend default Vertex AI location | deploy-production |
+| `VERTEX_IMAGE_LOCATION` | Backend image model location | deploy-production |
+| `VERTEX_VIDEO_LOCATION` | Backend video model location | deploy-production |
 | `VITE_GOOGLE_MAPS_API_KEY` | Google Maps API | build, e2e |
 | `FIREBASE_SERVICE_ACCOUNT` | Full service account JSON for Firebase deploy | deploy-staging, deploy-production |
 | `WINDOWS_CERTIFICATE` | Windows code-signing cert (base64) | release workflow |

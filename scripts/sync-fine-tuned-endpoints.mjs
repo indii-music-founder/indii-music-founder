@@ -5,7 +5,7 @@
  * Usage: node scripts/sync-fine-tuned-endpoints.mjs
  *
  * Requires: gcloud CLI authenticated (gcloud auth login)
- * Fetches: tuningJobs from Vertex (location: us-central1, picks latest per agent by endTime)
+ * Fetches: tuningJobs from Vertex (location: VERTEX_TUNING_LOCATION or us-central1, picks latest per agent by endTime)
  * Writes: packages/renderer/src/services/agent/fine-tuned-endpoints.generated.ts
  */
 
@@ -15,9 +15,15 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const PROJECT_ID = 'indii-music-founder';
-const LOCATION = 'us-central1';
+const PROJECT_ID = process.env.VERTEX_PROJECT_ID || process.env.GOOGLE_CLOUD_PROJECT || process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT || 'indii-music-founder';
+const LOCATION = process.env.VERTEX_TUNING_LOCATION || 'us-central1';
 const OUTPUT_FILE = path.join(__dirname, '../packages/renderer/src/services/agent/fine-tuned-endpoints.generated.ts');
+
+function getVertexAIBaseUrl(location) {
+  return location === 'global' || location === 'us' || location === 'eu'
+    ? 'https://aiplatform.googleapis.com'
+    : `https://${location}-aiplatform.googleapis.com`;
+}
 
 async function getAccessToken() {
   return new Promise((resolve, reject) => {
@@ -32,7 +38,7 @@ async function getAccessToken() {
 }
 
 async function fetchTuningJobs(token) {
-  const url = `https://us-central1-aiplatform.googleapis.com/v1/projects/${PROJECT_ID}/locations/${LOCATION}/tuningJobs?pageSize=200`;
+  const url = `${getVertexAIBaseUrl(LOCATION)}/v1/projects/${PROJECT_ID}/locations/${LOCATION}/tuningJobs?pageSize=200`;
   const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
   if (!res.ok) throw new Error(`Vertex API failed (${res.status}): ${await res.text()}`);
   const data = await res.json();
