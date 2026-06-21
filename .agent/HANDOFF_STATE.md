@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-21 09:25 EDT
+**Updated:** 2026-06-21 09:36 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+5ed004813 chore: session checkpoint [09:25]
 76584fe25 chore: session checkpoint [09:24]
 d18668563 chore: session checkpoint [09:15]
 ac24ebd5f chore: session checkpoint [09:11]
@@ -13,15 +14,33 @@ ac24ebd5f chore: session checkpoint [09:11]
 49ffef13c chore: session checkpoint [08:33]
 1131cf105 chore: update agent workflows, api registry, testing docs, and mock runs
 a77b74a80 docs(flowchart): add technical flowchart for beat-synced performance video generation
-254843c7e feat(training): add synthetic training data and scripts for event-planner & hospitality tuning
 ```
 
 ## Working State
 ```
  M packages/firebase/firestore.rules
+ M packages/firebase/src/relay/agentPrompts.ts
+ M packages/main/src/main.ts
+ M packages/renderer/src/hooks/useRemoteCommandListener.ts
+ M packages/renderer/src/modules/mobile-remote/MobileRemote.tsx
+ M packages/renderer/src/modules/mobile-remote/components/StatusDashboard.tsx
+ M packages/renderer/src/services/agent/RemoteRelayService.ts
+ M packages/renderer/src/services/agent/a2a/CardRegistry.ts
+ M packages/renderer/src/services/agent/agentConfig.ts
+ M packages/renderer/src/services/agent/departments.ts
+ M packages/renderer/src/services/agent/fine-tuned-models.ts
+ M packages/renderer/src/services/agent/specialists/GeneralistAgent.ts
+ M packages/renderer/src/services/agent/types.ts
+?? agents/event-planner/
+?? agents/hospitality/
+?? docs/flowcharts/mobile-remote-ui.md
 ?? docs/flowcharts/remote-dispatch-macro.md
 ?? docs/schemas/
+?? packages/renderer/src/modules/mobile-remote/components/QuickCaptureView.tsx
+?? packages/renderer/src/services/agent/definitions/EventPlannerAgent.ts
+?? packages/renderer/src/services/agent/definitions/HospitalityAgent.ts
 ?? packages/renderer/src/services/agent/fine-tuned-endpoints.generated.ts
+?? scripts/sync-fine-tuned-endpoints.mjs
 ```
 
 ## Decisions
