@@ -12,10 +12,10 @@ describe('vertexClient', () => {
   beforeEach(async () => {
     vi.resetModules();
     mockGoogleGenAI.mockClear();
-    delete process.env.VITE_VERTEX_PROJECT_ID;
     delete process.env.GCLOUD_PROJECT;
     delete process.env.GCP_PROJECT;
-    delete process.env.VITE_VERTEX_LOCATION;
+    delete process.env.GOOGLE_CLOUD_PROJECT;
+    delete process.env.VERTEX_PROJECT_ID;
     delete process.env.VERTEX_LOCATION;
 
     const { resetVertexAIClient } = await import('./vertexClient');
@@ -35,16 +35,16 @@ describe('vertexClient', () => {
     }));
   });
 
-  it('maps Vertex multi-region endpoint locations to a valid client host', async () => {
-    const { getVertexAIClient, normalizeVertexClientLocation } = await import('./vertexClient');
+  it('keeps Vertex multi-region locations while using a valid client host', async () => {
+    const { getVertexAIBaseUrl, getVertexAIClient } = await import('./vertexClient');
 
-    expect(normalizeVertexClientLocation('us')).toBe('global');
+    expect(getVertexAIBaseUrl('us')).toBe('https://aiplatform.googleapis.com');
     getVertexAIClient('148015878263', 'us');
 
     expect(mockGoogleGenAI).toHaveBeenCalledWith(expect.objectContaining({
       vertexai: true,
       project: '148015878263',
-      location: 'global',
+      location: 'us',
       httpOptions: { baseUrl: 'https://aiplatform.googleapis.com' },
     }));
   });

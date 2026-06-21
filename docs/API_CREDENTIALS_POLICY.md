@@ -34,7 +34,7 @@
 | **Key ID** | `Gemini Developer API key` |
 | **Project** | `indii-music-founder` |
 | **Restrictions** | ✅ Restricted to **Generative Language API** |
-| **Used In** | `.env` (VITE_API_KEY), `functions/.env` (GEMINI_API_KEY) |
+| **Used In** | Cloud Functions secret/env (`GEMINI_API_KEY`) |
 
 ### Firebase Auth Key: Browser key (auto-created by Firebase)
 
@@ -79,13 +79,16 @@
 
 ```bash
 # .env (Frontend - Vite)
-VITE_API_KEY=<Gemini Developer API Key>
-VITE_FIREBASE_API_KEY=<Gemini Developer API Key>
+VITE_FIREBASE_API_KEY=<Firebase Browser key>
 VITE_GOOGLE_MAPS_API_KEY=<Google Maps API Key>
 VITE_MEM0_API_KEY=<Mem0 Memory API Key>
 
-# functions/.env (Cloud Functions)
+# Cloud Functions / Secret Manager
 GEMINI_API_KEY=<Gemini Developer API Key>
+VERTEX_PROJECT_ID=indii-music-founder
+VERTEX_LOCATION=global
+VERTEX_IMAGE_LOCATION=us
+VERTEX_VIDEO_LOCATION=us-central1
 ```
 
 ---
@@ -160,10 +163,12 @@ The following secrets must be maintained in **GitHub Repo Settings > Secrets and
 
 | Secret Name | Value Origin |
 | --- | --- |
-| `VITE_API_KEY` | `Gemini Developer API key` (Restricted) |
 | `VITE_FIREBASE_API_KEY` | `Browser key` (from Firebase) |
-| `VITE_VERTEX_PROJECT_ID` | `indii-music-founder` |
-| `VITE_VERTEX_LOCATION` | `us-central1` |
+| `GEMINI_API_KEY` | `Gemini Developer API key` (Secret Manager sync) |
+| `VERTEX_PROJECT_ID` | `indii-music-founder` |
+| `VERTEX_LOCATION` | `global` |
+| `VERTEX_IMAGE_LOCATION` | `us` |
+| `VERTEX_VIDEO_LOCATION` | `us-central1` |
 
 > [!WARNING]
 > CI/CD Pipeline (`deploy.yml`) injects these secrets at build time. Changing `.env` locally has **NO EFFECT** on production builds. You must update GitHub Secrets manually.

@@ -70,8 +70,8 @@ const processEnv = {
     // 🛡️ Sentinel: Using static lookups for Vite compatibility
     // Vite requires static analysis of import.meta.env.VITE_* to perform replacement at build time.
     apiKey: '',
-    projectId: import.meta.env.VITE_VERTEX_PROJECT_ID || getProcessEnv('VITE_VERTEX_PROJECT_ID'),
-    location: import.meta.env.VITE_VERTEX_LOCATION || getProcessEnv('VITE_VERTEX_LOCATION') || "global",
+    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || getProcessEnv('VITE_FIREBASE_PROJECT_ID'),
+    location: "global",
     functionsRegion: import.meta.env.VITE_FUNCTIONS_REGION || getProcessEnv('VITE_FUNCTIONS_REGION') || 'us-central1',
     useVertex: toBoolean(import.meta.env.VITE_USE_VERTEX || getProcessEnv('VITE_USE_VERTEX')),
     googleMapsApiKey: undefined,
@@ -118,7 +118,6 @@ if (!parsed.success && !isTest) {
 
     // Explicitly log missing keys for easier debugging
     const missingKeys: string[] = [];
-    if (!processEnv.projectId) missingKeys.push('VITE_VERTEX_PROJECT_ID');
     if (!processEnv.firebaseApiKey) missingKeys.push('VITE_FIREBASE_API_KEY');
     
     // Browser-side Google Maps API keys are intentionally unsupported. Maps
@@ -146,8 +145,6 @@ if (import.meta.env.DEV) {
 
 export const env = {
     ...runtimeEnv,
-    VITE_VERTEX_PROJECT_ID: runtimeEnv.projectId,
-    VITE_VERTEX_LOCATION: runtimeEnv.location,
     VITE_FUNCTIONS_REGION: runtimeEnv.functionsRegion,
     VITE_USE_VERTEX: runtimeEnv.useVertex,
     enableGoogleMaps: runtimeEnv.enableGoogleMaps,

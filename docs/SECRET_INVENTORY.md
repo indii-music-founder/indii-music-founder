@@ -23,9 +23,11 @@ This document provides a comprehensive inventory of all sensitive credentials, A
 
 | Secret Name | Usage | Location | Status |
 | --- | --- | --- | --- |
-| `VITE_API_KEY` | Gemini API (Frontend/Sidecar) | `.env`, GitHub Secrets | 🔐 SECRET |
-| `GEMINI_API_KEY` | Gemini API (Functions) | `functions/.env`, Firebase Secrets | 🔐 SECRET |
-| `VITE_VERTEX_PROJECT_ID` | Vertex AI Configuration | `.env`, GitHub Secrets | ✅ IDENTIFIER |
+| `GEMINI_API_KEY` | Gemini API (Functions) | Firebase Secrets / Secret Manager | 🔐 SECRET |
+| `VERTEX_PROJECT_ID` | Backend Vertex AI project override | Cloud Functions env | ✅ IDENTIFIER |
+| `VERTEX_LOCATION` | Backend default Vertex AI location | Cloud Functions env | ✅ IDENTIFIER |
+| `VERTEX_IMAGE_LOCATION` | Backend image model location | Cloud Functions env | ✅ IDENTIFIER |
+| `VERTEX_VIDEO_LOCATION` | Backend video model location | Cloud Functions env | ✅ IDENTIFIER |
 | `VITE_MEM0_API_KEY` | Episodic Memory API | `.env`, GitHub Secrets | 🔐 SECRET |
 
 ## 3. Financial & Legal (Stripe / DocuSign)

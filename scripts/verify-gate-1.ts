@@ -1,5 +1,12 @@
 import { GoogleAuth } from 'google-auth-library';
 
+function getVertexAIBaseUrl(location: string): string {
+  if (location === 'global' || location === 'us' || location === 'eu') {
+    return 'https://aiplatform.googleapis.com';
+  }
+  return `https://${location}-aiplatform.googleapis.com`;
+}
+
 export const FINE_TUNED_MODEL_REGISTRY: Partial<Record<string, string>> = {
     'generalist':    'projects/148015878263/locations/us-central1/endpoints/4735553150121934848',
     'finance':       'projects/148015878263/locations/us-central1/endpoints/6137298534141001728',
@@ -33,7 +40,6 @@ async function verifyGate1() {
     });
 
     const client = await auth.getClient();
-    const location = 'us-central1';
     const accessToken = await client.getAccessToken();
 
     if (!accessToken.token) {
@@ -48,7 +54,9 @@ async function verifyGate1() {
       const endpointPath = FINE_TUNED_MODEL_REGISTRY[agent as keyof typeof FINE_TUNED_MODEL_REGISTRY];
       if (!endpointPath) continue;
 
-      const url = `https://${location}-aiplatform.googleapis.com/v1beta1/${endpointPath}:generateContent`;
+      const match = endpointPath.match(/^projects\/[^/]+\/locations\/([^/]+)\//);
+      const location = match?.[1] || 'global';
+      const url = `${getVertexAIBaseUrl(location)}/v1beta1/${endpointPath}:generateContent`;
 
       const startTime = Date.now();
       try {

@@ -11,8 +11,6 @@ vi.mock('@/config/env', () => {
             projectId: 'test-project',
             location: 'global',
             functionsRegion: 'us-central1',
-            VITE_VERTEX_PROJECT_ID: 'test-project',
-            VITE_VERTEX_LOCATION: 'global',
             VITE_FUNCTIONS_REGION: 'us-central1',
         }
     };

@@ -9,6 +9,13 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 config({ path: path.join(__dirname, "../.env") });
 
+function getVertexAIBaseUrl(location: string): string {
+    if (location === "global" || location === "us" || location === "eu") {
+        return "https://aiplatform.googleapis.com";
+    }
+    return `https://${location}-aiplatform.googleapis.com`;
+}
+
 if (!admin.apps.length) {
     admin.initializeApp({
         projectId: "indii-music-founder",
@@ -38,8 +45,8 @@ async function processJob(jobId: string, data: any) {
 
         console.log(`[Worker] Using Project ID: ${projectId}`);
         const modelId = "veo-3.1-fast-generate-preview";
-        const location = "us-central1";
-        const endpoint = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${modelId}:predictLongRunning`;
+        const location = process.env.VERTEX_VIDEO_LOCATION || process.env.VERTEX_LOCATION || "us-central1";
+        const endpoint = `${getVertexAIBaseUrl(location)}/v1/projects/${projectId}/locations/${location}/publishers/google/models/${modelId}:predictLongRunning`;
 
         const requestBody = {
             instances: [{ prompt: data.prompt }],
@@ -82,7 +89,7 @@ async function processJob(jobId: string, data: any) {
 
             // Veo uses fetchPredictOperation endpoint (POST with operationName in body)
             // See: https://cloud.google.com/vertex-ai/generative-ai/docs/model-reference/veo-video-generation
-            const pollEndpoint = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${modelId}:fetchPredictOperation`;
+            const pollEndpoint = `${getVertexAIBaseUrl(location)}/v1/projects/${projectId}/locations/${location}/publishers/google/models/${modelId}:fetchPredictOperation`;
 
             console.log(`[Worker] Calling fetchPredictOperation: ${pollEndpoint}`);
             const pollRes = await fetch(pollEndpoint, {
