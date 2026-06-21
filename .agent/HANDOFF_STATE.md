@@ -1,24 +1,24 @@
 # Handoff State
-**Updated:** 2026-06-21 08:31 EDT
+**Updated:** 2026-06-21 08:33 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
-2bc4f1ecd docs(flowchart): add technical flowchart for beat-synced performance video generation
-64dc68687 chore: session checkpoint [08:22]
-ce5d81f1b chore: session checkpoint [08:21]
-cdbffd81c fix(training): fix duplicate scenario IDs in event-planner and hospitality datasets
-a0d9c6d37 fix(video): use singletons in PerformanceVideoService to prevent test mocking issues
-dc58a0f7e chore: session checkpoint [08:09]
-7a6b90e7f fix: make endpoint fallback default-ON to survive CI deploys
-3c5fb3b3f chore: update agent workflows, api registry, testing docs, and mock runs
-0eaeac902 feat(training): add synthetic training data and scripts for event-planner & hospitality tuning
-e067de9f9 feat(video): implement beat-synced PerformanceVideoService and node graph templates
+1131cf105 chore: update agent workflows, api registry, testing docs, and mock runs
+a77b74a80 docs(flowchart): add technical flowchart for beat-synced performance video generation
+254843c7e feat(training): add synthetic training data and scripts for event-planner & hospitality tuning
+6911dd794 feat(video): implement beat-synced PerformanceVideoService and node graph templates
+74ce309f1 chore: session checkpoint [17:11]
+af0daf26d chore: session checkpoint [10:23]
+3af86ac4c docs(ledger): log ISSUE-AGENTS-RETRAIN — fine-tuned Vertex endpoints deleted, on base-model fallback
+8df691f26 chore: session checkpoint [09:39]
+ce2274b8a chore: session checkpoint [09:18]
+7ba118ec4 chore: session checkpoint [09:15]
 ```
 
 ## Working State
 ```
-clean working tree
+ M packages/firebase/src/index.ts
 ```
 
 ## Decisions
