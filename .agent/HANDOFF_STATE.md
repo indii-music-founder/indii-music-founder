@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-21 11:16 EDT
+**Updated:** 2026-06-21 11:17 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+33c3136fb chore: session checkpoint [11:16]
 d9f81273e chore: session checkpoint [11:15]
 3701cadaf chore: session checkpoint [11:13]
 9718c7733 fix: add real connectivity monitor for Electron apps
@@ -13,7 +14,6 @@ d9f81273e chore: session checkpoint [11:15]
 e5b740ce6 chore: session checkpoint [11:02]
 6c613db06 feat(mobile-remote): add general video and photo capture to remote relay
 f103ccd11 chore: session checkpoint [10:52]
-717e8d8a9 chore: session checkpoint [10:40]
 ```
 
 ## Working State
