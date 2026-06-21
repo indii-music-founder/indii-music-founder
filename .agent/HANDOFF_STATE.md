@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-21 14:24 EDT
+**Updated:** 2026-06-21 14:26 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+207da4e65 chore: session checkpoint [14:24]
 83a9a82dd chore: session checkpoint [14:24]
 fa7466dcc fix(creative): accurate error when Gemini returns no image (NO_IMAGE)
 50c4a230d chore: session checkpoint [14:18]
@@ -13,7 +14,6 @@ f5a91cdb5 chore: session checkpoint [14:12]
 7eea799ee fix: move vertex routing backend-only
 6d8ec69cc fix: normalize vertex endpoint locations
 8ee113540 fix: wire remote store types
-32cc49dbb chore: session checkpoint [12:14]
 ```
 
 ## Working State
