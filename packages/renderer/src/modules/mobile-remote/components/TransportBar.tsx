@@ -1,21 +1,21 @@
 /**
- * TransportBar — Audio transport controls wired to the real AudioPlayerSlice.
- * Controls the same playback engine as the desktop AudioPIPPlayer.
+ * TransportBar — Audio transport controls for Secure Cloud Streaming.
+ * Connects directly to an HTML5 Audio element for standalone mobile playback.
  */
 
-import { useStore } from '@/core/store';
-import { useShallow } from 'zustand/react/shallow';
+import { useRef, useEffect, useState } from 'react';
+import { HistoryItem } from '@/core/types/history';
 import {
     Play, Pause, SkipForward, Volume2, VolumeX,
     Square, Music2, Headphones, Activity
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 import { cn } from '@/lib/utils';
 
 interface TransportBarProps {
-    onSendCommand: (command: { type: string; payload: unknown }) => void;
-    isPaired: boolean;
+    track: HistoryItem | null;
+    onNext?: () => void;
 }
 
 function formatTime(seconds: number): string {
@@ -25,62 +25,80 @@ function formatTime(seconds: number): string {
     return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
-export default function TransportBar({ onSendCommand }: TransportBarProps) {
-    const {
-        currentTrack,
-        isPlaying,
-        volume,
-        currentTime,
-        duration,
-        pauseTrack,
-        resumeTrack,
-        stopTrack,
-        setVolume,
-    } = useStore(
-        useShallow(state => ({
-            currentTrack: state.currentTrack,
-            isPlaying: state.isPlaying,
-            volume: state.volume,
-            currentTime: state.currentTime,
-            duration: state.duration,
-            pauseTrack: state.pauseTrack,
-            resumeTrack: state.resumeTrack,
-            stopTrack: state.stopTrack,
-            setVolume: state.setVolume,
-        }))
-    );
+export default function TransportBar({ track, onNext }: TransportBarProps) {
+    const audioRef = useRef<HTMLAudioElement | null>(null);
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [currentTime, setCurrentTime] = useState(0);
+    const [duration, setDuration] = useState(0);
+    const [isMuted, setIsMuted] = useState(false);
 
-    const isMuted = volume === 0;
-    const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
-    const trackTitle = currentTrack?.prompt ?? currentTrack?.type ?? null;
+    useEffect(() => {
+        const audio = audioRef.current;
+        if (!audio) return;
+
+        const handleTimeUpdate = () => setCurrentTime(audio.currentTime);
+        const handleDurationChange = () => setDuration(audio.duration);
+        const handleEnded = () => {
+            setIsPlaying(false);
+            if (onNext) onNext();
+        };
+
+        audio.addEventListener('timeupdate', handleTimeUpdate);
+        audio.addEventListener('durationchange', handleDurationChange);
+        audio.addEventListener('ended', handleEnded);
+
+        return () => {
+            audio.removeEventListener('timeupdate', handleTimeUpdate);
+            audio.removeEventListener('durationchange', handleDurationChange);
+            audio.removeEventListener('ended', handleEnded);
+        };
+    }, [onNext]);
+
+    useEffect(() => {
+        if (audioRef.current && track?.url) {
+            audioRef.current.src = track.url;
+            audioRef.current.load();
+            audioRef.current.play().then(() => {
+                setIsPlaying(true);
+            }).catch(() => {
+                setIsPlaying(false);
+            });
+        } else if (audioRef.current && !track) {
+            audioRef.current.pause();
+            audioRef.current.src = '';
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setIsPlaying(false);
+            setCurrentTime(0);
+            setDuration(0);
+        }
+    }, [track]);
 
     const togglePlay = () => {
+        if (!audioRef.current || !track) return;
         if (isPlaying) {
-            pauseTrack();
+            audioRef.current.pause();
+            setIsPlaying(false);
         } else {
-            resumeTrack();
+            audioRef.current.play().catch(() => {});
+            setIsPlaying(true);
         }
-        onSendCommand({
-            type: 'agent_action',
-            payload: { action: isPlaying ? 'transport_pause' : 'transport_play' },
-        });
     };
 
     const toggleMute = () => {
-        if (isMuted) {
-            setVolume(0.8);
-        } else {
-            setVolume(0);
-        }
+        if (!audioRef.current) return;
+        audioRef.current.muted = !isMuted;
+        setIsMuted(!isMuted);
     };
 
     const handleStop = () => {
-        stopTrack();
-        onSendCommand({
-            type: 'agent_action',
-            payload: { action: 'transport_stop' },
-        });
+        if (!audioRef.current) return;
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+        setIsPlaying(false);
     };
+
+    const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
+    const trackTitle = track?.prompt || track?.subject || track?.type || null;
 
     return (
         <motion.div 
@@ -88,8 +106,10 @@ export default function TransportBar({ onSendCommand }: TransportBarProps) {
             animate={{ opacity: 1, y: 0 }}
             className="relative overflow-hidden rounded-[32px] bg-gradient-to-br from-white/[0.05] via-[#1c1c1e] to-white/[0.02] border border-white/10 shadow-2xl p-6"
         >
+            <audio ref={audioRef} style={{ display: 'none' }} playsInline crossOrigin="anonymous" />
+
             <AnimatePresence mode="wait">
-                {!currentTrack ? (
+                {!track ? (
                     <motion.div 
                         key="empty"
                         initial={{ opacity: 0 }}
@@ -100,8 +120,8 @@ export default function TransportBar({ onSendCommand }: TransportBarProps) {
                         <div className="w-16 h-16 rounded-full bg-white/[0.03] border border-white/5 flex items-center justify-center mb-4">
                             <Headphones className="w-8 h-8 text-white/10" />
                         </div>
-                        <h4 className="text-[10px] font-bold text-[#636366] uppercase tracking-[0.2em] mb-1">Audio Engine</h4>
-                        <p className="text-xs text-white/40">No media in playback pipeline</p>
+                        <h4 className="text-[10px] font-bold text-[#636366] uppercase tracking-[0.2em] mb-1">Secure Streaming</h4>
+                        <p className="text-xs text-white/40">Select a track to stream from Cloud</p>
                     </motion.div>
                 ) : (
                     <motion.div 
@@ -121,7 +141,7 @@ export default function TransportBar({ onSendCommand }: TransportBarProps) {
                                 <h4 className="text-base font-bold text-white truncate tracking-tight">
                                     {trackTitle || 'Master Preview'}
                                 </h4>
-                                <p className="text-[11px] font-bold text-[#8e8e93] uppercase tracking-widest mt-1">Studio Core Output</p>
+                                <p className="text-[11px] font-bold text-[#8e8e93] uppercase tracking-widest mt-1">Cloud Storage</p>
                             </div>
                             <div className="w-12 h-12 rounded-2xl bg-blue-600/10 border border-blue-500/20 flex items-center justify-center shadow-inner">
                                 <Music2 className="w-6 h-6 text-blue-400" />
@@ -173,8 +193,12 @@ export default function TransportBar({ onSendCommand }: TransportBarProps) {
 
                                 <motion.button
                                     whileTap={{ scale: 0.9 }}
-                                    onClick={handleStop}
-                                    className="w-12 h-12 rounded-2xl flex items-center justify-center bg-white/[0.03] border border-white/5 text-white/60 hover:text-white transition-all"
+                                    onClick={onNext}
+                                    disabled={!onNext}
+                                    className={cn(
+                                        "w-12 h-12 rounded-2xl flex items-center justify-center bg-white/[0.03] border border-white/5 transition-all",
+                                        onNext ? "text-white/60 hover:text-white cursor-pointer" : "text-white/20 cursor-not-allowed"
+                                    )}
                                 >
                                     <SkipForward className="w-5 h-5" />
                                 </motion.button>

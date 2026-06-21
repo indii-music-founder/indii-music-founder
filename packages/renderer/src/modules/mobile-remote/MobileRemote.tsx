@@ -45,15 +45,17 @@ export const triggerHaptic = (pattern: number | number[] = 50) => {
 
 // Lazy load sub-components for performance on phone
 const StatusDashboard = lazy(() => import('./components/StatusDashboard'));
-const CommandPad = lazy(() => import('./components/CommandPad'));
-const AgentChat = lazy(() => import('./components/AgentChat'));
-const GenerationMonitor = lazy(() => import('./components/GenerationMonitor'));
-const TransportBar = lazy(() => import('./components/TransportBar'));
-const ApprovalQueue = lazy(() => import('./components/ApprovalQueue'));
+const QuickCaptureView = lazy(() => import('./components/QuickCaptureView'));
+const StreamView = lazy(() => import('./components/StreamView'));
+// Legacy imports kept for eventual transition:
+// const CommandPad = lazy(() => import('./components/CommandPad'));
+// const AgentChat = lazy(() => import('./components/AgentChat'));
+// const GenerationMonitor = lazy(() => import('./components/GenerationMonitor'));
+// const ApprovalQueue = lazy(() => import('./components/ApprovalQueue'));
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-type TabId = 'home' | 'control' | 'studio' | 'review';
+type TabId = 'home' | 'capture' | 'stream' | 'settings';
 
 interface Tab {
   id: TabId;
@@ -63,9 +65,9 @@ interface Tab {
 
 const TABS: Tab[] = [
   { id: 'home', icon: LayoutDashboard, label: 'Home' },
-  { id: 'control', icon: Grip, label: 'Control' },
-  { id: 'studio', icon: MessageSquare, label: 'Studio' },
-  { id: 'review', icon: CheckSquare, label: 'Review' },
+  { id: 'capture', icon: MessageSquare, label: 'Capture' },
+  { id: 'stream', icon: CheckSquare, label: 'Stream' },
+  { id: 'settings', icon: Grip, label: 'Settings' },
 ];
 
 // We import QRCodeRenderer dynamically so it doesn't inflate load times if not used
@@ -470,37 +472,29 @@ export default function MobileRemote() {
       case 'home':
         return (
           <Suspense fallback={<TabFallback />}>
-            <div className="space-y-6">
-              <StatusDashboard connectionStatus={connectionStatus} isPaired={isPaired} />
-              <div className="pt-2 border-t border-white/5">
-                <TransportBar onSendCommand={sendCommand} isPaired={isPaired} />
-              </div>
+            <div className="space-y-6 pt-4">
+              <StatusDashboard connectionStatus={connectionStatus} isPaired={isPaired} onTabChange={setActiveTab} />
             </div>
           </Suspense>
         );
-      case 'control':
+      case 'capture':
         return (
           <Suspense fallback={<TabFallback />}>
-            <CommandPad onSendCommand={sendCommand} isPaired={isPaired} />
+            <QuickCaptureView isPaired={isPaired} />
           </Suspense>
         );
-      case 'studio':
+      case 'stream':
         return (
           <Suspense fallback={<TabFallback />}>
-            <div className="flex flex-col h-full flex-1 min-h-0">
-              <div className="flex-none mb-2">
-                <GenerationMonitor />
-              </div>
-              <div className="flex-1 min-h-0 flex flex-col">
-                <AgentChat onSendCommand={sendCommand} isPaired={isPaired} />
-              </div>
+            <StreamView />
+          </Suspense>
+        );
+      case 'settings':
+        return (
+          <Suspense fallback={<TabFallback />}>
+            <div className="flex flex-col h-full flex-1 min-h-[60vh] justify-center items-center opacity-50">
+              <p className="text-sm font-bold uppercase tracking-widest text-[#F0F0F0]">Settings View Coming Soon</p>
             </div>
-          </Suspense>
-        );
-      case 'review':
-        return (
-          <Suspense fallback={<TabFallback />}>
-            <ApprovalQueue onSendCommand={sendCommand} isPaired={isPaired} />
           </Suspense>
         );
       default:

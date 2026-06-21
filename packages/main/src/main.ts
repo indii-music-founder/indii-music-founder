@@ -173,6 +173,7 @@ const createWindow = async () => {
             safeDialogsMessage: 'Stop seeing alerts from this page',
             webSecurity: !isDev, // Intentionally disabled in dev only — needed for Vite CORS. Always true in production builds.
             webviewTag: false,
+            backgroundThrottling: false, // Ensures remote dispatch queue stays active when app is hidden to tray
         },
         autoHideMenuBar: true,
         backgroundColor: '#000000',
