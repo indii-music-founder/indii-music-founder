@@ -77,6 +77,27 @@ export interface DesktopState {
     online: boolean;
 }
 
+export interface AgentDispatchTask {
+    id?: string;
+    type: 'voice_memo' | 'quick_contact' | 'receipt_log' | 'agent_command';
+    payload: {
+        audioUrl?: string;
+        transcription?: string;
+        imageUrl?: string;
+        amount?: number;
+        commandText?: string;
+    };
+    status: 'pending' | 'processing' | 'completed' | 'failed';
+    executorId?: string;
+    createdAt: Timestamp | ReturnType<typeof serverTimestamp>;
+    pickedUpAt?: Timestamp | ReturnType<typeof serverTimestamp>;
+    completedAt?: Timestamp | ReturnType<typeof serverTimestamp>;
+    error?: {
+        code: string;
+        message: string;
+    };
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -104,6 +125,13 @@ function getResponsesRef() {
     const uid = getUserId();
     if (!uid) return null;
     return collection(db, 'users', uid, 'remote-relay-responses');
+}
+
+function getDispatchQueueRef() {
+    if (isFirebaseE2EMockEnabled()) return null;
+    const uid = getUserId();
+    if (!uid) return null;
+    return collection(db, 'users', uid, 'agent_dispatch_queue');
 }
 
 // ---------------------------------------------------------------------------
@@ -274,6 +302,53 @@ class RemoteRelayService {
         const docRef = await addDoc(ref, command);
         logger.info(`[RemoteRelay] 📱 Command sent: ${docRef.id} → agent: ${targetAgentId || 'auto'}`);
         return docRef.id;
+    }
+
+    /**
+     * Dispatch a generic task to the desktop executor (Mobile side).
+     */
+    async dispatchTask(task: Omit<AgentDispatchTask, 'id' | 'status' | 'createdAt'>): Promise<string | null> {
+        const ref = getDispatchQueueRef();
+        if (!ref) {
+            logger.warn('[RemoteRelay] No auth — cannot dispatch task');
+            return null;
+        }
+
+        const dispatchDoc: AgentDispatchTask = {
+            ...task,
+            status: 'pending',
+            createdAt: serverTimestamp(),
+        };
+
+        const docRef = await addDoc(ref, dispatchDoc);
+        logger.info(`[RemoteRelay] 📱 Dispatch task sent: ${docRef.id} [${task.type}]`);
+        return docRef.id;
+    }
+
+    /**
+     * Listen for all dispatch tasks for this user (Mobile side - to see status of tasks).
+     */
+    onAllDispatchTasks(callback: (tasks: (AgentDispatchTask & { id: string })[]) => void): Unsubscribe {
+        const ref = getDispatchQueueRef();
+        if (!ref) return () => { };
+
+        // Order by createdAt descending
+        const q = query(
+            ref,
+            orderBy('createdAt', 'desc'),
+            limit(50)
+        );
+
+        return onSnapshot(q, (snapshot) => {
+            const tasks: (AgentDispatchTask & { id: string })[] = [];
+            snapshot.forEach((doc) => {
+                const data = doc.data() as AgentDispatchTask;
+                tasks.push({ ...data, id: doc.id });
+            });
+            callback(tasks);
+        }, (error) => {
+            logger.error('[RemoteRelay] onAllDispatchTasks listener error:', error);
+        });
     }
 
     /**
@@ -480,6 +555,62 @@ class RemoteRelayService {
         await updateDoc(doc(db, 'users', uid, 'remote-relay-commands', commandId), {
             status: 'completed',
         });
+    }
+
+    /**
+     * Listen for pending dispatch tasks (desktop side).
+     */
+    onDispatchTask(
+        callback: (task: AgentDispatchTask & { id: string }) => void
+    ): Unsubscribe {
+        let unsubFirestore: Unsubscribe = () => {};
+        const ref = getDispatchQueueRef();
+        if (!ref) {
+            logger.warn('[RemoteRelay] No Firestore auth — cannot listen for dispatch tasks');
+        } else {
+            logger.info('[RemoteRelay] 🖥️ Starting Firestore dispatch task listener...');
+            unsubFirestore = onSnapshot(ref, (snapshot) => {
+                snapshot.docChanges().forEach((change) => {
+                    if (change.type === 'added' || change.type === 'modified') {
+                        const data = change.doc.data() as AgentDispatchTask;
+                        if (data.status === 'pending') {
+                            logger.info(`[RemoteRelay] 📥 Pending dispatch task received: ${change.doc.id} [${data.type}]`);
+                            callback({ ...data, id: change.doc.id });
+                        }
+                    }
+                });
+            }, (error) => {
+                logger.error('[RemoteRelay] Dispatch task listener error:', error);
+            });
+        }
+        return unsubFirestore;
+    }
+
+    /**
+     * Update the status of a dispatch task (desktop side).
+     */
+    async updateDispatchTaskStatus(
+        taskId: string, 
+        status: AgentDispatchTask['status'], 
+        error?: AgentDispatchTask['error']
+    ): Promise<void> {
+        const uid = getUserId();
+        if (!uid) return;
+        
+        const updateData: Partial<AgentDispatchTask> = { status };
+        
+        if (status === 'processing') {
+            updateData.pickedUpAt = serverTimestamp();
+        } else if (status === 'completed' || status === 'failed') {
+            updateData.completedAt = serverTimestamp();
+        }
+        
+        if (error) {
+            updateData.error = error;
+        }
+
+        await updateDoc(doc(db, 'users', uid, 'agent_dispatch_queue', taskId), updateData as any);
+        logger.info(`[RemoteRelay] 🖥️ Dispatch task ${taskId} marked as ${status}`);
     }
 
     /**
