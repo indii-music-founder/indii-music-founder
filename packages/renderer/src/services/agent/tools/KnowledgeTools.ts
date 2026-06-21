@@ -59,7 +59,7 @@ export const KnowledgeTools = {
     search_google_docs: wrapTool('search_google_docs', async (args: { query: string; maxResults?: number }) => {
         if (!devKnowledgeService.isAvailable()) {
             return toolError(
-                "Developer Knowledge API not configured. Set VITE_GOOGLE_DEVKNOWLEDGE_API_KEY.",
+                "Developer Knowledge API is backend-only and no secured Firebase gateway is configured.",
                 "CONFIG_MISSING"
             );
         }
@@ -109,7 +109,7 @@ export const KnowledgeTools = {
     get_google_doc: wrapTool('get_google_doc', async (args: { documentName: string }) => {
         if (!devKnowledgeService.isAvailable()) {
             return toolError(
-                "Developer Knowledge API not configured. Set VITE_GOOGLE_DEVKNOWLEDGE_API_KEY.",
+                "Developer Knowledge API is backend-only and no secured Firebase gateway is configured.",
                 "CONFIG_MISSING"
             );
         }

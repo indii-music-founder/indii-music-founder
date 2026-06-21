@@ -1,5 +1,6 @@
 import { logger } from '@/utils/logger';
-import { fetchWithRetry } from '@/lib/fetchWithRetry';
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '@/services/firebase';
 
 export interface MemoryBankResult {
     id: string;
@@ -12,22 +13,11 @@ export interface MemoryBankResult {
 /**
  * MemoryBankService — Bridge to GEAP's managed Memory Bank (Mem0).
  * Handles persistent long-term and episodic memory via vector search.
+ *
+ * Browser-side Mem0 API token usage is disabled. Any future Mem0 integration
+ * must be routed through an authenticated Firebase Callable/HTTP backend.
  */
 class MemoryBankService {
-    private apiKey: string;
-    private baseUrl = 'https://api.mem0.ai/v2/memories/';
-
-    constructor() {
-        this.apiKey = import.meta.env.VITE_MEM0_API_KEY || import.meta.env.MEM0_API_KEY || '';
-    }
-
-    private get headers() {
-        return {
-            'Authorization': `Token ${this.apiKey}`,
-            'Content-Type': 'application/json',
-        };
-    }
-
     /**
      * Redacts PII like credit card numbers and passwords/secrets from the text.
      */
@@ -49,30 +39,13 @@ class MemoryBankService {
      * Add a new memory for a user.
      */
     async addMemory(userId: string, content: string): Promise<MemoryBankResult[]> {
-        if (!this.apiKey) return [];
-
+        const redactedContent = this.redactPII(content);
         try {
-            const redactedContent = this.redactPII(content);
-            const response = await fetchWithRetry(this.baseUrl, {
-                method: 'POST',
-                headers: this.headers,
-                body: JSON.stringify({
-                    messages: [{ role: 'user', content: redactedContent }],
-                    user_id: userId,
-                }),
-                throwOnHttpError: false
-            });
-
-            if (!response.ok) {
-                const err = await response.text();
-                logger.error(`[MemoryBank] Failed to add memory: ${err}`);
-                return [];
-            }
-
-            const data = await response.json();
-            return data as MemoryBankResult[];
+            const callable = httpsCallable<{ action: string; memory: string }, { results: MemoryBankResult[] }>(functions, 'manageSemanticMemory');
+            const result = await callable({ action: 'add', memory: redactedContent });
+            return result.data.results || [];
         } catch (error) {
-            logger.error('[MemoryBank] Error adding memory:', error);
+            logger.error('[MemoryBank] Failed to add memory via manageSemanticMemory proxy', error);
             return [];
         }
     }
@@ -81,31 +54,13 @@ class MemoryBankService {
      * Search memories for a user based on a query.
      */
     async searchMemories(userId: string, query: string, limit: number = 5): Promise<MemoryBankResult[]> {
-        if (!this.apiKey) return [];
-
+        const redactedQuery = this.redactPII(query);
         try {
-            const redactedQuery = this.redactPII(query);
-            const response = await fetchWithRetry(`${this.baseUrl}search/`, {
-                method: 'POST',
-                headers: this.headers,
-                body: JSON.stringify({
-                    query: redactedQuery,
-                    user_id: userId,
-                    limit,
-                }),
-                throwOnHttpError: false
-            });
-
-            if (!response.ok) {
-                const err = await response.text();
-                logger.error(`[MemoryBank] Failed to search memories: ${err}`);
-                return [];
-            }
-
-            const data = await response.json();
-            return data as MemoryBankResult[];
+            const callable = httpsCallable<{ action: string; query: string; limit: number }, { results: MemoryBankResult[] }>(functions, 'manageSemanticMemory');
+            const result = await callable({ action: 'search', query: redactedQuery, limit });
+            return result.data.results || [];
         } catch (error) {
-            logger.error('[MemoryBank] Error searching memories:', error);
+            logger.error('[MemoryBank] Failed to search memories via manageSemanticMemory proxy', error);
             return [];
         }
     }
@@ -114,35 +69,15 @@ class MemoryBankService {
      * Get all memories for a user.
      */
     async getAllMemories(userId: string): Promise<MemoryBankResult[]> {
-        if (!this.apiKey) return [];
-
-        try {
-            const response = await fetchWithRetry(`${this.baseUrl}?user_id=${userId}`, {
-                method: 'GET',
-                headers: this.headers,
-                throwOnHttpError: false
-            });
-
-            if (!response.ok) {
-                const err = await response.text();
-                logger.error(`[MemoryBank] Failed to get memories: ${err}`);
-                return [];
-            }
-
-            const data = await response.json();
-            return data as MemoryBankResult[];
-        } catch (error) {
-            logger.error('[MemoryBank] Error getting memories:', error);
-            return [];
-        }
+        void userId;
+        logger.warn('[MemoryBank] getAllMemories is not supported by manageSemanticMemory proxy yet.');
+        return [];
     }
 
     /**
      * Indexes a completed graph execution as a long-term episodic memory.
      */
     async indexGraphExecution(userId: string, executionId: string, query: string, report: string): Promise<void> {
-        if (!this.apiKey) return;
-
         try {
             const content = `[Graph Execution ${executionId}]\nQuery: ${query}\nFinal Report: ${report}`;
             const results = await this.addMemory(userId, content);

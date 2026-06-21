@@ -2,10 +2,7 @@ import { AutonomousIntelligence } from '../intelligence/AutonomousIntelligence';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { InputSanitizer } from '../intelligence/utils/InputSanitizer';
 import { logger } from '@/utils/logger';
-import { ContentPart } from '@/shared/types/ai.dto';
-import { editImageDirectly } from '@/services/intelligence/generators/DirectImageEditor';
-
-
+import { ContentPart, Part } from '@/shared/types/ai.dto';
 // Data URI regex - strict pattern for image MIME types
 const DATA_URI_REGEX = /^data:(image\/[a-z0-9.+-]+);base64,([A-Za-z0-9+/=]+)$/i;
 
@@ -47,9 +44,6 @@ export class EditingService {
 
     /**
      * Edit a single image through the secured Cloud Function pipeline.
-     * 
-     * The legacy DirectImageEditor export now routes to the backend. Browser
-     * code must not call Gemini directly with raw API keys.
      */
     async editImage(options: {
         image: { mimeType: string; data: string };
@@ -69,16 +63,25 @@ export class EditingService {
             useSemanticMap: !!options.useSemanticMap,
         });
 
-        return this.withRetry(() => editImageDirectly({
-            image: options.image,
-            mask: options.mask,
-            referenceImage: options.referenceImage,
-            prompt: options.prompt,
-            forceHighFidelity: options.forceHighFidelity || !!options.decoratedImage,
-            model: options.model,
-            thoughtSignature: options.thoughtSignature,
-            useSemanticMap: options.useSemanticMap,
-        }));
+        return this.withRetry(async () => {
+            const { functions } = await import('@/services/firebase');
+            const { httpsCallable } = await import('firebase/functions');
+            const editImageFn = httpsCallable(functions, 'editImage');
+
+            const payload = {
+                image: options.image,
+                mask: options.mask,
+                referenceImage: options.referenceImage,
+                prompt: options.prompt,
+                forceHighFidelity: options.forceHighFidelity || !!options.decoratedImage,
+                model: options.model,
+                thoughtSignature: options.thoughtSignature,
+                useSemanticMap: options.useSemanticMap,
+            };
+
+            const result = await editImageFn(payload);
+            return result.data as { id: string; url: string; prompt: string; thoughtSignature?: string } | null;
+        });
     }
 
     /**
@@ -140,6 +143,36 @@ export class EditingService {
         }
 
         return results;
+    }
+
+    /**
+     * Specialized macro for AI Face Swap (Likeness).
+     * Extracts the face mask from the generated image and performs a targeted edit
+     * using the user's real face as the reference image to correct generation errors.
+     */
+    async faceSwap(options: {
+        generatedImage: { mimeType: string; data: string };
+        likenessImage: { mimeType: string; data: string };
+        model?: string;
+    }): Promise<{ id: string; url: string; prompt: string; thoughtSignature?: string } | null> {
+        const { ImageAnalysisService } = await import('./ImageAnalysisService');
+        const analysis = new ImageAnalysisService();
+        
+        logger.info('[EditingService] Extracting face mask for Likeness Face Swap');
+        const faceMaskBase64 = await analysis.extractSegmentationMask(
+            `data:${options.generatedImage.mimeType};base64,${options.generatedImage.data}`,
+            'The person\'s face'
+        );
+
+        logger.info('[EditingService] Executing Likeness Face Swap');
+        return this.editImage({
+            image: options.generatedImage,
+            mask: { mimeType: 'image/png', data: faceMaskBase64 },
+            referenceImage: options.likenessImage,
+            prompt: 'Seamlessly blend the reference face onto this person, matching lighting and skin tone exactly.',
+            model: options.model || 'pro',
+            forceHighFidelity: true
+        });
     }
 
     /**
@@ -214,7 +247,7 @@ export class EditingService {
         projectContext?: string;
         thoughtSignature?: string;
     }): Promise<{ id: string; url: string; prompt: string; thoughtSignature?: string } | null> {
-        const parts: import('firebase/ai').Part[] = [];
+        const parts: Part[] = [];
         options.images.forEach((img, idx) => {
             parts.push({ inlineData: { mimeType: img.mimeType, data: img.data } });
             parts.push({ text: `[Reference ${idx + 1}]` });
@@ -297,7 +330,7 @@ export class EditingService {
             }
 
             // Step 3: Generate Frame
-            const parts: import('firebase/ai').Part[] = [];
+            const parts: Part[] = [];
             if (previousImage) {
                 parts.push({ inlineData: { mimeType: previousImage.mimeType, data: previousImage.data } });
                 parts.push({ text: `[Reference Frame]` });
@@ -346,7 +379,7 @@ export class EditingService {
             ? INTELLIGENCE_MODELS.IMAGE.DIRECT_PRO
             : INTELLIGENCE_MODELS.IMAGE.DIRECT_FAST;
 
-        const parts: import('firebase/ai').Part[] = [
+        const parts: Part[] = [
             { text: options.prompt || 'Render the content image in the artistic style of the style reference. Preserve the subject and composition from the content image. Apply the colors, textures, lighting, and mood from the style reference.' },
             { inlineData: { mimeType: options.contentImage.mimeType, data: options.contentImage.data } },
             { text: '[Content Image - preserve this subject/composition]' },

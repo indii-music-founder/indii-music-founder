@@ -309,5 +309,61 @@ export const WORKFLOW_TEMPLATES: SavedWorkflow[] = [
             { id: 'e4', source: 'booking-1', target: 'end', sourceHandle: 'trigger_out', targetHandle: 'trigger' },
             { id: 'e5', source: 'art-1', target: 'end', sourceHandle: 'trigger_out', targetHandle: 'trigger' }
         ]
+    },
+    {
+        id: 'template-song-performance-video',
+        name: 'Song → Performance Video',
+        description: 'Create a beat-synced performance music video from an uploaded song and AI artist imagery.',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        viewport: { x: 0, y: 0, zoom: 1 },
+        nodes: [
+            {
+                id: 'start',
+                type: 'inputNode',
+                position: { x: 50, y: 250 },
+                data: {
+                    nodeType: 'input',
+                    prompt: 'My latest single ready for a music video',
+                    status: Status.PENDING
+                }
+            },
+            {
+                id: 'video-analyze',
+                type: 'departmentNode',
+                position: { x: 300, y: 250 },
+                data: {
+                    nodeType: 'department',
+                    departmentName: 'Video Department',
+                    selectedJobId: 'video-analyze-song',
+                    status: Status.PENDING
+                }
+            },
+            {
+                id: 'video-final',
+                type: 'departmentNode',
+                position: { x: 600, y: 250 },
+                data: {
+                    nodeType: 'department',
+                    departmentName: 'Video Department',
+                    selectedJobId: 'video-beat-sync-assemble',
+                    status: Status.PENDING
+                }
+            },
+            {
+                id: 'end',
+                type: 'outputNode',
+                position: { x: 900, y: 250 },
+                data: {
+                    nodeType: 'output',
+                    status: Status.PENDING
+                }
+            }
+        ],
+        edges: [
+            { id: 'e1', source: 'start', target: 'video-analyze', sourceHandle: 'trigger', targetHandle: 'trigger' },
+            { id: 'e2', source: 'video-analyze', target: 'video-final', sourceHandle: 'trigger_out', targetHandle: 'trigger' },
+            { id: 'e3', source: 'video-final', target: 'end', sourceHandle: 'trigger_out', targetHandle: 'trigger' }
+        ]
     }
 ];

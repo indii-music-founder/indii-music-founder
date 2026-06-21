@@ -8,7 +8,6 @@ dotenv.config();
 // Manually mapped to match env-schema.json
 const envSchema = z.object({
   VITE_API_KEY: z.string().min(1),
-  VITE_GOOGLE_MAPS_API_KEY: z.string().optional(),
   VITE_SKIP_ONBOARDING: z.enum(["true", "false"]).default("false").optional(),
   DEV: z.string().default("false").optional(),
 
@@ -33,7 +32,6 @@ const envSchema = z.object({
 
   // App Check
   VITE_FIREBASE_APP_CHECK_KEY: z.string().optional(),
-  VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN: z.string().optional(),
 
   VITE_LANDING_PAGE_URL: z.string().optional(),
 
@@ -59,7 +57,6 @@ console.log("Validating environment variables...");
 
 const processEnv = {
   VITE_API_KEY: process.env.VITE_API_KEY,
-  VITE_GOOGLE_MAPS_API_KEY: process.env.VITE_GOOGLE_MAPS_API_KEY,
   VITE_SKIP_ONBOARDING: process.env.VITE_SKIP_ONBOARDING,
   DEV: process.env.DEV,
 
@@ -83,8 +80,6 @@ const processEnv = {
   VITE_FIREBASE_DATABASE_URL: process.env.VITE_FIREBASE_DATABASE_URL,
 
   VITE_FIREBASE_APP_CHECK_KEY: process.env.VITE_FIREBASE_APP_CHECK_KEY,
-  VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN:
-    process.env.VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN,
 
   VITE_LANDING_PAGE_URL: process.env.VITE_LANDING_PAGE_URL,
 

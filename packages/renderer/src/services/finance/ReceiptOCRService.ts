@@ -1,7 +1,7 @@
 import { FirebaseIntelligenceService } from '@/services/intelligence/FirebaseIntelligenceService';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { logger } from '@/utils/logger';
-import type { Content } from 'firebase/ai';
+import type { Content } from '@/shared/types/ai.dto';
 
 export interface ReceiptData {
     amount: number;

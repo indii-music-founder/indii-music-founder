@@ -66,6 +66,9 @@ vi.mock('firebase-admin', () => {
     return {
         initializeApp: vi.fn(),
         auth: vi.fn(),
+        appCheck: vi.fn(() => ({
+            verifyToken: vi.fn().mockResolvedValue({ appId: 'test-app' }),
+        })),
         firestore: firestoreFn,
         storage: vi.fn(() => ({
             bucket: vi.fn(() => ({
@@ -233,7 +236,11 @@ describe('Image and Content Generation Functions', () => {
         it('should yield chunks from SDK stream', async () => {
             const req: any = {
                 method: 'POST',
-                headers: { authorization: 'Bearer token', origin: 'http://localhost:4242' },
+                headers: {
+                    authorization: 'Bearer token',
+                    origin: 'http://localhost:4242',
+                    'x-firebase-appcheck': 'app-check-token',
+                },
                 body: {
                     model: 'gemini-3.1-pro-preview',
                     contents: [{ role: 'user', parts: [{ text: 'say hello' }] }]

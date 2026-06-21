@@ -14,11 +14,26 @@ cc1c951 Merge pull request #169 from indii-music-founder/codex/firebase-only-ren
 511ff5d test: align security boundary expectations
 e37cb85 chore: session checkpoint [09:51]
 490d39a fix: enforce firebase-only renderer ai boundary
+**Updated:** 2026-06-21 08:40 EDT
+**Branch:** `main`
+
+## Recent Commits
+```
+49ffef13c chore: session checkpoint [08:33]
+1131cf105 chore: update agent workflows, api registry, testing docs, and mock runs
+a77b74a80 docs(flowchart): add technical flowchart for beat-synced performance video generation
+254843c7e feat(training): add synthetic training data and scripts for event-planner & hospitality tuning
+6911dd794 feat(video): implement beat-synced PerformanceVideoService and node graph templates
+74ce309f1 chore: session checkpoint [17:11]
+af0daf26d chore: session checkpoint [10:23]
+3af86ac4c docs(ledger): log ISSUE-AGENTS-RETRAIN — fine-tuned Vertex endpoints deleted, on base-model fallback
+8df691f26 chore: session checkpoint [09:39]
+ce2274b8a chore: session checkpoint [09:18]
 ```
 
 ## Working State
 ```
-clean working tree
+ M packages/firebase/src/index.ts
 ```
 
 ## Decisions

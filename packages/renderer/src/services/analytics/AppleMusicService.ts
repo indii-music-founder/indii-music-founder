@@ -1,15 +1,14 @@
 /**
  * AppleMusicService — Apple Music for Artists Analytics Integration
  *
- * Uses MusicKit JS (browser SDK) for user authentication and Apple Music API access.
+ * Apple Music analytics must be served by a backend integration.
  * Analytics data (streams, Shazam, radio airplay, listener counts) requires an
- * Apple Music for Artists account — standard MusicKit developer tokens grant access
- * only to catalog and personal library, NOT to artist analytics.
+ * Apple Music for Artists account. Browser-side developer tokens are disabled.
  *
  * OAuth/Auth Flow:
- *   MusicKit JS handles Apple ID sign-in entirely client-side using the MusicKit
- *   developer token (a JWT signed with your Apple developer private key). No
- *   server-side token exchange is required for authentication.
+ *   MusicKit JS requires a developer token signed with an Apple private key.
+ *   That token must be minted and served by a secured backend route before this
+ *   service can enable real Apple Music access.
  *
  * However, Apple Music for Artists analytics are served through a SEPARATE portal
  * (artists.apple.com) and its API is NOT publicly documented or available to
@@ -19,16 +18,13 @@
  *   - Storefront: country of the user
  *
  * What this service provides:
- *   - MusicKit JS initialization and Apple ID authentication
- *   - User's library tracks (to identify your releases in their library)
- *   - Catalog search to verify your tracks are on Apple Music
+ *   - Fails closed for browser-side Apple Music access
  *   - Placeholder for future Apple Music for Artists API when documented
  *
  * Setup requirements:
  *   1. Apple Developer account with MusicKit capability enabled
  *   2. Generate a MusicKit private key (.p8 file) in Apple Developer Console
- *   3. Create a developer token JWT (signed with private key, expires max 6 months)
- *      — this is typically done server-side and injected as VITE_APPLE_MUSIC_DEV_TOKEN
+ *   3. Create a backend route that mints developer token JWTs with the private key
  *   4. MusicKit JS loaded from Apple's CDN in index.html:
  *      <script src="https://js-cdn.music.apple.com/musickit/v3/musickit.js"></script>
  *
@@ -111,38 +107,12 @@ export class AppleMusicService {
      * Initialize MusicKit JS with the developer token.
      * Call this before any other method.
      *
-     * The developer token is a signed JWT. Never generate it client-side —
-     * use a server endpoint or bake it in as an env var.
+     * The developer token is a signed JWT. Never generate or inject it client-side.
      */
     async initialize(): Promise<void> {
         if (this._kit) return;
 
-        const devToken = import.meta.env.VITE_APPLE_MUSIC_DEV_TOKEN;
-        if (!devToken) {
-            logger.warn(
-                '[AppleMusicService] VITE_APPLE_MUSIC_DEV_TOKEN is not set. ' +
-                'Apple Music operations will run in fallback/sandbox mode.'
-            );
-            return;
-        }
-
-        if (!window.MusicKit) {
-            logger.warn(
-                '[AppleMusicService] MusicKit JS is not loaded. Add the CDN script to index.html. ' +
-                'Apple Music operations will run in fallback/sandbox mode.'
-            );
-            return;
-        }
-
-        try {
-            this._kit = await window.MusicKit.configure({
-                developerToken: devToken,
-                app: { name: 'indii', build: '1.0.0' },
-            });
-        } catch (err: unknown) {
-            logger.error('[AppleMusicService] Failed to configure MusicKit:', err);
-            Sentry.captureException(err);
-        }
+        logger.warn('[AppleMusicService] Browser-side Apple Music developer tokens are disabled. Configure a secured Firebase/backend gateway.');
     }
 
     // ── Auth / Connection ─────────────────────────────────────────────────────
@@ -241,65 +211,22 @@ export class AppleMusicService {
 
     /**
      * Fetch analytics from the partner backend service for Apple Music for Artists.
+     * Browser-side partner bearer tokens are disabled; this must route through
+     * a secured Firebase/backend integration.
      */
     async fetchPartnerAnalytics(artistId: string): Promise<PlatformData | null> {
-        try {
-            const backendUrl = import.meta.env.VITE_PARTNER_API_URL || 'https://api.indii.co/v1';
-            const token = import.meta.env.VITE_PARTNER_API_TOKEN;
-
-            if (!token) {
-                logger.warn('[AppleMusicService] VITE_PARTNER_API_TOKEN not configured. Skipping partner analytics fetch.');
-                return null;
-            }
-
-            logger.info(`[AppleMusicService] Fetching partner analytics for artist ${artistId} from ${backendUrl}`);
-            const response = await fetch(`${backendUrl}/analytics/apple-music?artistId=${encodeURIComponent(artistId)}`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Accept': 'application/json'
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error(`Partner service responded with status ${response.status}`);
-            }
-
-            const data = await response.json() as PlatformData;
-            if (data && typeof data.streams === 'number') {
-                return data;
-            }
-            return null;
-        } catch (err: unknown) {
-            logger.error('[AppleMusicService] Failed to fetch partner analytics:', err);
-            Sentry.captureException(err);
-            return null;
-        }
+        void artistId;
+        logger.warn('[AppleMusicService] Partner analytics are backend-only; no secured Firebase gateway is configured.');
+        return null;
     }
 
     /**
      * Fetch daily stream history from the partner service.
      */
     async fetchPartnerStreamHistory(artistId: string): Promise<StreamDataPoint[] | null> {
-        try {
-            const backendUrl = import.meta.env.VITE_PARTNER_API_URL || 'https://api.indii.co/v1';
-            const token = import.meta.env.VITE_PARTNER_API_TOKEN;
-
-            if (!token) return null;
-
-            const response = await fetch(`${backendUrl}/analytics/apple-music/history?artistId=${encodeURIComponent(artistId)}`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Accept': 'application/json'
-                }
-            });
-
-            if (!response.ok) return null;
-
-            return await response.json() as StreamDataPoint[];
-        } catch (err: unknown) {
-            logger.error('[AppleMusicService] Failed to fetch partner stream history:', err);
-            return null;
-        }
+        void artistId;
+        logger.warn('[AppleMusicService] Partner stream history is backend-only; no secured Firebase gateway is configured.');
+        return null;
     }
 
     // ── Analytics ─────────────────────────────────────────────────────────────

@@ -74,7 +74,10 @@ export function getGithubToken(): string | null {
  */
 export function getGeminiApiKey(): string | null {
     // 1. Try Environment Variable (Local/Dev/Emulator)
-    const envKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_GENAI_API_KEY || process.env.VITE_API_KEY;
+    let envKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_GENAI_API_KEY;
+    if (envKey === 'AIzaSyBH5WGpmbYLQcSNte0dOQxxVhMBZSEC-D-I') {
+        envKey = '';
+    }
     if (envKey && envKey.trim().length > 0) {
         return envKey;
     }
@@ -83,13 +86,19 @@ export function getGeminiApiKey(): string | null {
     // For V1 functions, secrets are mounted as environment variables.
     // However, defineSecret().value() is the modern way to access them if initialized.
     try {
-        const secret = geminiApiKey.value();
+        let secret = geminiApiKey.value();
+        if (secret === 'AIzaSyBH5WGpmbYLQcSNte0dOQxxVhMBZSEC-D-I') {
+            secret = '';
+        }
         if (secret && secret.trim().length > 0) {
             return secret;
         }
     } catch (_e) {
         // Fallback to direct process.env check in case .value() fails in specific contexts
-        const directEnv = process.env.GEMINI_API_KEY || process.env.VITE_API_KEY;
+        let directEnv = process.env.GEMINI_API_KEY || process.env.GOOGLE_GENAI_API_KEY;
+        if (directEnv === 'AIzaSyBH5WGpmbYLQcSNte0dOQxxVhMBZSEC-D-I') {
+            directEnv = '';
+        }
         if (directEnv && directEnv.trim().length > 0) {
             return directEnv;
         }

@@ -93,6 +93,7 @@ describe('AI Caching (Browser Environment)', () => {
                 usageMetadata: { promptTokenCount: 10, candidatesTokenCount: 10 }
             }
         });
+        vi.mocked(fetch).mockClear();
     });
 
     it('should cache generated text responses', async () => {
@@ -102,7 +103,7 @@ describe('AI Caching (Browser Environment)', () => {
         // 1. First Call: Should hit the API
         const response1 = await firebaseAI.generateText(prompt, model);
         expect(response1).toBe('Fresh Autonomous Response');
-        expect(mockGenerateContent).toHaveBeenCalledTimes(1);
+        expect(fetch).toHaveBeenCalledTimes(1);
 
         // 2. Refresh Mock to return something different (to prove we don't call it)
         mockGenerateContent.mockResolvedValueOnce({
@@ -115,7 +116,7 @@ describe('AI Caching (Browser Environment)', () => {
         // 3. Second Call: Should hit the Cache
         const response2 = await firebaseAI.generateText(prompt, model);
         expect(response2).toBe('Fresh Autonomous Response'); // Same response as before
-        expect(mockGenerateContent).toHaveBeenCalledTimes(1); // Call count remains 1
+        expect(fetch).toHaveBeenCalledTimes(1); // Call count remains 1
     });
 
     it('should cache structured data responses', async () => {
@@ -134,21 +135,21 @@ describe('AI Caching (Browser Environment)', () => {
         // 1. First Call
         const result1 = await firebaseAI.generateStructuredData(prompt, schema);
         expect(result1).toEqual({ foo: 'bar' });
-        expect(mockGenerateContent).toHaveBeenCalledTimes(1);
+        expect(fetch).toHaveBeenCalledTimes(1);
 
         // 2. Second Call
         const result2 = await firebaseAI.generateStructuredData(prompt, schema);
         expect(result2).toEqual({ foo: 'bar' });
-        expect(mockGenerateContent).toHaveBeenCalledTimes(1); // Still 1
+        expect(fetch).toHaveBeenCalledTimes(1); // Still 1
     });
 
     it('should respect cache misses (different prompt)', async () => {
         // 1. Call with Prompt A
         await firebaseAI.generateText('Prompt A');
-        expect(mockGenerateContent).toHaveBeenCalledTimes(1);
+        expect(fetch).toHaveBeenCalledTimes(1);
 
         // 2. Call with Prompt B
         await firebaseAI.generateText('Prompt B');
-        expect(mockGenerateContent).toHaveBeenCalledTimes(2);
+        expect(fetch).toHaveBeenCalledTimes(2);
     });
 });

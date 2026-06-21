@@ -22,26 +22,26 @@ export const USE_FINE_TUNED_AGENTS = import.meta.env.VITE_USE_FINE_TUNED_AGENTS 
  * Status: Training COMPLETE - 2026-05-10
  */
 export const DIRECT_FINE_TUNED_MODEL_REGISTRY = {
-    generalist: 'projects/223837784072/locations/us-central1/endpoints/8440177260006211584',
-    finance: 'projects/223837784072/locations/us-central1/endpoints/3270044887784882176',
-    legal: 'projects/223837784072/locations/us-central1/endpoints/7521442936022630400',
-    distribution: 'projects/223837784072/locations/us-central1/endpoints/4566237155537453056',
-    marketing: 'projects/223837784072/locations/us-central1/endpoints/2166662979079110656',
-    social: 'projects/223837784072/locations/us-central1/endpoints/2513440150386638848',
-    publishing: 'projects/223837784072/locations/us-central1/endpoints/8962594816781189120',
-    licensing: 'projects/223837784072/locations/us-central1/endpoints/1071443844697948160',
-    brand: 'projects/223837784072/locations/us-central1/endpoints/1396547442798755840',
-    road: 'projects/223837784072/locations/us-central1/endpoints/6548665416510603264',
-    publicist: 'projects/223837784072/locations/us-central1/endpoints/6584694213529567232',
-    music: 'projects/223837784072/locations/us-central1/endpoints/6646900183382622208',
-    video: 'projects/223837784072/locations/us-central1/endpoints/4778750762953998336',
-    devops: 'projects/223837784072/locations/us-central1/endpoints/4200038210836889600',
-    security: 'projects/223837784072/locations/us-central1/endpoints/3481714070271295488',
-    producer: 'projects/223837784072/locations/us-central1/endpoints/8255529675284021248',
-    director: 'projects/223837784072/locations/us-central1/endpoints/8584292448082067456',
-    screenwriter: 'projects/223837784072/locations/us-central1/endpoints/453043320864636928',
-    merchandise: 'projects/223837784072/locations/us-central1/endpoints/4666160772269735936',
-    curriculum: 'projects/223837784072/locations/us-central1/endpoints/2758886330078330880',
+    generalist: 'projects/148015878263/locations/us-central1/endpoints/8440177260006211584',
+    finance: 'projects/148015878263/locations/us-central1/endpoints/3270044887784882176',
+    legal: 'projects/148015878263/locations/us-central1/endpoints/7521442936022630400',
+    distribution: 'projects/148015878263/locations/us-central1/endpoints/4566237155537453056',
+    marketing: 'projects/148015878263/locations/us-central1/endpoints/2166662979079110656',
+    social: 'projects/148015878263/locations/us-central1/endpoints/2513440150386638848',
+    publishing: 'projects/148015878263/locations/us-central1/endpoints/8962594816781189120',
+    licensing: 'projects/148015878263/locations/us-central1/endpoints/1071443844697948160',
+    brand: 'projects/148015878263/locations/us-central1/endpoints/1396547442798755840',
+    road: 'projects/148015878263/locations/us-central1/endpoints/6548665416510603264',
+    publicist: 'projects/148015878263/locations/us-central1/endpoints/6584694213529567232',
+    music: 'projects/148015878263/locations/us-central1/endpoints/6646900183382622208',
+    video: 'projects/148015878263/locations/us-central1/endpoints/4778750762953998336',
+    devops: 'projects/148015878263/locations/us-central1/endpoints/4200038210836889600',
+    security: 'projects/148015878263/locations/us-central1/endpoints/3481714070271295488',
+    producer: 'projects/148015878263/locations/us-central1/endpoints/8255529675284021248',
+    director: 'projects/148015878263/locations/us-central1/endpoints/8584292448082067456',
+    screenwriter: 'projects/148015878263/locations/us-central1/endpoints/453043320864636928',
+    merchandise: 'projects/148015878263/locations/us-central1/endpoints/4666160772269735936',
+    curriculum: 'projects/148015878263/locations/us-central1/endpoints/2758886330078330880',
 } as const satisfies Partial<Record<ValidAgentId, string>>;
 
 /**
@@ -101,24 +101,14 @@ export const FINE_TUNED_MODEL_REGISTRY: Record<ValidAgentId, string> = buildReso
  * drift is visible immediately.
  */
 export function getFineTunedModel(agentId: ValidAgentId): string {
-    const isE2E =
-        (typeof window !== 'undefined' && window.location?.search.includes('e2e=true')) ||
-        import.meta.env?.VITE_PLAYWRIGHT_E2E === 'true';
-
-    if (isE2E) {
-        return 'gemini-3.1-flash-lite'; // E2E fallback
-    }
-
-    if (!USE_FINE_TUNED_AGENTS) {
-        throw new Error(
-            `[FineTunedModels] VITE_USE_FINE_TUNED_AGENTS=false disables tuned agent routing. ` +
-            `Agent "${agentId}" cannot run against a base model.`
-        );
-    }
-
     const endpoint = FINE_TUNED_MODEL_REGISTRY[agentId];
     if (!endpoint) {
         throw new Error(`[FineTunedModels] Missing fine-tuned endpoint for agent "${agentId}"`);
+    }
+
+    if (!USE_FINE_TUNED_AGENTS) {
+        // Fallback to the latest approved Pro model since fine-tuned endpoints are unavailable
+        return 'gemini-3.1-pro-preview';
     }
 
     return endpoint;

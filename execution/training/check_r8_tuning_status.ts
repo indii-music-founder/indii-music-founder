@@ -1,4 +1,5 @@
 import { GoogleAuth } from 'google-auth-library';
+import { execSync } from 'child_process';
 
 async function checkTuningStatus() {
     const auth = new GoogleAuth({
@@ -6,19 +7,23 @@ async function checkTuningStatus() {
     });
 
     const client = await auth.getClient();
-    const projectId = '223837784072';
+    const projectId = '148015878263';
     const location = 'us-central1';
-    const accessToken = await client.getAccessToken();
-
-    if (!accessToken.token) {
-        throw new Error('Failed to obtain Google Cloud access token.');
+    let token: string;
+    try {
+        const accessToken = await client.getAccessToken();
+        if (!accessToken.token) throw new Error('No token');
+        token = accessToken.token;
+    } catch (err: any) {
+        console.warn('GoogleAuth failed, falling back to gcloud auth print-access-token:', err.message);
+        token = execSync('gcloud auth print-access-token').toString().trim();
     }
 
     const url = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/tuningJobs`;
 
     const res = await fetch(url, {
         headers: {
-            'Authorization': `Bearer ${accessToken.token}`,
+            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
         }
     });

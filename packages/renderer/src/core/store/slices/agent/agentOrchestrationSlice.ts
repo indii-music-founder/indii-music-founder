@@ -2,6 +2,7 @@ import { StateCreator } from 'zustand';
 import { doc, onSnapshot, Unsubscribe } from 'firebase/firestore';
 import { db, auth } from '@/services/firebase';
 import type { GraphExecutionState, AgentGraph } from '@/services/agent/types';
+import type { AgentLoopExecution } from '@indii/shared';
 
 // Re-using the types defined in the shared firebase package
 export enum AgentTaskStateEnum {
@@ -37,6 +38,11 @@ export interface AgentOrchestrationSlice {
     activeGraphExecution: GraphExecutionState | null;
     activeGraphDefinition: AgentGraph | null;
     
+    // Agent Loops (Phase 2)
+    activeLoops: Record<string, AgentLoopExecution>;
+    setActiveLoops: (loops: Record<string, AgentLoopExecution>) => void;
+    updateLoopExecution: (execution: AgentLoopExecution) => void;
+    
     startListeningToGraph: (taskId: string) => Promise<void>;
     stopListeningToGraph: (taskId: string) => void;
 
@@ -58,6 +64,16 @@ export const buildAgentOrchestrationState: (
     activeGraphs: {},
     activeGraphExecution: null,
     activeGraphDefinition: null,
+    activeLoops: {},
+
+    setActiveLoops: (loops) => set({ activeLoops: loops }),
+    
+    updateLoopExecution: (execution) => set((state) => ({
+        activeLoops: {
+            ...state.activeLoops,
+            [execution.id]: execution
+        }
+    })),
 
     startListeningToGraph: async (taskId: string) => {
         if (graphListeners[taskId]) {

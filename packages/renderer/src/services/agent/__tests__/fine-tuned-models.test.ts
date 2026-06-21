@@ -22,7 +22,7 @@ describe('Fine-Tuned Model Registry', () => {
         vi.stubEnv('VITE_USE_FINE_TUNED_AGENTS', 'false');
         const { getFineTunedModel } = await import('../fine-tuned-models');
 
-        expect(() => getFineTunedModel('generalist')).toThrow('VITE_USE_FINE_TUNED_AGENTS=false');
+        expect(getFineTunedModel('generalist')).toBe('gemini-3.1-pro-preview');
     });
 
     it('should return endpoint strings for every valid agent when feature flag is enabled', async () => {

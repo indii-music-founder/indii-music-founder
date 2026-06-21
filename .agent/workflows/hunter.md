@@ -98,6 +98,17 @@ grep -rn 'fetch(' packages/renderer/src/services/ --include='*.ts' | grep -v 're
 - Missing status check → Add `if (!response.ok)` with appropriate error handling
 - Missing retry → Wrap in retry logic for 429/5xx codes
 
+### 1.6 API System Integrity (NEW)
+```bash
+# Detect ghost test duplicates and legacy AI imports
+node scripts/verify-api-system-integrity.js
+```
+
+**AUTO-FIX:** For each finding:
+- Duplicate test files → Delete the redundant file that is in the incorrect location (prefer `__tests__/` for isolated tests, or standard paths).
+- Banned AI logic (`DirectImageEditor`, `FallbackClient`) → Refactor out and route through `httpsCallable` Firebase Cloud Functions.
+- `VITE_API_KEY` → Remove from client usage and route through Cloud Functions.
+
 ### 1.6 Vendor Chunk Conflicts
 ```bash
 # Check manualChunks (electron.vite.config.ts + packages/renderer/vite.config.ts) for React-dependent libs split from vendor-react
@@ -137,6 +148,16 @@ grep -rn 'Here is the.*code\|As an AI' packages/renderer/src/ --include='*.ts' -
 **AUTO-FIX:** For each finding:
 - Boilerplate text → Delete the text from the file completely.
 - Lazy placeholders (`// ... rest of code`) → You MUST read the original file, synthesize the missing logic, and implement it fully. NEVER just delete the placeholder without implementing the code.
+
+### 1.9 Infrastructure Identity Leaks (The Ghost Project Sweep)
+```bash
+# Suspended project IDs and old app credentials
+grep -rn 'indii-v-1-1\|223837784072' packages/ scripts/ execution/ load-tests/ --include='*.ts' --include='*.js' --include='*.sh' --include='*.py' | grep -v node_modules
+```
+
+**AUTO-FIX:** For each finding:
+- Ghost Project IDs → You MUST replace them with the active project `indii-music-founder` (and its active ID `148015878263`). 
+- Check the GitHub CLI `gh secret list` immediately. If the ghost ID leaked into the code, it probably leaked into the CI/CD pipeline secrets.
 
 ---
 
@@ -214,6 +235,11 @@ grep -rn 'toLocaleDateString\|toLocaleString\|toLocaleTimeString' packages/rende
 
 After ALL fixes are applied, run the full verification gauntlet:
 
+**For UI or Frontend Bugs:**
+- You MUST connect via the `chrome-devtools` MCP plugin.
+- Ensure no console errors remain.
+- Capture screenshots/DOM snapshots proving the UI renders without crashing and the bug is resolved.
+
 ```bash
 # Frontend
 npm run typecheck 2>&1 | tail -30
@@ -224,7 +250,7 @@ npm run build:studio 2>&1 | tail -20
 cd packages/firebase && npx tsc --noEmit 2>&1 | tail -20 && cd ../..
 
 # Firestore rules (if modified)
-firebase firestore:rules validate --project indii-v-1-1
+firebase firestore:rules validate --project indii-music-founder
 ```
 
 If any check fails, fix the error and re-run. Apply the **Two-Strike Rule**: if a fix fails twice, stop, log extensively, and propose an alternative approach.
@@ -291,6 +317,7 @@ Do NOT commit, push, or log to Error Ledger/mem0 in AUDIT mode. The fixing agent
 4. **Verify after fixing.** Never commit code that doesn't pass typecheck and tests.
 5. **Log everything.** Every fix goes to Error Ledger AND mem0 for institutional memory.
 6. **Check deployed state.** If a bug involves configuration (API keys, env vars), verify the production deployment matches local config.
+7. **The Ponytail Rule.** Apply the simplest, most minimal fix possible. If a native platform feature or stdlib can do it, use it instead of writing custom logic.
 
 ### AUDIT Mode (find-only)
 

@@ -2,8 +2,6 @@
 /// <reference types="@react-three/fiber" />
 
 interface ImportMetaEnv {
-    // Core AI
-    readonly VITE_API_KEY: string
     readonly VITE_API_URL?: string
 
     // Vertex AI
@@ -19,7 +17,6 @@ interface ImportMetaEnv {
     readonly VITE_FIREBASE_DATABASE_URL?: string
     readonly VITE_FIREBASE_APP_ID?: string
     readonly VITE_FIREBASE_APP_CHECK_KEY?: string
-    readonly VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN?: string
     readonly VITE_FIREBASE_VAPID_KEY?: string
     readonly VITE_FCM_VAPID_KEY?: string
 
@@ -30,10 +27,7 @@ interface ImportMetaEnv {
     readonly VITE_USE_FUNCTIONS_EMULATOR?: string
 
     // Google / Maps
-    readonly VITE_GOOGLE_MAPS_API_KEY?: string
-    readonly VITE_GOOGLE_MAPS_KEY?: string
     readonly VITE_GOOGLE_OAUTH_CLIENT_ID?: string
-    readonly VITE_GOOGLE_DEVKNOWLEDGE_API_KEY?: string
 
     // WebSocket / WCP
     readonly VITE_WEBSOCKET_URL?: string
@@ -53,29 +47,11 @@ interface ImportMetaEnv {
 
     // Printful (Merchandise)
 
-    // Pinata (IPFS)
-    readonly VITE_PINATA_API_KEY?: string
-    readonly VITE_PINATA_SECRET?: string
-    readonly VITE_PINATA_JWT?: string
-    readonly VITE_PINATA_GATEWAY?: string
-
     // Web3 / Blockchain
-    readonly VITE_ALCHEMY_API_KEY?: string
-    readonly VITE_ETH_RPC_URL?: string
-    readonly VITE_OPENSEA_API_KEY?: string
     readonly VITE_WALLETCONNECT_PROJECT_ID?: string
-    readonly VITE_UD_API_KEY?: string
-
-    // DocuSign
-    readonly VITE_DOCUSIGN_ACCESS_TOKEN?: string
-    readonly VITE_DOCUSIGN_ACCOUNT_ID?: string
-    readonly VITE_DOCUSIGN_BASE_URL?: string
 
     // Microsoft
     readonly VITE_MICROSOFT_CLIENT_ID?: string
-
-    // Monetization / Legal
-    readonly VITE_NOTARIZE_API_KEY?: string
 
     // EPK / Press
     readonly VITE_EPK_BASE_URL?: string
@@ -106,7 +82,6 @@ interface ImportMetaEnv {
     readonly VITE_TIKTOK_CLIENT_KEY?: string
 
     // Apple Music (MusicKit JS developer token — JWT signed with Apple .p8 key)
-    readonly VITE_APPLE_MUSIC_DEV_TOKEN?: string
 
     // Meta / Instagram Graph API
     readonly VITE_META_APP_ID?: string

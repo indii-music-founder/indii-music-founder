@@ -297,7 +297,7 @@ export class VideoGenerationService {
     /**
      * Triggers a standard (atomic) video generation job.
      * Enriches the prompt, analyzes temporal context, and calls the
-     * @google/genai SDK directly via FirebaseIntelligenceService (no Cloud Functions).
+     * Google Gen AI SDK directly via FirebaseIntelligenceService (no Cloud Functions).
      * Writes results to Firestore for UI subscription compatibility.
      * 
      * @param options - Configuration for the video generation request.
@@ -455,9 +455,9 @@ export class VideoGenerationService {
                 ? { imageBytes: options.image.imageBytes, mimeType: options.image.mimeType || 'image/jpeg' }
                 : undefined;
 
-        // Build lastFrame as the @google/genai SDK Image type.
+        // Build lastFrame as the Google Gen AI SDK Image type.
         // SDK expects: { imageBytes: string; mimeType: string } (flat, no nesting).
-        // See: node_modules/@google/genai/dist/genai.d.ts → Image_2
+        // See: node_modules Google Gen AI SDK type definitions -> Image_2
         let lastFrameConfig: { imageBytes: string; mimeType: string } | undefined;
         if (options.lastFrame) {
             let lastFrameBytes = options.lastFrame;
@@ -472,7 +472,7 @@ export class VideoGenerationService {
             };
         }
 
-        // Generate video via direct @google/genai SDK (no Cloud Functions)
+        // Generate video via direct Google Gen AI SDK (no Cloud Functions)
         try {
             // Build the AI service request object
             const aiRequest = {
@@ -989,4 +989,3 @@ export class VideoGenerationService {
 }
 
 export const VideoGeneration = new VideoGenerationService();
-
