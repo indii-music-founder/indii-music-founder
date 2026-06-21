@@ -11,9 +11,11 @@ const envSchema = z.object({
   VITE_SKIP_ONBOARDING: z.enum(["true", "false"]).default("false").optional(),
   DEV: z.string().default("false").optional(),
 
-  VITE_VERTEX_PROJECT_ID: z.string().min(1),
-  VITE_VERTEX_LOCATION: z.string().default("us-central1"),
   VITE_USE_VERTEX: z.enum(["true", "false"]).default("false"),
+  VERTEX_PROJECT_ID: z.string().optional(),
+  VERTEX_LOCATION: z.string().default("global"),
+  VERTEX_IMAGE_LOCATION: z.string().default("us").optional(),
+  VERTEX_VIDEO_LOCATION: z.string().default("us-central1").optional(),
   GCLOUD_PROJECT: z.string().optional(),
 
   VITE_FUNCTIONS_REGION: z.string().default("us-central1"),
@@ -60,9 +62,11 @@ const processEnv = {
   VITE_SKIP_ONBOARDING: process.env.VITE_SKIP_ONBOARDING,
   DEV: process.env.DEV,
 
-  VITE_VERTEX_PROJECT_ID: process.env.VITE_VERTEX_PROJECT_ID,
-  VITE_VERTEX_LOCATION: process.env.VITE_VERTEX_LOCATION,
   VITE_USE_VERTEX: process.env.VITE_USE_VERTEX,
+  VERTEX_PROJECT_ID: process.env.VERTEX_PROJECT_ID,
+  VERTEX_LOCATION: process.env.VERTEX_LOCATION,
+  VERTEX_IMAGE_LOCATION: process.env.VERTEX_IMAGE_LOCATION,
+  VERTEX_VIDEO_LOCATION: process.env.VERTEX_VIDEO_LOCATION,
   GCLOUD_PROJECT: process.env.GCLOUD_PROJECT,
 
   VITE_FUNCTIONS_REGION: process.env.VITE_FUNCTIONS_REGION,

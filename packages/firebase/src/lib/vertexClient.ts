@@ -33,9 +33,12 @@ const clientsCache = new Map<string, GoogleGenAI>();
  * Vertex tuned endpoint resource names can use multi-region locations such as
  * `us`, but the public API host is not `us-aiplatform.googleapis.com`.
  */
-export function normalizeVertexClientLocation(location: string): string {
-  const trimmed = location.trim();
-  return trimmed === 'us' || trimmed === 'eu' ? 'global' : trimmed;
+export function getVertexAIBaseUrl(location: string): string {
+  if (location === 'global' || location === 'us' || location === 'eu') {
+    return 'https://aiplatform.googleapis.com';
+  }
+
+  return `https://${location}-aiplatform.googleapis.com`;
 }
 
 /**
@@ -44,21 +47,17 @@ export function normalizeVertexClientLocation(location: string): string {
  * ADC (Application Default Credentials) auth is automatic in Cloud Functions.
  */
 export function getVertexAIClient(projectOverride?: string, locationOverride?: string): GoogleGenAI {
-  const projectId = projectOverride || process.env.VITE_VERTEX_PROJECT_ID || process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT || 'indii-music-founder';
-  const rawLocation = locationOverride || process.env.VITE_VERTEX_LOCATION || process.env.VERTEX_LOCATION || 'global';
-  const location = normalizeVertexClientLocation(rawLocation);
+  const projectId = projectOverride || process.env.VERTEX_PROJECT_ID || process.env.GOOGLE_CLOUD_PROJECT || process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT || 'indii-music-founder';
+  const location = (locationOverride || process.env.VERTEX_LOCATION || 'global').trim();
 
   const cacheKey = `${projectId}:${location}`;
   if (clientsCache.has(cacheKey)) {
     return clientsCache.get(cacheKey)!;
   }
 
-  // The 'global' location is served from the unprefixed host (aiplatform.googleapis.com);
-  // regional locations use the LOCATION-prefixed host. Building `global-aiplatform...`
-  // yields a 404, which silently broke every base-model (non-fine-tuned) request.
-  const baseUrl = location === 'global'
-    ? 'https://aiplatform.googleapis.com'
-    : `https://${location}-aiplatform.googleapis.com`;
+  // Global and multi-region locations are served from the unprefixed host
+  // (aiplatform.googleapis.com); regional locations use LOCATION-prefixed hosts.
+  const baseUrl = getVertexAIBaseUrl(location);
 
   const client = new GoogleGenAI({
     vertexai: true,
@@ -68,7 +67,7 @@ export function getVertexAIClient(projectOverride?: string, locationOverride?: s
   });
 
   clientsCache.set(cacheKey, client);
-  console.info(`[VertexClient] Initialized Vertex AI SDK for project=${projectId}, location=${location}${rawLocation !== location ? ` (from ${rawLocation})` : ''}`);
+  console.info(`[VertexClient] Initialized Vertex AI SDK for project=${projectId}, location=${location}, baseUrl=${baseUrl}`);
   return client;
 }
 

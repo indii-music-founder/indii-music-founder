@@ -88,9 +88,11 @@ The project uses GitHub Actions for automated deployments on merge to `main`.
 ### Required GitHub Secrets
 
 - `FIREBASE_SERVICE_ACCOUNT` - Service account JSON for Firebase deployment
-- `VITE_API_KEY` - API key for the studio app (optional)
-- `VITE_VERTEX_PROJECT_ID` - GCP project ID (optional)
-- `VITE_VERTEX_LOCATION` - GCP location (optional)
+- `GEMINI_API_KEY` - backend Gemini key synced to Secret Manager
+- `VERTEX_PROJECT_ID` - backend Vertex project ID override (optional)
+- `VERTEX_LOCATION` - backend default Vertex location (optional)
+- `VERTEX_IMAGE_LOCATION` - backend image model location (optional, defaults to `us`)
+- `VERTEX_VIDEO_LOCATION` - backend video model location (optional)
 
 ## Troubleshooting
 
