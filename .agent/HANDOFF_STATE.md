@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-21 13:57 EDT
+**Updated:** 2026-06-21 14:08 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+6d1211b84 chore: session checkpoint [13:57]
 7eea799ee fix: move vertex routing backend-only
 6d8ec69cc fix: normalize vertex endpoint locations
 8ee113540 fix: wire remote store types
@@ -13,7 +14,6 @@
 4ac2e246f chore: session checkpoint [11:17]
 33c3136fb chore: session checkpoint [11:16]
 d9f81273e chore: session checkpoint [11:15]
-3701cadaf chore: session checkpoint [11:13]
 ```
 
 ## Working State
