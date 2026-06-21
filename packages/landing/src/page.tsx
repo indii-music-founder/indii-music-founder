@@ -6,10 +6,11 @@ import { useAuth } from './components/auth/AuthProvider';
 import { getStudioUrl } from './lib/auth';
 import {
   ShieldCheck, Zap, ArrowRight, Cpu, BrainCircuit,
-  Music, Users, Globe2, Disc3,
+  Music, Users, Globe2, Disc3, Film,
 } from 'lucide-react';
 import AgentGrid from './components/AgentGrid';
 import ConductorSection from './components/ConductorSection';
+import ThesisCrawl from './components/ThesisCrawl';
 
 /* ------------------------------------------------------------------ */
 /*  SpotlightCard                                                      */
@@ -81,6 +82,13 @@ const words = "the operating system for your musical independence".split(' ');
 export default function Home() {
   const { user, loading } = useAuth();
   const { scrollYProgress } = useScroll();
+  const [isThesisOpen, setIsThesisOpen] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('thesis') === 'true' || window.location.hash === '#thesis';
+    }
+    return false;
+  });
 
   const heroScale = useTransform(scrollYProgress, [0, 0.15], [1, 0.9]);
   const heroOpacity = useTransform(scrollYProgress, [0, 0.12], [1, 0]);
@@ -113,6 +121,7 @@ export default function Home() {
           <div className="hidden md:flex items-center gap-8 bg-white/[0.02] border border-white/5 rounded-full px-6 py-2 backdrop-blur-md shadow-xl">
             <a href="#capabilities" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">Agents</a>
             <a href="#conductor" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">Conductor</a>
+            <button onClick={() => setIsThesisOpen(true)} className="text-sm font-medium text-gray-400 hover:text-white transition-colors">The Thesis</button>
             <a href="#invest" className="text-sm font-bold text-amber-500 hover:text-amber-400 transition-colors">Founders Round</a>
           </div>
           <a
@@ -143,7 +152,7 @@ export default function Home() {
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
             <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500" />
           </span>
-          A Team of 15 Specialists • Musical Independence • Complete Ownership
+          A Team of 21 Specialists • Musical Independence • Complete Ownership
         </motion.div>
 
         <h1 className="text-5xl md:text-7xl lg:text-[5.5rem] font-black tracking-tighter text-white leading-[1.05] md:leading-[0.9] drop-shadow-2xl flex flex-wrap justify-center max-w-6xl">
@@ -169,7 +178,7 @@ export default function Home() {
           <strong className="text-white font-medium block mb-4 text-2xl">
             Independence doesn&apos;t mean being alone.
           </strong>
-          indii.music is your personal support network. A dedicated team of 15 specialists designed to handle the labor, remove the roadblocks, and let you focus entirely on your music. 
+          indii.music is your personal support network. A dedicated team of 21 specialists designed to handle the labor, remove the roadblocks, and let you focus entirely on your music. 
           <span className="block mt-4 text-amber-500 font-bold tracking-tight text-2xl italic">&ldquo;It&apos;s the operating system for your musical independence.&rdquo;</span>
         </motion.p>
 
@@ -187,6 +196,13 @@ export default function Home() {
             <span className="relative z-10">Launch Studio</span>
             <ArrowRight size={18} className="relative z-10 transition-transform group-hover:translate-x-1" />
           </a>
+          <button
+            onClick={() => setIsThesisOpen(true)}
+            className="group inline-flex w-full sm:w-auto justify-center items-center gap-2 px-8 py-4 text-base font-medium text-amber-500 border border-amber-500/20 hover:border-amber-500/40 rounded-full bg-amber-500/5 hover:bg-amber-500/10 transition-all shadow-[0_0_20px_rgba(245,158,11,0.1)]"
+          >
+            <Film size={16} className="text-amber-400 animate-pulse" />
+            <span>Read Thesis</span>
+          </button>
           <a
             href="#capabilities"
             className="inline-flex w-full sm:w-auto justify-center items-center gap-2 px-8 py-4 text-base font-medium text-gray-400 border border-white/10 rounded-full hover:text-white hover:border-white/20 transition-all"
@@ -229,7 +245,7 @@ export default function Home() {
       {/* ═══════════════ 5. STATS BAR ═══════════════ */}
       <section className="w-full max-w-5xl px-4 mb-24 z-20 relative">
         <div className="flex flex-wrap justify-center gap-8 md:gap-16 py-12 border-y border-amber-500/20 bg-gradient-to-r from-amber-500/5 via-transparent to-amber-500/5">
-          <AnimatedStat value="15" label="Specialists" />
+          <AnimatedStat value="21" label="Specialists" />
           <AnimatedStat value="100" suffix="%" label="Ownership" />
           <AnimatedStat value="0" suffix="%" label="Royalties Taken" />
           <AnimatedStat value="∞" label="Creative Capacity" />
@@ -324,6 +340,31 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ═══════════════ 8.7 THE INDII THESIS ═══════════════ */}
+      <section className="w-full max-w-5xl px-4 py-12 z-20 relative">
+        <div className="relative overflow-hidden rounded-[3rem] border border-amber-500/20 bg-gradient-to-r from-amber-950/20 via-black to-[#0a0a0a] p-8 md:p-16 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-8">
+          <div className="flex-1 space-y-4 text-left">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 font-mono text-[10px] tracking-widest uppercase">
+              <Film size={12} className="text-amber-500 animate-pulse" />
+              Manifesto Protocol
+            </div>
+            <h2 className="text-3xl md:text-4xl font-black tracking-tight text-white">
+              The indii Thesis
+            </h2>
+            <p className="text-gray-400 text-base max-w-xl leading-relaxed font-light">
+              Everything to Everybody in the Independent Music Industry. A challenge to conventional wisdom and a blueprint for musical independence.
+            </p>
+          </div>
+          <button
+            onClick={() => setIsThesisOpen(true)}
+            className="group relative flex items-center justify-center gap-3 px-8 py-4 bg-gradient-to-r from-amber-400 to-amber-600 hover:from-amber-300 hover:to-amber-500 text-black font-black text-base rounded-2xl transition-all hover:scale-[1.03] active:scale-[0.97] shadow-[0_0_40px_rgba(245,158,11,0.2)]"
+          >
+            <span>Launch Cinematic Thesis</span>
+            <Film size={16} className="transition-transform group-hover:scale-110" />
+          </button>
+        </div>
+      </section>
+
       {/* ═══════════════ 9. FOUNDERS COVENANT ═══════════════ */}
       <section id="invest" className="w-full max-w-5xl px-4 py-24 mb-24 z-20 relative">
         <div className="relative overflow-hidden rounded-[3rem] border border-amber-500/30 bg-gradient-to-b from-amber-900/20 to-[#0a0a0a] p-12 md:p-20 shadow-[0_0_100px_rgba(245,158,11,0.1)]">
@@ -339,7 +380,7 @@ export default function Home() {
               The Founders Agreement
             </h2>
             <p className="text-gray-300 text-lg md:text-xl max-w-2xl mb-12 font-light leading-relaxed">
-              We are opening exactly <strong className="text-white">10 paid lifetime seats (11 total)</strong> to the indii Founders Program. At $2,500, you become a stakeholder in the future of music. Permanent access to the entire indii infrastructure — all 15 agents, the Conductor, and every future update — with no recurring fees. Own the means of production on an architecture of togetherness.
+              We are opening exactly <strong className="text-white">10 paid lifetime seats (11 total)</strong> to the indii Founders Program. At $2,500, you become a stakeholder in the future of music. Permanent access to the entire indii infrastructure — all 21 agents, the Conductor, and every future update — with no recurring fees. Own the means of production on an architecture of togetherness.
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-3xl mb-12 text-left">
@@ -352,7 +393,7 @@ export default function Home() {
                 <p className="text-sm text-gray-400">Your signature and a record of your agreement are committed directly into the indii infrastructure forever. You are part of the system.</p>
               </div>
               <div className="bg-[#030303]/50 border border-white/5 rounded-2xl p-6 backdrop-blur-md">
-                <h4 className="text-amber-400 font-bold mb-2 flex items-center gap-2"><Users size={16} /> Your 15-Piece Team</h4>
+                <h4 className="text-amber-400 font-bold mb-2 flex items-center gap-2"><Users size={16} /> Your 21-Piece Team</h4>
                 <p className="text-sm text-gray-400">Distribution, Creative, Music, Legal, Finance, Marketing, Publishing, Analytics, Brand, Video, Social, Licensing, Merch, Publicist, Road. The collective is yours.</p>
               </div>
               <div className="bg-[#030303]/50 border border-white/5 rounded-2xl p-6 backdrop-blur-md">
@@ -387,6 +428,9 @@ export default function Home() {
           <a href="mailto:invest@indii.music" className="text-amber-500 hover:text-amber-400 transition-colors font-bold uppercase tracking-widest">Invest</a>
         </div>
       </footer>
+
+      {/* Cinematic Thesis Crawl */}
+      <ThesisCrawl isOpen={isThesisOpen} onClose={() => setIsThesisOpen(false)} />
 
     </main>
   );
