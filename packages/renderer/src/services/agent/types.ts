@@ -89,6 +89,8 @@ export const VALID_AGENT_IDS = [
     'social',
     'publicist',
     'road',
+    'hospitality',   // Venue hospitality & artist care for tours/events
+    'event-planner', // End-to-end event production & coordination
     'creative',
     'publishing',
     'licensing',
