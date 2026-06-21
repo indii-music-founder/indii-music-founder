@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-21 10:52 EDT
+**Updated:** 2026-06-21 11:02 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+6c613db06 feat(mobile-remote): add general video and photo capture to remote relay
+f103ccd11 chore: session checkpoint [10:52]
 717e8d8a9 chore: session checkpoint [10:40]
 6ce6a5ef9 feat(mobile-remote): basic void-styled UI with quick capture & cloud relay
 e29bf7062 fix: update test fixtures for R8 endpoint location (us) and new agents (hospitality, event-planner)
@@ -12,8 +14,6 @@ e29bf7062 fix: update test fixtures for R8 endpoint location (us) and new agents
 dec29a46a chore: session checkpoint [10:25]
 46d928042 chore: session checkpoint [10:15]
 a075b207a chore: session checkpoint [10:14]
-4a3150b70 chore: session checkpoint [10:12]
-5136734bd chore: session checkpoint [10:11]
 ```
 
 ## Working State
