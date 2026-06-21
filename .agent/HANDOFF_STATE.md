@@ -1,4 +1,19 @@
 # Handoff State
+**Updated:** 2026-06-20 23:16 UTC
+**Branch:** `claude/ci-failure-main-wxyof9`
+
+## Recent Commits
+```
+d40e350 chore: session checkpoint [16:14]
+d2d91af chore: session checkpoint [16:14]
+32336b1 fix: configure App Check in QA_Voice tests
+4f309c9 chore: session checkpoint [16:00]
+59f7eec chore: session checkpoint [15:59]
+409fc1b fix: configure App Check in FirebaseIntelligenceService security test
+cc1c951 Merge pull request #169 from indii-music-founder/codex/firebase-only-renderer-ai-boundary
+511ff5d test: align security boundary expectations
+e37cb85 chore: session checkpoint [09:51]
+490d39a fix: enforce firebase-only renderer ai boundary
 **Updated:** 2026-06-21 08:40 EDT
 **Branch:** `main`
 
