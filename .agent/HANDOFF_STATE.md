@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-21 10:40 EDT
+**Updated:** 2026-06-21 10:52 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+717e8d8a9 chore: session checkpoint [10:40]
 6ce6a5ef9 feat(mobile-remote): basic void-styled UI with quick capture & cloud relay
 e29bf7062 fix: update test fixtures for R8 endpoint location (us) and new agents (hospitality, event-planner)
 8f9b7c0ef chore: session checkpoint [10:34]
@@ -13,7 +14,6 @@ dec29a46a chore: session checkpoint [10:25]
 a075b207a chore: session checkpoint [10:14]
 4a3150b70 chore: session checkpoint [10:12]
 5136734bd chore: session checkpoint [10:11]
-17a8bbf73 chore: session checkpoint [10:04]
 ```
 
 ## Working State
