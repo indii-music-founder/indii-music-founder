@@ -4,9 +4,7 @@
 interface ImportMetaEnv {
     readonly VITE_API_URL?: string
 
-    // Vertex AI
-    readonly VITE_VERTEX_PROJECT_ID: string
-    readonly VITE_VERTEX_LOCATION?: string
+    // Backend AI routing is resolved in Cloud Functions.
     readonly VITE_USE_VERTEX?: string
 
     // Firebase

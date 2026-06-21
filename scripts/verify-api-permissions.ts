@@ -3,9 +3,16 @@ import { GoogleGenAI } from '@google/genai';
 
 dotenv.config();
 
-const apiKey = process.env.VITE_API_KEY || process.env.GEMINI_API_KEY;
-const projectId = process.env.VITE_VERTEX_PROJECT_ID;
-const location = process.env.VITE_VERTEX_LOCATION || 'us-central1';
+const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_GENAI_API_KEY;
+const projectId = process.env.VERTEX_PROJECT_ID || process.env.GOOGLE_CLOUD_PROJECT || process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
+const location = process.env.VERTEX_LOCATION || 'global';
+
+function getVertexAIBaseUrl(vertexLocation: string): string {
+    if (vertexLocation === 'global' || vertexLocation === 'us' || vertexLocation === 'eu') {
+        return 'https://aiplatform.googleapis.com';
+    }
+    return `https://${vertexLocation}-aiplatform.googleapis.com`;
+}
 
 console.log('--- API Key Permission Check ---');
 console.log(`Key Present: ${!!apiKey}`);
@@ -51,7 +58,7 @@ async function checkVertexAI() {
 
     // Attempting to use the API Key with Vertex AI REST endpoint.
     // This often requires the key to be restricted/enabled for "Vertex AI API" in GCP Console.
-    const endpoint = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+    const endpoint = `${getVertexAIBaseUrl(location)}/v1/projects/${projectId}/locations/${location}/publishers/google/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
 
     const payload = {
         contents: [{ role: 'user', parts: [{ text: 'Hello from Vertex REST?' }] }]

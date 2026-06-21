@@ -124,7 +124,7 @@ describe('generateImageV3Fn', () => {
         const callArgs = mockGenerateContent.mock.calls[0][0];
 
         // Model should be Fast
-        expect(callArgs.model).toBe('gemini-3.1-flash-image-preview');
+        expect(callArgs.model).toBe('gemini-3.1-flash-image');
         // Fast supports candidateCount
         expect(callArgs.config.candidateCount).toBe(3);
         // Default response modalities: image only
