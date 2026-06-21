@@ -32,6 +32,8 @@ export const DEPARTMENTS: Record<string, Department> = {
     publishing:   { id: 'publishing',   headId: 'publishing',   workerIds: [], displayName: 'Publishing' },
     licensing:    { id: 'licensing',    headId: 'licensing',    workerIds: [], displayName: 'Licensing' },
     road:         { id: 'road',         headId: 'road',         workerIds: [], displayName: 'Road' },
+    hospitality:  { id: 'hospitality',  headId: 'hospitality',  workerIds: [], displayName: 'Hospitality' },
+    'event-planner': { id: 'event-planner', headId: 'event-planner', workerIds: [], displayName: 'Event Planning' },
     merchandise:  { id: 'merchandise',  headId: 'merchandise',  workerIds: [], displayName: 'Merchandise' },
     creative:     { id: 'creative',     headId: 'creative',     workerIds: [], displayName: 'Creative' },
     producer:     { id: 'producer',     headId: 'producer',     workerIds: [], displayName: 'Producer' },
