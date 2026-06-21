@@ -302,8 +302,9 @@ const corsHandler = corsLib({
 
 // ----------------------------------------------------------------------------
 // Tier Limits (Duplicated from MembershipService for Server-Side Enforcement)
+// Updated to match SubscriptionTier enum — includes 'founder' (unlimited, for initial investors)
 // ----------------------------------------------------------------------------
-type MembershipTier = 'free' | 'pro' | 'enterprise';
+type MembershipTier = 'free' | 'pro' | 'enterprise' | 'founder';
 
 interface TierLimits {
     maxVideoDuration: number;          // Max seconds per job
@@ -322,6 +323,10 @@ const TIER_LIMITS: Record<MembershipTier, TierLimits> = {
     enterprise: {
         maxVideoDuration: 4 * 60 * 60,     // 4 hours
         maxVideoGenerationsPerDay: 500,
+    },
+    founder: {
+        maxVideoDuration: 24 * 60 * 60,    // 24 hours (unlimited in practice)
+        maxVideoGenerationsPerDay: 1000,   // 1000/day (unlimited in practice)
     },
 };
 
