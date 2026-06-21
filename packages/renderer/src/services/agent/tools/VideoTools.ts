@@ -4,6 +4,7 @@ import { VideoGeneration } from '@/services/video/VideoGenerationService';
 import { VideoGenerationOptions } from '@/modules/creative/video/schemas';
 import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
+import { performanceVideoService } from '@/services/video/PerformanceVideoService';
 
 // ============================================================================
 // FIX #10: Input Validation Constants
@@ -450,6 +451,34 @@ export const VideoTools = {
     generate_andromeda_variations: wrapTool('generate_andromeda_variations', async (args: { basePrompt: string }) => {
         void args;
         return toolError('Bulk video variation orchestration is unavailable: no A/B render queue backend is configured.', 'VIDEO_VARIATION_QUEUE_UNAVAILABLE');
+    }),
+
+    create_performance_video: wrapTool('create_performance_video', async (args: {
+        songUrl: string;
+        artistImageUrl?: string;
+        artistDescription?: string;
+        style?: string;
+        aspectRatio?: '9:16' | '16:9' | '1:1';
+        sceneCount?: number;
+    }) => {
+        if (!args.songUrl || args.songUrl.trim().length === 0) {
+            return toolError('Song URL is required.', 'INVALID_INPUT');
+        }
+
+        if (!args.artistImageUrl && !args.artistDescription) {
+            return toolError('Either artistImageUrl or artistDescription is required.', 'INVALID_INPUT');
+        }
+
+        try {
+            const result = await performanceVideoService.generate(args);
+            return toolSuccess(
+                { videoUrl: result.videoUrl, projectId: result.projectId },
+                `Performance video generated successfully: ${result.videoUrl}`
+            );
+        } catch (err) {
+            const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+            return toolError(`Failed to generate performance video: ${errorMsg}`, 'PERFORMANCE_VIDEO_GENERATION_FAILED');
+        }
     })
 } satisfies Record<string, AnyToolFunction>;
 
@@ -464,5 +493,6 @@ export const {
     interpolate_sequence,
     orchestrate_video_render,
     orchestrate_timeline,
-    generate_andromeda_variations
+    generate_andromeda_variations,
+    create_performance_video
 } = VideoTools;
