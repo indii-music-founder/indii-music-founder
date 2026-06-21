@@ -4,6 +4,7 @@ import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { VideoGeneration } from '@/services/video/VideoGenerationService';
 import { SocialService } from '@/services/social/SocialService';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
+import { performanceVideoService } from '@/services/video/PerformanceVideoService';
 import { logger } from '@/utils/logger';
 
 interface ExecutionTask {
@@ -207,6 +208,32 @@ export class WorkflowEngine {
 
             // ── Video Department ────────────────────────────────────────────
             case 'Video Department': {
+                if (jobId === 'video-analyze-song') {
+                    // Analyze audio: extract BPM, mood, structure
+                    const songUrl = (inputs.audio_input as string) || '';
+                    if (!songUrl) throw new Error('Song URL required for audio analysis');
+                    const analyzeAudio = (await import('firebase/functions')).httpsCallable(
+                        (await import('@/services/firebase')).functions,
+                        'analyzeAudio'
+                    );
+                    const response = await analyzeAudio({ audioUrl: songUrl, mimeType: 'audio/mpeg' });
+                    return response.data;
+                }
+                if (jobId === 'video-beat-sync-assemble') {
+                    // Beat-sync assemble: create performance video from song + artist image
+                    const songUrl = (inputs.audio_input as string) || '';
+                    const artistImageUrl = (inputs.image_input as string) || '';
+                    if (!songUrl) throw new Error('Song URL required');
+                    if (!artistImageUrl) throw new Error('Artist image URL required');
+                    const aspectRatio = (inputs.aspect_ratio as '16:9' | '9:16' | '1:1') || '16:9';
+                    const result = await performanceVideoService.generate({
+                        songUrl,
+                        artistImageUrl,
+                        style: prompt,
+                        aspectRatio,
+                    });
+                    return result.videoUrl;
+                }
                 if (jobId === 'video-img-to-video') {
                     // Image → video: pass the image url as the first frame
                     const imageUrl = (inputs.image_input as string) || undefined;
@@ -223,6 +250,21 @@ export class WorkflowEngine {
                     const results = await VideoGeneration.generateVideo({
                         prompt: `Continue: ${prompt}`,
                         durationSeconds: 5,
+                        aspectRatio: '16:9',
+                    });
+                    return results[0]?.url;
+                }
+                if (jobId === 'video-performance-clip') {
+                    // Performance clip: artist image → performance video
+                    const artistImageUrl = (inputs.image_input as string) || '';
+                    const durationSecStr = (inputs.duration_input as string) || '10';
+                    const durationSeconds = parseInt(durationSecStr, 10) || 10;
+                    if (!artistImageUrl) throw new Error('Artist image required for performance clip');
+                    const results = await VideoGeneration.generateVideo({
+                        prompt: `Artist performance: ${prompt}`,
+                        firstFrame: artistImageUrl,
+                        referenceImages: [{ image: { uri: artistImageUrl }, referenceType: 'asset' }],
+                        durationSeconds,
                         aspectRatio: '16:9',
                     });
                     return results[0]?.url;
