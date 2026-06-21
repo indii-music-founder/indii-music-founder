@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-21 09:36 EDT
+**Updated:** 2026-06-21 09:40 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+9394a471f chore: session checkpoint [09:36]
 7e16bbafd chore: session checkpoint [09:36]
 5ed004813 chore: session checkpoint [09:25]
 76584fe25 chore: session checkpoint [09:24]
@@ -13,7 +14,6 @@ ac24ebd5f chore: session checkpoint [09:11]
 07a1c0f19 fix(ai): self-heal fine-tuned routing + default to trying tuned endpoints
 76a04961d chore: session checkpoint [08:40]
 49ffef13c chore: session checkpoint [08:33]
-1131cf105 chore: update agent workflows, api registry, testing docs, and mock runs
 ```
 
 ## Working State
