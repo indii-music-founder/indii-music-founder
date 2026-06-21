@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Mic, Image as ImageIcon, Send, X, Loader2 } from 'lucide-react';
+import { Mic, Image as ImageIcon, Video, Send, X, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { remoteRelayService } from '@/services/agent/RemoteRelayService';
 import { StorageService } from '@/services/StorageService';
@@ -11,7 +11,9 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
     const [isDispatching, setIsDispatching] = useState(false);
     const [capturedAudioBlob, setCapturedAudioBlob] = useState<Blob | null>(null);
     const [capturedImageBlob, setCapturedImageBlob] = useState<File | null>(null);
+    const [capturedVideoBlob, setCapturedVideoBlob] = useState<File | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const videoInputRef = useRef<HTMLInputElement>(null);
     
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const audioChunksRef = useRef<Blob[]>([]);
@@ -43,8 +45,7 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
 
                 mediaRecorderRef.current.start();
                 setIsRecording(true);
-                setCapturedAudioBlob(null);
-                setCapturedImageBlob(null);
+                clearMediaState();
             } catch (error) {
                 console.error("Failed to access microphone", error);
                 triggerHaptic([100, 200, 100]); // Error haptic
@@ -52,11 +53,25 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
         }
     };
 
+    const clearMediaState = () => {
+        setCapturedAudioBlob(null);
+        setCapturedImageBlob(null);
+        setCapturedVideoBlob(null);
+    };
+
     const handleImageCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             const file = e.target.files[0];
+            clearMediaState();
             setCapturedImageBlob(file);
-            setCapturedAudioBlob(null);
+        }
+    };
+
+    const handleVideoCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            clearMediaState();
+            setCapturedVideoBlob(file);
         }
     };
 
@@ -82,15 +97,26 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
                     payload: { audioUrl: downloadUrl }
                 });
             } else if (capturedImageBlob) {
-                const filename = `receipt_${Date.now()}.${capturedImageBlob.name.split('.').pop() || 'jpg'}`;
-                const path = `users/${userId}/receipts/${filename}`;
+                const filename = `photo_${Date.now()}.${capturedImageBlob.name.split('.').pop() || 'jpg'}`;
+                const path = `users/${userId}/assets/captured_media/${filename}`;
                 
                 // Upload to Firebase Storage
                 const downloadUrl = await StorageService.uploadFile(capturedImageBlob, path);
 
                 await remoteRelayService.dispatchTask({
-                    type: 'receipt_log',
+                    type: 'media_capture',
                     payload: { imageUrl: downloadUrl }
+                });
+            } else if (capturedVideoBlob) {
+                const filename = `video_${Date.now()}.${capturedVideoBlob.name.split('.').pop() || 'mp4'}`;
+                const path = `users/${userId}/assets/captured_media/${filename}`;
+                
+                // Upload to Firebase Storage
+                const downloadUrl = await StorageService.uploadFile(capturedVideoBlob, path);
+
+                await remoteRelayService.dispatchTask({
+                    type: 'media_capture',
+                    payload: { videoUrl: downloadUrl }
                 });
             }
             
@@ -106,9 +132,9 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
     };
 
     const clearCapture = () => {
-        setCapturedAudioBlob(null);
-        setCapturedImageBlob(null);
+        clearMediaState();
         if (fileInputRef.current) fileInputRef.current.value = '';
+        if (videoInputRef.current) videoInputRef.current.value = '';
     };
 
     return (

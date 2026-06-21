@@ -25,9 +25,9 @@ flowchart TD
     end
 
     subgraph FirebaseCloud ["Firebase Backend (The Vault)"]
-        FS_Queue[("Firestore:\nagent_dispatch_queue")]
-        FS_CRM[("Firestore:\ncrm_contacts")]
-        F_Storage[("Cloud Storage:\nSecure Audio Vault")]
+        FS_Queue["Firestore:\nagent_dispatch_queue"]
+        FS_CRM["Firestore:\ncrm_contacts"]
+        F_Storage["Cloud Storage:\nSecure Audio Vault"]
         F_Auth["Firebase Auth"]
     end
 
@@ -63,7 +63,7 @@ flowchart TD
     class DesktopExecutor,ElectronBG,MCP_Server,Desktop_Sync,Tool_Exec desktop
 ```
 
-## System Summary
+## Transition Breakdown
 
 1.  **Zero-Local-Data Mobile:** The phone app stores absolutely no business logic or unreleased tracks locally. If the phone is lost, no data is compromised.
 2.  **Voice-First Input:** Users click the microphone, dictate notes or hand the phone to a contact, and the raw audio/text is sent to the `agent_dispatch_queue`.
