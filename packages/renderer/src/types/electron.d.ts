@@ -136,6 +136,12 @@ export interface ElectronAPI {
         onAC: (callback: () => void) => () => void;
     };
 
+    // Window control (Sleep/Wake) — hide to tray / show window
+    window?: {
+        show: () => Promise<void>;
+        hide: () => Promise<void>;
+    };
+
     // Video (Local Asset Management)
     video: {
         saveAsset: (url: string, filename: string) => Promise<string>;
