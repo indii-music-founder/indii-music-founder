@@ -4,6 +4,7 @@
 
 ## Recent Commits
 ```
+ee8043f73 chore: session checkpoint [09:40]
 9394a471f chore: session checkpoint [09:36]
 7e16bbafd chore: session checkpoint [09:36]
 5ed004813 chore: session checkpoint [09:25]
@@ -13,7 +14,6 @@ ac24ebd5f chore: session checkpoint [09:11]
 90f2b8ecc docs(governance): codify 'no hardcoded infra IDs in frontend' rule
 07a1c0f19 fix(ai): self-heal fine-tuned routing + default to trying tuned endpoints
 76a04961d chore: session checkpoint [08:40]
-49ffef13c chore: session checkpoint [08:33]
 ```
 
 ## Working State
