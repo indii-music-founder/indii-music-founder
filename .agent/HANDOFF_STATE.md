@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-21 14:27 EDT
+**Updated:** 2026-06-21 14:29 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+22d59d45c refactor(creative): replace any types in wrapWithFallback with generics
+b3824f6e4 chore: session checkpoint [14:27]
 d34df81a2 chore: session checkpoint [14:26]
 207da4e65 chore: session checkpoint [14:24]
 83a9a82dd chore: session checkpoint [14:24]
@@ -12,8 +14,6 @@ fa7466dcc fix(creative): accurate error when Gemini returns no image (NO_IMAGE)
 f5a91cdb5 chore: session checkpoint [14:12]
 451f08929 chore: session checkpoint [14:08]
 6d1211b84 chore: session checkpoint [13:57]
-7eea799ee fix: move vertex routing backend-only
-6d8ec69cc fix: normalize vertex endpoint locations
 ```
 
 ## Working State
@@ -25,7 +25,6 @@ f5a91cdb5 chore: session checkpoint [14:12]
  M GEMINI.md
  M JULES.md
  M docs/BACKEND_ONLY_API_DECLARATION.md
- M packages/firebase/src/functions/creative/gateway.ts
 ?? docs/flowcharts/agent-venue-research-macro.md
 ?? docs/handoff/
 ?? packages/renderer/src/modules/notes/
