@@ -197,6 +197,11 @@ export interface ElectronPowerAPI {
     onAC: (callback: () => void) => () => void;
 }
 
+export interface ElectronWindowAPI {
+    show: () => Promise<void>;
+    hide: () => Promise<void>;
+}
+
 // ── Root ElectronAPI Interface ─────────────────────────────────────────────
 
 export interface ElectronAPI {
@@ -229,6 +234,7 @@ export interface ElectronAPI {
     scheduler: ElectronSchedulerAPI;
     sidecar: ElectronSidecarAPI;
     power: ElectronPowerAPI;
+    window: ElectronWindowAPI;
 
     // Top-level test
     testAgent: (query?: string) => Promise<unknown>;
