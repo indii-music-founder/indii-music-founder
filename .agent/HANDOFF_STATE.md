@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-21 09:15 EDT
+**Updated:** 2026-06-21 09:24 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+d18668563 chore: session checkpoint [09:15]
 ac24ebd5f chore: session checkpoint [09:11]
 90f2b8ecc docs(governance): codify 'no hardcoded infra IDs in frontend' rule
 07a1c0f19 fix(ai): self-heal fine-tuned routing + default to trying tuned endpoints
@@ -13,12 +14,13 @@ ac24ebd5f chore: session checkpoint [09:11]
 a77b74a80 docs(flowchart): add technical flowchart for beat-synced performance video generation
 254843c7e feat(training): add synthetic training data and scripts for event-planner & hospitality tuning
 6911dd794 feat(video): implement beat-synced PerformanceVideoService and node graph templates
-74ce309f1 chore: session checkpoint [17:11]
 ```
 
 ## Working State
 ```
-clean working tree
+ M packages/firebase/firestore.rules
+?? docs/flowcharts/remote-dispatch-macro.md
+?? docs/schemas/
 ```
 
 ## Decisions
