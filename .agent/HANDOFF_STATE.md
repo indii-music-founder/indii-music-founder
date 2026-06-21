@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-21 10:12 EDT
+**Updated:** 2026-06-21 10:14 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+4a3150b70 chore: session checkpoint [10:12]
 5136734bd chore: session checkpoint [10:11]
 17a8bbf73 chore: session checkpoint [10:04]
 abbc83342 chore: session checkpoint [10:03]
@@ -13,24 +14,23 @@ b559c0eeb chore: session checkpoint [09:59]
 54be85f18 feat(agents): refresh fine-tuned endpoints & onboard hospitality + event-planner
 22771530a chore: session checkpoint [09:40]
 b256a181a chore: session checkpoint [09:40]
-a12597b55 chore: session checkpoint [09:36]
 ```
 
 ## Working State
 ```
- M packages/firebase/firestore.rules
- M packages/main/src/main.ts
- M packages/renderer/src/hooks/useRemoteCommandListener.ts
- M packages/renderer/src/modules/mobile-remote/MobileRemote.tsx
- M packages/renderer/src/modules/mobile-remote/components/StatusDashboard.tsx
- M packages/renderer/src/modules/mobile-remote/components/TransportBar.tsx
- M packages/renderer/src/services/agent/RemoteRelayService.ts
- M packages/renderer/src/services/agent/specialists/GeneralistAgent.ts
-?? docs/flowcharts/mobile-remote-ui.md
-?? docs/flowcharts/remote-dispatch-macro.md
-?? docs/schemas/
-?? packages/renderer/src/modules/mobile-remote/components/QuickCaptureView.tsx
-?? packages/renderer/src/modules/mobile-remote/components/StreamView.tsx
+A  docs/flowcharts/mobile-remote-ui.md
+A  docs/flowcharts/remote-dispatch-macro.md
+A  docs/schemas/agent_dispatch_queue.md
+M  packages/firebase/firestore.rules
+M  packages/main/src/main.ts
+M  packages/renderer/src/hooks/useRemoteCommandListener.ts
+M  packages/renderer/src/modules/mobile-remote/MobileRemote.tsx
+A  packages/renderer/src/modules/mobile-remote/components/QuickCaptureView.tsx
+M  packages/renderer/src/modules/mobile-remote/components/StatusDashboard.tsx
+A  packages/renderer/src/modules/mobile-remote/components/StreamView.tsx
+M  packages/renderer/src/modules/mobile-remote/components/TransportBar.tsx
+M  packages/renderer/src/services/agent/RemoteRelayService.ts
+M  packages/renderer/src/services/agent/specialists/GeneralistAgent.ts
 ```
 
 ## Decisions
