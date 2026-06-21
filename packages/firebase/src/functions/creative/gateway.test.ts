@@ -73,7 +73,7 @@ vi.mock('../../config/secrets', () => ({
   getGeminiApiKey: vi.fn(() => 'test-gemini-key'),
 }));
 
-import { generateImageV3, generateOmniRemixV3, generateVideoV3 } from './gateway';
+import { classifyMediaFinishFailure, generateImageV3, generateOmniRemixV3, generateVideoV3 } from './gateway';
 
 const callGenerateImage = generateImageV3 as unknown as (request: {
   auth?: { uid: string };
@@ -168,6 +168,71 @@ describe('creative gateway generateImageV3', () => {
       status: 'failed',
       error: expect.stringContaining('model is not available'),
     }));
+  });
+
+  it('surfaces a prompt-rephrase message when the model declines (NO_IMAGE), not a settings rejection', async () => {
+    mockGenerateContent.mockResolvedValueOnce({
+      candidates: [{
+        finishReason: 'NO_IMAGE',
+        content: { parts: [{ text: 'I am not sure what your dog looks like.' }] },
+      }],
+    });
+
+    const rejection = await callGenerateImage({
+      auth: { uid: 'user-123' },
+      data: {
+        prompt: 'If you know what my dog looks like you can try that',
+        aspectRatio: '16:9',
+        model: 'fast',
+      },
+    }).catch((error: unknown) => error as { code: string; message: string });
+
+    expect(rejection.code).toBe('failed-precondition');
+    expect(rejection.message).toContain("INDII couldn't create an image");
+    // The original defect: NO_IMAGE was wrapped as a settings rejection.
+    expect(rejection.message).not.toContain('Google rejected the image generation settings');
+    // The detailed finish reason is still recorded for diagnostics.
+    expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining({
+      status: 'failed',
+      error: expect.stringContaining('NO_IMAGE'),
+    }));
+  });
+});
+
+describe('classifyMediaFinishFailure', () => {
+  it('treats NO_IMAGE as a recoverable, prompt-driven decline', () => {
+    const result = classifyMediaFinishFailure('image', 'NO_IMAGE');
+    expect(result.category).toBe('declined');
+    expect(result.code).toBe('failed-precondition');
+    expect(result.publicMessage).toContain("INDII couldn't create an image");
+    expect(result.publicMessage).not.toContain('rejected');
+  });
+
+  it('maps safety finish reasons to an invalid-argument with a safety message', () => {
+    for (const reason of ['IMAGE_SAFETY', 'SAFETY', 'PROHIBITED_CONTENT', 'BLOCKLIST']) {
+      const result = classifyMediaFinishFailure('image', reason);
+      expect(result.category).toBe('safety');
+      expect(result.code).toBe('invalid-argument');
+      expect(result.publicMessage).toContain('safety filters');
+    }
+  });
+
+  it('maps RECITATION to a copyright-oriented message', () => {
+    const result = classifyMediaFinishFailure('image', 'RECITATION');
+    expect(result.category).toBe('recitation');
+    expect(result.publicMessage).toContain('copyrighted material');
+  });
+
+  it('maps MAX_TOKENS to a truncation message', () => {
+    const result = classifyMediaFinishFailure('audio', 'MAX_TOKENS');
+    expect(result.category).toBe('truncated');
+    expect(result.publicMessage).toContain('ran out of room');
+  });
+
+  it('uses the right media noun per kind', () => {
+    expect(classifyMediaFinishFailure('image', 'NO_IMAGE').publicMessage).toContain('an image');
+    expect(classifyMediaFinishFailure('video', 'OTHER').publicMessage).toContain('a video');
+    expect(classifyMediaFinishFailure('audio', 'OTHER').publicMessage).toContain('audio from that prompt');
   });
 });
 
