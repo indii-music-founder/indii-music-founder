@@ -71,7 +71,7 @@
   - `AgentStreamingService.test.ts`
   - `ReflectionLoop.test.ts`
 - [ ] **Run Platinum Checks:**
-  - Execute `/plat` workflow to ensure no Seven Anti-Patterns exist.
+  - Execute `/plat` workflow to ensure no Nine Anti-Patterns exist.
   - Verify `npm run typecheck`, `npm run lint`, and `npm test` are 100% green.
   - Test UI in the browser to confirm streaming and memory persistence behave correctly.
 

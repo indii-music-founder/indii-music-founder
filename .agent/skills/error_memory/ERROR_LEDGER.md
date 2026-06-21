@@ -1,3 +1,20 @@
+## 2026-06-21 Stale Hardcoded Fine-Tuned Endpoint Registry — Re-Tune Minted New IDs in a New Location
+
+**SEVERITY:** High (after an R8 re-tune of all agents, the frontend endpoint registry pointed at dead May endpoints in the wrong region; every agent would 404 → silently fall back to base model, i.e. NONE of the freshly-trained agents would actually serve)
+
+**MISTAKE:**
+- FILE: `packages/renderer/src/services/agent/fine-tuned-models.ts` — `DIRECT_FINE_TUNED_MODEL_REGISTRY` hand-hardcodes 20 agents to `projects/148015878263/locations/us-central1/endpoints/<id>`. Those IDs + location were from the **May 2026** R8 run.
+- DISCOVERY: User re-tuned all agents (R8 re-run, jobs `JOB_STATE_SUCCEEDED` 2026-06-21). Verified via REST: `GET https://us-central1-aiplatform.googleapis.com/v1/projects/indii-music-founder/locations/us-central1/tuningJobs` (23 jobs). Each succeeded job's `tunedModel.endpoint` is in **`locations/us`** (multi-region), NOT `us-central1`, with **brand-new endpoint IDs**. Examples: `marketing → endpoints/126382264543084544`, `video → endpoints/5283003837882302464`, plus NEW agents `hospitality` + `event-planner` that aren't in the old registry at all.
+- WHY IT'S DANGEROUS: TypeScript compiles fine, the registry's `VERTEX_ENDPOINT_PATTERN` still matches (it only checks shape, not liveness), so the app "looks fine." But `us-central1` endpoints list is `[]` → every tuned call 404s. With `DISABLE_FINE_TUNED=false` + the new runtime auto-fallback, agents silently drop to base `gemini-3.1-flash-lite` — so the user thinks they're talking to trained agents and they are NOT.
+- CONTEXT: `gcloud ai endpoints list`/`models list` were BLANK in `us-central1` and `gcloud auth` had expired (`Reauthentication failed`). Real source of truth was the **tuningJobs REST endpoint** read with `gcloud auth print-access-token`. NOTE: the `us` multi-region host is `https://us-aiplatform.googleapis.com` (consistent with the global-host rule from 2026-06-20 — location prefixes the host).
+
+**FIX (process, not just data):**
+1. Endpoint IDs/location must come from a **synced/generated surface**, regenerated from `tuningJobs`/`endpoints list` after every re-tune — never hand-typed across frontend modules. Codified as Platinum Anti-Pattern #9 "Hardcoded Infrastructure Identifiers (Frontend)".
+2. When refreshing the registry: pick each agent's LATEST succeeded job by `endTime` (e.g. `generalist` had two succeeded jobs — `1720656532632240128` @16:31 beats `7678918839643406336` @15:58), and update the location to `us`.
+3. Backend `generateContentStream` already parses `locations/<loc>` from the model path and builds the client for that location, so routing to `us` works once the registry carries the right path — but verify `getVertexAIClient`/`vertexClient.ts` builds `https://us-aiplatform.googleapis.com` for `location='us'`.
+
+**PREVENTION:** Treat any `endpoints/<digits>`, `locations/<region>`, or `projects/<number>` literal in `packages/renderer/` as a defect. Detect: `grep -rnE "endpoints/[0-9]{6,}|locations/(us|us-central1|global)/|projects/[0-9]{6,}" packages/renderer/src`. The source of truth for "which endpoint serves agent X" is Vertex, queried live — a checked-in copy must be generated, single-file, and stamped with its regen command. After ANY re-tune, re-sync before claiming agents are live (don't trust the registry; curl the endpoint).
+
 ## 2026-06-20 Chat Double-Broken — App Check Missing siteKey + Dead Fine-Tuned Endpoints + Wrong 'global' Vertex Host
 
 **SEVERITY:** Critical (Boardroom Conductor + all Vertex AI agents 500/404; three stacked root causes, each masking the next)
