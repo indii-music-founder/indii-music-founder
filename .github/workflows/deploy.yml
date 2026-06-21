@@ -456,7 +456,7 @@ jobs:
 
           gcloud services api-keys update "$KEY_RESOURCE" \
             --project indii-music-founder \
-            --allowed-referrers="https://app.indii.music/*,https://indii.music/*,https://founder.indii.music/*,https://indii-music-studio.web.app/*,https://indii-music-studio.firebaseapp.com/*,https://indii-music-founder.web.app/*,https://indii-music-founder.firebaseapp.com/*" \
+            --allowed-referrers="https://app.indii.music/*,https://indii.music/*,https://www.indii.music/*,https://founder.indii.music/*,https://indii-music-studio.web.app/*,https://indii-music-studio.firebaseapp.com/*,https://indii-music-founder.web.app/*,https://indii-music-founder.firebaseapp.com/*" \
             --api-target=service=identitytoolkit.googleapis.com \
             --api-target=service=securetoken.googleapis.com \
             --api-target=service=firestore.googleapis.com \
@@ -487,35 +487,48 @@ jobs:
             'requests-to-this-api-identitytoolkit-method',
           ];
 
-          for (let attempt = 1; attempt <= 12; attempt += 1) {
-            const response = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${encodeURIComponent(apiKey)}`, {
-              method: 'POST',
-              headers: {
-                'content-type': 'application/json',
-                referer: 'https://app.indii.music/',
-              },
-              body: JSON.stringify({
-                email: 'ci-auth-probe@example.invalid',
-                password: 'not-a-real-password',
-                returnSecureToken: true,
-              }),
-            });
-            const body = await response.json().catch(() => ({}));
-            const status = body?.error?.status || '';
-            const message = body?.error?.message || '';
-            const combined = `${status} ${message}`.toLowerCase();
+          const referrers = [
+            'https://app.indii.music/',
+            'https://indii.music/',
+            'https://www.indii.music/',
+            'https://founder.indii.music/',
+          ];
 
-            if (!blockedNeedles.some((needle) => combined.includes(needle.toLowerCase()))) {
-              console.log(`Firebase Auth password sign-in API reached expected credential validation path on attempt ${attempt}.`);
-              process.exit(0);
+          for (const referer of referrers) {
+            let reachedCredentialValidation = false;
+            for (let attempt = 1; attempt <= 12; attempt += 1) {
+              const response = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${encodeURIComponent(apiKey)}`, {
+                method: 'POST',
+                headers: {
+                  'content-type': 'application/json',
+                  referer,
+                },
+                body: JSON.stringify({
+                  email: 'ci-auth-probe@example.invalid',
+                  password: 'not-a-real-password',
+                  returnSecureToken: true,
+                }),
+              });
+              const body = await response.json().catch(() => ({}));
+              const status = body?.error?.status || '';
+              const message = body?.error?.message || '';
+              const combined = `${status} ${message}`.toLowerCase();
+
+              if (!blockedNeedles.some((needle) => combined.includes(needle.toLowerCase()))) {
+                console.log(`Firebase Auth password sign-in API reached expected credential validation path for ${referer} on attempt ${attempt}.`);
+                reachedCredentialValidation = true;
+                break;
+              }
+
+              if (attempt < 12) {
+                await new Promise((resolve) => setTimeout(resolve, 5000));
+              }
             }
 
-            if (attempt < 12) {
-              await new Promise((resolve) => setTimeout(resolve, 5000));
+            if (!reachedCredentialValidation) {
+              throw new Error(`Firebase Auth password sign-in API is still blocked for ${referer}.`);
             }
           }
-
-          throw new Error('Firebase Auth password sign-in API is still blocked for the deployed web API key.');
           NODE
 
       - name: Sync Gemini backend secret
