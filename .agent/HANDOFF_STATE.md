@@ -1,26 +1,32 @@
 # Handoff State
-**Updated:** 2026-06-21 12:14 EDT
+**Updated:** 2026-06-21 13:57 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+7eea799ee fix: move vertex routing backend-only
+6d8ec69cc fix: normalize vertex endpoint locations
+8ee113540 fix: wire remote store types
+32cc49dbb chore: session checkpoint [12:14]
 74fb38328 feat(mobile-remote): INDII sleep mode + wake-from-mobile
 155646566 chore: session checkpoint [11:18]
 4ac2e246f chore: session checkpoint [11:17]
 33c3136fb chore: session checkpoint [11:16]
 d9f81273e chore: session checkpoint [11:15]
 3701cadaf chore: session checkpoint [11:13]
-9718c7733 fix: add real connectivity monitor for Electron apps
-25957ded4 chore: session checkpoint [11:09]
-190999357 chore: session checkpoint [11:08]
-0dd89f11d feat(mobile-remote): add document scanner, pin drop, and text commands to mobile remote capture
 ```
 
 ## Working State
 ```
+ M ANTIGRAVITY.md
+ M CLAUDE.md
+ M CODEX.md
+ M DROID.md
+ M GEMINI.md
+ M JULES.md
+ M docs/BACKEND_ONLY_API_DECLARATION.md
 ?? docs/flowcharts/agent-venue-research-macro.md
-?? packages/renderer/src/core/store/slices/mapSlice.ts
-?? packages/renderer/src/core/store/slices/notesSlice.ts
+?? docs/handoff/
 ?? packages/renderer/src/modules/notes/
 ?? packages/renderer/src/services/agent/tools/NotesTools.ts
 ```
