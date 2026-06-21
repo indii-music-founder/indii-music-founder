@@ -320,6 +320,7 @@ service cloud.firestore {
 
       // ── Owner-scoped subcollections (2026-05-28: latent 403 fixes — see docs/architecture/FIRESTORE_RULES_403_AUDIT.md) ──
       match /agent_audit/{auditId} { allow read, write: if isOwner(userId); }
+      match /agent_dispatch_queue/{taskId} { allow read, write: if isOwner(userId); }
       match /browserHistory/{entryId} { allow read, write: if isOwner(userId); }
       match /contacts/{contactId} { allow read, write: if isOwner(userId); }
       match /crisis_responses/{responseId} { allow read, write: if isOwner(userId); }

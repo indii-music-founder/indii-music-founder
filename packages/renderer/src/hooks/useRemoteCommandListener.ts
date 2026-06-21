@@ -24,7 +24,7 @@ import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { agentService } from '@/services/agent/AgentService';
 import { entryCommandService } from '@/services/commands/EntryCommandService';
-import { remoteRelayService, type RemoteCommand } from '@/services/agent/RemoteRelayService';
+import { remoteRelayService, type RemoteCommand, type AgentDispatchTask } from '@/services/agent/RemoteRelayService';
 import { auth, db } from '@/services/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp, runTransaction } from 'firebase/firestore';
@@ -625,8 +625,61 @@ function useFirestoreRelay(enabled: boolean) {
         // Scan once when enabled/mounted to catch any backlogged commands immediately
         scanAndProcessPendingCommands();
 
+        // ─── AGENT DISPATCH QUEUE LISTENER (Phase 2) ───
+        logger.info('[RemoteRelay/Firestore] 🚀 Registering dispatch task listener NOW...');
+        const unsubscribeDispatch = remoteRelayService.onDispatchTask(async (task: AgentDispatchTask & { id: string }) => {
+            logger.info(`[RemoteRelay/Firestore] 📱→🖥️ Processing Dispatch Task: [${task.type}] ${task.id}`);
+            
+            try {
+                await remoteRelayService.updateDispatchTaskStatus(task.id, 'processing');
+                
+                // Switch based on the dispatch task type
+                switch (task.type) {
+                    case 'voice_memo':
+                    case 'quick_contact':
+                    case 'receipt_log':
+                    case 'agent_command': {
+                        // Fallback simple handler for Phase 2: Route directly to agent
+                        let text = task.payload.commandText || task.payload.transcription;
+                        if (!text) {
+                            if (task.type === 'receipt_log' && task.payload.imageUrl) {
+                                text = `Log this receipt image: ${task.payload.imageUrl}`;
+                            } else if ((task.type === 'voice_memo' || task.type === 'quick_contact') && task.payload.audioUrl) {
+                                text = `Process this voice audio file: ${task.payload.audioUrl}`;
+                            } else {
+                                text = `Handle ${task.type} action.`;
+                            }
+                        } else {
+                            // If text is provided but it also has media attachments, append them
+                            if (task.payload.imageUrl) text += `\n\nImage Attachment: ${task.payload.imageUrl}`;
+                            if (task.payload.audioUrl) text += `\n\nAudio Attachment: ${task.payload.audioUrl}`;
+                        }
+                        
+                        logger.info(`[RemoteRelay/Firestore] Dispatching to Agent Service: "${text}"`);
+                        await agentService.sendMessage(text, undefined, 'generalist', {
+                            source: 'mobile-remote'
+                        });
+                        break;
+                    }
+                    default:
+                        logger.warn(`[RemoteRelay/Firestore] Unknown dispatch task type: ${task.type}`);
+                        break;
+                }
+                
+                await remoteRelayService.updateDispatchTaskStatus(task.id, 'completed');
+                writeDiagnostic('dispatch_task_done', { taskId: task.id, type: task.type });
+            } catch (error: unknown) {
+                logger.error('[RemoteRelay/Firestore] Dispatch task failed:', error);
+                await remoteRelayService.updateDispatchTaskStatus(task.id, 'failed', {
+                    code: 'EXECUTION_ERROR',
+                    message: error instanceof Error ? error.message : 'Processing failed'
+                });
+            }
+        });
+
         return () => {
             unsubscribe();
+            unsubscribeDispatch();
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [enabled]);
