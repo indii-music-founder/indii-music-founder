@@ -19,7 +19,7 @@
  * Mount ONCE in App.tsx.
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { agentService } from '@/services/agent/AgentService';
@@ -241,11 +241,13 @@ function useFirestoreRelay(enabled: boolean) {
         writeDiagnostic('hook_enabled_changed', { enabled });
     }, [enabled]);
 
-    const { currentModule, isAgentProcessing, activeSessionId } = useStore(
+    const { currentModule, isAgentProcessing, activeSessionId, isSleeping, setIsSleeping } = useStore(
         useShallow(state => ({
             currentModule: state.currentModule,
             isAgentProcessing: state.isAgentProcessing,
             activeSessionId: state.activeSessionId,
+            isSleeping: state.isSleeping,
+            setIsSleeping: state.setIsSleeping,
         }))
     );
 
@@ -253,12 +255,29 @@ function useFirestoreRelay(enabled: boolean) {
     const currentModuleRef = useRef(currentModule);
     const isAgentProcessingRef = useRef(isAgentProcessing);
     const activeSessionIdRef = useRef(activeSessionId);
+    const isSleepingRef = useRef(isSleeping);
 
     useEffect(() => {
         currentModuleRef.current = currentModule;
         isAgentProcessingRef.current = isAgentProcessing;
         activeSessionIdRef.current = activeSessionId;
-    }, [currentModule, isAgentProcessing, activeSessionId]);
+        isSleepingRef.current = isSleeping;
+    }, [currentModule, isAgentProcessing, activeSessionId, isSleeping]);
+
+    /**
+     * Wake the desktop: show the window (Electron) and clear the sleep flag.
+     * Safe no-op in the web/PWA build where electronAPI is undefined.
+     * Used by both the explicit [WAKE] command and automatic wake-on-task.
+     */
+    const wakeDesktop = useCallback(() => {
+        if (isSleepingRef.current) {
+            setIsSleeping(false);
+            isSleepingRef.current = false;
+        }
+        window.electronAPI?.window?.show?.().catch((err: unknown) => {
+            logger.warn('[RemoteRelay] window.show failed during wake:', err);
+        });
+    }, [setIsSleeping]);
 
     // 1. Loop effect - runs every 5 seconds, mount-once to avoid unmount cleanup online:false flip-flops on navigation
     useEffect(() => {
@@ -272,6 +291,7 @@ function useFirestoreRelay(enabled: boolean) {
                     isAgentProcessing: isAgentProcessingRef.current,
                     activeSessionId: activeSessionIdRef.current || '',
                     online: true,
+                    sleepMode: isSleepingRef.current,
                 });
             } catch (error: unknown) {
                 logger.warn('[RemoteRelay/Firestore] Loop state push failed:', error);
@@ -340,6 +360,7 @@ function useFirestoreRelay(enabled: boolean) {
                     isAgentProcessing,
                     activeSessionId: activeSessionId || '',
                     online: true,
+                    sleepMode: isSleeping,
                 });
             } catch (error: unknown) {
                 logger.warn('[RemoteRelay/Firestore] Immediate state push failed:', error);
@@ -347,7 +368,7 @@ function useFirestoreRelay(enabled: boolean) {
         };
 
         pushStateImmediate();
-    }, [enabled, currentModule, isAgentProcessing, activeSessionId]);
+    }, [enabled, currentModule, isAgentProcessing, activeSessionId, isSleeping]);
 
     const processSingleCommand = async (command: RemoteCommand & { id: string }) => {
         if (isProcessing.current) return;
@@ -392,6 +413,23 @@ function useFirestoreRelay(enabled: boolean) {
         logger.info(`[RemoteRelay/Firestore] 📱→🖥️ Processing command: "${command.text?.substring(0, 50)}"`);
         writeDiagnostic('command_received', { commandId: command.id, text: command.text?.substring(0, 50) });
         try {
+            // ─── Wake Route (Sleep Mode) ─────────────────────────────
+            // Explicit "Wake INDII" from the phone. Show the window + clear the
+            // sleep flag. No agent work — just surface the resident process.
+            if (command.text.startsWith('[WAKE]')) {
+                logger.info('[RemoteRelay/Firestore] ⏰ Wake command received');
+                writeDiagnostic('wake_command', { commandId: command.id });
+                wakeDesktop();
+                await remoteRelayService.sendResponse(
+                    command.id,
+                    'INDII is awake.',
+                    'generalist',
+                    false
+                );
+                await remoteRelayService.markCommandCompleted(command.id);
+                return;
+            }
+
             // ─── Standard Agent Chat Route ───────────────────────────
             if (!command.text.startsWith('[')) {
                 const startedAt = Date.now();
@@ -629,7 +667,11 @@ function useFirestoreRelay(enabled: boolean) {
         logger.info('[RemoteRelay/Firestore] 🚀 Registering dispatch task listener NOW...');
         const unsubscribeDispatch = remoteRelayService.onDispatchTask(async (task: AgentDispatchTask & { id: string }) => {
             logger.info(`[RemoteRelay/Firestore] 📱→🖥️ Processing Dispatch Task: [${task.type}] ${task.id}`);
-            
+
+            // Automatic wake: any task from the phone surfaces a sleeping desktop
+            // before processing, so results are visible when the user looks.
+            wakeDesktop();
+
             try {
                 await remoteRelayService.updateDispatchTaskStatus(task.id, 'processing');
                 
@@ -646,19 +688,25 @@ function useFirestoreRelay(enabled: boolean) {
                         let text = task.payload.commandText || task.payload.transcription;
                         if (!text) {
                             if (task.type === 'receipt_log' && task.payload.imageUrl) {
-                                text = `Log this receipt image: ${task.payload.imageUrl}`;
+                                text = `Please process this receipt image. Use your tools to extract data, and CALL the \`save_media_note\` tool to attach it to my Notes: ${task.payload.imageUrl}`;
                             } else if (task.type === 'document_scan' && task.payload.imageUrl) {
-                                text = `Analyze and file this scanned document: ${task.payload.imageUrl}`;
+                                text = `Please analyze and file this scanned document. CALL the \`save_media_note\` tool with url="${task.payload.imageUrl}" and a description of the document.`;
                             } else if (task.type === 'venue_log' && task.payload.lat && task.payload.lng) {
-                                text = `Log this venue visit. Location: Latitude ${task.payload.lat}, Longitude ${task.payload.lng}`;
+                                // 1. Add user's pin directly to the map
+                                useStore.getState().addUserPin({ lat: task.payload.lat, lng: task.payload.lng });
+                                
+                                // 2. Formulate explicit instruction for Scout Agent
+                                text = `I just dropped a pin at Latitude ${task.payload.lat}, Longitude ${task.payload.lng}. 
+Please act as my Scout. Use your search tools to find 3-5 live music venues, clubs, or relevant music businesses within a 5-mile radius of this coordinate. 
+Format the findings and then CALL the \`save_scout_leads_to_map\` tool to plot them directly on my studio map. Ensure you include coordinates (lat/lng) for each venue you find.`;
                             } else if (task.type === 'media_capture' && task.payload.imageUrl) {
-                                text = `Save this general photo to my library: ${task.payload.imageUrl}`;
+                                text = `I captured a photo. CALL the \`save_media_note\` tool with url="${task.payload.imageUrl}" to save it to my Notes.`;
                             } else if (task.type === 'media_capture' && task.payload.videoUrl) {
-                                text = `Save this general video to my library: ${task.payload.videoUrl}`;
+                                text = `I captured a video. CALL the \`save_media_note\` tool with url="${task.payload.videoUrl}" to save it to my Notes.`;
                             } else if ((task.type === 'voice_memo' || task.type === 'quick_contact') && task.payload.audioUrl) {
-                                text = `Process this voice audio file: ${task.payload.audioUrl}`;
+                                text = `I captured a voice memo. If there's a transcription available, please summarize it and CALL \`save_note\`. If it's just audio, CALL \`save_media_note\` with url="${task.payload.audioUrl}".`;
                             } else {
-                                text = `Handle ${task.type} action.`;
+                                text = `I captured a ${task.type}. Please act on it and CALL \`save_note\` or \`save_media_note\` to save it to my Notes.`;
                             }
                         } else {
                             // If text is provided but it also has media attachments, append them

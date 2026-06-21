@@ -75,6 +75,12 @@ export interface DesktopState {
     activeSessionId: string;
     timestamp: Timestamp | ReturnType<typeof serverTimestamp>;
     online: boolean;
+    /**
+     * True when the desktop is in sleep mode (window hidden to tray, still
+     * listening to the relay queue). Lets the phone show Sleeping vs Active vs
+     * Offline. Absent/false in the web/PWA build (no Electron tray).
+     */
+    sleepMode?: boolean;
 }
 
 export interface AgentDispatchTask {

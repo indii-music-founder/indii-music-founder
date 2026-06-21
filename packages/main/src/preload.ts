@@ -262,5 +262,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
             ipcRenderer.on('power:on-ac', callback);
             return () => ipcRenderer.removeListener('power:on-ac', callback);
         }
+    },
+
+    // Window control (Sleep/Wake) — hide to tray on sleep, show on wake.
+    window: {
+        show: () => ipcRenderer.invoke('window:show'),
+        hide: () => ipcRenderer.invoke('window:hide'),
     }
 });
