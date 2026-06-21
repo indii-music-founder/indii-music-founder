@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-21 11:18 EDT
+**Updated:** 2026-06-21 12:14 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+74fb38328 feat(mobile-remote): INDII sleep mode + wake-from-mobile
+155646566 chore: session checkpoint [11:18]
 4ac2e246f chore: session checkpoint [11:17]
 33c3136fb chore: session checkpoint [11:16]
 d9f81273e chore: session checkpoint [11:15]
@@ -12,21 +14,15 @@ d9f81273e chore: session checkpoint [11:15]
 25957ded4 chore: session checkpoint [11:09]
 190999357 chore: session checkpoint [11:08]
 0dd89f11d feat(mobile-remote): add document scanner, pin drop, and text commands to mobile remote capture
-e5b740ce6 chore: session checkpoint [11:02]
-6c613db06 feat(mobile-remote): add general video and photo capture to remote relay
 ```
 
 ## Working State
 ```
- M package-lock.json
- M packages/renderer/package.json
- M packages/renderer/src/core/store/index.ts
- M packages/renderer/src/hooks/useRemoteCommandListener.ts
- M packages/renderer/src/modules/touring/components/TourMap.tsx
- M packages/renderer/src/services/agent/tools/MapsTools.ts
- M packages/renderer/src/test/setup.ts
 ?? docs/flowcharts/agent-venue-research-macro.md
 ?? packages/renderer/src/core/store/slices/mapSlice.ts
+?? packages/renderer/src/core/store/slices/notesSlice.ts
+?? packages/renderer/src/modules/notes/
+?? packages/renderer/src/services/agent/tools/NotesTools.ts
 ```
 
 ## Decisions
