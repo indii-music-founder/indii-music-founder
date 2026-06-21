@@ -36,6 +36,7 @@ import { ShareTargetHandler } from '@/core/components/ShareTargetHandler';
 import { ApprovalManager } from '@/components/instruments/InstrumentApprovalModal';
 import { useRemoteCommandListener } from '@/hooks/useRemoteCommandListener';
 import { useConnectivityMonitor } from '@/hooks/useConnectivityMonitor';
+import { useAutoSleep } from '@/hooks/useAutoSleep';
 import { BoardroomModule } from '@/modules/boardroom/BoardroomModule';
 
 import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
@@ -444,6 +445,9 @@ export default function App() {
 
     // Monitor actual connectivity in Electron — fixes stuck offline state
     useConnectivityMonitor();
+
+    // Auto-sleep the desktop to the tray after configurable idle (Electron only)
+    useAutoSleep();
 
     const publicLegalPage = useMemo(() => {
         const path = location.pathname.replace(/\/+$/, '') || '/';

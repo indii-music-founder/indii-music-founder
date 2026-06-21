@@ -47,6 +47,7 @@ export const triggerHaptic = (pattern: number | number[] = 50) => {
 const StatusDashboard = lazy(() => import('./components/StatusDashboard'));
 const QuickCaptureView = lazy(() => import('./components/QuickCaptureView'));
 const StreamView = lazy(() => import('./components/StreamView'));
+const SettingsView = lazy(() => import('./components/SettingsView'));
 // Legacy imports kept for eventual transition:
 // const CommandPad = lazy(() => import('./components/CommandPad'));
 // const AgentChat = lazy(() => import('./components/AgentChat'));
@@ -206,7 +207,7 @@ export default function MobileRemote() {
   );
   const [activeTab, setActiveTab] = useState<TabId>('home');
   const [showPairingModal, setShowPairingModal] = useState(false);
-  const [_desktopState, setDesktopState] = useState<DesktopState | null>(null);
+  const [desktopState, setDesktopState] = useState<DesktopState | null>(null);
 
   // Reconnection state machine
   const [isReconnecting, setIsReconnecting] = useState(false);
@@ -492,9 +493,7 @@ export default function MobileRemote() {
       case 'settings':
         return (
           <Suspense fallback={<TabFallback />}>
-            <div className="flex flex-col h-full flex-1 min-h-[60vh] justify-center items-center opacity-50">
-              <p className="text-sm font-bold uppercase tracking-widest text-[#F0F0F0]">Settings View Coming Soon</p>
-            </div>
+            <SettingsView desktopState={desktopState} isPaired={isPaired} />
           </Suspense>
         );
       default:
@@ -538,18 +537,33 @@ export default function MobileRemote() {
           <div className="flex items-center gap-3">
             <AnimatePresence mode="wait">
               {isPaired && connectionStatus === 'connected' ? (
-                <motion.div 
-                  key="connected"
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-500/10 border border-green-500/20 shadow-[0_0_15px_rgba(34,197,94,0.1)]"
-                >
-                  <div className="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.6)] animate-pulse" />
-                  <span className="text-[10px] font-bold text-green-400 uppercase tracking-[0.15em]">
-                    Active
-                  </span>
-                </motion.div>
+                desktopState?.sleepMode ? (
+                  <motion.div
+                    key="sleeping"
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 shadow-[0_0_15px_rgba(245,158,11,0.1)]"
+                  >
+                    <div className="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.6)]" />
+                    <span className="text-[10px] font-bold text-amber-400 uppercase tracking-[0.15em]">
+                      Sleeping
+                    </span>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="connected"
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-500/10 border border-green-500/20 shadow-[0_0_15px_rgba(34,197,94,0.1)]"
+                  >
+                    <div className="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.6)] animate-pulse" />
+                    <span className="text-[10px] font-bold text-green-400 uppercase tracking-[0.15em]">
+                      Active
+                    </span>
+                  </motion.div>
+                )
               ) : isReconnecting ? (
                 <motion.div 
                   key="reconnecting"
