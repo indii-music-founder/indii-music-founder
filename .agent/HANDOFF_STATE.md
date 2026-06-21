@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-21 11:08 EDT
+**Updated:** 2026-06-21 11:09 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+190999357 chore: session checkpoint [11:08]
 0dd89f11d feat(mobile-remote): add document scanner, pin drop, and text commands to mobile remote capture
 e5b740ce6 chore: session checkpoint [11:02]
 6c613db06 feat(mobile-remote): add general video and photo capture to remote relay
@@ -13,12 +14,13 @@ f103ccd11 chore: session checkpoint [10:52]
 e29bf7062 fix: update test fixtures for R8 endpoint location (us) and new agents (hospitality, event-planner)
 8f9b7c0ef chore: session checkpoint [10:34]
 593b6a0b1 chore: session checkpoint [10:25]
-dec29a46a chore: session checkpoint [10:25]
 ```
 
 ## Working State
 ```
-clean working tree
+ M package-lock.json
+ M packages/renderer/package.json
+?? docs/flowcharts/agent-venue-research-macro.md
 ```
 
 ## Decisions
