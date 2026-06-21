@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-21 11:17 EDT
+**Updated:** 2026-06-21 11:18 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+4ac2e246f chore: session checkpoint [11:17]
 33c3136fb chore: session checkpoint [11:16]
 d9f81273e chore: session checkpoint [11:15]
 3701cadaf chore: session checkpoint [11:13]
@@ -13,7 +14,6 @@ d9f81273e chore: session checkpoint [11:15]
 0dd89f11d feat(mobile-remote): add document scanner, pin drop, and text commands to mobile remote capture
 e5b740ce6 chore: session checkpoint [11:02]
 6c613db06 feat(mobile-remote): add general video and photo capture to remote relay
-f103ccd11 chore: session checkpoint [10:52]
 ```
 
 ## Working State
@@ -24,6 +24,7 @@ f103ccd11 chore: session checkpoint [10:52]
  M packages/renderer/src/hooks/useRemoteCommandListener.ts
  M packages/renderer/src/modules/touring/components/TourMap.tsx
  M packages/renderer/src/services/agent/tools/MapsTools.ts
+ M packages/renderer/src/test/setup.ts
 ?? docs/flowcharts/agent-venue-research-macro.md
 ?? packages/renderer/src/core/store/slices/mapSlice.ts
 ```
