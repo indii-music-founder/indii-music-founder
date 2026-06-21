@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-21 09:44 EDT
+**Updated:** 2026-06-21 09:57 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+39d1cd6cd chore: session checkpoint [09:44]
 60eca2962 feat(agents): refresh fine-tuned endpoints & onboard hospitality + event-planner
 d6496f4a6 chore: session checkpoint [09:40]
 ee8043f73 chore: session checkpoint [09:40]
@@ -13,7 +14,6 @@ ee8043f73 chore: session checkpoint [09:40]
 76584fe25 chore: session checkpoint [09:24]
 d18668563 chore: session checkpoint [09:15]
 ac24ebd5f chore: session checkpoint [09:11]
-90f2b8ecc docs(governance): codify 'no hardcoded infra IDs in frontend' rule
 ```
 
 ## Working State
