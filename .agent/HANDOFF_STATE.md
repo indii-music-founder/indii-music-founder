@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-21 11:13 EDT
+**Updated:** 2026-06-21 11:15 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+3701cadaf chore: session checkpoint [11:13]
 9718c7733 fix: add real connectivity monitor for Electron apps
 25957ded4 chore: session checkpoint [11:09]
 190999357 chore: session checkpoint [11:08]
@@ -13,7 +14,6 @@ e5b740ce6 chore: session checkpoint [11:02]
 f103ccd11 chore: session checkpoint [10:52]
 717e8d8a9 chore: session checkpoint [10:40]
 6ce6a5ef9 feat(mobile-remote): basic void-styled UI with quick capture & cloud relay
-e29bf7062 fix: update test fixtures for R8 endpoint location (us) and new agents (hospitality, event-planner)
 ```
 
 ## Working State
