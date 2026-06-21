@@ -1,9 +1,12 @@
 # Handoff State
-**Updated:** 2026-06-21 10:34 EDT
+**Updated:** 2026-06-21 10:40 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+6ce6a5ef9 feat(mobile-remote): basic void-styled UI with quick capture & cloud relay
+e29bf7062 fix: update test fixtures for R8 endpoint location (us) and new agents (hospitality, event-planner)
+8f9b7c0ef chore: session checkpoint [10:34]
 593b6a0b1 chore: session checkpoint [10:25]
 dec29a46a chore: session checkpoint [10:25]
 46d928042 chore: session checkpoint [10:15]
@@ -11,26 +14,11 @@ a075b207a chore: session checkpoint [10:14]
 4a3150b70 chore: session checkpoint [10:12]
 5136734bd chore: session checkpoint [10:11]
 17a8bbf73 chore: session checkpoint [10:04]
-abbc83342 chore: session checkpoint [10:03]
-b559c0eeb chore: session checkpoint [09:59]
-651711634 chore: session checkpoint [09:57]
 ```
 
 ## Working State
 ```
-A  docs/flowcharts/mobile-remote-ui.md
-A  docs/flowcharts/remote-dispatch-macro.md
-A  docs/schemas/agent_dispatch_queue.md
-M  packages/firebase/firestore.rules
-M  packages/main/src/main.ts
-M  packages/renderer/src/hooks/useRemoteCommandListener.ts
-M  packages/renderer/src/modules/mobile-remote/MobileRemote.tsx
-A  packages/renderer/src/modules/mobile-remote/components/QuickCaptureView.tsx
-M  packages/renderer/src/modules/mobile-remote/components/StatusDashboard.tsx
-A  packages/renderer/src/modules/mobile-remote/components/StreamView.tsx
-M  packages/renderer/src/modules/mobile-remote/components/TransportBar.tsx
-M  packages/renderer/src/services/agent/RemoteRelayService.ts
-M  packages/renderer/src/services/agent/specialists/GeneralistAgent.ts
+clean working tree
 ```
 
 ## Decisions
