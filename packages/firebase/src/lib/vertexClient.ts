@@ -30,13 +30,23 @@ import { GoogleGenAI } from "@google/genai";
 const clientsCache = new Map<string, GoogleGenAI>();
 
 /**
+ * Vertex tuned endpoint resource names can use multi-region locations such as
+ * `us`, but the public API host is not `us-aiplatform.googleapis.com`.
+ */
+export function normalizeVertexClientLocation(location: string): string {
+  const trimmed = location.trim();
+  return trimmed === 'us' || trimmed === 'eu' ? 'global' : trimmed;
+}
+
+/**
  * Get or create the Vertex AI client.
  * Lazy initialization — cached by project and location, reused thereafter.
  * ADC (Application Default Credentials) auth is automatic in Cloud Functions.
  */
 export function getVertexAIClient(projectOverride?: string, locationOverride?: string): GoogleGenAI {
   const projectId = projectOverride || process.env.VITE_VERTEX_PROJECT_ID || process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT || 'indii-music-founder';
-  const location = locationOverride || process.env.VITE_VERTEX_LOCATION || process.env.VERTEX_LOCATION || 'global';
+  const rawLocation = locationOverride || process.env.VITE_VERTEX_LOCATION || process.env.VERTEX_LOCATION || 'global';
+  const location = normalizeVertexClientLocation(rawLocation);
 
   const cacheKey = `${projectId}:${location}`;
   if (clientsCache.has(cacheKey)) {
@@ -58,7 +68,7 @@ export function getVertexAIClient(projectOverride?: string, locationOverride?: s
   });
 
   clientsCache.set(cacheKey, client);
-  console.info(`[VertexClient] Initialized Vertex AI SDK for project=${projectId}, location=${location}`);
+  console.info(`[VertexClient] Initialized Vertex AI SDK for project=${projectId}, location=${location}${rawLocation !== location ? ` (from ${rawLocation})` : ''}`);
   return client;
 }
 
