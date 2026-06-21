@@ -4,6 +4,7 @@
 
 ## Recent Commits
 ```
+7e16bbafd chore: session checkpoint [09:36]
 5ed004813 chore: session checkpoint [09:25]
 76584fe25 chore: session checkpoint [09:24]
 d18668563 chore: session checkpoint [09:15]
@@ -13,7 +14,6 @@ ac24ebd5f chore: session checkpoint [09:11]
 76a04961d chore: session checkpoint [08:40]
 49ffef13c chore: session checkpoint [08:33]
 1131cf105 chore: update agent workflows, api registry, testing docs, and mock runs
-a77b74a80 docs(flowchart): add technical flowchart for beat-synced performance video generation
 ```
 
 ## Working State
