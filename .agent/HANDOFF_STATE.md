@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-21 11:09 EDT
+**Updated:** 2026-06-21 11:13 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+9718c7733 fix: add real connectivity monitor for Electron apps
+25957ded4 chore: session checkpoint [11:09]
 190999357 chore: session checkpoint [11:08]
 0dd89f11d feat(mobile-remote): add document scanner, pin drop, and text commands to mobile remote capture
 e5b740ce6 chore: session checkpoint [11:02]
@@ -12,15 +14,18 @@ f103ccd11 chore: session checkpoint [10:52]
 717e8d8a9 chore: session checkpoint [10:40]
 6ce6a5ef9 feat(mobile-remote): basic void-styled UI with quick capture & cloud relay
 e29bf7062 fix: update test fixtures for R8 endpoint location (us) and new agents (hospitality, event-planner)
-8f9b7c0ef chore: session checkpoint [10:34]
-593b6a0b1 chore: session checkpoint [10:25]
 ```
 
 ## Working State
 ```
  M package-lock.json
  M packages/renderer/package.json
+ M packages/renderer/src/core/store/index.ts
+ M packages/renderer/src/hooks/useRemoteCommandListener.ts
+ M packages/renderer/src/modules/touring/components/TourMap.tsx
+ M packages/renderer/src/services/agent/tools/MapsTools.ts
 ?? docs/flowcharts/agent-venue-research-macro.md
+?? packages/renderer/src/core/store/slices/mapSlice.ts
 ```
 
 ## Decisions
