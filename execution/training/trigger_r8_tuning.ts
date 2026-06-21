@@ -1,6 +1,7 @@
 import { GoogleAuth } from 'google-auth-library';
 import * as fs from 'fs';
 import * as path from 'path';
+import { execSync } from 'child_process';
 
 /**
  * Trigger Vertex AI Fine-Tuning Job for Round 8 (Gemini 3.1 Flash-Lite)
@@ -23,10 +24,14 @@ async function triggerTuningJob(agentId: string) {
     const client = await auth.getClient();
     const projectId = 'indii-music-founder';
     const location = 'us-central1';
-    const accessToken = await client.getAccessToken();
-
-    if (!accessToken.token) {
-        throw new Error('Failed to obtain Google Cloud access token.');
+    let token: string;
+    try {
+        const accessToken = await client.getAccessToken();
+        if (!accessToken.token) throw new Error('No token');
+        token = accessToken.token;
+    } catch (err: any) {
+        console.warn('GoogleAuth failed, falling back to gcloud auth print-access-token:', err.message);
+        token = execSync('gcloud auth print-access-token').toString().trim();
     }
 
     const tunedModelDisplayName = `r8-${agentId}-3.1-flash-lite-${new Date().toISOString().split('T')[0]}`;
@@ -36,15 +41,14 @@ async function triggerTuningJob(agentId: string) {
     const url = `https://${location}-aiplatform.googleapis.com/v1beta1/projects/${projectId}/locations/${location}/tuningJobs`;
 
     const body = {
-        baseModel: "projects/google/locations/us-central1/publishers/google/models/gemini-3.1-flash-lite-preview",
+        baseModel: "gemini-3.1-flash-lite",
         tunedModelDisplayName: tunedModelDisplayName,
         supervisedTuningSpec: {
             trainingDatasetUri: datasetGcsUri,
             validationDatasetUri: evalDatasetGcsUri,
             hyperParameters: {
                 epochCount: 3,
-                learningRateMultiplier: 1.0,
-                adapterSize: 16
+                learningRateMultiplier: 1.0
             }
         },
         description: `Round 8 Swarm-Native Training for ${agentId} agent`
@@ -57,7 +61,7 @@ async function triggerTuningJob(agentId: string) {
     const res = await fetch(url, {
         method: 'POST',
         headers: {
-            'Authorization': `Bearer ${accessToken.token}`,
+            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
         },
         body: JSON.stringify(body)
