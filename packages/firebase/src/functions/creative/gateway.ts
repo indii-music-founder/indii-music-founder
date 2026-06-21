@@ -95,39 +95,50 @@ function getRawAiClient(kind: MediaKind, forceVertex = false): GoogleGenAI {
   return getVertexAIClient(project, getMediaVertexLocation(kind));
 }
 
-function wrapWithFallback(obj: any, forceVertex: boolean, fallbackFactory: () => any): any {
+/**
+ * Proxy wrapper that retries on API key failures by falling back to Vertex AI.
+ * Handles nested object/method chains so .models.generateContent(...) works.
+ * Type is preserved via generic T; only the function invoke layer is polymorphic.
+ */
+function wrapWithFallback<T extends object>(
+  obj: T,
+  forceVertex: boolean,
+  fallbackFactory: () => T,
+): T {
   return new Proxy(obj, {
-    get(target, prop, receiver) {
+    get(target: T, prop: string | symbol, receiver: unknown): unknown {
       const val = Reflect.get(target, prop, receiver);
       if (typeof val === 'function') {
-        return async function (...args: any[]) {
+        // Async wrapper that retries on API key errors
+        return async function wrappedMethod(...args: unknown[]): Promise<unknown> {
           try {
-            return await val.apply(target, args);
-          } catch (error: any) {
+            return await (val as (...args: unknown[]) => Promise<unknown>).apply(target, args);
+          } catch (error: unknown) {
             const errorMsg = error instanceof Error ? error.message : String(error);
-            const isApiKeyError = errorMsg.includes('API key expired') || 
-                                  errorMsg.includes('API_KEY_INVALID') || 
+            const isApiKeyError = errorMsg.includes('API key expired') ||
+                                  errorMsg.includes('API_KEY_INVALID') ||
                                   errorMsg.includes('API key not valid') ||
                                   (errorMsg.includes('INVALID_ARGUMENT') && errorMsg.includes('API key'));
-            
+
             if (isApiKeyError && !forceVertex) {
               console.warn('[creativeGateway] API key error encountered. Retrying automatically with Vertex AI ADC...', errorMsg);
               const fallbackObj = fallbackFactory();
-              const fallbackFn = fallbackObj[prop];
+              const fallbackFn = Reflect.get(fallbackObj, prop, fallbackObj) as (...args: unknown[]) => Promise<unknown>;
               return await fallbackFn.apply(fallbackObj, args);
             }
             throw error;
           }
         };
       } else if (val && typeof val === 'object') {
-        return wrapWithFallback(val, forceVertex, () => {
+        // Recursively wrap nested objects to handle .models.generateContent(...) chains
+        return wrapWithFallback(val as object, forceVertex, () => {
           const nextFallback = fallbackFactory();
-          return nextFallback[prop];
+          return Reflect.get(nextFallback, prop, nextFallback) as object;
         });
       }
       return val;
     }
-  });
+  }) as T;
 }
 
 function getAiClient(kind: MediaKind, forceVertex = false): GoogleGenAI {
