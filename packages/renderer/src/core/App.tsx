@@ -35,6 +35,7 @@ import { ResponsiveLayoutProvider } from '@/providers/ResponsiveLayoutProvider';
 import { ShareTargetHandler } from '@/core/components/ShareTargetHandler';
 import { ApprovalManager } from '@/components/instruments/InstrumentApprovalModal';
 import { useRemoteCommandListener } from '@/hooks/useRemoteCommandListener';
+import { useConnectivityMonitor } from '@/hooks/useConnectivityMonitor';
 import { BoardroomModule } from '@/modules/boardroom/BoardroomModule';
 
 import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
@@ -440,6 +441,9 @@ export default function App() {
 
     // 📱 Remote Relay: Listen for phone commands and process them through the desktop's agent pipeline
     useRemoteCommandListener();
+
+    // Monitor actual connectivity in Electron — fixes stuck offline state
+    useConnectivityMonitor();
 
     const publicLegalPage = useMemo(() => {
         const path = location.pathname.replace(/\/+$/, '') || '/';
