@@ -20,6 +20,7 @@ export const VideoAgent: AgentConfig = {
             browser_tool: UniversalTools.browser_tool,
             indii_image_gen: UniversalTools.indii_image_gen,
             orchestrate_timeline: VideoTools.orchestrate_timeline,
+            create_performance_video: VideoTools.create_performance_video,
             generate_storyboard: async (args: { script: string, numFrames: number }) => {
                 const prompt = `Break down this script into a ${args.numFrames}-frame storyboard. For each frame, provide a shot type, action description, and visual prompt for image generation. Script: ${args.script}`;
                 try {
@@ -40,7 +41,7 @@ export const VideoAgent: AgentConfig = {
             }
         } as Record<string, import('@/services/agent/types').AnyToolFunction>;
     },
-    authorizedTools: ['generate_video', 'batch_edit_videos', 'extend_video', 'update_keyframe', 'browser_tool', 'indii_image_gen', 'orchestrate_timeline', 'generate_storyboard', 'draft_video_budget'],
+    authorizedTools: ['generate_video', 'batch_edit_videos', 'extend_video', 'update_keyframe', 'browser_tool', 'indii_image_gen', 'orchestrate_timeline', 'create_performance_video', 'generate_storyboard', 'draft_video_budget'],
     tools: [{
         functionDeclarations: [
             {

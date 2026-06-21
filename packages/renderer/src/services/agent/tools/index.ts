@@ -151,7 +151,8 @@ AVAILABLE TOOLS:
 23. generate_crisis_response(issue: string, sentiment: string, platform: string) - Generate crisis response.
 24. extend_video(videoUrl: string, direction: string, frame: number) - Extend video (direction: 'forwards' or 'backwards').
 25. update_keyframe(clipId: string, property: string, frame: number, value: number, easing: string) - Add or update a keyframe.
-26. list_organizations() - List all organizations.
+26. create_performance_video(songUrl: string, artistImageUrl?: string, artistDescription?: string, style?: string, aspectRatio?: string, sceneCount?: number) - Generate a beat-synced performance music video from an uploaded song and AI artist.
+27. list_organizations() - List all organizations.
 27. switch_organization(orgId: string) - Switch to a different organization.
 28. create_organization(name: string) - Create a new organization.
 29. get_organization_details() - Get details of current organization.
