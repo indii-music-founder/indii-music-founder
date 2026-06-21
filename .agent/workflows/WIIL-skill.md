@@ -118,6 +118,10 @@ These commands are called by the Core Pipeline or can be invoked directly as nee
 - **Purpose:** Executes the dataset generation (using local scripts) and safely orchestrates cloud AI fine-tuning jobs for the multi-agent hub-and-spoke system.
 - **When to use:** When preparing harness datasets or when explicit user approval is granted to incur model training costs.
 
+### `/api` — The API Knowledge Base
+- **Purpose:** Serves as the ultimate reference and diagnostic tool for the entire API system (Firebase Cloud Functions, AI logic, Inngest Jobs, etc.).
+- **When to use:** When discovering, debugging, or planning to add new API endpoints.
+
 ---
 
 ## Creative, Design & Architectural Skills
