@@ -6377,3 +6377,11 @@ Therefore, no fix can be proposed or implemented.
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
 - **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/27909388829)
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
+
+### ISSUE-LANDING-20260622: Uncommitted landing/page.tsx regression (lint error + 3 broken tests)
+- **Status:** ⏳ OPEN
+- **Severity:** 🟠 MEDIUM (uncommitted in working tree; NOT yet on origin so CI is currently safe — but a `git add -A` checkpoint hook would push it and break CI under the wrong author)
+- **Module:** Landing
+- **File:** `packages/landing/src/page.tsx` (`Home`, `isThesisOpen` state)
+- **Summary:** An agent converted the lazy `useState(() => …)` initializer into `useState(false)` + `useEffect(setState)`. Causes ESLint **error** `Calling setState synchronously within an effect can trigger cascading renders` (fails the lint gate) and fails 3 `packages/landing/src/App.test.tsx` tests (they assert founder/thesis state on initial render).
+- **Fix Direction:** Revert to a lazy initializer; fold the intended `hostname.includes('founders')` detection INTO the initializer (synchronous), NOT an effect. Exact pattern + rationale in `.agent/skills/error_memory/ERROR_LEDGER.md` (2026-06-22 entry). Then `npm run lint` + `npm test -- --run packages/landing` must both pass.
