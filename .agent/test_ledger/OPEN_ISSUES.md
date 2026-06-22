@@ -6601,3 +6601,56 @@ Therefore, no fix can be proposed or implemented.
 - **Summary:** The GitHub Actions workflow `Build and Test` failed on branch `claude/agent-abcd-vem93b`.
 - **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/27989145213)
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
+
+---
+
+### ISSUE-A-014: E2E road-manager command center locator ambiguity strict mode violation
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Location:** `e2e/road-manager.spec.ts:171`
+- **Details:** The test expect statement `await expect(page.locator('text=Command Center')).toBeVisible({ timeout: 10_000 })` fails due to strict mode violation. The selector matches two elements: the sidebar navigation item (`[data-testid="nav-item-observability"]`) and the heading inside the road manager layout.
+- **Expected (acceptance):** Resolve the selector ambiguity by using a more specific selector, such as targeting the heading element directly (`page.getByRole('heading', { name: 'Command Center' })`) or targeting the navigation item uniquely.
+- **Honest fallback:** If the layout is not available, fail with a clean error rather than matching arbitrary nodes.
+- **DO NOT:** Do NOT use `.first()` as a quick fix, as it masks duplicate element violations and leads to unstable test paths.
+- **Evidence:** `strict mode violation: locator('text=Command Center') resolved to 2 elements` at `e2e/road-manager.spec.ts:171:59`.
+
+### ISSUE-A-015: E2E scratch_test date of birth input field timeout
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Location:** `e2e/scratch_test.spec.ts:156`
+- **Details:** The test fails with a timeout of 60000ms waiting for the date of birth input `locator('input[type="date"]')`. This suggests the date picker input is not present or visible in the DOM during registration/onboarding.
+- **Expected (acceptance):** Ensure that the date of birth input field renders correctly and is visible during the signup/registration flow. The locator must target the date input cleanly.
+- **Honest fallback:** If the registration form fails to load, render an error message to the user rather than leaving the inputs in an un-fillable state.
+- **DO NOT:** Do NOT skip or comment out the registration birth date requirement just to green the test.
+- **Evidence:** `Error: locator.fill: Test timeout of 60000ms exceeded. waiting for locator('input[type="date"]')` at `e2e/scratch_test.spec.ts:156:46`.
+
+### ISSUE-A-016: E2E detroit-techno-onboarding / stress-test prompt-input visibility timeout
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Location:** `e2e/detroit-techno-onboarding.spec.ts:587` & `e2e/stress-test-new-user.spec.ts:95`
+- **Details:** Both specs fail expecting `[data-testid="prompt-input"]` to be visible. This usually happens when the chat container/interface fails to load or onboarding state transitions fail, preventing the user from interacting with the agent.
+- **Expected (acceptance):** The agent chat prompt input must become visible within the timeout after signing up or logging in.
+- **Honest fallback:** If Firebase Auth or installations fail, show a clear connection status warning.
+- **DO NOT:** Do NOT mock the chat input visibility or bypass the onboarding steps.
+- **Evidence:** `expect(locator).toBeVisible() failed. Locator: locator('[data-testid="prompt-input"]')` in `e2e/detroit-techno-onboarding.spec.ts` and `e2e/stress-test-new-user.spec.ts`.
+
+### ISSUE-A-017: E2E creative-studio canvas container visibility timeout
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Location:** `e2e/creative-studio.spec.ts:56`
+- **Details:** The test expect statement `await expect(canvasContainer).toBeVisible({ timeout: 15_000 })` fails because the canvas container is never rendered. This is likely tied to the `useDirectGeneration.ts:148` TypeError (`Cannot read properties of undefined (reading 'indexOf')`) which crashes the DirectGenerationTab component before it can render the canvas.
+- **Expected (acceptance):** The DirectGenerationTab must handle downstream handoffs cleanly without throwing undefined index errors, and properly instantiate the canvas container.
+- **Honest fallback:** Display a clean error message inside the generator tab if generation fails, without crashing the entire module.
+- **DO NOT:** Do NOT comment out the canvas visibility check or use dummy images.
+- **Evidence:** `TypeError: Cannot read properties of undefined (reading 'indexOf') at /src/modules/creative/hooks/useDirectGeneration.ts:148:16` and E2E timeout on `.canvas-container`.
+
+### ISSUE-A-018: E2E live_tests_runner agent check failures
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Location:** `e2e/live_tests_runner.spec.ts:86`
+- **Details:** Multiple director and agent checks (Creative Director, Director Agent, Marketing Director, Merchandise Agent, Publishing Agent, Social Media Agent) fail with non-zero error counts. The runner asserts `expect(errors.length).toBe(0)` but receives several errors per agent.
+- **Expected (acceptance):** All agent runtime instances must register, validate their dependencies, load their prompts/skills correctly, and complete runs with zero execution errors.
+- **Honest fallback:** Log errors clearly in the database and report degradation to the UI.
+- **DO NOT:** Do NOT change the check threshold to ignore errors.
+- **Evidence:** `expect(received).toBe(expected) received: 5, 5, 1, 11, 8, 6` at `e2e/live_tests_runner.spec.ts:86:31`.
+
