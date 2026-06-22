@@ -1,9 +1,12 @@
 # Handoff State
-**Updated:** 2026-06-22 14:10 EDT
+**Updated:** 2026-06-22 14:14 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+3b7bbe43a docs(ledger): mark issue 445 fixed
+36fbe1ed1 fix(creative): surface backend unavailable errors
+c10601365 chore: session checkpoint [14:10]
 dd3b8a7f9 chore: session checkpoint [14:09]
 cae8cb4c4 chore: session checkpoint [14:08]
 04fdec15c chore: session checkpoint [14:07]
@@ -11,16 +14,11 @@ cae8cb4c4 chore: session checkpoint [14:08]
 43df912a4 chore: session checkpoint [14:06]
 53fd501ff chore: session checkpoint [14:05]
 507eca19d chore: session checkpoint [14:04]
-09286cd09 chore: session checkpoint [14:04]
-7d0dd0633 chore: session checkpoint [14:03]
-dacb06126 docs(ledger): record relay follow-up notes
 ```
 
 ## Working State
 ```
- M .agent/test_ledger/OPEN_ISSUES.md
- M packages/renderer/src/modules/creative/components/__tests__/DirectGenerationTab.test.tsx
- M packages/renderer/src/modules/creative/hooks/useDirectGeneration.ts
+?? .claude/launch.json
 ?? ORIGINAL_REQUEST.md
 ?? docs/flowcharts/agent-venue-research-macro.md
 ?? docs/handoff/
