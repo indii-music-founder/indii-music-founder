@@ -551,6 +551,42 @@ function useFirestoreRelay(enabled: boolean) {
                 return;
             }
 
+            // ─── Show Me Route (on-demand visual return channel) ──────────────────────────────
+            // ISSUE-REMOTE-SHOW-20260622 Phase 1: surface the most recent visual artifact on the
+            // phone by reusing the same imageUrls channel that [GENERATE_IMAGE] already uses.
+            if (command.text.startsWith('[SHOW]')) {
+                logger.info('[RemoteRelay/Firestore] 🖼️ Show me: surfacing latest visual artifact');
+                writeDiagnostic('show_me_started', { commandId: command.id });
+
+                const history = useStore.getState().generatedHistory ?? [];
+                const latestVisual = history.find(item => item.type === 'image' && !!item.url);
+
+                if (latestVisual) {
+                    await remoteRelayService.sendResponse(
+                        command.id,
+                        latestVisual.prompt
+                            ? `🖼️ Here's the latest: "${latestVisual.prompt}"`
+                            : '🖼️ Here\'s the latest visual.',
+                        'creative',
+                        false,
+                        [latestVisual.thumbnailUrl || latestVisual.url]
+                    );
+                    writeDiagnostic('show_me_done', { commandId: command.id, itemId: latestVisual.id });
+                } else {
+                    // Honest empty state — never a silent no-op or a raw error.
+                    await remoteRelayService.sendResponse(
+                        command.id,
+                        'Nothing to show yet — generate or open an asset first, then say "show me".',
+                        'creative',
+                        false
+                    );
+                    writeDiagnostic('show_me_empty', { commandId: command.id });
+                }
+
+                await remoteRelayService.markCommandCompleted(command.id);
+                return;
+            }
+
             // ─── Agent Action Route ──────────────────────────────
             if (command.text.startsWith('[AGENT_ACTION]')) {
                 const action = command.text.replace('[AGENT_ACTION]', '').trim();

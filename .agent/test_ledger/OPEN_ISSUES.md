@@ -6394,3 +6394,21 @@ Therefore, no fix can be proposed or implemented.
 - **Verification note (Engine A/D, 2026-06-22):** On inspection the committed code had been partially worked around with `setTimeout(() => setIsThesisOpen(true), 0)` inside the effect, which dodged the lint **error** (so `npm run lint` was already clean) and the 3 `App.test.tsx` tests already passed — i.e. the originally-reported failures did not reproduce. The remaining defect was the fragile pattern itself (effect + deferred `setState` → a one-tick thesis-open flash on the founder route; ERROR_LEDGER says reserve effects for subscriptions, not initial derivation).
 - **Fix applied:** Replaced the `useState(false)` + `useEffect`/`setTimeout` block with the canonical lazy initializer that derives `isThesisOpen` synchronously from `window.location` behind a `typeof window === 'undefined'` guard; removed the now-unused `useEffect` import.
 - **Evidence:** `packages/landing/src/page.tsx:82-90`. `npx eslint packages/landing/src/page.tsx` → exit 0 (no errors/warnings). `npx vitest run packages/landing/src/App.test.tsx` → 3/3 passed.
+
+### ISSUE-REMOTE-SHOW-20260622: indiiREMOTE — on-demand visual return channel ("show me")
+- **Status:** 🟡 IN PROGRESS (Phase 1 — branch `claude/agent-abcd-vem93b`)
+- **Severity:** 🟢 ENHANCEMENT
+- **Module:** mobile-remote (indiiREMOTE) / RemoteRelay
+- **Found:** 2026-06-22 (founder design conversation)
+- **Context / why:** Phone = remote-only by design (see ISSUE-443). The founder converses with the INDII coordinator from the phone; INDII delegates to department agents (`consult_specialist` / A2A swarm) and reports back as text. Today the ONLY visual return channel is `[GENERATE_IMAGE]`, which pushes generated `imageUrls` back to the phone via `remoteRelayService.sendResponse(id, text, agentId, false, imageUrls)`. There is **no general "show me" affordance** — the user can't say "show me what you just did / the current artifact" and get the visual surfaced on the phone. The user trusts the work is happening but can't *see* it on demand.
+- **Acceptance:** From the phone, a "Show me" action (or `[SHOW]` command) returns the current/most-recent visual artifact to the phone, rendered inline in the remote response — reusing the proven `imageUrls` channel. Honest fallback: if there is no artifact to show, return a clear text message ("Nothing to show yet — generate or open an asset first"), never a silent no-op or a raw error.
+- **Existing surfaces to reuse (grounded):**
+  - Desktop relay router: `packages/renderer/src/hooks/useRemoteCommandListener.ts` (prefix routes `[GENERATE_IMAGE]`, `[NAVIGATE]`, …).
+  - Visual channel: `RemoteRelayService.sendResponse(commandId, text, agentId?, isStreaming?, imageUrls?, boardroomMessageId?)` — already broadcasts `imageUrls` to the phone over Firestore + the P2P WebSocket fallback.
+  - Latest artifact source: `creativeHistorySlice` → `generatedHistory` (HistoryItem[] sorted by `timestamp` desc; `generatedHistory[0].url` is the most recent creative asset).
+  - Phone command senders: `mobile-remote/components/CommandPad.tsx`, `GenerationMonitor.tsx` (`remoteRelayService.sendCommand('[PREFIX] …')`).
+- **Phased plan:**
+  - **Phase 1 (this branch):** Desktop `[SHOW]` route in `useRemoteCommandListener.ts` that reads `generatedHistory[0]` and returns its `url` via `sendResponse(..., [url])`, with the honest empty-state fallback; add a "Show me" quick action on the phone (`CommandPad`) that sends `[SHOW]`. Unit-coverage the empty-state + happy-path branch where feasible.
+  - **Phase 2:** "Show me" targets beyond the latest asset — e.g. `[SHOW] canvas` (export the active Fabric.js canvas to a data/blob URL) and `[SHOW] <module>` (a snapshot of a given department's current output).
+  - **Phase 3:** Live/streamed preview (progressive frames while a long task runs) instead of a single end-state image.
+- **Out of scope (for now):** full desktop screen capture / arbitrary screenshot streaming (security + perf review required first).
