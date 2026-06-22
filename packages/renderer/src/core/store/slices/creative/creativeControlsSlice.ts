@@ -83,7 +83,7 @@ export interface CreativeControlsSlice {
         useGrounding: boolean;
         personGeneration: 'allow_adult' | 'dont_allow' | 'allow_all';
         isTransitionMode: boolean;
-        isAndromedaMode: boolean;
+        isPLPMode: boolean;
 
         // ── Nano Banana API Extensions ─────────────────────────────────────
 
@@ -114,8 +114,8 @@ export interface CreativeControlsSlice {
     setStudioControls: (controls: Partial<CreativeControlsSlice['studioControls']>) => void;
     enableCoverArtMode: () => void;
     disableCoverArtMode: () => void;
-    enableAndromedaMode: () => void;
-    disableAndromedaMode: () => void;
+    enablePLPMode: () => void;
+    disablePLPMode: () => void;
 
     // Mode & Inputs
     generationMode: 'image' | 'video';
@@ -247,7 +247,7 @@ export function buildCreativeControlsState(
             useGrounding: false,
             personGeneration: 'allow_adult',
             isTransitionMode: false,
-            isAndromedaMode: false,
+            isPLPMode: false,
             // Nano Banana API defaults
             imageSize: '2K',
             batchCount: 1,
@@ -282,16 +282,16 @@ export function buildCreativeControlsState(
                 isCoverArtMode: false
             }
         })),
-        enableAndromedaMode: () => set((state: StoreState) => ({
+        enablePLPMode: () => set((state: StoreState) => ({
             studioControls: {
                 ...state.studioControls,
-                isAndromedaMode: true
+                isPLPMode: true
             }
         })),
-        disableAndromedaMode: () => set((state: StoreState) => ({
+        disablePLPMode: () => set((state: StoreState) => ({
             studioControls: {
                 ...state.studioControls,
-                isAndromedaMode: false
+                isPLPMode: false
             }
         })),
 

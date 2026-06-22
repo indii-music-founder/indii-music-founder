@@ -9,7 +9,7 @@
  * 3. Prompt handling with real creative content
  * 4. Settings persistence and reset behavior
  * 5. Generation mode switching (image ↔ video)
- * 6. Andromeda mode activation
+ * 6. PLP mode activation
  *
  * If any of these fail, DJ Axiom can't make his flyer and the
  * park party has no promo. Unacceptable.
@@ -92,7 +92,7 @@ interface StudioControls {
     mediaResolution: 'low' | 'medium' | 'high';
     personGeneration: 'allow_adult' | 'dont_allow' | 'allow_all';
     generateAudio?: boolean;
-    isAndromedaMode?: boolean;
+    isPLPMode?: boolean;
 }
 
 const DEFAULT_CONTROLS: StudioControls = {
@@ -271,16 +271,16 @@ describe('DJ Axiom Power User — Roosevelt Park Event Prep', () => {
         });
     });
 
-    describe('Andromeda Mode — Batch Ad Variants', () => {
+    describe('PLP Mode — Batch Ad Variants', () => {
         it('activates for 15-variant generation', () => {
-            controls.isAndromedaMode = true;
-            expect(controls.isAndromedaMode).toBe(true);
+            controls.isPLPMode = true;
+            expect(controls.isPLPMode).toBe(true);
         });
 
         it('deactivates cleanly', () => {
-            controls.isAndromedaMode = true;
-            controls.isAndromedaMode = false;
-            expect(controls.isAndromedaMode).toBe(false);
+            controls.isPLPMode = true;
+            controls.isPLPMode = false;
+            expect(controls.isPLPMode).toBe(false);
         });
     });
 
@@ -325,12 +325,12 @@ describe('DJ Axiom Power User — Roosevelt Park Event Prep', () => {
             expect(normalizer(controls.resolution)).toBe('2k');
         });
 
-        it('Andromeda batch: 15 social media variants', () => {
-            controls.isAndromedaMode = true;
+        it('PLP batch: 15 social media variants', () => {
+            controls.isPLPMode = true;
             controls.resolution = '1080p';
             controls.aspectRatio = '9:16';
 
-            expect(controls.isAndromedaMode).toBe(true);
+            expect(controls.isPLPMode).toBe(true);
             expect(normalizer(controls.resolution)).toBe('2k');
         });
     });
