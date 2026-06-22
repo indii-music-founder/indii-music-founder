@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-22 13:57 EDT
+**Updated:** 2026-06-22 14:00 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+043187f6c chore: session checkpoint [13:57]
 e9412c530 chore: session checkpoint [13:56]
 a23ec046b docs(ledger): log PLP/Roster rename follow-ups for owner decision
 8c9780a60 chore: session checkpoint [13:54]
@@ -13,12 +14,12 @@ a23ec046b docs(ledger): log PLP/Roster rename follow-ups for owner decision
 ad263feaf chore: session checkpoint [13:51]
 824638c2b feat(remote): resilient presence relay, command security & type-safe refactor
 1a31bff5f chore: session checkpoint [13:45]
-4f2c398d3 chore: session checkpoint [13:44]
 ```
 
 ## Working State
 ```
  M .agent/skills/error_memory/ERROR_LEDGER.md
+ M .agent/test_ledger/OPEN_ISSUES.md
 ?? ORIGINAL_REQUEST.md
 ?? docs/flowcharts/agent-venue-research-macro.md
 ?? docs/handoff/
