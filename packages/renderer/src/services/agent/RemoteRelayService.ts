@@ -470,7 +470,7 @@ class RemoteRelayService {
         if (ref) {
             unsubFirestore = onSnapshot(ref, (snapshot) => {
                 if (snapshot.exists()) {
-                    callback(snapshot.data() as DesktopState);
+                    callback(snapshot.data({ serverTimestamps: 'estimate' }) as DesktopState);
                 } else {
                     callback(null);
                 }
