@@ -6421,7 +6421,8 @@ Therefore, no fix can be proposed or implemented.
 - **UX note:** In `CanvasHeader.tsx`, "FLASH" sits next to "REFINE" and reads like a second generate button, but it is actually a High-Fidelity (Pro) ↔ High-Speed (Flash) quality toggle. Consider relabeling/regrouping so it doesn't read as a generate action.
 
 ### ISSUE-LANDING-USEEFFECT-20260622: trivial unused `useEffect` import leftover
-- **Status:** ⏳ OPEN (1-line cleanup, owned by the landing agent)
+- **Status:** ✅ FIXED
 - **Severity:** 🟢 TRIVIAL (1 lint warning, no error)
 - **File:** `packages/landing/src/page.tsx:3`
-- **Summary:** After the setState-in-effect regression was fixed forward (see ISSUE-LANDING-20260622), `useEffect` is still imported but no longer used → `'useEffect' is defined but never used` warning. Remove it from the import.
+- **Summary:** The leftover `useEffect` import has been removed; the landing page now keeps the lazy initializer path only.
+- **Evidence:** `rg -n "useEffect" packages/landing/src/page.tsx` returns no matches; `npm test -- --run packages/landing/src/App.test.tsx` passed 3/3.
