@@ -33,6 +33,7 @@ import { delay } from '@/utils/async';
 import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 import { getRealAuthenticatedUserId, isAnonymousOrDemoUser } from '@/utils/authGuards';
 import type { AgentMessage } from '@/core/store/slices/agent/agentSessionSlice';
+import type { HistoryItem } from '@/core/types/history';
 
 /** Write relay diagnostics to Firestore (console is stripped in prod by terser) */
 async function writeDiagnostic(stage: string, details?: Record<string, unknown>) {
@@ -55,6 +56,43 @@ async function writeDiagnostic(stage: string, details?: Record<string, unknown>)
     } catch {
         // Silent — diagnostics should never crash the app
     }
+}
+
+/**
+ * Pure decision logic for the `[SHOW]` ("show me") remote route.
+ *
+ * Extracted from the Firestore relay route so the branch logic can be exercised
+ * deterministically without the live phone↔desktop round-trip. Given the
+ * current `generatedHistory`, it resolves what the phone should receive:
+ *   - happy path: the most-recent image artifact's thumbnail/full url + caption
+ *   - empty state: an honest text-only fallback (no imageUrls)
+ *
+ * This must stay behaviorally identical to the inline route it replaced.
+ */
+export interface ShowMeResponse {
+    text: string;
+    agentId: string;
+    imageUrls?: string[];
+}
+
+export function resolveShowMeResponse(history: HistoryItem[] | undefined): ShowMeResponse {
+    const latestVisual = (history ?? []).find(item => item.type === 'image' && !!item.url);
+
+    if (latestVisual) {
+        return {
+            text: latestVisual.prompt
+                ? `🖼️ Here's the latest: "${latestVisual.prompt}"`
+                : '🖼️ Here\'s the latest visual.',
+            agentId: 'creative',
+            imageUrls: [latestVisual.thumbnailUrl || latestVisual.url],
+        };
+    }
+
+    // Honest empty state — never a silent no-op or a raw error.
+    return {
+        text: 'Nothing to show yet — generate or open an asset first, then say "show me".',
+        agentId: 'creative',
+    };
 }
 
 function findLatestRemoteAgentResponse(startedAt: number): AgentMessage | undefined {
@@ -558,28 +596,20 @@ function useFirestoreRelay(enabled: boolean) {
                 logger.info('[RemoteRelay/Firestore] 🖼️ Show me: surfacing latest visual artifact');
                 writeDiagnostic('show_me_started', { commandId: command.id });
 
-                const history = useStore.getState().generatedHistory ?? [];
-                const latestVisual = history.find(item => item.type === 'image' && !!item.url);
+                const history = useStore.getState().generatedHistory;
+                const resolved = resolveShowMeResponse(history);
 
-                if (latestVisual) {
-                    await remoteRelayService.sendResponse(
-                        command.id,
-                        latestVisual.prompt
-                            ? `🖼️ Here's the latest: "${latestVisual.prompt}"`
-                            : '🖼️ Here\'s the latest visual.',
-                        'creative',
-                        false,
-                        [latestVisual.thumbnailUrl || latestVisual.url]
-                    );
-                    writeDiagnostic('show_me_done', { commandId: command.id, itemId: latestVisual.id });
+                await remoteRelayService.sendResponse(
+                    command.id,
+                    resolved.text,
+                    resolved.agentId,
+                    false,
+                    resolved.imageUrls
+                );
+
+                if (resolved.imageUrls) {
+                    writeDiagnostic('show_me_done', { commandId: command.id, imageUrl: resolved.imageUrls[0] });
                 } else {
-                    // Honest empty state — never a silent no-op or a raw error.
-                    await remoteRelayService.sendResponse(
-                        command.id,
-                        'Nothing to show yet — generate or open an asset first, then say "show me".',
-                        'creative',
-                        false
-                    );
                     writeDiagnostic('show_me_empty', { commandId: command.id });
                 }
 

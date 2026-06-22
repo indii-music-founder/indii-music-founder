@@ -6412,3 +6412,20 @@ Therefore, no fix can be proposed or implemented.
   - **Phase 2:** "Show me" targets beyond the latest asset — e.g. `[SHOW] canvas` (export the active Fabric.js canvas to a data/blob URL) and `[SHOW] <module>` (a snapshot of a given department's current output).
   - **Phase 3:** Live/streamed preview (progressive frames while a long task runs) instead of a single end-state image.
 - **Out of scope (for now):** full desktop screen capture / arbitrary screenshot streaming (security + perf review required first).
+- **Strict Issue Validation (2026-06-22 — Proof of Verification pass, Phase 1):**
+  - **Refactor (Ponytail/testability):** Extracted the pure `[SHOW]` decision into `resolveShowMeResponse(history): { text; agentId; imageUrls? }` in `packages/renderer/src/hooks/useRemoteCommandListener.ts`; the `[SHOW]` route now calls it and feeds its output straight into `sendResponse(...)`. Behavior unchanged (same caption text, `agentId: 'creative'`, same `[thumbnailUrl||url]` / undefined imageUrls).
+  - **Automated test:** `packages/renderer/src/hooks/useRemoteCommandListener.showme.test.ts` (6 cases) — proves BOTH branches.
+  - **Flowchart:** `docs/flowcharts/remote-show-me-channel-micro.md`.
+  - **Acceptance-criteria verdicts:**
+    | Criterion | Verdict | Evidence |
+    | --- | --- | --- |
+    | Happy path: returns latest image's url via imageUrls | ✅ PROVEN | test: `res.imageUrls === ['…/full.png']`, caption asserted |
+    | Prefers thumbnailUrl over full url | ✅ PROVEN | test: thumbnail returned when present |
+    | Picks most-recent image, skips non-image / urlless items | ✅ PROVEN | test: 'newest' image chosen over text/urlless items |
+    | Empty state: honest text fallback, NO imageUrls | ✅ PROVEN | test: `imageUrls` undefined, exact fallback string (empty/undefined/no-usable-image cases) |
+    | Route reuses proven `sendResponse(... imageUrls)` channel | ✅ PROVEN | static: `[SHOW]` route calls `sendResponse(id, resolved.text, resolved.agentId, false, resolved.imageUrls)` |
+    | `npm run typecheck` clean | ✅ PROVEN | 0 errors (raw output captured in session) |
+    | `eslint` on touched files clean | ✅ PROVEN | 0 errors (raw output captured in session) |
+    | Phone "Show Me" action emits `[SHOW]` | ⚠️ PARTIAL | static-only: `CommandPad.tsx` sends `sendCommand('[SHOW]')`; not exercised at runtime |
+    | Live phone↔desktop device round-trip + on-device image render | ❌ UNPROVEN | no physical device pairing / Firestore live relay available in this environment |
+  - **Status rationale:** Decision logic for both branches is PROVEN. Live device round-trip and phone-side render remain UNPROVEN (out of environment reach). Keeping issue **🟡 IN PROGRESS** — do NOT overclaim a fully verified feature.
