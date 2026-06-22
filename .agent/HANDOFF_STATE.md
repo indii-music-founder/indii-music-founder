@@ -1,9 +1,12 @@
 # Handoff State
-**Updated:** 2026-06-22 09:30 EDT
+**Updated:** 2026-06-22 09:33 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+4d0148ce6 fix(landing): guard query parsing in app routing
+710982571 fix(landing): check window before reading hostname or search in App.tsx
+9ac3087b5 chore: session checkpoint [09:30]
 2e7d8f98d docs(ledger): log cross-agent anti-pattern — lazy useState → useEffect+setState regression
 84de5ae01 feat: enhance thesis crawl styling and add auto-open logic
 f2f546416 test(ledger): log ISSUE-A-001
@@ -11,31 +14,10 @@ f2f546416 test(ledger): log ISSUE-A-001
 97087db47 chore: session checkpoint [09:23]
 9cadd2303 chore: session checkpoint [09:21]
 0228baab2 test: align ABCD engine workflows
-4ac523125 chore: session checkpoint [09:07]
-bd1201804 refactor(creative): rename Andromeda → PLP, Swarm → Roster
-683f13ef3 chore: session checkpoint [08:38]
 ```
 
 ## Working State
 ```
- M ANTIGRAVITY.md
- M CLAUDE.md
- M CODEX.md
- M DROID.md
- M GEMINI.md
- M JULES.md
- M docs/BACKEND_ONLY_API_DECLARATION.md
- M docs/development/AGENT_WORKFLOW_STANDARDS.md
- M docs/development/GAUNTLET_PROTOCOL.md
- M docs/flowcharts/07-mobile-remote-relay.md
- M e2e/mega-stress-test-v10.spec.ts
- M e2e/mega-stress-test-v11.spec.ts
- M e2e/mega-stress-test-v12.spec.ts
- M e2e/mega-stress-test-v4.spec.ts
- M packages/landing/src/App.tsx
- M packages/renderer/src/modules/mobile-remote/MobileRemote.tsx
- M packages/renderer/src/services/agent/RemoteRelayService.ts
- M scripts/run-gauntlet.sh
 ?? .agents/teamwork_preview_explorer_remote_connection_1/
 ?? .agents/teamwork_preview_explorer_remote_connection_2/
 ?? .agents/teamwork_preview_explorer_remote_connection_3/
