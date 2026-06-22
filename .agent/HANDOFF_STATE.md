@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-22 13:52 EDT
+**Updated:** 2026-06-22 13:53 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+8790713cd fix(types): remove duplicate RemoteMobilePayload import in RemoteRelayService
+99dc088f8 chore: session checkpoint [13:52]
 ad263feaf chore: session checkpoint [13:51]
 824638c2b feat(remote): resilient presence relay, command security & type-safe refactor
 1a31bff5f chore: session checkpoint [13:45]
@@ -12,13 +14,11 @@ ad263feaf chore: session checkpoint [13:51]
 20b5c192c feat(marketing): add live moment positioning
 a8628a216 feat(mobile-remote): add live moment capture lane
 a50c4376b fix(mobile-remote): add capture review and boardroom entry
-eda1f16e7 chore: session checkpoint [09:33]
-4d0148ce6 fix(landing): guard query parsing in app routing
 ```
 
 ## Working State
 ```
- M packages/renderer/src/services/agent/RemoteRelayService.ts
+ M .agent/skills/error_memory/ERROR_LEDGER.md
 ?? ORIGINAL_REQUEST.md
 ?? docs/flowcharts/agent-venue-research-macro.md
 ?? docs/handoff/
