@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-22 14:23 EDT
+**Updated:** 2026-06-22 14:26 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+deccb179f fix(e2e): exclude live gcp spec from emulator suite
+d16575844 chore: session checkpoint [14:23]
 9a2ae862d chore: session checkpoint [14:22]
 a0ad756e0 test(ledger): log ISSUE-A-006 (creative /history list denied), ISSUE-A-007 (live-GCP spec in emulator suite)
 748965422 chore: session checkpoint [14:16]
@@ -12,14 +14,16 @@ a0ad756e0 test(ledger): log ISSUE-A-006 (creative /history list denied), ISSUE-A
 3b7bbe43a docs(ledger): mark issue 445 fixed
 36fbe1ed1 fix(creative): surface backend unavailable errors
 c10601365 chore: session checkpoint [14:10]
-dd3b8a7f9 chore: session checkpoint [14:09]
-cae8cb4c4 chore: session checkpoint [14:08]
 ```
 
 ## Working State
 ```
  M artifacts/boardroom_live_home.png
  M artifacts/boardroom_result.png
+ M deep-test-boardroom-1.png
+ M deep-test-booking-1.png
+ M deep-test-campaign-1.png
+ M deep-test-publicist-1.png
 ?? .claude/launch.json
 ?? ORIGINAL_REQUEST.md
 ?? docs/flowcharts/agent-venue-research-macro.md
