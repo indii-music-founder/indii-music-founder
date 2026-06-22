@@ -95,7 +95,7 @@ vi.mock('./DesignHistoryDrawer', () => ({
 vi.mock('./AgentCapabilityRegistry', () => ({
     default: ({ onClose }: { onClose: () => void }) => (
         <div data-testid="agent-capability-registry">
-            <button onClick={onClose}>Close Swarm Registry</button>
+            <button onClick={onClose}>Close Roster Registry</button>
         </div>
     )
 }));
@@ -127,8 +127,8 @@ describe('CreativeNavbar', () => {
     const mockSetCreativePrompt = vi.fn();
     const mockToggleAgentWindow = vi.fn();
     const mockTogglePromptBuilder = vi.fn();
-    const mockEnableAndromedaMode = vi.fn();
-    const mockDisableAndromedaMode = vi.fn();
+    const mockEnablePLPMode = vi.fn();
+    const mockDisablePLPMode = vi.fn();
     const mockSetViewMode = vi.fn();
     
     const mockToast = {
@@ -145,7 +145,7 @@ describe('CreativeNavbar', () => {
             aspectRatio: '16:9',
             negativePrompt: '',
             seed: '',
-            isAndromedaMode: false
+            isPLPMode: false
         },
         generationMode: 'image',
         setGenerationMode: mockSetGenerationMode,
@@ -169,8 +169,8 @@ describe('CreativeNavbar', () => {
         isPromptBuilderOpen: false,
         togglePromptBuilder: mockTogglePromptBuilder,
         toggleAgentWindow: mockToggleAgentWindow,
-        enableAndromedaMode: mockEnableAndromedaMode,
-        disableAndromedaMode: mockDisableAndromedaMode,
+        enablePLPMode: mockEnablePLPMode,
+        disablePLPMode: mockDisablePLPMode,
         userProfile: {
             brandKit: {
                 colors: ['#000000'],
@@ -255,19 +255,19 @@ describe('CreativeNavbar', () => {
         expect(screen.queryByTestId('design-history-drawer')).not.toBeInTheDocument();
     });
 
-    it('opens and closes swarm capability registry drawer', () => {
+    it('opens and closes roster drawer drawer', () => {
         render(
             <ToastProvider>
                 <CreativeNavbar />
             </ToastProvider>
         );
 
-        const toggleButton = screen.getByText('Swarm');
+        const toggleButton = screen.getByText('Roster');
         fireEvent.click(toggleButton);
 
         expect(screen.getByTestId('agent-capability-registry')).toBeInTheDocument();
 
-        const closeButton = screen.getByText('Close Swarm Registry');
+        const closeButton = screen.getByText('Close Roster Registry');
         fireEvent.click(closeButton);
 
         expect(screen.queryByTestId('agent-capability-registry')).not.toBeInTheDocument();
@@ -309,29 +309,29 @@ describe('CreativeNavbar', () => {
         expect(mockSetCreativePrompt).toHaveBeenCalledWith('new prompt');
     });
 
-    it('activates and deactivates Andromeda Mode and displays corresponding toast', () => {
+    it('activates and deactivates PLP Mode and displays corresponding toast', () => {
         const { rerender } = render(
             <ToastProvider>
                 <CreativeNavbar />
             </ToastProvider>
         );
 
-        const andromedaButton = screen.getByTitle('Enable Andromeda Pipeline');
-        fireEvent.click(andromedaButton);
-        expect(mockEnableAndromedaMode).toHaveBeenCalled();
-        expect(mockToast.success).toHaveBeenCalledWith('Andromeda Mode activated: Ready to generate 15 ad variants');
+        const plpButton = screen.getByTitle('Enable PLP — Promote · Launch · Push (15 release-ready ad variants)');
+        fireEvent.click(plpButton);
+        expect(mockEnablePLPMode).toHaveBeenCalled();
+        expect(mockToast.success).toHaveBeenCalledWith('PLP Mode activated: Ready to generate 15 ad variants');
 
-        // Simulate active Andromeda mode state
-        const activeAndromedaState = {
+        // Simulate active PLP mode state
+        const activePLPState = {
             ...defaultState,
             studioControls: {
                 ...defaultState.studioControls,
-                isAndromedaMode: true
+                isPLPMode: true
             }
         };
         (useStore as unknown as import('vitest').Mock).mockImplementation((selector: any) => {
-            if (selector) return selector(activeAndromedaState);
-            return activeAndromedaState;
+            if (selector) return selector(activePLPState);
+            return activePLPState;
         });
 
         rerender(
@@ -340,10 +340,10 @@ describe('CreativeNavbar', () => {
             </ToastProvider>
         );
 
-        const disableButton = screen.getByTitle('Disable Andromeda Pipeline');
+        const disableButton = screen.getByTitle('Disable PLP — Promote · Launch · Push');
         fireEvent.click(disableButton);
-        expect(mockDisableAndromedaMode).toHaveBeenCalled();
-        expect(mockToast.success).toHaveBeenCalledWith('Andromeda Mode deactivated');
+        expect(mockDisablePLPMode).toHaveBeenCalled();
+        expect(mockToast.success).toHaveBeenCalledWith('PLP Mode deactivated');
     });
 
     it('opens projector window when permission is granted', async () => {
