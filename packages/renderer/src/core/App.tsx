@@ -424,6 +424,28 @@ function PublicLegalPage({ type }: { type: 'privacy' | 'terms' }) {
     );
 }
 
+function UnauthenticatedApp() {
+    const location = useLocation();
+
+    useEffect(() => {
+        const isRoot = location.pathname === '/' || location.pathname === '';
+        const isWebProd = typeof window !== 'undefined' && window.location.hostname === 'founder.indii.music';
+
+        if (isRoot && isWebProd) {
+            window.location.replace('https://indii.music');
+        }
+    }, [location.pathname]);
+
+    const isRoot = location.pathname === '/' || location.pathname === '';
+    const isWebProd = typeof window !== 'undefined' && window.location.hostname === 'founder.indii.music';
+
+    if (isRoot && isWebProd) {
+        return <LoadingFallback />;
+    }
+
+    return <LoginForm />;
+}
+
 export default function App() {
     const location = useLocation();
     // ⚡ Bolt Optimization: useShallow
@@ -486,7 +508,7 @@ export default function App() {
             ) : authLoading ? (
                 <LoadingFallback />
             ) : !user ? (
-                <LoginForm />
+                <UnauthenticatedApp />
             ) : (
                 <MotionConfig reducedMotion="user">
                     <ResponsiveLayoutProvider>
