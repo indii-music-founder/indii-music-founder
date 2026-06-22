@@ -5749,7 +5749,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-OPUS-005: Adopt react-call as the standard imperative-dialog pattern
 
-- **Status:** 🟡 IN PROGRESS (Agent B)
+- **Status:** ✅ FIXED (36fbe1ed1)
 - **Severity:** 🟢 LOW
 - **Location:** `packages/renderer/package.json`, `packages/renderer/src/components/ui/`, `CLAUDE.md`
 - **Details:** `react-call` (<https://github.com/desko27/react-call> — <1KB, zero deps, SSR/RN-safe) turns a React component into an awaitable async function: `const ok = await Confirm.call({ message })`. indii has already removed all native `window.confirm/prompt/alert` (0 left), but there is no canonical imperative-dialog pattern — agents hand-roll modal state, and once hand-rolled a FAKE modal (ISSUE-184). Standardize on react-call so dialogs/confirms/pickers are consistent and honest.
@@ -6258,7 +6258,8 @@ Therefore, no fix can be proposed or implemented.
 - **Expected (acceptance):** The generative image service successfully returns an image asset that is placed onto the canvas and saved to the project assets.
 - **Honest fallback:** Clear error describing why generation failed (e.g. quota, network, etc.) instead of generic 500 error.
 - **User Impact:** The core Creative Director image generation pipeline is completely blocked.
-- **Test Update (2026-06-19):** Tested locally. Still failing, but the root cause on local dev is `ERR_CONNECTION_REFUSED` on `127.0.0.1:5001`. The `package.json` dev scripts and `firebase emulators:start` command are skipping the Functions emulator, so `generateImageV3` cannot be reached.
+- **Fix:** Added backend-unavailable detection to the direct image-generation error mapper so `ERR_CONNECTION_REFUSED`, `ECONNREFUSED`, and `127.0.0.1:5001` surface as an honest emulator-start message instead of a generic internal error.
+- **Evidence:** `packages/renderer/src/modules/creative/hooks/useDirectGeneration.ts:55-97`; `packages/renderer/src/modules/creative/components/__tests__/DirectGenerationTab.test.tsx:259-277`; `npx vitest run packages/renderer/src/modules/creative/components/__tests__/DirectGenerationTab.test.tsx` passed 8/8; `npm run typecheck` passed.
 
 ---
 
