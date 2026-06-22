@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-22 14:48 UTC
+**Updated:** 2026-06-22 14:56 UTC
 **Branch:** `claude/agent-abcd-vem93b`
 
 ## Recent Commits
 ```
+6c53693 fix(landing): use lazy useState initializer for thesis-open detection
+5e0538d chore: session checkpoint [14:48]
 7e7a58c chore: session checkpoint [14:46]
 39b61a9 chore: session checkpoint [14:20]
 eda1f16 chore: session checkpoint [09:33]
@@ -12,8 +14,6 @@ eda1f16 chore: session checkpoint [09:33]
 9ac3087 chore: session checkpoint [09:30]
 2e7d8f9 docs(ledger): log cross-agent anti-pattern — lazy useState → useEffect+setState regression
 84de5ae feat: enhance thesis crawl styling and add auto-open logic
-f2f5464 test(ledger): log ISSUE-A-001
-02fa6ce chore: session checkpoint [09:24]
 ```
 
 ## Working State
