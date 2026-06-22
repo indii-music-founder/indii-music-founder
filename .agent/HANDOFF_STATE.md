@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-22 14:06 EDT
+**Updated:** 2026-06-22 14:07 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+43df912a4 chore: session checkpoint [14:06]
 53fd501ff chore: session checkpoint [14:05]
 507eca19d chore: session checkpoint [14:04]
 09286cd09 chore: session checkpoint [14:04]
@@ -13,7 +14,6 @@ dacb06126 docs(ledger): record relay follow-up notes
 043187f6c chore: session checkpoint [13:57]
 e9412c530 chore: session checkpoint [13:56]
 a23ec046b docs(ledger): log PLP/Roster rename follow-ups for owner decision
-8c9780a60 chore: session checkpoint [13:54]
 ```
 
 ## Working State
