@@ -6427,3 +6427,29 @@ Therefore, no fix can be proposed or implemented.
 - **File:** `packages/landing/src/page.tsx:3`
 - **Summary:** The leftover `useEffect` import has been removed; the landing page now keeps the lazy initializer path only.
 - **Evidence:** `rg -n "useEffect" packages/landing/src/page.tsx` returns no matches; `npm test -- --run packages/landing/src/App.test.tsx` passed 3/3.
+
+### ISSUE-A-006: Creative `/history` list query is denied (returns false) — History subscription still errors on every load
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Dimension:** Console / Security (Firestore Rules)
+- **Location:** `packages/firebase/firestore.rules` L624 (`match /history/{historyId}` read rule) falling through to L1161 deny-all; consumer is the CreativeSlice history subscription (`onSnapshot` list on `/history`).
+- **Details:** On EVERY boardroom/creative page load during the full E2E run (`firebase emulators:exec --only firestore "npm run test:e2e"`), the browser console throws:
+  `[CreativeSlice] History subscription error: FirebaseError: evaluation error at L624:22 for 'list' @ L624, false for 'list' @ L1161, false for 'list' @ L624, false for 'list' @ L1161`.
+  This is the **evolved successor** to ISSUE-A-004 (do NOT edit A-004's audit trail). A-004's `'userId' in resource.data` patch stopped the *"Property userId is undefined"* exception, but the `list`/collection-query is now cleanly **denied** (rule resolves `false`), so generated-content history never loads for the user. The error is silent to the rules engine but surfaces as a permission-denied in the app's subscription handler.
+- **Expected (acceptance):** The Creative generated-content History either (a) loads the user's own history without a permission error, or (b) shows an honest empty state — with NO `FirebaseError` thrown in console on load. Root-cause options for B to weigh: the `onSnapshot` query on `/history` must be constrained with a `where('userId','==',uid)` (or `orgId`) filter the rules can statically authorize for `list`, OR the `/history` read/list rule must be restructured to permit owner-scoped list queries. Apply the SAME fix to the 78+ other collections D flagged on A-004 that still use bare `resource.data.userId == request.auth.uid`.
+- **Honest fallback:** If owner-scoped list cannot be authorized, the subscription must degrade to an honest empty/"history unavailable" state — never a thrown FirebaseError on load, never broadened rules (`allow read: if true`).
+- **DO NOT:** Do not silence the console error by swallowing the exception without fixing the query/rule. Do not loosen rules to deny-nothing. Do not edit ISSUE-A-004's Verification Findings.
+- **Evidence:** `/tmp/a-e2e.log` — recurs on every boardroom/creative test load (e.g. boardroom-real-user-scenario, boardroom-swarm). Rule confirmed: `firestore.rules` L621-637 read rule is per-document owner-only; L1161 is the deny-all default.
+
+### ISSUE-A-007: Live-production GCP spec bundled into the emulator E2E suite — guaranteed 3-min timeout every run
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Dimension:** Architecture / Test Harness
+- **Location:** `e2e/api-live-real-gcp.spec.ts:7` ("Live Production GCP API Verification").
+- **Details:** The default E2E command run under the Firestore emulator (`firebase emulators:exec --only firestore "npm run test:e2e"`) includes `api-live-real-gcp.spec.ts`, which authenticates against and calls **live production GCP** (`cloudfunctions.net`, real `/v1/projects/...` endpoints). Under the emulator harness, Firebase Installations is referer-blocked (`403 PERMISSION_DENIED: Requests from referer http://localhost:4242/ are blocked`), so the live calls never complete and the spec **times out at its 180s ceiling (observed 3.0m)** on every run. A live-prod verification spec does not belong in the deterministic emulator suite.
+- **Expected (acceptance):** `api-live-real-gcp.spec.ts` is excluded from the default/emulator E2E run — e.g. tagged `@live` and gated behind an explicit env flag or a separate Playwright project — so the standard suite (and CI) no longer eats a guaranteed 3-minute timeout. The live spec still runnable on demand against real prod with real auth.
+- **Honest fallback:** If the team wants live verification in CI, it must run in its own job with real credentials and network egress, NOT under `emulators:exec`. Do not delete the spec.
+- **DO NOT:** Do not "fix" it by extending the timeout — that masks a misclassified test. Do not point it at the emulator (it is a live-prod check by design).
+- **Evidence:** `/tmp/a-e2e.log`: `✘ 16 [chromium] › e2e/api-live-real-gcp.spec.ts:7:5 › Live Production GCP API Verification › Authenticate and verify all backend API modules (3.0m)`; preceding `403 PERMISSION_DENIED ... referer http://localhost:4242/ are blocked`.
