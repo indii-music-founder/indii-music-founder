@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-22 14:16 EDT
+**Updated:** 2026-06-22 14:22 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+a0ad756e0 test(ledger): log ISSUE-A-006 (creative /history list denied), ISSUE-A-007 (live-GCP spec in emulator suite)
+748965422 chore: session checkpoint [14:16]
 502bac795 chore: session checkpoint [14:16]
 740e5a5ad chore: session checkpoint [14:14]
 3b7bbe43a docs(ledger): mark issue 445 fixed
@@ -12,12 +14,12 @@ c10601365 chore: session checkpoint [14:10]
 dd3b8a7f9 chore: session checkpoint [14:09]
 cae8cb4c4 chore: session checkpoint [14:08]
 04fdec15c chore: session checkpoint [14:07]
-276bd56bf chore: session checkpoint [14:07]
-43df912a4 chore: session checkpoint [14:06]
 ```
 
 ## Working State
 ```
+ M artifacts/boardroom_live_home.png
+ M artifacts/boardroom_result.png
 ?? .claude/launch.json
 ?? ORIGINAL_REQUEST.md
 ?? docs/flowcharts/agent-venue-research-macro.md
