@@ -116,7 +116,14 @@ test.describe('Boardroom Real User Multi-Turn Scenario', () => {
                     return;
                 }
                 // 1.5. Check if this is a utility/helper request (like guidelines extraction or search)
-                if (postData.length < 5000 && !userMessage.includes('Intelligence Autorater') && !postData.includes('overallPass')) {
+                // Keep this narrow so normal boardroom prompts still reach the seating state machine.
+                const isUtilityRequest = (
+                    userMessage.includes('Extract any') ||
+                    userMessage.includes('guidelines') ||
+                    userMessage.includes('conflicting restrictions')
+                );
+
+                if (isUtilityRequest && !userMessage.includes('Intelligence Autorater') && !postData.includes('overallPass')) {
                     console.log(`[E2E:MockAI] Fulfilling short utility request (size: ${postData.length} chars).`);
                     let utilityText = "*(Analysis complete)*";
                     if (postData.includes('Extract any') || userMessage.includes('Extract any')) {
@@ -148,7 +155,7 @@ test.describe('Boardroom Real User Multi-Turn Scenario', () => {
                 }
 
                 // 2. Extract the actual request text directly from the test-scoped currentActivePrompt variable for 100% fidelity
-                let actualRequest = currentActivePrompt;
+                const actualRequest = currentActivePrompt;
                 console.log(`[E2E:MockAI] Extracted Actual Request from Test Scope: "${actualRequest}"`);
                 console.log(`[E2E:MockAI] Extracted System Instruction: "${(systemInstructionText || '').substring(0, 100)}..."`);
 
@@ -483,12 +490,14 @@ test.describe('Boardroom Real User Multi-Turn Scenario', () => {
         // Helper to sweep popovers and active body pointer blocks
         const cleanOverlays = async () => {
             console.log('[E2E:Scenario] Sweeping Driver.js overlays and resetting pointerEvents...');
-            await page.evaluate(() => {
-                if ((window as any).driverObj) {
-                    try {
-                        (window as any).driverObj.destroy();
-                    } catch (e) {}
-                }
+                await page.evaluate(() => {
+                    if ((window as any).driverObj) {
+                        try {
+                            (window as any).driverObj.destroy();
+                        } catch (e) {
+                            void e;
+                        }
+                    }
                 document.body.classList.remove('driver-active', 'driver-fade');
                 document.body.style.pointerEvents = 'auto';
                 document.querySelectorAll('.driver-overlay, .driver-popover, .driver-overlay-animated').forEach(el => el.remove());
@@ -649,4 +658,3 @@ test.describe('Boardroom Real User Multi-Turn Scenario', () => {
         console.log('[E2E:Scenario] Multi-turn test completely successful! All 9 turns seated, unseated, and verified correctly.');
     });
 });
-

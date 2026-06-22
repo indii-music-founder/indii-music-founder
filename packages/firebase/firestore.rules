@@ -1010,8 +1010,8 @@ service cloud.firestore {
     // Token Usage & Rate Limits
     // =========================================================================
     match /user_usage_stats/{statId} {
-      allow read: if (isAuthenticated() && statId.matches(request.auth.uid + '_[0-9]+')) || (isGuest() && statId.matches('founder-demo-uid_[0-9]+'));
-      allow create, update: if (isVerifiedUser() && statId.matches(request.auth.uid + '_[0-9]+')) || (isGuest() && statId.matches('founder-demo-uid_[0-9]+'));
+      allow read: if (isAuthenticated() && statId.matches(request.auth.uid + '_[0-9-]+')) || (isGuest() && statId.matches('founder-demo-uid_[0-9-]+'));
+      allow create, update: if (isVerifiedUser() && statId.matches(request.auth.uid + '_[0-9-]+')) || (isGuest() && statId.matches('founder-demo-uid_[0-9-]+'));
       allow delete: if false;
     }
 
