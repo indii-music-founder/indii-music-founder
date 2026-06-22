@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-22 15:32 UTC
+**Updated:** 2026-06-22 15:40 UTC
 **Branch:** `claude/agent-abcd-vem93b`
 
 ## Recent Commits
 ```
+6926915 feat(remote): add [SHOW] on-demand visual return channel to indiiREMOTE
+308b8ee chore: session checkpoint [15:32]
 ee96029 test(nav): lock desktop Social Media Dept routing (ISSUE-443)
 76a2f29 chore: session checkpoint [15:19]
 c411838 chore: session checkpoint [14:58]
@@ -12,8 +14,6 @@ d18fb47 chore: session checkpoint [14:56]
 5e0538d chore: session checkpoint [14:48]
 7e7a58c chore: session checkpoint [14:46]
 39b61a9 chore: session checkpoint [14:20]
-eda1f16 chore: session checkpoint [09:33]
-4d0148c fix(landing): guard query parsing in app routing
 ```
 
 ## Working State
