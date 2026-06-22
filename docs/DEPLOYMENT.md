@@ -5,7 +5,7 @@
 This project has **two separate deployments**:
 
 1. **Landing Page** - React + Vite static site with WebGL effects
-   - URL: <https://indii-v-1-1.web.app>
+   - URL: <https://indii-music-founder.web.app>
    - Source: `landing-page/`
    - Build output: `landing-page/dist/`
 
@@ -57,7 +57,7 @@ npm run build:studio
 
 1. Install Firebase CLI: `npm install -g firebase-tools`
 2. Login: `firebase login`
-3. Select project: `firebase use indii-v-1-1`
+3. Select project: `firebase use indii-music-founder`
 
 ### Deploy Both Sites
 
@@ -88,9 +88,11 @@ The project uses GitHub Actions for automated deployments on merge to `main`.
 ### Required GitHub Secrets
 
 - `FIREBASE_SERVICE_ACCOUNT` - Service account JSON for Firebase deployment
-- `VITE_API_KEY` - API key for the studio app (optional)
-- `VITE_VERTEX_PROJECT_ID` - GCP project ID (optional)
-- `VITE_VERTEX_LOCATION` - GCP location (optional)
+- `GEMINI_API_KEY` - backend Gemini key synced to Secret Manager
+- `VERTEX_PROJECT_ID` - backend Vertex project ID override (optional)
+- `VERTEX_LOCATION` - backend default Vertex location (optional)
+- `VERTEX_IMAGE_LOCATION` - backend image model location (optional, defaults to `us`)
+- `VERTEX_VIDEO_LOCATION` - backend video model location (optional)
 
 ## Troubleshooting
 
@@ -129,7 +131,7 @@ npm run build:landing
 2. Set targets if missing:
 
    ```bash
-   firebase target:apply hosting landing indii-v-1-1
+   firebase target:apply hosting landing indii-music-founder
    firebase target:apply hosting app indii-studio
    ```
 
@@ -168,9 +170,9 @@ Rndr-AI-v1/
 ```json
 {
   "targets": {
-    "indii-v-1-1": {
+    "indii-music-founder": {
       "hosting": {
-        "landing": ["indii-v-1-1"],
+        "landing": ["indii-music-founder"],
         "app": ["indii-studio"]
       }
     }
@@ -199,7 +201,7 @@ Rndr-AI-v1/
 
 After deployment, verify both sites are working:
 
-1. **Landing Page**: <https://indii-v-1-1.web.app>
+1. **Landing Page**: <https://indii-music-founder.web.app>
    - Should show WebGL effects and animation
    - Should have "Enter Studio" or similar CTA
 

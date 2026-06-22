@@ -14,11 +14,49 @@ d2d91af chore: session checkpoint [16:14]
 59f7eec chore: session checkpoint [15:59]
 409fc1b fix: configure App Check in FirebaseIntelligenceService security test
 cc1c951 Merge pull request #169 from indii-music-founder/codex/firebase-only-renderer-ai-boundary
+**Updated:** 2026-06-22 18:39 EDT
+**Branch:** `main`
+
+## Recent Commits
+```
+e528b159d chore: session checkpoint [18:37]
+341fd2fd4 test(ledger): log ISSUE-A-012
+48852717c chore: session checkpoint [14:38]
+ed0586a74 test(ledger): log ISSUE-A-010 and ISSUE-A-011
+fcc01181c test(ledger): log ISSUE-A-009 (boardroom-live-verify env-fragile live-model spec in default gate)
+ca1a69a0b test(ledger): log ISSUE-A-008 (boardroom seat_agent dispatch fails Turn 1)
+53e598a94 chore: session checkpoint [14:34]
+dfddbbee2 chore: session checkpoint [14:33]
+310b803ad chore: session checkpoint [14:27]
+de5224a7f chore: session checkpoint [14:26]
 ```
 
 ## Working State
 ```
-clean working tree
+ M .agent/test_ledger/OPEN_ISSUES.md
+ M .agent/workflows/a.md
+ M artifacts/boardroom_live_home.png
+ M artifacts/boardroom_result.png
+ M artifacts/live-agent-daisy-chain/coordination-report.html
+ M artifacts/live-agent-daisy-chain/latest.json
+ M deep-test-boardroom-1.png
+ M deep-test-booking-1.png
+ M deep-test-campaign-1.png
+ M deep-test-publicist-1.png
+ M e2e/boardroom-live-verify.spec.ts
+ M e2e/boardroom-real-user-scenario.spec.ts
+ M e2e/fixtures/auth.ts
+ M e2e/founders-program.spec.ts
+ M packages/firebase/firestore.rules
+ M scripts/git_monitor_sync.js
+?? .claude/launch.json
+?? ORIGINAL_REQUEST.md
+?? artifacts/mega_audio_analyzer_2026-06-22_live_evidence.json
+?? artifacts/mega_audio_analyzer_2026-06-22_screenshots/
+?? docs/flowcharts/agent-venue-research-macro.md
+?? docs/handoff/
+?? packages/renderer/src/modules/notes/
+?? packages/renderer/src/services/agent/tools/NotesTools.ts
 ```
 
 ## Decisions

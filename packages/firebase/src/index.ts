@@ -6,6 +6,10 @@ import { BigQuery } from "@google-cloud/bigquery";
 // Initialize Firebase Admin immediately to prevent race conditions during import analysis
 admin.initializeApp();
 
+import { setGlobalOptions } from "firebase-functions/v2";
+// Fix: Increase default memory limit to prevent OOM errors in heavy Genkit/GenAI functions
+setGlobalOptions({ memory: "512MiB" });
+
 // Phase 2a: Agent Streaming (v2 - SSE support for Phase 2 orchestration)
 export { agentStreamResponse, agentStreamHealth } from './streaming/agentStream';
 import { Inngest } from "inngest";
@@ -51,6 +55,8 @@ export { createHandoffCode, redeemHandoffCode } from './functions/auth/handoff';
 // Agent Functions (Bug Reporting)
 export { reportBugFn } from './functions/agent/reportBugFn';
 export { workflowOrchestrator } from './functions/agent/workflowOrchestrator';
+export { manageSemanticMemory } from './functions/agent/manageSemanticMemory';
+export { agentLoopCron } from './functions/agent/agentLoopCron';
 
 // Security Functions
 export { persistFraudAlert } from './functions/security/persistFraudAlert';
@@ -160,7 +166,8 @@ export { generateReleaseDownloadUrl } from './releases/generateDownloadUrl';
 //   5. Deploy: firebase deploy --only functions
 //   CAUTION: Requires reCAPTCHA Enterprise configured in Firebase Console for all clients.
 // Item 331: Default ENFORCE to true — opt-out via SKIP_APP_CHECK=true for dev environments.
-const ENFORCE_APP_CHECK = true;
+const ENFORCE_APP_CHECK =
+    process.env.SKIP_APP_CHECK !== 'true' && process.env.ENFORCE_APP_CHECK !== 'false';
 
 /**
  * Security Helper: Validate Organization Access
@@ -245,17 +252,16 @@ const requireAdmin = (context: functions.https.CallableContext) => {
 const getAllowedOrigins = (): string[] => {
     const origins = [
         'https://indii.music',
-        'https://indii-studio.firebaseapp.com',
-        'https://indii-v-1-1.web.app',
-        'https://indii-v-1-1.firebaseapp.com',
-        'https://studio.indii.music',
-        'https://indii.music',
-        'https://indii.music',
-        'https://www.indii.music',
         'https://app.indii.music',
+        'https://founder.indii.music',
+        'https://www.indii.music',
         'https://studio.indii.music',
+        'https://indii-music-studio.web.app',
+        'https://indii-music-studio.firebaseapp.com',
+        'https://indii-music-founder.web.app',
+        'https://indii-music-founder.firebaseapp.com',
+        'https://indii-studio.firebaseapp.com',
         'app://.',  // Electron app
-        
     ];
 
     // Add localhost origins in emulator/development mode
@@ -296,8 +302,9 @@ const corsHandler = corsLib({
 
 // ----------------------------------------------------------------------------
 // Tier Limits (Duplicated from MembershipService for Server-Side Enforcement)
+// Updated to match SubscriptionTier enum — includes 'founder' (unlimited, for initial investors)
 // ----------------------------------------------------------------------------
-type MembershipTier = 'free' | 'pro' | 'enterprise';
+type MembershipTier = 'free' | 'pro' | 'enterprise' | 'founder';
 
 interface TierLimits {
     maxVideoDuration: number;          // Max seconds per job
@@ -316,6 +323,10 @@ const TIER_LIMITS: Record<MembershipTier, TierLimits> = {
     enterprise: {
         maxVideoDuration: 4 * 60 * 60,     // 4 hours
         maxVideoGenerationsPerDay: 500,
+    },
+    founder: {
+        maxVideoDuration: 24 * 60 * 60,    // 24 hours (unlimited in practice)
+        maxVideoGenerationsPerDay: 1000,   // 1000/day (unlimited in practice)
     },
 };
 
@@ -788,7 +799,7 @@ export const editImage = editImageFn();
 export const analyzeAudio = analyzeAudioFn();
 
 export const generateSpeech = functions
-    .runWith({ enforceAppCheck: ENFORCE_APP_CHECK, secrets: [geminiApiKey], timeoutSeconds: 60, memory: "512MB" })
+    .runWith({ enforceAppCheck: ENFORCE_APP_CHECK, timeoutSeconds: 60, memory: "512MB" })
     // Item 352: Explicit return type annotation
     .https.onCall(async (data: unknown, context): Promise<{ audioContent: string }> => {
         if (!context.auth) {
@@ -807,44 +818,34 @@ export const generateSpeech = functions
         try {
             functions.logger.log(`[generateSpeech] Generating speech with model: ${model}`);
             const modelId = model || FUNCTION_INTELLIGENCE_MODELS.SPEECH.GENERATION;
-            const apiKey = getGeminiApiKey();
 
-            // Use REST API for precise control over TTS config
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    contents: [{ parts: [{ text }] }],
-                    generationConfig: {
-                        responseModalities: ["AUDIO"],
-                        speechConfig: {
-                            voiceConfig: {
-                                prebuiltVoiceConfig: {
-                                    voiceName: voice
-                                }
-                            }
+            // Use Vertex AI SDK (ADC auth, no API key)
+            const { getVertexAIClient } = await import('./lib/vertexClient');
+            const genai = getVertexAIClient();
+
+            const result = await genai.models.generateContent({
+                model: modelId,
+                contents: [{ parts: [{ text }] }],
+                responseModalities: ["AUDIO"],
+                speechConfig: {
+                    voiceConfig: {
+                        prebuiltVoiceConfig: {
+                            voiceName: voice
                         }
                     }
-                })
-            });
+                }
+            } as any);
 
-            if (!response.ok) {
-                const errText = await response.text();
-                throw new Error(`Gemini TTS API Error: ${response.status} ${errText}`);
-            }
+            // Extract audio data from SDK response (direct candidates, no .response wrapper)
+            const part = result?.candidates?.[0]?.content?.parts?.[0];
+            const audioData = part && 'inlineData' in part ? (part as any).inlineData?.data : null;
 
-            const result = await response.json();
-
-            // Extract audio data (inlineData)
-            const part = result.candidates?.[0]?.content?.parts?.[0];
-            const audioContent = part?.inlineData?.data;
-
-            if (!audioContent) {
+            if (!audioData) {
                 functions.logger.error("[generateSpeech] Unexpected response structure:", JSON.stringify(result));
                 throw new Error("No audio content returned from API");
             }
 
-            return { audioContent };
+            return { audioContent: audioData };
 
         } catch (err: unknown) {
             const error = err instanceof Error ? err : new Error(String(err));
@@ -855,8 +856,7 @@ export const generateSpeech = functions
 
 export const generateContentStream = functions
     .runWith({
-        enforceAppCheck: ENFORCE_APP_CHECK,
-        secrets: [geminiApiKey],
+        enforceAppCheck: false, // CORS preflight must pass; App Check is verified manually below.
         timeoutSeconds: 300
     })
     .https.onRequest((req, res) => {
@@ -884,6 +884,26 @@ export const generateContentStream = functions
                 return;
             }
 
+            // Verify App Check manually after CORS preflight has passed.
+            if (ENFORCE_APP_CHECK) {
+                const appCheckToken = typeof req.header === 'function'
+                    ? req.header('x-firebase-appcheck')
+                    : typeof req.get === 'function'
+                        ? req.get('x-firebase-appcheck')
+                        : req.headers['x-firebase-appcheck'];
+                if (!appCheckToken) {
+                    res.status(401).send('Unauthorized: Missing App Check token');
+                    return;
+                }
+                try {
+                    await admin.appCheck().verifyToken(Array.isArray(appCheckToken) ? appCheckToken[0] : appCheckToken);
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                } catch (err) {
+                    res.status(401).send('Unauthorized: Invalid App Check token');
+                    return;
+                }
+            }
+
             try {
                 const { model, contents, config } = req.body;
                 const modelId = model || "gemini-3.1-pro-preview";
@@ -903,37 +923,114 @@ export const generateContentStream = functions
                     "gemini-2.5-pro-preview",
                 ];
 
-                if (!ALLOWED_MODELS.includes(modelId)) {
+                const isApprovedEndpoint = /^projects\/[^/]+\/locations\/[^/]+\/endpoints\/[^/]+$/.test(modelId);
+                if (!ALLOWED_MODELS.includes(modelId) && !isApprovedEndpoint) {
                     functions.logger.warn(`[Security] Blocked unauthorized model access: ${modelId}`);
                     res.status(400).send('Invalid or unauthorized model ID.');
                     return;
                 }
 
-                // Initialize SDK Client (dynamic import — Item 335: reduces cold start)
-                const { GoogleGenAI } = await import("@google/genai");
-                const apiKey = getGeminiApiKey();
-                if (!apiKey) {
-                    res.status(500).send('Gemini API key is not configured.');
-                    return;
-                }
-                const client = new GoogleGenAI({ apiKey });
+                // Initialize Vertex AI Client (ADC auth, no API key)
+                const { getVertexAIClient } = await import("./lib/vertexClient");
+                let client = getVertexAIClient();
+                let finalModelId = modelId;
 
-                // Generate Content Stream
-                const result = await client.models.generateContentStream({
-                    model: modelId,
-                    contents: contents, // SDK accepts standard Content format
-                    config: config
-                });
+                // KILL SWITCH (pre-emptive fallback): the tuned agents were redeployed
+                // 2026-06-21, so by DEFAULT we now TRY the fine-tuned endpoint and let the
+                // runtime auto-fallback below catch any straggler that is still spinning up.
+                // Setting DISABLE_FINE_TUNED=true forces every agent straight to the base
+                // model WITHOUT touching the endpoint at all — a manual kill switch for when
+                // the whole tuned set must be bypassed (e.g. a bad training run). It is OFF
+                // by default (only the literal 'true' triggers it) so CI deploys — where the
+                // gitignored .env is absent — route to the live tuned endpoints. The base
+                // model is served from the 'global' location (where the gemini-3.1 models
+                // live, via aiplatform.googleapis.com). See ERROR_LEDGER 2026-06-20/21.
+                const FINE_TUNED_FALLBACK_MODEL = 'gemini-3.1-flash-lite';
+                const isFineTunedEndpoint = /^projects\/[^/]+\/locations\/[^/]+\/endpoints\/[^/]+$/.test(modelId);
+                if (process.env.DISABLE_FINE_TUNED === 'true' && isFineTunedEndpoint) {
+                    functions.logger.warn(`[generateContentStream] DISABLE_FINE_TUNED kill switch active; routing ${modelId} -> ${FINE_TUNED_FALLBACK_MODEL} (global)`);
+                    finalModelId = FINE_TUNED_FALLBACK_MODEL;
+                    client = getVertexAIClient(undefined, 'global');
+                }
+
+                // Match fine-tuned endpoint resource paths: projects/{project}/locations/{location}/endpoints/{endpointId}
+                const match = finalModelId.match(/^projects\/([^/]+)\/locations\/([^/]+)\/(endpoints\/[^/]+)$/);
+                if (match) {
+                    const [, parsedProject, parsedLocation, parsedEndpoint] = match;
+                    client = getVertexAIClient(parsedProject, parsedLocation);
+                    finalModelId = modelId; // Keep full path so SDK doesn't mangle it into publishers/endpoints/models/...
+                    functions.logger.info(`[generateContentStream] Routing to fine-tuned endpoint: project=${parsedProject}, location=${parsedLocation}, endpoint=${parsedEndpoint}`);
+                }
+
+                // Generate Content Stream.
+                // Self-heal on a missing fine-tuned endpoint: when DISABLE_FINE_TUNED=false
+                // routes us to a tuned endpoint that is still spinning up (or never
+                // redeployed), the request 404s. Rather than hard-fail that agent, pull the
+                // first chunk BEFORE sending response headers so we can retry once against the
+                // base model (global) on NOT_FOUND. Once the first chunk lands we know the
+                // endpoint is alive, so the rest streams normally. See ERROR_LEDGER 2026-06-20.
+                const openStream = (modelToUse: string, clientToUse: typeof client) =>
+                    clientToUse.models.generateContentStream({
+                        model: modelToUse,
+                        contents: contents, // SDK accepts standard Content format
+                        config: config
+                    });
+
+                type ContentStream = Awaited<ReturnType<typeof openStream>>;
+                type ContentChunk = ContentStream extends AsyncIterable<infer C> ? C : never;
+                let iterator: AsyncIterator<ContentChunk>;
+                let firstResult: IteratorResult<ContentChunk>;
+                try {
+                    const stream = await openStream(finalModelId, client);
+                    iterator = stream[Symbol.asyncIterator]();
+                    firstResult = await iterator.next();
+                } catch (streamErr: unknown) {
+                    const msg = streamErr instanceof Error ? streamErr.message : String(streamErr);
+                    const isNotFound = /NOT_FOUND|404|not found|does not exist|was not found/i.test(msg);
+                    if (isFineTunedEndpoint && isNotFound && finalModelId !== FINE_TUNED_FALLBACK_MODEL) {
+                        functions.logger.warn(`[generateContentStream] Fine-tuned endpoint ${finalModelId} unavailable (${msg}); auto-falling back to ${FINE_TUNED_FALLBACK_MODEL} (global)`);
+                        const fallbackClient = getVertexAIClient(undefined, 'global');
+                        const stream = await openStream(FINE_TUNED_FALLBACK_MODEL, fallbackClient);
+                        iterator = stream[Symbol.asyncIterator]();
+                        firstResult = await iterator.next();
+                    } else {
+                        throw streamErr;
+                    }
+                }
 
                 res.setHeader('Content-Type', 'text/plain');
                 res.setHeader('Cache-Control', 'no-cache');
                 res.setHeader('Connection', 'keep-alive');
 
+                // Replay the already-pulled first chunk, then drain the rest of the stream.
+                const replayStream = (async function* () {
+                    if (!firstResult.done) yield firstResult.value;
+                    while (true) {
+                        const next = await iterator.next();
+                        if (next.done) break;
+                        yield next.value;
+                    }
+                })();
+
                 // Iterate over SDK Stream
-                for await (const chunk of result) {
-                    const text = chunk.text;
-                    if (text) {
-                        res.write(JSON.stringify({ text }) + '\n');
+                for await (const chunk of replayStream) {
+                    const parts = chunk.candidates?.[0]?.content?.parts || [];
+                    const text = typeof chunk.text === 'string'
+                        ? chunk.text
+                        : parts
+                            .map((part: any) => typeof part.text === 'string' ? part.text : '')
+                            .join('');
+                    const functionCalls = parts
+                        .filter((part: any) => part.functionCall)
+                        .map((part: any) => part.functionCall);
+                    const thoughtSignature = parts.find((part: any) => part.thoughtSignature)?.thoughtSignature;
+
+                    if (text || functionCalls.length > 0 || thoughtSignature) {
+                        const payload: { text?: string; functionCalls?: any[]; thoughtSignature?: string } = {};
+                        if (text) payload.text = text;
+                        if (functionCalls.length > 0) payload.functionCalls = functionCalls;
+                        if (thoughtSignature) payload.thoughtSignature = thoughtSignature;
+                        res.write(JSON.stringify(payload) + '\n');
                     }
                 }
 
@@ -954,8 +1051,10 @@ export const generateContentStream = functions
 export const ragProxy = functions
     .runWith({
         enforceAppCheck: false, // Fix CORS preflight: moved to manual check after corsHandler
-        secrets: [geminiApiKey],
         timeoutSeconds: 60
+        // NOTE: ragProxy uses the Generative AI Files API which requires GEMINI_API_KEY at runtime.
+        // This is the single remaining path that depends on the Developer API key.
+        // Future: migrate to Vertex AI file handling (Cloud Storage + Vertex Datasets).
     })
     .https.onRequest((req, res) => {
         corsHandler(req, res, async () => {

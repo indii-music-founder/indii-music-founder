@@ -17,6 +17,8 @@ import licensingCard from '@agents/licensing/agent_card.json';
 import marketingCard from '@agents/marketing/agent_card.json';
 import merchandiseCard from '@agents/merchandise/agent_card.json';
 import musicCard from '@agents/music/agent_card.json';
+import hospitalityCard from '@agents/hospitality/agent_card.json';
+import eventPlannerCard from '@agents/event-planner/agent_card.json';
 import { ProducerCard } from './cards/producer.card';
 import publicistCard from '@agents/publicist/agent_card.json';
 import publishingCard from '@agents/publishing/agent_card.json';
@@ -36,10 +38,12 @@ export const CARD_REGISTRY: Record<string, AgentCard> = {
     'devops': DevopsCard,
     'director': DirectorCard,
     'distribution': distributionCard as AgentCard,
+    'event-planner': eventPlannerCard as AgentCard,
     'finance.accounting': FinanceAccountingCard,
     'finance': financeCard as AgentCard,
     'finance.royalty': FinanceRoyaltyCard,
     'finance.tax': FinanceTaxCard,
+    'hospitality': hospitalityCard as AgentCard,
     'keeper': KeeperCard,
     'legal': legalCard as AgentCard,
     'legal.compliance': LegalComplianceCard,

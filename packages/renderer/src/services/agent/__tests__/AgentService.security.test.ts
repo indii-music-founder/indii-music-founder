@@ -136,7 +136,7 @@ vi.mock('../observability/TraceService', () => ({
 }));
 
 vi.mock('../fine-tuned-models', () => ({
-    getFineTunedModel: vi.fn().mockReturnValue('projects/223837784072/locations/us-central1/endpoints/8440177260006211584'),
+    getFineTunedModel: vi.fn().mockReturnValue('projects/148015878263/locations/us-central1/endpoints/8440177260006211584'),
 }));
 
 vi.mock('@/services/intelligence/context/ContextManager', () => ({
@@ -166,7 +166,7 @@ function makeTestAgent(authorizedTools: string[], extraTools: string[] = []): Ba
         color: 'bg-gray-500',
         category: 'specialist',
         systemPrompt: 'You are a test specialist agent.',
-        modelId: 'projects/223837784072/locations/us-central1/endpoints/8440177260006211584',
+        modelId: 'projects/148015878263/locations/us-central1/endpoints/8440177260006211584',
         authorizedTools,
         tools: [{
             functionDeclarations: allToolNames.map(name => ({
@@ -249,7 +249,7 @@ describe('BaseAgent Runtime Tool Authorization', () => {
                 color: 'bg-gray-500',
                 category: 'specialist',
                 systemPrompt: `You are the ${agentId} agent.`,
-                modelId: 'projects/223837784072/locations/us-central1/endpoints/8440177260006211584',
+                modelId: 'projects/148015878263/locations/us-central1/endpoints/8440177260006211584',
                 // Each spoke has its own tools but NOT delegate_task
                 authorizedTools: ['allowed_tool'],
                 tools: [{
@@ -286,7 +286,7 @@ describe('BaseAgent Runtime Tool Authorization', () => {
                 color: 'bg-gray-500',
                 category: 'specialist',
                 systemPrompt: `You are the ${agentId} agent.`,
-                modelId: 'projects/223837784072/locations/us-central1/endpoints/8440177260006211584',
+                modelId: 'projects/148015878263/locations/us-central1/endpoints/8440177260006211584',
                 authorizedTools: ['allowed_tool'],
                 tools: [{
                     functionDeclarations: [
@@ -339,7 +339,7 @@ describe('BaseAgent Runtime Tool Authorization', () => {
             color: 'bg-gray-500',
             category: 'specialist',
             systemPrompt: 'You are a restricted agent with no tools.',
-            modelId: 'projects/223837784072/locations/us-central1/endpoints/8440177260006211584',
+            modelId: 'projects/148015878263/locations/us-central1/endpoints/8440177260006211584',
             authorizedTools: [], // empty = nothing allowed
             tools: [{
                 functionDeclarations: [

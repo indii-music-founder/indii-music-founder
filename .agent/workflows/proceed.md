@@ -11,7 +11,7 @@ This command is used whenever the user says "continue", when resuming work after
 ## 1. Context Synchronization
 - **Handoff Sync:** Read the latest checkpoints in `.agent/checkpoints/` and the active `task.md` or `implementation_plan.md`.
 - **Change Audit:** Run `git diff` or `git status` to see exactly what was touched in the last session.
-- **Mental Map Align:** Read the strategic flowcharts in `docs/flowcharts/` that map the architecture of what is currently being built.
+- **Mental Map Align:** Read the strategic flowcharts in `docs/flowcharts/` (specifically [01-grand-unified-macro.md](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/docs/flowcharts/01-grand-unified-macro.md), [backend-only-api-boundary.md](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/docs/flowcharts/backend-only-api-boundary.md), and [entire-app-architecture.md](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/docs/flowcharts/entire-app-architecture.md)) that map the architecture, device boundaries, and API gateways of what is currently being built.
 
 ## 2. Hard Compliance Sweep
 Perform a rigorous automated scan against our core development constraints:

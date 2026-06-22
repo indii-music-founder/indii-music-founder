@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Service layer uses dynamic types for external API responses */
+ 
 import { logger } from '@/utils/logger';
 import { BaseAgent } from '../BaseAgent';
 // useStore removed to prevent circular dependency - dynamically imported in execute()
@@ -88,9 +88,8 @@ export class GeneralistAgent extends BaseAgent {
         this.tools = this.buildToolDeclarations();
 
         // NOTE: freezeAgentConfig was removed here. It deep-froze `this.tools` (and `this` itself),
-        // which caused "Cannot assign to read only property 'parameters'" errors when the Firebase
-        // SDK tried to normalize tool declarations during getGenerativeModel(). The SDK expects
-        // mutable tool objects. Tool integrity is now protected by per-iteration cloning below.
+        // which caused "Cannot assign to read only property 'parameters'" errors when model
+        // gateways normalize tool declarations. Tool integrity is now protected by per-iteration cloning below.
     }
 
 

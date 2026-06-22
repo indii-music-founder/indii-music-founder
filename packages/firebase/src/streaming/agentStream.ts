@@ -1,8 +1,26 @@
 /**
- * Agent Streaming Service
+ * Agent Streaming Service — Backend AI Gateway
  *
  * Cloud Function v2 - Server-Sent Events (SSE) support for agent response streaming.
  * This is the PRIMARY UNLOCKER for Phase 2 agent orchestration features.
+ *
+ * Architecture:
+ * - Client: POST /api/agents/stream with { userId, agentId, input, context }
+ * - Auth: Firebase ID token + App Check (verified in HTTP headers)
+ * - Backend: Uses Vertex AI via ADC (no API key in request)
+ * - Response: SSE stream of tokens { token, index, timestamp } until completion
+ *
+ * Credentials Flow:
+ * 1. Client sends Firebase ID token in Authorization header
+ * 2. Function verifies token (admin SDK)
+ * 3. Function calls getVertexAIClient() to initialize Vertex AI
+ * 4. Service account credentials are applied automatically (ADC)
+ * 5. Response tokens streamed to client as they arrive
+ *
+ * This design ensures:
+ * - No API keys in frontend code or network traffic
+ * - Streaming latency is minimized (direct backend-to-client SSE)
+ * - Cost tracking can happen server-side before/after request
  *
  * NOTE: This function uses v2 API and coexists with v1 functions during migration.
  */
@@ -11,8 +29,8 @@ import { onRequest } from "firebase-functions/v2/https";
 import { HttpsError } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
 import { Request, Response } from "express";
-import { GoogleGenAI } from "@google/genai";
 import { FUNCTION_INTELLIGENCE_MODELS } from "../config/models";
+import { getVertexAIClient } from "../lib/vertexClient";
 
 interface StreamToken {
   token: string;
@@ -51,9 +69,8 @@ interface AgentStreamRequest {
 export const agentStreamResponse = onRequest(
   {
     region: "us-central1",
-    timeoutSeconds: 600, // 10 minutes for long-running agent tasks
-    memory: "1GiB",
-    secrets: ["GEMINI_API_KEY"]
+    timeoutSeconds: 600,
+    memory: "1GiB"
   },
   async (req: Request, res: Response): Promise<void> => {
     // Handle CORS preflight
@@ -125,16 +142,8 @@ export const agentStreamResponse = onRequest(
         `[AgentStream] Starting stream for user=${userId}, agent=${agentId}`
       );
 
-      // Initialize Gemini API client
-      const apiKey = process.env.GEMINI_API_KEY;
-      if (!apiKey) {
-        throw new HttpsError(
-          "internal",
-          "GEMINI_API_KEY not configured"
-        );
-      }
-
-      const genai = new GoogleGenAI({ apiKey });
+      // Initialize Vertex AI client (ADC auth, no API key)
+      const genai = getVertexAIClient();
       let tokenIndex = 0;
 
       try {

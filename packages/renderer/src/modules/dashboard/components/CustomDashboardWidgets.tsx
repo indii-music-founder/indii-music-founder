@@ -22,6 +22,7 @@ import { revenueService, type RevenueStats } from '@/services/RevenueService';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { AnalyticsService } from '@/services/dashboard/AnalyticsService';
+import { MODEL_PRICING } from '@/core/config/intelligence-models';
 import type {
     DashboardRevenueStats,
     DashboardStreamsStats,
@@ -37,7 +38,7 @@ import type {
     DashboardTourStatus,
 } from '@/services/dashboard/schema';
 
-export type WidgetType = 'streams_today' | 'revenue_mtd' | 'revenue_aggregated' | 'next_release' | 'top_track' | 'agent_activity' | 'audience_growth' | 'active_campaigns' | 'pending_tasks' | 'social_engagement' | 'brand_identity' | 'merch_sales' | 'tour_status';
+export type WidgetType = 'streams_today' | 'revenue_mtd' | 'revenue_aggregated' | 'next_release' | 'top_track' | 'agent_activity' | 'audience_growth' | 'active_campaigns' | 'pending_tasks' | 'social_engagement' | 'brand_identity' | 'merch_sales' | 'tour_status' | 'cost_estimator';
 
 export interface Widget {
     id: string;
@@ -59,6 +60,7 @@ export const WIDGET_DEFINITIONS: Record<WidgetType, { label: string; icon: Lucid
     brand_identity: { label: 'Brand Integrity', icon: Palette, description: 'Visual identity and brand compliance scores' },
     merch_sales: { label: 'Merchandise', icon: ShoppingBag, description: 'Recent sales and inventory alerts' },
     tour_status: { label: 'Tour & Shows', icon: MapPin, description: 'Ticket sales and upcoming tour dates' },
+    cost_estimator: { label: 'Cost Estimator', icon: DollarSign, description: 'Estimate API costs for generative intelligence' },
 };
 
 const DEFAULT_WIDGETS: Widget[] = [
@@ -68,6 +70,7 @@ const DEFAULT_WIDGETS: Widget[] = [
     { id: 'w4', type: 'top_track', order: 3 },
     { id: 'w5', type: 'audience_growth', order: 4 },
     { id: 'w6', type: 'active_campaigns', order: 5 },
+    { id: 'w7', type: 'cost_estimator', order: 6 },
 ];
 
 export const STORAGE_KEY = 'indii_custom_dashboard_widgets';
@@ -920,6 +923,7 @@ export const WIDGET_RENDERERS: Record<WidgetType, () => React.ReactElement> = {
     merch_sales: () => <MerchSalesWidget />,
     tour_status: () => <TourStatusWidget />,
     revenue_aggregated: () => <RevenueAggregatedWidget />,
+    cost_estimator: () => <CostEstimatorWidget />,
 };
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -994,6 +998,112 @@ function RevenueAggregatedWidget() {
                 <div className="mt-2 flex justify-between items-center">
                     <span className="text-[8px] font-black text-white/20 uppercase tracking-widest">Multi-Stream Distribution</span>
                     <span className="text-[8px] font-black text-purple-400 uppercase tracking-widest group-hover/widget:translate-x-1 transition-transform">View Details →</span>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// eslint-disable-next-line react-refresh/only-export-components
+function CostEstimatorWidget() {
+    const [mediaType, setMediaType] = useState<'video' | 'image'>('video');
+    const [tier, setTier] = useState<'pro' | 'fast' | 'lite'>('pro');
+    const [duration, setDuration] = useState<number>(8);
+    const [count, setCount] = useState<number>(4);
+
+    const videoCost = (() => {
+        if (tier === 'pro') return duration * MODEL_PRICING['veo-3.1-generate-preview'].perSecond;
+        if (tier === 'fast') return duration * MODEL_PRICING['veo-3.1-fast-generate-preview'].perSecond;
+        return duration * MODEL_PRICING['veo-3.1-lite-generate-preview'].perSecond;
+    })();
+
+    const imageCost = (() => {
+        // Approximate image token sizes: ~13,400 tokens per 1K image
+        // 13,400 / 1,000,000 = 0.0134 multiplier for output cost
+        const TOKENS_PER_IMAGE = 13400;
+        const perTokenCost = (modelId: keyof typeof MODEL_PRICING) => 
+            // @ts-expect-error
+            (MODEL_PRICING[modelId].output || 0) / 1000000;
+
+        if (tier === 'pro') return count * TOKENS_PER_IMAGE * perTokenCost('gemini-3-pro-image-preview');
+        if (tier === 'fast') return count * TOKENS_PER_IMAGE * perTokenCost('gemini-3.1-flash-image');
+        return count * TOKENS_PER_IMAGE * perTokenCost('imagen-4.0-fast-generate-001'); // fallback lite equivalent
+    })();
+
+    const activeCost = mediaType === 'video' ? videoCost : imageCost;
+    const tierLabels = { pro: 'Pro', fast: 'Fast', lite: 'Lite' };
+
+    return (
+        <div className="flex flex-col h-full justify-between group/widget">
+            <div>
+                <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center border border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.2)] group-hover/widget:bg-emerald-500 group-hover/widget:text-black transition-all duration-500">
+                        <DollarSign size={18} className="group-hover/widget:scale-110 transition-transform" />
+                    </div>
+                    <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">Cost Estimator</span>
+                </div>
+                
+                <div className="space-y-1">
+                    <p className="text-5xl font-black text-white tracking-tighter">
+                        ${activeCost.toFixed(3)}
+                    </p>
+                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Estimated Run Cost</p>
+                </div>
+            </div>
+
+            <div className="mt-4 space-y-3">
+                <div className="grid grid-cols-2 gap-2 bg-white/5 p-1 rounded-xl">
+                    <button 
+                        onClick={() => { setMediaType('video'); if (tier === 'lite') setTier('fast'); }}
+                        className={`text-[9px] font-black uppercase tracking-widest py-1.5 rounded-lg transition-colors ${mediaType === 'video' ? 'bg-white/10 text-white shadow-sm' : 'text-white/40 hover:text-white/80'}`}
+                    >
+                        Video
+                    </button>
+                    <button 
+                        onClick={() => { setMediaType('image'); if (tier === 'lite') setTier('fast'); }}
+                        className={`text-[9px] font-black uppercase tracking-widest py-1.5 rounded-lg transition-colors ${mediaType === 'image' ? 'bg-white/10 text-white shadow-sm' : 'text-white/40 hover:text-white/80'}`}
+                    >
+                        Image
+                    </button>
+                </div>
+
+                <div className="flex items-center justify-between">
+                    <span className="text-[9px] font-black text-white/40 uppercase tracking-widest">Tier</span>
+                    <div className="flex gap-1">
+                        {(['pro', 'fast', 'lite'] as const).map(t => {
+                            if (mediaType === 'image' && t === 'lite') return null;
+                            return (
+                                <button
+                                    key={t}
+                                    onClick={() => setTier(t)}
+                                    className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest transition-colors ${tier === t ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-white/5 text-white/40 hover:bg-white/10'}`}
+                                >
+                                    {tierLabels[t]}
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+
+                <div className="flex items-center justify-between">
+                    <span className="text-[9px] font-black text-white/40 uppercase tracking-widest">
+                        {mediaType === 'video' ? 'Duration (s)' : 'Batch Size'}
+                    </span>
+                    <div className="flex items-center gap-2">
+                        <button 
+                            onClick={() => mediaType === 'video' ? setDuration(d => Math.max(1, d - 1)) : setCount(c => Math.max(1, c - 1))}
+                            className="w-5 h-5 rounded bg-white/5 flex items-center justify-center text-white/60 hover:bg-white/10"
+                        >
+                            -
+                        </button>
+                        <span className="text-xs font-black w-4 text-center">{mediaType === 'video' ? duration : count}</span>
+                        <button 
+                            onClick={() => mediaType === 'video' ? setDuration(d => Math.min(60, d + 1)) : setCount(c => Math.min(100, c + 1))}
+                            className="w-5 h-5 rounded bg-white/5 flex items-center justify-center text-white/60 hover:bg-white/10"
+                        >
+                            +
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

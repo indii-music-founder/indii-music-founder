@@ -314,7 +314,8 @@ All frontend env vars use the `VITE_` prefix. Copy `.env.example` to `.env` for 
 
 **Optional:**
 
-- `VITE_VERTEX_PROJECT_ID` / `VITE_VERTEX_LOCATION` - Vertex AI config
+- `VERTEX_PROJECT_ID` / `VERTEX_LOCATION` - backend Vertex AI config
+- `VERTEX_IMAGE_LOCATION` / `VERTEX_VIDEO_LOCATION` - backend media routing locations
 - `VITE_GOOGLE_MAPS_API_KEY` - Google Maps
 - `VITE_SKIP_ONBOARDING` - Skip onboarding in dev
 - `VITE_FIREBASE_APP_CHECK_KEY` - App Check (required for production)
@@ -352,7 +353,7 @@ All frontend env vars use the `VITE_` prefix. Copy `.env.example` to `.env` for 
 4. Two Firebase Hosting targets:
    - `landing` -> `landing-page/dist`
    - `app` -> `dist`
-5. Required secrets: `VITE_API_KEY`, `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_PROJECT_ID`, `VITE_VERTEX_PROJECT_ID`, `VITE_VERTEX_LOCATION`, `FIREBASE_SERVICE_ACCOUNT`
+5. Required secrets: `GEMINI_API_KEY`, `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_PROJECT_ID`, `VERTEX_PROJECT_ID`, `VERTEX_LOCATION`, `FIREBASE_SERVICE_ACCOUNT`
 
 ### Build Pipeline (`npm run build`)
 
@@ -388,6 +389,13 @@ The `build` script runs three steps sequentially:
 ---
 
 ## Operating Principles
+
+### -1. THE MCLEAR RULE (NEVER DECLARE VICTORY)
+
+> **"Never ever ever declare victory ever."**
+
+Before asserting that a problem is fixed, you MUST rigorously verify it from the user's perspective. Do not say "everything is completely fixed" if there are secondary side effects (like wiped local data) that the user will immediately encounter. State the exact status of the fix, acknowledge any new caveats, and never use the word "victory" or its equivalents.
+
 
 ### 0. CAVEMAN MODE (COMMUNICATION EFFICIENCY)
 
@@ -476,14 +484,14 @@ mcp_mem0_add-memory(
 
 Every code change, review, and agent-authored diff must meet the standards in the platinum documents:
 
-- `docs/PLATINUM_QUALITY_STANDARDS.md` — Code-review / diff discipline. The Seven Anti-Patterns, pre-commit checklist, pitfall library. **Read this before you edit anything.**
+- `docs/PLATINUM_QUALITY_STANDARDS.md` — Code-review / diff discipline. The Nine Anti-Patterns, pre-commit checklist, pitfall library. **Read this before you edit anything.**
 - `docs/PLATINUM_POLISH_REPORT.md` — Codebase audit snapshot (type safety, log hygiene, error handling).
 - `docs/DATABASE_PLATINUM_PROTOCOL.md` — Database-layer platinum protocol.
 - `docs/TOP_50_PLATINUM_RELEASE.md` — Release-readiness checklist.
 
 **Before every `git push`**, run `/plat` (see `.claude/commands/plat.md`). It executes the Pre-commit checklist from `docs/PLATINUM_QUALITY_STANDARDS.md`, cross-references the Error Ledger, and produces an explicit GO / NO-GO verdict. Skipping `/plat` on a substantive branch is treated the same as skipping the Error Ledger check — a protocol violation.
 
-Violations of the Seven Anti-Patterns must be fixed at the root. If you hit a novel variant, add new entries to BOTH `.agent/skills/error_memory/ERROR_LEDGER.md` AND `docs/PLATINUM_QUALITY_STANDARDS.md` before ending the session.
+Violations of the Nine Anti-Patterns must be fixed at the root. If you hit a novel variant, add new entries to BOTH `.agent/skills/error_memory/ERROR_LEDGER.md` AND `docs/PLATINUM_QUALITY_STANDARDS.md` before ending the session.
 
 ### 7. MERGE CONFLICT HYGIENE (MANDATORY AFTER EVERY MERGE)
 
@@ -548,6 +556,23 @@ Ignorance of a skill's purpose or absence from `WIIL-skill.md` is NOT grounds fo
 > [!IMPORTANT]
 > All agents in the swarm (including JULES, CODEX, Claude, Gemini, etc.) MUST actively utilize and coordinate via the native `firebase` CLI and the Google Cloud `gcloud` CLI for environment verification, function status checks, IAM policies, and logs. Additionally, all agents must remain aware of the active MCP tools (e.g., `firebase-mcp-server`, `cloudrun`, `sentry`, `genkit-mcp-server`) and call them to inspect/verify infrastructure rather than writing ad-hoc scripts.
 
+### 11. NO HARDCODED INFRASTRUCTURE IDENTIFIERS IN THE FRONTEND (STRICT)
+
+> [!CRITICAL]
+> Infrastructure-minted identifiers rotate on every re-train/redeploy. Hardcoding them into frontend source is a terminal review failure.
+
+**NEVER** hand-type any of the following into `packages/renderer/` (or any source module): Vertex AI **endpoint IDs**, deployed-model IDs, GCP **project numbers**, **regions/locations**, fine-tuned **tuning-job IDs**, bucket names, or any value an infra system mints and can rotate.
+
+**Why this rule exists (Post-Mortem 2026-06-21):** `packages/renderer/src/services/agent/fine-tuned-models.ts` hardcoded all 20 agents to `locations/us-central1/endpoints/<id>` from the May R8 run. A re-tune minted **new** endpoint IDs in a **different location (`us`)**. The code still compiled and passed its shape-check regex, so it "looked fine" — but every agent would 404 and silently fall back to the base model, meaning NONE of the freshly-trained agents actually served. See `.agent/skills/error_memory/ERROR_LEDGER.md` (2026-06-21 "Stale Hardcoded Fine-Tuned Endpoint Registry") and Platinum Anti-Pattern #9.
+
+**Required pattern:**
+1. Infra IDs come from a **single generated/synced config surface** (regenerated from `gcloud ai endpoints list` / the `tuningJobs` REST API after every re-tune) or are resolved at runtime — never scattered literals.
+2. If a value must be checked in, it lives in ONE clearly-marked generated file whose header carries the exact regen command. A re-tune must require editing only that one file, never hunting through frontend modules.
+3. **After ANY agent re-tune, re-sync the registry from Vertex before claiming agents are live.** Do not trust the checked-in registry — `curl` the live endpoint (`gcloud auth print-access-token` + the `tuningJobs`/`endpoints` REST API) and pick each agent's LATEST `JOB_STATE_SUCCEEDED` job by `endTime`.
+4. **Detect before every push:** `grep -rnE "endpoints/[0-9]{6,}|locations/(us|us-central1|global)/|projects/[0-9]{6,}" packages/renderer/src` — any hit outside a test fixture is a defect to fix at the root.
+
+**This rule is enforced by `/plat` and `/better` via Platinum Anti-Pattern #9. Skipping it on a branch that touches agent routing is a protocol violation.**
+
 ## Key Files Quick Reference
 
 | File | Purpose |
@@ -566,7 +591,7 @@ Ignorance of a skill's purpose or absence from `WIIL-skill.md` is NOT grounds fo
 | `packages/main/src/preload.ts` | Electron IPC bridge |
 | .env.example | Environment variable template |
 | `packages/renderer/src/test/setup.ts` | Vitest global test setup and Firebase mocks |
-| `docs/PLATINUM_QUALITY_STANDARDS.md` | Platinum code-review standards — Seven Anti-Patterns, pre-commit checklist |
+| `docs/PLATINUM_QUALITY_STANDARDS.md` | Platinum code-review standards — Nine Anti-Patterns, pre-commit checklist |
 | `docs/PLATINUM_POLISH_REPORT.md` | Codebase audit snapshot (type safety, log hygiene) |
 | `docs/DATABASE_PLATINUM_PROTOCOL.md` | Database-layer platinum protocol |
 | `docs/TOP_50_PLATINUM_RELEASE.md` | Release-readiness checklist |
@@ -737,4 +762,3 @@ Key routing rules:
 - Architecture review → invoke plan-eng-review
 - Save progress, checkpoint, resume → invoke checkpoint
 - Code quality, health check → invoke health
-

@@ -6,7 +6,7 @@
 - **Stack:** React 18 + Vite + Electron | Firebase | Gemini 3 | Zustand
 - **Dev Server:** `http://localhost:4242` (Vite) | `http://localhost:3000` (Landing)
 - **Repo:** `indii-music-founder/indii-music-founder`
-- **Firebase Project:** `indii-v-1-1`
+- **Firebase Project:** `indii-music-founder`
 
 ---
 

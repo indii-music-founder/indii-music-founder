@@ -494,25 +494,25 @@ graph TB
     %% ║            STYLING                       ║
     %% ════════════════════════════════════════════
 
-    classDef client fill:#00D4FF,stroke:#0077AA,stroke-width:2px,color:#001018
-    classDef auth fill:#FF00FF,stroke:#AA00AA,stroke-width:2px,color:#FFFFFF
-    classDef nav fill:#6366F1,stroke:#4338CA,stroke-width:2px,color:#FFFFFF
-    classDef manager fill:#F59E0B,stroke:#B45309,stroke-width:2px,color:#001018
-    classDef dept fill:#10B981,stroke:#047857,stroke-width:2px,color:#001018
-    classDef tool fill:#8B5CF6,stroke:#6D28D9,stroke-width:2px,color:#FFFFFF
-    classDef standalone fill:#EC4899,stroke:#BE185D,stroke-width:2px,color:#FFFFFF
-    classDef state fill:#39FF14,stroke:#1A8800,stroke-width:2px,color:#001018
-    classDef service fill:#FF8C00,stroke:#AA5500,stroke-width:2px,color:#001018
-    classDef agent fill:#E11D48,stroke:#9F1239,stroke-width:2px,color:#FFFFFF
-    classDef harness fill:#D946EF,stroke:#A21CAF,stroke-width:2px,color:#FFFFFF
-    classDef creative fill:#F472B6,stroke:#DB2777,stroke-width:2px,color:#001018
-    classDef audio fill:#22D3EE,stroke:#0891B2,stroke-width:2px,color:#001018
-    classDef distro fill:#A78BFA,stroke:#7C3AED,stroke-width:2px,color:#001018
-    classDef backend fill:#FB923C,stroke:#C2410C,stroke-width:2px,color:#001018
-    classDef ai fill:#4ADE80,stroke:#16A34A,stroke-width:2px,color:#001018
-    classDef external fill:#F87171,stroke:#DC2626,stroke-width:2px,color:#FFFFFF
-    classDef electron fill:#60A5FA,stroke:#2563EB,stroke-width:2px,color:#001018
-    classDef cicd fill:#FBBF24,stroke:#D97706,stroke-width:2px,color:#001018
+    classDef client fill:#0F172A,stroke:#00D4FF,stroke-width:2px,color:#F8FAFC
+    classDef auth fill:#1E1B4B,stroke:#FF00FF,stroke-width:2px,color:#F8FAFC
+    classDef nav fill:#110E2F,stroke:#6366F1,stroke-width:2px,color:#F8FAFC
+    classDef manager fill:#2D1F10,stroke:#F59E0B,stroke-width:2px,color:#F8FAFC
+    classDef dept fill:#062F24,stroke:#10B981,stroke-width:2px,color:#F8FAFC
+    classDef tool fill:#23173C,stroke:#8B5CF6,stroke-width:2px,color:#F8FAFC
+    classDef standalone fill:#2D1225,stroke:#EC4899,stroke-width:2px,color:#F8FAFC
+    classDef state fill:#0B230C,stroke:#39FF14,stroke-width:2px,color:#F8FAFC
+    classDef service fill:#2E1A08,stroke:#FF8C00,stroke-width:2px,color:#F8FAFC
+    classDef agent fill:#2D0B12,stroke:#E11D48,stroke-width:2px,color:#F8FAFC
+    classDef harness fill:#2A0F35,stroke:#D946EF,stroke-width:2px,color:#F8FAFC
+    classDef creative fill:#2D1020,stroke:#F472B6,stroke-width:2px,color:#F8FAFC
+    classDef audio fill:#082E37,stroke:#22D3EE,stroke-width:2px,color:#F8FAFC
+    classDef distro fill:#21173D,stroke:#A78BFA,stroke-width:2px,color:#F8FAFC
+    classDef backend fill:#2E150C,stroke:#FB923C,stroke-width:2px,color:#F8FAFC
+    classDef ai fill:#0F2F1D,stroke:#4ADE80,stroke-width:2px,color:#F8FAFC
+    classDef external fill:#2D0C0F,stroke:#F87171,stroke-width:2px,color:#F8FAFC
+    classDef electron fill:#0B1C3D,stroke:#60A5FA,stroke-width:2px,color:#F8FAFC
+    classDef cicd fill:#2D2209,stroke:#FBBF24,stroke-width:2px,color:#F8FAFC
 
     class LP,SA,ED,MR,INV,CAP client
     class LOGIN,FBAUTH,BIOMETRIC,APPCHECK,ONBOARD auth

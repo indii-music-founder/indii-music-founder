@@ -3,6 +3,17 @@
 import * as DistributionTypes from './distribution';
 import * as SchedulerTypes from '../services/scheduler/types';
 
+/** Shape of the payload delivered by the Electron P2P IPC bridge to the renderer. */
+export interface RemoteMobilePayload {
+    type: string;
+    ts?: number;
+    command?: {
+        id?: string;
+        text: string;
+        targetAgentId?: string;
+        metadata?: Record<string, unknown>;
+    };
+}
 export interface AuthTokenData {
     idToken: string;
     accessToken?: string | null;
@@ -136,6 +147,12 @@ export interface ElectronAPI {
         onAC: (callback: () => void) => () => void;
     };
 
+    // Window control (Sleep/Wake) — hide to tray / show window
+    window?: {
+        show: () => Promise<void>;
+        hide: () => Promise<void>;
+    };
+
     // Video (Local Asset Management)
     video: {
         saveAsset: (url: string, filename: string) => Promise<string>;
@@ -218,6 +235,11 @@ export interface ElectronAPI {
         get: (taskId: string) => Promise<{ success: boolean; task?: SchedulerTypes.ScheduledTask; error?: string }>;
         onTick: (callback: (event: SchedulerTypes.SchedulerTickEvent) => void) => () => void;
         onNeuralSync: (callback: (payload: unknown) => void) => () => void;
+    };
+    // Mobile Remote — P2P Local WebSocket IPC bridge (Electron-only)
+    remote?: {
+        onMessageFromMobile: (cb: (payload: RemoteMobilePayload) => void) => (() => void);
+        broadcast: (msg: Record<string, unknown>) => void;
     };
 }
 

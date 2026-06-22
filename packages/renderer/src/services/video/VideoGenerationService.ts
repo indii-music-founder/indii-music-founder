@@ -255,13 +255,14 @@ export class VideoGenerationService {
     }
 
 
-    /**
-     * Estimate the cost of video generation based on duration and model.
-     * Pricing: fast=$0.10/sec, pro=$0.40/sec
-     */
-    private estimateVideoCost(durationSeconds: number, model?: string): number {
+    public estimateVideoCost(durationSeconds: number, model?: string): number {
         const actualModel = model || DEFAULT_VIDEO_MODEL;
-        const rate = actualModel.includes('pro') ? 0.40 : 0.10;
+        let rate = 0.10; // Default/fast rate
+        if (actualModel.includes('pro') || actualModel === 'veo-3.1-generate-preview') {
+            rate = 0.40;
+        } else if (actualModel.includes('lite') || actualModel === 'veo-3.1-lite-generate-preview') {
+            rate = 0.05;
+        }
         return durationSeconds * rate;
     }
 
@@ -302,7 +303,7 @@ export class VideoGenerationService {
     /**
      * Triggers a standard (atomic) video generation job.
      * Enriches the prompt, analyzes temporal context, and calls the
-     * @google/genai SDK directly via FirebaseIntelligenceService (no Cloud Functions).
+     * secured generateVideoV3 Firebase Cloud Function.
      * Writes results to Firestore for UI subscription compatibility.
      * 
      * @param options - Configuration for the video generation request.
@@ -648,29 +649,38 @@ export class VideoGenerationService {
                 }
 
                 // Generate segment — with firstFrame from previous segment's last frame
-                // Uses withRetry for production-grade error recovery:
-                //   - Retries on 429, 503, network errors with exponential backoff + jitter
-                //   - Fails fast on 400, 401, 403, quota, safety violations
-                //   - Respects Retry-After headers when present
+                // Uses withRetry for production-grade error recovery
                 const videoUrl = await this.withRetry(
-                    () => AutonomousIntelligence.generateVideo({
-                        prompt: segmentPrompt,
-                        model: options.model || DEFAULT_VIDEO_MODEL,
-                        image: previousLastFrame
-                            ? { imageBytes: previousLastFrame, mimeType: 'image/jpeg' }
-                            : undefined,
-                        config: stripUndefined({
+                    async () => {
+                        const results = await this.generateVideo({
+                            prompt: segmentPrompt,
+                            model: options.model || DEFAULT_VIDEO_MODEL,
+                            image: previousLastFrame
+                                ? { imageBytes: previousLastFrame, mimeType: 'image/jpeg' }
+                                : undefined,
                             aspectRatio: targetAspectRatio || '16:9',
-                            resolution: options.resolution,
+                            resolution: options.resolution as "720p" | "1080p" | "4k",
                             durationSeconds: BLOCK_DURATION,
                             negativePrompt: options.negativePrompt,
                             seed: options.seed,
                             referenceImages: options.referenceImages,
-                        }),
-                    }),
+                        });
+                        
+                        const jobId = results[0]?.id;
+                        if (!jobId) throw new Error('Failed to get jobId from generateVideo');
+                        
+                        // Wait for the video job to complete via backend webhook/status update
+                        const completedJob = await this.waitForJob(jobId, 600000); // 10 min timeout per segment
+                        const jobResultUrl = completedJob?.output?.url || completedJob?.videoUrl || completedJob?.url;
+                        console.log('DEBUG_LONG_FORM:', { jobId, completedJob, jobResultUrl });
+                        if (!completedJob || !jobResultUrl) {
+                            throw new Error('Video generation failed or timed out without returning a result URL.');
+                        }
+                        return jobResultUrl;
+                    },
                     `Segment ${i + 1}/${numBlocks}`,
                     3,   // maxRetries
-                    2000 // baseDelayMs — start at 2s since Veo jobs are inherently slow
+                    2000 // baseDelayMs
                 );
 
                 segmentUrls.push(videoUrl);
@@ -848,4 +858,3 @@ export class VideoGenerationService {
 }
 
 export const VideoGeneration = new VideoGenerationService();
-

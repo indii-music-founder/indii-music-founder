@@ -23,13 +23,14 @@ import {
   DESKTOP_HEARTBEAT_STALE_MS,
   isFreshDesktopState,
   remoteRelayService,
+  isPrivateIP,
   type DesktopState,
 } from '@/services/agent/RemoteRelayService';
 import { auth } from '@/services/firebase';
 import { onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
 import { logger } from '@/utils/logger';
 import {
-  LayoutDashboard, Grip, MessageSquare,
+  LayoutDashboard, LayoutGrid, Grip, MessageSquare,
   CheckSquare, QrCode, Smartphone, LucideIcon, WifiOff, AlertCircle, RefreshCw
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -45,15 +46,14 @@ export const triggerHaptic = (pattern: number | number[] = 50) => {
 
 // Lazy load sub-components for performance on phone
 const StatusDashboard = lazy(() => import('./components/StatusDashboard'));
-const CommandPad = lazy(() => import('./components/CommandPad'));
+const QuickCaptureView = lazy(() => import('./components/QuickCaptureView'));
+const StreamView = lazy(() => import('./components/StreamView'));
+const SettingsView = lazy(() => import('./components/SettingsView'));
 const AgentChat = lazy(() => import('./components/AgentChat'));
-const GenerationMonitor = lazy(() => import('./components/GenerationMonitor'));
-const TransportBar = lazy(() => import('./components/TransportBar'));
-const ApprovalQueue = lazy(() => import('./components/ApprovalQueue'));
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-type TabId = 'home' | 'control' | 'studio' | 'review';
+type TabId = 'home' | 'capture' | 'boardroom' | 'stream' | 'settings';
 
 interface Tab {
   id: TabId;
@@ -63,9 +63,10 @@ interface Tab {
 
 const TABS: Tab[] = [
   { id: 'home', icon: LayoutDashboard, label: 'Home' },
-  { id: 'control', icon: Grip, label: 'Control' },
-  { id: 'studio', icon: MessageSquare, label: 'Studio' },
-  { id: 'review', icon: CheckSquare, label: 'Review' },
+  { id: 'capture', icon: MessageSquare, label: 'Capture' },
+  { id: 'boardroom', icon: LayoutGrid, label: 'Boardroom' },
+  { id: 'stream', icon: CheckSquare, label: 'Stream' },
+  { id: 'settings', icon: Grip, label: 'Settings' },
 ];
 
 // We import QRCodeRenderer dynamically so it doesn't inflate load times if not used
@@ -77,6 +78,9 @@ function PairingModal({ onClose }: { onClose: () => void }) {
   const [qrUrl, setQrUrl] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [manualCode, setManualCode] = useState<string>('');
+  const [redeeming, setRedeeming] = useState(false);
+  const [isPhoneMode, setIsPhoneMode] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -86,7 +90,9 @@ function PairingModal({ onClose }: { onClose: () => void }) {
         setLoading(true);
         const currentUser = auth.currentUser;
         if (!currentUser) {
-          throw new Error('Not authenticated on desktop');
+          setIsPhoneMode(true);
+          setLoading(false);
+          return;
         }
 
         const idToken = await currentUser.getIdToken();
@@ -109,7 +115,7 @@ function PairingModal({ onClose }: { onClose: () => void }) {
         }
 
         if (active) {
-          const isDev = window.location.hostname === 'localhost' || window.location.hostname.startsWith('192.168.');
+          const isDev = window.location.hostname === 'localhost' || isPrivateIP(window.location.hostname);
           const base = isDev ? window.location.origin + '/mobile-remote' : 'https://indii.music/mobile-remote';
           setQrUrl(`${base}?code=${data.code}`);
           setLoading(false);
@@ -129,6 +135,46 @@ function PairingModal({ onClose }: { onClose: () => void }) {
       active = false;
     };
   }, []);
+
+  const handleRedeemManualCode = async () => {
+    if (!manualCode.trim()) return;
+    setRedeeming(true);
+    setError(null);
+    try {
+      const code = manualCode.trim();
+      if (!/^[a-fA-F0-9]{64}$/.test(code)) {
+        throw new Error('Invalid code format. Must be a 64-character hex string.');
+      }
+
+      const { endpointService } = await import('@/core/config/EndpointService');
+      const redeemUrl = endpointService.getFunctionUrl('redeemHandoffCode');
+      const response = await fetch(redeemUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code }),
+      });
+
+      if (!response.ok) {
+        throw new Error(await response.text());
+      }
+
+      const data = await response.json();
+      if (data.customToken) {
+        logger.info('[MobileRemote] Redeem success, signing in with custom token...');
+        const { signInWithCustomToken } = await import('firebase/auth');
+        await signInWithCustomToken(auth, data.customToken);
+        logger.info('[MobileRemote] Signed in successfully!');
+        onClose();
+      } else {
+        throw new Error('No customToken returned');
+      }
+    } catch (err) {
+      logger.error('[PairingModal] Redeem failed:', err);
+      setError(err instanceof Error ? err.message : 'Failed to redeem pairing code');
+    } finally {
+      setRedeeming(false);
+    }
+  };
 
   return (
     <motion.div 
@@ -150,7 +196,9 @@ function PairingModal({ onClose }: { onClose: () => void }) {
 
         <h2 className="text-2xl font-bold text-white mb-2 text-center tracking-tight">Connect Remote</h2>
         <p className="text-[#a1a1a6] text-center text-sm mb-8 leading-relaxed">
-          Scan this code to link your phone. Once connected, you can control your studio from anywhere in the world.
+          {isPhoneMode
+            ? 'Enter the 64-character pairing code from your desktop studio Settings panel to link this remote.'
+            : 'Scan this code to link your phone. Once connected, you can control your studio from anywhere in the world.'}
         </p>
 
         <div className="bg-white p-5 rounded-3xl mb-8 shadow-[0_0_40px_rgba(255,255,255,0.1)] flex items-center justify-center w-[220px] h-[220px]">
@@ -159,8 +207,26 @@ function PairingModal({ onClose }: { onClose: () => void }) {
                <div className="w-6 h-6 border-2 border-gray-300 border-t-transparent rounded-full animate-spin" />
             </div>
           ) : error ? (
-            <div className="text-red-500 text-xs text-center px-4 font-semibold">
+            <div className="text-red-500 text-xs text-center px-4 font-semibold overflow-y-auto max-h-[180px]">
               {error}
+            </div>
+          ) : isPhoneMode ? (
+            <div className="flex flex-col items-center justify-center w-full h-full p-2">
+              <span className="text-black text-xs font-semibold text-center mb-2">Enter Pairing Code:</span>
+              <input
+                type="text"
+                placeholder="64-character hex code"
+                value={manualCode}
+                onChange={(e) => setManualCode(e.target.value)}
+                className="w-full px-3 py-2 text-black bg-gray-100 border border-gray-300 rounded-lg text-xs font-mono focus:outline-hidden"
+              />
+              <button
+                onClick={handleRedeemManualCode}
+                disabled={redeeming || !manualCode.trim()}
+                className="mt-4 w-full h-9 bg-blue-600 hover:bg-blue-500 disabled:bg-blue-600/40 text-white rounded-lg text-xs font-bold transition-all cursor-pointer"
+              >
+                {redeeming ? 'Pairing...' : 'Link Device'}
+              </button>
             </div>
           ) : (
             <QRCodeSVG value={qrUrl} size={180} />
@@ -204,7 +270,7 @@ export default function MobileRemote() {
   );
   const [activeTab, setActiveTab] = useState<TabId>('home');
   const [showPairingModal, setShowPairingModal] = useState(false);
-  const [_desktopState, setDesktopState] = useState<DesktopState | null>(null);
+  const [desktopState, setDesktopState] = useState<DesktopState | null>(null);
 
   // Reconnection state machine
   const [isReconnecting, setIsReconnecting] = useState(false);
@@ -223,6 +289,7 @@ export default function MobileRemote() {
       setIsAuth(authenticated);
       if (authenticated) {
         setConnectionStatus(prev => prev === 'idle' ? 'pairing' : prev);
+        setIsPaired(true);
       } else {
         setConnectionStatus('idle');
         setIsPaired(false);
@@ -283,6 +350,9 @@ export default function MobileRemote() {
   // Keep refs of connection status to avoid tearing down subscription in useEffect
   const isPairedRef = useRef(isPaired);
   const connectionStatusRef = useRef(connectionStatus);
+  const desktopStateRef = useRef<DesktopState | null>(null);
+  const gracePeriodUntilRef = useRef<number>(0);
+
   useEffect(() => {
     isPairedRef.current = isPaired;
     connectionStatusRef.current = connectionStatus;
@@ -298,14 +368,19 @@ export default function MobileRemote() {
     const markDesktopOffline = () => {
       const currentIsPaired = isPairedRef.current;
       const currentStatus = connectionStatusRef.current;
+
+      // If the page is hidden, do NOT mark desktop offline yet, as the timer is throttled
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+        logger.info('[MobileRemote] Page is hidden. Deferring offline state transition.');
+        return;
+      }
+
       if (currentIsPaired || currentStatus === 'connected') {
         logger.warn('[MobileRemote] Desktop heartbeat went stale. Initiating auto-reconnect sequence…');
-        // Do NOT set isPaired(false) here. Keep UI semi-functional during transient drops.
         setIsReconnecting(true);
         setConnectionStatus('pairing');
         setReconnectAttempts(1);
       } else {
-        setIsPaired(false);
         setConnectionStatus('idle');
         setIsReconnecting(false);
       }
@@ -313,28 +388,76 @@ export default function MobileRemote() {
 
     const unsub = remoteRelayService.onDesktopState((state) => {
       setDesktopState(state);
+      desktopStateRef.current = state;
+
       if (stalePresenceTimeoutRef.current) {
         clearTimeout(stalePresenceTimeoutRef.current);
         stalePresenceTimeoutRef.current = null;
       }
+
+      const isVisible = typeof document === 'undefined' || document.visibilityState === 'visible';
 
       if (isFreshDesktopState(state)) {
         setIsPaired(true);
         setConnectionStatus('connected');
         setIsReconnecting(false);
         setReconnectAttempts(0);
-        stalePresenceTimeoutRef.current = setTimeout(markDesktopOffline, DESKTOP_HEARTBEAT_STALE_MS);
+        
+        if (isVisible) {
+          stalePresenceTimeoutRef.current = setTimeout(markDesktopOffline, DESKTOP_HEARTBEAT_STALE_MS);
+        }
       } else {
-        // If we were previously connected, trigger automatic reconnection sequence
-        markDesktopOffline();
+        // If state is not fresh, only trigger offline/standby transition if visible AND we are past the grace period
+        if (isVisible && Date.now() > gracePeriodUntilRef.current) {
+          markDesktopOffline();
+        }
       }
     });
+
+    // Visibility change listener to handle phone sleep/wake
+    const onVisibilityChange = () => {
+      if (typeof document === 'undefined') return;
+      
+      if (document.visibilityState === 'visible') {
+        logger.info('[MobileRemote] App regained visibility. Refreshing connection state...');
+        if (stalePresenceTimeoutRef.current) {
+          clearTimeout(stalePresenceTimeoutRef.current);
+          stalePresenceTimeoutRef.current = null;
+        }
+        
+        setIsReconnecting(false);
+        setReconnectAttempts(0);
+        
+        // Set the grace period for 15 seconds
+        gracePeriodUntilRef.current = Date.now() + 15000;
+        
+        // Wait 15 seconds for Firestore sync before checking presence
+        stalePresenceTimeoutRef.current = setTimeout(() => {
+          logger.info('[MobileRemote] Delayed visibility check running...');
+          if (!isFreshDesktopState(desktopStateRef.current)) {
+            markDesktopOffline();
+          }
+        }, 15000);
+      } else {
+        if (stalePresenceTimeoutRef.current) {
+          clearTimeout(stalePresenceTimeoutRef.current);
+          stalePresenceTimeoutRef.current = null;
+        }
+      }
+    };
+
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', onVisibilityChange);
+    }
 
     return () => {
       unsub();
       if (stalePresenceTimeoutRef.current) {
         clearTimeout(stalePresenceTimeoutRef.current);
         stalePresenceTimeoutRef.current = null;
+      }
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', onVisibilityChange);
       }
     };
   }, [isAuth]);
@@ -378,6 +501,7 @@ export default function MobileRemote() {
     if (connectionStatus === 'pairing' && !isReconnecting) {
       pairingTimeoutRef.current = setTimeout(() => {
         setConnectionStatus('idle');
+        setIsPaired(false);
         logger.info('[MobileRemote] Pairing timeout — desktop not found, falling back to idle');
       }, 10_000);
     } else {
@@ -420,6 +544,10 @@ export default function MobileRemote() {
   const handleManualRetry = () => {
     triggerHaptic(50);
     logger.info('[MobileRemote] Manual reconnect triggered by user');
+    if (stalePresenceTimeoutRef.current) {
+      clearTimeout(stalePresenceTimeoutRef.current);
+      stalePresenceTimeoutRef.current = null;
+    }
     setReconnectAttempts(1);
     setIsReconnecting(true);
     setConnectionStatus('pairing');
@@ -470,37 +598,33 @@ export default function MobileRemote() {
       case 'home':
         return (
           <Suspense fallback={<TabFallback />}>
-            <div className="space-y-6">
-              <StatusDashboard connectionStatus={connectionStatus} isPaired={isPaired} />
-              <div className="pt-2 border-t border-white/5">
-                <TransportBar onSendCommand={sendCommand} isPaired={isPaired} />
-              </div>
+            <div className="space-y-6 pt-4">
+              <StatusDashboard connectionStatus={connectionStatus} isPaired={isPaired} onTabChange={setActiveTab} />
             </div>
           </Suspense>
         );
-      case 'control':
+      case 'capture':
         return (
           <Suspense fallback={<TabFallback />}>
-            <CommandPad onSendCommand={sendCommand} isPaired={isPaired} />
+            <QuickCaptureView isPaired={isPaired} />
           </Suspense>
         );
-      case 'studio':
+      case 'boardroom':
         return (
           <Suspense fallback={<TabFallback />}>
-            <div className="flex flex-col h-full flex-1 min-h-0">
-              <div className="flex-none mb-2">
-                <GenerationMonitor />
-              </div>
-              <div className="flex-1 min-h-0 flex flex-col">
-                <AgentChat onSendCommand={sendCommand} isPaired={isPaired} />
-              </div>
-            </div>
+            <AgentChat onSendCommand={sendCommand} isPaired={isPaired} />
           </Suspense>
         );
-      case 'review':
+      case 'stream':
         return (
           <Suspense fallback={<TabFallback />}>
-            <ApprovalQueue onSendCommand={sendCommand} isPaired={isPaired} />
+            <StreamView />
+          </Suspense>
+        );
+      case 'settings':
+        return (
+          <Suspense fallback={<TabFallback />}>
+            <SettingsView desktopState={desktopState} isPaired={isPaired} />
           </Suspense>
         );
       default:
@@ -542,46 +666,63 @@ export default function MobileRemote() {
           </motion.div>
 
           <div className="flex items-center gap-3">
+            {isPaired && auth.currentUser && (
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={() => {
+                  triggerHaptic(50);
+                  setShowPairingModal(true);
+                }}
+                className="flex items-center justify-center p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white cursor-pointer"
+                title="Show Pairing Code"
+              >
+                <QrCode className="w-4 h-4 text-blue-400" />
+              </motion.button>
+            )}
             <AnimatePresence mode="wait">
-              {isPaired && connectionStatus === 'connected' ? (
-                <motion.div 
-                  key="connected"
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-500/10 border border-green-500/20 shadow-[0_0_15px_rgba(34,197,94,0.1)]"
-                >
-                  <div className="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.6)] animate-pulse" />
-                  <span className="text-[10px] font-bold text-green-400 uppercase tracking-[0.15em]">
-                    Active
-                  </span>
-                </motion.div>
-              ) : isReconnecting ? (
-                <motion.div 
-                  key="reconnecting"
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  className="flex items-center gap-2 px-3.5 py-2 rounded-full bg-amber-500/10 border border-amber-500/20 shadow-[0_0_12px_rgba(245,158,11,0.15)]"
-                >
-                  <RefreshCw className="w-3.5 h-3.5 text-amber-400 animate-spin" />
-                  <span className="text-[10px] font-black text-amber-400 uppercase tracking-[0.15em]">
-                    Retry {reconnectAttempts}/{maxReconnectAttempts}
-                  </span>
-                </motion.div>
-              ) : connectionStatus === 'pairing' ? (
-                <motion.div 
-                  key="pairing"
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20"
-                >
-                  <div className="w-3 h-3 rounded-full border-2 border-amber-400 border-t-transparent animate-spin" />
-                  <span className="text-[10px] font-bold text-amber-400 uppercase tracking-[0.15em]">
-                    Linking
-                  </span>
-                </motion.div>
+              {isPaired ? (
+                connectionStatus === 'connected' ? (
+                  desktopState?.sleepMode ? (
+                    <motion.div
+                      key="sleeping"
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 shadow-[0_0_15px_rgba(245,158,11,0.1)]"
+                    >
+                      <div className="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.6)]" />
+                      <span className="text-[10px] font-bold text-amber-400 uppercase tracking-[0.15em]">
+                        Sleeping
+                      </span>
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="connected"
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-500/10 border border-green-500/20 shadow-[0_0_15px_rgba(34,197,94,0.1)]"
+                    >
+                      <div className="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.6)] animate-pulse" />
+                      <span className="text-[10px] font-bold text-green-400 uppercase tracking-[0.15em]">
+                        Active
+                      </span>
+                    </motion.div>
+                  )
+                ) : (
+                  <motion.div
+                    key="standby"
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-500/10 border border-zinc-500/20"
+                  >
+                    <div className="w-2 h-2 rounded-full bg-zinc-500 animate-pulse" />
+                    <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-[0.15em]">
+                      Standby
+                    </span>
+                  </motion.div>
+                )
               ) : (
                 <motion.button
                   key="idle"

@@ -1,0 +1,6 @@
+const { GoogleGenAI } = require('@google/genai');
+const ai = new GoogleGenAI({ vertexai: { project: 'indii-music-founder', location: 'us-central1' } });
+ai.models.generateContent({
+    model: 'endpoints/8440177260006211584',
+    contents: 'hello'
+}).catch(console.error);

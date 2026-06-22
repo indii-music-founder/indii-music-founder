@@ -27,12 +27,9 @@ Firebase API keys are **identifiers** (not secrets). They restrict which APIs th
 
 ### Steps:
 1. Go to [Google Cloud Console → APIs & Services → Credentials](https://console.cloud.google.com/apis/credentials)
-2. Create a new API key restricted to: `Generative Language API` + `Vertex AI API`
-3. Update `VITE_API_KEY` in:
-   - Firebase Hosting environment variables
-   - GitHub Actions secrets: `VITE_API_KEY`
-   - Local `.env`
-4. Also update `VITE_VERTEX_PROJECT_ID` if the project changes
+2. Create a new API key restricted to: `Generative Language API`
+3. Update `GEMINI_API_KEY` in Secret Manager / Firebase Functions secrets.
+4. Also update `VERTEX_PROJECT_ID` if the Vertex project changes.
 5. Deploy: `npm run deploy`
 6. Verify: Open app, run an AI generation in Creative Studio
 7. Delete old key from GCP console after 1h monitoring

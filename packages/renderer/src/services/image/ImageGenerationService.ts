@@ -37,6 +37,10 @@ export interface ImageGenerationOptions {
     /** Person generation policy: ALLOW_ALL | ALLOW_ADULT | ALLOW_NONE */
     personGeneration?: string;
     sourceImages?: { mimeType: string; data: string }[]; // Reference images for composition
+    referenceImages?: {
+        image: { uri?: string; imageBytes?: string; mimeType?: string };
+        referenceType: 'asset' | 'person' | 'face' | 'style' | 'subject'; // Allow likeness tuning for Face Swap
+    }[];
     projectContext?: string;
 
     // Distributor-aware options
@@ -374,6 +378,7 @@ export class ImageGenerationService {
                 useGrounding: options.useGrounding,
                 // Person generation safety filter
                 personGeneration: options.personGeneration,
+                referenceImages: options.referenceImages,
             };
 
             // Clean undefined values to reduce payload size
@@ -582,8 +587,9 @@ export class ImageGenerationService {
 
     async remixImage(options: RemixOptions): Promise<{ url: string } | null> {
         return withServiceError('ImageGeneration', 'remixImage', async () => {
-            // The legacy editImageDirectly export routes to the secured backend.
-            const { editImageDirectly } = await import('@/services/intelligence/generators/DirectImageEditor');
+            const { functions } = await import('@/services/firebase');
+            const { httpsCallable } = await import('firebase/functions');
+            const editImageFn = httpsCallable(functions, 'editImage');
 
             logger.info('[ImageGen] remixImage: using secured backend path', {
                 hasContent: !!options.contentImage,
@@ -591,7 +597,7 @@ export class ImageGenerationService {
                 promptSnippet: (options.prompt || '').substring(0, 60),
             });
 
-            const result = await editImageDirectly({
+            const result = await editImageFn({
                 image: {
                     mimeType: options.contentImage.mimeType,
                     data: options.contentImage.data,
@@ -600,14 +606,14 @@ export class ImageGenerationService {
                     mimeType: options.styleImage.mimeType,
                     data: options.styleImage.data,
                 } : undefined,
-                prompt: options.prompt || 'Create a cinematic remix that preserves the subject and composition while enhancing the mood and atmosphere.',
+                prompt: options.prompt || 'Remix this image',
+                model: 'pro'
             });
 
-            if (result) {
-                return { url: result.url };
-            }
-
-            return null;
+            const data = result.data as { id: string; url: string; prompt: string } | null;
+            if (!data || !data.url) return null;
+            
+            return { url: data.url };
         });
     }
 

@@ -8,7 +8,7 @@ import {
     type GenerateImageRequest,
 } from "./image";
 
-import { geminiApiKey, getGeminiApiKey } from "../config/secrets";
+import { getVertexAIClient } from "./vertexClient";
 import { enforceRateLimit, RATE_LIMITS } from "./rateLimit";
 
 // ============================================================================
@@ -95,33 +95,10 @@ export class GeminiImageService {
 
     private getClient(): GoogleGenAI {
         if (!this.client) {
-            const isTest = process.env.NODE_ENV === 'test' || process.env.VITEST === 'true';
-            const projectId = process.env.VITE_VERTEX_PROJECT_ID || process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
-
-            // Retrieve API key if configured (Production secrets or local .env)
-            let apiKey: string | null = null;
-            try {
-                apiKey = getGeminiApiKey();
-            } catch (_e) {
-                // Ignore key errors if we can fallback to Vertex AI
-            }
-
-            if (apiKey && !apiKey.includes("PLACEHOLDER")) {
-                console.log(`[GeminiImageService] Initializing with Google AI Studio API KEY (API_KEY: ${apiKey.substring(0, 4)}...)`);
-                this.client = new GoogleGenAI({ apiKey });
-            } else if (!isTest && projectId) {
-                // Production environment fallback: Use Vertex AI with ADC
-                const location = process.env.VERTEX_LOCATION || 'us-central1';
-                console.log(`[GeminiImageService] Initializing with VERTEX AI (Project: ${projectId}, Location: ${location})`);
-                this.client = new GoogleGenAI({
-                    vertexai: true,
-                    project: projectId,
-                    location: location
-                });
-            } else {
-                console.error("[GeminiImageService] Invalid or missing GEMINI_API_KEY. Operations will fail.");
-                throw new functions.https.HttpsError("failed-precondition", "Gemini API Key is missing or invalid.");
-            }
+            // Always use Vertex AI + ADC (no API key required)
+            const location = process.env.VERTEX_IMAGE_LOCATION || process.env.VERTEX_MEDIA_LOCATION || 'us';
+            this.client = getVertexAIClient(undefined, location);
+            console.log(`[GeminiImageService] Initialized with Vertex AI (ADC auth)`);
         }
         return this.client;
     }
@@ -129,7 +106,7 @@ export class GeminiImageService {
     /**
      * Resolves a NanoBananaTier to its corresponding model ID string.
      * @param tier - The tier to resolve.
-     * @returns The model ID string (e.g., 'gemini-3.1-flash-image-preview').
+     * @returns The model ID string (e.g., 'gemini-3.1-flash-image').
      */
     private resolveModelId(tier: NanoBananaTier | undefined | null): string {
         switch (tier) {
@@ -770,7 +747,6 @@ export const generateImageV3Fn = () => functions
     .region("us-central1")
     .runWith({
         enforceAppCheck: true,
-        secrets: [geminiApiKey],
         timeoutSeconds: 120,
         // Bumped to 1GB: Pro 4K generation + long-context history needs parity with editImageFn
         memory: "1GB"
@@ -807,7 +783,6 @@ export const editImageFn = () => functions
     .region("us-central1")
     .runWith({
         enforceAppCheck: true,
-        secrets: [geminiApiKey],
         timeoutSeconds: 120,
         memory: "1GB" // Bumped from 512MB — editing with references + 4K can exceed 512MB
     })

@@ -90,17 +90,15 @@ describe('Request Batching QA', () => {
     });
 
     describe('FirebaseIntelligenceService.batchEmbedContents (Polyfill)', () => {
-        it('should use concurrent embedContent requests when App Check is configured', async () => {
+        it('should fail closed until a backend embedding route exists', async () => {
             mockEmbedContent.mockResolvedValue({ embedding: { values: [1, 2, 3] } });
 
-            const results = await service.batchEmbedContents([
+            await expect(service.batchEmbedContents([
                 { role: 'user', parts: [{ text: '1' }] },
                 { role: 'user', parts: [{ text: '2' }] }
-            ]);
+            ])).rejects.toMatchObject({ code: 'UNAUTHORIZED' });
 
-            expect(mockEmbedContent).toHaveBeenCalledTimes(2);
-            expect(results).toHaveLength(2);
-            expect(results[0]).toEqual([1, 2, 3]);
+            expect(mockEmbedContent).not.toHaveBeenCalled();
         });
     });
 

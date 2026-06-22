@@ -6,7 +6,7 @@
  * 
  * Nano Banana Model Tiers:
  *   LEGACY  → gemini-2.5-flash-image       (OG, high-volume / low-latency)
- *   FAST    → gemini-3.1-flash-image-preview (Nano Banana 2, speed + quality)
+ *   FAST    → gemini-3.1-flash-image (Nano Banana 2, speed + quality)
  *   PRO     → gemini-3-pro-image-preview     (Nano Banana Pro, highest fidelity)
  */
 
@@ -15,7 +15,7 @@ export const FUNCTION_INTELLIGENCE_MODELS = {
         /** Nano Banana Pro — highest quality, 4K, advanced thinking */
         GENERATION: 'gemini-3-pro-image-preview',
         /** Nano Banana 2 — fast + quality, grounding, 4K */
-        FAST: 'gemini-3.1-flash-image-preview',
+        FAST: 'gemini-3.1-flash-image',
         /** Nano Banana OG — legacy, high-volume / low-latency */
         LEGACY: 'gemini-2.5-flash-image',
     },
@@ -58,7 +58,7 @@ export const NANO_BANANA_CAPABILITIES = {
         supportsInterleaved: true,
         defaultThinking: 'always_on',
     },
-    'gemini-3.1-flash-image-preview': {
+    'gemini-3.1-flash-image': {
         tier: 'fast' as const,
         displayName: 'Nano Banana 2',
         maxResolution: '4K',

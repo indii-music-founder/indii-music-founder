@@ -55,7 +55,7 @@ export class AuthService {
             const validIssuers = [
                 'https://accounts.google.com',
                 'accounts.google.com',
-                'https://securetoken.google.com/indii-v-1-1',
+                'https://securetoken.google.com/indii-music-founder',
             ];
 
             const isGoogleIssuer = validIssuers.some(iss => payload.iss === iss || payload.iss.includes('securetoken.google.com'));

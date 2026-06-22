@@ -173,6 +173,7 @@ const createWindow = async () => {
             safeDialogsMessage: 'Stop seeing alerts from this page',
             webSecurity: !isDev, // Intentionally disabled in dev only — needed for Vite CORS. Always true in production builds.
             webviewTag: false,
+            backgroundThrottling: false, // Ensures remote dispatch queue stays active when app is hidden to tray
         },
         autoHideMenuBar: true,
         backgroundColor: '#000000',
@@ -588,6 +589,26 @@ if (!gotTheLock) {
         // Send initial state on load
         ipcMain.handle('power:get-state', () => {
             return powerMonitor.isOnBatteryPower() ? 'battery' : 'ac';
+        });
+
+        // Window control (Sleep/Wake) — the renderer drives sleep mode by hiding
+        // the window to the tray and waking it back. The process keeps running
+        // (backgroundThrottling:false) so the relay listener stays alive while hidden.
+        ipcMain.handle('window:show', () => {
+            if (!mainWindow) return;
+            mainWindow.show();
+            mainWindow.moveTop();
+            if (process.platform === 'darwin') {
+                app.dock?.show();
+                app.focus({ steal: true });
+            }
+        });
+        ipcMain.handle('window:hide', () => {
+            if (!mainWindow) return;
+            mainWindow.hide();
+            if (process.platform === 'darwin') {
+                app.dock?.hide();
+            }
         });
 
         // Auto-updater IPC handlers — registered unconditionally so the renderer

@@ -52,6 +52,16 @@ function isGooglePrepaymentExhausted(text: string): boolean {
         || (lower.includes('resource_exhausted') && lower.includes('prepay'));
 }
 
+function isGenerationBackendUnavailable(text: string): boolean {
+    const lower = text.toLowerCase();
+    return lower.includes('err_connection_refused')
+        || lower.includes('econnrefused')
+        || lower.includes('connection refused')
+        || lower.includes('127.0.0.1:5001')
+        || lower.includes('localhost:5001')
+        || (lower.includes('functions/internal') && lower.includes('internal') && lower.includes('unavailable'));
+}
+
 function detailsMessage(details: unknown): string | undefined {
     if (!details) return undefined;
     if (typeof details === 'string') return details;
@@ -78,6 +88,13 @@ function generationErrorMessage(error: unknown): { code?: string; message: strin
 
     if (isGooglePrepaymentExhausted(combinedErrorText)) {
         return { code: 'resource-exhausted', message: GOOGLE_PREPAYMENT_EXHAUSTED_MESSAGE };
+    }
+
+    if (isGenerationBackendUnavailable(combinedErrorText)) {
+        return {
+            code: 'unavailable',
+            message: 'Image generation backend unavailable. Start the Firebase Functions emulator on port 5001.'
+        };
     }
 
     const usableRawMessage = rawMessage && rawMessage !== code && rawMessage !== '[object Object]' ? rawMessage : undefined;

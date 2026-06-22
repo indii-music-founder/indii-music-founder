@@ -29,12 +29,13 @@ for f in $(git diff --name-only main..HEAD); do echo "=== $f ==="; git log --one
 - *Fix:* If you revert lines from a recent `fix` or PR, STOP. Justify in the commit or undo the revert.
 
 ### Phase 4: Anti-Pattern Scan
-Check the branch diff against the Seven Anti-Patterns:
+Check the branch diff against the Nine Anti-Patterns (`docs/PLATINUM_QUALITY_STANDARDS.md`):
 1. **Duplicate Comments:** Scan `.ts`/`.tsx` for adjacent identical lines.
 2. **Prompt Bloat:** Check LLM template literals for excessive indentation.
 3. **Routing Typos:** Cross-check `agents/*/prompt.md` changes against `ls agents/`.
 4. **Recovery Deletion:** Justify any removed `try/catch`, `reload()`, or `fallback`.
 5. **Speculative TODOs:** Remove or implement `+ // TODO` additions.
+6. **Hardcoded Infra IDs (Frontend):** Run `grep -rnE "endpoints/[0-9]{6,}|locations/(us|us-central1|global)/|projects/[0-9]{6,}" packages/renderer/src`. Any hit outside a test fixture is a NO-GO — infra-minted IDs (Vertex endpoints, project numbers, regions, tuning-job IDs) must come from a generated/synced config surface, never hand-typed into frontend source. See Anti-Pattern #9.
 
 ### Phase 5: Build Gate
 Run sequentially. Stop on first failure.

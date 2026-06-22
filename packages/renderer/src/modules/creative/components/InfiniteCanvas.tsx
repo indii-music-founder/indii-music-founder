@@ -792,6 +792,24 @@ export default function InfiniteCanvas() {
         toast.success("Layers flattened successfully!");
     };
 
+    const handleZoomIn = () => {
+        scaleRef.current = Math.min(scaleRef.current * 1.2, 5);
+        requestDraw();
+    };
+
+    const handleZoomOut = () => {
+        scaleRef.current = Math.max(scaleRef.current / 1.2, 0.1);
+        requestDraw();
+    };
+
+    const handleDetectObjects = () => {
+        toast.info("Coming soon: Intelligent object and face detection in canvas.");
+    };
+
+    const handleToggleLayers = () => {
+        toast.info("Coming soon: Advanced layer composition management.");
+    };
+
     const handleDrop = async (e: React.DragEvent) => {
         e.preventDefault();
         const state = useStore.getState();
@@ -1073,6 +1091,10 @@ export default function InfiniteCanvas() {
                 removeCanvasImage={removeCanvasImage}
                 onFlatten={handleFlatten}
                 onGenerateVariations={handleGenerateVariations}
+                onZoomIn={handleZoomIn}
+                onZoomOut={handleZoomOut}
+                onDetectObjects={handleDetectObjects}
+                onToggleLayers={handleToggleLayers}
             />
 
             {promptOverlay && (

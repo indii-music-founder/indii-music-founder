@@ -158,13 +158,13 @@ export class AdAutomationService {
     }
 
     /**
-     * Executes the Meta Andromeda Pipeline: deploys 15 creative variations 
+     * Executes the Meta PLP Pipeline: deploys 15 creative variations 
      * simultaneously for robust algorithmic A/B testing.
      */
-    async deployAndromedaPipeline(creatives: AdCreative[], config: AdBudgetConfig): Promise<string[]> {
-        logger.info(`[AdAutomation] Deploying Meta Andromeda Pipeline with ${creatives.length} variations...`);
+    async deployPLPPipeline(creatives: AdCreative[], config: AdBudgetConfig): Promise<string[]> {
+        logger.info(`[AdAutomation] Deploying Meta PLP Pipeline with ${creatives.length} variations...`);
 
-        // Enforce 15 variations as per Andromeda specification
+        // Enforce 15 variations as per PLP specification
         if (creatives.length > 15) creatives.length = 15;
 
         const campaignId = await this.createCampaign(config);
@@ -176,7 +176,7 @@ export class AdAutomationService {
             adIds.push(adId);
         }
 
-        logger.info(`[AdAutomation] Andromeda Pipeline deployed successfully. Ad IDs: ${adIds.join(', ')}`);
+        logger.info(`[AdAutomation] PLP Pipeline deployed successfully. Ad IDs: ${adIds.join(', ')}`);
         return adIds;
     }
 

@@ -20,6 +20,9 @@ export const ALLOWED_COMMAND_PREFIXES = [
   '[GENERATE_IMAGE]',
   '[NAVIGATE]',
   '[AGENT_ACTION]',
+  '[DAW_CONTROL]',
+  '[MEDIA_PLAYBACK]',
+  '[WAKE]',
 ] as const;
 
 export type AllowedCommandPrefix = (typeof ALLOWED_COMMAND_PREFIXES)[number];
@@ -29,6 +32,9 @@ export type ParsedRemoteCommand =
   | { kind: 'navigate'; module: ModuleId }
   | { kind: 'generate_image'; prompt: string }
   | { kind: 'agent_action'; action: string }
+  | { kind: 'daw_control'; action: string }
+  | { kind: 'media_playback'; action: string }
+  | { kind: 'wake' }
   | { kind: 'rejected'; reason: string };
 
 /**
@@ -76,6 +82,17 @@ export function parseRemoteCommand(rawText: string | undefined | null): ParsedRe
     case '[AGENT_ACTION]': {
       if (!payload) return { kind: 'rejected', reason: 'agent action is empty' };
       return { kind: 'agent_action', action: payload };
+    }
+    case '[DAW_CONTROL]': {
+      if (!payload) return { kind: 'rejected', reason: 'DAW control action is empty' };
+      return { kind: 'daw_control', action: payload };
+    }
+    case '[MEDIA_PLAYBACK]': {
+      if (!payload) return { kind: 'rejected', reason: 'media playback action is empty' };
+      return { kind: 'media_playback', action: payload };
+    }
+    case '[WAKE]': {
+      return { kind: 'wake' };
     }
     default:
       // Exhaustiveness guard — unreachable while ALLOWED_COMMAND_PREFIXES is covered.

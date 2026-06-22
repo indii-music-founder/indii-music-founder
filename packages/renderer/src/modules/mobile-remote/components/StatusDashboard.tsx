@@ -1,219 +1,164 @@
 /**
- * StatusDashboard — At-a-glance system status for the phone control interface.
- * Shows current module, connection state, active agent, running processes, and quick stats.
+ * StatusDashboard — Replaced by the Basic Home Actions Dashboard
+ * Shows quick entry buttons for typical mobile tasks.
  */
 
-import { useShallow } from 'zustand/react/shallow';
-import { useStore } from '@/core/store';
-import { Wifi, WifiOff, Cpu, Activity, Layers, Clock, Zap, AlertTriangle, RefreshCw, CheckCircle, type LucideIcon } from 'lucide-react';
+import { Mic, FileText, ShoppingBag, Receipt, PenTool, LayoutDashboard } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { triggerHaptic } from '../MobileRemote';
 
 interface StatusDashboardProps {
     connectionStatus: 'idle' | 'pairing' | 'connected' | 'error';
     isPaired: boolean;
+    onTabChange?: (tab: 'home' | 'capture' | 'boardroom' | 'stream' | 'settings') => void;
 }
 
-function StatusCard({ icon: Icon, label, value, accent = false, delay = 0 }: {
-    icon: LucideIcon;
+function ActionButton({ icon: Icon, label, description, delay = 0, onClick, disabled }: {
+    icon: React.ElementType;
     label: string;
-    value: string;
-    accent?: boolean;
+    description: string;
     delay?: number;
+    onClick?: () => void;
+    disabled?: boolean;
 }) {
     return (
-        <motion.div 
+        <motion.button 
+            whileTap={!disabled ? { scale: 0.95 } : undefined}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay, duration: 0.4 }}
-            className="group relative overflow-hidden flex flex-col gap-3 p-4.5 rounded-[24px] bg-white/[0.03] border border-white/5 hover:bg-white/[0.05] hover:border-white/10 transition-all duration-300 shadow-md"
-            style={{ minHeight: '100px', minWidth: '44px' }}
+            onClick={() => {
+                if (!disabled && onClick) {
+                    triggerHaptic(40);
+                    onClick();
+                }
+            }}
+            disabled={disabled}
+            className={cn(
+                "group relative overflow-hidden flex flex-col gap-3 p-5 rounded-[24px] border transition-all duration-300 text-left",
+                disabled 
+                    ? "bg-[#1c1c1e] border-white/5 opacity-50 cursor-not-allowed" 
+                    : "bg-[#030303] border-white/10 hover:border-[#2E2EFE]/50 shadow-[0_4px_20px_rgba(0,0,0,0.4)] hover:shadow-[0_4px_20px_rgba(46,46,254,0.1)] cursor-pointer"
+            )}
         >
-            {/* Background Accent Gradient */}
             <div className={cn(
-                "absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-500 pointer-events-none",
-                accent ? "bg-gradient-to-br from-blue-500 to-indigo-600" : "bg-white"
-            )} />
-
-            <div className="flex items-center justify-between">
-                <div className={cn(
-                    "w-10 h-10 rounded-[14px] flex items-center justify-center transition-all duration-300 border border-white/5",
-                    accent 
-                        ? "bg-blue-500/10 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.15)] group-hover:scale-110" 
-                        : "bg-white/5 text-[#8e8e93] group-hover:text-white"
-                )}>
-                    <Icon className="w-5 h-5" />
-                </div>
-                
-                {accent && (
-                    <div className="flex gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
-                        <span className="w-1.5 h-1.5 rounded-full bg-blue-500/30 animate-pulse delay-75" />
-                    </div>
-                )}
+                "w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300",
+                disabled ? "bg-white/5 text-[#8e8e93]" : "bg-[#2E2EFE]/10 text-[#2E2EFE] group-hover:scale-110"
+            )}>
+                <Icon className="w-5 h-5" />
             </div>
 
-            <div className="flex-1 min-w-0 mt-1">
-                <p className="text-[10px] uppercase tracking-[0.15em] text-[#8e8e93] font-bold mb-1">{label}</p>
-                <p className={cn(
-                    "text-sm font-black truncate tracking-tight uppercase",
-                    accent ? "text-white" : "text-[#d1d1d6]"
-                )}>{value}</p>
+            <div className="flex-1 min-w-0 mt-2">
+                <p className="text-sm font-bold text-[#F0F0F0] tracking-tight">{label}</p>
+                <p className="text-[10px] text-[#8e8e93] font-medium leading-tight mt-1">{description}</p>
             </div>
-        </motion.div>
+        </motion.button>
     );
 }
 
-export default function StatusDashboard({ connectionStatus, isPaired }: StatusDashboardProps) {
-    const { currentModule, activeSessionId, agentHistory, isOffline } = useStore(
-        useShallow(state => ({
-            currentModule: state.currentModule,
-            activeSessionId: state.activeSessionId,
-            agentHistory: state.agentHistory,
-            isOffline: state.isOffline,
-        }))
-    );
-
-    const formatModuleName = (id: string) => {
-        return id.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-    };
-
-    // Derived network parameters for visual feedback
-    const signalQuality = isPaired ? 'Excellent' : 'Offline';
-    const latency = isPaired ? '1.2ms' : '---';
-
+export default function StatusDashboard({ connectionStatus, isPaired, onTabChange }: StatusDashboardProps) {
     return (
-        <div className="space-y-4 pb-8">
-            {/* Premium Connection Status Banner */}
-            <motion.div 
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className={cn(
-                    "flex items-center gap-3.5 px-5 py-4 rounded-[24px] text-xs font-black uppercase tracking-widest backdrop-blur-xl border transition-all duration-300",
-                    isPaired
-                        ? "bg-green-500/10 text-green-400 border-green-500/20 shadow-[0_4px_20px_rgba(34,197,94,0.06)]"
-                        : connectionStatus === 'pairing'
-                            ? "bg-amber-500/10 text-amber-400 border-amber-500/20 shadow-[0_4px_20px_rgba(245,158,11,0.06)] animate-pulse"
-                            : connectionStatus === 'error'
-                                ? "bg-red-500/10 text-red-400 border-red-500/20 shadow-[0_4px_20px_rgba(239,68,68,0.06)]"
-                                : "bg-white/[0.03] text-[#8e8e93] border-white/5"
-                )}
-                style={{ minHeight: '52px' }}
-            >
-                {isPaired ? (
-                    <>
-                        <div className="relative flex items-center justify-center">
-                            <Wifi className="w-5 h-5" />
-                            <motion.div 
-                                initial={{ scale: 0.8, opacity: 0 }}
-                                animate={{ scale: 1.6, opacity: 0 }}
-                                transition={{ repeat: Infinity, duration: 2 }}
-                                className="absolute inset-0 bg-green-400 rounded-full"
-                            />
-                        </div>
-                        <div className="flex-1">
-                            <span className="block font-black text-green-400">STUDIO SYNCED</span>
-                            <span className="block text-[9px] text-green-400/60 lowercase mt-0.5 tracking-normal font-medium">real-time cloud relay active</span>
-                        </div>
-                        <CheckCircle className="w-4 h-4 text-green-400" />
-                    </>
-                ) : connectionStatus === 'pairing' ? (
-                    <>
-                        <RefreshCw className="w-5 h-5 text-amber-400 animate-spin" />
-                        <div className="flex-1">
-                            <span className="block font-black text-amber-400">HANDSHAKE INIT</span>
-                            <span className="block text-[9px] text-amber-400/60 lowercase mt-0.5 tracking-normal font-medium">awaiting secure channel approval</span>
-                        </div>
-                    </>
-                ) : isOffline ? (
-                    <>
-                        <WifiOff className="w-5 h-5 opacity-60 text-red-400" />
-                        <div className="flex-1">
-                            <span className="block font-black text-red-400">STUDIO OFFLINE</span>
-                            <span className="block text-[9px] text-red-400/60 lowercase mt-0.5 tracking-normal font-medium">could not reach desktop daemon</span>
-                        </div>
-                        <AlertTriangle className="w-4 h-4 text-red-400/60" />
-                    </>
-                ) : (
-                    <>
-                        <Activity className="w-5 h-5 opacity-50" />
-                        <div className="flex-1">
-                            <span className="block font-black text-[#8e8e93]">AWAITING PAIR</span>
-                            <span className="block text-[9px] text-[#636366] lowercase mt-0.5 tracking-normal font-medium">pairing modal closed</span>
-                        </div>
-                    </>
-                )}
-            </motion.div>
+        <div className="space-y-6 pb-8">
+            <div className="px-2 pt-2">
+                <h2 className="text-2xl font-bold text-[#F0F0F0] tracking-tight mb-1">Welcome Back</h2>
+                <p className="text-sm text-[#a1a1a6] font-medium">Ready to dispatch tasks to the studio.</p>
+            </div>
 
-            {/* Status grid containing exactly 4 metrics */}
-            <div className="grid grid-cols-2 gap-3.5">
-                <StatusCard
-                    icon={Layers}
-                    label="Workspace"
-                    value={formatModuleName(currentModule ?? 'dashboard')}
-                    accent
+            <div className="grid grid-cols-2 gap-4">
+                <ActionButton
+                    icon={Mic}
+                    label="Live Moment"
+                    description="Capture what just happened"
                     delay={0.1}
+                    disabled={!isPaired}
+                    onClick={() => onTabChange?.('capture')}
                 />
-                <StatusCard
-                    icon={Cpu}
-                    label="Session ID"
-                    value={activeSessionId ? activeSessionId.slice(0, 8).toUpperCase() : 'Inactive'}
+                <ActionButton
+                    icon={Receipt}
+                    label="Log Receipt"
+                    description="Snap a photo of an expense"
                     delay={0.2}
+                    disabled={!isPaired}
+                    onClick={() => onTabChange?.('capture')}
                 />
-                <StatusCard
-                    icon={Zap}
-                    label="Queue"
-                    value={`${agentHistory?.length ?? 0} Messages`}
+                <ActionButton
+                    icon={ShoppingBag}
+                    label="Order Merch"
+                    description="Request stock via agent"
                     delay={0.3}
+                    disabled={!isPaired}
+                    onClick={() => onTabChange?.('capture')}
                 />
-                <StatusCard
-                    icon={Clock}
-                    label="Relay Mode"
-                    value={isPaired ? 'Real-time' : 'Polling'}
+                <ActionButton
+                    icon={PenTool}
+                    label="Contract Sign"
+                    description="Review pending legal tasks"
                     delay={0.4}
+                    disabled={!isPaired}
+                    onClick={() => onTabChange?.('home')} // placeholder
                 />
             </div>
 
-            {/* Telemetry/Ping visual gauge section */}
+            <motion.button
+                whileTap={isPaired ? { scale: 0.98 } : undefined}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.55, duration: 0.4 }}
+                onClick={() => {
+                    if (!isPaired) return;
+                    triggerHaptic(40);
+                    onTabChange?.('boardroom');
+                }}
+                disabled={!isPaired}
+                className={cn(
+                    "group relative overflow-hidden flex w-full items-center justify-between gap-4 p-5 rounded-[24px] border transition-all duration-300 text-left mt-4",
+                    isPaired
+                        ? "bg-gradient-to-r from-blue-500/12 via-[#030303] to-indigo-500/12 border-blue-400/20 hover:border-blue-400/40 shadow-[0_8px_30px_rgba(46,46,254,0.08)] cursor-pointer"
+                        : "bg-[#1c1c1e] border-white/5 opacity-50 cursor-not-allowed"
+                )}
+            >
+                <div className="flex items-center gap-4 min-w-0">
+                    <div className={cn(
+                        "w-11 h-11 rounded-2xl flex items-center justify-center transition-all duration-300 shrink-0",
+                        isPaired ? "bg-blue-500/15 text-blue-400" : "bg-white/5 text-[#8e8e93]"
+                    )}>
+                        <LayoutDashboard className="w-5 h-5" />
+                    </div>
+                    <div className="min-w-0">
+                        <p className="text-sm font-bold text-[#F0F0F0] tracking-tight">Talk to Boardroom</p>
+                        <p className="text-[10px] text-[#8e8e93] font-medium leading-tight mt-1">
+                            Open the boardroom thread and message the seated agents directly.
+                        </p>
+                    </div>
+                </div>
+                <span className={cn(
+                    "text-[10px] font-bold uppercase tracking-[0.2em]",
+                    isPaired ? "text-blue-400" : "text-[#636366]"
+                )}>
+                    Open
+                </span>
+            </motion.button>
+
+            {/* Basic Sync Indicator */}
             <motion.div 
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.5 }}
-                className="px-5 py-5 rounded-[24px] bg-gradient-to-br from-white/[0.03] to-transparent border border-white/5 shadow-inner"
+                className="mt-8 px-5 py-4 rounded-[20px] bg-[#1c1c1e] border border-white/5 flex items-center justify-between"
             >
-                <div className="flex items-center justify-between mb-3.5">
-                    <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#636366]">Telemetry Metrics</h4>
-                    <div className="flex gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
-                        <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse delay-150" />
-                    </div>
+                <div className="flex items-center gap-3">
+                    <div className={cn(
+                        "w-2 h-2 rounded-full",
+                        isPaired ? "bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.6)] animate-pulse" : "bg-red-400"
+                    )} />
+                    <span className="text-[11px] font-bold text-[#8e8e93] uppercase tracking-widest">
+                        {isPaired ? 'Secure Cloud Relay Active' : 'Studio Disconnected'}
+                    </span>
                 </div>
-
-                <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-bold text-white/50 uppercase tracking-wider">Sync Latency</span>
-                        <span className="text-[11px] font-mono font-bold text-white/70">{latency}</span>
-                    </div>
-
-                    <div className="flex items-center gap-4">
-                        <div className="flex-1 h-2 rounded-full bg-white/5 overflow-hidden border border-white/5">
-                            <motion.div 
-                                initial={{ width: 0 }}
-                                animate={{ width: isPaired ? '100%' : '0%' }}
-                                transition={{ duration: 1.5, ease: "circOut" }}
-                                className="h-full bg-gradient-to-r from-blue-500 to-indigo-600 shadow-[0_0_10px_rgba(59,130,246,0.5)]"
-                            />
-                        </div>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-1 text-[11px]">
-                        <span className="font-bold text-white/50 uppercase tracking-wider">Signal Quality</span>
-                        <span className={cn(
-                            "font-extrabold uppercase",
-                            isPaired ? "text-green-400" : "text-[#8e8e93]"
-                        )}>{signalQuality}</span>
-                    </div>
-                </div>
+                {isPaired && connectionStatus === 'connected' && (
+                    <span className="text-[10px] font-mono font-bold text-green-400">SYNCED</span>
+                )}
             </motion.div>
         </div>
     );

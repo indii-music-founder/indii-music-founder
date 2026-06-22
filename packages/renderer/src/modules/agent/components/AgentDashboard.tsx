@@ -24,6 +24,7 @@ import { PromptArea } from '@/core/components/command-bar/PromptArea';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { useTranslation } from 'react-i18next';
+import { AgentLoopMonitor } from './AgentLoopMonitor';
 
 const InboxTabNew = React.lazy(() => import('./InboxTab'));
 
@@ -131,7 +132,7 @@ const CampaignsTab: React.FC = () => {
 const AgentDashboard: React.FC = () => {
     const { t } = useTranslation();
     // Hooks must be called unconditionally before early returns
-    const [activeTab, setActiveTab] = useState<'scout' | 'campaigns' | 'inbox' | 'browser' | 'chat' | 'tasks'>('scout');
+    const [activeTab, setActiveTab] = useState<'scout' | 'campaigns' | 'inbox' | 'browser' | 'chat' | 'tasks' | 'loops'>('scout');
     const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
     const chatBottomRef = useRef<HTMLDivElement>(null);
     const { agentMessages } = useStore(useShallow(s => ({ agentMessages: s.agentHistory })));
@@ -222,7 +223,7 @@ const AgentDashboard: React.FC = () => {
                     {/* Mobile Tab Strip — visible only on phones */}
                     {isAnyPhone && (
                         <div className="flex items-center gap-2 px-4 py-3 border-b border-slate-800 overflow-x-auto shrink-0 no-scrollbar">
-                            {(['chat', 'tasks', 'campaigns', 'inbox'] as const).map((tab) => (
+                            {(['chat', 'tasks', 'campaigns', 'inbox', 'loops'] as const).map((tab) => (
                                 <button
                                     key={tab}
                                     onClick={() => setActiveTab(tab)}
@@ -392,8 +393,17 @@ const AgentDashboard: React.FC = () => {
                                 <TaskTracker />
                             </div>
                         )}
+                        
+                        {activeTab === 'loops' && (
+                            <div className="absolute inset-0 overflow-y-auto custom-scrollbar p-8 bg-[--background]">
+                                <div className="max-w-4xl mx-auto space-y-6">
+                                    <h1 className="text-2xl font-bold text-white tracking-tight">Autonomous Agent Loops</h1>
+                                    <AgentLoopMonitor />
+                                </div>
+                            </div>
+                        )}
 
-                        {activeTab !== 'scout' && activeTab !== 'browser' && activeTab !== 'chat' && activeTab !== 'tasks' && activeTab !== 'campaigns' && activeTab !== 'inbox' && (
+                        {activeTab !== 'scout' && activeTab !== 'browser' && activeTab !== 'chat' && activeTab !== 'tasks' && activeTab !== 'campaigns' && activeTab !== 'inbox' && activeTab !== 'loops' && (
                             <div className="flex flex-col items-center justify-center h-full text-slate-500 space-y-4">
                                 <div className="p-4 bg-slate-900 rounded-full border border-slate-800">
                                     <Filter size={32} className="opacity-50" />

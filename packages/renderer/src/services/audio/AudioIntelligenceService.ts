@@ -1,7 +1,7 @@
 import { audioAnalysisService } from './AudioAnalysisService';
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { AudioIntelligenceProfile, AudioSemanticData } from './types';
-import { Schema } from 'firebase/ai';
+import type { Schema } from '@/shared/types/ai.dto';
 import { fingerprintService } from './FingerprintService';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { musicLibraryService } from '@/services/music/MusicLibraryService';
@@ -255,7 +255,7 @@ export class AudioIntelligenceService {
      * ARCHITECTURE NOTE (2026-04-18):
      * Previously used the Gemini Files API (resumable upload → poll → delete) via
      * GeminiFileService.uploadFile(). That endpoint
-     * (generativelanguage.googleapis.com/upload/v1beta/files) does NOT return
+     * the browser-incompatible Gemini file upload endpoint does NOT return
      * CORS headers, so every browser-based fetch was blocked with:
      *   "No 'Access-Control-Allow-Origin' header is present"
      *

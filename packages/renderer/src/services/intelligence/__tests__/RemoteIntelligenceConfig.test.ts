@@ -70,6 +70,12 @@ vi.mock('@/config/env', () => ({
 describe('RemoteIntelligenceConfig & Dynamic Switching', () => {
     let service: FirebaseIntelligenceService;
 
+    const latestBackendRequest = () => {
+        const calls = vi.mocked(fetch).mock.calls;
+        const call = [...calls].reverse().find(([url]) => String(url).includes('generateContentStream'));
+        return JSON.parse(call?.[1]?.body as string);
+    };
+
     beforeEach(() => {
         service = new FirebaseIntelligenceService();
         vi.clearAllMocks();
@@ -92,10 +98,7 @@ describe('RemoteIntelligenceConfig & Dynamic Switching', () => {
         // Access private method or infer via mock call
         await service.generateContent('test', APPROVED_MODELS.TEXT_AGENT);
 
-        const { getGenerativeModel } = await import('firebase/ai');
-        expect(getGenerativeModel).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
-            model: APPROVED_MODELS.TEXT_AGENT
-        }));
+        expect(latestBackendRequest().model).toBe(APPROVED_MODELS.TEXT_AGENT);
     });
 
     it('should intercept and replace model ID when override is present', async () => {
@@ -119,14 +122,8 @@ describe('RemoteIntelligenceConfig & Dynamic Switching', () => {
         console.log('Requesting model:', APPROVED_MODELS.TEXT_AGENT);
         await service.generateContent('test', APPROVED_MODELS.TEXT_AGENT);
 
-        const { getGenerativeModel } = await import('firebase/ai');
-        const calls = vi.mocked(getGenerativeModel).mock.calls;
-        console.log('getGenerativeModel calls:', JSON.stringify(calls.map((c: any) => c[1]), null, 2));
-
         // Expect the overridden model name
-        expect(getGenerativeModel).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
-            model: 'gemini-4-ultra'
-        }));
+        expect(latestBackendRequest().model).toBe('gemini-4-ultra');
     });
 
     it('should fall back if remote schema is invalid', async () => {
@@ -138,11 +135,8 @@ describe('RemoteIntelligenceConfig & Dynamic Switching', () => {
         await service.bootstrap();
         await service.generateContent('test', APPROVED_MODELS.TEXT_AGENT);
 
-        const { getGenerativeModel } = await import('firebase/ai');
         // Should use original
-        expect(getGenerativeModel).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
-            model: APPROVED_MODELS.TEXT_AGENT
-        }));
+        expect(latestBackendRequest().model).toBe(APPROVED_MODELS.TEXT_AGENT);
     });
 
     describe('Capability-Based Routing', () => {

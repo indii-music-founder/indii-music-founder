@@ -38,8 +38,8 @@ const NON_RECOVERABLE_APP_CODES = new Set<AppErrorCode>([
  *   - AppException wrappers with retryable: false or non-recoverable error codes
  *   - Firebase App Check / Installations errors
  *   - Firebase auth / API key errors
- *   - HTTP 404 (model not found) from @google/genai SDK
- *   - HTTP 400 (bad request / invalid model) from @google/genai SDK
+ *   - HTTP 404 (model not found) from Google Gen AI SDK responses
+ *   - HTTP 400 (bad request / invalid model) from Google Gen AI SDK responses
  *
  * CRITICAL: handleError() in FirebaseIntelligenceService transforms raw SDK errors into
  * AppException objects BEFORE they reach the circuit breaker. Without this
@@ -67,7 +67,7 @@ function isNonRecoverableError(error: unknown): boolean {
     const code = (error as { code?: string })?.code || '';
     const httpStatus = (error as { status?: number })?.status;
 
-    // @google/genai ApiError with HTTP status codes
+    // Google Gen AI ApiError with HTTP status codes
     // 404 = model not found, 400 = bad request / invalid model config
     if (httpStatus === 404 || httpStatus === 400) {
         return true;

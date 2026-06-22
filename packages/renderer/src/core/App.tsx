@@ -18,6 +18,7 @@ import { ModuleAmbientBackground } from './components/ModuleAmbientBackground';
 import { MobileTabBar } from './components/MobileTabBar';
 import { MobileHeader } from './components/MobileHeader';
 import LoginForm from './components/auth/LoginForm';
+import { PrivacyPolicy, TermsOfService } from '@/modules/legal/pages/LegalPages';
 
 import { ApprovalModal } from './components/ApprovalModal';
 import CostWarningModal from './components/CostWarningModal';
@@ -34,6 +35,8 @@ import { ResponsiveLayoutProvider } from '@/providers/ResponsiveLayoutProvider';
 import { ShareTargetHandler } from '@/core/components/ShareTargetHandler';
 import { ApprovalManager } from '@/components/instruments/InstrumentApprovalModal';
 import { useRemoteCommandListener } from '@/hooks/useRemoteCommandListener';
+import { useConnectivityMonitor } from '@/hooks/useConnectivityMonitor';
+import { useAutoSleep } from '@/hooks/useAutoSleep';
 import { BoardroomModule } from '@/modules/boardroom/BoardroomModule';
 
 import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
@@ -405,7 +408,24 @@ function ModuleRenderer({
 // Main App Component
 // ============================================================================
 
+function PublicLegalPage({ type }: { type: 'privacy' | 'terms' }) {
+    return (
+        <div className="min-h-screen w-screen overflow-y-auto bg-black text-white">
+            <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-6 py-6">
+                <a href="/" className="text-sm font-semibold text-gray-400 transition-colors hover:text-white">
+                    indii.music
+                </a>
+                <a href="/login" className="text-sm font-semibold text-gray-400 transition-colors hover:text-white">
+                    Sign in
+                </a>
+            </div>
+            {type === 'privacy' ? <PrivacyPolicy /> : <TermsOfService />}
+        </div>
+    );
+}
+
 export default function App() {
+    const location = useLocation();
     // ⚡ Bolt Optimization: useShallow
     const { currentModule, user, authLoading } = useStore(
         useShallow(state => ({
@@ -418,12 +438,26 @@ export default function App() {
     // Defer non-critical startup work to avoid blocking FCP
     useEffect(() => { cleanupLocalStorage(); }, []);
 
-    // URL sync: self-guards on authLoading internally, safe to call unconditionally here
-    useURLSync();
     const shortcutsModal = useGlobalShortcutsModal();
 
     // 📱 Remote Relay: Listen for phone commands and process them through the desktop's agent pipeline
     useRemoteCommandListener();
+
+    // Monitor actual connectivity in Electron — fixes stuck offline state
+    useConnectivityMonitor();
+
+    // Auto-sleep the desktop to the tray after configurable idle (Electron only)
+    useAutoSleep();
+
+    const publicLegalPage = useMemo(() => {
+        const path = location.pathname.replace(/\/+$/, '') || '/';
+        if (path === '/privacy' || path === '/legal/privacy') return 'privacy';
+        if (path === '/terms' || path === '/legal/terms') return 'terms';
+        return null;
+    }, [location.pathname]);
+
+    // URL sync must not rewrite public legal routes back to a persisted module.
+    useURLSync({ disabled: !!publicLegalPage });
 
     // Determine if current module should show chrome (sidebar, command bar, etc.)
     const showChrome = useMemo(
@@ -442,9 +476,14 @@ export default function App() {
         }
     }, [isAnyPhone, currentModule]);
 
+    const activeModule = isAnyPhone ? 'mobile-remote' : currentModule;
+    const activeShowChrome = isAnyPhone ? false : showChrome;
+
     return (
         <AppInitializationProvider>
-            {authLoading ? (
+            {publicLegalPage ? (
+                <PublicLegalPage type={publicLegalPage} />
+            ) : authLoading ? (
                 <LoadingFallback />
             ) : !user ? (
                 <LoginForm />
@@ -454,7 +493,13 @@ export default function App() {
                         <VoiceProvider>
                             <ThemeProvider>
                                 <ToastProvider>
-                                    <AppContent currentModule={currentModule} showChrome={showChrome} isDesktop={isDesktop} isAnyPhone={isAnyPhone} shortcutsModal={shortcutsModal} />
+                                    <AppContent 
+                                        currentModule={activeModule} 
+                                        showChrome={activeShowChrome} 
+                                        isDesktop={isDesktop} 
+                                        isAnyPhone={isAnyPhone} 
+                                        shortcutsModal={shortcutsModal} 
+                                    />
                                 </ToastProvider>
                             </ThemeProvider>
                         </VoiceProvider>

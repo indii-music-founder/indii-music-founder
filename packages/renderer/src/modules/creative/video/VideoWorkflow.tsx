@@ -507,6 +507,8 @@ export default function VideoWorkflow() {
         }
     };
 
+    const estimatedCost = VideoGeneration.estimateVideoCost(studioControls.duration || 6, studioControls.model);
+
     return (
         <div className={`flex-1 flex overflow-hidden h-full bg-background relative`}>
             {/* Main Stage (Director View) */}
@@ -689,7 +691,7 @@ export default function VideoWorkflow() {
                                     {isPromptBuilderOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                                 </button>
                                 <span className="text-[10px] text-muted-foreground uppercase font-mono px-2 border-r border-white/5">
-                                    {studioControls?.model?.toUpperCase() || 'PRO'}
+                                    {studioControls?.model?.toUpperCase() || 'PRO'} (${estimatedCost.toFixed(2)})
                                 </span>
                                 <button
                                     onClick={() => handleGenerate()}

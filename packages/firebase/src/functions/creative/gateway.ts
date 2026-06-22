@@ -3,6 +3,7 @@ import * as admin from 'firebase-admin';
 import { z } from 'zod';
 import { getGeminiApiKey, geminiApiKey } from '../../config/secrets';
 import { FUNCTION_INTELLIGENCE_MODELS } from '../../config/models';
+import { getVertexAIClient } from '../../lib/vertexClient';
 import { readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -17,6 +18,8 @@ import {
 
 type MediaKind = 'image' | 'video' | 'audio';
 type GatewayErrorCode = 'invalid-argument' | 'permission-denied' | 'failed-precondition' | 'not-found' | 'resource-exhausted' | 'deadline-exceeded' | 'unavailable' | 'internal';
+
+const ENFORCE_APP_CHECK = process.env.NODE_ENV === 'production' && process.env.SKIP_APP_CHECK !== "true" && process.env.ENFORCE_APP_CHECK !== "false";
 
 interface GeminiInlineData {
   data?: string;
@@ -42,7 +45,7 @@ interface GeminiContentResponse {
 }
 
 const IMAGE_MODEL_IDS = {
-  fast: 'gemini-3.1-flash-image-preview',
+  fast: 'gemini-3.1-flash-image',
   pro: 'gemini-3-pro-image-preview',
   legacy: 'gemini-2.5-flash-image',
 } as const;
@@ -53,13 +56,24 @@ const VIDEO_MODEL_IDS = {
   lite: 'veo-3.1-lite-generate-preview',
 } as const;
 
-const OMNI_FLASH_MODEL_ID = process.env.GEMINI_OMNI_FLASH_MODEL || process.env.VITE_GEMINI_OMNI_FLASH_MODEL || '';
+const OMNI_FLASH_MODEL_ID = process.env.GEMINI_OMNI_FLASH_MODEL || '';
 const VIDEO_POLL_INTERVAL_MS = Number(process.env.VIDEO_POLL_INTERVAL_MS || '10000');
 const VIDEO_MAX_POLLS = Number(process.env.VIDEO_MAX_POLLS || '54');
 
+function getMediaVertexLocation(kind: MediaKind): string {
+  switch (kind) {
+    case 'image':
+      return process.env.VERTEX_IMAGE_LOCATION || process.env.VERTEX_MEDIA_LOCATION || 'us';
+    case 'video':
+      return process.env.VERTEX_VIDEO_LOCATION || process.env.VERTEX_MEDIA_LOCATION || process.env.VERTEX_LOCATION || 'us-central1';
+    case 'audio':
+      return process.env.VERTEX_AUDIO_LOCATION || process.env.VERTEX_MEDIA_LOCATION || process.env.VERTEX_LOCATION || 'global';
+  }
+}
+
 // Helper to resolve the GenAI client using Google AI Studio (API Key) or Vertex AI (ADC).
-// This fully adheres to the secure proxy architecture, preferring global preview models.
-function getAiClient(forceVertex = false): GoogleGenAI {
+// This fully adheres to the secure proxy architecture, with backend-only media routing.
+function getRawAiClient(kind: MediaKind, forceVertex = false): GoogleGenAI {
   let apiKey: string | null = null;
   try {
     apiKey = getGeminiApiKey();
@@ -78,11 +92,59 @@ function getAiClient(forceVertex = false): GoogleGenAI {
     throw new HttpsError('failed-precondition', 'Google AI credentials are not configured for media generation.');
   }
 
-  return new GoogleGenAI({
-    vertexai: true,
-    project,
-    location: process.env.VITE_VERTEX_LOCATION || 'us-central1',
-  });
+  return getVertexAIClient(project, getMediaVertexLocation(kind));
+}
+
+/**
+ * Proxy wrapper that retries on API key failures by falling back to Vertex AI.
+ * Handles nested object/method chains so .models.generateContent(...) works.
+ * Type is preserved via generic T; only the function invoke layer is polymorphic.
+ */
+function wrapWithFallback<T extends object>(
+  obj: T,
+  forceVertex: boolean,
+  fallbackFactory: () => T,
+): T {
+  return new Proxy(obj, {
+    get(target: T, prop: string | symbol, receiver: unknown): unknown {
+      const val = Reflect.get(target, prop, receiver);
+      if (typeof val === 'function') {
+        // Async wrapper that retries on API key errors
+        return async function wrappedMethod(...args: unknown[]): Promise<unknown> {
+          try {
+            return await (val as (...args: unknown[]) => Promise<unknown>).apply(target, args);
+          } catch (error: unknown) {
+            const errorMsg = error instanceof Error ? error.message : String(error);
+            const isApiKeyError = errorMsg.includes('API key expired') ||
+                                  errorMsg.includes('API_KEY_INVALID') ||
+                                  errorMsg.includes('API key not valid') ||
+                                  (errorMsg.includes('INVALID_ARGUMENT') && errorMsg.includes('API key'));
+
+            if (isApiKeyError && !forceVertex) {
+              console.warn('[creativeGateway] API key error encountered. Retrying automatically with Vertex AI ADC...', errorMsg);
+              const fallbackObj = fallbackFactory();
+              const fallbackFn = Reflect.get(fallbackObj, prop, fallbackObj) as (...args: unknown[]) => Promise<unknown>;
+              return await fallbackFn.apply(fallbackObj, args);
+            }
+            throw error;
+          }
+        };
+      } else if (val && typeof val === 'object') {
+        // Recursively wrap nested objects to handle .models.generateContent(...) chains
+        return wrapWithFallback(val as object, forceVertex, () => {
+          const nextFallback = fallbackFactory();
+          return Reflect.get(nextFallback, prop, nextFallback) as object;
+        });
+      }
+      return val;
+    }
+  }) as T;
+}
+
+function getAiClient(kind: MediaKind, forceVertex = false): GoogleGenAI {
+  const client = getRawAiClient(kind, forceVertex);
+  if (forceVertex) return client;
+  return wrapWithFallback(client, false, () => getRawAiClient(kind, true));
 }
 
 // Defer firestore and storage initialization until first use (for test compatibility)
@@ -292,6 +354,98 @@ function buildOmniPrompt(data: z.infer<typeof GenerateOmniRemixSchema>): string 
   ].join('\n');
 }
 
+/** Article + noun for user-facing copy, e.g. "an image", "a video", "audio". */
+const MEDIA_NOUN: Record<MediaKind, string> = {
+  image: 'an image',
+  video: 'a video',
+  audio: 'audio',
+};
+
+type MediaFailureCategory = 'safety' | 'recitation' | 'truncated' | 'declined';
+
+interface MediaFailureClassification {
+  category: MediaFailureCategory;
+  code: GatewayErrorCode;
+  publicMessage: string;
+}
+
+/**
+ * Map a Gemini finish reason (e.g. NO_IMAGE, IMAGE_SAFETY, RECITATION) to an
+ * accurate, user-facing message and the correct callable error code.
+ *
+ * This is deliberately type-driven. A benign "the model declined to render this
+ * prompt" (NO_IMAGE) must never be mislabeled as a settings or billing rejection
+ * by downstream substring matching — that was the original defect.
+ */
+export function classifyMediaFinishFailure(
+  kind: MediaKind,
+  finishReason: string,
+): MediaFailureClassification {
+  const noun = MEDIA_NOUN[kind];
+  const reason = (finishReason || '').toUpperCase();
+
+  if (/SAFETY|PROHIBITED|BLOCKLIST|SPII/.test(reason)) {
+    return {
+      category: 'safety',
+      code: 'invalid-argument',
+      publicMessage: `That prompt was blocked by Google's safety filters, so no ${kind} was produced. Adjust the wording to avoid restricted or sensitive content and try again.`,
+    };
+  }
+
+  if (reason.includes('RECITATION')) {
+    return {
+      category: 'recitation',
+      code: 'invalid-argument',
+      publicMessage: `Google blocked the ${kind} because it closely matched protected or copyrighted material. Try a more original prompt.`,
+    };
+  }
+
+  if (reason.includes('MAX_TOKENS')) {
+    return {
+      category: 'truncated',
+      code: 'failed-precondition',
+      publicMessage: `The model ran out of room before it could finish ${noun}. Try a shorter, simpler prompt.`,
+    };
+  }
+
+  // NO_IMAGE / IMAGE_OTHER / OTHER / STOP-with-no-media / unknown: the request
+  // was valid but the model chose not to render. Almost always a conversational
+  // or under-specified prompt, so guide the user to describe the result directly.
+  return {
+    category: 'declined',
+    code: 'failed-precondition',
+    publicMessage: `INDII couldn't create ${noun} from that prompt. Describe the ${kind} directly — the subject, style, and setting — instead of asking a question, then try again.`,
+  };
+}
+
+/**
+ * Raised when Gemini returns a response with no usable media part. Carries the
+ * provider finish reason plus a pre-classified, user-facing message so the error
+ * is handled by type — never by sniffing substrings — all the way to the client.
+ */
+export class MediaGenerationError extends Error {
+  readonly kind: MediaKind;
+  readonly finishReason: string;
+  readonly category: MediaFailureCategory;
+  readonly code: GatewayErrorCode;
+  readonly publicMessage: string;
+  readonly textPreview?: string;
+
+  constructor(kind: MediaKind, finishReason: string, textPreview?: string) {
+    const { category, code, publicMessage } = classifyMediaFinishFailure(kind, finishReason);
+    // The detailed message is what lands in logs and the job document.
+    const detail = `No ${kind} returned from Gemini (finish reason: ${finishReason || 'unknown'})${textPreview ? `. Model text: ${textPreview}` : ''}`;
+    super(detail);
+    this.name = 'MediaGenerationError';
+    this.kind = kind;
+    this.finishReason = finishReason || 'unknown';
+    this.category = category;
+    this.code = code;
+    this.publicMessage = publicMessage;
+    this.textPreview = textPreview;
+  }
+}
+
 function extractInlineMedia(response: unknown, kind: MediaKind): { data: string; mimeType: string } {
   interface GeneratedImageResponse {
     generatedImages?: Array<{
@@ -333,11 +487,9 @@ function extractInlineMedia(response: unknown, kind: MediaKind): { data: string;
     .map(part => part.text)
     .filter(Boolean)
     .join(' ')
-    .slice(0, 180);
+    .slice(0, 180) || undefined;
 
-  throw new Error(
-    `Invalid response: No ${kind} data returned from Gemini. Finish reason: ${finishReasons}${textPreview ? `. Text response: ${textPreview}` : ''}`
-  );
+  throw new MediaGenerationError(kind, finishReasons, textPreview);
 }
 
 function extensionForMime(mimeType: string, fallback: string): string {
@@ -369,6 +521,17 @@ function errorMessage(error: unknown): string {
 
 function toGatewayError(error: unknown, context: string): HttpsError {
   if (error instanceof HttpsError) return error;
+
+  // Pre-classified "no media returned" failures carry their own user-facing
+  // message and code. Handle by type so a benign NO_IMAGE is never re-mapped to a
+  // settings/billing rejection by the substring matching below.
+  if (error instanceof MediaGenerationError) {
+    return new HttpsError(error.code, `${context}: ${error.publicMessage}`, {
+      finishReason: error.finishReason,
+      category: error.category,
+      cause: error.message,
+    });
+  }
 
   const message = errorMessage(error);
   const status = typeof (error as { status?: unknown })?.status === 'number'
@@ -499,7 +662,7 @@ async function downloadGeneratedVideo(ai: GoogleGenAI, video: Video, jobId: stri
 /**
  * generateImageV3 - Routes to gemini-3-pro-image-preview
  */
-export const generateImageV3 = onCall({ timeoutSeconds: 120, memory: '1GiB', secrets: [geminiApiKey], enforceAppCheck: true }, async (request) => {
+export const generateImageV3 = onCall({ timeoutSeconds: 120, memory: '1GiB', secrets: [geminiApiKey], enforceAppCheck: ENFORCE_APP_CHECK }, async (request) => {
   if (!request.auth) throw new HttpsError('unauthenticated', 'User must be authenticated.');
   
   const parsed = GenerateImageSchema.safeParse(request.data);
@@ -521,7 +684,7 @@ export const generateImageV3 = onCall({ timeoutSeconds: 120, memory: '1GiB', sec
   });
 
   try {
-    const ai = getAiClient();
+    const ai = getAiClient('image');
     const modelId = resolveImageModel(model);
     const normalizedThinkingLevel = normalizeThinkingLevel(thinkingLevel);
     const normalizedImageSize = normalizeImageSize(imageSize);
@@ -588,7 +751,7 @@ export const generateImageV3 = onCall({ timeoutSeconds: 120, memory: '1GiB', sec
 /**
  * generateVideoV3 - Routes to Veo 3.1 via the long-running generateVideos API.
  */
-export const generateVideoV3 = onCall({ timeoutSeconds: 540, secrets: [geminiApiKey] , enforceAppCheck: true}, async (request) => {
+export const generateVideoV3 = onCall({ timeoutSeconds: 540, secrets: [geminiApiKey] , enforceAppCheck: ENFORCE_APP_CHECK}, async (request) => {
   if (!request.auth) throw new HttpsError('unauthenticated', 'User must be authenticated.');
   
   const parsed = GenerateVideoSchema.safeParse(request.data);
@@ -628,7 +791,7 @@ export const generateVideoV3 = onCall({ timeoutSeconds: 540, secrets: [geminiApi
   });
 
   try {
-    const ai = getAiClient();
+    const ai = getAiClient('video');
     const image = toImage(firstFrameUri || referenceUri);
     const referenceImages = toReferenceImages(referenceUris);
     const config: Record<string, unknown> = {
@@ -691,7 +854,7 @@ export const generateVideoV3 = onCall({ timeoutSeconds: 540, secrets: [geminiApi
  * Flow, and Shorts, with API access rolling out later. This callable is wired so
  * the UI can use the real backend path as soon as the API model ID is configured.
  */
-export const generateOmniRemixV3 = onCall({ timeoutSeconds: 540, secrets: [geminiApiKey] , enforceAppCheck: true}, async (request) => {
+export const generateOmniRemixV3 = onCall({ timeoutSeconds: 540, secrets: [geminiApiKey] , enforceAppCheck: ENFORCE_APP_CHECK}, async (request) => {
   if (!request.auth) throw new HttpsError('unauthenticated', 'User must be authenticated.');
 
   const parsed = GenerateOmniRemixSchema.safeParse(request.data);
@@ -703,7 +866,7 @@ export const generateOmniRemixV3 = onCall({ timeoutSeconds: 540, secrets: [gemin
   const userId = request.auth.uid;
   const jobId = getDb().collection('creative_jobs').doc().id;
 
-  if (!process.env.GEMINI_OMNI_FLASH_MODEL && !process.env.VITE_GEMINI_OMNI_FLASH_MODEL) {
+  if (!process.env.GEMINI_OMNI_FLASH_MODEL) {
     throw new HttpsError('failed-precondition', 'Omni remix failed: Gemini Omni Flash is not configured.');
   }
 
@@ -727,7 +890,7 @@ export const generateOmniRemixV3 = onCall({ timeoutSeconds: 540, secrets: [gemin
   });
 
   try {
-    const ai = getAiClient();
+    const ai = getAiClient('video');
     const referenceImages = toReferenceImages(data.referenceUris);
     const config: Record<string, unknown> = {
       numberOfVideos: 1,
@@ -782,7 +945,7 @@ export const generateOmniRemixV3 = onCall({ timeoutSeconds: 540, secrets: [gemin
 /**
  * generateAudioV3 - Routes to NB2
  */
-export const generateAudioV3 = onCall({ timeoutSeconds: 300, secrets: [geminiApiKey] , enforceAppCheck: true}, async (request) => {
+export const generateAudioV3 = onCall({ timeoutSeconds: 300, secrets: [geminiApiKey] , enforceAppCheck: ENFORCE_APP_CHECK}, async (request) => {
   if (!request.auth) throw new HttpsError('unauthenticated', 'User must be authenticated.');
   
   const parsed = GenerateAudioSchema.safeParse(request.data);
@@ -802,7 +965,7 @@ export const generateAudioV3 = onCall({ timeoutSeconds: 300, secrets: [geminiApi
   });
 
   try {
-    const ai = getAiClient();
+    const ai = getAiClient('audio');
     const response = await ai.models.generateContent({
       model: FUNCTION_INTELLIGENCE_MODELS.TEXT.FAST, // Nano Banana 2
       contents: prompt,

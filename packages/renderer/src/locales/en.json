@@ -160,7 +160,8 @@
             "chat": "Chat",
             "tasks": "Task Queue",
             "campaigns": "Campaigns",
-            "inbox": "Inbox"
+            "inbox": "Inbox",
+            "loops": "Loops"
         },
         "campaigns": {
             "budget": "Budget: {{amount}}",

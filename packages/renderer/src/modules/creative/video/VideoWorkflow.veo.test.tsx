@@ -120,6 +120,7 @@ vi.mock('../../../services/video/VideoGenerationService', () => ({
         generateVideo: (...args: any[]) => mockGenerateVideo(...args),
         subscribeToJob: (...args: any[]) => mockSubscribeToJob(...args),
         generateLongFormVideo: vi.fn(),
+        estimateVideoCost: vi.fn((duration) => duration * 0.1),
     },
 }));
 

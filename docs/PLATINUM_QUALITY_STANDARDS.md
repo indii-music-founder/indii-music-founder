@@ -13,9 +13,9 @@ Related docs:
 
 ---
 
-## The Seven Anti-Patterns
+## The Nine Anti-Patterns
 
-Meet all seven: **Platinum**. Miss one: **NO-GO**.
+Meet all nine: **Platinum**. Miss one: **NO-GO**.
 
 ### 1. Silent Reverts
 **Rule:** Zero silent reverts of recently-merged fixes.
@@ -57,6 +57,12 @@ Meet all seven: **Platinum**. Miss one: **NO-GO**.
 **Detect:** `git diff --cached --name-only | grep -E '\.(lock|tsbuildinfo|log|cache)$|\.DS_Store|HANDOFF|CHECKPOINT'`
 **Enforce:** Add to `.gitignore` before committing.
 
+### 9. Hardcoded Infrastructure Identifiers (Frontend)
+**Rule:** Zero hardcoded infrastructure identifiers in frontend/source code — Vertex endpoint IDs, deployed-model IDs, GCP project numbers, regions/locations, fine-tuned tuning-job IDs, bucket names, or any value that is minted/rotated by infra and is not stable across deploys or re-training. These belong in config/env/runtime discovery, never inline in `packages/renderer/`.
+**Why:** Infra-minted IDs go stale silently. Re-tuning agents mints NEW Vertex endpoint IDs (and can change the location), so any hardcoded registry points at dead endpoints the moment a re-train ships — the app keeps compiling and "looks fine" while every agent 404s or silently falls back to a base model. (See ERROR_LEDGER 2026-06-21 "Stale Hardcoded Fine-Tuned Endpoint Registry".)
+**Detect:** `grep -rnE "endpoints/[0-9]{6,}|locations/(us|us-central1|global)/|projects/[0-9]{6,}" packages/renderer/src` — any match outside a test fixture is a violation.
+**Enforce:** Source infra IDs from a single config surface regenerated from live infra (e.g. a generated file written by a `gcloud ai endpoints list` / tuningJobs sync script, or runtime resolution), not hand-typed into a `.ts` registry. If a value MUST be checked in, it lives in one clearly-marked generated file with the sync command in its header — never scattered across frontend modules. Hardcoded identifier IDs in `packages/renderer/` fail review.
+
 ---
 
 ## Pre-commit Checklist
@@ -95,6 +101,7 @@ npm run typecheck && npm run lint && npm test -- --run && npm run build
 - **Stale Chunks:** `window.location.reload()` is the ONLY valid recovery for dynamic import failures.
 - **Vitest:** `vi.stubGlobal('crypto', undefined)` leaves the property existing. `Reflect.deleteProperty(globalThis, 'crypto')` removes it entirely. Know the difference.
 - **Git Chmod:** Use `git update-index --chmod=+x` to force exec bits on cross-platform setups.
+- **No Hardcoded Infra IDs (Frontend):** Vertex endpoint IDs, model IDs, project numbers, regions, and tuning-job IDs are infra-minted and rotate on every re-train/redeploy. Never hand-type them into `packages/renderer/`. They go in one generated/synced config surface or are resolved at runtime. A re-tune that changes endpoint IDs or location must NOT require editing scattered frontend `.ts` files. (See Anti-Pattern #9.)
 
 ---
 
@@ -102,6 +109,22 @@ npm run typecheck && npm run lint && npm test -- --run && npm run build
 
 All agents (Claude, Gemini, Droid, Jules, Codex) are bound by this document.
 **Violations:** Fix at the root. If novel, append to `ERROR_LEDGER.md` AND this document.
+
+---
+
+## The Ponytail Protocol (Lazy, Not Negligent)
+
+**Established:** 2026-06-20 (Enforced for all agents)
+
+**Rule:** Before writing or accepting any code, stop at the first rung that holds:
+1. Does this need to exist? → no: skip it (YAGNI)
+2. Stdlib does it? → use it
+3. Native platform feature? → use it
+4. Installed dependency? → use it
+5. One line? → one line
+6. Only then: the minimum that works
+
+*Lazy, not negligent: trust-boundary validation, data-loss handling, security, and accessibility are never on the chopping block.*
 
 ---
 

@@ -13,11 +13,14 @@ async function listModels() {
         scopes: ['https://www.googleapis.com/auth/cloud-platform']
     });
     const client = await auth.getClient();
-    const projectId = process.env.VITE_VERTEX_PROJECT_ID || "indii-v-1-1";
-    const location = "us-central1";
+    const projectId = process.env.VERTEX_PROJECT_ID || process.env.GOOGLE_CLOUD_PROJECT || process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT || "indii-music-founder";
+    const location = process.env.VERTEX_LOCATION || "global";
     const accessToken = await client.getAccessToken();
 
-    const endpoint = `https://${location}-aiplatform.googleapis.com/v1beta/projects/${projectId}/locations/${location}/publishers/google/models`;
+    const baseUrl = location === "global" || location === "us" || location === "eu"
+        ? "https://aiplatform.googleapis.com"
+        : `https://${location}-aiplatform.googleapis.com`;
+    const endpoint = `${baseUrl}/v1beta/projects/${projectId}/locations/${location}/publishers/google/models`;
 
     console.log(`Checking models at: ${endpoint}`);
     const res = await fetch(endpoint, {

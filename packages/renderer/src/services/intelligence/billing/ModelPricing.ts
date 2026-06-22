@@ -83,7 +83,7 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
     // ── Image generation (Nano Banana family) ─────────────────────────────────
     // Image gen reports prompt tokens via usageMetadata; the output is billed per image.
     'gemini-3-pro-image-preview': { kind: 'image', perImage: 0.12, inputPerMillion: 1.25 },
-    'gemini-3.1-flash-image-preview': { kind: 'image', perImage: 0.039, inputPerMillion: 0.30 },
+    'gemini-3.1-flash-image': { kind: 'image', perImage: 0.039, inputPerMillion: 0.30 },
     'gemini-2.5-flash-image': { kind: 'image', perImage: 0.039, inputPerMillion: 0.30 },
 
     // ── Speech (TTS) ──────────────────────────────────────────────────────────
