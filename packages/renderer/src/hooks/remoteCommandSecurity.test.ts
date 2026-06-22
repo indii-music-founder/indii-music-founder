@@ -99,6 +99,48 @@ describe('parseRemoteCommand — structured commands (allowlist)', () => {
     expect(parseRemoteCommand('[AGENT_ACTION]').kind).toBe('rejected');
   });
 
+  it('parses daw control command', () => {
+    expect(parseRemoteCommand('[DAW_CONTROL] toggle_playback')).toEqual({
+      kind: 'daw_control',
+      action: 'toggle_playback',
+    });
+    expect(parseRemoteCommand('[DAW_CONTROL] play')).toEqual({
+      kind: 'daw_control',
+      action: 'play',
+    });
+  });
+
+  it('rejects empty daw control action', () => {
+    expect(parseRemoteCommand('[DAW_CONTROL]').kind).toBe('rejected');
+    expect(parseRemoteCommand('[DAW_CONTROL]   ').kind).toBe('rejected');
+  });
+
+  it('parses media playback command', () => {
+    expect(parseRemoteCommand('[MEDIA_PLAYBACK] pause')).toEqual({
+      kind: 'media_playback',
+      action: 'pause',
+    });
+    expect(parseRemoteCommand('[MEDIA_PLAYBACK] play')).toEqual({
+      kind: 'media_playback',
+      action: 'play',
+    });
+    expect(parseRemoteCommand('[MEDIA_PLAYBACK] stop')).toEqual({
+      kind: 'media_playback',
+      action: 'stop',
+    });
+  });
+
+  it('rejects empty media playback action', () => {
+    expect(parseRemoteCommand('[MEDIA_PLAYBACK]').kind).toBe('rejected');
+    expect(parseRemoteCommand('[MEDIA_PLAYBACK]   ').kind).toBe('rejected');
+  });
+
+  it('parses wake command', () => {
+    expect(parseRemoteCommand('[WAKE]')).toEqual({
+      kind: 'wake',
+    });
+  });
+
   it('rejects an unknown structured prefix (default-deny)', () => {
     const r = parseRemoteCommand('[EXEC] shutdown now');
     expect(r.kind).toBe('rejected');
@@ -112,8 +154,8 @@ describe('parseRemoteCommand — structured commands (allowlist)', () => {
 
   it('every allowlisted prefix is handled (no prefix falls through to reject-unknown)', () => {
     for (const prefix of ALLOWED_COMMAND_PREFIXES) {
-      const r = parseRemoteCommand(`${prefix} creative`);
-      // With a payload, none should be rejected as "unknown prefix".
+      const r = parseRemoteCommand(prefix === '[WAKE]' ? prefix : `${prefix} creative`);
+      // None should be rejected as "unknown prefix".
       if (r.kind === 'rejected') {
         expect(r.reason).not.toContain('unknown command prefix');
       }
