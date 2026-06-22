@@ -6481,7 +6481,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-A-010: Firestore rule regex `uid_[0-9]+` cannot match dashed quota docId `uid_YYYY-MM-DD` — quota reads denied → AI blocked for normal users in PROD
 
-- **Status:** ⏳ OPEN
+- **Status:** 🟡 IN PROGRESS (Agent B)
 - **Severity:** 🔴 HIGH (production latent — blocks AI for FREE/PRO authenticated users)
 - **Dimension:** Security (Firestore Rules) / Billing
 - **Location:** Rule `packages/firebase/firestore.rules:1013` (`user_usage_stats` read/create/update gate `statId.matches(request.auth.uid + '_[0-9]+')`). DocId built at `packages/renderer/src/services/intelligence/billing/TokenUsageService.ts:121-123` (`const today = new Date().toISOString().split('T')[0]; const docId = \`${userId}_${today}\``).
