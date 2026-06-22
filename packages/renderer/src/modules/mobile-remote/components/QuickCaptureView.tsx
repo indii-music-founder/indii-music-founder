@@ -1,5 +1,5 @@
-import { useState, useRef } from 'react';
-import { Mic, Image as ImageIcon, Video, Send, X, Loader2, MapPin, FileText, Keyboard } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { Mic, Image as ImageIcon, Video, Send, Loader2, MapPin, FileText, Keyboard } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { remoteRelayService } from '@/services/agent/RemoteRelayService';
 import { StorageService } from '@/services/StorageService';
@@ -12,7 +12,8 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
     const [capturedAudioBlob, setCapturedAudioBlob] = useState<Blob | null>(null);
     const [capturedImageBlob, setCapturedImageBlob] = useState<{file: File, type: 'photo' | 'document'} | null>(null);
     const [capturedVideoBlob, setCapturedVideoBlob] = useState<File | null>(null);
-    const [textCommand, setTextCommand] = useState('');
+    const [momentText, setMomentText] = useState('');
+    const [reviewUrl, setReviewUrl] = useState<string | null>(null);
     
     const photoInputRef = useRef<HTMLInputElement>(null);
     const docInputRef = useRef<HTMLInputElement>(null);
@@ -20,6 +21,31 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
     
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const audioChunksRef = useRef<Blob[]>([]);
+
+    const reviewKind = capturedAudioBlob
+        ? 'voice memo'
+        : capturedImageBlob?.type === 'photo'
+            ? 'photo'
+            : capturedImageBlob?.type === 'document'
+                ? 'document scan'
+                : capturedVideoBlob
+                    ? 'video'
+                    : null;
+
+    useEffect(() => {
+        const source = capturedAudioBlob ?? capturedImageBlob?.file ?? capturedVideoBlob;
+        if (!source) {
+            setReviewUrl(null);
+            return;
+        }
+
+        const nextUrl = URL.createObjectURL(source);
+        setReviewUrl(nextUrl);
+
+        return () => {
+            URL.revokeObjectURL(nextUrl);
+        };
+    }, [capturedAudioBlob, capturedImageBlob, capturedVideoBlob]);
 
     const handleMicTap = async () => {
         if (!isPaired) return;
@@ -115,17 +141,18 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
 
     const handleTextSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!textCommand.trim() || !isPaired || isDispatching) return;
+        const noteText = momentText.trim();
+        if (!noteText || !isPaired || isDispatching) return;
         
         setIsDispatching(true);
         triggerHaptic(50);
         
         try {
             await remoteRelayService.dispatchTask({
-                type: 'agent_command',
-                payload: { commandText: textCommand.trim() }
+                type: 'live_moment',
+                payload: { noteText }
             });
-            setTextCommand('');
+            setMomentText('');
             triggerHaptic([50, 50, 50]);
         } catch (error) {
             console.error('Failed to dispatch text:', error);
@@ -196,8 +223,8 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
         <div className="flex flex-col h-full min-h-[70vh] items-center justify-between pb-24 pt-8 px-4">
             <div className="w-full flex flex-col items-center space-y-10">
                 <div className="text-center space-y-2">
-                    <h2 className="text-2xl font-bold text-[#F0F0F0] tracking-tight">Quick Capture</h2>
-                    <p className="text-[#a1a1a6] text-sm font-medium">Capture notes, media, and location</p>
+                    <h2 className="text-2xl font-bold text-[#F0F0F0] tracking-tight">Live Moment Capture</h2>
+                    <p className="text-[#a1a1a6] text-sm font-medium">Capture every moment live and keep the whole team in your pocket.</p>
                 </div>
 
                 {/* Primary Action: Mic */}
@@ -279,68 +306,91 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
                     <div className="absolute left-4 text-[#8e8e93]">
                         <Keyboard className="w-5 h-5" />
                     </div>
-                    <input
-                        type="text"
-                        value={textCommand}
-                        onChange={(e) => setTextCommand(e.target.value)}
-                        placeholder="Silent text command..."
-                        disabled={!isPaired || isDispatching || isRecording}
-                        className="w-full bg-[#1c1c1e] border border-white/10 rounded-[20px] py-4 pl-12 pr-14 text-sm text-[#F0F0F0] placeholder:text-[#8e8e93] focus:outline-none focus:border-[#2E2EFE]/50 transition-colors"
-                    />
-                    <button
-                        type="submit"
-                        disabled={!textCommand.trim() || !isPaired || isDispatching}
-                        className="absolute right-2 w-10 h-10 rounded-xl flex items-center justify-center bg-[#2E2EFE] text-white disabled:opacity-50 disabled:bg-white/10 transition-all hover:bg-[#2E2EFE]/80"
-                    >
-                        {isDispatching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                    </button>
-                </form>
+                        <input
+                            type="text"
+                            value={momentText}
+                            onChange={(e) => setMomentText(e.target.value)}
+                            placeholder="Capture a live moment..."
+                            disabled={!isPaired || isDispatching || isRecording}
+                            className="w-full bg-[#1c1c1e] border border-white/10 rounded-[20px] py-4 pl-12 pr-14 text-sm text-[#F0F0F0] placeholder:text-[#8e8e93] focus:outline-none focus:border-[#2E2EFE]/50 transition-colors"
+                        />
+                        <button
+                            type="submit"
+                            disabled={!momentText.trim() || !isPaired || isDispatching}
+                            className="absolute right-2 w-10 h-10 rounded-xl flex items-center justify-center bg-[#2E2EFE] text-white disabled:opacity-50 disabled:bg-white/10 transition-all hover:bg-[#2E2EFE]/80"
+                        >
+                            {isDispatching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                        </button>
+                    </form>
             </div>
 
-            {/* Floating Dispatch Bar for Media */}
+            {/* Floating Review Card for Media */}
             <AnimatePresence>
                 {(capturedAudioBlob || capturedImageBlob || capturedVideoBlob) && !isRecording && (
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 20 }}
-                        className="fixed bottom-28 inset-x-6 p-4 rounded-[24px] bg-[#2E2EFE] border border-white/10 flex items-center justify-between shadow-[0_10px_40px_rgba(46,46,254,0.3)] z-50"
+                        className="fixed bottom-24 inset-x-6 z-50 mx-auto w-[calc(100%-3rem)] max-w-sm overflow-hidden rounded-[28px] border border-white/10 bg-[#1c1c1e] shadow-[0_20px_50px_rgba(0,0,0,0.45)]"
                     >
-                        <div className="flex items-center gap-3 overflow-hidden">
-                            <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
-                                {capturedAudioBlob && <Mic className="w-5 h-5 text-white" />}
-                                {capturedImageBlob?.type === 'photo' && <ImageIcon className="w-5 h-5 text-white" />}
-                                {capturedImageBlob?.type === 'document' && <FileText className="w-5 h-5 text-white" />}
-                                {capturedVideoBlob && <Video className="w-5 h-5 text-white" />}
+                        <div className="p-4">
+                            <div className="flex items-start justify-between gap-4">
+                                <div className="min-w-0">
+                                    <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-blue-400">Review before saving</p>
+                                    <p className="mt-2 text-sm font-semibold text-white">Uploads to your vault, then writes it into Notes for the team.</p>
+                                    <p className="mt-1 text-[11px] text-[#8e8e93]">
+                                        {reviewKind ? `Captured ${reviewKind}` : 'Captured media'}
+                                    </p>
+                                </div>
+                                <div className="w-10 h-10 rounded-2xl bg-blue-500/10 flex items-center justify-center shrink-0 border border-blue-500/20">
+                                    {capturedAudioBlob && <Mic className="w-5 h-5 text-blue-400" />}
+                                    {capturedImageBlob?.type === 'photo' && <ImageIcon className="w-5 h-5 text-blue-400" />}
+                                    {capturedImageBlob?.type === 'document' && <FileText className="w-5 h-5 text-blue-400" />}
+                                    {capturedVideoBlob && <Video className="w-5 h-5 text-blue-400" />}
+                                </div>
                             </div>
-                            <div className="min-w-0 text-white">
-                                <p className="text-xs font-bold truncate uppercase tracking-widest">
-                                    {capturedAudioBlob && 'Voice Memo Ready'}
-                                    {capturedImageBlob?.type === 'photo' && 'Photo Ready'}
-                                    {capturedImageBlob?.type === 'document' && 'Document Scanned'}
-                                    {capturedVideoBlob && 'Video Ready'}
-                                </p>
-                                <p className="text-[10px] text-white/70 truncate">
-                                    Tap send to upload to vault
-                                </p>
-                            </div>
-                        </div>
 
-                        <div className="flex items-center gap-2">
-                            <button 
-                                onClick={clearCapture}
-                                disabled={isDispatching}
-                                className="w-10 h-10 rounded-xl flex items-center justify-center hover:bg-black/20 text-white/70 transition-colors"
-                            >
-                                <X className="w-5 h-5" />
-                            </button>
-                            <button
-                                onClick={handleDispatchMedia}
-                                disabled={isDispatching}
-                                className="w-10 h-10 rounded-xl flex items-center justify-center bg-white hover:bg-white/90 text-[#2E2EFE] shadow-lg transition-all active:scale-95"
-                            >
-                                {isDispatching ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
-                            </button>
+                            <div className="mt-4 overflow-hidden rounded-2xl border border-white/10 bg-black/40">
+                                {capturedAudioBlob && reviewUrl && (
+                                    <div className="p-4">
+                                        <audio controls src={reviewUrl} className="w-full" />
+                                    </div>
+                                )}
+                                {capturedImageBlob && reviewUrl && (
+                                    <img
+                                        src={reviewUrl}
+                                        alt={capturedImageBlob.type === 'photo' ? 'Captured photo preview' : 'Captured document preview'}
+                                        className="max-h-72 w-full object-contain bg-black"
+                                    />
+                                )}
+                                {capturedVideoBlob && reviewUrl && (
+                                    <video controls src={reviewUrl} className="max-h-72 w-full bg-black" />
+                                )}
+                            </div>
+
+                            <div className="mt-4 flex items-center gap-3">
+                                <button 
+                                    onClick={clearCapture}
+                                    disabled={isDispatching}
+                                    className="flex-1 h-12 rounded-2xl border border-white/10 bg-white/5 text-white/80 text-sm font-semibold transition-colors hover:bg-white/10 disabled:opacity-50"
+                                >
+                                    Retake
+                                </button>
+                                <button
+                                    onClick={handleDispatchMedia}
+                                    disabled={isDispatching}
+                                    className="flex-1 h-12 rounded-2xl bg-white text-[#2E2EFE] text-sm font-semibold shadow-lg transition-all active:scale-[0.98] disabled:opacity-50"
+                                >
+                                    {isDispatching ? (
+                                        <span className="inline-flex items-center gap-2">
+                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                            Sending
+                                        </span>
+                                    ) : (
+                                        'Save to Notes'
+                                    )}
+                                </button>
+                            </div>
                         </div>
                     </motion.div>
                 )}

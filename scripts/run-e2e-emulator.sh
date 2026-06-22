@@ -20,4 +20,4 @@ if lsof -i :4242 > /dev/null; then
 fi
 
 echo "🚀 Starting Playwright E2E tests with Firestore Emulator..."
-npx firebase emulators:exec --only firestore "npm run test:e2e"
+npx firebase emulators:exec --only firestore "npx playwright test --project=chromium --grep-invert @live"

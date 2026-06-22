@@ -36,11 +36,14 @@ import {
     getDocs,
     Timestamp,
     type Unsubscribe,
+    type WithFieldValue,
 } from 'firebase/firestore';
 import { db, auth } from '@/services/firebase';
 import { logger } from '@/utils/logger';
 import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 import { getRealAuthenticatedUserId } from '@/utils/authGuards';
+import type { RemoteMobilePayload } from '@/types/electron';
+
 
 // ---------------------------------------------------------------------------
 // Types
@@ -85,7 +88,7 @@ export interface DesktopState {
 
 export interface AgentDispatchTask {
     id?: string;
-    type: 'voice_memo' | 'quick_contact' | 'receipt_log' | 'agent_command' | 'media_capture' | 'document_scan' | 'venue_log';
+    type: 'voice_memo' | 'quick_contact' | 'receipt_log' | 'agent_command' | 'live_moment' | 'media_capture' | 'document_scan' | 'venue_log';
     payload: {
         audioUrl?: string;
         videoUrl?: string;
@@ -93,6 +96,7 @@ export interface AgentDispatchTask {
         imageUrl?: string;
         amount?: number;
         commandText?: string;
+        noteText?: string;
         lat?: number;
         lng?: number;
     };
@@ -110,6 +114,15 @@ export interface AgentDispatchTask {
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+function isRemoteMobileMessage(payload: unknown): payload is RemoteMobilePayload {
+    if (!payload || typeof payload !== 'object') return false;
+    const message = payload as Record<string, unknown>;
+    if (typeof message.type !== 'string') return false;
+    if (message.command === undefined) return true;
+    if (!message.command || typeof message.command !== 'object') return false;
+    return typeof (message.command as Record<string, unknown>).text === 'string';
+}
 
 function getUserId(): string | null {
     return getRealAuthenticatedUserId(auth.currentUser);
@@ -184,6 +197,25 @@ export function relayTimestampToMillis(ts: Timestamp | ReturnType<typeof serverT
     return typeof maybe?.toMillis === 'function' ? maybe.toMillis() : 0;
 }
 
+export function isPrivateIP(hostname: string): boolean {
+    if (hostname === 'localhost' || hostname === '127.0.0.1') return true;
+
+    // Class A: 10.X.X.X
+    if (hostname.startsWith('10.')) return true;
+
+    // Class C: 192.168.X.X
+    if (hostname.startsWith('192.168.')) return true;
+
+    // Class B: 172.16.X.X to 172.31.X.X
+    const parts = hostname.split('.');
+    if (parts.length === 4 && parts[0] === '172') {
+        const second = parseInt(parts[1], 10);
+        if (second >= 16 && second <= 31) return true;
+    }
+
+    return false;
+}
+
 export function isFreshDesktopState(
     state: DesktopState | null | undefined,
     now = Date.now(),
@@ -195,9 +227,9 @@ export function isFreshDesktopState(
     
     // Account for local clock skew between phone and server.
     // Use Math.abs() to handle clocks that are either ahead or behind.
-    // Allow up to 10 minutes of skew. The local setTimeout in MobileRemote
+    // Allow up to 30 seconds of skew. The local setTimeout in MobileRemote
     // will catch an actually dead desktop after 15 seconds anyway.
-    const CLOCK_SKEW_TOLERANCE_MS = 10 * 60 * 1000;
+    const CLOCK_SKEW_TOLERANCE_MS = 30 * 1000;
     return Math.abs(now - timestamp) <= staleMs + CLOCK_SKEW_TOLERANCE_MS;
 }
 
@@ -206,13 +238,14 @@ export function isFreshDesktopState(
 // ---------------------------------------------------------------------------
 
 class RemoteRelayService {
-    private localWs: any = null;
-    private localMessageCallbacks: Map<string, (data: any) => void> = new Map();
+    private localWs: WebSocket | null = null;
+    private localMessageCallbacks: Map<string, (data: RemoteResponse) => void> = new Map();
     private localStateCallback: ((state: DesktopState | null) => void) | null = null;
+    private wsRetryCount = 0;
 
     constructor() {
         if (typeof window !== 'undefined' && typeof WebSocket !== 'undefined') {
-            const isLocalServer = window.location.port === '3333' || window.location.hostname.startsWith('192.168.') || window.location.hostname === 'localhost';
+            const isLocalServer = window.location.port === '3333' || isPrivateIP(window.location.hostname);
             if (isLocalServer) {
                 this.initLocalWebSocket();
             }
@@ -229,6 +262,7 @@ class RemoteRelayService {
             ws.onopen = () => {
                 logger.info('[RemoteRelay] Local P2P WebSocket connected');
                 this.localWs = ws;
+                this.wsRetryCount = 0; // reset on success
                 const passcode = new URLSearchParams(window.location.search).get('passcode') || localStorage.getItem('indii_p2p_passcode');
                 if (passcode) {
                     ws.send(JSON.stringify({ type: 'auth', token: passcode }));
@@ -257,13 +291,23 @@ class RemoteRelayService {
                     logger.error('[RemoteRelay] P2P message parse error', err);
                 }
             };
-            ws.onclose = () => {
-                logger.info('[RemoteRelay] Local P2P WebSocket closed. Retrying in 5s...');
+            ws.onclose = (event) => {
                 this.localWs = null;
-                setTimeout(() => this.initLocalWebSocket(), 5000);
+                if (event.code === 4001) {
+                    logger.warn('[RemoteRelay] Local P2P WebSocket authentication failed (code 4001). Will not retry.');
+                    return;
+                }
+                const delay = Math.min(1000 * Math.pow(2, this.wsRetryCount), 30000);
+                this.wsRetryCount++;
+                logger.info(`[RemoteRelay] Local P2P WebSocket closed. Code: ${event.code}. Retrying in ${delay}ms...`);
+                setTimeout(() => this.initLocalWebSocket(), delay);
             };
         } catch (err) {
             logger.error('[RemoteRelay] Local P2P WebSocket creation failed', err);
+            const delay = Math.min(1000 * Math.pow(2, this.wsRetryCount), 30000);
+            this.wsRetryCount++;
+            logger.info(`[RemoteRelay] Scheduling retry in ${delay}ms after constructor error.`);
+            setTimeout(() => this.initLocalWebSocket(), delay);
         }
     }
 
@@ -519,10 +563,11 @@ class RemoteRelayService {
 
         // Local P2P WebSocket fallback listener
         let localUnsub: (() => void) | null = null;
-        const api = (window as any).electronAPI;
+        const api = window.electronAPI;
         if (api?.remote?.onMessageFromMobile) {
             logger.info('[RemoteRelay] 🖥️ Starting P2P Local WebSocket IPC listener...');
-            localUnsub = api.remote.onMessageFromMobile((payload: any) => {
+            localUnsub = api.remote.onMessageFromMobile((payload: RemoteMobilePayload) => {
+                if (!isRemoteMobileMessage(payload)) return;
                 if (payload && payload.type === 'command' && payload.command) {
                     logger.info(`[RemoteRelay] 📥 P2P Local command received over WebSocket: ${payload.command.text}`);
                     callback({
@@ -606,7 +651,7 @@ class RemoteRelayService {
         const uid = getUserId();
         if (!uid) return;
         
-        const updateData: Partial<AgentDispatchTask> = { status };
+        const updateData: WithFieldValue<Partial<AgentDispatchTask>> = { status };
         
         if (status === 'processing') {
             updateData.pickedUpAt = serverTimestamp();
@@ -618,7 +663,7 @@ class RemoteRelayService {
             updateData.error = error;
         }
 
-        await updateDoc(doc(db, 'users', uid, 'agent_dispatch_queue', taskId), updateData as any);
+        await updateDoc(doc(db, 'users', uid, 'agent_dispatch_queue', taskId), updateData);
         logger.info(`[RemoteRelay] 🖥️ Dispatch task ${taskId} marked as ${status}`);
     }
 
@@ -634,7 +679,7 @@ class RemoteRelayService {
         boardroomMessageId?: string
     ): Promise<void> {
         // P2P Local WebSocket broadcast fallback
-        const api = (window as any).electronAPI;
+        const api = window.electronAPI;
         if (api?.remote?.broadcast) {
             api.remote.broadcast({
                 type: 'response',
@@ -678,7 +723,7 @@ class RemoteRelayService {
      */
     async pushDesktopState(state: Omit<DesktopState, 'timestamp'>): Promise<void> {
         // P2P Local WebSocket broadcast fallback
-        const api = (window as any).electronAPI;
+        const api = window.electronAPI;
         if (api?.remote?.broadcast) {
             api.remote.broadcast({
                 type: 'sync',

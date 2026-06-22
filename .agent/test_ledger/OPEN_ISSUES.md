@@ -5749,7 +5749,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-OPUS-005: Adopt react-call as the standard imperative-dialog pattern
 
-- **Status:** 🟡 IN PROGRESS (Agent B)
+- **Status:** ✅ FIXED (36fbe1ed1)
 - **Severity:** 🟢 LOW
 - **Location:** `packages/renderer/package.json`, `packages/renderer/src/components/ui/`, `CLAUDE.md`
 - **Details:** `react-call` (<https://github.com/desko27/react-call> — <1KB, zero deps, SSR/RN-safe) turns a React component into an awaitable async function: `const ok = await Confirm.call({ message })`. indii has already removed all native `window.confirm/prompt/alert` (0 left), but there is no canonical imperative-dialog pattern — agents hand-roll modal state, and once hand-rolled a FAKE modal (ISSUE-184). Standardize on react-call so dialogs/confirms/pickers are consistent and honest.
@@ -6249,7 +6249,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-445: Image Generation Fails with Internal Error
 
-- **Status:** OPEN
+- **Status:** 🟡 IN PROGRESS (Agent B)
 - **Severity:** 🔴 HIGH
 - **UX Dimension:** Core Functionality
 - **Module:** Creative Director
@@ -6265,6 +6265,8 @@ Therefore, no fix can be proposed or implemented.
 - **User Impact:** The core Creative Director image generation pipeline is completely blocked.
 - **Test Update (2026-06-19):** Tested locally. Still failing, but the root cause on local dev is `ERR_CONNECTION_REFUSED` on `127.0.0.1:5001`. The `package.json` dev scripts and `firebase emulators:start` command are skipping the Functions emulator, so `generateImageV3` cannot be reached.
 - **Investigation (2026-06-22, Claude):** Confirmed the root cause is a **missing dev script**, not a missing config. `firebase.json` DOES declare the Functions emulator (`emulators.functions.port: 5001`) — the config is fine. The gap: there is **no npm script that runs `firebase emulators:start` at all**. `npm run dev` = `preflight:dev && electron-vite dev` and `npm run dev:web` = `vite …` — both start only the renderer; nothing ever boots the emulator suite, so `:5001` is never listening. **Fix direction:** add a dev script that (a) builds functions (`npm run build -w packages/firebase`) and (b) runs `firebase emulators:start --only functions` (concurrently with the renderer, e.g. via `concurrently` or a documented two-terminal flow), and point `VITE_*`/the functions base URL at the emulator in dev. Shared root cause with ISSUE-442 and ISSUE-447 (both also blocked by the absent `:5001` emulator). No code changed this session — investigation only.
+- **Fix:** Added backend-unavailable detection to the direct image-generation error mapper so `ERR_CONNECTION_REFUSED`, `ECONNREFUSED`, and `127.0.0.1:5001` surface as an honest emulator-start message instead of a generic internal error.
+- **Evidence:** `packages/renderer/src/modules/creative/hooks/useDirectGeneration.ts:55-97`; `packages/renderer/src/modules/creative/components/__tests__/DirectGenerationTab.test.tsx:259-277`; `npx vitest run packages/renderer/src/modules/creative/components/__tests__/DirectGenerationTab.test.tsx` passed 8/8; `npm run typecheck` passed.
 
 ---
 
@@ -6388,6 +6390,21 @@ Therefore, no fix can be proposed or implemented.
 ### ISSUE-LANDING-20260622: Uncommitted landing/page.tsx regression (lint error + 3 broken tests)
 - **Status:** ✅ FIXED (2026-06-22, Engine B — branch `claude/agent-abcd-vem93b`)
 - **Severity:** 🟠 MEDIUM (uncommitted in working tree; NOT yet on origin so CI is currently safe — but a `git add -A` checkpoint hook would push it and break CI under the wrong author)
+### ISSUE-A-002: Mobile remote had no capture review step and no first-class boardroom entry point
+
+- **Status:** ✅ FIXED
+- **Severity:** 🟡 MEDIUM
+- **Location:** `packages/renderer/src/modules/mobile-remote/components/QuickCaptureView.tsx:16-48`
+- **Details:** The mobile capture flow only showed a generic "Tap send to upload to vault" bar, so photo, document, video, and voice memo captures had no actual review surface before dispatch. The boardroom conversation also existed only as a hidden chat mode, so there was no obvious mobile entry point to talk to the seated agents.
+- **Expected (acceptance):** After capture, the phone should show a real review card with the recorded photo or voice memo before upload, including a visible preview/control surface and explicit send/retake actions. The home dashboard should expose a direct "Talk to Boardroom" action that opens the boardroom chat on the phone.
+- **Honest fallback:** If a media type cannot preview locally, show a clear placeholder with the media type and destination, but never pretend the capture was reviewed or sent. If boardroom chat is unavailable, surface that state explicitly instead of hiding the path.
+- **DO NOT:** Do not auto-dispatch captures without a review surface, and do not leave boardroom access buried behind an unlabeled or hidden mode switch.
+- **Fix:** Added a local preview/review card with object-URL playback/image rendering and explicit `Retake` / `Send to Vault` actions in `QuickCaptureView`, then surfaced a dedicated `Talk to Boardroom` CTA and boardroom tab in the mobile shell.
+- **Evidence:** `packages/renderer/src/modules/mobile-remote/components/QuickCaptureView.tsx:16-48,164-219,330-390`; `packages/renderer/src/modules/mobile-remote/MobileRemote.tsx:51-68,528-548`; `packages/renderer/src/modules/mobile-remote/components/StatusDashboard.tsx:11-15,103-141`; `npm run typecheck` passed
+
+### ISSUE-LANDING-20260622: landing/page.tsx setState-in-effect regression
+- **Status:** ✅ RESOLVED 2026-06-22 by the landing agent (commits `710982571`, `4d0148ce6`). Verified on HEAD: `npm test -- --run packages/landing/src/App.test.tsx` → 3/3 pass; `eslint page.tsx` → 0 errors. Trivial leftover for the landing owner: page.tsx still imports `useEffect` but no longer uses it → 1 unused-import warning to sweep. The checkpoint hook DID `git add -A` the broken change onto origin before the fix landed (the predicted landmine), but it was fixed forward — no lasting CI break.
+- **Severity:** 🟠 MEDIUM (was uncommitted → committed by a `git add -A` hook → fixed forward)
 - **Module:** Landing
 - **File:** `packages/landing/src/page.tsx` (`Home`, `isThesisOpen` state)
 - **Summary:** An agent converted the lazy `useState(() => …)` initializer into `useState(false)` + `useEffect(setState)`. Causes ESLint **error** `Calling setState synchronously within an effect can trigger cascading renders` (fails the lint gate) and fails 3 `packages/landing/src/App.test.tsx` tests (they assert founder/thesis state on initial render).
@@ -6441,3 +6458,118 @@ Therefore, no fix can be proposed or implemented.
 - **Why it matters:** Misleading dead UI invites future regressions (e.g. someone "fixes" a department button that was never meant to work) and contradicts the remote-only design.
 - **Fix Direction:** Delete `MobileNav.tsx` (fully unused — verify no imports first) and either remove `MobileTabBar` or strip its module-nav lists down to remote-appropriate actions. **Respect the asset-deletion fail-safe** (CLAUDE.md §7): confirm zero imports/usages before deleting, and do it in a dedicated PR (not bundled with unrelated work) to avoid colliding with the concurrent Codex agent in core layout files.
 - **Acceptance:** No orphaned phone module-nav remains; `grep -rn "MobileNav\|MobileTabBar" packages/renderer/src` shows only intentional render sites (or none); `npm run typecheck` + `npm run lint` clean.
+
+## Follow-ups from PLP/Roster rename (2026-06-22) — logged for owner/marketing decision, NOT auto-changed
+
+### ISSUE-PLP-DOCS-20260622: Doc/agent/directive references still say "Meta Andromeda" after code rename to PLP
+- **Status:** ⏳ OPEN (needs a NAMING DECISION before touching)
+- **Severity:** 🟡 LOW (docs only; no runtime impact)
+- **Files:** `docs/INDII_GROWTH_PROTOCOL.md` (lines ~13, 15, 62), `agents/marketing/AGENTS.md` (~49), `agents/marketing/prompt.md` (~69), `directives/indii_growth_protocol.json` (~8, 79)
+- **Summary:** Code feature renamed Andromeda → **PLP** (Promote · Launch · Push) in `packages/renderer` (commit `bd1201804`). These docs/agent prompts/directives still call the 15-variant creative-testing pipeline "Meta Andromeda Pipeline," so docs and code now disagree.
+- **DECISION NEEDED (do not blind-rename):** "Meta Andromeda" may be referencing **Meta's real `Andromeda` ad-retrieval/ranking ML system** (an actual Meta product), not just indii's feature. If the docs mean indii's 15-variant generator → rename to **PLP** for consistency. If they mean Meta's external system → leave as-is (it's accurate) and just clarify wording so it's not confused with the indii feature. Founder/marketing owner decides.
+
+### ISSUE-CREATIVE-COPY-20260622: "Bypass Autonomous Swarms" subtitle still uses flagged "Swarm" wording
+- **Status:** ⏳ OPEN (naming/copy decision)
+- **Severity:** 🟡 LOW (UI copy)
+- **File:** `packages/renderer/src/modules/creative/components/DirectGenerationTab.tsx:113`
+- **Summary:** Creative Hub subtitle reads "Bypass Autonomous Swarms." Founder flagged "Swarm" as AI-slop wording (the creative-studio "Swarm" registry button was already renamed to "Roster"). This separate copy string was intentionally NOT changed because it describes bypassing the autonomous agent pipeline, not the Roster. Decide: rephrase (e.g. "Direct generation — skip the autonomous pipeline") or leave.
+
+### ISSUE-CREATIVE-AUDIT-20260622: Creative Studio button audit incomplete + FLASH/REFINE UX confusion
+- **Status:** ⏳ OPEN (parked when session pivoted to the PLP rename)
+- **Severity:** 🟡 LOW (verification + UX polish)
+- **Summary:** A full "does every button work / is it in the right place / named right" audit of Creative Studio was started but not finished. VERIFIED wired: top tabs (Generate/Canvas/Video/Omni Remix/Showroom/Keyframes → real components), right controls (Builder/Brand/History/Versions/Roster/PLP/Projector), and CanvasHeader (Describe field + Refine → `handleMagicFill`). NOT yet traced end-to-end: left tool rail (pointer/sparkle/text/undo/redo/ID/color palette/settings) and right action rail (image/grid/layers/save/sparkle/play/X) in `AnnotationPalette.tsx` / `CanvasActionRail.tsx`.
+- **UX note:** In `CanvasHeader.tsx`, "FLASH" sits next to "REFINE" and reads like a second generate button, but it is actually a High-Fidelity (Pro) ↔ High-Speed (Flash) quality toggle. Consider relabeling/regrouping so it doesn't read as a generate action.
+
+### ISSUE-LANDING-USEEFFECT-20260622: trivial unused `useEffect` import leftover
+- **Status:** ✅ FIXED
+- **Severity:** 🟢 TRIVIAL (1 lint warning, no error)
+- **File:** `packages/landing/src/page.tsx:3`
+- **Summary:** The leftover `useEffect` import has been removed; the landing page now keeps the lazy initializer path only.
+- **Evidence:** `rg -n "useEffect" packages/landing/src/page.tsx` returns no matches; `npm test -- --run packages/landing/src/App.test.tsx` passed 3/3.
+
+### ISSUE-A-006: Creative `/history` list query is denied (returns false) — History subscription still errors on every load
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Dimension:** Console / Security (Firestore Rules)
+- **Location:** `packages/firebase/firestore.rules` L624 (`match /history/{historyId}` read rule) falling through to L1161 deny-all; consumer is the CreativeSlice history subscription (`onSnapshot` list on `/history`).
+- **Details:** On EVERY boardroom/creative page load during the full E2E run (`firebase emulators:exec --only firestore "npm run test:e2e"`), the browser console throws:
+  `[CreativeSlice] History subscription error: FirebaseError: evaluation error at L624:22 for 'list' @ L624, false for 'list' @ L1161, false for 'list' @ L624, false for 'list' @ L1161`.
+  This is the **evolved successor** to ISSUE-A-004 (do NOT edit A-004's audit trail). A-004's `'userId' in resource.data` patch stopped the *"Property userId is undefined"* exception, but the `list`/collection-query is now cleanly **denied** (rule resolves `false`), so generated-content history never loads for the user. The error is silent to the rules engine but surfaces as a permission-denied in the app's subscription handler.
+- **Expected (acceptance):** The Creative generated-content History either (a) loads the user's own history without a permission error, or (b) shows an honest empty state — with NO `FirebaseError` thrown in console on load. Root-cause options for B to weigh: the `onSnapshot` query on `/history` must be constrained with a `where('userId','==',uid)` (or `orgId`) filter the rules can statically authorize for `list`, OR the `/history` read/list rule must be restructured to permit owner-scoped list queries. Apply the SAME fix to the 78+ other collections D flagged on A-004 that still use bare `resource.data.userId == request.auth.uid`.
+- **Honest fallback:** If owner-scoped list cannot be authorized, the subscription must degrade to an honest empty/"history unavailable" state — never a thrown FirebaseError on load, never broadened rules (`allow read: if true`).
+- **DO NOT:** Do not silence the console error by swallowing the exception without fixing the query/rule. Do not loosen rules to deny-nothing. Do not edit ISSUE-A-004's Verification Findings.
+- **Evidence:** `/tmp/a-e2e.log` — recurs on every boardroom/creative test load (e.g. boardroom-real-user-scenario, boardroom-swarm). Rule confirmed: `firestore.rules` L621-637 read rule is per-document owner-only; L1161 is the deny-all default.
+
+### ISSUE-A-007: Live-production GCP spec bundled into the emulator E2E suite — guaranteed 3-min timeout every run
+
+- **Status:** ✅ FIXED (Agent B)
+- **Severity:** 🟡 MEDIUM
+- **Dimension:** Architecture / Test Harness
+- **Location:** `e2e/api-live-real-gcp.spec.ts:7` ("Live Production GCP API Verification").
+- **Details:** The default E2E command run under the Firestore emulator (`firebase emulators:exec --only firestore "npm run test:e2e"`) includes `api-live-real-gcp.spec.ts`, which authenticates against and calls **live production GCP** (`cloudfunctions.net`, real `/v1/projects/...` endpoints). Under the emulator harness, Firebase Installations is referer-blocked (`403 PERMISSION_DENIED: Requests from referer http://localhost:4242/ are blocked`), so the live calls never complete and the spec **times out at its 180s ceiling (observed 3.0m)** on every run. A live-prod verification spec does not belong in the deterministic emulator suite.
+- **Expected (acceptance):** `api-live-real-gcp.spec.ts` is excluded from the default/emulator E2E run — e.g. tagged `@live` and gated behind an explicit env flag or a separate Playwright project — so the standard suite (and CI) no longer eats a guaranteed 3-minute timeout. The live spec still runnable on demand against real prod with real auth.
+- **Honest fallback:** If the team wants live verification in CI, it must run in its own job with real credentials and network egress, NOT under `emulators:exec`. Do not delete the spec.
+- **DO NOT:** Do not "fix" it by extending the timeout — that masks a misclassified test. Do not point it at the emulator (it is a live-prod check by design).
+- **Fix:** Tagged the spec as `@live` and excluded it from the emulator launcher with `--grep-invert @live`, so the deterministic Firestore-emulator suite no longer spends 3 minutes on a guaranteed live-prod timeout.
+- **Evidence:** `e2e/api-live-real-gcp.spec.ts:4-7`; `scripts/run-e2e-emulator.sh:22-23`; `npx playwright test e2e/api-live-real-gcp.spec.ts --project=chromium --grep-invert @live --list` returned `No tests found`; `npx playwright test e2e/api-live-real-gcp.spec.ts --project=chromium --list` still lists the live test; `npm run typecheck` passed.
+
+### ISSUE-A-008: Boardroom multi-turn E2E fails at Turn 1 — `seat_agent` tool call doesn't populate `activeAgents`
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Dimension:** AI/Agent Integrity / State Management (Boardroom seating)
+- **Location:** Failing assertion `e2e/boardroom-real-user-scenario.spec.ts:529-530` (`expect(seatedAfterTurn1).toContain('marketing'|'finance')`). Implicated chain: `packages/renderer/src/services/agent/tools/SwarmTools.ts:156-168` (`seat_agent` → `addActiveAgent`) → `packages/renderer/src/core/store/slices/boardroomSlice.ts:53-58`.
+- **Details:** Spec fails FAST (~8.8s), immediately after `[E2E:Scenario] Prompt processing completed for: "Let's bring in Marketing and Finance"` — Turn 1's processing loop finished (`isAgentProcessing===false`), so this is NOT a timeout. The mock route returns `{ functionCall: { name: 'seat_agent', args: { targetAgentId: 'marketing' } } }`, which should drive `seat_agent` → `addActiveAgent('marketing'|'finance')`. After Turn 1, `window.useStore.getState().activeAgents` did NOT contain `marketing`/`finance`, so `toContain` threw. The model turn completed without the `seat_agent` functionCall actually executing against the store. Fully mocked via `page.route` — NO live model, NO emulator-dependent assertion.
+- **Expected (acceptance):** After "Let's bring in Marketing and Finance" and `isAgentProcessing===false`, `activeAgents` contains both `marketing` and `finance` (plus the always-present `generalist`); spec lines 529-530 pass and the run reaches Turn 2. Fix the agent tool-dispatch path so `seat_agent` functionCalls returned by the model are dispatched BEFORE the turn is marked idle.
+- **Honest fallback:** If repro shows seating happens on a later tick, fix the wait condition — but do NOT loosen the `toContain` assertion or add blind sleeps. If the functionCall is parsed but never dispatched, fix dispatch, not the test.
+- **DO NOT:** Do NOT blame the `[MultiTurnAutorater] ... Quota check failed` log — it is caught/logged-only (`MultiTurnAutorater.ts:83-84`), does not abort the turn, and is unrelated noise. Do NOT attribute to live-model/Vertex fallback (spec fully mocks the model). Do NOT relax `toContain`.
+- **Evidence:** `/tmp/a-e2e.log` line ~1157: `✘ 22 [chromium] › e2e/boardroom-real-user-scenario.spec.ts:6:5 › ...dynamic seating and unseating (8.8s)`; preceding `[E2E:Scenario] Prompt processing completed for: "Let's bring in Marketing and Finance"`. 8.8s fast-fail + only Turn 1 logged ⇒ Turn-1 seating assertion at spec:529-530.
+
+### ISSUE-A-009: `boardroom-live-verify.spec.ts` is an env-fragile live-model test in the default E2E gate (no E2E mock bypass)
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟢 LOW (test-infra fragility — NOT a product defect; boardroom seating itself works)
+- **Dimension:** Architecture / Test Harness
+- **Location:** `e2e/boardroom-live-verify.spec.ts:66` (45s `waitForFunction` poll, 60s test timeout). Related: `packages/renderer/src/services/intelligence/billing/TokenUsageService.ts:181` (`if (this.isE2EMode) return true;` quota bypass — evaluated FALSE for this spec) and `:247` (`checkQuota` → `QUOTA_EXCEEDED`).
+- **Details:** This is the ONLY boardroom spec that requires the LIVE Conductor model to autonomously interpret "Can we bring in the financial department" and emit a `seat_agent` tool call. Its passing siblings (`boardroom-swarm.spec.ts`, ~8s) seat agents programmatically and need no live model. This spec never injects `window.FIREBASE_E2E_MOCK` / localStorage mock the way the scenario specs do, so `isFirebaseE2EMockEnabled()` is false → `TokenUsageService.checkQuota` does NOT early-return and throws `QUOTA_EXCEEDED`; combined with `@firebase/auth: JWT malformed` and aborted Firestore channels in this env, the model call is blocked → no tool call → `activeAgents` never gains `finance` → 45s poll times out (60s test fail). It got as far as writing `artifacts/boardroom_live_home.png` + `boardroom_live_initial.png` before the poll.
+- **Expected (acceptance):** Make it deterministic — seat via the store/`seat_agent` directly like the swarm specs, and/or set the E2E mock flag so `TokenUsageService` bypasses quota — OR quarantine it as `@live` behind an env flag with `test.skip` when the live model/emulator auth is unavailable, so it cannot block the default gate on env conditions.
+- **Honest fallback:** If a true live-model check is desired, gate behind an explicit flag and skip when unavailable. Never let an env-dependent live-model spec sit in the default deterministic suite.
+- **DO NOT:** Do NOT bump the 45s/60s timeout (the model call was blocked, not slow). Do NOT weaken `TokenUsageService.checkQuota`'s production quota guard to pass a test. Do NOT delete the spec. Do NOT file this as a Boardroom product bug — programmatic seating works (siblings pass).
+- **Evidence:** `/tmp/a-e2e.log:1108` `✘ 21 boardroom-live-verify.spec.ts:5:1 (1.0m)`; `~1099-1103` `JWT malformed` + `[MultiTurnAutorater] ... Quota check failed` at `TokenUsageService.checkQuota`; contrast `:1180,1446,1468,1511` boardroom-swarm PASS ~8s via programmatic seating.
+
+### ISSUE-A-010: Firestore rule regex `uid_[0-9]+` cannot match dashed quota docId `uid_YYYY-MM-DD` — quota reads denied → AI blocked for normal users in PROD
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH (production latent — blocks AI for FREE/PRO authenticated users)
+- **Dimension:** Security (Firestore Rules) / Billing
+- **Location:** Rule `packages/firebase/firestore.rules:1013` (`user_usage_stats` read/create/update gate `statId.matches(request.auth.uid + '_[0-9]+')`). DocId built at `packages/renderer/src/services/intelligence/billing/TokenUsageService.ts:121-123` (`const today = new Date().toISOString().split('T')[0]; const docId = \`${userId}_${today}\``).
+- **Details:** The `user_usage_stats` docId is `${userId}_2026-06-22` (ISO date, **contains dashes**). The security rule authorizes only `request.auth.uid + '_[0-9]+'`. Firestore `matches()` is **fully-anchored (RE2)** — `[0-9]+` consumes `2026` then must reach end-of-string but hits `-06-22`, so the **full-string match FAILS**. Every authenticated user whose docId carries a dashed date is therefore DENIED read/create/update on their own quota doc. `TokenUsageService.checkQuota` then throws `"Quota check failed. Operation blocked to prevent untracked spend."`, which trips the CircuitBreaker and **blocks the AI call**. Founder (`isFounderUser()` email bypass) and STUDIO/FOUNDER-tier users are spared (they `return true` before the read, `TokenUsageService.ts:194-213`), but **FREE and PRO authenticated users hit the denial in production.** `user_rate_limits` is NOT affected — its docId uses `Math.floor(Date.now()/60000)` (pure digits, line 301), which matches `[0-9]+`.
+- **Expected (acceptance):** The rule regex must accept the dashed ISO date, e.g. `statId.matches(request.auth.uid + '_[0-9-]+')` (or a precise `_\\d{4}-\\d{2}-\\d{2}`), so a normal authenticated user can read/write today's `user_usage_stats` doc. After the fix, a FREE-tier user's `checkQuota` reads the doc (no permission-denied), the CircuitBreaker does not trip, and AI calls proceed. Mirror-check every other rule that gates on `_[0-9]+` against the actual docId format used by the writer.
+- **Honest fallback:** If the date format must stay dashed, the rule must match it; do NOT instead change the docId to drop dashes without auditing all readers/writers (`TokenUsageService.ts:121,222,301,357,413`) and historical data. Never broaden to `allow read: if true`.
+- **DO NOT:** Do NOT "fix" by relaxing the `untracked spend` CircuitBreaker / quota guard — that's a cost-safety control and not the bug. Do NOT assume it's emulator-only: the regex mismatch is identical in production rules. Do NOT widen the rule to deny-nothing.
+- **Evidence:** Confirmed by inspection — `firestore.rules:1013` regex vs `TokenUsageService.ts:122` `\`${userId}_${today}\`` with `today = ...toISOString().split('T')[0]` (=`2026-06-22`). Symptom observed in E2E: `[CircuitBreaker] Failure N/20 ... Quota check failed. Operation blocked to prevent untracked spend` + `@firebase/firestore [code=permission-denied]` for non-mock authenticated test user (`/tmp/a-e2e.log` ~705/1007/1412). RE2 full-anchor: `uid_2026-06-22` does NOT fully match `uid_[0-9]+`.
+
+### ISSUE-A-011: Several E2E specs run with `FIREBASE_E2E_MOCK` disabled → hit real emulator Firestore (permission-denied/quota) and fail non-deterministically
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟢 LOW (test-harness fragility — not product defects)
+- **Dimension:** Architecture / Test Harness
+- **Location:** Affected specs observed: `e2e/conductor-consult-streaming.spec.ts:85`, `e2e/creative-character.spec.ts:76` (and related `e2e/creative-studio.spec.ts:45`). Flag: `packages/renderer/src/utils/e2eMode.ts` (`isFirebaseE2EMockEnabled`). Bypass that doesn't fire: `TokenUsageService.ts:181` (`if (this.isE2EMode) return true`).
+- **Details:** These specs use the real emulator auth fixture and only mock the Vertex/AppCheck hosts — they do NOT enable `FIREBASE_E2E_MOCK` (logs show `isE2EMockEnabled: false` on every `[AuthProxy]` line). Consequences in this run: (1) `TokenUsageService.checkQuota` is NOT bypassed → real Firestore quota read → denied (see ISSUE-A-010) → CircuitBreaker blocks the mocked AI reply (conductor-consult). (2) Image generation takes the real queued-job path and the in-memory `generatedHistory` is never populated; the only fallback (Firestore history subscription) is itself denied (see ISSUE-A-006), so the gallery stays empty and selection assertions time out (creative-character / creative-studio). Net: these specs are non-deterministic in the default emulator gate.
+- **Expected (acceptance):** Either enable the Firebase E2E mock for these specs (set `FIREBASE_E2E_MOCK` / `window.FIREBASE_E2E_MOCK` so `isFirebaseE2EMockEnabled()` is true and `checkQuota`/generation take deterministic mock paths), OR seed the quota doc + fix the history/quota rules so the real-path reads succeed under the emulator. The default E2E gate should be deterministic and not depend on live-model/real-Firestore availability.
+- **Honest fallback:** Specs that genuinely need the real path should be `@live`-tagged and excluded from the default gate (same remedy class as ISSUE-A-007 and ISSUE-A-009).
+- **DO NOT:** Do NOT make the real `generateImageV3` path call `addToHistory` to fake local history (breaks real-job semantics). Do NOT loosen production Firestore rules to make tests pass. Do NOT bump timeouts — the awaited item never arrives.
+- **Evidence:** `/tmp/a-e2e.log`: `isE2EMockEnabled: false` on `[AuthProxy]` lines; `[CreativeSlice] History subscription error: FirebaseError: ... false for 'list'`; `[CircuitBreaker] ... Quota check failed`. Fast/medium fails: conductor-consult 38.5s (25s visibility timeout), creative-character 12.4s.
+
+### ISSUE-A-012: founders-checkout E2E asserts removed "manual payment" UI — component is now Stripe-only (stale test/source divergence)
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM (real test/source divergence blocking CI; not a user-facing crash). **Needs OWNER DECISION — do not auto-pick.**
+- **Dimension:** Architecture / Test Harness (stale spec)
+- **Location:** Test `e2e/founders-program.spec.ts:14` (failing assertions lines 22-27). Source `packages/renderer/src/modules/founders/FoundersCheckout.tsx` (idle view ~168-254).
+- **Details:** The spec asserts a manual/direct-funding UI on `/founders-checkout` — `h3:has-text("Cash App")`, `"Wire Transfer"`, `"Physical Check"`, and `text=Investment Price: $2,500.00 USD`. None exist. The component was rewritten to a Stripe checkout flow (`idle → initiating → mock_redirect → mock_stripe_portal → mock_processing → success`); idle view shows a "Founder Pass" card with `$2,500.00` + `USD One-Time` (lines 201-202) and "Proceed to Secure Stripe Checkout" (line 232). `h1:has-text("Back The")` (line 19) passes ("Back The Vision." line 181); the first failing locator is `h3:has-text("Cash App")` (line 22) → ~8.6s fast fail, NO AI/network dependency. Sibling founders tests (#80 route-renders, portal tests) PASS under identical emulator state → not environmental.
+- **Expected (acceptance):** Owner decides: (a) if Stripe checkout is the intended current design → update `founders-program.spec.ts:14` to assert the real Stripe UI (Founder Pass card, `$2,500.00`, "Proceed to Secure Stripe Checkout"), removing Cash App/Wire/Check/"Investment Price" assertions; OR (b) if manual direct-funding instructions are still a required product surface → restore that UI in `FoundersCheckout.tsx`.
+- **Honest fallback:** None rendered — the test asserts UI that no longer exists; the component itself renders fine.
+- **DO NOT:** Do NOT add a Cash App/Wire/Check stub just to green the test if Stripe is the real flow (mock/placeholder UI — violates no-mock-data). Do NOT blame the Firebase/quota log noise (present in adjacent passing founders tests).
+- **Evidence:** `/tmp/a-e2e.log:3384` `✘ 77 ... founders-program.spec.ts:14:5 ... manual payment instructions ... (8.6s)`; `:3400/:3423` sibling founders tests `✓`. Source grep: only "USD" match is `FoundersCheckout.tsx:202` `USD One-Time`; zero matches for "Investment Price"/"Cash App"/"Wire Transfer"/"Physical Check".

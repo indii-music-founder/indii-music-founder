@@ -118,7 +118,7 @@ export default function CommandPad({ onSendCommand, isPaired }: CommandPadProps)
     {
       id: 'voice-note',
       icon: Mic,
-      label: 'Voice Note',
+      label: 'Live Moment',
       color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20',
       glow: 'shadow-emerald-500/15 hover:shadow-emerald-500/30',
       action: () => {

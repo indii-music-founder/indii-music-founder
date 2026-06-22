@@ -11,7 +11,7 @@ import { triggerHaptic } from '../MobileRemote';
 interface StatusDashboardProps {
     connectionStatus: 'idle' | 'pairing' | 'connected' | 'error';
     isPaired: boolean;
-    onTabChange?: (tab: 'home' | 'capture' | 'stream' | 'settings') => void;
+    onTabChange?: (tab: 'home' | 'capture' | 'boardroom' | 'stream' | 'settings') => void;
 }
 
 function ActionButton({ icon: Icon, label, description, delay = 0, onClick, disabled }: {
@@ -68,8 +68,8 @@ export default function StatusDashboard({ connectionStatus, isPaired, onTabChang
             <div className="grid grid-cols-2 gap-4">
                 <ActionButton
                     icon={Mic}
-                    label="Voice Memo"
-                    description="Dictate an idea or contact"
+                    label="Live Moment"
+                    description="Capture what just happened"
                     delay={0.1}
                     disabled={!isPaired}
                     onClick={() => onTabChange?.('capture')}
@@ -99,6 +99,46 @@ export default function StatusDashboard({ connectionStatus, isPaired, onTabChang
                     onClick={() => onTabChange?.('home')} // placeholder
                 />
             </div>
+
+            <motion.button
+                whileTap={isPaired ? { scale: 0.98 } : undefined}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.55, duration: 0.4 }}
+                onClick={() => {
+                    if (!isPaired) return;
+                    triggerHaptic(40);
+                    onTabChange?.('boardroom');
+                }}
+                disabled={!isPaired}
+                className={cn(
+                    "group relative overflow-hidden flex w-full items-center justify-between gap-4 p-5 rounded-[24px] border transition-all duration-300 text-left mt-4",
+                    isPaired
+                        ? "bg-gradient-to-r from-blue-500/12 via-[#030303] to-indigo-500/12 border-blue-400/20 hover:border-blue-400/40 shadow-[0_8px_30px_rgba(46,46,254,0.08)] cursor-pointer"
+                        : "bg-[#1c1c1e] border-white/5 opacity-50 cursor-not-allowed"
+                )}
+            >
+                <div className="flex items-center gap-4 min-w-0">
+                    <div className={cn(
+                        "w-11 h-11 rounded-2xl flex items-center justify-center transition-all duration-300 shrink-0",
+                        isPaired ? "bg-blue-500/15 text-blue-400" : "bg-white/5 text-[#8e8e93]"
+                    )}>
+                        <LayoutDashboard className="w-5 h-5" />
+                    </div>
+                    <div className="min-w-0">
+                        <p className="text-sm font-bold text-[#F0F0F0] tracking-tight">Talk to Boardroom</p>
+                        <p className="text-[10px] text-[#8e8e93] font-medium leading-tight mt-1">
+                            Open the boardroom thread and message the seated agents directly.
+                        </p>
+                    </div>
+                </div>
+                <span className={cn(
+                    "text-[10px] font-bold uppercase tracking-[0.2em]",
+                    isPaired ? "text-blue-400" : "text-[#636366]"
+                )}>
+                    Open
+                </span>
+            </motion.button>
 
             {/* Basic Sync Indicator */}
             <motion.div 

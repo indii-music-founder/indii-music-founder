@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import * as path from 'path';
 
-test.describe('Live Production GCP API Verification', () => {
+test.describe('@live Live Production GCP API Verification', () => {
     test.use({ viewport: { width: 1280, height: 800 } });
 
     test('Authenticate and verify all backend API modules', async ({ page, baseURL }) => {
