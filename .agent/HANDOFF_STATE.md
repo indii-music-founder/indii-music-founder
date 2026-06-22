@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-22 14:33 EDT
+**Updated:** 2026-06-22 14:34 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+dfddbbee2 chore: session checkpoint [14:33]
 310b803ad chore: session checkpoint [14:27]
 de5224a7f chore: session checkpoint [14:26]
 deccb179f fix(e2e): exclude live gcp spec from emulator suite
@@ -13,7 +14,6 @@ a0ad756e0 test(ledger): log ISSUE-A-006 (creative /history list denied), ISSUE-A
 748965422 chore: session checkpoint [14:16]
 502bac795 chore: session checkpoint [14:16]
 740e5a5ad chore: session checkpoint [14:14]
-3b7bbe43a docs(ledger): mark issue 445 fixed
 ```
 
 ## Working State
