@@ -67,6 +67,8 @@ function getGitState() {
 }
 
 function getCronExpression(minutes) {
+    if (minutes === 5) return '*/5 * * * *';
+    if (minutes === 10) return '*/10 * * * *';
     if (minutes === 15) return '*/15 * * * *';
     if (minutes === 30) return '*/30 * * * *';
     if (minutes === 60) return '0 * * * *';
@@ -76,19 +78,15 @@ function getCronExpression(minutes) {
 }
 
 function getNextInterval(consecutiveNoChanges) {
-    if (consecutiveNoChanges === 0) return 15;
-    if (consecutiveNoChanges === 1) return 30;
-    if (consecutiveNoChanges === 2) return 60;
-    if (consecutiveNoChanges === 3) return 120;
-    if (consecutiveNoChanges === 4) return 240;
-    return 480; // 8 hours maximum
+    if (consecutiveNoChanges === 0) return 5;
+    return 10;
 }
 
 async function executeSync() {
     logMessage('--- Starting Git Monitor Sync Cycle ---');
     
     let state = {
-        currentIntervalMinutes: 15,
+        currentIntervalMinutes: 5,
         currentTaskId: "",
         consecutiveNoChangesRuns: 0,
         lastCheckTime: new Date().toISOString()

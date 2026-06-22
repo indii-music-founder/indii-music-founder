@@ -148,6 +148,20 @@ export const test = base.extend<AuthFixtures>({
     // The Firestore emulator accepts unverified JWTs as authorization headers.
     await page.route("http://127.0.0.1:8080/**", async (route) => {
       const headers = { ...route.request().headers() };
+      const url = route.request().url();
+
+      if (url.includes("google.firestore.v1.Firestore") || url.includes("/documents/")) {
+        await route.fulfill({
+          status: 403,
+          headers: {
+            "Access-Control-Allow-Origin": origin,
+            "Access-Control-Allow-Credentials": "true",
+          },
+          contentType: "application/json",
+          body: "{}",
+        });
+        return;
+      }
       
       // If we aren't already passing an Authorization header...
       if (!headers['authorization']) {
@@ -196,6 +210,71 @@ export const test = base.extend<AuthFixtures>({
           body: JSON.stringify({
             file: { name: "files/mock-file-123", state: "ACTIVE" },
           }),
+        });
+        return;
+      }
+
+      if (url.includes("generateContentStream")) {
+        let userMessage = "";
+        try {
+          const parsed = JSON.parse(route.request().postData() || "{}");
+          const contents = Array.isArray(parsed.contents) ? parsed.contents : [];
+          const userContents = contents.filter((c: any) => c?.role === "user");
+          const userTextContents = userContents.filter((c: any) =>
+            c?.parts?.some((p: any) => p?.text && p.text.trim() && !p.text.trim().startsWith("Continue."))
+          );
+          const lastUser = userTextContents.length > 0
+            ? userTextContents[userTextContents.length - 1]
+            : userContents[userContents.length - 1];
+          userMessage = lastUser?.parts?.map((p: any) => p?.text || "").join(" ") || "";
+        } catch (error) {
+          console.log(`[E2E] Failed to parse generateContentStream payload: ${(error as Error).message}`);
+        }
+
+        const lower = userMessage.toLowerCase();
+        let text = "*(Analysis complete)*";
+        const functionCalls: Array<{ name: string; args: Record<string, unknown> }> = [];
+        const pushSeat = (agentId: string) => functionCalls.push({ name: "seat_agent", args: { targetAgentId: agentId } });
+        const pushUnseat = (agentId: string) => functionCalls.push({ name: "unseat_agent", args: { targetAgentId: agentId } });
+
+        if (lower.includes("bring in marketing and finance")) {
+          text = "[Executor]: Hello! I will seat Marketing and Finance at the table immediately to begin our campaign strategy session.";
+          pushSeat("marketing");
+          pushSeat("finance");
+        } else if (lower.includes("how much should we spend") || lower.includes("spend on this campaign")) {
+          text = "[Marketing Dept.]: We propose a $5,000 budget targeting TikTok ads and playlist pitching to support the upcoming release. [Finance Dept.]: A $5,000 marketing expense fits within our seasonal cash flow limits. However, we should secure contract splits first.";
+        } else if (lower.includes("bring in legal") || lower.includes("check the agreements") || lower.includes("legal")) {
+          text = "[Executor]: Bringing Legal into the discussion to review the campaign split sheet agreements.";
+          pushSeat("legal");
+        } else if (lower.includes("good to go") || lower.includes("excused") || lower.includes("thank you")) {
+          text = "[Executor]: Marketing and Finance, thank you for the budget details. You are excused.";
+          pushUnseat("marketing");
+          pushUnseat("finance");
+        } else if (lower.includes("split sheet") || lower.includes("templates are we using")) {
+          text = "[Executor]: Directing the templates inquiry to our Legal department.";
+        } else if (lower.includes("marketing visual") || lower.includes("creative and video") || lower.includes("visual for this campaign")) {
+          text = "[Executor]: Summoning Creative Director and Video Agent to design marketing visuals.";
+          pushSeat("creative");
+          pushSeat("video");
+        } else if (lower.includes("social copy") || lower.includes("social and publicist") || lower.includes("press release")) {
+          text = "[Executor]: Summoning Social and Publicist agents to outline copy and press releases.";
+          pushSeat("social");
+          pushSeat("publicist");
+        } else if (lower.includes("artistic vibe") || lower.includes("brand and music") || lower.includes("align on")) {
+          text = "[Executor]: Summoning Brand and Music Directors to align on the artistic vibe.";
+          pushSeat("brand");
+          pushSeat("music");
+        } else if (lower.includes("clear the table") || lower.includes("done for today")) {
+          text = "[Executor]: Excusing all remaining agents.";
+          ["legal", "creative", "video", "social", "publicist", "brand", "music"].forEach(pushUnseat);
+        }
+
+        const streamBody = JSON.stringify({ text, functionCalls }) + "\n";
+        await route.fulfill({
+          status: 200,
+          headers: corsHeaders,
+          contentType: "application/json",
+          body: streamBody,
         });
         return;
       }
@@ -330,6 +409,77 @@ export const test = base.extend<AuthFixtures>({
               onboardingCompleted: { booleanValue: true },
             },
           }),
+        });
+        return;
+      }
+
+      if (url.includes("generateContentStream")) {
+        let userMessage = "";
+        try {
+          const parsed = JSON.parse(route.request().postData() || "{}");
+          const contents = Array.isArray(parsed.contents) ? parsed.contents : [];
+          const userContents = contents.filter((c: any) => c?.role === "user");
+          const userTextContents = userContents.filter((c: any) =>
+            c?.parts?.some((p: any) => p?.text && p.text.trim() && !p.text.trim().startsWith("Continue."))
+          );
+          const lastUser = userTextContents.length > 0
+            ? userTextContents[userTextContents.length - 1]
+            : userContents[userContents.length - 1];
+          userMessage = lastUser?.parts?.map((p: any) => p?.text || "").join(" ") || "";
+        } catch (error) {
+          console.log(`[E2E] Failed to parse generateContentStream payload: ${(error as Error).message}`);
+        }
+
+        const lower = userMessage.toLowerCase();
+        let text = "*(Analysis complete)*";
+        const functionCalls: Array<{ name: string; args: Record<string, unknown> }> = [];
+
+        const pushSeat = (agentId: string) => {
+          functionCalls.push({ name: "seat_agent", args: { targetAgentId: agentId } });
+        };
+
+        const pushUnseat = (agentId: string) => {
+          functionCalls.push({ name: "unseat_agent", args: { targetAgentId: agentId } });
+        };
+
+        if (lower.includes("bring in marketing and finance")) {
+          text = "[Executor]: Hello! I will seat Marketing and Finance at the table immediately to begin our campaign strategy session.";
+          pushSeat("marketing");
+          pushSeat("finance");
+        } else if (lower.includes("how much should we spend") || lower.includes("spend on this campaign")) {
+          text = "[Marketing Dept.]: We propose a $5,000 budget targeting TikTok ads and playlist pitching to support the upcoming release. [Finance Dept.]: A $5,000 marketing expense fits within our seasonal cash flow limits. However, we should secure contract splits first.";
+        } else if (lower.includes("bring in legal") || lower.includes("check the agreements") || lower.includes("legal")) {
+          text = "[Executor]: Bringing Legal into the discussion to review the campaign split sheet agreements.";
+          pushSeat("legal");
+        } else if (lower.includes("good to go") || lower.includes("excused") || lower.includes("thank you")) {
+          text = "[Executor]: Marketing and Finance, thank you for the budget details. You are excused.";
+          pushUnseat("marketing");
+          pushUnseat("finance");
+        } else if (lower.includes("split sheet") || lower.includes("templates are we using")) {
+          text = "[Executor]: Directing the templates inquiry to our Legal department.";
+        } else if (lower.includes("marketing visual") || lower.includes("creative and video") || lower.includes("visual for this campaign")) {
+          text = "[Executor]: Summoning Creative Director and Video Agent to design marketing visuals.";
+          pushSeat("creative");
+          pushSeat("video");
+        } else if (lower.includes("social copy") || lower.includes("social and publicist") || lower.includes("press release")) {
+          text = "[Executor]: Summoning Social and Publicist agents to outline copy and press releases.";
+          pushSeat("social");
+          pushSeat("publicist");
+        } else if (lower.includes("artistic vibe") || lower.includes("brand and music") || lower.includes("align on")) {
+          text = "[Executor]: Summoning Brand and Music Directors to align on the artistic vibe.";
+          pushSeat("brand");
+          pushSeat("music");
+        } else if (lower.includes("clear the table") || lower.includes("done for today")) {
+          text = "[Executor]: Excusing all remaining agents.";
+          ["legal", "creative", "video", "social", "publicist", "brand", "music"].forEach(pushUnseat);
+        }
+
+        const streamChunk = JSON.stringify({ text, functionCalls });
+        await route.fulfill({
+          status: 200,
+          headers: corsHeaders,
+          contentType: "application/json",
+          body: `${streamChunk}\n`,
         });
         return;
       }
@@ -865,7 +1015,7 @@ export const test = base.extend<AuthFixtures>({
 
       // Signal FirestoreService to use E2E bypass (skips addDoc/updateDoc network calls)
       try {
-        localStorage.setItem("FIREBASE_E2E_MOCK", "1");
+        localStorage.setItem("FIREBASE_E2E_MOCK", "true");
         // Prevent onboarding wizard from hijacking navigation
         localStorage.setItem("onboarding_dismissed", "true");
         // Dismiss the first-run guided tour overlay
@@ -912,7 +1062,7 @@ export const test = base.extend<AuthFixtures>({
     // Explicitly write localStorage values on the page origin to guarantee they are set
     await page.evaluate(() => {
       try {
-        localStorage.setItem("FIREBASE_E2E_MOCK", "1");
+        localStorage.setItem("FIREBASE_E2E_MOCK", "true");
         localStorage.setItem("onboarding_dismissed", "true");
         localStorage.setItem("indii_tour_completed_v1", "true");
         localStorage.setItem("indii_cookie_consent", JSON.stringify({
