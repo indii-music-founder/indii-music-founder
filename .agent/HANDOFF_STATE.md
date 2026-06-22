@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-22 18:37 EDT
+**Updated:** 2026-06-22 18:39 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+e528b159d chore: session checkpoint [18:37]
 341fd2fd4 test(ledger): log ISSUE-A-012
 48852717c chore: session checkpoint [14:38]
 ed0586a74 test(ledger): log ISSUE-A-010 and ISSUE-A-011
@@ -13,7 +14,6 @@ ca1a69a0b test(ledger): log ISSUE-A-008 (boardroom seat_agent dispatch fails Tur
 dfddbbee2 chore: session checkpoint [14:33]
 310b803ad chore: session checkpoint [14:27]
 de5224a7f chore: session checkpoint [14:26]
-deccb179f fix(e2e): exclude live gcp spec from emulator suite
 ```
 
 ## Working State
@@ -36,6 +36,8 @@ deccb179f fix(e2e): exclude live gcp spec from emulator suite
  M scripts/git_monitor_sync.js
 ?? .claude/launch.json
 ?? ORIGINAL_REQUEST.md
+?? artifacts/mega_audio_analyzer_2026-06-22_live_evidence.json
+?? artifacts/mega_audio_analyzer_2026-06-22_screenshots/
 ?? docs/flowcharts/agent-venue-research-macro.md
 ?? docs/handoff/
 ?? packages/renderer/src/modules/notes/
