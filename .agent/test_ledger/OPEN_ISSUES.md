@@ -6427,6 +6427,7 @@ Therefore, no fix can be proposed or implemented.
 - **File:** `packages/landing/src/page.tsx:3`
 - **Summary:** The leftover `useEffect` import has been removed; the landing page now keeps the lazy initializer path only.
 - **Evidence:** `rg -n "useEffect" packages/landing/src/page.tsx` returns no matches; `npm test -- --run packages/landing/src/App.test.tsx` passed 3/3.
+- **Verdict:** ✅ VERIFIED (D, 2026-06-22): Leftover useEffect import removed from packages/landing/src/page.tsx:3. Verification confirmed.
 
 ### ISSUE-A-006: Creative `/history` list query is denied (returns false) — History subscription still errors on every load
 
@@ -6454,6 +6455,7 @@ Therefore, no fix can be proposed or implemented.
 - **DO NOT:** Do not "fix" it by extending the timeout — that masks a misclassified test. Do not point it at the emulator (it is a live-prod check by design).
 - **Fix:** Tagged the spec as `@live` and excluded it from the emulator launcher with `--grep-invert @live`, so the deterministic Firestore-emulator suite no longer spends 3 minutes on a guaranteed live-prod timeout.
 - **Evidence:** `e2e/api-live-real-gcp.spec.ts:4-7`; `scripts/run-e2e-emulator.sh:22-23`; `npx playwright test e2e/api-live-real-gcp.spec.ts --project=chromium --grep-invert @live --list` returned `No tests found`; `npx playwright test e2e/api-live-real-gcp.spec.ts --project=chromium --list` still lists the live test; `npm run typecheck` passed.
+- **Verdict:** ✅ VERIFIED (D, 2026-06-22): Live-prod spec successfully tagged @live and excluded from default E2E run under emulator. Commits checked: deccb179f.
 
 ### ISSUE-A-008: Boardroom multi-turn E2E fails at Turn 1 — `seat_agent` tool call doesn't populate `activeAgents`
 
