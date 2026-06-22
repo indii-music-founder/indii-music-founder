@@ -1,3 +1,29 @@
+## 2026-06-22 Lazy useState Initializer Regressed into useEffect+setState (lint error + 3 broken landing tests, left uncommitted)
+
+**SEVERITY:** Medium (1 ESLint **error** that fails the CI lint gate + 3 failing `packages/landing/src/App.test.tsx` tests). Caught only because it was left as a dirty working-tree change during an unrelated refactor; had a checkpoint hook `git add -A`'d it, it would have broken CI under someone else's name.
+
+**MISTAKE:**
+- FILE: `packages/landing/src/page.tsx` (`Home` component, `isThesisOpen` state).
+- An agent took a correct **lazy `useState` initializer** that derives initial state from `window` synchronously and rewrote it into `useState(false)` + a `useEffect(() => { … setIsThesisOpen(true) }, [])`.
+- TWO failures result:
+  1. **Lint error** — `Calling setState synchronously within an effect can trigger cascading renders` (a hard error, not a warning, so it fails `npm run lint` in CI).
+  2. **3 test failures** — `App.test.tsx` asserts the thesis/founder-mode state on the **initial render**. The lazy initializer set it during first render; the effect sets it on a *later* tick, so the initial-render assertions now fail.
+- The agent's underlying INTENT was valid (add `hostname.includes('founders')` detection). The implementation, not the feature, caused the regression.
+
+**FIX (the right way — keep it synchronous):** extend the lazy initializer; do NOT move derived-from-`window` initial state into an effect.
+```tsx
+const [isThesisOpen, setIsThesisOpen] = useState(() => {
+  if (typeof window === 'undefined') return false;
+  const { hostname, search, hash } = window.location;
+  return hostname.includes('founders') || search.includes('thesis=true') || hash.includes('#thesis');
+});
+```
+
+**PREVENTION (what NOT to do / what to do):**
+1. **Do not convert a lazy `useState(() => …)` initializer into `useState(initial)` + `useEffect(setState)`.** If initial state can be computed synchronously (incl. from `window`/`document` behind a `typeof window !== 'undefined'` guard), compute it in the initializer. Effects that immediately `setState` cause an extra render and trip the lint rule. Reserve effects for *subscriptions* and *post-mount* side effects, not initial derivation.
+2. **Never leave a broken change uncommitted in the shared working tree.** Run `npm run lint` + the package's tests on any file you touch BEFORE moving on. A dirty file that fails lint/tests is a landmine — a checkpoint/Stop hook doing `git add -A` can sweep it into someone else's commit and fail CI under the wrong author.
+3. **Detect:** `npm run lint` surfaces the rule by name (`setState synchronously within an effect`). For initial-render test breakage, run the touched package's tests (`npm test -- --run packages/landing`).
+
 ## 2026-06-21 Stale Hardcoded Fine-Tuned Endpoint Registry — Re-Tune Minted New IDs in a New Location
 
 **SEVERITY:** High (after an R8 re-tune of all agents, the frontend endpoint registry pointed at dead May endpoints in the wrong region; every agent would 404 → silently fall back to base model, i.e. NONE of the freshly-trained agents would actually serve)
