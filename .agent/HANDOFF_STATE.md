@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-22 15:40 UTC
+**Updated:** 2026-06-22 15:44 UTC
 **Branch:** `claude/agent-abcd-vem93b`
 
 ## Recent Commits
 ```
+bb63d03 chore: session checkpoint [15:40]
 6926915 feat(remote): add [SHOW] on-demand visual return channel to indiiREMOTE
 308b8ee chore: session checkpoint [15:32]
 ee96029 test(nav): lock desktop Social Media Dept routing (ISSUE-443)
@@ -13,12 +14,13 @@ d18fb47 chore: session checkpoint [14:56]
 6c53693 fix(landing): use lazy useState initializer for thesis-open detection
 5e0538d chore: session checkpoint [14:48]
 7e7a58c chore: session checkpoint [14:46]
-39b61a9 chore: session checkpoint [14:20]
 ```
 
 ## Working State
 ```
-clean working tree
+ M packages/renderer/src/hooks/useRemoteCommandListener.ts
+?? docs/flowcharts/remote-show-me-channel-micro.md
+?? packages/renderer/src/hooks/useRemoteCommandListener.showme.test.ts
 ```
 
 ## Decisions
