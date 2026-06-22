@@ -6444,7 +6444,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-A-007: Live-production GCP spec bundled into the emulator E2E suite — guaranteed 3-min timeout every run
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (Agent B)
 - **Severity:** 🟡 MEDIUM
 - **Dimension:** Architecture / Test Harness
 - **Location:** `e2e/api-live-real-gcp.spec.ts:7` ("Live Production GCP API Verification").
@@ -6452,4 +6452,5 @@ Therefore, no fix can be proposed or implemented.
 - **Expected (acceptance):** `api-live-real-gcp.spec.ts` is excluded from the default/emulator E2E run — e.g. tagged `@live` and gated behind an explicit env flag or a separate Playwright project — so the standard suite (and CI) no longer eats a guaranteed 3-minute timeout. The live spec still runnable on demand against real prod with real auth.
 - **Honest fallback:** If the team wants live verification in CI, it must run in its own job with real credentials and network egress, NOT under `emulators:exec`. Do not delete the spec.
 - **DO NOT:** Do not "fix" it by extending the timeout — that masks a misclassified test. Do not point it at the emulator (it is a live-prod check by design).
-- **Evidence:** `/tmp/a-e2e.log`: `✘ 16 [chromium] › e2e/api-live-real-gcp.spec.ts:7:5 › Live Production GCP API Verification › Authenticate and verify all backend API modules (3.0m)`; preceding `403 PERMISSION_DENIED ... referer http://localhost:4242/ are blocked`.
+- **Fix:** Tagged the spec as `@live` and excluded it from the emulator launcher with `--grep-invert @live`, so the deterministic Firestore-emulator suite no longer spends 3 minutes on a guaranteed live-prod timeout.
+- **Evidence:** `e2e/api-live-real-gcp.spec.ts:4-7`; `scripts/run-e2e-emulator.sh:22-23`; `npx playwright test e2e/api-live-real-gcp.spec.ts --project=chromium --grep-invert @live --list` returned `No tests found`; `npx playwright test e2e/api-live-real-gcp.spec.ts --project=chromium --list` still lists the live test; `npm run typecheck` passed.
