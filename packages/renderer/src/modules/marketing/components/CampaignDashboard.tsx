@@ -143,6 +143,23 @@ const CampaignDashboard: React.FC = () => {
                             Mission Active: {deployedBounty}
                         </div>
                     )}
+                    <div className="px-4 md:px-6 pt-4">
+                        <div className="rounded-[28px] border border-dept-marketing/20 bg-linear-to-r from-dept-marketing/10 via-white/[0.03] to-transparent p-5 md:p-6 shadow-[0_16px_40px_rgba(0,0,0,0.18)]">
+                            <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+                                <div className="max-w-2xl">
+                                    <p className="text-[10px] font-black uppercase tracking-[0.28em] text-dept-marketing">Marketing Narrative</p>
+                                    <h3 className="mt-2 text-xl md:text-2xl font-bold tracking-tight text-white">Pocket-team capture for live moments.</h3>
+                                    <p className="mt-2 text-sm md:text-[15px] leading-relaxed text-gray-300">
+                                        The remote becomes a pocket team-capture lane for voice memos, photos, and quick notes that turn real-world moments into campaign-ready material.
+                                    </p>
+                                </div>
+                                <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.24em] text-dept-marketing/80">
+                                    <span className="h-2 w-2 rounded-full bg-dept-marketing shadow-[0_0_12px_rgba(233,30,99,0.55)]" />
+                                    Marketing page concept
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     <MarketingToolbar
                         onAction={handleCreateNew}
                         actionLabel="New Campaign"
