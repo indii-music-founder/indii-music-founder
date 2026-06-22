@@ -38,7 +38,7 @@
 | Script                     | Runner                                  | Purpose                                                             |
 | -------------------------- | --------------------------------------- | ------------------------------------------------------------------- |
 | `run-gauntlet.sh`          | `bash scripts/run-gauntlet.sh`          | **Full E2E stress test (The Gauntlet)** — runs all Playwright specs |
-| `agent-stress-test.mjs`    | `node scripts/agent-stress-test.mjs`    | Stress test the indii Conductor with concurrent requests            |
+| `agent-stress-test.mjs`    | `node scripts/agent-stress-test.mjs --model-ladder --loop=3` | Live agent prompt stress test with model ladder and feedback retries |
 | `load-test.js`             | `node scripts/load-test.js`             | HTTP load test for API endpoints                                    |
 | `stress-test-rag.ts`       | `npx tsx scripts/stress-test-rag.ts`    | RAG pipeline stress test                                            |
 | `keyboard-audit.ts`        | `npx tsx scripts/keyboard-audit.ts`     | Accessibility keyboard navigation audit                             |
