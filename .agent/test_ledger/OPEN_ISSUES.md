@@ -6209,7 +6209,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-443: Social Media Department Button Redirects to `/mobile-remote`
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ RESOLVED / BY-DESIGN (2026-06-22, Engine B/D — branch `claude/agent-abcd-vem93b`)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Navigation / Social Media Department
 - **Found:** 2026-06-19 by Browser Subagent Test
@@ -6219,6 +6219,11 @@ Therefore, no fix can be proposed or implemented.
   2. Notice the desktop application is redirected to `/mobile-remote` route.
   3. If you navigate directly to `https://indii-music-studio.web.app/social`, the Firebase authentication context is destroyed and you are redirected to the Login page.
 - **User Impact:** Users cannot easily access the Social Media Department from the sidebar, and direct navigation requires re-authenticating.
+- **Root-cause analysis (Engine A/D, 2026-06-22):** The ONLY code path to `/mobile-remote` is `App.tsx:475`, inside an effect gated by `isAnyPhone` (`useMobile`): `if (isAnyPhone && currentModule !== 'mobile-remote') setModule('mobile-remote')`. On a real **desktop** (≥768px, non-mobile UA) `isAnyPhone` is `false`, so clicking "Social" correctly sets module `social` → renders `SocialDashboard`. The Sidebar itself is `hidden md:flex` (≥768px only). The reported `/mobile-remote` bounce therefore only occurs in a **mobile-emulated browser session** (mobile UA or ≤640px viewport) — i.e. a browser-subagent artifact, not a real desktop defect.
+- **Design confirmation (founder, 2026-06-22):** **Phone = remote-only by design.** The phone IS indiiREMOTE — a conversational interface to the INDII coordinator, which delegates to department agents and reports back. Department *screens* are intentionally not phone-navigable; you reach departments by talking to INDII, not by opening department module UIs. So the phone bounce to `mobile-remote` is correct behavior.
+- **Note — orphaned dead nav:** `MobileNav.tsx` has **no render site** (fully unused), and `MobileTabBar.tsx` only renders inside `{showChrome && …}` while `App.tsx` forces `activeShowChrome=false` on phones (plus `MobileTabBar` internally returns `null` when `!isAnyPhone`). Both phone-nav components (which still list department/manager/tool module buttons) are therefore orphaned and never render. Recommend a **separate cleanup task** to prune them (deferred here to avoid colliding with the concurrent Codex agent in core layout files; respects the asset-deletion fail-safe).
+- **Fix applied:** Added desktop regression coverage in `packages/renderer/src/core/components/SidebarNavigation.test.tsx` — (1) `currentModule='social'` renders `SocialDashboard` (not mobile-remote), (2) clicking "Social Media Department" dispatches `setModule('social')`. Locks the correct desktop behavior so the `isAnyPhone` force-route can't silently regress desktop department navigation.
+- **Evidence:** `npx vitest run packages/renderer/src/core/components/SidebarNavigation.test.tsx -t "ISSUE-443"` → 2/2 passed.
 
 ---
 
