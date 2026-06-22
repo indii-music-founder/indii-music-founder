@@ -314,7 +314,8 @@ All frontend env vars use the `VITE_` prefix. Copy `.env.example` to `.env` for 
 
 **Optional:**
 
-- `VITE_VERTEX_PROJECT_ID` / `VITE_VERTEX_LOCATION` - Vertex AI config
+- `VERTEX_PROJECT_ID` / `VERTEX_LOCATION` - backend Vertex AI config
+- `VERTEX_IMAGE_LOCATION` / `VERTEX_VIDEO_LOCATION` - backend media routing locations
 - `VITE_GOOGLE_MAPS_API_KEY` - Google Maps
 - `VITE_SKIP_ONBOARDING` - Skip onboarding in dev
 - `VITE_FIREBASE_APP_CHECK_KEY` - App Check (required for production)
@@ -352,7 +353,7 @@ All frontend env vars use the `VITE_` prefix. Copy `.env.example` to `.env` for 
 4. Two Firebase Hosting targets:
    - `landing` -> `landing-page/dist`
    - `app` -> `dist`
-5. Required secrets: `VITE_API_KEY`, `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_PROJECT_ID`, `VITE_VERTEX_PROJECT_ID`, `VITE_VERTEX_LOCATION`, `FIREBASE_SERVICE_ACCOUNT`
+5. Required secrets: `GEMINI_API_KEY`, `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_PROJECT_ID`, `VERTEX_PROJECT_ID`, `VERTEX_LOCATION`, `FIREBASE_SERVICE_ACCOUNT`
 
 ### Build Pipeline (`npm run build`)
 
@@ -761,4 +762,3 @@ Key routing rules:
 - Architecture review → invoke plan-eng-review
 - Save progress, checkpoint, resume → invoke checkpoint
 - Code quality, health check → invoke health
-
