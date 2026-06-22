@@ -226,6 +226,7 @@ export default function MobileRemote() {
       setIsAuth(authenticated);
       if (authenticated) {
         setConnectionStatus(prev => prev === 'idle' ? 'pairing' : prev);
+        setIsPaired(true);
       } else {
         setConnectionStatus('idle');
         setIsPaired(false);
@@ -286,6 +287,9 @@ export default function MobileRemote() {
   // Keep refs of connection status to avoid tearing down subscription in useEffect
   const isPairedRef = useRef(isPaired);
   const connectionStatusRef = useRef(connectionStatus);
+  const desktopStateRef = useRef<DesktopState | null>(null);
+  const gracePeriodUntilRef = useRef<number>(0);
+
   useEffect(() => {
     isPairedRef.current = isPaired;
     connectionStatusRef.current = connectionStatus;
@@ -301,14 +305,19 @@ export default function MobileRemote() {
     const markDesktopOffline = () => {
       const currentIsPaired = isPairedRef.current;
       const currentStatus = connectionStatusRef.current;
+
+      // If the page is hidden, do NOT mark desktop offline yet, as the timer is throttled
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+        logger.info('[MobileRemote] Page is hidden. Deferring offline state transition.');
+        return;
+      }
+
       if (currentIsPaired || currentStatus === 'connected') {
         logger.warn('[MobileRemote] Desktop heartbeat went stale. Initiating auto-reconnect sequence…');
-        // Do NOT set isPaired(false) here. Keep UI semi-functional during transient drops.
         setIsReconnecting(true);
         setConnectionStatus('pairing');
         setReconnectAttempts(1);
       } else {
-        setIsPaired(false);
         setConnectionStatus('idle');
         setIsReconnecting(false);
       }
@@ -316,28 +325,76 @@ export default function MobileRemote() {
 
     const unsub = remoteRelayService.onDesktopState((state) => {
       setDesktopState(state);
+      desktopStateRef.current = state;
+
       if (stalePresenceTimeoutRef.current) {
         clearTimeout(stalePresenceTimeoutRef.current);
         stalePresenceTimeoutRef.current = null;
       }
+
+      const isVisible = typeof document === 'undefined' || document.visibilityState === 'visible';
 
       if (isFreshDesktopState(state)) {
         setIsPaired(true);
         setConnectionStatus('connected');
         setIsReconnecting(false);
         setReconnectAttempts(0);
-        stalePresenceTimeoutRef.current = setTimeout(markDesktopOffline, DESKTOP_HEARTBEAT_STALE_MS);
+        
+        if (isVisible) {
+          stalePresenceTimeoutRef.current = setTimeout(markDesktopOffline, DESKTOP_HEARTBEAT_STALE_MS);
+        }
       } else {
-        // If we were previously connected, trigger automatic reconnection sequence
-        markDesktopOffline();
+        // If state is not fresh, only trigger offline/standby transition if visible AND we are past the grace period
+        if (isVisible && Date.now() > gracePeriodUntilRef.current) {
+          markDesktopOffline();
+        }
       }
     });
+
+    // Visibility change listener to handle phone sleep/wake
+    const onVisibilityChange = () => {
+      if (typeof document === 'undefined') return;
+      
+      if (document.visibilityState === 'visible') {
+        logger.info('[MobileRemote] App regained visibility. Refreshing connection state...');
+        if (stalePresenceTimeoutRef.current) {
+          clearTimeout(stalePresenceTimeoutRef.current);
+          stalePresenceTimeoutRef.current = null;
+        }
+        
+        setIsReconnecting(false);
+        setReconnectAttempts(0);
+        
+        // Set the grace period for 15 seconds
+        gracePeriodUntilRef.current = Date.now() + 15000;
+        
+        // Wait 15 seconds for Firestore sync before checking presence
+        stalePresenceTimeoutRef.current = setTimeout(() => {
+          logger.info('[MobileRemote] Delayed visibility check running...');
+          if (!isFreshDesktopState(desktopStateRef.current)) {
+            markDesktopOffline();
+          }
+        }, 15000);
+      } else {
+        if (stalePresenceTimeoutRef.current) {
+          clearTimeout(stalePresenceTimeoutRef.current);
+          stalePresenceTimeoutRef.current = null;
+        }
+      }
+    };
+
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', onVisibilityChange);
+    }
 
     return () => {
       unsub();
       if (stalePresenceTimeoutRef.current) {
         clearTimeout(stalePresenceTimeoutRef.current);
         stalePresenceTimeoutRef.current = null;
+      }
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', onVisibilityChange);
       }
     };
   }, [isAuth]);
@@ -357,7 +414,6 @@ export default function MobileRemote() {
       queueMicrotask(() => {
         setIsReconnecting(false);
         setConnectionStatus('idle');
-        setIsPaired(false);
       });
       return;
     }
@@ -423,6 +479,10 @@ export default function MobileRemote() {
   const handleManualRetry = () => {
     triggerHaptic(50);
     logger.info('[MobileRemote] Manual reconnect triggered by user');
+    if (stalePresenceTimeoutRef.current) {
+      clearTimeout(stalePresenceTimeoutRef.current);
+      stalePresenceTimeoutRef.current = null;
+    }
     setReconnectAttempts(1);
     setIsReconnecting(true);
     setConnectionStatus('pairing');
@@ -536,60 +596,49 @@ export default function MobileRemote() {
 
           <div className="flex items-center gap-3">
             <AnimatePresence mode="wait">
-              {isPaired && connectionStatus === 'connected' ? (
-                desktopState?.sleepMode ? (
-                  <motion.div
-                    key="sleeping"
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.8 }}
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 shadow-[0_0_15px_rgba(245,158,11,0.1)]"
-                  >
-                    <div className="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.6)]" />
-                    <span className="text-[10px] font-bold text-amber-400 uppercase tracking-[0.15em]">
-                      Sleeping
-                    </span>
-                  </motion.div>
+              {isPaired ? (
+                connectionStatus === 'connected' ? (
+                  desktopState?.sleepMode ? (
+                    <motion.div
+                      key="sleeping"
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 shadow-[0_0_15px_rgba(245,158,11,0.1)]"
+                    >
+                      <div className="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.6)]" />
+                      <span className="text-[10px] font-bold text-amber-400 uppercase tracking-[0.15em]">
+                        Sleeping
+                      </span>
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="connected"
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-500/10 border border-green-500/20 shadow-[0_0_15px_rgba(34,197,94,0.1)]"
+                    >
+                      <div className="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.6)] animate-pulse" />
+                      <span className="text-[10px] font-bold text-green-400 uppercase tracking-[0.15em]">
+                        Active
+                      </span>
+                    </motion.div>
+                  )
                 ) : (
                   <motion.div
-                    key="connected"
+                    key="standby"
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.8 }}
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-500/10 border border-green-500/20 shadow-[0_0_15px_rgba(34,197,94,0.1)]"
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-500/10 border border-zinc-500/20"
                   >
-                    <div className="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.6)] animate-pulse" />
-                    <span className="text-[10px] font-bold text-green-400 uppercase tracking-[0.15em]">
-                      Active
+                    <div className="w-2 h-2 rounded-full bg-zinc-500 animate-pulse" />
+                    <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-[0.15em]">
+                      Standby
                     </span>
                   </motion.div>
                 )
-              ) : isReconnecting ? (
-                <motion.div 
-                  key="reconnecting"
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  className="flex items-center gap-2 px-3.5 py-2 rounded-full bg-amber-500/10 border border-amber-500/20 shadow-[0_0_12px_rgba(245,158,11,0.15)]"
-                >
-                  <RefreshCw className="w-3.5 h-3.5 text-amber-400 animate-spin" />
-                  <span className="text-[10px] font-black text-amber-400 uppercase tracking-[0.15em]">
-                    Retry {reconnectAttempts}/{maxReconnectAttempts}
-                  </span>
-                </motion.div>
-              ) : connectionStatus === 'pairing' ? (
-                <motion.div 
-                  key="pairing"
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20"
-                >
-                  <div className="w-3 h-3 rounded-full border-2 border-amber-400 border-t-transparent animate-spin" />
-                  <span className="text-[10px] font-bold text-amber-400 uppercase tracking-[0.15em]">
-                    Linking
-                  </span>
-                </motion.div>
               ) : (
                 <motion.button
                   key="idle"
