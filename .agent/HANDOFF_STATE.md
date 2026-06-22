@@ -1,24 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-22 14:00 UTC
-**Branch:** `claude/ci-failure-main-wxyof9`
 
-## Recent Commits
-```
-8e9a938 chore: session checkpoint [13:28]
-d34b084 chore: session checkpoint [13:22]
-2e7c506 chore: session checkpoint [23:16]
-d40e350 chore: session checkpoint [16:14]
-d2d91af chore: session checkpoint [16:14]
-32336b1 fix: configure App Check in QA_Voice tests
-4f309c9 chore: session checkpoint [16:00]
-59f7eec chore: session checkpoint [15:59]
-409fc1b fix: configure App Check in FirebaseIntelligenceService security test
-cc1c951 Merge pull request #169 from indii-music-founder/codex/firebase-only-renderer-ai-boundary
-**Updated:** 2026-06-22 18:39 EDT
+**Updated:** 2026-06-22 18:44 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+913a661e6 chore: session checkpoint [18:39]
 e528b159d chore: session checkpoint [18:37]
 341fd2fd4 test(ledger): log ISSUE-A-012
 48852717c chore: session checkpoint [14:38]
@@ -28,12 +15,12 @@ ca1a69a0b test(ledger): log ISSUE-A-008 (boardroom seat_agent dispatch fails Tur
 53e598a94 chore: session checkpoint [14:34]
 dfddbbee2 chore: session checkpoint [14:33]
 310b803ad chore: session checkpoint [14:27]
-de5224a7f chore: session checkpoint [14:26]
 ```
 
 ## Working State
 ```
  M .agent/test_ledger/OPEN_ISSUES.md
+ M .agent/test_ledger/REAL_TEST_HISTORY.md
  M .agent/workflows/a.md
  M artifacts/boardroom_live_home.png
  M artifacts/boardroom_result.png
@@ -52,6 +39,8 @@ de5224a7f chore: session checkpoint [14:26]
 ?? .claude/launch.json
 ?? ORIGINAL_REQUEST.md
 ?? artifacts/mega_audio_analyzer_2026-06-22_live_evidence.json
+?? artifacts/mega_audio_analyzer_2026-06-22_preview_evidence.json
+?? artifacts/mega_audio_analyzer_2026-06-22_results.md
 ?? artifacts/mega_audio_analyzer_2026-06-22_screenshots/
 ?? docs/flowcharts/agent-venue-research-macro.md
 ?? docs/handoff/
