@@ -23,6 +23,7 @@ import {
   DESKTOP_HEARTBEAT_STALE_MS,
   isFreshDesktopState,
   remoteRelayService,
+  isPrivateIP,
   type DesktopState,
 } from '@/services/agent/RemoteRelayService';
 import { auth } from '@/services/firebase';
@@ -77,6 +78,9 @@ function PairingModal({ onClose }: { onClose: () => void }) {
   const [qrUrl, setQrUrl] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [manualCode, setManualCode] = useState<string>('');
+  const [redeeming, setRedeeming] = useState(false);
+  const [isPhoneMode, setIsPhoneMode] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -86,7 +90,9 @@ function PairingModal({ onClose }: { onClose: () => void }) {
         setLoading(true);
         const currentUser = auth.currentUser;
         if (!currentUser) {
-          throw new Error('Not authenticated on desktop');
+          setIsPhoneMode(true);
+          setLoading(false);
+          return;
         }
 
         const idToken = await currentUser.getIdToken();
@@ -109,7 +115,7 @@ function PairingModal({ onClose }: { onClose: () => void }) {
         }
 
         if (active) {
-          const isDev = window.location.hostname === 'localhost' || window.location.hostname.startsWith('192.168.');
+          const isDev = window.location.hostname === 'localhost' || isPrivateIP(window.location.hostname);
           const base = isDev ? window.location.origin + '/mobile-remote' : 'https://indii.music/mobile-remote';
           setQrUrl(`${base}?code=${data.code}`);
           setLoading(false);
@@ -129,6 +135,46 @@ function PairingModal({ onClose }: { onClose: () => void }) {
       active = false;
     };
   }, []);
+
+  const handleRedeemManualCode = async () => {
+    if (!manualCode.trim()) return;
+    setRedeeming(true);
+    setError(null);
+    try {
+      const code = manualCode.trim();
+      if (!/^[a-fA-F0-9]{64}$/.test(code)) {
+        throw new Error('Invalid code format. Must be a 64-character hex string.');
+      }
+
+      const { endpointService } = await import('@/core/config/EndpointService');
+      const redeemUrl = endpointService.getFunctionUrl('redeemHandoffCode');
+      const response = await fetch(redeemUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code }),
+      });
+
+      if (!response.ok) {
+        throw new Error(await response.text());
+      }
+
+      const data = await response.json();
+      if (data.customToken) {
+        logger.info('[MobileRemote] Redeem success, signing in with custom token...');
+        const { signInWithCustomToken } = await import('firebase/auth');
+        await signInWithCustomToken(auth, data.customToken);
+        logger.info('[MobileRemote] Signed in successfully!');
+        onClose();
+      } else {
+        throw new Error('No customToken returned');
+      }
+    } catch (err) {
+      logger.error('[PairingModal] Redeem failed:', err);
+      setError(err instanceof Error ? err.message : 'Failed to redeem pairing code');
+    } finally {
+      setRedeeming(false);
+    }
+  };
 
   return (
     <motion.div 
@@ -150,7 +196,9 @@ function PairingModal({ onClose }: { onClose: () => void }) {
 
         <h2 className="text-2xl font-bold text-white mb-2 text-center tracking-tight">Connect Remote</h2>
         <p className="text-[#a1a1a6] text-center text-sm mb-8 leading-relaxed">
-          Scan this code to link your phone. Once connected, you can control your studio from anywhere in the world.
+          {isPhoneMode
+            ? 'Enter the 64-character pairing code from your desktop studio Settings panel to link this remote.'
+            : 'Scan this code to link your phone. Once connected, you can control your studio from anywhere in the world.'}
         </p>
 
         <div className="bg-white p-5 rounded-3xl mb-8 shadow-[0_0_40px_rgba(255,255,255,0.1)] flex items-center justify-center w-[220px] h-[220px]">
@@ -159,8 +207,26 @@ function PairingModal({ onClose }: { onClose: () => void }) {
                <div className="w-6 h-6 border-2 border-gray-300 border-t-transparent rounded-full animate-spin" />
             </div>
           ) : error ? (
-            <div className="text-red-500 text-xs text-center px-4 font-semibold">
+            <div className="text-red-500 text-xs text-center px-4 font-semibold overflow-y-auto max-h-[180px]">
               {error}
+            </div>
+          ) : isPhoneMode ? (
+            <div className="flex flex-col items-center justify-center w-full h-full p-2">
+              <span className="text-black text-xs font-semibold text-center mb-2">Enter Pairing Code:</span>
+              <input
+                type="text"
+                placeholder="64-character hex code"
+                value={manualCode}
+                onChange={(e) => setManualCode(e.target.value)}
+                className="w-full px-3 py-2 text-black bg-gray-100 border border-gray-300 rounded-lg text-xs font-mono focus:outline-hidden"
+              />
+              <button
+                onClick={handleRedeemManualCode}
+                disabled={redeeming || !manualCode.trim()}
+                className="mt-4 w-full h-9 bg-blue-600 hover:bg-blue-500 disabled:bg-blue-600/40 text-white rounded-lg text-xs font-bold transition-all cursor-pointer"
+              >
+                {redeeming ? 'Pairing...' : 'Link Device'}
+              </button>
             </div>
           ) : (
             <QRCodeSVG value={qrUrl} size={180} />
@@ -411,6 +477,7 @@ export default function MobileRemote() {
       queueMicrotask(() => {
         setIsReconnecting(false);
         setConnectionStatus('idle');
+        setIsPaired(false);
       });
       return;
     }
@@ -434,6 +501,7 @@ export default function MobileRemote() {
     if (connectionStatus === 'pairing' && !isReconnecting) {
       pairingTimeoutRef.current = setTimeout(() => {
         setConnectionStatus('idle');
+        setIsPaired(false);
         logger.info('[MobileRemote] Pairing timeout — desktop not found, falling back to idle');
       }, 10_000);
     } else {
@@ -598,6 +666,19 @@ export default function MobileRemote() {
           </motion.div>
 
           <div className="flex items-center gap-3">
+            {isPaired && auth.currentUser && (
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={() => {
+                  triggerHaptic(50);
+                  setShowPairingModal(true);
+                }}
+                className="flex items-center justify-center p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white cursor-pointer"
+                title="Show Pairing Code"
+              >
+                <QrCode className="w-4 h-4 text-blue-400" />
+              </motion.button>
+            )}
             <AnimatePresence mode="wait">
               {isPaired ? (
                 connectionStatus === 'connected' ? (
