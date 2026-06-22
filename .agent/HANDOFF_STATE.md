@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-22 08:38 EDT
+**Updated:** 2026-06-22 09:07 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+bd1201804 refactor(creative): rename Andromeda → PLP, Swarm → Roster
+683f13ef3 chore: session checkpoint [08:38]
 0fc3a3fb2 chore: session checkpoint [08:38]
 a0cf5544b chore: session checkpoint [08:33]
 578b90577 chore: session checkpoint [08:28]
@@ -12,8 +14,6 @@ db4ca4002 docs: align landing page agent counts to 21 and fix React hook/hoistin
 3773bd076 test(ledger): log ISSUE-CI pipeline failures
 f88980acd fix: increase remote relay heartbeat timeout to 120s to tolerate background tab throttling
 9a6ea1504 chore: session checkpoint [15:06]
-1781b1e3e chore: session checkpoint [15:06]
-943f76a60 chore: session checkpoint [15:00]
 ```
 
 ## Working State
@@ -25,10 +25,35 @@ f88980acd fix: increase remote relay heartbeat timeout to 120s to tolerate backg
  M GEMINI.md
  M JULES.md
  M docs/BACKEND_ONLY_API_DECLARATION.md
+ M docs/development/AGENT_WORKFLOW_STANDARDS.md
+ M docs/development/GAUNTLET_PROTOCOL.md
  M docs/flowcharts/07-mobile-remote-relay.md
+ M docs/flowcharts/pinocchio-media-test-rotator-micro.md
+ M docs/testing/TEST_PLAYBOOK.md
+ D e2e/auth-flow.spec.ts
+ D e2e/boardroom-generate-media.spec.ts
+ D e2e/creative-prompt-builder.spec.ts
+ D e2e/creative.spec.ts
+ M e2e/mega-stress-test-v10.spec.ts
+ M e2e/mega-stress-test-v11.spec.ts
+ M e2e/mega-stress-test-v12.spec.ts
+ M e2e/mega-stress-test-v4.spec.ts
+ D e2e/video-producer-ux.spec.ts
+ D e2e/video.spec.ts
+ M packages/landing/src/App.tsx
  M packages/landing/src/components/ThesisCrawl.tsx
+ M packages/landing/src/page.tsx
+ M packages/renderer/src/modules/devops/DevopsDashboard.tsx
  M packages/renderer/src/modules/mobile-remote/MobileRemote.tsx
  M packages/renderer/src/services/agent/RemoteRelayService.ts
+ M scripts/run-gauntlet.sh
+ M scripts/run_all_agents.sh
+?? .agents/teamwork_preview_explorer_remote_connection_1/
+?? .agents/teamwork_preview_explorer_remote_connection_2/
+?? .agents/teamwork_preview_explorer_remote_connection_3/
+?? .agents/teamwork_preview_orchestrator_remote_connection/
+?? .agents/teamwork_preview_sentinel/
+?? ORIGINAL_REQUEST.md
 ?? docs/flowcharts/agent-venue-research-macro.md
 ?? docs/handoff/
 ?? packages/renderer/src/modules/notes/
