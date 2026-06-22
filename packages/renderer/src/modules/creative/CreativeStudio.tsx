@@ -121,10 +121,10 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
             // Trigger Image Generation
             const generateImage = async () => {
                 const isCoverArt = studioControls.isCoverArtMode;
-                const isAndromeda = studioControls.isAndromedaMode;
+                const isPLP = studioControls.isPLPMode;
 
                 setIsGenerating(true);
-                toast.info(isAndromeda ? "Deploying Andromeda 15-Variant Pipeline..." : isCoverArt ? "Generating cover art..." : "Generating image...");
+                toast.info(isPLP ? "Deploying PLP 15-Variant Pipeline..." : isCoverArt ? "Generating cover art..." : "Generating image...");
 
                 try {
                     const { ImageGeneration } = await import('@/services/image/ImageGenerationService');
@@ -133,7 +133,7 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                     const finalPrompt = WhiskService.synthesizeWhiskPrompt(pendingPrompt, whiskState);
                     const sourceImages = WhiskService.getSourceMedia(whiskState);
 
-                    if (isAndromeda) {
+                    if (isPLP) {
                         const { VideoGeneration } = await import('@/services/video/VideoGenerationService');
                         const { adAutomationService } = await import('@/services/marketing/AdAutomationService');
 
@@ -207,14 +207,14 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                                     callToAction: isVideo ? 'LEARN_MORE' : 'SHOP_NOW'
                                 });
                             } else if (res.status === 'rejected') {
-                                logger.warn(`[Andromeda] Variant ${index + 1} failed:`, res.reason);
+                                logger.warn(`[PLP] Variant ${index + 1} failed:`, res.reason);
                             }
                         });
 
                         if (successCount > 0) {
-                            toast.success(`Andromeda: ${successCount}/15 Variants generated.`);
+                            toast.success(`PLP: ${successCount}/15 Variants generated.`);
                             try {
-                                await adAutomationService.deployAndromedaPipeline(adCreatives, {
+                                await adAutomationService.deployPLPPipeline(adCreatives, {
                                     platform: 'meta',
                                     dailyBudget: 10.00,
                                     totalDays: 28,
@@ -223,11 +223,11 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                                 });
                                 toast.success("Campaign deployed to Marketing Protocol.");
                             } catch (e) {
-                                logger.error("[Andromeda] Failed to deploy marketing pipeline", e);
+                                logger.error("[PLP] Failed to deploy marketing pipeline", e);
                                 toast.error("Assets generated, but marketing deployment failed.");
                             }
                         } else {
-                            toast.error("Andromeda pipeline failed: 0 variants generated.");
+                            toast.error("PLP pipeline failed: 0 variants generated.");
                         }
 
                     } else {

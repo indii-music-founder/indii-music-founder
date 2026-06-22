@@ -45,7 +45,7 @@ export default function AgentCapabilityRegistry({ onClose }: AgentCapabilityRegi
             <Cpu size={18} className="text-indigo-400" />
           </div>
           <div>
-            <h2 className="text-sm font-bold text-white tracking-tight">Swarm Capability Registry</h2>
+            <h2 className="text-sm font-bold text-white tracking-tight">Specialist Roster</h2>
             <p className="text-[10px] text-gray-500 uppercase tracking-widest font-medium">A2A Autonomous Network</p>
           </div>
         </div>
@@ -61,7 +61,7 @@ export default function AgentCapabilityRegistry({ onClose }: AgentCapabilityRegi
         {loading ? (
           <div className="flex flex-col items-center justify-center h-64 gap-3">
             <Activity className="text-indigo-500 animate-pulse" size={32} />
-            <p className="text-xs text-gray-500 font-mono">SCANNING SWarm NODES...</p>
+            <p className="text-xs text-gray-500 font-mono">SCANNING ROSTER...</p>
           </div>
         ) : !registry ? (
           <div className="p-8 text-center border border-dashed border-white/10 rounded-xl bg-white/2">

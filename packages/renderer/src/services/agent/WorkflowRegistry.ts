@@ -137,7 +137,7 @@ export const WORKFLOW_REGISTRY: Record<string, WorkflowDefinition> = {
     'INDII_GROWTH_PROTOCOL': {
         id: 'INDII_GROWTH_PROTOCOL',
         name: 'indii Growth Protocol',
-        description: 'Automated Meta Andromeda creative pipeline and 28-day algorithmic spike campaign.',
+        description: 'Automated Meta PLP creative pipeline and 28-day algorithmic spike campaign.',
         steps: [
             {
                 id: 'video_generation',
