@@ -6380,9 +6380,12 @@ Therefore, no fix can be proposed or implemented.
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
 
 ### ISSUE-LANDING-20260622: Uncommitted landing/page.tsx regression (lint error + 3 broken tests)
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-06-22, Engine B — branch `claude/agent-abcd-vem93b`)
 - **Severity:** 🟠 MEDIUM (uncommitted in working tree; NOT yet on origin so CI is currently safe — but a `git add -A` checkpoint hook would push it and break CI under the wrong author)
 - **Module:** Landing
 - **File:** `packages/landing/src/page.tsx` (`Home`, `isThesisOpen` state)
 - **Summary:** An agent converted the lazy `useState(() => …)` initializer into `useState(false)` + `useEffect(setState)`. Causes ESLint **error** `Calling setState synchronously within an effect can trigger cascading renders` (fails the lint gate) and fails 3 `packages/landing/src/App.test.tsx` tests (they assert founder/thesis state on initial render).
 - **Fix Direction:** Revert to a lazy initializer; fold the intended `hostname.includes('founders')` detection INTO the initializer (synchronous), NOT an effect. Exact pattern + rationale in `.agent/skills/error_memory/ERROR_LEDGER.md` (2026-06-22 entry). Then `npm run lint` + `npm test -- --run packages/landing` must both pass.
+- **Verification note (Engine A/D, 2026-06-22):** On inspection the committed code had been partially worked around with `setTimeout(() => setIsThesisOpen(true), 0)` inside the effect, which dodged the lint **error** (so `npm run lint` was already clean) and the 3 `App.test.tsx` tests already passed — i.e. the originally-reported failures did not reproduce. The remaining defect was the fragile pattern itself (effect + deferred `setState` → a one-tick thesis-open flash on the founder route; ERROR_LEDGER says reserve effects for subscriptions, not initial derivation).
+- **Fix applied:** Replaced the `useState(false)` + `useEffect`/`setTimeout` block with the canonical lazy initializer that derives `isThesisOpen` synchronously from `window.location` behind a `typeof window === 'undefined'` guard; removed the now-unused `useEffect` import.
+- **Evidence:** `packages/landing/src/page.tsx:82-90`. `npx eslint packages/landing/src/page.tsx` → exit 0 (no errors/warnings). `npx vitest run packages/landing/src/App.test.tsx` → 3/3 passed.
