@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-22 13:54 EDT
+**Updated:** 2026-06-22 13:56 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+a23ec046b docs(ledger): log PLP/Roster rename follow-ups for owner decision
+8c9780a60 chore: session checkpoint [13:54]
 9fb0397d6 chore: session checkpoint [13:53]
 8790713cd fix(types): remove duplicate RemoteMobilePayload import in RemoteRelayService
 99dc088f8 chore: session checkpoint [13:52]
@@ -12,8 +14,6 @@ ad263feaf chore: session checkpoint [13:51]
 1a31bff5f chore: session checkpoint [13:45]
 4f2c398d3 chore: session checkpoint [13:44]
 1c350869b docs(ledger): mark ISSUE-LANDING-20260622 resolved (landing agent fixed forward)
-20b5c192c feat(marketing): add live moment positioning
-a8628a216 feat(mobile-remote): add live moment capture lane
 ```
 
 ## Working State
