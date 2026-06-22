@@ -34,6 +34,19 @@ import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 import { getRealAuthenticatedUserId, isAnonymousOrDemoUser } from '@/utils/authGuards';
 import type { AgentMessage } from '@/core/store/slices/agent/agentSessionSlice';
 
+export function buildLiveMomentNote(noteText: string) {
+    const content = noteText.trim();
+    const firstLine = content.split(/\r?\n/).map(line => line.trim()).find(Boolean) || 'Live Moment';
+    const title = firstLine.length > 56 ? `${firstLine.slice(0, 53)}...` : firstLine;
+
+    return {
+        title,
+        content,
+        attachments: [],
+        tags: ['live-moment', 'mobile-remote'],
+    };
+}
+
 /** Write relay diagnostics to Firestore (console is stripped in prod by terser) */
 async function writeDiagnostic(stage: string, details?: Record<string, unknown>) {
     const uid = getRealAuthenticatedUserId(auth.currentUser);
@@ -680,6 +693,7 @@ function useFirestoreRelay(enabled: boolean) {
                     case 'voice_memo':
                     case 'quick_contact':
                     case 'receipt_log':
+                    case 'live_moment':
                     case 'media_capture':
                     case 'document_scan':
                     case 'venue_log':
@@ -687,7 +701,12 @@ function useFirestoreRelay(enabled: boolean) {
                         // Fallback simple handler for Phase 2: Route directly to agent
                         let text = task.payload.commandText || task.payload.transcription;
                         if (!text) {
-                            if (task.type === 'receipt_log' && task.payload.imageUrl) {
+                            if (task.type === 'live_moment' && task.payload.noteText) {
+                                useStore.getState().addNote(buildLiveMomentNote(task.payload.noteText));
+                                break;
+                            } else if (task.type === 'live_moment') {
+                                throw new Error('Missing live moment text');
+                            } else if (task.type === 'receipt_log' && task.payload.imageUrl) {
                                 text = `Please process this receipt image. Use your tools to extract data, and CALL the \`save_media_note\` tool to attach it to my Notes: ${task.payload.imageUrl}`;
                             } else if (task.type === 'document_scan' && task.payload.imageUrl) {
                                 text = `Please analyze and file this scanned document. CALL the \`save_media_note\` tool with url="${task.payload.imageUrl}" and a description of the document.`;

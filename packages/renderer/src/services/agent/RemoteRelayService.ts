@@ -85,7 +85,7 @@ export interface DesktopState {
 
 export interface AgentDispatchTask {
     id?: string;
-    type: 'voice_memo' | 'quick_contact' | 'receipt_log' | 'agent_command' | 'media_capture' | 'document_scan' | 'venue_log';
+    type: 'voice_memo' | 'quick_contact' | 'receipt_log' | 'agent_command' | 'live_moment' | 'media_capture' | 'document_scan' | 'venue_log';
     payload: {
         audioUrl?: string;
         videoUrl?: string;
@@ -93,6 +93,7 @@ export interface AgentDispatchTask {
         imageUrl?: string;
         amount?: number;
         commandText?: string;
+        noteText?: string;
         lat?: number;
         lng?: number;
     };

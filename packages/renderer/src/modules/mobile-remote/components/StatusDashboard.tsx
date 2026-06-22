@@ -68,8 +68,8 @@ export default function StatusDashboard({ connectionStatus, isPaired, onTabChang
             <div className="grid grid-cols-2 gap-4">
                 <ActionButton
                     icon={Mic}
-                    label="Voice Memo"
-                    description="Dictate an idea or contact"
+                    label="Live Moment"
+                    description="Capture what just happened"
                     delay={0.1}
                     disabled={!isPaired}
                     onClick={() => onTabChange?.('capture')}
