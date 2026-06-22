@@ -6391,9 +6391,9 @@ Therefore, no fix can be proposed or implemented.
 - **Fix:** Added a local preview/review card with object-URL playback/image rendering and explicit `Retake` / `Send to Vault` actions in `QuickCaptureView`, then surfaced a dedicated `Talk to Boardroom` CTA and boardroom tab in the mobile shell.
 - **Evidence:** `packages/renderer/src/modules/mobile-remote/components/QuickCaptureView.tsx:16-48,164-219,330-390`; `packages/renderer/src/modules/mobile-remote/MobileRemote.tsx:51-68,528-548`; `packages/renderer/src/modules/mobile-remote/components/StatusDashboard.tsx:11-15,103-141`; `npm run typecheck` passed
 
-### ISSUE-LANDING-20260622: Uncommitted landing/page.tsx regression (lint error + 3 broken tests)
-- **Status:** ⏳ OPEN
-- **Severity:** 🟠 MEDIUM (uncommitted in working tree; NOT yet on origin so CI is currently safe — but a `git add -A` checkpoint hook would push it and break CI under the wrong author)
+### ISSUE-LANDING-20260622: landing/page.tsx setState-in-effect regression
+- **Status:** ✅ RESOLVED 2026-06-22 by the landing agent (commits `710982571`, `4d0148ce6`). Verified on HEAD: `npm test -- --run packages/landing/src/App.test.tsx` → 3/3 pass; `eslint page.tsx` → 0 errors. Trivial leftover for the landing owner: page.tsx still imports `useEffect` but no longer uses it → 1 unused-import warning to sweep. The checkpoint hook DID `git add -A` the broken change onto origin before the fix landed (the predicted landmine), but it was fixed forward — no lasting CI break.
+- **Severity:** 🟠 MEDIUM (was uncommitted → committed by a `git add -A` hook → fixed forward)
 - **Module:** Landing
 - **File:** `packages/landing/src/page.tsx` (`Home`, `isThesisOpen` state)
 - **Summary:** An agent converted the lazy `useState(() => …)` initializer into `useState(false)` + `useEffect(setState)`. Causes ESLint **error** `Calling setState synchronously within an effect can trigger cascading renders` (fails the lint gate) and fails 3 `packages/landing/src/App.test.tsx` tests (they assert founder/thesis state on initial render).
