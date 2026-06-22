@@ -6244,7 +6244,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-445: Image Generation Fails with Internal Error
 
-- **Status:** OPEN
+- **Status:** 🟡 IN PROGRESS (Agent B)
 - **Severity:** 🔴 HIGH
 - **UX Dimension:** Core Functionality
 - **Module:** Creative Director

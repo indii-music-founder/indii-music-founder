@@ -256,6 +256,27 @@ describe('DirectGenerationTab', () => {
         });
     });
 
+    it('surfaces backend connection failures as an unavailable generation service', async () => {
+        mockHttpsCallable.mockRejectedValueOnce({
+            code: 'functions/internal',
+            message: 'internal',
+            details: { cause: 'connect ECONNREFUSED 127.0.0.1:5001' },
+        });
+
+        const mockToast = useToast();
+
+        render(<DirectGenerationTab />);
+        fireEvent.change(screen.getByTestId('direct-prompt-input'), { target: { value: 'fail' } });
+
+        await act(async () => {
+            fireEvent.click(screen.getByTestId('direct-generate-btn'));
+        });
+
+        await waitFor(() => {
+            expect(mockToast.error).toHaveBeenCalledWith('Generation failed: Image generation backend unavailable. Start the Firebase Functions emulator on port 5001.');
+        });
+    });
+
     it('surfaces depleted Google AI Studio prepayment credits as a billing blocker', async () => {
         mockHttpsCallable.mockRejectedValueOnce({
             code: 'functions/resource-exhausted',
