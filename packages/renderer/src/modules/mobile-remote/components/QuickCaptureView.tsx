@@ -12,7 +12,7 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
     const [capturedAudioBlob, setCapturedAudioBlob] = useState<Blob | null>(null);
     const [capturedImageBlob, setCapturedImageBlob] = useState<{file: File, type: 'photo' | 'document'} | null>(null);
     const [capturedVideoBlob, setCapturedVideoBlob] = useState<File | null>(null);
-    const [textCommand, setTextCommand] = useState('');
+    const [momentText, setMomentText] = useState('');
     const [reviewUrl, setReviewUrl] = useState<string | null>(null);
     
     const photoInputRef = useRef<HTMLInputElement>(null);
@@ -141,17 +141,18 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
 
     const handleTextSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!textCommand.trim() || !isPaired || isDispatching) return;
+        const noteText = momentText.trim();
+        if (!noteText || !isPaired || isDispatching) return;
         
         setIsDispatching(true);
         triggerHaptic(50);
         
         try {
             await remoteRelayService.dispatchTask({
-                type: 'agent_command',
-                payload: { commandText: textCommand.trim() }
+                type: 'live_moment',
+                payload: { noteText }
             });
-            setTextCommand('');
+            setMomentText('');
             triggerHaptic([50, 50, 50]);
         } catch (error) {
             console.error('Failed to dispatch text:', error);
@@ -222,8 +223,8 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
         <div className="flex flex-col h-full min-h-[70vh] items-center justify-between pb-24 pt-8 px-4">
             <div className="w-full flex flex-col items-center space-y-10">
                 <div className="text-center space-y-2">
-                    <h2 className="text-2xl font-bold text-[#F0F0F0] tracking-tight">Quick Capture</h2>
-                    <p className="text-[#a1a1a6] text-sm font-medium">Capture notes, media, and location</p>
+                    <h2 className="text-2xl font-bold text-[#F0F0F0] tracking-tight">Live Moment Capture</h2>
+                    <p className="text-[#a1a1a6] text-sm font-medium">Capture every moment live and keep the whole team in your pocket.</p>
                 </div>
 
                 {/* Primary Action: Mic */}
@@ -305,22 +306,22 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
                     <div className="absolute left-4 text-[#8e8e93]">
                         <Keyboard className="w-5 h-5" />
                     </div>
-                    <input
-                        type="text"
-                        value={textCommand}
-                        onChange={(e) => setTextCommand(e.target.value)}
-                        placeholder="Silent text command..."
-                        disabled={!isPaired || isDispatching || isRecording}
-                        className="w-full bg-[#1c1c1e] border border-white/10 rounded-[20px] py-4 pl-12 pr-14 text-sm text-[#F0F0F0] placeholder:text-[#8e8e93] focus:outline-none focus:border-[#2E2EFE]/50 transition-colors"
-                    />
-                    <button
-                        type="submit"
-                        disabled={!textCommand.trim() || !isPaired || isDispatching}
-                        className="absolute right-2 w-10 h-10 rounded-xl flex items-center justify-center bg-[#2E2EFE] text-white disabled:opacity-50 disabled:bg-white/10 transition-all hover:bg-[#2E2EFE]/80"
-                    >
-                        {isDispatching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                    </button>
-                </form>
+                        <input
+                            type="text"
+                            value={momentText}
+                            onChange={(e) => setMomentText(e.target.value)}
+                            placeholder="Capture a live moment..."
+                            disabled={!isPaired || isDispatching || isRecording}
+                            className="w-full bg-[#1c1c1e] border border-white/10 rounded-[20px] py-4 pl-12 pr-14 text-sm text-[#F0F0F0] placeholder:text-[#8e8e93] focus:outline-none focus:border-[#2E2EFE]/50 transition-colors"
+                        />
+                        <button
+                            type="submit"
+                            disabled={!momentText.trim() || !isPaired || isDispatching}
+                            className="absolute right-2 w-10 h-10 rounded-xl flex items-center justify-center bg-[#2E2EFE] text-white disabled:opacity-50 disabled:bg-white/10 transition-all hover:bg-[#2E2EFE]/80"
+                        >
+                            {isDispatching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                        </button>
+                    </form>
             </div>
 
             {/* Floating Review Card for Media */}
@@ -335,8 +336,8 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
                         <div className="p-4">
                             <div className="flex items-start justify-between gap-4">
                                 <div className="min-w-0">
-                                    <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-blue-400">Review before sending</p>
-                                    <p className="mt-2 text-sm font-semibold text-white">Will upload to your vault, then queue it for the desktop.</p>
+                                    <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-blue-400">Review before saving</p>
+                                    <p className="mt-2 text-sm font-semibold text-white">Uploads to your vault, then writes it into Notes for the team.</p>
                                     <p className="mt-1 text-[11px] text-[#8e8e93]">
                                         {reviewKind ? `Captured ${reviewKind}` : 'Captured media'}
                                     </p>
@@ -386,7 +387,7 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
                                             Sending
                                         </span>
                                     ) : (
-                                        'Send to Vault'
+                                        'Save to Notes'
                                     )}
                                 </button>
                             </div>
