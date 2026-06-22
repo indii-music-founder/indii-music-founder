@@ -6297,6 +6297,17 @@ Therefore, no fix can be proposed or implemented.
 - **User Impact:** Users cannot extract data from their music, completely blocking the AI distribution and ingestion pipeline.
 - **Test Update (2026-06-19):** Tested locally with a valid 1s `.wav`. The extraction fails due to the same `Firebase Installations API` 403 error blocking `FirebaseIntelligenceService` bootstrap. Also blocked by the missing local Functions emulator on port 5001.
 
+### ISSUE-A-001: Landing app crashes on undefined query flag parsing
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Location:** `packages/landing/src/App.tsx:52-53`
+- **Details:** `App()` crashes during render when it evaluates `window.location.search.includes(...)` and the test harness or runtime provides no `search` string. `vitest --run` fails in `packages/landing/src/App.test.tsx` with `TypeError: Cannot read properties of undefined (reading 'includes')`, so none of the routing assertions can complete.
+- **Expected (acceptance):** The landing app should safely determine founder/public routing without throwing. Query parsing must tolerate a missing or non-string `location.search`, and the public placeholder / founder routes should render normally in all three test cases.
+- **Honest fallback:** If query-flag routing cannot be supported in a given environment, default to env/hostname checks only and render the correct route set without crashing.
+- **DO NOT:** Do not assume `window.location.search` always exists or call string methods on an undefined value just to reach the route branch.
+- **Evidence:** `npm test -- --run` → `packages/landing/src/App.test.tsx` (3 failures); runtime stack shows `TypeError: Cannot read properties of undefined (reading 'includes')` at `packages/landing/src/App.tsx:53`
+
 ### ISSUE-CI-27852206294: CI Pipeline Failure (Deploy to Firebase Hosting)
 
 - **Status:** ⏳ OPEN
