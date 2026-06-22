@@ -1,34 +1,24 @@
 # Handoff State
-**Updated:** 2026-06-22 09:33 EDT
-**Branch:** `main`
+**Updated:** 2026-06-22 14:20 UTC
+**Branch:** `claude/agent-abcd-vem93b`
 
 ## Recent Commits
 ```
-4d0148ce6 fix(landing): guard query parsing in app routing
-710982571 fix(landing): check window before reading hostname or search in App.tsx
-9ac3087b5 chore: session checkpoint [09:30]
-2e7d8f98d docs(ledger): log cross-agent anti-pattern — lazy useState → useEffect+setState regression
-84de5ae01 feat: enhance thesis crawl styling and add auto-open logic
-f2f546416 test(ledger): log ISSUE-A-001
-02fa6ce45 chore: session checkpoint [09:24]
-97087db47 chore: session checkpoint [09:23]
-9cadd2303 chore: session checkpoint [09:21]
-0228baab2 test: align ABCD engine workflows
+eda1f16 chore: session checkpoint [09:33]
+4d0148c fix(landing): guard query parsing in app routing
+7109825 fix(landing): check window before reading hostname or search in App.tsx
+9ac3087 chore: session checkpoint [09:30]
+2e7d8f9 docs(ledger): log cross-agent anti-pattern — lazy useState → useEffect+setState regression
+84de5ae feat: enhance thesis crawl styling and add auto-open logic
+f2f5464 test(ledger): log ISSUE-A-001
+02fa6ce chore: session checkpoint [09:24]
+97087db chore: session checkpoint [09:23]
+9cadd23 chore: session checkpoint [09:21]
 ```
 
 ## Working State
 ```
-?? .agents/teamwork_preview_explorer_remote_connection_1/
-?? .agents/teamwork_preview_explorer_remote_connection_2/
-?? .agents/teamwork_preview_explorer_remote_connection_3/
-?? .agents/teamwork_preview_orchestrator_remote_connection/
-?? .agents/teamwork_preview_sentinel/
-?? .agents/teamwork_preview_worker_remote_connection/
-?? ORIGINAL_REQUEST.md
-?? docs/flowcharts/agent-venue-research-macro.md
-?? docs/handoff/
-?? packages/renderer/src/modules/notes/
-?? packages/renderer/src/services/agent/tools/NotesTools.ts
+clean working tree
 ```
 
 ## Decisions
