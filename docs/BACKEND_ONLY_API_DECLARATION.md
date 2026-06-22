@@ -85,6 +85,8 @@ All AI requests route through one of:
 **Cloud Functions Runtime:**
 - `GCLOUD_PROJECT` — inferred from Cloud Run environment
 - `VERTEX_LOCATION` — set in function configuration
+- `VERTEX_IMAGE_LOCATION` — image model location
+- `VERTEX_VIDEO_LOCATION` — video model location
 - **ADC (Application Default Credentials):** Automatic, service-account-based
 
 **SDK Initialization:**
@@ -173,7 +175,7 @@ packages/firebase/src/lib/image_generation.ts     (image generation)
 ## Compliance Notes
 
 - **SOC 2 / ISO 27001:** Backend-only architecture aligns with principle of least privilege (client has no credentials)
-- **GDPR / Data Residency:** All processing stays within GCP cloud (region configurable via `VERTEX_LOCATION`)
+- **GDPR / Data Residency:** All processing stays within GCP cloud (region configurable via `VERTEX_LOCATION`, with media-specific overrides for image/video where needed)
 - **PCI DSS (if applicable):** No payment processor keys in frontend
 
 ---
