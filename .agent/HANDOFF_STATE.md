@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-22 13:51 EDT
+**Updated:** 2026-06-22 13:52 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+ad263feaf chore: session checkpoint [13:51]
 824638c2b feat(remote): resilient presence relay, command security & type-safe refactor
 1a31bff5f chore: session checkpoint [13:45]
 4f2c398d3 chore: session checkpoint [13:44]
@@ -13,12 +14,10 @@ a8628a216 feat(mobile-remote): add live moment capture lane
 a50c4376b fix(mobile-remote): add capture review and boardroom entry
 eda1f16e7 chore: session checkpoint [09:33]
 4d0148ce6 fix(landing): guard query parsing in app routing
-710982571 fix(landing): check window before reading hostname or search in App.tsx
 ```
 
 ## Working State
 ```
- M .agent/HANDOFF_STATE.md
  M packages/renderer/src/services/agent/RemoteRelayService.ts
 ?? ORIGINAL_REQUEST.md
 ?? docs/flowcharts/agent-venue-research-macro.md
