@@ -1,3 +1,37 @@
+## 2026-06-22 window.location access without SSR guard → TypeError in test env
+
+**SEVERITY:** Medium (3 test failures, blocking CI lint gate on `App.test.tsx`)
+
+**MISTAKE:**
+- FILE: `packages/landing/src/App.tsx` (`App` component)
+- Direct `window.location.hostname.startsWith(...)` and `window.location.search.includes(...)` called at component top-level without `typeof window !== 'undefined'` guard.
+- In jsdom test environments, `window.location.search` is `undefined` if not explicitly mocked, causing `TypeError: Cannot read properties of undefined (reading 'includes')`.
+
+**FIX:**
+```tsx
+const isFounderDomain = typeof window !== 'undefined' && window.location && window.location.hostname && window.location.hostname.startsWith('founder');
+const hasQueryFlag = typeof window !== 'undefined' && window.location && window.location.search &&
+  (window.location.search.includes('founder=true') || window.location.search.includes('thesis=true'));
+```
+
+**PREVENTION:** Every `window.location.*` access in component scope (not inside an effect or event handler) MUST be guarded with `typeof window !== 'undefined' && window.location && window.location.<prop>`. Never assume the test environment fully mocks `window.location`.
+
+---
+
+## 2026-06-22 Duplicate Global Interface Augmentation → TS2717 Type Conflict
+
+**SEVERITY:** Medium (typecheck fails, blocks CI)
+
+**MISTAKE:**
+- Added `declare global { interface Window { electronAPI?: ElectronAPI } }` inline inside a `.ts` service file when an authoritative `electron.d.ts` already declares the same augmentation.
+- TypeScript raises `TS2717: Subsequent property declarations must have the same type` even if both sides declare identical shapes, because the same property is augmented twice from different files.
+
+**FIX:** Never add a `declare global { interface Window { … } }` in a non-`.d.ts` file. Always extend the canonical `packages/renderer/src/types/electron.d.ts` instead. For new IPC surfaces, add the property directly to the `ElectronAPI` interface in that file and export a named type alias for complex nested shapes (e.g., `RemoteMobilePayload`).
+
+**DETECTION:** `error TS2717: Subsequent property declarations must have the same type. Property 'X' must be of type 'Y', but here has type 'Y'.` — even when "Y" looks identical, it means the augmentation exists elsewhere.
+
+---
+
 ## 2026-06-22 Lazy useState Initializer Regressed into useEffect+setState (lint error + 3 broken landing tests, left uncommitted)
 
 **SEVERITY:** Medium (1 ESLint **error** that fails the CI lint gate + 3 failing `packages/landing/src/App.test.tsx` tests). Caught only because it was left as a dirty working-tree change during an unrelated refactor; had a checkpoint hook `git add -A`'d it, it would have broken CI under someone else's name.
