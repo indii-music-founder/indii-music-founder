@@ -258,11 +258,11 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
             setCommandBarInput('');
             setCommandBarAttachments([]);
 
-            if (currentInput.trim() === '/deploy-andromeda') {
+            if (currentInput.trim() === '/deploy-plp') {
                 const state = useStore.getState();
                 state.setModule('creative');
-                state.enableAndromedaMode();
-                toast.success('Andromeda Pipeline Armed. Enter a prompt to begin 15-variant batch generation.');
+                state.enablePLPMode();
+                toast.success('PLP Pipeline Armed. Enter a prompt to begin 15-variant batch generation.');
                 setIsLocalProcessing(false);
                 return;
             }
@@ -285,7 +285,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
             }
 
             // --- DNA INFUSION: Slash Command Interceptor ---
-            if (currentInput.trim().startsWith('/') && !currentInput.trim().startsWith('/deploy-andromeda') && !currentInput.trim().startsWith('/status-blitz')) {
+            if (currentInput.trim().startsWith('/') && !currentInput.trim().startsWith('/deploy-plp') && !currentInput.trim().startsWith('/status-blitz')) {
                 const parts = currentInput.trim().split(' ');
                 const command = parts[0]!.substring(1); // Extract 'mega' from '/mega'
                 

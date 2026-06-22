@@ -448,7 +448,7 @@ export const VideoTools = {
         return toolError('Timeline orchestration is unavailable: no render queue backend is configured.', 'VIDEO_RENDER_QUEUE_UNAVAILABLE');
     }),
 
-    generate_andromeda_variations: wrapTool('generate_andromeda_variations', async (args: { basePrompt: string }) => {
+    generate_plp_variations: wrapTool('generate_plp_variations', async (args: { basePrompt: string }) => {
         void args;
         return toolError('Bulk video variation orchestration is unavailable: no A/B render queue backend is configured.', 'VIDEO_VARIATION_QUEUE_UNAVAILABLE');
     }),
@@ -493,6 +493,6 @@ export const {
     interpolate_sequence,
     orchestrate_video_render,
     orchestrate_timeline,
-    generate_andromeda_variations,
+    generate_plp_variations,
     create_performance_video
 } = VideoTools;

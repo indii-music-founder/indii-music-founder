@@ -102,7 +102,7 @@ describe('StudioControlsPanel', () => {
             useImageSearch: false,
             personGeneration: 'allow_adult' as const,
             isTransitionMode: false,
-            isAndromedaMode: false,
+            isPLPMode: false,
             imageSize: '1K' as const,
             batchCount: 1,
             responseFormat: 'image_only' as const,

@@ -28,8 +28,8 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
         viewMode,
         setViewMode,
         studioControls,
-        enableAndromedaMode,
-        disableAndromedaMode,
+        enablePLPMode,
+        disablePLPMode,
         showPromptBuilder,
         togglePromptBuilder
     } = useStore(useShallow(state => ({
@@ -40,8 +40,8 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
         viewMode: state.viewMode,
         setViewMode: state.setViewMode,
         studioControls: state.studioControls,
-        enableAndromedaMode: state.enableAndromedaMode,
-        disableAndromedaMode: state.disableAndromedaMode,
+        enablePLPMode: state.enablePLPMode,
+        disablePLPMode: state.disablePLPMode,
         showPromptBuilder: state.isPromptBuilderOpen,
         togglePromptBuilder: state.togglePromptBuilder
     })));
@@ -49,7 +49,7 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
     const [showBrandAssets, setShowBrandAssets] = useState(false);
     const [showPromptHistory, setShowPromptHistory] = useState(false);
     const [showDesignHistory, setShowDesignHistory] = useState(false);
-    const [showSwarmRegistry, setShowSwarmRegistry] = useState(false);
+    const [showRosterRegistry, setShowRosterRegistry] = useState(false);
     const [showFrameModal, setShowFrameModal] = useState(false);
     const [frameModalTarget, setFrameModalTarget] = useState<'firstFrame' | 'lastFrame'>('firstFrame');
 
@@ -158,14 +158,14 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
                                 <span className="hidden xl:inline">Versions</span>
                             </button>
                             <button
-                                onClick={() => setShowSwarmRegistry(!showSwarmRegistry)}
+                                onClick={() => setShowRosterRegistry(!showRosterRegistry)}
                                 className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-all text-[10px] font-bold uppercase tracking-wider
-                                    ${showSwarmRegistry
+                                    ${showRosterRegistry
                                         ? 'bg-purple-500/15 text-purple-300 shadow-[0_0_12px_rgba(168,85,247,0.1)]'
                                         : 'text-gray-500 hover:text-gray-300 hover:bg-white/4'}`}
                             >
-                                <Cpu size={11} className={showSwarmRegistry ? 'text-purple-400' : ''} />
-                                <span className="hidden xl:inline">Swarm</span>
+                                <Cpu size={11} className={showRosterRegistry ? 'text-purple-400' : ''} />
+                                <span className="hidden xl:inline">Roster</span>
                             </button>
                         </div>
                     ) : (
@@ -180,25 +180,25 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
                     )}
 
 
-                    {/* Andromeda Mode Toggle */}
+                    {/* PLP Mode Toggle */}
                     <button
                         onClick={() => {
-                            if (studioControls.isAndromedaMode) {
-                                disableAndromedaMode();
-                                toast.success("Andromeda Mode deactivated");
+                            if (studioControls.isPLPMode) {
+                                disablePLPMode();
+                                toast.success("PLP Mode deactivated");
                             } else {
-                                enableAndromedaMode();
-                                toast.success("Andromeda Mode activated: Ready to generate 15 ad variants");
+                                enablePLPMode();
+                                toast.success("PLP Mode activated: Ready to generate 15 ad variants");
                             }
                         }}
-                        title={studioControls.isAndromedaMode ? "Disable Andromeda Pipeline" : "Enable Andromeda Pipeline"}
+                        title={studioControls.isPLPMode ? "Disable PLP — Promote · Launch · Push" : "Enable PLP — Promote · Launch · Push (15 release-ready ad variants)"}
                         className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md border transition-all text-[10px] font-bold uppercase tracking-wider shrink-0
-                            ${studioControls.isAndromedaMode
+                            ${studioControls.isPLPMode
                                 ? 'bg-indigo-600/30 border-indigo-500/50 text-indigo-300 shadow-[0_0_15px_rgba(99,102,241,0.3)] animate-pulse'
                                 : 'bg-white/3 border-white/6 text-gray-500 hover:text-gray-300 hover:bg-white/6'}`}
                     >
-                        <Rocket size={11} className={studioControls.isAndromedaMode ? "text-indigo-400" : ""} />
-                        <span className="hidden lg:inline">Andromeda</span>
+                        <Rocket size={11} className={studioControls.isPLPMode ? "text-indigo-400" : ""} />
+                        <span className="hidden lg:inline">PLP</span>
                     </button>
 
                     <div className="h-3.5 w-px bg-white/8 mx-0.5 shrink-0" />
@@ -261,10 +261,10 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
                 <DesignHistoryDrawer onClose={() => setShowDesignHistory(false)} />
             )}
 
-            {/* Swarm Capability Registry */}
+            {/* Roster Capability Registry */}
             <AnimatePresence>
-                {showSwarmRegistry && (
-                    <AgentCapabilityRegistry onClose={() => setShowSwarmRegistry(false)} />
+                {showRosterRegistry && (
+                    <AgentCapabilityRegistry onClose={() => setShowRosterRegistry(false)} />
                 )}
             </AnimatePresence>
 
