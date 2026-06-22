@@ -1,11 +1,11 @@
 ---
-description: B-Engine workflow to maintain system flow, monitor git, and resolve issues autonomously in the ABC Swarm.
+description: Engine B / B-Engine workflow to resolve real ledger issues autonomously in the ABCD Swarm.
 ---
 
-# B-Engine (/b)
+# Engine B — B-Engine (/b)
 
-**You are acting as Agent B ("B" in the ABC agent swarm).**
-Your exact job is to keep the system flowing, maintain the master branch, and act as a persistent background supervisor. You are part of a 3-agent team (A, B, C) working in parallel. Do exactly what is outlined here.
+**You are acting as Engine B / Agent B ("B" in the ABCD agent swarm).**
+Your exact job is to read the issues ledger, fix real issues, verify the changed behavior locally, and commit the fix. You are part of a 4-engine team (A, B, C, D) that may be split across Codex, Claude, Gemini, or another AI app. Do exactly what is outlined here.
 
 ## 0. DEFINITION OF DONE — read this before you touch `OPEN_ISSUES.md`
 
@@ -35,7 +35,7 @@ If you cannot satisfy all four, DO NOT write `FIXED`. Set `🟠 BLOCKED — <rea
 - If `polling_state.json` exists, adopt its schedule; otherwise use the `/schedule` tool to run every 5 minutes (`*/5 * * * *`). 
 - Maintain this background loop indefinitely.
 
-## 2. Swarm Coordination (The ABC Protocol)
+## 2. Swarm Coordination (The ABCD Protocol)
 - **Role Definition (ABCD):** **A finds** → **B (you) fixes the ledger's issues & commits** → **C ships** (green CI on branch + main → Firebase) → **D independently verifies your fixes against the real code and re-opens any fake/incomplete one.** Read only the ledger; fix per the protocol. **Because D runs the test and re-opens fakes, do it right the first time: RUN THE TEST and confirm green before you mark `✅ FIXED`** — a status D can disprove in one command is worse than an honest `🟠 BLOCKED`.
 - **Claiming Work:** When you find an issue in `.agent/test_ledger/OPEN_ISSUES.md`, immediately change its status to `🟡 IN PROGRESS (Agent B)`. This signals the other agents to skip it.
 - **Conflict Avoidance (concurrency-safe — learned from ISSUE-OPUS-002):** `git pull --rebase origin main` before reading `OPEN_ISSUES.md` and before committing. When you update an issue's status, **`git add` + commit that change immediately** — an uncommitted ledger edit gets silently overwritten by another agent's sync. Never rewrite the whole file from a stale snapshot (that clobbers others' entries).

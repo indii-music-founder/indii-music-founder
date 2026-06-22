@@ -33,20 +33,20 @@ run_agent() {
     fi
 }
 
-# 1. The Gatekeeper (Auth)
-run_agent "The Gatekeeper" "e2e/auth-flow.spec.ts"
+# 1. The Gatekeeper (Entry / Shell)
+run_agent "The Gatekeeper" "e2e/navigation.spec.ts"
 GATEKEEPER_STATUS=$?
 
-# 2. The Gauntlet (Load/Performance)
-run_agent "The Gauntlet" "e2e/stress-test.spec.ts"
+# 2. The Gauntlet (FTUE / Happy Path)
+run_agent "The Gauntlet" "e2e/stress-test-new-user.spec.ts"
 GAUNTLET_STATUS=$?
 
 # 3. Fear Factor (Chaos)
-run_agent "Fear Factor" "e2e/fear-factor.spec.ts"
+run_agent "Fear Factor" "e2e/chaos.spec.ts"
 FEAR_FACTOR_STATUS=$?
 
 # 4. The Paparazzi (Visual Regression)
-run_agent "The Paparazzi" "e2e/the-paparazzi.spec.ts"
+run_agent "The Paparazzi" "e2e/visual-qa.spec.ts"
 PAPARAZZI_STATUS=$?
 
 # 5. The Librarian (RAG)

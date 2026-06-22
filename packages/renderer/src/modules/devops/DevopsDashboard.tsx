@@ -53,7 +53,7 @@ export default function DevopsDashboard() {
     const [e2eProgress, setE2eProgress] = useState(0);
     const [e2ePassCount, setE2ePassCount] = useState(0);
     const [e2eFailCount, setE2eFailCount] = useState(0);
-    const [selectedTestFile, setSelectedTestFile] = useState('auth-flow.spec.ts');
+    const [selectedTestFile, setSelectedTestFile] = useState('navigation.spec.ts');
 
     // Auto-scroll logs
     const logEndRef = useRef<HTMLDivElement>(null);
@@ -514,10 +514,10 @@ export default function DevopsDashboard() {
                                         onChange={(e) => setSelectedTestFile(e.target.value)}
                                         className="bg-black border border-white/10 text-xs font-mono text-gray-300 rounded px-3 py-1.5 focus:outline-none focus:border-emerald-500"
                                     >
-                                        <option value="auth-flow.spec.ts">auth-flow.spec.ts (Authentication)</option>
-                                        <option value="studio-persistence.spec.ts">studio-persistence.spec.ts (Persistence)</option>
+                                        <option value="navigation.spec.ts">navigation.spec.ts (Entry / Shell)</option>
+                                        <option value="creative-persistence.spec.ts">creative-persistence.spec.ts (Persistence)</option>
                                         <option value="maestro-workflows.spec.ts">maestro-workflows.spec.ts (Workflows)</option>
-                                        <option value="chaos-resilience.spec.ts">chaos-resilience.spec.ts (Stress / Chaos)</option>
+                                        <option value="chaos.spec.ts">chaos.spec.ts (Stress / Chaos)</option>
                                     </select>
                                     <button 
                                         onClick={runE2ETests}
