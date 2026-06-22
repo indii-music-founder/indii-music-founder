@@ -29,7 +29,7 @@ import { auth } from '@/services/firebase';
 import { onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
 import { logger } from '@/utils/logger';
 import {
-  LayoutDashboard, Grip, MessageSquare,
+  LayoutDashboard, LayoutGrid, Grip, MessageSquare,
   CheckSquare, QrCode, Smartphone, LucideIcon, WifiOff, AlertCircle, RefreshCw
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -48,15 +48,11 @@ const StatusDashboard = lazy(() => import('./components/StatusDashboard'));
 const QuickCaptureView = lazy(() => import('./components/QuickCaptureView'));
 const StreamView = lazy(() => import('./components/StreamView'));
 const SettingsView = lazy(() => import('./components/SettingsView'));
-// Legacy imports kept for eventual transition:
-// const CommandPad = lazy(() => import('./components/CommandPad'));
-// const AgentChat = lazy(() => import('./components/AgentChat'));
-// const GenerationMonitor = lazy(() => import('./components/GenerationMonitor'));
-// const ApprovalQueue = lazy(() => import('./components/ApprovalQueue'));
+const AgentChat = lazy(() => import('./components/AgentChat'));
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-type TabId = 'home' | 'capture' | 'stream' | 'settings';
+type TabId = 'home' | 'capture' | 'boardroom' | 'stream' | 'settings';
 
 interface Tab {
   id: TabId;
@@ -67,6 +63,7 @@ interface Tab {
 const TABS: Tab[] = [
   { id: 'home', icon: LayoutDashboard, label: 'Home' },
   { id: 'capture', icon: MessageSquare, label: 'Capture' },
+  { id: 'boardroom', icon: LayoutGrid, label: 'Boardroom' },
   { id: 'stream', icon: CheckSquare, label: 'Stream' },
   { id: 'settings', icon: Grip, label: 'Settings' },
 ];
@@ -542,6 +539,12 @@ export default function MobileRemote() {
         return (
           <Suspense fallback={<TabFallback />}>
             <QuickCaptureView isPaired={isPaired} />
+          </Suspense>
+        );
+      case 'boardroom':
+        return (
+          <Suspense fallback={<TabFallback />}>
+            <AgentChat onSendCommand={sendCommand} isPaired={isPaired} />
           </Suspense>
         );
       case 'stream':
