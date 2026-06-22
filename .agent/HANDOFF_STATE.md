@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-22 14:38 EDT
+**Updated:** 2026-06-22 18:37 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+341fd2fd4 test(ledger): log ISSUE-A-012
+48852717c chore: session checkpoint [14:38]
 ed0586a74 test(ledger): log ISSUE-A-010 and ISSUE-A-011
 fcc01181c test(ledger): log ISSUE-A-009 (boardroom-live-verify env-fragile live-model spec in default gate)
 ca1a69a0b test(ledger): log ISSUE-A-008 (boardroom seat_agent dispatch fails Turn 1)
@@ -12,12 +14,12 @@ dfddbbee2 chore: session checkpoint [14:33]
 310b803ad chore: session checkpoint [14:27]
 de5224a7f chore: session checkpoint [14:26]
 deccb179f fix(e2e): exclude live gcp spec from emulator suite
-d16575844 chore: session checkpoint [14:23]
-9a2ae862d chore: session checkpoint [14:22]
 ```
 
 ## Working State
 ```
+ M .agent/test_ledger/OPEN_ISSUES.md
+ M .agent/workflows/a.md
  M artifacts/boardroom_live_home.png
  M artifacts/boardroom_result.png
  M artifacts/live-agent-daisy-chain/coordination-report.html
@@ -26,6 +28,12 @@ d16575844 chore: session checkpoint [14:23]
  M deep-test-booking-1.png
  M deep-test-campaign-1.png
  M deep-test-publicist-1.png
+ M e2e/boardroom-live-verify.spec.ts
+ M e2e/boardroom-real-user-scenario.spec.ts
+ M e2e/fixtures/auth.ts
+ M e2e/founders-program.spec.ts
+ M packages/firebase/firestore.rules
+ M scripts/git_monitor_sync.js
 ?? .claude/launch.json
 ?? ORIGINAL_REQUEST.md
 ?? docs/flowcharts/agent-venue-research-macro.md
