@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-22 13:45 EDT
+**Updated:** 2026-06-22 13:51 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+824638c2b feat(remote): resilient presence relay, command security & type-safe refactor
+1a31bff5f chore: session checkpoint [13:45]
 4f2c398d3 chore: session checkpoint [13:44]
 1c350869b docs(ledger): mark ISSUE-LANDING-20260622 resolved (landing agent fixed forward)
 20b5c192c feat(marketing): add live moment positioning
@@ -12,34 +14,14 @@ a50c4376b fix(mobile-remote): add capture review and boardroom entry
 eda1f16e7 chore: session checkpoint [09:33]
 4d0148ce6 fix(landing): guard query parsing in app routing
 710982571 fix(landing): check window before reading hostname or search in App.tsx
-9ac3087b5 chore: session checkpoint [09:30]
-2e7d8f98d docs(ledger): log cross-agent anti-pattern — lazy useState → useEffect+setState regression
 ```
 
 ## Working State
 ```
- M packages/landing/src/page.tsx
- M packages/renderer/src/hooks/remoteCommandSecurity.test.ts
- M packages/renderer/src/hooks/remoteCommandSecurity.ts
- M packages/renderer/src/hooks/useRemoteCommandListener.ts
- M packages/renderer/src/modules/mobile-remote/MobileRemote.tsx
- M packages/renderer/src/services/agent/RemoteRelayService.test.ts
+ M .agent/HANDOFF_STATE.md
  M packages/renderer/src/services/agent/RemoteRelayService.ts
-?? .agents/teamwork_preview_auditor_remote_connection/
-?? .agents/teamwork_preview_challenger_remote_connection_1/
-?? .agents/teamwork_preview_challenger_remote_connection_2/
-?? .agents/teamwork_preview_explorer_remote_connection_1/
-?? .agents/teamwork_preview_explorer_remote_connection_2/
-?? .agents/teamwork_preview_explorer_remote_connection_3/
-?? .agents/teamwork_preview_orchestrator_remote_connection/
-?? .agents/teamwork_preview_reviewer_remote_connection_1/
-?? .agents/teamwork_preview_reviewer_remote_connection_2/
-?? .agents/teamwork_preview_sentinel/
-?? .agents/teamwork_preview_worker_remote_connection/
-?? .agents/teamwork_preview_worker_remote_connection_2/
 ?? ORIGINAL_REQUEST.md
 ?? docs/flowcharts/agent-venue-research-macro.md
-?? docs/flowcharts/remote-connection-relay-macro.md
 ?? docs/handoff/
 ?? packages/renderer/src/modules/notes/
 ?? packages/renderer/src/services/agent/tools/NotesTools.ts
