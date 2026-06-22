@@ -47,10 +47,12 @@ function App() {
   const isFounderEnv = import.meta.env.VITE_FOUNDER_MODE === 'true';
   const isFounderDomain = typeof window !== 'undefined' && window.location && window.location.hostname && window.location.hostname.startsWith('founder');
   const isLocalhost = typeof window !== 'undefined' && window.location && window.location.hostname && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+  const search = typeof window !== 'undefined' && window.location && typeof window.location.search === 'string'
+    ? window.location.search
+    : '';
   
   // Also check if they explicitly pass a query parameter like ?founder=true or ?thesis=true
-  const hasQueryFlag = typeof window !== 'undefined' && window.location && window.location.search &&
-    (window.location.search.includes('founder=true') || window.location.search.includes('thesis=true'));
+  const hasQueryFlag = search.includes('founder=true') || search.includes('thesis=true');
     
   const isFounder = isFounderEnv || isFounderDomain || isLocalhost || hasQueryFlag;
 
