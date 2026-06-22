@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-22 17:52 UTC
+**Updated:** 2026-06-22 17:56 UTC
 **Branch:** `claude/agent-abcd-vem93b`
 
 ## Recent Commits
 ```
+fd4a619 docs(ledger): capture follow-up work for SHOW, ISSUE-445 emulator, orphaned phone-nav
+fb1cb2a chore: session checkpoint [17:52]
 2472e8b chore: session checkpoint [17:48]
 7685b81 chore: session checkpoint [17:47]
 0764bf2 chore: session checkpoint [15:46]
@@ -12,8 +14,6 @@ a8f9911 chore: session checkpoint [15:44]
 0d1538e chore: session checkpoint [15:44]
 bb63d03 chore: session checkpoint [15:40]
 6926915 feat(remote): add [SHOW] on-demand visual return channel to indiiREMOTE
-308b8ee chore: session checkpoint [15:32]
-ee96029 test(nav): lock desktop Social Media Dept routing (ISSUE-443)
 ```
 
 ## Working State
