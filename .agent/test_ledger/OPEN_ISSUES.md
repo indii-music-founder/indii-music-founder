@@ -6398,3 +6398,30 @@ Therefore, no fix can be proposed or implemented.
 - **File:** `packages/landing/src/page.tsx` (`Home`, `isThesisOpen` state)
 - **Summary:** An agent converted the lazy `useState(() => …)` initializer into `useState(false)` + `useEffect(setState)`. Causes ESLint **error** `Calling setState synchronously within an effect can trigger cascading renders` (fails the lint gate) and fails 3 `packages/landing/src/App.test.tsx` tests (they assert founder/thesis state on initial render).
 - **Fix Direction:** Revert to a lazy initializer; fold the intended `hostname.includes('founders')` detection INTO the initializer (synchronous), NOT an effect. Exact pattern + rationale in `.agent/skills/error_memory/ERROR_LEDGER.md` (2026-06-22 entry). Then `npm run lint` + `npm test -- --run packages/landing` must both pass.
+
+## Follow-ups from PLP/Roster rename (2026-06-22) — logged for owner/marketing decision, NOT auto-changed
+
+### ISSUE-PLP-DOCS-20260622: Doc/agent/directive references still say "Meta Andromeda" after code rename to PLP
+- **Status:** ⏳ OPEN (needs a NAMING DECISION before touching)
+- **Severity:** 🟡 LOW (docs only; no runtime impact)
+- **Files:** `docs/INDII_GROWTH_PROTOCOL.md` (lines ~13, 15, 62), `agents/marketing/AGENTS.md` (~49), `agents/marketing/prompt.md` (~69), `directives/indii_growth_protocol.json` (~8, 79)
+- **Summary:** Code feature renamed Andromeda → **PLP** (Promote · Launch · Push) in `packages/renderer` (commit `bd1201804`). These docs/agent prompts/directives still call the 15-variant creative-testing pipeline "Meta Andromeda Pipeline," so docs and code now disagree.
+- **DECISION NEEDED (do not blind-rename):** "Meta Andromeda" may be referencing **Meta's real `Andromeda` ad-retrieval/ranking ML system** (an actual Meta product), not just indii's feature. If the docs mean indii's 15-variant generator → rename to **PLP** for consistency. If they mean Meta's external system → leave as-is (it's accurate) and just clarify wording so it's not confused with the indii feature. Founder/marketing owner decides.
+
+### ISSUE-CREATIVE-COPY-20260622: "Bypass Autonomous Swarms" subtitle still uses flagged "Swarm" wording
+- **Status:** ⏳ OPEN (naming/copy decision)
+- **Severity:** 🟡 LOW (UI copy)
+- **File:** `packages/renderer/src/modules/creative/components/DirectGenerationTab.tsx:113`
+- **Summary:** Creative Hub subtitle reads "Bypass Autonomous Swarms." Founder flagged "Swarm" as AI-slop wording (the creative-studio "Swarm" registry button was already renamed to "Roster"). This separate copy string was intentionally NOT changed because it describes bypassing the autonomous agent pipeline, not the Roster. Decide: rephrase (e.g. "Direct generation — skip the autonomous pipeline") or leave.
+
+### ISSUE-CREATIVE-AUDIT-20260622: Creative Studio button audit incomplete + FLASH/REFINE UX confusion
+- **Status:** ⏳ OPEN (parked when session pivoted to the PLP rename)
+- **Severity:** 🟡 LOW (verification + UX polish)
+- **Summary:** A full "does every button work / is it in the right place / named right" audit of Creative Studio was started but not finished. VERIFIED wired: top tabs (Generate/Canvas/Video/Omni Remix/Showroom/Keyframes → real components), right controls (Builder/Brand/History/Versions/Roster/PLP/Projector), and CanvasHeader (Describe field + Refine → `handleMagicFill`). NOT yet traced end-to-end: left tool rail (pointer/sparkle/text/undo/redo/ID/color palette/settings) and right action rail (image/grid/layers/save/sparkle/play/X) in `AnnotationPalette.tsx` / `CanvasActionRail.tsx`.
+- **UX note:** In `CanvasHeader.tsx`, "FLASH" sits next to "REFINE" and reads like a second generate button, but it is actually a High-Fidelity (Pro) ↔ High-Speed (Flash) quality toggle. Consider relabeling/regrouping so it doesn't read as a generate action.
+
+### ISSUE-LANDING-USEEFFECT-20260622: trivial unused `useEffect` import leftover
+- **Status:** ⏳ OPEN (1-line cleanup, owned by the landing agent)
+- **Severity:** 🟢 TRIVIAL (1 lint warning, no error)
+- **File:** `packages/landing/src/page.tsx:3`
+- **Summary:** After the setState-in-effect regression was fixed forward (see ISSUE-LANDING-20260622), `useEffect` is still imported but no longer used → `'useEffect' is defined but never used` warning. Remove it from the import.
