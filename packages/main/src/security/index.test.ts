@@ -224,13 +224,14 @@ describe('security/index.ts', () => {
         });
 
         describe('onBeforeSendHeaders (Referer Injection)', () => {
-            it('should inject referer for firestore and storage', () => {
+            it('should inject referer for all googleapis and firebaseapp', () => {
                 configureSecurity(mockSession as unknown as Session);
                 const handler = mockSession.webRequest.onBeforeSendHeaders.mock.calls[0][1];
 
                 const urls = [
                     'https://firestore.googleapis.com/v1/projects/my-project/databases/(default)/documents',
-                    'https://firebasestorage.googleapis.com/v0/b/my-bucket.appspot.com/o'
+                    'https://firebasestorage.googleapis.com/v0/b/my-bucket.appspot.com/o',
+                    'https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword'
                 ];
 
                 for (const url of urls) {
@@ -245,29 +246,10 @@ describe('security/index.ts', () => {
                     expect(callback).toHaveBeenCalledWith({
                         requestHeaders: {
                             'User-Agent': 'test',
-                            'Referer': 'http://localhost:4242'
+                            'Referer': 'https://founder.indii.music/'
                         }
                     });
                 }
-            });
-
-            it('should not inject referer for other googleapis', () => {
-                configureSecurity(mockSession as unknown as Session);
-                const handler = mockSession.webRequest.onBeforeSendHeaders.mock.calls[0][1];
-                const callback = vi.fn();
-                const details: { url: string; requestHeaders: Record<string, string> } = {
-                    url: 'https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword',
-                    requestHeaders: { 'User-Agent': 'test' }
-                };
-
-                handler(details, callback);
-
-                expect(callback).toHaveBeenCalledWith({
-                    requestHeaders: {
-                        'User-Agent': 'test'
-                    }
-                });
-                expect(details.requestHeaders['Referer']).toBeUndefined();
             });
         });
     });

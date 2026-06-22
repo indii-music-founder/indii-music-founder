@@ -121,21 +121,10 @@ export function configureSecurity(session: Session) {
     session.webRequest.onBeforeSendHeaders(
         { urls: ['*://*.googleapis.com/*', '*://*.firebaseapp.com/*'] },
         (details, callback) => {
-            const url = details.url;
-
-            // Only inject Referer for Firestore and Storage which specifically require it
-            // for security rules matching.
-            if (
-                url.includes('firestore.googleapis.com') ||
-                url.includes('firebasestorage.googleapis.com')
-            ) {
-                details.requestHeaders['Referer'] = 'http://localhost:4242';
-                callback({ requestHeaders: details.requestHeaders });
-                return;
-            }
-
-            // Do NOT inject Referer for Identity Toolkit, Secure Token, or generic Google APIs
-            // as this can trigger 'auth/invalid-credential' errors.
+            // Inject a valid production referer for all Firebase/Google APIs.
+            // This satisfies GCP API Key restrictions which block <empty> referers,
+            // fixing the 'auth/requests-from-referer-<empty>-are-blocked' error.
+            details.requestHeaders['Referer'] = 'https://founder.indii.music/';
             callback({ requestHeaders: details.requestHeaders });
         }
     );
