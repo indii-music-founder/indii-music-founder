@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-22 15:19 UTC
+**Updated:** 2026-06-22 15:32 UTC
 **Branch:** `claude/agent-abcd-vem93b`
 
 ## Recent Commits
 ```
+ee96029 test(nav): lock desktop Social Media Dept routing (ISSUE-443)
+76a2f29 chore: session checkpoint [15:19]
 c411838 chore: session checkpoint [14:58]
 d18fb47 chore: session checkpoint [14:56]
 6c53693 fix(landing): use lazy useState initializer for thesis-open detection
@@ -12,8 +14,6 @@ d18fb47 chore: session checkpoint [14:56]
 39b61a9 chore: session checkpoint [14:20]
 eda1f16 chore: session checkpoint [09:33]
 4d0148c fix(landing): guard query parsing in app routing
-7109825 fix(landing): check window before reading hostname or search in App.tsx
-9ac3087 chore: session checkpoint [09:30]
 ```
 
 ## Working State
