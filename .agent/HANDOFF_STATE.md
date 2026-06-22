@@ -4,6 +4,7 @@
 
 ## Recent Commits
 ```
+502bac795 chore: session checkpoint [14:16]
 740e5a5ad chore: session checkpoint [14:14]
 3b7bbe43a docs(ledger): mark issue 445 fixed
 36fbe1ed1 fix(creative): surface backend unavailable errors
@@ -13,12 +14,10 @@ cae8cb4c4 chore: session checkpoint [14:08]
 04fdec15c chore: session checkpoint [14:07]
 276bd56bf chore: session checkpoint [14:07]
 43df912a4 chore: session checkpoint [14:06]
-53fd501ff chore: session checkpoint [14:05]
 ```
 
 ## Working State
 ```
- M .agent/HANDOFF_STATE.md
 ?? .claude/launch.json
 ?? ORIGINAL_REQUEST.md
 ?? docs/flowcharts/agent-venue-research-macro.md
