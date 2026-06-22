@@ -6379,6 +6379,18 @@ Therefore, no fix can be proposed or implemented.
 - **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/27909388829)
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
 
+### ISSUE-A-002: Mobile remote had no capture review step and no first-class boardroom entry point
+
+- **Status:** ✅ FIXED
+- **Severity:** 🟡 MEDIUM
+- **Location:** `packages/renderer/src/modules/mobile-remote/components/QuickCaptureView.tsx:16-48`
+- **Details:** The mobile capture flow only showed a generic "Tap send to upload to vault" bar, so photo, document, video, and voice memo captures had no actual review surface before dispatch. The boardroom conversation also existed only as a hidden chat mode, so there was no obvious mobile entry point to talk to the seated agents.
+- **Expected (acceptance):** After capture, the phone should show a real review card with the recorded photo or voice memo before upload, including a visible preview/control surface and explicit send/retake actions. The home dashboard should expose a direct "Talk to Boardroom" action that opens the boardroom chat on the phone.
+- **Honest fallback:** If a media type cannot preview locally, show a clear placeholder with the media type and destination, but never pretend the capture was reviewed or sent. If boardroom chat is unavailable, surface that state explicitly instead of hiding the path.
+- **DO NOT:** Do not auto-dispatch captures without a review surface, and do not leave boardroom access buried behind an unlabeled or hidden mode switch.
+- **Fix:** Added a local preview/review card with object-URL playback/image rendering and explicit `Retake` / `Send to Vault` actions in `QuickCaptureView`, then surfaced a dedicated `Talk to Boardroom` CTA and boardroom tab in the mobile shell.
+- **Evidence:** `packages/renderer/src/modules/mobile-remote/components/QuickCaptureView.tsx:16-48,164-219,330-390`; `packages/renderer/src/modules/mobile-remote/MobileRemote.tsx:51-68,528-548`; `packages/renderer/src/modules/mobile-remote/components/StatusDashboard.tsx:11-15,103-141`; `npm run typecheck` passed
+
 ### ISSUE-LANDING-20260622: Uncommitted landing/page.tsx regression (lint error + 3 broken tests)
 - **Status:** ⏳ OPEN
 - **Severity:** 🟠 MEDIUM (uncommitted in working tree; NOT yet on origin so CI is currently safe — but a `git add -A` checkpoint hook would push it and break CI under the wrong author)
