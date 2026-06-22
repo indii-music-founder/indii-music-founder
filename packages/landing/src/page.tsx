@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { useAuth } from './components/auth/AuthProvider';
 import { getStudioUrl } from './lib/auth';
@@ -82,13 +82,18 @@ const words = "the operating system for your musical independence".split(' ');
 export default function Home() {
   const { user, loading } = useAuth();
   const { scrollYProgress } = useScroll();
-  const [isThesisOpen, setIsThesisOpen] = useState(() => {
+  const [isThesisOpen, setIsThesisOpen] = useState(false);
+
+  useEffect(() => {
     if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      return params.get('thesis') === 'true' || window.location.hash === '#thesis';
+      const hostname = window.location.hostname;
+      const search = window.location.search;
+      const hash = window.location.hash;
+      if (hostname.includes('founders') || search.includes('thesis=true') || hash.includes('#thesis')) {
+        setTimeout(() => setIsThesisOpen(true), 0);
+      }
     }
-    return false;
-  });
+  }, []);
 
   const heroScale = useTransform(scrollYProgress, [0, 0.15], [1, 0.9]);
   const heroOpacity = useTransform(scrollYProgress, [0, 0.12], [1, 0]);
