@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-22 08:33 EDT
+**Updated:** 2026-06-22 08:38 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+a0cf5544b chore: session checkpoint [08:33]
 578b90577 chore: session checkpoint [08:28]
 f01f833d6 chore: session checkpoint [08:24]
 db4ca4002 docs: align landing page agent counts to 21 and fix React hook/hoisting lint warnings
@@ -13,7 +14,6 @@ f88980acd fix: increase remote relay heartbeat timeout to 120s to tolerate backg
 1781b1e3e chore: session checkpoint [15:06]
 943f76a60 chore: session checkpoint [15:00]
 d7d03846f chore: session checkpoint [14:59]
-f0e434388 chore: session checkpoint [14:59]
 ```
 
 ## Working State
@@ -25,6 +25,7 @@ f0e434388 chore: session checkpoint [14:59]
  M GEMINI.md
  M JULES.md
  M docs/BACKEND_ONLY_API_DECLARATION.md
+ M docs/flowcharts/07-mobile-remote-relay.md
  M packages/landing/src/components/ThesisCrawl.tsx
  M packages/renderer/src/modules/mobile-remote/MobileRemote.tsx
  M packages/renderer/src/services/agent/RemoteRelayService.ts
