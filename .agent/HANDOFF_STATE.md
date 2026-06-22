@@ -1,69 +1,24 @@
 # Handoff State
-**Updated:** 2026-06-22 17:56 UTC
+**Updated:** 2026-06-22 22:53 UTC
 **Branch:** `claude/agent-abcd-vem93b`
 
 ## Recent Commits
 ```
-fd4a619 docs(ledger): capture follow-up work for SHOW, ISSUE-445 emulator, orphaned phone-nav
-fb1cb2a chore: session checkpoint [17:52]
-2472e8b chore: session checkpoint [17:48]
-7685b81 chore: session checkpoint [17:47]
-0764bf2 chore: session checkpoint [15:46]
-20e8d81 test(remote): prove [SHOW] route both branches + flowchart + issue validation
-a8f9911 chore: session checkpoint [15:44]
-0d1538e chore: session checkpoint [15:44]
-bb63d03 chore: session checkpoint [15:40]
-6926915 feat(remote): add [SHOW] on-demand visual return channel to indiiREMOTE
-**Updated:** 2026-06-22 14:00 UTC
-**Branch:** `claude/ci-failure-main-wxyof9`
-
-**Updated:** 2026-06-22 18:44 EDT
-**Branch:** `main`
-
-## Recent Commits
-```
-913a661e6 chore: session checkpoint [18:39]
-e528b159d chore: session checkpoint [18:37]
-341fd2fd4 test(ledger): log ISSUE-A-012
-48852717c chore: session checkpoint [14:38]
-ed0586a74 test(ledger): log ISSUE-A-010 and ISSUE-A-011
-fcc01181c test(ledger): log ISSUE-A-009 (boardroom-live-verify env-fragile live-model spec in default gate)
-ca1a69a0b test(ledger): log ISSUE-A-008 (boardroom seat_agent dispatch fails Turn 1)
-53e598a94 chore: session checkpoint [14:34]
-dfddbbee2 chore: session checkpoint [14:33]
-310b803ad chore: session checkpoint [14:27]
+d5bddad fix: repair merge breakage in landing + remote command routing
+b2a0230 Merge branch 'main' into claude/agent-abcd-vem93b
+c3ad919 chore: session checkpoint [18:44]
+9756234 Merge branch 'main' into claude/agent-abcd-vem93b
+5c241fd Claude/ci failure main wxyof9 (#188)
+913a661 chore: session checkpoint [18:39]
+e528b15 chore: session checkpoint [18:37]
+341fd2f test(ledger): log ISSUE-A-012
+4885271 chore: session checkpoint [14:38]
+ed0586a test(ledger): log ISSUE-A-010 and ISSUE-A-011
 ```
 
 ## Working State
 ```
 clean working tree
- M .agent/test_ledger/OPEN_ISSUES.md
- M .agent/test_ledger/REAL_TEST_HISTORY.md
- M .agent/workflows/a.md
- M artifacts/boardroom_live_home.png
- M artifacts/boardroom_result.png
- M artifacts/live-agent-daisy-chain/coordination-report.html
- M artifacts/live-agent-daisy-chain/latest.json
- M deep-test-boardroom-1.png
- M deep-test-booking-1.png
- M deep-test-campaign-1.png
- M deep-test-publicist-1.png
- M e2e/boardroom-live-verify.spec.ts
- M e2e/boardroom-real-user-scenario.spec.ts
- M e2e/fixtures/auth.ts
- M e2e/founders-program.spec.ts
- M packages/firebase/firestore.rules
- M scripts/git_monitor_sync.js
-?? .claude/launch.json
-?? ORIGINAL_REQUEST.md
-?? artifacts/mega_audio_analyzer_2026-06-22_live_evidence.json
-?? artifacts/mega_audio_analyzer_2026-06-22_preview_evidence.json
-?? artifacts/mega_audio_analyzer_2026-06-22_results.md
-?? artifacts/mega_audio_analyzer_2026-06-22_screenshots/
-?? docs/flowcharts/agent-venue-research-macro.md
-?? docs/handoff/
-?? packages/renderer/src/modules/notes/
-?? packages/renderer/src/services/agent/tools/NotesTools.ts
 ```
 
 ## Decisions
