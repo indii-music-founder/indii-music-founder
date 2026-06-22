@@ -25,6 +25,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { agentService } from '@/services/agent/AgentService';
 import { entryCommandService } from '@/services/commands/EntryCommandService';
 import { remoteRelayService, type RemoteCommand, type AgentDispatchTask } from '@/services/agent/RemoteRelayService';
+import { parseRemoteCommand } from '@/hooks/remoteCommandSecurity';
 import { auth, db } from '@/services/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp, runTransaction } from 'firebase/firestore';
@@ -426,10 +427,22 @@ function useFirestoreRelay(enabled: boolean) {
         logger.info(`[RemoteRelay/Firestore] 📱→🖥️ Processing command: "${command.text?.substring(0, 50)}"`);
         writeDiagnostic('command_received', { commandId: command.id, text: command.text?.substring(0, 50) });
         try {
-            // ─── Wake Route (Sleep Mode) ─────────────────────────────
-            // Explicit "Wake INDII" from the phone. Show the window + clear the
-            // sleep flag. No agent work — just surface the resident process.
-            if (command.text.startsWith('[WAKE]')) {
+            const parsed = parseRemoteCommand(command.text);
+
+            if (parsed.kind === 'rejected') {
+                logger.warn(`[RemoteRelay/Firestore] ⚠️ Rejected command: ${parsed.reason}`);
+                writeDiagnostic('command_rejected', { commandId: command.id, reason: parsed.reason });
+                await remoteRelayService.sendResponse(
+                    command.id,
+                    `⚠️ This action could not be handled: ${parsed.reason}`,
+                    undefined,
+                    false
+                );
+                await remoteRelayService.markCommandCompleted(command.id);
+                return;
+            }
+
+            if (parsed.kind === 'wake') {
                 logger.info('[RemoteRelay/Firestore] ⏰ Wake command received');
                 writeDiagnostic('wake_command', { commandId: command.id });
                 wakeDesktop();
@@ -443,63 +456,26 @@ function useFirestoreRelay(enabled: boolean) {
                 return;
             }
 
-            // ─── Standard Agent Chat Route ───────────────────────────
-            if (!command.text.startsWith('[')) {
-                const startedAt = Date.now();
-                logger.info(`[RemoteRelay/Firestore] 💬 Agent chat: "${command.text.substring(0, 50)}"`);
-                writeDiagnostic('agent_chat_started', {
-                    commandId: command.id,
-                    targetAgentId: command.targetAgentId || 'auto',
-                });
+            if (parsed.kind === 'navigate') {
+                const targetModule = parsed.module;
+                logger.info(`[RemoteRelay/Firestore] 🧭 Navigate to: "${targetModule}"`);
+                writeDiagnostic('navigation_started', { module: targetModule });
+
+                useStore.getState().setModule(targetModule);
 
                 await remoteRelayService.sendResponse(
                     command.id,
-                    'Processing in desktop studio…',
-                    command.targetAgentId,
-                    true
-                );
-
-                const commandResult = await entryCommandService.handleInput(command.text, {
-                    source: 'mobile',
-                    includeUserMessage: true,
-                    remoteCommandId: command.id,
-                });
-                if (commandResult.handled) {
-                    await remoteRelayService.sendResponse(
-                        command.id,
-                        commandResult.responseText || 'Workflow command handled.',
-                        commandResult.agentId || command.targetAgentId || 'generalist',
-                        false
-                    );
-                    await remoteRelayService.markCommandCompleted(command.id);
-                    writeDiagnostic('entry_command_done', { commandId: command.id });
-                    return;
-                }
-
-                await agentService.sendMessage(
-                    command.text,
+                    `🧭 Navigated to ${targetModule}`,
                     undefined,
-                    command.targetAgentId,
-                    { source: 'mobile-remote' }
+                    false
                 );
 
-                const response = findLatestRemoteAgentResponse(startedAt);
-                await remoteRelayService.sendResponse(
-                    command.id,
-                    response?.text?.trim() || 'Done.',
-                    response?.agentId || command.targetAgentId || 'generalist',
-                    false,
-                    undefined,
-                    response?.id
-                );
                 await remoteRelayService.markCommandCompleted(command.id);
-                writeDiagnostic('agent_chat_done', { commandId: command.id });
                 return;
             }
 
-            // ─── Image Generation Route ──────────────────────────────
-            if (command.text.startsWith('[GENERATE_IMAGE]')) {
-                const imagePrompt = command.text.replace('[GENERATE_IMAGE]', '').trim();
+            if (parsed.kind === 'generate_image') {
+                const imagePrompt = parsed.prompt;
                 const aspectRatio = (command.metadata?.aspectRatio as string) || '1:1';
 
                 logger.info(`[RemoteRelay/Firestore] 🎨 Image generation: "${imagePrompt}" (${aspectRatio})`);
@@ -545,28 +521,8 @@ function useFirestoreRelay(enabled: boolean) {
                 return;
             }
 
-            // ─── Navigation Route ──────────────────────────────
-            if (command.text.startsWith('[NAVIGATE]')) {
-                const targetModule = command.text.replace('[NAVIGATE]', '').trim();
-                logger.info(`[RemoteRelay/Firestore] 🧭 Navigate to: "${targetModule}"`);
-                writeDiagnostic('navigation_started', { module: targetModule });
-
-                useStore.getState().setModule(targetModule as import('@/core/constants').ModuleId);
-
-                await remoteRelayService.sendResponse(
-                    command.id,
-                    `🧭 Navigated to ${targetModule}`,
-                    undefined,
-                    false
-                );
-
-                await remoteRelayService.markCommandCompleted(command.id);
-                return;
-            }
-
-            // ─── Agent Action Route ──────────────────────────────
-            if (command.text.startsWith('[AGENT_ACTION]')) {
-                const action = command.text.replace('[AGENT_ACTION]', '').trim();
+            if (parsed.kind === 'agent_action') {
+                const action = parsed.action;
                 logger.info(`[RemoteRelay/Firestore] 🤖 Agent Action: "${action}"`);
                 writeDiagnostic('agent_action_started', { action });
 
@@ -595,18 +551,121 @@ function useFirestoreRelay(enabled: boolean) {
                 return;
             }
 
-            logger.warn(`[RemoteRelay/Firestore] ⚠️ Unhandled desktop-only command prefix: ${command.text?.substring(0, 30)}`);
-            writeDiagnostic('command_unhandled_prefix', {
-                commandId: command.id,
-                text: command.text?.substring(0, 50),
-            });
-            await remoteRelayService.sendResponse(
-                command.id,
-                '⚠️ This action could not be handled on the desktop. Please try again.',
-                undefined,
-                false
-            );
-            await remoteRelayService.markCommandCompleted(command.id);
+            if (parsed.kind === 'daw_control') {
+                const action = parsed.action;
+                logger.info(`[RemoteRelay/Firestore] 🎛️ DAW Control: "${action}"`);
+                writeDiagnostic('daw_control_started', { action });
+
+                const store = useStore.getState();
+                if (action === 'toggle_playback') {
+                    if (store.isPlaying) {
+                        store.pauseTrack();
+                    } else {
+                        store.resumeTrack();
+                    }
+                } else if (action === 'play' || action === 'resume') {
+                    store.resumeTrack();
+                } else if (action === 'pause') {
+                    store.pauseTrack();
+                } else if (action === 'stop') {
+                    store.stopTrack();
+                }
+
+                await remoteRelayService.sendResponse(
+                    command.id,
+                    `🎛️ DAW Control: ${action} executed`,
+                    undefined,
+                    false
+                );
+
+                await remoteRelayService.markCommandCompleted(command.id);
+                return;
+            }
+
+            if (parsed.kind === 'media_playback') {
+                const action = parsed.action;
+                logger.info(`[RemoteRelay/Firestore] 🎬 Media Playback: "${action}"`);
+                writeDiagnostic('media_playback_started', { action });
+
+                const store = useStore.getState();
+                if (action === 'toggle_playback') {
+                    if (store.isPlaying) {
+                        store.pauseTrack();
+                    } else {
+                        store.resumeTrack();
+                    }
+                } else if (action === 'play' || action === 'resume') {
+                    store.resumeTrack();
+                } else if (action === 'pause') {
+                    store.pauseTrack();
+                } else if (action === 'stop') {
+                    store.stopTrack();
+                }
+
+                await remoteRelayService.sendResponse(
+                    command.id,
+                    `🎬 Media Playback: ${action} executed`,
+                    undefined,
+                    false
+                );
+
+                await remoteRelayService.markCommandCompleted(command.id);
+                return;
+            }
+
+            if (parsed.kind === 'chat') {
+                const text = parsed.text;
+                const startedAt = Date.now();
+                logger.info(`[RemoteRelay/Firestore] 💬 Agent chat: "${text.substring(0, 50)}"`);
+                writeDiagnostic('agent_chat_started', {
+                    commandId: command.id,
+                    targetAgentId: command.targetAgentId || 'auto',
+                });
+
+                await remoteRelayService.sendResponse(
+                    command.id,
+                    'Processing in desktop studio…',
+                    command.targetAgentId,
+                    true
+                );
+
+                const commandResult = await entryCommandService.handleInput(text, {
+                    source: 'mobile',
+                    includeUserMessage: true,
+                    remoteCommandId: command.id,
+                });
+                if (commandResult.handled) {
+                    await remoteRelayService.sendResponse(
+                        command.id,
+                        commandResult.responseText || 'Workflow command handled.',
+                        commandResult.agentId || command.targetAgentId || 'generalist',
+                        false
+                    );
+                    await remoteRelayService.markCommandCompleted(command.id);
+                    writeDiagnostic('entry_command_done', { commandId: command.id });
+                    return;
+                }
+
+                await agentService.sendMessage(
+                    text,
+                    undefined,
+                    command.targetAgentId,
+                    { source: 'mobile-remote' }
+                );
+
+                const response = findLatestRemoteAgentResponse(startedAt);
+                await remoteRelayService.sendResponse(
+                    command.id,
+                    response?.text?.trim() || 'Done.',
+                    response?.agentId || command.targetAgentId || 'generalist',
+                    false,
+                    undefined,
+                    response?.id
+                );
+                await remoteRelayService.markCommandCompleted(command.id);
+                writeDiagnostic('agent_chat_done', { commandId: command.id });
+                return;
+            }
         } catch (error: unknown) {
             logger.error('[RemoteRelay/Firestore] Command failed:', error);
             await remoteRelayService.sendResponse(
