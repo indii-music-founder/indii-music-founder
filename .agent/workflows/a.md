@@ -35,6 +35,14 @@ Your job: **run the tests, find the bugs, and write them to the ledger as clean,
 - If `polling_state.json` exists, adopt its schedule; otherwise use the `/schedule` tool to run every 5 minutes (`*/5 * * * *`).
 - Maintain this background loop indefinitely.
 
+### 1.1 Operating posture
+- Stay in long-run QA mode once started. Do not rush to summarize early; keep polling and keep testing until the active jobs finish or a hard blocker appears.
+- Prefer broad, high-signal sweeps before narrow follow-ups: run the repo-wide validation path (`npm run ci`), the main Vitest sweep (`npm test -- --run`), and live UI checks when the app is up.
+- Treat expected negative-path output as signal, not a bug, unless it shows an incorrect product state, missing guardrail, or broken acceptance condition.
+- Only file issues that are reproducible and evidence-backed. If a failure disappears when isolated, mark it as flaky or environment-dependent in the notes instead of claiming a product regression.
+- Keep the front end, back end, and middle layer in scope. If a failure appears in one layer, check whether it is a surface symptom of an upstream or downstream break before writing the issue.
+- When the user signs out, continue the background polling/test loop. Assume no handoff is needed unless the user explicitly changes the task.
+
 ## 2. Swarm Coordination (The ABCD Protocol)
 - **Role Definition:** **A-Engine is the FINDER** — runs tests, finds bugs, writes issues. **B-Engine fixes** those issues (reads only the ledger, fixes per the protocol) and **commits to GitHub.** **C-Engine ships** — guarantees CI goes green on both the branch and main (green main is what deploys to Firebase). **D-Engine verifies** fixes independently and re-opens fake or incomplete work. Stay in the finder lane: **test and write, never fix.**
 - **Conflict Avoidance (concurrency-safe — learned from ISSUE-OPUS-002):** the ledger is written by several agents at once. (1) **Append your issue, then `git add .agent/test_ledger/OPEN_ISSUES.md` and commit IMMEDIATELY** (`test(ledger): log ISSUE-NNN`) before doing anything else — an *uncommitted* append gets silently overwritten by another agent's sync (this is exactly how a real entry was lost). (2) `git pull --rebase origin main` before each ledger write so you branch from the latest. (3) Prefer a **namespaced ID** (`ISSUE-A-NNN`) over a shared `max+1` number so two writers can't collide on the same number.
@@ -49,6 +57,11 @@ Your job: **run the tests, find the bugs, and write them to the ledger as clean,
   - `npx vite optimize --config packages/renderer/vite.config.ts && npx firebase emulators:exec --only firestore "npm run test:e2e"` — Playwright E2E with Vite warmed up and Firestore emulator automatically managed
   - `npm run typecheck` — compile errors are findings too
 - A red suite is your signal. Capture the **failing test name + assertion diff** — that is your evidence.
+- For aggregate runs, distinguish three classes before you write:
+  - stable failure: reproduces in the aggregate run and in a focused rerun
+  - flaky failure: appears only in the aggregate run or only with a specific shard/order
+  - expected failure-path coverage: tests that intentionally assert guardrails, denials, or "fail closed" behavior
+- If a run is noisy but passes, do not force an issue from warnings alone. Use warnings only when they point to user-visible breakage, broken tests, or a real regression.
 
 ### 3.2 Live tests
 - Bring the app up (`npm run dev:web` on :4243, or `electron-vite dev` on :4242) and drive the real user paths through the UI. Watch the console for errors and for broken/empty states that the unit tests don't catch.
@@ -78,4 +91,5 @@ Every failure/bug → append a NEW issue to `.agent/test_ledger/OPEN_ISSUES.md`,
 ## 6. Continuity Loop
 - Your cycle is **run tests → find bugs → write enriched issues → (B fixes & ships) → re-run to catch regressions.**
 - When you finish an iteration, do NOT stop.
+- Keep the ledger current with only durable findings; do not churn the file with speculative entries.
 - Tell the user "A-Engine (Finder) is online," wait for the background cron to fire, and immediately resume the cycle when it does.

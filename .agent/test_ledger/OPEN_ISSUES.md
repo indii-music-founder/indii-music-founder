@@ -6514,3 +6514,79 @@ Therefore, no fix can be proposed or implemented.
 - **Honest fallback:** None rendered — the test asserts UI that no longer exists; the component itself renders fine.
 - **DO NOT:** Do NOT add a Cash App/Wire/Check stub just to green the test if Stripe is the real flow (mock/placeholder UI — violates no-mock-data). Do NOT blame the Firebase/quota log noise (present in adjacent passing founders tests).
 - **Evidence:** `/tmp/a-e2e.log:3384` `✘ 77 ... founders-program.spec.ts:14:5 ... manual payment instructions ... (8.6s)`; `:3400/:3423` sibling founders tests `✓`. Source grep: only "USD" match is `FoundersCheckout.tsx:202` `USD One-Time`; zero matches for "Investment Price"/"Cash App"/"Wire Transfer"/"Physical Check".
+
+---
+
+### ISSUE-A-013: indiiCONTROLLER pairing handshake flaky under real-world cellular/cross-network handoff
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Dimension:** Core Feature / Mobile Remote Reliability
+- **Location:** `packages/renderer/src/services/agent/RemoteRelayService.ts` & `packages/renderer/src/hooks/useRemoteCommandListener.ts`
+- **Details:** Heartbeat drops and transient packet loss cause aggressive toasts ("handshake bad connection", "connection bad") when switching between mobile cellular networks and local networks. Under real-world handoff, the WebSocket layer teardown/reconnect loops without cleanly preserving active authorization headers or fallback channels.
+- **Expected (acceptance):** Heartbeat loss up to 10s should fail silently without intrusive error toasts, using soft status indicator changes in the UI. Auth tokens must be aggressively cached in localStorage to prevent pairing spinners during transient reconnect loops.
+- **Next Steps / Recommended Swarm Audit:** Launch a specialized testing agent to execute real-world simulation runs under artificial network constraints (throttling, latency injection) to audit pairing state transitions. Verify that locking/unlocking the device cleanly triggers silent recovery.
+
+### ISSUE-448: Audio-connected Creative handoff crashes DirectGenerationTab before canvas renders
+- **Status:** OPEN
+- **Severity:** 🔴 HIGH
+- **Dimension:** Console | DataFlow | AssetGen
+- **Target:** Audio Analyzer (tool)
+- **Module:** Creative Studio downstream handoff
+- **Flowchart:** docs/flowcharts/audio-intelligence-flow.md | docs/flowcharts/creative-studio-pipeline.md
+- **Tech Stack:** React 18.3.1 | Zustand | Vite 6.4.2 | Firebase
+- **Found:** 2026-06-22 by /mega-test audio-analyzer
+- **Summary:** The audio target's connected Creative flow crashes after image generation is triggered. The module renders the error boundary with `Cannot read properties of undefined (reading 'indexOf')`, and the expected canvas never appears.
+- **Steps to Reproduce:** Run `python3 execution/run_department_test.py audio-analyzer`; in the connected Playwright suite, `e2e/creative-studio.spec.ts:45` fills the direct prompt, clicks generate, then waits for `.canvas-container`. The page instead shows `Something went wrong` for Studio.
+- **Expected:** Audio-derived or downstream Creative prompts should generate/display an asset without crashing the Creative module, and the canvas container should become visible.
+- **UX Impact:** Audio Analyzer cannot reliably hand off Semantic Audio DNA or audio-derived creative prompts into downstream visual generation; the user lands on a module-level crash instead of a generated asset.
+- **Dimensional Data:** Scoped runner: unit/integration 21/21 files and 135/135 tests passed; connected E2E failed 2/17. Creative failure: `e2e/creative-studio.spec.ts:56`, screenshot `test-results/creative-studio-Creative-S-a81a5-prompt---generate---display-chromium/test-failed-1.png`, error context `test-results/creative-studio-Creative-S-a81a5-prompt---generate---display-chromium/error-context.md`.
+
+### ISSUE-449: Audio-connected Distribution metadata submission never reaches done state
+- **Status:** OPEN
+- **Severity:** 🔴 HIGH
+- **Dimension:** DataFlow | State | API | ProdParity
+- **Target:** Audio Analyzer (tool)
+- **Module:** Distribution metadata flow
+- **Flowchart:** docs/flowcharts/audio-intelligence-flow.md | docs/flowcharts/distribution-and-legal-flow.md
+- **Tech Stack:** React 18.3.1 | Zustand | Vite 6.4.2 | Firebase
+- **Found:** 2026-06-22 by /mega-test audio-analyzer
+- **Summary:** The audio target's connected Distribution workflow accepts release metadata but never reaches the expected completion state. The submit modal remains at `0% complete` with `Submitting...` disabled, and `[data-testid="release-done-button"]` never appears.
+- **Steps to Reproduce:** Run `python3 execution/run_department_test.py audio-analyzer`; in the connected Playwright suite, `e2e/distribution-workflow.spec.ts:176` opens New Release, fills release metadata, submits, then waits for `[data-testid="release-done-button"]`.
+- **Expected:** Distribution metadata submission should advance QC -> ISRC -> DDEX -> DSP Delivery, expose the Done button, close cleanly, and persist release metadata for downstream status tracking.
+- **UX Impact:** Audio Analyzer's distribution handoff cannot prove release metadata persistence or delivery readiness; users may be trapped in an indeterminate submission state.
+- **Dimensional Data:** Failure at `e2e/distribution-workflow.spec.ts:203` after 30s wait for `release-done-button`; screenshot `test-results/distribution-workflow-Dist-e11a2-rkflow-submits-successfully-chromium/test-failed-1.png`; error context `test-results/distribution-workflow-Dist-e11a2-rkflow-submits-successfully-chromium/error-context.md`. Concurrent console/network evidence included repeated Firestore `Listen`/`Write` 403s and offline errors during the submission flow.
+
+---
+
+### ISSUE-450: Untracked and Incomplete Notes Module and NotesTools in workspace
+- **Status:** OPEN
+- **Severity:** 🟡 MEDIUM
+- **Dimension:** Architecture | Feature Completeness
+- **Target:** Notes module / NotesTools
+- **Module:** packages/renderer/src/modules/notes/ | packages/renderer/src/services/agent/tools/NotesTools.ts
+- **Summary:** There are untracked and incomplete Notes component files and tool interfaces present in the worktree. These were left untracked from earlier sessions and need to be fully integrated, type-checked, and added to the build and navigation registry, or cleaned up.
+- **Next Steps:** Evaluate whether the Notes feature is part of the core roadmap. If so, register it in the sidebar navigation and wire its service integrations. Otherwise, prune/clean the files.
+
+### ISSUE-451: LLM API Rate Limits / 429 Quota Exhaustion in `/abcd` loops
+- **Status:** OPEN
+- **Severity:** 🟡 MEDIUM
+- **Dimension:** Developer Experience | Agent Swarm Loops
+- **Summary:** When running the autonomous ABCD loops, multi-agent pipelines make heavy concurrent calls to Vertex AI / Gemini API endpoints. This triggers frequent HTTP 429 rate limit errors or Firestore quota blocks within a single cycle.
+- **Next Steps:** Introduce robust exponential-backoff retries directly into the agent request wrappers or enforce a global throttle/delay in `A2AClient` during swarm execution.
+
+### ISSUE-452: Systemic CI Deployment Pipeline Failures
+- **Status:** OPEN
+- **Severity:** 🔴 HIGH
+- **Dimension:** CI/CD | Infrastructure
+- **Summary:** Multiple GitHub Actions CI runs are failing deployment stages due to environment token expirations or outdated Node runtime warnings. 
+- **Next Steps:** Debug the integration secrets in the repo settings and ensure App Check keys are properly synchronized.
+
+
+### ISSUE-CI-27988974179: CI Pipeline Failure (Build and Test)
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** CI/CD
+- **Summary:** The GitHub Actions workflow `Build and Test` failed on branch `claude/agent-abcd-vem93b`.
+- **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/27988974179)
+- **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
