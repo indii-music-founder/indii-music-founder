@@ -43,7 +43,6 @@ import { logger } from '@/utils/logger';
 import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 import { getRealAuthenticatedUserId } from '@/utils/authGuards';
 import type { RemoteMobilePayload } from '@/types/electron';
-import type { RemoteMobilePayload } from '@/types/electron';
 
 
 // ---------------------------------------------------------------------------
