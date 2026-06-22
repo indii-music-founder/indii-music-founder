@@ -1,19 +1,19 @@
 # Handoff State
-**Updated:** 2026-06-22 09:24 EDT
+**Updated:** 2026-06-22 09:30 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+2e7d8f98d docs(ledger): log cross-agent anti-pattern — lazy useState → useEffect+setState regression
+84de5ae01 feat: enhance thesis crawl styling and add auto-open logic
+f2f546416 test(ledger): log ISSUE-A-001
+02fa6ce45 chore: session checkpoint [09:24]
 97087db47 chore: session checkpoint [09:23]
 9cadd2303 chore: session checkpoint [09:21]
 0228baab2 test: align ABCD engine workflows
 4ac523125 chore: session checkpoint [09:07]
 bd1201804 refactor(creative): rename Andromeda → PLP, Swarm → Roster
 683f13ef3 chore: session checkpoint [08:38]
-0fc3a3fb2 chore: session checkpoint [08:38]
-a0cf5544b chore: session checkpoint [08:33]
-578b90577 chore: session checkpoint [08:28]
-f01f833d6 chore: session checkpoint [08:24]
 ```
 
 ## Working State
@@ -33,8 +33,6 @@ f01f833d6 chore: session checkpoint [08:24]
  M e2e/mega-stress-test-v12.spec.ts
  M e2e/mega-stress-test-v4.spec.ts
  M packages/landing/src/App.tsx
- M packages/landing/src/components/ThesisCrawl.tsx
- M packages/landing/src/page.tsx
  M packages/renderer/src/modules/mobile-remote/MobileRemote.tsx
  M packages/renderer/src/services/agent/RemoteRelayService.ts
  M scripts/run-gauntlet.sh
