@@ -6438,10 +6438,12 @@ Therefore, no fix can be proposed or implemented.
 - **Evidence:** `rg -n "Bypass Autonomous Swarms|autonomous orchestration algorithms|Swarm|Swarms" packages/renderer/src/modules/creative/components/DirectGenerationTab.tsx packages/renderer/src/modules/creative -g '*.tsx'` returns no matches; `npm run typecheck` passed.
 
 ### ISSUE-CREATIVE-AUDIT-20260622: Creative Studio button audit incomplete + FLASH/REFINE UX confusion
-- **Status:** ⏳ OPEN (parked when session pivoted to the PLP rename)
+- **Status:** ✅ FIXED
 - **Severity:** 🟡 LOW (verification + UX polish)
 - **Summary:** A full "does every button work / is it in the right place / named right" audit of Creative Studio was started but not finished. VERIFIED wired: top tabs (Generate/Canvas/Video/Omni Remix/Showroom/Keyframes → real components), right controls (Builder/Brand/History/Versions/Roster/PLP/Projector), and CanvasHeader (Describe field + Refine → `handleMagicFill`). NOT yet traced end-to-end: left tool rail (pointer/sparkle/text/undo/redo/ID/color palette/settings) and right action rail (image/grid/layers/save/sparkle/play/X) in `AnnotationPalette.tsx` / `CanvasActionRail.tsx`.
 - **UX note:** In `CanvasHeader.tsx`, "FLASH" sits next to "REFINE" and reads like a second generate button, but it is actually a High-Fidelity (Pro) ↔ High-Speed (Flash) quality toggle. Consider relabeling/regrouping so it doesn't read as a generate action.
+- **Fix:** Completed the trace of `AnnotationPalette`, `CanvasActionRail`, and `CanvasToolbar` coverage, and relabeled the visible fast model toggle from `Flash` to `Speed` with an explicit `Model quality: High Speed` aria label so it no longer reads as a second generate action next to `Refine`.
+- **Evidence:** `npm test -- --run packages/renderer/src/modules/creative/components/__tests__/CanvasHeader.test.tsx packages/renderer/src/modules/creative/components/AnnotationPalette.interaction.test.tsx packages/renderer/src/modules/creative/components/__tests__/CanvasActionRail.test.tsx packages/renderer/src/modules/creative/components/CanvasToolbar.test.tsx` passed 21/21; `npm run typecheck` passed.
 
 ### ISSUE-LANDING-USEEFFECT-20260622: trivial unused `useEffect` import leftover
 - **Status:** ✅ FIXED
