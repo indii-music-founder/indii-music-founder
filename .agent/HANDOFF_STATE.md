@@ -1,4 +1,19 @@
 # Handoff State
+**Updated:** 2026-06-22 22:53 UTC
+**Branch:** `claude/agent-abcd-vem93b`
+
+## Recent Commits
+```
+d5bddad fix: repair merge breakage in landing + remote command routing
+b2a0230 Merge branch 'main' into claude/agent-abcd-vem93b
+c3ad919 chore: session checkpoint [18:44]
+9756234 Merge branch 'main' into claude/agent-abcd-vem93b
+5c241fd Claude/ci failure main wxyof9 (#188)
+913a661 chore: session checkpoint [18:39]
+e528b15 chore: session checkpoint [18:37]
+341fd2f test(ledger): log ISSUE-A-012
+4885271 chore: session checkpoint [14:38]
+ed0586a test(ledger): log ISSUE-A-010 and ISSUE-A-011
 **Updated:** 2026-06-23 10:07 EDT
 **Branch:** `codex/boardroom-abort-signal`
 
