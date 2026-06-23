@@ -111,8 +111,7 @@ export class CanvasOperationsService {
                 logger.info('[CanvasOps] Image loaded via blob URL (preferred for storage assets)');
                 return img;
             } catch (blobErr: unknown) {
-                logger.warn('[CanvasOps] Preferred blob load failed for storage asset:', blobErr);
-                throw new Error(`Safe image load failed for storage asset: ${url}`);
+                logger.warn('[CanvasOps] Preferred blob load failed for storage asset, falling back to direct CORS-safe load:', blobErr);
             }
         }
 
@@ -137,7 +136,7 @@ export class CanvasOperationsService {
             logger.warn('[CanvasOps] Blob fallback failed:', blobErr);
         }
 
-        throw new Error(`All image load strategies failed for: ${url}`);
+        throw new Error(`All CORS-safe image load strategies failed for URL: ${url}`);
     }
 
     /**

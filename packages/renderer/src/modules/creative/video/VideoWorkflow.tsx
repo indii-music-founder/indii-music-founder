@@ -91,11 +91,15 @@ export const processJobUpdate = (
                     .then((path: any) => {
                         logger.debug('Video saved locally to:', path);
                         deps.updateHistoryItem(currentJobId, { localPath: path });
+                        deps.toast.success(`Video saved locally to: ${path}`);
                     })
                     .catch((err: unknown) => {
                         logger.error('Failed to save to local folder:', err);
                         deps.toast.error('Failed to save video to local disk.');
+                        deps.toast.success('Scene generated (available in cloud).');
                     });
+            } else {
+                deps.toast.success('Scene generated!');
             }
 
             const metadata = data.output?.metadata || data.metadata;
@@ -113,7 +117,6 @@ export const processJobUpdate = (
             };
             deps.addToHistory(newAsset);
             deps.setActiveVideo(newAsset);
-            deps.toast.success('Scene generated!');
             deps.setJobId(null);
             deps.setJobStatus('idle');
             deps.resetEditorProgress();
@@ -447,8 +450,14 @@ export default function VideoWorkflow() {
                                 .then((path: string) => {
                                     logger.debug('Video saved locally to:', path);
                                     updateHistoryItem(res.id, { localPath: path });
+                                    toast.success(`Video saved locally to: ${path}`);
                                 })
-                                .catch((err: unknown) => logger.error('Failed to save to local folder:', err));
+                                .catch((err: unknown) => {
+                                    logger.error('Failed to save to local folder:', err);
+                                    toast.success('Scene generated (available in cloud).');
+                                });
+                        } else {
+                            toast.success('Scene generated!');
                         }
 
                         const newAsset = {
@@ -464,7 +473,6 @@ export default function VideoWorkflow() {
                         setActiveVideo(newAsset);
                     });
                     setJobStatus('completed');
-                    toast.success('Scene generated!');
                 } else {
                     // Start listening for the background job
                     setJobId(firstResult!.id);

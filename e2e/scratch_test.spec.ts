@@ -153,7 +153,7 @@ test('Create Account sign-up flow simulation with logout', async ({ authedPage: 
     await passwordInputs.nth(1).fill('password123');
     
     // Fill Date of Birth
-    await page.locator('input[type="date"]').fill('2000-01-01');
+    await page.locator('input[aria-label="date of birth"]').fill('2000-01-01');
 
     // 5. Click Submit ("Create Account" submit button)
     console.log('[PLAYWRIGHT] Clicking submit button...');

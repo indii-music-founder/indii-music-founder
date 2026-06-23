@@ -89,6 +89,26 @@ export function registerVideoHandlers() {
         }
     });
 
+    ipcMain.handle('video:get-default-path', async (event, filename?: string) => {
+        try {
+            validateSender(event);
+            const documentsPath = app.getPath('documents');
+            const assetDir = path.join(documentsPath, 'indii', 'Assets', 'Video');
+            if (filename) {
+                const baseName = path.basename(filename);
+                const safeName = baseName.replace(/[^a-z0-9.]/gi, '_');
+                const targetPath = path.join(assetDir, safeName);
+                accessControlService.grantAccess(targetPath);
+                return targetPath;
+            }
+            accessControlService.grantAccess(assetDir);
+            return assetDir;
+        } catch (error) {
+            log.error('[VideoHandler] Failed to get default path:', error);
+            throw error;
+        }
+    });
+
     ipcMain.handle('video:open-folder', async (event, filePath?: string) => {
         try {
             validateSender(event);

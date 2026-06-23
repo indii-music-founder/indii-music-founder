@@ -14,7 +14,21 @@ vi.mock('../../core/components/AgentWindow', () => ({ default: () => <div data-t
 vi.mock('./components/InfiniteCanvas', () => ({ default: () => <div data-testid="infinite-canvas" /> }));
 vi.mock('./components/Showroom', () => ({ default: () => <div data-testid="showroom" /> }));
 vi.mock('../video/VideoWorkflow', () => ({ default: () => <div data-testid="video-workflow" /> }));
-vi.mock('./components/CreativeCanvas', () => ({ default: () => <div data-testid="creative-canvas" /> }));
+
+let capturedOnSendToWorkflow: any = null;
+vi.mock('./components/CreativeCanvas', () => ({
+    default: (props: any) => {
+        capturedOnSendToWorkflow = props.onSendToWorkflow;
+        return <div data-testid="creative-canvas" />;
+    }
+}));
+
+const mockConfirmCall = vi.fn();
+vi.mock('@/components/ui/ConfirmDialog', () => ({
+    ConfirmDialog: {
+        call: (...args: any[]) => mockConfirmCall(...args)
+    }
+}));
 
 // Mock ImageGenerationService
 const mockGenerateImages = vi.fn();
@@ -34,6 +48,7 @@ describe('CreativeStudio', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        capturedOnSendToWorkflow = null;
 
         (useToast as unknown as import("vitest").Mock).mockReturnValue({
             info: mockToastInfo,
@@ -48,6 +63,7 @@ describe('CreativeStudio', () => {
             setSelectedItem: vi.fn(),
             generationMode: 'image',
             setGenerationMode: vi.fn(),
+            setVideoInput: vi.fn(),
             pendingPrompt: null,
             setPendingPrompt: mockSetPendingPrompt,
             setPrompt: mockSetPrompt,
@@ -171,5 +187,55 @@ describe('CreativeStudio', () => {
         await waitFor(() => {
             expect(mockToastError).toHaveBeenCalledWith(expect.stringContaining('Image generation failed'));
         });
+    });
+
+    it('shows confirmation dialog when sending image to video workflow', async () => {
+        const setVideoInput = vi.fn();
+        const setGenerationMode = vi.fn();
+        const setViewMode = vi.fn();
+        const setSelectedItem = vi.fn();
+
+        const currentStore = (useStore as any).getState();
+        const updatedStore = {
+            ...currentStore,
+            viewMode: 'editor',
+            selectedItem: { id: 'img-123', url: 'http://test.com/img.png', type: 'image' },
+            setVideoInput,
+            setGenerationMode,
+            setViewMode,
+            setSelectedItem
+        };
+
+        (useStore as unknown as import("vitest").Mock).mockImplementation((selector: any) => {
+            if (selector && typeof selector === 'function') {
+                return selector(updatedStore);
+            }
+            return updatedStore;
+        });
+        (useStore as any).getState.mockReturnValue(updatedStore);
+
+        render(<CreativeStudio />);
+        expect(screen.getByTestId('creative-canvas')).toBeInTheDocument();
+        expect(capturedOnSendToWorkflow).toBeTypeOf('function');
+
+        // Test Scenario 1: Cancel
+        mockConfirmCall.mockResolvedValueOnce(false);
+        await capturedOnSendToWorkflow('firstFrame', updatedStore.selectedItem);
+
+        expect(mockConfirmCall).toHaveBeenCalledWith(expect.objectContaining({
+            title: 'Send to Video Editor?',
+            confirmText: 'Yes, Send to Video'
+        }));
+        expect(setVideoInput).not.toHaveBeenCalled();
+
+        // Test Scenario 2: Confirm
+        mockConfirmCall.mockResolvedValueOnce(true);
+        await capturedOnSendToWorkflow('firstFrame', updatedStore.selectedItem);
+
+        expect(setVideoInput).toHaveBeenCalledWith('firstFrame', updatedStore.selectedItem);
+        expect(setGenerationMode).toHaveBeenCalledWith('video');
+        expect(setViewMode).toHaveBeenCalledWith('video_production');
+        expect(setSelectedItem).toHaveBeenCalledWith(null);
+        expect(mockToastSuccess).toHaveBeenCalledWith('Set as Start Frame');
     });
 });

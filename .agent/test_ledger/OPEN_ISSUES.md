@@ -5939,12 +5939,13 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-CI-27553621352: CI Pipeline Failure (Deploy to Firebase Hosting)
 
-- **Status:** 🟡 IN PROGRESS (Agent C)
+- **Status:** ⏳ OPEN
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
 - **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/27553621352)
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
+- **Ownership note:** Unassigned as of 2026-06-23; no separate Agent C is currently active on this item.
 
 ### ISSUE-CI-27561429805: CI Pipeline Failure (Deploy to Firebase Hosting)
 
@@ -6244,7 +6245,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-445: Image Generation Fails with Internal Error
 
-- **Status:** 🟡 IN PROGRESS (Agent B)
+- **Status:** ⏳ OPEN
 - **Severity:** 🔴 HIGH
 - **UX Dimension:** Core Functionality
 - **Module:** Creative Director
@@ -6260,6 +6261,7 @@ Therefore, no fix can be proposed or implemented.
 - **User Impact:** The core Creative Director image generation pipeline is completely blocked.
 - **Fix:** Added backend-unavailable detection to the direct image-generation error mapper so `ERR_CONNECTION_REFUSED`, `ECONNREFUSED`, and `127.0.0.1:5001` surface as an honest emulator-start message instead of a generic internal error.
 - **Evidence:** `packages/renderer/src/modules/creative/hooks/useDirectGeneration.ts:55-97`; `packages/renderer/src/modules/creative/components/__tests__/DirectGenerationTab.test.tsx:259-277`; `npx vitest run packages/renderer/src/modules/creative/components/__tests__/DirectGenerationTab.test.tsx` passed 8/8; `npm run typecheck` passed.
+- **Remaining work:** The error-mapping improvement is present, but the core image-generation path still needs live verification/fix with the required backend or emulator running. Unassigned as of 2026-06-23; no separate Agent B is currently active on this item.
 
 ---
 
@@ -6606,7 +6608,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-A-014: E2E road-manager command center locator ambiguity strict mode violation
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Location:** `e2e/road-manager.spec.ts:171`
 - **Details:** The test expect statement `await expect(page.locator('text=Command Center')).toBeVisible({ timeout: 10_000 })` fails due to strict mode violation. The selector matches two elements: the sidebar navigation item (`[data-testid="nav-item-observability"]`) and the heading inside the road manager layout.
@@ -6614,6 +6616,8 @@ Therefore, no fix can be proposed or implemented.
 - **Honest fallback:** If the layout is not available, fail with a clean error rather than matching arbitrary nodes.
 - **DO NOT:** Do NOT use `.first()` as a quick fix, as it masks duplicate element violations and leads to unstable test paths.
 - **Evidence:** `strict mode violation: locator('text=Command Center') resolved to 2 elements` at `e2e/road-manager.spec.ts:171:59`.
+- **Fix:** Replaced generic `text=Command Center` locator with specific `page.getByRole('heading', { name: 'Command Center' })` locator.
+- **Evidence:** `npm run typecheck` and `npx firebase emulators:exec --only firestore "npx playwright test e2e/road-manager.spec.ts"` both passed successfully.
 
 ### ISSUE-A-015: E2E scratch_test date of birth input field timeout
 - **Status:** ⏳ OPEN
@@ -6636,7 +6640,7 @@ Therefore, no fix can be proposed or implemented.
 - **Evidence:** `expect(locator).toBeVisible() failed. Locator: locator('[data-testid="prompt-input"]')` in `e2e/detroit-techno-onboarding.spec.ts` and `e2e/stress-test-new-user.spec.ts`.
 
 ### ISSUE-A-017: E2E creative-studio canvas container visibility timeout
-- **Status:** ⏳ OPEN
+- **Status:** ✅ RESOLVED / NO LONGER REPRODUCES
 - **Severity:** 🔴 HIGH
 - **Location:** `e2e/creative-studio.spec.ts:56`
 - **Details:** The test expect statement `await expect(canvasContainer).toBeVisible({ timeout: 15_000 })` fails because the canvas container is never rendered. This is likely tied to the `useDirectGeneration.ts:148` TypeError (`Cannot read properties of undefined (reading 'indexOf')`) which crashes the DirectGenerationTab component before it can render the canvas.
@@ -6656,7 +6660,8 @@ Therefore, no fix can be proposed or implemented.
 - **Evidence:** `expect(received).toBe(expected) received: 5, 5, 1, 11, 8, 6` at `e2e/live_tests_runner.spec.ts:86:31`.
 
 ### ISSUE-A-019: Creative canvas export fails on tainted storage images
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED
+- **Fix:** Removed opaque `no-cors` fallback in `safeStorageFetch.ts` which was producing tainted blobs and poisoning the canvas for export.
 - **Severity:** 🔴 HIGH
 - **Location:** `packages/renderer/src/modules/creative/services/CanvasOperationsService.ts`
 - **Details:** Exporting the creative canvas can fail with `Failed to execute 'toDataURL' on 'HTMLCanvasElement': Tainted canvases may not be exported` when Firebase Storage images are loaded through a non-CORS-safe path. A follow-up error also appears from `safeStorageFetch` when all fetch strategies fail on the same storage URL.
@@ -6664,9 +6669,13 @@ Therefore, no fix can be proposed or implemented.
 - **Honest fallback:** If an asset cannot be loaded safely, surface a clear error and keep the canvas exportable.
 - **DO NOT:** Do NOT fall back to a display-only remote image path for exportable canvases.
 - **Evidence:** `Error: [safeStorageFetch] All fetch strategies failed for: https://firebasestorage.googleapis.com/...` and `Tainted canvases may not be exported`.
+- **Fix 2:** Refactored `CanvasOperationsService.ts` to fallback from a failed blob load to a direct CORS-safe loading (anonymous) path, avoiding immediate throwing on `safeStorageFetch` failures and ensuring no non-CORS-safe display paths taint the canvas.
+- **Evidence 2:** Project-wide typecheck (`npm run typecheck`) and Vitest runs passed successfully.
 
 ### ISSUE-A-020: Daisy Chain handoff is opaque and looks like it may be stuck
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED
+- **Root issue mapping:** Migrated from root `OPEN_ISSUES.md` as `ISSUE-368`. This is separate from ledger `ISSUE-368`, which is the older fixed webhook queue issue.
+- **Fix:** Added an explicit `ConfirmDialog` intercept in `CreativeStudio.tsx`'s `onSendToWorkflow` handler. When handing off a frame from the Canvas to the Video Editor, the user now receives a clear, blocking confirmation prompt explaining the mode switch and the destination, preventing the transition from feeling accidental or like a loading state.
 - **Severity:** 🟡 MEDIUM
 - **Location:** `packages/renderer/src/modules/creative/components/DaisyChainControls.tsx` and `packages/renderer/src/modules/creative/video/VideoWorkflow.tsx`
 - **Details:** The Daisy Chain control visibly pulses, but the UI does not clearly confirm that the selected frame was accepted or that the user has been moved into the video editor on purpose. Because the transition happens by accident from the user's perspective, the control reads like a loading state or a loop instead of a completed handoff.
@@ -6676,7 +6685,8 @@ Therefore, no fix can be proposed or implemented.
 - **Evidence:** User report: clicking the Daisy Chain/send flow opens the video editor, but the image association is not visible and the button just flashes without making progress obvious.
 
 ### ISSUE-A-021: Video renders save to Documents with weak completion feedback
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED
+- **Fix:** Updated the completion toasts in `VideoWorkflow.tsx` (both fast-path and background job listener) to explicitly display the local absolute file path when a video is successfully downloaded/rendered, clarifying that the file exists locally and exactly where it was saved.
 - **Severity:** 🟡 MEDIUM
 - **Location:** `packages/main/src/handlers/video.ts`, `packages/main/src/services/ElectronRenderService.ts`, `packages/renderer/src/modules/creative/video/VideoWorkflow.tsx`
 - **Details:** The local save path is `~/Documents/indii/Assets/Video`, so users who expect an in-app video folder may think no file was created. The render path itself is finite, but the UI does not clearly surface the final save location or success state, which makes the job look stalled or looped.
@@ -6686,7 +6696,7 @@ Therefore, no fix can be proposed or implemented.
 - **Evidence:** `video:save-asset` writes to `app.getPath('documents')/indii/Assets/Video`, and `video:render` is a single awaited render call rather than an intentional infinite loop.
 
 ### ISSUE-A-022: Project Assets panel hides generated video artifacts
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟡 MEDIUM
 - **Location:** `packages/renderer/src/modules/creative/components/CreativeGallery.tsx` and `packages/renderer/src/modules/creative/video/VideoWorkflow.tsx`
 - **Details:** The asset browser in the creative workspace does not clearly present generated MP4/video outputs after a render or daisy-chain flow, so the user cannot tell whether a video was produced. The panel currently gives strong visibility to still images, but not to the corresponding video artifact or save result.
@@ -6694,6 +6704,8 @@ Therefore, no fix can be proposed or implemented.
 - **Honest fallback:** If the video asset cannot be indexed into Project Assets, surface that limitation explicitly and provide a direct open-folder action.
 - **DO NOT:** Do NOT leave success hidden behind a non-updating image grid.
 - **Evidence:** Screenshot shows `Project Assets` with 17 items and no obvious video output despite the video workflow being exercised.
+- **Fix:** `VideoWorkflow.tsx` stores completed renders in `generatedHistory` with `type: 'video'` and updates `localPath` after the Electron save completes. `CreativeGallery.tsx` renders video history entries with `<video>` previews and resolves saved local MP4s through `file://${item.localPath}`. `EditorAssetLibrary.tsx` applies the same `file://` local-path handling and labels saved videos as `Saved locally`.
+- **Evidence:** Static verification against `packages/renderer/src/modules/creative/video/VideoWorkflow.tsx`, `packages/renderer/src/modules/creative/components/CreativeGallery.tsx`, and `packages/renderer/src/modules/creative/video/editor/components/EditorAssetLibrary.tsx` on 2026-06-23.
 
 ### ISSUE-A-023: Visual autorater correction loop reads like an endless retry
 - **Status:** ⏳ OPEN
