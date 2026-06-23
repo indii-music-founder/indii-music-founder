@@ -165,7 +165,7 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                                 motionStrength: 0.8,
                                 model: studioControls.model,
                                 referenceImages: (characterReferences || [])
-                                    .filter(ref => ref?.image?.url)
+                                    .filter(ref => typeof ref?.image?.url === 'string' && ref.image.url.length > 0)
                                     .map(ref => {
                                         let bytes = ref.image.url;
                                         const commaIndex = bytes.indexOf(',');

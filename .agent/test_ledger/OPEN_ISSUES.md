@@ -6210,7 +6210,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-443: Social Media Department Button Redirects to `/mobile-remote`
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED / NO LONGER REPRODUCES
 - **Severity:** 🟡 MEDIUM
 - **Module:** Navigation / Social Media Department
 - **Found:** 2026-06-19 by Browser Subagent Test
@@ -6220,6 +6220,8 @@ Therefore, no fix can be proposed or implemented.
   2. Notice the desktop application is redirected to `/mobile-remote` route.
   3. If you navigate directly to `https://indii-music-studio.web.app/social`, the Firebase authentication context is destroyed and you are redirected to the Login page.
 - **User Impact:** Users cannot easily access the Social Media Department from the sidebar, and direct navigation requires re-authenticating.
+- **Verification:** Desktop sidebar navigation now has explicit regression coverage proving `Social Media Department` calls `setModule('social')`, not `mobile-remote`. The only remaining automatic `mobile-remote` routing is the intentional phone-viewport path in `App.tsx`.
+- **Evidence:** `npm test -- --run packages/renderer/src/core/components/SidebarNavigation.test.tsx` passed 9/9 after adding the Social Department assertion.
 
 ---
 
@@ -6433,7 +6435,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-A-006: Creative `/history` list query is denied (returns false) — History subscription still errors on every load
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED / COVERED
 - **Severity:** 🔴 HIGH
 - **Dimension:** Console / Security (Firestore Rules)
 - **Location:** `packages/firebase/firestore.rules` L624 (`match /history/{historyId}` read rule) falling through to L1161 deny-all; consumer is the CreativeSlice history subscription (`onSnapshot` list on `/history`).
@@ -6442,6 +6444,8 @@ Therefore, no fix can be proposed or implemented.
   This is the **evolved successor** to ISSUE-A-004 (do NOT edit A-004's audit trail). A-004's `'userId' in resource.data` patch stopped the *"Property userId is undefined"* exception, but the `list`/collection-query is now cleanly **denied** (rule resolves `false`), so generated-content history never loads for the user. The error is silent to the rules engine but surfaces as a permission-denied in the app's subscription handler.
 - **Expected (acceptance):** The Creative generated-content History either (a) loads the user's own history without a permission error, or (b) shows an honest empty state — with NO `FirebaseError` thrown in console on load. Root-cause options for B to weigh: the `onSnapshot` query on `/history` must be constrained with a `where('userId','==',uid)` (or `orgId`) filter the rules can statically authorize for `list`, OR the `/history` read/list rule must be restructured to permit owner-scoped list queries. Apply the SAME fix to the 78+ other collections D flagged on A-004 that still use bare `resource.data.userId == request.auth.uid`.
 - **Honest fallback:** If owner-scoped list cannot be authorized, the subscription must degrade to an honest empty/"history unavailable" state — never a thrown FirebaseError on load, never broadened rules (`allow read: if true`).
+- **Fix:** `StorageService` already constrains personal top-level `/history` subscriptions with both `orgId == 'personal'` and `userId == auth.currentUser.uid`, including the missing-index fallback path. Added a regression assertion so the personal subscription query cannot drop the `userId` predicate again.
+- **Evidence:** `npm test -- --run packages/renderer/src/services/StorageService.test.ts` passed 2/2.
 - **DO NOT:** Do not silence the console error by swallowing the exception without fixing the query/rule. Do not loosen rules to deny-nothing. Do not edit ISSUE-A-004's Verification Findings.
 - **Evidence:** `/tmp/a-e2e.log` — recurs on every boardroom/creative test load (e.g. boardroom-real-user-scenario, boardroom-swarm). Rule confirmed: `firestore.rules` L621-637 read rule is per-document owner-only; L1161 is the deny-all default.
 

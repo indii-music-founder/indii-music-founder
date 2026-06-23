@@ -50,6 +50,7 @@ vi.mock('@/modules/creative/video/VideoStudioContainer', () => ({ default: () =>
 vi.mock('@/modules/workflow/WorkflowLab', () => ({ default: () => <div data-testid="workflow-lab">Workflow Lab</div> }));
 vi.mock('@/modules/dashboard/Dashboard', () => ({ default: () => <div data-testid="dashboard">Dashboard</div> }));
 vi.mock('@/modules/knowledge/KnowledgeBase', () => ({ default: () => <div data-testid="knowledge-base">Knowledge Base</div> }));
+vi.mock('@/modules/notes/NotesModule', () => ({ default: () => <div data-testid="notes-module">Notes Module</div> }));
 vi.mock('@/modules/auth/SelectOrg', () => ({ default: () => <div data-testid="select-org">Select Org</div> }));
 
 // Mock other components used in App
@@ -160,6 +161,7 @@ describe('Sidebar Navigation Integration', () => {
         expect(screen.getByText('Publishing Department')).toBeInTheDocument();
         expect(screen.getByText('Finance Department')).toBeInTheDocument();
         expect(screen.getByText('Licensing Department')).toBeInTheDocument();
+        expect(screen.getByText('Notes')).toBeInTheDocument();
     });
 
     it('calls setModule when a sidebar item is clicked', () => {
@@ -180,6 +182,14 @@ describe('Sidebar Navigation Integration', () => {
         vi.advanceTimersByTime(200);
         fireEvent.click(screen.getByText('Finance Department'));
         expect(mockSetModule).toHaveBeenCalledWith('finance');
+
+        vi.advanceTimersByTime(200);
+        fireEvent.click(screen.getByText('Social Media Department'));
+        expect(mockSetModule).toHaveBeenCalledWith('social');
+
+        vi.advanceTimersByTime(200);
+        fireEvent.click(screen.getByText('Notes'));
+        expect(mockSetModule).toHaveBeenCalledWith('notes');
 
         vi.useRealTimers();
     });
@@ -295,6 +305,25 @@ describe('Sidebar Navigation Integration', () => {
 
         await waitFor(() => {
             expect(screen.getByTestId('licensing-dashboard')).toBeInTheDocument();
+        }, { timeout: 20000 });
+    }, 30000);
+
+    it('renders correct dashboard for Notes', async () => {
+        const state = buildStoreState({ currentModule: 'notes' });
+        mockedUseStore.mockImplementation((selector?: (state: ReturnType<typeof buildStoreState>) => unknown) => {
+            if (selector && typeof selector === 'function') return selector(state);
+            return state;
+        });
+        mockedUseStore.getState = vi.fn().mockReturnValue(state);
+
+        render(
+            <MemoryRouter>
+                <App />
+            </MemoryRouter>
+        );
+
+        await waitFor(() => {
+            expect(screen.getByTestId('notes-module')).toBeInTheDocument();
         }, { timeout: 20000 });
     }, 30000);
 
