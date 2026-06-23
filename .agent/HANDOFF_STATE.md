@@ -1,19 +1,19 @@
 # Handoff State
-**Updated:** 2026-06-23 14:06 EDT
-**Branch:** `codex/boardroom-abort-signal`
+**Updated:** 2026-06-23 16:08 EDT
+**Branch:** `fix/prune-orphaned-nav-components`
 
 ## Recent Commits
 ```
+cfdd44f71 chore: bump to v1.64.3 and update changelog
+e263ae6ea Merge branch 'main' into fix/prune-orphaned-nav-components
+35c04f4f0 Codex/boardroom abort signal (#194)
+201826f43 Codex/boardroom abort signal (#192)
+6ef0282bc fix(auth): add explicit auth token verification for image/video generation (ISSUE-442)
+703bd7920 chore: session checkpoint [14:14]
+281c9ac94 fix(test): resolve CreativeStudio test flakiness in full suite (TEST-FLAKY-20260623)
+dfa297de7 fix(nav): remove orphaned MobileNav dead code (ISSUE-NAV-ORPHAN-20260622)
+9c1de6536 chore: session checkpoint [14:06]
 7dd6eb80a chore: session checkpoint [12:18]
-8b9f3b215 chore: session checkpoint [12:16]
-6a7fe3690 chore: session checkpoint [12:11]
-321810303 chore: session checkpoint [12:09]
-2d1f41afa chore: resolve merge conflict with main
-663f1c52f chore: session checkpoint [12:07]
-44e5c86b2 chore: session checkpoint [12:07]
-b91a8906f ABCD session: landing fix + ISSUE-443 regression + indiiREMOTE "show me" channel (#186)
-0d44c7560 chore: session checkpoint [11:57]
-5967ddac5 fix: use parsed.kind for agent_action type narrowing
 ```
 
 ## Working State
