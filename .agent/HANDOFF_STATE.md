@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-23 16:17 EDT
+**Updated:** 2026-06-23 16:18 EDT
 **Branch:** `fix/prune-orphaned-nav-components`
 
 ## Recent Commits
 ```
+5f5db4b7c chore: session checkpoint [16:17]
 2f16e53a5 chore: session checkpoint [16:16]
 7d3fe1476 chore: session checkpoint [16:16]
 4de1ad2b1 chore: session checkpoint [16:13]
@@ -13,7 +14,6 @@ cfdd44f71 chore: bump to v1.64.3 and update changelog
 e263ae6ea Merge branch 'main' into fix/prune-orphaned-nav-components
 35c04f4f0 Codex/boardroom abort signal (#194)
 201826f43 Codex/boardroom abort signal (#192)
-6ef0282bc fix(auth): add explicit auth token verification for image/video generation (ISSUE-442)
 ```
 
 ## Working State
