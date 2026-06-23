@@ -6493,6 +6493,7 @@ Therefore, no fix can be proposed or implemented.
 - **DO NOT:** Do NOT "fix" by relaxing the `untracked spend` CircuitBreaker / quota guard — that's a cost-safety control and not the bug. Do NOT assume it's emulator-only: the regex mismatch is identical in production rules. Do NOT widen the rule to deny-nothing.
 - **Fix:** Updated the regex pattern for `user_usage_stats` document match rule to include a hyphen (`-[0-9-]+` instead of `_[0-9]+`) so that the rules match dashed ISO dates used in the document ID structure.
 - **Evidence:** `packages/firebase/firestore.rules:1013-1014` contains `statId.matches(request.auth.uid + '_[0-9-]+')`. All 126 security rules tests pass (`npm run test:rules`). Typecheck and eslint are green.
+- **Verdict:** ✅ VERIFIED (D, 2026-06-23): Checked firestore.rules:1013-1014. The matches pattern correctly uses [0-9-]+. Executed npm run test:rules and all 126 security rules tests pass cleanly.
 
 ### ISSUE-A-011: Several E2E specs run with `FIREBASE_E2E_MOCK` disabled → hit real emulator Firestore (permission-denied/quota) and fail non-deterministically
 
@@ -6654,3 +6655,52 @@ Therefore, no fix can be proposed or implemented.
 - **DO NOT:** Do NOT change the check threshold to ignore errors.
 - **Evidence:** `expect(received).toBe(expected) received: 5, 5, 1, 11, 8, 6` at `e2e/live_tests_runner.spec.ts:86:31`.
 
+### ISSUE-A-019: Creative canvas export fails on tainted storage images
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Location:** `packages/renderer/src/modules/creative/services/CanvasOperationsService.ts`
+- **Details:** Exporting the creative canvas can fail with `Failed to execute 'toDataURL' on 'HTMLCanvasElement': Tainted canvases may not be exported` when Firebase Storage images are loaded through a non-CORS-safe path. A follow-up error also appears from `safeStorageFetch` when all fetch strategies fail on the same storage URL.
+- **Expected (acceptance):** Every image loaded into the exportable creative canvas must be CORS-safe or converted to base64/blob before drawing; export should never poison the canvas with a tainted source.
+- **Honest fallback:** If an asset cannot be loaded safely, surface a clear error and keep the canvas exportable.
+- **DO NOT:** Do NOT fall back to a display-only remote image path for exportable canvases.
+- **Evidence:** `Error: [safeStorageFetch] All fetch strategies failed for: https://firebasestorage.googleapis.com/...` and `Tainted canvases may not be exported`.
+
+### ISSUE-A-020: Daisy Chain handoff is opaque and looks like it may be stuck
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Location:** `packages/renderer/src/modules/creative/components/DaisyChainControls.tsx` and `packages/renderer/src/modules/creative/video/VideoWorkflow.tsx`
+- **Details:** The Daisy Chain control visibly pulses, but the UI does not clearly confirm that the selected frame was accepted or that the user has been moved into the video editor on purpose. Because the transition happens by accident from the user's perspective, the control reads like a loading state or a loop instead of a completed handoff.
+- **Expected (acceptance):** When a frame is handed off to video, show an explicit confirmation of the selected frame, the destination, and the next action. The editor should open with visible context, not just a mode change.
+- **Honest fallback:** If the handoff cannot be completed, keep the user in place and show a concrete error or missing-input state.
+- **DO NOT:** Do NOT rely on a blinking pill or subtle mode switch as the only feedback.
+- **Evidence:** User report: clicking the Daisy Chain/send flow opens the video editor, but the image association is not visible and the button just flashes without making progress obvious.
+
+### ISSUE-A-021: Video renders save to Documents with weak completion feedback
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Location:** `packages/main/src/handlers/video.ts`, `packages/main/src/services/ElectronRenderService.ts`, `packages/renderer/src/modules/creative/video/VideoWorkflow.tsx`
+- **Details:** The local save path is `~/Documents/indii/Assets/Video`, so users who expect an in-app video folder may think no file was created. The render path itself is finite, but the UI does not clearly surface the final save location or success state, which makes the job look stalled or looped.
+- **Expected (acceptance):** After a successful render, show the saved location and a visible success state, and make the destination folder obvious in the UI.
+- **Honest fallback:** If save fails, surface the failure immediately and leave the rendered URL/path visible for manual recovery.
+- **DO NOT:** Do NOT imply the file lives in the project tree when it is actually saved to the user's Documents folder.
+- **Evidence:** `video:save-asset` writes to `app.getPath('documents')/indii/Assets/Video`, and `video:render` is a single awaited render call rather than an intentional infinite loop.
+
+### ISSUE-A-022: Project Assets panel hides generated video artifacts
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Location:** `packages/renderer/src/modules/creative/components/CreativeGallery.tsx` and `packages/renderer/src/modules/creative/video/VideoWorkflow.tsx`
+- **Details:** The asset browser in the creative workspace does not clearly present generated MP4/video outputs after a render or daisy-chain flow, so the user cannot tell whether a video was produced. The panel currently gives strong visibility to still images, but not to the corresponding video artifact or save result.
+- **Expected (acceptance):** When a video render succeeds, it should appear in Project Assets with a clear video thumbnail/entry and a success indicator, or the UI should otherwise show the output path directly.
+- **Honest fallback:** If the video asset cannot be indexed into Project Assets, surface that limitation explicitly and provide a direct open-folder action.
+- **DO NOT:** Do NOT leave success hidden behind a non-updating image grid.
+- **Evidence:** Screenshot shows `Project Assets` with 17 items and no obvious video output despite the video workflow being exercised.
+
+### ISSUE-A-023: Visual autorater correction loop reads like an endless retry
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Location:** `packages/renderer/src/services/agent/governance/VisualOutputAutorater.ts`, `packages/renderer/src/services/agent/AgentService.ts`
+- **Details:** The correction loop for Creative Director image generation is bounded by a max-attempt cap, but the transcript still looks like it is stuck in an endless corrective retry cycle because each rejection immediately prompts another regeneration. The user needs a hard stop message and a clear summary of the remaining defect when the cap is reached.
+- **Expected (acceptance):** After the autorater rejects an output enough times, stop regeneration, explain what failed, and hand the user a stable next step instead of re-issuing another prompt.
+- **Honest fallback:** Surface a manual-review state and keep the last acceptable asset visible.
+- **DO NOT:** Do NOT keep re-prompting in a way that looks like a runaway loop after the cap is reached.
+- **Evidence:** Pasted Creative Director transcript shows repeated `Visual Autorater Correction` messages followed by another `generate_image` request each time.
