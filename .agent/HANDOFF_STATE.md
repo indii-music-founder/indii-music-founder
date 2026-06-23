@@ -1,41 +1,31 @@
 # Handoff State
-
-**Updated:** 2026-06-22 18:44 EDT
-**Branch:** `main`
+**Updated:** 2026-06-23 08:09 EDT
+**Branch:** `codex/boardroom-abort-signal`
 
 ## Recent Commits
 ```
-913a661e6 chore: session checkpoint [18:39]
-e528b159d chore: session checkpoint [18:37]
-341fd2fd4 test(ledger): log ISSUE-A-012
-48852717c chore: session checkpoint [14:38]
-ed0586a74 test(ledger): log ISSUE-A-010 and ISSUE-A-011
-fcc01181c test(ledger): log ISSUE-A-009 (boardroom-live-verify env-fragile live-model spec in default gate)
-ca1a69a0b test(ledger): log ISSUE-A-008 (boardroom seat_agent dispatch fails Turn 1)
-53e598a94 chore: session checkpoint [14:34]
-dfddbbee2 chore: session checkpoint [14:33]
-310b803ad chore: session checkpoint [14:27]
+395929ba5 fix(boardroom): wire abort signal through swarm
+80bc4f2a9 test(ledger): log ISSUE-A-014 to ISSUE-A-018
+56ff494aa test(security): update expected mock referer assertion to founder.indii.music
+c6da9731e test(ledger): log ISSUE-CI pipeline failures
+8d92e3c3a fix(ledger): resolve ISSUE-A-010
+f554408d0 test(ledger): D-Engine verifies ISSUE-A-007 and ISSUE-LANDING-USEEFFECT
+22b0effcf chore(ledger): claim ISSUE-A-010 as IN PROGRESS
+e9733cf56 chore: git lock file cleanup and sync update
+c3ad9197e chore: session checkpoint [18:44]
+5c241fd4c Claude/ci failure main wxyof9 (#188)
 ```
 
 ## Working State
 ```
  M .agent/test_ledger/OPEN_ISSUES.md
- M .agent/test_ledger/REAL_TEST_HISTORY.md
- M .agent/workflows/a.md
- M artifacts/boardroom_live_home.png
- M artifacts/boardroom_result.png
- M artifacts/live-agent-daisy-chain/coordination-report.html
- M artifacts/live-agent-daisy-chain/latest.json
- M deep-test-boardroom-1.png
- M deep-test-booking-1.png
- M deep-test-campaign-1.png
- M deep-test-publicist-1.png
- M e2e/boardroom-live-verify.spec.ts
- M e2e/boardroom-real-user-scenario.spec.ts
- M e2e/fixtures/auth.ts
- M e2e/founders-program.spec.ts
- M packages/firebase/firestore.rules
- M scripts/git_monitor_sync.js
+ M OPEN_ISSUES.md
+ M electron.vite.config.ts
+ M packages/renderer/src/modules/creative/components/CreativeGallery.tsx
+ M packages/renderer/src/modules/creative/services/CanvasOperationsService.ts
+ M packages/renderer/src/modules/creative/video/editor/components/EditorAssetLibrary.tsx
+ M packages/renderer/src/modules/creative/video/editor/hooks/useVideoEditor.ts
+ M packages/renderer/vite.config.ts
 ?? .claude/launch.json
 ?? ORIGINAL_REQUEST.md
 ?? artifacts/mega_audio_analyzer_2026-06-22_live_evidence.json
