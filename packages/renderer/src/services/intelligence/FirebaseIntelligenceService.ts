@@ -67,6 +67,39 @@ import type {
 type GenerateContentResult = WrappedResponse;
 type LiveGenerativeModel = never;
 
+type BackendStreamPayload = {
+    text?: string;
+    functionCalls?: FunctionCallPart['functionCall'][];
+    thoughtSignature?: string;
+    candidates?: Array<{ content?: { parts?: ContentPart[] } }>;
+};
+
+const stripSseDataPrefix = (line: string): string | null => {
+    const trimmed = line.trim();
+    if (!trimmed) return null;
+    if (trimmed.startsWith('data:')) {
+        const data = trimmed.slice(5).trim();
+        return data === '[DONE]' ? null : data;
+    }
+    return trimmed;
+};
+
+const extractFunctionCalls = (payload: BackendStreamPayload): FunctionCallPart['functionCall'][] => {
+    if (Array.isArray(payload.functionCalls)) return payload.functionCalls;
+    const parts = payload.candidates?.flatMap(candidate => candidate.content?.parts || []) || [];
+    return parts
+        .filter((part): part is FunctionCallPart => !!part && typeof part === 'object' && 'functionCall' in part)
+        .map(part => part.functionCall);
+};
+
+const extractText = (payload: BackendStreamPayload): string => {
+    if (typeof payload.text === 'string') return payload.text;
+    const parts = payload.candidates?.flatMap(candidate => candidate.content?.parts || []) || [];
+    return parts
+        .map(part => ('text' in part && typeof part.text === 'string' ? part.text : ''))
+        .join('');
+};
+
 // Re-export ChatMessage for backward compatibility
 export type { ChatMessage } from './types';
 
@@ -343,13 +376,15 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
 
                         for (const line of lines) {
                             if (!line.trim()) continue;
-                            const parsed = safeJsonParse(line) as { text?: string; functionCalls?: FunctionCallPart['functionCall'][]; thoughtSignature?: string } | null;
+                            const jsonLine = stripSseDataPrefix(line);
+                            if (!jsonLine) continue;
+                            const parsed = safeJsonParse(jsonLine) as BackendStreamPayload | null;
                             if (!parsed) continue;
-                            const text = parsed.text || '';
+                            const text = extractText(parsed);
                             finalText += text;
                             const chunk: StreamChunk = {
                                 text: () => text,
-                                functionCalls: () => parsed.functionCalls || [],
+                                functionCalls: () => extractFunctionCalls(parsed),
                                 thoughtSignature: parsed.thoughtSignature
                             };
                             chunks.push(chunk);
@@ -357,13 +392,14 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                         }
                     }
                     if (buffer.trim()) {
-                        const parsed = safeJsonParse(buffer) as { text?: string; functionCalls?: FunctionCallPart['functionCall'][]; thoughtSignature?: string } | null;
+                        const jsonLine = stripSseDataPrefix(buffer);
+                        const parsed = jsonLine ? safeJsonParse(jsonLine) as BackendStreamPayload | null : null;
                         if (parsed) {
-                            const text = parsed.text || '';
+                            const text = extractText(parsed);
                             finalText += text;
                             const chunk: StreamChunk = {
                                 text: () => text,
-                                functionCalls: () => parsed.functionCalls || [],
+                                functionCalls: () => extractFunctionCalls(parsed),
                                 thoughtSignature: parsed.thoughtSignature
                             };
                             chunks.push(chunk);

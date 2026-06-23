@@ -40,7 +40,7 @@ const mockFirestoreUserDoc = async (route: any) => {
     await route.fulfill({ status: 200, headers: corsHeaders, contentType: 'application/json', body: '{}' });
 };
 
-test('Create Account sign-up flow simulation with logout', async ({ authedPage: page }) => {
+test('Create Account sign-up flow simulation with logout', async ({ page }) => {
     // Capture browser logs for debugging
     page.on('console', msg => console.log(`[BROWSER LOG] [${msg.type()}] ${msg.text()}`));
     page.on('pageerror', err => console.error(`[BROWSER ERROR] ${err.message}`));
@@ -62,6 +62,10 @@ test('Create Account sign-up flow simulation with logout', async ({ authedPage: 
                 authToken: { token: 'mock-auth-token', expiresIn: '604800s' }
             })
         });
+    });
+
+    await page.addInitScript(() => {
+        localStorage.setItem('FIREBASE_E2E_SIGNED_OUT', '1');
     });
 
     // Mock Firestore
@@ -123,16 +127,7 @@ test('Create Account sign-up flow simulation with logout', async ({ authedPage: 
     // Wait for store initialization
     await page.waitForFunction(() => (window as any).useStore !== undefined, { timeout: 10000 });
 
-    // 2. Perform Logout via Zustand store to show LoginForm
-    console.log('[PLAYWRIGHT] Performing logout via Zustand store...');
-    await page.evaluate(async () => {
-        const store = (window as any).useStore;
-        if (store.getState().user) {
-            await store.getState().logout();
-        }
-    });
-
-    // Verify LoginForm is rendered (e.g. Email Address label visible)
+    // 2. Verify LoginForm is rendered (e.g. Email Address label visible)
     const emailLabel = page.locator('label:has-text("Email Address")').first();
     await expect(emailLabel).toBeVisible({ timeout: 10000 });
 
@@ -153,7 +148,7 @@ test('Create Account sign-up flow simulation with logout', async ({ authedPage: 
     await passwordInputs.nth(1).fill('password123');
     
     // Fill Date of Birth
-    await page.locator('input[type="date"]').fill('2000-01-01');
+    await page.locator('input[aria-label="date of birth"]').fill('2000-01-01');
 
     // 5. Click Submit ("Create Account" submit button)
     console.log('[PLAYWRIGHT] Clicking submit button...');

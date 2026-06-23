@@ -125,6 +125,17 @@ describe('StorageService', () => {
         );
 
         expect(mockOnSnapshot).toHaveBeenCalledTimes(2);
+        const personalQuery = mockOnSnapshot.mock.calls
+            .map(([q]) => q)
+            .find((q) => q.constraints.some((constraint: { field?: string; value?: string }) =>
+                constraint.field === 'orgId' && constraint.value === 'personal'
+            ));
+        expect(personalQuery?.constraints).toContainEqual({
+            type: 'where',
+            field: 'userId',
+            op: '==',
+            value: 'test-user-123'
+        });
         expect(updates.at(-1)?.map(item => item.id)).toEqual([
             'personal-web-image',
             'org-image'

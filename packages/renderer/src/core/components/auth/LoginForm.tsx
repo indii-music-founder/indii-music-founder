@@ -379,7 +379,7 @@ export default function LoginForm() {
                                                         value={dateOfBirth}
                                                         onChange={(e) => setDateOfBirth(e.target.value)}
                                                         placeholder="MM/DD/YYYY"
-                                                        pattern="(\d{1,2}[/-]\d{1,2}[/-]\d{4})|(\d{4}-\d{2}-\d{2})"
+                                                        pattern="(\d{1,2}(/|-)\d{1,2}(/|-)\d{4})|(\d{4}-\d{2}-\d{2})"
                                                         title="Use MM/DD/YYYY or YYYY-MM-DD"
                                                         className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl focus:border-green-500/50 focus:ring-1 focus:ring-green-500/50 outline-none transition-all text-white [color-scheme:dark]"
                                                         required

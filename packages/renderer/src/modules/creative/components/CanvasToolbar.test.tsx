@@ -21,6 +21,9 @@ describe('CanvasToolbar', () => {
         render(<CanvasToolbar {...mockProps} />);
         expect(screen.getByRole('button', { name: /Add Text/i })).toBeInTheDocument();
         expect(screen.getByRole('button', { name: /Magic Fill/i })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /ID Objects/i })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Zoom Controls Coming Soon/i })).toBeDisabled();
+        expect(screen.getByRole('button', { name: /Layers Panel Coming Soon/i })).toBeDisabled();
     });
 
     it('calls setTool when magic fill button is clicked', () => {
@@ -33,6 +36,12 @@ describe('CanvasToolbar', () => {
         render(<CanvasToolbar {...mockProps} />);
         fireEvent.click(screen.getByRole('button', { name: /Add Text/i }));
         expect(mockProps.setTool).toHaveBeenCalledWith('text');
+    });
+
+    it('calls object detection when the ID button is clicked', () => {
+        render(<CanvasToolbar {...mockProps} />);
+        fireEvent.click(screen.getByRole('button', { name: /ID Objects/i }));
+        expect(mockProps.handleDetectObjects).toHaveBeenCalledOnce();
     });
 
     it('shows active state for Select Tool button', () => {

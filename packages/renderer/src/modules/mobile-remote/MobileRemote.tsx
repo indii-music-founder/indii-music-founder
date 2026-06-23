@@ -69,6 +69,8 @@ const TABS: Tab[] = [
   { id: 'settings', icon: Grip, label: 'Settings' },
 ];
 
+const TRANSIENT_HEARTBEAT_GRACE_MS = 10_000;
+
 // We import QRCodeRenderer dynamically so it doesn't inflate load times if not used
 import { QRCodeSVG } from 'qrcode.react';
 
@@ -278,6 +280,7 @@ export default function MobileRemote() {
   const maxReconnectAttempts = 5;
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const stalePresenceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const transientHeartbeatTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Track auth readiness to re-subscribe when auth becomes available
   const [isAuth, setIsAuth] = useState(() => remoteRelayService.isAuthenticated());
@@ -376,10 +379,24 @@ export default function MobileRemote() {
       }
 
       if (currentIsPaired || currentStatus === 'connected') {
-        logger.warn('[MobileRemote] Desktop heartbeat went stale. Initiating auto-reconnect sequence…');
-        setIsReconnecting(true);
+        if (transientHeartbeatTimeoutRef.current) return;
+
+        logger.info('[MobileRemote] Desktop heartbeat stale. Holding paired state during transient grace window…');
         setConnectionStatus('pairing');
-        setReconnectAttempts(1);
+        transientHeartbeatTimeoutRef.current = setTimeout(() => {
+          transientHeartbeatTimeoutRef.current = null;
+          if (isFreshDesktopState(desktopStateRef.current)) {
+            setConnectionStatus('connected');
+            setIsReconnecting(false);
+            setReconnectAttempts(0);
+            return;
+          }
+
+          logger.warn('[MobileRemote] Desktop heartbeat still stale after grace window. Initiating auto-reconnect sequence…');
+          setIsReconnecting(true);
+          setConnectionStatus('pairing');
+          setReconnectAttempts(1);
+        }, TRANSIENT_HEARTBEAT_GRACE_MS);
       } else {
         setConnectionStatus('idle');
         setIsReconnecting(false);
@@ -398,6 +415,10 @@ export default function MobileRemote() {
       const isVisible = typeof document === 'undefined' || document.visibilityState === 'visible';
 
       if (isFreshDesktopState(state)) {
+        if (transientHeartbeatTimeoutRef.current) {
+          clearTimeout(transientHeartbeatTimeoutRef.current);
+          transientHeartbeatTimeoutRef.current = null;
+        }
         setIsPaired(true);
         setConnectionStatus('connected');
         setIsReconnecting(false);
@@ -443,6 +464,10 @@ export default function MobileRemote() {
           clearTimeout(stalePresenceTimeoutRef.current);
           stalePresenceTimeoutRef.current = null;
         }
+        if (transientHeartbeatTimeoutRef.current) {
+          clearTimeout(transientHeartbeatTimeoutRef.current);
+          transientHeartbeatTimeoutRef.current = null;
+        }
       }
     };
 
@@ -455,6 +480,10 @@ export default function MobileRemote() {
       if (stalePresenceTimeoutRef.current) {
         clearTimeout(stalePresenceTimeoutRef.current);
         stalePresenceTimeoutRef.current = null;
+      }
+      if (transientHeartbeatTimeoutRef.current) {
+        clearTimeout(transientHeartbeatTimeoutRef.current);
+        transientHeartbeatTimeoutRef.current = null;
       }
       if (typeof document !== 'undefined') {
         document.removeEventListener('visibilitychange', onVisibilityChange);

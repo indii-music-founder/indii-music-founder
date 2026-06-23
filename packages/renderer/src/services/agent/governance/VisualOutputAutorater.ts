@@ -110,6 +110,8 @@ export interface AutoraterResult {
  * @see MultiTurnAutorater for the text-based autorater this is modeled after.
  */
 export class VisualOutputAutorater {
+    static readonly MAX_CORRECTION_ATTEMPTS = MAX_CORRECTION_ATTEMPTS;
+
     /**
      * Tracks correction attempts per originalImageId.
      * Keyed by originalImageId → number of corrections dispatched so far.

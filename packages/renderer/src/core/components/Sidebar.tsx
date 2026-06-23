@@ -188,6 +188,7 @@ export default function Sidebar() {
         { id: 'workflow', icon: GitBranch, label: 'Workflow Builder' },
         { id: 'audio-analyzer', icon: Radio, label: 'Audio Analyzer' },
         { id: 'knowledge', icon: Book, label: 'Knowledge Base' },
+        { id: 'notes', icon: FileText, label: 'Notes' },
         { id: 'memory', icon: AudioLines, label: 'Memory Agent' },
         { id: 'observability', icon: Activity, label: 'Command Center' },
         { id: 'settings', icon: Settings, label: 'Settings' },

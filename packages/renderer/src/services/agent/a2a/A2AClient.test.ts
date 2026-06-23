@@ -41,6 +41,10 @@ function resetClient() {
   c.keyExchangeDone = false;
   c.cachedCards = [];
   c.transport = null;
+  c.activeRequests = 0;
+  c.waitingResolvers = [];
+  c.startGate = Promise.resolve();
+  c.lastRequestStartedAt = 0;
 }
 
 const validCard = {

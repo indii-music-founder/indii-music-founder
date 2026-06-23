@@ -14,13 +14,39 @@ test.describe('Boardroom Real User Multi-Turn Scenario', () => {
 
         // Setup custom Vertex AI multi-turn route interceptor with stateless state-machine parsing history
         await page.route(
-            /.*(firebasevertexai|generativelanguage|ragProxy).*/,
+            /.*(firebasevertexai|generativelanguage|ragProxy|cloudfunctions\.net\/generateContentStream|:5001\/.*\/generateContentStream).*/,
             async (route) => {
                 const method = route.request().method();
                 if (method === 'OPTIONS') {
                     await route.fulfill({ status: 204, headers: { 'Access-Control-Allow-Origin': '*' } });
                     return;
                 }                const url = route.request().url();
+                if (url.includes('fileSearchStores')) {
+                    console.log(`[E2E:MockAI] Intercepted fileSearchStores request: ${method} ${url}`);
+                    const mockResponse = {
+                        fileSearchStores: [
+                            {
+                                name: "projects/indii-music-founder/locations/us-central1/fileSearchStores/mock-store-default",
+                                displayName: "indii Store - default"
+                            },
+                            {
+                                name: "projects/indii-music-founder/locations/us-central1/fileSearchStores/mock-store-global",
+                                displayName: "indii Default Store"
+                            }
+                        ],
+                        name: "projects/indii-music-founder/locations/us-central1/fileSearchStores/mock-store-default"
+                    };
+                    await route.fulfill({
+                        status: 200,
+                        headers: {
+                            'Access-Control-Allow-Origin': '*',
+                            'Access-Control-Allow-Headers': '*',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(mockResponse)
+                    });
+                    return;
+                }
                 if (url.includes('embedContent') || url.includes('batchEmbedContents')) {
                     console.log(`[E2E:MockAI] Intercepted embedding request to URL: ${url}. Returning mock values.`);
                     const mockEmbeddingResponse = url.includes('batchEmbedContents') 
@@ -123,7 +149,7 @@ test.describe('Boardroom Real User Multi-Turn Scenario', () => {
                     userMessage.includes('conflicting restrictions')
                 );
 
-                if (isUtilityRequest && !userMessage.includes('Intelligence Autorater') && !postData.includes('overallPass')) {
+                if (!currentActivePrompt && isUtilityRequest && !userMessage.includes('Intelligence Autorater') && !postData.includes('overallPass')) {
                     console.log(`[E2E:MockAI] Fulfilling short utility request (size: ${postData.length} chars).`);
                     let utilityText = "*(Analysis complete)*";
                     if (postData.includes('Extract any') || userMessage.includes('Extract any')) {
@@ -549,6 +575,7 @@ test.describe('Boardroom Real User Multi-Turn Scenario', () => {
 
         // Verify responses are stored
         const messagesAfterTurn2 = await page.evaluate(() => window.useStore.getState().boardroomMessages || []);
+        console.log('[E2E:Scenario] messagesAfterTurn2:', JSON.stringify(messagesAfterTurn2, null, 2));
         const hasBudgetDetail = messagesAfterTurn2.some(m => m.text?.includes('$5,000') && m.agentId === 'marketing');
         expect(hasBudgetDetail).toBe(true);
         console.log('[E2E:Scenario] Turn 2 responses verified.');

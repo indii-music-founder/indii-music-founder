@@ -74,13 +74,14 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
                     <button
                         onClick={() => setIsHighFidelity(!isHighFidelity)}
                         title={isHighFidelity ? "Switch to High Speed (Flash)" : "Switch to High Fidelity (Pro)"}
+                        aria-label={isHighFidelity ? "Model quality: Pro" : "Model quality: High Speed"}
                         className={`p-1.5 px-3 rounded-lg border transition-all flex items-center gap-1.5 ${isHighFidelity
                             ? 'bg-amber-500/20 border-amber-500/50 text-amber-500 shadow-lg shadow-amber-500/20 font-bold'
                             : 'bg-gray-800 border-gray-700 text-gray-500 hover:text-white font-medium'
                             }`}
                     >
                         <Star size={12} fill={isHighFidelity ? "currentColor" : "none"} />
-                        <span className="text-[10px] uppercase tracking-wider">{isHighFidelity ? "Pro" : "Flash"}</span>
+                        <span className="text-[10px] uppercase tracking-wider">{isHighFidelity ? "Pro" : "Speed"}</span>
                     </button>
                 </div>
             </div>
