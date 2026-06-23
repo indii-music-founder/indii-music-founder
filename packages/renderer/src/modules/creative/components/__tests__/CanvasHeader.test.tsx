@@ -41,13 +41,20 @@ describe('CanvasHeader — edit prompt and model mode', () => {
     it('calls setIsHighFidelity when Pro/Flash toggle is clicked', () => {
         const setIsHighFidelity = vi.fn();
         renderHeader({ isHighFidelity: false, setIsHighFidelity });
-        fireEvent.click(screen.getByText('Flash').closest('button')!);
+        fireEvent.click(screen.getByRole('button', { name: 'Model quality: High Speed' }));
         expect(setIsHighFidelity).toHaveBeenCalledWith(true);
     });
 
     it('displays Pro when isHighFidelity is true', () => {
         renderHeader({ isHighFidelity: true });
         expect(screen.getByText('Pro')).toBeInTheDocument();
+    });
+
+    it('labels the fast model mode as Speed instead of a second generate action', () => {
+        renderHeader({ isHighFidelity: false });
+        expect(screen.getByRole('button', { name: 'Model quality: High Speed' })).toBeInTheDocument();
+        expect(screen.getByText('Speed')).toBeInTheDocument();
+        expect(screen.queryByText('Flash')).not.toBeInTheDocument();
     });
 
     it('calls setMagicFillPrompt on input change', () => {

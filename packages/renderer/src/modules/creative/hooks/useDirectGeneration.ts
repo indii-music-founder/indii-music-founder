@@ -361,10 +361,12 @@ export function useDirectGeneration() {
         const lastFrame = videoInputs?.lastFrame?.url;
 
         const combinedReferenceImages = [
-            ...(characterReferences || []).map(ref => ({
-                image: { uri: ref.image.url },
-                referenceType: 'asset' as const
-            })),
+            ...(characterReferences || [])
+                .filter(ref => ref?.image?.url)
+                .map(ref => ({
+                    image: { uri: ref.image.url },
+                    referenceType: 'asset' as const
+                })),
             ...(WhiskService.getSourceMedia(whiskState) || []).map(w => ({
                 image: { imageBytes: w.data, mimeType: w.mimeType },
                 referenceType: 'asset' as const

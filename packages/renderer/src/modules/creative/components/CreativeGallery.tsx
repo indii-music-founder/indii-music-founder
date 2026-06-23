@@ -40,6 +40,9 @@ interface GalleryItemProps {
 
 const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference, setSelectedItem, toast, generationMode, onDelete, setPrompt, setViewMode, playTrack, pauseTrack, resumeTrack, currentTrack, isPlaying, pinToClipboard, sendToModule }: GalleryItemProps) => {
     const [showSendMenu, setShowSendMenu] = useState(false);
+    const playableVideoSrc = item.type === 'video'
+        ? (item.localPath ? `file://${item.localPath}` : item.url)
+        : item.url;
     return (
         <div
             draggable
@@ -58,10 +61,10 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
             className="group relative aspect-video bg-[#1a1a1a] rounded-lg border border-gray-800 overflow-hidden hover:border-gray-600 transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
         >
             {item.type === 'video' ? (
-                item.url.startsWith('data:image') ? (
+                playableVideoSrc.startsWith('data:image') ? (
                     <div className="relative w-full h-full">
                         <img
-                            src={item.url}
+                            src={playableVideoSrc}
                             alt={item.prompt}
                             loading="lazy"
                             decoding="async"
@@ -72,7 +75,7 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                         </div>
                     </div>
                 ) : (
-                    <video src={item.url} className="w-full h-full object-contain bg-black" loop muted onMouseOver={e => e.currentTarget.play()} onMouseOut={e => e.currentTarget.pause()} />
+                    <video src={playableVideoSrc} className="w-full h-full object-contain bg-black" loop muted onMouseOver={e => e.currentTarget.play()} onMouseOut={e => e.currentTarget.pause()} />
                 )
             ) : item.type === 'music' ? (
                 <div className="w-full h-full flex flex-col items-center justify-center bg-gray-900 text-gray-400 p-4 text-center group-hover:text-white transition-colors">

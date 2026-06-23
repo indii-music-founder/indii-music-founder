@@ -161,6 +161,7 @@ export default defineConfig({
     renderer: {
         root: resolve(__dirname, 'packages/renderer'),
         envPrefix: [
+            'VITE_E2E',
             'VITE_FIREBASE_',
             'VITE_VERTEX_',
             'VITE_FUNCTIONS_',

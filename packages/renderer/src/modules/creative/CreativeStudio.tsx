@@ -1,4 +1,5 @@
 import React, { useEffect, lazy, Suspense } from 'react';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 import CreativeNavbar from './components/CreativeNavbar';
 import InfiniteCanvas from './components/InfiniteCanvas';
@@ -96,7 +97,7 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
 
     useEffect(() => {
         useStore.setState({ isAgentOpen: false });
-        
+
         if (generationMode !== prevGenerationMode.current) {
             if (generationMode === 'video') {
                 // Allow navigating to editor to pick assets even while in video mode
@@ -163,17 +164,19 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                                 cameraMovement: 'Dynamic',
                                 motionStrength: 0.8,
                                 model: studioControls.model,
-                                referenceImages: (characterReferences || []).map(ref => {
-                                    let bytes = ref.image.url;
-                                    const commaIndex = bytes.indexOf(',');
-                                    if (bytes.startsWith('data:') && commaIndex !== -1) {
-                                        bytes = bytes.substring(commaIndex + 1);
-                                    }
-                                    return {
-                                        image: { imageBytes: bytes, mimeType: 'image/jpeg' },
-                                        referenceType: 'asset' as const
-                                    };
-                                })
+                                referenceImages: (characterReferences || [])
+                                    .filter(ref => typeof ref?.image?.url === 'string' && ref.image.url.length > 0)
+                                    .map(ref => {
+                                        let bytes = ref.image.url;
+                                        const commaIndex = bytes.indexOf(',');
+                                        if (bytes.startsWith('data:') && commaIndex !== -1) {
+                                            bytes = bytes.substring(commaIndex + 1);
+                                        }
+                                        return {
+                                            image: { imageBytes: bytes, mimeType: 'image/jpeg' },
+                                            referenceType: 'asset' as const
+                                        };
+                                    })
                             })
                         );
 
@@ -336,13 +339,23 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                                     setSelectedItem(null);
                                     setViewMode(generationMode === 'video' ? 'video_production' : 'direct');
                                 }}
-                                onSendToWorkflow={(type, item) => {
+                                onSendToWorkflow={async (type, item) => {
                                     const { setVideoInput, setGenerationMode, setViewMode, setSelectedItem } = useStore.getState();
-                                    setVideoInput(type, item);
-                                    setGenerationMode('video');
-                                    setViewMode('video_production');
-                                    setSelectedItem(null);
-                                    toast.success(`Set as ${type === 'firstFrame' ? 'Start' : 'End'} Frame`);
+
+                                    const confirmed = await ConfirmDialog.call({
+                                        title: 'Send to Video Editor?',
+                                        message: `You are about to hand off this image to the Video Editor as the ${type === 'firstFrame' ? 'Start' : 'End'} Frame. This will switch your workspace to Video Production mode.`,
+                                        confirmText: 'Yes, Send to Video',
+                                        cancelText: 'Cancel'
+                                    });
+
+                                    if (confirmed) {
+                                        setVideoInput(type, item);
+                                        setGenerationMode('video');
+                                        setViewMode('video_production');
+                                        setSelectedItem(null);
+                                        toast.success(`Set as ${type === 'firstFrame' ? 'Start' : 'End'} Frame`);
+                                    }
                                 }}
                             />
                         )}

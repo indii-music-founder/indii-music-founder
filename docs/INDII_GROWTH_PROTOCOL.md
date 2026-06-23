@@ -10,9 +10,9 @@ Instead of burning hours and budget trying to manually optimize ads, you set you
 
 ## How It Works
 
-### 1. The Meta Andromeda Pipeline (Creative Generation)
+### 1. The PLP Pipeline (Creative Generation)
 
-When you trigger the Growth Protocol, the system doesn't rely on just one or two ad variations. Using the **Meta Andromeda** pipeline, the indii Conductor analyzes your release metadata, cover art, and short-form video assets, and automatically generates up to **15 different creative variations**.
+When you trigger the Growth Protocol, the system doesn't rely on just one or two ad variations. Using the **PLP (Promote · Launch · Push)** pipeline, the indii Conductor analyzes your release metadata, cover art, and short-form video assets, and automatically generates up to **15 different creative variations**.
 
 This includes different hooks, video cuts, and copy treatments to ensure the algorithm has enough data to find the cheapest, most engaged audience.
 
@@ -59,4 +59,4 @@ At this stage, your track has proven market validity. You can then invoke the `i
 
 ### Advanced Settings
 
-While the system is entirely autonomous, founders and advanced users can view real-time CPS tracking, Popularity Score deltas, and view which creative variants (under the Meta Andromeda test) won the A/B testing sprint directly from the Analytics tab.
+While the system is entirely autonomous, founders and advanced users can view real-time CPS tracking, Popularity Score deltas, and view which creative variants (under the PLP test) won the A/B testing sprint directly from the Analytics tab.

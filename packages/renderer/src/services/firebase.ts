@@ -116,6 +116,22 @@ if (isFirebaseE2EMockEnabled()) {
         authStateListeners.forEach(cb => cb(currentMockUser));
     };
 
+    const clearSignedOutFlag = () => {
+        try {
+            localStorage.removeItem('FIREBASE_E2E_SIGNED_OUT');
+        } catch {
+            // ignore
+        }
+    };
+
+    const setSignedOutFlag = () => {
+        try {
+            localStorage.setItem('FIREBASE_E2E_SIGNED_OUT', '1');
+        } catch {
+            // ignore
+        }
+    };
+
     rawAuth = {
         app,
         _signedOut: false,
@@ -129,18 +145,21 @@ if (isFirebaseE2EMockEnabled()) {
             };
         },
         signInAnonymously: async () => {
+            clearSignedOutFlag();
             currentMockUser = getE2EMockUser<User>();
             (rawAuth as Auth & { _signedOut?: boolean })._signedOut = false;
             notifyListeners();
             return { user: currentMockUser };
         },
         signInWithEmailAndPassword: async () => {
+            clearSignedOutFlag();
             currentMockUser = getE2EMockUser<User>();
             (rawAuth as Auth & { _signedOut?: boolean })._signedOut = false;
             notifyListeners();
             return { user: currentMockUser };
         },
         createUserWithEmailAndPassword: async () => {
+            clearSignedOutFlag();
             currentMockUser = getE2EMockUser<User>();
             (rawAuth as Auth & { _signedOut?: boolean })._signedOut = false;
             notifyListeners();
@@ -151,12 +170,14 @@ if (isFirebaseE2EMockEnabled()) {
             return Promise.resolve();
         },
         signInWithPopup: async () => {
+            clearSignedOutFlag();
             currentMockUser = getE2EMockUser<User>();
             (rawAuth as Auth & { _signedOut?: boolean })._signedOut = false;
             notifyListeners();
             return { user: currentMockUser };
         },
         signOut: async () => {
+            setSignedOutFlag();
             currentMockUser = null;
             (rawAuth as Auth & { _signedOut?: boolean })._signedOut = true;
             notifyListeners();

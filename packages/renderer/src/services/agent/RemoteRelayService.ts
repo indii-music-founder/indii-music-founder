@@ -172,6 +172,7 @@ function getDispatchQueueRef() {
  */
 const FEED_PAGE_SIZE = 50;
 const FEED_RECENCY_HOURS = 24;
+const LOCAL_P2P_PASSCODE_KEY = 'indii_p2p_passcode';
 // Background browser tabs throttle setTimeout/setInterval to ~once per minute, so the
 // desktop's 5s heartbeat loop collapses to ~60s whenever the studio tab is not focused
 // (the common case while driving from a phone). A 15s window made the phone flap between
@@ -233,6 +234,30 @@ export function isFreshDesktopState(
     return Math.abs(now - timestamp) <= staleMs + CLOCK_SKEW_TOLERANCE_MS;
 }
 
+export function cacheRemotePairingToken(token: string | null | undefined): string | null {
+    const normalized = token?.trim();
+    if (!normalized) return null;
+
+    try {
+        localStorage.setItem(LOCAL_P2P_PASSCODE_KEY, normalized);
+    } catch (error) {
+        logger.debug('[RemoteRelay] Unable to cache local P2P passcode:', error);
+    }
+
+    return normalized;
+}
+
+export function getCachedRemotePairingToken(search = typeof window !== 'undefined' ? window.location.search : ''): string | null {
+    const urlToken = cacheRemotePairingToken(new URLSearchParams(search).get('passcode'));
+    if (urlToken) return urlToken;
+
+    try {
+        return localStorage.getItem(LOCAL_P2P_PASSCODE_KEY);
+    } catch {
+        return null;
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Service
 // ---------------------------------------------------------------------------
@@ -263,7 +288,7 @@ class RemoteRelayService {
                 logger.info('[RemoteRelay] Local P2P WebSocket connected');
                 this.localWs = ws;
                 this.wsRetryCount = 0; // reset on success
-                const passcode = new URLSearchParams(window.location.search).get('passcode') || localStorage.getItem('indii_p2p_passcode');
+                const passcode = getCachedRemotePairingToken();
                 if (passcode) {
                     ws.send(JSON.stringify({ type: 'auth', token: passcode }));
                 }
