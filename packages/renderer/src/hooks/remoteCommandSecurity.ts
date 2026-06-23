@@ -22,6 +22,7 @@ export const ALLOWED_COMMAND_PREFIXES = [
   '[AGENT_ACTION]',
   '[DAW_CONTROL]',
   '[MEDIA_PLAYBACK]',
+  '[SHOW]',
   '[WAKE]',
 ] as const;
 
@@ -34,6 +35,7 @@ export type ParsedRemoteCommand =
   | { kind: 'agent_action'; action: string }
   | { kind: 'daw_control'; action: string }
   | { kind: 'media_playback'; action: string }
+  | { kind: 'show' }
   | { kind: 'wake' }
   | { kind: 'rejected'; reason: string };
 
@@ -90,6 +92,10 @@ export function parseRemoteCommand(rawText: string | undefined | null): ParsedRe
     case '[MEDIA_PLAYBACK]': {
       if (!payload) return { kind: 'rejected', reason: 'media playback action is empty' };
       return { kind: 'media_playback', action: payload };
+    }
+    case '[SHOW]': {
+      // No payload required — surfaces the most recent visual artifact on the phone.
+      return { kind: 'show' };
     }
     case '[WAKE]': {
       return { kind: 'wake' };

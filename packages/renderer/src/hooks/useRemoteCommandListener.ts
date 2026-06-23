@@ -559,29 +559,10 @@ function useFirestoreRelay(enabled: boolean) {
                 return;
             }
 
-            // ─── Navigation Route ──────────────────────────────
-            if (command.text.startsWith('[NAVIGATE]')) {
-                const targetModule = command.text.replace('[NAVIGATE]', '').trim();
-                logger.info(`[RemoteRelay/Firestore] 🧭 Navigate to: "${targetModule}"`);
-                writeDiagnostic('navigation_started', { module: targetModule });
-
-                useStore.getState().setModule(targetModule as import('@/core/constants').ModuleId);
-
-                await remoteRelayService.sendResponse(
-                    command.id,
-                    `🧭 Navigated to ${targetModule}`,
-                    undefined,
-                    false
-                );
-
-                await remoteRelayService.markCommandCompleted(command.id);
-                return;
-            }
-
             // ─── Show Me Route (on-demand visual return channel) ──────────────────────────────
             // ISSUE-REMOTE-SHOW-20260622 Phase 1: surface the most recent visual artifact on the
             // phone by reusing the same imageUrls channel that [GENERATE_IMAGE] already uses.
-            if (command.text.startsWith('[SHOW]')) {
+            if (parsed.kind === 'show') {
                 logger.info('[RemoteRelay/Firestore] 🖼️ Show me: surfacing latest visual artifact');
                 writeDiagnostic('show_me_started', { commandId: command.id });
 
