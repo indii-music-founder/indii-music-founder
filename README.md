@@ -932,15 +932,21 @@ The `WorkflowEngine` now executes every node type with real service calls:
 
 ### v0.1.0-beta.3 — April 2026
 
-**Indii Growth Protocol & PLP Pipeline**
+**Indii Growth Protocol & PLP: The Three Pillars**
 
-- **Creative Studio Integration**: Integrated the 15-variant (10 images, 5 videos via Veo 3.1) PLP (Promote · Launch · Push) batch generation pipeline.
-- **Automated Deployment**: PLP directly interfaces with `AdAutomationService` to seamlessly deploy variants to Meta networks (Instagram exclusively) for algorithmic A/B testing and stream-velocity spikes.
-- **Dashboard Observability**: Real-time viral scoring, algorithmic velocity trends, and CPS Kill-Switch status indicators are now natively integrated into `PlatformCard.tsx`.
+PLP (Promote · Launch · Push) is the operational backbone of indii — a unified three-pillar system that orchestrates every release from creative testing through global scaling. [Learn more](docs/PLP_THREE_PILLARS.md).
+
+- **PROMOTE**: Design, test, and optimize 15-variant creative assets (10 images, 5 videos via Veo 3.1) across Meta networks (Instagram Stories/Reels/Feed) with autonomous A/B testing and cost-per-save optimization.
+- **LAUNCH**: Execute metadata-optimized, DSP-ready release coordination across Spotify, Apple Music, Amazon Music with full DDEX compliance, ISRC generation, and smart contract splits.
+- **PUSH**: Scale post-release momentum through 28-day front-loaded budget allocation, Saver Lookalike audiences, and autonomous playlist curator outreach driven by stream velocity analytics.
+
+- **Creative Studio Integration**: 15-variant batch generation with real-time performance tracking, kill-switch automation (CPS < 5%), and audience evolution.
+- **Automated Deployment**: PLP directly interfaces with `AdAutomationService` for seamless variant deployment to Meta networks for algorithmic A/B testing.
+- **Dashboard Observability**: Real-time viral scoring, stream velocity trends, and CPS Kill-Switch status indicators across all three pillars integrated into the Analytics module.
 
 **Command Bar Enhancements (UI/UX)**
 
-- **Slash Commands**: Introduced `/deploy-plp` and `/status-blitz` intercepts directly in the Command Bar (`PromptArea.tsx`).
+- **Slash Commands**: `/deploy-plp` (activate full workflow), `/promote-status` (check variant health), `/launch-readiness` (DSP metadata validation), `/push-analytics` (stream velocity & growth metrics).
 - **Accessibility**: 100% WCAG 2.1 AA compliance achieved on dynamic UI elements and Delegate Menus, verified by automated `jest-axe` tests.
 
 **Indii Conductor (Agentic Harness) Hardening**
