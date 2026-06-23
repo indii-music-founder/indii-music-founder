@@ -99,6 +99,20 @@ const personas: Persona[] = [
 
 const BASE_URL = process.env.E2E_STUDIO_URL || 'http://localhost:4242';
 
+async function enterOnboardingChat(page: import('@playwright/test').Page, careerPath = 'DJ / Performer') {
+    const promptInput = page.locator('[data-testid="prompt-input"]');
+    if (await promptInput.isVisible({ timeout: 1000 }).catch(() => false)) {
+        return promptInput;
+    }
+
+    const careerPathHeading = page.getByRole('heading', { name: 'Choose Your Career Path' });
+    await expect(careerPathHeading).toBeVisible({ timeout: 15000 });
+    await page.getByRole('button', { name: new RegExp(careerPath.replace('/', '\\/'), 'i') }).click();
+    await expect(promptInput).toBeVisible({ timeout: 15000 });
+
+    return promptInput;
+}
+
 authedTest.describe('Detroit Techno Onboarding & Studio Flow Stress Test', () => {
     authedTest.use({ viewport: { width: 1440, height: 900 } });
     authedTest.setTimeout(1800000); // 30 minutes total timeout for long execution loop
@@ -116,6 +130,58 @@ authedTest.describe('Detroit Techno Onboarding & Studio Flow Stress Test', () =>
 
         let onboardingTurn = 0;
         let currentPersona = personas[0]!;
+
+        const nextOnboardingResponse = () => {
+            let text = "";
+            const functionCalls: any[] = [];
+
+            onboardingTurn++;
+            console.log(`[Techno E2E] Processing AI Turn ${onboardingTurn} for ${currentPersona.displayName}`);
+
+            if (onboardingTurn === 1) {
+                text = `${currentPersona.displayName} — I respect that. Detroit is the birthplace of techno, the birthplace of machine soul. Raw analog drums and industrial warehouse vibes have a permanent place in music history. Since you're forging this path, where are you at in your career right now?`;
+                functionCalls.push({ name: "updateProfile", args: { bio: currentPersona.bio, brand_description: currentPersona.brandDescription } });
+                functionCalls.push({ name: "askMultipleChoice", args: { question_type: "career_stage", options: ["Just starting out", "Building momentum", "Established", "Industry veteran"] } });
+            } else if (onboardingTurn === 2) {
+                text = `Got it, building momentum is the sweet spot. That's when the raw hustle starts to pay off. As you push forward with ${currentPersona.displayName}, what's the immediate target?`;
+                functionCalls.push({ name: "updateProfile", args: { career_stage: "Building momentum" } });
+                functionCalls.push({ name: "askMultipleChoice", args: { question_type: "goals", options: ["Grow fanbase", "Touring", "Sync licensing", "Label deal"] } });
+            } else if (onboardingTurn === 3) {
+                text = `Touring is where underground techno lives. The sweat, the shadows, the sound systems. To get you on those lineups, your visual brand needs to match that raw warehouse energy. What's the visual aesthetic style we are building around?`;
+                functionCalls.push({ name: "updateProfile", args: { goals: ["Grow fanbase", "Touring"] } });
+                functionCalls.push({ name: "askMultipleChoice", args: { question_type: "aesthetic_style", options: ["Minimalist", "Maximalist", "Vintage", "Futuristic", "Cinematic", "Abstract"] } });
+            } else if (onboardingTurn === 4) {
+                text = `${currentPersona.aestheticStyle} industrial. Spot on. No clutter, just raw impact — like a concrete warehouse at 4 AM. And to enforce this, I'm setting a strict guard: no neon, no cyberpunk cliches, no cartoon gloss. What color vibe represents ${currentPersona.displayName}?`;
+                functionCalls.push({ name: "updateProfile", args: { aesthetic_style: currentPersona.aestheticStyle, negative_prompt: "no neon, no cyberpunk, no bright cartoon colors, no glossy synthwave" } });
+                functionCalls.push({ name: "askMultipleChoice", args: { question_type: "color_vibe", options: ["Black & White", "Muted & Earthy", "High Contrast", "Warm tones", "Cool tones"] } });
+            } else if (onboardingTurn === 5) {
+                text = `Nice choice. Charcoal, rust orange, slate gray, and analog amber. It feels tactile, like vacuum tubes and warehouse metal. Let's lock down the typography to match. What font style fits ${currentPersona.displayName}?`;
+                functionCalls.push({ name: "updateProfile", args: { colors: currentPersona.colors } });
+                functionCalls.push({ name: "askMultipleChoice", args: { question_type: "font_style", options: ["Bold & Geometric", "Elegant Serif", "Clean Sans-Serif", "Tech/Mono", "Handwritten"] } });
+            } else if (onboardingTurn === 6) {
+                text = `${currentPersona.fonts} typography is perfect. Keep it industrial. Now let's handle the plumbing. How are we getting this music out? Who are you distributing with?`;
+                functionCalls.push({ name: "updateProfile", args: { fonts: currentPersona.fonts } });
+                functionCalls.push({ name: "askMultipleChoice", args: { question_type: "distributor", options: ["Symphonic", "CD Baby", "DistroKid", "TuneCore"] } });
+            } else if (onboardingTurn === 7) {
+                text = `${currentPersona.distributor} is a solid choice. Excellent indie focus and strong support. Let's save that. Now, let's talk about what we're releasing next. What is the title of the track or project we're preparing?`;
+                functionCalls.push({ name: "updateProfile", args: { distributor: currentPersona.distributor } });
+                functionCalls.push({ name: "shareDistributorInfo", args: { distributor_name: currentPersona.distributor } });
+            } else if (onboardingTurn === 8) {
+                text = `'${currentPersona.releaseTitle}' — that's a classic title. For an EP format, how many tracks are we talking about?`;
+                functionCalls.push({ name: "updateProfile", args: { release_title: currentPersona.releaseTitle } });
+                functionCalls.push({ name: "askMultipleChoice", args: { question_type: "release_type", options: ["Single", "EP (3-6 tracks)", "Album (7+ tracks)", "Remix", "DJ Mix"] } });
+            } else if (onboardingTurn === 9) {
+                text = `Alright, a solid EP rollout. To help plan the marketing campaigns, what's the primary mood of '${currentPersona.releaseTitle}'?`;
+                functionCalls.push({ name: "updateProfile", args: { release_type: "EP (3-6 tracks)" } });
+                functionCalls.push({ name: "askMultipleChoice", args: { question_type: "mood", options: ["Dark & moody", "Euphoric", "Introspective", "High-energy", "Chill"] } });
+            } else {
+                text = `High-energy machine rhythms. Perfect. That's the engine of the Motor City. We've got the core brand kit, colors, fonts, distributor, and your upcoming EP set up. Let's enter the studio!`;
+                functionCalls.push({ name: "updateProfile", args: { release_mood: "High-energy", release_genre: "Techno", release_themes: "motor city nights, warehouse energy, machine rhythms" } });
+                functionCalls.push({ name: "finishOnboarding", args: {} });
+            }
+
+            return { text, functionCalls };
+        };
 
         // 1. Intercept AI API calls (Vertex/Gemini)
         await page.route(/.*(firebasevertexai|generativelanguage)\.googleapis\.com.*/, async (route) => {
@@ -394,6 +460,19 @@ authedTest.describe('Detroit Techno Onboarding & Studio Flow Stress Test', () =>
                 maxTeamMembers: 5
             };
 
+            if (url.includes('generateContentStream')) {
+                await route.fulfill({
+                    status: 200,
+                    headers: {
+                        "Access-Control-Allow-Origin": "*",
+                        "Access-Control-Allow-Credentials": "true",
+                    },
+                    contentType: 'application/json',
+                    body: `${JSON.stringify(nextOnboardingResponse())}\n`,
+                });
+                return;
+            }
+
             if (url.includes('getSubscription')) {
                 await route.fulfill({
                     status: 200,
@@ -535,10 +614,10 @@ authedTest.describe('Detroit Techno Onboarding & Studio Flow Stress Test', () =>
 
             // 3. Force Zustand state to Onboarding
             console.log('[Techno E2E] Initializing onboarding state...');
-            await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
+            await page.goto(`${BASE_URL}/onboarding`, { waitUntil: 'domcontentloaded' });
             await page.waitForFunction(() => (window as any).useStore !== undefined, { timeout: 15000 });
 
-            await page.evaluate((persona) => {
+            await page.evaluate(async (persona) => {
                 const store = (window as any).useStore;
                 const state = store.getState();
                 
@@ -581,9 +660,13 @@ authedTest.describe('Detroit Techno Onboarding & Studio Flow Stress Test', () =>
                         savedWorkflows: []
                     }
                 });
+                const setModule = store.getState().setModule;
+                if (typeof setModule === 'function') {
+                    await setModule('onboarding');
+                }
             }, currentPersona);
 
-            const chatInput = page.locator('[data-testid="prompt-input"]');
+            const chatInput = await enterOnboardingChat(page);
             await expect(chatInput).toBeVisible({ timeout: 15000 });
 
             // Phase 1: Onboarding Chat Simulation
@@ -685,6 +768,10 @@ authedTest.describe('Detroit Techno Onboarding & Studio Flow Stress Test', () =>
             // Phase 3: Distribution setup and connection
             console.log('[Techno E2E] Phase 3: Navigating to Distribution Module...');
             await page.locator('[data-testid="nav-item-distribution"]').click();
+            const leavePageButton = page.getByRole('button', { name: 'Leave Page' });
+            if (await leavePageButton.isVisible({ timeout: 3000 }).catch(() => false)) {
+                await leavePageButton.click();
+            }
             await expect(page.locator('[data-testid="distribution-dashboard"]')).toBeVisible({ timeout: 30000 });
             await page.waitForTimeout(1500);
 
