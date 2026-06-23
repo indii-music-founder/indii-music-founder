@@ -2,7 +2,7 @@ import { test, expect } from './fixtures/auth';
 
 const BASE_URL = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:4242';
 
-test('Boardroom Live Visual Verification', async ({ authedPage: page }) => {
+test('@live Boardroom Live Visual Verification', async ({ authedPage: page }) => {
     // Navigate to local server or configured BASE_URL
     console.log(`[E2E:Live] Navigating to: ${BASE_URL}`);
     await page.goto(BASE_URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
@@ -23,7 +23,7 @@ test('Boardroom Live Visual Verification', async ({ authedPage: page }) => {
         await declineCookies.waitFor({ state: 'visible', timeout: 3000 });
         await declineCookies.click();
         console.log('[E2E:Live] Declined cookies.');
-    } catch (e) {
+    } catch {
         console.log('[E2E:Live] Onboarding dialog not found, proceeding.');
     }
 

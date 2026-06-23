@@ -11,20 +11,18 @@ test.describe('Founders Program Flow', () => {
         });
     });
 
-    test('should render the manual payment instructions on founders-checkout', async ({ authedPage: page }) => {
+    test('should render the Stripe founders checkout on founders-checkout', async ({ authedPage: page }) => {
         await page.goto('/founders-checkout', { waitUntil: 'domcontentloaded' });
 
         // Verify the heading is visible
         const checkoutHeading = page.locator('h1:has-text("Back The")');
         await expect(checkoutHeading).toBeVisible();
 
-        // Check for direct funding sections
-        await expect(page.locator('h3:has-text("Cash App")')).toBeVisible();
-        await expect(page.locator('h3:has-text("Wire Transfer")')).toBeVisible();
-        await expect(page.locator('h3:has-text("Physical Check")')).toBeVisible();
-
-        // Check for the investment price info
-        await expect(page.locator('text=Investment Price: $2,500.00 USD')).toBeVisible();
+        // Check for the current Founder Pass card and Stripe checkout CTA
+        await expect(page.locator('h3:has-text("indii Founder Pass")')).toBeVisible();
+        await expect(page.locator('text=$2,500.00')).toBeVisible();
+        await expect(page.locator('text=USD One-Time')).toBeVisible();
+        await expect(page.locator('button:has-text("Proceed to Secure Stripe Checkout")')).toBeVisible();
     });
 
     test('should show Access Denied in the Founders Portal for non-founders', async ({ authedPage: page }) => {

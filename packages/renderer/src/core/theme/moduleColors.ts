@@ -71,6 +71,7 @@ export const departmentCssVars = {
     investor: '--color-dept-distribution', // Investor portal shares Distribution
     settings: '--color-dept-social',       // Settings uses Social cyan
     registration: '--color-dept-licensing', // Registration uses Licensing teal
+    notes: '--color-dept-licensing',        // Notes shares Memory/Licensing teal
 } as const;
 
 /**
@@ -352,6 +353,16 @@ export const moduleColors: Record<ModuleId, ModuleColor> = {
     },
     memory: {
         // Always-On Memory — Teal for knowledge/intelligence
+        text: 'text-teal-400',
+        bg: 'bg-teal-500/10',
+        border: 'border-teal-500',
+        ring: 'focus-within:ring-teal-500/50',
+        hoverText: 'hover:text-teal-300',
+        hoverBg: 'hover:bg-teal-500/5',
+        cssVar: '--color-dept-licensing',
+    },
+    notes: {
+        // Notes shares Memory's teal note-taking surface
         text: 'text-teal-400',
         bg: 'bg-teal-500/10',
         border: 'border-teal-500',

@@ -5,7 +5,7 @@
     "file_path": "directives/indii_growth_protocol.json",
     "objective": "Implement the indii-native Meta-to-Spotify growth loop using front-loaded ad spend, algorithmic threshold triggers, and strict Cost-Per-Save optimization.",
     "orchestrator": "indii Conductor (Hub)",
-    "description": "The indii Growth Protocol defines a 28-day front-loaded campaign cycle optimized for triggering Spotify's algorithmic thresholds. Each cycle concentrates Meta ad spend in the first 72 hours to create stream velocity spikes, then sustains momentum through the remaining days. The protocol enforces Cost-Per-Save as the primary KPI, Instagram-Only placement delivery, Meta Andromeda 15-variant creative testing, and Saver Lookalike audience evolution.",
+    "description": "The indii Growth Protocol defines a 28-day front-loaded campaign cycle optimized for triggering Spotify's algorithmic thresholds. Each cycle concentrates Meta ad spend in the first 72 hours to create stream velocity spikes, then sustains momentum through the remaining days. The protocol enforces Cost-Per-Save as the primary KPI, Instagram-Only placement delivery, PLP (Promote · Launch · Push) 15-variant creative testing, and Saver Lookalike audience evolution.",
     "tasks": [
         {
             "target_service": "Timeline Orchestrator",
@@ -76,7 +76,7 @@
                 "Video Agent",
                 "Workflow Lab"
             ],
-            "action": "Automate Meta Andromeda Creative Pipeline",
+            "action": "Automate PLP Creative Pipeline",
             "workflow_steps": [
                 {
                     "agent": "Workflow Lab",

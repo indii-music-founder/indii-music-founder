@@ -1,0 +1,1205 @@
+{
+  "startedAt": "2026-06-22T22:40:46.017Z",
+  "target": "http://localhost:4272",
+  "pages": [
+    {
+      "route": "/",
+      "label": "home-direct",
+      "status": 200,
+      "ms": 1699,
+      "title": "indii.music",
+      "url": "http://localhost:4272/",
+      "bodyText": "indii.music FOUNDERS RELEASE • V1.0 Sign In Create Account EMAIL ADDRESS PASSWORD Sign In Forgot Password? PRIVACY POLICY • TERMS OF SERVICE • © 2026 NEW DETROIT MUSIC LLC",
+      "screenshot": "artifacts/mega_audio_analyzer_2026-06-22_screenshots/preview-home-direct.png",
+      "consoleDeltaStart": 0,
+      "networkDeltaStart": 0,
+      "console": [
+        {
+          "type": "info",
+          "text": "[App Check] Initialized successfully"
+        },
+        {
+          "type": "info",
+          "text": "[DistributorService] Registered adapter: DistroKid"
+        },
+        {
+          "type": "info",
+          "text": "[DistributorService] Registered adapter: TuneCore"
+        },
+        {
+          "type": "info",
+          "text": "[DistributorService] Registered adapter: CDBaby"
+        },
+        {
+          "type": "info",
+          "text": "[DistributorService] Registered adapter: Symphonic"
+        },
+        {
+          "type": "info",
+          "text": "[RemoteRelay] Connecting local P2P WebSocket to ws://localhost:4272"
+        },
+        {
+          "type": "info",
+          "text": "🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙"
+        },
+        {
+          "type": "info",
+          "text": "[RemoteRelay] 🔐 Setting up auth listener..."
+        },
+        {
+          "type": "info",
+          "text": "[RemoteRelay/Firestore] 🔍 Command listener effect triggered, enabled=false"
+        },
+        {
+          "type": "info",
+          "text": "[RemoteRelay/Firestore] ⏸️ Not enabled — skipping command listener"
+        },
+        {
+          "type": "info",
+          "text": "[Firebase] Performance Monitoring initialized"
+        },
+        {
+          "type": "error",
+          "text": "WebSocket connection to 'ws://localhost:4272/' failed: Error during WebSocket handshake: Unexpected response code: 200"
+        },
+        {
+          "type": "info",
+          "text": "[RemoteRelay] Local P2P WebSocket closed. Code: 1006. Retrying in 1000ms..."
+        },
+        {
+          "type": "info",
+          "text": "NetworkQualityMonitor: initialized"
+        },
+        {
+          "type": "info",
+          "text": "[Phase 2] Memory and orchestration services initialized"
+        },
+        {
+          "type": "info",
+          "text": "[Phase 3] Observability and performance monitoring initialized"
+        },
+        {
+          "type": "info",
+          "text": "[WebVitals] Core Web Vitals monitoring initialized"
+        },
+        {
+          "type": "info",
+          "text": "[Phase 1] PWA and offline services initialized"
+        },
+        {
+          "type": "info",
+          "text": "MediaCacheManager: IndexedDB initialized"
+        },
+        {
+          "type": "info",
+          "text": "MediaCacheManager: total cache size = 0.00MB"
+        },
+        {
+          "type": "info",
+          "text": "[Auth] onAuthStateChanged fired. User: null, lastKnownUser: null"
+        },
+        {
+          "type": "info",
+          "text": "[Auth] Steady state reached. Setting authLoading to false. User: null"
+        },
+        {
+          "type": "info",
+          "text": "[RemoteRelay] 🔐 Auth state changed: SIGNED OUT"
+        },
+        {
+          "type": "info",
+          "text": "[WebVitals] FCP: 472.0ms (good)"
+        },
+        {
+          "type": "error",
+          "text": "Access to script at 'https://www.gstatic.com/recaptcha/releases/MerVUtRoajKEbP7pLiGXkL28/recaptcha__en.js' from origin 'http://localhost:4272' has been blocked by CORS policy: Request header field cache-control is not allowed by Access-Control-Allow-Headers in preflight response."
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: net::ERR_FAILED"
+        },
+        {
+          "type": "info",
+          "text": "[WebVitals] TTFB: 8.5ms (good)"
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 403 ()"
+        },
+        {
+          "type": "error",
+          "text": "FirebaseError: Installations: Create Installation request failed with error \"403 PERMISSION_DENIED: Requests from referer http://localhost:4272/ are blocked.\" (installations/request-failed).\n    at getErrorFromResponse (http://localhost:4272/assets/vendor-firebase-sdowxrH6.js:38697:26)\n    at async createInstallationRequest (http://localhost:4272/assets/vendor-firebase-sdowxrH6.js:38779:11)\n    at async registerInstallation (http://localhost:4272/assets/vendor-firebase-sdowxrH6.js:39093:41)"
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 403 ()"
+        },
+        {
+          "type": "info",
+          "text": "[2026-06-22T22:40:47.526Z]  Performance: Could not fetch config, will use default configs"
+        },
+        {
+          "type": "pageerror",
+          "text": "Installations: Create Installation request failed with error \"403 PERMISSION_DENIED: Requests from referer http://localhost:4272/ are blocked.\" (installations/request-failed)."
+        },
+        {
+          "type": "info",
+          "text": "[RemoteRelay] Connecting local P2P WebSocket to ws://localhost:4272"
+        },
+        {
+          "type": "error",
+          "text": "WebSocket connection to 'ws://localhost:4272/' failed: Error during WebSocket handshake: Unexpected response code: 200"
+        },
+        {
+          "type": "info",
+          "text": "[RemoteRelay] Local P2P WebSocket closed. Code: 1006. Retrying in 2000ms..."
+        }
+      ],
+      "network": [
+        {
+          "method": "GET",
+          "url": "http://localhost:4272/assets/BundleAnalysisService-BoR9og-w.js",
+          "status": 200,
+          "contentType": "text/javascript"
+        },
+        {
+          "method": "POST",
+          "url": "https://firebaseinstallations.googleapis.com/v1/projects/indii-music-founder/installations",
+          "status": 403,
+          "contentType": "application/json; charset=UTF-8"
+        },
+        {
+          "method": "POST",
+          "url": "https://firebaseinstallations.googleapis.com/v1/projects/indii-music-founder/installations",
+          "status": 403,
+          "contentType": "application/json; charset=UTF-8"
+        }
+      ]
+    },
+    {
+      "route": "/audio-analyzer",
+      "label": "audio-analyzer-direct",
+      "status": 200,
+      "ms": 887,
+      "title": "indii.music",
+      "url": "http://localhost:4272/audio-analyzer",
+      "bodyText": "indii.music FOUNDERS RELEASE • V1.0 Sign In Create Account EMAIL ADDRESS PASSWORD Sign In Forgot Password? PRIVACY POLICY • TERMS OF SERVICE • © 2026 NEW DETROIT MUSIC LLC",
+      "screenshot": "artifacts/mega_audio_analyzer_2026-06-22_screenshots/preview-audio-analyzer-direct.png",
+      "consoleDeltaStart": 35,
+      "networkDeltaStart": 3,
+      "console": [
+        {
+          "type": "info",
+          "text": "[WebVitals] CLS: 0.0ms (good)"
+        },
+        {
+          "type": "info",
+          "text": "[WebVitals] LCP: 568.0ms (good)"
+        },
+        {
+          "type": "info",
+          "text": "[App Check] Initialized successfully"
+        },
+        {
+          "type": "info",
+          "text": "[DistributorService] Registered adapter: DistroKid"
+        },
+        {
+          "type": "info",
+          "text": "[DistributorService] Registered adapter: TuneCore"
+        },
+        {
+          "type": "info",
+          "text": "[DistributorService] Registered adapter: CDBaby"
+        },
+        {
+          "type": "info",
+          "text": "[DistributorService] Registered adapter: Symphonic"
+        },
+        {
+          "type": "info",
+          "text": "[RemoteRelay] Connecting local P2P WebSocket to ws://localhost:4272"
+        },
+        {
+          "type": "info",
+          "text": "🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙"
+        },
+        {
+          "type": "info",
+          "text": "[RemoteRelay] 🔐 Setting up auth listener..."
+        },
+        {
+          "type": "info",
+          "text": "[RemoteRelay/Firestore] 🔍 Command listener effect triggered, enabled=false"
+        },
+        {
+          "type": "info",
+          "text": "[RemoteRelay/Firestore] ⏸️ Not enabled — skipping command listener"
+        },
+        {
+          "type": "info",
+          "text": "[Firebase] Performance Monitoring initialized"
+        },
+        {
+          "type": "error",
+          "text": "WebSocket connection to 'ws://localhost:4272/' failed: Error during WebSocket handshake: Unexpected response code: 200"
+        },
+        {
+          "type": "info",
+          "text": "[RemoteRelay] Local P2P WebSocket closed. Code: 1006. Retrying in 1000ms..."
+        },
+        {
+          "type": "info",
+          "text": "NetworkQualityMonitor: initialized"
+        },
+        {
+          "type": "info",
+          "text": "[Phase 2] Memory and orchestration services initialized"
+        },
+        {
+          "type": "info",
+          "text": "[Phase 3] Observability and performance monitoring initialized"
+        },
+        {
+          "type": "info",
+          "text": "[WebVitals] Core Web Vitals monitoring initialized"
+        },
+        {
+          "type": "info",
+          "text": "MediaCacheManager: IndexedDB initialized"
+        },
+        {
+          "type": "info",
+          "text": "MediaCacheManager: total cache size = 0.00MB"
+        },
+        {
+          "type": "info",
+          "text": "[Auth] onAuthStateChanged fired. User: null, lastKnownUser: null"
+        },
+        {
+          "type": "info",
+          "text": "[Auth] Steady state reached. Setting authLoading to false. User: null"
+        },
+        {
+          "type": "info",
+          "text": "[RemoteRelay] 🔐 Auth state changed: SIGNED OUT"
+        },
+        {
+          "type": "info",
+          "text": "[Phase 1] PWA and offline services initialized"
+        },
+        {
+          "type": "info",
+          "text": "[WebVitals] FCP: 120.0ms (good)"
+        },
+        {
+          "type": "error",
+          "text": "Access to script at 'https://www.gstatic.com/recaptcha/releases/MerVUtRoajKEbP7pLiGXkL28/recaptcha__en.js' from origin 'http://localhost:4272' has been blocked by CORS policy: Request header field cache-control is not allowed by Access-Control-Allow-Headers in preflight response."
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: net::ERR_FAILED"
+        },
+        {
+          "type": "info",
+          "text": "[WebVitals] TTFB: 1.7ms (good)"
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 403 ()"
+        },
+        {
+          "type": "error",
+          "text": "FirebaseError: Installations: Create Installation request failed with error \"403 PERMISSION_DENIED: Requests from referer http://localhost:4272/ are blocked.\" (installations/request-failed).\n    at getErrorFromResponse (http://localhost:4272/assets/vendor-firebase-sdowxrH6.js:38697:26)\n    at async createInstallationRequest (http://localhost:4272/assets/vendor-firebase-sdowxrH6.js:38779:11)\n    at async registerInstallation (http://localhost:4272/assets/vendor-firebase-sdowxrH6.js:39093:41)"
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 403 ()"
+        },
+        {
+          "type": "info",
+          "text": "[2026-06-22T22:40:48.516Z]  Performance: Could not fetch config, will use default configs"
+        },
+        {
+          "type": "pageerror",
+          "text": "Installations: Create Installation request failed with error \"403 PERMISSION_DENIED: Requests from referer http://localhost:4272/ are blocked.\" (installations/request-failed)."
+        }
+      ],
+      "network": [
+        {
+          "method": "GET",
+          "url": "http://localhost:4272/audio-analyzer",
+          "status": 200,
+          "contentType": "text/html"
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4272/assets/BundleAnalysisService-BoR9og-w.js",
+          "status": 304,
+          "contentType": ""
+        },
+        {
+          "method": "POST",
+          "url": "https://firebaseinstallations.googleapis.com/v1/projects/indii-music-founder/installations",
+          "status": 403,
+          "contentType": "application/json; charset=UTF-8"
+        },
+        {
+          "method": "POST",
+          "url": "https://firebaseinstallations.googleapis.com/v1/projects/indii-music-founder/installations",
+          "status": 403,
+          "contentType": "application/json; charset=UTF-8"
+        }
+      ]
+    },
+    {
+      "route": "/distribution",
+      "label": "distribution-direct",
+      "status": 200,
+      "ms": 846,
+      "title": "indii.music",
+      "url": "http://localhost:4272/distribution",
+      "bodyText": "indii.music FOUNDERS RELEASE • V1.0 Sign In Create Account EMAIL ADDRESS PASSWORD Sign In Forgot Password? PRIVACY POLICY • TERMS OF SERVICE • © 2026 NEW DETROIT MUSIC LLC",
+      "screenshot": "artifacts/mega_audio_analyzer_2026-06-22_screenshots/preview-distribution-direct.png",
+      "consoleDeltaStart": 69,
+      "networkDeltaStart": 7,
+      "console": [
+        {
+          "type": "info",
+          "text": "[WebVitals] CLS: 0.0ms (good)"
+        },
+        {
+          "type": "info",
+          "text": "[WebVitals] LCP: 120.0ms (good)"
+        },
+        {
+          "type": "info",
+          "text": "[App Check] Initialized successfully"
+        },
+        {
+          "type": "info",
+          "text": "[DistributorService] Registered adapter: DistroKid"
+        },
+        {
+          "type": "info",
+          "text": "[DistributorService] Registered adapter: TuneCore"
+        },
+        {
+          "type": "info",
+          "text": "[DistributorService] Registered adapter: CDBaby"
+        },
+        {
+          "type": "info",
+          "text": "[DistributorService] Registered adapter: Symphonic"
+        },
+        {
+          "type": "info",
+          "text": "[RemoteRelay] Connecting local P2P WebSocket to ws://localhost:4272"
+        },
+        {
+          "type": "info",
+          "text": "🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙"
+        },
+        {
+          "type": "info",
+          "text": "[RemoteRelay] 🔐 Setting up auth listener..."
+        },
+        {
+          "type": "info",
+          "text": "[RemoteRelay/Firestore] 🔍 Command listener effect triggered, enabled=false"
+        },
+        {
+          "type": "info",
+          "text": "[RemoteRelay/Firestore] ⏸️ Not enabled — skipping command listener"
+        },
+        {
+          "type": "info",
+          "text": "[Firebase] Performance Monitoring initialized"
+        },
+        {
+          "type": "error",
+          "text": "WebSocket connection to 'ws://localhost:4272/' failed: Error during WebSocket handshake: Unexpected response code: 200"
+        },
+        {
+          "type": "info",
+          "text": "[RemoteRelay] Local P2P WebSocket closed. Code: 1006. Retrying in 1000ms..."
+        },
+        {
+          "type": "info",
+          "text": "NetworkQualityMonitor: initialized"
+        },
+        {
+          "type": "info",
+          "text": "[Phase 2] Memory and orchestration services initialized"
+        },
+        {
+          "type": "info",
+          "text": "MediaCacheManager: IndexedDB initialized"
+        },
+        {
+          "type": "info",
+          "text": "MediaCacheManager: total cache size = 0.00MB"
+        },
+        {
+          "type": "info",
+          "text": "[Auth] onAuthStateChanged fired. User: null, lastKnownUser: null"
+        },
+        {
+          "type": "info",
+          "text": "[Auth] Steady state reached. Setting authLoading to false. User: null"
+        },
+        {
+          "type": "info",
+          "text": "[RemoteRelay] 🔐 Auth state changed: SIGNED OUT"
+        },
+        {
+          "type": "info",
+          "text": "[Phase 3] Observability and performance monitoring initialized"
+        },
+        {
+          "type": "info",
+          "text": "[Phase 1] PWA and offline services initialized"
+        },
+        {
+          "type": "info",
+          "text": "[WebVitals] Core Web Vitals monitoring initialized"
+        },
+        {
+          "type": "info",
+          "text": "[WebVitals] FCP: 80.0ms (good)"
+        },
+        {
+          "type": "error",
+          "text": "Access to script at 'https://www.gstatic.com/recaptcha/releases/MerVUtRoajKEbP7pLiGXkL28/recaptcha__en.js' from origin 'http://localhost:4272' has been blocked by CORS policy: Request header field cache-control is not allowed by Access-Control-Allow-Headers in preflight response."
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: net::ERR_FAILED"
+        },
+        {
+          "type": "info",
+          "text": "[WebVitals] TTFB: 1.9ms (good)"
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 403 ()"
+        },
+        {
+          "type": "error",
+          "text": "FirebaseError: Installations: Create Installation request failed with error \"403 PERMISSION_DENIED: Requests from referer http://localhost:4272/ are blocked.\" (installations/request-failed).\n    at getErrorFromResponse (http://localhost:4272/assets/vendor-firebase-sdowxrH6.js:38697:26)\n    at async createInstallationRequest (http://localhost:4272/assets/vendor-firebase-sdowxrH6.js:38779:11)\n    at async registerInstallation (http://localhost:4272/assets/vendor-firebase-sdowxrH6.js:39093:41)"
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 403 ()"
+        },
+        {
+          "type": "info",
+          "text": "[2026-06-22T22:40:49.435Z]  Performance: Could not fetch config, will use default configs"
+        },
+        {
+          "type": "pageerror",
+          "text": "Installations: Create Installation request failed with error \"403 PERMISSION_DENIED: Requests from referer http://localhost:4272/ are blocked.\" (installations/request-failed)."
+        }
+      ],
+      "network": [
+        {
+          "method": "GET",
+          "url": "http://localhost:4272/distribution",
+          "status": 200,
+          "contentType": "text/html"
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4272/assets/BundleAnalysisService-BoR9og-w.js",
+          "status": 304,
+          "contentType": ""
+        },
+        {
+          "method": "POST",
+          "url": "https://firebaseinstallations.googleapis.com/v1/projects/indii-music-founder/installations",
+          "status": 403,
+          "contentType": "application/json; charset=UTF-8"
+        },
+        {
+          "method": "POST",
+          "url": "https://firebaseinstallations.googleapis.com/v1/projects/indii-music-founder/installations",
+          "status": 403,
+          "contentType": "application/json; charset=UTF-8"
+        }
+      ]
+    },
+    {
+      "route": "/creative",
+      "label": "creative-direct",
+      "status": 200,
+      "ms": 831,
+      "title": "indii.music",
+      "url": "http://localhost:4272/creative",
+      "bodyText": "indii.music FOUNDERS RELEASE • V1.0 Sign In Create Account EMAIL ADDRESS PASSWORD Sign In Forgot Password? PRIVACY POLICY • TERMS OF SERVICE • © 2026 NEW DETROIT MUSIC LLC",
+      "screenshot": "artifacts/mega_audio_analyzer_2026-06-22_screenshots/preview-creative-direct.png",
+      "consoleDeltaStart": 103,
+      "networkDeltaStart": 11,
+      "console": [
+        {
+          "type": "info",
+          "text": "[WebVitals] CLS: 0.0ms (good)"
+        },
+        {
+          "type": "info",
+          "text": "[WebVitals] LCP: 80.0ms (good)"
+        },
+        {
+          "type": "info",
+          "text": "[App Check] Initialized successfully"
+        },
+        {
+          "type": "info",
+          "text": "[DistributorService] Registered adapter: DistroKid"
+        },
+        {
+          "type": "info",
+          "text": "[DistributorService] Registered adapter: TuneCore"
+        },
+        {
+          "type": "info",
+          "text": "[DistributorService] Registered adapter: CDBaby"
+        },
+        {
+          "type": "info",
+          "text": "[DistributorService] Registered adapter: Symphonic"
+        },
+        {
+          "type": "info",
+          "text": "[RemoteRelay] Connecting local P2P WebSocket to ws://localhost:4272"
+        },
+        {
+          "type": "info",
+          "text": "🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙"
+        },
+        {
+          "type": "info",
+          "text": "[RemoteRelay] 🔐 Setting up auth listener..."
+        },
+        {
+          "type": "info",
+          "text": "[RemoteRelay/Firestore] 🔍 Command listener effect triggered, enabled=false"
+        },
+        {
+          "type": "info",
+          "text": "[RemoteRelay/Firestore] ⏸️ Not enabled — skipping command listener"
+        },
+        {
+          "type": "info",
+          "text": "[Firebase] Performance Monitoring initialized"
+        },
+        {
+          "type": "info",
+          "text": "NetworkQualityMonitor: initialized"
+        },
+        {
+          "type": "info",
+          "text": "[Auth] onAuthStateChanged fired. User: null, lastKnownUser: null"
+        },
+        {
+          "type": "info",
+          "text": "[Auth] Steady state reached. Setting authLoading to false. User: null"
+        },
+        {
+          "type": "info",
+          "text": "[RemoteRelay] 🔐 Auth state changed: SIGNED OUT"
+        },
+        {
+          "type": "info",
+          "text": "[WebVitals] Core Web Vitals monitoring initialized"
+        },
+        {
+          "type": "info",
+          "text": "[Phase 2] Memory and orchestration services initialized"
+        },
+        {
+          "type": "info",
+          "text": "MediaCacheManager: IndexedDB initialized"
+        },
+        {
+          "type": "info",
+          "text": "MediaCacheManager: total cache size = 0.00MB"
+        },
+        {
+          "type": "info",
+          "text": "[Phase 3] Observability and performance monitoring initialized"
+        },
+        {
+          "type": "info",
+          "text": "[Phase 1] PWA and offline services initialized"
+        },
+        {
+          "type": "error",
+          "text": "WebSocket connection to 'ws://localhost:4272/' failed: Error during WebSocket handshake: Unexpected response code: 200"
+        },
+        {
+          "type": "info",
+          "text": "[RemoteRelay] Local P2P WebSocket closed. Code: 1006. Retrying in 1000ms..."
+        },
+        {
+          "type": "info",
+          "text": "[WebVitals] FCP: 80.0ms (good)"
+        },
+        {
+          "type": "error",
+          "text": "Access to script at 'https://www.gstatic.com/recaptcha/releases/MerVUtRoajKEbP7pLiGXkL28/recaptcha__en.js' from origin 'http://localhost:4272' has been blocked by CORS policy: Request header field cache-control is not allowed by Access-Control-Allow-Headers in preflight response."
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: net::ERR_FAILED"
+        },
+        {
+          "type": "info",
+          "text": "[WebVitals] TTFB: 1.4ms (good)"
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 403 ()"
+        },
+        {
+          "type": "error",
+          "text": "FirebaseError: Installations: Create Installation request failed with error \"403 PERMISSION_DENIED: Requests from referer http://localhost:4272/ are blocked.\" (installations/request-failed).\n    at getErrorFromResponse (http://localhost:4272/assets/vendor-firebase-sdowxrH6.js:38697:26)\n    at async createInstallationRequest (http://localhost:4272/assets/vendor-firebase-sdowxrH6.js:38779:11)\n    at async registerInstallation (http://localhost:4272/assets/vendor-firebase-sdowxrH6.js:39093:41)"
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 403 ()"
+        },
+        {
+          "type": "info",
+          "text": "[2026-06-22T22:40:50.340Z]  Performance: Could not fetch config, will use default configs"
+        },
+        {
+          "type": "pageerror",
+          "text": "Installations: Create Installation request failed with error \"403 PERMISSION_DENIED: Requests from referer http://localhost:4272/ are blocked.\" (installations/request-failed)."
+        }
+      ],
+      "network": [
+        {
+          "method": "GET",
+          "url": "http://localhost:4272/creative",
+          "status": 200,
+          "contentType": "text/html"
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4272/assets/BundleAnalysisService-BoR9og-w.js",
+          "status": 304,
+          "contentType": ""
+        },
+        {
+          "method": "POST",
+          "url": "https://firebaseinstallations.googleapis.com/v1/projects/indii-music-founder/installations",
+          "status": 403,
+          "contentType": "application/json; charset=UTF-8"
+        },
+        {
+          "method": "POST",
+          "url": "https://firebaseinstallations.googleapis.com/v1/projects/indii-music-founder/installations",
+          "status": 403,
+          "contentType": "application/json; charset=UTF-8"
+        }
+      ]
+    }
+  ],
+  "api": [
+    {
+      "method": "OPTIONS",
+      "url": "/api/audio/upload",
+      "status": 404,
+      "ms": 11,
+      "contentType": "application/json",
+      "bodySummary": "{\"success\":false,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"API endpoint /api/audio/upload not found on built preview server. Use Firebase hosting API routing in production.\"}}",
+      "error": null
+    },
+    {
+      "method": "POST",
+      "url": "/api/audio/upload",
+      "status": 404,
+      "ms": 1,
+      "contentType": "application/json",
+      "bodySummary": "{\"success\":false,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"API endpoint /api/audio/upload not found on built preview server. Use Firebase hosting API routing in production.\"}}",
+      "error": null
+    },
+    {
+      "method": "GET",
+      "url": "/api/audio/upload",
+      "status": 404,
+      "ms": 1,
+      "contentType": "application/json",
+      "bodySummary": "{\"success\":false,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"API endpoint /api/audio/upload not found on built preview server. Use Firebase hosting API routing in production.\"}}",
+      "error": null
+    },
+    {
+      "method": "OPTIONS",
+      "url": "/api/audio/analyze",
+      "status": 404,
+      "ms": 0,
+      "contentType": "application/json",
+      "bodySummary": "{\"success\":false,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"API endpoint /api/audio/analyze not found on built preview server. Use Firebase hosting API routing in production.\"}}",
+      "error": null
+    },
+    {
+      "method": "POST",
+      "url": "/api/audio/analyze",
+      "status": 404,
+      "ms": 0,
+      "contentType": "application/json",
+      "bodySummary": "{\"success\":false,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"API endpoint /api/audio/analyze not found on built preview server. Use Firebase hosting API routing in production.\"}}",
+      "error": null
+    },
+    {
+      "method": "GET",
+      "url": "/api/audio/analyze",
+      "status": 404,
+      "ms": 1,
+      "contentType": "application/json",
+      "bodySummary": "{\"success\":false,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"API endpoint /api/audio/analyze not found on built preview server. Use Firebase hosting API routing in production.\"}}",
+      "error": null
+    },
+    {
+      "method": "OPTIONS",
+      "url": "/api/audio/analysis",
+      "status": 404,
+      "ms": 1,
+      "contentType": "application/json",
+      "bodySummary": "{\"success\":false,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"API endpoint /api/audio/analysis not found on built preview server. Use Firebase hosting API routing in production.\"}}",
+      "error": null
+    },
+    {
+      "method": "POST",
+      "url": "/api/audio/analysis",
+      "status": 404,
+      "ms": 0,
+      "contentType": "application/json",
+      "bodySummary": "{\"success\":false,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"API endpoint /api/audio/analysis not found on built preview server. Use Firebase hosting API routing in production.\"}}",
+      "error": null
+    },
+    {
+      "method": "GET",
+      "url": "/api/audio/analysis",
+      "status": 404,
+      "ms": 1,
+      "contentType": "application/json",
+      "bodySummary": "{\"success\":false,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"API endpoint /api/audio/analysis not found on built preview server. Use Firebase hosting API routing in production.\"}}",
+      "error": null
+    },
+    {
+      "method": "OPTIONS",
+      "url": "/api/audio/metadata",
+      "status": 404,
+      "ms": 1,
+      "contentType": "application/json",
+      "bodySummary": "{\"success\":false,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"API endpoint /api/audio/metadata not found on built preview server. Use Firebase hosting API routing in production.\"}}",
+      "error": null
+    },
+    {
+      "method": "POST",
+      "url": "/api/audio/metadata",
+      "status": 404,
+      "ms": 1,
+      "contentType": "application/json",
+      "bodySummary": "{\"success\":false,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"API endpoint /api/audio/metadata not found on built preview server. Use Firebase hosting API routing in production.\"}}",
+      "error": null
+    },
+    {
+      "method": "GET",
+      "url": "/api/audio/metadata",
+      "status": 404,
+      "ms": 0,
+      "contentType": "application/json",
+      "bodySummary": "{\"success\":false,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"API endpoint /api/audio/metadata not found on built preview server. Use Firebase hosting API routing in production.\"}}",
+      "error": null
+    },
+    {
+      "method": "OPTIONS",
+      "url": "/api/audio/dna",
+      "status": 404,
+      "ms": 1,
+      "contentType": "application/json",
+      "bodySummary": "{\"success\":false,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"API endpoint /api/audio/dna not found on built preview server. Use Firebase hosting API routing in production.\"}}",
+      "error": null
+    },
+    {
+      "method": "POST",
+      "url": "/api/audio/dna",
+      "status": 404,
+      "ms": 1,
+      "contentType": "application/json",
+      "bodySummary": "{\"success\":false,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"API endpoint /api/audio/dna not found on built preview server. Use Firebase hosting API routing in production.\"}}",
+      "error": null
+    },
+    {
+      "method": "GET",
+      "url": "/api/audio/dna",
+      "status": 404,
+      "ms": 1,
+      "contentType": "application/json",
+      "bodySummary": "{\"success\":false,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"API endpoint /api/audio/dna not found on built preview server. Use Firebase hosting API routing in production.\"}}",
+      "error": null
+    },
+    {
+      "method": "OPTIONS",
+      "url": "/api/music-library",
+      "status": 404,
+      "ms": 1,
+      "contentType": "application/json",
+      "bodySummary": "{\"success\":false,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"API endpoint /api/music-library not found on built preview server. Use Firebase hosting API routing in production.\"}}",
+      "error": null
+    },
+    {
+      "method": "POST",
+      "url": "/api/music-library",
+      "status": 404,
+      "ms": 1,
+      "contentType": "application/json",
+      "bodySummary": "{\"success\":false,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"API endpoint /api/music-library not found on built preview server. Use Firebase hosting API routing in production.\"}}",
+      "error": null
+    },
+    {
+      "method": "GET",
+      "url": "/api/music-library",
+      "status": 404,
+      "ms": 0,
+      "contentType": "application/json",
+      "bodySummary": "{\"success\":false,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"API endpoint /api/music-library not found on built preview server. Use Firebase hosting API routing in production.\"}}",
+      "error": null
+    },
+    {
+      "method": "OPTIONS",
+      "url": "/api/music-library/analysis",
+      "status": 404,
+      "ms": 1,
+      "contentType": "application/json",
+      "bodySummary": "{\"success\":false,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"API endpoint /api/music-library/analysis not found on built preview server. Use Firebase hosting API routing in production.\"}}",
+      "error": null
+    },
+    {
+      "method": "POST",
+      "url": "/api/music-library/analysis",
+      "status": 404,
+      "ms": 0,
+      "contentType": "application/json",
+      "bodySummary": "{\"success\":false,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"API endpoint /api/music-library/analysis not found on built preview server. Use Firebase hosting API routing in production.\"}}",
+      "error": null
+    },
+    {
+      "method": "GET",
+      "url": "/api/music-library/analysis",
+      "status": 404,
+      "ms": 1,
+      "contentType": "application/json",
+      "bodySummary": "{\"success\":false,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"API endpoint /api/music-library/analysis not found on built preview server. Use Firebase hosting API routing in production.\"}}",
+      "error": null
+    },
+    {
+      "method": "OPTIONS",
+      "url": "/api/distribution/metadata",
+      "status": 404,
+      "ms": 0,
+      "contentType": "application/json",
+      "bodySummary": "{\"success\":false,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"API endpoint /api/distribution/metadata not found on built preview server. Use Firebase hosting API routing in production.\"}}",
+      "error": null
+    },
+    {
+      "method": "POST",
+      "url": "/api/distribution/metadata",
+      "status": 404,
+      "ms": 1,
+      "contentType": "application/json",
+      "bodySummary": "{\"success\":false,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"API endpoint /api/distribution/metadata not found on built preview server. Use Firebase hosting API routing in production.\"}}",
+      "error": null
+    },
+    {
+      "method": "GET",
+      "url": "/api/distribution/metadata",
+      "status": 404,
+      "ms": 0,
+      "contentType": "application/json",
+      "bodySummary": "{\"success\":false,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"API endpoint /api/distribution/metadata not found on built preview server. Use Firebase hosting API routing in production.\"}}",
+      "error": null
+    },
+    {
+      "method": "OPTIONS",
+      "url": "/api/distribution/handoff",
+      "status": 404,
+      "ms": 1,
+      "contentType": "application/json",
+      "bodySummary": "{\"success\":false,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"API endpoint /api/distribution/handoff not found on built preview server. Use Firebase hosting API routing in production.\"}}",
+      "error": null
+    },
+    {
+      "method": "POST",
+      "url": "/api/distribution/handoff",
+      "status": 404,
+      "ms": 0,
+      "contentType": "application/json",
+      "bodySummary": "{\"success\":false,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"API endpoint /api/distribution/handoff not found on built preview server. Use Firebase hosting API routing in production.\"}}",
+      "error": null
+    },
+    {
+      "method": "GET",
+      "url": "/api/distribution/handoff",
+      "status": 404,
+      "ms": 0,
+      "contentType": "application/json",
+      "bodySummary": "{\"success\":false,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"API endpoint /api/distribution/handoff not found on built preview server. Use Firebase hosting API routing in production.\"}}",
+      "error": null
+    },
+    {
+      "method": "OPTIONS",
+      "url": "/api/creative/audio-handoff",
+      "status": 404,
+      "ms": 1,
+      "contentType": "application/json",
+      "bodySummary": "{\"success\":false,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"API endpoint /api/creative/audio-handoff not found on built preview server. Use Firebase hosting API routing in production.\"}}",
+      "error": null
+    },
+    {
+      "method": "POST",
+      "url": "/api/creative/audio-handoff",
+      "status": 404,
+      "ms": 0,
+      "contentType": "application/json",
+      "bodySummary": "{\"success\":false,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"API endpoint /api/creative/audio-handoff not found on built preview server. Use Firebase hosting API routing in production.\"}}",
+      "error": null
+    },
+    {
+      "method": "GET",
+      "url": "/api/creative/audio-handoff",
+      "status": 404,
+      "ms": 0,
+      "contentType": "application/json",
+      "bodySummary": "{\"success\":false,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"API endpoint /api/creative/audio-handoff not found on built preview server. Use Firebase hosting API routing in production.\"}}",
+      "error": null
+    },
+    {
+      "method": "OPTIONS",
+      "url": "/api/video/audio-handoff",
+      "status": 404,
+      "ms": 0,
+      "contentType": "application/json",
+      "bodySummary": "{\"success\":false,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"API endpoint /api/video/audio-handoff not found on built preview server. Use Firebase hosting API routing in production.\"}}",
+      "error": null
+    },
+    {
+      "method": "POST",
+      "url": "/api/video/audio-handoff",
+      "status": 404,
+      "ms": 0,
+      "contentType": "application/json",
+      "bodySummary": "{\"success\":false,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"API endpoint /api/video/audio-handoff not found on built preview server. Use Firebase hosting API routing in production.\"}}",
+      "error": null
+    },
+    {
+      "method": "GET",
+      "url": "/api/video/audio-handoff",
+      "status": 404,
+      "ms": 1,
+      "contentType": "application/json",
+      "bodySummary": "{\"success\":false,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"API endpoint /api/video/audio-handoff not found on built preview server. Use Firebase hosting API routing in production.\"}}",
+      "error": null
+    },
+    {
+      "method": "OPTIONS",
+      "url": "/audio/upload",
+      "status": 204,
+      "ms": 0,
+      "contentType": "",
+      "bodySummary": "",
+      "error": null
+    },
+    {
+      "method": "POST",
+      "url": "/audio/upload",
+      "status": 404,
+      "ms": 1,
+      "contentType": "",
+      "bodySummary": "",
+      "error": null
+    },
+    {
+      "method": "GET",
+      "url": "/audio/upload",
+      "status": 200,
+      "ms": 3,
+      "contentType": "text/html",
+      "bodySummary": "<!doctype html> <html lang=\"en\"> <head> <meta charset=\"UTF-8\" /> <!-- Favicon --> <link rel=\"icon\" type=\"image/svg+xml\" href=\"./favicon.svg\" /> <!-- PWA Manifest --> <link rel=\"manifest\" href=\"./manifest.json\" /> <!-- Mobile Viewport - Optimized for touch --> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover, interactive-widget=resizes-content\" /> <!-- Theme Colors --> <meta name=\"theme-color\" content=\"#0f0f0f\" /> <meta",
+      "error": null
+    },
+    {
+      "method": "OPTIONS",
+      "url": "/audio/analyze",
+      "status": 204,
+      "ms": 1,
+      "contentType": "",
+      "bodySummary": "",
+      "error": null
+    },
+    {
+      "method": "POST",
+      "url": "/audio/analyze",
+      "status": 404,
+      "ms": 0,
+      "contentType": "",
+      "bodySummary": "",
+      "error": null
+    },
+    {
+      "method": "GET",
+      "url": "/audio/analyze",
+      "status": 200,
+      "ms": 2,
+      "contentType": "text/html",
+      "bodySummary": "<!doctype html> <html lang=\"en\"> <head> <meta charset=\"UTF-8\" /> <!-- Favicon --> <link rel=\"icon\" type=\"image/svg+xml\" href=\"./favicon.svg\" /> <!-- PWA Manifest --> <link rel=\"manifest\" href=\"./manifest.json\" /> <!-- Mobile Viewport - Optimized for touch --> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover, interactive-widget=resizes-content\" /> <!-- Theme Colors --> <meta name=\"theme-color\" content=\"#0f0f0f\" /> <meta",
+      "error": null
+    },
+    {
+      "method": "OPTIONS",
+      "url": "/audio/analysis",
+      "status": 204,
+      "ms": 1,
+      "contentType": "",
+      "bodySummary": "",
+      "error": null
+    },
+    {
+      "method": "POST",
+      "url": "/audio/analysis",
+      "status": 404,
+      "ms": 0,
+      "contentType": "",
+      "bodySummary": "",
+      "error": null
+    },
+    {
+      "method": "GET",
+      "url": "/audio/analysis",
+      "status": 200,
+      "ms": 1,
+      "contentType": "text/html",
+      "bodySummary": "<!doctype html> <html lang=\"en\"> <head> <meta charset=\"UTF-8\" /> <!-- Favicon --> <link rel=\"icon\" type=\"image/svg+xml\" href=\"./favicon.svg\" /> <!-- PWA Manifest --> <link rel=\"manifest\" href=\"./manifest.json\" /> <!-- Mobile Viewport - Optimized for touch --> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover, interactive-widget=resizes-content\" /> <!-- Theme Colors --> <meta name=\"theme-color\" content=\"#0f0f0f\" /> <meta",
+      "error": null
+    },
+    {
+      "method": "OPTIONS",
+      "url": "/music-library/analysis",
+      "status": 204,
+      "ms": 0,
+      "contentType": "",
+      "bodySummary": "",
+      "error": null
+    },
+    {
+      "method": "POST",
+      "url": "/music-library/analysis",
+      "status": 404,
+      "ms": 0,
+      "contentType": "",
+      "bodySummary": "",
+      "error": null
+    },
+    {
+      "method": "GET",
+      "url": "/music-library/analysis",
+      "status": 200,
+      "ms": 2,
+      "contentType": "text/html",
+      "bodySummary": "<!doctype html> <html lang=\"en\"> <head> <meta charset=\"UTF-8\" /> <!-- Favicon --> <link rel=\"icon\" type=\"image/svg+xml\" href=\"./favicon.svg\" /> <!-- PWA Manifest --> <link rel=\"manifest\" href=\"./manifest.json\" /> <!-- Mobile Viewport - Optimized for touch --> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover, interactive-widget=resizes-content\" /> <!-- Theme Colors --> <meta name=\"theme-color\" content=\"#0f0f0f\" /> <meta",
+      "error": null
+    },
+    {
+      "method": "OPTIONS",
+      "url": "/distribution/metadata",
+      "status": 204,
+      "ms": 1,
+      "contentType": "",
+      "bodySummary": "",
+      "error": null
+    },
+    {
+      "method": "POST",
+      "url": "/distribution/metadata",
+      "status": 404,
+      "ms": 1,
+      "contentType": "",
+      "bodySummary": "",
+      "error": null
+    },
+    {
+      "method": "GET",
+      "url": "/distribution/metadata",
+      "status": 200,
+      "ms": 2,
+      "contentType": "text/html",
+      "bodySummary": "<!doctype html> <html lang=\"en\"> <head> <meta charset=\"UTF-8\" /> <!-- Favicon --> <link rel=\"icon\" type=\"image/svg+xml\" href=\"./favicon.svg\" /> <!-- PWA Manifest --> <link rel=\"manifest\" href=\"./manifest.json\" /> <!-- Mobile Viewport - Optimized for touch --> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover, interactive-widget=resizes-content\" /> <!-- Theme Colors --> <meta name=\"theme-color\" content=\"#0f0f0f\" /> <meta",
+      "error": null
+    },
+    {
+      "method": "OPTIONS",
+      "url": "/creative/audio-handoff",
+      "status": 204,
+      "ms": 1,
+      "contentType": "",
+      "bodySummary": "",
+      "error": null
+    },
+    {
+      "method": "POST",
+      "url": "/creative/audio-handoff",
+      "status": 404,
+      "ms": 0,
+      "contentType": "",
+      "bodySummary": "",
+      "error": null
+    },
+    {
+      "method": "GET",
+      "url": "/creative/audio-handoff",
+      "status": 200,
+      "ms": 1,
+      "contentType": "text/html",
+      "bodySummary": "<!doctype html> <html lang=\"en\"> <head> <meta charset=\"UTF-8\" /> <!-- Favicon --> <link rel=\"icon\" type=\"image/svg+xml\" href=\"./favicon.svg\" /> <!-- PWA Manifest --> <link rel=\"manifest\" href=\"./manifest.json\" /> <!-- Mobile Viewport - Optimized for touch --> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover, interactive-widget=resizes-content\" /> <!-- Theme Colors --> <meta name=\"theme-color\" content=\"#0f0f0f\" /> <meta",
+      "error": null
+    },
+    {
+      "method": "OPTIONS",
+      "url": "/video/audio-handoff",
+      "status": 204,
+      "ms": 0,
+      "contentType": "",
+      "bodySummary": "",
+      "error": null
+    },
+    {
+      "method": "POST",
+      "url": "/video/audio-handoff",
+      "status": 404,
+      "ms": 1,
+      "contentType": "",
+      "bodySummary": "",
+      "error": null
+    },
+    {
+      "method": "GET",
+      "url": "/video/audio-handoff",
+      "status": 200,
+      "ms": 1,
+      "contentType": "text/html",
+      "bodySummary": "<!doctype html> <html lang=\"en\"> <head> <meta charset=\"UTF-8\" /> <!-- Favicon --> <link rel=\"icon\" type=\"image/svg+xml\" href=\"./favicon.svg\" /> <!-- PWA Manifest --> <link rel=\"manifest\" href=\"./manifest.json\" /> <!-- Mobile Viewport - Optimized for touch --> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover, interactive-widget=resizes-content\" /> <!-- Theme Colors --> <meta name=\"theme-color\" content=\"#0f0f0f\" /> <meta",
+      "error": null
+    }
+  ],
+  "envLeak": [
+    {
+      "url": "http://localhost:4272/audio-analyzer",
+      "matches": [],
+      "htmlLength": 5071
+    }
+  ],
+  "errors": [],
+  "finishedAt": "2026-06-22T22:40:51.033Z"
+}

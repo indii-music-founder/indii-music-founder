@@ -1,0 +1,5144 @@
+{
+  "startedAt": "2026-06-22T22:38:36.398Z",
+  "target": "http://localhost:4242",
+  "pages": [
+    {
+      "route": "/",
+      "label": "home-direct",
+      "status": 200,
+      "ms": 3357,
+      "title": "indii.music",
+      "url": "http://localhost:4242/",
+      "bodyText": "indii.music FOUNDERS RELEASE • V1.0 Sign In Create Account EMAIL ADDRESS PASSWORD Sign In Forgot Password? PRIVACY POLICY • TERMS OF SERVICE • © 2026 NEW DETROIT MUSIC LLC",
+      "screenshot": "artifacts/mega_audio_analyzer_2026-06-22_screenshots/home-direct.png",
+      "consoleDeltaStart": 0,
+      "networkDeltaStart": 0,
+      "console": [
+        {
+          "type": "debug",
+          "text": "[vite] connecting..."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected."
+        },
+        {
+          "type": "info",
+          "text": "%cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold"
+        },
+        {
+          "type": "log",
+          "text": "[indii.music][Env] Initialized: {hasMapsKey: false, mapsEnabled: false}"
+        },
+        {
+          "type": "debug",
+          "text": "[Firebase] Connected to Firestore emulator on port 8080"
+        },
+        {
+          "type": "debug",
+          "text": "[Firebase] Connected to Storage emulator on port 9199"
+        },
+        {
+          "type": "debug",
+          "text": "[Firebase] Connected to Auth emulator on port 9099"
+        },
+        {
+          "type": "debug",
+          "text": "[Firebase] Connected to Functions emulator on port 5001"
+        },
+        {
+          "type": "debug",
+          "text": "[App Check] Auto-debug mode enabled (check console for debug token)"
+        },
+        {
+          "type": "info",
+          "text": "[App Check] Skipped in emulator mode (dev: true, emulator: true). Auth/Firestore will work without App Check validation."
+        },
+        {
+          "type": "info",
+          "text": "[DistributorService] Registered adapter: DistroKid"
+        },
+        {
+          "type": "info",
+          "text": "[DistributorService] Registered adapter: TuneCore"
+        },
+        {
+          "type": "info",
+          "text": "[DistributorService] Registered adapter: CDBaby"
+        },
+        {
+          "type": "info",
+          "text": "[DistributorService] Registered adapter: Symphonic"
+        },
+        {
+          "type": "debug",
+          "text": "[AgentRegistry] Pre-warming Generalist agent..."
+        },
+        {
+          "type": "debug",
+          "text": "[AgentRegistry] Loading agent 'generalist' (attempt 1)..."
+        },
+        {
+          "type": "info",
+          "text": "[RemoteRelay] Connecting local P2P WebSocket to ws://localhost:4242"
+        },
+        {
+          "type": "info",
+          "text": "🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙"
+        },
+        {
+          "type": "log",
+          "text": "i18next: languageChanged en-US"
+        },
+        {
+          "type": "log",
+          "text": "i18next: initialized {debug: true, initAsync: true, ns: Array(1), defaultNS: Array(1), fallbackLng: Array(1)}"
+        },
+        {
+          "type": "debug",
+          "text": "indii.music"
+        },
+        {
+          "type": "warning",
+          "text": "Lit is in dev mode. Not recommended for production! See https://lit.dev/msg/dev-mode for more information."
+        },
+        {
+          "type": "debug",
+          "text": "[Auth] Initializing Auth Listener..."
+        },
+        {
+          "type": "info",
+          "text": "[RemoteRelay] 🔐 Setting up auth listener..."
+        },
+        {
+          "type": "debug",
+          "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}"
+        },
+        {
+          "type": "debug",
+          "text": "[AuthProxy] returning null"
+        },
+        {
+          "type": "info",
+          "text": "[RemoteRelay/Firestore] 🔍 Command listener effect triggered, enabled=false"
+        },
+        {
+          "type": "info",
+          "text": "[RemoteRelay/Firestore] ⏸️ Not enabled — skipping command listener"
+        },
+        {
+          "type": "debug",
+          "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}"
+        },
+        {
+          "type": "debug",
+          "text": "[AuthProxy] returning null"
+        },
+        {
+          "type": "debug",
+          "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}"
+        },
+        {
+          "type": "debug",
+          "text": "[AuthProxy] returning null"
+        },
+        {
+          "type": "debug",
+          "text": "[Auth] Initializing Auth Listener..."
+        },
+        {
+          "type": "info",
+          "text": "[RemoteRelay] 🔐 Setting up auth listener..."
+        },
+        {
+          "type": "debug",
+          "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}"
+        },
+        {
+          "type": "debug",
+          "text": "[AuthProxy] returning null"
+        },
+        {
+          "type": "info",
+          "text": "[RemoteRelay/Firestore] 🔍 Command listener effect triggered, enabled=false"
+        },
+        {
+          "type": "info",
+          "text": "[RemoteRelay/Firestore] ⏸️ Not enabled — skipping command listener"
+        },
+        {
+          "type": "debug",
+          "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}"
+        },
+        {
+          "type": "debug",
+          "text": "[AuthProxy] returning null"
+        },
+        {
+          "type": "info",
+          "text": "[Firebase] Performance Monitoring initialized"
+        },
+        {
+          "type": "info",
+          "text": "[Auth] onAuthStateChanged fired. User: null, lastKnownUser: null"
+        },
+        {
+          "type": "info",
+          "text": "[Auth] Steady state reached. Setting authLoading to false. User: null"
+        },
+        {
+          "type": "info",
+          "text": "[RemoteRelay] 🔐 Auth state changed: SIGNED OUT"
+        },
+        {
+          "type": "info",
+          "text": "MediaCacheManager: IndexedDB initialized"
+        },
+        {
+          "type": "info",
+          "text": "MediaCacheManager: total cache size = 0.00MB"
+        },
+        {
+          "type": "debug",
+          "text": "[OfflineSync] IndexedDB initialized"
+        },
+        {
+          "type": "info",
+          "text": "[Phase 2] Memory and orchestration services initialized"
+        },
+        {
+          "type": "debug",
+          "text": "NetworkQualityMonitor: quality changed to 4g (10Mbps, 50ms RTT)"
+        },
+        {
+          "type": "info",
+          "text": "NetworkQualityMonitor: initialized"
+        },
+        {
+          "type": "info",
+          "text": "[Phase 3] Observability and performance monitoring initialized"
+        },
+        {
+          "type": "info",
+          "text": "[Phase 1] PWA and offline services initialized"
+        },
+        {
+          "type": "info",
+          "text": "[WebVitals] Core Web Vitals monitoring initialized"
+        },
+        {
+          "type": "info",
+          "text": "[WebVitals] FCP: 2340.0ms (needs-improvement)"
+        },
+        {
+          "type": "info",
+          "text": "[WebVitals] TTFB: 38.8ms (good)"
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 403 ()"
+        },
+        {
+          "type": "error",
+          "text": "FirebaseError: Installations: Create Installation request failed with error \"403 PERMISSION_DENIED: Requests from referer http://localhost:4242/ are blocked.\" (installations/request-failed).\n    at getErrorFromResponse (http://localhost:4242/node_modules/.vite/deps/chunk-L7D2RWHQ.js?v=aec6a253:70:24)\n    at async createInstallationRequest (http://localhost:4242/node_modules/.vite/deps/chunk-L7D2RWHQ.js?v=aec6a253:136:11)\n    at async registerInstallation (http://localhost:4242/node_modules/.vite/deps/chunk-L7D2RWHQ.js?v=aec6a253:338:41)"
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 403 ()"
+        },
+        {
+          "type": "info",
+          "text": "[2026-06-22T22:38:39.570Z]  Performance: Could not fetch config, will use default configs"
+        },
+        {
+          "type": "pageerror",
+          "text": "Installations: Create Installation request failed with error \"403 PERMISSION_DENIED: Requests from referer http://localhost:4242/ are blocked.\" (installations/request-failed)."
+        },
+        {
+          "type": "debug",
+          "text": "[AgentRegistry] Agent 'generalist' loaded successfully"
+        },
+        {
+          "type": "debug",
+          "text": "[AgentRegistry] Generalist agent pre-warmed successfully"
+        }
+      ],
+      "network": [
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/node_modules/vite/dist/client/env.mjs",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/modules/distribution/components/TransmissionMonitor.tsx",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/components/shared/UploadQueueMonitor.tsx",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/components/shared/AudioPIPPlayer.tsx",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/core/store/slices/creative/index.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/core/store/slices/distributionSlice.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/node_modules/.vite/deps/firebase_firestore.js?v=aec6a253",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/core/store/slices/audioIntelligenceSlice.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/core/store/slices/audioGenerationSlice.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/core/store/slices/uploadQueueSlice.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/core/store/slices/audioPlayerSlice.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/core/store/slices/analyticsSlice.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/audio/AudioService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/DistributionService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/audio/AudioContextManager.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/node_modules/driver.js/dist/driver.css",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/node_modules/.vite/deps/firebase_functions.js?v=aec6a253",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/core/store/slices/creative/creativeHistorySlice.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/core/store/slices/creative/creativeControlsSlice.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/core/store/slices/creative/designHistorySlice.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/DistributorService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/DistributionSyncService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/audio/AudioIntelligenceService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/audio/FingerprintService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/audio/AudioPersistenceService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/FirestoreService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/DistributionSchemas.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/ISRCService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/UPCService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/TaxService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/music/MusicLibraryService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/DistributionPersistenceService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/DeliveryService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/CurrencyConversionService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/proprietary-ingestion/validation.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/adapters/DistroKidAdapter.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/adapters/TuneCoreAdapter.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/adapters/CDBabyAdapter.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/audio/StyleMemoryStore.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/adapters/SymphonicAdapter.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/audio/AudioAnalysisService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/licensing/SyncMetadataTaggingService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/audio/AcousticFingerprintService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/audio/EnergyMapService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/business-harness/DistributionDdexCompiler.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/business-harness/UploadIntakeHarnessService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/agent/definitions/VideoAgent.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/agent/definitions/MusicAgent.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/agent/definitions/DistributionAgent.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/agent/definitions/CreativeAgent.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/agent/definitions/AnalyticsAgent.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/transport/SFTPTransporter.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/audio/TranscodingService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/adapters/BaseDistributorAdapter.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/EarningsService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/proprietary-ingestion/IngestionNotificationService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/audio/DSPComplianceValidator.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/persistence/MetadataPersistenceService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/proprietary-ingestion/IngestionMapper.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/intelligence/generators/HighLevelAPI.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/shared/src/index.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/agent/fine-tuned-endpoints.generated.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/marketing/prompt.md?import&raw",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/finance/prompt.md?import&raw",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/agent/tools/VideoTools.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/agent/tools/AnalysisTools.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/agent/tools/MusicTools.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/video/prompt.md?import&raw",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/event-planner/prompt.md?import&raw",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/social/prompt.md?import&raw",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/publicist/prompt.md?import&raw",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/road/prompt.md?import&raw",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/hospitality/prompt.md?import&raw",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/licensing/prompt.md?import&raw",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/publishing/prompt.md?import&raw",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/brand/prompt.md?import&raw",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/music/prompt.md?import&raw",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/agent/tools/DistributionTools.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/distribution/prompt.md?import&raw",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/agent/tools/AnalyticsTools.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/analytics/prompt.md?import&raw",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/proprietary-ingestion/IngestionParser.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/proprietary-ingestion/IngestionNotificationMapper.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/creative/prompt.md?import&raw",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/shared/src/schemas/env.schema.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/shared/src/schemas/api.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/shared/src/schemas/workflowState.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/shared/src/schemas/agentLoopState.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/shared/src/services/AuthService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/shared/src/types/errors.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/shared/src/ipc/electron-api.types.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/shared/src/services/business-harness/types.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/shared/src/types/ai.dto.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/shared/src/services/business-harness/HarnessCompiler.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/video/PerformanceVideoService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/metadata/MetadataOrchestrator.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/video/VideoGenerationService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/creative/CreativeStorageService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/metadata/TrackLibraryService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/metadata/types.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/modules/creative/video/schemas.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/conductor/prompt.md?import&raw",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/observability/BundleAnalysisService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/brand/agent_card.json?import",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/indii_curriculum/agent_card.json?import",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/creative/agent_card.json?import",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/distribution/agent_card.json?import",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/finance/agent_card.json?import",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/legal/agent_card.json?import",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/licensing/agent_card.json?import",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/marketing/agent_card.json?import",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/merchandise/agent_card.json?import",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/publicist/agent_card.json?import",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/music/agent_card.json?import",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/hospitality/agent_card.json?import",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/event-planner/agent_card.json?import",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/road/agent_card.json?import",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/publishing/agent_card.json?import",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/analytics/agent_card.json?import",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/conductor/agent_card.json?import",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/social/agent_card.json?import",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/video/agent_card.json?import",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/default/agent_card.json?import",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "POST",
+          "url": "https://firebaseinstallations.googleapis.com/v1/projects/indii-music-founder/installations",
+          "status": 403,
+          "contentType": "application/json; charset=UTF-8",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/modules/creative/tools.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "POST",
+          "url": "https://firebaseinstallations.googleapis.com/v1/projects/indii-music-founder/installations",
+          "status": 403,
+          "contentType": "application/json; charset=UTF-8",
+          "timing": null
+        }
+      ]
+    },
+    {
+      "route": "/audio-analyzer",
+      "label": "audio-analyzer-direct",
+      "status": 200,
+      "ms": 1090,
+      "title": "indii.music",
+      "url": "http://localhost:4242/audio-analyzer",
+      "bodyText": "indii.music FOUNDERS RELEASE • V1.0 Sign In Create Account EMAIL ADDRESS PASSWORD Sign In Forgot Password? PRIVACY POLICY • TERMS OF SERVICE • © 2026 NEW DETROIT MUSIC LLC",
+      "screenshot": "artifacts/mega_audio_analyzer_2026-06-22_screenshots/audio-analyzer-direct.png",
+      "consoleDeltaStart": 62,
+      "networkDeltaStart": 126,
+      "console": [
+        {
+          "type": "info",
+          "text": "[WebVitals] CLS: 0.0ms (good)"
+        },
+        {
+          "type": "info",
+          "text": "[WebVitals] LCP: 2432.0ms (good)"
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connecting..."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected."
+        },
+        {
+          "type": "info",
+          "text": "%cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold"
+        },
+        {
+          "type": "log",
+          "text": "[indii.music][Env] Initialized: {hasMapsKey: false, mapsEnabled: false}"
+        },
+        {
+          "type": "debug",
+          "text": "[Firebase] Connected to Firestore emulator on port 8080"
+        },
+        {
+          "type": "debug",
+          "text": "[Firebase] Connected to Storage emulator on port 9199"
+        },
+        {
+          "type": "debug",
+          "text": "[Firebase] Connected to Auth emulator on port 9099"
+        },
+        {
+          "type": "debug",
+          "text": "[Firebase] Connected to Functions emulator on port 5001"
+        },
+        {
+          "type": "debug",
+          "text": "[App Check] Auto-debug mode enabled (check console for debug token)"
+        },
+        {
+          "type": "info",
+          "text": "[App Check] Skipped in emulator mode (dev: true, emulator: true). Auth/Firestore will work without App Check validation."
+        },
+        {
+          "type": "info",
+          "text": "[DistributorService] Registered adapter: DistroKid"
+        },
+        {
+          "type": "info",
+          "text": "[DistributorService] Registered adapter: TuneCore"
+        },
+        {
+          "type": "info",
+          "text": "[DistributorService] Registered adapter: CDBaby"
+        },
+        {
+          "type": "info",
+          "text": "[DistributorService] Registered adapter: Symphonic"
+        },
+        {
+          "type": "debug",
+          "text": "[AgentRegistry] Pre-warming Generalist agent..."
+        },
+        {
+          "type": "debug",
+          "text": "[AgentRegistry] Loading agent 'generalist' (attempt 1)..."
+        },
+        {
+          "type": "info",
+          "text": "[RemoteRelay] Connecting local P2P WebSocket to ws://localhost:4242"
+        },
+        {
+          "type": "info",
+          "text": "🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙"
+        },
+        {
+          "type": "log",
+          "text": "i18next: languageChanged en-US"
+        },
+        {
+          "type": "log",
+          "text": "i18next: initialized {debug: true, initAsync: true, ns: Array(1), defaultNS: Array(1), fallbackLng: Array(1)}"
+        },
+        {
+          "type": "debug",
+          "text": "indii.music"
+        },
+        {
+          "type": "warning",
+          "text": "Lit is in dev mode. Not recommended for production! See https://lit.dev/msg/dev-mode for more information."
+        },
+        {
+          "type": "debug",
+          "text": "[Auth] Initializing Auth Listener..."
+        },
+        {
+          "type": "info",
+          "text": "[RemoteRelay] 🔐 Setting up auth listener..."
+        },
+        {
+          "type": "debug",
+          "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}"
+        },
+        {
+          "type": "debug",
+          "text": "[AuthProxy] returning null"
+        },
+        {
+          "type": "info",
+          "text": "[RemoteRelay/Firestore] 🔍 Command listener effect triggered, enabled=false"
+        },
+        {
+          "type": "info",
+          "text": "[RemoteRelay/Firestore] ⏸️ Not enabled — skipping command listener"
+        },
+        {
+          "type": "debug",
+          "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}"
+        },
+        {
+          "type": "debug",
+          "text": "[AuthProxy] returning null"
+        },
+        {
+          "type": "debug",
+          "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}"
+        },
+        {
+          "type": "debug",
+          "text": "[AuthProxy] returning null"
+        },
+        {
+          "type": "debug",
+          "text": "[Auth] Initializing Auth Listener..."
+        },
+        {
+          "type": "info",
+          "text": "[RemoteRelay] 🔐 Setting up auth listener..."
+        },
+        {
+          "type": "debug",
+          "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}"
+        },
+        {
+          "type": "debug",
+          "text": "[AuthProxy] returning null"
+        },
+        {
+          "type": "info",
+          "text": "[RemoteRelay/Firestore] 🔍 Command listener effect triggered, enabled=false"
+        },
+        {
+          "type": "info",
+          "text": "[RemoteRelay/Firestore] ⏸️ Not enabled — skipping command listener"
+        },
+        {
+          "type": "debug",
+          "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}"
+        },
+        {
+          "type": "debug",
+          "text": "[AuthProxy] returning null"
+        },
+        {
+          "type": "info",
+          "text": "[Firebase] Performance Monitoring initialized"
+        },
+        {
+          "type": "debug",
+          "text": "NetworkQualityMonitor: quality changed to 4g (10Mbps, 50ms RTT)"
+        },
+        {
+          "type": "info",
+          "text": "NetworkQualityMonitor: initialized"
+        },
+        {
+          "type": "debug",
+          "text": "[OfflineSync] IndexedDB initialized"
+        },
+        {
+          "type": "info",
+          "text": "MediaCacheManager: IndexedDB initialized"
+        },
+        {
+          "type": "info",
+          "text": "[Phase 3] Observability and performance monitoring initialized"
+        },
+        {
+          "type": "info",
+          "text": "[WebVitals] Core Web Vitals monitoring initialized"
+        },
+        {
+          "type": "info",
+          "text": "[Phase 2] Memory and orchestration services initialized"
+        },
+        {
+          "type": "info",
+          "text": "[Phase 1] PWA and offline services initialized"
+        },
+        {
+          "type": "info",
+          "text": "[WebVitals] TTFB: 8.0ms (good)"
+        },
+        {
+          "type": "info",
+          "text": "MediaCacheManager: total cache size = 0.00MB"
+        },
+        {
+          "type": "info",
+          "text": "[Auth] onAuthStateChanged fired. User: null, lastKnownUser: null"
+        },
+        {
+          "type": "info",
+          "text": "[Auth] Steady state reached. Setting authLoading to false. User: null"
+        },
+        {
+          "type": "info",
+          "text": "[RemoteRelay] 🔐 Auth state changed: SIGNED OUT"
+        },
+        {
+          "type": "info",
+          "text": "[WebVitals] FCP: 436.0ms (good)"
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 403 ()"
+        },
+        {
+          "type": "error",
+          "text": "FirebaseError: Installations: Create Installation request failed with error \"403 PERMISSION_DENIED: Requests from referer http://localhost:4242/ are blocked.\" (installations/request-failed).\n    at getErrorFromResponse (http://localhost:4242/node_modules/.vite/deps/chunk-L7D2RWHQ.js?v=aec6a253:70:24)\n    at async createInstallationRequest (http://localhost:4242/node_modules/.vite/deps/chunk-L7D2RWHQ.js?v=aec6a253:136:11)\n    at async registerInstallation (http://localhost:4242/node_modules/.vite/deps/chunk-L7D2RWHQ.js?v=aec6a253:338:41)"
+        },
+        {
+          "type": "debug",
+          "text": "[AgentRegistry] Agent 'generalist' loaded successfully"
+        },
+        {
+          "type": "debug",
+          "text": "[AgentRegistry] Generalist agent pre-warmed successfully"
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 403 ()"
+        },
+        {
+          "type": "info",
+          "text": "[2026-06-22T22:38:40.820Z]  Performance: Could not fetch config, will use default configs"
+        },
+        {
+          "type": "pageerror",
+          "text": "Installations: Create Installation request failed with error \"403 PERMISSION_DENIED: Requests from referer http://localhost:4242/ are blocked.\" (installations/request-failed)."
+        }
+      ],
+      "network": [
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/audio-analyzer",
+          "status": 200,
+          "contentType": "text/html",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/node_modules/vite/dist/client/env.mjs",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/modules/distribution/components/TransmissionMonitor.tsx",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/components/shared/UploadQueueMonitor.tsx",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/components/shared/AudioPIPPlayer.tsx",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/core/store/slices/creative/index.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/core/store/slices/distributionSlice.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/core/store/slices/audioIntelligenceSlice.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/core/store/slices/audioGenerationSlice.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/core/store/slices/uploadQueueSlice.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/core/store/slices/audioPlayerSlice.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/core/store/slices/analyticsSlice.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/audio/AudioService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/node_modules/.vite/deps/firebase_firestore.js?v=aec6a253",
+          "status": 304,
+          "contentType": "",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/DistributionService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/node_modules/driver.js/dist/driver.css",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/audio/AudioContextManager.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/core/store/slices/creative/creativeControlsSlice.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/core/store/slices/creative/creativeHistorySlice.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/core/store/slices/creative/designHistorySlice.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/DistributionSyncService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/DistributorService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/audio/FingerprintService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/audio/AudioPersistenceService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/audio/AudioIntelligenceService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/FirestoreService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/node_modules/.vite/deps/firebase_functions.js?v=aec6a253",
+          "status": 304,
+          "contentType": "",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/ISRCService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/UPCService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/TaxService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/DistributionSchemas.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/music/MusicLibraryService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/DistributionPersistenceService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/DeliveryService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/CurrencyConversionService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/proprietary-ingestion/validation.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/adapters/DistroKidAdapter.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/adapters/TuneCoreAdapter.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/adapters/CDBabyAdapter.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/adapters/SymphonicAdapter.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/audio/AudioAnalysisService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/audio/AcousticFingerprintService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/audio/EnergyMapService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/licensing/SyncMetadataTaggingService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/audio/StyleMemoryStore.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/business-harness/DistributionDdexCompiler.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/business-harness/UploadIntakeHarnessService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/agent/definitions/VideoAgent.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/agent/definitions/DistributionAgent.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/agent/definitions/MusicAgent.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/agent/definitions/AnalyticsAgent.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/agent/definitions/CreativeAgent.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/transport/SFTPTransporter.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/proprietary-ingestion/IngestionNotificationService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/audio/TranscodingService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/adapters/BaseDistributorAdapter.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/EarningsService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/audio/DSPComplianceValidator.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/persistence/MetadataPersistenceService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/proprietary-ingestion/IngestionMapper.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/intelligence/generators/HighLevelAPI.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/agent/fine-tuned-endpoints.generated.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/shared/src/index.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/marketing/prompt.md?import&raw",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/finance/prompt.md?import&raw",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/agent/tools/VideoTools.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/agent/tools/MusicTools.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/video/prompt.md?import&raw",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/social/prompt.md?import&raw",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/agent/tools/AnalysisTools.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/road/prompt.md?import&raw",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/hospitality/prompt.md?import&raw",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/publicist/prompt.md?import&raw",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/brand/prompt.md?import&raw",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/event-planner/prompt.md?import&raw",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/publishing/prompt.md?import&raw",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/licensing/prompt.md?import&raw",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/agent/tools/DistributionTools.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/distribution/prompt.md?import&raw",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/agent/tools/AnalyticsTools.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/analytics/prompt.md?import&raw",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/music/prompt.md?import&raw",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/proprietary-ingestion/IngestionParser.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/proprietary-ingestion/IngestionNotificationMapper.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/creative/prompt.md?import&raw",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/shared/src/services/AuthService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/shared/src/schemas/env.schema.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/shared/src/schemas/workflowState.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/shared/src/schemas/agentLoopState.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/shared/src/types/ai.dto.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/shared/src/schemas/api.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/shared/src/ipc/electron-api.types.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/shared/src/services/business-harness/types.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/shared/src/services/business-harness/HarnessCompiler.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/shared/src/types/errors.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/video/VideoGenerationService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/video/PerformanceVideoService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/metadata/MetadataOrchestrator.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/creative/CreativeStorageService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/metadata/TrackLibraryService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/metadata/types.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/modules/creative/video/schemas.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/observability/BundleAnalysisService.ts",
+          "status": 304,
+          "contentType": "",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/conductor/prompt.md?import&raw",
+          "status": 304,
+          "contentType": "",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/brand/agent_card.json?import",
+          "status": 304,
+          "contentType": "",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/creative/agent_card.json?import",
+          "status": 304,
+          "contentType": "",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/indii_curriculum/agent_card.json?import",
+          "status": 304,
+          "contentType": "",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/finance/agent_card.json?import",
+          "status": 304,
+          "contentType": "",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/distribution/agent_card.json?import",
+          "status": 304,
+          "contentType": "",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/legal/agent_card.json?import",
+          "status": 304,
+          "contentType": "",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/licensing/agent_card.json?import",
+          "status": 304,
+          "contentType": "",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/marketing/agent_card.json?import",
+          "status": 304,
+          "contentType": "",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/merchandise/agent_card.json?import",
+          "status": 304,
+          "contentType": "",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/publicist/agent_card.json?import",
+          "status": 304,
+          "contentType": "",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/music/agent_card.json?import",
+          "status": 304,
+          "contentType": "",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/hospitality/agent_card.json?import",
+          "status": 304,
+          "contentType": "",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/event-planner/agent_card.json?import",
+          "status": 304,
+          "contentType": "",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/road/agent_card.json?import",
+          "status": 304,
+          "contentType": "",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/publishing/agent_card.json?import",
+          "status": 304,
+          "contentType": "",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/analytics/agent_card.json?import",
+          "status": 304,
+          "contentType": "",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/conductor/agent_card.json?import",
+          "status": 304,
+          "contentType": "",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/default/agent_card.json?import",
+          "status": 304,
+          "contentType": "",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/social/agent_card.json?import",
+          "status": 304,
+          "contentType": "",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/video/agent_card.json?import",
+          "status": 304,
+          "contentType": "",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/modules/creative/tools.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "POST",
+          "url": "https://firebaseinstallations.googleapis.com/v1/projects/indii-music-founder/installations",
+          "status": 403,
+          "contentType": "application/json; charset=UTF-8",
+          "timing": null
+        },
+        {
+          "method": "POST",
+          "url": "https://firebaseinstallations.googleapis.com/v1/projects/indii-music-founder/installations",
+          "status": 403,
+          "contentType": "application/json; charset=UTF-8",
+          "timing": null
+        }
+      ]
+    },
+    {
+      "route": "/distribution",
+      "label": "distribution-direct",
+      "status": 200,
+      "ms": 1308,
+      "title": "indii.music",
+      "url": "http://localhost:4242/distribution",
+      "bodyText": "indii.music FOUNDERS RELEASE • V1.0 Sign In Create Account EMAIL ADDRESS PASSWORD Sign In Forgot Password? PRIVACY POLICY • TERMS OF SERVICE • © 2026 NEW DETROIT MUSIC LLC",
+      "screenshot": "artifacts/mega_audio_analyzer_2026-06-22_screenshots/distribution-direct.png",
+      "consoleDeltaStart": 126,
+      "networkDeltaStart": 253,
+      "console": [
+        {
+          "type": "info",
+          "text": "[WebVitals] CLS: 0.0ms (good)"
+        },
+        {
+          "type": "info",
+          "text": "[WebVitals] LCP: 436.0ms (good)"
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connecting..."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected."
+        },
+        {
+          "type": "info",
+          "text": "%cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold"
+        },
+        {
+          "type": "log",
+          "text": "[indii.music][Env] Initialized: {hasMapsKey: false, mapsEnabled: false}"
+        },
+        {
+          "type": "debug",
+          "text": "[Firebase] Connected to Firestore emulator on port 8080"
+        },
+        {
+          "type": "debug",
+          "text": "[Firebase] Connected to Storage emulator on port 9199"
+        },
+        {
+          "type": "debug",
+          "text": "[Firebase] Connected to Auth emulator on port 9099"
+        },
+        {
+          "type": "debug",
+          "text": "[Firebase] Connected to Functions emulator on port 5001"
+        },
+        {
+          "type": "debug",
+          "text": "[App Check] Auto-debug mode enabled (check console for debug token)"
+        },
+        {
+          "type": "info",
+          "text": "[App Check] Skipped in emulator mode (dev: true, emulator: true). Auth/Firestore will work without App Check validation."
+        },
+        {
+          "type": "info",
+          "text": "[DistributorService] Registered adapter: DistroKid"
+        },
+        {
+          "type": "info",
+          "text": "[DistributorService] Registered adapter: TuneCore"
+        },
+        {
+          "type": "info",
+          "text": "[DistributorService] Registered adapter: CDBaby"
+        },
+        {
+          "type": "info",
+          "text": "[DistributorService] Registered adapter: Symphonic"
+        },
+        {
+          "type": "debug",
+          "text": "[AgentRegistry] Pre-warming Generalist agent..."
+        },
+        {
+          "type": "debug",
+          "text": "[AgentRegistry] Loading agent 'generalist' (attempt 1)..."
+        },
+        {
+          "type": "info",
+          "text": "[RemoteRelay] Connecting local P2P WebSocket to ws://localhost:4242"
+        },
+        {
+          "type": "info",
+          "text": "🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙"
+        },
+        {
+          "type": "log",
+          "text": "i18next: languageChanged en-US"
+        },
+        {
+          "type": "log",
+          "text": "i18next: initialized {debug: true, initAsync: true, ns: Array(1), defaultNS: Array(1), fallbackLng: Array(1)}"
+        },
+        {
+          "type": "debug",
+          "text": "indii.music"
+        },
+        {
+          "type": "warning",
+          "text": "Lit is in dev mode. Not recommended for production! See https://lit.dev/msg/dev-mode for more information."
+        },
+        {
+          "type": "debug",
+          "text": "[Auth] Initializing Auth Listener..."
+        },
+        {
+          "type": "info",
+          "text": "[RemoteRelay] 🔐 Setting up auth listener..."
+        },
+        {
+          "type": "debug",
+          "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}"
+        },
+        {
+          "type": "debug",
+          "text": "[AuthProxy] returning null"
+        },
+        {
+          "type": "info",
+          "text": "[RemoteRelay/Firestore] 🔍 Command listener effect triggered, enabled=false"
+        },
+        {
+          "type": "info",
+          "text": "[RemoteRelay/Firestore] ⏸️ Not enabled — skipping command listener"
+        },
+        {
+          "type": "debug",
+          "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}"
+        },
+        {
+          "type": "debug",
+          "text": "[AuthProxy] returning null"
+        },
+        {
+          "type": "debug",
+          "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}"
+        },
+        {
+          "type": "debug",
+          "text": "[AuthProxy] returning null"
+        },
+        {
+          "type": "debug",
+          "text": "[Auth] Initializing Auth Listener..."
+        },
+        {
+          "type": "info",
+          "text": "[RemoteRelay] 🔐 Setting up auth listener..."
+        },
+        {
+          "type": "debug",
+          "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}"
+        },
+        {
+          "type": "debug",
+          "text": "[AuthProxy] returning null"
+        },
+        {
+          "type": "info",
+          "text": "[RemoteRelay/Firestore] 🔍 Command listener effect triggered, enabled=false"
+        },
+        {
+          "type": "info",
+          "text": "[RemoteRelay/Firestore] ⏸️ Not enabled — skipping command listener"
+        },
+        {
+          "type": "debug",
+          "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}"
+        },
+        {
+          "type": "debug",
+          "text": "[AuthProxy] returning null"
+        },
+        {
+          "type": "info",
+          "text": "[Firebase] Performance Monitoring initialized"
+        },
+        {
+          "type": "debug",
+          "text": "NetworkQualityMonitor: quality changed to 4g (10Mbps, 50ms RTT)"
+        },
+        {
+          "type": "info",
+          "text": "NetworkQualityMonitor: initialized"
+        },
+        {
+          "type": "debug",
+          "text": "[OfflineSync] IndexedDB initialized"
+        },
+        {
+          "type": "info",
+          "text": "MediaCacheManager: IndexedDB initialized"
+        },
+        {
+          "type": "info",
+          "text": "[Phase 2] Memory and orchestration services initialized"
+        },
+        {
+          "type": "info",
+          "text": "MediaCacheManager: total cache size = 0.00MB"
+        },
+        {
+          "type": "info",
+          "text": "[Phase 3] Observability and performance monitoring initialized"
+        },
+        {
+          "type": "info",
+          "text": "[WebVitals] Core Web Vitals monitoring initialized"
+        },
+        {
+          "type": "info",
+          "text": "[Phase 1] PWA and offline services initialized"
+        },
+        {
+          "type": "info",
+          "text": "[WebVitals] TTFB: 5.0ms (good)"
+        },
+        {
+          "type": "info",
+          "text": "[Auth] onAuthStateChanged fired. User: null, lastKnownUser: null"
+        },
+        {
+          "type": "info",
+          "text": "[Auth] Steady state reached. Setting authLoading to false. User: null"
+        },
+        {
+          "type": "info",
+          "text": "[RemoteRelay] 🔐 Auth state changed: SIGNED OUT"
+        },
+        {
+          "type": "info",
+          "text": "[WebVitals] FCP: 648.0ms (good)"
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 403 ()"
+        },
+        {
+          "type": "error",
+          "text": "FirebaseError: Installations: Create Installation request failed with error \"403 PERMISSION_DENIED: Requests from referer http://localhost:4242/ are blocked.\" (installations/request-failed).\n    at getErrorFromResponse (http://localhost:4242/node_modules/.vite/deps/chunk-L7D2RWHQ.js?v=aec6a253:70:24)\n    at async createInstallationRequest (http://localhost:4242/node_modules/.vite/deps/chunk-L7D2RWHQ.js?v=aec6a253:136:11)\n    at async registerInstallation (http://localhost:4242/node_modules/.vite/deps/chunk-L7D2RWHQ.js?v=aec6a253:338:41)"
+        },
+        {
+          "type": "debug",
+          "text": "[AgentRegistry] Agent 'generalist' loaded successfully"
+        },
+        {
+          "type": "debug",
+          "text": "[AgentRegistry] Generalist agent pre-warmed successfully"
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 403 ()"
+        },
+        {
+          "type": "info",
+          "text": "[2026-06-22T22:38:42.213Z]  Performance: Could not fetch config, will use default configs"
+        },
+        {
+          "type": "pageerror",
+          "text": "Installations: Create Installation request failed with error \"403 PERMISSION_DENIED: Requests from referer http://localhost:4242/ are blocked.\" (installations/request-failed)."
+        }
+      ],
+      "network": [
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/distribution",
+          "status": 200,
+          "contentType": "text/html",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/node_modules/vite/dist/client/env.mjs",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/modules/distribution/components/TransmissionMonitor.tsx",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/components/shared/UploadQueueMonitor.tsx",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/components/shared/AudioPIPPlayer.tsx",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/core/store/slices/creative/index.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/core/store/slices/distributionSlice.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/core/store/slices/audioIntelligenceSlice.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/core/store/slices/audioPlayerSlice.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/core/store/slices/audioGenerationSlice.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/core/store/slices/uploadQueueSlice.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/core/store/slices/analyticsSlice.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/audio/AudioService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/node_modules/.vite/deps/firebase_firestore.js?v=aec6a253",
+          "status": 304,
+          "contentType": "",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/DistributionService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/audio/AudioContextManager.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/node_modules/driver.js/dist/driver.css",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/core/store/slices/creative/creativeHistorySlice.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/core/store/slices/creative/creativeControlsSlice.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/core/store/slices/creative/designHistorySlice.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/DistributionSyncService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/DistributorService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/audio/AudioIntelligenceService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/audio/FingerprintService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/audio/AudioPersistenceService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/FirestoreService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/node_modules/.vite/deps/firebase_functions.js?v=aec6a253",
+          "status": 304,
+          "contentType": "",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/DistributionSchemas.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/ISRCService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/UPCService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/TaxService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/music/MusicLibraryService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/DistributionPersistenceService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/DeliveryService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/CurrencyConversionService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/proprietary-ingestion/validation.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/adapters/DistroKidAdapter.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/adapters/TuneCoreAdapter.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/adapters/CDBabyAdapter.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/adapters/SymphonicAdapter.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/audio/AudioAnalysisService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/licensing/SyncMetadataTaggingService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/audio/StyleMemoryStore.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/audio/EnergyMapService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/audio/AcousticFingerprintService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/business-harness/DistributionDdexCompiler.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/business-harness/UploadIntakeHarnessService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/agent/definitions/VideoAgent.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/agent/definitions/DistributionAgent.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/agent/definitions/MusicAgent.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/agent/definitions/CreativeAgent.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/agent/definitions/AnalyticsAgent.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/proprietary-ingestion/IngestionNotificationService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/audio/TranscodingService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/adapters/BaseDistributorAdapter.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/EarningsService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/transport/SFTPTransporter.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/audio/DSPComplianceValidator.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/persistence/MetadataPersistenceService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/proprietary-ingestion/IngestionMapper.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/intelligence/generators/HighLevelAPI.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/shared/src/index.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/agent/fine-tuned-endpoints.generated.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/agent/tools/AnalysisTools.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/finance/prompt.md?import&raw",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/agent/tools/MusicTools.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/agent/tools/VideoTools.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/marketing/prompt.md?import&raw",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/publicist/prompt.md?import&raw",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/road/prompt.md?import&raw",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/video/prompt.md?import&raw",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/publishing/prompt.md?import&raw",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/hospitality/prompt.md?import&raw",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/event-planner/prompt.md?import&raw",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/social/prompt.md?import&raw",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/brand/prompt.md?import&raw",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/licensing/prompt.md?import&raw",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/agent/tools/DistributionTools.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/distribution/prompt.md?import&raw",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/creative/prompt.md?import&raw",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/agent/tools/AnalyticsTools.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/analytics/prompt.md?import&raw",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/music/prompt.md?import&raw",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/proprietary-ingestion/IngestionParser.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/proprietary-ingestion/IngestionNotificationMapper.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/shared/src/services/AuthService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/shared/src/schemas/api.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/shared/src/schemas/env.schema.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/shared/src/schemas/workflowState.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/shared/src/schemas/agentLoopState.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/shared/src/types/ai.dto.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/shared/src/types/errors.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/shared/src/ipc/electron-api.types.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/shared/src/services/business-harness/HarnessCompiler.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/shared/src/services/business-harness/types.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/metadata/MetadataOrchestrator.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/video/VideoGenerationService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/video/PerformanceVideoService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/creative/CreativeStorageService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/metadata/TrackLibraryService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/modules/creative/video/schemas.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/metadata/types.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/observability/BundleAnalysisService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/conductor/prompt.md?import&raw",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/brand/agent_card.json?import",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/creative/agent_card.json?import",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/indii_curriculum/agent_card.json?import",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/finance/agent_card.json?import",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/legal/agent_card.json?import",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/distribution/agent_card.json?import",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/licensing/agent_card.json?import",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/merchandise/agent_card.json?import",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/marketing/agent_card.json?import",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/music/agent_card.json?import",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/hospitality/agent_card.json?import",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/event-planner/agent_card.json?import",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/publicist/agent_card.json?import",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/publishing/agent_card.json?import",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/road/agent_card.json?import",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/social/agent_card.json?import",
+          "status": 304,
+          "contentType": "",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/analytics/agent_card.json?import",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/conductor/agent_card.json?import",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/default/agent_card.json?import",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/video/agent_card.json?import",
+          "status": 304,
+          "contentType": "",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/modules/creative/tools.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "POST",
+          "url": "https://firebaseinstallations.googleapis.com/v1/projects/indii-music-founder/installations",
+          "status": 403,
+          "contentType": "application/json; charset=UTF-8",
+          "timing": null
+        },
+        {
+          "method": "POST",
+          "url": "https://firebaseinstallations.googleapis.com/v1/projects/indii-music-founder/installations",
+          "status": 403,
+          "contentType": "application/json; charset=UTF-8",
+          "timing": null
+        }
+      ]
+    },
+    {
+      "route": "/creative",
+      "label": "creative-direct",
+      "status": 200,
+      "ms": 944,
+      "title": "indii.music",
+      "url": "http://localhost:4242/creative",
+      "bodyText": "indii.music FOUNDERS RELEASE • V1.0 Sign In Create Account EMAIL ADDRESS PASSWORD Sign In Forgot Password? PRIVACY POLICY • TERMS OF SERVICE • © 2026 NEW DETROIT MUSIC LLC",
+      "screenshot": "artifacts/mega_audio_analyzer_2026-06-22_screenshots/creative-direct.png",
+      "consoleDeltaStart": 190,
+      "networkDeltaStart": 380,
+      "console": [
+        {
+          "type": "info",
+          "text": "[WebVitals] CLS: 0.0ms (good)"
+        },
+        {
+          "type": "info",
+          "text": "[WebVitals] LCP: 764.0ms (good)"
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connecting..."
+        },
+        {
+          "type": "debug",
+          "text": "[vite] connected."
+        },
+        {
+          "type": "info",
+          "text": "%cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold"
+        },
+        {
+          "type": "log",
+          "text": "[indii.music][Env] Initialized: {hasMapsKey: false, mapsEnabled: false}"
+        },
+        {
+          "type": "debug",
+          "text": "[Firebase] Connected to Firestore emulator on port 8080"
+        },
+        {
+          "type": "debug",
+          "text": "[Firebase] Connected to Storage emulator on port 9199"
+        },
+        {
+          "type": "debug",
+          "text": "[Firebase] Connected to Auth emulator on port 9099"
+        },
+        {
+          "type": "debug",
+          "text": "[Firebase] Connected to Functions emulator on port 5001"
+        },
+        {
+          "type": "debug",
+          "text": "[App Check] Auto-debug mode enabled (check console for debug token)"
+        },
+        {
+          "type": "info",
+          "text": "[App Check] Skipped in emulator mode (dev: true, emulator: true). Auth/Firestore will work without App Check validation."
+        },
+        {
+          "type": "info",
+          "text": "[DistributorService] Registered adapter: DistroKid"
+        },
+        {
+          "type": "info",
+          "text": "[DistributorService] Registered adapter: TuneCore"
+        },
+        {
+          "type": "info",
+          "text": "[DistributorService] Registered adapter: CDBaby"
+        },
+        {
+          "type": "info",
+          "text": "[DistributorService] Registered adapter: Symphonic"
+        },
+        {
+          "type": "debug",
+          "text": "[AgentRegistry] Pre-warming Generalist agent..."
+        },
+        {
+          "type": "debug",
+          "text": "[AgentRegistry] Loading agent 'generalist' (attempt 1)..."
+        },
+        {
+          "type": "info",
+          "text": "[RemoteRelay] Connecting local P2P WebSocket to ws://localhost:4242"
+        },
+        {
+          "type": "info",
+          "text": "🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙"
+        },
+        {
+          "type": "log",
+          "text": "i18next: languageChanged en-US"
+        },
+        {
+          "type": "log",
+          "text": "i18next: initialized {debug: true, initAsync: true, ns: Array(1), defaultNS: Array(1), fallbackLng: Array(1)}"
+        },
+        {
+          "type": "debug",
+          "text": "indii.music"
+        },
+        {
+          "type": "warning",
+          "text": "Lit is in dev mode. Not recommended for production! See https://lit.dev/msg/dev-mode for more information."
+        },
+        {
+          "type": "debug",
+          "text": "[Auth] Initializing Auth Listener..."
+        },
+        {
+          "type": "info",
+          "text": "[RemoteRelay] 🔐 Setting up auth listener..."
+        },
+        {
+          "type": "debug",
+          "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}"
+        },
+        {
+          "type": "debug",
+          "text": "[AuthProxy] returning null"
+        },
+        {
+          "type": "info",
+          "text": "[RemoteRelay/Firestore] 🔍 Command listener effect triggered, enabled=false"
+        },
+        {
+          "type": "info",
+          "text": "[RemoteRelay/Firestore] ⏸️ Not enabled — skipping command listener"
+        },
+        {
+          "type": "debug",
+          "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}"
+        },
+        {
+          "type": "debug",
+          "text": "[AuthProxy] returning null"
+        },
+        {
+          "type": "debug",
+          "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}"
+        },
+        {
+          "type": "debug",
+          "text": "[AuthProxy] returning null"
+        },
+        {
+          "type": "debug",
+          "text": "[Auth] Initializing Auth Listener..."
+        },
+        {
+          "type": "info",
+          "text": "[RemoteRelay] 🔐 Setting up auth listener..."
+        },
+        {
+          "type": "debug",
+          "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}"
+        },
+        {
+          "type": "debug",
+          "text": "[AuthProxy] returning null"
+        },
+        {
+          "type": "info",
+          "text": "[RemoteRelay/Firestore] 🔍 Command listener effect triggered, enabled=false"
+        },
+        {
+          "type": "info",
+          "text": "[RemoteRelay/Firestore] ⏸️ Not enabled — skipping command listener"
+        },
+        {
+          "type": "debug",
+          "text": "[AuthProxy] currentUser getter accessed. {_signedOut: undefined, targetCurrentUser: null, isE2EMockEnabled: false}"
+        },
+        {
+          "type": "debug",
+          "text": "[AuthProxy] returning null"
+        },
+        {
+          "type": "info",
+          "text": "[Firebase] Performance Monitoring initialized"
+        },
+        {
+          "type": "debug",
+          "text": "NetworkQualityMonitor: quality changed to 4g (10Mbps, 50ms RTT)"
+        },
+        {
+          "type": "info",
+          "text": "NetworkQualityMonitor: initialized"
+        },
+        {
+          "type": "debug",
+          "text": "[OfflineSync] IndexedDB initialized"
+        },
+        {
+          "type": "info",
+          "text": "MediaCacheManager: IndexedDB initialized"
+        },
+        {
+          "type": "info",
+          "text": "[WebVitals] Core Web Vitals monitoring initialized"
+        },
+        {
+          "type": "info",
+          "text": "[Phase 3] Observability and performance monitoring initialized"
+        },
+        {
+          "type": "info",
+          "text": "[Phase 1] PWA and offline services initialized"
+        },
+        {
+          "type": "info",
+          "text": "[Phase 2] Memory and orchestration services initialized"
+        },
+        {
+          "type": "info",
+          "text": "MediaCacheManager: total cache size = 0.00MB"
+        },
+        {
+          "type": "info",
+          "text": "[WebVitals] TTFB: 3.4ms (good)"
+        },
+        {
+          "type": "info",
+          "text": "[Auth] onAuthStateChanged fired. User: null, lastKnownUser: null"
+        },
+        {
+          "type": "info",
+          "text": "[Auth] Steady state reached. Setting authLoading to false. User: null"
+        },
+        {
+          "type": "info",
+          "text": "[RemoteRelay] 🔐 Auth state changed: SIGNED OUT"
+        },
+        {
+          "type": "info",
+          "text": "[WebVitals] FCP: 280.0ms (good)"
+        },
+        {
+          "type": "debug",
+          "text": "[AgentRegistry] Agent 'generalist' loaded successfully"
+        },
+        {
+          "type": "debug",
+          "text": "[AgentRegistry] Generalist agent pre-warmed successfully"
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 403 ()"
+        },
+        {
+          "type": "error",
+          "text": "FirebaseError: Installations: Create Installation request failed with error \"403 PERMISSION_DENIED: Requests from referer http://localhost:4242/ are blocked.\" (installations/request-failed).\n    at getErrorFromResponse (http://localhost:4242/node_modules/.vite/deps/chunk-L7D2RWHQ.js?v=aec6a253:70:24)\n    at async createInstallationRequest (http://localhost:4242/node_modules/.vite/deps/chunk-L7D2RWHQ.js?v=aec6a253:136:11)\n    at async registerInstallation (http://localhost:4242/node_modules/.vite/deps/chunk-L7D2RWHQ.js?v=aec6a253:338:41)"
+        },
+        {
+          "type": "error",
+          "text": "Failed to load resource: the server responded with a status of 403 ()"
+        },
+        {
+          "type": "info",
+          "text": "[2026-06-22T22:38:43.229Z]  Performance: Could not fetch config, will use default configs"
+        },
+        {
+          "type": "pageerror",
+          "text": "Installations: Create Installation request failed with error \"403 PERMISSION_DENIED: Requests from referer http://localhost:4242/ are blocked.\" (installations/request-failed)."
+        }
+      ],
+      "network": [
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/creative",
+          "status": 200,
+          "contentType": "text/html",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/node_modules/vite/dist/client/env.mjs",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/modules/distribution/components/TransmissionMonitor.tsx",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/components/shared/UploadQueueMonitor.tsx",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/components/shared/AudioPIPPlayer.tsx",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/node_modules/.vite/deps/firebase_firestore.js?v=aec6a253",
+          "status": 304,
+          "contentType": "",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/core/store/slices/creative/index.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/core/store/slices/distributionSlice.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/core/store/slices/audioIntelligenceSlice.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/core/store/slices/audioGenerationSlice.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/core/store/slices/audioPlayerSlice.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/core/store/slices/uploadQueueSlice.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/core/store/slices/analyticsSlice.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/audio/AudioService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/DistributionService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/audio/AudioContextManager.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/node_modules/driver.js/dist/driver.css",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/node_modules/.vite/deps/firebase_functions.js?v=aec6a253",
+          "status": 304,
+          "contentType": "",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/core/store/slices/creative/creativeHistorySlice.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/core/store/slices/creative/creativeControlsSlice.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/core/store/slices/creative/designHistorySlice.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/DistributionSyncService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/audio/FingerprintService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/audio/AudioIntelligenceService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/DistributorService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/FirestoreService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/audio/AudioPersistenceService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/DistributionSchemas.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/ISRCService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/UPCService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/TaxService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/music/MusicLibraryService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/audio/AudioAnalysisService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/audio/StyleMemoryStore.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/audio/AcousticFingerprintService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/audio/EnergyMapService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/DistributionPersistenceService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/licensing/SyncMetadataTaggingService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/DeliveryService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/proprietary-ingestion/validation.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/adapters/DistroKidAdapter.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/CurrencyConversionService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/adapters/TuneCoreAdapter.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/adapters/SymphonicAdapter.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/adapters/CDBabyAdapter.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/business-harness/DistributionDdexCompiler.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/business-harness/UploadIntakeHarnessService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/agent/definitions/VideoAgent.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/agent/definitions/DistributionAgent.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/agent/definitions/MusicAgent.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/agent/definitions/CreativeAgent.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/agent/definitions/AnalyticsAgent.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/audio/DSPComplianceValidator.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/persistence/MetadataPersistenceService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/proprietary-ingestion/IngestionNotificationService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/audio/TranscodingService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/proprietary-ingestion/IngestionMapper.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/transport/SFTPTransporter.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/EarningsService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/adapters/BaseDistributorAdapter.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/intelligence/generators/HighLevelAPI.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/shared/src/index.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/agent/fine-tuned-endpoints.generated.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/agent/tools/AnalysisTools.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/marketing/prompt.md?import&raw",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/finance/prompt.md?import&raw",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/social/prompt.md?import&raw",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/agent/tools/VideoTools.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/agent/tools/MusicTools.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/event-planner/prompt.md?import&raw",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/publicist/prompt.md?import&raw",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/video/prompt.md?import&raw",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/road/prompt.md?import&raw",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/hospitality/prompt.md?import&raw",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/publishing/prompt.md?import&raw",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/licensing/prompt.md?import&raw",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/brand/prompt.md?import&raw",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/agent/tools/DistributionTools.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/distribution/prompt.md?import&raw",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/music/prompt.md?import&raw",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/agent/tools/AnalyticsTools.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/analytics/prompt.md?import&raw",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/proprietary-ingestion/IngestionParser.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/distribution/proprietary-ingestion/IngestionNotificationMapper.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/creative/prompt.md?import&raw",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/shared/src/services/AuthService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/shared/src/schemas/env.schema.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/shared/src/schemas/workflowState.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/shared/src/schemas/agentLoopState.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/shared/src/schemas/api.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/shared/src/types/errors.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/shared/src/ipc/electron-api.types.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/shared/src/services/business-harness/HarnessCompiler.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/shared/src/services/business-harness/types.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/packages/shared/src/types/ai.dto.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/metadata/MetadataOrchestrator.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/video/VideoGenerationService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/creative/CreativeStorageService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/video/PerformanceVideoService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/metadata/TrackLibraryService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/metadata/types.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/modules/creative/video/schemas.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/services/observability/BundleAnalysisService.ts",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/conductor/prompt.md?import&raw",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/brand/agent_card.json?import",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/creative/agent_card.json?import",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/indii_curriculum/agent_card.json?import",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/finance/agent_card.json?import",
+          "status": 200,
+          "contentType": "text/javascript",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/distribution/agent_card.json?import",
+          "status": 304,
+          "contentType": "",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/legal/agent_card.json?import",
+          "status": 304,
+          "contentType": "",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/licensing/agent_card.json?import",
+          "status": 304,
+          "contentType": "",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/marketing/agent_card.json?import",
+          "status": 304,
+          "contentType": "",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/event-planner/agent_card.json?import",
+          "status": 304,
+          "contentType": "",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/merchandise/agent_card.json?import",
+          "status": 304,
+          "contentType": "",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/music/agent_card.json?import",
+          "status": 304,
+          "contentType": "",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/hospitality/agent_card.json?import",
+          "status": 304,
+          "contentType": "",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/publicist/agent_card.json?import",
+          "status": 304,
+          "contentType": "",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/publishing/agent_card.json?import",
+          "status": 304,
+          "contentType": "",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/road/agent_card.json?import",
+          "status": 304,
+          "contentType": "",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/social/agent_card.json?import",
+          "status": 304,
+          "contentType": "",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/video/agent_card.json?import",
+          "status": 304,
+          "contentType": "",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/analytics/agent_card.json?import",
+          "status": 304,
+          "contentType": "",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/conductor/agent_card.json?import",
+          "status": 304,
+          "contentType": "",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/@fs/Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/agents/default/agent_card.json?import",
+          "status": 304,
+          "contentType": "",
+          "timing": null
+        },
+        {
+          "method": "GET",
+          "url": "http://localhost:4242/src/modules/creative/tools.ts",
+          "status": 304,
+          "contentType": "",
+          "timing": null
+        },
+        {
+          "method": "POST",
+          "url": "https://firebaseinstallations.googleapis.com/v1/projects/indii-music-founder/installations",
+          "status": 403,
+          "contentType": "application/json; charset=UTF-8",
+          "timing": null
+        },
+        {
+          "method": "POST",
+          "url": "https://firebaseinstallations.googleapis.com/v1/projects/indii-music-founder/installations",
+          "status": 403,
+          "contentType": "application/json; charset=UTF-8",
+          "timing": null
+        }
+      ]
+    },
+    {
+      "route": "/audio-analyzer",
+      "label": "audio-upload-fixture",
+      "fileInputs": 0,
+      "action": "none",
+      "consoleDeltaStart": 318,
+      "networkDeltaStart": 634,
+      "bodyText": "indii.music FOUNDERS RELEASE • V1.0 Sign In Create Account EMAIL ADDRESS PASSWORD Sign In Forgot Password? PRIVACY POLICY • TERMS OF SERVICE • © 2026 NEW DETROIT MUSIC LLC",
+      "screenshot": "artifacts/mega_audio_analyzer_2026-06-22_screenshots/audio-upload-fixture.png",
+      "console": [],
+      "network": []
+    }
+  ],
+  "api": [
+    {
+      "method": "OPTIONS",
+      "url": "/api/audio/upload",
+      "status": 404,
+      "ms": 8,
+      "contentType": "application/json",
+      "bodySummary": "{\"success\":false,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"API endpoint /api/audio/upload not found on local dev server. Use Firebase emulator or local main process instead.\"}}",
+      "error": null
+    },
+    {
+      "method": "POST",
+      "url": "/api/audio/upload",
+      "status": 404,
+      "ms": 6,
+      "contentType": "application/json",
+      "bodySummary": "{\"success\":false,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"API endpoint /api/audio/upload not found on local dev server. Use Firebase emulator or local main process instead.\"}}",
+      "error": null
+    },
+    {
+      "method": "GET",
+      "url": "/api/audio/upload",
+      "status": 404,
+      "ms": 0,
+      "contentType": "application/json",
+      "bodySummary": "{\"success\":false,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"API endpoint /api/audio/upload not found on local dev server. Use Firebase emulator or local main process instead.\"}}",
+      "error": null
+    },
+    {
+      "method": "OPTIONS",
+      "url": "/api/audio/analyze",
+      "status": 404,
+      "ms": 1,
+      "contentType": "application/json",
+      "bodySummary": "{\"success\":false,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"API endpoint /api/audio/analyze not found on local dev server. Use Firebase emulator or local main process instead.\"}}",
+      "error": null
+    },
+    {
+      "method": "POST",
+      "url": "/api/audio/analyze",
+      "status": 404,
+      "ms": 0,
+      "contentType": "application/json",
+      "bodySummary": "{\"success\":false,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"API endpoint /api/audio/analyze not found on local dev server. Use Firebase emulator or local main process instead.\"}}",
+      "error": null
+    },
+    {
+      "method": "GET",
+      "url": "/api/audio/analyze",
+      "status": 404,
+      "ms": 1,
+      "contentType": "application/json",
+      "bodySummary": "{\"success\":false,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"API endpoint /api/audio/analyze not found on local dev server. Use Firebase emulator or local main process instead.\"}}",
+      "error": null
+    },
+    {
+      "method": "OPTIONS",
+      "url": "/api/audio/analysis",
+      "status": 404,
+      "ms": 3,
+      "contentType": "application/json",
+      "bodySummary": "{\"success\":false,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"API endpoint /api/audio/analysis not found on local dev server. Use Firebase emulator or local main process instead.\"}}",
+      "error": null
+    },
+    {
+      "method": "POST",
+      "url": "/api/audio/analysis",
+      "status": 404,
+      "ms": 1,
+      "contentType": "application/json",
+      "bodySummary": "{\"success\":false,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"API endpoint /api/audio/analysis not found on local dev server. Use Firebase emulator or local main process instead.\"}}",
+      "error": null
+    },
+    {
+      "method": "GET",
+      "url": "/api/audio/analysis",
+      "status": 404,
+      "ms": 1,
+      "contentType": "application/json",
+      "bodySummary": "{\"success\":false,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"API endpoint /api/audio/analysis not found on local dev server. Use Firebase emulator or local main process instead.\"}}",
+      "error": null
+    },
+    {
+      "method": "OPTIONS",
+      "url": "/api/audio/metadata",
+      "status": 404,
+      "ms": 4,
+      "contentType": "application/json",
+      "bodySummary": "{\"success\":false,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"API endpoint /api/audio/metadata not found on local dev server. Use Firebase emulator or local main process instead.\"}}",
+      "error": null
+    },
+    {
+      "method": "POST",
+      "url": "/api/audio/metadata",
+      "status": 404,
+      "ms": 2,
+      "contentType": "application/json",
+      "bodySummary": "{\"success\":false,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"API endpoint /api/audio/metadata not found on local dev server. Use Firebase emulator or local main process instead.\"}}",
+      "error": null
+    },
+    {
+      "method": "GET",
+      "url": "/api/audio/metadata",
+      "status": 404,
+      "ms": 1,
+      "contentType": "application/json",
+      "bodySummary": "{\"success\":false,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"API endpoint /api/audio/metadata not found on local dev server. Use Firebase emulator or local main process instead.\"}}",
+      "error": null
+    },
+    {
+      "method": "OPTIONS",
+      "url": "/api/audio/dna",
+      "status": 404,
+      "ms": 1,
+      "contentType": "application/json",
+      "bodySummary": "{\"success\":false,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"API endpoint /api/audio/dna not found on local dev server. Use Firebase emulator or local main process instead.\"}}",
+      "error": null
+    },
+    {
+      "method": "POST",
+      "url": "/api/audio/dna",
+      "status": 404,
+      "ms": 0,
+      "contentType": "application/json",
+      "bodySummary": "{\"success\":false,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"API endpoint /api/audio/dna not found on local dev server. Use Firebase emulator or local main process instead.\"}}",
+      "error": null
+    },
+    {
+      "method": "GET",
+      "url": "/api/audio/dna",
+      "status": 404,
+      "ms": 2,
+      "contentType": "application/json",
+      "bodySummary": "{\"success\":false,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"API endpoint /api/audio/dna not found on local dev server. Use Firebase emulator or local main process instead.\"}}",
+      "error": null
+    },
+    {
+      "method": "OPTIONS",
+      "url": "/api/music-library",
+      "status": 404,
+      "ms": 3,
+      "contentType": "application/json",
+      "bodySummary": "{\"success\":false,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"API endpoint /api/music-library not found on local dev server. Use Firebase emulator or local main process instead.\"}}",
+      "error": null
+    },
+    {
+      "method": "POST",
+      "url": "/api/music-library",
+      "status": 404,
+      "ms": 1,
+      "contentType": "application/json",
+      "bodySummary": "{\"success\":false,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"API endpoint /api/music-library not found on local dev server. Use Firebase emulator or local main process instead.\"}}",
+      "error": null
+    },
+    {
+      "method": "GET",
+      "url": "/api/music-library",
+      "status": 404,
+      "ms": 1,
+      "contentType": "application/json",
+      "bodySummary": "{\"success\":false,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"API endpoint /api/music-library not found on local dev server. Use Firebase emulator or local main process instead.\"}}",
+      "error": null
+    },
+    {
+      "method": "OPTIONS",
+      "url": "/api/music-library/analysis",
+      "status": 404,
+      "ms": 0,
+      "contentType": "application/json",
+      "bodySummary": "{\"success\":false,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"API endpoint /api/music-library/analysis not found on local dev server. Use Firebase emulator or local main process instead.\"}}",
+      "error": null
+    },
+    {
+      "method": "POST",
+      "url": "/api/music-library/analysis",
+      "status": 404,
+      "ms": 1,
+      "contentType": "application/json",
+      "bodySummary": "{\"success\":false,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"API endpoint /api/music-library/analysis not found on local dev server. Use Firebase emulator or local main process instead.\"}}",
+      "error": null
+    },
+    {
+      "method": "GET",
+      "url": "/api/music-library/analysis",
+      "status": 404,
+      "ms": 0,
+      "contentType": "application/json",
+      "bodySummary": "{\"success\":false,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"API endpoint /api/music-library/analysis not found on local dev server. Use Firebase emulator or local main process instead.\"}}",
+      "error": null
+    },
+    {
+      "method": "OPTIONS",
+      "url": "/api/distribution/metadata",
+      "status": 404,
+      "ms": 0,
+      "contentType": "application/json",
+      "bodySummary": "{\"success\":false,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"API endpoint /api/distribution/metadata not found on local dev server. Use Firebase emulator or local main process instead.\"}}",
+      "error": null
+    },
+    {
+      "method": "POST",
+      "url": "/api/distribution/metadata",
+      "status": 404,
+      "ms": 1,
+      "contentType": "application/json",
+      "bodySummary": "{\"success\":false,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"API endpoint /api/distribution/metadata not found on local dev server. Use Firebase emulator or local main process instead.\"}}",
+      "error": null
+    },
+    {
+      "method": "GET",
+      "url": "/api/distribution/metadata",
+      "status": 404,
+      "ms": 0,
+      "contentType": "application/json",
+      "bodySummary": "{\"success\":false,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"API endpoint /api/distribution/metadata not found on local dev server. Use Firebase emulator or local main process instead.\"}}",
+      "error": null
+    },
+    {
+      "method": "OPTIONS",
+      "url": "/api/distribution/handoff",
+      "status": 404,
+      "ms": 0,
+      "contentType": "application/json",
+      "bodySummary": "{\"success\":false,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"API endpoint /api/distribution/handoff not found on local dev server. Use Firebase emulator or local main process instead.\"}}",
+      "error": null
+    },
+    {
+      "method": "POST",
+      "url": "/api/distribution/handoff",
+      "status": 404,
+      "ms": 0,
+      "contentType": "application/json",
+      "bodySummary": "{\"success\":false,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"API endpoint /api/distribution/handoff not found on local dev server. Use Firebase emulator or local main process instead.\"}}",
+      "error": null
+    },
+    {
+      "method": "GET",
+      "url": "/api/distribution/handoff",
+      "status": 404,
+      "ms": 1,
+      "contentType": "application/json",
+      "bodySummary": "{\"success\":false,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"API endpoint /api/distribution/handoff not found on local dev server. Use Firebase emulator or local main process instead.\"}}",
+      "error": null
+    },
+    {
+      "method": "OPTIONS",
+      "url": "/api/creative/audio-handoff",
+      "status": 404,
+      "ms": 0,
+      "contentType": "application/json",
+      "bodySummary": "{\"success\":false,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"API endpoint /api/creative/audio-handoff not found on local dev server. Use Firebase emulator or local main process instead.\"}}",
+      "error": null
+    },
+    {
+      "method": "POST",
+      "url": "/api/creative/audio-handoff",
+      "status": 404,
+      "ms": 0,
+      "contentType": "application/json",
+      "bodySummary": "{\"success\":false,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"API endpoint /api/creative/audio-handoff not found on local dev server. Use Firebase emulator or local main process instead.\"}}",
+      "error": null
+    },
+    {
+      "method": "GET",
+      "url": "/api/creative/audio-handoff",
+      "status": 404,
+      "ms": 0,
+      "contentType": "application/json",
+      "bodySummary": "{\"success\":false,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"API endpoint /api/creative/audio-handoff not found on local dev server. Use Firebase emulator or local main process instead.\"}}",
+      "error": null
+    },
+    {
+      "method": "OPTIONS",
+      "url": "/api/video/audio-handoff",
+      "status": 404,
+      "ms": 1,
+      "contentType": "application/json",
+      "bodySummary": "{\"success\":false,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"API endpoint /api/video/audio-handoff not found on local dev server. Use Firebase emulator or local main process instead.\"}}",
+      "error": null
+    },
+    {
+      "method": "POST",
+      "url": "/api/video/audio-handoff",
+      "status": 404,
+      "ms": 0,
+      "contentType": "application/json",
+      "bodySummary": "{\"success\":false,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"API endpoint /api/video/audio-handoff not found on local dev server. Use Firebase emulator or local main process instead.\"}}",
+      "error": null
+    },
+    {
+      "method": "GET",
+      "url": "/api/video/audio-handoff",
+      "status": 404,
+      "ms": 0,
+      "contentType": "application/json",
+      "bodySummary": "{\"success\":false,\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"API endpoint /api/video/audio-handoff not found on local dev server. Use Firebase emulator or local main process instead.\"}}",
+      "error": null
+    },
+    {
+      "method": "OPTIONS",
+      "url": "/audio/upload",
+      "status": 204,
+      "ms": 0,
+      "contentType": "",
+      "bodySummary": "",
+      "error": null
+    },
+    {
+      "method": "POST",
+      "url": "/audio/upload",
+      "status": 404,
+      "ms": 1,
+      "contentType": "",
+      "bodySummary": "",
+      "error": null
+    },
+    {
+      "method": "GET",
+      "url": "/audio/upload",
+      "status": 200,
+      "ms": 2,
+      "contentType": "text/html",
+      "bodySummary": "<!doctype html> <html lang=\"en\"> <head> <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\"; injectIntoGlobalHook(window); window.$RefreshReg$ = () => {}; window.$RefreshSig$ = () => (type) => type;</script> <script type=\"module\" src=\"/@vite/client\"></script> <meta charset=\"UTF-8\" /> <!-- Favicon --> <link rel=\"icon\" type=\"image/svg+xml\" href=\"/favicon.svg\" /> <!-- PWA Manifest --> <link rel=\"manifest\" href=\"/manifest.json\" /> <!-- Mobile Viewport - Optimized for touch -",
+      "error": null
+    },
+    {
+      "method": "OPTIONS",
+      "url": "/audio/analyze",
+      "status": 204,
+      "ms": 1,
+      "contentType": "",
+      "bodySummary": "",
+      "error": null
+    },
+    {
+      "method": "POST",
+      "url": "/audio/analyze",
+      "status": 404,
+      "ms": 0,
+      "contentType": "",
+      "bodySummary": "",
+      "error": null
+    },
+    {
+      "method": "GET",
+      "url": "/audio/analyze",
+      "status": 200,
+      "ms": 3,
+      "contentType": "text/html",
+      "bodySummary": "<!doctype html> <html lang=\"en\"> <head> <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\"; injectIntoGlobalHook(window); window.$RefreshReg$ = () => {}; window.$RefreshSig$ = () => (type) => type;</script> <script type=\"module\" src=\"/@vite/client\"></script> <meta charset=\"UTF-8\" /> <!-- Favicon --> <link rel=\"icon\" type=\"image/svg+xml\" href=\"/favicon.svg\" /> <!-- PWA Manifest --> <link rel=\"manifest\" href=\"/manifest.json\" /> <!-- Mobile Viewport - Optimized for touch -",
+      "error": null
+    },
+    {
+      "method": "OPTIONS",
+      "url": "/audio/analysis",
+      "status": 204,
+      "ms": 0,
+      "contentType": "",
+      "bodySummary": "",
+      "error": null
+    },
+    {
+      "method": "POST",
+      "url": "/audio/analysis",
+      "status": 404,
+      "ms": 1,
+      "contentType": "",
+      "bodySummary": "",
+      "error": null
+    },
+    {
+      "method": "GET",
+      "url": "/audio/analysis",
+      "status": 200,
+      "ms": 2,
+      "contentType": "text/html",
+      "bodySummary": "<!doctype html> <html lang=\"en\"> <head> <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\"; injectIntoGlobalHook(window); window.$RefreshReg$ = () => {}; window.$RefreshSig$ = () => (type) => type;</script> <script type=\"module\" src=\"/@vite/client\"></script> <meta charset=\"UTF-8\" /> <!-- Favicon --> <link rel=\"icon\" type=\"image/svg+xml\" href=\"/favicon.svg\" /> <!-- PWA Manifest --> <link rel=\"manifest\" href=\"/manifest.json\" /> <!-- Mobile Viewport - Optimized for touch -",
+      "error": null
+    },
+    {
+      "method": "OPTIONS",
+      "url": "/music-library/analysis",
+      "status": 204,
+      "ms": 0,
+      "contentType": "",
+      "bodySummary": "",
+      "error": null
+    },
+    {
+      "method": "POST",
+      "url": "/music-library/analysis",
+      "status": 404,
+      "ms": 1,
+      "contentType": "",
+      "bodySummary": "",
+      "error": null
+    },
+    {
+      "method": "GET",
+      "url": "/music-library/analysis",
+      "status": 200,
+      "ms": 1,
+      "contentType": "text/html",
+      "bodySummary": "<!doctype html> <html lang=\"en\"> <head> <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\"; injectIntoGlobalHook(window); window.$RefreshReg$ = () => {}; window.$RefreshSig$ = () => (type) => type;</script> <script type=\"module\" src=\"/@vite/client\"></script> <meta charset=\"UTF-8\" /> <!-- Favicon --> <link rel=\"icon\" type=\"image/svg+xml\" href=\"/favicon.svg\" /> <!-- PWA Manifest --> <link rel=\"manifest\" href=\"/manifest.json\" /> <!-- Mobile Viewport - Optimized for touch -",
+      "error": null
+    },
+    {
+      "method": "OPTIONS",
+      "url": "/distribution/metadata",
+      "status": 204,
+      "ms": 0,
+      "contentType": "",
+      "bodySummary": "",
+      "error": null
+    },
+    {
+      "method": "POST",
+      "url": "/distribution/metadata",
+      "status": 404,
+      "ms": 0,
+      "contentType": "",
+      "bodySummary": "",
+      "error": null
+    },
+    {
+      "method": "GET",
+      "url": "/distribution/metadata",
+      "status": 200,
+      "ms": 2,
+      "contentType": "text/html",
+      "bodySummary": "<!doctype html> <html lang=\"en\"> <head> <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\"; injectIntoGlobalHook(window); window.$RefreshReg$ = () => {}; window.$RefreshSig$ = () => (type) => type;</script> <script type=\"module\" src=\"/@vite/client\"></script> <meta charset=\"UTF-8\" /> <!-- Favicon --> <link rel=\"icon\" type=\"image/svg+xml\" href=\"/favicon.svg\" /> <!-- PWA Manifest --> <link rel=\"manifest\" href=\"/manifest.json\" /> <!-- Mobile Viewport - Optimized for touch -",
+      "error": null
+    },
+    {
+      "method": "OPTIONS",
+      "url": "/creative/audio-handoff",
+      "status": 204,
+      "ms": 0,
+      "contentType": "",
+      "bodySummary": "",
+      "error": null
+    },
+    {
+      "method": "POST",
+      "url": "/creative/audio-handoff",
+      "status": 404,
+      "ms": 1,
+      "contentType": "",
+      "bodySummary": "",
+      "error": null
+    },
+    {
+      "method": "GET",
+      "url": "/creative/audio-handoff",
+      "status": 200,
+      "ms": 2,
+      "contentType": "text/html",
+      "bodySummary": "<!doctype html> <html lang=\"en\"> <head> <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\"; injectIntoGlobalHook(window); window.$RefreshReg$ = () => {}; window.$RefreshSig$ = () => (type) => type;</script> <script type=\"module\" src=\"/@vite/client\"></script> <meta charset=\"UTF-8\" /> <!-- Favicon --> <link rel=\"icon\" type=\"image/svg+xml\" href=\"/favicon.svg\" /> <!-- PWA Manifest --> <link rel=\"manifest\" href=\"/manifest.json\" /> <!-- Mobile Viewport - Optimized for touch -",
+      "error": null
+    },
+    {
+      "method": "OPTIONS",
+      "url": "/video/audio-handoff",
+      "status": 204,
+      "ms": 0,
+      "contentType": "",
+      "bodySummary": "",
+      "error": null
+    },
+    {
+      "method": "POST",
+      "url": "/video/audio-handoff",
+      "status": 404,
+      "ms": 0,
+      "contentType": "",
+      "bodySummary": "",
+      "error": null
+    },
+    {
+      "method": "GET",
+      "url": "/video/audio-handoff",
+      "status": 200,
+      "ms": 1,
+      "contentType": "text/html",
+      "bodySummary": "<!doctype html> <html lang=\"en\"> <head> <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\"; injectIntoGlobalHook(window); window.$RefreshReg$ = () => {}; window.$RefreshSig$ = () => (type) => type;</script> <script type=\"module\" src=\"/@vite/client\"></script> <meta charset=\"UTF-8\" /> <!-- Favicon --> <link rel=\"icon\" type=\"image/svg+xml\" href=\"/favicon.svg\" /> <!-- PWA Manifest --> <link rel=\"manifest\" href=\"/manifest.json\" /> <!-- Mobile Viewport - Optimized for touch -",
+      "error": null
+    }
+  ],
+  "envLeak": [
+    {
+      "url": "http://localhost:4242/audio-analyzer",
+      "matches": [],
+      "htmlLength": 4451
+    }
+  ],
+  "errors": [],
+  "finishedAt": "2026-06-22T22:38:44.886Z"
+}

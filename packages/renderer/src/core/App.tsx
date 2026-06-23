@@ -117,6 +117,7 @@ const MerchStudio = lazyWithRetry(() => import('../modules/merchandise/MerchStud
 const AudioAnalyzer = lazyWithRetry(() => import('../modules/tools/AudioAnalyzer'));
 const ObserverabilityDashboard = lazyWithRetry(() => import('../modules/observability/ObservabilityDashboard'));
 const HistoryDashboard = lazyWithRetry(() => import('../modules/history/HistoryDashboard'));
+const NotesModule = lazyWithRetry(() => import('../modules/notes/NotesModule'));
 const MultimodalGauntlet = lazyWithRetry(() => import('../modules/debug/MultimodalGauntlet'));
 const InvestorPortal = lazyWithRetry(() => import('../modules/investor/InvestorPortal'));
 const GhostCapture = lazyWithRetry(() => import('../modules/capture/GhostCapture'));
@@ -175,6 +176,7 @@ const MODULE_COMPONENTS: Partial<Record<ModuleId, React.LazyExoticComponent<Reac
     'observability': ObserverabilityDashboard,
     'select-org': SelectOrg,
     'history': HistoryDashboard,
+    'notes': NotesModule,
     'debug': MultimodalGauntlet,
     'investor': InvestorPortal,
     'capture': GhostCapture,
@@ -424,6 +426,28 @@ function PublicLegalPage({ type }: { type: 'privacy' | 'terms' }) {
     );
 }
 
+function UnauthenticatedApp() {
+    const location = useLocation();
+
+    useEffect(() => {
+        const isRoot = location.pathname === '/' || location.pathname === '';
+        const isWebProd = typeof window !== 'undefined' && window.location.hostname === 'founder.indii.music';
+
+        if (isRoot && isWebProd) {
+            window.location.replace('https://indii.music');
+        }
+    }, [location.pathname]);
+
+    const isRoot = location.pathname === '/' || location.pathname === '';
+    const isWebProd = typeof window !== 'undefined' && window.location.hostname === 'founder.indii.music';
+
+    if (isRoot && isWebProd) {
+        return <LoadingFallback />;
+    }
+
+    return <LoginForm />;
+}
+
 export default function App() {
     const location = useLocation();
     // ⚡ Bolt Optimization: useShallow
@@ -486,7 +510,7 @@ export default function App() {
             ) : authLoading ? (
                 <LoadingFallback />
             ) : !user ? (
-                <LoginForm />
+                <UnauthenticatedApp />
             ) : (
                 <MotionConfig reducedMotion="user">
                     <ResponsiveLayoutProvider>

@@ -14,13 +14,39 @@ test.describe('Boardroom Real User Multi-Turn Scenario', () => {
 
         // Setup custom Vertex AI multi-turn route interceptor with stateless state-machine parsing history
         await page.route(
-            /.*(firebasevertexai|generativelanguage|ragProxy).*/,
+            /.*(firebasevertexai|generativelanguage|ragProxy|cloudfunctions\.net\/generateContentStream|:5001\/.*\/generateContentStream).*/,
             async (route) => {
                 const method = route.request().method();
                 if (method === 'OPTIONS') {
                     await route.fulfill({ status: 204, headers: { 'Access-Control-Allow-Origin': '*' } });
                     return;
                 }                const url = route.request().url();
+                if (url.includes('fileSearchStores')) {
+                    console.log(`[E2E:MockAI] Intercepted fileSearchStores request: ${method} ${url}`);
+                    const mockResponse = {
+                        fileSearchStores: [
+                            {
+                                name: "projects/indii-music-founder/locations/us-central1/fileSearchStores/mock-store-default",
+                                displayName: "indii Store - default"
+                            },
+                            {
+                                name: "projects/indii-music-founder/locations/us-central1/fileSearchStores/mock-store-global",
+                                displayName: "indii Default Store"
+                            }
+                        ],
+                        name: "projects/indii-music-founder/locations/us-central1/fileSearchStores/mock-store-default"
+                    };
+                    await route.fulfill({
+                        status: 200,
+                        headers: {
+                            'Access-Control-Allow-Origin': '*',
+                            'Access-Control-Allow-Headers': '*',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(mockResponse)
+                    });
+                    return;
+                }
                 if (url.includes('embedContent') || url.includes('batchEmbedContents')) {
                     console.log(`[E2E:MockAI] Intercepted embedding request to URL: ${url}. Returning mock values.`);
                     const mockEmbeddingResponse = url.includes('batchEmbedContents') 
@@ -116,7 +142,14 @@ test.describe('Boardroom Real User Multi-Turn Scenario', () => {
                     return;
                 }
                 // 1.5. Check if this is a utility/helper request (like guidelines extraction or search)
-                if (postData.length < 5000 && !userMessage.includes('Intelligence Autorater') && !postData.includes('overallPass')) {
+                // Keep this narrow so normal boardroom prompts still reach the seating state machine.
+                const isUtilityRequest = (
+                    userMessage.includes('Extract any') ||
+                    userMessage.includes('guidelines') ||
+                    userMessage.includes('conflicting restrictions')
+                );
+
+                if (!currentActivePrompt && isUtilityRequest && !userMessage.includes('Intelligence Autorater') && !postData.includes('overallPass')) {
                     console.log(`[E2E:MockAI] Fulfilling short utility request (size: ${postData.length} chars).`);
                     let utilityText = "*(Analysis complete)*";
                     if (postData.includes('Extract any') || userMessage.includes('Extract any')) {
@@ -148,7 +181,7 @@ test.describe('Boardroom Real User Multi-Turn Scenario', () => {
                 }
 
                 // 2. Extract the actual request text directly from the test-scoped currentActivePrompt variable for 100% fidelity
-                let actualRequest = currentActivePrompt;
+                const actualRequest = currentActivePrompt;
                 console.log(`[E2E:MockAI] Extracted Actual Request from Test Scope: "${actualRequest}"`);
                 console.log(`[E2E:MockAI] Extracted System Instruction: "${(systemInstructionText || '').substring(0, 100)}..."`);
 
@@ -483,12 +516,14 @@ test.describe('Boardroom Real User Multi-Turn Scenario', () => {
         // Helper to sweep popovers and active body pointer blocks
         const cleanOverlays = async () => {
             console.log('[E2E:Scenario] Sweeping Driver.js overlays and resetting pointerEvents...');
-            await page.evaluate(() => {
-                if ((window as any).driverObj) {
-                    try {
-                        (window as any).driverObj.destroy();
-                    } catch (e) {}
-                }
+                await page.evaluate(() => {
+                    if ((window as any).driverObj) {
+                        try {
+                            (window as any).driverObj.destroy();
+                        } catch (e) {
+                            void e;
+                        }
+                    }
                 document.body.classList.remove('driver-active', 'driver-fade');
                 document.body.style.pointerEvents = 'auto';
                 document.querySelectorAll('.driver-overlay, .driver-popover, .driver-overlay-animated').forEach(el => el.remove());
@@ -540,6 +575,7 @@ test.describe('Boardroom Real User Multi-Turn Scenario', () => {
 
         // Verify responses are stored
         const messagesAfterTurn2 = await page.evaluate(() => window.useStore.getState().boardroomMessages || []);
+        console.log('[E2E:Scenario] messagesAfterTurn2:', JSON.stringify(messagesAfterTurn2, null, 2));
         const hasBudgetDetail = messagesAfterTurn2.some(m => m.text?.includes('$5,000') && m.agentId === 'marketing');
         expect(hasBudgetDetail).toBe(true);
         console.log('[E2E:Scenario] Turn 2 responses verified.');
@@ -649,4 +685,3 @@ test.describe('Boardroom Real User Multi-Turn Scenario', () => {
         console.log('[E2E:Scenario] Multi-turn test completely successful! All 9 turns seated, unseated, and verified correctly.');
     });
 });
-

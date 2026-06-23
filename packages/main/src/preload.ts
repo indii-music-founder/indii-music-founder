@@ -66,7 +66,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
     // Network (Main Process Fetching)
     network: {
-        fetchUrl: (url: string) => ipcRenderer.invoke('net:fetch-url', url)
+        fetchUrl: (url: string) => ipcRenderer.invoke('net:fetch-url', url),
+        fetchUrlBase64: (url: string) => ipcRenderer.invoke('net:fetch-url-base64', url)
     },
 
     // SFTP (Distribution)
@@ -117,6 +118,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
         saveAsset: (url: string, filename: string) => ipcRenderer.invoke('video:save-asset', url, filename),
         openFolder: (filePath?: string) => ipcRenderer.invoke('video:open-folder', filePath),
         render: (config: unknown) => ipcRenderer.invoke('video:render', config),
+        getDefaultPath: (filename?: string) => ipcRenderer.invoke('video:get-default-path', filename),
     },
 
 

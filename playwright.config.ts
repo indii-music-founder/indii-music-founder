@@ -44,7 +44,7 @@ export default defineConfig({
     ],
     ...(isLocalhost ? {
         webServer: {
-            command: 'VITE_E2E=true VITE_RENDERER_ONLY=true vite --config packages/renderer/vite.config.ts --port 4242',
+            command: 'VITE_E2E=true VITE_FIREBASE_E2E_MOCK=true VITE_RENDERER_ONLY=true vite --config packages/renderer/vite.config.ts --port 4242',
             url: 'http://localhost:4242',
             reuseExistingServer: !process.env.CI,
             timeout: 60_000,

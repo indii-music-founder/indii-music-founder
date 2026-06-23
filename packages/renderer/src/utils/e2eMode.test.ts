@@ -70,6 +70,12 @@ describe('e2eMode utilities', () => {
             expect(user.email).toBe('test@indii.com');
         });
 
+        it('should return null when the E2E signed-out flag is set', () => {
+            (window as any).FIREBASE_E2E_MOCK = true;
+            localStorage.setItem('FIREBASE_E2E_SIGNED_OUT', '1');
+            expect(getE2EMockUser()).toBeNull();
+        });
+
         it('should return merged user when custom user is set on window', () => {
             (window as any).FIREBASE_E2E_MOCK = true;
             (window as any).FIREBASE_USER_MOCK = { uid: 'custom-id', displayName: 'Custom Agent' };
