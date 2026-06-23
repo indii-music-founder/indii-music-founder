@@ -105,6 +105,7 @@ export interface ElectronAPI {
     // Network (Main Process Fetching)
     network: {
         fetchUrl: (url: string) => Promise<string>;
+        fetchUrlBase64: (url: string) => Promise<{ base64: string; contentType: string }>;
     };
 
     // SFTP (Distribution)
@@ -157,6 +158,8 @@ export interface ElectronAPI {
     video: {
         saveAsset: (url: string, filename: string) => Promise<string>;
         openFolder: (filePath?: string) => Promise<void>;
+        render: (config: { compositionId: string; outputLocation: string; inputProps?: Record<string, unknown> }) => Promise<string>;
+        getDefaultPath: (filename?: string) => Promise<string>;
     };
 
     // Credentials

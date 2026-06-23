@@ -157,7 +157,7 @@ export function useVideoEditor(initialVideo?: HistoryItem) {
                 inputProps: { project }
             });
             
-            toast.success(`Render complete!`);
+            toast.success(`Render complete: ${resultLocation}`);
             
             // Auto-save output to generatedHistory globally
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -168,6 +168,7 @@ export function useVideoEditor(initialVideo?: HistoryItem) {
                     id: `export_${timestamp}`,
                     type: 'video',
                     url: `file://${resultLocation}`,
+                    localPath: resultLocation,
                     origin: 'editor',
                     prompt: `Export of ${project.name || 'Project'}`,
                     timestamp: timestamp,

@@ -50,6 +50,14 @@ export const isFirebaseE2EMockEnabled = (): boolean => {
 
 export const getE2EMockUser = <T>(): T | null => {
     if (!isFirebaseE2EMockEnabled() || typeof window === 'undefined') return null;
+
+    try {
+        if (localStorage.getItem('FIREBASE_E2E_SIGNED_OUT') === '1') {
+            return null;
+        }
+    } catch {
+        // ignore
+    }
     
     const defaultUser = {
         uid: 'test-agent-123',

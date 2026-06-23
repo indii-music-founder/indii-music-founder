@@ -96,4 +96,37 @@ describe('Streaming QA', () => {
         const r2 = await reader.read();
         expect(r2.done).toBe(true);
     });
+
+    it('should preserve function calls from SSE candidate parts', async () => {
+        vi.mocked(fetch).mockResolvedValueOnce(new Response(
+            `data: ${JSON.stringify({
+                candidates: [{
+                    content: {
+                        role: 'model',
+                        parts: [
+                            { text: 'Seating Marketing.' },
+                            { functionCall: { name: 'seat_agent', args: { targetAgentId: 'marketing' } } },
+                        ],
+                    },
+                    finishReason: 'STOP',
+                }],
+            })}\n\n`,
+            { status: 200, headers: { 'Content-Type': 'text/event-stream' } },
+        ));
+
+        const { stream, response } = await service.generateContentStream('prompt');
+        const reader = stream.getReader();
+
+        const streamed = await reader.read();
+        expect(streamed.value?.text()).toBe('Seating Marketing.');
+        expect(streamed.value?.functionCalls()).toEqual([
+            { name: 'seat_agent', args: { targetAgentId: 'marketing' } },
+        ]);
+
+        const final = await response;
+        expect(final.text()).toBe('Seating Marketing.');
+        expect(final.functionCalls()).toEqual([
+            { name: 'seat_agent', args: { targetAgentId: 'marketing' } },
+        ]);
+    });
 });

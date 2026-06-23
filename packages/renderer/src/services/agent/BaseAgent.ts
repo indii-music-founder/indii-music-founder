@@ -1008,6 +1008,34 @@ export class BaseAgent implements SpecializedAgent {
                     for (const functionCall of functionCalls) {
                         const { name, args } = functionCall;
 
+                        if ((name === 'seat_agent' || name === 'unseat_agent') && args && typeof args === 'object' && 'targetAgentId' in args) {
+                            const targetAgentId = String((args as { targetAgentId: unknown }).targetAgentId);
+                            const { useStore } = await import('@/core/store');
+                            const isActive = useStore.getState().activeAgents.includes(targetAgentId);
+                            if ((name === 'seat_agent' && isActive) || (name === 'unseat_agent' && !isActive)) {
+                                const message = name === 'seat_agent'
+                                    ? `${targetAgentId} is already seated in the Boardroom.`
+                                    : `${targetAgentId} is already absent from the Boardroom.`;
+                                const result: ToolFunctionResult = {
+                                    success: true,
+                                    message,
+                                    data: {
+                                        targetAgentId,
+                                        idempotent: true,
+                                    },
+                                };
+                                lastToolResult = result;
+                                toolCalls.push({ name, args, result });
+                                fullPrompt += `\n[Tool Call: ${name}(${JSON.stringify(args)})] Result: Success: ${message}\n`;
+                                onProgress?.({
+                                    type: 'tool_result',
+                                    toolName: name,
+                                    content: `Success: ${message}`,
+                                });
+                                continue;
+                            }
+                        }
+
                         // Phase 2: Advanced loop detection
                         const loopCheck = await this.loopDetector.detectLoop(name, args);
                         if (loopCheck.isLoop) {

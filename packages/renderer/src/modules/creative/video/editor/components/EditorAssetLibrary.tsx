@@ -53,6 +53,11 @@ export const EditorAssetLibrary: React.FC<EditorAssetLibraryProps> = ({ onDragSt
                         style={{ height: '100%' }}
                         data={assets}
                         itemContent={(index, item) => (
+                            (() => {
+                                const playableVideoSrc = item.type === 'video'
+                                    ? (item.localPath ? `file://${item.localPath}` : item.url)
+                                    : item.url;
+                                return (
                             <div
                                 key={item.id}
                                 draggable
@@ -62,7 +67,7 @@ export const EditorAssetLibrary: React.FC<EditorAssetLibraryProps> = ({ onDragSt
                                 <div className="aspect-video relative">
                                     {item.type === 'video' ? (
                                         <video
-                                            src={item.url}
+                                            src={playableVideoSrc}
                                             className="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-opacity"
                                             preload="metadata"
                                             muted
@@ -97,11 +102,18 @@ export const EditorAssetLibrary: React.FC<EditorAssetLibraryProps> = ({ onDragSt
                                     <p className="text-[10px] font-medium text-gray-300 truncate leading-tight" title={item.prompt}>
                                         {item.prompt || 'Untitled Asset'}
                                     </p>
+                                    {item.type === 'video' && item.localPath && (
+                                        <p className="text-[8px] text-emerald-400 mt-0.5 truncate" title={item.localPath}>
+                                            Saved locally
+                                        </p>
+                                    )}
                                     <p className="text-[9px] text-gray-600 mt-0.5">
                                         {new Date(item.timestamp).toLocaleDateString('en-US')}
                                     </p>
                                 </div>
                             </div>
+                                );
+                            })()
                         )}
                     />
                 )}

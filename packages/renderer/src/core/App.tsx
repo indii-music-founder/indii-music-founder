@@ -117,6 +117,7 @@ const MerchStudio = lazyWithRetry(() => import('../modules/merchandise/MerchStud
 const AudioAnalyzer = lazyWithRetry(() => import('../modules/tools/AudioAnalyzer'));
 const ObserverabilityDashboard = lazyWithRetry(() => import('../modules/observability/ObservabilityDashboard'));
 const HistoryDashboard = lazyWithRetry(() => import('../modules/history/HistoryDashboard'));
+const NotesModule = lazyWithRetry(() => import('../modules/notes/NotesModule'));
 const MultimodalGauntlet = lazyWithRetry(() => import('../modules/debug/MultimodalGauntlet'));
 const InvestorPortal = lazyWithRetry(() => import('../modules/investor/InvestorPortal'));
 const GhostCapture = lazyWithRetry(() => import('../modules/capture/GhostCapture'));
@@ -175,6 +176,7 @@ const MODULE_COMPONENTS: Partial<Record<ModuleId, React.LazyExoticComponent<Reac
     'observability': ObserverabilityDashboard,
     'select-org': SelectOrg,
     'history': HistoryDashboard,
+    'notes': NotesModule,
     'debug': MultimodalGauntlet,
     'investor': InvestorPortal,
     'capture': GhostCapture,

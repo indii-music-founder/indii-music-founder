@@ -26,6 +26,25 @@ export interface StorageFetchResult {
  * @throws     Only if both the direct fetch AND proxy fallback fail
  */
 export async function safeStorageFetch(url: string): Promise<StorageFetchResult> {
+    // --- Attempt 0: Electron Main Process Fetch (bypasses CORS entirely) ---
+    const electronAPI = (window as any).electronAPI;
+    if (electronAPI?.network?.fetchUrlBase64) {
+        try {
+            logger.info('[safeStorageFetch] Attempting Electron main-process base64 fetch proxy');
+            const { base64, contentType } = await electronAPI.network.fetchUrlBase64(url);
+            const byteCharacters = atob(base64);
+            const byteNumbers = new Array(byteCharacters.length);
+            for (let i = 0; i < byteCharacters.length; i++) {
+                byteNumbers[i] = byteCharacters.charCodeAt(i);
+            }
+            const byteArray = new Uint8Array(byteNumbers);
+            const blob = new Blob([byteArray], { type: contentType });
+            return { blob, mimeType: contentType };
+        } catch (electronErr: unknown) {
+            logger.warn('[safeStorageFetch] Electron main-process fetch failed, falling back:', electronErr);
+        }
+    }
+
     // --- Attempt 1: Direct browser fetch ---
     try {
         const res = await fetch(url, { mode: 'cors' });
@@ -39,17 +58,7 @@ export async function safeStorageFetch(url: string): Promise<StorageFetchResult>
         logger.warn('[safeStorageFetch] Direct fetch failed, attempting no-cors fallback:', directErr);
     }
 
-    // --- Attempt 2: no-cors opaque fetch (gets the bytes but not headers) ---
-    try {
-        const res = await fetch(url, { mode: 'no-cors' });
-        const blob = await res.blob();
-        if (blob.size > 0) {
-            const mimeType = guessMimeFromUrl(url);
-            return { blob, mimeType };
-        }
-    } catch {
-        // Fallback silently
-    }
+
 
     // --- Attempt 3: Image element loading (works for images even with CORS blocks) ---
     try {

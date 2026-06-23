@@ -187,6 +187,12 @@ export const MODULE_THEMES: Record<ModuleId, ModuleTheme> = {
         backgroundGradient: 'radial-gradient(circle at 50% 50%, rgba(0, 150, 136, 0.07), rgba(0, 0, 0, 0))',
         ambientConfig: { type: 'vectors', opacity: 0.3 }
     },
+    'notes': {
+        officeName: 'Notes',
+        accent: '#009688', // Teal
+        backgroundGradient: 'radial-gradient(circle at 50% 50%, rgba(0, 150, 136, 0.06), rgba(0, 0, 0, 0))',
+        ambientConfig: { type: 'vectors', opacity: 0.18 }
+    },
     'settings': {
         officeName: 'Settings',
         accent: '#00BCD4', // Cyan

@@ -1,12 +1,37 @@
 import { describe, it, expect } from 'vitest';
 import { Timestamp } from 'firebase/firestore';
 import {
+    cacheRemotePairingToken,
+    getCachedRemotePairingToken,
     isFreshDesktopState,
     isPrivateIP,
     relayTimestampToMillis,
     DESKTOP_HEARTBEAT_STALE_MS as _DESKTOP_HEARTBEAT_STALE_MS,
     type DesktopState
 } from './RemoteRelayService';
+
+describe('RemoteRelayService - local pairing token cache', () => {
+    it('caches a URL passcode for reconnect auth', () => {
+        localStorage.clear();
+
+        expect(getCachedRemotePairingToken('?passcode=abc123')).toBe('abc123');
+        expect(localStorage.getItem('indii_p2p_passcode')).toBe('abc123');
+    });
+
+    it('falls back to the cached passcode when the URL no longer has one', () => {
+        localStorage.clear();
+        cacheRemotePairingToken('stored-token');
+
+        expect(getCachedRemotePairingToken('')).toBe('stored-token');
+    });
+
+    it('ignores empty passcodes', () => {
+        localStorage.clear();
+
+        expect(cacheRemotePairingToken('   ')).toBeNull();
+        expect(localStorage.getItem('indii_p2p_passcode')).toBeNull();
+    });
+});
 
 describe('RemoteRelayService - relayTimestampToMillis', () => {
     it('handles numeric timestamps', () => {

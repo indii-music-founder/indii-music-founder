@@ -95,6 +95,7 @@ export default defineConfig({
     root: __dirname,
     envDir: repoRoot,
     envPrefix: [
+        'VITE_E2E',
         'VITE_FIREBASE_',
         'VITE_VERTEX_',
         'VITE_FUNCTIONS_',
