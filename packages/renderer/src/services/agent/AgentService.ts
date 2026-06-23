@@ -122,11 +122,14 @@ export class AgentService {
         this.isProcessing = true;
 
         let useStoreInstance: typeof import('@/core/store').useStore | null = null;
+        let executionSignal: AbortSignal | undefined;
         try {
             try {
                 useStoreInstance = await this.getStore();
                 const state = useStoreInstance.getState();
-                if (typeof state.setAgentProcessing === 'function') {
+                if (typeof state.startAgentExecution === 'function') {
+                    executionSignal = state.startAgentExecution();
+                } else if (typeof state.setAgentProcessing === 'function') {
                     state.setAgentProcessing(true);
                 }
             } catch (_) {
@@ -249,7 +252,7 @@ export class AgentService {
             try {
                 // Main execution logic wrapped in a race with timeout
                 await Promise.race([
-                    this.executeFlow(redactedText, attachments, context, responseId, forcedAgentId).then(() => {
+                    this.executeFlow(redactedText, attachments, context, responseId, forcedAgentId, executionSignal).then(() => {
                         const currentState = store.getState();
                         const resultMsg = isBoardroomMode 
                             ? (currentState.boardroomMessages as AgentMessage[]).find(m => m.id === responseId)
@@ -368,6 +371,7 @@ export class AgentService {
                     if (typeof state.setAgentProcessing === 'function') {
                         state.setAgentProcessing(false);
                     }
+                    useStoreInstance.setState({ agentAbortController: null });
                 } catch (e) {
                     logger.error('[AgentService] Failed to reset processing state:', e);
                 }
@@ -377,6 +381,7 @@ export class AgentService {
                     if (typeof state.setAgentProcessing === 'function') {
                         state.setAgentProcessing(false);
                     }
+                    store.setState({ agentAbortController: null });
                 }).catch((e) => {
                     logger.error('[AgentService] Failed to reset processing state in getStore:', e);
                 });
@@ -392,7 +397,8 @@ export class AgentService {
         attachments: { mimeType: string; base64: string }[] | undefined,
         context: AgentContext,
         responseId: string,
-        forcedAgentId?: string
+        forcedAgentId?: string,
+        signal?: AbortSignal
     ): Promise<void> {
         const useStore = await this.getStore();
         const state = useStore.getState();
@@ -405,13 +411,13 @@ export class AgentService {
         // 0. Dispatch by Mode — MUST be checked FIRST.
         if (conversationMode === 'boardroom') {
             logger.debug('[AgentService] Routing to boardroom multi-dispatch flow');
-            await this.handleBoardroomSwarmFlow(text, attachments, context, responseId);
+            await this.handleBoardroomSwarmFlow(text, attachments, context, responseId, signal);
             return;
         }
 
         if (conversationMode === 'department') {
             logger.debug('[AgentService] Routing to department flow');
-            await this.handleDepartmentFlow(text, attachments, context, responseId);
+            await this.handleDepartmentFlow(text, attachments, context, responseId, signal);
             return;
         }
 
@@ -454,7 +460,7 @@ export class AgentService {
                         });
                     }
                 }
-            }, undefined, undefined, attachments);
+            }, signal, undefined, attachments);
 
             if (result && result.text) {
                 updateAgentMessage(responseId, {
@@ -553,7 +559,7 @@ export class AgentService {
                     });
                 }
             }
-        }, undefined, undefined, attachments);
+        }, signal, undefined, attachments);
 
         if (result && result.text) {
             updateAgentMessage(responseId, {
@@ -585,7 +591,8 @@ export class AgentService {
         text: string,
         attachments: { mimeType: string; base64: string }[] | undefined,
         context: AgentContext,
-        responseId: string
+        responseId: string,
+        signal?: AbortSignal
     ): Promise<void> {
         const useStore = await this.getStore();
         const state = useStore.getState();
@@ -632,7 +639,7 @@ export class AgentService {
                     });
                 }
             }
-        }, undefined, undefined, attachments);
+        }, signal, undefined, attachments);
 
         if (result && result.text) {
             updateAgentMessage(responseId, {
@@ -817,7 +824,8 @@ export class AgentService {
         text: string,
         attachments: { mimeType: string; base64: string }[] | undefined,
         context: AgentContext,
-        initialResponseId: string
+        initialResponseId: string,
+        signal?: AbortSignal
     ): Promise<void> {
         const useStore = await this.getStore();
         const state = useStore.getState();
@@ -935,7 +943,7 @@ export class AgentService {
                                 }
                             }
                         },
-                        undefined,
+                        signal,
                         undefined,
                         attachments
                     );
