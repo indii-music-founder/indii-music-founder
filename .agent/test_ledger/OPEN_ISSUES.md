@@ -6594,11 +6594,13 @@ Therefore, no fix can be proposed or implemented.
 - **Evidence:** `npm test -- --run packages/renderer/src/core/components/SidebarNavigation.test.tsx` passed 10/10 with explicit Notes sidebar click and module render coverage; `npm run typecheck` passed.
 
 ### ISSUE-451: LLM API Rate Limits / 429 Quota Exhaustion in `/abcd` loops
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟡 MEDIUM
 - **Dimension:** Developer Experience | Agent Swarm Loops
 - **Summary:** When running the autonomous ABCD loops, multi-agent pipelines make heavy concurrent calls to Vertex AI / Gemini API endpoints. This triggers frequent HTTP 429 rate limit errors or Firestore quota blocks within a single cycle.
 - **Next Steps:** Introduce robust exponential-backoff retries directly into the agent request wrappers or enforce a global throttle/delay in `A2AClient` during swarm execution.
+- **Fix:** Added A2A client backpressure around discovery, key exchange, sync invokes, and stream initialization. Request starts are now spaced by `VITE_A2A_REQUEST_SPACING_MS` (default 250ms) and capped by `VITE_A2A_MAX_CONCURRENT_REQUESTS` (default 2), while the existing HTTP transport retry/backoff remains in place for 429/5xx responses.
+- **Evidence:** `npm test -- --run packages/renderer/src/services/agent/a2a/A2AClient.test.ts packages/renderer/src/services/agent/a2a/A2A.integration.test.ts packages/renderer/src/services/agent/tools/SwarmToolsStreaming.test.ts` passed 8/8; `npm run typecheck` passed.
 
 ### ISSUE-452: Systemic CI Deployment Pipeline Failures
 - **Status:** OPEN
