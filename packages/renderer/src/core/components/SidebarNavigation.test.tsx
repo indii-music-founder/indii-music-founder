@@ -310,6 +310,23 @@ describe('Sidebar Navigation Integration', () => {
 
     it('renders correct dashboard for Notes', async () => {
         const state = buildStoreState({ currentModule: 'notes' });
+        mockedUseStore.mockImplementation((selector?: (state: ReturnType<typeof buildStoreState>) => unknown) => {
+            if (selector && typeof selector === 'function') return selector(state);
+            return state;
+        });
+        mockedUseStore.getState = vi.fn().mockReturnValue(state);
+
+        render(
+            <MemoryRouter>
+                <App />
+            </MemoryRouter>
+        );
+
+        await waitFor(() => {
+            expect(screen.getByTestId('notes-module')).toBeInTheDocument();
+        }, { timeout: 20000 });
+    }, 30000);
+
     // ISSUE-443 regression: the "Social Media Department" sidebar item must route to the
     // 'social' module (SocialDashboard) on desktop, NOT bounce to mobile-remote. The
     // App.tsx phone force-route (isAnyPhone -> mobile-remote) only applies on phone-class
@@ -330,10 +347,6 @@ describe('Sidebar Navigation Integration', () => {
         );
 
         await waitFor(() => {
-            expect(screen.getByTestId('notes-module')).toBeInTheDocument();
-        }, { timeout: 20000 });
-    }, 30000);
-
             expect(screen.getByTestId('social-dashboard')).toBeInTheDocument();
         }, { timeout: 20000 });
     }, 30000);

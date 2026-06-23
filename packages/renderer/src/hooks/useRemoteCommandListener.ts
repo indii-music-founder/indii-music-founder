@@ -611,8 +611,6 @@ function useFirestoreRelay(enabled: boolean) {
             }
 
             // ─── Agent Action Route ──────────────────────────────
-            if (parsed.kind === 'agent_action') {
-                const action = parsed.action;
             if (command.text.startsWith('[AGENT_ACTION]')) {
                 const action = command.text.replace('[AGENT_ACTION]', '').trim();
                 logger.info(`[RemoteRelay/Firestore] 🤖 Agent Action: "${action}"`);
@@ -758,7 +756,7 @@ function useFirestoreRelay(enabled: boolean) {
                 writeDiagnostic('agent_chat_done', { commandId: command.id });
                 return;
             }
-        } catch (error: unknown) {
+        }} catch (error: unknown) {
             logger.error('[RemoteRelay/Firestore] Command failed:', error);
             await remoteRelayService.sendResponse(
                 command.id,
