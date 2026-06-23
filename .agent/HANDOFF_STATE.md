@@ -1,4 +1,19 @@
 # Handoff State
+**Updated:** 2026-06-23 16:07 UTC
+**Branch:** `claude/agent-abcd-vem93b`
+
+## Recent Commits
+```
+5ba2ae5 fix: repair re-merged breakage in page.tsx + remote listener routing
+1bd00e7 fix: restore parsed.kind check for proper type narrowing
+1b7e10a fix: resolve lint errors in PR #186 (claude/agent-abcd-vem93b)
+2f7fff7 Merge branch 'main' into claude/agent-abcd-vem93b
+369dc3f Codex/boardroom abort signal (#191)
+923f0e8 Add notes module and tighten navigation and storage handling (#189)
+8df76d4 Pr 186 (#190)
+80bc4f2 test(ledger): log ISSUE-A-014 to ISSUE-A-018
+56ff494 test(security): update expected mock referer assertion to founder.indii.music
+c6da973 test(ledger): log ISSUE-CI pipeline failures
 **Updated:** 2026-06-23 14:06 EDT
 **Branch:** `codex/boardroom-abort-signal`
 
