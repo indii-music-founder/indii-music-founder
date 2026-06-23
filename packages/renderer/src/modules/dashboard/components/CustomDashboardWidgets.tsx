@@ -1021,8 +1021,8 @@ function CostEstimatorWidget() {
         // Approximate image token sizes: ~13,400 tokens per 1K image
         // 13,400 / 1,000,000 = 0.0134 multiplier for output cost
         const TOKENS_PER_IMAGE = 13400;
+        // @ts-expect-error model pricing type indexing
         const perTokenCost = (modelId: keyof typeof MODEL_PRICING) =>
-            // @ts-expect-error model pricing type indexing
             (MODEL_PRICING[modelId].output || 0) / 1000000;
 
         if (tier === 'pro') return count * TOKENS_PER_IMAGE * perTokenCost('gemini-3-pro-image-preview');
