@@ -6469,7 +6469,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-A-008: Boardroom multi-turn E2E fails at Turn 1 — `seat_agent` tool call doesn't populate `activeAgents`
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟡 MEDIUM
 - **Dimension:** AI/Agent Integrity / State Management (Boardroom seating)
 - **Location:** Failing assertion `e2e/boardroom-real-user-scenario.spec.ts:529-530` (`expect(seatedAfterTurn1).toContain('marketing'|'finance')`). Implicated chain: `packages/renderer/src/services/agent/tools/SwarmTools.ts:156-168` (`seat_agent` → `addActiveAgent`) → `packages/renderer/src/core/store/slices/boardroomSlice.ts:53-58`.
@@ -6478,6 +6478,8 @@ Therefore, no fix can be proposed or implemented.
 - **Honest fallback:** If repro shows seating happens on a later tick, fix the wait condition — but do NOT loosen the `toContain` assertion or add blind sleeps. If the functionCall is parsed but never dispatched, fix dispatch, not the test.
 - **DO NOT:** Do NOT blame the `[MultiTurnAutorater] ... Quota check failed` log — it is caught/logged-only (`MultiTurnAutorater.ts:83-84`), does not abort the turn, and is unrelated noise. Do NOT attribute to live-model/Vertex fallback (spec fully mocks the model). Do NOT relax `toContain`.
 - **Evidence:** `/tmp/a-e2e.log` line ~1157: `✘ 22 [chromium] › e2e/boardroom-real-user-scenario.spec.ts:6:5 › ...dynamic seating and unseating (8.8s)`; preceding `[E2E:Scenario] Prompt processing completed for: "Let's bring in Marketing and Finance"`. 8.8s fast-fail + only Turn 1 logged ⇒ Turn-1 seating assertion at spec:529-530.
+- **Fix:** `FirebaseIntelligenceService` now parses SSE `data:` frames and extracts Gemini candidate `parts[].functionCall` into the wrapped `functionCalls()` API. `BaseAgent` treats duplicate `seat_agent`/`unseat_agent` calls as idempotent no-op successes instead of loop-detector activity. The E2E spec's model route now covers the current Functions gateway URL and no longer sends active boardroom prompts through the utility-response branch.
+- **Verification:** `npm test -- --run packages/renderer/src/services/intelligence/__tests__/QA_Streaming.test.ts` passed 3/3; `npx playwright test e2e/boardroom-real-user-scenario.spec.ts --project=chromium` passed 1/1 with all 9 turns seated, unseated, and verified; `npm run typecheck` passed.
 
 ### ISSUE-A-009: `boardroom-live-verify.spec.ts` is an env-fragile live-model test in the default E2E gate (no E2E mock bypass)
 

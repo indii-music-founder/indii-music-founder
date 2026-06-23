@@ -14,7 +14,7 @@ test.describe('Boardroom Real User Multi-Turn Scenario', () => {
 
         // Setup custom Vertex AI multi-turn route interceptor with stateless state-machine parsing history
         await page.route(
-            /.*(firebasevertexai|generativelanguage|ragProxy).*/,
+            /.*(firebasevertexai|generativelanguage|ragProxy|cloudfunctions\.net\/generateContentStream|:5001\/.*\/generateContentStream).*/,
             async (route) => {
                 const method = route.request().method();
                 if (method === 'OPTIONS') {
@@ -149,7 +149,7 @@ test.describe('Boardroom Real User Multi-Turn Scenario', () => {
                     userMessage.includes('conflicting restrictions')
                 );
 
-                if (isUtilityRequest && !userMessage.includes('Intelligence Autorater') && !postData.includes('overallPass')) {
+                if (!currentActivePrompt && isUtilityRequest && !userMessage.includes('Intelligence Autorater') && !postData.includes('overallPass')) {
                     console.log(`[E2E:MockAI] Fulfilling short utility request (size: ${postData.length} chars).`);
                     let utilityText = "*(Analysis complete)*";
                     if (postData.includes('Extract any') || userMessage.includes('Extract any')) {
