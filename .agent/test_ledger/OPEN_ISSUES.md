@@ -5939,40 +5939,44 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-CI-27553621352: CI Pipeline Failure (Deploy to Firebase Hosting)
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ RESOLVED / SUPERSEDED
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
 - **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/27553621352)
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
 - **Ownership note:** Unassigned as of 2026-06-23; no separate Agent C is currently active on this item.
+- **Resolution:** Superseded by later successful `Deploy to Firebase Hosting` runs on `main`, including run `27990495640` on 2026-06-22.
 
 ### ISSUE-CI-27561429805: CI Pipeline Failure (Deploy to Firebase Hosting)
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ RESOLVED / SUPERSEDED
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
 - **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/27561429805)
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
+- **Resolution:** Superseded by later successful `Deploy to Firebase Hosting` runs on `main`, including run `27990495640` on 2026-06-22.
 
 ### ISSUE-CI-27560343501: CI Pipeline Failure (Deploy to Firebase Hosting)
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ RESOLVED / SUPERSEDED
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
 - **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/27560343501)
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
+- **Resolution:** Superseded by later successful `Deploy to Firebase Hosting` runs on `main`, including run `27990495640` on 2026-06-22.
 
 ### ISSUE-CI-27554563590: CI Pipeline Failure (Deploy to Firebase Hosting)
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ RESOLVED / SUPERSEDED
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
 - **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/27554563590)
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
+- **Resolution:** Superseded by later successful `Deploy to Firebase Hosting` runs on `main`, including run `27990495640` on 2026-06-22.
 
 ### ISSUE-431: Audio Analyzer blocked by unresolved conflict marker
 
@@ -6227,7 +6231,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-444: Agent Chat Fails with Firebase Installations API Error
 
-- **Status:** OPEN
+- **Status:** ⏸️ BLOCKED / EXTERNAL CONFIG
 - **Severity:** 🔴 HIGH
 - **UX Dimension:** Error Communication / Core Functionality
 - **Module:** Brand Manager / Agent Chat
@@ -6242,12 +6246,13 @@ Therefore, no fix can be proposed or implemented.
 - **Honest fallback:** If KB is offline or the AI fails, it should gracefully fall back to a user-friendly error message, not a raw GCP/Firebase configuration error.
 - **User Impact:** Users cannot generate critical intelligence briefs; the feature is completely unusable.
 - **Test Update (2026-06-19):** Tested locally. Still failing. Console shows `403 PERMISSION_DENIED: Requests from referer http://localhost:4242/ are blocked`. The GCP API Key restrictions are still blocking localhost.
+- **Blocker:** This requires Firebase/GCP API key referer restrictions or Firebase Installations/App Check project configuration changes outside this repo. No local code change can make a blocked referer call succeed.
 
 ---
 
 ### ISSUE-445: Image Generation Fails with Internal Error
 
-- **Status:** ⏳ OPEN
+- **Status:** ⏸️ BLOCKED / BACKEND VERIFICATION REQUIRED
 - **Severity:** 🔴 HIGH
 - **UX Dimension:** Core Functionality
 - **Module:** Creative Director
@@ -6264,6 +6269,7 @@ Therefore, no fix can be proposed or implemented.
 - **Fix:** Added backend-unavailable detection to the direct image-generation error mapper so `ERR_CONNECTION_REFUSED`, `ECONNREFUSED`, and `127.0.0.1:5001` surface as an honest emulator-start message instead of a generic internal error.
 - **Evidence:** `packages/renderer/src/modules/creative/hooks/useDirectGeneration.ts:55-97`; `packages/renderer/src/modules/creative/components/__tests__/DirectGenerationTab.test.tsx:259-277`; `npx vitest run packages/renderer/src/modules/creative/components/__tests__/DirectGenerationTab.test.tsx` passed 8/8; `npm run typecheck` passed.
 - **Remaining work:** The error-mapping improvement is present, but the core image-generation path still needs live verification/fix with the required backend or emulator running. Unassigned as of 2026-06-23; no separate Agent B is currently active on this item.
+- **Blocker:** Live generation requires the local Functions emulator on port 5001 or deployed backend credentials/quota. The repo-side fallback/error mapping is already fixed and verified.
 
 ---
 
@@ -6289,7 +6295,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-447: Audio Analyzer Deep Extraction Fails on Upload
 
-- **Status:** OPEN
+- **Status:** ⏸️ BLOCKED / EXTERNAL CONFIG
 - **Severity:** 🔴 HIGH
 - **UX Dimension:** Core Functionality / Error Communication
 - **Module:** Audio Analyzer / Distribution QC
@@ -6303,6 +6309,7 @@ Therefore, no fix can be proposed or implemented.
 - **Honest fallback:** If the backend limits are reached, the error should state the explicit limitation (e.g., quota exceeded) or prompt the user to upgrade. If the service is offline, it should gracefully fail.
 - **User Impact:** Users cannot extract data from their music, completely blocking the AI distribution and ingestion pipeline.
 - **Test Update (2026-06-19):** Tested locally with a valid 1s `.wav`. The extraction fails due to the same `Firebase Installations API` 403 error blocking `FirebaseIntelligenceService` bootstrap. Also blocked by the missing local Functions emulator on port 5001.
+- **Blocker:** Requires Firebase Installations/App Check API key restriction changes and/or a running local Functions emulator. This is the same external configuration blocker as `ISSUE-444`, not an additional local code task.
 
 ### ISSUE-A-001: Landing app crashes on undefined query flag parsing
 
@@ -6318,43 +6325,47 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-CI-27852206294: CI Pipeline Failure (Deploy to Firebase Hosting)
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ RESOLVED / SUPERSEDED
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
 - **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/27852206294)
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
+- **Resolution:** Superseded by later successful `Deploy to Firebase Hosting` runs on `main`, including runs `27989238015` and `27990495640`.
 
 ### ISSUE-CI-27849480875: CI Pipeline Failure (Deploy to Firebase Hosting)
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ RESOLVED / SUPERSEDED
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
 - **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/27849480875)
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
+- **Resolution:** Superseded by later successful `Deploy to Firebase Hosting` runs on `main`, including runs `27989238015` and `27990495640`.
 
 ### ISSUE-CI-27848641949: CI Pipeline Failure (Deploy to Firebase Hosting)
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ RESOLVED / SUPERSEDED
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
 - **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/27848641949)
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
+- **Resolution:** Superseded by later successful `Deploy to Firebase Hosting` runs on `main`, including runs `27989238015` and `27990495640`.
 
 ### ISSUE-CI-27854907887: CI Pipeline Failure (Deploy to Firebase Hosting)
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ RESOLVED / SUPERSEDED
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
 - **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/27854907887)
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
+- **Resolution:** Superseded by later successful `Deploy to Firebase Hosting` runs on `main`, including runs `27989238015` and `27990495640`.
 
 ### ISSUE-AGENTS-RETRAIN: Fine-Tuned Vertex Agent Endpoints Deleted — Running on Base-Model Fallback
 
-- **Status:** ⏳ OPEN
+- **Status:** ⏸️ BLOCKED / OWNER COST DECISION
 - **Severity:** 🟠 MEDIUM (chat works on base model; tuned behavior/quality is lost until redeployed — no outage)
 - **Module:** AI / Vertex AI / Agents
 - **Discovered:** 2026-06-20 (while fixing the Boardroom Conductor outage)
@@ -6369,22 +6380,25 @@ Therefore, no fix can be proposed or implemented.
   5. Verify with one authenticated call per agent (mint ID token via anonymous `accounts:signUp` + App Check via `:exchangeDebugToken`, both with a `Referer: https://indii.music` header; expect `200`).
 - **Cost note:** keeping 20 tuned endpoints continuously deployed has real hosting cost — confirm the pricing/usage tradeoff (see AI cost instrumentation) before redeploying all of them; consider deploying only the high-traffic agents and leaving the rest on base-model fallback.
 - **Ref:** `.agent/skills/error_memory/ERROR_LEDGER.md` (2026-06-20 "Chat Double-Broken" entry).
+- **Blocker:** The current repo mitigation keeps agents functional on base-model fallback. Restoring fine-tuned endpoints requires Vertex model recovery/retraining, endpoint deployment, new endpoint IDs, and an explicit cost/operations decision.
 
 ### ISSUE-CI-27910134272: CI Pipeline Failure (Deploy to Firebase Hosting)
-- **Status:** ⏳ OPEN
+- **Status:** ✅ RESOLVED / SUPERSEDED
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
 - **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/27910134272)
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
+- **Resolution:** Superseded by later successful `Deploy to Firebase Hosting` runs on `main`, including runs `27989238015` and `27990495640`.
 
 ### ISSUE-CI-27909388829: CI Pipeline Failure (Deploy to Firebase Hosting)
-- **Status:** ⏳ OPEN
+- **Status:** ✅ RESOLVED / SUPERSEDED
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
 - **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/27909388829)
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
+- **Resolution:** Superseded by later successful `Deploy to Firebase Hosting` runs on `main`, including runs `27989238015` and `27990495640`.
 
 ### ISSUE-A-002: Mobile remote had no capture review step and no first-class boardroom entry point
 
@@ -6539,13 +6553,15 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-A-013: indiiCONTROLLER pairing handshake flaky under real-world cellular/cross-network handoff
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED
+- **Fix:** Added local P2P pairing-token caching in `RemoteRelayService` so passcodes from URL handoff are preserved in `localStorage` for reconnect auth, and added a 10-second transient heartbeat grace in `MobileRemote` before stale desktop presence escalates into visible reconnect/offline mode.
 - **Severity:** 🔴 HIGH
 - **Dimension:** Core Feature / Mobile Remote Reliability
-- **Location:** `packages/renderer/src/services/agent/RemoteRelayService.ts` & `packages/renderer/src/hooks/useRemoteCommandListener.ts`
+- **Location:** `packages/renderer/src/services/agent/RemoteRelayService.ts`, `packages/renderer/src/modules/mobile-remote/MobileRemote.tsx` & `packages/renderer/src/hooks/useRemoteCommandListener.ts`
 - **Details:** Heartbeat drops and transient packet loss cause aggressive toasts ("handshake bad connection", "connection bad") when switching between mobile cellular networks and local networks. Under real-world handoff, the WebSocket layer teardown/reconnect loops without cleanly preserving active authorization headers or fallback channels.
 - **Expected (acceptance):** Heartbeat loss up to 10s should fail silently without intrusive error toasts, using soft status indicator changes in the UI. Auth tokens must be aggressively cached in localStorage to prevent pairing spinners during transient reconnect loops.
 - **Next Steps / Recommended Swarm Audit:** Launch a specialized testing agent to execute real-world simulation runs under artificial network constraints (throttling, latency injection) to audit pairing state transitions. Verify that locking/unlocking the device cleanly triggers silent recovery.
+- **Evidence:** `npm test -- --run packages/renderer/src/services/agent/RemoteRelayService.test.ts` passed 19/19; `npm run typecheck` passed.
 
 ### ISSUE-448: Audio-connected Creative handoff crashes DirectGenerationTab before canvas renders
 - **Status:** ✅ FIXED
@@ -6603,28 +6619,31 @@ Therefore, no fix can be proposed or implemented.
 - **Evidence:** `npm test -- --run packages/renderer/src/services/agent/a2a/A2AClient.test.ts packages/renderer/src/services/agent/a2a/A2A.integration.test.ts packages/renderer/src/services/agent/tools/SwarmToolsStreaming.test.ts` passed 8/8; `npm run typecheck` passed.
 
 ### ISSUE-452: Systemic CI Deployment Pipeline Failures
-- **Status:** OPEN
+- **Status:** ✅ RESOLVED / CURRENTLY GREEN
 - **Severity:** 🔴 HIGH
 - **Dimension:** CI/CD | Infrastructure
 - **Summary:** Multiple GitHub Actions CI runs are failing deployment stages due to environment token expirations or outdated Node runtime warnings. 
 - **Next Steps:** Debug the integration secrets in the repo settings and ensure App Check keys are properly synchronized.
+- **Resolution:** Recent Actions history shows `Deploy to Firebase Hosting` on `main` succeeded in runs `27989238015` and `27990495640`; `Build and Test` on the ABCD PR succeeded in run `27989497640`. Current PR #189 Build and Test is running, not failed, as of 2026-06-23.
 
 
 ### ISSUE-CI-27988974179: CI Pipeline Failure (Build and Test)
-- **Status:** ⏳ OPEN
+- **Status:** ✅ RESOLVED / SUPERSEDED
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Build and Test` failed on branch `claude/agent-abcd-vem93b`.
 - **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/27988974179)
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
+- **Resolution:** Superseded by successful `Build and Test` run `27989497640` on the same branch/PR after follow-up fixes.
 
 ### ISSUE-CI-27989145213: CI Pipeline Failure (Build and Test)
-- **Status:** ⏳ OPEN
+- **Status:** ✅ RESOLVED / SUPERSEDED
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Build and Test` failed on branch `claude/agent-abcd-vem93b`.
 - **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/27989145213)
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
+- **Resolution:** Superseded by successful `Build and Test` run `27989497640` on the same branch/PR after follow-up fixes.
 
 ---
 
