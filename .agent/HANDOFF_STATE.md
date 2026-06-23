@@ -1,4 +1,21 @@
 # Handoff State
+**Updated:** 2026-06-22 17:56 UTC
+**Branch:** `claude/agent-abcd-vem93b`
+
+## Recent Commits
+```
+fd4a619 docs(ledger): capture follow-up work for SHOW, ISSUE-445 emulator, orphaned phone-nav
+fb1cb2a chore: session checkpoint [17:52]
+2472e8b chore: session checkpoint [17:48]
+7685b81 chore: session checkpoint [17:47]
+0764bf2 chore: session checkpoint [15:46]
+20e8d81 test(remote): prove [SHOW] route both branches + flowchart + issue validation
+a8f9911 chore: session checkpoint [15:44]
+0d1538e chore: session checkpoint [15:44]
+bb63d03 chore: session checkpoint [15:40]
+6926915 feat(remote): add [SHOW] on-demand visual return channel to indiiREMOTE
+**Updated:** 2026-06-22 14:00 UTC
+**Branch:** `claude/ci-failure-main-wxyof9`
 
 **Updated:** 2026-06-22 18:44 EDT
 **Branch:** `main`
@@ -19,6 +36,7 @@ dfddbbee2 chore: session checkpoint [14:33]
 
 ## Working State
 ```
+clean working tree
  M .agent/test_ledger/OPEN_ISSUES.md
  M .agent/test_ledger/REAL_TEST_HISTORY.md
  M .agent/workflows/a.md
