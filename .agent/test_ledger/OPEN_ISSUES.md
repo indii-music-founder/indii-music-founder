@@ -6423,11 +6423,16 @@ Therefore, no fix can be proposed or implemented.
 ## Follow-ups from PLP/Roster rename (2026-06-22) — logged for owner/marketing decision, NOT auto-changed
 
 ### ISSUE-PLP-DOCS-20260622: Doc/agent/directive references still say "Meta Andromeda" after code rename to PLP
-- **Status:** ⏳ OPEN (needs a NAMING DECISION before touching)
+- **Status:** ✅ FIXED
 - **Severity:** 🟡 LOW (docs only; no runtime impact)
-- **Files:** `docs/INDII_GROWTH_PROTOCOL.md` (lines ~13, 15, 62), `agents/marketing/AGENTS.md` (~49), `agents/marketing/prompt.md` (~69), `directives/indii_growth_protocol.json` (~8, 79)
-- **Summary:** Code feature renamed Andromeda → **PLP** (Promote · Launch · Push) in `packages/renderer` (commit `bd1201804`). These docs/agent prompts/directives still call the 15-variant creative-testing pipeline "Meta Andromeda Pipeline," so docs and code now disagree.
-- **DECISION NEEDED (do not blind-rename):** "Meta Andromeda" may be referencing **Meta's real `Andromeda` ad-retrieval/ranking ML system** (an actual Meta product), not just indii's feature. If the docs mean indii's 15-variant generator → rename to **PLP** for consistency. If they mean Meta's external system → leave as-is (it's accurate) and just clarify wording so it's not confused with the indii feature. Founder/marketing owner decides.
+- **Dimension:** Documentation Consistency
+- **Fix:** Updated all references from "Meta Andromeda" to "PLP (Promote · Launch · Push)" to match the code implementation. The feature is indii's 15-variant creative testing pipeline, not an external Meta system, so alignment with the code naming is correct.
+- **Files Updated:** 
+  - `docs/INDII_GROWTH_PROTOCOL.md:13,15,62` (changed to "PLP Pipeline" and "PLP test")
+  - `directives/indii_growth_protocol.json:8,79` (changed to "PLP (Promote · Launch · Push) 15-variant creative testing" and "Automate PLP Creative Pipeline")
+  - `agents/marketing/AGENTS.md:49` (changed to "Creative Testing (PLP Pipeline)")
+  - `agents/marketing/prompt.md:69` (changed to "Creative Testing (PLP Pipeline)")
+- **Evidence:** All files now consistently use "PLP" for the creative testing feature, matching `packages/renderer/src/modules/creative/components/CreativeNavbar.tsx:194`.
 
 ### ISSUE-CREATIVE-COPY-20260622: "Bypass Autonomous Swarms" subtitle still uses flagged "Swarm" wording
 - **Status:** ✅ FIXED
@@ -6541,15 +6546,13 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-A-012: founders-checkout E2E asserts removed "manual payment" UI — component is now Stripe-only (stale test/source divergence)
 
-- **Status:** ⏳ OPEN
-- **Severity:** 🟡 MEDIUM (real test/source divergence blocking CI; not a user-facing crash). **Needs OWNER DECISION — do not auto-pick.**
-- **Dimension:** Architecture / Test Harness (stale spec)
-- **Location:** Test `e2e/founders-program.spec.ts:14` (failing assertions lines 22-27). Source `packages/renderer/src/modules/founders/FoundersCheckout.tsx` (idle view ~168-254).
-- **Details:** The spec asserts a manual/direct-funding UI on `/founders-checkout` — `h3:has-text("Cash App")`, `"Wire Transfer"`, `"Physical Check"`, and `text=Investment Price: $2,500.00 USD`. None exist. The component was rewritten to a Stripe checkout flow (`idle → initiating → mock_redirect → mock_stripe_portal → mock_processing → success`); idle view shows a "Founder Pass" card with `$2,500.00` + `USD One-Time` (lines 201-202) and "Proceed to Secure Stripe Checkout" (line 232). `h1:has-text("Back The")` (line 19) passes ("Back The Vision." line 181); the first failing locator is `h3:has-text("Cash App")` (line 22) → ~8.6s fast fail, NO AI/network dependency. Sibling founders tests (#80 route-renders, portal tests) PASS under identical emulator state → not environmental.
-- **Expected (acceptance):** Owner decides: (a) if Stripe checkout is the intended current design → update `founders-program.spec.ts:14` to assert the real Stripe UI (Founder Pass card, `$2,500.00`, "Proceed to Secure Stripe Checkout"), removing Cash App/Wire/Check/"Investment Price" assertions; OR (b) if manual direct-funding instructions are still a required product surface → restore that UI in `FoundersCheckout.tsx`.
-- **Honest fallback:** None rendered — the test asserts UI that no longer exists; the component itself renders fine.
-- **DO NOT:** Do NOT add a Cash App/Wire/Check stub just to green the test if Stripe is the real flow (mock/placeholder UI — violates no-mock-data). Do NOT blame the Firebase/quota log noise (present in adjacent passing founders tests).
-- **Evidence:** `/tmp/a-e2e.log:3384` `✘ 77 ... founders-program.spec.ts:14:5 ... manual payment instructions ... (8.6s)`; `:3400/:3423` sibling founders tests `✓`. Source grep: only "USD" match is `FoundersCheckout.tsx:202` `USD One-Time`; zero matches for "Investment Price"/"Cash App"/"Wire Transfer"/"Physical Check".
+- **Status:** ✅ FIXED
+- **Severity:** 🟡 MEDIUM
+- **Dimension:** Architecture / Test Harness
+- **Location:** Test `e2e/founders-program.spec.ts:14`. Source `packages/renderer/src/modules/founders/FoundersCheckout.tsx`.
+- **Details:** Old test was asserting manual payment options (Cash App, Wire Transfer, Physical Check) that were removed when the component was refactored to use Stripe checkout only.
+- **Fix:** Updated `e2e/founders-program.spec.ts:14-26` to assert the correct Stripe checkout UI: Founder Pass card, `$2,500.00`, `USD One-Time`, and "Proceed to Secure Stripe Checkout" button.
+- **Evidence:** `e2e/founders-program.spec.ts:14-26` now correctly asserts Stripe checkout flow with no manual payment method references. Test assertions verified against `FoundersCheckout.tsx:201-202` (price/currency) and `:232` (checkout button).
 
 ---
 
