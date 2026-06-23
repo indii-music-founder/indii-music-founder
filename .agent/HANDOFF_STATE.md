@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-23 10:43 EDT
+**Updated:** 2026-06-23 10:51 EDT
 **Branch:** `codex/boardroom-abort-signal`
 
 ## Recent Commits
 ```
+a3fc1f5e1 fix(typecheck): move @ts-expect-error comment to correct line
+b082abe25 chore: session checkpoint [10:43]
 a1a076d76 chore: session checkpoint [10:40]
 98d8fee87 chore: session checkpoint [10:37]
 68bb87ea6 chore: session checkpoint [10:34]
@@ -12,8 +14,6 @@ a1a076d76 chore: session checkpoint [10:40]
 1c2ddb0bd chore: session checkpoint [10:20]
 377012300 fix(lint): correct arrow function syntax with @ts-expect-error comment
 aab62b3ad Merge branch 'main' into codex/boardroom-abort-signal
-e0ccddf19 chore: session checkpoint [10:13]
-d21d6938a fix(lint): add required description to @ts-expect-error directive
 ```
 
 ## Working State
