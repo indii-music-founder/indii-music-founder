@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-23 16:23 EDT
+**Updated:** 2026-06-23 16:24 EDT
 **Branch:** `fix/prune-orphaned-nav-components`
 
 ## Recent Commits
 ```
+1c02695f6 chore: add emulator:functions npm script to start Firebase Functions emulator
+e46c99c62 chore: session checkpoint [16:23]
 632218684 chore: session checkpoint [16:23]
 40e11b1ce chore: session checkpoint [16:21]
 4c1d25a01 chore: session checkpoint [16:18]
@@ -12,13 +14,11 @@
 7d3fe1476 chore: session checkpoint [16:16]
 4de1ad2b1 chore: session checkpoint [16:13]
 8b5a8f53b chore: session checkpoint [16:12]
-eb20de137 chore: session checkpoint [16:08]
-cfdd44f71 chore: bump to v1.64.3 and update changelog
 ```
 
 ## Working State
 ```
- M package.json
+clean working tree
 ```
 
 ## Decisions
