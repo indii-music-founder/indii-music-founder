@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-23 09:57 EDT
+**Updated:** 2026-06-23 10:00 EDT
 **Branch:** `codex/boardroom-abort-signal`
 
 ## Recent Commits
 ```
+9915099a4 fix(landing): resolve TypeScript redeclaration error in useState initializer
+946a827a5 chore: session checkpoint [09:57]
 45a86f217 refactor: complete PLP rebrand — replace all remaining Andromeda references
 4d014ab5f chore: session checkpoint [09:55]
 87eaca1da docs(session): checkpoint work and log flaky test issue
@@ -12,8 +14,6 @@
 7b85919f3 fix(creative): clarify canvas speed toggle
 dfb093237 fix(remote): soften mobile pairing reconnects
 34b9b32ec fix(a2a): throttle swarm request bursts
-70a03c7ed test(e2e): stabilize live agent runner errors
-9d3b3bfa3 test(e2e): stabilize onboarding and distribution flows
 ```
 
 ## Working State
