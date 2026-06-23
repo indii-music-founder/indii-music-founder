@@ -298,6 +298,41 @@ describe('Sidebar Navigation Integration', () => {
         }, { timeout: 20000 });
     }, 30000);
 
+    // ISSUE-443 regression: the "Social Media Department" sidebar item must route to the
+    // 'social' module (SocialDashboard) on desktop, NOT bounce to mobile-remote. The
+    // App.tsx phone force-route (isAnyPhone -> mobile-remote) only applies on phone-class
+    // viewports; on desktop (jsdom media queries default to non-phone) Social must render
+    // its own dashboard.
+    it('renders SocialDashboard for Social Media Department, not mobile-remote (ISSUE-443)', async () => {
+        const state = buildStoreState({ currentModule: 'social' });
+        mockedUseStore.mockImplementation((selector?: (state: ReturnType<typeof buildStoreState>) => unknown) => {
+            if (selector && typeof selector === 'function') return selector(state);
+            return state;
+        });
+        mockedUseStore.getState = vi.fn().mockReturnValue(state);
+
+        render(
+            <MemoryRouter>
+                <App />
+            </MemoryRouter>
+        );
+
+        await waitFor(() => {
+            expect(screen.getByTestId('social-dashboard')).toBeInTheDocument();
+        }, { timeout: 20000 });
+    }, 30000);
+
+    it('Social Media Department sidebar click dispatches setModule("social") (ISSUE-443)', () => {
+        render(
+            <MemoryRouter>
+                <Sidebar />
+            </MemoryRouter>
+        );
+
+        fireEvent.click(screen.getByText('Social Media Department'));
+        expect(mockSetModule).toHaveBeenCalledWith('social');
+    });
+
     it('renders navigation items correctly', () => {
         mockedUseStore.mockReturnValue({
             ...buildStoreState(),
