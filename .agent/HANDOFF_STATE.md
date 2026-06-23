@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-23 09:55 EDT
+**Updated:** 2026-06-23 09:57 EDT
 **Branch:** `codex/boardroom-abort-signal`
 
 ## Recent Commits
 ```
+45a86f217 refactor: complete PLP rebrand — replace all remaining Andromeda references
+4d014ab5f chore: session checkpoint [09:55]
 87eaca1da docs(session): checkpoint work and log flaky test issue
 547474154 test(sidebar): update snapshots for Notes module navigation item
 2ed31d4e5 fix(docs): rename Meta Andromeda to PLP for consistency with code
@@ -12,8 +14,6 @@ dfb093237 fix(remote): soften mobile pairing reconnects
 34b9b32ec fix(a2a): throttle swarm request bursts
 70a03c7ed test(e2e): stabilize live agent runner errors
 9d3b3bfa3 test(e2e): stabilize onboarding and distribution flows
-7280830f1 fix(auth): allow e2e signup from signed-out mock
-942b4090a fix(boardroom): preserve streamed function calls
 ```
 
 ## Working State
