@@ -304,6 +304,12 @@ export function useDirectGeneration() {
             throw new Error('User must be authenticated to generate images.');
         }
 
+        // Verify auth token is available before calling backend
+        const token = await auth.currentUser?.getIdToken();
+        if (!token) {
+            throw new Error('Failed to obtain auth token. Please re-authenticate.');
+        }
+
         let referenceUri;
         const ingredientsList = videoInputs?.ingredients || [];
         const firstIngredient = ingredientsList[0];
@@ -335,6 +341,12 @@ export function useDirectGeneration() {
         const userId = auth.currentUser?.uid;
         if (!userId) {
             throw new Error('User must be authenticated to generate videos.');
+        }
+
+        // Verify auth token is available before calling backend
+        const token = await auth.currentUser?.getIdToken();
+        if (!token) {
+            throw new Error('Failed to obtain auth token. Please re-authenticate.');
         }
 
         let effectiveResolution = studioControls.resolution;
