@@ -6770,3 +6770,16 @@ Therefore, no fix can be proposed or implemented.
 - **Root cause:** The retry cap was tracked by response message id, so each regenerated image received a fresh id and reset the counter. That made the configured cap ineffective across the correction chain.
 - **Fix:** `AgentService` now keys autorater correction attempts by stable `agentId + normalized original brief` instead of response id. The correction prompt shows the attempt number and cap, and the terminal system message explicitly says automatic correction has stopped, lists remaining gaps, and gives the user a manual next step.
 - **Evidence:** `npx vitest run packages/renderer/src/services/agent/governance/VisualOutputAutorater.test.ts` passed 24/24; `npm run typecheck` passed.
+
+### TEST-FLAKY-20260623: CreativeStudio test flaky when run in full suite
+
+- **Status:** ⏳ OPEN (test infrastructure issue, not user-facing bug)
+- **Severity:** 🟢 LOW (test-harness fragility — not a product defect)
+- **Dimension:** Test Harness / Timing
+- **Location:** `packages/renderer/src/modules/creative/CreativeStudio.test.tsx:218` ("shows confirmation dialog when sending image to video workflow")
+- **Details:** Test fails when run as part of the full `npm test -- --run` suite with error "Cannot read properties of undefined (reading 'length')", but passes consistently when run in isolation (`npm test -- --run packages/renderer/src/modules/creative/CreativeStudio.test.tsx`). The error occurs at the point where the test tries to render `<CreativeStudio />` and locate the `creative-canvas` element. Instead, the component renders an error boundary.
+- **Root cause:** Likely a mock state initialization race condition or store state leak from a previous test in the full suite run.
+- **Expected (acceptance):** The test should pass consistently whether run in isolation or as part of the full suite. Mock state must be properly reset between tests to prevent cross-test pollution.
+- **Honest fallback:** If the test has environment-dependent behavior, add a `beforeEach` hook to explicitly reset all mocks and store state.
+- **Evidence:** Full suite run shows 1/4253 tests failing at line 218; isolated run shows 4/4 passing.
+- **Next steps:** Run the test 3+ times in full suite to verify consistency. If consistently fails in full suite only, investigate mock reset / store teardown in the test setup.
