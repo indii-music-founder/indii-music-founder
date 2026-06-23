@@ -6209,7 +6209,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-443: Social Media Department Button Redirects to `/mobile-remote`
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ RESOLVED / BY-DESIGN (2026-06-22, Engine B/D — branch `claude/agent-abcd-vem93b`)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Navigation / Social Media Department
 - **Found:** 2026-06-19 by Browser Subagent Test
@@ -6219,6 +6219,11 @@ Therefore, no fix can be proposed or implemented.
   2. Notice the desktop application is redirected to `/mobile-remote` route.
   3. If you navigate directly to `https://indii-music-studio.web.app/social`, the Firebase authentication context is destroyed and you are redirected to the Login page.
 - **User Impact:** Users cannot easily access the Social Media Department from the sidebar, and direct navigation requires re-authenticating.
+- **Root-cause analysis (Engine A/D, 2026-06-22):** The ONLY code path to `/mobile-remote` is `App.tsx:475`, inside an effect gated by `isAnyPhone` (`useMobile`): `if (isAnyPhone && currentModule !== 'mobile-remote') setModule('mobile-remote')`. On a real **desktop** (≥768px, non-mobile UA) `isAnyPhone` is `false`, so clicking "Social" correctly sets module `social` → renders `SocialDashboard`. The Sidebar itself is `hidden md:flex` (≥768px only). The reported `/mobile-remote` bounce therefore only occurs in a **mobile-emulated browser session** (mobile UA or ≤640px viewport) — i.e. a browser-subagent artifact, not a real desktop defect.
+- **Design confirmation (founder, 2026-06-22):** **Phone = remote-only by design.** The phone IS indiiREMOTE — a conversational interface to the INDII coordinator, which delegates to department agents and reports back. Department *screens* are intentionally not phone-navigable; you reach departments by talking to INDII, not by opening department module UIs. So the phone bounce to `mobile-remote` is correct behavior.
+- **Note — orphaned dead nav:** `MobileNav.tsx` has **no render site** (fully unused), and `MobileTabBar.tsx` only renders inside `{showChrome && …}` while `App.tsx` forces `activeShowChrome=false` on phones (plus `MobileTabBar` internally returns `null` when `!isAnyPhone`). Both phone-nav components (which still list department/manager/tool module buttons) are therefore orphaned and never render. Recommend a **separate cleanup task** to prune them (deferred here to avoid colliding with the concurrent Codex agent in core layout files; respects the asset-deletion fail-safe).
+- **Fix applied:** Added desktop regression coverage in `packages/renderer/src/core/components/SidebarNavigation.test.tsx` — (1) `currentModule='social'` renders `SocialDashboard` (not mobile-remote), (2) clicking "Social Media Department" dispatches `setModule('social')`. Locks the correct desktop behavior so the `isAnyPhone` force-route can't silently regress desktop department navigation.
+- **Evidence:** `npx vitest run packages/renderer/src/core/components/SidebarNavigation.test.tsx -t "ISSUE-443"` → 2/2 passed.
 
 ---
 
@@ -6258,6 +6263,8 @@ Therefore, no fix can be proposed or implemented.
 - **Expected (acceptance):** The generative image service successfully returns an image asset that is placed onto the canvas and saved to the project assets.
 - **Honest fallback:** Clear error describing why generation failed (e.g. quota, network, etc.) instead of generic 500 error.
 - **User Impact:** The core Creative Director image generation pipeline is completely blocked.
+- **Test Update (2026-06-19):** Tested locally. Still failing, but the root cause on local dev is `ERR_CONNECTION_REFUSED` on `127.0.0.1:5001`. The `package.json` dev scripts and `firebase emulators:start` command are skipping the Functions emulator, so `generateImageV3` cannot be reached.
+- **Investigation (2026-06-22, Claude):** Confirmed the root cause is a **missing dev script**, not a missing config. `firebase.json` DOES declare the Functions emulator (`emulators.functions.port: 5001`) — the config is fine. The gap: there is **no npm script that runs `firebase emulators:start` at all**. `npm run dev` = `preflight:dev && electron-vite dev` and `npm run dev:web` = `vite …` — both start only the renderer; nothing ever boots the emulator suite, so `:5001` is never listening. **Fix direction:** add a dev script that (a) builds functions (`npm run build -w packages/firebase`) and (b) runs `firebase emulators:start --only functions` (concurrently with the renderer, e.g. via `concurrently` or a documented two-terminal flow), and point `VITE_*`/the functions base URL at the emulator in dev. Shared root cause with ISSUE-442 and ISSUE-447 (both also blocked by the absent `:5001` emulator). No code changed this session — investigation only.
 - **Fix:** Added backend-unavailable detection to the direct image-generation error mapper so `ERR_CONNECTION_REFUSED`, `ECONNREFUSED`, and `127.0.0.1:5001` surface as an honest emulator-start message instead of a generic internal error.
 - **Evidence:** `packages/renderer/src/modules/creative/hooks/useDirectGeneration.ts:55-97`; `packages/renderer/src/modules/creative/components/__tests__/DirectGenerationTab.test.tsx:259-277`; `npx vitest run packages/renderer/src/modules/creative/components/__tests__/DirectGenerationTab.test.tsx` passed 8/8; `npm run typecheck` passed.
 
@@ -6380,6 +6387,9 @@ Therefore, no fix can be proposed or implemented.
 - **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/27909388829)
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
 
+### ISSUE-LANDING-20260622: Uncommitted landing/page.tsx regression (lint error + 3 broken tests)
+- **Status:** ✅ FIXED (2026-06-22, Engine B — branch `claude/agent-abcd-vem93b`)
+- **Severity:** 🟠 MEDIUM (uncommitted in working tree; NOT yet on origin so CI is currently safe — but a `git add -A` checkpoint hook would push it and break CI under the wrong author)
 ### ISSUE-A-002: Mobile remote had no capture review step and no first-class boardroom entry point
 
 - **Status:** ✅ FIXED
@@ -6399,6 +6409,55 @@ Therefore, no fix can be proposed or implemented.
 - **File:** `packages/landing/src/page.tsx` (`Home`, `isThesisOpen` state)
 - **Summary:** An agent converted the lazy `useState(() => …)` initializer into `useState(false)` + `useEffect(setState)`. Causes ESLint **error** `Calling setState synchronously within an effect can trigger cascading renders` (fails the lint gate) and fails 3 `packages/landing/src/App.test.tsx` tests (they assert founder/thesis state on initial render).
 - **Fix Direction:** Revert to a lazy initializer; fold the intended `hostname.includes('founders')` detection INTO the initializer (synchronous), NOT an effect. Exact pattern + rationale in `.agent/skills/error_memory/ERROR_LEDGER.md` (2026-06-22 entry). Then `npm run lint` + `npm test -- --run packages/landing` must both pass.
+- **Verification note (Engine A/D, 2026-06-22):** On inspection the committed code had been partially worked around with `setTimeout(() => setIsThesisOpen(true), 0)` inside the effect, which dodged the lint **error** (so `npm run lint` was already clean) and the 3 `App.test.tsx` tests already passed — i.e. the originally-reported failures did not reproduce. The remaining defect was the fragile pattern itself (effect + deferred `setState` → a one-tick thesis-open flash on the founder route; ERROR_LEDGER says reserve effects for subscriptions, not initial derivation).
+- **Fix applied:** Replaced the `useState(false)` + `useEffect`/`setTimeout` block with the canonical lazy initializer that derives `isThesisOpen` synchronously from `window.location` behind a `typeof window === 'undefined'` guard; removed the now-unused `useEffect` import.
+- **Evidence:** `packages/landing/src/page.tsx:82-90`. `npx eslint packages/landing/src/page.tsx` → exit 0 (no errors/warnings). `npx vitest run packages/landing/src/App.test.tsx` → 3/3 passed.
+
+### ISSUE-REMOTE-SHOW-20260622: indiiREMOTE — on-demand visual return channel ("show me")
+- **Status:** 🟡 IN PROGRESS (Phase 1 — branch `claude/agent-abcd-vem93b`)
+- **Severity:** 🟢 ENHANCEMENT
+- **Module:** mobile-remote (indiiREMOTE) / RemoteRelay
+- **Found:** 2026-06-22 (founder design conversation)
+- **Context / why:** Phone = remote-only by design (see ISSUE-443). The founder converses with the INDII coordinator from the phone; INDII delegates to department agents (`consult_specialist` / A2A swarm) and reports back as text. Today the ONLY visual return channel is `[GENERATE_IMAGE]`, which pushes generated `imageUrls` back to the phone via `remoteRelayService.sendResponse(id, text, agentId, false, imageUrls)`. There is **no general "show me" affordance** — the user can't say "show me what you just did / the current artifact" and get the visual surfaced on the phone. The user trusts the work is happening but can't *see* it on demand.
+- **Acceptance:** From the phone, a "Show me" action (or `[SHOW]` command) returns the current/most-recent visual artifact to the phone, rendered inline in the remote response — reusing the proven `imageUrls` channel. Honest fallback: if there is no artifact to show, return a clear text message ("Nothing to show yet — generate or open an asset first"), never a silent no-op or a raw error.
+- **Existing surfaces to reuse (grounded):**
+  - Desktop relay router: `packages/renderer/src/hooks/useRemoteCommandListener.ts` (prefix routes `[GENERATE_IMAGE]`, `[NAVIGATE]`, …).
+  - Visual channel: `RemoteRelayService.sendResponse(commandId, text, agentId?, isStreaming?, imageUrls?, boardroomMessageId?)` — already broadcasts `imageUrls` to the phone over Firestore + the P2P WebSocket fallback.
+  - Latest artifact source: `creativeHistorySlice` → `generatedHistory` (HistoryItem[] sorted by `timestamp` desc; `generatedHistory[0].url` is the most recent creative asset).
+  - Phone command senders: `mobile-remote/components/CommandPad.tsx`, `GenerationMonitor.tsx` (`remoteRelayService.sendCommand('[PREFIX] …')`).
+- **Phased plan:**
+  - **Phase 1 (this branch):** Desktop `[SHOW]` route in `useRemoteCommandListener.ts` that reads `generatedHistory[0]` and returns its `url` via `sendResponse(..., [url])`, with the honest empty-state fallback; add a "Show me" quick action on the phone (`CommandPad`) that sends `[SHOW]`. Unit-coverage the empty-state + happy-path branch where feasible.
+  - **Phase 2:** "Show me" targets beyond the latest asset — e.g. `[SHOW] canvas` (export the active Fabric.js canvas to a data/blob URL) and `[SHOW] <module>` (a snapshot of a given department's current output).
+  - **Phase 3:** Live/streamed preview (progressive frames while a long task runs) instead of a single end-state image.
+- **Out of scope (for now):** full desktop screen capture / arbitrary screenshot streaming (security + perf review required first).
+- **Strict Issue Validation (2026-06-22 — Proof of Verification pass, Phase 1):**
+  - **Refactor (Ponytail/testability):** Extracted the pure `[SHOW]` decision into `resolveShowMeResponse(history): { text; agentId; imageUrls? }` in `packages/renderer/src/hooks/useRemoteCommandListener.ts`; the `[SHOW]` route now calls it and feeds its output straight into `sendResponse(...)`. Behavior unchanged (same caption text, `agentId: 'creative'`, same `[thumbnailUrl||url]` / undefined imageUrls).
+  - **Automated test:** `packages/renderer/src/hooks/useRemoteCommandListener.showme.test.ts` (6 cases) — proves BOTH branches.
+  - **Flowchart:** `docs/flowcharts/remote-show-me-channel-micro.md`.
+  - **Acceptance-criteria verdicts:**
+    | Criterion | Verdict | Evidence |
+    | --- | --- | --- |
+    | Happy path: returns latest image's url via imageUrls | ✅ PROVEN | test: `res.imageUrls === ['…/full.png']`, caption asserted |
+    | Prefers thumbnailUrl over full url | ✅ PROVEN | test: thumbnail returned when present |
+    | Picks most-recent image, skips non-image / urlless items | ✅ PROVEN | test: 'newest' image chosen over text/urlless items |
+    | Empty state: honest text fallback, NO imageUrls | ✅ PROVEN | test: `imageUrls` undefined, exact fallback string (empty/undefined/no-usable-image cases) |
+    | Route reuses proven `sendResponse(... imageUrls)` channel | ✅ PROVEN | static: `[SHOW]` route calls `sendResponse(id, resolved.text, resolved.agentId, false, resolved.imageUrls)` |
+    | `npm run typecheck` clean | ✅ PROVEN | 0 errors (raw output captured in session) |
+    | `eslint` on touched files clean | ✅ PROVEN | 0 errors (raw output captured in session) |
+    | Phone "Show Me" action emits `[SHOW]` | ⚠️ PARTIAL | static-only: `CommandPad.tsx` sends `sendCommand('[SHOW]')`; not exercised at runtime |
+    | Live phone↔desktop device round-trip + on-device image render | ❌ UNPROVEN | no physical device pairing / Firestore live relay available in this environment |
+  - **Status rationale:** Decision logic for both branches is PROVEN. Live device round-trip and phone-side render remain UNPROVEN (out of environment reach). Keeping issue **🟡 IN PROGRESS** — do NOT overclaim a fully verified feature.
+- **Follow-up to close Phase 1 / advance:** (1) Founder live test — pair a phone, tap "Show Me", confirm the latest artifact renders on the device; flip status to ✅ only after that round-trip passes. (2) Phase 2: `[SHOW] canvas` (export active Fabric.js canvas) + `[SHOW] <module>`. (3) Phase 3: streamed live preview. (4) Minor test hygiene: `useRemoteCommandListener.showme.test.ts` emits a non-fatal teardown unhandled-rejection (`Closing rpc while onUserConsoleLog was pending`) because importing the hook pulls `RemoteRelayService`'s WebSocket side effect — exit code is 0 (CI safe), but mocking `@/services/agent/RemoteRelayService` + `@/services/firebase` in the test would silence it.
+
+### ISSUE-NAV-ORPHAN-20260622: Prune orphaned phone-nav components (MobileNav / MobileTabBar)
+- **Status:** 🔴 OPEN (follow-up spun out of ISSUE-443)
+- **Severity:** 🟢 LOW (dead code / maintenance — no user-facing impact today)
+- **Module:** Navigation / mobile layout
+- **Found:** 2026-06-22 (Claude, while resolving ISSUE-443)
+- **Summary:** With **phone = remote-only** confirmed (phone is the conversational indiiREMOTE; departments are reached via the INDII coordinator, not department screens), the phone module-navigation components are dead code: `packages/renderer/src/core/components/MobileNav.tsx` has **no render site at all**, and `packages/renderer/src/core/components/MobileTabBar.tsx` only renders inside `{showChrome && …}` while `App.tsx` forces `activeShowChrome=false` on phones (and `MobileTabBar` itself early-returns `null` when `!isAnyPhone`). Both still enumerate department/manager/tool module buttons that, by design, can never be navigated to from a phone.
+- **Why it matters:** Misleading dead UI invites future regressions (e.g. someone "fixes" a department button that was never meant to work) and contradicts the remote-only design.
+- **Fix Direction:** Delete `MobileNav.tsx` (fully unused — verify no imports first) and either remove `MobileTabBar` or strip its module-nav lists down to remote-appropriate actions. **Respect the asset-deletion fail-safe** (CLAUDE.md §7): confirm zero imports/usages before deleting, and do it in a dedicated PR (not bundled with unrelated work) to avoid colliding with the concurrent Codex agent in core layout files.
+- **Acceptance:** No orphaned phone module-nav remains; `grep -rn "MobileNav\|MobileTabBar" packages/renderer/src` shows only intentional render sites (or none); `npm run typecheck` + `npm run lint` clean.
 
 ## Follow-ups from PLP/Roster rename (2026-06-22) — logged for owner/marketing decision, NOT auto-changed
 
