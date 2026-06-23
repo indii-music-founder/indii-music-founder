@@ -6638,7 +6638,7 @@ Therefore, no fix can be proposed or implemented.
 - **Evidence:** `npm run typecheck` and `npx firebase emulators:exec --only firestore "npx playwright test e2e/road-manager.spec.ts"` both passed successfully.
 
 ### ISSUE-A-015: E2E scratch_test date of birth input field timeout
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Location:** `e2e/scratch_test.spec.ts:156`
 - **Details:** The test fails with a timeout of 60000ms waiting for the date of birth input `locator('input[type="date"]')`. This suggests the date picker input is not present or visible in the DOM during registration/onboarding.
@@ -6646,6 +6646,8 @@ Therefore, no fix can be proposed or implemented.
 - **Honest fallback:** If the registration form fails to load, render an error message to the user rather than leaving the inputs in an un-fillable state.
 - **DO NOT:** Do NOT skip or comment out the registration birth date requirement just to green the test.
 - **Evidence:** `Error: locator.fill: Test timeout of 60000ms exceeded. waiting for locator('input[type="date"]')` at `e2e/scratch_test.spec.ts:156:46`.
+- **Fix:** Added an explicit `FIREBASE_E2E_SIGNED_OUT` boot flag so signup E2E can start from the Login/Create Account form even when `VITE_FIREBASE_E2E_MOCK=true`; E2E sign-in/create-account calls clear the flag. Updated `scratch_test.spec.ts` to use the base page fixture and boot signed out before app initialization. Also fixed the Date of Birth `pattern` attribute to avoid Chromium's `v`-flag character-class rejection.
+- **Verification:** `npm test -- --run packages/renderer/src/utils/e2eMode.test.ts` passed 12/12; `npx playwright test e2e/scratch_test.spec.ts --project=chromium` passed 1/1; `npm run typecheck` passed.
 
 ### ISSUE-A-016: E2E detroit-techno-onboarding / stress-test prompt-input visibility timeout
 - **Status:** ⏳ OPEN
