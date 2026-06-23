@@ -40,6 +40,34 @@ This root file is a current index for agents. The detailed issue ledger is:
 - **Severity:** 🟢 LOW
 - **Summary:** Verified and fixed improper removeEventListener and unsubscribe methods in useEffect across renderer.
 
+### ISSUE-367: Creative canvas export fails on tainted storage images
+- **Status:** ✅ FIXED
+- **Severity:** 🔴 HIGH
+- **Summary:** Exporting the creative canvas can fail with `Failed to execute 'toDataURL' on 'HTMLCanvasElement': Tainted canvases may not be exported` after loading Firebase Storage images.
+- **Verdict:** ✅ VERIFIED (D, 2026-06-23): Updated `CanvasOperationsService.loadImageSafe` to detect remote GCP/Firebase storage URLs and prefer loading them as Blobs using `safeStorageFetch` to guarantee they do not taint the canvas context. Checked that all unit/integration tests pass cleanly.
+
+### ISSUE-368: Daisy Chain handoff jumps to video editor without obvious confirmation
+- **Status:** 🟡 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Summary:** Clicking the Daisy Chain / send-to-video flow moves the user into the video editor, but the selected image/frame is not clearly confirmed in-place and the pulsing Daisy Chain state reads like a loading indicator rather than a completed handoff. The result is accidental discovery instead of a visible, intentional workflow.
+
+### ISSUE-369: Video renders save outside the app and completion is not obvious
+- **Status:** ✅ FIXED
+- **Severity:** 🟡 MEDIUM
+- **Summary:** Successful video renders are written to the user's Documents folder (`~/Documents/indii/Assets/Video`) instead of an in-app video folder.
+- **Verdict:** ✅ VERIFIED (D, 2026-06-23): Updated video renderer success callback in `useVideoEditor.ts` to surface the final saved location via success toast (`Render complete: ${resultLocation}`) and globally save `localPath` in `generatedHistory`.
+
+### ISSUE-370: Project Assets panel does not surface generated video outputs
+- **Status:** ✅ FIXED
+- **Severity:** 🟡 MEDIUM
+- **Summary:** The Project Assets panel in the creative workspace appears to show image assets only, with no obvious MP4/video artifact.
+- **Verdict:** ✅ VERIFIED (D, 2026-06-23): Updated `CreativeGallery.tsx` and `EditorAssetLibrary.tsx` to read the `localPath` using the `file://` protocol wrapper for local rendering of MP4 outputs, surfacing generated video assets correctly inside the gallery and assets sidebar panel.
+
+### ISSUE-371: Creative Director visual correction loop is hard to distinguish from a runaway loop
+- **Status:** 🟡 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Summary:** The Creative Director can enter a self-correction cycle when the visual autorater rejects a generated asset, but the user-facing transcript makes it look like the agent is looping indefinitely and repeatedly asking for another pass. The system needs a clearer stop condition, a final failure state, and an explanation of what was corrected versus what still failed.
+
 
 ### ISSUE-079: Founder Seat Model Split-Brain Across Product Surfaces
 - **Status:** ✅ FIXED
