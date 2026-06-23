@@ -1,19 +1,19 @@
 # Handoff State
-**Updated:** 2026-06-23 16:24 EDT
-**Branch:** `fix/prune-orphaned-nav-components`
+**Updated:** 2026-06-23 16:33 EDT
+**Branch:** `main`
 
 ## Recent Commits
 ```
-1c02695f6 chore: add emulator:functions npm script to start Firebase Functions emulator
-e46c99c62 chore: session checkpoint [16:23]
-632218684 chore: session checkpoint [16:23]
-40e11b1ce chore: session checkpoint [16:21]
-4c1d25a01 chore: session checkpoint [16:18]
-5f5db4b7c chore: session checkpoint [16:17]
-2f16e53a5 chore: session checkpoint [16:16]
-7d3fe1476 chore: session checkpoint [16:16]
-4de1ad2b1 chore: session checkpoint [16:13]
-8b5a8f53b chore: session checkpoint [16:12]
+fba9d8ab7 v1.64.3 fix: remove orphaned nav components and fix test flakiness (#193)
+3aaa6dea3 Claude/agent abcd vem93b (#195)
+35c04f4f0 Codex/boardroom abort signal (#194)
+201826f43 Codex/boardroom abort signal (#192)
+b91a8906f ABCD session: landing fix + ISSUE-443 regression + indiiREMOTE "show me" channel (#186)
+369dc3f11 Codex/boardroom abort signal (#191)
+923f0e8af Add notes module and tighten navigation and storage handling (#189)
+8df76d497 Pr 186 (#190)
+80bc4f2a9 test(ledger): log ISSUE-A-014 to ISSUE-A-018
+56ff494aa test(security): update expected mock referer assertion to founder.indii.music
 ```
 
 ## Working State
