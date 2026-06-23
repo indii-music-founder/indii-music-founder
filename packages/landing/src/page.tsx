@@ -84,10 +84,9 @@ export default function Home() {
   const { scrollYProgress } = useScroll();
   const [isThesisOpen, setIsThesisOpen] = useState(() => {
     if (typeof window === 'undefined') return false;
-    const hostname = window.location.hostname;
-    const search = window.location.search;
-    const hash = window.location.hash;
-    return hostname.includes('founders') || search.includes('thesis=true') || hash.includes('#thesis');
+    return window.location.hostname.includes('founders') ||
+           window.location.search.includes('thesis=true') ||
+           window.location.hash.includes('#thesis');
   });
 
   const heroScale = useTransform(scrollYProgress, [0, 0.15], [1, 0.9]);
