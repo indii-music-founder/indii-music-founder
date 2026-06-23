@@ -1,6 +1,26 @@
 # Handoff State
 **Updated:** 2026-06-23 10:06 EDT
 **Branch:** `codex/boardroom-abort-signal`
+**Updated:** 2026-06-22 17:56 UTC
+**Branch:** `claude/agent-abcd-vem93b`
+
+## Recent Commits
+```
+fd4a619 docs(ledger): capture follow-up work for SHOW, ISSUE-445 emulator, orphaned phone-nav
+fb1cb2a chore: session checkpoint [17:52]
+2472e8b chore: session checkpoint [17:48]
+7685b81 chore: session checkpoint [17:47]
+0764bf2 chore: session checkpoint [15:46]
+20e8d81 test(remote): prove [SHOW] route both branches + flowchart + issue validation
+a8f9911 chore: session checkpoint [15:44]
+0d1538e chore: session checkpoint [15:44]
+bb63d03 chore: session checkpoint [15:40]
+6926915 feat(remote): add [SHOW] on-demand visual return channel to indiiREMOTE
+**Updated:** 2026-06-22 14:00 UTC
+**Branch:** `claude/ci-failure-main-wxyof9`
+
+**Updated:** 2026-06-22 18:44 EDT
+**Branch:** `main`
 
 ## Recent Commits
 ```
@@ -19,6 +39,33 @@ c2ef1f333 chore: session checkpoint [10:04]
 ## Working State
 ```
 clean working tree
+ M .agent/test_ledger/OPEN_ISSUES.md
+ M .agent/test_ledger/REAL_TEST_HISTORY.md
+ M .agent/workflows/a.md
+ M artifacts/boardroom_live_home.png
+ M artifacts/boardroom_result.png
+ M artifacts/live-agent-daisy-chain/coordination-report.html
+ M artifacts/live-agent-daisy-chain/latest.json
+ M deep-test-boardroom-1.png
+ M deep-test-booking-1.png
+ M deep-test-campaign-1.png
+ M deep-test-publicist-1.png
+ M e2e/boardroom-live-verify.spec.ts
+ M e2e/boardroom-real-user-scenario.spec.ts
+ M e2e/fixtures/auth.ts
+ M e2e/founders-program.spec.ts
+ M packages/firebase/firestore.rules
+ M scripts/git_monitor_sync.js
+?? .claude/launch.json
+?? ORIGINAL_REQUEST.md
+?? artifacts/mega_audio_analyzer_2026-06-22_live_evidence.json
+?? artifacts/mega_audio_analyzer_2026-06-22_preview_evidence.json
+?? artifacts/mega_audio_analyzer_2026-06-22_results.md
+?? artifacts/mega_audio_analyzer_2026-06-22_screenshots/
+?? docs/flowcharts/agent-venue-research-macro.md
+?? docs/handoff/
+?? packages/renderer/src/modules/notes/
+?? packages/renderer/src/services/agent/tools/NotesTools.ts
 ```
 
 ## Decisions
