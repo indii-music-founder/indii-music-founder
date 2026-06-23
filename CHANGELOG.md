@@ -2,6 +2,14 @@
 
 All notable changes to indii are documented in this file.
 
+## [1.64.3](https://github.com/indii-music-founder/indii-music-founder/compare/v1.64.2...v1.64.3) (2026-06-23)
+
+### Bug Fixes
+
+* **nav:** remove orphaned MobileNav dead code — Removed unused MobileNav component and related test files since phone UI routing is remote-only by design.
+* **test:** resolve CreativeStudio test flakiness in full suite — Added explicit mock cleanup in beforeEach to prevent mock state pollution from previous tests.
+* **auth:** add explicit auth token verification for image/video generation — Added auth token verification before calling Firebase Cloud Functions to prevent 401 Unauthorized errors.
+
 ## [1.64.2](https://github.com/indii-music-founder/indii-music-founder/compare/v1.64.1...v1.64.2) (2026-06-10)
 
 

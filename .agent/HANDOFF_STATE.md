@@ -1,34 +1,19 @@
 # Handoff State
-**Updated:** 2026-06-23 16:07 UTC
-**Branch:** `claude/agent-abcd-vem93b`
+**Updated:** 2026-06-23 16:24 EDT
+**Branch:** `fix/prune-orphaned-nav-components`
 
 ## Recent Commits
 ```
-5ba2ae5 fix: repair re-merged breakage in page.tsx + remote listener routing
-1bd00e7 fix: restore parsed.kind check for proper type narrowing
-1b7e10a fix: resolve lint errors in PR #186 (claude/agent-abcd-vem93b)
-2f7fff7 Merge branch 'main' into claude/agent-abcd-vem93b
-369dc3f Codex/boardroom abort signal (#191)
-923f0e8 Add notes module and tighten navigation and storage handling (#189)
-8df76d4 Pr 186 (#190)
-80bc4f2 test(ledger): log ISSUE-A-014 to ISSUE-A-018
-56ff494 test(security): update expected mock referer assertion to founder.indii.music
-c6da973 test(ledger): log ISSUE-CI pipeline failures
-**Updated:** 2026-06-23 14:06 EDT
-**Branch:** `codex/boardroom-abort-signal`
-
-## Recent Commits
-```
-7dd6eb80a chore: session checkpoint [12:18]
-8b9f3b215 chore: session checkpoint [12:16]
-6a7fe3690 chore: session checkpoint [12:11]
-321810303 chore: session checkpoint [12:09]
-2d1f41afa chore: resolve merge conflict with main
-663f1c52f chore: session checkpoint [12:07]
-44e5c86b2 chore: session checkpoint [12:07]
-b91a8906f ABCD session: landing fix + ISSUE-443 regression + indiiREMOTE "show me" channel (#186)
-0d44c7560 chore: session checkpoint [11:57]
-5967ddac5 fix: use parsed.kind for agent_action type narrowing
+1c02695f6 chore: add emulator:functions npm script to start Firebase Functions emulator
+e46c99c62 chore: session checkpoint [16:23]
+632218684 chore: session checkpoint [16:23]
+40e11b1ce chore: session checkpoint [16:21]
+4c1d25a01 chore: session checkpoint [16:18]
+5f5db4b7c chore: session checkpoint [16:17]
+2f16e53a5 chore: session checkpoint [16:16]
+7d3fe1476 chore: session checkpoint [16:16]
+4de1ad2b1 chore: session checkpoint [16:13]
+8b5a8f53b chore: session checkpoint [16:12]
 ```
 
 ## Working State

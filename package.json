@@ -1,6 +1,6 @@
 {
   "name": "indii.music",
-  "version": "1.64.2",
+  "version": "1.64.3",
   "description": "The Operating System for Independent Music — npm Workspace Monorepo",
   "author": "New Detroit Music LLC <info@indii.music>",
   "type": "module",
@@ -48,6 +48,7 @@
     "test:e2e:all": "npx playwright test",
     "test:e2e:emulator": "bash scripts/run-e2e-emulator.sh",
     "test:rules": "FIRESTORE_EMULATOR_HOST=localhost:8080 vitest run --config vitest.rules.config.ts",
+    "emulator:functions": "firebase emulators:start --only functions",
     "health:check": "vitest --run --grep '\\.integration\\.test\\.ts' -- packages/renderer/src/services",
     "health:generate-dashboard": "tsx scripts/generate-health-dashboard.ts",
     "clean": "rm -rf dist dist-electron packages/*/dist .firebase .genkit coverage test-results playwright-report",
