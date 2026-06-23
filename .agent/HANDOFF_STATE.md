@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-23 11:45 EDT
+**Updated:** 2026-06-23 11:57 EDT
 **Branch:** `codex/boardroom-abort-signal`
 
 ## Recent Commits
 ```
+5967ddac5 fix: use parsed.kind for agent_action type narrowing
+71313901d chore: session checkpoint [11:45]
 6332e9cef chore: session checkpoint [11:31]
 4df0d224b chore: session checkpoint [10:59]
 1dba41236 chore: session checkpoint [10:51]
@@ -12,8 +14,6 @@ b082abe25 chore: session checkpoint [10:43]
 a1a076d76 chore: session checkpoint [10:40]
 98d8fee87 chore: session checkpoint [10:37]
 68bb87ea6 chore: session checkpoint [10:34]
-2627e4d5a fix(tests): complete missing test body and fix assertion in SidebarNavigation.test.tsx
-49613fb2d chore: session checkpoint [10:24]
 ```
 
 ## Working State
