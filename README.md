@@ -932,15 +932,15 @@ The `WorkflowEngine` now executes every node type with real service calls:
 
 ### v0.1.0-beta.3 — April 2026
 
-**Indii Growth Protocol & Meta Andromeda Pipeline**
+**Indii Growth Protocol & PLP Pipeline**
 
-- **Creative Studio Integration**: Integrated the 15-variant (10 images, 5 videos via Veo 3.1) Meta Andromeda batch generation pipeline.
-- **Automated Deployment**: Andromeda directly interfaces with `AdAutomationService` to seamlessly deploy variants to Meta networks (Instagram exclusively) for algorithmic A/B testing and stream-velocity spikes.
+- **Creative Studio Integration**: Integrated the 15-variant (10 images, 5 videos via Veo 3.1) PLP (Promote · Launch · Push) batch generation pipeline.
+- **Automated Deployment**: PLP directly interfaces with `AdAutomationService` to seamlessly deploy variants to Meta networks (Instagram exclusively) for algorithmic A/B testing and stream-velocity spikes.
 - **Dashboard Observability**: Real-time viral scoring, algorithmic velocity trends, and CPS Kill-Switch status indicators are now natively integrated into `PlatformCard.tsx`.
 
 **Command Bar Enhancements (UI/UX)**
 
-- **Slash Commands**: Introduced `/deploy-andromeda` and `/status-blitz` intercepts directly in the Command Bar (`PromptArea.tsx`).
+- **Slash Commands**: Introduced `/deploy-plp` and `/status-blitz` intercepts directly in the Command Bar (`PromptArea.tsx`).
 - **Accessibility**: 100% WCAG 2.1 AA compliance achieved on dynamic UI elements and Delegate Menus, verified by automated `jest-axe` tests.
 
 **Indii Conductor (Agentic Harness) Hardening**

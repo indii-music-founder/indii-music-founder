@@ -21,7 +21,7 @@ Every interaction in the app follows this exact cycle:
 
 ### 1c. The Agentic Harness (indii Conductor) & Python Execution
 
-- **Execution:** `python/tools/*.py` holds 103+ extremely specific scripts doing heavy lifting (e.g., `waterfall_calculator.py`, `ddex_build.py`, `andromeda_deploy.py`).
+- **Execution:** `python/tools/*.py` holds 103+ extremely specific scripts doing heavy lifting (e.g., `waterfall_calculator.py`, `ddex_build.py`, `plp_deploy.py`).
 - **Safety & Resilience:** Orchestration is governed by a hardened harness. `WorkflowStateService` provides persistent, resumable multi-agent execution tracks backed by Firestore. The `ToolRiskRegistry` categorizes all tools into a 3-tier system (read/write/destructive), triggering automated Digital Handshakes for explicit user approval on sensitive actions.
 - **Agents:** The 20 specialized models (Legal, Finance, Creative, etc.) are orchestrated via the `indii Conductor`. They analyze a user's prompt, select the right secure tool, execute it, and return the structured result back to the frontend.
 
