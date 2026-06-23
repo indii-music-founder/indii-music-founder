@@ -6221,7 +6221,7 @@ Therefore, no fix can be proposed or implemented.
   3. If you navigate directly to `https://indii-music-studio.web.app/social`, the Firebase authentication context is destroyed and you are redirected to the Login page.
 - **User Impact:** Users cannot easily access the Social Media Department from the sidebar, and direct navigation requires re-authenticating.
 - **Verification:** Desktop sidebar navigation now has explicit regression coverage proving `Social Media Department` calls `setModule('social')`, not `mobile-remote`. The only remaining automatic `mobile-remote` routing is the intentional phone-viewport path in `App.tsx`.
-- **Evidence:** `npm test -- --run packages/renderer/src/core/components/SidebarNavigation.test.tsx` passed 9/9 after adding the Social Department assertion.
+- **Evidence:** `npm test -- --run packages/renderer/src/core/components/SidebarNavigation.test.tsx` passed 10/10 after adding the Social Department assertion and Notes route coverage. Added route aliases for `/social-media` and `/socials` to normalize to `social`.
 
 ---
 
@@ -6269,7 +6269,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-446: Missing 'ID' (Detect Objects) and Zoom/Layers in Canvas Tools
 
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟡 MEDIUM
 - **UX Dimension:** Action Discoverability
 - **Module:** Creative Director
@@ -6282,6 +6282,8 @@ Therefore, no fix can be proposed or implemented.
 - **Expected (acceptance):** The canvas tool palette should include the requested functionality (ID/Detect Objects, Zoom, Layers) as described in the module requirements.
 - **Honest fallback:** If not yet implemented, a disabled placeholder or Coming Soon tooltip should be present to manage expectations.
 - **User Impact:** Power users cannot manage canvas objects or utilize the advanced AI vision tools.
+- **Fix:** Added a first-class `ID Objects` toolbar button wired to `handleDetectObjects`, plus disabled honest placeholders for Zoom Controls and Layers Panel with accessible labels and tooltips.
+- **Evidence:** `npm test -- --run packages/renderer/src/modules/creative/components/CanvasToolbar.test.tsx` passed 6/6; combined focused regression run passed 18/18; `npm run typecheck` passed.
 
 ---
 
@@ -6414,10 +6416,12 @@ Therefore, no fix can be proposed or implemented.
 - **DECISION NEEDED (do not blind-rename):** "Meta Andromeda" may be referencing **Meta's real `Andromeda` ad-retrieval/ranking ML system** (an actual Meta product), not just indii's feature. If the docs mean indii's 15-variant generator → rename to **PLP** for consistency. If they mean Meta's external system → leave as-is (it's accurate) and just clarify wording so it's not confused with the indii feature. Founder/marketing owner decides.
 
 ### ISSUE-CREATIVE-COPY-20260622: "Bypass Autonomous Swarms" subtitle still uses flagged "Swarm" wording
-- **Status:** ⏳ OPEN (naming/copy decision)
+- **Status:** ✅ FIXED
 - **Severity:** 🟡 LOW (UI copy)
 - **File:** `packages/renderer/src/modules/creative/components/DirectGenerationTab.tsx:113`
-- **Summary:** Creative Hub subtitle reads "Bypass Autonomous Swarms." Founder flagged "Swarm" as AI-slop wording (the creative-studio "Swarm" registry button was already renamed to "Roster"). This separate copy string was intentionally NOT changed because it describes bypassing the autonomous agent pipeline, not the Roster. Decide: rephrase (e.g. "Direct generation — skip the autonomous pipeline") or leave.
+- **Summary:** Creative Hub subtitle read "Bypass Autonomous Swarms." Founder flagged "Swarm" as AI-slop wording (the creative-studio "Swarm" registry button was already renamed to "Roster").
+- **Fix:** Replaced the remaining subtitle with "Direct Creative Generation" and the body copy with "Skip the autonomous pipeline..." wording.
+- **Evidence:** `rg -n "Bypass Autonomous Swarms|autonomous orchestration algorithms|Swarm|Swarms" packages/renderer/src/modules/creative/components/DirectGenerationTab.tsx packages/renderer/src/modules/creative -g '*.tsx'` returns no matches; `npm run typecheck` passed.
 
 ### ISSUE-CREATIVE-AUDIT-20260622: Creative Studio button audit incomplete + FLASH/REFINE UX confusion
 - **Status:** ⏳ OPEN (parked when session pivoted to the PLP rename)
@@ -6477,7 +6481,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-A-009: `boardroom-live-verify.spec.ts` is an env-fragile live-model test in the default E2E gate (no E2E mock bypass)
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟢 LOW (test-infra fragility — NOT a product defect; boardroom seating itself works)
 - **Dimension:** Architecture / Test Harness
 - **Location:** `e2e/boardroom-live-verify.spec.ts:66` (45s `waitForFunction` poll, 60s test timeout). Related: `packages/renderer/src/services/intelligence/billing/TokenUsageService.ts:181` (`if (this.isE2EMode) return true;` quota bypass — evaluated FALSE for this spec) and `:247` (`checkQuota` → `QUOTA_EXCEEDED`).
@@ -6486,6 +6490,8 @@ Therefore, no fix can be proposed or implemented.
 - **Honest fallback:** If a true live-model check is desired, gate behind an explicit flag and skip when unavailable. Never let an env-dependent live-model spec sit in the default deterministic suite.
 - **DO NOT:** Do NOT bump the 45s/60s timeout (the model call was blocked, not slow). Do NOT weaken `TokenUsageService.checkQuota`'s production quota guard to pass a test. Do NOT delete the spec. Do NOT file this as a Boardroom product bug — programmatic seating works (siblings pass).
 - **Evidence:** `/tmp/a-e2e.log:1108` `✘ 21 boardroom-live-verify.spec.ts:5:1 (1.0m)`; `~1099-1103` `JWT malformed` + `[MultiTurnAutorater] ... Quota check failed` at `TokenUsageService.checkQuota`; contrast `:1180,1446,1468,1511` boardroom-swarm PASS ~8s via programmatic seating.
+- **Fix:** Default `npm run test:e2e` now excludes `@live` specs with `--grep-invert @live`; added `npm run test:e2e:live` for explicit live verification.
+- **Verification:** `package.json` E2E scripts separate deterministic and live gates; `npm run typecheck` passed.
 
 ### ISSUE-A-010: Firestore rule regex `uid_[0-9]+` cannot match dashed quota docId `uid_YYYY-MM-DD` — quota reads denied → AI blocked for normal users in PROD
 
@@ -6503,7 +6509,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-A-011: Several E2E specs run with `FIREBASE_E2E_MOCK` disabled → hit real emulator Firestore (permission-denied/quota) and fail non-deterministically
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟢 LOW (test-harness fragility — not product defects)
 - **Dimension:** Architecture / Test Harness
 - **Location:** Affected specs observed: `e2e/conductor-consult-streaming.spec.ts:85`, `e2e/creative-character.spec.ts:76` (and related `e2e/creative-studio.spec.ts:45`). Flag: `packages/renderer/src/utils/e2eMode.ts` (`isFirebaseE2EMockEnabled`). Bypass that doesn't fire: `TokenUsageService.ts:181` (`if (this.isE2EMode) return true`).
@@ -6512,6 +6518,8 @@ Therefore, no fix can be proposed or implemented.
 - **Honest fallback:** Specs that genuinely need the real path should be `@live`-tagged and excluded from the default gate (same remedy class as ISSUE-A-007 and ISSUE-A-009).
 - **DO NOT:** Do NOT make the real `generateImageV3` path call `addToHistory` to fake local history (breaks real-job semantics). Do NOT loosen production Firestore rules to make tests pass. Do NOT bump timeouts — the awaited item never arrives.
 - **Evidence:** `/tmp/a-e2e.log`: `isE2EMockEnabled: false` on `[AuthProxy]` lines; `[CreativeSlice] History subscription error: FirebaseError: ... false for 'list'`; `[CircuitBreaker] ... Quota check failed`. Fast/medium fails: conductor-consult 38.5s (25s visibility timeout), creative-character 12.4s.
+- **Fix:** Playwright's default `webServer.command` now starts Vite with `VITE_FIREBASE_E2E_MOCK=true` in addition to `VITE_E2E=true`, so specs get the deterministic Firebase mock branch from startup.
+- **Verification:** `playwright.config.ts` includes `VITE_FIREBASE_E2E_MOCK=true`; `npm run typecheck` passed.
 
 ### ISSUE-A-012: founders-checkout E2E asserts removed "manual payment" UI — component is now Stripe-only (stale test/source divergence)
 
@@ -6538,7 +6546,7 @@ Therefore, no fix can be proposed or implemented.
 - **Next Steps / Recommended Swarm Audit:** Launch a specialized testing agent to execute real-world simulation runs under artificial network constraints (throttling, latency injection) to audit pairing state transitions. Verify that locking/unlocking the device cleanly triggers silent recovery.
 
 ### ISSUE-448: Audio-connected Creative handoff crashes DirectGenerationTab before canvas renders
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Dimension:** Console | DataFlow | AssetGen
 - **Target:** Audio Analyzer (tool)
@@ -6551,6 +6559,8 @@ Therefore, no fix can be proposed or implemented.
 - **Expected:** Audio-derived or downstream Creative prompts should generate/display an asset without crashing the Creative module, and the canvas container should become visible.
 - **UX Impact:** Audio Analyzer cannot reliably hand off Semantic Audio DNA or audio-derived creative prompts into downstream visual generation; the user lands on a module-level crash instead of a generated asset.
 - **Dimensional Data:** Scoped runner: unit/integration 21/21 files and 135/135 tests passed; connected E2E failed 2/17. Creative failure: `e2e/creative-studio.spec.ts:56`, screenshot `test-results/creative-studio-Creative-S-a81a5-prompt---generate---display-chromium/test-failed-1.png`, error context `test-results/creative-studio-Creative-S-a81a5-prompt---generate---display-chromium/error-context.md`.
+- **Fix:** Guarded the PLP/character-reference video mapping so it only calls `indexOf` on real string image URLs and drops malformed references instead of crashing the Creative module.
+- **Evidence:** `packages/renderer/src/modules/creative/CreativeStudio.tsx`; combined focused regression run passed 18/18; `npm run typecheck` passed.
 
 ### ISSUE-449: Audio-connected Distribution metadata submission never reaches done state
 - **Status:** OPEN
@@ -6570,13 +6580,15 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-450: Untracked and Incomplete Notes Module and NotesTools in workspace
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟡 MEDIUM
 - **Dimension:** Architecture | Feature Completeness
 - **Target:** Notes module / NotesTools
 - **Module:** packages/renderer/src/modules/notes/ | packages/renderer/src/services/agent/tools/NotesTools.ts
 - **Summary:** There are untracked and incomplete Notes component files and tool interfaces present in the worktree. These were left untracked from earlier sessions and need to be fully integrated, type-checked, and added to the build and navigation registry, or cleaned up.
 - **Next Steps:** Evaluate whether the Notes feature is part of the core roadmap. If so, register it in the sidebar navigation and wire its service integrations. Otherwise, prune/clean the files.
+- **Fix:** Registered `notes` as a first-class module in `MODULE_IDS`, agent mapping, lazy component map, desktop sidebar, mobile nav, module themes/colors, and persisted store fields.
+- **Evidence:** `npm test -- --run packages/renderer/src/core/components/SidebarNavigation.test.tsx` passed 10/10 with explicit Notes sidebar click and module render coverage; `npm run typecheck` passed.
 
 ### ISSUE-451: LLM API Rate Limits / 429 Quota Exhaustion in `/abcd` loops
 - **Status:** OPEN
