@@ -34,6 +34,7 @@ import { delay } from '@/utils/async';
 import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 import { getRealAuthenticatedUserId, isAnonymousOrDemoUser } from '@/utils/authGuards';
 import type { AgentMessage } from '@/core/store/slices/agent/agentSessionSlice';
+import type { HistoryItem } from '@/core/types/history';
 
 export function buildLiveMomentNote(noteText: string) {
     const content = noteText.trim();
@@ -69,6 +70,43 @@ async function writeDiagnostic(stage: string, details?: Record<string, unknown>)
     } catch {
         // Silent — diagnostics should never crash the app
     }
+}
+
+/**
+ * Pure decision logic for the `[SHOW]` ("show me") remote route.
+ *
+ * Extracted from the Firestore relay route so the branch logic can be exercised
+ * deterministically without the live phone↔desktop round-trip. Given the
+ * current `generatedHistory`, it resolves what the phone should receive:
+ *   - happy path: the most-recent image artifact's thumbnail/full url + caption
+ *   - empty state: an honest text-only fallback (no imageUrls)
+ *
+ * This must stay behaviorally identical to the inline route it replaced.
+ */
+export interface ShowMeResponse {
+    text: string;
+    agentId: string;
+    imageUrls?: string[];
+}
+
+export function resolveShowMeResponse(history: HistoryItem[] | undefined): ShowMeResponse {
+    const latestVisual = (history ?? []).find(item => item.type === 'image' && !!item.url);
+
+    if (latestVisual) {
+        return {
+            text: latestVisual.prompt
+                ? `🖼️ Here's the latest: "${latestVisual.prompt}"`
+                : '🖼️ Here\'s the latest visual.',
+            agentId: 'creative',
+            imageUrls: [latestVisual.thumbnailUrl || latestVisual.url],
+        };
+    }
+
+    // Honest empty state — never a silent no-op or a raw error.
+    return {
+        text: 'Nothing to show yet — generate or open an asset first, then say "show me".',
+        agentId: 'creative',
+    };
 }
 
 function findLatestRemoteAgentResponse(startedAt: number): AgentMessage | undefined {
@@ -521,8 +559,56 @@ function useFirestoreRelay(enabled: boolean) {
                 return;
             }
 
-            if (parsed.kind === 'agent_action') {
-                const action = parsed.action;
+            // ─── Navigation Route ──────────────────────────────
+            if (command.text.startsWith('[NAVIGATE]')) {
+                const targetModule = command.text.replace('[NAVIGATE]', '').trim();
+                logger.info(`[RemoteRelay/Firestore] 🧭 Navigate to: "${targetModule}"`);
+                writeDiagnostic('navigation_started', { module: targetModule });
+
+                useStore.getState().setModule(targetModule as import('@/core/constants').ModuleId);
+
+                await remoteRelayService.sendResponse(
+                    command.id,
+                    `🧭 Navigated to ${targetModule}`,
+                    undefined,
+                    false
+                );
+
+                await remoteRelayService.markCommandCompleted(command.id);
+                return;
+            }
+
+            // ─── Show Me Route (on-demand visual return channel) ──────────────────────────────
+            // ISSUE-REMOTE-SHOW-20260622 Phase 1: surface the most recent visual artifact on the
+            // phone by reusing the same imageUrls channel that [GENERATE_IMAGE] already uses.
+            if (command.text.startsWith('[SHOW]')) {
+                logger.info('[RemoteRelay/Firestore] 🖼️ Show me: surfacing latest visual artifact');
+                writeDiagnostic('show_me_started', { commandId: command.id });
+
+                const history = useStore.getState().generatedHistory;
+                const resolved = resolveShowMeResponse(history);
+
+                await remoteRelayService.sendResponse(
+                    command.id,
+                    resolved.text,
+                    resolved.agentId,
+                    false,
+                    resolved.imageUrls
+                );
+
+                if (resolved.imageUrls) {
+                    writeDiagnostic('show_me_done', { commandId: command.id, imageUrl: resolved.imageUrls[0] });
+                } else {
+                    writeDiagnostic('show_me_empty', { commandId: command.id });
+                }
+
+                await remoteRelayService.markCommandCompleted(command.id);
+                return;
+            }
+
+            // ─── Agent Action Route ──────────────────────────────
+            if (command.text.startsWith('[AGENT_ACTION]')) {
+                const action = command.text.replace('[AGENT_ACTION]', '').trim();
                 logger.info(`[RemoteRelay/Firestore] 🤖 Agent Action: "${action}"`);
                 writeDiagnostic('agent_action_started', { action });
 
