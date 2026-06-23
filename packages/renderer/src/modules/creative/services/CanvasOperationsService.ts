@@ -47,14 +47,13 @@ export class CanvasOperationsService {
     private _points: { x: number; y: number }[] = [];
 
     /**
-     * Load a Fabric.js Image from URL with automatic CORS fallback.
+     * Load a Fabric.js Image from URL without tainting the export canvas.
      *
      * Strategy:
-     *  1. Try fabric.Image.fromURL with crossOrigin:'anonymous' (works for data URIs
-     *     and correctly-configured CORS origins).
-     *  2. On failure (CORS block, network error), fetch the image bytes via
-     *     `safeStorageFetch`, create a blob URL, and retry — blob URLs are same-origin
-     *     so CORS is irrelevant.
+     *  1. Prefer a blob URL for known remote storage assets so the browser never
+     *     has to guess about canvas safety.
+     *  2. Fall back to direct anonymous loading for sources that are already same-origin
+     *     or are clearly CORS-safe.
      */
     private async loadImageSafe(url: string): Promise<fabric.Image> {
         // High-performance async decoding (off main thread) helper
@@ -98,14 +97,33 @@ export class CanvasOperationsService {
             }
         }
 
-        // Attempt 1: Direct load with crossOrigin
+        const shouldPreferBlob = /firebasestorage\.googleapis\.com|storage\.googleapis\.com/i.test(url);
+
+        // Attempt 1: Use a blob URL for remote storage sources to avoid canvas taint.
+        if (shouldPreferBlob) {
+            try {
+                const { safeStorageFetch } = await import('@/services/storage/safeStorageFetch');
+                const { blob } = await safeStorageFetch(url);
+                const blobUrl = URL.createObjectURL(blob);
+                this._activeBlobUrls.push(blobUrl);
+
+                const img = await loadOffThread(blobUrl);
+                logger.info('[CanvasOps] Image loaded via blob URL (preferred for storage assets)');
+                return img;
+            } catch (blobErr: unknown) {
+                logger.warn('[CanvasOps] Preferred blob load failed for storage asset:', blobErr);
+                throw new Error(`Safe image load failed for storage asset: ${url}`);
+            }
+        }
+
+        // Attempt 2: Direct load with crossOrigin for sources that are already safe.
         try {
             return await loadOffThread(url, 'anonymous');
         } catch (directErr: unknown) {
             logger.warn('[CanvasOps] Direct image load failed (likely CORS), attempting blob fallback:', directErr);
         }
 
-        // Attempt 2: Fetch via safeStorageFetch → blob URL (bypasses CORS)
+        // Attempt 3: Fetch via safeStorageFetch → blob URL (bypasses CORS)
         try {
             const { safeStorageFetch } = await import('@/services/storage/safeStorageFetch');
             const { blob } = await safeStorageFetch(url);
@@ -116,18 +134,10 @@ export class CanvasOperationsService {
             logger.info('[CanvasOps] Image loaded via blob URL fallback');
             return img;
         } catch (blobErr: unknown) {
-            logger.warn('[CanvasOps] Blob fallback also failed, trying no-CORS Image element:', blobErr);
+            logger.warn('[CanvasOps] Blob fallback failed:', blobErr);
         }
 
-        // Attempt 3: Final fallback: try without crossOrigin for display-only (won't be exportable)
-        try {
-            const img = await loadOffThread(url);
-            logger.info('[CanvasOps] Image loaded via no-crossOrigin fallback');
-            return img;
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        } catch (e) {
-            throw new Error(`All image load strategies failed for: ${url}`);
-        }
+        throw new Error(`All image load strategies failed for: ${url}`);
     }
 
     /**
