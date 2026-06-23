@@ -1,92 +1,24 @@
 # Handoff State
-**Updated:** 2026-06-22 22:53 UTC
+**Updated:** 2026-06-23 16:07 UTC
 **Branch:** `claude/agent-abcd-vem93b`
 
 ## Recent Commits
 ```
-d5bddad fix: repair merge breakage in landing + remote command routing
-b2a0230 Merge branch 'main' into claude/agent-abcd-vem93b
-c3ad919 chore: session checkpoint [18:44]
-9756234 Merge branch 'main' into claude/agent-abcd-vem93b
-5c241fd Claude/ci failure main wxyof9 (#188)
-913a661 chore: session checkpoint [18:39]
-e528b15 chore: session checkpoint [18:37]
-341fd2f test(ledger): log ISSUE-A-012
-4885271 chore: session checkpoint [14:38]
-ed0586a test(ledger): log ISSUE-A-010 and ISSUE-A-011
-**Updated:** 2026-06-23 10:07 EDT
-**Branch:** `codex/boardroom-abort-signal`
-
-## Recent Commits
-```
-5c28cdc43 chore: session checkpoint [10:06]
-**Updated:** 2026-06-23 10:06 EDT
-**Branch:** `codex/boardroom-abort-signal`
-**Updated:** 2026-06-22 17:56 UTC
-**Branch:** `claude/agent-abcd-vem93b`
-
-## Recent Commits
-```
-fd4a619 docs(ledger): capture follow-up work for SHOW, ISSUE-445 emulator, orphaned phone-nav
-fb1cb2a chore: session checkpoint [17:52]
-2472e8b chore: session checkpoint [17:48]
-7685b81 chore: session checkpoint [17:47]
-0764bf2 chore: session checkpoint [15:46]
-20e8d81 test(remote): prove [SHOW] route both branches + flowchart + issue validation
-a8f9911 chore: session checkpoint [15:44]
-0d1538e chore: session checkpoint [15:44]
-bb63d03 chore: session checkpoint [15:40]
-6926915 feat(remote): add [SHOW] on-demand visual return channel to indiiREMOTE
-**Updated:** 2026-06-22 14:00 UTC
-**Branch:** `claude/ci-failure-main-wxyof9`
-
-**Updated:** 2026-06-22 18:44 EDT
-**Branch:** `main`
-
-## Recent Commits
-```
-c2ef1f333 chore: session checkpoint [10:04]
-0240632c1 chore: session checkpoint [10:04]
-1e569556e docs: establish PLP as strategic three-pillar system
-7262fff97 chore: session checkpoint [10:00]
-9915099a4 fix(landing): resolve TypeScript redeclaration error in useState initializer
-946a827a5 chore: session checkpoint [09:57]
-45a86f217 refactor: complete PLP rebrand — replace all remaining Andromeda references
-4d014ab5f chore: session checkpoint [09:55]
-87eaca1da docs(session): checkpoint work and log flaky test issue
-547474154 test(sidebar): update snapshots for Notes module navigation item
+5ba2ae5 fix: repair re-merged breakage in page.tsx + remote listener routing
+1bd00e7 fix: restore parsed.kind check for proper type narrowing
+1b7e10a fix: resolve lint errors in PR #186 (claude/agent-abcd-vem93b)
+2f7fff7 Merge branch 'main' into claude/agent-abcd-vem93b
+369dc3f Codex/boardroom abort signal (#191)
+923f0e8 Add notes module and tighten navigation and storage handling (#189)
+8df76d4 Pr 186 (#190)
+80bc4f2 test(ledger): log ISSUE-A-014 to ISSUE-A-018
+56ff494 test(security): update expected mock referer assertion to founder.indii.music
+c6da973 test(ledger): log ISSUE-CI pipeline failures
 ```
 
 ## Working State
 ```
 clean working tree
- M .agent/test_ledger/OPEN_ISSUES.md
- M .agent/test_ledger/REAL_TEST_HISTORY.md
- M .agent/workflows/a.md
- M artifacts/boardroom_live_home.png
- M artifacts/boardroom_result.png
- M artifacts/live-agent-daisy-chain/coordination-report.html
- M artifacts/live-agent-daisy-chain/latest.json
- M deep-test-boardroom-1.png
- M deep-test-booking-1.png
- M deep-test-campaign-1.png
- M deep-test-publicist-1.png
- M e2e/boardroom-live-verify.spec.ts
- M e2e/boardroom-real-user-scenario.spec.ts
- M e2e/fixtures/auth.ts
- M e2e/founders-program.spec.ts
- M packages/firebase/firestore.rules
- M scripts/git_monitor_sync.js
-?? .claude/launch.json
-?? ORIGINAL_REQUEST.md
-?? artifacts/mega_audio_analyzer_2026-06-22_live_evidence.json
-?? artifacts/mega_audio_analyzer_2026-06-22_preview_evidence.json
-?? artifacts/mega_audio_analyzer_2026-06-22_results.md
-?? artifacts/mega_audio_analyzer_2026-06-22_screenshots/
-?? docs/flowcharts/agent-venue-research-macro.md
-?? docs/handoff/
-?? packages/renderer/src/modules/notes/
-?? packages/renderer/src/services/agent/tools/NotesTools.ts
 ```
 
 ## Decisions
