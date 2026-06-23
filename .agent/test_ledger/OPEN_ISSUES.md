@@ -6708,7 +6708,7 @@ Therefore, no fix can be proposed or implemented.
 - **Evidence:** Static verification against `packages/renderer/src/modules/creative/video/VideoWorkflow.tsx`, `packages/renderer/src/modules/creative/components/CreativeGallery.tsx`, and `packages/renderer/src/modules/creative/video/editor/components/EditorAssetLibrary.tsx` on 2026-06-23.
 
 ### ISSUE-A-023: Visual autorater correction loop reads like an endless retry
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟡 MEDIUM
 - **Location:** `packages/renderer/src/services/agent/governance/VisualOutputAutorater.ts`, `packages/renderer/src/services/agent/AgentService.ts`
 - **Details:** The correction loop for Creative Director image generation is bounded by a max-attempt cap, but the transcript still looks like it is stuck in an endless corrective retry cycle because each rejection immediately prompts another regeneration. The user needs a hard stop message and a clear summary of the remaining defect when the cap is reached.
@@ -6716,3 +6716,6 @@ Therefore, no fix can be proposed or implemented.
 - **Honest fallback:** Surface a manual-review state and keep the last acceptable asset visible.
 - **DO NOT:** Do NOT keep re-prompting in a way that looks like a runaway loop after the cap is reached.
 - **Evidence:** Pasted Creative Director transcript shows repeated `Visual Autorater Correction` messages followed by another `generate_image` request each time.
+- **Root cause:** The retry cap was tracked by response message id, so each regenerated image received a fresh id and reset the counter. That made the configured cap ineffective across the correction chain.
+- **Fix:** `AgentService` now keys autorater correction attempts by stable `agentId + normalized original brief` instead of response id. The correction prompt shows the attempt number and cap, and the terminal system message explicitly says automatic correction has stopped, lists remaining gaps, and gives the user a manual next step.
+- **Evidence:** `npx vitest run packages/renderer/src/services/agent/governance/VisualOutputAutorater.test.ts` passed 24/24; `npm run typecheck` passed.

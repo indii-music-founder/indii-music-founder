@@ -1611,7 +1611,7 @@ The user will see this plan and can approve it to start execution.`;
             }
 
             const traceId = `visual-${responseId}`;
-            const originalImageId = responseId; // Use the response message ID as the image identifier
+            const originalImageId = this.getVisualAutoraterRetryKey(agentId, originalBrief);
 
             // Check if we've already exhausted retries for this image
             if (VisualOutputAutorater.hasReachedCap(originalImageId)) {
@@ -1687,7 +1687,7 @@ The user will see this plan and can approve it to start execution.`;
                 const manualReviewMsg = {
                     id: uuidv4(),
                     role: 'system' as const,
-                    text: `⚠️ **Image flagged for manual review** — The autorater couldn't reach a passing score after ${attemptNumber} self-correction attempts. Gaps found: ${score.gapsFound}`,
+                    text: `**Image correction stopped for manual review** — The autorater could not reach a passing score after ${attemptNumber} self-correction attempts, so no more automatic regenerations will run for this brief. Remaining gaps: ${score.gapsFound}. Next step: revise the prompt manually or accept the latest image with those limitations.`,
                     timestamp: Date.now(),
                 };
 
@@ -1704,13 +1704,25 @@ The user will see this plan and can approve it to start execution.`;
                 `[AgentService] Visual autorater FAILED (attempt ${attemptNumber}): dispatching correction. Gaps: ${score.gapsFound}`
             );
 
-            const correctiveMessage = `[Visual Autorater Correction] The previously generated image did not match the brief. ${score.gapsFound}. Please regenerate with the following corrections: ${score.correctivePrompt}. Original brief: "${originalBrief}"`;
+            const correctiveMessage = `[Visual Autorater Correction ${attemptNumber}/${VisualOutputAutorater.MAX_CORRECTION_ATTEMPTS}] The previously generated image did not match the brief. Remaining gaps: ${score.gapsFound}. Regenerate one corrected image using these corrections: ${score.correctivePrompt}. Original brief: "${originalBrief}"`;
 
             // Re-enter sendMessage to trigger a corrective generation
             await this.sendMessage(correctiveMessage, undefined, agentId, { source: 'background' });
         } catch (error) {
             logger.error('[AgentService] Visual autorater failed:', error);
         }
+    }
+
+    private getVisualAutoraterRetryKey(agentId: string, originalBrief: string): string {
+        let hash = 0;
+        const normalizedBrief = originalBrief.trim().toLowerCase();
+
+        for (let i = 0; i < normalizedBrief.length; i += 1) {
+            hash = ((hash << 5) - hash) + normalizedBrief.charCodeAt(i);
+            hash |= 0;
+        }
+
+        return `${agentId}:${Math.abs(hash).toString(36)}`;
     }
 }
 
