@@ -14,7 +14,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { remoteRelayService } from '@/services/agent/RemoteRelayService';
 import { logger } from '@/utils/logger';
 import {
-  Palette, Video, Music, DollarSign, Calendar, TrendingUp, Bot, Users, Activity,
+  Palette, Video, Music, DollarSign, Calendar, TrendingUp, Bot, Users, Activity, Image as ImageIcon,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   CheckSquare, ThumbsUp, ShoppingBag, MapPin, Sparkles, Mic, LucideIcon, Rocket, Zap,
   Cpu, Headphones, Share2, Layers, Settings, FileText, Globe, BarChart3, Shield,
@@ -89,6 +89,20 @@ export default function CommandPad({ onSendCommand, isPaired }: CommandPadProps)
           undefined,
           { aspectRatio: '1:1', type: 'generate_image' }
         ).catch(err => logger.error('[CommandPad] Generate failed:', err));
+      },
+    },
+    {
+      id: 'show-me',
+      icon: ImageIcon,
+      label: 'Show Me',
+      color: 'bg-fuchsia-500/10 text-fuchsia-400 border-fuchsia-500/20 hover:bg-fuchsia-500/20',
+      glow: 'shadow-fuchsia-500/15 hover:shadow-fuchsia-500/30',
+      action: () => {
+        triggerHaptic(40);
+        // ISSUE-REMOTE-SHOW-20260622: surface the latest desktop visual artifact on the phone.
+        remoteRelayService.sendCommand('[SHOW]').catch(err =>
+          logger.error('[CommandPad] Show Me failed:', err)
+        );
       },
     },
     {

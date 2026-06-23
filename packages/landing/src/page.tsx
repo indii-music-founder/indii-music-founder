@@ -87,6 +87,11 @@ export default function Home() {
     return window.location.hostname.includes('founders') ||
            window.location.search.includes('thesis=true') ||
            window.location.hash.includes('#thesis');
+    const { hostname, search, hash } = window.location;
+    const hostname = window.location.hostname;
+    const search = window.location.search;
+    const hash = window.location.hash;
+    return hostname.includes('founders') || search.includes('thesis=true') || hash.includes('#thesis');
   });
 
   const heroScale = useTransform(scrollYProgress, [0, 0.15], [1, 0.9]);
