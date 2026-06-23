@@ -82,6 +82,7 @@ export const MobileNav = () => {
         { id: 'audio-analyzer', icon: Radio, label: 'Audio Analyzer' },
         { id: 'workflow', icon: Network, label: 'Workflow Builder' },
         { id: 'knowledge', icon: Book, label: 'Knowledge Base' },
+        { id: 'notes', icon: FileText, label: 'Notes' },
         { id: 'history', icon: Clock, label: 'History' },
     ];
 

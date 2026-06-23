@@ -1,5 +1,5 @@
 import React from 'react';
-import { Type, Wand2, MousePointer2, Undo2, Redo2 } from 'lucide-react';
+import { Layers, ScanSearch, Type, Wand2, MousePointer2, Undo2, Redo2, ZoomIn } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface CanvasToolbarProps {
@@ -30,7 +30,6 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
     canUndo,
     canRedo,
     activeTool,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     handleDetectObjects,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     handleClearDetections,
@@ -75,6 +74,48 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
                     <TooltipContent side={tooltipSide}>Add Text</TooltipContent>
                 </Tooltip>
 
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <button
+                            onClick={handleDetectObjects}
+                            className={baseButtonClass}
+                            aria-label="ID Objects"
+                            data-testid="detect-objects-btn"
+                        >
+                            <ScanSearch size={18} />
+                        </button>
+                    </TooltipTrigger>
+                    <TooltipContent side={tooltipSide}>ID Objects</TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <button
+                            disabled
+                            className={`${baseButtonClass} disabled:opacity-30 disabled:cursor-not-allowed`}
+                            aria-label="Zoom Controls Coming Soon"
+                            data-testid="zoom-controls-placeholder"
+                        >
+                            <ZoomIn size={18} />
+                        </button>
+                    </TooltipTrigger>
+                    <TooltipContent side={tooltipSide}>Zoom Controls Coming Soon</TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <button
+                            disabled
+                            className={`${baseButtonClass} disabled:opacity-30 disabled:cursor-not-allowed`}
+                            aria-label="Layers Panel Coming Soon"
+                            data-testid="layers-panel-placeholder"
+                        >
+                            <Layers size={18} />
+                        </button>
+                    </TooltipTrigger>
+                    <TooltipContent side={tooltipSide}>Layers Panel Coming Soon</TooltipContent>
+                </Tooltip>
+
                 <div className={separatorClass} />
 
                 <Tooltip>
@@ -98,4 +139,3 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
         </TooltipProvider>
     );
 };
-

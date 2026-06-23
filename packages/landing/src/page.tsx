@@ -84,6 +84,9 @@ export default function Home() {
   const { scrollYProgress } = useScroll();
   const [isThesisOpen, setIsThesisOpen] = useState(() => {
     if (typeof window === 'undefined') return false;
+    return window.location.hostname.includes('founders') ||
+           window.location.search.includes('thesis=true') ||
+           window.location.hash.includes('#thesis');
     const { hostname, search, hash } = window.location;
     const hostname = window.location.hostname;
     const search = window.location.search;

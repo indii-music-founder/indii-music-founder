@@ -110,7 +110,7 @@ export default function DirectGenerationTab() {
                             </div>
                             <div>
                                 <h2 className="text-xs uppercase font-extrabold tracking-widest text-white/90">Creative Hub</h2>
-                                <p className="text-[10px] text-gray-500 font-medium">Bypass Autonomous Swarms</p>
+                                <p className="text-[10px] text-gray-500 font-medium">Direct Creative Generation</p>
                             </div>
                         </div>
                         {/* Dynamic Active Model Status Badge */}
@@ -502,7 +502,7 @@ export default function DirectGenerationTab() {
 
                         <h3 className="text-sm font-extrabold text-white uppercase tracking-wider mb-2">Direct Creative Canvas</h3>
                         <p className="text-xs text-gray-500 leading-relaxed mb-6">
-                            Welcome to the Direct Generation Hub. Bypass autonomous orchestration algorithms to generate photorealistic release art and high-fidelity video canvases.
+                            Welcome to the Direct Generation Hub. Skip the autonomous pipeline to generate photorealistic release art and high-fidelity video canvases.
                         </p>
 
                         <div className="grid grid-cols-2 gap-4 w-full text-left">

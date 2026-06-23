@@ -46,6 +46,8 @@ export function useURLSync(options: URLSyncOptions = {}) {
         const ROUTE_ALIASES: Record<string, string> = {
             'controller': 'mobile-remote',
             'remote': 'mobile-remote',
+            'social-media': 'social',
+            'socials': 'social',
             'video-producer': 'video',
             'video-studio': 'video',
             'creative-director': 'creative',
@@ -81,4 +83,3 @@ export function useURLSync(options: URLSyncOptions = {}) {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [currentModule, navigate, options.disabled]);
 }
-
