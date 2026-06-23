@@ -611,8 +611,8 @@ function useFirestoreRelay(enabled: boolean) {
             }
 
             // ─── Agent Action Route ──────────────────────────────
-            if (command.text.startsWith('[AGENT_ACTION]')) {
-                const action = command.text.replace('[AGENT_ACTION]', '').trim();
+            if (parsed.kind === 'agent_action') {
+                const action = parsed.action;
                 logger.info(`[RemoteRelay/Firestore] 🤖 Agent Action: "${action}"`);
                 writeDiagnostic('agent_action_started', { action });
 
