@@ -82,7 +82,6 @@ vi.mock('../core/components/ErrorBoundary', () => ({
 vi.mock('../core/components/Sidebar', () => ({ default: () => <div>Sidebar</div> }));
 vi.mock('../core/components/RightPanel', () => ({ default: () => <div>RightPanel</div> }));
 vi.mock('../core/components/CommandBar', () => ({ default: () => <div>CommandBar</div> }));
-vi.mock('../core/components/MobileNav', () => ({ MobileNav: () => <div>MobileNav</div> }));
 
 // Silence background async services causing fetch overlap
 vi.mock('../core/logger/Logger', () => ({

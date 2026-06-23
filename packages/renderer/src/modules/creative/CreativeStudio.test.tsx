@@ -49,6 +49,15 @@ describe('CreativeStudio', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         capturedOnSendToWorkflow = null;
+        // Reset all mocks to initial state
+        mockSetPrompt.mockClear();
+        mockSetPendingPrompt.mockClear();
+        mockAddToHistory.mockClear();
+        mockToastInfo.mockClear();
+        mockToastSuccess.mockClear();
+        mockToastError.mockClear();
+        mockConfirmCall.mockClear();
+        mockGenerateImages.mockClear();
 
         (useToast as unknown as import("vitest").Mock).mockReturnValue({
             info: mockToastInfo,
