@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-24 07:45 EDT
+**Updated:** 2026-06-24 07:50 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+5ec4a62e9 fix: restore confirmation dialog on send-to-video + fix test isolation
+cc8cd7fb7 chore: session checkpoint [07:45]
 0283a485e chore: session checkpoint [07:42]
 541d802dc chore: session checkpoint [07:37]
 0c9ee6e4c chore: session checkpoint [07:37]
@@ -12,20 +14,11 @@ d3f1f03c6 chore: session checkpoint [07:32]
 fa9624fbf chore: session checkpoint [07:31]
 c902bd314 chore: session checkpoint [07:30]
 1a5664e30 chore: session checkpoint [07:30]
-a4c196597 chore: session checkpoint [16:33]
-fba9d8ab7 v1.64.3 fix: remove orphaned nav components and fix test flakiness (#193)
 ```
 
 ## Working State
 ```
- M .agent/test_ledger/OPEN_ISSUES.md
- M packages/firebase/src/functions/security/arcjet.ts
- M packages/renderer/src/modules/creative/CreativeStudio.test.tsx
- M packages/renderer/src/modules/creative/CreativeStudio.tsx
- M packages/renderer/src/modules/creative/components/CanvasActionRail.tsx
- M packages/renderer/src/modules/creative/components/CreativeCanvas.tsx
- M packages/renderer/src/modules/creative/video/VideoWorkflow.tsx
- M packages/renderer/src/services/storage/safeStorageFetch.ts
+clean working tree
 ```
 
 ## Decisions
