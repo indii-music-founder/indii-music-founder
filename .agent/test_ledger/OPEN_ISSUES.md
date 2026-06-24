@@ -7258,6 +7258,35 @@ Therefore, no fix can be proposed or implemented.
 - **Files:** `.github/workflows/deploy.yml:289-296,428-436,549-553,555-566`; `package.json:92` (`firebase-tools` pin); `package-lock.json`
 - **Related:** MEMORY `platinum_roadmap_active` (Phase 1A = CORS/Auth fix), `ask-for-cloud-auth-dont-act-blocked`; ERROR_LEDGER Arcjet lazy-init entry; ISSUE-478 (separate Firebase auth surface — bucket CORS, not CI).
 
+#### 🔧 REPAIR NOTE — 2026-06-24, post-#196 (Opus, watch-and-repair of JULES's fix): the firebase-tools-version diagnosis was WRONG
+
+- **#196 (JULES) did NOT fix it.** It pinned `firebase-tools` to 15.19.0. After merge (commit `b4fb0e9af`), run `28117733256` still failed — now `deploy-staging` fails at "Deploy to staging preview channel" with the SAME error `"Failed to authenticate, have you run firebase login?"`, and `deploy-production` never ran (gated on staging). Net: **worse** — last session staging passed on 15.22.1; now even staging fails.
+- **Why the version theory is disproven (evidence):**
+  1. The last GREEN production deploy **v1.64.3** (commit `fba9d8ab7`, 2026-06-23) used firebase-tools **15.19.0** — the exact version #196 pinned to. Same version → can't be the differentiator.
+  2. firebase-tools' own auth subtree is unchanged: `npm ls gaxios` shows firebase-tools → `gaxios@6.7.1` (same as v1.64.3). The npm-audit fix added `gaxios@7.1.x` / `gcp-metadata@8.1.3`, but those sit under `@google-cloud/storage`'s `google-auth-library@10.5.0` — NOT on firebase-tools' auth path. `google-auth-library` versions are identical green-vs-broken.
+  3. `deploy.yml` is unchanged between v1.64.3 and now (only arcjet/send-to-video commits touched code, not the workflow).
+- **Corrected root-cause hypothesis:** With identical firebase-tools version, identical auth deps, and unchanged workflow, the break is **auth/credential-level, not Node deps.** Same `firebase-tools@15.19.0` worked yesterday and fails today → strongest lead is the **`FIREBASE_SERVICE_ACCOUNT` secret / service-account validity or IAM permissions changed today** (consistent with the active App Check / API-key-restriction / auth work — MEMORY `platinum_roadmap_active` Phase 1A, `appcheck-disabled-pending-recaptcha-domain`). The "Authenticate with Firebase" step only writes the key file (so it "passes"); the firebase CLI then can't authenticate with it. Secondary possibility: version-specific CLI auth behavior differing between `hosting:channel:deploy` and `firebase deploy` (15.22.1 passed staging/failed prod; 15.19.0 fails staging) — but that's secondary to the credential angle.
+- **Repair direction (needs William's cloud auth to verify — do NOT keep guessing versions):**
+  1. **Verify the service account + key first.** Check the `FIREBASE_SERVICE_ACCOUNT` GitHub secret is current and the SA has roles **Firebase Hosting Admin** + **Service Account Token Creator** + Cloud Functions/API perms. Confirm the SA key wasn't rotated/disabled today. (`gcloud iam service-accounts keys list`, check the SA in console.)
+  2. **Make auth version-independent + robust:** switch the hosting deploy steps to the official `FirebaseExtended/action-hosting-deploy` action (takes `firebaseServiceAccount` directly), OR generate a CI token (`firebase login:ci`) and pass `FIREBASE_TOKEN`/`--token`. This removes reliance on ADC pickup that's behaving inconsistently across firebase-tools versions.
+  3. Only after auth is confirmed working should firebase-tools be re-evaluated for the npm-audit security bump.
+- **Status of #196:** merged but ineffective; do not close ISSUE-498. The firebase-tools pin can stay (15.19.0 is the last-known-good version anyway) but is not the fix.
+
+#### 🔬 EXPANDED RULE-OUT — 2026-06-24 (Opus, gcloud + lockfile forensics): cause is NOT statically determinable
+
+Systematically compared the broken state (`main`, post-#196) against the last GREEN deploy (`v1.64.3`/`fba9d8ab7`). **All identical:**
+- firebase-tools version: 15.19.0 (same as v1.64.3). | firebase-tools auth subtree: `gaxios@6.7.1` (unchanged; the new `gaxios@7`/`gcp-metadata@8.1.3` are under `@google-cloud/storage`, off the auth path). | JWT/crypto chain `gtoken`/`jsonwebtoken@9.0.10`/`ecdsa-sig-formatter@1.0.11`: unchanged. | `deploy.yml`: unchanged.
+- **GCP side (verified via gcloud as wiil@indii.music):** CI SA `github-actions@indii-music-founder.iam.gserviceaccount.com` has `roles/owner`; its key created 2026-06-01T20:30:18 **never expires, not disabled, present**; the `FIREBASE_SERVICE_ACCOUNT` GitHub secret was last set 2026-06-01T20:30:24 (6s after that key → secret holds that valid key). Secret unchanged since.
+
+**Conclusion:** every input that produced a green deploy on 2026-06-23 is byte-identical today, yet `firebase` CLI reports `Failed to authenticate`. This is not resolvable by more static analysis — it requires **runtime instrumentation in the deploy job.**
+- **Note on `npx`:** deploy jobs run `npx firebase ...` after only a *cache restore* (no `npm ci`). If the node_modules cache misses (and #196 changed `package-lock.json`, which is part of the cache key `node-modules-${os}-${hashFiles('package-lock.json')}`), `npx` may fetch a DIFFERENT firebase-tools from npm, bypassing the pin. **Unverified but high-priority suspect.**
+- **Decisive next step (instrument, don't guess):** add to the failing deploy step, before the deploy command:
+  - `npx firebase --version` (proves which firebase-tools actually runs — confirms/denies the npx-fetch theory)
+  - `node -e "console.log(!!process.env.GOOGLE_APPLICATION_CREDENTIALS, require('fs').existsSync(process.env.GOOGLE_APPLICATION_CREDENTIALS||''))"` (proves the cred file is set + present at deploy time)
+  - run the deploy with `--debug` and surface the underlying auth error.
+  Then re-run; the log will reveal the true cause. This is a safe, low-risk diagnostic change (one CI run, no prod side effects beyond the already-failing deploy attempt).
+- **Robust alternative fix (if instrumentation confirms npx/ADC flakiness):** switch hosting deploys to the official `FirebaseExtended/action-hosting-deploy` action (takes `firebaseServiceAccount` directly), or run `npm ci` in the deploy jobs so `npx` uses the pinned local firebase-tools. **API Credentials Policy:** do NOT rotate the SA key / secret without William's explicit approval — the key is valid, so rotation is not indicated.
+
 ---
 
 ## 📚 IA REFERENCE — how comparable products structure creative/edit UX (informs ISSUE-488/489/491/496 proposal)
