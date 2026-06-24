@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-24 16:12 EDT
-**Branch:** `main`
+**Updated:** 2026-06-24 19:09 EDT
+**Branch:** `feat/creative-ia-phase1-mode-picker`
 
 ## Recent Commits
 ```
+a7f381d09 feat(creative): IA Option C Phase 1 — mode picker replaces 6 flat tabs (ISSUE-488/491)
+9d2db1cab chore: session checkpoint [16:12]
 16e1f9e5c chore: session checkpoint [15:52]
 88f4e986d docs(ledger): mark Creative Director fixes resolved + remaining work (478-498)
 06b85de2e docs: Creative Director IA consolidation proposal (ISSUE-488/489/491/496) (#205)
@@ -12,8 +14,6 @@ ef4e6f4f9 fix(agent): neutral wording when no RAG corpus is configured (ISSUE-48
 e99f6d70c fix(creative): stop Showroom upload card overlapping product-type pills (ISSUE-485) (#201)
 92ee72812 fix(creative): gate PLP ad spend + stop fabricated campaign success (ISSUE-495/497) (#200)
 ef986d21b fix(creative): chat sight + roster web state + panel overlap (ISSUE-479/490/492) (#199)
-0b0bcc249 fix(creative): eliminate canvas-taint crashes in Magic Edit (ISSUE-478/482/480) (#198)
-787f79dea chore: session checkpoint [15:19]
 ```
 
 ## Working State
