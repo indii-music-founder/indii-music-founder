@@ -1,10 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-24 19:09 EDT
-**Branch:** `feat/creative-ia-phase1-mode-picker`
+**Updated:** 2026-06-24 19:26 EDT
+**Branch:** `main`
 
 ## Recent Commits
 ```
-a7f381d09 feat(creative): IA Option C Phase 1 — mode picker replaces 6 flat tabs (ISSUE-488/491)
+9b0452516 feat(creative): IA Option C Phase 1 — mode picker (ISSUE-488/491) (#206)
 9d2db1cab chore: session checkpoint [16:12]
 16e1f9e5c chore: session checkpoint [15:52]
 88f4e986d docs(ledger): mark Creative Director fixes resolved + remaining work (478-498)
