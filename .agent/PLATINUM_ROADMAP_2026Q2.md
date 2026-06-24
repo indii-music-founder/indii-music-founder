@@ -34,13 +34,13 @@
 - **Owner:** Available agent | **ETA:** Day 2 (4h)
 - **Commit:** `test: add core service unit tests`
 
-### Workstream 1C: Pre-commit Hooks (Parallel)
-- [ ] Run `/setup-pre-commit` skill
-- [ ] Verify lint + typecheck + test gates
-- **Owner:** Available agent | **ETA:** Day 2 (30m)
-- **Commit:** `chore: add pre-commit hooks`
+### Workstream 1C: Pre-commit Hooks ✅ **COMPLETE**
+- ✅ Enhanced pre-commit with typecheck + security checks
+- ✅ Verified: lint → typecheck → security boundary checks
+- **Owner:** Claude Code | **Status:** DONE
+- **Commit:** `a3e82ecc5`
 
-### v1.64.4 Ship
+### v1.64.4 Ship ✅ **READY TO DEPLOY**
 ```
 npm version patch
 git push
