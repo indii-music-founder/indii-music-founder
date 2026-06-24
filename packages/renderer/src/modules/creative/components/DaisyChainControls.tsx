@@ -10,9 +10,11 @@ interface DaisyChainControlsProps {
 }
 
 export default function DaisyChainControls({ onOpenFrameModal }: DaisyChainControlsProps) {
-    const { videoInputs, setVideoInput } = useStore(useShallow(state => ({
+    const { videoInputs, setVideoInput, setViewMode, setGenerationMode } = useStore(useShallow(state => ({
         videoInputs: state.videoInputs,
-        setVideoInput: state.setVideoInput
+        setVideoInput: state.setVideoInput,
+        setViewMode: state.setViewMode,
+        setGenerationMode: state.setGenerationMode
     })));
     const _toast = useToast();
 
@@ -105,6 +107,20 @@ export default function DaisyChainControls({ onOpenFrameModal }: DaisyChainContr
                 <span className={`w-1.5 h-1.5 rounded-full transition-colors duration-300 ${videoInputs.isDaisyChain ? 'bg-purple-400 animate-pulse' : 'bg-gray-600'}`} />
                 <span className="hidden lg:inline">Daisy Chain</span>
             </button>
+
+            {/* ISSUE-491: multi-shot sequencing lives in the Sequence mode (the canonical
+                home). When daisy-chaining is on, offer a jump there instead of duplicating. */}
+            {videoInputs.isDaisyChain && (
+                <button
+                    onClick={() => { setGenerationMode('video'); setViewMode('lab'); }}
+                    data-testid="open-sequence-from-daisychain"
+                    title="Build multi-shot sequences in the Sequence tab"
+                    className="ml-1 text-[9px] px-2.5 py-1 rounded-md border border-white/6 bg-white/3 text-gray-400 hover:text-gray-200 hover:bg-white/6 font-bold uppercase tracking-widest transition-all flex items-center gap-1.5 shrink-0"
+                >
+                    <span className="hidden lg:inline">Open Sequence</span>
+                    <ArrowRight size={10} />
+                </button>
+            )}
 
             {/* Time Offset Slider */}
             <div className="flex items-center gap-2.5 ml-2 border-l border-white/8 pl-4 h-5 hidden xl:flex">
