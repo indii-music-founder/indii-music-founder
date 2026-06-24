@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-24 13:34 EDT
+**Updated:** 2026-06-24 13:35 EDT
 **Branch:** `fix/issue-498-firebase-tools-deploy-auth`
 
 ## Recent Commits
 ```
+44ccf6cc6 chore: session checkpoint [13:34]
 8de7ec07d chore: session checkpoint [13:32]
 f091dbbc3 fix(ci): pin firebase-tools to 15.19.0 to restore production deploy auth (ISSUE-498)
 c593ae49c chore: session checkpoint [13:23]
@@ -13,7 +14,6 @@ f69dacf9f chore: session checkpoint [11:36]
 fe5532498 chore: session checkpoint [11:31]
 46d1139c5 chore: session checkpoint [11:23]
 5ce8c4e59 chore: session checkpoint [11:08]
-eecb05e81 chore: session checkpoint [10:58]
 ```
 
 ## Working State
