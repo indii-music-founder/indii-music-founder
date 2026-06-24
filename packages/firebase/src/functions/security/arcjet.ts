@@ -15,50 +15,29 @@ const arcjetKey = process.env.ARCJET_KEY;
 const arcjetConfigured = typeof arcjetKey === "string" && arcjetKey.startsWith("ajkey_");
 const productionRuntime = process.env.NODE_ENV === "production" || Boolean(process.env.K_SERVICE);
 
-// Lazy initialization placeholder; actual Arcjet client will be created after checking configuration.
-let baseArcjet: ReturnType<typeof arcjet> | null = null;
-function getBaseArcjet() {
-    if (!baseArcjet) {
-        baseArcjet = arcjet({
-            key: arcjetKey || "ajkey_missing_arcjet_key",
-            rules: [
-                shield({ mode: "LIVE" }),
-            ],
-        });
-    }
-    return baseArcjet;
-}
+const baseArcjet = arcjet({
+    key: arcjetKey || "ajkey_missing_arcjet_key",
+    rules: [
+        shield({ mode: "LIVE" }),
+    ],
+});
 
-// Lazy initialization for authenticated API Arcjet client.
-let authenticatedApiArcjet: ReturnType<ReturnType<typeof arcjet>['withRule']> | null = null;
-function getAuthenticatedApiArcjet() {
-    if (!authenticatedApiArcjet) {
-        authenticatedApiArcjet = getBaseArcjet().withRule(
-            slidingWindow({
-                mode: "LIVE",
-                characteristics: ["userId"],
-                interval: "1m",
-                max: 240,
-            })
-        );
-    }
-    return authenticatedApiArcjet;
-}
+const authenticatedApiArcjet = baseArcjet.withRule(
+    slidingWindow({
+        mode: "LIVE",
+        characteristics: ["userId"],
+        interval: "1m",
+        max: 240,
+    }),
+);
 
-// Lazy initialization for public API Arcjet client.
-let publicApiArcjet: ReturnType<ReturnType<typeof arcjet>['withRule']> | null = null;
-function getPublicApiArcjet() {
-    if (!publicApiArcjet) {
-        publicApiArcjet = getBaseArcjet().withRule(
-            slidingWindow({
-                mode: "LIVE",
-                interval: "1m",
-                max: 120,
-            })
-        );
-    }
-    return publicApiArcjet;
-}
+const publicApiArcjet = baseArcjet.withRule(
+    slidingWindow({
+        mode: "LIVE",
+        interval: "1m",
+        max: 120,
+    }),
+);
 
 function mapDecision(decision: ArcjetDecision): ArcjetProtectionResult {
     if (decision.isErrored()) {
@@ -115,7 +94,7 @@ export async function protectAuthenticatedApiRequest(
         return missingArcjetKeyResult();
     }
     // Ensure Arcjet client is initialized lazily
-    const arcjetClient = getAuthenticatedApiArcjet();
+    const arcjetClient = authenticatedApiArcjet;
     try {
         const decision = await arcjetClient.protect(req, { userId });
         return mapDecision(decision);
@@ -130,7 +109,7 @@ export async function protectPublicApiRequest(req: Request): Promise<ArcjetProte
         return missingArcjetKeyResult();
     }
     // Ensure Arcjet client is initialized lazily
-    const arcjetClient = getPublicApiArcjet();
+    const arcjetClient = publicApiArcjet;
     try {
         const decision = await arcjetClient.protect(req);
         return mapDecision(decision);
@@ -140,8 +119,4 @@ export async function protectPublicApiRequest(req: Request): Promise<ArcjetProte
     }
 }
 
-// Initialize Arcjet clients in environments (e.g., tests) where ARCJET_KEY is configured
-if (arcjetConfigured) {
-    getAuthenticatedApiArcjet();
-    getPublicApiArcjet();
-}
+// Arcjet clients initialized at module load (no lazy initialization needed)
