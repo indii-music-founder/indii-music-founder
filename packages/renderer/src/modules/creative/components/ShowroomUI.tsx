@@ -137,7 +137,7 @@ export default function ShowroomUI() {
                     <h2 className="text-lg font-bold tracking-tight text-white">Asset Rack</h2>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-4 shrink-0">
                     <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Product Asset</label>
                     <div className="relative group">
                         {showroomState.productAsset ? (
@@ -153,16 +153,16 @@ export default function ShowroomUI() {
                                 </div>
                             </div>
                         ) : (
-                            <FileUpload 
+                            <FileUpload
                                 onFilesSelected={handleAssetSelected}
                                 acceptedFileTypes={['image/png', 'image/jpeg', 'image/webp']}
-                                className="h-48"
+                                className="min-h-48"
                             />
                         )}
                     </div>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-4 shrink-0">
                     <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Product Type</label>
                     <div className="grid grid-cols-2 gap-2">
                         {PRODUCT_TYPES.map((type) => (
@@ -184,7 +184,7 @@ export default function ShowroomUI() {
                     </div>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-4 shrink-0">
                     <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Placement Hint</label>
                     <div className="relative">
                         <input 
