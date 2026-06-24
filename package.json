@@ -184,6 +184,9 @@
     "react-dom": "18.3.1"
   },
   "lint-staged": {
+    "package.json": [
+      "node --import tsx scripts/production-gate.ts --dev"
+    ],
     "packages/renderer/src/**/*.{ts,tsx}": [
       "eslint"
     ],

@@ -1,1 +1,30 @@
-npx lint-staged
+#!/bin/bash
+
+# Platinum Quality Gate: Pre-commit Hook
+# Prevents commits that violate code quality standards
+
+set -e
+
+echo "🔐 Running pre-commit quality gates..."
+
+# Stage 1: Lint all staged files
+echo "  1️⃣  Linting staged files..."
+npx lint-staged --quiet
+
+# Stage 2: Type check (quick check of current project)
+echo "  2️⃣  Type checking..."
+npm run typecheck > /dev/null 2>&1 || {
+  echo "  ❌ Type errors detected. Fix them and try again."
+  npm run typecheck
+  exit 1
+}
+
+# Stage 3: Verify no security boundary violations
+echo "  3️⃣  Checking API security boundaries..."
+npm run security:frontend-api-boundary > /dev/null 2>&1 || {
+  echo "  ❌ Security boundary violation detected."
+  exit 1
+}
+
+echo "  ✅ All pre-commit gates passed!"
+exit 0
