@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-24 07:50 EDT
+**Updated:** 2026-06-24 07:52 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+466bc1029 chore: session checkpoint [07:50]
 5ec4a62e9 fix: restore confirmation dialog on send-to-video + fix test isolation
 cc8cd7fb7 chore: session checkpoint [07:45]
 0283a485e chore: session checkpoint [07:42]
@@ -13,7 +14,6 @@ cc8cd7fb7 chore: session checkpoint [07:45]
 d3f1f03c6 chore: session checkpoint [07:32]
 fa9624fbf chore: session checkpoint [07:31]
 c902bd314 chore: session checkpoint [07:30]
-1a5664e30 chore: session checkpoint [07:30]
 ```
 
 ## Working State
