@@ -75,8 +75,11 @@ export class RAGAgent extends BaseAgent {
                 onProgress?.({ type: 'thought', content: 'Proceeding with standard protocol (no supplemental insights required).' });
             }
         } catch (error: unknown) {
+            // A failed/absent RAG corpus is normal (most projects have no knowledge
+            // base configured). Degrade silently with neutral wording instead of the
+            // alarming "KB offline" that read like a failure to users (ISSUE-481).
             logger.warn(`[RAGAgent] Knowledge Base Query Failed for ${this.id}:`, error);
-            onProgress?.({ type: 'thought', content: 'Proceeding without supplemental domain knowledge (KB offline).' });
+            onProgress?.({ type: 'thought', content: 'Proceeding with standard knowledge.' });
         }
 
         if (signal?.aborted) {
