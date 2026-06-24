@@ -365,6 +365,8 @@ describe('Creative Director 12-Click Daisychain', () => {
         });
 
         // --- CLICK 12: Switch to Canvas (Gallery removed — assets are in Omni-Panel) ---
+        // IA Option C: Canvas is a sub-view of the Image mode, so activate Image first.
+        fireEvent.click(screen.getByTestId('mode-image-btn'));
         const canvasBtn = screen.getByTestId('canvas-view-btn');
         fireEvent.click(canvasBtn);
         expect(mockSetViewMode).toHaveBeenCalledWith('canvas');

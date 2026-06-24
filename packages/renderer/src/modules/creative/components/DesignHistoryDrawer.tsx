@@ -5,7 +5,7 @@ import { X, RotateCw, Trash2, Save, Layers, Check } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { DesignVersion } from '@/core/store';
 
-export default function DesignHistoryDrawer({ onClose }: { onClose: () => void }) {
+export default function DesignHistoryDrawer({ onClose, embedded = false }: { onClose: () => void; embedded?: boolean }) {
     const { designVersions, saveDesignVersion, restoreDesignVersion, deleteDesignVersion } = useStore(useShallow(state => ({
         designVersions: state.designVersions,
         saveDesignVersion: state.saveDesignVersion,
@@ -53,18 +53,8 @@ export default function DesignHistoryDrawer({ onClose }: { onClose: () => void }
         setDeletingId(null);
     };
 
-    return (
-        <div className="absolute top-full right-0 mt-2 mr-2 w-80 bg-[#0f0f0f]/95 backdrop-blur-xl border border-white/10 rounded-xl z-50 flex flex-col max-h-[80vh] overflow-hidden shadow-2xl animate-in slide-in-from-top-2 fade-in duration-200">
-            <div className="p-4 border-b border-white/10 flex items-center justify-between bg-white/5">
-                <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                    <Layers size={16} className="text-emerald-400" />
-                    Design Versions
-                </h3>
-                <button onClick={onClose} aria-label="Close design history" className="p-1 hover:bg-white/10 rounded-full text-gray-500 hover:text-white transition-colors">
-                    <X size={18} />
-                </button>
-            </div>
-
+    const body = (
+        <>
             <div className="p-3 border-b border-white/5">
                 <button
                     onClick={handleSave}
@@ -135,6 +125,23 @@ export default function DesignHistoryDrawer({ onClose }: { onClose: () => void }
                     ))
                 )}
             </div>
+        </>
+    );
+
+    if (embedded) return <div className="flex flex-col min-h-0 flex-1">{body}</div>;
+
+    return (
+        <div className="absolute top-full right-0 mt-2 mr-2 w-80 bg-[#0f0f0f]/95 backdrop-blur-xl border border-white/10 rounded-xl z-50 flex flex-col max-h-[80vh] overflow-hidden shadow-2xl animate-in slide-in-from-top-2 fade-in duration-200">
+            <div className="p-4 border-b border-white/10 flex items-center justify-between bg-white/5">
+                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                    <Layers size={16} className="text-emerald-400" />
+                    Design Versions
+                </h3>
+                <button onClick={onClose} aria-label="Close design history" className="p-1 hover:bg-white/10 rounded-full text-gray-500 hover:text-white transition-colors">
+                    <X size={18} />
+                </button>
+            </div>
+            {body}
         </div>
     );
 }
