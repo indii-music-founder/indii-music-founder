@@ -1,24 +1,24 @@
 # Handoff State
-**Updated:** 2026-06-24 13:23 EDT
-**Branch:** `main`
+**Updated:** 2026-06-24 13:35 EDT
+**Branch:** `fix/issue-498-firebase-tools-deploy-auth`
 
 ## Recent Commits
 ```
+812cd2aa4 chore: session checkpoint [13:35]
+44ccf6cc6 chore: session checkpoint [13:34]
+8de7ec07d chore: session checkpoint [13:32]
+f091dbbc3 fix(ci): pin firebase-tools to 15.19.0 to restore production deploy auth (ISSUE-498)
+c593ae49c chore: session checkpoint [13:23]
 410d727f8 chore: session checkpoint [11:38]
 f69dacf9f chore: session checkpoint [11:36]
 19770af68 chore: session checkpoint [11:35]
 fe5532498 chore: session checkpoint [11:31]
 46d1139c5 chore: session checkpoint [11:23]
-5ce8c4e59 chore: session checkpoint [11:08]
-eecb05e81 chore: session checkpoint [10:58]
-16bdd70ab chore: session checkpoint [10:34]
-20dd3f5bc docs: add error ledger entry for Arcjet lazy init complexity (2026-06-24)
-7036310c8 chore: session checkpoint [10:32]
 ```
 
 ## Working State
 ```
- M .agent/test_ledger/OPEN_ISSUES.md
+clean working tree
 ```
 
 ## Decisions

@@ -7025,3 +7025,253 @@ Therefore, no fix can be proposed or implemented.
 - **Fix direction:** Standardize: all spend values stored as integer cents in Zustand/Firestore, converted to display string only at render time via a shared `formatCents()` utility.
 - **Files:** `packages/renderer/src/services/MembershipService.ts:511,563-565,572`
 
+---
+
+## 🎨 Creative Director (Studio) — Full-Surface Breakdown (2026-06-24, Opus live walkthrough w/ William)
+
+> Source: live user walkthrough of the Creative Director module. William toured every tab. One
+> root cause (ISSUE-478, CORS canvas taint) takes down most pixel-export features; the rest are
+> wiring / IA / layout defects surfaced because the broken features blocked him from ever reaching them.
+> **Test agent logged these; do NOT fix in this pass. Fix agent: read ISSUE-478 FIRST — it is the
+> trunk; 480/482/483/486 are branches of it.** Recurrence of ERROR_LEDGER `2026-04-15 Creative Studio
+> Blank Canvas (CORS)` — apply that documented fix.
+
+### Triage summary
+
+| # | Title | Sev | Root |
+|---|---|---|---|
+| 478 | Storage bucket has NO CORS → tainted canvas → all `toDataURL` exports crash | 🔴 CRIT | trunk |
+| 479 | "Creative Director" chat is blind — `prepareVisualPrompt()` never called | 🟠 HIGH | wiring |
+| 480 | Undo / Redo non-functional (stale enable-state + restore re-taint) | 🟠 HIGH | 478 + wiring |
+| 481 | Agent "KB offline / proceeding without domain knowledge" on normal turn | 🟡 MED | needs confirm |
+| 482 | Save Canvas + Flatten Canvas → "An error occurred while flattening" | 🟠 HIGH | 478 |
+| 483 | "Send to Video Editor" drops the frame → lands in empty Director's Chair | 🟠 HIGH | wiring/UX |
+| 484 | Multi-format rail button errors | 🟡 MED | needs confirm (likely 478) |
+| 485 | SHOWROOM tab — never tested + layout overlap (asset card covers product pills) | 🟡 MED | audit + layout |
+| 486 | Blank / partial canvas on reopen (Magic Edit Mode: Purple) | 🟠 HIGH | 478 (restore) |
+| 487 | KEYFRAMES "Sequence Architect" (AutonomousLab) — never tested | 🟡 MED | audit |
+| 488 | Information architecture — too many incoherent tabs; PLP/VERSIONS float over unrelated views | 🟠 HIGH | DESIGN DECISION (needs William) |
+| 489 | VERSIONS vs PLP unclear — "15 versions of what?"; both undocumented in UI | 🟡 MED | UX clarity |
+
+### ISSUE-478: Storage bucket has NO CORS config → Fabric canvas tainted → every `toDataURL` export crashes (MASTER ROOT CAUSE)
+
+- **Status:** 🔴 OPEN — **Severity:** 🔴 CRITICAL — **Module:** creative / CanvasOperationsService + Firebase Storage infra
+- **Confirmed evidence (live):** `gsutil cors get gs://indii-music-founder.firebasestorage.app` → `has no CORS configuration`. `gcloud storage buckets describe … --format="json(cors_config)"` → `null`. Committed `config/cors.json` (origin `*`) exists but is **not deployed**.
+- **Symptom user saw:** `Failed to execute 'toDataURL' on 'HTMLCanvasElement': Tainted canvases may not be exported.` on REFINE; "An error occurred while flattening" on Save.
+- **Why image shows but canvas is tainted:** On reopen, `useCreativeCanvas.ts:91-99` restores a saved canvas via `loadFromJSON(savedState)` instead of the CORS-safe `loadImageSafe()`. Fabric reloads the base image from its stored **http `src` with no `crossOrigin`** (`CanvasOperationsService.ts:330,346,685-689`), so the bitmap renders but taints the canvas (no `Access-Control-Allow-Origin` header). The 3-tier blob protection in `loadImageSafe` (`:58-140`) is bypassed on restore.
+- **Blast radius (every `toDataURL`/`toBlob` consumer):** REFINE/Magic Edit (`prepareMasksForEdit` `:1065,1119`, `prepareVisualPrompt` `:1022`), Save/flatten (`:782`, ISSUE-482), candidate apply (`:440,635,1257,1332`), Send-to-Video start frame (ISSUE-483), thumbnails.
+- **Fix direction (server, the real fix):** `gsutil cors set config/cors.json gs://indii-music-founder.firebasestorage.app` → verify with `gsutil cors get …`. Needs operator auth (`gcloud auth login`, correct project). Set on every active bucket (`VITE_FIREBASE_STORAGE_BUCKET`). MUST re-run for any new bucket/project — this is why it regressed.
+- **Fix direction (client hardening so a missing header can't hard-crash):** (1) route `loadFromJSON` image revival through `safeStorageFetch`→blob (taint-proof) or force `crossOrigin:'anonymous'` + cache-buster like `InfiniteCanvas.tsx:125`; (2) broaden `shouldPreferBlob` regex `:100` — it misses the bucket's own `*.firebasestorage.app` domain; prefer blob for ALL cross-origin http URLs; (3) wrap every `toDataURL` in a `SecurityError` guard that toasts instead of throwing.
+- **Files:** `packages/renderer/src/modules/creative/services/CanvasOperationsService.ts:58-140,100,330,346,685-689,1022,1065,1119`; `…/hooks/useCreativeCanvas.ts:91-104`; `packages/renderer/src/services/storage/safeStorageFetch.ts`; `config/cors.json`
+- **Related:** ERROR_LEDGER.md `2026-04-15 Creative Studio Blank Canvas (CORS)`.
+
+### ISSUE-479: "Creative Director" chat is blind — `prepareVisualPrompt()` has ZERO callers
+
+- **Status:** 🔴 OPEN — **Severity:** 🟠 HIGH — **Module:** creative / chat ↔ canvas wiring
+- **Evidence:** `prepareVisualPrompt()` (`CanvasOperationsService.ts:1012-1031`) flattens base image + colored highlights into a PNG for "Visual Prompting", but a full grep shows **no callers**. The Creative Director composer sends text only; the model gets no pixels. Its reply ("I cannot see any visual input… provide the asset ID") is truthful. **User is NOT using it wrong — the wiring doesn't exist.**
+- **Fix direction:** In the chat send handler, when a canvas/asset is active, call `canvasOps.prepareVisualPrompt()` (gate on `hasContent()`) and attach `{mimeType,data}` as an inline image part (multimodal). Depends on ISSUE-478 (the call itself uses `toDataURL`). Product decision for William: auto-attach current canvas every message vs. only when referenced.
+- **Files:** `CanvasOperationsService.ts:1012-1031`; Creative Director chat composer/send path (grep `Message Creative Director`).
+
+### ISSUE-480: Undo / Redo non-functional (two independent causes)
+
+- **Status:** 🔴 OPEN — **Severity:** 🟠 HIGH — **Module:** creative / history + useCreativeCanvas
+- **Cause A (button stuck disabled):** `canUndo()/canRedo()` are read at render (`useCreativeCanvas.ts:614-615`); only `setHistoryTrigger` forces re-render and it's bumped ONLY in `handleUndo/handleRedo` (`:163,168`), never from the debounced `handleCanvasChange` (`:76`). So after a draw, `_historyStack` grows but `disabled={!canUndo}` (`CanvasToolbar.tsx:123,132`) stays stuck → button inert.
+- **Cause B (restore re-taints):** `undo()/redo()` → `loadFromJSON` (`CanvasOperationsService.ts:330,346`) reloads the base image with no CORS-safe path → blank/re-taint on a no-CORS bucket (compounds 478).
+- **Fix direction:** A — bump `setHistoryTrigger` from `handleCanvasChange` (or expose `onHistoryChange` from the service). B — share the 478 CORS-safe loader for `loadFromJSON` revival.
+- **Files:** `useCreativeCanvas.ts:49,76,161-168,614-615`; `CanvasOperationsService.ts:304-361`; `CanvasToolbar.tsx:123,132`
+
+### ISSUE-481: "KB offline / proceeding without supplemental domain knowledge" on a normal chat turn
+
+- **Status:** 🟡 OPEN (needs live confirmation) — **Severity:** 🟡 MEDIUM — **Module:** agent / Creative Director KB retrieval
+- **Evidence:** Chat reasoning trace shows "Consulting the central knowledge base…" → "Proceeding without supplemental domain knowledge (KB offline)." Suggests RAG/KB lookup failing or unconfigured.
+- **Fix direction (investigate, don't assume):** find the KB lookup; determine if "KB offline" is a caught error (log the real failure) or a deliberate no-KB path. Cross-check MEMORY note `appcheck-disabled-pending-recaptcha-domain` (fine-tuned Vertex endpoints undeployed → base-model fallback) before concluding it's a bug.
+- **Files:** grep `central knowledge base` / `supplemental domain knowledge` / `KB offline`.
+
+### ISSUE-482: Save Canvas + Flatten Canvas → "An error occurred while flattening" (branch of 478)
+
+- **Status:** 🔴 OPEN — **Severity:** 🟠 HIGH — **Module:** creative / useCreativeCanvas + CanvasOperationsService
+- **Evidence:** `handleFlattenCanvas` (`useCreativeCanvas.ts:394-416`) → `canvasOps.flattenCanvas()` → `toDataURL` on tainted canvas throws → caught → toast "An error occurred while flattening." (`:411`). Save path: `saveCanvas` (`:418-`) has a `hasContent()` guard (good) but calls `canvasOps.saveCanvas()` (which does `toDataURL` `:782`) at **line 428, OUTSIDE the try/catch** (try starts `:430`) → uncaught `SecurityError` on taint.
+- **Flatten Layers button:** unverified live but shares the same `toDataURL` path — assume broken until 478 fixed.
+- **Fix direction:** fix 478 first. Then move the `canvasOps.saveCanvas()` call inside the try; add `SecurityError`-specific toast. Add `hasContent()`/taint guard to flatten too.
+- **Files:** `useCreativeCanvas.ts:394-416,418-428`; `CanvasOperationsService.ts:782` + `flattenCanvas()`; `CanvasActionRail.tsx:79,92`
+
+### ISSUE-483: "Send to Video Editor" handoff drops the frame → lands in empty Director's Chair
+
+- **Status:** 🔴 OPEN — **Severity:** 🟠 HIGH (UX + data) — **Module:** creative / CreativeStudio video handoff
+- **Evidence:** `onSendToWorkflow` (`CreativeStudio.tsx:340-357`) confirms then `setVideoInput(type, item)` + `setViewMode('video_production')`. User confirmed "Yes, Send to Video" and landed in the **empty** "Director's Chair" ("Compose your vision above to begin") — the frame never surfaces in the landing view. Two defects: (1) it passes the **original `item`**, not the edited/flattened canvas (annotations lost); (2) `video_production` landing view (`VideoWorkflow`) doesn't display the set start-frame — it only appears in a `ReviewStep` sub-view (`video/components/ReviewStep.tsx:54-59`).
+- **Fix direction:** capture the edited canvas (via 478-safe export) as the start frame; surface the set start/end frame in the `VideoWorkflow` landing view so the handoff is visible; verify `setVideoInput` shape matches what `VideoWorkflow` reads.
+- **Files:** `CreativeStudio.tsx:340-357,329`; `modules/creative/video/` (`VideoWorkflow`, `ReviewStep.tsx`); store `setVideoInput`.
+
+### ISSUE-484: Multi-format rail button errors
+
+- **Status:** 🟡 OPEN (needs live confirm) — **Severity:** 🟡 MEDIUM — **Module:** creative / CanvasActionRail
+- **Evidence:** User reports an error indicator on the "multi-format" rail button (`CanvasActionRail.tsx:61` id `multi-format`). Likely another `toDataURL` consumer (branch of 478) but the handler must be traced.
+- **Fix direction:** trace the `multi-format` onClick → its export/generation call; confirm whether it's 478 taint or a separate failure; log specifics.
+- **Files:** `CanvasActionRail.tsx:61`; its handler in `useCreativeCanvas.ts` / `CreativeCanvas.tsx`.
+
+### ISSUE-485: SHOWROOM tab — never tested (audit required) + layout overlap
+
+- **Status:** 🟡 OPEN — **Severity:** 🟡 MEDIUM — **Module:** creative / ShowroomUI
+- **Evidence:** William has never used Showroom. Flow: upload product asset → pick product type (`PRODUCT_TYPES` `ShowroomUI.tsx:25`) → GENERATE MOCKUP (`handleGenerateMockup :68`) → ANIMATE SCENE (`handleAnimateScene :101`). Untested end-to-end; assume taint-affected where it exports. **Layout bug (visible):** in the left "Asset Rack" column (`:132` `w-80 … overflow-y-auto`), the Product Asset upload card overlaps/covers the product-type pills (T-Shirt/Hoodie partially hidden) — spacing/height/z-index issue in that column.
+- **Fix direction:** full functional audit of mockup + animate; fix the Asset Rack column layout so the upload card and pill grid don't overlap (check fixed heights / negative margins / absolute positioning in `:132-200`).
+- **Files:** `ShowroomUI.tsx:25,68,101,130-200`
+
+### ISSUE-486: Blank / partial canvas on reopen (Magic Edit Mode: Purple)
+
+- **Status:** 🔴 OPEN — **Severity:** 🟠 HIGH — **Module:** creative / canvas restore
+- **Evidence:** Reopening an edited asset showed a near-empty dark canvas with only a sliver of the image at the bottom. Consistent with 478: `loadFromJSON` restore fails/half-renders when the base image can't load CORS-safe, or sizing/render runs before image decode completes.
+- **Fix direction:** fix 478 restore path; ensure `renderAll()` fires after image decode; verify canvas dimensions are set from the restored base image, not stale container size.
+- **Files:** `useCreativeCanvas.ts:91-104`; `CanvasOperationsService.ts:145-163 (placeImageOnCanvas), 685-689 (loadFromJSON)`
+
+### ISSUE-487: KEYFRAMES "Sequence Architect" — never tested (audit required)
+
+- **Status:** 🟡 OPEN — **Severity:** 🟡 MEDIUM — **Module:** creative / AutonomousLab (Sequence Architect)
+- **Evidence:** KEYFRAMES tab → `viewMode === "lab"` → `AutonomousLab` (`CreativeStudio.tsx:332`, imported `:6`; timeline `SequenceTimeline.tsx`). UI ("Establish Scene → drop establishing shot → Synthesize Sequence") never exercised; William couldn't reach it past the broken features in front of it.
+- **Fix direction:** full functional audit: drag-asset-to-establishing-shot, time/beat presets, Synthesize Sequence. Verify it doesn't depend on the same broken canvas export.
+- **Files:** `CreativeStudio.tsx:6,332`; `components/AutonomousLab.tsx`; `components/SequenceTimeline.tsx`
+
+### ISSUE-488: Information architecture — too many incoherent tabs; global controls float over unrelated views (DESIGN DECISION)
+
+- **Status:** 🟠 OPEN — **Severity:** 🟠 HIGH (product) — **Module:** creative / CreativeStudio shell + StudioHeader
+- **Evidence:** Top bar carries GENERATE, CANVAS, VIDEO, OMNI REMIX, SHOWROOM, KEYFRAMES **plus** BRAND, HISTORY, VERSIONS, ROSTER, PLP. William: "it seems ridiculous that I have the PLP tab open on the Sequence Architect / Keyframes… it just doesn't make a lot of sense." Global panels (PLP, VERSIONS) appear over views they have no relationship to. Some surfaces likely belong consolidated into others to be discoverable.
+- **NOT a mechanical fix — needs William's product decision.** Next agent must NOT redesign the IA unilaterally. Deliverable for this item: an audit doc that maps each tab/panel → what it does → proposed grouping options, then bring 2-3 IA options to William to choose. (Honor MEMORY: terminology aversion to buzzwords; YAGNI — reframe/rename to surface use cases rather than add modes.)
+- **Files:** `modules/creative/CreativeStudio.tsx`; StudioHeader/tab-bar component; PLP + VERSIONS panel mounts.
+
+### ISSUE-489: VERSIONS vs PLP unclear — "15 versions of what?"
+
+- **Status:** 🟡 OPEN — **Severity:** 🟡 MEDIUM — **Module:** creative / Versions panel + PLP
+- **Evidence:** William activated "Design Versions / SAVE CURRENT DESIGN" and asked "what's it making 15 versions of?" — conflating two distinct features. PLP (Promote·Launch·Push) = 15-variant campaign-asset engine (see MEMORY `plp-naming-decision`). VERSIONS = design snapshot/history. Neither explains itself in-UI; the "15" almost certainly comes from PLP, not Versions.
+- **Fix direction:** verify in code what VERSIONS panel and PLP each generate (confirm the "15"); add a one-line in-panel explainer to each; consider folding into the ISSUE-488 IA pass. Confirm copy with William (no buzzwords).
+- **Files:** VERSIONS panel component (grep `Design Versions` / `SAVE CURRENT DESIGN`); PLP engine module.
+
+### ISSUE-490: ROSTER ("Specialist Roster") is desktop-only — shows scary "Registry not found / run audit_skill" in the web app
+
+- **Status:** 🔴 OPEN — **Severity:** 🟡 MEDIUM — **Module:** creative / AgentCapabilityRegistry
+- **Confirmed root cause:** `AgentCapabilityService.getRegistry()` (`services/agent/AgentCapabilityService.ts:23-46`) calls `window.electronAPI.agent.getCapabilityRegistry()`. In the **web build** (`indii.music/creative`, which is what William runs) `electronAPI` is undefined → returns `null` → panel renders the error branch "Registry not found or inaccessible. Run `audit_skill` to generate registry." (`AgentCapabilityRegistry.tsx:66-70`). It can NEVER succeed in web.
+- **Impact:** Every web user who opens ROSTER sees a broken-looking error + a meaningless "run audit_skill" instruction. Feature usefulness unverified even on desktop.
+- **Fix direction (junior agent):** Detect environment. If not Electron, either (a) hide the ROSTER tab in web builds, or (b) fetch the registry from a Firestore doc / callable function so web has real data, or (c) at minimum replace the error copy with an honest empty state ("Specialist Roster runs in the desktop app"). Do NOT show "run audit_skill" to end users. Recommend (b) if the registry data can live in Firestore; else (a).
+- **Files:** `packages/renderer/src/services/agent/AgentCapabilityService.ts:23-46`; `packages/renderer/src/modules/creative/components/AgentCapabilityRegistry.tsx:16-81`; tab gating in `CreativeNavbar.tsx:52,161-168,266-267`
+
+### ISSUE-491: KEYFRAMES (Sequence Architect) and VIDEO "Daisy Chain" are redundant/overlapping features built in parallel — consolidation candidate
+
+- **Status:** 🟠 OPEN — **Severity:** 🟡 MEDIUM (product/IA) — **Module:** creative / AutonomousLab + VideoWorkflow/DaisyChainControls
+- **Context (user-stated):** William: "the keyframes in the daisy chain kind of seemed like they're all together… I was building these things so fast the agents couldn't keep up." Two surfaces solve the same problem (chaining frames into longer sequences via interpolation): KEYFRAMES → `AutonomousLab` "Sequence Architect" (`CreativeStudio.tsx:332`), and VIDEO → Daisy Chain toggle (`DaisyChainControls.tsx:98` `setVideoInput('isDaisyChain', …)`, consumed at `VideoWorkflow.tsx:389` "long-form Video (Daisy Chain or duration > 8s)"). `CanvasOperationsService.ts:1158` also has a "Daisy Chain" candidate-apply.
+- **Decision needed (NOT a mechanical fix — William's call):** keep one, fold the other in, or clearly differentiate. Junior agent deliverable: a comparison doc (what each does, inputs/outputs, which is more complete) + a recommendation, then bring to William. Part of the ISSUE-488 IA pass.
+- **Files:** `CreativeStudio.tsx:6,332`; `components/AutonomousLab.tsx`, `SequenceTimeline.tsx`; `components/DaisyChainControls.tsx`; `video/VideoWorkflow.tsx:389`
+
+### ISSUE-492: Floating panels (Roster / Versions / PLP) are not mutually exclusive → they stack and overlap each other and float over unrelated views
+
+- **Status:** 🔴 OPEN — **Severity:** 🟡 MEDIUM (UX) — **Module:** creative / CreativeNavbar panel host
+- **Evidence:** Screenshot shows "Design Versions" panel overlapping the "Specialist Roster" panel, both open at once, partially covering the Sequence Architect behind them. Each panel is an independent `useState` toggle in `CreativeNavbar.tsx` (e.g. `showRosterRegistry` `:52`, rendered `:266-267`) with no coordination — opening one does not close the others, and they share overlapping absolute positions.
+- **Fix direction (junior agent):** make the right-rail panels mutually exclusive (single `activePanel` state, or close others on open); give them a consistent anchored position + z-index; ensure they don't render over view-specific tabs they don't relate to. Concrete, self-contained fix; coordinate with the broader ISSUE-488 IA decision but this overlap bug can be fixed independently now.
+- **Files:** `packages/renderer/src/modules/creative/components/CreativeNavbar.tsx:52,155-168,266-267` (+ the Versions and PLP toggle/render siblings nearby)
+
+### ISSUE-493: OMNI REMIX — untested; relies on `generateOmniRemixV3` cloud function (verify deployed/working)
+
+- **Status:** 🟡 OPEN (needs live confirm) — **Severity:** 🟡 MEDIUM — **Module:** creative / OmniWorkflow
+- **Evidence:** `OmniWorkflow.tsx:303-304` calls `httpsCallable(functions, 'generateOmniRemixV3')`. Note: this path does NOT use the tainted-canvas export (it posts to a function directly), so it is **independent of ISSUE-478** — a good thing to confirm works while the canvas is broken. Untested by William.
+- **Fix direction (junior agent):** verify `generateOmniRemixV3` is deployed (`firebase functions:list` / functions logs) and returns a usable result; exercise the full Omni flow; log any concrete failure with the function error. If the function 404s/errors, that's a backend deploy issue, not frontend.
+- **Files:** `packages/renderer/src/modules/creative/video/OmniWorkflow.tsx:303-333`; Firebase function `generateOmniRemixV3`
+
+### 🔑 FIX-AGENT GUIDANCE — the correct taint-proof pattern already exists in this repo
+
+> The CANVAS tab (`InfiniteCanvas`) does NOT suffer the ISSUE-478 taint because it loads every remote
+> image through `fetchAsBase64()` → a `data:` URL before drawing (`InfiniteCanvas.tsx:116-120`). A `data:`
+> URL is same-origin, so `toDataURL` never throws there. **This is the reference implementation.** The
+> Magic-Edit editor (`CanvasOperationsService`) breaks only because its `loadFromJSON` restore path
+> (`:685-689`) lets Fabric reload images straight from their http `src`. Fix = make restore use the same
+> `safeStorageFetch`/`fetchAsBase64` → blob/data-URL approach. Copy the working pattern; don't invent a new one.
+>
+> **Surface independence map (so fixers don't chase phantom bugs):**
+> - Taint-dependent (all fixed by 478): Magic Edit/REFINE, Save, Flatten, Send-to-Video frame, undo/redo restore, blank-on-reopen, multi-format.
+> - **Independent of 478** (cloud-function paths, work even while canvas is broken — verify separately): GENERATE (`generateImageV3`/`generateVideo`, `useDirectGeneration.ts:320,392` — has honest timeout/quota/fail toasts `:465-469`), OMNI REMIX (`generateOmniRemixV3`), CANVAS tab.
+> - Wiring/IA/infra (separate roots): 479 chat-blind, 483 video handoff, 488/491 IA, 490 roster-web, 492 panel-overlap.
+
+### ISSUE-494: GENERATE + BRAND — light audit, no confirmed defect yet (verify live)
+
+- **Status:** 🟡 OPEN (needs live confirm) — **Severity:** 🟢 LOW — **Module:** creative / DirectGenerationTab + BrandAssetsDrawer
+- **Evidence:** GENERATE (`useDirectGeneration.ts`) calls `generateImageV3`/`generateVideo` with reasonable error handling (`:459-469`). No obvious frontend defect; failures would be backend (function deploy / quota / fine-tuned-endpoint fallback — see MEMORY `appcheck-disabled-pending-recaptcha-domain`). BRAND → `BrandAssetsDrawer.tsx` not yet exercised.
+- **Fix direction (junior agent):** run a real generate (image + video) and confirm output appears in gallery; open BRAND drawer and confirm assets load + apply. Log concrete failures only. Treat as verification task, not a known bug.
+- **Files:** `packages/renderer/src/modules/creative/hooks/useDirectGeneration.ts:320,392,459-469`; `packages/renderer/src/modules/creative/components/BrandAssetsDrawer.tsx`
+
+### ISSUE-495: 🚨 PLP "Generate" silently launches a REAL paid Meta ad campaign — no confirmation, hardcoded budget/targeting, placeholder ad copy
+
+- **Status:** 🔴 OPEN — **Severity:** 🔴 CRITICAL (spends real money without consent) — **Module:** creative / PLP pipeline + AdAutomationService
+- **Confirmed evidence:** In PLP mode, `generateImage` (`CreativeStudio.tsx:137-232`) generates **10 image + 5 Veo video variants** (`:142,158`) then, if ≥1 succeeds, **automatically** calls `adAutomationService.deployPLPPipeline(adCreatives, { platform:'meta', dailyBudget:10.00, totalDays:28, targetAgeRange:[18,35], targetInterests:['music','creativity','art'] })` (`:218-224`). `deployPLPPipeline` (`services/marketing/AdAutomationService.ts:164`) calls real Firebase callables `createCampaignFn`/`createAdSetFn`/`createAdFn` (`:54-141`) which create **live Meta Graph API campaigns/adsets/ads — NOT a stub.** There is **no `ConfirmDialog`** before this (the only confirm in the file is Send-to-Video, `:343`).
+- **Impact:** One PLP click = ~$10/day × 28 days = **~$280 ad spend committed silently**, plus 5 expensive Veo video generations, with **placeholder ad copy** ("Discover the Magic 1", body = first 80 chars of prompt + "...", `:206-208`) and hardcoded audience. User (William) did not know PLP launches ads at all. Violates the "confirm before money-moving / outward-facing actions" rule, the no-mock-data rule (placeholder copy), and the AI-cost-awareness goal (see MEMORY `ai-cost-instrumentation`, `pricing-strategy-direction`).
+- **Fix direction (junior agent — HIGH priority, treat as financial safety):**
+  1. **Gate the deploy behind explicit confirmation** showing real numbers: variant count, est. generation cost, ad budget, duration, targeting. No auto-deploy.
+  2. Make budget, duration, targeting, and ad copy **user-editable** — never hardcoded; no placeholder headlines in a live campaign.
+  3. Separate "generate 15 variants" from "deploy as ads" — they should be two deliberate steps, not one button.
+  4. Surface the Veo video generation cost up front (5 videos is expensive).
+  5. Confirm with William the intended PLP behavior before building (this is also part of ISSUE-489 — "15 versions of what" — the UI must explain this).
+- **Files:** `packages/renderer/src/modules/creative/CreativeStudio.tsx:123-232` (esp. 142,158,206-208,218-224); `packages/renderer/src/services/marketing/AdAutomationService.ts:54-211`
+
+### ISSUE-496: HISTORY is fragmented across three overlapping surfaces (DesignHistory + PromptHistory + Versions panel)
+
+- **Status:** 🟠 OPEN — **Severity:** 🟡 MEDIUM (IA) — **Module:** creative / history drawers
+- **Evidence:** Three separate history-ish surfaces exist: `DesignHistoryDrawer.tsx`, `PromptHistoryDrawer.tsx`, and the VERSIONS "Design Versions" panel (which itself lists prompt history with "USE PROMPT" — seen in screenshot). Overlapping purpose, no clear boundary; compounds the ISSUE-488 IA confusion and the ISSUE-489 VERSIONS-vs-PLP ambiguity.
+- **Fix direction (design decision, William):** decide the canonical model — likely one "History" surface with tabs (Designs / Prompts / Versions) — and fold the three together. Junior agent: produce the consolidation proposal as part of the ISSUE-488 IA pass; do not delete drawers unilaterally.
+- **Files:** `packages/renderer/src/modules/creative/components/DesignHistoryDrawer.tsx`; `…/PromptHistoryDrawer.tsx`; VERSIONS/Design Versions panel
+
+### ISSUE-497: PLP marketing backend doesn't exist → fabricated "Campaign deployed" success + latent financial risk (revises ISSUE-495)
+
+- **Status:** 🔴 OPEN — **Severity:** 🔴 CRITICAL (honesty/trust now; financial when functions land) — **Module:** creative / AdAutomationService + functions package
+- **Confirmed evidence:** The Meta callables the frontend invokes — `createAdCampaign`, `createAdSet`, `createAd`, `getAdInsights` (`AdAutomationService.ts:59,83,114,144`) — **do not exist anywhere in `packages/firebase`** (verified: `generateImageV3`/`generateOmniRemixV3`/`generateVideoV3` ARE exported in `lib/index.js:101-103`; the four ad functions return zero matches in `src` or `lib`). Each `createAd*` method has a `catch` that logs "Cloud Function unavailable, using local ID" and **returns a fabricated ID** `camp_/adset_/ad_${Date.now()}` (`:68-70,99-101,125-127`). So `deployPLPPipeline` never throws; PLP shows **"Campaign deployed to Marketing Protocol."** (`CreativeStudio.tsx:225`) when **nothing was deployed**.
+- **Impact:**
+  - **Now:** no real ad spend (functions absent), but the app **lies** that a campaign launched and fabricates IDs — violates no-mock-data + never-declare-victory rules. User trusts that ads are running.
+  - **Latent:** the moment someone deploys `createAdCampaign`/etc., ISSUE-495's ungated auto-deploy spends real money. The two issues must be fixed together.
+  - **Wasted cost regardless:** PLP still runs 10 image + 5 Veo video generations per click (real AI spend) even though the marketing step is a no-op.
+- **Fix direction (junior agent):** (1) Never fabricate success — if the ad callable is unavailable, surface an honest failure ("Marketing backend not configured"), don't return fake IDs or a success toast. (2) Decide product intent with William: is the Meta-ads pipeline real and wanted? If yes, build+deploy the functions behind the ISSUE-495 confirmation gate; if no, remove the auto-deploy and the "Campaign deployed" toast entirely. (3) Until then, PLP should generate variants only and say so plainly.
+- **Files:** `packages/renderer/src/services/marketing/AdAutomationService.ts:50-129,164-211`; `packages/renderer/src/modules/creative/CreativeStudio.tsx:218-231`; missing functions in `packages/firebase/src` (`createAdCampaign`, `createAdSet`, `createAd`, `getAdInsights`)
+- **Related:** ISSUE-495 (the gate/cost side of the same PLP flow).
+
+### ✅ DECISIONS FROM WILLIAM (2026-06-24) — authoritative; fix agents follow these, do not re-ask
+
+1. **PLP = real ads pipeline, GATED (resolves 495 + 497 intent).** William DOES want PLP to launch real Meta campaigns. Required build:
+   - Implement the missing Firebase functions `createAdCampaign`, `createAdSet`, `createAd`, `getAdInsights` (Meta Graph API) in `packages/firebase/src`.
+   - **Mandatory confirmation gate before ANY spend**, showing real numbers: variant count, est. generation cost (incl. 5 Veo videos), ad daily budget, total duration, full targeting, and the actual ad copy.
+   - Budget, duration, targeting, headlines/body must be **user-editable** — no hardcoded `$10/28d/[18,35]`, no placeholder copy ("Discover the Magic").
+   - **Remove the fabricated-success path** (no fake `camp_/adset_/ad_` IDs, no "Campaign deployed" toast on failure). Honest failure only.
+   - Separate "generate 15 variants" from "deploy ads" into two deliberate steps.
+2. **IA / redundancy (488, 489, 491, 496) = AUDIT + PROPOSE, do not change structure yet.** Junior agents produce a consolidation proposal (tab/panel map, 2-3 grouping options, recommendation) and bring it to William. No tabs merged, no drawers deleted, no panels removed until he picks. Honor MEMORY: no buzzwords/"Nexus", YAGNI (reframe/rename to surface use cases over adding modes).
+
+---
+
+## 🔴 CI / Deploy — why main is red (2026-06-24, Opus investigation via `gh`)
+
+### ISSUE-498: "Deploy to Firebase Hosting" fails on every push since v1.64.4 — production deploy auth broken (production is stuck on v1.64.3)
+
+- **Status:** 🟢 FIX APPLIED (on branch, pending merge + prod-deploy verification) — **Severity:** 🔴 CRITICAL (no production deploys are landing) — **Module:** CI / `.github/workflows/deploy.yml`
+- **FIX (2026-06-24, authorized by William):** Pinned `package.json:92` `firebase-tools` from `^15.18.0` (which resolved to the broken 15.22.1) to exact **`15.19.0`** — the version from the last green production deploy (v1.64.3, commit `fba9d8ab7`). Regenerated `package-lock.json` via `npm install --package-lock-only`. firebase-tools is a `devDependency` (CI/deploy tooling only — NOT shipped to users), so reverting it does not touch the runtime app; the other npm-audit fixes (Arcjet/ENS/crypto) are untouched. Delivered on a branch + PR — NOT pushed to `main` directly because a push to main auto-deploys to production; merging (and thus the real deploy-auth verification) is William's call. **Verification still pending:** the deploy-auth fix can only be confirmed by a push to `main` triggering `deploy-production`.
+- **Symptom:** The red ✗ marks on GitHub are the `Deploy to Firebase Hosting` workflow failing on `main`. Runs `28105625736` (v1.64.4), `28098122444` (Arcjet revert), `28096771159` (docs) all failed. (The grey "cancelled" runs are just superseded by newer pushes — normal, ignore.)
+- **Confirmed cause #1 — production deploy can't authenticate (CURRENT blocker):** In the latest run **all code jobs pass** — `setup`, all 8 `unit-tests` shards, `build`, `deploy-staging`, `e2e-staging` ✓ — and only **`deploy-production` fails** at step **"Deploy landing page to Firebase Hosting"** (`deploy.yml:549-550`, `npx firebase deploy --only hosting:landing`) with:
+  `Error: Failed to authenticate, have you run firebase login?` → exit 1.
+  Both staging and production decode the SAME `FIREBASE_SERVICE_ACCOUNT` secret to `$HOME/gcloud-key.json` + set `GOOGLE_APPLICATION_CREDENTIALS` (`deploy.yml:289-296` vs `428-436`). **Staging succeeds** using `firebase hosting:channel:deploy` (`deploy.yml:~298`); **production fails** using `firebase deploy --only hosting:landing` — same run, same creds. So it's command/version-specific, not a missing secret.
+- **Root cause (high confidence):** The npm-audit security fixes today (commit `1ac353517` → `ff1d50abe`) bumped **`firebase-tools` to 15.22.1** (lockfile resolved line; package.json pins `^15.18.0` so `npm audit fix` pulled latest 15.x). Last green production deploy was **v1.64.3 (2026-06-23, run 28055154276)** on the older firebase-tools. firebase-tools 15.22.x changed/regressed how `firebase deploy` resolves ADC credentials, breaking the GOOGLE_APPLICATION_CREDENTIALS path for full `deploy` (channel-deploy still works).
+- **Confirmed cause #2 — earlier failure, ALREADY FIXED:** run `28096771159` failed earlier at `Deploy Cloud Functions` → functions build: `src/functions/security/arcjet.ts(33,47) & (49,40): error TS18047: 'baseArcjet' is possibly 'null'` (npm err code 2). A later commit ("fix: resolve TypeScript 'possibly null' error in Arcjet lazy initialization") fixed this; the v1.64.4 run's `build` job passes. No action needed beyond confirming it stays green.
+- **Impact:** **No commit since v1.64.3 has deployed to production** — app.indii.music / indii.music are running v1.64.3. Also blocks the `Deploy studio app` (`deploy.yml:552`) and likely `Deploy Cloud Functions` steps that follow in the same job. This means the ISSUE-478 bucket-CORS work and everything else can't ship until CI deploy is restored.
+- **Fix direction (junior agent — fastest first):**
+  1. **Pin firebase-tools back to the last-working version.** Get it: `git show 28055154276's commit (v1.64.3) :package-lock.json | grep firebase-tools` (or check the v1.64.3 lockfile). Change `package.json:92` from `^15.18.0` to the exact prior version, `npm install` to regenerate lockfile, push, confirm deploy-production goes green. This directly reverses the regression.
+  2. If staying on 15.22.x is required for the security fix: read the firebase-tools 15.19→15.22 changelog for ADC/auth changes; switch the production hosting deploys to the same auth path that staging uses (`hosting:channel:deploy` works, or use the `FirebaseExtended/action-hosting-deploy` action with `firebaseServiceAccount`), and/or verify the service account has the **Firebase Hosting Admin** role.
+  3. Re-run the failed workflow after the fix (`gh run rerun 28105625736` or push a no-op) and confirm `deploy-production` passes end to end (landing + studio + functions).
+- **Files:** `.github/workflows/deploy.yml:289-296,428-436,549-553,555-566`; `package.json:92` (`firebase-tools` pin); `package-lock.json`
+- **Related:** MEMORY `platinum_roadmap_active` (Phase 1A = CORS/Auth fix), `ask-for-cloud-auth-dont-act-blocked`; ERROR_LEDGER Arcjet lazy-init entry; ISSUE-478 (separate Firebase auth surface — bucket CORS, not CI).
+
+---
+
+## 📚 IA REFERENCE — how comparable products structure creative/edit UX (informs ISSUE-488/489/491/496 proposal)
+
+> Competitive scan (2026) to ground the IA "audit + propose" decision. Not bugs — reference patterns for the junior agent's consolidation proposal to William. Sources at end.
+
+**What the leaders do (Photoshop/Firefly, Krea, Recraft, Runway):**
+1. **Contextual task bar, not separate tabs.** Edit controls + model picker appear *on the canvas* when you make a selection (Photoshop "Contextual Task Bar"). indii's "Magic Edit Mode: Red" + REFINE/SPEED is close, but model choice (Flash/Pro) and actions are scattered. → Consolidate edit controls into one contextual bar; don't make users tab-hop.
+2. **History/versions = nondestructive layers on the canvas, recording prompt + model.** Each generative edit lands on its own auto-masked layer that stores the prompt and the model used (Photoshop). This is a stronger model than indii's separate floating VERSIONS panel + DesignHistory + PromptHistory (ISSUE-496). → Fold the three history surfaces into one layers/versions concept tied to the canvas, not floating panels.
+3. **Canvas-first, not chat-box.** Krea explicitly markets "real-time iteration on a canvas instead of a chat box." indii has a chat (currently blind — ISSUE-479) AND a canvas. → Decide: make the chat canvas-aware (479) OR make direct canvas tools primary and demote chat. Leaders trend toward direct manipulation.
+4. **One generation surface with a model picker — not 6 tabs.** Krea unifies images/video/3D (Flux, Imagen, Kling, Veo) in one canvas with a model dropdown. indii splits GENERATE / VIDEO / OMNI REMIX / SHOWROOM / KEYFRAMES across top tabs (ISSUE-488/491). → Strong precedent for collapsing these into one workspace + mode/model selector.
+5. **"Move fluidly between generative and pixel editing without disrupting workflow."** A single continuous workspace. indii's tab-switching + overlapping floating panels (ISSUE-492) breaks this. → The proposal should optimize for one uninterrupted surface.
+- **Deliverable for junior agent:** use these 5 patterns as the rubric in the 488 consolidation proposal; present William 2-3 options (e.g., "Krea-style single canvas + model picker" vs "Photoshop-style contextual bar + layers history" vs "minimal: keep tabs, fix overlap only"). Honor MEMORY: no buzzwords, YAGNI.
+- **Sources:** [Photoshop Generative Fill (Adobe Help)](https://helpx.adobe.com/photoshop/desktop/create-open-import-images/create-images/edit-images-with-generative-fill.html); [Photoshop Beta Expands Generative Fill (Adobe Blog 2025)](https://blog.adobe.com/en/publish/2025/09/25/photoshop-beta-expands-generative-fillmore-ai-models-more-possibilities); [Krea Edit docs](https://krea.ai/docs/features/edit); [Krea AI Creative Suite](https://www.krea.ai/)
+
+---
+
