@@ -76,18 +76,10 @@ vi.mock('./BrandAssetsDrawer', () => ({
     )
 }));
 
-vi.mock('./PromptHistoryDrawer', () => ({
+vi.mock('./HistoryDrawer', () => ({
     default: ({ onClose }: { onClose: () => void }) => (
-        <div data-testid="prompt-history-drawer">
+        <div data-testid="history-drawer">
             <button onClick={onClose}>Close History</button>
-        </div>
-    )
-}));
-
-vi.mock('./DesignHistoryDrawer', () => ({
-    default: ({ onClose }: { onClose: () => void }) => (
-        <div data-testid="design-history-drawer">
-            <button onClick={onClose}>Close Design History</button>
         </div>
     )
 }));
@@ -219,40 +211,19 @@ describe('CreativeNavbar', () => {
         expect(screen.queryByTestId('brand-assets-drawer')).not.toBeInTheDocument();
     });
 
-    it('opens and closes prompt history drawer', () => {
+    it('opens and closes the unified history drawer (Versions + Prompts)', () => {
         render(
             <ToastProvider>
                 <CreativeNavbar />
             </ToastProvider>
         );
 
-        const toggleButton = screen.getByText('History');
-        fireEvent.click(toggleButton);
+        // Single History entry point now (ISSUE-496 consolidation)
+        fireEvent.click(screen.getByTestId('history-btn'));
+        expect(screen.getByTestId('history-drawer')).toBeInTheDocument();
 
-        expect(screen.getByTestId('prompt-history-drawer')).toBeInTheDocument();
-
-        const closeButton = screen.getByText('Close History');
-        fireEvent.click(closeButton);
-
-        expect(screen.queryByTestId('prompt-history-drawer')).not.toBeInTheDocument();
-    });
-
-    it('opens and closes design history drawer', () => {
-        render(
-            <ToastProvider>
-                <CreativeNavbar />
-            </ToastProvider>
-        );
-
-        const toggleButton = screen.getByText('Versions');
-        fireEvent.click(toggleButton);
-
-        expect(screen.getByTestId('design-history-drawer')).toBeInTheDocument();
-
-        const closeButton = screen.getByText('Close Design History');
-        fireEvent.click(closeButton);
-
-        expect(screen.queryByTestId('design-history-drawer')).not.toBeInTheDocument();
+        fireEvent.click(screen.getByText('Close History'));
+        expect(screen.queryByTestId('history-drawer')).not.toBeInTheDocument();
     });
 
     it('opens and closes roster drawer drawer', () => {
