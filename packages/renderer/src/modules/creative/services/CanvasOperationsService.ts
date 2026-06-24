@@ -97,7 +97,12 @@ export class CanvasOperationsService {
             }
         }
 
-        const shouldPreferBlob = /firebasestorage\.googleapis\.com|storage\.googleapis\.com/i.test(url);
+        // Prefer the blob path for ANY cross-origin http(s) URL — not just the two
+        // legacy hosts. The bucket's own *.firebasestorage.app domain, signed URLs,
+        // and CDNs all taint the canvas if loaded directly without CORS (ISSUE-478).
+        const isRemoteHttp = /^https?:\/\//i.test(url);
+        const isSameOrigin = typeof window !== 'undefined' && url.startsWith(window.location.origin);
+        const shouldPreferBlob = isRemoteHttp && !isSameOrigin;
 
         // Attempt 1: Use a blob URL for remote storage sources to avoid canvas taint.
         if (shouldPreferBlob) {
@@ -685,11 +690,47 @@ export class CanvasOperationsService {
     async loadFromJSON(json: string): Promise<void> {
         if (!this.canvas) return;
         try {
-            await this.canvas.loadFromJSON(JSON.parse(json));
+            const parsed = JSON.parse(json);
+            // CRITICAL (ISSUE-478): Fabric's loadFromJSON reloads images straight from
+            // their stored http `src` with no crossOrigin, which TAINTS the canvas when
+            // the bucket lacks CORS — every later toDataURL() then throws. Swap remote
+            // image sources to same-origin blob URLs BEFORE handing the JSON to Fabric.
+            await this._sanitizeRemoteImageSources(parsed);
+            await this.canvas.loadFromJSON(parsed);
             this.canvas.renderAll();
         } catch (e: unknown) {
             const message = e instanceof Error ? e.message : 'Unknown error';
             logger.error(`Failed to load canvas from JSON: ${message}`);
+        }
+    }
+
+    /**
+     * Walk a parsed Fabric JSON tree and replace any remote http(s) image `src`
+     * with a same-origin blob URL (fetched via safeStorageFetch), so reviving the
+     * canvas can never taint it regardless of bucket CORS state (ISSUE-478).
+     */
+    private async _sanitizeRemoteImageSources(node: unknown): Promise<void> {
+        if (!node || typeof node !== 'object') return;
+        const obj = node as { src?: unknown; crossOrigin?: unknown; objects?: unknown };
+
+        if (typeof obj.src === 'string' && /^https?:\/\//i.test(obj.src)) {
+            try {
+                const { safeStorageFetch } = await import('@/services/storage/safeStorageFetch');
+                const { blob } = await safeStorageFetch(obj.src);
+                const blobUrl = URL.createObjectURL(blob);
+                this._activeBlobUrls.push(blobUrl);
+                obj.src = blobUrl;
+                obj.crossOrigin = 'anonymous';
+            } catch (e: unknown) {
+                logger.warn('[CanvasOps] Could not blob-swap restored image src; may taint canvas:', e);
+                obj.crossOrigin = 'anonymous';
+            }
+        }
+
+        if (Array.isArray(obj.objects)) {
+            for (const child of obj.objects) {
+                await this._sanitizeRemoteImageSources(child);
+            }
         }
     }
 
@@ -786,6 +827,12 @@ export class CanvasOperationsService {
             });
 
             return dataUrl;
+        } catch (e: unknown) {
+            // A tainted canvas (cross-origin image without CORS) makes toDataURL throw
+            // a SecurityError. Degrade gracefully so callers (save/flatten/export) show
+            // an honest failure instead of an uncaught crash (ISSUE-478/482).
+            logger.error('[CanvasOps] Export failed — canvas may be tainted (cross-origin image without CORS):', e);
+            return '';
         } finally {
             // Restore original visibility
             annotationObjects.forEach((obj, i) => (obj.visible = visibilitySnapshot[i] ?? true));
