@@ -78,7 +78,7 @@ describe('CreativeStudio', () => {
             setPrompt: mockSetPrompt,
             setCreativePrompt: mockSetPrompt,
             creativePrompt: '',
-            setIsGenerating: vi.fn(), // Added missing property
+            setIsGenerating: vi.fn(),
             isGenerating: false,
             studioControls: {
                 resolution: '1024x1024',
@@ -91,6 +91,10 @@ describe('CreativeStudio', () => {
             prompt: '',
             addToHistory: mockAddToHistory,
             currentProjectId: 'test-project',
+            userProfile: null,
+            characterReferences: [],
+            chatImportContext: null,
+            clearChatImportContext: vi.fn(),
             // Whisk Mocks
             whiskState: {
                 subjects: [],
@@ -208,7 +212,14 @@ describe('CreativeStudio', () => {
         const updatedStore = {
             ...currentStore,
             viewMode: 'editor',
-            selectedItem: { id: 'img-123', url: 'http://test.com/img.png', type: 'image' },
+            selectedItem: {
+                id: 'img-123',
+                url: 'http://test.com/img.png',
+                type: 'image' as const,
+                prompt: 'test image',
+                timestamp: Date.now(),
+                projectId: 'proj-123'
+            },
             setVideoInput,
             setGenerationMode,
             setViewMode,

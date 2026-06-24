@@ -97,7 +97,7 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
 
     useEffect(() => {
         useStore.setState({ isAgentOpen: false });
-
+        
         if (generationMode !== prevGenerationMode.current) {
             if (generationMode === 'video') {
                 // Allow navigating to editor to pick assets even while in video mode
@@ -164,19 +164,17 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                                 cameraMovement: 'Dynamic',
                                 motionStrength: 0.8,
                                 model: studioControls.model,
-                                referenceImages: (characterReferences || [])
-                                    .filter(ref => typeof ref?.image?.url === 'string' && ref.image.url.length > 0)
-                                    .map(ref => {
-                                        let bytes = ref.image.url;
-                                        const commaIndex = bytes.indexOf(',');
-                                        if (bytes.startsWith('data:') && commaIndex !== -1) {
-                                            bytes = bytes.substring(commaIndex + 1);
-                                        }
-                                        return {
-                                            image: { imageBytes: bytes, mimeType: 'image/jpeg' },
-                                            referenceType: 'asset' as const
-                                        };
-                                    })
+                                referenceImages: (characterReferences || []).map(ref => {
+                                    let bytes = ref.image.url;
+                                    const commaIndex = bytes.indexOf(',');
+                                    if (bytes.startsWith('data:') && commaIndex !== -1) {
+                                        bytes = bytes.substring(commaIndex + 1);
+                                    }
+                                    return {
+                                        image: { imageBytes: bytes, mimeType: 'image/jpeg' },
+                                        referenceType: 'asset' as const
+                                    };
+                                })
                             })
                         );
 
