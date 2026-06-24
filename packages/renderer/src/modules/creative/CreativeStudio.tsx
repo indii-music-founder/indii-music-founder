@@ -214,18 +214,35 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
 
                         if (successCount > 0) {
                             toast.success(`PLP: ${successCount}/15 Variants generated.`);
-                            try {
-                                await adAutomationService.deployPLPPipeline(adCreatives, {
-                                    platform: 'meta',
-                                    dailyBudget: 10.00,
-                                    totalDays: 28,
-                                    targetAgeRange: [18, 35],
-                                    targetInterests: ['music', 'creativity', 'art']
-                                });
-                                toast.success("Campaign deployed to Marketing Protocol.");
-                            } catch (e) {
-                                logger.error("[PLP] Failed to deploy marketing pipeline", e);
-                                toast.error("Assets generated, but marketing deployment failed.");
+
+                            // ISSUE-495: deploying to a REAL paid Meta ad campaign spends money.
+                            // Never auto-launch — require an explicit confirmation that shows the
+                            // actual budget, duration, and targeting before any spend.
+                            const adBudget = {
+                                platform: 'meta' as const,
+                                dailyBudget: 10.00,
+                                totalDays: 28,
+                                targetAgeRange: [18, 35] as [number, number],
+                                targetInterests: ['music', 'creativity', 'art'],
+                            };
+                            const estTotal = (adBudget.dailyBudget * adBudget.totalDays).toFixed(2);
+                            const deployConfirmed = await ConfirmDialog.call({
+                                title: 'Launch a real paid ad campaign?',
+                                message: `This deploys ${successCount} creatives to a live ${adBudget.platform} ad campaign and spends real money — about $${adBudget.dailyBudget.toFixed(2)}/day for ${adBudget.totalDays} days (~$${estTotal} total), targeting ages ${adBudget.targetAgeRange[0]}–${adBudget.targetAgeRange[1]} interested in ${adBudget.targetInterests.join(', ')}. Your ${successCount} variants are already saved either way.`,
+                                confirmText: 'Yes, launch campaign',
+                                cancelText: 'No, just keep the variants',
+                            });
+
+                            if (!deployConfirmed) {
+                                toast.info('Variants saved. No ad campaign was launched.');
+                            } else {
+                                try {
+                                    await adAutomationService.deployPLPPipeline(adCreatives, adBudget);
+                                    toast.success('Campaign deployed to Marketing Protocol.');
+                                } catch (e) {
+                                    logger.error('[PLP] Failed to deploy marketing pipeline', e);
+                                    toast.error('Variants saved, but the ad campaign could not be launched (marketing backend unavailable).');
+                                }
                             }
                         } else {
                             toast.error("PLP pipeline failed: 0 variants generated.");

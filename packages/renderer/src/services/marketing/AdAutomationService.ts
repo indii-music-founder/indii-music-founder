@@ -65,9 +65,12 @@ export class AdAutomationService {
             });
 
             return result.data.campaignId;
-        } catch (_error: unknown) {
-            logger.warn('[AdAutomation] Campaign Cloud Function unavailable, using local ID.');
-            return `camp_${Date.now()}`;
+        } catch (error: unknown) {
+            // ISSUE-497: never fabricate a fake ID / false success. If the backend
+            // is unavailable, fail honestly so the caller does not claim a campaign
+            // was deployed when nothing happened.
+            logger.error('[AdAutomation] createAdCampaign failed:', error);
+            throw new Error('Marketing backend unavailable — could not create the ad campaign.');
         }
     }
 
@@ -96,9 +99,9 @@ export class AdAutomationService {
             });
 
             return result.data.adSetId;
-        } catch (_error: unknown) {
-            logger.warn('[AdAutomation] AdSet Cloud Function unavailable, using local ID.');
-            return `adset_${Date.now()}`;
+        } catch (error: unknown) {
+            logger.error('[AdAutomation] createAdSet failed:', error);
+            throw new Error('Marketing backend unavailable — could not create the ad set.');
         }
     }
 
@@ -122,9 +125,9 @@ export class AdAutomationService {
             });
 
             return result.data.adId;
-        } catch (_error: unknown) {
-            logger.warn('[AdAutomation] Ad Cloud Function unavailable, using local ID.');
-            return `ad_${Date.now()}`;
+        } catch (error: unknown) {
+            logger.error('[AdAutomation] createAd failed:', error);
+            throw new Error('Marketing backend unavailable — could not create the ad.');
         }
     }
 
