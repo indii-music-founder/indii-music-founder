@@ -46,10 +46,15 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
         togglePromptBuilder: state.togglePromptBuilder
     })));
     const toast = useToast();
-    const [showBrandAssets, setShowBrandAssets] = useState(false);
-    const [showPromptHistory, setShowPromptHistory] = useState(false);
-    const [showDesignHistory, setShowDesignHistory] = useState(false);
-    const [showRosterRegistry, setShowRosterRegistry] = useState(false);
+    // Single active right-rail panel so they are mutually exclusive and can't
+    // overlap/stack on top of each other (ISSUE-492).
+    type RailPanel = 'brand' | 'promptHistory' | 'designHistory' | 'roster' | null;
+    const [activePanel, setActivePanel] = useState<RailPanel>(null);
+    const showBrandAssets = activePanel === 'brand';
+    const showPromptHistory = activePanel === 'promptHistory';
+    const showDesignHistory = activePanel === 'designHistory';
+    const showRosterRegistry = activePanel === 'roster';
+    const togglePanel = (p: Exclude<RailPanel, null>) => setActivePanel(prev => (prev === p ? null : p));
     const [showFrameModal, setShowFrameModal] = useState(false);
     const [frameModalTarget, setFrameModalTarget] = useState<'firstFrame' | 'lastFrame'>('firstFrame');
 
@@ -128,7 +133,7 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
                                 <span className="hidden xl:inline">Builder</span>
                             </button>
                             <button
-                                onClick={() => setShowBrandAssets(!showBrandAssets)}
+                                onClick={() => togglePanel('brand')}
                                 className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-all text-[10px] font-bold uppercase tracking-wider
                                     ${showBrandAssets
                                         ? 'bg-purple-500/15 text-purple-300 shadow-[0_0_12px_rgba(168,85,247,0.1)]'
@@ -138,7 +143,7 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
                                 <span className="hidden xl:inline">Brand</span>
                             </button>
                             <button
-                                onClick={() => setShowPromptHistory(!showPromptHistory)}
+                                onClick={() => togglePanel('promptHistory')}
                                 className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-all text-[10px] font-bold uppercase tracking-wider
                                     ${showPromptHistory
                                         ? 'bg-purple-500/15 text-purple-300 shadow-[0_0_12px_rgba(168,85,247,0.1)]'
@@ -148,7 +153,7 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
                                 <span className="hidden xl:inline">History</span>
                             </button>
                             <button
-                                onClick={() => setShowDesignHistory(!showDesignHistory)}
+                                onClick={() => togglePanel('designHistory')}
                                 className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-all text-[10px] font-bold uppercase tracking-wider
                                     ${showDesignHistory
                                         ? 'bg-purple-500/15 text-purple-300 shadow-[0_0_12px_rgba(168,85,247,0.1)]'
@@ -158,7 +163,7 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
                                 <span className="hidden xl:inline">Versions</span>
                             </button>
                             <button
-                                onClick={() => setShowRosterRegistry(!showRosterRegistry)}
+                                onClick={() => togglePanel('roster')}
                                 className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-all text-[10px] font-bold uppercase tracking-wider
                                     ${showRosterRegistry
                                         ? 'bg-purple-500/15 text-purple-300 shadow-[0_0_12px_rgba(168,85,247,0.1)]'
@@ -248,23 +253,23 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
 
             {/* Brand Assets Drawer */}
             {showBrandAssets && (
-                <BrandAssetsDrawer onClose={() => setShowBrandAssets(false)} />
+                <BrandAssetsDrawer onClose={() => setActivePanel(null)} />
             )}
 
             {/* Prompt History Drawer */}
             {showPromptHistory && (
-                <PromptHistoryDrawer onClose={() => setShowPromptHistory(false)} />
+                <PromptHistoryDrawer onClose={() => setActivePanel(null)} />
             )}
 
             {/* Design History Drawer */}
             {showDesignHistory && (
-                <DesignHistoryDrawer onClose={() => setShowDesignHistory(false)} />
+                <DesignHistoryDrawer onClose={() => setActivePanel(null)} />
             )}
 
             {/* Roster Capability Registry */}
             <AnimatePresence>
                 {showRosterRegistry && (
-                    <AgentCapabilityRegistry onClose={() => setShowRosterRegistry(false)} />
+                    <AgentCapabilityRegistry onClose={() => setActivePanel(null)} />
                 )}
             </AnimatePresence>
 
