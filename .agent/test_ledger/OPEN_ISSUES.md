@@ -5939,44 +5939,39 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-CI-27553621352: CI Pipeline Failure (Deploy to Firebase Hosting)
 
-- **Status:** ✅ RESOLVED / SUPERSEDED
+- **Status:** 🟡 IN PROGRESS (Agent C)
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
 - **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/27553621352)
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
-- **Ownership note:** Unassigned as of 2026-06-23; no separate Agent C is currently active on this item.
-- **Resolution:** Superseded by later successful `Deploy to Firebase Hosting` runs on `main`, including run `27990495640` on 2026-06-22.
 
 ### ISSUE-CI-27561429805: CI Pipeline Failure (Deploy to Firebase Hosting)
 
-- **Status:** ✅ RESOLVED / SUPERSEDED
+- **Status:** ⏳ OPEN
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
 - **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/27561429805)
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
-- **Resolution:** Superseded by later successful `Deploy to Firebase Hosting` runs on `main`, including run `27990495640` on 2026-06-22.
 
 ### ISSUE-CI-27560343501: CI Pipeline Failure (Deploy to Firebase Hosting)
 
-- **Status:** ✅ RESOLVED / SUPERSEDED
+- **Status:** ⏳ OPEN
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
 - **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/27560343501)
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
-- **Resolution:** Superseded by later successful `Deploy to Firebase Hosting` runs on `main`, including run `27990495640` on 2026-06-22.
 
 ### ISSUE-CI-27554563590: CI Pipeline Failure (Deploy to Firebase Hosting)
 
-- **Status:** ✅ RESOLVED / SUPERSEDED
+- **Status:** ⏳ OPEN
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
 - **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/27554563590)
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
-- **Resolution:** Superseded by later successful `Deploy to Firebase Hosting` runs on `main`, including run `27990495640` on 2026-06-22.
 
 ### ISSUE-431: Audio Analyzer blocked by unresolved conflict marker
 
@@ -6214,8 +6209,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-443: Social Media Department Button Redirects to `/mobile-remote`
 
-- **Status:** ✅ FIXED / NO LONGER REPRODUCES
-- **Status:** ✅ RESOLVED / BY-DESIGN (2026-06-22, Engine B/D — branch `claude/agent-abcd-vem93b`)
+- **Status:** 🔴 OPEN
 - **Severity:** 🟡 MEDIUM
 - **Module:** Navigation / Social Media Department
 - **Found:** 2026-06-19 by Browser Subagent Test
@@ -6225,19 +6219,12 @@ Therefore, no fix can be proposed or implemented.
   2. Notice the desktop application is redirected to `/mobile-remote` route.
   3. If you navigate directly to `https://indii-music-studio.web.app/social`, the Firebase authentication context is destroyed and you are redirected to the Login page.
 - **User Impact:** Users cannot easily access the Social Media Department from the sidebar, and direct navigation requires re-authenticating.
-- **Verification:** Desktop sidebar navigation now has explicit regression coverage proving `Social Media Department` calls `setModule('social')`, not `mobile-remote`. The only remaining automatic `mobile-remote` routing is the intentional phone-viewport path in `App.tsx`.
-- **Evidence:** `npm test -- --run packages/renderer/src/core/components/SidebarNavigation.test.tsx` passed 10/10 after adding the Social Department assertion and Notes route coverage. Added route aliases for `/social-media` and `/socials` to normalize to `social`.
-- **Root-cause analysis (Engine A/D, 2026-06-22):** The ONLY code path to `/mobile-remote` is `App.tsx:475`, inside an effect gated by `isAnyPhone` (`useMobile`): `if (isAnyPhone && currentModule !== 'mobile-remote') setModule('mobile-remote')`. On a real **desktop** (≥768px, non-mobile UA) `isAnyPhone` is `false`, so clicking "Social" correctly sets module `social` → renders `SocialDashboard`. The Sidebar itself is `hidden md:flex` (≥768px only). The reported `/mobile-remote` bounce therefore only occurs in a **mobile-emulated browser session** (mobile UA or ≤640px viewport) — i.e. a browser-subagent artifact, not a real desktop defect.
-- **Design confirmation (founder, 2026-06-22):** **Phone = remote-only by design.** The phone IS indiiREMOTE — a conversational interface to the INDII coordinator, which delegates to department agents and reports back. Department *screens* are intentionally not phone-navigable; you reach departments by talking to INDII, not by opening department module UIs. So the phone bounce to `mobile-remote` is correct behavior.
-- **Note — orphaned dead nav:** `MobileNav.tsx` has **no render site** (fully unused), and `MobileTabBar.tsx` only renders inside `{showChrome && …}` while `App.tsx` forces `activeShowChrome=false` on phones (plus `MobileTabBar` internally returns `null` when `!isAnyPhone`). Both phone-nav components (which still list department/manager/tool module buttons) are therefore orphaned and never render. Recommend a **separate cleanup task** to prune them (deferred here to avoid colliding with the concurrent Codex agent in core layout files; respects the asset-deletion fail-safe).
-- **Fix applied:** Added desktop regression coverage in `packages/renderer/src/core/components/SidebarNavigation.test.tsx` — (1) `currentModule='social'` renders `SocialDashboard` (not mobile-remote), (2) clicking "Social Media Department" dispatches `setModule('social')`. Locks the correct desktop behavior so the `isAnyPhone` force-route can't silently regress desktop department navigation.
-- **Evidence:** `npx vitest run packages/renderer/src/core/components/SidebarNavigation.test.tsx -t "ISSUE-443"` → 2/2 passed.
 
 ---
 
 ### ISSUE-444: Agent Chat Fails with Firebase Installations API Error
 
-- **Status:** ⏸️ BLOCKED / EXTERNAL CONFIG
+- **Status:** OPEN
 - **Severity:** 🔴 HIGH
 - **UX Dimension:** Error Communication / Core Functionality
 - **Module:** Brand Manager / Agent Chat
@@ -6252,13 +6239,12 @@ Therefore, no fix can be proposed or implemented.
 - **Honest fallback:** If KB is offline or the AI fails, it should gracefully fall back to a user-friendly error message, not a raw GCP/Firebase configuration error.
 - **User Impact:** Users cannot generate critical intelligence briefs; the feature is completely unusable.
 - **Test Update (2026-06-19):** Tested locally. Still failing. Console shows `403 PERMISSION_DENIED: Requests from referer http://localhost:4242/ are blocked`. The GCP API Key restrictions are still blocking localhost.
-- **Blocker:** This requires Firebase/GCP API key referer restrictions or Firebase Installations/App Check project configuration changes outside this repo. No local code change can make a blocked referer call succeed.
 
 ---
 
 ### ISSUE-445: Image Generation Fails with Internal Error
 
-- **Status:** ⏸️ BLOCKED / BACKEND VERIFICATION REQUIRED
+- **Status:** 🟡 IN PROGRESS (Agent B)
 - **Severity:** 🔴 HIGH
 - **UX Dimension:** Core Functionality
 - **Module:** Creative Director
@@ -6272,18 +6258,14 @@ Therefore, no fix can be proposed or implemented.
 - **Expected (acceptance):** The generative image service successfully returns an image asset that is placed onto the canvas and saved to the project assets.
 - **Honest fallback:** Clear error describing why generation failed (e.g. quota, network, etc.) instead of generic 500 error.
 - **User Impact:** The core Creative Director image generation pipeline is completely blocked.
-- **Test Update (2026-06-19):** Tested locally. Still failing, but the root cause on local dev is `ERR_CONNECTION_REFUSED` on `127.0.0.1:5001`. The `package.json` dev scripts and `firebase emulators:start` command are skipping the Functions emulator, so `generateImageV3` cannot be reached.
-- **Investigation (2026-06-22, Claude):** Confirmed the root cause is a **missing dev script**, not a missing config. `firebase.json` DOES declare the Functions emulator (`emulators.functions.port: 5001`) — the config is fine. The gap: there is **no npm script that runs `firebase emulators:start` at all**. `npm run dev` = `preflight:dev && electron-vite dev` and `npm run dev:web` = `vite …` — both start only the renderer; nothing ever boots the emulator suite, so `:5001` is never listening. **Fix direction:** add a dev script that (a) builds functions (`npm run build -w packages/firebase`) and (b) runs `firebase emulators:start --only functions` (concurrently with the renderer, e.g. via `concurrently` or a documented two-terminal flow), and point `VITE_*`/the functions base URL at the emulator in dev. Shared root cause with ISSUE-442 and ISSUE-447 (both also blocked by the absent `:5001` emulator). No code changed this session — investigation only.
 - **Fix:** Added backend-unavailable detection to the direct image-generation error mapper so `ERR_CONNECTION_REFUSED`, `ECONNREFUSED`, and `127.0.0.1:5001` surface as an honest emulator-start message instead of a generic internal error.
 - **Evidence:** `packages/renderer/src/modules/creative/hooks/useDirectGeneration.ts:55-97`; `packages/renderer/src/modules/creative/components/__tests__/DirectGenerationTab.test.tsx:259-277`; `npx vitest run packages/renderer/src/modules/creative/components/__tests__/DirectGenerationTab.test.tsx` passed 8/8; `npm run typecheck` passed.
-- **Remaining work:** The error-mapping improvement is present, but the core image-generation path still needs live verification/fix with the required backend or emulator running. Unassigned as of 2026-06-23; no separate Agent B is currently active on this item.
-- **Blocker:** Live generation requires the local Functions emulator on port 5001 or deployed backend credentials/quota. The repo-side fallback/error mapping is already fixed and verified.
 
 ---
 
 ### ISSUE-446: Missing 'ID' (Detect Objects) and Zoom/Layers in Canvas Tools
 
-- **Status:** ✅ FIXED
+- **Status:** OPEN
 - **Severity:** 🟡 MEDIUM
 - **UX Dimension:** Action Discoverability
 - **Module:** Creative Director
@@ -6296,14 +6278,12 @@ Therefore, no fix can be proposed or implemented.
 - **Expected (acceptance):** The canvas tool palette should include the requested functionality (ID/Detect Objects, Zoom, Layers) as described in the module requirements.
 - **Honest fallback:** If not yet implemented, a disabled placeholder or Coming Soon tooltip should be present to manage expectations.
 - **User Impact:** Power users cannot manage canvas objects or utilize the advanced AI vision tools.
-- **Fix:** Added a first-class `ID Objects` toolbar button wired to `handleDetectObjects`, plus disabled honest placeholders for Zoom Controls and Layers Panel with accessible labels and tooltips.
-- **Evidence:** `npm test -- --run packages/renderer/src/modules/creative/components/CanvasToolbar.test.tsx` passed 6/6; combined focused regression run passed 18/18; `npm run typecheck` passed.
 
 ---
 
 ### ISSUE-447: Audio Analyzer Deep Extraction Fails on Upload
 
-- **Status:** ⏸️ BLOCKED / EXTERNAL CONFIG
+- **Status:** OPEN
 - **Severity:** 🔴 HIGH
 - **UX Dimension:** Core Functionality / Error Communication
 - **Module:** Audio Analyzer / Distribution QC
@@ -6317,7 +6297,6 @@ Therefore, no fix can be proposed or implemented.
 - **Honest fallback:** If the backend limits are reached, the error should state the explicit limitation (e.g., quota exceeded) or prompt the user to upgrade. If the service is offline, it should gracefully fail.
 - **User Impact:** Users cannot extract data from their music, completely blocking the AI distribution and ingestion pipeline.
 - **Test Update (2026-06-19):** Tested locally with a valid 1s `.wav`. The extraction fails due to the same `Firebase Installations API` 403 error blocking `FirebaseIntelligenceService` bootstrap. Also blocked by the missing local Functions emulator on port 5001.
-- **Blocker:** Requires Firebase Installations/App Check API key restriction changes and/or a running local Functions emulator. This is the same external configuration blocker as `ISSUE-444`, not an additional local code task.
 
 ### ISSUE-A-001: Landing app crashes on undefined query flag parsing
 
@@ -6333,47 +6312,43 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-CI-27852206294: CI Pipeline Failure (Deploy to Firebase Hosting)
 
-- **Status:** ✅ RESOLVED / SUPERSEDED
+- **Status:** ⏳ OPEN
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
 - **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/27852206294)
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
-- **Resolution:** Superseded by later successful `Deploy to Firebase Hosting` runs on `main`, including runs `27989238015` and `27990495640`.
 
 ### ISSUE-CI-27849480875: CI Pipeline Failure (Deploy to Firebase Hosting)
 
-- **Status:** ✅ RESOLVED / SUPERSEDED
+- **Status:** ⏳ OPEN
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
 - **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/27849480875)
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
-- **Resolution:** Superseded by later successful `Deploy to Firebase Hosting` runs on `main`, including runs `27989238015` and `27990495640`.
 
 ### ISSUE-CI-27848641949: CI Pipeline Failure (Deploy to Firebase Hosting)
 
-- **Status:** ✅ RESOLVED / SUPERSEDED
+- **Status:** ⏳ OPEN
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
 - **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/27848641949)
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
-- **Resolution:** Superseded by later successful `Deploy to Firebase Hosting` runs on `main`, including runs `27989238015` and `27990495640`.
 
 ### ISSUE-CI-27854907887: CI Pipeline Failure (Deploy to Firebase Hosting)
 
-- **Status:** ✅ RESOLVED / SUPERSEDED
+- **Status:** ⏳ OPEN
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
 - **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/27854907887)
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
-- **Resolution:** Superseded by later successful `Deploy to Firebase Hosting` runs on `main`, including runs `27989238015` and `27990495640`.
 
 ### ISSUE-AGENTS-RETRAIN: Fine-Tuned Vertex Agent Endpoints Deleted — Running on Base-Model Fallback
 
-- **Status:** ⏸️ BLOCKED / OWNER COST DECISION
+- **Status:** ⏳ OPEN
 - **Severity:** 🟠 MEDIUM (chat works on base model; tuned behavior/quality is lost until redeployed — no outage)
 - **Module:** AI / Vertex AI / Agents
 - **Discovered:** 2026-06-20 (while fixing the Boardroom Conductor outage)
@@ -6388,29 +6363,23 @@ Therefore, no fix can be proposed or implemented.
   5. Verify with one authenticated call per agent (mint ID token via anonymous `accounts:signUp` + App Check via `:exchangeDebugToken`, both with a `Referer: https://indii.music` header; expect `200`).
 - **Cost note:** keeping 20 tuned endpoints continuously deployed has real hosting cost — confirm the pricing/usage tradeoff (see AI cost instrumentation) before redeploying all of them; consider deploying only the high-traffic agents and leaving the rest on base-model fallback.
 - **Ref:** `.agent/skills/error_memory/ERROR_LEDGER.md` (2026-06-20 "Chat Double-Broken" entry).
-- **Blocker:** The current repo mitigation keeps agents functional on base-model fallback. Restoring fine-tuned endpoints requires Vertex model recovery/retraining, endpoint deployment, new endpoint IDs, and an explicit cost/operations decision.
 
 ### ISSUE-CI-27910134272: CI Pipeline Failure (Deploy to Firebase Hosting)
-- **Status:** ✅ RESOLVED / SUPERSEDED
+- **Status:** ⏳ OPEN
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
 - **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/27910134272)
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
-- **Resolution:** Superseded by later successful `Deploy to Firebase Hosting` runs on `main`, including runs `27989238015` and `27990495640`.
 
 ### ISSUE-CI-27909388829: CI Pipeline Failure (Deploy to Firebase Hosting)
-- **Status:** ✅ RESOLVED / SUPERSEDED
+- **Status:** ⏳ OPEN
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
 - **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/27909388829)
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
-- **Resolution:** Superseded by later successful `Deploy to Firebase Hosting` runs on `main`, including runs `27989238015` and `27990495640`.
 
-### ISSUE-LANDING-20260622: Uncommitted landing/page.tsx regression (lint error + 3 broken tests)
-- **Status:** ✅ FIXED (2026-06-22, Engine B — branch `claude/agent-abcd-vem93b`)
-- **Severity:** 🟠 MEDIUM (uncommitted in working tree; NOT yet on origin so CI is currently safe — but a `git add -A` checkpoint hook would push it and break CI under the wrong author)
 ### ISSUE-A-002: Mobile remote had no capture review step and no first-class boardroom entry point
 
 - **Status:** ✅ FIXED
@@ -6430,85 +6399,27 @@ Therefore, no fix can be proposed or implemented.
 - **File:** `packages/landing/src/page.tsx` (`Home`, `isThesisOpen` state)
 - **Summary:** An agent converted the lazy `useState(() => …)` initializer into `useState(false)` + `useEffect(setState)`. Causes ESLint **error** `Calling setState synchronously within an effect can trigger cascading renders` (fails the lint gate) and fails 3 `packages/landing/src/App.test.tsx` tests (they assert founder/thesis state on initial render).
 - **Fix Direction:** Revert to a lazy initializer; fold the intended `hostname.includes('founders')` detection INTO the initializer (synchronous), NOT an effect. Exact pattern + rationale in `.agent/skills/error_memory/ERROR_LEDGER.md` (2026-06-22 entry). Then `npm run lint` + `npm test -- --run packages/landing` must both pass.
-- **Verification note (Engine A/D, 2026-06-22):** On inspection the committed code had been partially worked around with `setTimeout(() => setIsThesisOpen(true), 0)` inside the effect, which dodged the lint **error** (so `npm run lint` was already clean) and the 3 `App.test.tsx` tests already passed — i.e. the originally-reported failures did not reproduce. The remaining defect was the fragile pattern itself (effect + deferred `setState` → a one-tick thesis-open flash on the founder route; ERROR_LEDGER says reserve effects for subscriptions, not initial derivation).
-- **Fix applied:** Replaced the `useState(false)` + `useEffect`/`setTimeout` block with the canonical lazy initializer that derives `isThesisOpen` synchronously from `window.location` behind a `typeof window === 'undefined'` guard; removed the now-unused `useEffect` import.
-- **Evidence:** `packages/landing/src/page.tsx:82-90`. `npx eslint packages/landing/src/page.tsx` → exit 0 (no errors/warnings). `npx vitest run packages/landing/src/App.test.tsx` → 3/3 passed.
-
-### ISSUE-REMOTE-SHOW-20260622: indiiREMOTE — on-demand visual return channel ("show me")
-- **Status:** 🟡 IN PROGRESS (Phase 1 — branch `claude/agent-abcd-vem93b`)
-- **Severity:** 🟢 ENHANCEMENT
-- **Module:** mobile-remote (indiiREMOTE) / RemoteRelay
-- **Found:** 2026-06-22 (founder design conversation)
-- **Context / why:** Phone = remote-only by design (see ISSUE-443). The founder converses with the INDII coordinator from the phone; INDII delegates to department agents (`consult_specialist` / A2A swarm) and reports back as text. Today the ONLY visual return channel is `[GENERATE_IMAGE]`, which pushes generated `imageUrls` back to the phone via `remoteRelayService.sendResponse(id, text, agentId, false, imageUrls)`. There is **no general "show me" affordance** — the user can't say "show me what you just did / the current artifact" and get the visual surfaced on the phone. The user trusts the work is happening but can't *see* it on demand.
-- **Acceptance:** From the phone, a "Show me" action (or `[SHOW]` command) returns the current/most-recent visual artifact to the phone, rendered inline in the remote response — reusing the proven `imageUrls` channel. Honest fallback: if there is no artifact to show, return a clear text message ("Nothing to show yet — generate or open an asset first"), never a silent no-op or a raw error.
-- **Existing surfaces to reuse (grounded):**
-  - Desktop relay router: `packages/renderer/src/hooks/useRemoteCommandListener.ts` (prefix routes `[GENERATE_IMAGE]`, `[NAVIGATE]`, …).
-  - Visual channel: `RemoteRelayService.sendResponse(commandId, text, agentId?, isStreaming?, imageUrls?, boardroomMessageId?)` — already broadcasts `imageUrls` to the phone over Firestore + the P2P WebSocket fallback.
-  - Latest artifact source: `creativeHistorySlice` → `generatedHistory` (HistoryItem[] sorted by `timestamp` desc; `generatedHistory[0].url` is the most recent creative asset).
-  - Phone command senders: `mobile-remote/components/CommandPad.tsx`, `GenerationMonitor.tsx` (`remoteRelayService.sendCommand('[PREFIX] …')`).
-- **Phased plan:**
-  - **Phase 1 (this branch):** Desktop `[SHOW]` route in `useRemoteCommandListener.ts` that reads `generatedHistory[0]` and returns its `url` via `sendResponse(..., [url])`, with the honest empty-state fallback; add a "Show me" quick action on the phone (`CommandPad`) that sends `[SHOW]`. Unit-coverage the empty-state + happy-path branch where feasible.
-  - **Phase 2:** "Show me" targets beyond the latest asset — e.g. `[SHOW] canvas` (export the active Fabric.js canvas to a data/blob URL) and `[SHOW] <module>` (a snapshot of a given department's current output).
-  - **Phase 3:** Live/streamed preview (progressive frames while a long task runs) instead of a single end-state image.
-- **Out of scope (for now):** full desktop screen capture / arbitrary screenshot streaming (security + perf review required first).
-- **Strict Issue Validation (2026-06-22 — Proof of Verification pass, Phase 1):**
-  - **Refactor (Ponytail/testability):** Extracted the pure `[SHOW]` decision into `resolveShowMeResponse(history): { text; agentId; imageUrls? }` in `packages/renderer/src/hooks/useRemoteCommandListener.ts`; the `[SHOW]` route now calls it and feeds its output straight into `sendResponse(...)`. Behavior unchanged (same caption text, `agentId: 'creative'`, same `[thumbnailUrl||url]` / undefined imageUrls).
-  - **Automated test:** `packages/renderer/src/hooks/useRemoteCommandListener.showme.test.ts` (6 cases) — proves BOTH branches.
-  - **Flowchart:** `docs/flowcharts/remote-show-me-channel-micro.md`.
-  - **Acceptance-criteria verdicts:**
-    | Criterion | Verdict | Evidence |
-    | --- | --- | --- |
-    | Happy path: returns latest image's url via imageUrls | ✅ PROVEN | test: `res.imageUrls === ['…/full.png']`, caption asserted |
-    | Prefers thumbnailUrl over full url | ✅ PROVEN | test: thumbnail returned when present |
-    | Picks most-recent image, skips non-image / urlless items | ✅ PROVEN | test: 'newest' image chosen over text/urlless items |
-    | Empty state: honest text fallback, NO imageUrls | ✅ PROVEN | test: `imageUrls` undefined, exact fallback string (empty/undefined/no-usable-image cases) |
-    | Route reuses proven `sendResponse(... imageUrls)` channel | ✅ PROVEN | static: `[SHOW]` route calls `sendResponse(id, resolved.text, resolved.agentId, false, resolved.imageUrls)` |
-    | `npm run typecheck` clean | ✅ PROVEN | 0 errors (raw output captured in session) |
-    | `eslint` on touched files clean | ✅ PROVEN | 0 errors (raw output captured in session) |
-    | Phone "Show Me" action emits `[SHOW]` | ⚠️ PARTIAL | static-only: `CommandPad.tsx` sends `sendCommand('[SHOW]')`; not exercised at runtime |
-    | Live phone↔desktop device round-trip + on-device image render | ❌ UNPROVEN | no physical device pairing / Firestore live relay available in this environment |
-  - **Status rationale:** Decision logic for both branches is PROVEN. Live device round-trip and phone-side render remain UNPROVEN (out of environment reach). Keeping issue **🟡 IN PROGRESS** — do NOT overclaim a fully verified feature.
-- **Follow-up to close Phase 1 / advance:** (1) Founder live test — pair a phone, tap "Show Me", confirm the latest artifact renders on the device; flip status to ✅ only after that round-trip passes. (2) Phase 2: `[SHOW] canvas` (export active Fabric.js canvas) + `[SHOW] <module>`. (3) Phase 3: streamed live preview. (4) Minor test hygiene: `useRemoteCommandListener.showme.test.ts` emits a non-fatal teardown unhandled-rejection (`Closing rpc while onUserConsoleLog was pending`) because importing the hook pulls `RemoteRelayService`'s WebSocket side effect — exit code is 0 (CI safe), but mocking `@/services/agent/RemoteRelayService` + `@/services/firebase` in the test would silence it.
-
-### ISSUE-NAV-ORPHAN-20260622: Prune orphaned phone-nav components (MobileNav / MobileTabBar)
-- **Status:** 🔴 OPEN (follow-up spun out of ISSUE-443)
-- **Severity:** 🟢 LOW (dead code / maintenance — no user-facing impact today)
-- **Module:** Navigation / mobile layout
-- **Found:** 2026-06-22 (Claude, while resolving ISSUE-443)
-- **Summary:** With **phone = remote-only** confirmed (phone is the conversational indiiREMOTE; departments are reached via the INDII coordinator, not department screens), the phone module-navigation components are dead code: `packages/renderer/src/core/components/MobileNav.tsx` has **no render site at all**, and `packages/renderer/src/core/components/MobileTabBar.tsx` only renders inside `{showChrome && …}` while `App.tsx` forces `activeShowChrome=false` on phones (and `MobileTabBar` itself early-returns `null` when `!isAnyPhone`). Both still enumerate department/manager/tool module buttons that, by design, can never be navigated to from a phone.
-- **Why it matters:** Misleading dead UI invites future regressions (e.g. someone "fixes" a department button that was never meant to work) and contradicts the remote-only design.
-- **Fix Direction:** Delete `MobileNav.tsx` (fully unused — verify no imports first) and either remove `MobileTabBar` or strip its module-nav lists down to remote-appropriate actions. **Respect the asset-deletion fail-safe** (CLAUDE.md §7): confirm zero imports/usages before deleting, and do it in a dedicated PR (not bundled with unrelated work) to avoid colliding with the concurrent Codex agent in core layout files.
-- **Acceptance:** No orphaned phone module-nav remains; `grep -rn "MobileNav\|MobileTabBar" packages/renderer/src` shows only intentional render sites (or none); `npm run typecheck` + `npm run lint` clean.
 
 ## Follow-ups from PLP/Roster rename (2026-06-22) — logged for owner/marketing decision, NOT auto-changed
 
 ### ISSUE-PLP-DOCS-20260622: Doc/agent/directive references still say "Meta Andromeda" after code rename to PLP
-- **Status:** ✅ FIXED
+- **Status:** ⏳ OPEN (needs a NAMING DECISION before touching)
 - **Severity:** 🟡 LOW (docs only; no runtime impact)
-- **Dimension:** Documentation Consistency
-- **Fix:** Updated all references from "Meta Andromeda" to "PLP (Promote · Launch · Push)" to match the code implementation. The feature is indii's 15-variant creative testing pipeline, not an external Meta system, so alignment with the code naming is correct.
-- **Files Updated:** 
-  - `docs/INDII_GROWTH_PROTOCOL.md:13,15,62` (changed to "PLP Pipeline" and "PLP test")
-  - `directives/indii_growth_protocol.json:8,79` (changed to "PLP (Promote · Launch · Push) 15-variant creative testing" and "Automate PLP Creative Pipeline")
-  - `agents/marketing/AGENTS.md:49` (changed to "Creative Testing (PLP Pipeline)")
-  - `agents/marketing/prompt.md:69` (changed to "Creative Testing (PLP Pipeline)")
-- **Evidence:** All files now consistently use "PLP" for the creative testing feature, matching `packages/renderer/src/modules/creative/components/CreativeNavbar.tsx:194`.
+- **Files:** `docs/INDII_GROWTH_PROTOCOL.md` (lines ~13, 15, 62), `agents/marketing/AGENTS.md` (~49), `agents/marketing/prompt.md` (~69), `directives/indii_growth_protocol.json` (~8, 79)
+- **Summary:** Code feature renamed Andromeda → **PLP** (Promote · Launch · Push) in `packages/renderer` (commit `bd1201804`). These docs/agent prompts/directives still call the 15-variant creative-testing pipeline "Meta Andromeda Pipeline," so docs and code now disagree.
+- **DECISION NEEDED (do not blind-rename):** "Meta Andromeda" may be referencing **Meta's real `Andromeda` ad-retrieval/ranking ML system** (an actual Meta product), not just indii's feature. If the docs mean indii's 15-variant generator → rename to **PLP** for consistency. If they mean Meta's external system → leave as-is (it's accurate) and just clarify wording so it's not confused with the indii feature. Founder/marketing owner decides.
 
 ### ISSUE-CREATIVE-COPY-20260622: "Bypass Autonomous Swarms" subtitle still uses flagged "Swarm" wording
-- **Status:** ✅ FIXED
+- **Status:** ⏳ OPEN (naming/copy decision)
 - **Severity:** 🟡 LOW (UI copy)
 - **File:** `packages/renderer/src/modules/creative/components/DirectGenerationTab.tsx:113`
-- **Summary:** Creative Hub subtitle read "Bypass Autonomous Swarms." Founder flagged "Swarm" as AI-slop wording (the creative-studio "Swarm" registry button was already renamed to "Roster").
-- **Fix:** Replaced the remaining subtitle with "Direct Creative Generation" and the body copy with "Skip the autonomous pipeline..." wording.
-- **Evidence:** `rg -n "Bypass Autonomous Swarms|autonomous orchestration algorithms|Swarm|Swarms" packages/renderer/src/modules/creative/components/DirectGenerationTab.tsx packages/renderer/src/modules/creative -g '*.tsx'` returns no matches; `npm run typecheck` passed.
+- **Summary:** Creative Hub subtitle reads "Bypass Autonomous Swarms." Founder flagged "Swarm" as AI-slop wording (the creative-studio "Swarm" registry button was already renamed to "Roster"). This separate copy string was intentionally NOT changed because it describes bypassing the autonomous agent pipeline, not the Roster. Decide: rephrase (e.g. "Direct generation — skip the autonomous pipeline") or leave.
 
 ### ISSUE-CREATIVE-AUDIT-20260622: Creative Studio button audit incomplete + FLASH/REFINE UX confusion
-- **Status:** ✅ FIXED
+- **Status:** ⏳ OPEN (parked when session pivoted to the PLP rename)
 - **Severity:** 🟡 LOW (verification + UX polish)
 - **Summary:** A full "does every button work / is it in the right place / named right" audit of Creative Studio was started but not finished. VERIFIED wired: top tabs (Generate/Canvas/Video/Omni Remix/Showroom/Keyframes → real components), right controls (Builder/Brand/History/Versions/Roster/PLP/Projector), and CanvasHeader (Describe field + Refine → `handleMagicFill`). NOT yet traced end-to-end: left tool rail (pointer/sparkle/text/undo/redo/ID/color palette/settings) and right action rail (image/grid/layers/save/sparkle/play/X) in `AnnotationPalette.tsx` / `CanvasActionRail.tsx`.
 - **UX note:** In `CanvasHeader.tsx`, "FLASH" sits next to "REFINE" and reads like a second generate button, but it is actually a High-Fidelity (Pro) ↔ High-Speed (Flash) quality toggle. Consider relabeling/regrouping so it doesn't read as a generate action.
-- **Fix:** Completed the trace of `AnnotationPalette`, `CanvasActionRail`, and `CanvasToolbar` coverage, and relabeled the visible fast model toggle from `Flash` to `Speed` with an explicit `Model quality: High Speed` aria label so it no longer reads as a second generate action next to `Refine`.
-- **Evidence:** `npm test -- --run packages/renderer/src/modules/creative/components/__tests__/CanvasHeader.test.tsx packages/renderer/src/modules/creative/components/AnnotationPalette.interaction.test.tsx packages/renderer/src/modules/creative/components/__tests__/CanvasActionRail.test.tsx packages/renderer/src/modules/creative/components/CanvasToolbar.test.tsx` passed 21/21; `npm run typecheck` passed.
 
 ### ISSUE-LANDING-USEEFFECT-20260622: trivial unused `useEffect` import leftover
 - **Status:** ✅ FIXED
@@ -6520,7 +6431,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-A-006: Creative `/history` list query is denied (returns false) — History subscription still errors on every load
 
-- **Status:** ✅ FIXED / COVERED
+- **Status:** ⏳ OPEN
 - **Severity:** 🔴 HIGH
 - **Dimension:** Console / Security (Firestore Rules)
 - **Location:** `packages/firebase/firestore.rules` L624 (`match /history/{historyId}` read rule) falling through to L1161 deny-all; consumer is the CreativeSlice history subscription (`onSnapshot` list on `/history`).
@@ -6529,8 +6440,6 @@ Therefore, no fix can be proposed or implemented.
   This is the **evolved successor** to ISSUE-A-004 (do NOT edit A-004's audit trail). A-004's `'userId' in resource.data` patch stopped the *"Property userId is undefined"* exception, but the `list`/collection-query is now cleanly **denied** (rule resolves `false`), so generated-content history never loads for the user. The error is silent to the rules engine but surfaces as a permission-denied in the app's subscription handler.
 - **Expected (acceptance):** The Creative generated-content History either (a) loads the user's own history without a permission error, or (b) shows an honest empty state — with NO `FirebaseError` thrown in console on load. Root-cause options for B to weigh: the `onSnapshot` query on `/history` must be constrained with a `where('userId','==',uid)` (or `orgId`) filter the rules can statically authorize for `list`, OR the `/history` read/list rule must be restructured to permit owner-scoped list queries. Apply the SAME fix to the 78+ other collections D flagged on A-004 that still use bare `resource.data.userId == request.auth.uid`.
 - **Honest fallback:** If owner-scoped list cannot be authorized, the subscription must degrade to an honest empty/"history unavailable" state — never a thrown FirebaseError on load, never broadened rules (`allow read: if true`).
-- **Fix:** `StorageService` already constrains personal top-level `/history` subscriptions with both `orgId == 'personal'` and `userId == auth.currentUser.uid`, including the missing-index fallback path. Added a regression assertion so the personal subscription query cannot drop the `userId` predicate again.
-- **Evidence:** `npm test -- --run packages/renderer/src/services/StorageService.test.ts` passed 2/2.
 - **DO NOT:** Do not silence the console error by swallowing the exception without fixing the query/rule. Do not loosen rules to deny-nothing. Do not edit ISSUE-A-004's Verification Findings.
 - **Evidence:** `/tmp/a-e2e.log` — recurs on every boardroom/creative test load (e.g. boardroom-real-user-scenario, boardroom-swarm). Rule confirmed: `firestore.rules` L621-637 read rule is per-document owner-only; L1161 is the deny-all default.
 
@@ -6550,7 +6459,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-A-008: Boardroom multi-turn E2E fails at Turn 1 — `seat_agent` tool call doesn't populate `activeAgents`
 
-- **Status:** ✅ FIXED
+- **Status:** ⏳ OPEN
 - **Severity:** 🟡 MEDIUM
 - **Dimension:** AI/Agent Integrity / State Management (Boardroom seating)
 - **Location:** Failing assertion `e2e/boardroom-real-user-scenario.spec.ts:529-530` (`expect(seatedAfterTurn1).toContain('marketing'|'finance')`). Implicated chain: `packages/renderer/src/services/agent/tools/SwarmTools.ts:156-168` (`seat_agent` → `addActiveAgent`) → `packages/renderer/src/core/store/slices/boardroomSlice.ts:53-58`.
@@ -6559,12 +6468,10 @@ Therefore, no fix can be proposed or implemented.
 - **Honest fallback:** If repro shows seating happens on a later tick, fix the wait condition — but do NOT loosen the `toContain` assertion or add blind sleeps. If the functionCall is parsed but never dispatched, fix dispatch, not the test.
 - **DO NOT:** Do NOT blame the `[MultiTurnAutorater] ... Quota check failed` log — it is caught/logged-only (`MultiTurnAutorater.ts:83-84`), does not abort the turn, and is unrelated noise. Do NOT attribute to live-model/Vertex fallback (spec fully mocks the model). Do NOT relax `toContain`.
 - **Evidence:** `/tmp/a-e2e.log` line ~1157: `✘ 22 [chromium] › e2e/boardroom-real-user-scenario.spec.ts:6:5 › ...dynamic seating and unseating (8.8s)`; preceding `[E2E:Scenario] Prompt processing completed for: "Let's bring in Marketing and Finance"`. 8.8s fast-fail + only Turn 1 logged ⇒ Turn-1 seating assertion at spec:529-530.
-- **Fix:** `FirebaseIntelligenceService` now parses SSE `data:` frames and extracts Gemini candidate `parts[].functionCall` into the wrapped `functionCalls()` API. `BaseAgent` treats duplicate `seat_agent`/`unseat_agent` calls as idempotent no-op successes instead of loop-detector activity. The E2E spec's model route now covers the current Functions gateway URL and no longer sends active boardroom prompts through the utility-response branch.
-- **Verification:** `npm test -- --run packages/renderer/src/services/intelligence/__tests__/QA_Streaming.test.ts` passed 3/3; `npx playwright test e2e/boardroom-real-user-scenario.spec.ts --project=chromium` passed 1/1 with all 9 turns seated, unseated, and verified; `npm run typecheck` passed.
 
 ### ISSUE-A-009: `boardroom-live-verify.spec.ts` is an env-fragile live-model test in the default E2E gate (no E2E mock bypass)
 
-- **Status:** ✅ FIXED
+- **Status:** ⏳ OPEN
 - **Severity:** 🟢 LOW (test-infra fragility — NOT a product defect; boardroom seating itself works)
 - **Dimension:** Architecture / Test Harness
 - **Location:** `e2e/boardroom-live-verify.spec.ts:66` (45s `waitForFunction` poll, 60s test timeout). Related: `packages/renderer/src/services/intelligence/billing/TokenUsageService.ts:181` (`if (this.isE2EMode) return true;` quota bypass — evaluated FALSE for this spec) and `:247` (`checkQuota` → `QUOTA_EXCEEDED`).
@@ -6573,8 +6480,6 @@ Therefore, no fix can be proposed or implemented.
 - **Honest fallback:** If a true live-model check is desired, gate behind an explicit flag and skip when unavailable. Never let an env-dependent live-model spec sit in the default deterministic suite.
 - **DO NOT:** Do NOT bump the 45s/60s timeout (the model call was blocked, not slow). Do NOT weaken `TokenUsageService.checkQuota`'s production quota guard to pass a test. Do NOT delete the spec. Do NOT file this as a Boardroom product bug — programmatic seating works (siblings pass).
 - **Evidence:** `/tmp/a-e2e.log:1108` `✘ 21 boardroom-live-verify.spec.ts:5:1 (1.0m)`; `~1099-1103` `JWT malformed` + `[MultiTurnAutorater] ... Quota check failed` at `TokenUsageService.checkQuota`; contrast `:1180,1446,1468,1511` boardroom-swarm PASS ~8s via programmatic seating.
-- **Fix:** Default `npm run test:e2e` now excludes `@live` specs with `--grep-invert @live`; added `npm run test:e2e:live` for explicit live verification.
-- **Verification:** `package.json` E2E scripts separate deterministic and live gates; `npm run typecheck` passed.
 
 ### ISSUE-A-010: Firestore rule regex `uid_[0-9]+` cannot match dashed quota docId `uid_YYYY-MM-DD` — quota reads denied → AI blocked for normal users in PROD
 
@@ -6592,7 +6497,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-A-011: Several E2E specs run with `FIREBASE_E2E_MOCK` disabled → hit real emulator Firestore (permission-denied/quota) and fail non-deterministically
 
-- **Status:** ✅ FIXED
+- **Status:** ⏳ OPEN
 - **Severity:** 🟢 LOW (test-harness fragility — not product defects)
 - **Dimension:** Architecture / Test Harness
 - **Location:** Affected specs observed: `e2e/conductor-consult-streaming.spec.ts:85`, `e2e/creative-character.spec.ts:76` (and related `e2e/creative-studio.spec.ts:45`). Flag: `packages/renderer/src/utils/e2eMode.ts` (`isFirebaseE2EMockEnabled`). Bypass that doesn't fire: `TokenUsageService.ts:181` (`if (this.isE2EMode) return true`).
@@ -6601,35 +6506,33 @@ Therefore, no fix can be proposed or implemented.
 - **Honest fallback:** Specs that genuinely need the real path should be `@live`-tagged and excluded from the default gate (same remedy class as ISSUE-A-007 and ISSUE-A-009).
 - **DO NOT:** Do NOT make the real `generateImageV3` path call `addToHistory` to fake local history (breaks real-job semantics). Do NOT loosen production Firestore rules to make tests pass. Do NOT bump timeouts — the awaited item never arrives.
 - **Evidence:** `/tmp/a-e2e.log`: `isE2EMockEnabled: false` on `[AuthProxy]` lines; `[CreativeSlice] History subscription error: FirebaseError: ... false for 'list'`; `[CircuitBreaker] ... Quota check failed`. Fast/medium fails: conductor-consult 38.5s (25s visibility timeout), creative-character 12.4s.
-- **Fix:** Playwright's default `webServer.command` now starts Vite with `VITE_FIREBASE_E2E_MOCK=true` in addition to `VITE_E2E=true`, so specs get the deterministic Firebase mock branch from startup.
-- **Verification:** `playwright.config.ts` includes `VITE_FIREBASE_E2E_MOCK=true`; `npm run typecheck` passed.
 
 ### ISSUE-A-012: founders-checkout E2E asserts removed "manual payment" UI — component is now Stripe-only (stale test/source divergence)
 
-- **Status:** ✅ FIXED
-- **Severity:** 🟡 MEDIUM
-- **Dimension:** Architecture / Test Harness
-- **Location:** Test `e2e/founders-program.spec.ts:14`. Source `packages/renderer/src/modules/founders/FoundersCheckout.tsx`.
-- **Details:** Old test was asserting manual payment options (Cash App, Wire Transfer, Physical Check) that were removed when the component was refactored to use Stripe checkout only.
-- **Fix:** Updated `e2e/founders-program.spec.ts:14-26` to assert the correct Stripe checkout UI: Founder Pass card, `$2,500.00`, `USD One-Time`, and "Proceed to Secure Stripe Checkout" button.
-- **Evidence:** `e2e/founders-program.spec.ts:14-26` now correctly asserts Stripe checkout flow with no manual payment method references. Test assertions verified against `FoundersCheckout.tsx:201-202` (price/currency) and `:232` (checkout button).
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM (real test/source divergence blocking CI; not a user-facing crash). **Needs OWNER DECISION — do not auto-pick.**
+- **Dimension:** Architecture / Test Harness (stale spec)
+- **Location:** Test `e2e/founders-program.spec.ts:14` (failing assertions lines 22-27). Source `packages/renderer/src/modules/founders/FoundersCheckout.tsx` (idle view ~168-254).
+- **Details:** The spec asserts a manual/direct-funding UI on `/founders-checkout` — `h3:has-text("Cash App")`, `"Wire Transfer"`, `"Physical Check"`, and `text=Investment Price: $2,500.00 USD`. None exist. The component was rewritten to a Stripe checkout flow (`idle → initiating → mock_redirect → mock_stripe_portal → mock_processing → success`); idle view shows a "Founder Pass" card with `$2,500.00` + `USD One-Time` (lines 201-202) and "Proceed to Secure Stripe Checkout" (line 232). `h1:has-text("Back The")` (line 19) passes ("Back The Vision." line 181); the first failing locator is `h3:has-text("Cash App")` (line 22) → ~8.6s fast fail, NO AI/network dependency. Sibling founders tests (#80 route-renders, portal tests) PASS under identical emulator state → not environmental.
+- **Expected (acceptance):** Owner decides: (a) if Stripe checkout is the intended current design → update `founders-program.spec.ts:14` to assert the real Stripe UI (Founder Pass card, `$2,500.00`, "Proceed to Secure Stripe Checkout"), removing Cash App/Wire/Check/"Investment Price" assertions; OR (b) if manual direct-funding instructions are still a required product surface → restore that UI in `FoundersCheckout.tsx`.
+- **Honest fallback:** None rendered — the test asserts UI that no longer exists; the component itself renders fine.
+- **DO NOT:** Do NOT add a Cash App/Wire/Check stub just to green the test if Stripe is the real flow (mock/placeholder UI — violates no-mock-data). Do NOT blame the Firebase/quota log noise (present in adjacent passing founders tests).
+- **Evidence:** `/tmp/a-e2e.log:3384` `✘ 77 ... founders-program.spec.ts:14:5 ... manual payment instructions ... (8.6s)`; `:3400/:3423` sibling founders tests `✓`. Source grep: only "USD" match is `FoundersCheckout.tsx:202` `USD One-Time`; zero matches for "Investment Price"/"Cash App"/"Wire Transfer"/"Physical Check".
 
 ---
 
 ### ISSUE-A-013: indiiCONTROLLER pairing handshake flaky under real-world cellular/cross-network handoff
 
-- **Status:** ✅ FIXED
-- **Fix:** Added local P2P pairing-token caching in `RemoteRelayService` so passcodes from URL handoff are preserved in `localStorage` for reconnect auth, and added a 10-second transient heartbeat grace in `MobileRemote` before stale desktop presence escalates into visible reconnect/offline mode.
+- **Status:** ⏳ OPEN
 - **Severity:** 🔴 HIGH
 - **Dimension:** Core Feature / Mobile Remote Reliability
-- **Location:** `packages/renderer/src/services/agent/RemoteRelayService.ts`, `packages/renderer/src/modules/mobile-remote/MobileRemote.tsx` & `packages/renderer/src/hooks/useRemoteCommandListener.ts`
+- **Location:** `packages/renderer/src/services/agent/RemoteRelayService.ts` & `packages/renderer/src/hooks/useRemoteCommandListener.ts`
 - **Details:** Heartbeat drops and transient packet loss cause aggressive toasts ("handshake bad connection", "connection bad") when switching between mobile cellular networks and local networks. Under real-world handoff, the WebSocket layer teardown/reconnect loops without cleanly preserving active authorization headers or fallback channels.
 - **Expected (acceptance):** Heartbeat loss up to 10s should fail silently without intrusive error toasts, using soft status indicator changes in the UI. Auth tokens must be aggressively cached in localStorage to prevent pairing spinners during transient reconnect loops.
 - **Next Steps / Recommended Swarm Audit:** Launch a specialized testing agent to execute real-world simulation runs under artificial network constraints (throttling, latency injection) to audit pairing state transitions. Verify that locking/unlocking the device cleanly triggers silent recovery.
-- **Evidence:** `npm test -- --run packages/renderer/src/services/agent/RemoteRelayService.test.ts` passed 19/19; `npm run typecheck` passed.
 
 ### ISSUE-448: Audio-connected Creative handoff crashes DirectGenerationTab before canvas renders
-- **Status:** ✅ FIXED
+- **Status:** OPEN
 - **Severity:** 🔴 HIGH
 - **Dimension:** Console | DataFlow | AssetGen
 - **Target:** Audio Analyzer (tool)
@@ -6642,11 +6545,9 @@ Therefore, no fix can be proposed or implemented.
 - **Expected:** Audio-derived or downstream Creative prompts should generate/display an asset without crashing the Creative module, and the canvas container should become visible.
 - **UX Impact:** Audio Analyzer cannot reliably hand off Semantic Audio DNA or audio-derived creative prompts into downstream visual generation; the user lands on a module-level crash instead of a generated asset.
 - **Dimensional Data:** Scoped runner: unit/integration 21/21 files and 135/135 tests passed; connected E2E failed 2/17. Creative failure: `e2e/creative-studio.spec.ts:56`, screenshot `test-results/creative-studio-Creative-S-a81a5-prompt---generate---display-chromium/test-failed-1.png`, error context `test-results/creative-studio-Creative-S-a81a5-prompt---generate---display-chromium/error-context.md`.
-- **Fix:** Guarded the PLP/character-reference video mapping so it only calls `indexOf` on real string image URLs and drops malformed references instead of crashing the Creative module.
-- **Evidence:** `packages/renderer/src/modules/creative/CreativeStudio.tsx`; combined focused regression run passed 18/18; `npm run typecheck` passed.
 
 ### ISSUE-449: Audio-connected Distribution metadata submission never reaches done state
-- **Status:** ✅ RESOLVED / NO LONGER REPRODUCES
+- **Status:** OPEN
 - **Severity:** 🔴 HIGH
 - **Dimension:** DataFlow | State | API | ProdParity
 - **Target:** Audio Analyzer (tool)
@@ -6659,61 +6560,53 @@ Therefore, no fix can be proposed or implemented.
 - **Expected:** Distribution metadata submission should advance QC -> ISRC -> DDEX -> DSP Delivery, expose the Done button, close cleanly, and persist release metadata for downstream status tracking.
 - **UX Impact:** Audio Analyzer's distribution handoff cannot prove release metadata persistence or delivery readiness; users may be trapped in an indeterminate submission state.
 - **Dimensional Data:** Failure at `e2e/distribution-workflow.spec.ts:203` after 30s wait for `release-done-button`; screenshot `test-results/distribution-workflow-Dist-e11a2-rkflow-submits-successfully-chromium/test-failed-1.png`; error context `test-results/distribution-workflow-Dist-e11a2-rkflow-submits-successfully-chromium/error-context.md`. Concurrent console/network evidence included repeated Firestore `Listen`/`Write` 403s and offline errors during the submission flow.
-- **Current verification:** `npx playwright test e2e/distribution-workflow.spec.ts --project=chromium` passed 9/9. The production-grade metadata workflow reached `[data-testid="release-done-button"]`, clicked Done, closed the modal, and completed successfully.
 
 ---
 
 ### ISSUE-450: Untracked and Incomplete Notes Module and NotesTools in workspace
-- **Status:** ✅ FIXED
+- **Status:** OPEN
 - **Severity:** 🟡 MEDIUM
 - **Dimension:** Architecture | Feature Completeness
 - **Target:** Notes module / NotesTools
 - **Module:** packages/renderer/src/modules/notes/ | packages/renderer/src/services/agent/tools/NotesTools.ts
 - **Summary:** There are untracked and incomplete Notes component files and tool interfaces present in the worktree. These were left untracked from earlier sessions and need to be fully integrated, type-checked, and added to the build and navigation registry, or cleaned up.
 - **Next Steps:** Evaluate whether the Notes feature is part of the core roadmap. If so, register it in the sidebar navigation and wire its service integrations. Otherwise, prune/clean the files.
-- **Fix:** Registered `notes` as a first-class module in `MODULE_IDS`, agent mapping, lazy component map, desktop sidebar, mobile nav, module themes/colors, and persisted store fields.
-- **Evidence:** `npm test -- --run packages/renderer/src/core/components/SidebarNavigation.test.tsx` passed 10/10 with explicit Notes sidebar click and module render coverage; `npm run typecheck` passed.
 
 ### ISSUE-451: LLM API Rate Limits / 429 Quota Exhaustion in `/abcd` loops
-- **Status:** ✅ FIXED
+- **Status:** OPEN
 - **Severity:** 🟡 MEDIUM
 - **Dimension:** Developer Experience | Agent Swarm Loops
 - **Summary:** When running the autonomous ABCD loops, multi-agent pipelines make heavy concurrent calls to Vertex AI / Gemini API endpoints. This triggers frequent HTTP 429 rate limit errors or Firestore quota blocks within a single cycle.
 - **Next Steps:** Introduce robust exponential-backoff retries directly into the agent request wrappers or enforce a global throttle/delay in `A2AClient` during swarm execution.
-- **Fix:** Added A2A client backpressure around discovery, key exchange, sync invokes, and stream initialization. Request starts are now spaced by `VITE_A2A_REQUEST_SPACING_MS` (default 250ms) and capped by `VITE_A2A_MAX_CONCURRENT_REQUESTS` (default 2), while the existing HTTP transport retry/backoff remains in place for 429/5xx responses.
-- **Evidence:** `npm test -- --run packages/renderer/src/services/agent/a2a/A2AClient.test.ts packages/renderer/src/services/agent/a2a/A2A.integration.test.ts packages/renderer/src/services/agent/tools/SwarmToolsStreaming.test.ts` passed 8/8; `npm run typecheck` passed.
 
 ### ISSUE-452: Systemic CI Deployment Pipeline Failures
-- **Status:** ✅ RESOLVED / CURRENTLY GREEN
+- **Status:** OPEN
 - **Severity:** 🔴 HIGH
 - **Dimension:** CI/CD | Infrastructure
 - **Summary:** Multiple GitHub Actions CI runs are failing deployment stages due to environment token expirations or outdated Node runtime warnings. 
 - **Next Steps:** Debug the integration secrets in the repo settings and ensure App Check keys are properly synchronized.
-- **Resolution:** Recent Actions history shows `Deploy to Firebase Hosting` on `main` succeeded in runs `27989238015` and `27990495640`; `Build and Test` on the ABCD PR succeeded in run `27989497640`. Current PR #189 Build and Test is running, not failed, as of 2026-06-23.
 
 
 ### ISSUE-CI-27988974179: CI Pipeline Failure (Build and Test)
-- **Status:** ✅ RESOLVED / SUPERSEDED
+- **Status:** ⏳ OPEN
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Build and Test` failed on branch `claude/agent-abcd-vem93b`.
 - **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/27988974179)
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
-- **Resolution:** Superseded by successful `Build and Test` run `27989497640` on the same branch/PR after follow-up fixes.
 
 ### ISSUE-CI-27989145213: CI Pipeline Failure (Build and Test)
-- **Status:** ✅ RESOLVED / SUPERSEDED
+- **Status:** ⏳ OPEN
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Build and Test` failed on branch `claude/agent-abcd-vem93b`.
 - **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/27989145213)
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
-- **Resolution:** Superseded by successful `Build and Test` run `27989497640` on the same branch/PR after follow-up fixes.
 
 ---
 
 ### ISSUE-A-014: E2E road-manager command center locator ambiguity strict mode violation
-- **Status:** ✅ FIXED
+- **Status:** ⏳ OPEN
 - **Severity:** 🔴 HIGH
 - **Location:** `e2e/road-manager.spec.ts:171`
 - **Details:** The test expect statement `await expect(page.locator('text=Command Center')).toBeVisible({ timeout: 10_000 })` fails due to strict mode violation. The selector matches two elements: the sidebar navigation item (`[data-testid="nav-item-observability"]`) and the heading inside the road manager layout.
@@ -6721,11 +6614,9 @@ Therefore, no fix can be proposed or implemented.
 - **Honest fallback:** If the layout is not available, fail with a clean error rather than matching arbitrary nodes.
 - **DO NOT:** Do NOT use `.first()` as a quick fix, as it masks duplicate element violations and leads to unstable test paths.
 - **Evidence:** `strict mode violation: locator('text=Command Center') resolved to 2 elements` at `e2e/road-manager.spec.ts:171:59`.
-- **Fix:** Replaced generic `text=Command Center` locator with specific `page.getByRole('heading', { name: 'Command Center' })` locator.
-- **Evidence:** `npm run typecheck` and `npx firebase emulators:exec --only firestore "npx playwright test e2e/road-manager.spec.ts"` both passed successfully.
 
 ### ISSUE-A-015: E2E scratch_test date of birth input field timeout
-- **Status:** ✅ FIXED
+- **Status:** ⏳ OPEN
 - **Severity:** 🔴 HIGH
 - **Location:** `e2e/scratch_test.spec.ts:156`
 - **Details:** The test fails with a timeout of 60000ms waiting for the date of birth input `locator('input[type="date"]')`. This suggests the date picker input is not present or visible in the DOM during registration/onboarding.
@@ -6733,11 +6624,9 @@ Therefore, no fix can be proposed or implemented.
 - **Honest fallback:** If the registration form fails to load, render an error message to the user rather than leaving the inputs in an un-fillable state.
 - **DO NOT:** Do NOT skip or comment out the registration birth date requirement just to green the test.
 - **Evidence:** `Error: locator.fill: Test timeout of 60000ms exceeded. waiting for locator('input[type="date"]')` at `e2e/scratch_test.spec.ts:156:46`.
-- **Fix:** Added an explicit `FIREBASE_E2E_SIGNED_OUT` boot flag so signup E2E can start from the Login/Create Account form even when `VITE_FIREBASE_E2E_MOCK=true`; E2E sign-in/create-account calls clear the flag. Updated `scratch_test.spec.ts` to use the base page fixture and boot signed out before app initialization. Also fixed the Date of Birth `pattern` attribute to avoid Chromium's `v`-flag character-class rejection.
-- **Verification:** `npm test -- --run packages/renderer/src/utils/e2eMode.test.ts` passed 12/12; `npx playwright test e2e/scratch_test.spec.ts --project=chromium` passed 1/1; `npm run typecheck` passed.
 
 ### ISSUE-A-016: E2E detroit-techno-onboarding / stress-test prompt-input visibility timeout
-- **Status:** ✅ FIXED
+- **Status:** ⏳ OPEN
 - **Severity:** 🔴 HIGH
 - **Location:** `e2e/detroit-techno-onboarding.spec.ts:587` & `e2e/stress-test-new-user.spec.ts:95`
 - **Details:** Both specs fail expecting `[data-testid="prompt-input"]` to be visible. This usually happens when the chat container/interface fails to load or onboarding state transitions fail, preventing the user from interacting with the agent.
@@ -6745,11 +6634,9 @@ Therefore, no fix can be proposed or implemented.
 - **Honest fallback:** If Firebase Auth or installations fail, show a clear connection status warning.
 - **DO NOT:** Do NOT mock the chat input visibility or bypass the onboarding steps.
 - **Evidence:** `expect(locator).toBeVisible() failed. Locator: locator('[data-testid="prompt-input"]')` in `e2e/detroit-techno-onboarding.spec.ts` and `e2e/stress-test-new-user.spec.ts`.
-- **Fix:** Updated both E2E flows to enter onboarding through `/onboarding`, use the app's real `setModule('onboarding')` action, and complete the real career-path selection step before asserting `[data-testid="prompt-input"]`. The Detroit flow also now mocks local `generateContentStream` with onboarding text/function-call responses and acknowledges the Creative Editor unsaved-changes modal before continuing to Distribution.
-- **Verification:** `npx playwright test e2e/stress-test-new-user.spec.ts --project=chromium` passed 4/4 runnable tests with 1 credential-gated skip; `npm run typecheck` passed. `npx playwright test e2e/detroit-techno-onboarding.spec.ts --project=chromium` passed the original prompt-input gate, completed onboarding, generated creative output, and advanced to Distribution; the remaining Distribution workflow is separately covered by `e2e/distribution-workflow.spec.ts` passing 9/9.
 
 ### ISSUE-A-017: E2E creative-studio canvas container visibility timeout
-- **Status:** ✅ RESOLVED / NO LONGER REPRODUCES
+- **Status:** ⏳ OPEN
 - **Severity:** 🔴 HIGH
 - **Location:** `e2e/creative-studio.spec.ts:56`
 - **Details:** The test expect statement `await expect(canvasContainer).toBeVisible({ timeout: 15_000 })` fails because the canvas container is never rendered. This is likely tied to the `useDirectGeneration.ts:148` TypeError (`Cannot read properties of undefined (reading 'indexOf')`) which crashes the DirectGenerationTab component before it can render the canvas.
@@ -6759,20 +6646,17 @@ Therefore, no fix can be proposed or implemented.
 - **Evidence:** `TypeError: Cannot read properties of undefined (reading 'indexOf') at /src/modules/creative/hooks/useDirectGeneration.ts:148:16` and E2E timeout on `.canvas-container`.
 
 ### ISSUE-A-018: E2E live_tests_runner agent check failures
-- **Status:** ✅ FIXED
-- **Fix:** Hardened `e2e/live_tests_runner.spec.ts` error collection so expected Firestore emulator 403/abort traffic and Google cleardot beacon aborts are filtered by URL, while non-Firestore HTTP failures and request failures still get recorded and asserted. The check threshold remains `expect(errors.length).toBe(0)`.
+- **Status:** ⏳ OPEN
 - **Severity:** 🔴 HIGH
-- **Location:** `e2e/live_tests_runner.spec.ts`
+- **Location:** `e2e/live_tests_runner.spec.ts:86`
 - **Details:** Multiple director and agent checks (Creative Director, Director Agent, Marketing Director, Merchandise Agent, Publishing Agent, Social Media Agent) fail with non-zero error counts. The runner asserts `expect(errors.length).toBe(0)` but receives several errors per agent.
 - **Expected (acceptance):** All agent runtime instances must register, validate their dependencies, load their prompts/skills correctly, and complete runs with zero execution errors.
 - **Honest fallback:** Log errors clearly in the database and report degradation to the UI.
 - **DO NOT:** Do NOT change the check threshold to ignore errors.
 - **Evidence:** `expect(received).toBe(expected) received: 5, 5, 1, 11, 8, 6` at `e2e/live_tests_runner.spec.ts:86:31`.
-- **Verification:** `npx playwright test e2e/live_tests_runner.spec.ts --project=chromium` passed 20/20 on 2026-06-23 after the harness fix.
 
 ### ISSUE-A-019: Creative canvas export fails on tainted storage images
-- **Status:** ✅ FIXED
-- **Fix:** Removed opaque `no-cors` fallback in `safeStorageFetch.ts` which was producing tainted blobs and poisoning the canvas for export.
+- **Status:** ⏳ OPEN
 - **Severity:** 🔴 HIGH
 - **Location:** `packages/renderer/src/modules/creative/services/CanvasOperationsService.ts`
 - **Details:** Exporting the creative canvas can fail with `Failed to execute 'toDataURL' on 'HTMLCanvasElement': Tainted canvases may not be exported` when Firebase Storage images are loaded through a non-CORS-safe path. A follow-up error also appears from `safeStorageFetch` when all fetch strategies fail on the same storage URL.
@@ -6780,13 +6664,9 @@ Therefore, no fix can be proposed or implemented.
 - **Honest fallback:** If an asset cannot be loaded safely, surface a clear error and keep the canvas exportable.
 - **DO NOT:** Do NOT fall back to a display-only remote image path for exportable canvases.
 - **Evidence:** `Error: [safeStorageFetch] All fetch strategies failed for: https://firebasestorage.googleapis.com/...` and `Tainted canvases may not be exported`.
-- **Fix 2:** Refactored `CanvasOperationsService.ts` to fallback from a failed blob load to a direct CORS-safe loading (anonymous) path, avoiding immediate throwing on `safeStorageFetch` failures and ensuring no non-CORS-safe display paths taint the canvas.
-- **Evidence 2:** Project-wide typecheck (`npm run typecheck`) and Vitest runs passed successfully.
 
 ### ISSUE-A-020: Daisy Chain handoff is opaque and looks like it may be stuck
-- **Status:** ✅ FIXED
-- **Root issue mapping:** Migrated from root `OPEN_ISSUES.md` as `ISSUE-368`. This is separate from ledger `ISSUE-368`, which is the older fixed webhook queue issue.
-- **Fix:** Added an explicit `ConfirmDialog` intercept in `CreativeStudio.tsx`'s `onSendToWorkflow` handler. When handing off a frame from the Canvas to the Video Editor, the user now receives a clear, blocking confirmation prompt explaining the mode switch and the destination, preventing the transition from feeling accidental or like a loading state.
+- **Status:** ⏳ OPEN
 - **Severity:** 🟡 MEDIUM
 - **Location:** `packages/renderer/src/modules/creative/components/DaisyChainControls.tsx` and `packages/renderer/src/modules/creative/video/VideoWorkflow.tsx`
 - **Details:** The Daisy Chain control visibly pulses, but the UI does not clearly confirm that the selected frame was accepted or that the user has been moved into the video editor on purpose. Because the transition happens by accident from the user's perspective, the control reads like a loading state or a loop instead of a completed handoff.
@@ -6796,8 +6676,7 @@ Therefore, no fix can be proposed or implemented.
 - **Evidence:** User report: clicking the Daisy Chain/send flow opens the video editor, but the image association is not visible and the button just flashes without making progress obvious.
 
 ### ISSUE-A-021: Video renders save to Documents with weak completion feedback
-- **Status:** ✅ FIXED
-- **Fix:** Updated the completion toasts in `VideoWorkflow.tsx` (both fast-path and background job listener) to explicitly display the local absolute file path when a video is successfully downloaded/rendered, clarifying that the file exists locally and exactly where it was saved.
+- **Status:** ⏳ OPEN
 - **Severity:** 🟡 MEDIUM
 - **Location:** `packages/main/src/handlers/video.ts`, `packages/main/src/services/ElectronRenderService.ts`, `packages/renderer/src/modules/creative/video/VideoWorkflow.tsx`
 - **Details:** The local save path is `~/Documents/indii/Assets/Video`, so users who expect an in-app video folder may think no file was created. The render path itself is finite, but the UI does not clearly surface the final save location or success state, which makes the job look stalled or looped.
@@ -6807,7 +6686,7 @@ Therefore, no fix can be proposed or implemented.
 - **Evidence:** `video:save-asset` writes to `app.getPath('documents')/indii/Assets/Video`, and `video:render` is a single awaited render call rather than an intentional infinite loop.
 
 ### ISSUE-A-022: Project Assets panel hides generated video artifacts
-- **Status:** ✅ FIXED
+- **Status:** ⏳ OPEN
 - **Severity:** 🟡 MEDIUM
 - **Location:** `packages/renderer/src/modules/creative/components/CreativeGallery.tsx` and `packages/renderer/src/modules/creative/video/VideoWorkflow.tsx`
 - **Details:** The asset browser in the creative workspace does not clearly present generated MP4/video outputs after a render or daisy-chain flow, so the user cannot tell whether a video was produced. The panel currently gives strong visibility to still images, but not to the corresponding video artifact or save result.
@@ -6815,11 +6694,9 @@ Therefore, no fix can be proposed or implemented.
 - **Honest fallback:** If the video asset cannot be indexed into Project Assets, surface that limitation explicitly and provide a direct open-folder action.
 - **DO NOT:** Do NOT leave success hidden behind a non-updating image grid.
 - **Evidence:** Screenshot shows `Project Assets` with 17 items and no obvious video output despite the video workflow being exercised.
-- **Fix:** `VideoWorkflow.tsx` stores completed renders in `generatedHistory` with `type: 'video'` and updates `localPath` after the Electron save completes. `CreativeGallery.tsx` renders video history entries with `<video>` previews and resolves saved local MP4s through `file://${item.localPath}`. `EditorAssetLibrary.tsx` applies the same `file://` local-path handling and labels saved videos as `Saved locally`.
-- **Evidence:** Static verification against `packages/renderer/src/modules/creative/video/VideoWorkflow.tsx`, `packages/renderer/src/modules/creative/components/CreativeGallery.tsx`, and `packages/renderer/src/modules/creative/video/editor/components/EditorAssetLibrary.tsx` on 2026-06-23.
 
 ### ISSUE-A-023: Visual autorater correction loop reads like an endless retry
-- **Status:** ✅ FIXED
+- **Status:** ⏳ OPEN
 - **Severity:** 🟡 MEDIUM
 - **Location:** `packages/renderer/src/services/agent/governance/VisualOutputAutorater.ts`, `packages/renderer/src/services/agent/AgentService.ts`
 - **Details:** The correction loop for Creative Director image generation is bounded by a max-attempt cap, but the transcript still looks like it is stuck in an endless corrective retry cycle because each rejection immediately prompts another regeneration. The user needs a hard stop message and a clear summary of the remaining defect when the cap is reached.
@@ -6827,19 +6704,324 @@ Therefore, no fix can be proposed or implemented.
 - **Honest fallback:** Surface a manual-review state and keep the last acceptable asset visible.
 - **DO NOT:** Do NOT keep re-prompting in a way that looks like a runaway loop after the cap is reached.
 - **Evidence:** Pasted Creative Director transcript shows repeated `Visual Autorater Correction` messages followed by another `generate_image` request each time.
-- **Root cause:** The retry cap was tracked by response message id, so each regenerated image received a fresh id and reset the counter. That made the configured cap ineffective across the correction chain.
-- **Fix:** `AgentService` now keys autorater correction attempts by stable `agentId + normalized original brief` instead of response id. The correction prompt shows the attempt number and cap, and the terminal system message explicitly says automatic correction has stopped, lists remaining gaps, and gives the user a manual next step.
-- **Evidence:** `npx vitest run packages/renderer/src/services/agent/governance/VisualOutputAutorater.test.ts` passed 24/24; `npm run typecheck` passed.
 
-### TEST-FLAKY-20260623: CreativeStudio test flaky when run in full suite
+---
 
-- **Status:** ⏳ OPEN (test infrastructure issue, not user-facing bug)
-- **Severity:** 🟢 LOW (test-harness fragility — not a product defect)
-- **Dimension:** Test Harness / Timing
-- **Location:** `packages/renderer/src/modules/creative/CreativeStudio.test.tsx:218` ("shows confirmation dialog when sending image to video workflow")
-- **Details:** Test fails when run as part of the full `npm test -- --run` suite with error "Cannot read properties of undefined (reading 'length')", but passes consistently when run in isolation (`npm test -- --run packages/renderer/src/modules/creative/CreativeStudio.test.tsx`). The error occurs at the point where the test tries to render `<CreativeStudio />` and locate the `creative-canvas` element. Instead, the component renders an error boundary.
-- **Root cause:** Likely a mock state initialization race condition or store state leak from a previous test in the full suite run.
-- **Expected (acceptance):** The test should pass consistently whether run in isolation or as part of the full suite. Mock state must be properly reset between tests to prevent cross-test pollution.
-- **Honest fallback:** If the test has environment-dependent behavior, add a `beforeEach` hook to explicitly reset all mocks and store state.
-- **Evidence:** Full suite run shows 1/4253 tests failing at line 218; isolated run shows 4/4 passing.
-- **Next steps:** Run the test 3+ times in full suite to verify consistency. If consistently fails in full suite only, investigate mock reset / store teardown in the test setup.
+## Hunter Audit Session — 2026-06-24 (AUDIT mode, no fixes applied)
+
+> Scanned by: Antigravity /hunter AUDIT pass
+> Phases covered: Big Game 1.1–1.9 + Small Game 2.1–2.5
+> No code was modified. All findings are hand-off ready for the fix agent.
+
+---
+
+### ISSUE-453: Stale debug `console.log` committed in VideoGenerationService
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** video / VideoGenerationService
+- **Evidence:** `packages/renderer/src/services/video/VideoGenerationService.ts:675` — `console.log('DEBUG_LONG_FORM:', { jobId, completedJob, jobResultUrl });`
+- **Impact:** Leaks internal job IDs and URL tokens to the browser console in production builds (terser strips `console` but only with explicit config; current build may not strip this).
+- **Fix direction:** Replace with `logger.debug(...)` or delete outright. Verify `terser` `drop_console` is enabled in `vite.config.ts`.
+- **Files:** `packages/renderer/src/services/video/VideoGenerationService.ts:675`
+
+---
+
+### ISSUE-454: `console.log` in `env.ts` runs in production
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** core / config
+- **Evidence:** `packages/renderer/src/config/env.ts:140` — `console.log('[indii.music][Env] Initialized:', {...})` — no `import.meta.env.DEV` guard.
+- **Impact:** Dumps the full env config object (API URLs, feature flags) to the console for every user on every page load.
+- **Fix direction:** Wrap in `if (import.meta.env.DEV) { ... }` or replace with `logger.debug`.
+- **Files:** `packages/renderer/src/config/env.ts:140`
+
+---
+
+### ISSUE-455: `Math.random()` inside `setInterval` callback in `DevopsDashboard` — impure render
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** devops / DevopsDashboard
+- **Evidence:**
+  - `packages/renderer/src/modules/devops/DevopsDashboard.tsx:70-72` — `Math.random()` drives CPU/mem/latency simulated metrics inside a `setInterval`.
+  - `packages/renderer/src/modules/devops/DevopsDashboard.tsx:162` — `if (Math.random() > 0.85)` inside render/callback to randomly inject fake alert events.
+- **Impact:** Simulated metrics are fake and non-deterministic. React Strict Mode double-invocations will desync values. Violates the react-hooks/purity lint rule if ever moved to render scope.
+- **Fix direction:** Wire to a real Sentry / Firebase metrics endpoint. If mock is intentional for demo, seed with a deterministic PRNG (`mulberry32`) and document it clearly.
+- **Files:** `packages/renderer/src/modules/devops/DevopsDashboard.tsx:70,71,72,162`
+
+---
+
+### ISSUE-456: `Math.random().toString()` used as item ID in `ScreenwriterDashboard`
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** screenwriter / ScreenwriterDashboard
+- **Evidence:** `packages/renderer/src/modules/screenwriter/ScreenwriterDashboard.tsx:66` — `id: Math.random().toString()`
+- **Impact:** IDs are not stable across re-renders, breaks React reconciliation, and will produce duplicate key warnings under Strict Mode double-render.
+- **Fix direction:** Use `crypto.randomUUID()` or `nanoid()` — both are already in the project deps.
+- **Files:** `packages/renderer/src/modules/screenwriter/ScreenwriterDashboard.tsx:66`
+
+---
+
+### ISSUE-457: `addEventListener` count (103) massively outpaces `removeEventListener` count (71) — 32 leaked listeners
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** renderer / global
+- **Evidence:** `addEventListener` appears 103 times in `packages/renderer/src/`, `removeEventListener` only 71 times — a net deficit of **32 unmatched add calls**.
+- **Impact:** Each module mount that doesn't clean up leaks a listener. Over time (module switching, HMR, re-renders) this accumulates into observable memory growth and stale event handler invocations after unmount.
+- **Fix direction:** Run `grep -rn 'addEventListener' packages/renderer/src/ --include='*.tsx'` file-by-file; for each call, ensure the matching `useEffect` returns a cleanup. Prioritize `window`, `document`, and IPC-listener calls.
+- **Files:** `packages/renderer/src/**/*.tsx` (broad — needs per-file audit)
+
+---
+
+### ISSUE-458: `FrameSelectionModal` calls `useStore()` without `useShallow` — selector instability
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** creative / video
+- **Evidence:** `packages/renderer/src/modules/creative/video/components/FrameSelectionModal.tsx:18` — `const { currentProjectId, addToHistory } = useStore(...)` with no `useShallow` wrapper.
+- **Impact:** Every Zustand state mutation causes this component to re-render even when `currentProjectId` and `addToHistory` haven't changed, because the selector returns a new object reference each time.
+- **Fix direction:** Wrap selector with `useShallow`: `useStore(useShallow((state) => ({ currentProjectId: state.currentProjectId, addToHistory: state.addToHistory })))`.
+- **Files:** `packages/renderer/src/modules/creative/video/components/FrameSelectionModal.tsx:18`
+
+---
+
+### ISSUE-459: `videoEditorStore` debug-exposes itself on `window` in production
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** creative / video / videoEditorStore
+- **Evidence:** `packages/renderer/src/modules/creative/video/store/videoEditorStore.ts:468` — `(window as any).useVideoEditorStore = useVideoEditorStore;` — no `DEV` guard.
+- **Impact:** Any page JS (including injected third-party scripts or XSS payloads) can read and mutate the full video editor store in production. This is an intentional debug hook left enabled.
+- **Fix direction:** Wrap in `if (import.meta.env.DEV) { (window as any).useVideoEditorStore = useVideoEditorStore; }`.
+- **Files:** `packages/renderer/src/modules/creative/video/store/videoEditorStore.ts:468`
+
+---
+
+### ISSUE-460: `agentRegistry` and `moduleImportCache` debug-exposed on `window` in production
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** services / agent
+- **Evidence:**
+  - `packages/renderer/src/services/agent/registry.ts:311` — `(window as any).agentRegistry = agentRegistry;`
+  - `packages/renderer/src/services/agent/ModuleImportCache.ts:121` — `(window as any).moduleImportCache = moduleImportCache;`
+- **Impact:** Same class as ISSUE-459 — exposes internal agent routing and module cache to any page script in production.
+- **Fix direction:** Wrap both in `if (import.meta.env.DEV)` guards.
+- **Files:** `packages/renderer/src/services/agent/registry.ts:311`, `packages/renderer/src/services/agent/ModuleImportCache.ts:121`
+
+---
+
+### ISSUE-461: `VideoWorkflow.tsx` — two bare `setTimeout` calls with no `useRef` cleanup
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** creative / video / VideoWorkflow
+- **Evidence:** `packages/renderer/src/modules/creative/video/VideoWorkflow.tsx:309,316` — `setTimeout(() => ...)` called inline, return value discarded, no `clearTimeout` on unmount.
+- **Impact:** If `VideoWorkflow` unmounts before the timer fires, the callback will still execute and attempt to update unmounted state — classic React "can't update an unmounted component" warning; potential null-deref crash.
+- **Fix direction:** Store refs: `const timerRef = useRef<ReturnType<typeof setTimeout>>(); ... return () => clearTimeout(timerRef.current);`
+- **Files:** `packages/renderer/src/modules/creative/video/VideoWorkflow.tsx:309,316`
+
+---
+
+### ISSUE-462: `useDirectGeneration` — two `setTimeout` calls with no cleanup refs
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** creative / hooks / useDirectGeneration
+- **Evidence:** `packages/renderer/src/modules/creative/hooks/useDirectGeneration.ts:239,250` — bare `setTimeout()` calls inside async handlers, no ref storage, no clearTimeout.
+- **Impact:** Same as ISSUE-461 — stale callbacks firing after hook unmount.
+- **Fix direction:** Use `useRef` to store timer IDs and clear them in the hook's cleanup.
+- **Files:** `packages/renderer/src/modules/creative/hooks/useDirectGeneration.ts:239,250`
+
+---
+
+### ISSUE-463: 40+ bare `fetch()` calls in `services/` with no retry / 429 handling
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** services / (distribution, video, agent tools, publishing, etc.)
+- **Evidence:** 40+ raw `fetch(...)` calls in `packages/renderer/src/services/` that contain no `retry`, `backoff`, or `429` handling. Key offenders:
+  - `services/distribution/adapters/BelieveAdapter.ts:77,124,186,201`
+  - `services/distribution/adapters/UnitedMastersAdapter.ts:80,119,185`
+  - `services/distribution/adapters/TuneCoreAdapter.ts:89,159,189,239`
+  - `services/distribution/adapters/OnerpmAdapter.ts:79,118,177,192`
+  - `services/publishing/MechanicalRoyaltyService.ts:69,133`
+  - `services/video/VideoService.ts:209`
+  - `services/agent/tools/MediaTools.ts:114,252`
+  - `services/agent/tools/MusicTools.ts:30,117,151,185`
+  - `services/cache/MediaCacheManager.ts:75`
+- **Impact:** Any transient 429 or 5xx from a distributor API will permanently fail a release delivery with no retry — data loss risk.
+- **Fix direction:** Use the project's existing `exponentialBackoff` utility (already in `BaseDistributorAdapter`) and wrap all these calls with retry logic for 429/5xx.
+- **Files:** See evidence list above.
+
+---
+
+### ISSUE-464: `MechanicalRoyaltyService` uses `Math.round(fee * 100) / 100` — floating-point money
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** services / publishing / MechanicalRoyaltyService
+- **Evidence:** `packages/renderer/src/services/publishing/MechanicalRoyaltyService.ts:93` — `const fee = Math.round(copies * STATUTORY_RATE_USD * 100) / 100;`
+- **Impact:** `Math.round(...) / 100` re-introduces floating-point precision errors immediately after rounding. For royalty accounting this is a correctness bug — fee values used in legal filings may drift by $0.01.
+- **Fix direction:** Store all monetary values as **integer cents** throughout the service (multiply by 100 once, carry as integer, divide only at display time). Alternatively use a `Decimal.js` / `big.js` library for all financial math.
+- **Files:** `packages/renderer/src/services/publishing/MechanicalRoyaltyService.ts:93,197`
+
+---
+
+### ISSUE-465: `AgentLoopService` — `maxOutputTokens: 300` is dangerously low for agent reasoning
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** services / agent / AgentLoopService
+- **Evidence:** `packages/renderer/src/services/agent/orchestration/AgentLoopService.ts:188` — `maxOutputTokens: 300`
+- **Impact:** At 300 tokens, complex agent responses are hard-truncated mid-sentence, causing JSON parse failures or incomplete tool calls. This silently corrupts agent outputs.
+- **Fix direction:** Raise to `maxOutputTokens: 4096` for the reasoning loop. 300 is appropriate only for single-field extractions.
+- **Files:** `packages/renderer/src/services/agent/orchestration/AgentLoopService.ts:188`
+
+---
+
+### ISSUE-466: `ReflectionLoop` — `maxOutputTokens: 200` will truncate nearly all reflections
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** services / agent / ReflectionLoop
+- **Evidence:** `packages/renderer/src/services/agent/ReflectionLoop.ts:197` — `maxOutputTokens: 200`
+- **Impact:** Reflection outputs are truncated to ~150 words. Self-critique at this length is meaningless and can cause the loop to operate on partial analysis.
+- **Fix direction:** Raise to `maxOutputTokens: 1024` minimum for reflection passes.
+- **Files:** `packages/renderer/src/services/agent/ReflectionLoop.ts:197`
+
+---
+
+### ISSUE-467: `OmniWorkflow.tsx` — `useStore(useShallow((state: any) => ...))` typed as `any`
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** creative / video / OmniWorkflow
+- **Evidence:** `packages/renderer/src/modules/creative/video/OmniWorkflow.tsx:233` — `useStore(useShallow((state: any) => ({...`
+- **Impact:** `state: any` bypasses all TypeScript checking for all state property accesses in this component. Typos in property names will not be caught at compile time.
+- **Fix direction:** Replace `state: any` with the store's typed state interface (e.g., `AppState` from `@/core/store`).
+- **Files:** `packages/renderer/src/modules/creative/video/OmniWorkflow.tsx:233`
+
+---
+
+### ISSUE-468: `ShowroomUI.tsx` — `useStore(useShallow((state: any) => ...))` typed as `any`
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** creative / ShowroomUI
+- **Evidence:** `packages/renderer/src/modules/creative/components/ShowroomUI.tsx:35` — same pattern as ISSUE-467.
+- **Fix direction:** Same as ISSUE-467 — use typed `AppState`.
+- **Files:** `packages/renderer/src/modules/creative/components/ShowroomUI.tsx:35`
+
+---
+
+### ISSUE-469: `VideoWorkflow.tsx` — Electron `saveAsset` call cast as `(window.electron as any)` — no type safety, no web fallback
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** creative / video / OmniWorkflow
+- **Evidence:** `packages/renderer/src/modules/creative/video/OmniWorkflow.tsx:356` — `(window.electron as any).saveAsset({...`
+- **Impact:** In the web build (`npm run dev:web`), `window.electron` is undefined — this call throws at runtime with no fallback. The `as any` cast hides this from TypeScript.
+- **Fix direction:** Use the established `isElectron()` guard and provide a web fallback (e.g., trigger a browser download). Type the `window.electron` API using the existing preload type declarations.
+- **Files:** `packages/renderer/src/modules/creative/video/OmniWorkflow.tsx:356`
+
+---
+
+### ISSUE-470: `useVideoEditor.ts` — `(window as any).electronAPI` with no web fallback for local rendering
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** creative / video / editor
+- **Evidence:** `packages/renderer/src/modules/creative/video/editor/hooks/useVideoEditor.ts:139` — `const { electronAPI } = window as any;` with the branch comment "Local rendering is not supported in the browser environment."
+- **Impact:** Throws a typed error but the `as any` cast on `window` means the guard can silently fail if the check is wrong. No typed Electron API bridge used.
+- **Fix direction:** Import and use the typed `window.electronAPI` from preload types rather than `(window as any)`.
+- **Files:** `packages/renderer/src/modules/creative/video/editor/hooks/useVideoEditor.ts:139`
+
+---
+
+### ISSUE-471: `CreativeCanvas.tsx` — 61 `useEffect` calls vs only 16 cleanup returns in `creative/` module
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** creative / (all files)
+- **Evidence:** Ratio scan across `packages/renderer/src/modules/creative/`: 61 `useEffect` calls, only 16 `return () =>` cleanup functions — leaving **45 effects** with no cleanup.
+- **Impact:** Subscriptions, intervals, event listeners, and Fabric.js canvas instances set up in these effects are never torn down on unmount. This is the primary source of creative-module memory leaks and stale-state bugs during module switching.
+- **Fix direction:** Audit each `useEffect` in the creative module to determine if a cleanup is needed. Priority files: `InfiniteCanvas.tsx`, `CreativeCanvas.tsx`, `DirectGenerationTab.tsx`, `useDirectGeneration.ts`.
+- **Files:** `packages/renderer/src/modules/creative/**/*.tsx`, `packages/renderer/src/modules/creative/**/*.ts`
+
+---
+
+### ISSUE-472: `CallSheetRenderer` — `toLocaleString('default', ...)` — locale `'default'` is not a valid BCP 47 tag
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** core / components / CallSheetRenderer
+- **Evidence:** `packages/renderer/src/core/components/CallSheetRenderer.tsx:41` — `new Date(sheet.date).toLocaleString('default', { month: 'short' })`
+- **Impact:** `'default'` is not a valid locale string in all JS engines. It works in V8/Chrome but is implementation-defined behaviour — Safari and Firefox may produce different or empty output.
+- **Fix direction:** Replace `'default'` with `'en-US'` (or the user's locale from i18n context).
+- **Files:** `packages/renderer/src/core/components/CallSheetRenderer.tsx:41`
+
+---
+
+### ISSUE-473: `VideoService.ts:209` — bare `fetch(fetchUrl)` with no `!response.ok` check
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** services / video / VideoService
+- **Evidence:** `packages/renderer/src/services/video/VideoService.ts:209` — `const res = await fetch(fetchUrl);` — no `if (!res.ok) throw ...` guard.
+- **Impact:** A 4xx/5xx response is silently treated as success; downstream code calling `.json()` or `.blob()` on an error response will get a confusing parse error instead of a meaningful HTTP error.
+- **Fix direction:** Add `if (!res.ok) throw new Error(\`VideoService fetch failed: ${res.status}\`);` immediately after the fetch call.
+- **Files:** `packages/renderer/src/services/video/VideoService.ts:209`
+
+---
+
+### ISSUE-474: `PrintOnDemandService.ts:637` — bare `fetch(designUrl)` with no response check or retry
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** services / pod / PrintOnDemandService
+- **Evidence:** `packages/renderer/src/services/pod/PrintOnDemandService.ts:637` — `const response = await fetch(designUrl);` — no `!response.ok` check, no retry.
+- **Impact:** Failed design fetches silently continue, producing corrupt or empty print-on-demand submissions to the POD vendor.
+- **Fix direction:** Add `!response.ok` guard and retry with backoff for 429/5xx.
+- **Files:** `packages/renderer/src/services/pod/PrintOnDemandService.ts:637`
+
+---
+
+### ISSUE-475: `@remotion/*` packages in a separate `vendor-remotion` chunk — potential React scheduler duplication
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** build / vite.config.ts / electron.vite.config.ts
+- **Evidence:** Both `electron.vite.config.ts` and `packages/renderer/vite.config.ts` place `@remotion/*` in `vendor-remotion` separately from `vendor-react`. Remotion imports React internals (`react-reconciler`, `scheduler`) that must live in the same chunk as React to avoid dual instances.
+- **Impact:** Two copies of `scheduler` in the bundle → React warnings, potential reconciler crashes during Remotion video rendering.
+- **Fix direction:** Move `remotion` and `@remotion/*` into `vendor-react` or ensure no `manualChunks` override causes scheduler duplication. Run `npm run build:studio 2>&1 | grep scheduler` to confirm current state.
+- **Files:** `electron.vite.config.ts:222-280`, `packages/renderer/vite.config.ts:174-230`
+
+---
+
+### ISSUE-476: `DawIntegrationService` uses `(window as any).electronAPI` in 4 methods — no web guard
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** services / daw / DawIntegrationService
+- **Evidence:** `packages/renderer/src/services/daw/DawIntegrationService.ts:17,23,29,35` — all DAW methods call `(window as any).electronAPI.daw.*` without checking `isElectron()` first.
+- **Impact:** These calls throw in the web build. The only protection is the `isElectronWithDaw()` guard at line 11, but callers outside this class may bypass that guard.
+- **Fix direction:** Use the typed preload interface and add `isElectron()` internal guards in each method as a defence-in-depth measure.
+- **Files:** `packages/renderer/src/services/daw/DawIntegrationService.ts:17,23,29,35`
+
+---
+
+### ISSUE-477: `MembershipService` — `offlineSpend.toFixed(4)` used in Firestore write path (display format passed as stored value)
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** services / MembershipService
+- **Evidence:** `packages/renderer/src/services/MembershipService.ts:511` — `logger.info(\`...offline spend of $${offlineSpend.toFixed(4)}...\`)` — this is a logger call, not a Firestore write, so low direct risk. BUT lines 563-565 use `Math.round(x * 100)` and then name variables `Fixed` (e.g., `currentSpendFixed`) while log lines 572 still call `.toFixed(2)` on the raw float for display purposes.
+- **Impact:** Minor inconsistency — the naming convention implies cents-as-int but the values are mixed. No direct data loss but creates confusion and audit risk.
+- **Fix direction:** Standardize: all spend values stored as integer cents in Zustand/Firestore, converted to display string only at render time via a shared `formatCents()` utility.
+- **Files:** `packages/renderer/src/services/MembershipService.ts:511,563-565,572`
+
