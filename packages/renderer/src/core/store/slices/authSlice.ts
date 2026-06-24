@@ -145,6 +145,11 @@ function getAuthErrorMessage(error: FirebaseAuthError): string | null {
         case 'auth/requires-recent-login':
             return 'Your session has expired. Please sign in again before making this change.';
 
+        // ── Domain authorization (Firebase Console configuration) ──────────
+        case 'auth/requests-from-referer-blocked':
+        case 'auth/requests-from-referer-empty-are-blocked':
+            return 'Authentication service not configured for this domain. Please contact support.';
+
         // ── Fallback ───────────────────────────────────────────────────────
         default:
             return error.message ?? 'Authentication failed';
