@@ -6,14 +6,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ScreenControl } from '@/services/screen/ScreenControlService';
 import {
     Sparkles, Image as ImageIcon, Video, MonitorPlay, MessageSquare,
-    Palette, Clock, FlaskConical, Rocket, Layers, Cpu
+    Palette, Clock, FlaskConical, Rocket, Cpu
 } from 'lucide-react';
 import IntelligencePromptBuilder from './IntelligencePromptBuilder';
 import DaisyChainControls from './DaisyChainControls';
 import { useToast } from '@/core/context/ToastContext';
 import BrandAssetsDrawer from './BrandAssetsDrawer';
-import PromptHistoryDrawer from './PromptHistoryDrawer';
-import DesignHistoryDrawer from './DesignHistoryDrawer';
+import HistoryDrawer from './HistoryDrawer';
 import AgentCapabilityRegistry from './AgentCapabilityRegistry';
 import FrameSelectionModal from '../video/components/FrameSelectionModal';
 
@@ -48,11 +47,10 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
     const toast = useToast();
     // Single active right-rail panel so they are mutually exclusive and can't
     // overlap/stack on top of each other (ISSUE-492).
-    type RailPanel = 'brand' | 'promptHistory' | 'designHistory' | 'roster' | null;
+    type RailPanel = 'brand' | 'history' | 'roster' | null;
     const [activePanel, setActivePanel] = useState<RailPanel>(null);
     const showBrandAssets = activePanel === 'brand';
-    const showPromptHistory = activePanel === 'promptHistory';
-    const showDesignHistory = activePanel === 'designHistory';
+    const showHistory = activePanel === 'history';
     const showRosterRegistry = activePanel === 'roster';
     const togglePanel = (p: Exclude<RailPanel, null>) => setActivePanel(prev => (prev === p ? null : p));
     const [showFrameModal, setShowFrameModal] = useState(false);
@@ -188,24 +186,15 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
                                 <span className="hidden xl:inline">Brand</span>
                             </button>
                             <button
-                                onClick={() => togglePanel('promptHistory')}
+                                onClick={() => togglePanel('history')}
+                                data-testid="history-btn"
                                 className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-all text-[10px] font-bold uppercase tracking-wider
-                                    ${showPromptHistory
+                                    ${showHistory
                                         ? 'bg-purple-500/15 text-purple-300 shadow-[0_0_12px_rgba(168,85,247,0.1)]'
                                         : 'text-gray-500 hover:text-gray-300 hover:bg-white/4'}`}
                             >
-                                <Clock size={11} className={showPromptHistory ? 'text-purple-400' : ''} />
+                                <Clock size={11} className={showHistory ? 'text-purple-400' : ''} />
                                 <span className="hidden xl:inline">History</span>
-                            </button>
-                            <button
-                                onClick={() => togglePanel('designHistory')}
-                                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-all text-[10px] font-bold uppercase tracking-wider
-                                    ${showDesignHistory
-                                        ? 'bg-purple-500/15 text-purple-300 shadow-[0_0_12px_rgba(168,85,247,0.1)]'
-                                        : 'text-gray-500 hover:text-gray-300 hover:bg-white/4'}`}
-                            >
-                                <Layers size={11} className={showDesignHistory ? 'text-purple-400' : ''} />
-                                <span className="hidden xl:inline">Versions</span>
                             </button>
                             <button
                                 onClick={() => togglePanel('roster')}
@@ -301,14 +290,9 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
                 <BrandAssetsDrawer onClose={() => setActivePanel(null)} />
             )}
 
-            {/* Prompt History Drawer */}
-            {showPromptHistory && (
-                <PromptHistoryDrawer onClose={() => setActivePanel(null)} />
-            )}
-
-            {/* Design History Drawer */}
-            {showDesignHistory && (
-                <DesignHistoryDrawer onClose={() => setActivePanel(null)} />
+            {/* Unified History Drawer (Versions + Prompts) — ISSUE-496 */}
+            {showHistory && (
+                <HistoryDrawer onClose={() => setActivePanel(null)} />
             )}
 
             {/* Roster Capability Registry */}

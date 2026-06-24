@@ -4,7 +4,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { X, RotateCw, Copy, Clock } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 
-export default function PromptHistoryDrawer({ onClose }: { onClose: () => void }) {
+export default function PromptHistoryDrawer({ onClose, embedded = false }: { onClose: () => void; embedded?: boolean }) {
     const { generatedHistory, setCreativePrompt, setViewMode } = useStore(useShallow(state => ({
         generatedHistory: state.generatedHistory,
         setCreativePrompt: state.setCreativePrompt,
@@ -34,19 +34,8 @@ export default function PromptHistoryDrawer({ onClose }: { onClose: () => void }
         onClose();
     };
 
-    return (
-        <div className="absolute top-full right-0 mt-2 mr-2 w-80 bg-[#0f0f0f]/95 backdrop-blur-xl border border-white/10 rounded-xl z-50 flex flex-col max-h-[80vh] overflow-hidden shadow-2xl animate-in slide-in-from-top-2 fade-in duration-200">
-            <div className="p-4 border-b border-white/10 flex items-center justify-between bg-white/5">
-                <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                    <Clock size={16} className="text-purple-400" />
-                    Prompt History
-                </h3>
-                <button onClick={onClose} aria-label="Close prompt history" className="p-1 hover:bg-white/10 rounded-full text-gray-500 hover:text-white transition-colors">
-                    <X size={18} />
-                </button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-3 custom-scrollbar space-y-3 pb-24">
+    const body = (
+        <div className="flex-1 overflow-y-auto p-3 custom-scrollbar space-y-3 pb-24">
                 {uniquePrompts.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-40 text-gray-500 text-xs">
                         <Clock size={32} className="mb-2 opacity-10" />
@@ -87,6 +76,22 @@ export default function PromptHistoryDrawer({ onClose }: { onClose: () => void }
                     ))
                 )}
             </div>
+    );
+
+    if (embedded) return body;
+
+    return (
+        <div className="absolute top-full right-0 mt-2 mr-2 w-80 bg-[#0f0f0f]/95 backdrop-blur-xl border border-white/10 rounded-xl z-50 flex flex-col max-h-[80vh] overflow-hidden shadow-2xl animate-in slide-in-from-top-2 fade-in duration-200">
+            <div className="p-4 border-b border-white/10 flex items-center justify-between bg-white/5">
+                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                    <Clock size={16} className="text-purple-400" />
+                    Prompt History
+                </h3>
+                <button onClick={onClose} aria-label="Close prompt history" className="p-1 hover:bg-white/10 rounded-full text-gray-500 hover:text-white transition-colors">
+                    <X size={18} />
+                </button>
+            </div>
+            {body}
         </div>
     );
 }
