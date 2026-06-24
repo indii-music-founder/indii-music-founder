@@ -4,6 +4,7 @@
 
 ## Recent Commits
 ```
+1a5664e30 chore: session checkpoint [07:30]
 a4c196597 chore: session checkpoint [16:33]
 fba9d8ab7 v1.64.3 fix: remove orphaned nav components and fix test flakiness (#193)
 3aaa6dea3 Claude/agent abcd vem93b (#195)
@@ -13,7 +14,6 @@ b91a8906f ABCD session: landing fix + ISSUE-443 regression + indiiREMOTE "show m
 369dc3f11 Codex/boardroom abort signal (#191)
 923f0e8af Add notes module and tighten navigation and storage handling (#189)
 8df76d497 Pr 186 (#190)
-80bc4f2a9 test(ledger): log ISSUE-A-014 to ISSUE-A-018
 ```
 
 ## Working State
