@@ -308,8 +308,30 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
 
             try {
                 const processedAttachments = currentAttachments.length > 0 ? await processAttachments(currentAttachments) : undefined;
+
+                // ISSUE-479: when the Creative editor canvas is open, attach its flattened
+                // view (base image + the user's colored highlights) so the agent can actually
+                // SEE what the user is referring to ("can you see the item I highlighted?").
+                let outgoingAttachments = processedAttachments;
+                try {
+                    if (useStore.getState().viewMode === 'editor') {
+                        const { canvasOps } = await import('@/modules/creative/services/CanvasOperationsService');
+                        if (canvasOps.isInitialized() && canvasOps.hasContent()) {
+                            const visual = await canvasOps.prepareVisualPrompt();
+                            if (visual?.data) {
+                                outgoingAttachments = [
+                                    ...(processedAttachments || []),
+                                    { mimeType: visual.mimeType, base64: visual.data },
+                                ];
+                            }
+                        }
+                    }
+                } catch (visErr: unknown) {
+                    logger.warn('PromptArea: could not attach canvas visual to message:', visErr);
+                }
+
                 const targetAgentId = isIndiiMode ? undefined : (knownAgentIds.includes(currentModule) ? currentModule : undefined);
-                await agentService.sendMessage(currentInput, processedAttachments, targetAgentId);
+                await agentService.sendMessage(currentInput, outgoingAttachments, targetAgentId);
                 setIsLocalProcessing(false);
             } catch (error: unknown) {
                 logger.error('PromptArea: Failed to send message:', error);
