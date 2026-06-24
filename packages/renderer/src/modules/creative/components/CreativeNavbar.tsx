@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ScreenControl } from '@/services/screen/ScreenControlService';
 import {
     Sparkles, Image as ImageIcon, Video, MonitorPlay, MessageSquare,
-    Palette, Clock, FlaskConical, Wand2, Rocket, Layers, Cpu
+    Palette, Clock, FlaskConical, Rocket, Layers, Cpu
 } from 'lucide-react';
 import IntelligencePromptBuilder from './IntelligencePromptBuilder';
 import DaisyChainControls from './DaisyChainControls';
@@ -58,14 +58,41 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
     const [showFrameModal, setShowFrameModal] = useState(false);
     const [frameModalTarget, setFrameModalTarget] = useState<'firstFrame' | 'lastFrame'>('firstFrame');
 
-    const tabs = [
-        { id: 'direct', label: 'Generate', icon: Wand2, testId: 'direct-view-btn' },
-        { id: 'canvas', label: 'Canvas', icon: ImageIcon, testId: 'canvas-view-btn' },
-        { id: 'video_production', label: 'Video', icon: Video, testId: 'director-view-btn' },
-        { id: 'omni', label: 'Omni Remix', icon: Sparkles, testId: 'omni-view-btn' },
-        { id: 'showroom', label: 'Showroom', icon: MonitorPlay, testId: 'showroom-view-btn' },
-        { id: 'lab', label: 'Keyframes', icon: FlaskConical, testId: 'lab-view-btn' },
+    // IA Option C, Phase 1 (ISSUE-488/491): the former 6 flat tabs are grouped into
+    // 4 primary MODES with secondary sub-views. "Keyframes" is renamed "Sequence"
+    // (Daisy Chain merges here conceptually; full functional merge is Phase 2).
+    // Original view testIds are preserved so e2e/nav tests keep working.
+    const MODES = [
+        {
+            id: 'image', label: 'Image', icon: ImageIcon, gen: 'image' as const,
+            views: [
+                { id: 'direct', label: 'Generate', testId: 'direct-view-btn' },
+                { id: 'canvas', label: 'Canvas', testId: 'canvas-view-btn' },
+            ],
+        },
+        {
+            id: 'video', label: 'Video', icon: Video, gen: 'video' as const,
+            views: [
+                { id: 'video_production', label: 'Produce', testId: 'director-view-btn' },
+                { id: 'omni', label: 'Omni Remix', testId: 'omni-view-btn' },
+            ],
+        },
+        {
+            id: 'mockup', label: 'Mockup', icon: MonitorPlay, gen: 'image' as const,
+            views: [{ id: 'showroom', label: 'Showroom', testId: 'showroom-view-btn' }],
+        },
+        {
+            id: 'sequence', label: 'Sequence', icon: FlaskConical, gen: 'video' as const,
+            views: [{ id: 'lab', label: 'Sequence', testId: 'lab-view-btn' }],
+        },
     ] as const;
+
+    const activeMode = MODES.find(m => m.views.some(v => v.id === viewMode)) ?? MODES[0];
+
+    const selectView = (viewId: string, gen: 'image' | 'video') => {
+        setViewMode(viewId as typeof viewMode);
+        useStore.getState().setGenerationMode(gen);
+    };
 
     return (
         <div {...props} className={`flex flex-col z-20 relative bg-[#060608]/90 backdrop-blur-xl border-b border-white/6 select-none ${props.className || ''}`}>
@@ -86,35 +113,53 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
 
                     <div className="h-3.5 w-px bg-white/8 mx-0.5" />
 
-                    {/* View Mode Switcher */}
+                    {/* Primary mode picker (IA Option C) */}
                     <div className="flex bg-white/4 p-0.5 rounded-lg border border-white/6 overflow-x-auto no-scrollbar min-w-0 flex-shrink">
-                        {tabs.map(tab => {
-                            const Icon = tab.icon;
-                            const isActive = viewMode === tab.id;
+                        {MODES.map(mode => {
+                            const Icon = mode.icon;
+                            const isActive = activeMode.id === mode.id;
+                            const isSingle = mode.views.length === 1;
                             return (
                                 <button
-                                    key={tab.id}
-                                    title={tab.label}
-                                    onClick={() => {
-                                        setViewMode(tab.id as typeof viewMode);
-                                        if (tab.id === 'video_production' || tab.id === 'omni') {
-                                            useStore.getState().setGenerationMode('video');
-                                        } else if (tab.id === 'direct' || tab.id === 'canvas' || tab.id === 'showroom') {
-                                            useStore.getState().setGenerationMode('image');
-                                        }
-                                    }}
-                                    data-testid={tab.testId}
+                                    key={mode.id}
+                                    title={mode.label}
+                                    onClick={() => selectView(mode.views[0]!.id, mode.gen)}
+                                    // Single-view modes carry the original view testId so e2e/nav tests still resolve.
+                                    data-testid={isSingle ? mode.views[0]!.testId : `mode-${mode.id}-btn`}
                                     className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] uppercase font-bold tracking-wider transition-all ${isActive
                                         ? 'bg-purple-500/15 text-purple-300 shadow-[0_0_12px_rgba(168,85,247,0.1)]'
                                         : 'text-gray-500 hover:text-gray-300 hover:bg-white/4'
                                         }`}
                                   >
                                     <Icon size={11} className={isActive ? 'text-purple-400' : ''} />
-                                    <span className="hidden xl:inline">{tab.label}</span>
+                                    <span className="hidden lg:inline">{mode.label}</span>
                                 </button>
                             );
                         })}
                     </div>
+
+                    {/* Secondary sub-view selector (shown only when the active mode has >1 view) */}
+                    {activeMode.views.length > 1 && (
+                        <div className="flex bg-white/4 p-0.5 rounded-lg border border-white/6 shrink-0">
+                            {activeMode.views.map(v => {
+                                const isActive = viewMode === v.id;
+                                return (
+                                    <button
+                                        key={v.id}
+                                        title={v.label}
+                                        onClick={() => selectView(v.id, activeMode.gen)}
+                                        data-testid={v.testId}
+                                        className={`px-2.5 py-1 rounded-md text-[10px] uppercase font-bold tracking-wider transition-all ${isActive
+                                            ? 'bg-white/10 text-white'
+                                            : 'text-gray-500 hover:text-gray-300 hover:bg-white/4'
+                                            }`}
+                                    >
+                                        {v.label}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    )}
                 </div>
 
                 {/* Right: Context Controls */}

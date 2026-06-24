@@ -386,41 +386,38 @@ describe('CreativeNavbar', () => {
             </ToastProvider>
         );
 
-        // Click Video tab
-        const videoTab = screen.getByTestId('director-view-btn');
-        fireEvent.click(videoTab);
+        // IA Option C: 4 primary modes + secondary sub-views. Default viewMode is
+        // 'direct' so the Image mode is active and its sub-views are visible.
+
+        // Primary: Video mode → first view (Produce / video_production)
+        fireEvent.click(screen.getByTestId('mode-video-btn'));
         expect(mockSetViewMode).toHaveBeenCalledWith('video_production');
         expect(mockSetGenerationMode).toHaveBeenCalledWith('video');
 
-        // Click Omni tab
-        const omniTab = screen.getByTestId('omni-view-btn');
-        fireEvent.click(omniTab);
-        expect(mockSetViewMode).toHaveBeenCalledWith('omni');
-        expect(mockSetGenerationMode).toHaveBeenCalledWith('video');
-
-        // Click Generate tab
-        const generateTab = screen.getByTestId('direct-view-btn');
-        fireEvent.click(generateTab);
+        // Primary: Image mode → first view (Generate / direct)
+        fireEvent.click(screen.getByTestId('mode-image-btn'));
         expect(mockSetViewMode).toHaveBeenCalledWith('direct');
         expect(mockSetGenerationMode).toHaveBeenCalledWith('image');
 
-        // Click Canvas tab
-        const canvasTab = screen.getByTestId('canvas-view-btn');
-        fireEvent.click(canvasTab);
+        // Secondary sub-view (visible under active Image mode): Generate
+        fireEvent.click(screen.getByTestId('direct-view-btn'));
+        expect(mockSetViewMode).toHaveBeenCalledWith('direct');
+        expect(mockSetGenerationMode).toHaveBeenCalledWith('image');
+
+        // Secondary sub-view: Canvas
+        fireEvent.click(screen.getByTestId('canvas-view-btn'));
         expect(mockSetViewMode).toHaveBeenCalledWith('canvas');
         expect(mockSetGenerationMode).toHaveBeenCalledWith('image');
 
-        // Click Showroom tab
-        const showroomTab = screen.getByTestId('showroom-view-btn');
-        fireEvent.click(showroomTab);
+        // Single-view mode: Mockup (carries showroom-view-btn)
+        fireEvent.click(screen.getByTestId('showroom-view-btn'));
         expect(mockSetViewMode).toHaveBeenCalledWith('showroom');
         expect(mockSetGenerationMode).toHaveBeenCalledWith('image');
 
-        // Click Keyframes tab
-        const keyframesTab = screen.getByTestId('lab-view-btn');
-        fireEvent.click(keyframesTab);
+        // Single-view mode: Sequence (renamed from Keyframes; carries lab-view-btn, video gen)
+        fireEvent.click(screen.getByTestId('lab-view-btn'));
         expect(mockSetViewMode).toHaveBeenCalledWith('lab');
-        // Keyframes does not update generation mode, only viewMode
+        expect(mockSetGenerationMode).toHaveBeenCalledWith('video');
     });
 
     it('renders DaisyChainControls when generationMode is video and opens FrameSelectionModal', () => {
