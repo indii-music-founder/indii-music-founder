@@ -30,7 +30,7 @@ function getBaseArcjet() {
 }
 
 // Lazy initialization for authenticated API Arcjet client.
-let authenticatedApiArcjet: ReturnType<typeof baseArcjet.withRule> | null = null;
+let authenticatedApiArcjet: ReturnType<ReturnType<typeof arcjet>['withRule']> | null = null;
 function getAuthenticatedApiArcjet() {
     if (!authenticatedApiArcjet) {
         authenticatedApiArcjet = getBaseArcjet().withRule(
@@ -46,7 +46,7 @@ function getAuthenticatedApiArcjet() {
 }
 
 // Lazy initialization for public API Arcjet client.
-let publicApiArcjet: ReturnType<typeof baseArcjet.withRule> | null = null;
+let publicApiArcjet: ReturnType<ReturnType<typeof arcjet>['withRule']> | null = null;
 function getPublicApiArcjet() {
     if (!publicApiArcjet) {
         publicApiArcjet = getBaseArcjet().withRule(
