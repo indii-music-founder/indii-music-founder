@@ -304,16 +304,12 @@ jobs:
           npm install --prefer-offline --no-audit --no-fund
           echo "::notice::firebase-tools $(npx --no-install firebase --version)"
           node -e "console.log('GAC set:', !!process.env.GOOGLE_APPLICATION_CREDENTIALS, '| file exists:', require('fs').existsSync(process.env.GOOGLE_APPLICATION_CREDENTIALS||''))"
-          # ISSUE-498 probe: confirm the key file is valid JSON with an SA identity
-          node -e "try{const k=require(process.env.GOOGLE_APPLICATION_CREDENTIALS);console.log('KEY type:',k.type,'| client_email:',k.client_email,'| has private_key:',!!k.private_key,'| project_id:',k.project_id)}catch(e){console.log('KEY PARSE FAILED:',e.message)}"
           set +e
-          # --debug surfaces the real auth error; capture stderr too
           OUTPUT=$(npx --no-install firebase hosting:channel:deploy staging \
             --project indii-music-founder \
             --expires 2h \
             --only app \
-            --debug \
-            --json 2>&1)
+            --json)
           EXIT_CODE=$?
           set -e
           
