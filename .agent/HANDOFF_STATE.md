@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-24 14:55 EDT
+**Updated:** 2026-06-24 14:59 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+49ce44bae fix(ci): install pinned firebase-tools in deploy jobs + use npx --no-install (ISSUE-498) (#197)
+68b6155ee chore: session checkpoint [14:55]
 ebd4a4bdb chore: session checkpoint [14:07]
 1e56570dd chore: session checkpoint [13:59]
 b38d11d1c chore: session checkpoint [13:40]
@@ -12,8 +14,6 @@ c593ae49c chore: session checkpoint [13:23]
 410d727f8 chore: session checkpoint [11:38]
 f69dacf9f chore: session checkpoint [11:36]
 19770af68 chore: session checkpoint [11:35]
-fe5532498 chore: session checkpoint [11:31]
-46d1139c5 chore: session checkpoint [11:23]
 ```
 
 ## Working State
