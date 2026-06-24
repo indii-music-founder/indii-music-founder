@@ -16,6 +16,12 @@ export default function AgentCapabilityRegistry({ onClose }: AgentCapabilityRegi
   const [registry, setRegistry] = useState<CapabilityRegistry | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // The roster registry is sourced from the Electron desktop bridge
+  // (electronAPI.agent). In the web build it's unavailable — show an honest
+  // "desktop only" state instead of a scary "registry not found" error (ISSUE-490).
+  const isDesktop = typeof window !== 'undefined' &&
+    !!(window as unknown as { electronAPI?: { agent?: unknown } }).electronAPI?.agent;
+
   useEffect(() => {
     const fetchRegistry = async () => {
       const data = await agentCapabilityService.getRegistry();
@@ -65,9 +71,18 @@ export default function AgentCapabilityRegistry({ onClose }: AgentCapabilityRegi
           </div>
         ) : !registry ? (
           <div className="p-8 text-center border border-dashed border-white/10 rounded-xl bg-white/2">
-            <ShieldCheck size={32} className="mx-auto text-red-400/50 mb-3" />
-            <p className="text-sm text-gray-400">Registry not found or inaccessible.</p>
-            <p className="text-xs text-gray-600 mt-1">Run `audit_skill` to generate registry.</p>
+            <ShieldCheck size={32} className="mx-auto text-indigo-400/50 mb-3" />
+            {isDesktop ? (
+              <>
+                <p className="text-sm text-gray-400">Roster temporarily unavailable.</p>
+                <p className="text-xs text-gray-600 mt-1">Could not reach the specialist registry. Try again shortly.</p>
+              </>
+            ) : (
+              <>
+                <p className="text-sm text-gray-400">Specialist Roster runs in the desktop app.</p>
+                <p className="text-xs text-gray-600 mt-1">Open indii on desktop to view the A2A agent network.</p>
+              </>
+            )}
           </div>
         ) : (
           <div className="space-y-4">
