@@ -7304,3 +7304,20 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ---
 
+## ✅ RESOLUTION STATUS — 2026-06-24 (Opus, fixes merged to main)
+
+| Issue | Status | PR |
+|---|---|---|
+| 498 (CI deploy auth) | ✅ FIXED & MERGED — prod deploy green again. Root cause was NOT firebase-tools version (deploys broke ~8 AM, before the 10:23 AM bump); real fix = `npm install` in deploy jobs + `npx --no-install` so the pinned firebase-tools is used. Earlier failure was transient/cache. | #197, #202/#203 (debug add/remove) |
+| 478 / 482 / 480 (canvas taint, save/flatten, undo-redo) | ✅ FIXED & MERGED | #198 |
+| 479 / 490 / 492 (chat sight, roster web, panel overlap) | ✅ FIXED & MERGED | #199 |
+| 495 / 497 (PLP ad-spend gate + honest failure) | ✅ FRONTEND FIXED & MERGED — gate + no fabricated success. **Still TODO:** build the real Meta cloud functions (`createAdCampaign`/`createAdSet`/`createAd`/`getAdInsights`) per William's "real ads, gated" decision. | #200 |
+| 485 (Showroom layout overlap) | ✅ FIXED & MERGED | #201 |
+| 484 (multi-format error) / 486 (blank reopen) | ✅ RESOLVED via 478 trunk (both were taint symptoms) — verify live | #198 |
+| 481 (KB offline) / 487 (Keyframes) / 493 (Omni) | ⏳ OPEN — need live runtime verification, not code-fixable statically | — |
+| 488 / 489 / 491 / 496 (IA consolidation) | ⏳ OPEN — William's decision: audit + propose (IA reference above) | — |
+
+**Remaining work:** (1) Meta ad backend functions for PLP; (2) live-verify 481/487/493; (3) IA proposal for William. All other Creative Director defects are fixed and on main.
+
+---
+
