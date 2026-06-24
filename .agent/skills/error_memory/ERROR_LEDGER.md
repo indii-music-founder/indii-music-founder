@@ -1,3 +1,25 @@
+## 2026-06-24 Arcjet Lazy Initialization TypeScript Complexity → Revert to Eager Init
+
+**SEVERITY:** Low (local issue, resolved before CI run)
+
+**MISTAKE:**
+- FILE: `packages/firebase/src/functions/security/arcjet.ts`
+- Attempted to make Arcjet client initialization lazy with type: `let baseArcjet: ReturnType<typeof arcjet> | null = null`
+- Then tried to type dependent clients as: `ReturnType<typeof baseArcjet.withRule>` when baseArcjet could be null
+- TypeScript cannot infer the type when the variable is possibly null, leading to: `error TS18047: 'baseArcjet' is possibly 'null'`
+
+**FIX:** Reverted to original eager initialization (original pattern was correct).
+```typescript
+const baseArcjet = arcjet({ ... }); // Eager, not lazy
+const authenticatedApiArcjet = baseArcjet.withRule(...);
+```
+
+**PREVENTION:** When initializing polymorphic clients that have dependent types (like Arcjet), prefer eager initialization over lazy unless there's a compelling performance reason. Lazy init adds type complexity that often isn't worth it for startup-time operations.
+
+**LEARNING:** Simple code beats clever code. The original eager init was the right choice.
+
+---
+
 ## 2026-06-22 window.location access without SSR guard → TypeError in test env
 
 **SEVERITY:** Medium (3 test failures, blocking CI lint gate on `App.test.tsx`)
