@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-24 08:14 EDT
+**Updated:** 2026-06-24 08:16 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+6aa949c24 docs: add v1.64.4 deployment status (ready for production)
+9b72a700f chore: session checkpoint [08:14]
 1998da06c docs: mark v1.64.4 ready for deployment (1A + 1C complete, all tests pass)
 a3e82ecc5 chore: enhance pre-commit hooks with typecheck + security checks
 89d3bb918 chore: session checkpoint [07:58]
@@ -12,13 +14,11 @@ a5e758341 fix: add clearer error message for Firebase referer domain config issu
 ff79e1724 docs: add platinum roadmap for v1.64.4→v1.66.0 (agent swarm coordination)
 473de7cf7 chore: session checkpoint [07:52]
 466bc1029 chore: session checkpoint [07:50]
-5ec4a62e9 fix: restore confirmation dialog on send-to-video + fix test isolation
-cc8cd7fb7 chore: session checkpoint [07:45]
 ```
 
 ## Working State
 ```
-?? .agent/DEPLOYMENT_STATUS_v1.64.4.md
+clean working tree
 ```
 
 ## Decisions
