@@ -1,19 +1,19 @@
 # Handoff State
-**Updated:** 2026-06-24 15:52 EDT
+**Updated:** 2026-06-24 16:12 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
-92af0e205 docs(ledger): mark Creative Director fixes resolved + remaining work (478-498)
+16e1f9e5c chore: session checkpoint [15:52]
+88f4e986d docs(ledger): mark Creative Director fixes resolved + remaining work (478-498)
+06b85de2e docs: Creative Director IA consolidation proposal (ISSUE-488/489/491/496) (#205)
+ef4e6f4f9 fix(agent): neutral wording when no RAG corpus is configured (ISSUE-481) (#204)
 60bc88067 chore(ci): remove temporary ISSUE-498 deploy debug instrumentation (#203)
 e99f6d70c fix(creative): stop Showroom upload card overlapping product-type pills (ISSUE-485) (#201)
 92ee72812 fix(creative): gate PLP ad spend + stop fabricated campaign success (ISSUE-495/497) (#200)
 ef986d21b fix(creative): chat sight + roster web state + panel overlap (ISSUE-479/490/492) (#199)
 0b0bcc249 fix(creative): eliminate canvas-taint crashes in Magic Edit (ISSUE-478/482/480) (#198)
 787f79dea chore: session checkpoint [15:19]
-90c95dbd7 chore(ci): add --debug + key-validity probe to staging deploy (ISSUE-498 diagnosis) (#202)
-b535ab684 chore: session checkpoint [14:59]
-49ce44bae fix(ci): install pinned firebase-tools in deploy jobs + use npx --no-install (ISSUE-498) (#197)
 ```
 
 ## Working State
