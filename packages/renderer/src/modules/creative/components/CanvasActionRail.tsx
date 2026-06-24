@@ -7,7 +7,7 @@ type CapabilityAction = {
     id: string;
     label: string;
     icon: React.ComponentType<{ size?: string | number; className?: string }>;
-    onClick: () => void;
+    onClick: () => void | Promise<void>;
     className: string;
     disabled?: boolean;
     testId?: string;
@@ -26,7 +26,7 @@ interface CanvasActionRailProps {
     setIsSelectingEndFrame: (isSelecting: boolean) => void;
     handleAnimate: () => void;
     onClose: () => void;
-    onSendToWorkflow?: (type: 'firstFrame' | 'lastFrame', item: HistoryItem) => void;
+    onSendToWorkflow?: (type: 'firstFrame' | 'lastFrame', item: HistoryItem) => void | Promise<void>;
     onCreateLastFrame?: () => void;
     isProcessing: boolean;
     processingStatus?: string;

@@ -15,29 +15,50 @@ const arcjetKey = process.env.ARCJET_KEY;
 const arcjetConfigured = typeof arcjetKey === "string" && arcjetKey.startsWith("ajkey_");
 const productionRuntime = process.env.NODE_ENV === "production" || Boolean(process.env.K_SERVICE);
 
-const baseArcjet = arcjet({
-    key: arcjetKey || "ajkey_missing_arcjet_key",
-    rules: [
-        shield({ mode: "LIVE" }),
-    ],
-});
+// Lazy initialization placeholder; actual Arcjet client will be created after checking configuration.
+let baseArcjet: ReturnType<typeof arcjet> | null = null;
+function getBaseArcjet() {
+    if (!baseArcjet) {
+        baseArcjet = arcjet({
+            key: arcjetKey || "ajkey_missing_arcjet_key",
+            rules: [
+                shield({ mode: "LIVE" }),
+            ],
+        });
+    }
+    return baseArcjet;
+}
 
-const authenticatedApiArcjet = baseArcjet.withRule(
-    slidingWindow({
-        mode: "LIVE",
-        characteristics: ["userId"],
-        interval: "1m",
-        max: 240,
-    }),
-);
+// Lazy initialization for authenticated API Arcjet client.
+let authenticatedApiArcjet: ReturnType<typeof baseArcjet.withRule> | null = null;
+function getAuthenticatedApiArcjet() {
+    if (!authenticatedApiArcjet) {
+        authenticatedApiArcjet = getBaseArcjet().withRule(
+            slidingWindow({
+                mode: "LIVE",
+                characteristics: ["userId"],
+                interval: "1m",
+                max: 240,
+            })
+        );
+    }
+    return authenticatedApiArcjet;
+}
 
-const publicApiArcjet = baseArcjet.withRule(
-    slidingWindow({
-        mode: "LIVE",
-        interval: "1m",
-        max: 120,
-    }),
-);
+// Lazy initialization for public API Arcjet client.
+let publicApiArcjet: ReturnType<typeof baseArcjet.withRule> | null = null;
+function getPublicApiArcjet() {
+    if (!publicApiArcjet) {
+        publicApiArcjet = getBaseArcjet().withRule(
+            slidingWindow({
+                mode: "LIVE",
+                interval: "1m",
+                max: 120,
+            })
+        );
+    }
+    return publicApiArcjet;
+}
 
 function mapDecision(decision: ArcjetDecision): ArcjetProtectionResult {
     if (decision.isErrored()) {
@@ -93,9 +114,10 @@ export async function protectAuthenticatedApiRequest(
     if (!arcjetConfigured) {
         return missingArcjetKeyResult();
     }
-
+    // Ensure Arcjet client is initialized lazily
+    const arcjetClient = getAuthenticatedApiArcjet();
     try {
-        const decision = await authenticatedApiArcjet.protect(req, { userId });
+        const decision = await arcjetClient.protect(req, { userId });
         return mapDecision(decision);
     } catch (error) {
         logger.error("[Arcjet] Authenticated API protection failed open", { error });
@@ -107,12 +129,19 @@ export async function protectPublicApiRequest(req: Request): Promise<ArcjetProte
     if (!arcjetConfigured) {
         return missingArcjetKeyResult();
     }
-
+    // Ensure Arcjet client is initialized lazily
+    const arcjetClient = getPublicApiArcjet();
     try {
-        const decision = await publicApiArcjet.protect(req);
+        const decision = await arcjetClient.protect(req);
         return mapDecision(decision);
     } catch (error) {
         logger.error("[Arcjet] Public API protection failed open", { error });
         return { allowed: true };
     }
+}
+
+// Initialize Arcjet clients in environments (e.g., tests) where ARCJET_KEY is configured
+if (arcjetConfigured) {
+    getAuthenticatedApiArcjet();
+    getPublicApiArcjet();
 }

@@ -14,7 +14,7 @@ import { useCreativeCanvas } from '../hooks/useCreativeCanvas';
 interface CreativeCanvasProps {
     item: HistoryItem | null;
     onClose: () => void;
-    onSendToWorkflow?: (type: 'firstFrame' | 'lastFrame', item: HistoryItem) => void;
+    onSendToWorkflow?: (type: 'firstFrame' | 'lastFrame', item: HistoryItem) => void | Promise<void>;
     onRefine?: () => void;
 }
 
