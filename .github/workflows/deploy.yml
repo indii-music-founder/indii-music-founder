@@ -299,8 +299,13 @@ jobs:
         id: channel-deploy
         run: |
           set -uo pipefail
+          # Ensure the PINNED firebase-tools is installed locally so `npx` uses it
+          # instead of fetching the latest from npm on a cache miss (ISSUE-498).
+          npm install --prefer-offline --no-audit --no-fund
+          echo "::notice::firebase-tools $(npx --no-install firebase --version)"
+          node -e "console.log('GAC set:', !!process.env.GOOGLE_APPLICATION_CREDENTIALS, '| file exists:', require('fs').existsSync(process.env.GOOGLE_APPLICATION_CREDENTIALS||''))"
           set +e
-          OUTPUT=$(npx firebase hosting:channel:deploy staging \
+          OUTPUT=$(npx --no-install firebase hosting:channel:deploy staging \
             --project indii-music-founder \
             --expires 2h \
             --only app \
@@ -435,6 +440,14 @@ jobs:
           echo "GOOGLE_APPLICATION_CREDENTIALS=$HOME/gcloud-key.json" >> $GITHUB_ENV
           gcloud auth activate-service-account --key-file="$HOME/gcloud-key.json" --project=indii-music-founder
 
+      - name: Ensure pinned firebase-tools + verify credentials (ISSUE-498)
+        run: |
+          # Install the PINNED firebase-tools so `npx --no-install` uses it instead
+          # of fetching latest from npm on a cache miss.
+          npm install --prefer-offline --no-audit --no-fund
+          echo "::notice::firebase-tools $(npx --no-install firebase --version)"
+          node -e "console.log('GAC set:', !!process.env.GOOGLE_APPLICATION_CREDENTIALS, '| file exists:', require('fs').existsSync(process.env.GOOGLE_APPLICATION_CREDENTIALS||''))"
+
       - name: Repair Firebase web API key restrictions
         env:
           VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
@@ -547,10 +560,10 @@ jobs:
             --data-file=-
 
       - name: Deploy landing page to Firebase Hosting
-        run: npx firebase deploy --only hosting:landing --project indii-music-founder --non-interactive
+        run: npx --no-install firebase deploy --only hosting:landing --project indii-music-founder --non-interactive
 
       - name: Deploy studio app to Firebase Hosting
-        run: npx firebase deploy --only hosting:app --project indii-music-founder --non-interactive
+        run: npx --no-install firebase deploy --only hosting:app --project indii-music-founder --non-interactive
 
       - name: Deploy Cloud Functions
         env:
@@ -559,11 +572,11 @@ jobs:
           # Firebase Tools copies stale CPU metadata from existing gen1 endpoints
           # during deploy validation. These two functions were created with bad
           # remote metadata, so delete/recreate them before deploying all functions.
-          npx firebase functions:delete createStripeAccount --region us-central1 --project indii-music-founder --force --non-interactive || true
-          npx firebase functions:delete createTransfer --region us-central1 --project indii-music-founder --force --non-interactive || true
+          npx --no-install firebase functions:delete createStripeAccount --region us-central1 --project indii-music-founder --force --non-interactive || true
+          npx --no-install firebase functions:delete createTransfer --region us-central1 --project indii-music-founder --force --non-interactive || true
           printf 'INFLUENCER_BOUNTY_BASE_URL=%s\n' "$INFLUENCER_BOUNTY_BASE_URL" > packages/firebase/.env.indii-music-founder
           npm run build -w packages/firebase
-          npx firebase deploy --only functions --project indii-music-founder --non-interactive --force
+          npx --no-install firebase deploy --only functions --project indii-music-founder --non-interactive --force
 
       - name: Pipeline health summary
         run: |
