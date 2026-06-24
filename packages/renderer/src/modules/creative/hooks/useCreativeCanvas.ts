@@ -73,7 +73,7 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
         async function setupCanvas() {
             if (!canvasEl.current || !item || item.type !== 'image') return;
 
-            const handleCanvasChange = debounce(async () => {
+            const debouncedSave = debounce(async () => {
                 if (!canvasOps.isInitialized()) return;
                 try {
                     const json = await canvasOps.toJSON();
@@ -84,6 +84,15 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                     logger.warn('[CreativeStudio] Auto-save failed', err);
                 }
             }, 1000);
+
+            // Fire on every canvas mutation. Bump historyTrigger IMMEDIATELY so the
+            // Undo/Redo buttons re-evaluate canUndo()/canRedo() right after a draw
+            // (ISSUE-480 — they were stuck disabled until an unrelated re-render),
+            // then debounce the heavier state persistence.
+            const handleCanvasChange = () => {
+                setHistoryTrigger(prev => prev + 1);
+                debouncedSave();
+            };
 
             // Try to load any previous edits/annotations FIRST
             try {
@@ -424,10 +433,14 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
             return;
         }
 
-        // 1. Get the data URL
-        const dataUrl = canvasOps.saveCanvas();
-
         try {
+            // 1. Get the data URL (inside try: throws/returns '' if canvas is tainted — ISSUE-482)
+            const dataUrl = canvasOps.saveCanvas();
+            if (!dataUrl) {
+                toast.error('Could not export the canvas. Reopen the image and try again.');
+                return;
+            }
+
             // 2. Upload blob to Firebase Storage as a persistent asset
             const blob = await canvasOps.getBlob();
             if (blob) {
