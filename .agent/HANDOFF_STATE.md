@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-25 18:59 EDT
+**Updated:** 2026-06-25 19:11 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+41cf2d000 chore: session checkpoint [18:59]
 f9c7d15f7 fix(ci): revert to manual Firebase auth (working approach from commit 60bc88067)
 7700c99bd chore: session checkpoint [18:19]
 c8c4106e9 fix(ci): remove invalid FIREBASE_TOKEN from deploy steps
@@ -13,7 +14,6 @@ a501c056a chore: session checkpoint [18:15]
 93fc96c8e chore: session checkpoint [18:07]
 c27d8fad4 chore: session checkpoint [18:03]
 fb4ed1517 chore: session checkpoint [17:59]
-bc59b27cc chore: session checkpoint [17:58]
 ```
 
 ## Working State
