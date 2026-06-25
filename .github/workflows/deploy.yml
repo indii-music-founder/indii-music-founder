@@ -282,6 +282,8 @@ jobs:
 
       - name: Deploy to staging preview channel
         id: channel-deploy
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
         run: |
           set -uo pipefail
           # Use local or cached firebase-tools without re-installing
@@ -292,6 +294,7 @@ jobs:
             --project indii-music-founder \
             --expires 2h \
             --only app \
+            --token "$FIREBASE_TOKEN" \
             --json)
           EXIT_CODE=$?
           set -e
