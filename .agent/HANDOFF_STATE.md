@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-25 17:53 EDT
+**Updated:** 2026-06-25 17:58 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+0b448f4b1 fix(ci): add GOOGLE_APPLICATION_CREDENTIALS and FIREBASE_TOKEN to Cloud Functions deploy
+51ecc9708 chore: session checkpoint [17:53]
 22b76c985 fix: add FIREBASE_TOKEN to staging deploy step
 48fd6897e fix: pass FIREBASE_TOKEN secret to firebase deploy commands
 be5f10f91 fix: add GOOGLE_APPLICATION_CREDENTIALS to landing deploy
@@ -12,8 +14,6 @@ c69d9b4f4 fix(ci): avoid local npm installs in staging/production deploy steps t
 30563f160 chore: session checkpoint [08:39]
 a251818f1 docs(ledger): add ISSUE-499 — PLP Meta Ads backend plan (blocked on Meta account) (#209)
 92c4e7070 fix(ci): explicitly export GOOGLE_APPLICATION_CREDENTIALS in staging deploy
-a496a092c fix(ci): bypass lifecycle scripts during deploy step npm installs to preserve credentials
-fe2f66f7e fix(ci): switch to google-github-actions/auth@v2 for Firebase auth
 ```
 
 ## Working State
