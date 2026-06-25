@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-25 18:10 EDT
+**Updated:** 2026-06-25 18:15 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+86fccac48 chore: session checkpoint [18:10]
 7e83b58d3 chore: session checkpoint [18:08]
 93fc96c8e chore: session checkpoint [18:07]
 c27d8fad4 chore: session checkpoint [18:03]
@@ -13,7 +14,6 @@ bc59b27cc chore: session checkpoint [17:58]
 51ecc9708 chore: session checkpoint [17:53]
 22b76c985 fix: add FIREBASE_TOKEN to staging deploy step
 48fd6897e fix: pass FIREBASE_TOKEN secret to firebase deploy commands
-be5f10f91 fix: add GOOGLE_APPLICATION_CREDENTIALS to landing deploy
 ```
 
 ## Working State
