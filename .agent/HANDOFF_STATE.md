@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-25 18:15 EDT
+**Updated:** 2026-06-25 18:19 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+c8c4106e9 fix(ci): remove invalid FIREBASE_TOKEN from deploy steps
+a501c056a chore: session checkpoint [18:15]
 86fccac48 chore: session checkpoint [18:10]
 7e83b58d3 chore: session checkpoint [18:08]
 93fc96c8e chore: session checkpoint [18:07]
@@ -12,8 +14,6 @@ fb4ed1517 chore: session checkpoint [17:59]
 bc59b27cc chore: session checkpoint [17:58]
 0b448f4b1 fix(ci): add GOOGLE_APPLICATION_CREDENTIALS and FIREBASE_TOKEN to Cloud Functions deploy
 51ecc9708 chore: session checkpoint [17:53]
-22b76c985 fix: add FIREBASE_TOKEN to staging deploy step
-48fd6897e fix: pass FIREBASE_TOKEN secret to firebase deploy commands
 ```
 
 ## Working State
