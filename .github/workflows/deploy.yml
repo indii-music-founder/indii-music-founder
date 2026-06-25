@@ -283,10 +283,8 @@ jobs:
         id: channel-deploy
         run: |
           set -uo pipefail
-          # Ensure the PINNED firebase-tools is installed locally so `npx` uses it
-          # instead of fetching the latest from npm on a cache miss (ISSUE-498).
-          npm install --prefer-offline --no-audit --no-fund --ignore-scripts
-          echo "::notice::firebase-tools $(npx --no-install firebase --version)"
+          # Use local or cached firebase-tools without re-installing
+          echo "::notice::firebase-tools $(npx --no-install firebase --version || npm exec firebase --version)"
           set +e
           export GOOGLE_APPLICATION_CREDENTIALS="$GOOGLE_GHA_CREDS_PATH"
           OUTPUT=$(npx --no-install firebase hosting:channel:deploy staging \
@@ -413,13 +411,6 @@ jobs:
 
       - name: Configure gcloud project
         run: gcloud config set project indii-music-founder
-
-      - name: Ensure pinned firebase-tools + verify credentials (ISSUE-498)
-        run: |
-          # Install the PINNED firebase-tools so `npx --no-install` uses it instead
-          # of fetching latest from npm on a cache miss.
-          npm install --prefer-offline --no-audit --no-fund --ignore-scripts
-          echo "::notice::firebase-tools $(npx --no-install firebase --version)"
 
       - name: Repair Firebase web API key restrictions
         env:
