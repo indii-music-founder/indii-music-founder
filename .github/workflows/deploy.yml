@@ -525,12 +525,18 @@ jobs:
             --data-file=-
 
       - name: Deploy landing page to Firebase Hosting
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
         run: |
           export GOOGLE_APPLICATION_CREDENTIALS="${{ steps.auth.outputs.credentials_file_path }}"
-          npx --no-install firebase deploy --only hosting:landing --project indii-music-founder --non-interactive
+          npx --no-install firebase deploy --only hosting:landing --project indii-music-founder --non-interactive --token "$FIREBASE_TOKEN"
 
       - name: Deploy studio app to Firebase Hosting
-        run: npx --no-install firebase deploy --only hosting:app --project indii-music-founder --non-interactive
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+        run: |
+          export GOOGLE_APPLICATION_CREDENTIALS="${{ steps.auth.outputs.credentials_file_path }}"
+          npx --no-install firebase deploy --only hosting:app --project indii-music-founder --non-interactive --token "$FIREBASE_TOKEN"
 
       - name: Deploy Cloud Functions
         env:
