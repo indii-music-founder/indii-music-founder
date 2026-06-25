@@ -1,19 +1,19 @@
 # Handoff State
-**Updated:** 2026-06-25 08:39 EDT
+**Updated:** 2026-06-25 17:53 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+22b76c985 fix: add FIREBASE_TOKEN to staging deploy step
+48fd6897e fix: pass FIREBASE_TOKEN secret to firebase deploy commands
+be5f10f91 fix: add GOOGLE_APPLICATION_CREDENTIALS to landing deploy
+d2de4e396 fix(ci): route GOOGLE_APPLICATION_CREDENTIALS through steps.auth.outputs to guarantee ADC resolution
+c69d9b4f4 fix(ci): avoid local npm installs in staging/production deploy steps to preserve auth environment
+30563f160 chore: session checkpoint [08:39]
 a251818f1 docs(ledger): add ISSUE-499 — PLP Meta Ads backend plan (blocked on Meta account) (#209)
 92c4e7070 fix(ci): explicitly export GOOGLE_APPLICATION_CREDENTIALS in staging deploy
 a496a092c fix(ci): bypass lifecycle scripts during deploy step npm installs to preserve credentials
 fe2f66f7e fix(ci): switch to google-github-actions/auth@v2 for Firebase auth
-8553a4270 chore: session checkpoint [19:56]
-724484df1 chore: session checkpoint [19:48]
-e7b745b53 feat(creative): IA Option C Phase 3 — unify Daisy Chain into Sequence (ISSUE-491) (#208)
-56d088302 feat(creative): IA Option C Phase 2 — unified History drawer (ISSUE-496/489) (#207)
-a618ac8f9 chore: session checkpoint [19:26]
-9b0452516 feat(creative): IA Option C Phase 1 — mode picker (ISSUE-488/491) (#206)
 ```
 
 ## Working State
