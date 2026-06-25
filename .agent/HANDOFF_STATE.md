@@ -4,6 +4,7 @@
 
 ## Recent Commits
 ```
+445f228bc chore: session checkpoint [19:22]
 0ff209171 chore: session checkpoint [19:21]
 1cc6a797b chore: session checkpoint [19:20]
 cc5c726bf chore: session checkpoint [19:19]
@@ -13,7 +14,6 @@ c6ee22291 chore: session checkpoint [19:15]
 61c0b408c chore: session checkpoint [19:12]
 4ecbe00e9 chore: session checkpoint [19:11]
 41cf2d000 chore: session checkpoint [18:59]
-f9c7d15f7 fix(ci): revert to manual Firebase auth (working approach from commit 60bc88067)
 ```
 
 ## Working State
