@@ -275,6 +275,7 @@ jobs:
           name: build-dist-${{ github.sha }}
 
       - name: Authenticate with Google Cloud
+        id: auth
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
@@ -286,7 +287,7 @@ jobs:
           # Use local or cached firebase-tools without re-installing
           echo "::notice::firebase-tools $(npx --no-install firebase --version || npm exec firebase --version)"
           set +e
-          export GOOGLE_APPLICATION_CREDENTIALS="$GOOGLE_GHA_CREDS_PATH"
+          export GOOGLE_APPLICATION_CREDENTIALS="${{ steps.auth.outputs.credentials_file_path }}"
           OUTPUT=$(npx --no-install firebase hosting:channel:deploy staging \
             --project indii-music-founder \
             --expires 2h \

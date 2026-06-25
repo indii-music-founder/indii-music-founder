@@ -110,7 +110,7 @@
     "lightningcss-linux-x64-gnu": "1.30.2"
   },
   "engines": {
-    "node": ">=22.0.0"
+    "node": ">=24.0.0"
   },
   "build": {
     "appId": "com.indii.music",
