@@ -1,19 +1,19 @@
 # Handoff State
-**Updated:** 2026-06-24 19:56 EDT
+**Updated:** 2026-06-25 08:39 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+a251818f1 docs(ledger): add ISSUE-499 — PLP Meta Ads backend plan (blocked on Meta account) (#209)
+92c4e7070 fix(ci): explicitly export GOOGLE_APPLICATION_CREDENTIALS in staging deploy
+a496a092c fix(ci): bypass lifecycle scripts during deploy step npm installs to preserve credentials
+fe2f66f7e fix(ci): switch to google-github-actions/auth@v2 for Firebase auth
+8553a4270 chore: session checkpoint [19:56]
 724484df1 chore: session checkpoint [19:48]
 e7b745b53 feat(creative): IA Option C Phase 3 — unify Daisy Chain into Sequence (ISSUE-491) (#208)
 56d088302 feat(creative): IA Option C Phase 2 — unified History drawer (ISSUE-496/489) (#207)
 a618ac8f9 chore: session checkpoint [19:26]
 9b0452516 feat(creative): IA Option C Phase 1 — mode picker (ISSUE-488/491) (#206)
-9d2db1cab chore: session checkpoint [16:12]
-16e1f9e5c chore: session checkpoint [15:52]
-88f4e986d docs(ledger): mark Creative Director fixes resolved + remaining work (478-498)
-06b85de2e docs: Creative Director IA consolidation proposal (ISSUE-488/489/491/496) (#205)
-ef4e6f4f9 fix(agent): neutral wording when no RAG corpus is configured (ISSUE-481) (#204)
 ```
 
 ## Working State
