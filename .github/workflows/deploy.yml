@@ -544,15 +544,17 @@ jobs:
       - name: Deploy Cloud Functions
         env:
           INFLUENCER_BOUNTY_BASE_URL: https://app.indii.music
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
         run: |
           # Firebase Tools copies stale CPU metadata from existing gen1 endpoints
           # during deploy validation. These two functions were created with bad
           # remote metadata, so delete/recreate them before deploying all functions.
+          export GOOGLE_APPLICATION_CREDENTIALS="${{ steps.auth.outputs.credentials_file_path }}"
           npx --no-install firebase functions:delete createStripeAccount --region us-central1 --project indii-music-founder --force --non-interactive || true
           npx --no-install firebase functions:delete createTransfer --region us-central1 --project indii-music-founder --force --non-interactive || true
           printf 'INFLUENCER_BOUNTY_BASE_URL=%s\n' "$INFLUENCER_BOUNTY_BASE_URL" > packages/firebase/.env.indii-music-founder
           npm run build -w packages/firebase
-          npx --no-install firebase deploy --only functions --project indii-music-founder --non-interactive --force
+          npx --no-install firebase deploy --only functions --project indii-music-founder --non-interactive --force --token "$FIREBASE_TOKEN"
 
       - name: Pipeline health summary
         run: |
