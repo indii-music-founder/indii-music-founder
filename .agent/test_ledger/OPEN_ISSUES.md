@@ -7311,13 +7311,51 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 | 498 (CI deploy auth) | ✅ FIXED & MERGED — prod deploy green again. Root cause was NOT firebase-tools version (deploys broke ~8 AM, before the 10:23 AM bump); real fix = `npm install` in deploy jobs + `npx --no-install` so the pinned firebase-tools is used. Earlier failure was transient/cache. | #197, #202/#203 (debug add/remove) |
 | 478 / 482 / 480 (canvas taint, save/flatten, undo-redo) | ✅ FIXED & MERGED | #198 |
 | 479 / 490 / 492 (chat sight, roster web, panel overlap) | ✅ FIXED & MERGED | #199 |
-| 495 / 497 (PLP ad-spend gate + honest failure) | ✅ FRONTEND FIXED & MERGED — gate + no fabricated success. **Still TODO:** build the real Meta cloud functions (`createAdCampaign`/`createAdSet`/`createAd`/`getAdInsights`) per William's "real ads, gated" decision. | #200 |
+| 495 / 497 (PLP ad-spend gate + honest failure) | ✅ FRONTEND FIXED & MERGED — gate + no fabricated success. Backend build tracked as **ISSUE-499 (BLOCKED on Meta Business account)**. | #200 |
 | 485 (Showroom layout overlap) | ✅ FIXED & MERGED | #201 |
 | 484 (multi-format error) / 486 (blank reopen) | ✅ RESOLVED via 478 trunk (both were taint symptoms) — verify live | #198 |
 | 481 (KB offline) / 487 (Keyframes) / 493 (Omni) | ⏳ OPEN — need live runtime verification, not code-fixable statically | — |
 | 488 / 489 / 491 / 496 (IA consolidation) | ⏳ OPEN — William's decision: audit + propose (IA reference above) | — |
 
-**Remaining work:** (1) Meta ad backend functions for PLP; (2) live-verify 481/487/493; (3) IA proposal for William. All other Creative Director defects are fixed and on main.
+**Remaining work:** (1) Meta ad backend functions for PLP — see ISSUE-499 (BLOCKED on Meta account); (2) live-verify 481/487/493; (3) IA proposal for William. All other Creative Director defects are fixed and on main.
+
+---
+
+## ISSUE-499: Build PLP Meta Ads backend (4 cloud functions) — BLOCKED on Meta Business account
+
+- **Status:** 🚧 BLOCKED / PLANNED — **Severity:** 🟠 HIGH (feature incomplete) — **Module:** `packages/firebase` + `services/marketing/AdAutomationService.ts`
+- **Decision (William, 2026-06-24):** PLP should be a *real, gated* ad pipeline. **But William has no Meta Business account available right now**, so this is parked until he does. Do NOT start until the prerequisites below exist. The financial-safety frontend (confirmation gate + honest failure, ISSUE-495/497) is already merged (#200), so PLP is safe in the meantime — it generates variants and reports honestly that no campaign launched.
+- **What's missing:** the frontend (`AdAutomationService.ts`) calls four Firebase callables that **do not exist**: `createAdCampaign` (`:59`), `createAdSet` (`:83`), `createAd` (`:114`), `getAdInsights` (`:144`) — plus `pauseAdCampaign` (`:215`) used by the CPS kill-switch. They must be implemented in `packages/firebase/src` against the **Meta Marketing API** (Graph API).
+
+### Prerequisites (William provides — none are in the repo, all are secrets)
+1. **Meta Developer App** → `META_APP_ID` + `META_APP_SECRET`.
+2. **Long-lived access token** with `ads_management` + `ads_read` scopes — strongly prefer a **Meta Business System User token** (doesn't expire like user tokens) → `META_ACCESS_TOKEN`.
+3. **Ad Account ID** → `META_AD_ACCOUNT_ID` (format `act_XXXXXXXXX`).
+4. **Facebook Page ID** + connected **Instagram account ID** → `META_PAGE_ID`, `META_IG_ACCOUNT_ID` (ads need a page/IG identity).
+5. Meta app **Advanced Access** for `ads_management` (requires Meta App Review) before it can run on accounts other than the developer's own.
+- **Where they live:** Firebase **Secret Manager** (e.g., `gcloud secrets create META_ACCESS_TOKEN …`), bound to the functions via `defineSecret`. **Never** in code or `.env` committed to git (per API Credentials Policy).
+
+### Implementation plan (when unblocked)
+- **Region:** deploy to `us-west1` (frontend uses `functionsWest1` — `AdAutomationService.ts:53`). Match exactly or the callables 404.
+- **Function 1 — `createAdCampaign`** ({platform,dailyBudget,totalDays} → {campaignId}): `POST /v23.0/{ad_account_id}/campaigns` with `objective` (e.g. `OUTCOME_TRAFFIC`/`OUTCOME_AWARENESS`), `status:'PAUSED'` (create paused — never auto-activate spend), `special_ad_categories:[]`.
+- **Function 2 — `createAdSet`** ({campaignId,platform,targetAgeRange,targetInterests,placements} → {adSetId}): `POST /{ad_account_id}/adsets` with `daily_budget` (cents), `billing_event`, `optimization_goal`, `targeting` (age range, interests, the Instagram placements the frontend already enforces at `:86-88`), `status:'PAUSED'`.
+- **Function 3 — `createAd`** ({adSetId,creativeId,headline,body,callToAction} → {adId}): first create an **AdCreative** (`POST /{ad_account_id}/adcreatives` referencing the generated asset URL + page/IG identity), then `POST /{ad_account_id}/ads` linking adset+creative, `status:'PAUSED'`.
+- **Function 4 — `getAdInsights`** ({adId} → {impressions,clicks,spend,ctr,cpc}): `GET /{adId}/insights`.
+- **Function 5 — `pauseAdCampaign`** ({campaignId} → {success}): `POST /{campaignId}` `status:'PAUSED'` (already referenced by the ViralScore CPS kill-switch).
+- **Cross-cutting:** auth-gate every callable (verify Firebase auth + that the user is entitled to run ads); rate-limit; structured error returns (the frontend now expects honest failures, not fake IDs); log spend to `user_usage_stats` for cost tracking (see MEMORY `ai-cost-instrumentation`); upload generated image/video assets to Meta from their storage URLs.
+- **Asset note:** Meta needs media uploaded to the ad account (image_hash / video_id), not just a URL — add an upload step (`/{ad_account_id}/adimages` or `/advideos`) before creating the creative.
+
+### Safety requirements (must keep)
+- All created objects start **`PAUSED`** — launching to active/spending must be a separate explicit user action, never automatic. (Complements the ISSUE-495 confirmation gate.)
+- Make budget/duration/targeting/copy **user-editable** before any campaign is created (still hardcoded at `CreativeStudio.tsx:218-224` — fix as part of this).
+- Replace the placeholder ad copy ("Discover the Magic N" at `CreativeStudio.tsx:206-208`) with real, user-authored copy.
+
+### Acceptance criteria
+- [ ] With valid Meta secrets, hitting PLP + confirming the gate creates a real PAUSED campaign/adset/ads visible in Meta Ads Manager.
+- [ ] No spend occurs without a deliberate activation step.
+- [ ] Missing/invalid creds → honest error toast, no fake success (already true on the frontend).
+- [ ] Insights round-trip works; CPS kill-switch can pause.
+- **Files:** `packages/firebase/src/` (new `marketing/` functions + export in `index.ts`); `packages/renderer/src/services/marketing/AdAutomationService.ts:50-211`; `packages/renderer/src/modules/creative/CreativeStudio.tsx:206-224`. **Related:** ISSUE-495, ISSUE-497.
 
 ---
 
