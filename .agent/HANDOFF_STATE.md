@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-25 17:58 EDT
+**Updated:** 2026-06-25 17:59 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+bc59b27cc chore: session checkpoint [17:58]
 0b448f4b1 fix(ci): add GOOGLE_APPLICATION_CREDENTIALS and FIREBASE_TOKEN to Cloud Functions deploy
 51ecc9708 chore: session checkpoint [17:53]
 22b76c985 fix: add FIREBASE_TOKEN to staging deploy step
@@ -13,7 +14,6 @@ d2de4e396 fix(ci): route GOOGLE_APPLICATION_CREDENTIALS through steps.auth.outpu
 c69d9b4f4 fix(ci): avoid local npm installs in staging/production deploy steps to preserve auth environment
 30563f160 chore: session checkpoint [08:39]
 a251818f1 docs(ledger): add ISSUE-499 — PLP Meta Ads backend plan (blocked on Meta account) (#209)
-92c4e7070 fix(ci): explicitly export GOOGLE_APPLICATION_CREDENTIALS in staging deploy
 ```
 
 ## Working State
