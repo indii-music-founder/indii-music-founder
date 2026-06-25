@@ -285,7 +285,7 @@ jobs:
           set -uo pipefail
           # Ensure the PINNED firebase-tools is installed locally so `npx` uses it
           # instead of fetching the latest from npm on a cache miss (ISSUE-498).
-          npm install --prefer-offline --no-audit --no-fund
+          npm install --prefer-offline --no-audit --no-fund --ignore-scripts
           echo "::notice::firebase-tools $(npx --no-install firebase --version)"
           set +e
           OUTPUT=$(npx --no-install firebase hosting:channel:deploy staging \
@@ -417,7 +417,7 @@ jobs:
         run: |
           # Install the PINNED firebase-tools so `npx --no-install` uses it instead
           # of fetching latest from npm on a cache miss.
-          npm install --prefer-offline --no-audit --no-fund
+          npm install --prefer-offline --no-audit --no-fund --ignore-scripts
           echo "::notice::firebase-tools $(npx --no-install firebase --version)"
 
       - name: Repair Firebase web API key restrictions
