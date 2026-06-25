@@ -110,10 +110,16 @@ jobs:
             packages/*/node_modules
           key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
 
-      - name: Authenticate with Google Cloud
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+      - name: Authenticate with Firebase
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          if echo "$FIREBASE_SERVICE_ACCOUNT" | base64 -d >/dev/null 2>&1; then
+            echo "$FIREBASE_SERVICE_ACCOUNT" | base64 -d > $HOME/gcloud-key.json
+          else
+            echo "$FIREBASE_SERVICE_ACCOUNT" > $HOME/gcloud-key.json
+          fi
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$HOME/gcloud-key.json" >> $GITHUB_ENV
 
       - name: Run unit tests (shard ${{ matrix.shard }}/8)
         timeout-minutes: 15
@@ -274,20 +280,25 @@ jobs:
         with:
           name: build-dist-${{ github.sha }}
 
-      - name: Authenticate with Google Cloud
-        id: auth
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+      - name: Authenticate with Firebase
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          if echo "$FIREBASE_SERVICE_ACCOUNT" | base64 -d >/dev/null 2>&1; then
+            echo "$FIREBASE_SERVICE_ACCOUNT" | base64 -d > $HOME/gcloud-key.json
+          else
+            echo "$FIREBASE_SERVICE_ACCOUNT" > $HOME/gcloud-key.json
+          fi
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$HOME/gcloud-key.json" >> $GITHUB_ENV
 
       - name: Deploy to staging preview channel
         id: channel-deploy
         run: |
           set -uo pipefail
-          # Use local or cached firebase-tools without re-installing
-          echo "::notice::firebase-tools $(npx --no-install firebase --version || npm exec firebase --version)"
+          # Ensure the PINNED firebase-tools is installed locally
+          npm install --prefer-offline --no-audit --no-fund
+          echo "::notice::firebase-tools $(npx --no-install firebase --version)"
           set +e
-          export GOOGLE_APPLICATION_CREDENTIALS="${{ steps.auth.outputs.credentials_file_path }}"
           OUTPUT=$(npx --no-install firebase hosting:channel:deploy staging \
             --project indii-music-founder \
             --expires 2h \
@@ -404,11 +415,16 @@ jobs:
         with:
           name: build-dist-${{ github.sha }}
 
-      - name: Authenticate with Google Cloud
-        id: auth
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+      - name: Authenticate with Firebase
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          if echo "$FIREBASE_SERVICE_ACCOUNT" | base64 -d >/dev/null 2>&1; then
+            echo "$FIREBASE_SERVICE_ACCOUNT" | base64 -d > $HOME/gcloud-key.json
+          else
+            echo "$FIREBASE_SERVICE_ACCOUNT" > $HOME/gcloud-key.json
+          fi
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$HOME/gcloud-key.json" >> $GITHUB_ENV
 
       - name: Configure gcloud project
         run: gcloud config set project indii-music-founder
@@ -526,12 +542,10 @@ jobs:
 
       - name: Deploy landing page to Firebase Hosting
         run: |
-          export GOOGLE_APPLICATION_CREDENTIALS="${{ steps.auth.outputs.credentials_file_path }}"
           npx --no-install firebase deploy --only hosting:landing --project indii-music-founder --non-interactive
 
       - name: Deploy studio app to Firebase Hosting
         run: |
-          export GOOGLE_APPLICATION_CREDENTIALS="${{ steps.auth.outputs.credentials_file_path }}"
           npx --no-install firebase deploy --only hosting:app --project indii-music-founder --non-interactive
 
       - name: Deploy Cloud Functions
@@ -541,7 +555,6 @@ jobs:
           # Firebase Tools copies stale CPU metadata from existing gen1 endpoints
           # during deploy validation. These two functions were created with bad
           # remote metadata, so delete/recreate them before deploying all functions.
-          export GOOGLE_APPLICATION_CREDENTIALS="${{ steps.auth.outputs.credentials_file_path }}"
           npx --no-install firebase functions:delete createStripeAccount --region us-central1 --project indii-music-founder --force --non-interactive || true
           npx --no-install firebase functions:delete createTransfer --region us-central1 --project indii-music-founder --force --non-interactive || true
           printf 'INFLUENCER_BOUNTY_BASE_URL=%s\n' "$INFLUENCER_BOUNTY_BASE_URL" > packages/firebase/.env.indii-music-founder
