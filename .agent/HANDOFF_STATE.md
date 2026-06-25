@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-25 18:19 EDT
+**Updated:** 2026-06-25 18:59 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+f9c7d15f7 fix(ci): revert to manual Firebase auth (working approach from commit 60bc88067)
+7700c99bd chore: session checkpoint [18:19]
 c8c4106e9 fix(ci): remove invalid FIREBASE_TOKEN from deploy steps
 a501c056a chore: session checkpoint [18:15]
 86fccac48 chore: session checkpoint [18:10]
@@ -12,8 +14,6 @@ a501c056a chore: session checkpoint [18:15]
 c27d8fad4 chore: session checkpoint [18:03]
 fb4ed1517 chore: session checkpoint [17:59]
 bc59b27cc chore: session checkpoint [17:58]
-0b448f4b1 fix(ci): add GOOGLE_APPLICATION_CREDENTIALS and FIREBASE_TOKEN to Cloud Functions deploy
-51ecc9708 chore: session checkpoint [17:53]
 ```
 
 ## Working State
