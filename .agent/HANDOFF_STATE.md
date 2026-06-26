@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-25 22:01 EDT
+**Updated:** 2026-06-25 22:07 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+33f2be78e fix(ci): upgrade firebase-tools 15.19.0 -> 15.22.3 to fix OAuth 'Premature close'
+a59f80ff0 chore: session checkpoint [22:01]
 81d7ddc04 chore: session checkpoint [21:53]
 03f3a801a ci: diagnose runner network path to Google token endpoint
 be3631210 chore: session checkpoint [21:41]
@@ -12,8 +14,6 @@ be3631210 chore: session checkpoint [21:41]
 be208f55c fix(ci): force IPv4 + retry on staging deploy to fix OAuth token 'Premature close'
 c50a54f9c chore: session checkpoint [21:17]
 b80cc4643 ci: temporary firebase auth diagnostics in deploy-staging
-2de19e89f chore: session checkpoint [21:01]
-43f5ef522 fix(ci): deterministic self-validating Firebase key reconstruction
 ```
 
 ## Working State
