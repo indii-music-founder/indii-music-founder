@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-25 20:27 EDT
+**Updated:** 2026-06-25 20:38 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+551ede4d9 chore: session checkpoint [20:27]
 b5c01b045 chore: session checkpoint [20:23]
 9f23e6d54 fix(ci): restore deploy.yml to last-green 60bc88067 (manual Firebase auth)
 4ac20ef53 chore: session checkpoint [20:15]
@@ -13,7 +14,6 @@ f0ce19a7f chore: session checkpoint [19:58]
 f2c069cb5 chore: session checkpoint [19:56]
 0449efad0 chore: session checkpoint [19:52]
 5ef08123a chore: session checkpoint [19:51]
-6455f18be chore: session checkpoint [19:47]
 ```
 
 ## Working State
