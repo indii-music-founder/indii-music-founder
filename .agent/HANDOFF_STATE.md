@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-25 21:29 EDT
+**Updated:** 2026-06-25 21:41 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+18c5c88b3 fix(ci): disable Node Happy Eyeballs racing to fix OAuth 'Premature close'
+43d883bd3 chore: session checkpoint [21:29]
 be208f55c fix(ci): force IPv4 + retry on staging deploy to fix OAuth token 'Premature close'
 c50a54f9c chore: session checkpoint [21:17]
 b80cc4643 ci: temporary firebase auth diagnostics in deploy-staging
@@ -12,8 +14,6 @@ b80cc4643 ci: temporary firebase auth diagnostics in deploy-staging
 44f57ae88 chore: session checkpoint [20:48]
 1eb907830 chore: session checkpoint [20:38]
 551ede4d9 chore: session checkpoint [20:27]
-b5c01b045 chore: session checkpoint [20:23]
-9f23e6d54 fix(ci): restore deploy.yml to last-green 60bc88067 (manual Firebase auth)
 ```
 
 ## Working State
