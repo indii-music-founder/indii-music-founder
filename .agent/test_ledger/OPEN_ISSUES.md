@@ -7655,3 +7655,11 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Remove/adapt:** `next` dependency, `src/components` paths, older Firebase dependency versions, generic `/jobs` naming if it conflicts with existing `videoJobs`, placeholder bucket names, global unaudited `sessions/temp/` prefixes, and Python Cloud Functions unless the backend platform is deliberately expanded.
 - **Acceptance criteria:** implementation agents receive one concise brief that names actual repo paths (`packages/renderer`, `packages/firebase`), existing dependencies/versions, chosen collection names, Storage prefixes, and test expectations; no agent scaffolds a new Next.js app or duplicate backend.
 - **Files:** `.agent/test_ledger/OPEN_ISSUES.md`; optional future handoff doc under `.agent/` if implementation is split across agents.
+
+### ISSUE-CI-28249067854: CI Pipeline Failure (Deploy to Firebase Hosting)
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** CI/CD
+- **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
+- **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/28249067854)
+- **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
