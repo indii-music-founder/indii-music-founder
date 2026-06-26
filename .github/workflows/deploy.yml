@@ -619,10 +619,34 @@ jobs:
             --data-file=-
 
       - name: Deploy landing page to Firebase Hosting
-        run: npx --no-install firebase deploy --only hosting:landing --project indii-music-founder --non-interactive
+        run: |
+          set -uo pipefail
+          set +e
+          OUT=$(npx --no-install firebase deploy --only hosting:landing --project indii-music-founder --non-interactive 2>&1)
+          CODE=$?
+          set -e
+          echo "$OUT"
+          # Unchanged content is already live -> "is the current active version".
+          # That is a successful no-op deploy, not a failure.
+          if [ $CODE -ne 0 ] && echo "$OUT" | grep -q "is the current active version"; then
+            echo "::notice::landing already serves this exact build; treating as success"
+            CODE=0
+          fi
+          exit $CODE
 
       - name: Deploy studio app to Firebase Hosting
-        run: npx --no-install firebase deploy --only hosting:app --project indii-music-founder --non-interactive
+        run: |
+          set -uo pipefail
+          set +e
+          OUT=$(npx --no-install firebase deploy --only hosting:app --project indii-music-founder --non-interactive 2>&1)
+          CODE=$?
+          set -e
+          echo "$OUT"
+          if [ $CODE -ne 0 ] && echo "$OUT" | grep -q "is the current active version"; then
+            echo "::notice::app already serves this exact build; treating as success"
+            CODE=0
+          fi
+          exit $CODE
 
       - name: Deploy Cloud Functions
         env:
