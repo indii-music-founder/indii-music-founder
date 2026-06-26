@@ -21,6 +21,7 @@ import { useVideoEditorStore, VideoProject } from '@/modules/creative/video/stor
 import { videoRenderOrchestrator } from './VideoRenderOrchestrator';
 import { logger } from '@/utils/logger';
 import { v4 as uuidv4 } from 'uuid';
+import { COLLECTIONS } from '@/core/config/collections';
 
 export interface VeoIngestOptions {
     /** Veo job ID from VideoGenerationService */
@@ -86,7 +87,7 @@ export class VeoToRemotionBridge {
         logger.info(`[VeoToRemotionBridge] Ingesting Veo job: ${jobId}`);
 
         // 1. Fetch job from Firestore
-        const jobRef = doc(db, 'videoJobs', jobId);
+        const jobRef = doc(db, COLLECTIONS.VIDEO.JOBS, jobId);
         const jobSnap = await getDoc(jobRef);
 
         if (!jobSnap.exists()) {
