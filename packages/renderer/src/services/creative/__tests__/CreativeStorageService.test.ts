@@ -39,4 +39,22 @@ describe('CreativeStorageService', () => {
         expect(storageRef).toHaveBeenCalledWith(expect.anything(), expect.stringContaining('users/user/vault/objects/'));
         expect(uploadString).toHaveBeenCalled();
     });
+
+    it('uploads session media into the owner-scoped temp video namespace', async () => {
+        await CreativeStorageService.uploadReferenceMedia('user', 'data:image/png;base64,AAA', 'image', {
+            scope: 'masks',
+            sessionId: 'session-123',
+        });
+
+        expect(storageRef).toHaveBeenCalledWith(expect.anything(), expect.stringContaining('creative/user/video/tmp/session-123/masks/'));
+    });
+
+    it('uploads project media into the owner-scoped project namespace', async () => {
+        await CreativeStorageService.uploadReferenceMedia('user', 'data:image/png;base64,AAA', 'image', {
+            scope: 'objects',
+            projectId: 'project-123',
+        });
+
+        expect(storageRef).toHaveBeenCalledWith(expect.anything(), expect.stringContaining('creative/user/projects/project-123/objects/'));
+    });
 });
