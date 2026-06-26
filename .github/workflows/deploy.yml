@@ -130,6 +130,10 @@ jobs:
           VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
           VITE_FIREBASE_PROJECT_ID: indii-music-founder
 
+      - name: Cleanup credentials
+        if: always()
+        run: rm -f $HOME/gcloud-key.json
+
   # ─── Build & Static Analysis ────────────────────────────────────────────────
   build:
     runs-on: ubuntu-latest
@@ -295,9 +299,11 @@ jobs:
         id: channel-deploy
         run: |
           set -uo pipefail
-          # Ensure the PINNED firebase-tools is installed locally
+          # Ensure the PINNED firebase-tools is installed locally so `npx` uses it
+          # instead of fetching the latest from npm on a cache miss (ISSUE-498).
           npm install --prefer-offline --no-audit --no-fund
           echo "::notice::firebase-tools $(npx --no-install firebase --version)"
+          node -e "console.log('GAC set:', !!process.env.GOOGLE_APPLICATION_CREDENTIALS, '| file exists:', require('fs').existsSync(process.env.GOOGLE_APPLICATION_CREDENTIALS||''))"
           set +e
           OUTPUT=$(npx --no-install firebase hosting:channel:deploy staging \
             --project indii-music-founder \
@@ -323,6 +329,10 @@ jobs:
           print(url)
           ")
           echo "staging_url=${STAGING_URL}" >> $GITHUB_OUTPUT
+
+      - name: Cleanup credentials
+        if: always()
+        run: rm -f $HOME/gcloud-key.json
 
   # ─── E2E Smoke Tests Against Staging ─────────────────────────────────────────
   # NOTE: no continue-on-error. A real e2e failure must set this job's result to
@@ -402,6 +412,9 @@ jobs:
         with:
           node-version: '22.x'
 
+      - name: Setup Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v3
+
       - name: Restore node_modules cache
         uses: actions/cache@v4
         with:
@@ -425,9 +438,15 @@ jobs:
             echo "$FIREBASE_SERVICE_ACCOUNT" > $HOME/gcloud-key.json
           fi
           echo "GOOGLE_APPLICATION_CREDENTIALS=$HOME/gcloud-key.json" >> $GITHUB_ENV
+          gcloud auth activate-service-account --key-file="$HOME/gcloud-key.json" --project=indii-music-founder
 
-      - name: Configure gcloud project
-        run: gcloud config set project indii-music-founder
+      - name: Ensure pinned firebase-tools + verify credentials (ISSUE-498)
+        run: |
+          # Install the PINNED firebase-tools so `npx --no-install` uses it instead
+          # of fetching latest from npm on a cache miss.
+          npm install --prefer-offline --no-audit --no-fund
+          echo "::notice::firebase-tools $(npx --no-install firebase --version)"
+          node -e "console.log('GAC set:', !!process.env.GOOGLE_APPLICATION_CREDENTIALS, '| file exists:', require('fs').existsSync(process.env.GOOGLE_APPLICATION_CREDENTIALS||''))"
 
       - name: Repair Firebase web API key restrictions
         env:
@@ -541,12 +560,10 @@ jobs:
             --data-file=-
 
       - name: Deploy landing page to Firebase Hosting
-        run: |
-          npx --no-install firebase deploy --only hosting:landing --project indii-music-founder --non-interactive
+        run: npx --no-install firebase deploy --only hosting:landing --project indii-music-founder --non-interactive
 
       - name: Deploy studio app to Firebase Hosting
-        run: |
-          npx --no-install firebase deploy --only hosting:app --project indii-music-founder --non-interactive
+        run: npx --no-install firebase deploy --only hosting:app --project indii-music-founder --non-interactive
 
       - name: Deploy Cloud Functions
         env:
@@ -569,3 +586,6 @@ jobs:
           echo "Hosting, staging e2e, and Cloud Functions deploy completed successfully."
           echo "══════════════════════════════════════════"
 
+      - name: Cleanup credentials
+        if: always()
+        run: rm -f $HOME/gcloud-key.json
