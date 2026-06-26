@@ -7484,7 +7484,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-510: Add `video.js` as the canonical Video Studio playback/buffer layer
 
-- **Status:** 🔴 OPEN / PLANNED — **Severity:** 🟠 HIGH — **Module:** video / playback / timeline
+- **Status:** 🟢 FIX APPLIED LOCALLY — **Severity:** 🟠 HIGH — **Module:** video / playback / timeline
 - **Evidence:** `VideoStage.tsx` currently uses a bare `<video controls>` element and frame capture via `HTMLVideoElement` + canvas. This is not enough for large Veo outputs, streaming buffer behavior, durable playback state, or future temporal inpainting workflows.
 - **Decision:** use `video.js` for the media player and buffering layer. Keep custom React UI for the Director's Bay chrome, timeline overlays, mask drawing affordances, in/out points, markers, and prompt/job metadata.
 - **Dependency adaptation:** blueprint examples may show `next`, older `firebase`, or generic `src/components`. Do not add Next.js. This repo already uses React 18 and Firebase 12 in `packages/renderer`; add only the missing video/editor dependencies that match the existing Vite/Electron toolchain (`video.js`, and later `@ffmpeg/ffmpeg` / `@ffmpeg/util` if worker extraction is implemented).
@@ -7502,7 +7502,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-511: Convert Veo submission from synchronous callable rendering to true async job orchestration
 
-- **Status:** 🔴 OPEN / PLANNED — **Severity:** 🔴 HIGH — **Module:** Firebase video gateway / Firestore jobs
+- **Status:** 🟢 FIX APPLIED LOCALLY — **Severity:** 🔴 HIGH — **Module:** Firebase video gateway / Firestore jobs
 - **Evidence:** `generateVideoV3` in `packages/firebase/src/functions/creative/gateway.ts` starts `ai.models.generateVideos(...)`, polls in the same callable, downloads the result, uploads it to Storage, then returns. It has `timeoutSeconds: 540`, so it still depends on the exact timeout ceiling the Veo architecture is trying to avoid.
 - **Fix direction:** split the flow into submission and execution:
   1. Client uploads input media to Cloud Storage and writes/creates a Firestore job with status `PENDING` or `QUEUED`.
@@ -7515,7 +7515,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-512: Normalize video job collections and status contracts before adding more Veo modes
 
-- **Status:** 🔴 OPEN / PLANNED — **Severity:** 🔴 HIGH — **Module:** Firestore video jobs / renderer subscription
+- **Status:** 🟢 FIX APPLIED LOCALLY — **Severity:** 🔴 HIGH — **Module:** Firestore video jobs / renderer subscription
 - **Evidence:** renderer subscription reads `videoJobs/{jobId}` in `VideoGenerationService.subscribeToJob(...)`, while the newer creative gateway creates IDs from `creative_jobs` and writes with `safeDbSet(jobId, ...)`. This risks completed jobs that the Video Studio never hears about.
 - **Fix direction:** choose one canonical job model for video work, or add a clearly documented bridge. Required fields: `id`, `userId`, `orgId`, `projectId`, `type`, `mode`, `status`, `progress`, `inputUris`, `maskUris`, `operationName`, `resultUri`, `downloadUrl`, `metadata`, `error`, `createdAt`, `updatedAt`, `completedAt`.
 - **Status enum:** standardize on `PENDING`, `QUEUED`, `PROCESSING`, `STITCHING`, `COMPLETED`, `FAILED`, `CANCELLED` at the backend boundary; renderer can map to lowercase display values if needed.
