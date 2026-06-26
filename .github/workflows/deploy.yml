@@ -316,10 +316,11 @@ jobs:
       - name: Deploy to staging preview channel
         id: channel-deploy
         env:
-          # GitHub runners' IPv6 path to googleapis.com intermittently kills Node's
-          # TLS fetch of the OAuth token ("Premature close" -> "Failed to
-          # authenticate"). Force IPv4 DNS so the token exchange completes.
-          NODE_OPTIONS: --dns-result-order=ipv4first
+          # GitHub runners' dual-stack "Happy Eyeballs" connection racing tears down
+          # Node's TLS fetch of the OAuth token mid-response ("Premature close" ->
+          # "Failed to authenticate"). gcloud (Python) is unaffected; Node needs the
+          # racing disabled and IPv4 preferred so the token exchange completes.
+          NODE_OPTIONS: --no-network-family-autoselection --dns-result-order=ipv4first
         run: |
           set -uo pipefail
           # Ensure the PINNED firebase-tools is installed locally so `npx` uses it
