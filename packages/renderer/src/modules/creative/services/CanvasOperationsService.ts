@@ -377,6 +377,44 @@ export class CanvasOperationsService {
     }
 
     /**
+     * True when the editable canvas has a real artwork layer, not just masks or
+     * annotation objects. Used to recover from stale/blank saved Fabric states.
+     */
+    hasBaseImage(): boolean {
+        if (!this.canvas) return false;
+
+        return this.canvas.getObjects().some(obj => {
+            if (obj.visible === false || obj.type !== 'image') return false;
+
+            const data = (obj as fabric.Object & { data?: Record<string, unknown> }).data;
+            if (data?.isSegmentationMask || data?.isAnnotation || data?.isBoundingBox) {
+                return false;
+            }
+
+            return data?.isBaseImage === true || !this.isAnnotation(obj);
+        });
+    }
+
+    /**
+     * Load the selected asset as the base artwork if restored JSON did not
+     * contain one. This keeps the editor usable even when an old autosave only
+     * captured an empty canvas or annotations.
+     */
+    async ensureBaseImage(imageUrl?: string): Promise<boolean> {
+        if (!this.canvas || !imageUrl || this.hasBaseImage()) return false;
+
+        const img = await this.loadImageSafe(imageUrl);
+        img.set('data', { isBaseImage: true });
+        scaleImageToCanvas(img, this.canvas);
+        this.canvas.add(img);
+        this.canvas.sendObjectToBack(img);
+        this.canvas.renderAll();
+        this.saveHistoryState();
+
+        return true;
+    }
+
+    /**
      * Dispose of the canvas and cleanup
      */
     dispose(): void {
