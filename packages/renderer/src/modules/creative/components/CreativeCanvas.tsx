@@ -27,6 +27,7 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
         activeColor,
         definitions,
         referenceImages,
+        referenceRoles,
         generatedCandidates,
         endFrameItem,
         magicFillPrompt,
@@ -34,6 +35,8 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
         processingStatus,
         canvasEl,
         generatedHistory,
+        editManifest,
+        sessionId,
 
         setIsSelectingEndFrame,
         setEndFrameItem,
@@ -48,6 +51,7 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
         handleDetectObjects,
         handleUpdateDefinition,
         handleUpdateReferenceImage,
+        handleUpdateReferenceRole,
         handleMagicFill,
         handleClearDetections,
         handleAnimate,
@@ -87,6 +91,14 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                     processingStatus={processingStatus}
                     isHighFidelity={isHighFidelity}
                     setIsHighFidelity={setIsHighFidelity}
+                    routeLabel={editManifest.route.label}
+                    routeReason={editManifest.route.reason}
+                    modelTier={editManifest.settings.modelTier}
+                    resolution={editManifest.settings.resolution}
+                    aspectRatio={editManifest.settings.aspectRatio}
+                    grounding={editManifest.settings.grounding}
+                    imageSize={editManifest.settings.imageSize}
+                    sessionId={sessionId}
                 />
 
                 <div className="flex-1 relative overflow-hidden bg-[#060608]">
@@ -178,11 +190,13 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                     <EditDefinitionsPanel
                         isOpen={isDefinitionsOpen}
                         onClose={() => setIsDefinitionsOpen(false)}
-                        definitions={definitions}
-                        onUpdateDefinition={handleUpdateDefinition}
-                        referenceImages={referenceImages}
-                        onUpdateReferenceImage={handleUpdateReferenceImage}
-                    />
+                    definitions={definitions}
+                    onUpdateDefinition={handleUpdateDefinition}
+                    referenceImages={referenceImages}
+                    onUpdateReferenceImage={handleUpdateReferenceImage}
+                    referenceRoles={referenceRoles}
+                    onUpdateReferenceRole={handleUpdateReferenceRole}
+                />
                 </div>
             </motion.div>
         </AnimatePresence>
