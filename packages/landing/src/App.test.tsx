@@ -6,7 +6,11 @@ import App from './App';
 
 // Mock subcomponents to isolate routing logic
 vi.mock('./page', () => ({
-  default: () => <div data-testid="founder-home">Founder Program Lander</div>,
+  default: ({ founder = true }: { founder?: boolean }) => (
+    <div data-testid={founder ? 'founder-home' : 'public-home'}>
+      {founder ? 'Founder Program Lander' : 'Public Marketing Lander'}
+    </div>
+  ),
 }));
 
 vi.mock('./components/auth/AuthProvider', () => ({
@@ -48,7 +52,7 @@ describe('Landing App Dynamic Routing', () => {
     });
   });
 
-  it('renders General public placeholder when VITE_FOUNDER_MODE=false and hostname is not founder.indii.music', async () => {
+  it('renders public marketing lander when VITE_FOUNDER_MODE=false and hostname is not founder.indii.music', async () => {
     Object.defineProperty(window, 'location', {
       value: { 
         hostname: 'indii.music', 
@@ -62,8 +66,8 @@ describe('Landing App Dynamic Routing', () => {
       root.render(<App />);
     });
 
-    expect(container.textContent).toContain('indii.music');
-    expect(container.textContent).toContain('The general public platform is coming soon.');
+    expect(container.querySelector('[data-testid="public-home"]')).not.toBeNull();
+    expect(container.textContent).toContain('Public Marketing Lander');
     expect(container.querySelector('[data-testid="founder-home"]')).toBeNull();
   });
 
