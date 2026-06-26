@@ -1,19 +1,19 @@
 # Handoff State
-**Updated:** 2026-06-26 09:50 EDT
-**Branch:** `main`
+**Updated:** 2026-06-26 11:47 EDT
+**Branch:** `feat/public-marketing-page`
 
 ## Recent Commits
 ```
+0ad506971 chore: session checkpoint [11:18]
+f97f5a41b chore: session checkpoint [10:59]
+fa24566f6 feat(landing): real public marketing page at indii.music
+2cde2f27e chore: session checkpoint [09:50]
 5dbd4c11c chore: session checkpoint [09:49]
 1e2392f10 chore: session checkpoint [09:46]
 2df7a7369 chore: session checkpoint [09:43]
 831ee8407 chore: session checkpoint [09:42]
 59956d04d chore: session checkpoint [09:41]
 2d9482f09 chore: session checkpoint [09:39]
-555251ca5 chore: session checkpoint [09:37]
-b31f74d14 chore: session checkpoint [09:35]
-559ad4a0d chore: session checkpoint [09:24]
-2ba321f67 chore: session checkpoint [09:21]
 ```
 
 ## Working State
