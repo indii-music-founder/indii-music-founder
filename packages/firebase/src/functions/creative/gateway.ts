@@ -46,7 +46,7 @@ interface GeminiContentResponse {
 
 const IMAGE_MODEL_IDS = {
   fast: 'gemini-3.1-flash-image',
-  pro: 'gemini-3-pro-image-preview',
+  pro: 'gemini-3-pro-image',
   legacy: 'gemini-2.5-flash-image',
 } as const;
 
@@ -162,14 +162,17 @@ function getStorage() {
 const BaseMediaRequest = z.object({
   prompt: z.string().min(1),
   referenceUri: z.string().startsWith('gs://').optional(),
+  referenceUris: z.array(z.string().startsWith('gs://')).max(14).optional(),
 });
 
 const GenerateImageSchema = BaseMediaRequest.extend({
+  sessionId: z.string().optional(),
   aspectRatio: z.enum(['1:1', '16:9', '9:16', '3:4', '4:3']).default('1:1'),
   model: z.enum(['lite', 'fast', 'pro', 'legacy']).default('fast'),
   imageSize: z.enum(['512', '0.5K', '1K', '2K', '4K', '1k', '2k', '4k']).optional(),
   thinkingLevel: z.enum(['none', 'minimal', 'low', 'medium', 'high']).optional(),
   useGoogleSearch: z.boolean().optional(),
+  useImageSearch: z.boolean().optional(),
   useGrounding: z.boolean().optional(),
 });
 
@@ -249,10 +252,10 @@ function normalizeImageSize(imageSize?: string): '512' | '1K' | '2K' | '4K' | un
   return '1K';
 }
 
-function normalizeThinkingLevel(thinkingLevel?: string): 'Minimal' | 'High' | undefined {
+function normalizeThinkingLevel(thinkingLevel?: string): 'minimal' | 'high' | undefined {
   if (!thinkingLevel || thinkingLevel === 'none') return undefined;
-  if (thinkingLevel === 'high' || thinkingLevel === 'medium') return 'High';
-  return 'Minimal';
+  if (thinkingLevel === 'high' || thinkingLevel === 'medium') return 'high';
+  return 'minimal';
 }
 
 function resolveImageModel(model: z.infer<typeof GenerateImageSchema>['model']): string {
@@ -332,6 +335,105 @@ function toReferenceImages(referenceUris?: string[]): VideoGenerationReferenceIm
     referenceType: VideoGenerationReferenceType.ASSET,
   }));
   return references.length > 0 ? references : undefined;
+}
+
+function parseGsUri(uri: string): { bucket: string; path: string } {
+  const match = uri.match(/^gs:\/\/([^/]+)\/(.+)$/);
+  if (!match) {
+    throw new HttpsError('invalid-argument', `Expected a gs:// URI, got: ${uri}`);
+  }
+  return { bucket: match[1]!, path: match[2]! };
+}
+
+function isOwnerScopedCreativePath(userId: string, path: string): boolean {
+  return (
+    path.startsWith(`creative/${userId}/`) ||
+    path.startsWith(`users/${userId}/vault/`)
+  );
+}
+
+async function loadReferenceImage(userId: string, uri: string): Promise<{ mimeType: string; data: string }> {
+  const { bucket, path } = parseGsUri(uri);
+  if (!isOwnerScopedCreativePath(userId, path)) {
+    throw new HttpsError('permission-denied', 'Reference media must live in your creative storage namespace.');
+  }
+
+  const file = getStorage().bucket(bucket).file(path);
+  const [metadata] = await file.getMetadata();
+  const contentType = metadata.contentType || 'image/png';
+  if (!contentType.startsWith('image/')) {
+    throw new HttpsError('invalid-argument', `Reference media must be an image, got ${contentType}.`);
+  }
+
+  const [buffer] = await file.download();
+  return { mimeType: contentType, data: buffer.toString('base64') };
+}
+
+async function loadReferenceImages(userId: string, requestData: { referenceUri?: string; referenceUris?: string[] }): Promise<{ mimeType: string; data: string }[]> {
+  const uris = [
+    requestData.referenceUri,
+    ...(requestData.referenceUris ?? []),
+  ].filter((uri, index, array): uri is string => !!uri && array.indexOf(uri) === index);
+
+  return Promise.all(uris.map(uri => loadReferenceImage(userId, uri)));
+}
+
+function extractInteractionImage(response: unknown, kind: MediaKind = 'image'): { mimeType: string; data: string } {
+  const typed = response as {
+    output_image?: { data?: string; mime_type?: string; mimeType?: string };
+    outputs?: Array<Record<string, unknown>>;
+    status?: string;
+  };
+
+  if (typed.output_image?.data) {
+    return {
+      data: typed.output_image.data,
+      mimeType: typed.output_image.mime_type || typed.output_image.mimeType || 'image/png',
+    };
+  }
+
+  for (const output of typed.outputs ?? []) {
+    if (!output || typeof output !== 'object') continue;
+    const imageOutput = output as {
+      type?: string;
+      data?: string;
+      mime_type?: string;
+      mimeType?: string;
+      parts?: Array<Record<string, unknown>>;
+    };
+
+    if (imageOutput.type === 'image' && imageOutput.data) {
+      return {
+        data: imageOutput.data,
+        mimeType: imageOutput.mime_type || imageOutput.mimeType || 'image/png',
+      };
+    }
+
+    for (const part of imageOutput.parts ?? []) {
+      const inlineData = (part as { inlineData?: { data?: string; mimeType?: string } }).inlineData;
+      if (inlineData?.data) {
+        return {
+          data: inlineData.data,
+          mimeType: inlineData.mimeType || 'image/png',
+        };
+      }
+    }
+  }
+
+  const textPreview = (typed.outputs ?? [])
+    .flatMap(output => {
+      if (!output || typeof output !== 'object') return [];
+      const imageOutput = output as { text?: string; parts?: Array<Record<string, unknown>> };
+      const textParts = imageOutput.text ? [imageOutput.text] : [];
+      const nestedTextParts = (imageOutput.parts ?? [])
+        .map(part => (part as { text?: string }).text)
+        .filter((text): text is string => !!text);
+      return [...textParts, ...nestedTextParts];
+    })
+    .join(' ')
+    .slice(0, 180) || undefined;
+
+  throw new MediaGenerationError(kind, 'NO_IMAGE', textPreview);
 }
 
 function buildOmniPrompt(data: z.infer<typeof GenerateOmniRemixSchema>): string {
@@ -660,7 +762,7 @@ async function downloadGeneratedVideo(ai: GoogleGenAI, video: Video, jobId: stri
 }
 
 /**
- * generateImageV3 - Routes to gemini-3-pro-image-preview
+ * generateImageV3 - Routes to Gemini 3 image models via Interactions API.
  */
 export const generateImageV3 = onCall({ timeoutSeconds: 120, memory: '1GiB', secrets: [geminiApiKey], enforceAppCheck: ENFORCE_APP_CHECK }, async (request) => {
   if (!request.auth) throw new HttpsError('unauthenticated', 'User must be authenticated.');
@@ -670,13 +772,14 @@ export const generateImageV3 = onCall({ timeoutSeconds: 120, memory: '1GiB', sec
     throw new HttpsError('invalid-argument', 'Payload validation failed. Ensure no base64 is passed and only gs:// URIs are used.');
   }
 
-  const { prompt, aspectRatio, model, imageSize, thinkingLevel, useGoogleSearch, useGrounding } = parsed.data;
+  const { prompt, sessionId, aspectRatio, model, imageSize, thinkingLevel, useGoogleSearch, useGrounding, useImageSearch } = parsed.data;
   const userId = request.auth.uid;
   const jobId = getDb().collection('creative_jobs').doc().id;
   
   await safeDbSet(jobId, {
     id: jobId,
     userId,
+    sessionId,
     status: 'processing',
     type: 'image',
     prompt,
@@ -688,29 +791,43 @@ export const generateImageV3 = onCall({ timeoutSeconds: 120, memory: '1GiB', sec
     const modelId = resolveImageModel(model);
     const normalizedThinkingLevel = normalizeThinkingLevel(thinkingLevel);
     const normalizedImageSize = normalizeImageSize(imageSize);
-    const config: Record<string, unknown> = {
-      responseModalities: ["IMAGE"],
-      imageConfig: {
-        aspectRatio,
-        ...(normalizedImageSize ? { imageSize: normalizedImageSize } : {}),
-      },
-    };
+    const referenceImages = await loadReferenceImages(userId, parsed.data);
+    const interactionInput = [
+      { type: 'text' as const, text: prompt },
+      ...referenceImages.map(ref => ({
+        type: 'image' as const,
+        mime_type: ref.mimeType as 'image/png' | 'image/jpeg' | 'image/webp' | 'image/heic' | 'image/heif' | 'image/gif' | 'image/bmp' | 'image/tiff',
+        data: ref.data,
+      })),
+    ];
+    const searchTypes: Array<'web_search' | 'image_search' | 'enterprise_web_search'> =
+      model === 'fast' && useImageSearch
+        ? ['web_search', 'image_search']
+        : ['web_search'];
+    const googleSearchTool = useGoogleSearch || useGrounding
+      ? [{
+          type: 'google_search' as const,
+          search_types: searchTypes,
+        }]
+      : undefined;
 
-    if (normalizedThinkingLevel && model === 'fast') {
-      config.thinkingConfig = { thinkingLevel: normalizedThinkingLevel };
-    }
-    if (useGoogleSearch || useGrounding) {
-      config.tools = [{ googleSearch: {} }];
-    }
-
-    // Generate image using Gemini 3 Multimodal capabilities
-    const response = await ai.models.generateContent({
+    const interaction = await ai.interactions.create({
       model: modelId,
-      contents: [{ role: "user", parts: [{ text: prompt }] }],
-      config,
+      input: interactionInput,
+      response_modalities: ['image'],
+      generation_config: {
+        image_config: {
+          aspect_ratio: aspectRatio,
+          ...(normalizedImageSize ? { image_size: normalizedImageSize } : {}),
+        },
+        ...(normalizedThinkingLevel && model === 'fast'
+          ? { thinking_level: normalizedThinkingLevel }
+          : {}),
+      },
+      ...(googleSearchTool ? { tools: googleSearchTool } : {}),
     });
 
-    const image = extractInlineMedia(response, 'image');
+    const image = extractInteractionImage(interaction);
     
     const buffer = Buffer.from(image.data, 'base64');
     

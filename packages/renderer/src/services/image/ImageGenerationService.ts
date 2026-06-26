@@ -76,6 +76,9 @@ export interface ImageGenerationOptions {
     /** Thought signature from a previous response for multi-turn continuity. */
     thoughtSignature?: string;
 
+    /** Optional creative session id used to link jobs back to the editor/session record. */
+    sessionId?: string;
+
     /** Optional artistic style directive. */
     style?: string;
     /** Optional generation quality setting. */
@@ -345,12 +348,15 @@ export class ImageGenerationService {
             // Resolve imageSize: prefer explicit imageSize, fall back to resolution.
             const imageSize = options.imageSize || this.normalizeImageResolution(options.resolution);
 
-            let referenceUri;
+            let referenceUri: string | undefined;
+            let referenceUris: string[] | undefined;
             if (options.sourceImages && options.sourceImages.length > 0) {
-                const firstImg = options.sourceImages[0];
-                if (firstImg) {
-                    referenceUri = await CreativeStorageService.uploadReferenceMedia(uid, `data:${firstImg.mimeType};base64,${firstImg.data}`, 'image');
-                }
+                referenceUris = (await Promise.all(
+                    options.sourceImages.slice(0, 14).map((img) =>
+                        CreativeStorageService.uploadReferenceMedia(uid, `data:${img.mimeType};base64,${img.data}`, 'image', { scope: 'objects' })
+                    )
+                )).filter((uri): uri is string => !!uri);
+                referenceUri = referenceUris[0];
             }
 
             const payload: Record<string, unknown> = {
@@ -360,6 +366,7 @@ export class ImageGenerationService {
                 model: options.model || 'fast',
                 imageSize,
                 referenceUri,
+                referenceUris,
                 // Gemini 3 advanced config
                 thinkingLevel: options.thinkingLevel,
                 includeThoughts: options.includeThoughts,
@@ -369,6 +376,7 @@ export class ImageGenerationService {
                 // Multi-turn
                 conversationHistory: options.conversationHistory,
                 thoughtSignature: options.thoughtSignature,
+                sessionId: options.sessionId,
                 // Advanced control
                 style: options.style,
                 quality: options.quality,

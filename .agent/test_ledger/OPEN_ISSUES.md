@@ -7387,7 +7387,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-502: Add a repo-native `CanvasManifest` compiler for Fabric canvas edits
 
-- **Status:** 🟡 OPEN / PARTIALLY IMPLEMENTED LOCALLY — **Severity:** 🟠 HIGH — **Module:** creative / CanvasOperationsService / edit pipeline
+- **Status:** 🟢 FIX APPLIED LOCALLY — **Severity:** 🟠 HIGH — **Module:** creative / CanvasOperationsService / edit pipeline
 - **Blueprint item to use:** the sketch's `CanvasManifest` concept is good, but it must be adapted to this repo. Do not copy the Next/Fabric 5 scaffold.
 - **Current gap:** canvas state is spread across `HistoryItem`, `CanvasOperationsService.prepareMasksForEdit(...)`, `definitions`, `referenceImages`, `studioControls`, and ad hoc service calls. There is no single compiled object that says: base image, mask(s), subject/style references, prompt history, model tier, grounding, resolution, and aspect ratio.
 - **Fix applied in current workspace:** added `creativeManifest.ts` with a typed manifest compiler, route inference, subject-vault packing, and a summary helper, then wired it into `useCreativeCanvas` and `CanvasHeader`.
@@ -7413,7 +7413,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-504: Normalize Nano Banana model IDs and choose Interactions API vs generateContent for image workflows
 
-- **Status:** 🟡 OPEN / FIX APPLIED LOCALLY — **Severity:** 🟠 HIGH — **Module:** Gemini model config / image gateway
+- **Status:** 🟢 FIX APPLIED LOCALLY — **Severity:** 🟠 HIGH — **Module:** Gemini model config / image gateway
 - **Evidence:** The canonical image model IDs are now normalized to `gemini-3-pro-image` in the repo model registry and renderer config, while the gateway routes image generation through `ai.interactions.create(...)` with the current Google Search tool shape.
 - **Risk:** live model availability still depends on project/region provisioning, and the repo should keep the fallback/alias story explicit so older preview names do not reappear silently.
 - **Fix applied in current workspace:** model IDs were centralized, pricing aliases were updated, and the creative gateway moved to the Interactions API path with structured image inputs and grounding support.
@@ -7423,7 +7423,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-505: Add explicit model routing for rapid edit vs typography/heavy rendering/reference blend
 
-- **Status:** 🟡 OPEN / PARTIALLY IMPLEMENTED LOCALLY — **Severity:** 🟡 MEDIUM — **Module:** creative / model orchestration
+- **Status:** 🟢 FIX APPLIED LOCALLY — **Severity:** 🟡 MEDIUM — **Module:** creative / model orchestration
 - **Blueprint item to use:** the sketch's orchestration layer is directionally right: classify edits into rapid, typography, heavy rendering, mask edit, or reference blend, then select model/settings.
 - **Current gap:** UI exposes high-fidelity/pro language, model tiers, grounding, and resolution, but routing is scattered and not tied to a single manifest/policy. Typography and text-heavy assets should default to Pro; quick inpainting should default to Flash; grounded factual visuals should use Search.
 - **Fix applied in current workspace:** the new manifest compiler now infers a route label/reason (`rapid_edit`, `typography`, `heavy_rendering`, `reference_blend`, `grounded`, `canvas_remix`) and surfaces that summary in the editor chrome.
@@ -7437,7 +7437,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-506: Build a user-scoped creative subject vault for objects, characters, style references, masks, and outputs
 
-- **Status:** 🟡 OPEN / PARTIALLY IMPLEMENTED LOCALLY — **Severity:** 🟡 MEDIUM — **Module:** creative storage / project assets / security rules
+- **Status:** 🟢 FIX APPLIED LOCALLY — **Severity:** 🟡 MEDIUM — **Module:** creative storage / project assets / security rules
 - **Blueprint item to use:** subject vault is a useful product concept. It should not be implemented as a global `/sessions/{sessionId}` path; this repo should keep owner-scoped storage.
 - **Current gap:** Project Assets aggregates generated/uploaded items, but there is no explicit typed vault for image-generation references. Storage rules have `creative/{userId}/{allPaths=**}` and `users/{userId}/...`, but no dedicated semantic paths for reference roles.
 - **Fix applied in current workspace:** `CreativeStorageService` now supports scoped vault uploads for `objects`, `characters`, `style`, `masks`, and `outputs`, and the Firebase rules add `creative_sessions` ownership gating for the session-backed records.
@@ -7447,7 +7447,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-507: Persist creative sessions and multi-turn image-edit continuity metadata
 
-- **Status:** 🟡 OPEN / PARTIALLY IMPLEMENTED LOCALLY — **Severity:** 🟡 MEDIUM — **Module:** creative sessions / Firestore / Gemini continuity
+- **Status:** 🟢 FIX APPLIED LOCALLY — **Severity:** 🟡 MEDIUM — **Module:** creative sessions / Firestore / Gemini continuity
 - **Blueprint item to use:** multi-turn `chatHistory` is useful, but current Gemini image workflows need backend session metadata too (e.g. previous interaction IDs or thought/context metadata depending on chosen API path).
 - **Current gap:** jobs are stored in `creative_jobs`, but there is no durable `creative_sessions/{sessionId}` model tying together base image, masks, references, generated variants, selected candidate, model tier, grounding metadata, and edit history.
 - **Fix applied in current workspace:** added a Firestore-backed `CreativeSessionService`, wired `useCreativeCanvas` to compile/persist session snapshots, and stored the `sessionId` on creative jobs.
@@ -7457,7 +7457,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-508: Expose grounding/resolution/model controls coherently in the editor
 
-- **Status:** 🟡 OPEN / PARTIALLY IMPLEMENTED LOCALLY — **Severity:** 🟡 MEDIUM — **Module:** creative UI / CanvasHeader / StudioSettings
+- **Status:** 🟢 FIX APPLIED LOCALLY — **Severity:** 🟡 MEDIUM — **Module:** creative UI / CanvasHeader / StudioSettings
 - **Blueprint item to use:** `settings: { resolution: '2K' | '4K'; grounding: boolean; aspectRatio }` is good. It needs to become a real editor control, not hidden implementation detail.
 - **Current gap:** user sees `REFINE`, `SPEED`, model-ish toggles, top tabs, and global controls, but there is no clear single place in Magic Edit mode that says which model/resolution/grounding will be used and what it costs.
 - **Fix applied in current workspace:** `CanvasHeader` now surfaces the active route, model tier, resolution/image size, grounding state, aspect ratio, and session id inline so the editor state is visible at a glance.
