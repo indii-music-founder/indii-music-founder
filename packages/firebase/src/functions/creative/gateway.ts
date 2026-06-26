@@ -227,20 +227,42 @@ async function uploadToStorage(userId: string, buffer: Buffer, extension: string
   return `gs://${bucket.name}/${filename}`;
 }
 
-async function safeDbSet(jobId: string, data: Record<string, unknown>) {
+async function safeDbSet(
+  jobId: string,
+  data: Record<string, unknown>,
+  collection: string = 'creative_jobs',
+) {
   try {
-    await getDb().collection('creative_jobs').doc(jobId).set(data);
+    await getDb().collection(collection).doc(jobId).set(data);
   } catch (e) {
-    console.warn(`[creativeGateway] Firestore set failed (non-blocking):`, e);
+    console.warn(`[creativeGateway] Firestore set failed for ${collection} (non-blocking):`, e);
   }
 }
 
-async function safeDbUpdate(jobId: string, data: Record<string, unknown>) {
+async function safeDbUpdate(
+  jobId: string,
+  data: Record<string, unknown>,
+  collection: string = 'creative_jobs',
+) {
   try {
-    await getDb().collection('creative_jobs').doc(jobId).update(data);
+    await getDb().collection(collection).doc(jobId).update(data);
   } catch (e) {
-    console.warn(`[creativeGateway] Firestore update failed (non-blocking):`, e);
+    console.warn(`[creativeGateway] Firestore update failed for ${collection} (non-blocking):`, e);
   }
+}
+
+async function syncVideoJobDocument(jobId: string, data: Record<string, unknown>) {
+  await Promise.all([
+    safeDbSet(jobId, data, 'creative_jobs'),
+    safeDbSet(jobId, data, 'videoJobs'),
+  ]);
+}
+
+async function syncVideoJobUpdate(jobId: string, data: Record<string, unknown>) {
+  await Promise.all([
+    safeDbUpdate(jobId, data, 'creative_jobs'),
+    safeDbUpdate(jobId, data, 'videoJobs'),
+  ]);
 }
 
 function normalizeImageSize(imageSize?: string): '512' | '1K' | '2K' | '4K' | undefined {
@@ -689,7 +711,7 @@ async function pollVideoOperation(ai: GoogleGenAI, operation: GenerateVideosOper
     await sleep(VIDEO_POLL_INTERVAL_MS);
     currentOperation = await ai.operations.getVideosOperation({ operation: currentOperation });
 
-    await safeDbUpdate(jobId, {
+    await syncVideoJobUpdate(jobId, {
       progress: Math.min(95, Math.round((attempts / VIDEO_MAX_POLLS) * 95)),
       updatedAt: new Date().toISOString(),
     });
@@ -758,6 +780,145 @@ async function downloadGeneratedVideo(ai: GoogleGenAI, video: Video, jobId: stri
     throw downloadError;
   } finally {
     await rm(downloadPath, { force: true }).catch(() => undefined);
+  }
+}
+
+export interface VideoGenerationJobRecord extends z.infer<typeof GenerateVideoSchema> {
+  id: string;
+  userId: string;
+  status: 'queued' | 'processing' | 'completed' | 'failed';
+  type: 'video';
+  [key: string]: unknown;
+  progress?: number;
+  mode?: string;
+  resultUri?: string;
+  downloadUrl?: string;
+  videoUrl?: string;
+  url?: string;
+  operationName?: string;
+  inputUris?: string[];
+  maskUris?: string[];
+  metadata?: Record<string, unknown>;
+  error?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  completedAt?: string;
+}
+
+export async function executeVideoJob(jobId: string, job: VideoGenerationJobRecord): Promise<{ jobId: string; resultUri: string }> {
+  const normalizedResolution = normalizeVideoResolution(job.resolution, job.model);
+  const hasFrameInput = !!job.firstFrameUri || !!job.referenceUri || !!job.lastFrameUri;
+  const normalizedDuration = normalizeVideoDuration(job.durationSeconds, normalizedResolution, hasFrameInput);
+  const modelId = resolveVideoModel(job.model);
+
+  await syncVideoJobUpdate(jobId, {
+    id: jobId,
+    userId: job.userId,
+    status: 'processing',
+    type: 'video',
+    prompt: job.prompt,
+    model: modelId,
+    progress: 0,
+    inputUris: [
+      job.firstFrameUri || job.referenceUri,
+      job.lastFrameUri,
+      ...(job.referenceUris ?? []),
+    ].filter((uri): uri is string => !!uri),
+    maskUris: [],
+    metadata: {
+      model: modelId,
+      resolution: normalizedResolution,
+      durationSeconds: normalizedDuration,
+      aspectRatio: normalizeVideoAspectRatio(job.aspectRatio),
+      referenceCount: job.referenceUris?.length ?? 0,
+      hasFirstFrame: !!job.firstFrameUri || !!job.referenceUri,
+      hasLastFrame: !!job.lastFrameUri,
+    },
+    updatedAt: new Date().toISOString(),
+  });
+
+  try {
+    const ai = getAiClient('video');
+    const image = toImage(job.firstFrameUri || job.referenceUri);
+    const referenceImages = toReferenceImages(job.referenceUris);
+    const config: Record<string, unknown> = {
+      numberOfVideos: 1,
+      aspectRatio: normalizeVideoAspectRatio(job.aspectRatio),
+      durationSeconds: normalizedDuration,
+      resolution: normalizedResolution,
+      ...(job.negativePrompt ? { negativePrompt: job.negativePrompt } : {}),
+      ...(normalizeVideoSeed(job.seed) !== undefined ? { seed: normalizeVideoSeed(job.seed) } : {}),
+      ...(job.enhancePrompt !== undefined ? { enhancePrompt: job.enhancePrompt } : {}),
+      ...(normalizePersonGeneration(job.personGeneration, hasFrameInput) ? { personGeneration: normalizePersonGeneration(job.personGeneration, hasFrameInput) } : {}),
+      ...(job.lastFrameUri ? { lastFrame: toImage(job.lastFrameUri) } : {}),
+      ...(referenceImages ? { referenceImages } : {}),
+    };
+
+    let operation = await ai.models.generateVideos({
+      model: modelId,
+      prompt: job.prompt,
+      ...(image ? { image } : {}),
+      config: config as Parameters<typeof ai.models.generateVideos>[0]['config'],
+    });
+
+    await syncVideoJobUpdate(jobId, {
+      operationName: operation.name,
+      progress: 5,
+      updatedAt: new Date().toISOString(),
+    });
+
+    operation = await pollVideoOperation(ai, operation, jobId);
+    const video = extractGeneratedVideo(operation);
+    const downloadedVideo = await downloadGeneratedVideo(ai, video, jobId);
+    const outputUri = await uploadToStorage(
+      job.userId,
+      downloadedVideo.buffer,
+      extensionForMime(downloadedVideo.mimeType, 'mp4'),
+      downloadedVideo.mimeType,
+    );
+
+    await syncVideoJobUpdate(jobId, {
+      status: 'completed',
+      resultUri: outputUri,
+      downloadUrl: outputUri,
+      videoUrl: outputUri,
+      url: outputUri,
+      progress: 100,
+      output: {
+        url: outputUri,
+        metadata: {
+          model: modelId,
+          aspectRatio: normalizeVideoAspectRatio(job.aspectRatio),
+          resolution: normalizedResolution,
+          durationSeconds: normalizedDuration,
+          mime_type: downloadedVideo.mimeType,
+          hasFirstFrame: !!image,
+          hasLastFrame: !!job.lastFrameUri,
+          referenceCount: referenceImages?.length ?? 0,
+        },
+      },
+      metadata: {
+        model: modelId,
+        aspectRatio: normalizeVideoAspectRatio(job.aspectRatio),
+        resolution: normalizedResolution,
+        durationSeconds: normalizedDuration,
+        mimeType: downloadedVideo.mimeType,
+        hasFirstFrame: !!image,
+        hasLastFrame: !!job.lastFrameUri,
+        referenceCount: referenceImages?.length ?? 0,
+      },
+      completedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+
+    return { jobId, resultUri: outputUri };
+  } catch (error: unknown) {
+    await syncVideoJobUpdate(jobId, {
+      status: 'failed',
+      error: errorMessage(error),
+      updatedAt: new Date().toISOString(),
+    });
+    throw toGatewayError(error, 'Video generation failed');
   }
 }
 
@@ -895,73 +1056,50 @@ export const generateVideoV3 = onCall({ timeoutSeconds: 540, secrets: [geminiApi
   const hasFrameInput = !!firstFrameUri || !!referenceUri || !!lastFrameUri;
   const normalizedDuration = normalizeVideoDuration(durationSeconds, normalizedResolution, hasFrameInput);
   const modelId = resolveVideoModel(model);
-  
-  await safeDbSet(jobId, {
+  const inputUris = [
+    firstFrameUri || referenceUri,
+    lastFrameUri,
+    ...(referenceUris ?? []),
+  ].filter((uri): uri is string => !!uri);
+
+  const jobRecord: VideoGenerationJobRecord = {
     id: jobId,
     userId,
-    status: 'processing',
+    status: 'queued',
     type: 'video',
     prompt,
-    model: modelId,
+    model,
+    aspectRatio,
+    resolution,
+    durationSeconds,
+    negativePrompt,
+    personGeneration,
+    seed,
+    enhancePrompt,
+    firstFrameUri,
+    lastFrameUri,
+    referenceUri,
+    referenceUris,
     progress: 0,
-    createdAt: new Date().toISOString()
-  });
-
-  try {
-    const ai = getAiClient('video');
-    const image = toImage(firstFrameUri || referenceUri);
-    const referenceImages = toReferenceImages(referenceUris);
-    const config: Record<string, unknown> = {
-      numberOfVideos: 1,
-      aspectRatio: normalizeVideoAspectRatio(aspectRatio),
-      durationSeconds: normalizedDuration,
-      resolution: normalizedResolution,
-      ...(negativePrompt ? { negativePrompt } : {}),
-      ...(normalizeVideoSeed(seed) !== undefined ? { seed: normalizeVideoSeed(seed) } : {}),
-      ...(enhancePrompt !== undefined ? { enhancePrompt } : {}),
-      ...(normalizePersonGeneration(personGeneration, hasFrameInput) ? { personGeneration: normalizePersonGeneration(personGeneration, hasFrameInput) } : {}),
-      ...(lastFrameUri ? { lastFrame: toImage(lastFrameUri) } : {}),
-      ...(referenceImages ? { referenceImages } : {}),
-    };
-
-    let operation = await ai.models.generateVideos({
+    mode: modelId,
+    inputUris,
+    maskUris: [],
+    metadata: {
       model: modelId,
-      prompt,
-      ...(image ? { image } : {}),
-      config: config as Parameters<typeof ai.models.generateVideos>[0]['config'],
-    });
+      aspectRatio: normalizeVideoAspectRatio(aspectRatio),
+      resolution: normalizedResolution,
+      durationSeconds: normalizedDuration,
+      hasFirstFrame: !!firstFrameUri || !!referenceUri,
+      hasLastFrame: !!lastFrameUri,
+      referenceCount: referenceUris?.length ?? 0,
+    },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
 
-    operation = await pollVideoOperation(ai, operation, jobId);
-    const video = extractGeneratedVideo(operation);
-    const downloadedVideo = await downloadGeneratedVideo(ai, video, jobId);
-    const outputUri = await uploadToStorage(
-      userId,
-      downloadedVideo.buffer,
-      extensionForMime(downloadedVideo.mimeType, 'mp4'),
-      downloadedVideo.mimeType,
-    );
-    
-    await safeDbUpdate(jobId, {
-      status: 'completed',
-      resultUri: outputUri,
-      progress: 100,
-      metadata: {
-        model: modelId,
-        aspectRatio: normalizeVideoAspectRatio(aspectRatio),
-        resolution: normalizedResolution,
-        durationSeconds: normalizedDuration,
-        mimeType: downloadedVideo.mimeType,
-        hasFirstFrame: !!image,
-        referenceCount: referenceImages?.length ?? 0,
-      },
-      completedAt: new Date().toISOString()
-    });
+  await syncVideoJobDocument(jobId, jobRecord);
 
-    return { jobId, resultUri: outputUri };
-  } catch (error: unknown) {
-    await safeDbUpdate(jobId, { status: 'failed', error: errorMessage(error) });
-    throw toGatewayError(error, 'Video generation failed');
-  }
+  return { jobId };
 });
 
 /**
