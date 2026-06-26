@@ -114,12 +114,21 @@ jobs:
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: |
-          if echo "$FIREBASE_SERVICE_ACCOUNT" | base64 -d >/dev/null 2>&1; then
-            echo "$FIREBASE_SERVICE_ACCOUNT" | base64 -d > $HOME/gcloud-key.json
+          set -euo pipefail
+          KEY="$HOME/gcloud-key.json"
+          # Reconstruct the service-account key deterministically. Accept either a
+          # base64-encoded secret OR raw JSON, picking whichever yields valid JSON.
+          # printf (not echo) preserves the private_key's \n escape sequences.
+          if printf '%s' "$FIREBASE_SERVICE_ACCOUNT" | base64 -d 2>/dev/null | python3 -c "import sys,json; json.load(sys.stdin)" >/dev/null 2>&1; then
+            printf '%s' "$FIREBASE_SERVICE_ACCOUNT" | base64 -d > "$KEY"
+            echo "auth: decoded base64 secret"
           else
-            echo "$FIREBASE_SERVICE_ACCOUNT" > $HOME/gcloud-key.json
+            printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$KEY"
+            echo "auth: wrote raw JSON secret"
           fi
-          echo "GOOGLE_APPLICATION_CREDENTIALS=$HOME/gcloud-key.json" >> $GITHUB_ENV
+          # Fail loudly with a clear message if the key is not usable JSON.
+          python3 -c "import json; d=json.load(open('$KEY')); assert d.get('private_key'), 'key missing private_key'; assert d.get('client_email'), 'key missing client_email'; print('auth: key valid for', d['client_email'], '(' + str(__import__('os').path.getsize('$KEY')) + ' bytes)')"
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$KEY" >> $GITHUB_ENV
 
       - name: Run unit tests (shard ${{ matrix.shard }}/8)
         timeout-minutes: 15
@@ -288,12 +297,21 @@ jobs:
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: |
-          if echo "$FIREBASE_SERVICE_ACCOUNT" | base64 -d >/dev/null 2>&1; then
-            echo "$FIREBASE_SERVICE_ACCOUNT" | base64 -d > $HOME/gcloud-key.json
+          set -euo pipefail
+          KEY="$HOME/gcloud-key.json"
+          # Reconstruct the service-account key deterministically. Accept either a
+          # base64-encoded secret OR raw JSON, picking whichever yields valid JSON.
+          # printf (not echo) preserves the private_key's \n escape sequences.
+          if printf '%s' "$FIREBASE_SERVICE_ACCOUNT" | base64 -d 2>/dev/null | python3 -c "import sys,json; json.load(sys.stdin)" >/dev/null 2>&1; then
+            printf '%s' "$FIREBASE_SERVICE_ACCOUNT" | base64 -d > "$KEY"
+            echo "auth: decoded base64 secret"
           else
-            echo "$FIREBASE_SERVICE_ACCOUNT" > $HOME/gcloud-key.json
+            printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$KEY"
+            echo "auth: wrote raw JSON secret"
           fi
-          echo "GOOGLE_APPLICATION_CREDENTIALS=$HOME/gcloud-key.json" >> $GITHUB_ENV
+          # Fail loudly with a clear message if the key is not usable JSON.
+          python3 -c "import json; d=json.load(open('$KEY')); assert d.get('private_key'), 'key missing private_key'; assert d.get('client_email'), 'key missing client_email'; print('auth: key valid for', d['client_email'], '(' + str(__import__('os').path.getsize('$KEY')) + ' bytes)')"
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$KEY" >> $GITHUB_ENV
 
       - name: Deploy to staging preview channel
         id: channel-deploy
@@ -432,12 +450,21 @@ jobs:
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: |
-          if echo "$FIREBASE_SERVICE_ACCOUNT" | base64 -d >/dev/null 2>&1; then
-            echo "$FIREBASE_SERVICE_ACCOUNT" | base64 -d > $HOME/gcloud-key.json
+          set -euo pipefail
+          KEY="$HOME/gcloud-key.json"
+          # Reconstruct the service-account key deterministically. Accept either a
+          # base64-encoded secret OR raw JSON, picking whichever yields valid JSON.
+          # printf (not echo) preserves the private_key's \n escape sequences.
+          if printf '%s' "$FIREBASE_SERVICE_ACCOUNT" | base64 -d 2>/dev/null | python3 -c "import sys,json; json.load(sys.stdin)" >/dev/null 2>&1; then
+            printf '%s' "$FIREBASE_SERVICE_ACCOUNT" | base64 -d > "$KEY"
+            echo "auth: decoded base64 secret"
           else
-            echo "$FIREBASE_SERVICE_ACCOUNT" > $HOME/gcloud-key.json
+            printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$KEY"
+            echo "auth: wrote raw JSON secret"
           fi
-          echo "GOOGLE_APPLICATION_CREDENTIALS=$HOME/gcloud-key.json" >> $GITHUB_ENV
+          # Fail loudly with a clear message if the key is not usable JSON.
+          python3 -c "import json; d=json.load(open('$KEY')); assert d.get('private_key'), 'key missing private_key'; assert d.get('client_email'), 'key missing client_email'; print('auth: key valid for', d['client_email'], '(' + str(__import__('os').path.getsize('$KEY')) + ' bytes)')"
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$KEY" >> $GITHUB_ENV
           gcloud auth activate-service-account --key-file="$HOME/gcloud-key.json" --project=indii-music-founder
 
       - name: Ensure pinned firebase-tools + verify credentials (ISSUE-498)
