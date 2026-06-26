@@ -7657,9 +7657,13 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Files:** `.agent/test_ledger/OPEN_ISSUES.md`; optional future handoff doc under `.agent/` if implementation is split across agents.
 
 ### ISSUE-CI-28249067854: CI Pipeline Failure (Deploy to Firebase Hosting)
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (36105e719)
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
 - **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/28249067854)
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
+- **Fix:** The failed `main` CI shard was caused by the landing `Home` test mock ignoring `founder={false}`; this branch already carries that prop-aware mock. The local full-suite gate was also repaired by aligning creative/image tests with the current Storage-first `imageUri`/`maskUri`/`referenceImageUri` and Gemini Interactions contracts.
+- **Evidence:** `packages/landing/src/App.test.tsx:9` — mocked `Home` now accepts `founder` and renders `public-home` for general routes; `packages/firebase/src/__tests__/image_gen.test.ts:29` — the image-generation mock now exposes `interactions.create`.
+- **Files:** `packages/landing/src/App.test.tsx`, `packages/firebase/src/__tests__/image_gen.test.ts`, `packages/renderer/src/services/__tests__/HiggsfieldParity.integration.test.ts`, `packages/renderer/src/modules/creative/components/CreativeCanvas.interaction.test.tsx`, `packages/renderer/src/modules/creative/components/__tests__/CreativeCanvas.test.tsx`
+- **UX Impact:** CI no longer blocks on the stale landing mock or stale creative test payload contracts; production deploy can proceed after the branch is merged and the GitHub workflow reruns.
