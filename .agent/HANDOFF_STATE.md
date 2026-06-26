@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-26 11:50 EDT
+**Updated:** 2026-06-26 13:49 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+1d286065c test(landing): update public route expectation
+d8cb4da00 chore: session checkpoint [11:50]
 17ee81637 feat(landing): real public marketing page at indii.music (#210)
 2cde2f27e chore: session checkpoint [09:50]
 5dbd4c11c chore: session checkpoint [09:49]
@@ -12,13 +14,37 @@
 831ee8407 chore: session checkpoint [09:42]
 59956d04d chore: session checkpoint [09:41]
 2d9482f09 chore: session checkpoint [09:39]
-555251ca5 chore: session checkpoint [09:37]
-b31f74d14 chore: session checkpoint [09:35]
 ```
 
 ## Working State
 ```
-clean working tree
+ M .agent/test_ledger/OPEN_ISSUES.md
+ M README.md
+ M docs/README.md
+ M packages/firebase/firestore.rules
+ M packages/firebase/src/config/models.ts
+ M packages/firebase/src/functions/creative/gateway.test.ts
+ M packages/firebase/src/functions/creative/gateway.ts
+ M packages/firebase/src/lib/image.ts
+ M packages/firebase/src/lib/image_generation.test.ts
+ M packages/firebase/src/lib/image_generation.ts
+ M packages/renderer/src/core/config/intelligence-models.ts
+ M packages/renderer/src/modules/creative/CreativeStudio.tsx
+ M packages/renderer/src/modules/creative/components/CanvasHeader.tsx
+ M packages/renderer/src/modules/creative/components/CreativeCanvas.tsx
+ M packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts
+ M packages/renderer/src/modules/creative/hooks/useDirectGeneration.ts
+ M packages/renderer/src/modules/creative/services/CanvasOperationsService.ts
+ M packages/renderer/src/services/creative/CreativeStorageService.ts
+ M packages/renderer/src/services/creative/__tests__/CreativeStorageService.test.ts
+ M packages/renderer/src/services/image/EditingService.test.ts
+ M packages/renderer/src/services/image/EditingService.ts
+ M packages/renderer/src/services/image/ImageGenerationService.ts
+ M packages/renderer/src/services/intelligence/billing/ModelPricing.ts
+?? .agent/checkpoints/codex-veo-blueprint-2026-06-26.md
+?? packages/renderer/src/modules/creative/services/__tests__/
+?? packages/renderer/src/modules/creative/services/creativeManifest.ts
+?? packages/renderer/src/services/creative/CreativeSessionService.ts
 ```
 
 ## Decisions
