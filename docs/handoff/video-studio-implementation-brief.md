@@ -41,6 +41,7 @@ This brief is the repo-native version of the Veo 3.x sketch. It exists to keep f
 - Temp video assets: `creative/{userId}/video/tmp/{sessionId}/...`
 - Project-scoped assets: `creative/{userId}/projects/{projectId}/...`
 - Owner vault assets: `users/{userId}/vault/{scope}/...`
+- Temp cleanup worker: `packages/firebase/src/devops/storageMaintenance.ts` (`cleanupExpiredVideoTemps`)
 
 ## Creative route isolation
 

@@ -141,8 +141,8 @@ export { sendEmail } from './email/sendEmail';
 // Growth Intelligence Engine — Platform Analytics OAuth (Spotify, TikTok, Instagram)
 export { analyticsExchangeToken, analyticsRefreshToken, analyticsRevokeToken } from './analytics/platformTokenExchange';
 
-// Storage Maintenance (Scheduled — orphan cleanup, quota tracking, archival flagging)
-export { cleanupOrphanedVideos, trackStorageQuotas, flagVideosForArchival } from './devops/storageMaintenance';
+// Storage Maintenance (Scheduled — orphan cleanup, quota tracking, archival flagging, temp cleanup)
+export { cleanupExpiredVideoTemps, cleanupOrphanedVideos, trackStorageQuotas, flagVideosForArchival } from './devops/storageMaintenance';
 
 // Remote Relay — Server-Side Agent Processing (replaces desktop-browser-dependent relay)
 export { processRelayCommand } from './relay/relayCommandProcessor';
