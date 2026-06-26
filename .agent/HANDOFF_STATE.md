@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-26 08:41 EDT
+**Updated:** 2026-06-26 08:46 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+49005aac2 chore: session checkpoint [08:41]
 bca6bc016 chore: session checkpoint [08:38]
 016ca89c0 chore: session checkpoint [08:37]
 50c73abf4 chore: session checkpoint [08:29]
@@ -13,7 +14,6 @@ bca6bc016 chore: session checkpoint [08:38]
 46cfd5a4a chore: session checkpoint [22:42]
 d144147a4 fix(ci): treat 'current active version' as idempotent success for prod hosting deploys
 211b04f5e chore: session checkpoint [22:27]
-fe7d43004 fix(ci): treat 'current active version' as idempotent staging-deploy success
 ```
 
 ## Working State
