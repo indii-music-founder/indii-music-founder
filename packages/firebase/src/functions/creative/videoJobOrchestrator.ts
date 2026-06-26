@@ -4,7 +4,7 @@ import { executeVideoJob, type VideoGenerationJobRecord } from './gateway';
 
 export const videoJobOrchestrator = onDocumentWritten(
   {
-    document: 'creative_jobs/{jobId}',
+    document: 'videoJobs/{jobId}',
     region: 'us-central1',
     memory: '512MiB',
   },

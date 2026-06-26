@@ -7,6 +7,7 @@ import { getVertexAIClient } from '../../lib/vertexClient';
 import { readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { VideoJobDocumentSchema, type VideoJobDocument } from '@indii/shared';
 import {
   GoogleGenAI,
   VideoGenerationReferenceType,
@@ -55,6 +56,7 @@ const VIDEO_MODEL_IDS = {
   pro: 'veo-3.1-generate-preview',
   lite: 'veo-3.1-lite-generate-preview',
 } as const;
+type VideoModelId = typeof VIDEO_MODEL_IDS[keyof typeof VIDEO_MODEL_IDS];
 
 const OMNI_FLASH_MODEL_ID = process.env.GEMINI_OMNI_FLASH_MODEL || '';
 const VIDEO_POLL_INTERVAL_MS = Number(process.env.VIDEO_POLL_INTERVAL_MS || '10000');
@@ -286,9 +288,9 @@ function resolveImageModel(model: z.infer<typeof GenerateImageSchema>['model']):
   return IMAGE_MODEL_IDS.fast;
 }
 
-function resolveVideoModel(model: z.infer<typeof GenerateVideoSchema>['model']): string {
-  if (model === 'pro') return VIDEO_MODEL_IDS.pro;
-  if (model === 'lite') return VIDEO_MODEL_IDS.lite;
+function resolveVideoModel(model: string | undefined): VideoModelId {
+  if (model === VIDEO_MODEL_IDS.pro || model === 'pro' || (model?.includes('pro') ?? false)) return VIDEO_MODEL_IDS.pro;
+  if (model === VIDEO_MODEL_IDS.lite || model === 'lite' || (model?.includes('lite') ?? false)) return VIDEO_MODEL_IDS.lite;
   return VIDEO_MODEL_IDS.fast;
 }
 
@@ -309,25 +311,28 @@ function normalizeVideoAspectRatio(aspectRatio: z.infer<typeof GenerateVideoSche
 }
 
 function normalizeVideoResolution(
-  resolution: z.infer<typeof GenerateVideoSchema>['resolution'],
-  model: z.infer<typeof GenerateVideoSchema>['model'],
+  resolution: z.infer<typeof GenerateVideoSchema>['resolution'] | undefined,
+  model: string | undefined,
 ): '720p' | '1080p' | '4k' {
-  const normalized = resolution === '1280x720'
+  const normalizedInput = resolution ?? '720p';
+  const normalizedModel = model && model.includes('lite') ? 'lite' : 'fast';
+  const normalized = normalizedInput === '1280x720'
     ? '720p'
-    : resolution === '1920x1080'
+    : normalizedInput === '1920x1080'
       ? '1080p'
-      : resolution === '3840x2160'
+      : normalizedInput === '3840x2160'
         ? '4k'
-        : resolution;
+        : normalizedInput;
 
-  if (model === 'lite' && normalized === '4k') return '1080p';
+  if (normalizedModel === 'lite' && normalized === '4k') return '1080p';
   return normalized;
 }
 
-function normalizeVideoDuration(durationSeconds: number, resolution: string, hasFrameInput: boolean): 4 | 6 | 8 {
+function normalizeVideoDuration(durationSeconds: number | undefined, resolution: string, hasFrameInput: boolean): 4 | 6 | 8 {
+  const safeDurationSeconds = durationSeconds ?? 8;
   if (resolution !== '720p' || hasFrameInput) return 8;
-  if (durationSeconds <= 4) return 4;
-  if (durationSeconds <= 6) return 6;
+  if (safeDurationSeconds <= 4) return 4;
+  if (safeDurationSeconds <= 6) return 6;
   return 8;
 }
 
@@ -783,27 +788,21 @@ async function downloadGeneratedVideo(ai: GoogleGenAI, video: Video, jobId: stri
   }
 }
 
-export interface VideoGenerationJobRecord extends z.infer<typeof GenerateVideoSchema> {
-  id: string;
-  userId: string;
-  status: 'queued' | 'processing' | 'completed' | 'failed';
+export type VideoGenerationJobRecord = VideoJobDocument & {
   type: 'video';
-  [key: string]: unknown;
-  progress?: number;
-  mode?: string;
-  resultUri?: string;
-  downloadUrl?: string;
-  videoUrl?: string;
-  url?: string;
-  operationName?: string;
-  inputUris?: string[];
-  maskUris?: string[];
-  metadata?: Record<string, unknown>;
-  error?: string;
-  createdAt?: string;
-  updatedAt?: string;
-  completedAt?: string;
-}
+  prompt: string;
+  aspectRatio?: z.infer<typeof GenerateVideoSchema>['aspectRatio'];
+  firstFrameUri?: string;
+  lastFrameUri?: string;
+  referenceUri?: string;
+  referenceUris?: string[];
+  resolution?: z.infer<typeof GenerateVideoSchema>['resolution'];
+  durationSeconds?: number;
+  negativePrompt?: string;
+  personGeneration?: z.infer<typeof GenerateVideoSchema>['personGeneration'];
+  seed?: z.infer<typeof GenerateVideoSchema>['seed'];
+  enhancePrompt?: boolean;
+};
 
 export async function executeVideoJob(jobId: string, job: VideoGenerationJobRecord): Promise<{ jobId: string; resultUri: string }> {
   const normalizedResolution = normalizeVideoResolution(job.resolution, job.model);
@@ -829,7 +828,7 @@ export async function executeVideoJob(jobId: string, job: VideoGenerationJobReco
       model: modelId,
       resolution: normalizedResolution,
       durationSeconds: normalizedDuration,
-      aspectRatio: normalizeVideoAspectRatio(job.aspectRatio),
+      aspectRatio: normalizeVideoAspectRatio(job.aspectRatio ?? '16:9'),
       referenceCount: job.referenceUris?.length ?? 0,
       hasFirstFrame: !!job.firstFrameUri || !!job.referenceUri,
       hasLastFrame: !!job.lastFrameUri,
@@ -843,7 +842,7 @@ export async function executeVideoJob(jobId: string, job: VideoGenerationJobReco
     const referenceImages = toReferenceImages(job.referenceUris);
     const config: Record<string, unknown> = {
       numberOfVideos: 1,
-      aspectRatio: normalizeVideoAspectRatio(job.aspectRatio),
+      aspectRatio: normalizeVideoAspectRatio(job.aspectRatio ?? '16:9'),
       durationSeconds: normalizedDuration,
       resolution: normalizedResolution,
       ...(job.negativePrompt ? { negativePrompt: job.negativePrompt } : {}),
@@ -888,7 +887,7 @@ export async function executeVideoJob(jobId: string, job: VideoGenerationJobReco
         url: outputUri,
         metadata: {
           model: modelId,
-          aspectRatio: normalizeVideoAspectRatio(job.aspectRatio),
+          aspectRatio: normalizeVideoAspectRatio(job.aspectRatio ?? '16:9'),
           resolution: normalizedResolution,
           durationSeconds: normalizedDuration,
           mime_type: downloadedVideo.mimeType,
@@ -899,7 +898,7 @@ export async function executeVideoJob(jobId: string, job: VideoGenerationJobReco
       },
       metadata: {
         model: modelId,
-        aspectRatio: normalizeVideoAspectRatio(job.aspectRatio),
+        aspectRatio: normalizeVideoAspectRatio(job.aspectRatio ?? '16:9'),
         resolution: normalizedResolution,
         durationSeconds: normalizedDuration,
         mimeType: downloadedVideo.mimeType,
@@ -1064,11 +1063,12 @@ export const generateVideoV3 = onCall({ timeoutSeconds: 540, secrets: [geminiApi
 
   const jobRecord: VideoGenerationJobRecord = {
     id: jobId,
+    schemaVersion: 1,
     userId,
+    mode: 'video_remix',
     status: 'queued',
     type: 'video',
     prompt,
-    model,
     aspectRatio,
     resolution,
     durationSeconds,
@@ -1081,8 +1081,30 @@ export const generateVideoV3 = onCall({ timeoutSeconds: 540, secrets: [geminiApi
     referenceUri,
     referenceUris,
     progress: 0,
-    mode: modelId,
+    payload: {
+      prompt,
+      sourceVideoUri: firstFrameUri || referenceUri,
+      maskFrameUri: lastFrameUri,
+      cameraPhysics: undefined,
+    },
+    directorSettings: {
+      fps: 24,
+      durationSeconds: normalizedDuration,
+      totalFrames: normalizedDuration * 24,
+      aspectRatio: normalizeVideoAspectRatio(aspectRatio),
+      resolution: normalizedResolution,
+      seed: normalizeVideoSeed(seed),
+      firstFrameUri,
+      lastFrameUri,
+    },
+    provider: 'google-genai',
+    model: modelId,
+    costEstimate: undefined,
+    costReservationId: undefined,
+    retryCount: 0,
     inputUris,
+    tempUris: [],
+    persistentUris: inputUris,
     maskUris: [],
     metadata: {
       model: modelId,
@@ -1097,6 +1119,7 @@ export const generateVideoV3 = onCall({ timeoutSeconds: 540, secrets: [geminiApi
     updatedAt: new Date().toISOString(),
   };
 
+  VideoJobDocumentSchema.parse(jobRecord);
   await syncVideoJobDocument(jobId, jobRecord);
 
   return { jobId };

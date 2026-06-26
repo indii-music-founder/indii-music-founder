@@ -20,6 +20,7 @@ import { httpsCallable } from 'firebase/functions';
 import { functions } from '@/services/firebase';
 import { CreativeStorageService } from '@/services/creative/CreativeStorageService';
 import { neuralCortex, type RenderDirectives } from '@/services/intelligence/NeuralCortexService';
+import { COLLECTIONS } from '@/core/config/collections';
 
 
 type VideoAspectRatio = z.infer<typeof VideoAspectRatioSchema>;
@@ -427,7 +428,7 @@ export class VideoGenerationService {
             const res = await generateVideoV3(compactedPayload);
             const data = res.data as { jobId: string };
 
-            // We return a placeholder URL; the actual video will be resolved by waitForJob or the UI listener
+            // Return a job token here; the actual video URL resolves via waitForJob or the UI listener
             return [{
                 id: data.jobId,
                 url: '', 
@@ -443,7 +444,7 @@ export class VideoGenerationService {
      * Subscribes to a video job status.
      */
     subscribeToJob(jobId: string, callback: (job: VideoJob | null) => void): () => void {
-        const jobRef = doc(db, 'videoJobs', jobId);
+        const jobRef = doc(db, COLLECTIONS.VIDEO.JOBS, jobId);
         let maxQualityLevel = 0;
 
         const getQualityLevel = (q?: string): number => {
@@ -551,7 +552,7 @@ export class VideoGenerationService {
      * sequentially via the direct SDK, then writes results to Firestore.
      * 
      * @param options - Configuration for long-form generation including totalDuration.
-     * @returns A promise resolving to the main jobId placeholder.
+     * @returns A promise resolving to the main jobId token.
      */
     async generateLongFormVideo(options: {
         prompt: string;
@@ -609,7 +610,7 @@ export class VideoGenerationService {
 
         // Write initial long-form job to Firestore
         const { setDoc, serverTimestamp } = await import('firebase/firestore');
-        const jobRef = doc(db, 'videoJobs', jobId);
+        const jobRef = doc(db, COLLECTIONS.VIDEO.JOBS, jobId);
         await setDoc(jobRef, {
             id: jobId,
             userId: auth.currentUser?.uid,
