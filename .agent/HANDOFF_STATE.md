@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-25 22:42 EDT
+**Updated:** 2026-06-25 22:55 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+46cfd5a4a chore: session checkpoint [22:42]
 d144147a4 fix(ci): treat 'current active version' as idempotent success for prod hosting deploys
 211b04f5e chore: session checkpoint [22:27]
 fe7d43004 fix(ci): treat 'current active version' as idempotent staging-deploy success
@@ -13,7 +14,6 @@ a59f80ff0 chore: session checkpoint [22:01]
 81d7ddc04 chore: session checkpoint [21:53]
 03f3a801a ci: diagnose runner network path to Google token endpoint
 be3631210 chore: session checkpoint [21:41]
-18c5c88b3 fix(ci): disable Node Happy Eyeballs racing to fix OAuth 'Premature close'
 ```
 
 ## Working State
