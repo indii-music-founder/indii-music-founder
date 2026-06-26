@@ -42,6 +42,13 @@ This brief is the repo-native version of the Veo 3.x sketch. It exists to keep f
 - Project-scoped assets: `creative/{userId}/projects/{projectId}/...`
 - Owner vault assets: `users/{userId}/vault/{scope}/...`
 
+## Creative route isolation
+
+- Creative Studio routes `/creative` and `/creative/**` are scoped in `firebase.json` to:
+  - `Cross-Origin-Opener-Policy: same-origin`
+  - `Cross-Origin-Embedder-Policy: require-corp`
+- This is the route intended for worker-backed frame extraction and any future `SharedArrayBuffer`-dependent media tooling.
+
 ## Job shape
 
 The current canonical job document should carry:
@@ -81,4 +88,3 @@ The current canonical job document should carry:
 - Unscoped `sessions/{sessionId}` asset paths.
 - A second job collection without a bridge plan.
 - Hand-rolled media buffering in place of `video.js`.
-
