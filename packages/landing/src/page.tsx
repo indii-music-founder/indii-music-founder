@@ -79,7 +79,7 @@ const words = "the operating system for your musical independence".split(' ');
 /*  Page                                                               */
 /* ------------------------------------------------------------------ */
 
-export default function Home() {
+export default function Home({ founder = true }: { founder?: boolean }) {
   const { user, loading } = useAuth();
   const { scrollYProgress } = useScroll();
   const [isThesisOpen, setIsThesisOpen] = useState(() => {
@@ -119,8 +119,8 @@ export default function Home() {
           <div className="hidden md:flex items-center gap-8 bg-white/[0.02] border border-white/5 rounded-full px-6 py-2 backdrop-blur-md shadow-xl">
             <a href="#capabilities" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">Agents</a>
             <a href="#conductor" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">Conductor</a>
-            <button onClick={() => setIsThesisOpen(true)} className="text-sm font-medium text-gray-400 hover:text-white transition-colors">The Thesis</button>
-            <a href="#invest" className="text-sm font-bold text-amber-500 hover:text-amber-400 transition-colors">Founders Round</a>
+            {founder && <button onClick={() => setIsThesisOpen(true)} className="text-sm font-medium text-gray-400 hover:text-white transition-colors">The Thesis</button>}
+            {founder && <a href="#invest" className="text-sm font-bold text-amber-500 hover:text-amber-400 transition-colors">Founders Round</a>}
           </div>
           <a
             href={getStudioUrl()}
@@ -194,13 +194,15 @@ export default function Home() {
             <span className="relative z-10">Launch Studio</span>
             <ArrowRight size={18} className="relative z-10 transition-transform group-hover:translate-x-1" />
           </a>
-          <button
-            onClick={() => setIsThesisOpen(true)}
-            className="group inline-flex w-full sm:w-auto justify-center items-center gap-2 px-8 py-4 text-base font-medium text-amber-500 border border-amber-500/20 hover:border-amber-500/40 rounded-full bg-amber-500/5 hover:bg-amber-500/10 transition-all shadow-[0_0_20px_rgba(245,158,11,0.1)]"
-          >
-            <Film size={16} className="text-amber-400 animate-pulse" />
-            <span>Read Thesis</span>
-          </button>
+          {founder && (
+            <button
+              onClick={() => setIsThesisOpen(true)}
+              className="group inline-flex w-full sm:w-auto justify-center items-center gap-2 px-8 py-4 text-base font-medium text-amber-500 border border-amber-500/20 hover:border-amber-500/40 rounded-full bg-amber-500/5 hover:bg-amber-500/10 transition-all shadow-[0_0_20px_rgba(245,158,11,0.1)]"
+            >
+              <Film size={16} className="text-amber-400 animate-pulse" />
+              <span>Read Thesis</span>
+            </button>
+          )}
           <a
             href="#capabilities"
             className="inline-flex w-full sm:w-auto justify-center items-center gap-2 px-8 py-4 text-base font-medium text-gray-400 border border-white/10 rounded-full hover:text-white hover:border-white/20 transition-all"
@@ -303,6 +305,7 @@ export default function Home() {
         </div>
       </section>
 
+      {founder && (<>
       {/* ═══════════════ 8.5 PROJECT WHITE GLOVE ═══════════════ */}
       <section className="w-full max-w-5xl px-4 py-12 z-20 relative">
         <div className="relative overflow-hidden rounded-[3rem] border border-white/10 bg-[#0a0a0a] shadow-2xl p-8 md:p-16">
@@ -411,6 +414,7 @@ export default function Home() {
           </div>
         </div>
       </section>
+      </>)}
 
       {/* ═══════════════ 10. FOOTER ═══════════════ */}
       <footer className="w-full border-t border-white/[0.04] py-12 md:py-16 px-6 md:px-12 flex flex-col md:flex-row items-center justify-between gap-8 text-sm text-gray-500 bg-[#030303] z-20 relative">
@@ -423,12 +427,12 @@ export default function Home() {
         <div className="flex flex-wrap justify-center gap-6 md:gap-8">
           <a href="/privacy" className="hover:text-white transition-colors font-medium">Privacy Policy</a>
           <a href="/terms" className="hover:text-white transition-colors font-medium">Terms of Service</a>
-          <a href="mailto:invest@indii.music" className="text-amber-500 hover:text-amber-400 transition-colors font-bold uppercase tracking-widest">Invest</a>
+          {founder && <a href="mailto:invest@indii.music" className="text-amber-500 hover:text-amber-400 transition-colors font-bold uppercase tracking-widest">Invest</a>}
         </div>
       </footer>
 
       {/* Cinematic Thesis Crawl */}
-      <ThesisCrawl isOpen={isThesisOpen} onClose={() => setIsThesisOpen(false)} />
+      {founder && <ThesisCrawl isOpen={isThesisOpen} onClose={() => setIsThesisOpen(false)} />}
 
     </main>
   );
