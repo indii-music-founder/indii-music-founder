@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-25 22:55 EDT
+**Updated:** 2026-06-26 08:23 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+43389c3e7 chore: session checkpoint [22:55]
 46cfd5a4a chore: session checkpoint [22:42]
 d144147a4 fix(ci): treat 'current active version' as idempotent success for prod hosting deploys
 211b04f5e chore: session checkpoint [22:27]
@@ -13,7 +14,6 @@ fe7d43004 fix(ci): treat 'current active version' as idempotent staging-deploy s
 a59f80ff0 chore: session checkpoint [22:01]
 81d7ddc04 chore: session checkpoint [21:53]
 03f3a801a ci: diagnose runner network path to Google token endpoint
-be3631210 chore: session checkpoint [21:41]
 ```
 
 ## Working State
