@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-26 08:23 EDT
+**Updated:** 2026-06-26 08:25 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+3215fe413 chore: session checkpoint [08:23]
 43389c3e7 chore: session checkpoint [22:55]
 46cfd5a4a chore: session checkpoint [22:42]
 d144147a4 fix(ci): treat 'current active version' as idempotent success for prod hosting deploys
@@ -13,7 +14,6 @@ fe7d43004 fix(ci): treat 'current active version' as idempotent staging-deploy s
 33f2be78e fix(ci): upgrade firebase-tools 15.19.0 -> 15.22.3 to fix OAuth 'Premature close'
 a59f80ff0 chore: session checkpoint [22:01]
 81d7ddc04 chore: session checkpoint [21:53]
-03f3a801a ci: diagnose runner network path to Google token endpoint
 ```
 
 ## Working State
