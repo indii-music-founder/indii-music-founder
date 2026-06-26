@@ -313,6 +313,17 @@ jobs:
           python3 -c "import json; d=json.load(open('$KEY')); assert d.get('private_key'), 'key missing private_key'; assert d.get('client_email'), 'key missing client_email'; print('auth: key valid for', d['client_email'], '(' + str(__import__('os').path.getsize('$KEY')) + ' bytes)')"
           echo "GOOGLE_APPLICATION_CREDENTIALS=$KEY" >> $GITHUB_ENV
 
+      - name: DIAG network to Google (temporary)
+        run: |
+          echo "=== curl token endpoint (any http_code = reachable) ==="
+          curl -sS -m 25 -o /dev/null -w "curl    http_code=%{http_code} time=%{time_total}\n" -X POST https://www.googleapis.com/oauth2/v4/token 2>&1 || echo "curl FAILED exit=$?"
+          curl -4 -sS -m 25 -o /dev/null -w "curl-4  http_code=%{http_code} time=%{time_total}\n" -X POST https://www.googleapis.com/oauth2/v4/token 2>&1 || echo "curl-4 FAILED exit=$?"
+          echo "=== gcloud (Python) mint a token from the SA key ==="
+          gcloud auth activate-service-account --key-file="$GOOGLE_APPLICATION_CREDENTIALS" --project=indii-music-founder 2>&1 | tail -1
+          if gcloud auth print-access-token >/tmp/tok 2>/tmp/tokerr; then echo "gcloud token OK ($(wc -c </tmp/tok) bytes)"; else echo "gcloud token FAILED: $(cat /tmp/tokerr | tail -1)"; fi
+          echo "=== node fetch the token endpoint ==="
+          node -e "fetch('https://www.googleapis.com/oauth2/v4/token',{method:'POST'}).then(r=>console.log('node fetch status',r.status)).catch(e=>console.log('node fetch ERR',e.message))" || true
+
       - name: Deploy to staging preview channel
         id: channel-deploy
         env:
