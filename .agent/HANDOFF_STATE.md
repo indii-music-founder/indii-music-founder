@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-26 08:37 EDT
+**Updated:** 2026-06-26 08:38 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+016ca89c0 chore: session checkpoint [08:37]
 50c73abf4 chore: session checkpoint [08:29]
 72a66d9ee chore: session checkpoint [08:25]
 3215fe413 chore: session checkpoint [08:23]
@@ -13,7 +14,6 @@ d144147a4 fix(ci): treat 'current active version' as idempotent success for prod
 211b04f5e chore: session checkpoint [22:27]
 fe7d43004 fix(ci): treat 'current active version' as idempotent staging-deploy success
 7a9a1c2dd chore: session checkpoint [22:07]
-33f2be78e fix(ci): upgrade firebase-tools 15.19.0 -> 15.22.3 to fix OAuth 'Premature close'
 ```
 
 ## Working State
