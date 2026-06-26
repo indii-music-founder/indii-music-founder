@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-25 20:48 EDT
+**Updated:** 2026-06-25 21:01 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+43f5ef522 fix(ci): deterministic self-validating Firebase key reconstruction
+44f57ae88 chore: session checkpoint [20:48]
 1eb907830 chore: session checkpoint [20:38]
 551ede4d9 chore: session checkpoint [20:27]
 b5c01b045 chore: session checkpoint [20:23]
@@ -12,8 +14,6 @@ b5c01b045 chore: session checkpoint [20:23]
 7e60dcb84 chore: session checkpoint [20:11]
 2a3300b2e chore: session checkpoint [20:02]
 f0ce19a7f chore: session checkpoint [19:58]
-f2c069cb5 chore: session checkpoint [19:56]
-0449efad0 chore: session checkpoint [19:52]
 ```
 
 ## Working State
