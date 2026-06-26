@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-25 21:01 EDT
+**Updated:** 2026-06-25 21:17 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+b80cc4643 ci: temporary firebase auth diagnostics in deploy-staging
+2de19e89f chore: session checkpoint [21:01]
 43f5ef522 fix(ci): deterministic self-validating Firebase key reconstruction
 44f57ae88 chore: session checkpoint [20:48]
 1eb907830 chore: session checkpoint [20:38]
@@ -12,8 +14,6 @@ b5c01b045 chore: session checkpoint [20:23]
 9f23e6d54 fix(ci): restore deploy.yml to last-green 60bc88067 (manual Firebase auth)
 4ac20ef53 chore: session checkpoint [20:15]
 7e60dcb84 chore: session checkpoint [20:11]
-2a3300b2e chore: session checkpoint [20:02]
-f0ce19a7f chore: session checkpoint [19:58]
 ```
 
 ## Working State
