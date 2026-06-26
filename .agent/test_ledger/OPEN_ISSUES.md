@@ -7637,7 +7637,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-521: Configure cross-origin isolation for FFmpeg.wasm worker + SharedArrayBuffer support
 
-- **Status:** 🔴 OPEN / PLANNED — **Severity:** 🟠 HIGH — **Module:** Firebase Hosting / Electron renderer security / FFmpeg.wasm worker
+- **Status:** 🟢 FIX APPLIED LOCALLY — **Severity:** 🟠 HIGH — **Module:** Firebase Hosting / Electron renderer security / FFmpeg.wasm worker
 - **Blueprint direction:** FFmpeg.wasm extraction must stay in a dedicated Web Worker. If SharedArrayBuffer is required for zero-copy transfer or the selected FFmpeg.wasm build requires cross-origin isolation, the hosted renderer must serve the correct headers:
   - `Cross-Origin-Opener-Policy: same-origin`
   - `Cross-Origin-Embedder-Policy: require-corp`
@@ -7646,6 +7646,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Risk:** `Cross-Origin-Embedder-Policy: require-corp` can break third-party scripts, fonts, images, analytics, Firebase-hosted media, or CDN assets unless they are same-origin, CORS-enabled, or served with compatible CORP/CORS headers. Inventory all renderer assets before enabling this globally.
 - **Fix direction:** add a scoped Firebase Hosting headers plan for the renderer routes that need worker/SAB support, plus matching dev-server/Electron production behavior if needed. Prefer same-origin serving for FFmpeg worker/core assets. Document any third-party asset exceptions.
 - **Acceptance criteria:** `crossOriginIsolated === true` in the Video Studio runtime where worker extraction runs; FFmpeg.wasm loads inside the worker; Video.js remains interactive during extraction; no core app asset breaks under COEP; tests or Playwright checks verify headers on hosted routes.
+- **Fix applied in current workspace:** scoped COOP/COEP headers were added to the creative route in `firebase.json` (`/creative` and `/creative/**`) so the worker-backed Video Studio surface has an isolation target without forcing the landing surface into the same policy.
 - **Files:** `firebase.json`; `packages/renderer/vite.config*` if dev headers are needed; Electron main/security config if production desktop needs equivalent isolation; `packages/renderer/src/modules/creative/video/*`.
 
 ### ISSUE-522: Compile Veo blueprint into repo-native implementation brief before agents code
