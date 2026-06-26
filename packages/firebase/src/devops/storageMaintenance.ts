@@ -20,6 +20,7 @@ const AUDITABLE_PREFIXES = [
     "videos/",
     "video-thumbnails/",
     "users/",
+    "creative/",
 ];
 
 /** Per-tier storage limits in bytes (referenced by client-side StorageQuotaService) */
@@ -32,6 +33,42 @@ void _STORAGE_LIMITS; // Exported as documentation — used by client-side quota
 
 /** Max age (in days) before a video is flagged for archival */
 const ARCHIVE_THRESHOLD_DAYS = 90;
+
+/** Max age (in days) before temp creative video assets are deleted */
+const TEMP_VIDEO_TTL_DAYS = 1;
+
+type StorageFileMetadata = {
+    metadata?: Record<string, string | undefined>;
+    timeCreated?: string;
+};
+
+function parseStorageFileDate(metadata: StorageFileMetadata): Date | null {
+    const generatedAt = metadata.metadata?.generatedAt;
+    if (typeof generatedAt === 'string') {
+        const parsed = new Date(generatedAt);
+        if (!Number.isNaN(parsed.getTime())) return parsed;
+    }
+
+    if (metadata.timeCreated) {
+        const parsed = new Date(metadata.timeCreated);
+        if (!Number.isNaN(parsed.getTime())) return parsed;
+    }
+
+    return null;
+}
+
+function isExpiredStorageFile(cutoffDate: Date, metadata: StorageFileMetadata): boolean {
+    const fileDate = parseStorageFileDate(metadata);
+    return !!fileDate && fileDate < cutoffDate;
+}
+
+function isCreativeVideoTempPath(path: string): boolean {
+    const pathParts = path.split("/");
+    return pathParts.length >= 6 &&
+        pathParts[0] === "creative" &&
+        pathParts[2] === "video" &&
+        pathParts[3] === "tmp";
+}
 
 // ============================================================================
 // 1. Orphan Cleanup (Scheduled — runs weekly)
@@ -218,6 +255,7 @@ export const trackStorageQuotas = functions
                     // videos/{userId}/... → userId at index 1
                     // users/{userId}/... → userId at index 1
                     // video-thumbnails/{userId}/... → userId at index 1
+                    // creative/{userId}/... → userId at index 1
                     const pathParts = file.name.split("/");
                     if (pathParts.length < 2) continue;
 
@@ -279,7 +317,65 @@ export const trackStorageQuotas = functions
 
 
 // ============================================================================
-// 3. Archive Old Videos (Metadata Flagging)
+// 3. Temp Creative Video Cleanup
+// ============================================================================
+
+/**
+ * cleanupExpiredVideoTemps
+ *
+ * Deletes temp creative video assets older than TEMP_VIDEO_TTL_DAYS.
+ * Temp assets are expected under creative/{userId}/video/tmp/{sessionId}/...
+ *
+ * Schedule: Every day at 1:30 AM UTC
+ */
+export const cleanupExpiredVideoTemps = functions
+    .region("us-central1")
+    .runWith({
+        enforceAppCheck: true,
+        timeoutSeconds: 540,
+        memory: "512MB",
+    })
+    .pubsub.schedule("every day 01:30")
+    .timeZone("UTC")
+    .onRun(async () => {
+        const startTime = Date.now();
+        const cutoffDate = new Date();
+        cutoffDate.setDate(cutoffDate.getDate() - TEMP_VIDEO_TTL_DAYS);
+
+        console.log(`[TempVideoCleanup] Removing temp creative video assets older than ${TEMP_VIDEO_TTL_DAYS} day(s)...`);
+
+        const bucket = admin.storage().bucket();
+        let scanned = 0;
+        let deleted = 0;
+        let errorCount = 0;
+
+        try {
+            const [files] = await bucket.getFiles({ prefix: "creative/", maxResults: 10000 });
+            scanned = files.length;
+
+            for (const file of files) {
+                if (!isCreativeVideoTempPath(file.name)) continue;
+                if (!isExpiredStorageFile(cutoffDate, file.metadata as StorageFileMetadata)) continue;
+
+                try {
+                    await file.delete();
+                    deleted++;
+                } catch (err) {
+                    errorCount++;
+                    console.error(`[TempVideoCleanup] Failed to delete ${file.name}:`, err);
+                }
+            }
+        } catch (err) {
+            errorCount++;
+            console.error("[TempVideoCleanup] Error scanning creative/:", err);
+        }
+
+        console.log(`[TempVideoCleanup] Complete. Scanned: ${scanned}, Deleted: ${deleted}, Errors: ${errorCount}, Duration: ${Date.now() - startTime}ms`);
+    });
+
+
+// ============================================================================
+// 4. Archive Old Videos (Metadata Flagging)
 // ============================================================================
 
 /**
@@ -318,20 +414,11 @@ export const flagVideosForArchival = functions
 
             for (const file of files) {
                 const metadata = file.metadata;
-                const generatedAt = metadata.metadata?.generatedAt;
 
                 // Skip files already flagged
                 if (metadata.metadata?.archiveEligible === "true") continue;
 
-                // Determine file age
-                let fileDate: Date | null = null;
-                if (typeof generatedAt === 'string') {
-                    fileDate = new Date(generatedAt);
-                } else if (metadata.timeCreated) {
-                    fileDate = new Date(String(metadata.timeCreated));
-                }
-
-                if (fileDate && fileDate < cutoffDate) {
+                if (isExpiredStorageFile(cutoffDate, metadata as StorageFileMetadata)) {
                     try {
                         await file.setMetadata({
                             metadata: {

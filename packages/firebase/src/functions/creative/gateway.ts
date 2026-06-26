@@ -218,9 +218,28 @@ const GenerateAudioSchema = BaseMediaRequest.extend({
 /**
  * Helper: Upload a raw buffer to Cloud Storage and return the gs:// URI
  */
-async function uploadToStorage(userId: string, buffer: Buffer, extension: string, contentType?: string): Promise<string> {
+async function uploadToStorage(
+  userId: string,
+  buffer: Buffer,
+  extension: string,
+  contentType?: string,
+  options?: {
+    projectId?: string;
+    sessionId?: string;
+    jobId?: string;
+    category?: 'image' | 'video' | 'audio';
+    purpose?: 'outputs' | 'intermediates' | 'thumbnails';
+  }
+): Promise<string> {
   const bucket = getStorage().bucket();
-  const filename = `creative/${userId}/${Date.now()}_${crypto.randomUUID().split('-')[0]}.${extension}`;
+  const mediaCategory = options?.category || (extension === 'mp4' ? 'video' : extension === 'wav' ? 'audio' : 'image');
+  const purpose = options?.purpose || 'outputs';
+  const basePath = options?.projectId
+    ? `creative/${userId}/projects/${options.projectId}/${mediaCategory}/${purpose}`
+    : options?.sessionId || options?.jobId
+      ? `creative/${userId}/video/tmp/${options.sessionId || options.jobId}/${purpose}`
+      : `creative/${userId}/${mediaCategory}/${purpose}`;
+  const filename = `${basePath}/${Date.now()}_${crypto.randomUUID().split('-')[0]}.${extension}`;
   const file = bucket.file(filename);
   await file.save(buffer, {
     resumable: false,
@@ -874,6 +893,13 @@ export async function executeVideoJob(jobId: string, job: VideoGenerationJobReco
       downloadedVideo.buffer,
       extensionForMime(downloadedVideo.mimeType, 'mp4'),
       downloadedVideo.mimeType,
+      {
+        projectId: job.projectId,
+        sessionId: job.sessionId,
+        jobId,
+        category: 'video',
+        purpose: 'outputs',
+      },
     );
 
     await syncVideoJobUpdate(jobId, {
@@ -1194,6 +1220,11 @@ export const generateOmniRemixV3 = onCall({ timeoutSeconds: 540, secrets: [gemin
       downloadedVideo.buffer,
       extensionForMime(downloadedVideo.mimeType, 'mp4'),
       downloadedVideo.mimeType,
+      {
+        jobId,
+        category: 'video',
+        purpose: 'outputs',
+      },
     );
 
     await safeDbUpdate(jobId, {
