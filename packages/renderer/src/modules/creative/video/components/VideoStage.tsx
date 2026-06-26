@@ -4,6 +4,7 @@ import { Sparkles, Video } from 'lucide-react';
 import { HistoryItem } from '@/core/store';
 import { CreativeSlice } from '@/core/store/slices/creative';
 import { logger } from '@/utils/logger';
+import { VideoJsPlayer, type VideoJsPlayerHandle } from './VideoJsPlayer';
 
 interface VideoStageProps {
     jobStatus: 'idle' | 'queued' | 'processing' | 'stitching' | 'completed' | 'failed';
@@ -22,7 +23,7 @@ export const VideoStage = React.memo<VideoStageProps>(({
     const [videoError, setVideoError] = React.useState<string | null>(null);
     const [displayProgress, setDisplayProgress] = React.useState(0);
     const [statusMessageIndex, setStatusMessageIndex] = React.useState(0);
-    const videoRef = React.useRef<HTMLVideoElement>(null);
+    const playerRef = React.useRef<VideoJsPlayerHandle | null>(null);
 
     /**
      * Captures the current video frame as a base64 JPEG string.
@@ -30,32 +31,15 @@ export const VideoStage = React.memo<VideoStageProps>(({
      * not a blob: URL reference (which is session-scoped and un-fetchable by the API).
      */
     const captureCurrentFrame = React.useCallback((): string | null => {
-        const video = videoRef.current;
-        if (!video || video.videoWidth === 0 || video.videoHeight === 0) {
-            logger.warn('[VideoStage] Cannot capture frame: video element not ready');
+        const frameData = playerRef.current?.captureFrame();
+        if (!frameData) {
+            logger.warn('[VideoStage] Cannot capture frame: video player not ready');
             return null;
         }
-
-        try {
-            const canvas = document.createElement('canvas');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            const ctx = canvas.getContext('2d');
-            if (!ctx) return null;
-
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            // Return base64 JPEG — strip the data:image/jpeg;base64, prefix for the API
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
-            logger.info('[VideoStage] Frame captured successfully', {
-                width: canvas.width,
-                height: canvas.height,
-                size: Math.round(dataUrl.length / 1024) + 'KB'
-            });
-            return dataUrl;
-        } catch (e: unknown) {
-            logger.error('[VideoStage] Frame capture failed:', e);
-            return null;
-        }
+        logger.info('[VideoStage] Frame captured successfully', {
+            size: Math.round(frameData.length / 1024) + 'KB'
+        });
+        return frameData;
     }, []);
 
     /**
@@ -219,15 +203,27 @@ export const VideoStage = React.memo<VideoStageProps>(({
                         {activeVideo.url.startsWith('data:image') || activeVideo.type === 'image' ? (
                             <img src={activeVideo.url} alt="Preview" className="w-full h-full object-contain" />
                         ) : (
-                            <video
-                                ref={videoRef}
-                                src={activeVideo.url}
+                            <VideoJsPlayer
+                                ref={playerRef}
+                                videoUrl={activeVideo.url}
+                                mimeType={activeVideo.meta ? (() => {
+                                    try {
+                                        const meta = JSON.parse(activeVideo.meta);
+                                        return meta.mime_type || 'video/mp4';
+                                    } catch {
+                                        return 'video/mp4';
+                                    }
+                                })() : 'video/mp4'}
                                 controls
+                                onError={(message) => {
+                                    if (activeVideo?.url.startsWith('blob:')) {
+                                        void handleVideoError();
+                                        return;
+                                    }
+                                    setVideoError(message);
+                                }}
                                 className="max-h-full max-w-full rounded-lg shadow-2xl border border-white/10"
-                                poster={undefined} // H4 Fix: Do not use video URL as an image poster
-                                preload="metadata" // ⚡ Bolt Optimization: efficient loading
-                                onError={handleVideoError}
-                                data-testid="video-player"
+                                dataTestId="video-player"
                             />
                         )}
                         {/* Info Overlay — Top-left, auto-hides to not block video controls */}

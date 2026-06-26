@@ -8,6 +8,7 @@ const mockGetMetadata = vi.fn();
 const mockSet = vi.fn();
 const mockUpdate = vi.fn();
 const mockSave = vi.fn();
+const mockCollectionNames: string[] = [];
 const mockOnCallOptions = vi.hoisted(() => [] as unknown[]);
 const mockOnCall = vi.hoisted(() => vi.fn((options, handler) => {
   mockOnCallOptions.push(options);
@@ -53,13 +54,16 @@ vi.mock('firebase-functions/v2/https', () => ({
 
 vi.mock('firebase-admin', () => ({
   firestore: vi.fn(() => ({
-    collection: vi.fn(() => ({
-      doc: vi.fn((id?: string) => ({
-        id: id || 'job-123',
-        set: mockSet,
-        update: mockUpdate,
-      })),
-    })),
+    collection: vi.fn((name: string) => {
+      mockCollectionNames.push(name);
+      return {
+        doc: vi.fn((id?: string) => ({
+          id: id || 'job-123',
+          set: mockSet,
+          update: mockUpdate,
+        })),
+      };
+    }),
   })),
   storage: vi.fn(() => ({
     bucket: vi.fn(() => ({
@@ -278,21 +282,10 @@ describe('classifyMediaFinishFailure', () => {
 describe('creative gateway generateVideoV3', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockCollectionNames.length = 0;
   });
 
-  it('routes video generation through Veo generateVideos and stores returned bytes', async () => {
-    mockGenerateVideos.mockResolvedValueOnce({
-      done: true,
-      response: {
-        generatedVideos: [{
-          video: {
-            videoBytes: Buffer.from('video-bytes').toString('base64'),
-            mimeType: 'video/mp4',
-          },
-        }],
-      },
-    });
-
+  it('queues a video job and returns quickly from the callable', async () => {
     const result = await callGenerateVideo({
       auth: { uid: 'user-123' },
       data: {
@@ -308,6 +301,53 @@ describe('creative gateway generateVideoV3', () => {
         negativePrompt: 'no blurry faces',
         seed: '42',
       },
+    });
+
+    expect(result).toEqual(expect.objectContaining({
+      jobId: 'job-123',
+    }));
+    expect(mockGenerateVideos).not.toHaveBeenCalled();
+    expect(mockGetVideosOperation).not.toHaveBeenCalled();
+    expect(mockCollectionNames).toEqual(expect.arrayContaining(['creative_jobs', 'videoJobs']));
+    expect(mockSet).toHaveBeenCalledTimes(2);
+  });
+
+  it('processes a queued video job asynchronously and stores the rendered output', async () => {
+    mockGenerateVideos.mockResolvedValueOnce({
+      done: true,
+      response: {
+        generatedVideos: [{
+          video: {
+            videoBytes: Buffer.from('video-bytes').toString('base64'),
+            mimeType: 'video/mp4',
+          },
+        }],
+      },
+    });
+
+    const { executeVideoJob } = await import('./gateway');
+    const result = await executeVideoJob('job-123', {
+      userId: 'user-123',
+      status: 'queued',
+      type: 'video',
+      prompt: 'A cinematic social clip',
+      aspectRatio: '9:16',
+      model: 'fast',
+      resolution: '1080p',
+      durationSeconds: 6,
+      referenceUris: ['gs://test-bucket/refs/artist.png'],
+      firstFrameUri: 'gs://test-bucket/frames/start.png',
+      lastFrameUri: 'gs://test-bucket/frames/end.png',
+      personGeneration: 'allow_adult',
+      negativePrompt: 'no blurry faces',
+      seed: '42',
+      enhancePrompt: true,
+      progress: 0,
+      mode: 'veo-3.1-fast-generate-preview',
+      inputUris: ['gs://test-bucket/frames/start.png'],
+      maskUris: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     });
 
     expect(mockGenerateVideos).toHaveBeenCalledWith(expect.objectContaining({
@@ -329,12 +369,13 @@ describe('creative gateway generateVideoV3', () => {
         }],
       }),
     }));
-    expect(mockGetVideosOperation).not.toHaveBeenCalled();
     expect(mockSave).toHaveBeenCalledWith(Buffer.from('video-bytes'), expect.objectContaining({ contentType: 'video/mp4' }));
     expect(result).toEqual(expect.objectContaining({
       jobId: 'job-123',
       resultUri: expect.stringContaining('gs://test-bucket/creative/user-123/'),
     }));
+    expect(mockCollectionNames).toEqual(expect.arrayContaining(['creative_jobs', 'videoJobs']));
+    expect(mockUpdate).toHaveBeenCalled();
   });
 
   it('maps Veo safety-filter failures to actionable callable errors', async () => {
@@ -347,13 +388,23 @@ describe('creative gateway generateVideoV3', () => {
       },
     });
 
-    await expect(callGenerateVideo({
-      auth: { uid: 'user-123' },
-      data: {
-        prompt: 'blocked clip',
-        aspectRatio: '16:9',
-        model: 'pro',
-      },
+    const { executeVideoJob } = await import('./gateway');
+
+    await expect(executeVideoJob('job-123', {
+      id: 'job-123',
+      userId: 'user-123',
+      status: 'queued',
+      type: 'video',
+      prompt: 'blocked clip',
+      aspectRatio: '16:9',
+      model: 'pro',
+      resolution: '720p',
+      durationSeconds: 6,
+      progress: 0,
+      inputUris: [],
+      maskUris: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     })).rejects.toMatchObject({
       code: 'invalid-argument',
       message: expect.stringContaining('Video generation failed'),
