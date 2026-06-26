@@ -7581,7 +7581,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-519: Add explicit temp-vs-project asset lifecycle for Video.js + FFmpeg.wasm intermediates
 
-- **Status:** 🔴 OPEN / PLANNED — **Severity:** 🟠 HIGH — **Module:** Storage lifecycle / project assets / video editor
+- **Status:** 🟢 FIX APPLIED LOCALLY — **Severity:** 🟠 HIGH — **Module:** Storage lifecycle / project assets / video editor
 - **Decision:** raw mask frames and scratch extraction artifacts should auto-delete after 24 hours. Permanently keep only assets that are attached to the user's project model: final generated videos, selected keyframes, approved mask tracks, poster frames, and any user-saved source clips.
 - **Evidence:** the Video.js + FFmpeg.wasm pipeline will create frequent large intermediates. Keeping every raw extracted frame permanently would inflate Storage cost and make project histories noisy; deleting everything would break reopen/undo for masks the user actually used.
 - **Fix direction:** define two explicit Storage namespaces:
@@ -7609,6 +7609,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Graceful fallback:** show a clean "Source Missing" / "Session Expired" modal only when self-healing is impossible: the durable source video was deleted, the timestamp/mask metadata is missing, the user lacks access to the source, or extraction/upload fails after bounded retries. Do not silently no-op, and do not pretend a deleted temp mask still exists.
 - **Worker decision:** FFmpeg.wasm extraction and self-healing regeneration must run inside a dedicated Web Worker, not a standard React hook on the main thread. React hooks may orchestrate worker lifecycle, progress, cancellation, and state hydration, but the actual WASM load/exec/read/write path belongs off the UI thread so Video.js playback and controls remain responsive.
 - **Acceptance criteria:** raw frame extraction tests assert temp paths; save/confirm tests assert promoted project paths; lifecycle config covers temp prefixes only; deleting temp artifacts does not break completed project assets; Undo intercepts temp 404s and performs worker-backed re-extraction when possible; Video.js stays interactive during regeneration; impossible recovery shows a clear modal with the missing-source reason.
+- **Fix applied in current workspace:** `CreativeStorageService` now routes temp video assets through `creative/{userId}/video/tmp/{sessionId}/...`, project assets through `creative/{userId}/projects/{projectId}/...`, the backend video gateway writes completed video outputs into the same split, and `cleanupExpiredVideoTemps` removes temp creative video assets older than 24 hours.
 - **Files:** `packages/firebase/storage.rules`; `firebase.json`; `cors.json`; `packages/renderer/src/services/creative/CreativeStorageService.ts`; `packages/renderer/src/modules/creative/video/*`; Firestore rules/indexes if project asset records change.
 
 ### ISSUE-520: Define the Firestore schema for the asynchronous Veo job queue before implementation
