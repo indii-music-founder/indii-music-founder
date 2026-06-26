@@ -119,7 +119,7 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                 userId,
                 `data:${media.mimeType};base64,${media.data}`,
                 'image',
-                { scope, sessionId }
+                { scope, sessionId, projectId: currentProjectId ?? undefined }
             );
             return [colorId, uri] as const;
         }));
