@@ -7613,7 +7613,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-520: Define the Firestore schema for the asynchronous Veo job queue before implementation
 
-- **Status:** 🔴 OPEN / PLANNED — **Severity:** 🔴 HIGH — **Module:** Firestore / async Veo queue / job orchestration
+- **Status:** 🟢 FIX APPLIED LOCALLY — **Severity:** 🔴 HIGH — **Module:** Firestore / async Veo queue / job orchestration
 - **Priority decision:** map the Firestore async job schema first. Cross-origin isolation headers are required for the worker path, but the queue schema must come first because every Video.js, FFmpeg.wasm, Storage lifecycle, billing, retry, and completion flow depends on the same durable job contract.
 - **Blueprint handling rule:** William may provide strong external examples using `/jobs/{jobId}`, Python Cloud Functions, or Next.js-style file paths. Treat those as architectural inputs, not literal repo instructions. Adapt the final schema to this repo's existing Electron/Vite renderer and TypeScript Firebase backend unless a later implementation decision deliberately changes the backend platform.
 - **Blueprint direction:** define a canonical `videoJobs/{jobId}` or successor collection before adding more Veo modes. Avoid splitting state between `videoJobs` and `creative_jobs` unless there is an explicit bridge/migration plan.
@@ -7632,6 +7632,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Proposed job fields:** `id`, `schemaVersion`, `userId`, `orgId`, `projectId`, `sessionId`, `mode` (`text_to_video`, `image_to_video`, `temporal_inpaint`, `video_remix`, `long_form`), `status`, `progress`, `prompt`, `directorSettings`, `inputUris`, `tempUris`, `persistentUris`, `maskMetadata`, `operationName`, `provider`, `model`, `costEstimate`, `costReservationId`, `retryCount`, `error`, `createdAt`, `updatedAt`, `completedAt`, `cancelledAt`.
 - **Subcollections if needed:** `events` for append-only audit/progress messages, `artifacts` for temp/persistent media records, and `segments` for long-form chained renders. Keep the first implementation simple unless tests prove subcollections are needed.
 - **Acceptance criteria:** frontend can subscribe to one job document and recover after refresh; backend can claim/process/retry/cancel idempotently; all temp artifacts have enough metadata to self-heal from durable sources; Firestore rules enforce user/org ownership; tests cover completed, failed, cancelled, and temp-404 self-healing states.
+- **Fix applied in current workspace:** added `packages/shared/src/schemas/videoJob.ts`, exported it from `packages/shared/src/index.ts`, normalized the backend video gateway into the canonical `videoJobs/{jobId}` bridge, and switched renderer listeners to the same collection.
 - **Files:** `packages/renderer/src/services/video/VideoGenerationService.ts`; `packages/firebase/src/functions/creative/gateway.ts`; `packages/firebase/src/index.ts`; `packages/firebase/firestore.rules`; Firestore indexes if required.
 
 ### ISSUE-521: Configure cross-origin isolation for FFmpeg.wasm worker + SharedArrayBuffer support
@@ -7649,11 +7650,12 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-522: Compile Veo blueprint into repo-native implementation brief before agents code
 
-- **Status:** 🔴 OPEN / PLANNED — **Severity:** 🟡 MEDIUM — **Module:** agent handoff / architecture hygiene
+- **Status:** 🟢 FIX APPLIED LOCALLY — **Severity:** 🟡 MEDIUM — **Module:** agent handoff / architecture hygiene
 - **Purpose:** before any implementation agent starts, convert the external Veo 3.x blueprint into a short repo-native brief that removes misleading assumptions and preserves only the useful decisions.
 - **Keep:** `video.js` playback wrapper, dedicated FFmpeg.wasm Web Worker, self-healing temp 404 recovery, hybrid Storage TTL/persistent vault routing, Firestore async job queue, strict job statuses, 24 FPS temporal math, and COOP/COEP evaluation for worker/SAB support.
 - **Remove/adapt:** `next` dependency, `src/components` paths, older Firebase dependency versions, generic `/jobs` naming if it conflicts with existing `videoJobs`, placeholder bucket names, global unaudited `sessions/temp/` prefixes, and Python Cloud Functions unless the backend platform is deliberately expanded.
 - **Acceptance criteria:** implementation agents receive one concise brief that names actual repo paths (`packages/renderer`, `packages/firebase`), existing dependencies/versions, chosen collection names, Storage prefixes, and test expectations; no agent scaffolds a new Next.js app or duplicate backend.
+- **Fix applied in current workspace:** created `docs/handoff/video-studio-implementation-brief.md` with the repo-native path map, job contract, storage namespaces, and explicit do-not-reintroduce rules.
 - **Files:** `.agent/test_ledger/OPEN_ISSUES.md`; optional future handoff doc under `.agent/` if implementation is split across agents.
 
 ### ISSUE-CI-28249067854: CI Pipeline Failure (Deploy to Firebase Hosting)

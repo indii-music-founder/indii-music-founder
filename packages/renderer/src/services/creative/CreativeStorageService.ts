@@ -112,6 +112,7 @@ export class CreativeStorageService {
         options?: {
             scope?: CreativeVaultScope;
             sessionId?: string;
+            projectId?: string;
         }
     ): Promise<string> {
         if (!storage) {
@@ -135,11 +136,15 @@ export class CreativeStorageService {
 
         const extension = mediaType === 'video' ? 'mp4' : mediaType === 'audio' ? 'wav' : 'jpg';
         const scope = options?.scope || 'assets';
-        const basePath = options?.sessionId
-            ? `sessions/${options.sessionId}/${scope}`
-            : scope === 'assets'
-                ? `creative/${userId}`
-                : `users/${userId}/vault/${scope}`;
+        const basePath = options?.projectId
+            ? mediaType === 'video'
+                ? `creative/${userId}/projects/${options.projectId}/video/${scope}`
+                : `creative/${userId}/projects/${options.projectId}/${scope}`
+            : options?.sessionId
+                ? `creative/${userId}/video/tmp/${options.sessionId}/${scope}`
+                : scope === 'assets'
+                    ? `creative/${userId}`
+                    : `users/${userId}/vault/${scope}`;
         const filename = `${basePath}/${Date.now()}_${crypto.randomUUID()}.${extension}`;
         const storageRef = ref(storage, filename);
 
