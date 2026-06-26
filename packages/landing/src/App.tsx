@@ -26,14 +26,7 @@ const FounderRoutes = () => (
 
 const GeneralRoutes = () => (
   <Routes>
-    <Route path="/" element={
-      <div className="min-h-screen flex items-center justify-center bg-black text-white">
-        <div className="text-center">
-          <h1 className="text-4xl font-bold mb-4">indii.music</h1>
-          <p className="text-xl text-gray-400">The general public platform is coming soon.</p>
-        </div>
-      </div>
-    } />
+    <Route path="/" element={<Home founder={false} />} />
     <Route path="/login" element={<AuthLayout><LoginForm /></AuthLayout>} />
     <Route path="/signup" element={<AuthLayout><SignupForm /></AuthLayout>} />
     <Route path="/reset-password" element={<AuthLayout><PasswordResetForm /></AuthLayout>} />
@@ -53,8 +46,10 @@ function App() {
   
   // Also check if they explicitly pass a query parameter like ?founder=true or ?thesis=true
   const hasQueryFlag = search.includes('founder=true') || search.includes('thesis=true');
-    
-  const isFounder = isFounderEnv || isFounderDomain || isLocalhost || hasQueryFlag;
+  // Allow forcing the public marketing page anywhere (e.g. ?public=true on localhost).
+  const forcePublic = search.includes('public=true');
+
+  const isFounder = !forcePublic && (isFounderEnv || isFounderDomain || isLocalhost || hasQueryFlag);
 
   return (
     <AuthProvider>
