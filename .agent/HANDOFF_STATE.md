@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-25 21:41 EDT
+**Updated:** 2026-06-25 21:53 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+03f3a801a ci: diagnose runner network path to Google token endpoint
+be3631210 chore: session checkpoint [21:41]
 18c5c88b3 fix(ci): disable Node Happy Eyeballs racing to fix OAuth 'Premature close'
 43d883bd3 chore: session checkpoint [21:29]
 be208f55c fix(ci): force IPv4 + retry on staging deploy to fix OAuth token 'Premature close'
@@ -12,8 +14,6 @@ b80cc4643 ci: temporary firebase auth diagnostics in deploy-staging
 2de19e89f chore: session checkpoint [21:01]
 43f5ef522 fix(ci): deterministic self-validating Firebase key reconstruction
 44f57ae88 chore: session checkpoint [20:48]
-1eb907830 chore: session checkpoint [20:38]
-551ede4d9 chore: session checkpoint [20:27]
 ```
 
 ## Working State
