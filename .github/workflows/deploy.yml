@@ -313,6 +313,19 @@ jobs:
           python3 -c "import json; d=json.load(open('$KEY')); assert d.get('private_key'), 'key missing private_key'; assert d.get('client_email'), 'key missing client_email'; print('auth: key valid for', d['client_email'], '(' + str(__import__('os').path.getsize('$KEY')) + ' bytes)')"
           echo "GOOGLE_APPLICATION_CREDENTIALS=$KEY" >> $GITHUB_ENV
 
+      - name: DIAG firebase auth (temporary)
+        run: |
+          echo "=== configstore present? ==="
+          ls -la "$HOME/.config/configstore/" 2>&1 || echo "(no configstore dir)"
+          head -c 300 "$HOME/.config/configstore/firebase-tools.json" 2>&1 || echo "(no firebase-tools.json)"
+          echo ""
+          echo "=== auth-related env vars (values redacted) ==="
+          env | grep -iE 'FIREBASE|GOOGLE|GCLOUD|GCP' | sed 's/=.*/=<set>/' || echo "(none)"
+          echo "GAC path = $GOOGLE_APPLICATION_CREDENTIALS"
+          echo "=== firebase projects:list --debug (tail) ==="
+          npm install --prefer-offline --no-audit --no-fund >/dev/null 2>&1
+          npx --no-install firebase projects:list --project indii-music-founder --debug 2>&1 | tail -45 || true
+
       - name: Deploy to staging preview channel
         id: channel-deploy
         run: |
