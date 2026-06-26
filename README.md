@@ -770,7 +770,7 @@ indii-music-founder/
 ├── .agent/                 # Agent system configuration and error memory
 ├── scripts/                # Build and utility scripts
 ├── python/                 # Python scripts
-└── python-functions/       # Python cloud functions
+└── python-functions/       # Experimental Python cloud functions (not the production creative gateway)
 ```
 
 ---

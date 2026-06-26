@@ -1,4 +1,5 @@
 import * as functions from "firebase-functions/v1";
+import * as admin from "firebase-admin";
 import { GoogleGenAI } from "@google/genai";
 import { FUNCTION_INTELLIGENCE_MODELS, NANO_BANANA_CAPABILITIES, type NanoBananaTier } from "../config/models";
 import {
@@ -70,6 +71,11 @@ interface GeminiCandidate {
  */
 interface GeminiGenerateContentResponse {
     candidates?: GeminiCandidate[];
+}
+
+interface StorageMedia {
+    mimeType: string;
+    data: string;
 }
 
 // ============================================================================
@@ -309,6 +315,40 @@ export class GeminiImageService {
         }
 
         return [{ role: "user", parts }];
+    }
+
+    private parseGsUri(uri: string): { bucket: string; path: string } {
+        const match = uri.match(/^gs:\/\/([^/]+)\/(.+)$/);
+        if (!match) {
+            throw new Error(`Expected gs:// URI, got ${uri}`);
+        }
+        return { bucket: match[1]!, path: match[2]! };
+    }
+
+    private async loadStorageImage(uri: string): Promise<StorageMedia> {
+        const { bucket, path } = this.parseGsUri(uri);
+        const file = admin.storage().bucket(bucket).file(path);
+        const [metadata] = await file.getMetadata();
+        const mimeType = metadata.contentType || "image/png";
+        if (!mimeType.startsWith("image/")) {
+            throw new Error(`Storage media must be an image. Got ${mimeType}`);
+        }
+        const [buffer] = await file.download();
+        return { mimeType, data: buffer.toString("base64") };
+    }
+
+    private async resolveEditMedia(
+        media?: string | null,
+        mediaUri?: string | null,
+        fallbackMimeType = "image/png"
+    ): Promise<StorageMedia | null> {
+        if (mediaUri) {
+            return this.loadStorageImage(mediaUri);
+        }
+        if (media) {
+            return { mimeType: fallbackMimeType, data: media };
+        }
+        return null;
     }
 
     /**
@@ -560,6 +600,18 @@ export class GeminiImageService {
             let contents: Record<string, unknown>[];
             const caps = NANO_BANANA_CAPABILITIES[modelId as keyof typeof NANO_BANANA_CAPABILITIES];
             const maxRefs = caps?.maxReferenceImages ?? 0;
+            const sourceImage = await this.resolveEditMedia(data.image, data.imageUri, data.imageMimeType || "image/png");
+            const sourceMask = await this.resolveEditMedia(data.mask, data.maskUri, data.maskMimeType || "image/png");
+            const resolvedReferenceImages = data.referenceImages?.length
+                ? data.referenceImages
+                : data.referenceImageUris?.length
+                    ? await Promise.all(data.referenceImageUris.slice(0, maxRefs).map(uri => this.loadStorageImage(uri)))
+                    : undefined;
+            const resolvedReferenceImage = data.referenceImageUri
+                ? await this.loadStorageImage(data.referenceImageUri)
+                : data.referenceImage
+                    ? { mimeType: data.refMimeType || "image/png", data: data.referenceImage }
+                    : null;
 
             if (data.conversationHistory && data.conversationHistory.length > 0) {
                 // Multi-turn edit: history + new turn
@@ -568,28 +620,28 @@ export class GeminiImageService {
                 const newParts: Record<string, unknown>[] = [];
 
                 // Source image
-                if (data.image) {
+                if (sourceImage) {
                     newParts.push({
                         inlineData: {
-                            mimeType: data.imageMimeType || "image/png",
-                            data: data.image,
+                            mimeType: sourceImage.mimeType,
+                            data: sourceImage.data,
                         },
                     });
                 }
 
                 // Mask
-                if (data.mask) {
+                if (sourceMask) {
                     newParts.push({
                         inlineData: {
-                            mimeType: data.maskMimeType || "image/png",
-                            data: data.mask,
+                            mimeType: sourceMask.mimeType,
+                            data: sourceMask.data,
                         },
                     });
                 }
 
                 // Reference images (new array field)
-                if (maxRefs > 0 && data.referenceImages && data.referenceImages.length > 0) {
-                    const imagesToAdd = data.referenceImages.slice(0, maxRefs);
+                if (maxRefs > 0 && resolvedReferenceImages && resolvedReferenceImages.length > 0) {
+                    const imagesToAdd = resolvedReferenceImages.slice(0, maxRefs);
                     for (const ref of imagesToAdd) {
                         newParts.push({
                             inlineData: {
@@ -601,11 +653,11 @@ export class GeminiImageService {
                 }
 
                 // Legacy single reference image (gate on maxRefs > 0 for consistency with single-turn)
-                if (maxRefs > 0 && data.referenceImage && !data.referenceImages?.length) {
+                if (maxRefs > 0 && resolvedReferenceImage && !resolvedReferenceImages?.length) {
                     newParts.push({
                         inlineData: {
-                            mimeType: data.refMimeType || "image/png",
-                            data: data.referenceImage,
+                            mimeType: resolvedReferenceImage.mimeType,
+                            data: resolvedReferenceImage.data,
                         },
                     });
                 }
@@ -627,21 +679,21 @@ export class GeminiImageService {
                 const parts: Record<string, unknown>[] = [];
 
                 // Source image first (consistent with multi-turn ordering)
-                if (data.image) {
+                if (sourceImage) {
                     parts.push({
                         inlineData: {
-                            mimeType: data.imageMimeType || "image/png",
-                            data: data.image,
+                            mimeType: sourceImage.mimeType,
+                            data: sourceImage.data,
                         },
                     });
                 }
 
                 // Mask
-                if (data.mask) {
+                if (sourceMask) {
                     parts.push({
                         inlineData: {
-                            mimeType: data.maskMimeType || "image/png",
-                            data: data.mask,
+                            mimeType: sourceMask.mimeType,
+                            data: sourceMask.data,
                         },
                     });
                 }
@@ -650,8 +702,8 @@ export class GeminiImageService {
                 const maxRefs = caps?.maxReferenceImages ?? 0;
 
                 // Reference images (new array field)
-                if (maxRefs > 0 && data.referenceImages && data.referenceImages.length > 0) {
-                    const imagesToAdd = data.referenceImages.slice(0, maxRefs);
+                if (maxRefs > 0 && resolvedReferenceImages && resolvedReferenceImages.length > 0) {
+                    const imagesToAdd = resolvedReferenceImages.slice(0, maxRefs);
                     for (const ref of imagesToAdd) {
                         parts.push({
                             inlineData: {
@@ -663,11 +715,11 @@ export class GeminiImageService {
                 }
 
                 // Legacy single reference image
-                if (maxRefs > 1 && data.referenceImage && !data.referenceImages?.length) {
+                if (maxRefs > 1 && resolvedReferenceImage && !resolvedReferenceImages?.length) {
                     parts.push({
                         inlineData: {
-                            mimeType: data.refMimeType || "image/png",
-                            data: data.referenceImage,
+                            mimeType: resolvedReferenceImage.mimeType,
+                            data: resolvedReferenceImage.data,
                         },
                     });
                 }
@@ -718,9 +770,14 @@ export class GeminiImageService {
                     isAIGenerated: true,
                     timestamp: new Date().toISOString(),
                     promptSnippet: data.prompt.substring(0, 100),
-                    hasMultipleReferences: !!(data.referenceImages && data.referenceImages.length > 0),
-                    hasMask: !!data.mask,
+                    hasMultipleReferences: !!(resolvedReferenceImages && resolvedReferenceImages.length > 0),
+                    hasMask: !!sourceMask,
+                    hasStorageInputs: !!(data.imageUri || data.maskUri || data.referenceImageUri || (data.referenceImageUris && data.referenceImageUris.length > 0)),
                     isMultiTurn: !!(data.conversationHistory && data.conversationHistory.length > 0),
+                    sessionId: data.sessionId || null,
+                    routeId: data.routeId || null,
+                    routeLabel: data.routeLabel || null,
+                    routeReason: data.routeReason || null,
                 },
                 aiGenerationInfo: {
                     isFullyAIGenerated: false,

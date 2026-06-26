@@ -1,7 +1,8 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { X, Sparkles, AlertCircle } from 'lucide-react';
+import { X, Sparkles, AlertCircle, Layers3, Users, Brush } from 'lucide-react';
 import { STUDIO_COLORS } from '../constants';
+import type { CreativeVaultScope } from '../services/creativeManifest';
 
 interface EditDefinitionsPanelProps {
     isOpen: boolean;
@@ -10,6 +11,8 @@ interface EditDefinitionsPanelProps {
     onUpdateDefinition: (colorId: string, prompt: string) => void;
     referenceImages?: Record<string, { mimeType: string, data: string } | null>;
     onUpdateReferenceImage?: (colorId: string, image: { mimeType: string, data: string } | null) => void;
+    referenceRoles?: Record<string, CreativeVaultScope>;
+    onUpdateReferenceRole?: (colorId: string, role: CreativeVaultScope) => void;
 }
 
 export default function EditDefinitionsPanel({
@@ -18,7 +21,9 @@ export default function EditDefinitionsPanel({
     definitions,
     onUpdateDefinition,
     referenceImages = {},
-    onUpdateReferenceImage
+    onUpdateReferenceImage,
+    referenceRoles = {},
+    onUpdateReferenceRole
 }: EditDefinitionsPanelProps) {
     if (!isOpen) return null;
 
@@ -117,6 +122,33 @@ export default function EditDefinitionsPanel({
                                     )
                                 )}
                             </div>
+
+                            {onUpdateReferenceRole && (
+                                <div className="flex flex-wrap gap-1 pt-1">
+                                    {[
+                                        { role: 'objects' as const, label: 'Object', icon: Layers3 },
+                                        { role: 'characters' as const, label: 'Character', icon: Users },
+                                        { role: 'style' as const, label: 'Style', icon: Brush },
+                                    ].map(({ role, label, icon: Icon }) => {
+                                        const active = (referenceRoles[color.id] || 'objects') === role;
+                                        return (
+                                            <button
+                                                key={role}
+                                                type="button"
+                                                onClick={() => onUpdateReferenceRole(color.id, role)}
+                                                className={`flex items-center gap-1 rounded-full border px-2 py-1 text-[9px] font-semibold uppercase tracking-wide transition-colors ${
+                                                    active
+                                                        ? 'border-amber-400/40 bg-amber-400/10 text-amber-200'
+                                                        : 'border-white/8 bg-white/[0.03] text-gray-500 hover:border-white/15 hover:text-gray-300'
+                                                }`}
+                                            >
+                                                <Icon size={10} />
+                                                {label}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            )}
                         </div>
                     </div>
                 ))}

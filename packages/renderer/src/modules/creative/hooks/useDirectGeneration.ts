@@ -310,22 +310,27 @@ export function useDirectGeneration() {
             throw new Error('Failed to obtain auth token. Please re-authenticate.');
         }
 
-        let referenceUri;
-        const ingredientsList = videoInputs?.ingredients || [];
-        const firstIngredient = ingredientsList[0];
-        if (firstIngredient && firstIngredient.url) {
-            referenceUri = await CreativeStorageService.uploadReferenceMedia(userId, firstIngredient.url, 'image');
+        let referenceUri: string | undefined;
+        let referenceUris: string[] | undefined;
+        const ingredientsList = (videoInputs?.ingredients || []).filter(ingredient => !!ingredient?.url);
+        if (ingredientsList.length > 0) {
+            referenceUris = (await Promise.all(
+                ingredientsList.slice(0, 14).map(ingredient => CreativeStorageService.uploadReferenceMedia(userId, ingredient.url, 'image', { scope: 'objects' }))
+            )).filter((uri): uri is string => !!uri);
+            referenceUri = referenceUris[0];
         }
 
         const generateImageV3 = httpsCallable(functions, 'generateImageV3');
         const res = await generateImageV3(compactCallablePayload({
             prompt: finalPrompt,
+            sessionId: currentProjectId ? `creative_${currentProjectId}` : undefined,
             aspectRatio: studioControls.aspectRatio,
             model: studioControls.model,
             imageSize: studioControls.imageSize,
             thinkingLevel: studioControls.thinkingLevel,
             useGoogleSearch: studioControls.useGrounding,
-            referenceUri
+            referenceUri,
+            referenceUris
         }));
         
         const data = res.data as { jobId: string };
