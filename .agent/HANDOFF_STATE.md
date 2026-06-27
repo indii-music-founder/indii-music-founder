@@ -4,6 +4,7 @@
 
 ## Recent Commits
 ```
+be9e5a0e0 chore: session checkpoint [13:28]
 49f0a25d0 chore: session checkpoint [13:27]
 0f33b8c2b chore: session checkpoint [13:27]
 8c5d670b9 chore: session checkpoint [13:26]
@@ -13,7 +14,6 @@
 1b0b67d55 chore: session checkpoint [13:24]
 5e671f4f4 chore: session checkpoint [13:19]
 1276a0480 chore: session checkpoint [13:14]
-c5ddfd56d fix: point package.json main to compiled dist/index.js
 ```
 
 ## Working State
