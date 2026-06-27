@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-27 13:44 EDT
+**Updated:** 2026-06-27 13:52 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+011f11f4b chore: npm install after adding @indii/shared dependency
+b332fe7e4 chore: session checkpoint [13:44]
 2f82084ad chore: session checkpoint [13:44]
 db2830121 chore: session checkpoint [13:43]
 e44e4db5f chore: session checkpoint [13:43]
@@ -12,8 +14,6 @@ fa423ae5f chore: session checkpoint [13:43]
 1a0554c66 chore: session checkpoint [13:42]
 c02ea666b chore: session checkpoint [13:42]
 3a6bb6a48 chore: session checkpoint [13:41]
-cd1794d8e chore: session checkpoint [13:41]
-00af7231c chore: session checkpoint [13:41]
 ```
 
 ## Working State
