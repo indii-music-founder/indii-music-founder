@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-27 09:47 EDT
+**Updated:** 2026-06-27 09:53 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+50dbd2dbc fix: restore .js extension for AuthService ESM resolution
+2b1c561ce chore: session checkpoint [09:47]
 9058a6479 chore: session checkpoint [09:42]
 030c33405 chore: session checkpoint [09:36]
 f97db90c0 fix: remove .js extensions from all shared package exports
@@ -12,8 +14,6 @@ c78641964 chore: session checkpoint [09:32]
 11c01fb6b chore: session checkpoint [09:31]
 5ec422bee chore: session checkpoint [09:31]
 b7e84b598 chore: session checkpoint [09:30]
-8230ac3c1 chore: session checkpoint [09:25]
-bd855fd87 chore: session checkpoint [09:20]
 ```
 
 ## Working State
