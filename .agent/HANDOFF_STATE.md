@@ -4,6 +4,7 @@
 
 ## Recent Commits
 ```
+753cf8f80 chore: session checkpoint [12:36]
 75ff38ffc chore: session checkpoint [12:35]
 f5857a624 chore: session checkpoint [12:35]
 0dd542f33 chore: session checkpoint [12:30]
@@ -13,7 +14,6 @@ d66fabcf8 fix: add .js extensions to ESM imports in shared package
 175e3aa33 chore: session checkpoint [12:22]
 94375be75 chore: session checkpoint [12:16]
 b55800e16 chore: session checkpoint [12:11]
-d11b911d9 fix: add @indii/shared path mapping to tsconfig
 ```
 
 ## Working State
