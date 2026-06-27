@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-27 15:09 EDT
+**Updated:** 2026-06-27 15:11 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+de653529a ci: retry deployment
+2c76de012 chore: session checkpoint [15:09]
 27243a55e chore: session checkpoint [15:08]
 f0c21e68d chore: session checkpoint [15:07]
 b9f8469e3 chore: session checkpoint [15:06]
@@ -12,8 +14,6 @@ db53b5471 fix: restore rootDir as '.' to enable compilation
 2f764253c chore: session checkpoint [14:52]
 014b26754 chore: session checkpoint [14:52]
 cd7e85a53 chore: session checkpoint [14:51]
-c39e63653 chore: session checkpoint [14:51]
-323d4329b chore: session checkpoint [14:51]
 ```
 
 ## Working State
