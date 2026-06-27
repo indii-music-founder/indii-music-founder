@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-27 13:12 EDT
+**Updated:** 2026-06-27 13:14 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+c5ddfd56d fix: point package.json main to compiled dist/index.js
+965bdc0f6 chore: session checkpoint [13:12]
 86bb19137 chore: session checkpoint [13:12]
 7b85c5e25 chore: session checkpoint [13:11]
 13edddb85 chore: session checkpoint [13:11]
@@ -12,8 +14,6 @@ b963ef5c7 chore: session checkpoint [13:10]
 26cffd87f chore: session checkpoint [13:09]
 2800882d5 chore: session checkpoint [13:04]
 28752de9e chore: session checkpoint [13:03]
-a9ce9c7aa chore: session checkpoint [13:03]
-0fa19c1ee chore: session checkpoint [13:03]
 ```
 
 ## Working State
