@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-27 08:54 EDT
+**Updated:** 2026-06-27 08:55 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+e83942b0e fix: validate URL format before HEAD request and add fetch mock
+2a7a1c276 chore: session checkpoint [08:54]
 bfdcba5f9 chore: session checkpoint [08:36]
 3f2150f82 fix: refine 404 check to only reject on explicit 404 responses
 39b391f58 chore: session checkpoint [08:33]
@@ -12,8 +14,6 @@ c81bd29c8 chore: session checkpoint [08:15]
 771b4c180 Merge branch 'codex/video-player-bridge'
 8f5dfbb1a chore: remove unused imports and dead functions
 d1d602b5d chore: session checkpoint [08:11]
-c65c7a232 fix(creative): wire video timing and storage resolution
-0bbdc47c5 feat(video): route outputs through storage lifecycle
 ```
 
 ## Working State
