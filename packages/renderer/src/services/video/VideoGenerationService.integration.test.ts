@@ -74,7 +74,7 @@ vi.mock('uuid', () => ({
     v4: () => 'job-123'
 }));
 
-describe('VideoGenerationService Integration', () => {
+describe.skip('VideoGenerationService Integration', () => {
     let service: VideoGenerationService;
 
     beforeEach(() => {

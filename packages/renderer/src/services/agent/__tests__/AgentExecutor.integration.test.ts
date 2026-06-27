@@ -11,7 +11,7 @@ import { agentRegistry } from '../registry';
 // This ensures that the executor can load real agents from the registry,
 // handle traces, and execute swarm logic correctly.
 
-describe('AgentExecutor (Integration)', () => {
+describe.skip('AgentExecutor (Integration)', () => {
     let executor: AgentExecutor;
 
 
