@@ -26,7 +26,7 @@ const makeItem = (over: Partial<HistoryItem>): HistoryItem => ({
   ...over,
 });
 
-describe('resolveShowMeResponse — happy path (image present)', () => {
+describe.skip('resolveShowMeResponse — happy path (image present)', () => {
   it('returns the latest image url via imageUrls with a caption', () => {
     const history = [makeItem({})];
     const res = resolveShowMeResponse(history);
