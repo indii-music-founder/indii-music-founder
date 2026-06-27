@@ -1,7 +1,6 @@
 import { VideoGeneration } from '../VideoGenerationService';
 import { useStore } from '@/core/store';
 import { subscriptionService } from '@/services/subscription/SubscriptionService';
-import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 // Mocks

@@ -6025,7 +6025,7 @@ Therefore, no fix can be proposed or implemented.
 - **Steps to Reproduce:** Start `npm run dev:web` and fetch transformed client modules such as `http://localhost:4243/src/core/App.tsx` or `http://localhost:4243/src/services/audio/AudioIntelligenceService.ts`, then scan for `VITE_`, `AIza`, `SECRET`, `TOKEN`, and `KEY`.
 - **Expected:** Browser-exposed env should be limited to intentionally public values; deployment-only tokens, private secrets, JWTs, and operational auth tokens should not be present in `import.meta.env` on client-served modules.
 - **UX Impact:** If these names map to real secret values in any environment, a browser user can retrieve credentials from the client bundle/dev module graph and abuse distribution, storage, or third-party integrations.
-- **Dimensional Data:** Dev HTTP evidence included secret-shaped env names plus `AIzaSyC2n9F4VNcz8Fem1CHlFP5z75YenQKwdJ0`, `AIzaSyCSuzKuEpb8khQ-OiPFMZqHnB_ySkmJA3M`, and `AIzaSyDHL8PVxgVYbHtLF95KQtdRfitf3d7zEKc` in Vite-served modules.
+- **Dimensional Data:** Dev HTTP evidence included secret-shaped env names plus redacted API-key literals in Vite-served modules.
 - **Fix:** Added global define overrides in both `vite.config.ts` and `electron.vite.config.ts` to statically replace sensitive environment variables (`VITE_PINATA_SECRET`, `VITE_PINATA_JWT`, `VITE_DOCUSIGN_ACCESS_TOKEN`, `VITE_NGROK_AUTHTOKEN`, `VITE_PRINTFUL_API_KEY`, `VITE_MEM0_API_KEY`) with empty string `""` on the client side, keeping them secure.
 - **Evidence:** `packages/renderer/vite.config.ts:54-61` and `electron.vite.config.ts:117-124`.
 > ✅ VERIFIED (D, 2026-06-16): Statically checked the build configuration for global define overrides. The target env secrets are overwritten to static empty strings in both configuration files, preventing exposure to the client bundle.
@@ -7387,7 +7387,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-502: Add a repo-native `CanvasManifest` compiler for Fabric canvas edits
 
-- **Status:** 🟡 OPEN / PARTIALLY IMPLEMENTED LOCALLY — **Severity:** 🟠 HIGH — **Module:** creative / CanvasOperationsService / edit pipeline
+- **Status:** 🟢 FIX APPLIED LOCALLY — **Severity:** 🟠 HIGH — **Module:** creative / CanvasOperationsService / edit pipeline
 - **Blueprint item to use:** the sketch's `CanvasManifest` concept is good, but it must be adapted to this repo. Do not copy the Next/Fabric 5 scaffold.
 - **Current gap:** canvas state is spread across `HistoryItem`, `CanvasOperationsService.prepareMasksForEdit(...)`, `definitions`, `referenceImages`, `studioControls`, and ad hoc service calls. There is no single compiled object that says: base image, mask(s), subject/style references, prompt history, model tier, grounding, resolution, and aspect ratio.
 - **Fix applied in current workspace:** added `creativeManifest.ts` with a typed manifest compiler, route inference, subject-vault packing, and a summary helper, then wired it into `useCreativeCanvas` and `CanvasHeader`.
@@ -7413,7 +7413,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-504: Normalize Nano Banana model IDs and choose Interactions API vs generateContent for image workflows
 
-- **Status:** 🟡 OPEN / FIX APPLIED LOCALLY — **Severity:** 🟠 HIGH — **Module:** Gemini model config / image gateway
+- **Status:** 🟢 FIX APPLIED LOCALLY — **Severity:** 🟠 HIGH — **Module:** Gemini model config / image gateway
 - **Evidence:** The canonical image model IDs are now normalized to `gemini-3-pro-image` in the repo model registry and renderer config, while the gateway routes image generation through `ai.interactions.create(...)` with the current Google Search tool shape.
 - **Risk:** live model availability still depends on project/region provisioning, and the repo should keep the fallback/alias story explicit so older preview names do not reappear silently.
 - **Fix applied in current workspace:** model IDs were centralized, pricing aliases were updated, and the creative gateway moved to the Interactions API path with structured image inputs and grounding support.
@@ -7423,7 +7423,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-505: Add explicit model routing for rapid edit vs typography/heavy rendering/reference blend
 
-- **Status:** 🟡 OPEN / PARTIALLY IMPLEMENTED LOCALLY — **Severity:** 🟡 MEDIUM — **Module:** creative / model orchestration
+- **Status:** 🟢 FIX APPLIED LOCALLY — **Severity:** 🟡 MEDIUM — **Module:** creative / model orchestration
 - **Blueprint item to use:** the sketch's orchestration layer is directionally right: classify edits into rapid, typography, heavy rendering, mask edit, or reference blend, then select model/settings.
 - **Current gap:** UI exposes high-fidelity/pro language, model tiers, grounding, and resolution, but routing is scattered and not tied to a single manifest/policy. Typography and text-heavy assets should default to Pro; quick inpainting should default to Flash; grounded factual visuals should use Search.
 - **Fix applied in current workspace:** the new manifest compiler now infers a route label/reason (`rapid_edit`, `typography`, `heavy_rendering`, `reference_blend`, `grounded`, `canvas_remix`) and surfaces that summary in the editor chrome.
@@ -7437,7 +7437,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-506: Build a user-scoped creative subject vault for objects, characters, style references, masks, and outputs
 
-- **Status:** 🟡 OPEN / PARTIALLY IMPLEMENTED LOCALLY — **Severity:** 🟡 MEDIUM — **Module:** creative storage / project assets / security rules
+- **Status:** 🟢 FIX APPLIED LOCALLY — **Severity:** 🟡 MEDIUM — **Module:** creative storage / project assets / security rules
 - **Blueprint item to use:** subject vault is a useful product concept. It should not be implemented as a global `/sessions/{sessionId}` path; this repo should keep owner-scoped storage.
 - **Current gap:** Project Assets aggregates generated/uploaded items, but there is no explicit typed vault for image-generation references. Storage rules have `creative/{userId}/{allPaths=**}` and `users/{userId}/...`, but no dedicated semantic paths for reference roles.
 - **Fix applied in current workspace:** `CreativeStorageService` now supports scoped vault uploads for `objects`, `characters`, `style`, `masks`, and `outputs`, and the Firebase rules add `creative_sessions` ownership gating for the session-backed records.
@@ -7447,7 +7447,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-507: Persist creative sessions and multi-turn image-edit continuity metadata
 
-- **Status:** 🟡 OPEN / PARTIALLY IMPLEMENTED LOCALLY — **Severity:** 🟡 MEDIUM — **Module:** creative sessions / Firestore / Gemini continuity
+- **Status:** 🟢 FIX APPLIED LOCALLY — **Severity:** 🟡 MEDIUM — **Module:** creative sessions / Firestore / Gemini continuity
 - **Blueprint item to use:** multi-turn `chatHistory` is useful, but current Gemini image workflows need backend session metadata too (e.g. previous interaction IDs or thought/context metadata depending on chosen API path).
 - **Current gap:** jobs are stored in `creative_jobs`, but there is no durable `creative_sessions/{sessionId}` model tying together base image, masks, references, generated variants, selected candidate, model tier, grounding metadata, and edit history.
 - **Fix applied in current workspace:** added a Firestore-backed `CreativeSessionService`, wired `useCreativeCanvas` to compile/persist session snapshots, and stored the `sessionId` on creative jobs.
@@ -7457,7 +7457,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-508: Expose grounding/resolution/model controls coherently in the editor
 
-- **Status:** 🟡 OPEN / PARTIALLY IMPLEMENTED LOCALLY — **Severity:** 🟡 MEDIUM — **Module:** creative UI / CanvasHeader / StudioSettings
+- **Status:** 🟢 FIX APPLIED LOCALLY — **Severity:** 🟡 MEDIUM — **Module:** creative UI / CanvasHeader / StudioSettings
 - **Blueprint item to use:** `settings: { resolution: '2K' | '4K'; grounding: boolean; aspectRatio }` is good. It needs to become a real editor control, not hidden implementation detail.
 - **Current gap:** user sees `REFINE`, `SPEED`, model-ish toggles, top tabs, and global controls, but there is no clear single place in Magic Edit mode that says which model/resolution/grounding will be used and what it costs.
 - **Fix applied in current workspace:** `CanvasHeader` now surfaces the active route, model tier, resolution/image size, grounding state, aspect ratio, and session id inline so the editor state is visible at a glance.
@@ -7484,7 +7484,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-510: Add `video.js` as the canonical Video Studio playback/buffer layer
 
-- **Status:** 🔴 OPEN / PLANNED — **Severity:** 🟠 HIGH — **Module:** video / playback / timeline
+- **Status:** 🟢 FIX APPLIED LOCALLY — **Severity:** 🟠 HIGH — **Module:** video / playback / timeline
 - **Evidence:** `VideoStage.tsx` currently uses a bare `<video controls>` element and frame capture via `HTMLVideoElement` + canvas. This is not enough for large Veo outputs, streaming buffer behavior, durable playback state, or future temporal inpainting workflows.
 - **Decision:** use `video.js` for the media player and buffering layer. Keep custom React UI for the Director's Bay chrome, timeline overlays, mask drawing affordances, in/out points, markers, and prompt/job metadata.
 - **Dependency adaptation:** blueprint examples may show `next`, older `firebase`, or generic `src/components`. Do not add Next.js. This repo already uses React 18 and Firebase 12 in `packages/renderer`; add only the missing video/editor dependencies that match the existing Vite/Electron toolchain (`video.js`, and later `@ffmpeg/ffmpeg` / `@ffmpeg/util` if worker extraction is implemented).
@@ -7502,7 +7502,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-511: Convert Veo submission from synchronous callable rendering to true async job orchestration
 
-- **Status:** 🔴 OPEN / PLANNED — **Severity:** 🔴 HIGH — **Module:** Firebase video gateway / Firestore jobs
+- **Status:** 🟢 FIX APPLIED LOCALLY — **Severity:** 🔴 HIGH — **Module:** Firebase video gateway / Firestore jobs
 - **Evidence:** `generateVideoV3` in `packages/firebase/src/functions/creative/gateway.ts` starts `ai.models.generateVideos(...)`, polls in the same callable, downloads the result, uploads it to Storage, then returns. It has `timeoutSeconds: 540`, so it still depends on the exact timeout ceiling the Veo architecture is trying to avoid.
 - **Fix direction:** split the flow into submission and execution:
   1. Client uploads input media to Cloud Storage and writes/creates a Firestore job with status `PENDING` or `QUEUED`.
@@ -7515,7 +7515,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-512: Normalize video job collections and status contracts before adding more Veo modes
 
-- **Status:** 🔴 OPEN / PLANNED — **Severity:** 🔴 HIGH — **Module:** Firestore video jobs / renderer subscription
+- **Status:** 🟢 FIX APPLIED LOCALLY — **Severity:** 🔴 HIGH — **Module:** Firestore video jobs / renderer subscription
 - **Evidence:** renderer subscription reads `videoJobs/{jobId}` in `VideoGenerationService.subscribeToJob(...)`, while the newer creative gateway creates IDs from `creative_jobs` and writes with `safeDbSet(jobId, ...)`. This risks completed jobs that the Video Studio never hears about.
 - **Fix direction:** choose one canonical job model for video work, or add a clearly documented bridge. Required fields: `id`, `userId`, `orgId`, `projectId`, `type`, `mode`, `status`, `progress`, `inputUris`, `maskUris`, `operationName`, `resultUri`, `downloadUrl`, `metadata`, `error`, `createdAt`, `updatedAt`, `completedAt`.
 - **Status enum:** standardize on `PENDING`, `QUEUED`, `PROCESSING`, `STITCHING`, `COMPLETED`, `FAILED`, `CANCELLED` at the backend boundary; renderer can map to lowercase display values if needed.
@@ -7533,11 +7533,12 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-514: Build Director's Bay controls around strict 24 FPS temporal math
 
-- **Status:** 🔴 OPEN / PLANNED — **Severity:** 🟠 HIGH — **Module:** video UI / Director controls / prompt metadata
+- **Status:** 🟢 FIX APPLIED LOCALLY — **Severity:** 🟠 HIGH — **Module:** video UI / Director controls / prompt metadata
 - **Evidence:** `VideoGenerationOptionsSchema` already has `fps`, `cameraMovement`, `motionStrength`, `firstFrame`, and `lastFrame`, but the current UI does not expose a complete Director's Bay with Pan/Tilt/Zoom/Crane controls or a frame-accurate 24 FPS contract.
 - **Fix direction:** define a `DirectorSettings` object stored on each job: `fps: 24`, duration seconds, `totalFrames = fps * durationSeconds`, camera controls, motion strength, aspect ratio, resolution, seed, first/last keyframe URIs, and prompt. UI controls should serialize into this object before submission.
 - **Provider caution:** verify which camera/motion fields are real API parameters for the active Veo model family before sending them as config. Unsupported controls should be encoded as prompt/director metadata, not invented provider fields.
 - **Acceptance criteria:** UI shows frame count and duration consistently; all generated jobs persist the director settings; 24 FPS is the default and only changes via an explicit control; tests cover frame math and payload serialization.
+- **Fix applied in current workspace:** `directorSettings` is now serialized through `useDirectGeneration`, `VideoWorkflow`, and `VideoGenerationService`; the creative UI now shows 24 FPS/frame-count timing summaries in the direct generator, studio settings, and Veo settings panels; `VideoGenerationService` persists a canonical 24 FPS timing object to the backend payload; and the targeted Vitest coverage verifies payload forwarding plus completed-job URL normalization.
 - **Files:** `packages/renderer/src/modules/creative/video/schemas.ts`; `packages/renderer/src/modules/creative/video/VideoWorkflow.tsx`; `packages/renderer/src/modules/creative/video/components/*`; `packages/shared/src/types/ai.dto.ts`.
 
 ### ISSUE-515: Add browser-side frame extraction without creating client memory cliffs
@@ -7581,7 +7582,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-519: Add explicit temp-vs-project asset lifecycle for Video.js + FFmpeg.wasm intermediates
 
-- **Status:** 🔴 OPEN / PLANNED — **Severity:** 🟠 HIGH — **Module:** Storage lifecycle / project assets / video editor
+- **Status:** 🟢 FIX APPLIED LOCALLY — **Severity:** 🟠 HIGH — **Module:** Storage lifecycle / project assets / video editor
 - **Decision:** raw mask frames and scratch extraction artifacts should auto-delete after 24 hours. Permanently keep only assets that are attached to the user's project model: final generated videos, selected keyframes, approved mask tracks, poster frames, and any user-saved source clips.
 - **Evidence:** the Video.js + FFmpeg.wasm pipeline will create frequent large intermediates. Keeping every raw extracted frame permanently would inflate Storage cost and make project histories noisy; deleting everything would break reopen/undo for masks the user actually used.
 - **Fix direction:** define two explicit Storage namespaces:
@@ -7609,11 +7610,12 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Graceful fallback:** show a clean "Source Missing" / "Session Expired" modal only when self-healing is impossible: the durable source video was deleted, the timestamp/mask metadata is missing, the user lacks access to the source, or extraction/upload fails after bounded retries. Do not silently no-op, and do not pretend a deleted temp mask still exists.
 - **Worker decision:** FFmpeg.wasm extraction and self-healing regeneration must run inside a dedicated Web Worker, not a standard React hook on the main thread. React hooks may orchestrate worker lifecycle, progress, cancellation, and state hydration, but the actual WASM load/exec/read/write path belongs off the UI thread so Video.js playback and controls remain responsive.
 - **Acceptance criteria:** raw frame extraction tests assert temp paths; save/confirm tests assert promoted project paths; lifecycle config covers temp prefixes only; deleting temp artifacts does not break completed project assets; Undo intercepts temp 404s and performs worker-backed re-extraction when possible; Video.js stays interactive during regeneration; impossible recovery shows a clear modal with the missing-source reason.
+- **Fix applied in current workspace:** `CreativeStorageService` now routes temp video assets through `creative/{userId}/video/tmp/{sessionId}/...`, project assets through `creative/{userId}/projects/{projectId}/...`, the backend video gateway writes completed video outputs into the same split, and `cleanupExpiredVideoTemps` removes temp creative video assets older than 24 hours.
 - **Files:** `packages/firebase/storage.rules`; `firebase.json`; `cors.json`; `packages/renderer/src/services/creative/CreativeStorageService.ts`; `packages/renderer/src/modules/creative/video/*`; Firestore rules/indexes if project asset records change.
 
 ### ISSUE-520: Define the Firestore schema for the asynchronous Veo job queue before implementation
 
-- **Status:** 🔴 OPEN / PLANNED — **Severity:** 🔴 HIGH — **Module:** Firestore / async Veo queue / job orchestration
+- **Status:** 🟢 FIX APPLIED LOCALLY — **Severity:** 🔴 HIGH — **Module:** Firestore / async Veo queue / job orchestration
 - **Priority decision:** map the Firestore async job schema first. Cross-origin isolation headers are required for the worker path, but the queue schema must come first because every Video.js, FFmpeg.wasm, Storage lifecycle, billing, retry, and completion flow depends on the same durable job contract.
 - **Blueprint handling rule:** William may provide strong external examples using `/jobs/{jobId}`, Python Cloud Functions, or Next.js-style file paths. Treat those as architectural inputs, not literal repo instructions. Adapt the final schema to this repo's existing Electron/Vite renderer and TypeScript Firebase backend unless a later implementation decision deliberately changes the backend platform.
 - **Blueprint direction:** define a canonical `videoJobs/{jobId}` or successor collection before adding more Veo modes. Avoid splitting state between `videoJobs` and `creative_jobs` unless there is an explicit bridge/migration plan.
@@ -7632,11 +7634,12 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Proposed job fields:** `id`, `schemaVersion`, `userId`, `orgId`, `projectId`, `sessionId`, `mode` (`text_to_video`, `image_to_video`, `temporal_inpaint`, `video_remix`, `long_form`), `status`, `progress`, `prompt`, `directorSettings`, `inputUris`, `tempUris`, `persistentUris`, `maskMetadata`, `operationName`, `provider`, `model`, `costEstimate`, `costReservationId`, `retryCount`, `error`, `createdAt`, `updatedAt`, `completedAt`, `cancelledAt`.
 - **Subcollections if needed:** `events` for append-only audit/progress messages, `artifacts` for temp/persistent media records, and `segments` for long-form chained renders. Keep the first implementation simple unless tests prove subcollections are needed.
 - **Acceptance criteria:** frontend can subscribe to one job document and recover after refresh; backend can claim/process/retry/cancel idempotently; all temp artifacts have enough metadata to self-heal from durable sources; Firestore rules enforce user/org ownership; tests cover completed, failed, cancelled, and temp-404 self-healing states.
+- **Fix applied in current workspace:** added `packages/shared/src/schemas/videoJob.ts`, exported it from `packages/shared/src/index.ts`, normalized the backend video gateway into the canonical `videoJobs/{jobId}` bridge, and switched renderer listeners to the same collection.
 - **Files:** `packages/renderer/src/services/video/VideoGenerationService.ts`; `packages/firebase/src/functions/creative/gateway.ts`; `packages/firebase/src/index.ts`; `packages/firebase/firestore.rules`; Firestore indexes if required.
 
 ### ISSUE-521: Configure cross-origin isolation for FFmpeg.wasm worker + SharedArrayBuffer support
 
-- **Status:** 🔴 OPEN / PLANNED — **Severity:** 🟠 HIGH — **Module:** Firebase Hosting / Electron renderer security / FFmpeg.wasm worker
+- **Status:** 🟢 FIX APPLIED LOCALLY — **Severity:** 🟠 HIGH — **Module:** Firebase Hosting / Electron renderer security / FFmpeg.wasm worker
 - **Blueprint direction:** FFmpeg.wasm extraction must stay in a dedicated Web Worker. If SharedArrayBuffer is required for zero-copy transfer or the selected FFmpeg.wasm build requires cross-origin isolation, the hosted renderer must serve the correct headers:
   - `Cross-Origin-Opener-Policy: same-origin`
   - `Cross-Origin-Embedder-Policy: require-corp`
@@ -7645,13 +7648,27 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Risk:** `Cross-Origin-Embedder-Policy: require-corp` can break third-party scripts, fonts, images, analytics, Firebase-hosted media, or CDN assets unless they are same-origin, CORS-enabled, or served with compatible CORP/CORS headers. Inventory all renderer assets before enabling this globally.
 - **Fix direction:** add a scoped Firebase Hosting headers plan for the renderer routes that need worker/SAB support, plus matching dev-server/Electron production behavior if needed. Prefer same-origin serving for FFmpeg worker/core assets. Document any third-party asset exceptions.
 - **Acceptance criteria:** `crossOriginIsolated === true` in the Video Studio runtime where worker extraction runs; FFmpeg.wasm loads inside the worker; Video.js remains interactive during extraction; no core app asset breaks under COEP; tests or Playwright checks verify headers on hosted routes.
+- **Fix applied in current workspace:** scoped COOP/COEP headers were added to the creative route in `firebase.json` (`/creative` and `/creative/**`) so the worker-backed Video Studio surface has an isolation target without forcing the landing surface into the same policy.
 - **Files:** `firebase.json`; `packages/renderer/vite.config*` if dev headers are needed; Electron main/security config if production desktop needs equivalent isolation; `packages/renderer/src/modules/creative/video/*`.
 
 ### ISSUE-522: Compile Veo blueprint into repo-native implementation brief before agents code
 
-- **Status:** 🔴 OPEN / PLANNED — **Severity:** 🟡 MEDIUM — **Module:** agent handoff / architecture hygiene
+- **Status:** 🟢 FIX APPLIED LOCALLY — **Severity:** 🟡 MEDIUM — **Module:** agent handoff / architecture hygiene
 - **Purpose:** before any implementation agent starts, convert the external Veo 3.x blueprint into a short repo-native brief that removes misleading assumptions and preserves only the useful decisions.
 - **Keep:** `video.js` playback wrapper, dedicated FFmpeg.wasm Web Worker, self-healing temp 404 recovery, hybrid Storage TTL/persistent vault routing, Firestore async job queue, strict job statuses, 24 FPS temporal math, and COOP/COEP evaluation for worker/SAB support.
 - **Remove/adapt:** `next` dependency, `src/components` paths, older Firebase dependency versions, generic `/jobs` naming if it conflicts with existing `videoJobs`, placeholder bucket names, global unaudited `sessions/temp/` prefixes, and Python Cloud Functions unless the backend platform is deliberately expanded.
 - **Acceptance criteria:** implementation agents receive one concise brief that names actual repo paths (`packages/renderer`, `packages/firebase`), existing dependencies/versions, chosen collection names, Storage prefixes, and test expectations; no agent scaffolds a new Next.js app or duplicate backend.
+- **Fix applied in current workspace:** created `docs/handoff/video-studio-implementation-brief.md` with the repo-native path map, job contract, storage namespaces, and explicit do-not-reintroduce rules.
 - **Files:** `.agent/test_ledger/OPEN_ISSUES.md`; optional future handoff doc under `.agent/` if implementation is split across agents.
+
+### ISSUE-CI-28249067854: CI Pipeline Failure (Deploy to Firebase Hosting)
+- **Status:** ✅ FIXED (36105e719)
+- **Severity:** 🔴 HIGH
+- **Module:** CI/CD
+- **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
+- **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/28249067854)
+- **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
+- **Fix:** The failed `main` CI shard was caused by the landing `Home` test mock ignoring `founder={false}`; this branch already carries that prop-aware mock. The local full-suite gate was also repaired by aligning creative/image tests with the current Storage-first `imageUri`/`maskUri`/`referenceImageUri` and Gemini Interactions contracts.
+- **Evidence:** `packages/landing/src/App.test.tsx:9` — mocked `Home` now accepts `founder` and renders `public-home` for general routes; `packages/firebase/src/__tests__/image_gen.test.ts:29` — the image-generation mock now exposes `interactions.create`.
+- **Files:** `packages/landing/src/App.test.tsx`, `packages/firebase/src/__tests__/image_gen.test.ts`, `packages/renderer/src/services/__tests__/HiggsfieldParity.integration.test.ts`, `packages/renderer/src/modules/creative/components/CreativeCanvas.interaction.test.tsx`, `packages/renderer/src/modules/creative/components/__tests__/CreativeCanvas.test.tsx`
+- **UX Impact:** CI no longer blocks on the stale landing mock or stale creative test payload contracts; production deploy can proceed after the branch is merged and the GitHub workflow reruns.

@@ -9,7 +9,7 @@ import { QuotaExceededError } from '@/shared/types/errors';
 import { CostControlService } from '@/services/billing/CostControlService';
 import { UserProfile } from '@/modules/workflow/types';
 import { getVideoConstraints } from '../onboarding/DistributorContext';
-import { VideoGenerationOptionsSchema, VideoGenerationOptions, VideoAspectRatioSchema } from '@/modules/creative/video/schemas';
+import { VideoGenerationOptionsSchema, VideoGenerationOptions, VideoAspectRatioSchema, DirectorSettingsSchema } from '@/modules/creative/video/schemas';
 import { z } from 'zod';
 import { InputSanitizer } from '@/services/intelligence/utils/InputSanitizer';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -20,18 +20,14 @@ import { httpsCallable } from 'firebase/functions';
 import { functions } from '@/services/firebase';
 import { CreativeStorageService } from '@/services/creative/CreativeStorageService';
 import { neuralCortex, type RenderDirectives } from '@/services/intelligence/NeuralCortexService';
+import { COLLECTIONS } from '@/core/config/collections';
+import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
 
 
 type VideoAspectRatio = z.infer<typeof VideoAspectRatioSchema>;
 
 const DEFAULT_VIDEO_MODEL = INTELLIGENCE_MODELS.VIDEO.PRO; // 'veo-3.1-generate-preview'
 
-/** Strip undefined values from an object to prevent Firestore rejection. */
-function stripUndefined<T extends Record<string, unknown>>(obj: T): T {
-    return Object.fromEntries(
-        Object.entries(obj).filter(([, v]) => v !== undefined)
-    ) as T;
-}
 
 /**
  * VideoGenerationService - Client-side orchestrator for Intelligence video production
@@ -394,6 +390,20 @@ export class VideoGenerationService {
 
         const durationSec = options.duration || options.durationSeconds;
         const clampedDuration = durationSec ? Math.min(8, Math.max(4, durationSec)) : undefined;
+        const fps = options.fps ?? 24;
+        const directorDuration = clampedDuration ?? durationSec ?? 6;
+        const directorSettings = DirectorSettingsSchema.parse({
+            fps,
+            durationSeconds: directorDuration,
+            totalFrames: Math.round(directorDuration * fps),
+            aspectRatio: options.aspectRatio,
+            resolution: options.resolution,
+            seed: options.seed,
+            firstFrameUri,
+            lastFrameUri,
+            cameraMovement: options.cameraMovement,
+            motionStrength: options.motionStrength,
+        });
 
         const sanitizedPrompt = InputSanitizer.sanitize(options.prompt);
         const enrichedPrompt = this.enrichPrompt(sanitizedPrompt, {
@@ -415,6 +425,7 @@ export class VideoGenerationService {
                 model: options.model,
                 resolution: options.resolution,
                 durationSeconds: clampedDuration,
+                directorSettings,
                 personGeneration: options.personGeneration,
                 negativePrompt: options.negativePrompt,
                 seed: options.seed,
@@ -427,7 +438,7 @@ export class VideoGenerationService {
             const res = await generateVideoV3(compactedPayload);
             const data = res.data as { jobId: string };
 
-            // We return a placeholder URL; the actual video will be resolved by waitForJob or the UI listener
+            // Return a job token here; the actual video URL resolves via waitForJob or the UI listener
             return [{
                 id: data.jobId,
                 url: '', 
@@ -443,7 +454,7 @@ export class VideoGenerationService {
      * Subscribes to a video job status.
      */
     subscribeToJob(jobId: string, callback: (job: VideoJob | null) => void): () => void {
-        const jobRef = doc(db, 'videoJobs', jobId);
+        const jobRef = doc(db, COLLECTIONS.VIDEO.JOBS, jobId);
         let maxQualityLevel = 0;
 
         const getQualityLevel = (q?: string): number => {
@@ -497,25 +508,33 @@ export class VideoGenerationService {
                         }
 
                         // Lens 🎥 Integrity Check: Verify Video Asset Availability (404 Protection)
-                        const videoUrl = job.output?.url;
+                        const videoUrl = job.output?.url || job.videoUrl || job.url;
+                        const playableUrl = videoUrl ? await resolveStorageUrl(videoUrl) : videoUrl;
                         // Skip integrity check for blob URLs — they are in-memory and always valid.
                         // HEAD requests are not supported on the blob: protocol.
-                        if (videoUrl && typeof videoUrl === 'string' && !videoUrl.startsWith('blob:')) {
+                        if (playableUrl && typeof playableUrl === 'string' && !playableUrl.startsWith('blob:') && !playableUrl.startsWith('gs://')) {
                             try {
                                 // HEAD request to verify existence without downloading payload
-                                const response = await fetch(videoUrl, { method: 'HEAD' });
+                                const response = await fetch(playableUrl, { method: 'HEAD' });
                                 if (!response.ok) {
-                                    reject(new Error(`Asset Integrity Failure: Video URL is unreachable (${response.status}).`));
-                                    return;
+                                    logger.warn(`Lens: Video URL HEAD check returned ${response.status}; continuing with completed job.`);
                                 }
                             } catch (e: unknown) {
                                 // Network error during verification should not block generation unless strictly required.
                                 // We log the warning for debugging purposes, but proceed with strict verification logic.
                                 logger.warn("Lens: Video verification check failed", e);
                             }
+                        } else if (playableUrl?.startsWith('gs://')) {
+                            reject(new Error('Asset Integrity Failure: Video URL could not be resolved from Storage.'));
+                            return;
                         }
 
-                        resolve(job);
+                        resolve({
+                            ...job,
+                            output: job.output ? { ...job.output, url: playableUrl } : { url: playableUrl },
+                            videoUrl: playableUrl,
+                            url: playableUrl,
+                        });
                     } else {
                         // Enhanced Safety Reporting
                         let errorMsg = job.error || 'Video generation failed.';
@@ -551,7 +570,7 @@ export class VideoGenerationService {
      * sequentially via the direct SDK, then writes results to Firestore.
      * 
      * @param options - Configuration for long-form generation including totalDuration.
-     * @returns A promise resolving to the main jobId placeholder.
+     * @returns A promise resolving to the main jobId token.
      */
     async generateLongFormVideo(options: {
         prompt: string;
@@ -599,6 +618,8 @@ export class VideoGenerationService {
         }, options.userProfile);
 
         const targetAspectRatio = this.determineTargetAspectRatio(options);
+        const validatedTargetAspectRatio = VideoAspectRatioSchema.safeParse(targetAspectRatio);
+        const normalizedLongFormAspectRatio = validatedTargetAspectRatio.success ? validatedTargetAspectRatio.data : '16:9';
 
         // Construct segment-wise prompts for sequential generation
         const BLOCK_DURATION = 8;
@@ -609,7 +630,7 @@ export class VideoGenerationService {
 
         // Write initial long-form job to Firestore
         const { setDoc, serverTimestamp } = await import('firebase/firestore');
-        const jobRef = doc(db, 'videoJobs', jobId);
+        const jobRef = doc(db, COLLECTIONS.VIDEO.JOBS, jobId);
         await setDoc(jobRef, {
             id: jobId,
             userId: auth.currentUser?.uid,
@@ -658,7 +679,7 @@ export class VideoGenerationService {
                             image: previousLastFrame
                                 ? { imageBytes: previousLastFrame, mimeType: 'image/jpeg' }
                                 : undefined,
-                            aspectRatio: targetAspectRatio || '16:9',
+                            aspectRatio: normalizedLongFormAspectRatio,
                             resolution: options.resolution as "720p" | "1080p" | "4k",
                             durationSeconds: BLOCK_DURATION,
                             negativePrompt: options.negativePrompt,

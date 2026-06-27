@@ -1,12 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mockGenerateContent = vi.fn();
+const mockInteractionsCreate = vi.fn();
 const mockGenerateVideos = vi.fn();
 const mockGetVideosOperation = vi.fn();
 const mockDownload = vi.fn();
+const mockGetMetadata = vi.fn();
 const mockSet = vi.fn();
 const mockUpdate = vi.fn();
 const mockSave = vi.fn();
+const mockCollectionNames: string[] = [];
 const mockOnCallOptions = vi.hoisted(() => [] as unknown[]);
 const mockOnCall = vi.hoisted(() => vi.fn((options, handler) => {
   mockOnCallOptions.push(options);
@@ -16,8 +18,10 @@ const mockOnCall = vi.hoisted(() => vi.fn((options, handler) => {
 vi.mock('@google/genai', () => ({
   GoogleGenAI: vi.fn(function GoogleGenAI() {
     return {
+      interactions: {
+        create: mockInteractionsCreate,
+      },
       models: {
-        generateContent: mockGenerateContent,
         generateVideos: mockGenerateVideos,
       },
       operations: {
@@ -50,19 +54,24 @@ vi.mock('firebase-functions/v2/https', () => ({
 
 vi.mock('firebase-admin', () => ({
   firestore: vi.fn(() => ({
-    collection: vi.fn(() => ({
-      doc: vi.fn((id?: string) => ({
-        id: id || 'job-123',
-        set: mockSet,
-        update: mockUpdate,
-      })),
-    })),
+    collection: vi.fn((name: string) => {
+      mockCollectionNames.push(name);
+      return {
+        doc: vi.fn((id?: string) => ({
+          id: id || 'job-123',
+          set: mockSet,
+          update: mockUpdate,
+        })),
+      };
+    }),
   })),
   storage: vi.fn(() => ({
     bucket: vi.fn(() => ({
       name: 'test-bucket',
       file: vi.fn(() => ({
         save: mockSave,
+        download: mockDownload,
+        getMetadata: mockGetMetadata,
       })),
     })),
   })),
@@ -93,6 +102,7 @@ const callGenerateOmniRemix = generateOmniRemixV3 as unknown as (request: {
 describe('creative gateway generateImageV3', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockGetMetadata.mockResolvedValue([{ contentType: 'image/png' }]);
   });
 
   it('allocates enough memory for the Gemini image SDK path', () => {
@@ -106,16 +116,11 @@ describe('creative gateway generateImageV3', () => {
   });
 
   it('honors fast model settings and extracts image data after text parts', async () => {
-    mockGenerateContent.mockResolvedValueOnce({
-      candidates: [{
-        content: {
-          parts: [
-            { thought: true, inlineData: { data: Buffer.from('draft-image').toString('base64'), mimeType: 'image/png' } },
-            { text: 'Composing final image.' },
-            { inlineData: { data: Buffer.from('image-bytes').toString('base64'), mimeType: 'image/png' } },
-          ],
-        },
-      }],
+    mockInteractionsCreate.mockResolvedValueOnce({
+      output_image: {
+        data: Buffer.from('image-bytes').toString('base64'),
+        mime_type: 'image/png',
+      },
     });
 
     const result = await callGenerateImage({
@@ -130,15 +135,15 @@ describe('creative gateway generateImageV3', () => {
       },
     });
 
-    expect(mockGenerateContent).toHaveBeenCalledWith(expect.objectContaining({
+    expect(mockInteractionsCreate).toHaveBeenCalledWith(expect.objectContaining({
       model: 'gemini-3.1-flash-image',
-      contents: [{ role: 'user', parts: [{ text: 'Dogs having fun' }] }],
-      config: expect.objectContaining({
-        responseModalities: ['IMAGE'],
-        imageConfig: expect.objectContaining({ aspectRatio: '16:9', imageSize: '2K' }),
-        thinkingConfig: { thinkingLevel: 'Minimal' },
-        tools: [{ googleSearch: {} }],
+      input: [{ type: 'text', text: 'Dogs having fun' }],
+      response_modalities: ['image'],
+      generation_config: expect.objectContaining({
+        image_config: expect.objectContaining({ aspect_ratio: '16:9', image_size: '2K' }),
+        thinking_level: 'minimal',
       }),
+      tools: [{ type: 'google_search', search_types: ['web_search'] }],
     }));
     expect(mockSave).toHaveBeenCalledWith(Buffer.from('image-bytes'), expect.objectContaining({ contentType: 'image/png' }));
     expect(result).toEqual(expect.objectContaining({
@@ -147,8 +152,48 @@ describe('creative gateway generateImageV3', () => {
     }));
   });
 
+  it('includes reference images in the Gemini interaction payload and rejects foreign storage paths', async () => {
+    mockDownload.mockResolvedValue([Buffer.from('reference-bytes')]);
+    mockInteractionsCreate.mockResolvedValueOnce({
+      output_image: {
+        data: Buffer.from('image-bytes').toString('base64'),
+        mime_type: 'image/png',
+      },
+    });
+
+    await callGenerateImage({
+      auth: { uid: 'user-123' },
+      data: {
+        prompt: 'Dogs having fun',
+        aspectRatio: '1:1',
+        model: 'pro',
+        referenceUri: 'gs://test-bucket/creative/user-123/ref.png',
+      },
+    });
+
+    expect(mockInteractionsCreate).toHaveBeenCalledWith(expect.objectContaining({
+      model: 'gemini-3-pro-image',
+      input: [
+        { type: 'text', text: 'Dogs having fun' },
+        { type: 'image', mime_type: 'image/png', data: Buffer.from('reference-bytes').toString('base64') },
+      ],
+    }));
+
+    await expect(callGenerateImage({
+      auth: { uid: 'user-123' },
+      data: {
+        prompt: 'Dogs having fun',
+        aspectRatio: '1:1',
+        model: 'pro',
+        referenceUri: 'gs://test-bucket/creative/other-user/ref.png',
+      },
+    })).rejects.toMatchObject({
+      code: 'permission-denied',
+    });
+  });
+
   it('maps Google model availability failures to actionable callable errors', async () => {
-    mockGenerateContent.mockRejectedValueOnce(Object.assign(
+    mockInteractionsCreate.mockRejectedValueOnce(Object.assign(
       new Error('404 NOT_FOUND: model is not available for this project'),
       { status: 404 },
     ));
@@ -171,11 +216,9 @@ describe('creative gateway generateImageV3', () => {
   });
 
   it('surfaces a prompt-rephrase message when the model declines (NO_IMAGE), not a settings rejection', async () => {
-    mockGenerateContent.mockResolvedValueOnce({
-      candidates: [{
-        finishReason: 'NO_IMAGE',
-        content: { parts: [{ text: 'I am not sure what your dog looks like.' }] },
-      }],
+    mockInteractionsCreate.mockResolvedValueOnce({
+      status: 'failed',
+      outputs: [{ type: 'text', text: 'I am not sure what your dog looks like.' }],
     });
 
     const rejection = await callGenerateImage({
@@ -239,21 +282,10 @@ describe('classifyMediaFinishFailure', () => {
 describe('creative gateway generateVideoV3', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockCollectionNames.length = 0;
   });
 
-  it('routes video generation through Veo generateVideos and stores returned bytes', async () => {
-    mockGenerateVideos.mockResolvedValueOnce({
-      done: true,
-      response: {
-        generatedVideos: [{
-          video: {
-            videoBytes: Buffer.from('video-bytes').toString('base64'),
-            mimeType: 'video/mp4',
-          },
-        }],
-      },
-    });
-
+  it('queues a video job and returns quickly from the callable', async () => {
     const result = await callGenerateVideo({
       auth: { uid: 'user-123' },
       data: {
@@ -269,6 +301,53 @@ describe('creative gateway generateVideoV3', () => {
         negativePrompt: 'no blurry faces',
         seed: '42',
       },
+    });
+
+    expect(result).toEqual(expect.objectContaining({
+      jobId: 'job-123',
+    }));
+    expect(mockGenerateVideos).not.toHaveBeenCalled();
+    expect(mockGetVideosOperation).not.toHaveBeenCalled();
+    expect(mockCollectionNames).toEqual(expect.arrayContaining(['creative_jobs', 'videoJobs']));
+    expect(mockSet).toHaveBeenCalledTimes(2);
+  });
+
+  it('processes a queued video job asynchronously and stores the rendered output', async () => {
+    mockGenerateVideos.mockResolvedValueOnce({
+      done: true,
+      response: {
+        generatedVideos: [{
+          video: {
+            videoBytes: Buffer.from('video-bytes').toString('base64'),
+            mimeType: 'video/mp4',
+          },
+        }],
+      },
+    });
+
+    const { executeVideoJob } = await import('./gateway');
+    const result = await executeVideoJob('job-123', {
+      userId: 'user-123',
+      status: 'queued',
+      type: 'video',
+      prompt: 'A cinematic social clip',
+      aspectRatio: '9:16',
+      model: 'fast',
+      resolution: '1080p',
+      durationSeconds: 6,
+      referenceUris: ['gs://test-bucket/refs/artist.png'],
+      firstFrameUri: 'gs://test-bucket/frames/start.png',
+      lastFrameUri: 'gs://test-bucket/frames/end.png',
+      personGeneration: 'allow_adult',
+      negativePrompt: 'no blurry faces',
+      seed: '42',
+      enhancePrompt: true,
+      progress: 0,
+      mode: 'veo-3.1-fast-generate-preview',
+      inputUris: ['gs://test-bucket/frames/start.png'],
+      maskUris: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     });
 
     expect(mockGenerateVideos).toHaveBeenCalledWith(expect.objectContaining({
@@ -290,12 +369,13 @@ describe('creative gateway generateVideoV3', () => {
         }],
       }),
     }));
-    expect(mockGetVideosOperation).not.toHaveBeenCalled();
     expect(mockSave).toHaveBeenCalledWith(Buffer.from('video-bytes'), expect.objectContaining({ contentType: 'video/mp4' }));
     expect(result).toEqual(expect.objectContaining({
       jobId: 'job-123',
       resultUri: expect.stringContaining('gs://test-bucket/creative/user-123/'),
     }));
+    expect(mockCollectionNames).toEqual(expect.arrayContaining(['creative_jobs', 'videoJobs']));
+    expect(mockUpdate).toHaveBeenCalled();
   });
 
   it('maps Veo safety-filter failures to actionable callable errors', async () => {
@@ -308,13 +388,23 @@ describe('creative gateway generateVideoV3', () => {
       },
     });
 
-    await expect(callGenerateVideo({
-      auth: { uid: 'user-123' },
-      data: {
-        prompt: 'blocked clip',
-        aspectRatio: '16:9',
-        model: 'pro',
-      },
+    const { executeVideoJob } = await import('./gateway');
+
+    await expect(executeVideoJob('job-123', {
+      id: 'job-123',
+      userId: 'user-123',
+      status: 'queued',
+      type: 'video',
+      prompt: 'blocked clip',
+      aspectRatio: '16:9',
+      model: 'pro',
+      resolution: '720p',
+      durationSeconds: 6,
+      progress: 0,
+      inputUris: [],
+      maskUris: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     })).rejects.toMatchObject({
       code: 'invalid-argument',
       message: expect.stringContaining('Video generation failed'),

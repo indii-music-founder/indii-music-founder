@@ -27,6 +27,7 @@ import { generateVideoDirect } from "./lib/video_generation_direct";
 import { executeMilestoneFn } from "./timeline/milestone_execution";
 import { editImageFn } from "./lib/image_generation";
 export { generateImageV3, generateVideoV3, generateOmniRemixV3, generateAudioV3 } from "./functions/creative/gateway";
+export { videoJobOrchestrator } from "./functions/creative/videoJobOrchestrator";
 import { analyzeAudioFn } from "./lib/audio";
 import { FUNCTION_INTELLIGENCE_MODELS } from "./config/models";
 import { clearbitApiKey, apolloApiKey } from "./config/secrets";
@@ -140,8 +141,8 @@ export { sendEmail } from './email/sendEmail';
 // Growth Intelligence Engine — Platform Analytics OAuth (Spotify, TikTok, Instagram)
 export { analyticsExchangeToken, analyticsRefreshToken, analyticsRevokeToken } from './analytics/platformTokenExchange';
 
-// Storage Maintenance (Scheduled — orphan cleanup, quota tracking, archival flagging)
-export { cleanupOrphanedVideos, trackStorageQuotas, flagVideosForArchival } from './devops/storageMaintenance';
+// Storage Maintenance (Scheduled — orphan cleanup, quota tracking, archival flagging, temp cleanup)
+export { cleanupExpiredVideoTemps, cleanupOrphanedVideos, trackStorageQuotas, flagVideosForArchival } from './devops/storageMaintenance';
 
 // Remote Relay — Server-Side Agent Processing (replaces desktop-browser-dependent relay)
 export { processRelayCommand } from './relay/relayCommandProcessor';
