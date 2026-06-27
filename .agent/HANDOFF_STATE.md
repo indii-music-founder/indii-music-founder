@@ -4,6 +4,7 @@
 
 ## Recent Commits
 ```
+44849a06e chore: session checkpoint [19:43]
 bc679b481 chore: session checkpoint [19:42]
 c66380728 chore: session checkpoint [19:42]
 ee7a0f06c chore: session checkpoint [19:41]
@@ -13,12 +14,11 @@ ade32f0fb chore: session checkpoint [19:33]
 b7f69027a fix: skip showme diagnostic test in CI
 ea191c369 chore: session checkpoint [19:27]
 8abc960d5 chore: session checkpoint [19:26]
-7252630a4 chore: session checkpoint [19:25]
 ```
 
 ## Working State
 ```
-M  .agent/HANDOFF_STATE.md
+clean working tree
 ```
 
 ## Decisions
