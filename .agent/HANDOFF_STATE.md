@@ -1,50 +1,24 @@
 # Handoff State
-**Updated:** 2026-06-26 13:49 EDT
-**Branch:** `main`
+**Updated:** 2026-06-27 08:11 EDT
+**Branch:** `codex/video-player-bridge`
 
 ## Recent Commits
 ```
-1d286065c test(landing): update public route expectation
-d8cb4da00 chore: session checkpoint [11:50]
-17ee81637 feat(landing): real public marketing page at indii.music (#210)
-2cde2f27e chore: session checkpoint [09:50]
-5dbd4c11c chore: session checkpoint [09:49]
-1e2392f10 chore: session checkpoint [09:46]
-2df7a7369 chore: session checkpoint [09:43]
-831ee8407 chore: session checkpoint [09:42]
-59956d04d chore: session checkpoint [09:41]
-2d9482f09 chore: session checkpoint [09:39]
+c65c7a232 fix(creative): wire video timing and storage resolution
+0bbdc47c5 feat(video): route outputs through storage lifecycle
+bb89ea51e feat(video): scope isolation and handoff brief
+0c093d53a feat(video): scope creative storage paths
+548e01676 docs(ledger): mark latest CI issue fixed
+a60619a05 test: align creative tests with storage-first image flow
+add7b093a fix(video): canonicalize queue schema and bridge
+868cd7b44 test(ledger): log ISSUE-CI pipeline failures
+6d7a78c81 feat(video): add video.js player and async job queue
+59e89f23c feat(creative): add image manifest and storage flow
 ```
 
 ## Working State
 ```
- M .agent/test_ledger/OPEN_ISSUES.md
- M README.md
- M docs/README.md
- M packages/firebase/firestore.rules
- M packages/firebase/src/config/models.ts
- M packages/firebase/src/functions/creative/gateway.test.ts
- M packages/firebase/src/functions/creative/gateway.ts
- M packages/firebase/src/lib/image.ts
- M packages/firebase/src/lib/image_generation.test.ts
- M packages/firebase/src/lib/image_generation.ts
- M packages/renderer/src/core/config/intelligence-models.ts
- M packages/renderer/src/modules/creative/CreativeStudio.tsx
- M packages/renderer/src/modules/creative/components/CanvasHeader.tsx
- M packages/renderer/src/modules/creative/components/CreativeCanvas.tsx
- M packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts
- M packages/renderer/src/modules/creative/hooks/useDirectGeneration.ts
- M packages/renderer/src/modules/creative/services/CanvasOperationsService.ts
- M packages/renderer/src/services/creative/CreativeStorageService.ts
- M packages/renderer/src/services/creative/__tests__/CreativeStorageService.test.ts
- M packages/renderer/src/services/image/EditingService.test.ts
- M packages/renderer/src/services/image/EditingService.ts
- M packages/renderer/src/services/image/ImageGenerationService.ts
- M packages/renderer/src/services/intelligence/billing/ModelPricing.ts
-?? .agent/checkpoints/codex-veo-blueprint-2026-06-26.md
-?? packages/renderer/src/modules/creative/services/__tests__/
-?? packages/renderer/src/modules/creative/services/creativeManifest.ts
-?? packages/renderer/src/services/creative/CreativeSessionService.ts
+clean working tree
 ```
 
 ## Decisions
