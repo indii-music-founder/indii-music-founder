@@ -17,6 +17,7 @@ import { CreativeStorageService } from '@/services/creative/CreativeStorageServi
 import { auth } from '@/services/firebase';
 import { CostControlService } from '@/services/billing/CostControlService';
 import { estimateCostUsd } from '@/services/intelligence/billing/ModelPricing';
+import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
 
 // Basic debounce helper
 function debounce<T extends (...args: any[]) => any>(
@@ -208,7 +209,7 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                         if (!isMounted) return;
 
                         await canvasOps.loadFromJSON(savedState);
-                        const recoveredBase = await canvasOps.ensureBaseImage(item.url);
+                        const recoveredBase = await canvasOps.ensureBaseImage(await resolveStorageUrl(item.url));
                         if (recoveredBase) {
                             logger.warn('[CreativeStudio] Restored missing base image from selected asset URL', {
                                 itemId: item.id,
@@ -217,7 +218,7 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                     }, handleCanvasChange);
                 } else if (isMounted) {
                     // Initialize WITH base image URL
-                    canvasOps.initialize(canvasEl.current, item.url, undefined, handleCanvasChange);
+                    canvasOps.initialize(canvasEl.current, await resolveStorageUrl(item.url), undefined, handleCanvasChange);
                 }
 
                 try {

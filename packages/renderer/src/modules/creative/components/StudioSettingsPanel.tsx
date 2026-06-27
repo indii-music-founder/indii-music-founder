@@ -154,6 +154,8 @@ export default function StudioSettingsPanel({ onClose }: { onClose: () => void }
         setStudioControls: state.setStudioControls,
         generationMode: state.generationMode
     })));
+    const directorFps = studioControls.fps || 24;
+    const directorFrames = Math.round((studioControls.duration || 0) * directorFps);
 
     const resetDefaults = useCallback(() => {
         setStudioControls({
@@ -194,6 +196,18 @@ export default function StudioSettingsPanel({ onClose }: { onClose: () => void }
                         </button>
                     </div>
                 </div>
+
+                {generationMode === 'video' && (
+                    <div className="mb-4 flex items-center justify-between rounded-lg border border-white/8 bg-white/3 px-3 py-2">
+                        <div>
+                            <p className="text-[9px] uppercase tracking-widest text-gray-500 font-bold">Video timing</p>
+                            <p className="text-[11px] font-mono font-bold text-white">{directorFps} fps · {directorFrames} frames</p>
+                        </div>
+                        <span className="text-[9px] uppercase tracking-widest text-purple-300 bg-purple-500/10 border border-purple-500/20 rounded-full px-2 py-1">
+                            Locked
+                        </span>
+                    </div>
+                )}
 
                 {/* Controls Grid */}
                 <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">

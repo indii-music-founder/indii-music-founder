@@ -49,6 +49,8 @@ export const VideoJobDirectorSettingsSchema = z.object({
     cameraPhysics: VideoJobDirectorPhysicsSchema.optional(),
     firstFrameUri: z.string().startsWith('gs://').optional(),
     lastFrameUri: z.string().startsWith('gs://').optional(),
+    cameraMovement: z.string().optional(),
+    motionStrength: z.number().min(0).max(1).optional(),
 }).passthrough();
 
 export const VideoJobDocumentSchema = z.object({

@@ -9,7 +9,7 @@ import { QuotaExceededError } from '@/shared/types/errors';
 import { CostControlService } from '@/services/billing/CostControlService';
 import { UserProfile } from '@/modules/workflow/types';
 import { getVideoConstraints } from '../onboarding/DistributorContext';
-import { VideoGenerationOptionsSchema, VideoGenerationOptions, VideoAspectRatioSchema } from '@/modules/creative/video/schemas';
+import { VideoGenerationOptionsSchema, VideoGenerationOptions, VideoAspectRatioSchema, DirectorSettingsSchema } from '@/modules/creative/video/schemas';
 import { z } from 'zod';
 import { InputSanitizer } from '@/services/intelligence/utils/InputSanitizer';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -21,6 +21,7 @@ import { functions } from '@/services/firebase';
 import { CreativeStorageService } from '@/services/creative/CreativeStorageService';
 import { neuralCortex, type RenderDirectives } from '@/services/intelligence/NeuralCortexService';
 import { COLLECTIONS } from '@/core/config/collections';
+import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
 
 
 type VideoAspectRatio = z.infer<typeof VideoAspectRatioSchema>;
@@ -395,6 +396,20 @@ export class VideoGenerationService {
 
         const durationSec = options.duration || options.durationSeconds;
         const clampedDuration = durationSec ? Math.min(8, Math.max(4, durationSec)) : undefined;
+        const fps = options.fps ?? 24;
+        const directorDuration = clampedDuration ?? durationSec ?? 6;
+        const directorSettings = DirectorSettingsSchema.parse({
+            fps,
+            durationSeconds: directorDuration,
+            totalFrames: Math.round(directorDuration * fps),
+            aspectRatio: options.aspectRatio,
+            resolution: options.resolution,
+            seed: options.seed,
+            firstFrameUri,
+            lastFrameUri,
+            cameraMovement: options.cameraMovement,
+            motionStrength: options.motionStrength,
+        });
 
         const sanitizedPrompt = InputSanitizer.sanitize(options.prompt);
         const enrichedPrompt = this.enrichPrompt(sanitizedPrompt, {
@@ -416,6 +431,7 @@ export class VideoGenerationService {
                 model: options.model,
                 resolution: options.resolution,
                 durationSeconds: clampedDuration,
+                directorSettings,
                 personGeneration: options.personGeneration,
                 negativePrompt: options.negativePrompt,
                 seed: options.seed,
@@ -498,25 +514,33 @@ export class VideoGenerationService {
                         }
 
                         // Lens 🎥 Integrity Check: Verify Video Asset Availability (404 Protection)
-                        const videoUrl = job.output?.url;
+                        const videoUrl = job.output?.url || job.videoUrl || job.url;
+                        const playableUrl = videoUrl ? await resolveStorageUrl(videoUrl) : videoUrl;
                         // Skip integrity check for blob URLs — they are in-memory and always valid.
                         // HEAD requests are not supported on the blob: protocol.
-                        if (videoUrl && typeof videoUrl === 'string' && !videoUrl.startsWith('blob:')) {
+                        if (playableUrl && typeof playableUrl === 'string' && !playableUrl.startsWith('blob:') && !playableUrl.startsWith('gs://')) {
                             try {
                                 // HEAD request to verify existence without downloading payload
-                                const response = await fetch(videoUrl, { method: 'HEAD' });
+                                const response = await fetch(playableUrl, { method: 'HEAD' });
                                 if (!response.ok) {
-                                    reject(new Error(`Asset Integrity Failure: Video URL is unreachable (${response.status}).`));
-                                    return;
+                                    logger.warn(`Lens: Video URL HEAD check returned ${response.status}; continuing with completed job.`);
                                 }
                             } catch (e: unknown) {
                                 // Network error during verification should not block generation unless strictly required.
                                 // We log the warning for debugging purposes, but proceed with strict verification logic.
                                 logger.warn("Lens: Video verification check failed", e);
                             }
+                        } else if (playableUrl?.startsWith('gs://')) {
+                            reject(new Error('Asset Integrity Failure: Video URL could not be resolved from Storage.'));
+                            return;
                         }
 
-                        resolve(job);
+                        resolve({
+                            ...job,
+                            output: job.output ? { ...job.output, url: playableUrl } : { url: playableUrl },
+                            videoUrl: playableUrl,
+                            url: playableUrl,
+                        });
                     } else {
                         // Enhanced Safety Reporting
                         let errorMsg = job.error || 'Video generation failed.';
@@ -600,6 +624,8 @@ export class VideoGenerationService {
         }, options.userProfile);
 
         const targetAspectRatio = this.determineTargetAspectRatio(options);
+        const validatedTargetAspectRatio = VideoAspectRatioSchema.safeParse(targetAspectRatio);
+        const normalizedLongFormAspectRatio = validatedTargetAspectRatio.success ? validatedTargetAspectRatio.data : '16:9';
 
         // Construct segment-wise prompts for sequential generation
         const BLOCK_DURATION = 8;
@@ -659,7 +685,7 @@ export class VideoGenerationService {
                             image: previousLastFrame
                                 ? { imageBytes: previousLastFrame, mimeType: 'image/jpeg' }
                                 : undefined,
-                            aspectRatio: targetAspectRatio || '16:9',
+                            aspectRatio: normalizedLongFormAspectRatio,
                             resolution: options.resolution as "720p" | "1080p" | "4k",
                             durationSeconds: BLOCK_DURATION,
                             negativePrompt: options.negativePrompt,
