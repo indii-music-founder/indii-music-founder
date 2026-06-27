@@ -4,6 +4,7 @@
 
 ## Recent Commits
 ```
+861866c14 chore: session checkpoint [11:57]
 7bdfc56a9 chore: session checkpoint [11:52]
 c15b20ca0 fix: revert to src/index.ts for monorepo compatibility
 e89c7867f chore: session checkpoint [11:47]
@@ -13,7 +14,6 @@ dc61f7a20 chore: session checkpoint [11:41]
 428208af9 chore: session checkpoint [11:35]
 7c52bb4b6 fix: point package.json main to compiled dist/index.js
 c15369806 chore: session checkpoint [11:29]
-80772f7b0 chore: session checkpoint [11:23]
 ```
 
 ## Working State
