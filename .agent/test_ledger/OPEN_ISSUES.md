@@ -6025,7 +6025,7 @@ Therefore, no fix can be proposed or implemented.
 - **Steps to Reproduce:** Start `npm run dev:web` and fetch transformed client modules such as `http://localhost:4243/src/core/App.tsx` or `http://localhost:4243/src/services/audio/AudioIntelligenceService.ts`, then scan for `VITE_`, `AIza`, `SECRET`, `TOKEN`, and `KEY`.
 - **Expected:** Browser-exposed env should be limited to intentionally public values; deployment-only tokens, private secrets, JWTs, and operational auth tokens should not be present in `import.meta.env` on client-served modules.
 - **UX Impact:** If these names map to real secret values in any environment, a browser user can retrieve credentials from the client bundle/dev module graph and abuse distribution, storage, or third-party integrations.
-- **Dimensional Data:** Dev HTTP evidence included secret-shaped env names plus `AIzaSyC2n9F4VNcz8Fem1CHlFP5z75YenQKwdJ0`, `AIzaSyCSuzKuEpb8khQ-OiPFMZqHnB_ySkmJA3M`, and `AIzaSyDHL8PVxgVYbHtLF95KQtdRfitf3d7zEKc` in Vite-served modules.
+- **Dimensional Data:** Dev HTTP evidence included secret-shaped env names plus redacted API-key literals in Vite-served modules.
 - **Fix:** Added global define overrides in both `vite.config.ts` and `electron.vite.config.ts` to statically replace sensitive environment variables (`VITE_PINATA_SECRET`, `VITE_PINATA_JWT`, `VITE_DOCUSIGN_ACCESS_TOKEN`, `VITE_NGROK_AUTHTOKEN`, `VITE_PRINTFUL_API_KEY`, `VITE_MEM0_API_KEY`) with empty string `""` on the client side, keeping them secure.
 - **Evidence:** `packages/renderer/vite.config.ts:54-61` and `electron.vite.config.ts:117-124`.
 > ✅ VERIFIED (D, 2026-06-16): Statically checked the build configuration for global define overrides. The target env secrets are overwritten to static empty strings in both configuration files, preventing exposure to the client bundle.
@@ -7533,11 +7533,12 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-514: Build Director's Bay controls around strict 24 FPS temporal math
 
-- **Status:** 🔴 OPEN / PLANNED — **Severity:** 🟠 HIGH — **Module:** video UI / Director controls / prompt metadata
+- **Status:** 🟢 FIX APPLIED LOCALLY — **Severity:** 🟠 HIGH — **Module:** video UI / Director controls / prompt metadata
 - **Evidence:** `VideoGenerationOptionsSchema` already has `fps`, `cameraMovement`, `motionStrength`, `firstFrame`, and `lastFrame`, but the current UI does not expose a complete Director's Bay with Pan/Tilt/Zoom/Crane controls or a frame-accurate 24 FPS contract.
 - **Fix direction:** define a `DirectorSettings` object stored on each job: `fps: 24`, duration seconds, `totalFrames = fps * durationSeconds`, camera controls, motion strength, aspect ratio, resolution, seed, first/last keyframe URIs, and prompt. UI controls should serialize into this object before submission.
 - **Provider caution:** verify which camera/motion fields are real API parameters for the active Veo model family before sending them as config. Unsupported controls should be encoded as prompt/director metadata, not invented provider fields.
 - **Acceptance criteria:** UI shows frame count and duration consistently; all generated jobs persist the director settings; 24 FPS is the default and only changes via an explicit control; tests cover frame math and payload serialization.
+- **Fix applied in current workspace:** `directorSettings` is now serialized through `useDirectGeneration`, `VideoWorkflow`, and `VideoGenerationService`; the creative UI now shows 24 FPS/frame-count timing summaries in the direct generator, studio settings, and Veo settings panels; `VideoGenerationService` persists a canonical 24 FPS timing object to the backend payload; and the targeted Vitest coverage verifies payload forwarding plus completed-job URL normalization.
 - **Files:** `packages/renderer/src/modules/creative/video/schemas.ts`; `packages/renderer/src/modules/creative/video/VideoWorkflow.tsx`; `packages/renderer/src/modules/creative/video/components/*`; `packages/shared/src/types/ai.dto.ts`.
 
 ### ISSUE-515: Add browser-side frame extraction without creating client memory cliffs

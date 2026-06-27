@@ -13,6 +13,7 @@ declare module 'fabric' {
 import { hexToRgba, scaleImageToCanvas } from '@/lib/canvasUtils';
 import { STUDIO_COLORS, CreativeColor } from '../constants';
 import { logger } from '@/utils/logger';
+import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
 
 export interface MaskData {
     mimeType: string;
@@ -56,6 +57,8 @@ export class CanvasOperationsService {
      *     or are clearly CORS-safe.
      */
     private async loadImageSafe(url: string): Promise<fabric.Image> {
+        const playableUrl = await resolveStorageUrl(url);
+
         // High-performance async decoding (off main thread) helper
         const loadOffThread = (sourceUrl: string, crossOrigin?: string): Promise<fabric.Image> => {
             return new Promise((resolve, reject) => {
@@ -88,27 +91,27 @@ export class CanvasOperationsService {
         };
 
         // Fast path for data URIs — no CORS issues possible
-        if (url.startsWith('data:')) {
+        if (playableUrl.startsWith('data:')) {
             try {
-                return await loadOffThread(url);
+                return await loadOffThread(playableUrl);
             } catch (e) {
                 logger.warn('[CanvasOps] Off-thread data URI load failed, falling back to fromURL:', e);
-                return fabric.Image.fromURL(url, { crossOrigin: 'anonymous' });
+                return fabric.Image.fromURL(playableUrl, { crossOrigin: 'anonymous' });
             }
         }
 
         // Prefer the blob path for ANY cross-origin http(s) URL — not just the two
         // legacy hosts. The bucket's own *.firebasestorage.app domain, signed URLs,
         // and CDNs all taint the canvas if loaded directly without CORS (ISSUE-478).
-        const isRemoteHttp = /^https?:\/\//i.test(url);
-        const isSameOrigin = typeof window !== 'undefined' && url.startsWith(window.location.origin);
+        const isRemoteHttp = /^https?:\/\//i.test(playableUrl);
+        const isSameOrigin = typeof window !== 'undefined' && playableUrl.startsWith(window.location.origin);
         const shouldPreferBlob = isRemoteHttp && !isSameOrigin;
 
         // Attempt 1: Use a blob URL for remote storage sources to avoid canvas taint.
         if (shouldPreferBlob) {
             try {
                 const { safeStorageFetch } = await import('@/services/storage/safeStorageFetch');
-                const { blob } = await safeStorageFetch(url);
+                const { blob } = await safeStorageFetch(playableUrl);
                 const blobUrl = URL.createObjectURL(blob);
                 this._activeBlobUrls.push(blobUrl);
 
@@ -122,7 +125,7 @@ export class CanvasOperationsService {
 
         // Attempt 2: Direct load with crossOrigin for sources that are already safe.
         try {
-            return await loadOffThread(url, 'anonymous');
+                return await loadOffThread(playableUrl, 'anonymous');
         } catch (directErr: unknown) {
             logger.warn('[CanvasOps] Direct image load failed (likely CORS), attempting blob fallback:', directErr);
         }
@@ -130,7 +133,7 @@ export class CanvasOperationsService {
         // Attempt 3: Fetch via safeStorageFetch → blob URL (bypasses CORS)
         try {
             const { safeStorageFetch } = await import('@/services/storage/safeStorageFetch');
-            const { blob } = await safeStorageFetch(url);
+            const { blob } = await safeStorageFetch(playableUrl);
             const blobUrl = URL.createObjectURL(blob);
             this._activeBlobUrls.push(blobUrl);
 

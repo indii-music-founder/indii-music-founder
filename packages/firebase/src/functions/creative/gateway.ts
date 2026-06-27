@@ -7,7 +7,7 @@ import { getVertexAIClient } from '../../lib/vertexClient';
 import { readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { VideoJobDocumentSchema, type VideoJobDocument } from '@indii/shared';
+import { VideoJobDocumentSchema, type VideoJobDocument, VideoJobDirectorSettingsSchema } from '@indii/shared';
 import {
   GoogleGenAI,
   VideoGenerationReferenceType,
@@ -186,6 +186,7 @@ const GenerateVideoSchema = BaseMediaRequest.extend({
   model: z.enum(['lite', 'fast', 'pro']).default('fast'),
   resolution: z.enum(['720p', '1080p', '4k', '1280x720', '1920x1080', '3840x2160']).default('720p'),
   durationSeconds: z.number().min(4).max(8).default(6),
+  directorSettings: VideoJobDirectorSettingsSchema.optional(),
   personGeneration: z.enum(['allow_adult', 'dont_allow', 'allow_all']).optional(),
   negativePrompt: z.string().max(1000).optional(),
   seed: z.union([z.number().int(), z.string().regex(/^\d+$/)]).optional(),
@@ -1074,6 +1075,7 @@ export const generateVideoV3 = onCall({ timeoutSeconds: 540, secrets: [geminiApi
     negativePrompt,
     seed,
     enhancePrompt,
+    directorSettings: requestedDirectorSettings,
   } = parsed.data;
   const userId = request.auth.uid;
   const jobId = getDb().collection('creative_jobs').doc().id;
@@ -1086,6 +1088,16 @@ export const generateVideoV3 = onCall({ timeoutSeconds: 540, secrets: [geminiApi
     lastFrameUri,
     ...(referenceUris ?? []),
   ].filter((uri): uri is string => !!uri);
+  const directorSettings = requestedDirectorSettings ?? {
+    fps: 24,
+    durationSeconds: normalizedDuration,
+    totalFrames: normalizedDuration * 24,
+    aspectRatio: normalizeVideoAspectRatio(aspectRatio),
+    resolution: normalizedResolution,
+    seed: normalizeVideoSeed(seed),
+    firstFrameUri,
+    lastFrameUri,
+  };
 
   const jobRecord: VideoGenerationJobRecord = {
     id: jobId,
@@ -1113,16 +1125,7 @@ export const generateVideoV3 = onCall({ timeoutSeconds: 540, secrets: [geminiApi
       maskFrameUri: lastFrameUri,
       cameraPhysics: undefined,
     },
-    directorSettings: {
-      fps: 24,
-      durationSeconds: normalizedDuration,
-      totalFrames: normalizedDuration * 24,
-      aspectRatio: normalizeVideoAspectRatio(aspectRatio),
-      resolution: normalizedResolution,
-      seed: normalizeVideoSeed(seed),
-      firstFrameUri,
-      lastFrameUri,
-    },
+    directorSettings,
     provider: 'google-genai',
     model: modelId,
     costEstimate: undefined,
