@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-27 11:47 EDT
+**Updated:** 2026-06-27 11:52 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+c15b20ca0 fix: revert to src/index.ts for monorepo compatibility
+e89c7867f chore: session checkpoint [11:47]
 dc61f7a20 chore: session checkpoint [11:41]
 133bdc49d chore: session checkpoint [11:41]
 333ea0f9a chore: session checkpoint [11:40]
@@ -12,8 +14,6 @@ dc61f7a20 chore: session checkpoint [11:41]
 c15369806 chore: session checkpoint [11:29]
 80772f7b0 chore: session checkpoint [11:23]
 bae9801d7 chore: session checkpoint [11:18]
-103259a96 chore: session checkpoint [11:18]
-4d1e8d62f fix: remove .js extensions from TypeScript source file
 ```
 
 ## Working State
