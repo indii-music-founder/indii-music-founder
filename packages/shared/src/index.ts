@@ -1,4 +1,4 @@
-export * from './services/AuthService.js';
+export * from './services/AuthService';
 export * from './schemas/api.js';
 export * from './schemas/env.schema.js';
 export * from './schemas/workflowState.js';
