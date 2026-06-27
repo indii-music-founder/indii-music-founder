@@ -1,9 +1,12 @@
 # Handoff State
-**Updated:** 2026-06-27 08:11 EDT
-**Branch:** `codex/video-player-bridge`
+**Updated:** 2026-06-27 08:15 EDT
+**Branch:** `main`
 
 ## Recent Commits
 ```
+771b4c180 Merge branch 'codex/video-player-bridge'
+8f5dfbb1a chore: remove unused imports and dead functions
+d1d602b5d chore: session checkpoint [08:11]
 c65c7a232 fix(creative): wire video timing and storage resolution
 0bbdc47c5 feat(video): route outputs through storage lifecycle
 bb89ea51e feat(video): scope isolation and handoff brief
@@ -11,9 +14,6 @@ bb89ea51e feat(video): scope isolation and handoff brief
 548e01676 docs(ledger): mark latest CI issue fixed
 a60619a05 test: align creative tests with storage-first image flow
 add7b093a fix(video): canonicalize queue schema and bridge
-868cd7b44 test(ledger): log ISSUE-CI pipeline failures
-6d7a78c81 feat(video): add video.js player and async job queue
-59e89f23c feat(creative): add image manifest and storage flow
 ```
 
 ## Working State
