@@ -28,12 +28,6 @@ type VideoAspectRatio = z.infer<typeof VideoAspectRatioSchema>;
 
 const DEFAULT_VIDEO_MODEL = INTELLIGENCE_MODELS.VIDEO.PRO; // 'veo-3.1-generate-preview'
 
-/** Strip undefined values from an object to prevent Firestore rejection. */
-function stripUndefined<T extends Record<string, unknown>>(obj: T): T {
-    return Object.fromEntries(
-        Object.entries(obj).filter(([, v]) => v !== undefined)
-    ) as T;
-}
 
 /**
  * VideoGenerationService - Client-side orchestrator for Intelligence video production
