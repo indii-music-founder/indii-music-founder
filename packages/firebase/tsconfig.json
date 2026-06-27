@@ -12,7 +12,6 @@
         "paths": {
             "@indii/shared": ["../shared/src/index.ts"]
         },
-        "rootDir": ".",
         "skipLibCheck": true,
         "sourceMap": true,
         "strict": true,
