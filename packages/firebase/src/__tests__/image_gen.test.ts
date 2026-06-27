@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => {
     return {
         generateContent: vi.fn(),
         generateContentStream: vi.fn(),
+        createInteraction: vi.fn(),
         generateImages: vi.fn(),
         editImage: vi.fn(),
         secrets: {
@@ -24,6 +25,9 @@ vi.mock('@google/genai', () => {
                 generateContentStream: mocks.generateContentStream,
                 generateImages: mocks.generateImages,
                 editImage: mocks.editImage
+            };
+            interactions = {
+                create: mocks.createInteraction
             };
         }
     };
@@ -163,28 +167,24 @@ describe('Image and Content Generation Functions', () => {
                 model: 'fast'
             };
 
-            mocks.generateContent.mockResolvedValue({
-                candidates: [{
-                    content: {
-                        parts: [
-                            { inlineData: { data: 'base64-image-1', mimeType: 'image/png' } },
-                            { inlineData: { data: 'base64-image-2', mimeType: 'image/png' } }
-                        ]
-                    }
-                }]
+            mocks.createInteraction.mockResolvedValue({
+                output_image: {
+                    data: 'base64-image-1',
+                    mime_type: 'image/png'
+                }
             });
 
             const generateImageCall = generateImageV3 as any;
             const result = await generateImageCall({ data, auth: context.auth });
 
-            expect(mocks.generateContent).toHaveBeenCalledWith(
+            expect(mocks.createInteraction).toHaveBeenCalledWith(
                 expect.objectContaining({
                     model: 'gemini-3.1-flash-image',
-                    contents: [{ role: "user", parts: [{ text: 'a beautiful cat' }] }],
-                    config: expect.objectContaining({
-                        responseModalities: ["IMAGE"],
-                        imageConfig: expect.objectContaining({
-                            aspectRatio: '1:1'
+                    input: [{ type: 'text', text: 'a beautiful cat' }],
+                    response_modalities: ['image'],
+                    generation_config: expect.objectContaining({
+                        image_config: expect.objectContaining({
+                            aspect_ratio: '1:1'
                         })
                     })
                 })

@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { VideoGeneration } from '../VideoGenerationService';
-import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { subscriptionService } from '@/services/subscription/SubscriptionService';
 import { onSnapshot } from 'firebase/firestore';
 
@@ -108,8 +107,9 @@ vi.mock('@/services/billing/CostControlService', () => ({
 // Mock video utils to prevent HTMLMediaElement frame extraction timeout in jsdom
 vi.mock('@/utils/video', () => ({
     extractLastFrameForAPI: vi.fn().mockResolvedValue({
-        data: 'fake-frame-base64',
+        imageBytes: 'fake-frame-base64',
         mimeType: 'image/png',
+        dataUrl: 'data:image/png;base64,fake-frame-base64'
     }),
 }));
 
@@ -119,15 +119,22 @@ describe('VideoGenerationService', () => {
     });
 
     describe('generateVideo', () => {
-        it('should trigger video generation successfully', async () => {
-            const result = await VideoGeneration.generateVideo({ prompt: 'test video' });
+    it('should trigger video generation successfully', async () => {
+        const result = await VideoGeneration.generateVideo({ prompt: 'test video' });
 
-            expect(result).toHaveLength(1);
-            expect(result[0]!.id).toBe('mock-job-id');
-            expect(result[0]!.url).toBe('');
-            // Verify it calls the Cloud Functions, not direct SDK path
-            expect(mockHttpsCallable).toHaveBeenCalled();
-        });
+        expect(result).toHaveLength(1);
+        expect(result[0]!.id).toBe('mock-job-id');
+        expect(result[0]!.url).toBe('');
+        // Verify it calls the Cloud Functions, not direct SDK path
+        expect(mockHttpsCallable).toHaveBeenCalled();
+        const callArgs = mockHttpsCallable.mock.calls[0]?.[0];
+        expect(callArgs).toEqual(expect.objectContaining({
+            directorSettings: expect.objectContaining({
+                fps: 24,
+                totalFrames: expect.any(Number)
+            })
+        }));
+    });
 
         it('should throw error if quota is exceeded', async () => {
             vi.mocked(subscriptionService.canPerformAction).mockResolvedValueOnce({
@@ -150,9 +157,9 @@ describe('VideoGenerationService', () => {
             expect(CreativeStorageService.uploadReferenceMedia).toHaveBeenCalled();
         });
 
-        it('should handle long-form video generation', async () => {
-            const spyGenerate = vi.spyOn(VideoGeneration, 'generateVideo').mockResolvedValue([{ id: 'long_1', url: '', prompt: 'long video' }]);
-            const spyWait = vi.spyOn(VideoGeneration, 'waitForJob').mockResolvedValue({ id: 'long_1', url: 'https://test.mp4', status: 'completed' } as any);
+    it('should handle long-form video generation', async () => {
+        const spyGenerate = vi.spyOn(VideoGeneration, 'generateVideo').mockResolvedValue([{ id: 'long_1', url: '', prompt: 'long video' }]);
+        const spyWait = vi.spyOn(VideoGeneration, 'waitForJob').mockResolvedValue({ id: 'long_1', url: 'https://test.mp4', status: 'completed' } as any);
 
             const result = await VideoGeneration.generateLongFormVideo({
                 prompt: 'long video',
@@ -210,6 +217,35 @@ describe('VideoGenerationService', () => {
             expect(job.url).toBe(mockVeoMetadata.url);
             expect((job.metadata as unknown as Record<string, unknown>).fps).toBe(24);
             expect((job.metadata as unknown as Record<string, unknown>).mime_type).toBe('video/mp4');
+        });
+
+        it('should resolve gs:// output URLs before returning the completed job', async () => {
+            const mockJobId = 'veo-gs-job';
+
+            vi.mocked(onSnapshot).mockImplementation(((ref: unknown, callback: (snapshot: unknown) => void) => {
+                setTimeout(() => {
+                    callback({
+                        exists: () => true,
+                        id: mockJobId,
+                        data: () => ({
+                            status: 'completed',
+                            output: {
+                                url: 'gs://mock-bucket.appspot.com/creative/video/output.mp4',
+                                metadata: {
+                                    mime_type: 'video/mp4'
+                                }
+                            }
+                        })
+                    } as unknown as import('firebase/firestore').DocumentSnapshot);
+                }, 10);
+                return vi.fn();
+            }) as unknown as typeof import('firebase/firestore').onSnapshot);
+
+            const job = await VideoGeneration.waitForJob(mockJobId);
+
+            expect(job.output?.url).toBe('https://mock-url.com');
+            expect(job.videoUrl).toBe('https://mock-url.com');
+            expect(job.url).toBe('https://mock-url.com');
         });
 
         it('should reject when job status is failed (SafetySettings)', async () => {
@@ -275,7 +311,8 @@ describe('VideoGenerationService', () => {
 
             await VideoGeneration.generateVideo(options);
 
-            expect(mockHttpsCallable).toHaveBeenCalledWith({
+            const callArgs = mockHttpsCallable.mock.calls[0]?.[0];
+            expect(callArgs).toEqual(expect.objectContaining({
                 prompt: expect.stringContaining('cinematic video of a cat'),
                 firstFrameUri: 'gs://mock-bucket/mock-uri',
                 lastFrameUri: 'gs://mock-bucket/mock-uri',
@@ -286,8 +323,12 @@ describe('VideoGenerationService', () => {
                 durationSeconds: 6,
                 personGeneration: 'allow_adult',
                 negativePrompt: 'blurry',
-                seed: 42
-            });
+                seed: 42,
+                directorSettings: expect.objectContaining({
+                    fps: 24,
+                    totalFrames: 144
+                })
+            }));
         });
 
         it('should reject client-side MediaGenerator usage', async () => {

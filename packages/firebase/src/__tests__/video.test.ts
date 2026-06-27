@@ -218,7 +218,7 @@ vi.mock('../relay/telegramLink', () => ({ generateTelegramLinkCode: vi.fn(), get
 vi.mock('../email/sendEmail', () => ({ sendEmail: vi.fn() }));
 vi.mock('../email/tokenManager', () => ({ emailExchangeToken: vi.fn(), emailRefreshToken: vi.fn(), emailRevokeToken: vi.fn() }));
 vi.mock('../analytics/platformTokenExchange', () => ({ analyticsExchangeToken: vi.fn(), analyticsRefreshToken: vi.fn(), analyticsRevokeToken: vi.fn() }));
-vi.mock('../devops/storageMaintenance', () => ({ cleanupOrphanedVideos: vi.fn(), trackStorageQuotas: vi.fn(), flagVideosForArchival: vi.fn() }));
+vi.mock('../devops/storageMaintenance', () => ({ cleanupExpiredVideoTemps: vi.fn(), cleanupOrphanedVideos: vi.fn(), trackStorageQuotas: vi.fn(), flagVideosForArchival: vi.fn() }));
 
 // Import functions AFTER mocks
 import { triggerVideoJob, renderVideo } from '../index';

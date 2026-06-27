@@ -1,14 +1,25 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { mockEditImageFn } = vi.hoisted(() => {
+const { mockEditImageFn, mockUploadReferenceMedia } = vi.hoisted(() => {
     return {
-        mockEditImageFn: vi.fn()
+        mockEditImageFn: vi.fn(),
+        mockUploadReferenceMedia: vi.fn(async (_userId: string, media: string) => {
+            if (media.includes('mask')) return 'gs://mock-bucket.appspot.com/users/test-user/vault/masks/mock-mask.png';
+            if (media.includes('reference')) return 'gs://mock-bucket.appspot.com/users/test-user/vault/objects/mock-reference.png';
+            return 'gs://mock-bucket.appspot.com/users/test-user/vault/objects/mock-image.png';
+        })
     };
 });
 
 vi.mock('firebase/functions', () => ({
     httpsCallable: () => mockEditImageFn,
     connectFunctionsEmulator: vi.fn(),
+}));
+
+vi.mock('@/services/creative/CreativeStorageService', () => ({
+    CreativeStorageService: {
+        uploadReferenceMedia: (...args: unknown[]) => mockUploadReferenceMedia(...args as [string, string]),
+    },
 }));
 
 // Mock firebase service
@@ -85,6 +96,12 @@ describe('EditingService', () => {
     beforeEach(async () => {
         vi.resetAllMocks();
         mockEditImageFn.mockReset();
+        mockUploadReferenceMedia.mockReset();
+        mockUploadReferenceMedia.mockImplementation(async (_userId: string, media: string) => {
+            if (media.includes('mask')) return 'gs://mock-bucket.appspot.com/users/test-user/vault/masks/mock-mask.png';
+            if (media.includes('reference')) return 'gs://mock-bucket.appspot.com/users/test-user/vault/objects/mock-reference.png';
+            return 'gs://mock-bucket.appspot.com/users/test-user/vault/objects/mock-image.png';
+        });
         // Dynamic import to get fresh module each time
         const mod = await import('./EditingService');
         EditingService = new mod.EditingService();
@@ -111,6 +128,9 @@ describe('EditingService', () => {
             expect(result!.prompt).toContain('Make the sky blue');
             expect(result!.id).toBeDefined();
             expect(mockEditImageFn).toHaveBeenCalledTimes(1);
+            expect(mockEditImageFn).toHaveBeenCalledWith(expect.objectContaining({
+                imageUri: 'gs://mock-bucket.appspot.com/users/test-user/vault/objects/mock-image.png',
+            }));
         });
 
         it('should propagate thought signatures from direct SDK', async () => {
@@ -183,7 +203,7 @@ describe('EditingService', () => {
 
             expect(mockEditImageFn).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    mask: { mimeType: 'image/png', data: 'maskbase64==' },
+                    maskUri: 'gs://mock-bucket.appspot.com/users/test-user/vault/masks/mock-mask.png',
                 })
             );
         });

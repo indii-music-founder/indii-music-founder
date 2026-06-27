@@ -4,6 +4,8 @@
 
 This directory contains detailed architectural and technical documentation for indii.
 
+Production creative image generation is routed through the TypeScript Firebase gateway in `packages/firebase`; the Python image function under `python-functions/` is experimental and sandbox-only.
+
 ---
 
 ## 🏗️ Architecture

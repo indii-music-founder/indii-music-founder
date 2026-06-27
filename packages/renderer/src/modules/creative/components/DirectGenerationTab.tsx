@@ -92,6 +92,8 @@ export default function DirectGenerationTab() {
     ] as const;
 
     const durationOptions = [4, 6, 8, 10] as const;
+    const directorFps = studioControls.fps || 24;
+    const directorFrames = Math.round((studioControls.duration || 0) * directorFps);
 
     return (
         <div className="flex flex-col md:flex-row h-full w-full bg-[#050406] text-foreground select-none overflow-hidden">
@@ -206,6 +208,16 @@ export default function DirectGenerationTab() {
                                         animate={{ opacity: 1, y: 0 }}
                                         className="flex flex-col gap-4 border-t border-white/5 pt-4"
                                     >
+                                        <div className="flex items-center justify-between rounded-xl border border-white/5 bg-white/2 px-3 py-2">
+                                            <div>
+                                                <p className="text-[9px] uppercase tracking-widest text-gray-500 font-bold">Director timing</p>
+                                                <p className="text-[11px] font-mono font-bold text-white/85">{directorFps} fps · {directorFrames} frames</p>
+                                            </div>
+                                            <span className="text-[9px] uppercase tracking-widest text-purple-300 bg-purple-500/10 border border-purple-500/20 rounded-full px-2 py-1">
+                                                24 FPS locked
+                                            </span>
+                                        </div>
+
                                         {/* Camera Motion Pills */}
                                         <div className="flex flex-col gap-2">
                                             <label className="text-[10px] uppercase font-bold text-gray-400 tracking-wider flex items-center gap-1.5">

@@ -19,6 +19,8 @@ export function VeoSettingsPanel({ isOpen }: VeoSettingsPanelProps) {
     const aspectRatios = ['16:9', '9:16', '1:1'] as const;
     const durations = [4, 5, 6, 8];
     const cameraMovements = ['Static', 'Pan', 'Tilt', 'Zoom', 'Orbit'];
+    const directorFps = studioControls.fps || 24;
+    const directorFrames = Math.round((studioControls.duration || 0) * directorFps);
 
     return (
         <AnimatePresence>
@@ -33,6 +35,15 @@ export function VeoSettingsPanel({ isOpen }: VeoSettingsPanelProps) {
                         <div className="flex items-center gap-2 mb-2">
                             <Sparkles size={16} className="text-purple-400" />
                             <h3 className="text-sm font-bold text-white">Veo 3.1 Settings</h3>
+                        </div>
+                        <div className="flex items-center justify-between rounded-lg border border-white/8 bg-white/3 px-3 py-2">
+                            <div>
+                                <p className="text-[9px] uppercase tracking-widest text-gray-500 font-bold">Temporal lock</p>
+                                <p className="text-[11px] font-mono font-bold text-white">{directorFps} fps · {directorFrames} frames</p>
+                            </div>
+                            <span className="text-[9px] uppercase tracking-widest text-cyan-300 bg-cyan-500/10 border border-cyan-500/20 rounded-full px-2 py-1">
+                                Director timing
+                            </span>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             {/* Aspect Ratio */}

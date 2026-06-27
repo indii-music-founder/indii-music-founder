@@ -4,6 +4,8 @@ import { doc, onSnapshot } from 'firebase/firestore';
 import { Play, Pause, Volume2, VolumeX, Maximize, Download, AlertTriangle, Loader2, ShieldAlert } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { logger } from '@/utils/logger';
+import { COLLECTIONS } from '@/core/config/collections';
+import { useResolvedStorageUrl } from '@/hooks/useResolvedStorageUrl';
 
 interface CreativeVideoPlayerProps {
     jobId?: string;
@@ -31,11 +33,12 @@ export const CreativeVideoPlayer: React.FC<CreativeVideoPlayerProps> = ({
     const [progress, setProgress] = useState(0);
     const [duration, setDuration] = useState(0);
     const [isHovering, setIsHovering] = useState(false);
+    const { url: resolvedVideoUrl, isResolving, error: resolveError } = useResolvedStorageUrl(videoUrl);
 
     useEffect(() => {
         if (!jobId) return;
 
-        const jobRef = doc(db, 'videoJobs', jobId);
+        const jobRef = doc(db, COLLECTIONS.VIDEO.JOBS, jobId);
         const unsubscribe = onSnapshot(jobRef, (docSnap) => {
             if (docSnap.exists()) {
                 const data = docSnap.data();
@@ -114,10 +117,10 @@ export const CreativeVideoPlayer: React.FC<CreativeVideoPlayerProps> = ({
 
     const handleDownload = async (e: React.MouseEvent) => {
         e.stopPropagation();
-        if (!videoUrl) return;
+        if (!resolvedVideoUrl) return;
         
         try {
-            const response = await fetch(videoUrl);
+            const response = await fetch(resolvedVideoUrl);
             const blob = await response.blob();
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -147,7 +150,7 @@ export const CreativeVideoPlayer: React.FC<CreativeVideoPlayerProps> = ({
         );
     }
 
-    if (status === 'failed' || !videoUrl) {
+    if (status === 'failed' || !videoUrl || resolveError) {
         return (
             <div className={`flex flex-col items-center justify-center bg-[#1a0f0f] rounded-xl overflow-hidden border border-red-500/20 p-6 ${className}`}>
                 <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mb-4">
@@ -158,7 +161,16 @@ export const CreativeVideoPlayer: React.FC<CreativeVideoPlayerProps> = ({
                     )}
                 </div>
                 <p className="text-sm font-bold text-red-200 mb-2 text-center">Generation Failed</p>
-                <p className="text-xs text-red-400/80 text-center max-w-[90%]">{error || 'An unexpected error occurred.'}</p>
+                <p className="text-xs text-red-400/80 text-center max-w-[90%]">{error || resolveError || 'An unexpected error occurred.'}</p>
+            </div>
+        );
+    }
+
+    if (isResolving) {
+        return (
+            <div className={`relative flex flex-col items-center justify-center bg-[#0a0a0a] rounded-xl overflow-hidden border border-white/10 ${className}`}>
+                <Loader2 size={40} className="text-white/50 animate-spin mb-3" />
+                <p className="text-sm font-medium text-white/70">Resolving playback asset...</p>
             </div>
         );
     }
@@ -173,7 +185,7 @@ export const CreativeVideoPlayer: React.FC<CreativeVideoPlayerProps> = ({
         >
             <video
                 ref={videoRef}
-                src={videoUrl}
+                src={resolvedVideoUrl}
                 className="w-full h-full object-contain"
                 autoPlay={autoPlay}
                 muted={isMuted}

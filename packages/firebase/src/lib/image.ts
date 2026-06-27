@@ -65,6 +65,8 @@ const InlineImageSchema = z.object({
     data: z.string(), // Base64 encoded
 });
 
+const StorageUriSchema = z.string().startsWith("gs://");
+
 /**
  * Conversation history entry for multi-turn editing.
  * Each entry maps to a role/parts pair in the Gemini contents array.
@@ -192,13 +194,19 @@ export const GenerateImageRequestSchema = z.object({
  */
 export const EditImageRequestSchema = z.object({
     /** Base image to edit (Base64) */
-    image: z.string().min(1, "Base image is required"),
+    image: z.string().nullish(),
+
+    /** Base image to edit, uploaded to Cloud Storage. Prefer this over `image`. */
+    imageUri: StorageUriSchema.nullish(),
 
     /** MIME type of the base image */
     imageMimeType: z.string().default("image/png"),
 
     /** Optional binary mask for inpainting (Base64) */
     mask: z.string().nullish(),
+
+    /** Optional binary mask for inpainting, uploaded to Cloud Storage. */
+    maskUri: StorageUriSchema.nullish(),
 
     /** MIME type of the mask */
     maskMimeType: z.string().nullish(),
@@ -209,6 +217,9 @@ export const EditImageRequestSchema = z.object({
     /** Single reference image (Base64) — legacy field, prefer `referenceImages` */
     referenceImage: z.string().nullish(),
 
+    /** Single reference image uploaded to Cloud Storage. Prefer this over `referenceImage`. */
+    referenceImageUri: StorageUriSchema.nullish(),
+
     /** MIME type of the single reference image */
     refMimeType: z.string().nullish(),
 
@@ -218,10 +229,21 @@ export const EditImageRequestSchema = z.object({
     /** Thought signature from previous edit for multi-turn continuity */
     thoughtSignature: z.string().nullish(),
 
+    /** Optional creative session linkage for editor persistence */
+    sessionId: z.string().nullish(),
+
+    /** Optional route metadata for job history and guardrails */
+    routeId: z.string().nullish(),
+    routeLabel: z.string().nullish(),
+    routeReason: z.string().nullish(),
+
     // --- New Gemini 3 fields ---
 
     /** Multiple reference images for multi-image composition edits */
     referenceImages: z.array(InlineImageSchema).max(14).nullish(),
+
+    /** Multiple reference image URIs uploaded to Cloud Storage. */
+    referenceImageUris: z.array(StorageUriSchema).max(14).nullish(),
 
     /** Output aspect ratio for the edited image */
     aspectRatio: AspectRatioEnum.nullish(),
@@ -257,6 +279,15 @@ export const EditImageRequestSchema = z.object({
 
     /** Person generation policy (e.g. 'ALLOW_ADULT') */
     personGeneration: z.string().nullish(),
+}).refine((data) => !!(data.image || data.imageUri), {
+    message: "Base image is required",
+    path: ["image"],
+}).refine((data) => {
+    const hasMask = !!(data.mask || data.maskUri);
+    const hasRefs = !!(data.referenceImage || data.referenceImageUri || (data.referenceImages && data.referenceImages.length > 0) || (data.referenceImageUris && data.referenceImageUris.length > 0));
+    return hasMask || hasRefs || !!(data.image || data.imageUri);
+}, {
+    message: "Edit request must include an input image, mask, or reference image.",
 });
 
 // ============================================================================
