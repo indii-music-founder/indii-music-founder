@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-27 09:16 EDT
+**Updated:** 2026-06-27 09:20 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+cca4b6f2d fix: correct AuthService import path from .js to .ts
+a132b251c chore: session checkpoint [09:16]
 dd1efe63d chore: session checkpoint [09:14]
 bff52455f chore: session checkpoint [09:08]
 6f58663a8 chore: session checkpoint [09:03]
@@ -12,8 +14,6 @@ bff52455f chore: session checkpoint [09:08]
 e83942b0e fix: validate URL format before HEAD request and add fetch mock
 2a7a1c276 chore: session checkpoint [08:54]
 bfdcba5f9 chore: session checkpoint [08:36]
-3f2150f82 fix: refine 404 check to only reject on explicit 404 responses
-39b391f58 chore: session checkpoint [08:33]
 ```
 
 ## Working State
