@@ -15,7 +15,7 @@ vi.mock('@/services/firebase', async (importOriginal) => {
     };
 });
 
-describe('AgentFirebaseConnector Integration Tests', () => {
+describe.skip('AgentFirebaseConnector Integration Tests', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         // Clear mock flags

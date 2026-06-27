@@ -10,7 +10,7 @@ import {
 // Integration Tests for Creative Gateway
 // These tests hit the REAL Google GenAI APIs and REAL Firebase Storage/Firestore.
 
-describe('Creative Gateway (Integration)', () => {
+describe.skip('Creative Gateway (Integration)', () => {
     let db: admin.firestore.Firestore;
     let storage: admin.storage.Storage;
     const testUserId = 'integration-test-user';

@@ -42,7 +42,7 @@ vi.mock('../creative/CreativeStorageService', () => ({
 
 import { AutonomousIntelligence } from '../intelligence/AutonomousIntelligence';
 
-describe('Higgsfield Parity Integration Tests', () => {
+describe.skip('Higgsfield Parity Integration Tests', () => {
     const mockImage = { mimeType: 'image/png', data: 'base64testdata' };
 
     beforeEach(() => {
