@@ -1,12 +1,17 @@
 {
     "compileOnSave": true,
     "compilerOptions": {
+        "baseUrl": ".",
         "esModuleInterop": true,
         "forceConsistentCasingInFileNames": true,
         "module": "commonjs",
+        "moduleResolution": "node",
         "noImplicitReturns": true,
         "noUnusedLocals": true,
         "outDir": "lib",
+        "paths": {
+            "@indii/shared": ["../shared/src/index.ts"]
+        },
         "rootDir": "src",
         "skipLibCheck": true,
         "sourceMap": true,
