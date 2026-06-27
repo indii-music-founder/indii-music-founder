@@ -17,6 +17,7 @@
         "test:rules": "vitest src/test/security/firestore.rules.test.ts"
     },
     "dependencies": {
+        "@indii/shared": "*",
         "@arcjet/node": "^1.4.0",
         "@electron/rebuild": "4.0.4",
         "@google-cloud/bigquery": "8.1.1",
