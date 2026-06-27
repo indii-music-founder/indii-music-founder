@@ -7,6 +7,7 @@ import { getVertexAIClient } from '../../lib/vertexClient';
 import { readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { VideoJobDocumentSchema, type VideoJobDocument, VideoJobDirectorSettingsSchema } from '@indii/shared';
 import {
   GoogleGenAI,
   VideoGenerationReferenceType,
@@ -46,7 +47,7 @@ interface GeminiContentResponse {
 
 const IMAGE_MODEL_IDS = {
   fast: 'gemini-3.1-flash-image',
-  pro: 'gemini-3-pro-image-preview',
+  pro: 'gemini-3-pro-image',
   legacy: 'gemini-2.5-flash-image',
 } as const;
 
@@ -55,6 +56,7 @@ const VIDEO_MODEL_IDS = {
   pro: 'veo-3.1-generate-preview',
   lite: 'veo-3.1-lite-generate-preview',
 } as const;
+type VideoModelId = typeof VIDEO_MODEL_IDS[keyof typeof VIDEO_MODEL_IDS];
 
 const OMNI_FLASH_MODEL_ID = process.env.GEMINI_OMNI_FLASH_MODEL || '';
 const VIDEO_POLL_INTERVAL_MS = Number(process.env.VIDEO_POLL_INTERVAL_MS || '10000');
@@ -162,14 +164,17 @@ function getStorage() {
 const BaseMediaRequest = z.object({
   prompt: z.string().min(1),
   referenceUri: z.string().startsWith('gs://').optional(),
+  referenceUris: z.array(z.string().startsWith('gs://')).max(14).optional(),
 });
 
 const GenerateImageSchema = BaseMediaRequest.extend({
+  sessionId: z.string().optional(),
   aspectRatio: z.enum(['1:1', '16:9', '9:16', '3:4', '4:3']).default('1:1'),
   model: z.enum(['lite', 'fast', 'pro', 'legacy']).default('fast'),
   imageSize: z.enum(['512', '0.5K', '1K', '2K', '4K', '1k', '2k', '4k']).optional(),
   thinkingLevel: z.enum(['none', 'minimal', 'low', 'medium', 'high']).optional(),
   useGoogleSearch: z.boolean().optional(),
+  useImageSearch: z.boolean().optional(),
   useGrounding: z.boolean().optional(),
 });
 
@@ -181,6 +186,7 @@ const GenerateVideoSchema = BaseMediaRequest.extend({
   model: z.enum(['lite', 'fast', 'pro']).default('fast'),
   resolution: z.enum(['720p', '1080p', '4k', '1280x720', '1920x1080', '3840x2160']).default('720p'),
   durationSeconds: z.number().min(4).max(8).default(6),
+  directorSettings: VideoJobDirectorSettingsSchema.optional(),
   personGeneration: z.enum(['allow_adult', 'dont_allow', 'allow_all']).optional(),
   negativePrompt: z.string().max(1000).optional(),
   seed: z.union([z.number().int(), z.string().regex(/^\d+$/)]).optional(),
@@ -213,9 +219,28 @@ const GenerateAudioSchema = BaseMediaRequest.extend({
 /**
  * Helper: Upload a raw buffer to Cloud Storage and return the gs:// URI
  */
-async function uploadToStorage(userId: string, buffer: Buffer, extension: string, contentType?: string): Promise<string> {
+async function uploadToStorage(
+  userId: string,
+  buffer: Buffer,
+  extension: string,
+  contentType?: string,
+  options?: {
+    projectId?: string;
+    sessionId?: string;
+    jobId?: string;
+    category?: 'image' | 'video' | 'audio';
+    purpose?: 'outputs' | 'intermediates' | 'thumbnails';
+  }
+): Promise<string> {
   const bucket = getStorage().bucket();
-  const filename = `creative/${userId}/${Date.now()}_${crypto.randomUUID().split('-')[0]}.${extension}`;
+  const mediaCategory = options?.category || (extension === 'mp4' ? 'video' : extension === 'wav' ? 'audio' : 'image');
+  const purpose = options?.purpose || 'outputs';
+  const basePath = options?.projectId
+    ? `creative/${userId}/projects/${options.projectId}/${mediaCategory}/${purpose}`
+    : options?.sessionId || options?.jobId
+      ? `creative/${userId}/video/tmp/${options.sessionId || options.jobId}/${purpose}`
+      : `creative/${userId}/${mediaCategory}/${purpose}`;
+  const filename = `${basePath}/${Date.now()}_${crypto.randomUUID().split('-')[0]}.${extension}`;
   const file = bucket.file(filename);
   await file.save(buffer, {
     resumable: false,
@@ -224,20 +249,42 @@ async function uploadToStorage(userId: string, buffer: Buffer, extension: string
   return `gs://${bucket.name}/${filename}`;
 }
 
-async function safeDbSet(jobId: string, data: Record<string, unknown>) {
+async function safeDbSet(
+  jobId: string,
+  data: Record<string, unknown>,
+  collection: string = 'creative_jobs',
+) {
   try {
-    await getDb().collection('creative_jobs').doc(jobId).set(data);
+    await getDb().collection(collection).doc(jobId).set(data);
   } catch (e) {
-    console.warn(`[creativeGateway] Firestore set failed (non-blocking):`, e);
+    console.warn(`[creativeGateway] Firestore set failed for ${collection} (non-blocking):`, e);
   }
 }
 
-async function safeDbUpdate(jobId: string, data: Record<string, unknown>) {
+async function safeDbUpdate(
+  jobId: string,
+  data: Record<string, unknown>,
+  collection: string = 'creative_jobs',
+) {
   try {
-    await getDb().collection('creative_jobs').doc(jobId).update(data);
+    await getDb().collection(collection).doc(jobId).update(data);
   } catch (e) {
-    console.warn(`[creativeGateway] Firestore update failed (non-blocking):`, e);
+    console.warn(`[creativeGateway] Firestore update failed for ${collection} (non-blocking):`, e);
   }
+}
+
+async function syncVideoJobDocument(jobId: string, data: Record<string, unknown>) {
+  await Promise.all([
+    safeDbSet(jobId, data, 'creative_jobs'),
+    safeDbSet(jobId, data, 'videoJobs'),
+  ]);
+}
+
+async function syncVideoJobUpdate(jobId: string, data: Record<string, unknown>) {
+  await Promise.all([
+    safeDbUpdate(jobId, data, 'creative_jobs'),
+    safeDbUpdate(jobId, data, 'videoJobs'),
+  ]);
 }
 
 function normalizeImageSize(imageSize?: string): '512' | '1K' | '2K' | '4K' | undefined {
@@ -249,10 +296,10 @@ function normalizeImageSize(imageSize?: string): '512' | '1K' | '2K' | '4K' | un
   return '1K';
 }
 
-function normalizeThinkingLevel(thinkingLevel?: string): 'Minimal' | 'High' | undefined {
+function normalizeThinkingLevel(thinkingLevel?: string): 'minimal' | 'high' | undefined {
   if (!thinkingLevel || thinkingLevel === 'none') return undefined;
-  if (thinkingLevel === 'high' || thinkingLevel === 'medium') return 'High';
-  return 'Minimal';
+  if (thinkingLevel === 'high' || thinkingLevel === 'medium') return 'high';
+  return 'minimal';
 }
 
 function resolveImageModel(model: z.infer<typeof GenerateImageSchema>['model']): string {
@@ -261,9 +308,9 @@ function resolveImageModel(model: z.infer<typeof GenerateImageSchema>['model']):
   return IMAGE_MODEL_IDS.fast;
 }
 
-function resolveVideoModel(model: z.infer<typeof GenerateVideoSchema>['model']): string {
-  if (model === 'pro') return VIDEO_MODEL_IDS.pro;
-  if (model === 'lite') return VIDEO_MODEL_IDS.lite;
+function resolveVideoModel(model: string | undefined): VideoModelId {
+  if (model === VIDEO_MODEL_IDS.pro || model === 'pro' || (model?.includes('pro') ?? false)) return VIDEO_MODEL_IDS.pro;
+  if (model === VIDEO_MODEL_IDS.lite || model === 'lite' || (model?.includes('lite') ?? false)) return VIDEO_MODEL_IDS.lite;
   return VIDEO_MODEL_IDS.fast;
 }
 
@@ -284,25 +331,28 @@ function normalizeVideoAspectRatio(aspectRatio: z.infer<typeof GenerateVideoSche
 }
 
 function normalizeVideoResolution(
-  resolution: z.infer<typeof GenerateVideoSchema>['resolution'],
-  model: z.infer<typeof GenerateVideoSchema>['model'],
+  resolution: z.infer<typeof GenerateVideoSchema>['resolution'] | undefined,
+  model: string | undefined,
 ): '720p' | '1080p' | '4k' {
-  const normalized = resolution === '1280x720'
+  const normalizedInput = resolution ?? '720p';
+  const normalizedModel = model && model.includes('lite') ? 'lite' : 'fast';
+  const normalized = normalizedInput === '1280x720'
     ? '720p'
-    : resolution === '1920x1080'
+    : normalizedInput === '1920x1080'
       ? '1080p'
-      : resolution === '3840x2160'
+      : normalizedInput === '3840x2160'
         ? '4k'
-        : resolution;
+        : normalizedInput;
 
-  if (model === 'lite' && normalized === '4k') return '1080p';
+  if (normalizedModel === 'lite' && normalized === '4k') return '1080p';
   return normalized;
 }
 
-function normalizeVideoDuration(durationSeconds: number, resolution: string, hasFrameInput: boolean): 4 | 6 | 8 {
+function normalizeVideoDuration(durationSeconds: number | undefined, resolution: string, hasFrameInput: boolean): 4 | 6 | 8 {
+  const safeDurationSeconds = durationSeconds ?? 8;
   if (resolution !== '720p' || hasFrameInput) return 8;
-  if (durationSeconds <= 4) return 4;
-  if (durationSeconds <= 6) return 6;
+  if (safeDurationSeconds <= 4) return 4;
+  if (safeDurationSeconds <= 6) return 6;
   return 8;
 }
 
@@ -332,6 +382,105 @@ function toReferenceImages(referenceUris?: string[]): VideoGenerationReferenceIm
     referenceType: VideoGenerationReferenceType.ASSET,
   }));
   return references.length > 0 ? references : undefined;
+}
+
+function parseGsUri(uri: string): { bucket: string; path: string } {
+  const match = uri.match(/^gs:\/\/([^/]+)\/(.+)$/);
+  if (!match) {
+    throw new HttpsError('invalid-argument', `Expected a gs:// URI, got: ${uri}`);
+  }
+  return { bucket: match[1]!, path: match[2]! };
+}
+
+function isOwnerScopedCreativePath(userId: string, path: string): boolean {
+  return (
+    path.startsWith(`creative/${userId}/`) ||
+    path.startsWith(`users/${userId}/vault/`)
+  );
+}
+
+async function loadReferenceImage(userId: string, uri: string): Promise<{ mimeType: string; data: string }> {
+  const { bucket, path } = parseGsUri(uri);
+  if (!isOwnerScopedCreativePath(userId, path)) {
+    throw new HttpsError('permission-denied', 'Reference media must live in your creative storage namespace.');
+  }
+
+  const file = getStorage().bucket(bucket).file(path);
+  const [metadata] = await file.getMetadata();
+  const contentType = metadata.contentType || 'image/png';
+  if (!contentType.startsWith('image/')) {
+    throw new HttpsError('invalid-argument', `Reference media must be an image, got ${contentType}.`);
+  }
+
+  const [buffer] = await file.download();
+  return { mimeType: contentType, data: buffer.toString('base64') };
+}
+
+async function loadReferenceImages(userId: string, requestData: { referenceUri?: string; referenceUris?: string[] }): Promise<{ mimeType: string; data: string }[]> {
+  const uris = [
+    requestData.referenceUri,
+    ...(requestData.referenceUris ?? []),
+  ].filter((uri, index, array): uri is string => !!uri && array.indexOf(uri) === index);
+
+  return Promise.all(uris.map(uri => loadReferenceImage(userId, uri)));
+}
+
+function extractInteractionImage(response: unknown, kind: MediaKind = 'image'): { mimeType: string; data: string } {
+  const typed = response as {
+    output_image?: { data?: string; mime_type?: string; mimeType?: string };
+    outputs?: Array<Record<string, unknown>>;
+    status?: string;
+  };
+
+  if (typed.output_image?.data) {
+    return {
+      data: typed.output_image.data,
+      mimeType: typed.output_image.mime_type || typed.output_image.mimeType || 'image/png',
+    };
+  }
+
+  for (const output of typed.outputs ?? []) {
+    if (!output || typeof output !== 'object') continue;
+    const imageOutput = output as {
+      type?: string;
+      data?: string;
+      mime_type?: string;
+      mimeType?: string;
+      parts?: Array<Record<string, unknown>>;
+    };
+
+    if (imageOutput.type === 'image' && imageOutput.data) {
+      return {
+        data: imageOutput.data,
+        mimeType: imageOutput.mime_type || imageOutput.mimeType || 'image/png',
+      };
+    }
+
+    for (const part of imageOutput.parts ?? []) {
+      const inlineData = (part as { inlineData?: { data?: string; mimeType?: string } }).inlineData;
+      if (inlineData?.data) {
+        return {
+          data: inlineData.data,
+          mimeType: inlineData.mimeType || 'image/png',
+        };
+      }
+    }
+  }
+
+  const textPreview = (typed.outputs ?? [])
+    .flatMap(output => {
+      if (!output || typeof output !== 'object') return [];
+      const imageOutput = output as { text?: string; parts?: Array<Record<string, unknown>> };
+      const textParts = imageOutput.text ? [imageOutput.text] : [];
+      const nestedTextParts = (imageOutput.parts ?? [])
+        .map(part => (part as { text?: string }).text)
+        .filter((text): text is string => !!text);
+      return [...textParts, ...nestedTextParts];
+    })
+    .join(' ')
+    .slice(0, 180) || undefined;
+
+  throw new MediaGenerationError(kind, 'NO_IMAGE', textPreview);
 }
 
 function buildOmniPrompt(data: z.infer<typeof GenerateOmniRemixSchema>): string {
@@ -587,7 +736,7 @@ async function pollVideoOperation(ai: GoogleGenAI, operation: GenerateVideosOper
     await sleep(VIDEO_POLL_INTERVAL_MS);
     currentOperation = await ai.operations.getVideosOperation({ operation: currentOperation });
 
-    await safeDbUpdate(jobId, {
+    await syncVideoJobUpdate(jobId, {
       progress: Math.min(95, Math.round((attempts / VIDEO_MAX_POLLS) * 95)),
       updatedAt: new Date().toISOString(),
     });
@@ -659,8 +808,148 @@ async function downloadGeneratedVideo(ai: GoogleGenAI, video: Video, jobId: stri
   }
 }
 
+export type VideoGenerationJobRecord = VideoJobDocument & {
+  type: 'video';
+  prompt: string;
+  aspectRatio?: z.infer<typeof GenerateVideoSchema>['aspectRatio'];
+  firstFrameUri?: string;
+  lastFrameUri?: string;
+  referenceUri?: string;
+  referenceUris?: string[];
+  resolution?: z.infer<typeof GenerateVideoSchema>['resolution'];
+  durationSeconds?: number;
+  negativePrompt?: string;
+  personGeneration?: z.infer<typeof GenerateVideoSchema>['personGeneration'];
+  seed?: z.infer<typeof GenerateVideoSchema>['seed'];
+  enhancePrompt?: boolean;
+};
+
+export async function executeVideoJob(jobId: string, job: VideoGenerationJobRecord): Promise<{ jobId: string; resultUri: string }> {
+  const normalizedResolution = normalizeVideoResolution(job.resolution, job.model);
+  const hasFrameInput = !!job.firstFrameUri || !!job.referenceUri || !!job.lastFrameUri;
+  const normalizedDuration = normalizeVideoDuration(job.durationSeconds, normalizedResolution, hasFrameInput);
+  const modelId = resolveVideoModel(job.model);
+
+  await syncVideoJobUpdate(jobId, {
+    id: jobId,
+    userId: job.userId,
+    status: 'processing',
+    type: 'video',
+    prompt: job.prompt,
+    model: modelId,
+    progress: 0,
+    inputUris: [
+      job.firstFrameUri || job.referenceUri,
+      job.lastFrameUri,
+      ...(job.referenceUris ?? []),
+    ].filter((uri): uri is string => !!uri),
+    maskUris: [],
+    metadata: {
+      model: modelId,
+      resolution: normalizedResolution,
+      durationSeconds: normalizedDuration,
+      aspectRatio: normalizeVideoAspectRatio(job.aspectRatio ?? '16:9'),
+      referenceCount: job.referenceUris?.length ?? 0,
+      hasFirstFrame: !!job.firstFrameUri || !!job.referenceUri,
+      hasLastFrame: !!job.lastFrameUri,
+    },
+    updatedAt: new Date().toISOString(),
+  });
+
+  try {
+    const ai = getAiClient('video');
+    const image = toImage(job.firstFrameUri || job.referenceUri);
+    const referenceImages = toReferenceImages(job.referenceUris);
+    const config: Record<string, unknown> = {
+      numberOfVideos: 1,
+      aspectRatio: normalizeVideoAspectRatio(job.aspectRatio ?? '16:9'),
+      durationSeconds: normalizedDuration,
+      resolution: normalizedResolution,
+      ...(job.negativePrompt ? { negativePrompt: job.negativePrompt } : {}),
+      ...(normalizeVideoSeed(job.seed) !== undefined ? { seed: normalizeVideoSeed(job.seed) } : {}),
+      ...(job.enhancePrompt !== undefined ? { enhancePrompt: job.enhancePrompt } : {}),
+      ...(normalizePersonGeneration(job.personGeneration, hasFrameInput) ? { personGeneration: normalizePersonGeneration(job.personGeneration, hasFrameInput) } : {}),
+      ...(job.lastFrameUri ? { lastFrame: toImage(job.lastFrameUri) } : {}),
+      ...(referenceImages ? { referenceImages } : {}),
+    };
+
+    let operation = await ai.models.generateVideos({
+      model: modelId,
+      prompt: job.prompt,
+      ...(image ? { image } : {}),
+      config: config as Parameters<typeof ai.models.generateVideos>[0]['config'],
+    });
+
+    await syncVideoJobUpdate(jobId, {
+      operationName: operation.name,
+      progress: 5,
+      updatedAt: new Date().toISOString(),
+    });
+
+    operation = await pollVideoOperation(ai, operation, jobId);
+    const video = extractGeneratedVideo(operation);
+    const downloadedVideo = await downloadGeneratedVideo(ai, video, jobId);
+    const outputUri = await uploadToStorage(
+      job.userId,
+      downloadedVideo.buffer,
+      extensionForMime(downloadedVideo.mimeType, 'mp4'),
+      downloadedVideo.mimeType,
+      {
+        projectId: job.projectId,
+        sessionId: job.sessionId,
+        jobId,
+        category: 'video',
+        purpose: 'outputs',
+      },
+    );
+
+    await syncVideoJobUpdate(jobId, {
+      status: 'completed',
+      resultUri: outputUri,
+      downloadUrl: outputUri,
+      videoUrl: outputUri,
+      url: outputUri,
+      progress: 100,
+      output: {
+        url: outputUri,
+        metadata: {
+          model: modelId,
+          aspectRatio: normalizeVideoAspectRatio(job.aspectRatio ?? '16:9'),
+          resolution: normalizedResolution,
+          durationSeconds: normalizedDuration,
+          mime_type: downloadedVideo.mimeType,
+          hasFirstFrame: !!image,
+          hasLastFrame: !!job.lastFrameUri,
+          referenceCount: referenceImages?.length ?? 0,
+        },
+      },
+      metadata: {
+        model: modelId,
+        aspectRatio: normalizeVideoAspectRatio(job.aspectRatio ?? '16:9'),
+        resolution: normalizedResolution,
+        durationSeconds: normalizedDuration,
+        mimeType: downloadedVideo.mimeType,
+        hasFirstFrame: !!image,
+        hasLastFrame: !!job.lastFrameUri,
+        referenceCount: referenceImages?.length ?? 0,
+      },
+      completedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+
+    return { jobId, resultUri: outputUri };
+  } catch (error: unknown) {
+    await syncVideoJobUpdate(jobId, {
+      status: 'failed',
+      error: errorMessage(error),
+      updatedAt: new Date().toISOString(),
+    });
+    throw toGatewayError(error, 'Video generation failed');
+  }
+}
+
 /**
- * generateImageV3 - Routes to gemini-3-pro-image-preview
+ * generateImageV3 - Routes to Gemini 3 image models via Interactions API.
  */
 export const generateImageV3 = onCall({ timeoutSeconds: 120, memory: '1GiB', secrets: [geminiApiKey], enforceAppCheck: ENFORCE_APP_CHECK }, async (request) => {
   if (!request.auth) throw new HttpsError('unauthenticated', 'User must be authenticated.');
@@ -670,13 +959,14 @@ export const generateImageV3 = onCall({ timeoutSeconds: 120, memory: '1GiB', sec
     throw new HttpsError('invalid-argument', 'Payload validation failed. Ensure no base64 is passed and only gs:// URIs are used.');
   }
 
-  const { prompt, aspectRatio, model, imageSize, thinkingLevel, useGoogleSearch, useGrounding } = parsed.data;
+  const { prompt, sessionId, aspectRatio, model, imageSize, thinkingLevel, useGoogleSearch, useGrounding, useImageSearch } = parsed.data;
   const userId = request.auth.uid;
   const jobId = getDb().collection('creative_jobs').doc().id;
   
   await safeDbSet(jobId, {
     id: jobId,
     userId,
+    sessionId,
     status: 'processing',
     type: 'image',
     prompt,
@@ -688,29 +978,43 @@ export const generateImageV3 = onCall({ timeoutSeconds: 120, memory: '1GiB', sec
     const modelId = resolveImageModel(model);
     const normalizedThinkingLevel = normalizeThinkingLevel(thinkingLevel);
     const normalizedImageSize = normalizeImageSize(imageSize);
-    const config: Record<string, unknown> = {
-      responseModalities: ["IMAGE"],
-      imageConfig: {
-        aspectRatio,
-        ...(normalizedImageSize ? { imageSize: normalizedImageSize } : {}),
-      },
-    };
+    const referenceImages = await loadReferenceImages(userId, parsed.data);
+    const interactionInput = [
+      { type: 'text' as const, text: prompt },
+      ...referenceImages.map(ref => ({
+        type: 'image' as const,
+        mime_type: ref.mimeType as 'image/png' | 'image/jpeg' | 'image/webp' | 'image/heic' | 'image/heif' | 'image/gif' | 'image/bmp' | 'image/tiff',
+        data: ref.data,
+      })),
+    ];
+    const searchTypes: Array<'web_search' | 'image_search' | 'enterprise_web_search'> =
+      model === 'fast' && useImageSearch
+        ? ['web_search', 'image_search']
+        : ['web_search'];
+    const googleSearchTool = useGoogleSearch || useGrounding
+      ? [{
+          type: 'google_search' as const,
+          search_types: searchTypes,
+        }]
+      : undefined;
 
-    if (normalizedThinkingLevel && model === 'fast') {
-      config.thinkingConfig = { thinkingLevel: normalizedThinkingLevel };
-    }
-    if (useGoogleSearch || useGrounding) {
-      config.tools = [{ googleSearch: {} }];
-    }
-
-    // Generate image using Gemini 3 Multimodal capabilities
-    const response = await ai.models.generateContent({
+    const interaction = await ai.interactions.create({
       model: modelId,
-      contents: [{ role: "user", parts: [{ text: prompt }] }],
-      config,
+      input: interactionInput,
+      response_modalities: ['image'],
+      generation_config: {
+        image_config: {
+          aspect_ratio: aspectRatio,
+          ...(normalizedImageSize ? { image_size: normalizedImageSize } : {}),
+        },
+        ...(normalizedThinkingLevel && model === 'fast'
+          ? { thinking_level: normalizedThinkingLevel }
+          : {}),
+      },
+      ...(googleSearchTool ? { tools: googleSearchTool } : {}),
     });
 
-    const image = extractInlineMedia(response, 'image');
+    const image = extractInteractionImage(interaction);
     
     const buffer = Buffer.from(image.data, 'base64');
     
@@ -771,6 +1075,7 @@ export const generateVideoV3 = onCall({ timeoutSeconds: 540, secrets: [geminiApi
     negativePrompt,
     seed,
     enhancePrompt,
+    directorSettings: requestedDirectorSettings,
   } = parsed.data;
   const userId = request.auth.uid;
   const jobId = getDb().collection('creative_jobs').doc().id;
@@ -778,73 +1083,75 @@ export const generateVideoV3 = onCall({ timeoutSeconds: 540, secrets: [geminiApi
   const hasFrameInput = !!firstFrameUri || !!referenceUri || !!lastFrameUri;
   const normalizedDuration = normalizeVideoDuration(durationSeconds, normalizedResolution, hasFrameInput);
   const modelId = resolveVideoModel(model);
-  
-  await safeDbSet(jobId, {
+  const inputUris = [
+    firstFrameUri || referenceUri,
+    lastFrameUri,
+    ...(referenceUris ?? []),
+  ].filter((uri): uri is string => !!uri);
+  const directorSettings = requestedDirectorSettings ?? {
+    fps: 24,
+    durationSeconds: normalizedDuration,
+    totalFrames: normalizedDuration * 24,
+    aspectRatio: normalizeVideoAspectRatio(aspectRatio),
+    resolution: normalizedResolution,
+    seed: normalizeVideoSeed(seed),
+    firstFrameUri,
+    lastFrameUri,
+  };
+
+  const jobRecord: VideoGenerationJobRecord = {
     id: jobId,
+    schemaVersion: 1,
     userId,
-    status: 'processing',
+    mode: 'video_remix',
+    status: 'queued',
     type: 'video',
     prompt,
-    model: modelId,
+    aspectRatio,
+    resolution,
+    durationSeconds,
+    negativePrompt,
+    personGeneration,
+    seed,
+    enhancePrompt,
+    firstFrameUri,
+    lastFrameUri,
+    referenceUri,
+    referenceUris,
     progress: 0,
-    createdAt: new Date().toISOString()
-  });
-
-  try {
-    const ai = getAiClient('video');
-    const image = toImage(firstFrameUri || referenceUri);
-    const referenceImages = toReferenceImages(referenceUris);
-    const config: Record<string, unknown> = {
-      numberOfVideos: 1,
-      aspectRatio: normalizeVideoAspectRatio(aspectRatio),
-      durationSeconds: normalizedDuration,
-      resolution: normalizedResolution,
-      ...(negativePrompt ? { negativePrompt } : {}),
-      ...(normalizeVideoSeed(seed) !== undefined ? { seed: normalizeVideoSeed(seed) } : {}),
-      ...(enhancePrompt !== undefined ? { enhancePrompt } : {}),
-      ...(normalizePersonGeneration(personGeneration, hasFrameInput) ? { personGeneration: normalizePersonGeneration(personGeneration, hasFrameInput) } : {}),
-      ...(lastFrameUri ? { lastFrame: toImage(lastFrameUri) } : {}),
-      ...(referenceImages ? { referenceImages } : {}),
-    };
-
-    let operation = await ai.models.generateVideos({
-      model: modelId,
+    payload: {
       prompt,
-      ...(image ? { image } : {}),
-      config: config as Parameters<typeof ai.models.generateVideos>[0]['config'],
-    });
+      sourceVideoUri: firstFrameUri || referenceUri,
+      maskFrameUri: lastFrameUri,
+      cameraPhysics: undefined,
+    },
+    directorSettings,
+    provider: 'google-genai',
+    model: modelId,
+    costEstimate: undefined,
+    costReservationId: undefined,
+    retryCount: 0,
+    inputUris,
+    tempUris: [],
+    persistentUris: inputUris,
+    maskUris: [],
+    metadata: {
+      model: modelId,
+      aspectRatio: normalizeVideoAspectRatio(aspectRatio),
+      resolution: normalizedResolution,
+      durationSeconds: normalizedDuration,
+      hasFirstFrame: !!firstFrameUri || !!referenceUri,
+      hasLastFrame: !!lastFrameUri,
+      referenceCount: referenceUris?.length ?? 0,
+    },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
 
-    operation = await pollVideoOperation(ai, operation, jobId);
-    const video = extractGeneratedVideo(operation);
-    const downloadedVideo = await downloadGeneratedVideo(ai, video, jobId);
-    const outputUri = await uploadToStorage(
-      userId,
-      downloadedVideo.buffer,
-      extensionForMime(downloadedVideo.mimeType, 'mp4'),
-      downloadedVideo.mimeType,
-    );
-    
-    await safeDbUpdate(jobId, {
-      status: 'completed',
-      resultUri: outputUri,
-      progress: 100,
-      metadata: {
-        model: modelId,
-        aspectRatio: normalizeVideoAspectRatio(aspectRatio),
-        resolution: normalizedResolution,
-        durationSeconds: normalizedDuration,
-        mimeType: downloadedVideo.mimeType,
-        hasFirstFrame: !!image,
-        referenceCount: referenceImages?.length ?? 0,
-      },
-      completedAt: new Date().toISOString()
-    });
+  VideoJobDocumentSchema.parse(jobRecord);
+  await syncVideoJobDocument(jobId, jobRecord);
 
-    return { jobId, resultUri: outputUri };
-  } catch (error: unknown) {
-    await safeDbUpdate(jobId, { status: 'failed', error: errorMessage(error) });
-    throw toGatewayError(error, 'Video generation failed');
-  }
+  return { jobId };
 });
 
 /**
@@ -916,6 +1223,11 @@ export const generateOmniRemixV3 = onCall({ timeoutSeconds: 540, secrets: [gemin
       downloadedVideo.buffer,
       extensionForMime(downloadedVideo.mimeType, 'mp4'),
       downloadedVideo.mimeType,
+      {
+        jobId,
+        category: 'video',
+        purpose: 'outputs',
+      },
     );
 
     await safeDbUpdate(jobId, {

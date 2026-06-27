@@ -12,6 +12,13 @@ vi.mock('@/core/store', () => ({
         addUploadedImage: vi.fn(),
         currentProjectId: 'test-project',
         generatedHistory: [],
+        studioControls: {
+            aspectRatio: '1:1',
+            imageSize: '1k',
+            model: 'fast',
+            resolution: '1k',
+            useGrounding: false,
+        },
         initializeDesignHistory: vi.fn().mockResolvedValue(undefined)
     })
 }));

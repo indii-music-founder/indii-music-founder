@@ -150,7 +150,8 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                                 sourceImages: sourceImages,
                                 model: studioControls.model,
                                 thinkingLevel: studioControls.thinkingLevel === 'none' ? undefined : studioControls.thinkingLevel,
-                                useGrounding: studioControls.useGrounding
+                                useGrounding: studioControls.useGrounding,
+                                sessionId: currentProjectId ? `creative_${currentProjectId}` : undefined,
                             })
                         );
 
@@ -264,7 +265,8 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                             // Gemini 3 Params
                             model: studioControls.model,
                             thinkingLevel: studioControls.thinkingLevel === 'none' ? undefined : studioControls.thinkingLevel,
-                            useGrounding: studioControls.useGrounding
+                            useGrounding: studioControls.useGrounding,
+                            sessionId: currentProjectId ? `creative_${currentProjectId}` : undefined,
                         });
 
                         if (results.length > 0) {

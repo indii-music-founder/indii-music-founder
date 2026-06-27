@@ -4,6 +4,7 @@
  * Used by the Daisy Chain engine to extract first/last frames from generated segments
  * and feed them into the next generation cycle for visual continuity.
  */
+import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
 
 /**
  * Extract a frame from a video at a specific time position.
@@ -16,10 +17,11 @@ export async function extractVideoFrame(
     videoUrl: string,
     position: 'first' | 'last' | number = 'last'
 ): Promise<string> {
+    const playableUrl = await resolveStorageUrl(videoUrl);
     return new Promise((resolve, reject) => {
         const video = document.createElement('video');
         video.crossOrigin = 'anonymous';
-        video.src = videoUrl;
+        video.src = playableUrl;
         video.muted = true;
         video.playsInline = true;
 
