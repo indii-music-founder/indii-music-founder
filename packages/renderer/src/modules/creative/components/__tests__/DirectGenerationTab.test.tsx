@@ -205,6 +205,10 @@ describe('DirectGenerationTab', () => {
             resolution: '1080p',
             duration: 6,
             personGeneration: 'allow_adult',
+            directorSettings: expect.objectContaining({
+                fps: 24,
+                totalFrames: 144
+            })
         }));
 
         // Fast-forward all pending timers including the 10ms subscription callback

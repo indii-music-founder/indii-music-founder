@@ -15,6 +15,7 @@ import { VideoGeneration } from '@/services/video/VideoGenerationService';
 import { useToast } from '@/core/context/ToastContext';
 import { renderService } from '@/services/video/RenderService';
 import { logger } from '@/utils/logger';
+import { useResolvedStorageUrl } from '@/hooks/useResolvedStorageUrl';
 
 function readAudioDuration(audioUrl: string): Promise<number> {
     return new Promise((resolve, reject) => {
@@ -30,6 +31,37 @@ function readAudioDuration(audioUrl: string): Promise<number> {
         audio.onerror = () => reject(new Error('Unable to read audio metadata from uploaded file.'));
         audio.src = audioUrl;
     });
+}
+
+function StoryboardClipPreview({ videoUrl }: { videoUrl: string }) {
+    const { url: resolvedVideoUrl, isResolving, error: resolveError } = useResolvedStorageUrl(videoUrl);
+
+    if (isResolving) {
+        return (
+            <div className="flex h-full w-full items-center justify-center bg-black/60 text-[10px] font-bold uppercase tracking-widest text-white/50">
+                Resolving clip...
+            </div>
+        );
+    }
+
+    if (resolveError) {
+        return (
+            <div className="flex h-full w-full items-center justify-center bg-[#1a0f0f] px-3 text-center text-[10px] font-bold uppercase tracking-widest text-red-300">
+                Preview unavailable
+            </div>
+        );
+    }
+
+    return (
+        <video
+            src={resolvedVideoUrl}
+            className="w-full h-full object-cover"
+            muted
+            loop
+            playsInline
+            autoPlay
+        />
+    );
 }
 
 export function StoryboardTimeline() {
@@ -408,14 +440,7 @@ export function StoryboardTimeline() {
                                     <div className="flex-1 bg-black/50 relative overflow-hidden flex items-center justify-center select-none group">
                                         {slot.videoUrl ? (
                                             <div className="w-full h-full relative">
-                                                <video
-                                                    src={slot.videoUrl}
-                                                    className="w-full h-full object-cover"
-                                                    muted
-                                                    loop
-                                                    playsInline
-                                                    autoPlay
-                                                />
+                                                <StoryboardClipPreview videoUrl={slot.videoUrl} />
                                                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                                                     <button
                                                         onClick={() => updateStoryboardSlot(slot.id, { videoUrl: undefined })}

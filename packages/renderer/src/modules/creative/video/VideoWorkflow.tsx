@@ -17,6 +17,7 @@ import { IntelligencePromptInput } from '../components/veo/IntelligencePromptInp
 import { DailiesStrip } from './components/DailiesStrip';
 import { VideoStage } from './components/VideoStage';
 import { useGlobalShortcut } from '@/hooks/useGlobalShortcut';
+import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
 // Lazy load SceneBuilder to prevent vendor-three → vendor-react circular dependency
 const SceneBuilder = lazy(() => import('./visualizer/SceneBuilder').then(m => ({ default: m.SceneBuilder })));
 import { useToast, ToastContextType } from '@/core/context/ToastContext';
@@ -33,6 +34,7 @@ export interface VideoJobUpdateData {
     stitchError?: string;
     metadata?: Record<string, unknown>;
     output?: {
+        url?: string;
         metadata?: Record<string, unknown>;
     };
 }
@@ -41,7 +43,7 @@ export interface VideoJobUpdateData {
 const VideoEditor = React.lazy(() => import('./editor/VideoEditor').then(module => ({ default: module.VideoEditor })));
 
 // eslint-disable-next-line react-refresh/only-export-components
-export const processJobUpdate = (
+export const processJobUpdate = async (
     data: VideoJobUpdateData | null,
     currentJobId: string,
     deps: {
@@ -77,8 +79,10 @@ export const processJobUpdate = (
             useStore.getState().updateJobProgress(currentJobId, data.progress);
         }
 
-        if (newStatus === 'completed' && data.videoUrl) {
+        if (newStatus === 'completed' && (data.videoUrl || data.output?.url)) {
             useStore.getState().updateJobStatus(currentJobId, 'success');
+            const rawVideoUrl = data.videoUrl || data.output?.url || '';
+            const playableVideoUrl = await resolveStorageUrl(rawVideoUrl);
             // ⚡ Automatic Local Save (Veo 3.1 Requirement)
             // The Autonomous community/app needs access to this file locally first.
             const filename = `veo_${currentJobId}.mp4`;
@@ -86,7 +90,7 @@ export const processJobUpdate = (
             // Trigger background download via Electron
             // We don't await this to avoid blocking the UI update, but we log it
             if (window.electronAPI?.video?.saveAsset) {
-                window.electronAPI.video.saveAsset(data.videoUrl, filename)
+                window.electronAPI.video.saveAsset(playableVideoUrl, filename)
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     .then((path: any) => {
                         logger.debug('Video saved locally to:', path);
@@ -102,7 +106,7 @@ export const processJobUpdate = (
 
             const newAsset = {
                 id: currentJobId,
-                url: data.videoUrl,
+                url: playableVideoUrl,
                 localPath: '', // Will be updated async
                 prompt: data.prompt || deps.localPrompt,
                 type: 'video' as const,
@@ -296,7 +300,7 @@ export default function VideoWorkflow() {
         if (!jobId) return;
 
         const unsubscribe = VideoGeneration.subscribeToJob(jobId, (data) => {
-            processJobUpdate(data, jobId, {
+            void processJobUpdate(data, jobId, {
                 currentProjectId,
                 currentOrganizationId,
                 localPrompt: localPromptRef.current,
@@ -408,6 +412,21 @@ export default function VideoWorkflow() {
                     }
                 });
             } else {
+                const directorFps = studioControls.fps || 24;
+                const directorDuration = studioControls.duration || 6;
+                const directorSettings = {
+                    fps: directorFps,
+                    durationSeconds: directorDuration,
+                    totalFrames: Math.round(directorFps * directorDuration),
+                    aspectRatio: effectiveAspectRatio,
+                    resolution: studioControls.resolution,
+                    seed: studioControls.seed ? parseInt(studioControls.seed) : undefined,
+                    firstFrameUri: videoInputs.firstFrame?.url,
+                    lastFrameUri: videoInputs.lastFrame?.url,
+                    cameraMovement: studioControls.cameraMovement,
+                    motionStrength: studioControls.motionStrength,
+                };
+
                 results = await VideoGeneration.generateVideo({
                     prompt: finalPrompt,
                     resolution: studioControls.resolution,
@@ -426,6 +445,7 @@ export default function VideoWorkflow() {
                     orgId: currentOrganizationId,
                     duration: studioControls.duration,
                     durationSeconds: studioControls.duration,
+                    directorSettings,
                     // Audio suppression handled via prompt augmentation above
                     inputAudio: useVideoEditorStore.getState().inputAudio || undefined,
                     thinkingLevel: studioControls.thinkingLevel,

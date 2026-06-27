@@ -346,7 +346,7 @@ describe('VideoWorkflow - processJobUpdate', () => {
         };
     });
 
-    it('extracts Veo 3.1 metadata and stores it in HistoryItem.meta', () => {
+    it('extracts Veo 3.1 metadata and stores it in HistoryItem.meta', async () => {
         const veoMetadata = {
             duration_seconds: 5.0,
             fps: 24,
@@ -361,7 +361,7 @@ describe('VideoWorkflow - processJobUpdate', () => {
             progress: 100
         };
 
-        processJobUpdate(jobData, 'veo-job-123', mockDeps);
+        await processJobUpdate(jobData, 'veo-job-123', mockDeps);
 
         // Verify that addToHistory was called with the correct metadata
         expect(mockDeps.addToHistory).toHaveBeenCalledWith(expect.objectContaining({

@@ -2,6 +2,7 @@ import React from 'react';
 import videojs from 'video.js';
 import 'video.js/dist/video-js.css';
 import { logger } from '@/utils/logger';
+import { useResolvedStorageUrl } from '@/hooks/useResolvedStorageUrl';
 
 type VideoJsPlayerInstance = ReturnType<typeof videojs>;
 
@@ -49,6 +50,8 @@ export const VideoJsPlayer = React.forwardRef<VideoJsPlayerHandle, VideoJsPlayer
     const onReadyRef = React.useRef(onReady);
     const onTimeUpdateRef = React.useRef(onTimeUpdate);
     const onErrorRef = React.useRef(onError);
+    const { url: resolvedVideoUrl, isResolving, error: resolveError } = useResolvedStorageUrl(videoUrl);
+    const sourceUrl = resolvedVideoUrl || (videoUrl.startsWith('gs://') ? '' : videoUrl);
 
     React.useEffect(() => {
         onReadyRef.current = onReady;
@@ -101,7 +104,7 @@ export const VideoJsPlayer = React.forwardRef<VideoJsPlayerHandle, VideoJsPlayer
 
     React.useEffect(() => {
         const videoEl = videoElementRef.current;
-        if (!videoEl || playerRef.current) return;
+        if (!videoEl || playerRef.current || !sourceUrl) return;
 
         const player = videojs(videoEl, {
             controls,
@@ -112,7 +115,7 @@ export const VideoJsPlayer = React.forwardRef<VideoJsPlayerHandle, VideoJsPlayer
             muted,
             loop,
             poster: posterUrl,
-            sources: [{ src: videoUrl, type: mimeType }],
+            sources: [{ src: sourceUrl, type: mimeType }],
         });
         playerRef.current = player;
 
@@ -137,12 +140,12 @@ export const VideoJsPlayer = React.forwardRef<VideoJsPlayerHandle, VideoJsPlayer
             player.dispose();
             playerRef.current = null;
         };
-    }, [autoPlay, buildHandle, controls, mimeType, muted, posterUrl, videoUrl, loop]);
+    }, [autoPlay, buildHandle, controls, mimeType, muted, posterUrl, sourceUrl, loop]);
 
     React.useEffect(() => {
         const player = playerRef.current;
-        if (!player) return;
-        player.src({ src: videoUrl, type: mimeType });
+        if (!player || !sourceUrl) return;
+        player.src({ src: sourceUrl, type: mimeType });
         player.autoplay(autoPlay);
         player.controls(controls);
         player.muted(muted);
@@ -150,7 +153,29 @@ export const VideoJsPlayer = React.forwardRef<VideoJsPlayerHandle, VideoJsPlayer
         if (posterUrl !== undefined) {
             player.poster(posterUrl);
         }
-    }, [autoPlay, controls, loop, mimeType, muted, posterUrl, videoUrl]);
+    }, [autoPlay, controls, loop, mimeType, muted, posterUrl, sourceUrl]);
+
+    React.useEffect(() => {
+        if (resolveError) {
+            onErrorRef.current?.(resolveError);
+        }
+    }, [resolveError]);
+
+    if (isResolving) {
+        return (
+            <div className={`flex items-center justify-center rounded-lg border border-white/10 bg-black/70 text-white/60 ${className}`}>
+                Resolving playback asset...
+            </div>
+        );
+    }
+
+    if (resolveError) {
+        return (
+            <div className={`flex items-center justify-center rounded-lg border border-red-500/20 bg-[#1a0f0f] text-red-300 ${className}`}>
+                Playback asset unavailable.
+            </div>
+        );
+    }
 
     return (
         <video

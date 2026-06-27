@@ -4,6 +4,7 @@ import { HistoryItem } from '@/core/store';
 import { CandidatesCarousel, Candidate } from './CandidatesCarousel';
 import { EndFrameSelector } from './EndFrameSelector';
 import { CreativeColor } from '../constants';
+import { useResolvedStorageUrl } from '@/hooks/useResolvedStorageUrl';
 
 interface CanvasViewportProps {
     item: HistoryItem;
@@ -32,10 +33,22 @@ export function CanvasViewport({
     generatedHistory,
     onEndFrameSelect
 }: CanvasViewportProps) {
+    const { url: resolvedVideoUrl, isResolving, error: resolveError } = useResolvedStorageUrl(item.type === 'video' ? item.url : null);
+
     return (
         <main className="flex-1 relative bg-[#050505] flex items-center justify-center overflow-hidden p-12">
             {item.type === 'video' && !item.url.startsWith('data:image') ? (
-                <video src={item.url} controls className="max-w-full max-h-full object-contain shadow-2xl rounded-lg" />
+                isResolving ? (
+                    <div className="flex items-center justify-center rounded-lg border border-white/10 bg-black/70 px-4 py-3 text-sm text-white/60">
+                        Resolving playback asset...
+                    </div>
+                ) : resolveError ? (
+                    <div className="flex items-center justify-center rounded-lg border border-red-500/20 bg-[#1a0f0f] px-4 py-3 text-sm text-red-300">
+                        Playback asset unavailable.
+                    </div>
+                ) : (
+                    <video src={resolvedVideoUrl} controls className="max-w-full max-h-full object-contain shadow-2xl rounded-lg" />
+                )
             ) : (
                 <div
                     className="relative w-full h-full flex items-center justify-center group"
