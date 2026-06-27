@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-27 14:10 EDT
+**Updated:** 2026-06-27 14:15 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+0f5e6dbd0 fix: add module resolution to firebase tsconfig
+399fea792 chore: session checkpoint [14:10]
 2a8f69c85 chore: session checkpoint [14:10]
 1f5e8ec2a chore: session checkpoint [14:10]
 fb42607d5 chore: session checkpoint [14:09]
@@ -12,8 +14,6 @@ fb42607d5 chore: session checkpoint [14:09]
 319cc2362 chore: session checkpoint [14:08]
 9acd5443e chore: session checkpoint [14:08]
 787e6240f chore: session checkpoint [14:07]
-9e146157c chore: session checkpoint [14:07]
-6e97c96c1 chore: session checkpoint [14:06]
 ```
 
 ## Working State
