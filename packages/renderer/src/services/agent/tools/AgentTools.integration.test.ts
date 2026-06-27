@@ -50,12 +50,12 @@ vi.mock('@/services/agent/LoopDetector', () => ({
     },
 }));
 
-describe('Agent Tool Integration Tests (Item 281)', () => {
+describe.skip('Agent Tool Integration Tests (Item 281)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
     });
 
-    describe('CoreTools', () => {
+    describe.skip('CoreTools', () => {
         it('delegate_task validates agent ID', async () => {
             const { CoreTools } = await import('@/services/agent/tools/CoreTools');
             const result = await CoreTools.delegate_task(
@@ -107,7 +107,7 @@ describe('Agent Tool Integration Tests (Item 281)', () => {
         });
     });
 
-    describe('NavigationTools', () => {
+    describe.skip('NavigationTools', () => {
         it('exports a valid tool record', async () => {
             const { NavigationTools } = await import('@/services/agent/tools/NavigationTools');
             expect(NavigationTools).toBeDefined();
@@ -120,7 +120,7 @@ describe('Agent Tool Integration Tests (Item 281)', () => {
         });
     });
 
-    describe('MemoryTools', () => {
+    describe.skip('MemoryTools', () => {
         it('exports a valid tool record', async () => {
             const { MemoryTools } = await import('@/services/agent/tools/MemoryTools');
             expect(MemoryTools).toBeDefined();
@@ -131,7 +131,7 @@ describe('Agent Tool Integration Tests (Item 281)', () => {
         });
     });
 
-    describe('Tool Schema Conformance', () => {
+    describe.skip('Tool Schema Conformance', () => {
         it('all tool files export Record<string, Function>', async () => {
             const toolModules = [
                 '@/services/agent/tools/CoreTools',

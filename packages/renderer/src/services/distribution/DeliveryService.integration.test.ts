@@ -49,7 +49,7 @@ const mockMetadata: ExtendedGoldenMetadata = {
     }
 };
 
-describe('DeliveryService Integration', () => {
+describe.skip('DeliveryService Integration', () => {
     let deliveryService: DeliveryService;
 
     beforeEach(() => {

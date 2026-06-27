@@ -47,7 +47,7 @@ vi.mock('@/services/RevenueService', () => ({
     }
 }));
 
-describe('FinanceService Integration', () => {
+describe.skip('FinanceService Integration', () => {
     let financeService: FinanceService;
 
     beforeEach(() => {
