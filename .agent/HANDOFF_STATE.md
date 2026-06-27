@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-27 14:30 EDT
+**Updated:** 2026-06-27 14:38 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+7145b7f7f fix: remove rootDir constraint from firebase tsconfig
+7a561697f chore: session checkpoint [14:30]
 e0ab68243 chore: session checkpoint [14:30]
 b49b8ac9b chore: session checkpoint [14:29]
 f76b64ebc chore: session checkpoint [14:29]
@@ -12,8 +14,6 @@ b5e39cbaf chore: session checkpoint [14:28]
 74325f0f2 chore: session checkpoint [14:28]
 f55ec33d4 chore: session checkpoint [14:28]
 994cdfab5 chore: session checkpoint [14:27]
-170fef863 chore: session checkpoint [14:27]
-9ac483417 chore: session checkpoint [14:26]
 ```
 
 ## Working State
