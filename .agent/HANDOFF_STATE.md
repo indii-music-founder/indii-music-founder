@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-27 10:43 EDT
+**Updated:** 2026-06-27 10:48 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+ea16a5451 chore: session checkpoint [10:43]
 57f7caff4 fix: restore .js extensions and point package.json to dist
 1ef19e38d chore: session checkpoint [10:37]
 5b2af5fd8 chore: session checkpoint [10:31]
@@ -13,7 +14,6 @@ b285dd60b fix: remove .js extensions from TypeScript source exports
 ee8207324 chore: session checkpoint [10:15]
 bccbd5a3e chore: session checkpoint [10:09]
 f16c82329 fix: add .js extensions to all shared package exports for ESM
-529877922 chore: session checkpoint [10:03]
 ```
 
 ## Working State
