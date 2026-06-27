@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-27 08:36 EDT
+**Updated:** 2026-06-27 08:54 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+bfdcba5f9 chore: session checkpoint [08:36]
 3f2150f82 fix: refine 404 check to only reject on explicit 404 responses
 39b391f58 chore: session checkpoint [08:33]
 27f0b5c29 fix: enforce Asset Integrity on 404 video URLs and async test handling
@@ -13,7 +14,6 @@ c81bd29c8 chore: session checkpoint [08:15]
 d1d602b5d chore: session checkpoint [08:11]
 c65c7a232 fix(creative): wire video timing and storage resolution
 0bbdc47c5 feat(video): route outputs through storage lifecycle
-bb89ea51e feat(video): scope isolation and handoff brief
 ```
 
 ## Working State
