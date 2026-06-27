@@ -393,6 +393,20 @@ export function useDirectGeneration() {
         const parsedSeed = studioControls.seed ? Number(studioControls.seed) : undefined;
         const validatedAR = VideoAspectRatioSchema.safeParse(studioControls.aspectRatio);
         const effectiveAspectRatio = validatedAR.success ? validatedAR.data : '16:9';
+        const directorFps = studioControls.fps || 24;
+        const directorDuration = Math.min(8, Math.max(4, studioControls.duration || Math.ceil(sequenceTotalSeconds) || 6));
+        const directorSettings = {
+            fps: directorFps,
+            durationSeconds: directorDuration,
+            totalFrames: Math.round(directorFps * directorDuration),
+            aspectRatio: effectiveAspectRatio,
+            resolution: effectiveResolution,
+            seed: Number.isSafeInteger(parsedSeed) ? parsedSeed : undefined,
+            firstFrameUri: firstFrame,
+            lastFrameUri: lastFrame,
+            cameraMovement: studioControls.cameraMovement,
+            motionStrength: studioControls.motionStrength,
+        };
 
         const results = await VideoGeneration.generateVideo({
             prompt: sequencePrompt,
@@ -402,7 +416,8 @@ export function useDirectGeneration() {
             aspectRatio: effectiveAspectRatio,
             model: studioControls.model,
             resolution: effectiveResolution,
-            duration: Math.min(8, Math.max(4, studioControls.duration || Math.ceil(sequenceTotalSeconds) || 6)),
+            duration: directorDuration,
+            directorSettings,
             personGeneration: studioControls.personGeneration,
             negativePrompt: studioControls.negativePrompt || undefined,
             seed: Number.isSafeInteger(parsedSeed) ? parsedSeed : undefined,
