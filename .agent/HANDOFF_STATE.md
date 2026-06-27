@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-27 19:00 EDT
+**Updated:** 2026-06-27 19:25 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+b99097bc5 fix: skip integration tests in CI/test environments
+d877c8fd0 chore: session checkpoint [19:00]
 0b56fbdf5 chore: session checkpoint [15:16]
 eeec00fd8 chore: session checkpoint [15:15]
 9240722f5 chore: session checkpoint [15:15]
@@ -12,8 +14,6 @@ eeec00fd8 chore: session checkpoint [15:15]
 9b65d4eb5 chore: session checkpoint [15:11]
 de653529a ci: retry deployment
 2c76de012 chore: session checkpoint [15:09]
-27243a55e chore: session checkpoint [15:08]
-f0c21e68d chore: session checkpoint [15:07]
 ```
 
 ## Working State
