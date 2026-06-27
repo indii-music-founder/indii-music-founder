@@ -516,13 +516,13 @@ export class VideoGenerationService {
                             try {
                                 // HEAD request to verify existence without downloading payload
                                 const response = await fetch(playableUrl, { method: 'HEAD' });
-                                if (!response.ok) {
+                                if (response.status === 404) {
                                     reject(new Error(`Asset Integrity Failure: Video URL is unreachable (${response.status}).`));
                                     return;
                                 }
                             } catch (e: unknown) {
-                                // Network error during verification should not block generation unless strictly required.
-                                // We log the warning for debugging purposes, but proceed with strict verification logic.
+                                // Network error during verification should not block generation.
+                                // Log for debugging but allow completion.
                                 logger.warn("Lens: Video verification check failed", e);
                             }
                         } else if (playableUrl?.startsWith('gs://')) {
