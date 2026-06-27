@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-27 10:20 EDT
+**Updated:** 2026-06-27 10:26 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+b285dd60b fix: remove .js extensions from TypeScript source exports
+30ddac5a7 chore: session checkpoint [10:20]
 ee8207324 chore: session checkpoint [10:15]
 bccbd5a3e chore: session checkpoint [10:09]
 f16c82329 fix: add .js extensions to all shared package exports for ESM
@@ -12,8 +14,6 @@ f16c82329 fix: add .js extensions to all shared package exports for ESM
 31e2d37e4 chore: session checkpoint [09:53]
 50dbd2dbc fix: restore .js extension for AuthService ESM resolution
 2b1c561ce chore: session checkpoint [09:47]
-9058a6479 chore: session checkpoint [09:42]
-030c33405 chore: session checkpoint [09:36]
 ```
 
 ## Working State
