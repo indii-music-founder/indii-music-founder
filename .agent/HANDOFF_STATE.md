@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-27 19:42 EDT
+**Updated:** 2026-06-27 19:43 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+bc679b481 chore: session checkpoint [19:42]
 c66380728 chore: session checkpoint [19:42]
 ee7a0f06c chore: session checkpoint [19:41]
 2d4a94ec4 chore: session checkpoint [19:40]
@@ -13,12 +14,11 @@ b7f69027a fix: skip showme diagnostic test in CI
 ea191c369 chore: session checkpoint [19:27]
 8abc960d5 chore: session checkpoint [19:26]
 7252630a4 chore: session checkpoint [19:25]
-b99097bc5 fix: skip integration tests in CI/test environments
 ```
 
 ## Working State
 ```
-clean working tree
+M  .agent/HANDOFF_STATE.md
 ```
 
 ## Decisions
