@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-27 12:38 EDT
+**Updated:** 2026-06-27 12:56 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+26a4c56ff fix: revert to bare imports - files are .ts not .js
+b232e7fef chore: session checkpoint [12:38]
 c885666c9 chore: session checkpoint [12:37]
 ab0ccd8be chore: session checkpoint [12:37]
 3a863e01c chore: session checkpoint [12:37]
@@ -12,8 +14,6 @@ ab0ccd8be chore: session checkpoint [12:37]
 753cf8f80 chore: session checkpoint [12:36]
 75ff38ffc chore: session checkpoint [12:35]
 f5857a624 chore: session checkpoint [12:35]
-0dd542f33 chore: session checkpoint [12:30]
-0c53ad7b9 chore: session checkpoint [12:29]
 ```
 
 ## Working State
