@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-27 08:15 EDT
+**Updated:** 2026-06-27 08:33 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+27f0b5c29 fix: enforce Asset Integrity on 404 video URLs and async test handling
+c81bd29c8 chore: session checkpoint [08:15]
 771b4c180 Merge branch 'codex/video-player-bridge'
 8f5dfbb1a chore: remove unused imports and dead functions
 d1d602b5d chore: session checkpoint [08:11]
@@ -12,8 +14,6 @@ c65c7a232 fix(creative): wire video timing and storage resolution
 bb89ea51e feat(video): scope isolation and handoff brief
 0c093d53a feat(video): scope creative storage paths
 548e01676 docs(ledger): mark latest CI issue fixed
-a60619a05 test: align creative tests with storage-first image flow
-add7b093a fix(video): canonicalize queue schema and bridge
 ```
 
 ## Working State
