@@ -517,7 +517,8 @@ export class VideoGenerationService {
                                 // HEAD request to verify existence without downloading payload
                                 const response = await fetch(playableUrl, { method: 'HEAD' });
                                 if (!response.ok) {
-                                    logger.warn(`Lens: Video URL HEAD check returned ${response.status}; continuing with completed job.`);
+                                    reject(new Error(`Asset Integrity Failure: Video URL is unreachable (${response.status}).`));
+                                    return;
                                 }
                             } catch (e: unknown) {
                                 // Network error during verification should not block generation unless strictly required.
