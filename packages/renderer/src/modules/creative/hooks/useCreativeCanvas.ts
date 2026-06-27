@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { useStore, HistoryItem } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/core/context/ToastContext';
@@ -11,6 +11,13 @@ import { saveAssetToStorage, saveCanvasStateToStorage, getCanvasStateFromStorage
 import { Candidate } from '../components/CandidatesCarousel';
 import { imageAnalysisService } from '@/services/image/ImageAnalysisService';
 import { logger } from '@/utils/logger';
+import { compileCreativeEditManifest, getCreativeSessionId, normalizeCreativeImageSize, summarizeCreativeEditManifest, type CreativeVaultScope } from '../services/creativeManifest';
+import { creativeSessionService } from '@/services/creative/CreativeSessionService';
+import { CreativeStorageService } from '@/services/creative/CreativeStorageService';
+import { auth } from '@/services/firebase';
+import { CostControlService } from '@/services/billing/CostControlService';
+import { estimateCostUsd } from '@/services/intelligence/billing/ModelPricing';
+import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
 
 // Basic debounce helper
 function debounce<T extends (...args: any[]) => any>(
@@ -31,9 +38,10 @@ interface UseCreativeCanvasProps {
 }
 
 export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvasProps) {
-    const { generatedHistory, currentProjectId } = useStore(useShallow(state => ({
+    const { generatedHistory, currentProjectId, studioControls } = useStore(useShallow(state => ({
         generatedHistory: state.generatedHistory,
-        currentProjectId: state.currentProjectId
+        currentProjectId: state.currentProjectId,
+        studioControls: state.studioControls
     })));
     const toast = useToast();
 
@@ -53,6 +61,7 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
     const [activeColor, setActiveColor] = useState<CreativeColor>(STUDIO_COLORS[0]!);
     const [definitions, setDefinitions] = useState<Record<string, string>>({});
     const [referenceImages, setReferenceImages] = useState<Record<string, { mimeType: string, data: string } | null>>({});
+    const [referenceRoles, setReferenceRoles] = useState<Record<string, CreativeVaultScope>>({});
     const [generatedCandidates, setGeneratedCandidates] = useState<Candidate[]>([]);
     const [endFrameItem, setEndFrameItem] = useState<{ id: string; url: string; prompt: string; type: 'image' | 'video' } | null>(null);
     const [magicFillPrompt, setMagicFillPrompt] = useState('');
@@ -60,6 +69,102 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
 
     // Canvas ref
     const canvasEl = useRef<HTMLCanvasElement>(null);
+    const sessionId = useMemo(() => getCreativeSessionId(item?.id ?? null, currentProjectId), [currentProjectId, item?.id]);
+    const editManifest = useMemo(() => compileCreativeEditManifest({
+        sessionId,
+        projectId: currentProjectId,
+        item,
+        prompt: magicFillPrompt || prompt || item?.prompt || '',
+        definitions,
+        referenceImages,
+        referenceRoles,
+        generatedCandidates,
+        settings: {
+            modelTier: isHighFidelity || studioControls.model === 'pro' ? 'pro' : 'fast',
+            resolution: studioControls.resolution,
+            imageSize: normalizeCreativeImageSize(studioControls.imageSize),
+            grounding: studioControls.useGrounding,
+            aspectRatio: studioControls.aspectRatio,
+            highFidelity: isHighFidelity,
+        }
+    }), [
+        currentProjectId,
+        definitions,
+        generatedCandidates,
+        isHighFidelity,
+        item,
+        magicFillPrompt,
+        prompt,
+        referenceImages,
+        referenceRoles,
+        sessionId,
+        studioControls.aspectRatio,
+        studioControls.imageSize,
+        studioControls.model,
+        studioControls.resolution,
+        studioControls.useGrounding
+    ]);
+    const editSummary = useMemo(() => summarizeCreativeEditManifest(editManifest), [editManifest]);
+    const uploadSessionMedia = async (
+        mediaByColor: Record<string, { mimeType: string; data: string } | null>,
+        rolesByColor: Record<string, CreativeVaultScope>,
+        scopeFallback: CreativeVaultScope
+    ): Promise<Record<string, string | null>> => {
+        const userId = auth.currentUser?.uid;
+        if (!userId) return {};
+
+        const entries = await Promise.all(Object.entries(mediaByColor).map(async ([colorId, media]) => {
+            if (!media) return [colorId, null] as const;
+            const scope = rolesByColor[colorId] || scopeFallback;
+            const uri = await CreativeStorageService.uploadReferenceMedia(
+                userId,
+                `data:${media.mimeType};base64,${media.data}`,
+                'image',
+                { scope, sessionId, projectId: currentProjectId ?? undefined }
+            );
+            return [colorId, uri] as const;
+        }));
+
+        return Object.fromEntries(entries);
+    };
+    const reserveImageBudget = async (modelId: 'gemini-3-pro-image' | 'gemini-3.1-flash-image') => {
+        const userId = auth.currentUser?.uid;
+        if (!userId) {
+            throw new Error('Auth required for creative image generation.');
+        }
+
+        const estimatedCost = estimateCostUsd(modelId, { images: 1 });
+        const result = await CostControlService.checkAndReserve({
+            operationType: 'image',
+            estimatedCost,
+            userId,
+            metadata: {
+                sessionId,
+                routeId: editManifest.route.id,
+                routeLabel: editManifest.route.label,
+                modelId,
+                resolution: editManifest.settings.imageSize || editManifest.settings.resolution,
+            },
+        });
+
+        if (!result.allowed) {
+            throw new Error(result.reason || 'Creative edit blocked by cost controls.');
+        }
+    };
+    const persistSession = async (manifest = editManifest, extras: Record<string, unknown> = {}) => {
+        try {
+            await creativeSessionService.upsertFromManifest(manifest, extras as Parameters<typeof creativeSessionService.upsertFromManifest>[1]);
+        } catch (error) {
+            logger.warn('[CreativeStudio] Creative session persistence skipped', error);
+        }
+    };
+    const updateSession = async (updates: Record<string, unknown>) => {
+        try {
+            await creativeSessionService.updateSession(sessionId, updates as Parameters<typeof creativeSessionService.updateSession>[1]);
+        } catch (error) {
+            logger.warn('[CreativeStudio] Creative session update skipped', error);
+        }
+    };
 
     // Sync prompt from item
     useEffect(() => {
@@ -98,13 +203,49 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
             try {
                 const savedState = await getCanvasStateFromStorage(item.id);
                 if (savedState && isMounted) {
-                    // Initialize WITHOUT image URL (loadFromJSON brings its own objects)
+                    // Initialize from saved layers, then repair stale/blank states
+                    // that do not contain the selected asset as a base image.
                     canvasOps.initialize(canvasEl.current, undefined, async () => {
-                        if (isMounted) await canvasOps.loadFromJSON(savedState);
+                        if (!isMounted) return;
+
+                        await canvasOps.loadFromJSON(savedState);
+                        const recoveredBase = await canvasOps.ensureBaseImage(await resolveStorageUrl(item.url));
+                        if (recoveredBase) {
+                            logger.warn('[CreativeStudio] Restored missing base image from selected asset URL', {
+                                itemId: item.id,
+                            });
+                        }
                     }, handleCanvasChange);
                 } else if (isMounted) {
                     // Initialize WITH base image URL
-                    canvasOps.initialize(canvasEl.current, item.url, undefined, handleCanvasChange);
+                    canvasOps.initialize(canvasEl.current, await resolveStorageUrl(item.url), undefined, handleCanvasChange);
+                }
+
+                try {
+                    const savedSession = await creativeSessionService.loadSession(sessionId);
+                    if (savedSession && isMounted) {
+                        setIsHighFidelity(savedSession.settings.modelTier === 'pro');
+                        setMagicFillPrompt(savedSession.prompt);
+                        const restoredDefinitions = Object.fromEntries(
+                            savedSession.references
+                                .filter((ref) => ref.prompt.trim().length > 0)
+                                .map((ref) => [ref.colorId, ref.prompt])
+                        );
+                        setDefinitions(restoredDefinitions);
+                        setReferenceRoles(Object.fromEntries(
+                            savedSession.references.map(ref => [ref.colorId, ref.role || 'objects'])
+                        ));
+
+                        if (savedSession.generatedCandidates.length > 0) {
+                            setGeneratedCandidates(savedSession.generatedCandidates.map((url) => ({
+                                id: crypto.randomUUID(),
+                                url,
+                                prompt: savedSession.prompt
+                            })));
+                        }
+                    }
+                } catch (sessionErr) {
+                    logger.warn('[CreativeStudio] Creative session restore skipped', sessionErr);
                 }
             } catch (err: unknown) {
                 logger.warn('[CreativeStudio] Failed to restore canvas state', err);
@@ -188,6 +329,10 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
         setReferenceImages(prev => ({ ...prev, [colorId]: image }));
     };
 
+    const handleUpdateReferenceRole = (colorId: string, role: CreativeVaultScope) => {
+        setReferenceRoles(prev => ({ ...prev, [colorId]: role }));
+    };
+
     const handleDetectObjects = async () => {
         if (!item || !canvasOps.isInitialized()) return;
         
@@ -267,6 +412,42 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
 
             if (prepared && prepared.masks.length > 0) {
                 const combinedPrompt = Object.values(finalDefinitions).join(". ") || magicFillPrompt;
+                const referenceAssetUris = await uploadSessionMedia(referenceImages, referenceRoles, 'objects');
+                const maskAssetUris = await Promise.all(prepared.masks.map(async (mask) => {
+                    const userId = auth.currentUser?.uid;
+                    if (!userId) return null;
+                    return CreativeStorageService.uploadReferenceMedia(
+                        userId,
+                        `data:${mask.mimeType};base64,${mask.data}`,
+                        'image',
+                        { scope: 'masks', sessionId }
+                    );
+                })).then((uris) => uris.filter((uri): uri is string => !!uri));
+                const sessionSnapshot = compileCreativeEditManifest({
+                    sessionId,
+                    projectId: currentProjectId,
+                    item,
+                    prompt: combinedPrompt,
+                    definitions: finalDefinitions,
+                    referenceImages,
+                    referenceRoles,
+                    referenceAssetUris,
+                    maskUris: maskAssetUris,
+                    generatedCandidates,
+                    settings: {
+                        modelTier: isHighFidelity || studioControls.model === 'pro' ? 'pro' : 'fast',
+                        resolution: studioControls.resolution,
+                        imageSize: normalizeCreativeImageSize(studioControls.imageSize),
+                        grounding: studioControls.useGrounding,
+                        aspectRatio: studioControls.aspectRatio,
+                        highFidelity: isHighFidelity,
+                    }
+                });
+
+                await persistSession(sessionSnapshot, {
+                    lastAction: 'magic_fill',
+                    status: 'active',
+                });
 
                 if (isHighFidelity) {
                     const activeKeys = Object.keys(finalDefinitions);
@@ -277,6 +458,7 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                     let useSemanticMap = false;
 
                     if (isMultiMask) {
+                        await reserveImageBudget('gemini-3-pro-image');
                         maskData = canvasOps.extractSemanticMask();
                         useSemanticMap = true;
                         const legend = activeKeys.map(colorId => {
@@ -296,7 +478,11 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                             prompt: promptPayload,
                             forceHighFidelity: true,
                             model: 'pro',
-                            useSemanticMap
+                            useSemanticMap,
+                            sessionId,
+                            routeId: editManifest.route.id,
+                            routeLabel: editManifest.route.label,
+                            routeReason: editManifest.route.reason,
                         });
 
                         if (result) {
@@ -306,16 +492,26 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                                 prompt: promptPayload,
                                 thoughtSignature: result.thoughtSignature
                             }]);
+                            await updateSession({
+                                lastAction: 'high_fidelity_edit',
+                                selectedCandidateUri: result.url,
+                                outputUri: result.url,
+                            });
                             toast.success(`High-Fidelity Edit Complete!`);
                         }
                     }
                 } else if (prepared.masks.length === 1) {
+                    await reserveImageBudget('gemini-3.1-flash-image');
                     const result = await Editing.editImage({
                         image: prepared.baseImage,
                         mask: prepared.masks[0],
                         prompt: combinedPrompt,
                         forceHighFidelity: false,
-                        model: 'flash'
+                        model: 'flash',
+                        sessionId,
+                        routeId: editManifest.route.id,
+                        routeLabel: editManifest.route.label,
+                        routeReason: editManifest.route.reason,
                     });
 
                     if (result) {
@@ -324,15 +520,25 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                             url: result.url,
                             prompt: combinedPrompt
                         }]);
+                        await updateSession({
+                            lastAction: 'speed_edit',
+                            selectedCandidateUri: result.url,
+                            outputUri: result.url,
+                        });
                         toast.success(`Speedy Edit Complete!`);
                     }
                 } else {
                     setProcessingStatus(isHighFidelity ? "Chaining Edits (Pro)..." : "Chaining Edits (Flash)...");
+                    await reserveImageBudget(isHighFidelity ? 'gemini-3-pro-image' : 'gemini-3.1-flash-image');
                     const results = await Editing.multiMaskEdit({
                         image: prepared.baseImage,
                         masks: prepared.masks,
                         variationCount: 1,
-                        model: isHighFidelity ? 'pro' : 'flash'
+                        model: isHighFidelity ? 'pro' : 'flash',
+                        sessionId,
+                        routeId: editManifest.route.id,
+                        routeLabel: editManifest.route.label,
+                        routeReason: editManifest.route.reason,
                     });
 
                     if (results.length > 0) {
@@ -341,6 +547,11 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                             url: r.url,
                             prompt: r.prompt
                         })));
+                        await updateSession({
+                            lastAction: 'multi_region_edit',
+                            selectedCandidateUri: results[0]?.url ?? null,
+                            outputUri: results[0]?.url ?? null,
+                        });
                         toast.success("Multi-Region Chain Complete!");
                     }
                 }
@@ -368,6 +579,11 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                         url: result.url,
                         prompt: magicFillPrompt
                     }]);
+                    await updateSession({
+                        lastAction: 'remix_edit',
+                        selectedCandidateUri: result.url,
+                        outputUri: result.url,
+                    });
                     toast.success("Remix Generated! Hint: Draw on the image for targeted edits.");
                 }
             }
@@ -397,6 +613,11 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
     const handleCandidateSelect = async (candidate: Candidate, index: number) => {
         await canvasOps.applyCandidateImage(candidate.url, isMagicFillMode, activeColor);
         setGeneratedCandidates([]);
+        await updateSession({
+            lastAction: 'candidate_selected',
+            selectedCandidateUri: candidate.url,
+            outputUri: candidate.url,
+        });
         toast.success(`Applied Option ${index + 1}`);
     };
 
@@ -412,6 +633,9 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                 toast.success('Canvas flattened! Edits are now permanent.');
                 // Auto-save the new state
                 await saveCanvas();
+                await updateSession({
+                    lastAction: 'flatten_canvas',
+                });
             } else {
                 toast.error('Failed to flatten canvas.');
             }
@@ -472,6 +696,12 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
             // 4. Persist canvas state (annotations / layers) for reload
             const json = await canvasOps.toJSON();
             if (json) await saveCanvasStateToStorage(item.id, JSON.stringify(json));
+            await persistSession(editManifest, {
+                lastAction: 'save_canvas',
+                status: 'completed',
+                selectedCandidateUri: generatedCandidates[0]?.url ?? null,
+                outputUri: item.url,
+            });
             toast.success('Saved to gallery & cloud!');
         } catch {
             toast.warning('Stored to disk only.');
@@ -592,6 +822,7 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
         activeColor,
         definitions,
         referenceImages,
+        referenceRoles,
         generatedCandidates,
         endFrameItem,
         magicFillPrompt,
@@ -612,6 +843,7 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
         toggleMagicFill,
         handleUpdateDefinition,
         handleUpdateReferenceImage,
+        handleUpdateReferenceRole,
         handleMagicFill,
         handleDetectObjects,
         handleClearDetections,
@@ -631,5 +863,8 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
         handleAddRectangle,
         handleAddCircle,
         handleAddText,
+        sessionId,
+        editManifest,
+        editSummary,
     };
 }

@@ -310,22 +310,27 @@ export function useDirectGeneration() {
             throw new Error('Failed to obtain auth token. Please re-authenticate.');
         }
 
-        let referenceUri;
-        const ingredientsList = videoInputs?.ingredients || [];
-        const firstIngredient = ingredientsList[0];
-        if (firstIngredient && firstIngredient.url) {
-            referenceUri = await CreativeStorageService.uploadReferenceMedia(userId, firstIngredient.url, 'image');
+        let referenceUri: string | undefined;
+        let referenceUris: string[] | undefined;
+        const ingredientsList = (videoInputs?.ingredients || []).filter(ingredient => !!ingredient?.url);
+        if (ingredientsList.length > 0) {
+            referenceUris = (await Promise.all(
+                ingredientsList.slice(0, 14).map(ingredient => CreativeStorageService.uploadReferenceMedia(userId, ingredient.url, 'image', { scope: 'objects' }))
+            )).filter((uri): uri is string => !!uri);
+            referenceUri = referenceUris[0];
         }
 
         const generateImageV3 = httpsCallable(functions, 'generateImageV3');
         const res = await generateImageV3(compactCallablePayload({
             prompt: finalPrompt,
+            sessionId: currentProjectId ? `creative_${currentProjectId}` : undefined,
             aspectRatio: studioControls.aspectRatio,
             model: studioControls.model,
             imageSize: studioControls.imageSize,
             thinkingLevel: studioControls.thinkingLevel,
             useGoogleSearch: studioControls.useGrounding,
-            referenceUri
+            referenceUri,
+            referenceUris
         }));
         
         const data = res.data as { jobId: string };
@@ -388,6 +393,20 @@ export function useDirectGeneration() {
         const parsedSeed = studioControls.seed ? Number(studioControls.seed) : undefined;
         const validatedAR = VideoAspectRatioSchema.safeParse(studioControls.aspectRatio);
         const effectiveAspectRatio = validatedAR.success ? validatedAR.data : '16:9';
+        const directorFps = studioControls.fps || 24;
+        const directorDuration = Math.min(8, Math.max(4, studioControls.duration || Math.ceil(sequenceTotalSeconds) || 6));
+        const directorSettings = {
+            fps: directorFps,
+            durationSeconds: directorDuration,
+            totalFrames: Math.round(directorFps * directorDuration),
+            aspectRatio: effectiveAspectRatio,
+            resolution: effectiveResolution,
+            seed: Number.isSafeInteger(parsedSeed) ? parsedSeed : undefined,
+            firstFrameUri: firstFrame,
+            lastFrameUri: lastFrame,
+            cameraMovement: studioControls.cameraMovement,
+            motionStrength: studioControls.motionStrength,
+        };
 
         const results = await VideoGeneration.generateVideo({
             prompt: sequencePrompt,
@@ -397,7 +416,8 @@ export function useDirectGeneration() {
             aspectRatio: effectiveAspectRatio,
             model: studioControls.model,
             resolution: effectiveResolution,
-            duration: Math.min(8, Math.max(4, studioControls.duration || Math.ceil(sequenceTotalSeconds) || 6)),
+            duration: directorDuration,
+            directorSettings,
             personGeneration: studioControls.personGeneration,
             negativePrompt: studioControls.negativePrompt || undefined,
             seed: Number.isSafeInteger(parsedSeed) ? parsedSeed : undefined,

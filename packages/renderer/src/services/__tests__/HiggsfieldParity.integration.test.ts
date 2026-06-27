@@ -76,7 +76,8 @@ describe('Higgsfield Parity Integration Tests', () => {
 
         expect(result?.url).toContain('data:image/png;base64,');
         expect(mockHttpsCallable).toHaveBeenCalledWith(expect.objectContaining({
-            mask: { mimeType: 'image/png', data: 'fakeMaskBase64' }
+            imageUri: 'https://fake-storage-url/image.png',
+            maskUri: 'https://fake-storage-url/image.png'
         }));
     });
 
@@ -94,8 +95,9 @@ describe('Higgsfield Parity Integration Tests', () => {
         });
 
         expect(mockHttpsCallable).toHaveBeenCalledWith(expect.objectContaining({
-            referenceImage: mockLikeness,
-            mask: { mimeType: 'image/png', data: 'faceMaskBase64' },
+            imageUri: 'https://fake-storage-url/image.png',
+            referenceImageUri: 'https://fake-storage-url/image.png',
+            maskUri: 'https://fake-storage-url/image.png',
             prompt: expect.stringContaining('Seamlessly blend')
         }));
     });
@@ -147,7 +149,8 @@ describe('Higgsfield Parity Integration Tests', () => {
         });
 
         expect(mockHttpsCallable).toHaveBeenCalledWith(expect.objectContaining({
-            referenceImage: mockLogo,
+            imageUri: 'https://fake-storage-url/image.png',
+            referenceImageUri: 'https://fake-storage-url/image.png',
             prompt: 'A black t-shirt with this logo on the front'
         }));
     });
@@ -164,7 +167,8 @@ describe('Higgsfield Parity Integration Tests', () => {
         });
 
         expect(mockHttpsCallable).toHaveBeenCalledWith(expect.objectContaining({
-            mask: mockMask,
+            imageUri: 'https://fake-storage-url/image.png',
+            maskUri: 'https://fake-storage-url/image.png',
             prompt: 'leather jacket, cyberpunk style'
         }));
     });

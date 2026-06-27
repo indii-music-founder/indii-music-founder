@@ -194,6 +194,9 @@ export default defineConfig({
                     if (pkg === 'firebase' || pkg.startsWith('@firebase/')) {
                         return 'vendor-firebase';
                     }
+                    if (pkg === 'video.js' || pkg.startsWith('@videojs/') || pkg.startsWith('videojs-')) {
+                        return 'vendor-video';
+                    }
                     if (pkg === 'lucide-react') {
                         return 'vendor-lucide';
                     }

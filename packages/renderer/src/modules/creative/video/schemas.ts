@@ -31,6 +31,19 @@ export const ReferenceImageSchema = z.object({
     referenceType: z.literal('asset').optional().default('asset')
 });
 
+export const DirectorSettingsSchema = z.object({
+    fps: z.number().int().min(1).max(60),
+    durationSeconds: z.number().positive(),
+    totalFrames: z.number().int().nonnegative(),
+    aspectRatio: VideoAspectRatioSchema.optional(),
+    resolution: VideoResolutionSchema.optional(),
+    seed: z.union([z.number().int(), z.string().regex(/^\d+$/)]).optional(),
+    firstFrameUri: z.string().optional(),
+    lastFrameUri: z.string().optional(),
+    cameraMovement: z.string().optional(),
+    motionStrength: z.number().min(0).max(1).optional(),
+});
+
 export const VideoGenerationOptionsSchema = z.object({
     prompt: z.string().min(1, "Prompt is required"),
     aspectRatio: VideoAspectRatioSchema.optional(),
@@ -55,6 +68,7 @@ export const VideoGenerationOptionsSchema = z.object({
     cameraMovement: z.string().optional(),
     motionStrength: z.number().min(0).max(1).optional(),
     shotList: z.array(z.unknown()).optional(), // Can refine later
+    directorSettings: DirectorSettingsSchema.optional(),
     // NOTE: Audio is always-on for Veo 3.1 — generateAudio is not a valid API parameter
     // Retained in schema for UI state only, never sent to API
     inputAudio: z.string().optional(), // For custom soundtracks (URL or Base64)

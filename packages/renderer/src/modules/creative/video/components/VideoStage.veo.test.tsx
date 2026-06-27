@@ -12,6 +12,16 @@ vi.mock('motion/react', () => ({
     AnimatePresence: ({ children }: any) => <>{children}</>,
 }));
 
+vi.mock('./VideoJsPlayer', () => ({
+    VideoJsPlayer: React.forwardRef(({ videoUrl, onError }: { videoUrl: string; onError?: (message: string) => void }, _ref) => (
+        <video
+            data-testid="video-player"
+            src={videoUrl}
+            onError={() => onError?.('Playback Error: Video source unavailable or corrupted.')}
+        />
+    )),
+}));
+
 describe('🎥 Lens: Veo 3.1 & Gemini 3 - Video Stage Integrity', () => {
     const mockSetVideoInputs = vi.fn();
 

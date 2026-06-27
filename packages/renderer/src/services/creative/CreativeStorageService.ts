@@ -1,6 +1,8 @@
 import { storage } from '@/services/firebase';
 import { ref, uploadBytes, uploadString } from 'firebase/storage';
 
+export type CreativeVaultScope = 'assets' | 'objects' | 'characters' | 'style' | 'masks' | 'outputs';
+
 export class CreativeStorageService {
     /**
      * Helper to downscale and compress reference images using a canvas.
@@ -106,7 +108,12 @@ export class CreativeStorageService {
     static async uploadReferenceMedia(
         userId: string,
         media: File | Blob | string,
-        mediaType: 'image' | 'video' | 'audio'
+        mediaType: 'image' | 'video' | 'audio',
+        options?: {
+            scope?: CreativeVaultScope;
+            sessionId?: string;
+            projectId?: string;
+        }
     ): Promise<string> {
         if (!storage) {
             throw new Error('Firebase Storage is not initialized.');
@@ -128,7 +135,17 @@ export class CreativeStorageService {
         }
 
         const extension = mediaType === 'video' ? 'mp4' : mediaType === 'audio' ? 'wav' : 'jpg';
-        const filename = `creative/${userId}/${Date.now()}_${crypto.randomUUID()}.${extension}`;
+        const scope = options?.scope || 'assets';
+        const basePath = options?.projectId
+            ? mediaType === 'video'
+                ? `creative/${userId}/projects/${options.projectId}/video/${scope}`
+                : `creative/${userId}/projects/${options.projectId}/${scope}`
+            : options?.sessionId
+                ? `creative/${userId}/video/tmp/${options.sessionId}/${scope}`
+                : scope === 'assets'
+                    ? `creative/${userId}`
+                    : `users/${userId}/vault/${scope}`;
+        const filename = `${basePath}/${Date.now()}_${crypto.randomUUID()}.${extension}`;
         const storageRef = ref(storage, filename);
 
         if (typeof mediaToUpload === 'string') {

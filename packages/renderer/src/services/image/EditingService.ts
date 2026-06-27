@@ -3,6 +3,7 @@ import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { InputSanitizer } from '../intelligence/utils/InputSanitizer';
 import { logger } from '@/utils/logger';
 import { ContentPart, Part } from '@/shared/types/ai.dto';
+import { CreativeStorageService } from '@/services/creative/CreativeStorageService';
 // Data URI regex - strict pattern for image MIME types
 const DATA_URI_REGEX = /^data:(image\/[a-z0-9.+-]+);base64,([A-Za-z0-9+/=]+)$/i;
 
@@ -55,6 +56,10 @@ export class EditingService {
         model?: 'pro' | 'flash' | string;
         thoughtSignature?: string;
         useSemanticMap?: boolean;
+        sessionId?: string;
+        routeId?: string;
+        routeLabel?: string;
+        routeReason?: string;
     }): Promise<{ id: string; url: string; prompt: string; thoughtSignature?: string } | null> {
         logger.info('[EditingService] editImage called — using secured backend path', {
             hasMask: !!options.mask,
@@ -64,19 +69,52 @@ export class EditingService {
         });
 
         return this.withRetry(async () => {
-            const { functions } = await import('@/services/firebase');
+            const firebaseModule = await import('@/services/firebase');
+            const { functions } = firebaseModule;
             const { httpsCallable } = await import('firebase/functions');
             const editImageFn = httpsCallable(functions, 'editImage');
 
+            const userId = firebaseModule.auth.currentUser?.uid;
+            if (!userId) {
+                throw new Error('User must be authenticated to edit images.');
+            }
+
+            const imageUri = await CreativeStorageService.uploadReferenceMedia(
+                userId,
+                `data:${options.image.mimeType};base64,${options.image.data}`,
+                'image',
+                { scope: 'objects' }
+            );
+            const maskUri = options.mask
+                ? await CreativeStorageService.uploadReferenceMedia(
+                    userId,
+                    `data:${options.mask.mimeType};base64,${options.mask.data}`,
+                    'image',
+                    { scope: 'masks' }
+                )
+                : undefined;
+            const referenceImageUri = options.referenceImage
+                ? await CreativeStorageService.uploadReferenceMedia(
+                    userId,
+                    `data:${options.referenceImage.mimeType};base64,${options.referenceImage.data}`,
+                    'image',
+                    { scope: 'objects' }
+                )
+                : undefined;
+
             const payload = {
-                image: options.image,
-                mask: options.mask,
-                referenceImage: options.referenceImage,
+                imageUri,
+                maskUri,
+                referenceImageUri,
                 prompt: options.prompt,
                 forceHighFidelity: options.forceHighFidelity || !!options.decoratedImage,
                 model: options.model,
                 thoughtSignature: options.thoughtSignature,
                 useSemanticMap: options.useSemanticMap,
+                sessionId: options.sessionId,
+                routeId: options.routeId,
+                routeLabel: options.routeLabel,
+                routeReason: options.routeReason,
             };
 
             const result = await editImageFn(payload);
@@ -93,6 +131,10 @@ export class EditingService {
         masks: { mimeType: string; data: string; prompt: string; colorId: string; referenceImage?: { mimeType: string; data: string } }[];
         variationCount?: number;
         model?: string;
+        sessionId?: string;
+        routeId?: string;
+        routeLabel?: string;
+        routeReason?: string;
     }): Promise<{ id: string; url: string; prompt: string }[]> {
         const results: { id: string; url: string; prompt: string }[] = [];
         const count = options.variationCount || 4;
@@ -116,6 +158,10 @@ export class EditingService {
                     prompt: variedPrompt,
                     model: options.model,
                     thoughtSignature: currentThoughtSignature, // Circulate through chain
+                    sessionId: options.sessionId,
+                    routeId: options.routeId,
+                    routeLabel: options.routeLabel,
+                    routeReason: options.routeReason,
                 });
 
                 if (result) {

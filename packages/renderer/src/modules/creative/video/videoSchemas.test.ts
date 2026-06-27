@@ -3,7 +3,8 @@ import {
     VideoJobStatusSchema,
     VideoResolutionSchema,
     VideoAspectRatioSchema,
-    VideoGenerationOptionsSchema
+    VideoGenerationOptionsSchema,
+    DirectorSettingsSchema
 } from './schemas';
 
 describe('Video Schemas', () => {
@@ -58,6 +59,20 @@ describe('Video Schemas', () => {
             // The schema is z.array(z.string()), so it accepts any string, not just URLs.
             // We test invalid type instead.
             expect(() => VideoGenerationOptionsSchema.parse({ ...base, ingredients: [123] })).toThrow();
+        });
+
+        it('should validate director settings frame math', () => {
+            const directorSettings = DirectorSettingsSchema.parse({
+                fps: 24,
+                durationSeconds: 6,
+                totalFrames: 144,
+                aspectRatio: '16:9',
+                resolution: '1080p',
+                seed: '42'
+            });
+
+            expect(directorSettings.totalFrames).toBe(144);
+            expect(directorSettings.fps).toBe(24);
         });
     });
 });
