@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-27 12:35 EDT
+**Updated:** 2026-06-27 12:36 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+75ff38ffc chore: session checkpoint [12:35]
 f5857a624 chore: session checkpoint [12:35]
 0dd542f33 chore: session checkpoint [12:30]
 0c53ad7b9 chore: session checkpoint [12:29]
@@ -13,7 +14,6 @@ d66fabcf8 fix: add .js extensions to ESM imports in shared package
 94375be75 chore: session checkpoint [12:16]
 b55800e16 chore: session checkpoint [12:11]
 d11b911d9 fix: add @indii/shared path mapping to tsconfig
-7833dabc3 chore: session checkpoint [12:08]
 ```
 
 ## Working State
