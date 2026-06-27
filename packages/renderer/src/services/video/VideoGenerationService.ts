@@ -512,7 +512,7 @@ export class VideoGenerationService {
                         const playableUrl = videoUrl ? await resolveStorageUrl(videoUrl) : videoUrl;
                         // Skip integrity check for blob URLs — they are in-memory and always valid.
                         // HEAD requests are not supported on the blob: protocol.
-                        if (playableUrl && typeof playableUrl === 'string' && !playableUrl.startsWith('blob:') && !playableUrl.startsWith('gs://')) {
+                        if (playableUrl && typeof playableUrl === 'string' && !playableUrl.startsWith('blob:') && !playableUrl.startsWith('gs://') && (playableUrl.startsWith('http://') || playableUrl.startsWith('https://'))) {
                             try {
                                 // HEAD request to verify existence without downloading payload
                                 const response = await fetch(playableUrl, { method: 'HEAD' });
