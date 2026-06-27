@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-27 12:08 EDT
+**Updated:** 2026-06-27 12:11 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+d11b911d9 fix: add @indii/shared path mapping to tsconfig
+7833dabc3 chore: session checkpoint [12:08]
 90ce89b1d chore: session checkpoint [12:05]
 a57fe0d1e chore: session checkpoint [12:04]
 ea1fe786f chore: session checkpoint [12:04]
@@ -12,8 +14,6 @@ c5d67ae51 chore: session checkpoint [12:03]
 0b22a7179 chore: session checkpoint [12:03]
 9e9c097ef chore: session checkpoint [11:57]
 861866c14 chore: session checkpoint [11:57]
-7bdfc56a9 chore: session checkpoint [11:52]
-c15b20ca0 fix: revert to src/index.ts for monorepo compatibility
 ```
 
 ## Working State
