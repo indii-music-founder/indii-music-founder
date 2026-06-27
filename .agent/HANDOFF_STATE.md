@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-27 09:33 EDT
+**Updated:** 2026-06-27 09:36 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+f97db90c0 fix: remove .js extensions from all shared package exports
+b8d58ee06 chore: session checkpoint [09:33]
 c78641964 chore: session checkpoint [09:32]
 11c01fb6b chore: session checkpoint [09:31]
 5ec422bee chore: session checkpoint [09:31]
@@ -12,8 +14,6 @@ b7e84b598 chore: session checkpoint [09:30]
 bd855fd87 chore: session checkpoint [09:20]
 cca4b6f2d fix: correct AuthService import path from .js to .ts
 a132b251c chore: session checkpoint [09:16]
-dd1efe63d chore: session checkpoint [09:14]
-bff52455f chore: session checkpoint [09:08]
 ```
 
 ## Working State
