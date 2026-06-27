@@ -82,6 +82,14 @@ describe('🎥 Lens: Veo 3.1 & Gemini 3 Integration Verification', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         vi.useFakeTimers();
+        // Mock global fetch for storage.googleapis.com URLs
+        global.fetch = vi.fn((url: string | URL) => {
+            const urlStr = typeof url === 'string' ? url : url.toString();
+            if (urlStr.includes('storage.googleapis.com')) {
+                return Promise.resolve(new Response(null, { status: 200 }));
+            }
+            return Promise.reject(new Error('Not mocked'));
+        }) as any;
     });
 
     afterEach(() => {
