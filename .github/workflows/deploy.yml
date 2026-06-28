@@ -182,7 +182,10 @@ jobs:
         run: npm run typecheck
 
       - name: Build shared package
-        run: npm run build -w packages/shared
+        run: |
+          cd packages/shared
+          npx tsc
+          cd ../.. && ls -la packages/shared/dist/
 
       - name: Build landing page
         run: |
