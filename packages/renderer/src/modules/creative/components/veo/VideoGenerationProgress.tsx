@@ -14,12 +14,12 @@ export interface VideoGenerationJob {
 }
 
 interface VideoGenerationProgressProps {
-    key?: React.Key;
     job: VideoGenerationJob;
     onCancel?: (jobId: string) => void;
 }
 
-export function VideoGenerationProgress({ job, onCancel }: VideoGenerationProgressProps) {
+export const VideoGenerationProgress = React.forwardRef<HTMLDivElement, VideoGenerationProgressProps>(
+function VideoGenerationProgress({ job, onCancel }, ref) {
     const isError = job.status === 'failed';
     const isCompleted = job.status === 'completed';
     const isProcessing = job.status === 'processing' || job.status === 'stitching';
@@ -27,6 +27,7 @@ export function VideoGenerationProgress({ job, onCancel }: VideoGenerationProgre
 
     return (
         <motion.div
+            ref={ref}
             layout
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -125,4 +126,4 @@ export function VideoGenerationProgress({ job, onCancel }: VideoGenerationProgre
             </div>
         </motion.div>
     );
-}
+});
