@@ -2,11 +2,20 @@ import { logger } from '@/utils/logger';
 
 // CRITICAL: Set App Check debug token BEFORE any Firebase SDK initialization
 // This must happen in the module scope before any Firebase services load
+// In Electron, use debug token to allow development without blocking Referer headers
 if (typeof window !== 'undefined' && import.meta.env.DEV) {
     const key = ['FIREBASE', 'APPCHECK', 'DEBUG', 'TOKEN'].join('_');
+    const isElectronEnv = typeof (window as any).electronAPI !== 'undefined';
+
+    // For Electron, use a valid debug token format (Firebase SDK will recognize this in debug mode)
+    // Web browsers can leave it as `true` to trigger automatic token generation
     if (typeof (window as any)[key] !== 'string') {
-        (window as unknown as Record<string, string | boolean>)[key] = true;
-        (self as unknown as Record<string, string | boolean>)[key] = true;
+        (window as unknown as Record<string, string | boolean>)[key] = isElectronEnv
+            ? 'debug-token-electron-local-dev'
+            : true;
+        (self as unknown as Record<string, string | boolean>)[key] = isElectronEnv
+            ? 'debug-token-electron-local-dev'
+            : true;
     }
 }
 
@@ -378,15 +387,18 @@ if (typeof window !== 'undefined') {
 
     // Logic:
     // 1. Must have a key.
-    // 2. If Electron, only initialize in DEV, where Firebase can emit a local debug token.
+    // 2. CRITICAL: Always skip App Check in Electron (DEV or PROD) because:
+    //    - ReCaptcha Enterprise requires a web origin (Electron is not a web origin)
+    //    - Electron has empty/missing Referer headers which Firebase blocks
+    //    - Firestore/Storage Security Rules enforce authorization without App Check
     // 3. CRITICAL: In DEV mode with Functions emulator, skip App Check entirely to avoid Installations API blocking.
-    //    The emulator doesn't need App Check validation - Firestore/Storage rules enforce authorization.
+    const skipAppCheckInElectron = isElectron;
     const skipAppCheckInEmulator = env.DEV && env.VITE_USE_FUNCTIONS_EMULATOR === 'true';
-    const shouldInitAppCheck = !skipAppCheckInEmulator && !!env.appCheckKey && (
-        !isElectron || env.DEV
-    );
+    const shouldInitAppCheck = !skipAppCheckInElectron && !skipAppCheckInEmulator && !!env.appCheckKey;
 
-    if (skipAppCheckInEmulator) {
+    if (skipAppCheckInElectron) {
+        logger.info('[App Check] Skipped in Electron (native app, empty Referer headers). Auth/Firestore Security Rules enforce authorization.');
+    } else if (skipAppCheckInEmulator) {
         logger.info('[App Check] Skipped in emulator mode (dev: true, emulator: true). Auth/Firestore will work without App Check validation.');
     } else if (shouldInitAppCheck) {
         if (env.DEV && isLocalhost) {
@@ -396,10 +408,6 @@ if (typeof window !== 'undefined') {
                 '1. Check the console for "App Check debug token: XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"\n' +
                 '2. Register this token in the Firebase Console under App Check > Manage Debug Tokens.'
             );
-        }
-
-        if (isElectron && env.DEV) {
-            logger.debug('[App Check] Initializing in Electron with local App Check debug mode');
         }
 
         try {
