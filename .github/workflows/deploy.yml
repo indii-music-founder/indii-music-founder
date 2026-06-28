@@ -182,7 +182,8 @@ jobs:
         run: npm run typecheck
 
       - name: Build shared package
-        run: npx tsc --project packages/shared/tsconfig.json
+        working-directory: packages/shared
+        run: npx tsc
 
       - name: Build landing page
         run: |
