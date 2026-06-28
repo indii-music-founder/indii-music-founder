@@ -181,10 +181,6 @@ jobs:
       - name: TypeScript type check (Item 343)
         run: npm run typecheck
 
-      - name: Build shared package
-        working-directory: packages/shared
-        run: npx tsc
-
       - name: Build landing page
         run: |
           cd packages/landing
