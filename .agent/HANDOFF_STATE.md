@@ -1,19 +1,19 @@
 # Handoff State
-**Updated:** 2026-06-28 12:31 EDT
+**Updated:** 2026-06-28 17:43 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+4dbc08833 fix(creative): stabilize image edits and video jobs
+77807e5ee fix(ci): handle already-active version error in staging preview channel deploy
+831511012 test(ledger): log ISSUE-CI pipeline failures
+95c59496b chore(ledger): remove transient billing-related CI issues
+253c2f999 chore: session checkpoint [12:31]
 f76643a45 docs: resolve ISSUE-498 CI deploy auth status in ledger
 4a9572e3a test(ledger): log ISSUE-CI pipeline failures
 5feeaf884 fix: route all Veo/Gemini preview models through global endpoint, replace banned gemini-2.5-flash
 726e622fd docs: add Vertex AI endpoint reference for all agents
 f8c0c3bc9 fix: disable noUnusedLocals in firebase tsconfig to unblock Cloud Functions build
-a52e131af chore: complete Node 24 monorepo upgrade and apply workflow token changes
-fbbe5c019 chore: session checkpoint [10:45]
-2d300bcbb Merge branch 'fix/electron-firebase-storage-urls'
-3d0805ee8 Merge remote-tracking branch 'origin/main'
-0fe506bb2 chore: normalize package lock metadata
 ```
 
 ## Working State
