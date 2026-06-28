@@ -143,6 +143,7 @@ export { analyticsExchangeToken, analyticsRefreshToken, analyticsRevokeToken } f
 
 // Storage Maintenance (Scheduled — orphan cleanup, quota tracking, archival flagging, temp cleanup)
 export { cleanupExpiredVideoTemps, cleanupOrphanedVideos, trackStorageQuotas, flagVideosForArchival } from './devops/storageMaintenance';
+export { fetchStorageAssetForCanvas } from './functions/storage/fetchStorageAssetForCanvas';
 
 // Remote Relay — Server-Side Agent Processing (replaces desktop-browser-dependent relay)
 export { processRelayCommand } from './relay/relayCommandProcessor';

@@ -4,6 +4,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import DirectGenerationTab from '../DirectGenerationTab';
 import { VideoGeneration } from '@/services/video/VideoGenerationService';
 import { useToast } from '@/core/context/ToastContext';
+import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
 
 // Mock dependencies
 const mockToastObject = {
@@ -78,6 +79,10 @@ vi.mock('@/services/video/VideoGenerationService', () => ({
     }
 }));
 
+vi.mock('@/services/storage/resolveStorageUrl', () => ({
+    resolveStorageUrl: vi.fn((uri: string) => Promise.resolve(uri)),
+}));
+
 import { create } from 'zustand';
 
 const useMockStore = create<any>((set) => ({
@@ -121,6 +126,7 @@ describe('DirectGenerationTab', () => {
     beforeEach(() => {
         vi.useRealTimers();
         vi.clearAllMocks();
+        vi.mocked(resolveStorageUrl).mockImplementation((uri: string) => Promise.resolve(uri));
         useMockStore.setState({
             studioControls: { model: 'fast', aspectRatio: '16:9', resolution: '1080p', duration: 6, personGeneration: 'allow_adult', negativePrompt: '', seed: '' },
             creativePrompt: '',
@@ -181,6 +187,41 @@ describe('DirectGenerationTab', () => {
         // Results grid should show the image
         const img = document.querySelector('img');
         expect(img).toBeTruthy();
+    });
+
+    it('opens immediately when image generation returns a completed resultUri', async () => {
+        mockHttpsCallable.mockResolvedValueOnce({
+            data: {
+                jobId: 'completed-image-job',
+                resultUri: 'gs://mock-bucket/creative/test-user/completed.png',
+            }
+        });
+        vi.mocked(resolveStorageUrl).mockResolvedValueOnce('https://cdn.example.com/completed.png');
+
+        render(<DirectGenerationTab />);
+        fireEvent.change(screen.getByTestId('direct-prompt-input'), {
+            target: { value: 'A finished image' }
+        });
+
+        await act(async () => {
+            fireEvent.click(screen.getByTestId('direct-generate-btn'));
+        });
+
+        await waitFor(() => {
+            expect(useMockStore.getState().setSelectedItem).toHaveBeenCalledWith(expect.objectContaining({
+                id: 'completed-image-job',
+                url: 'https://cdn.example.com/completed.png',
+                type: 'image',
+                prompt: 'A finished image',
+            }));
+            expect(useMockStore.getState().setViewMode).toHaveBeenCalledWith('editor');
+        });
+        expect(useMockStore.getState().generatedHistory).toEqual([
+            expect.objectContaining({
+                id: 'completed-image-job',
+                url: 'https://cdn.example.com/completed.png',
+            })
+        ]);
     });
 
     it('handles video generation successfully', async () => {
