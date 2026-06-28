@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-27 23:56 EDT
+**Updated:** 2026-06-28 00:07 EDT
 **Branch:** `fix/electron-firebase-storage-urls`
 
 ## Recent Commits
 ```
+c9e769956 fix: build shared package in CI before main builds
+4749d769f chore: session checkpoint [23:56]
 69aa81087 chore: session checkpoint [23:55]
 b0eafc947 chore: session checkpoint [23:36]
 b44c8be09 chore: session checkpoint [23:20]
@@ -12,8 +14,6 @@ b44c8be09 chore: session checkpoint [23:20]
 9e49e7fac chore: session checkpoint [23:14]
 884090ee6 fix: set App Check debug token for Electron development
 dd00de768 chore: session checkpoint [23:07]
-6719a435e fix: disable App Check in Electron to prevent empty Referer header blocking
-f1a2c5e82 chore: session checkpoint [23:04]
 ```
 
 ## Working State
