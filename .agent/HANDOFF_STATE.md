@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-28 07:58 EDT
+**Updated:** 2026-06-28 08:00 EDT
 **Branch:** `fix/electron-firebase-storage-urls`
 
 ## Recent Commits
 ```
+19770da76 fix: update App Check test to reflect Electron bypass behavior
+3ce59cf57 chore: session checkpoint [07:58]
 47464825c chore: session checkpoint [01:30]
 f9cfe509b chore: session checkpoint [01:20]
 9109ab6a4 chore: remove shared package build step from CI
@@ -12,8 +14,6 @@ f9cfe509b chore: session checkpoint [01:20]
 3a78bae00 chore: session checkpoint [01:04]
 0146f81a4 fix: use working-directory for shared package build in CI
 b6b486f27 chore: session checkpoint [00:56]
-d4f0435e3 fix: build shared package with explicit tsconfig path
-ff4f404cc chore: session checkpoint [00:47]
 ```
 
 ## Working State
