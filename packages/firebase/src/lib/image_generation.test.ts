@@ -367,4 +367,23 @@ describe('editImageFn', () => {
         const context = {};
         await expect(wrapped(data, context)).rejects.toThrow(/authenticated/);
     });
+
+    it('should surface a friendly error when Gemini returns no editable image', async () => {
+        mockGenerateContent.mockResolvedValueOnce({
+            candidates: [{
+                content: {
+                    parts: [{ text: 'no image available' }]
+                }
+            }]
+        });
+
+        const data: any = {
+            image: 'source-base64',
+            imageMimeType: 'image/png',
+            prompt: 'remove the background',
+        };
+
+        const context = { auth: { uid: 'test-user-id' } };
+        await expect(wrapped(data, context)).rejects.toThrow(/did not return an editable image/i);
+    });
 });

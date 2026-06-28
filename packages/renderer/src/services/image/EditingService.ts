@@ -4,6 +4,7 @@ import { InputSanitizer } from '../intelligence/utils/InputSanitizer';
 import { logger } from '@/utils/logger';
 import { ContentPart, Part } from '@/shared/types/ai.dto';
 import { CreativeStorageService } from '@/services/creative/CreativeStorageService';
+import { normalizeEditImageResult } from './editResponse';
 // Data URI regex - strict pattern for image MIME types
 const DATA_URI_REGEX = /^data:(image\/[a-z0-9.+-]+);base64,([A-Za-z0-9+/=]+)$/i;
 
@@ -118,7 +119,7 @@ export class EditingService {
             };
 
             const result = await editImageFn(payload);
-            return result.data as { id: string; url: string; prompt: string; thoughtSignature?: string } | null;
+            return normalizeEditImageResult(result.data, options.prompt);
         });
     }
 

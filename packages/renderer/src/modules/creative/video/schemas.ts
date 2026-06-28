@@ -2,7 +2,7 @@ import { z } from "zod";
 import { UserProfile } from "@/types/User";
 
 export const VideoJobStatusSchema = z.enum([
-    'idle', 'queued', 'processing', 'completed', 'failed', 'stitching'
+    'idle', 'queued', 'processing', 'completed', 'failed', 'stitching', 'cancelled'
 ]);
 
 export const SafetyRatingSchema = z.object({
@@ -84,9 +84,9 @@ export const VideoGenerationOptionsSchema = z.object({
     orgId: z.string().optional(),
     userProfile: z.custom<UserProfile>().optional(), // Typed UserProfile for service compatibility
     jobId: z.string().optional(),
-    useGrounding: z.boolean().optional()
-    ,
-    skipCostCheck: z.boolean().optional()
+    useGrounding: z.boolean().optional(),
+    skipCostCheck: z.boolean().optional(),
+    costReservationId: z.string().optional(),
 });
 
 export type VideoGenerationOptions = z.infer<typeof VideoGenerationOptionsSchema>;
