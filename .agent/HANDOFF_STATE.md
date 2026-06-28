@@ -1,25 +1,24 @@
 # Handoff State
-**Updated:** 2026-06-27 22:50 EDT
+**Updated:** 2026-06-27 22:57 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+27ea60f62 chore: update OPEN_ISSUES status for merged creative/video backlog (ISSUE-500-522)
+58e184306 fix: resolve storage URLs in creative gallery for Electron compatibility
+42d7fdaa8 fix: resolve storage URL in canvas init fallback path
+3b29ab514 chore: session checkpoint [22:50]
 737c9238f chore: session checkpoint [22:42]
 5481e8d00 chore: session checkpoint [22:41]
 724a7a1bf chore: session checkpoint [22:39]
 8f923e67f chore: session checkpoint [22:38]
 936c04955 chore: session checkpoint [22:38]
 80abd9e6b chore: session checkpoint [22:38]
-b0c31513f chore: session checkpoint [22:37]
-a18373369 chore: session checkpoint [22:37]
-7593a86b0 chore: session checkpoint [22:37]
-e9c18781e chore: session checkpoint [22:36]
 ```
 
 ## Working State
 ```
-MM .agent/test_ledger/OPEN_ISSUES.md
-M  packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts
+clean working tree
 ```
 
 ## Decisions
