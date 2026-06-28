@@ -182,7 +182,7 @@ jobs:
         run: npm run typecheck
 
       - name: Build shared package
-        run: npx tsc -b packages/shared --verbose
+        run: npx tsc --project packages/shared/tsconfig.json
 
       - name: Build landing page
         run: |
