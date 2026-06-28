@@ -1,9 +1,14 @@
 # Handoff State
+**Updated:** 2026-06-28 08:08 EDT
 **Updated:** 2026-06-28 01:30 EDT
 **Branch:** `fix/electron-firebase-storage-urls`
 
 ## Recent Commits
 ```
+e2542fa2f chore: session checkpoint [08:00]
+19770da76 fix: update App Check test to reflect Electron bypass behavior
+3ce59cf57 chore: session checkpoint [07:58]
+47464825c chore: session checkpoint [01:30]
 f9cfe509b chore: session checkpoint [01:20]
 9109ab6a4 chore: remove shared package build step from CI
 1aae12b2b chore: commit @indii/shared dist folder for CI build
