@@ -1,0 +1,10 @@
+import { z } from 'zod';
+export const CommonEnvSchema = z.object({
+    apiKey: z.string().optional().default(''),
+    projectId: z.string().min(1, "Project ID is required"),
+    location: z.string().default('us-central1'),
+    functionsRegion: z.string().default('us-central1'),
+    useVertex: z.boolean().default(false),
+    googleMapsApiKey: z.string().optional(),
+    firebaseApiKey: z.string().optional(),
+});
