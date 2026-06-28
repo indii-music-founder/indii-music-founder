@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-27 19:56 EDT
+**Updated:** 2026-06-27 20:03 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+3990d41b5 fix: remove rootDir completely from Firebase tsconfig
+cae381387 chore: session checkpoint [19:56]
 3c61405d6 chore: session checkpoint [19:55]
 501a62212 chore: session checkpoint [19:54]
 29e94e678 chore: session checkpoint [19:54]
@@ -12,13 +14,34 @@
 09f96ed6e chore: session checkpoint [19:53]
 bbe1b9ed0 chore: session checkpoint [19:52]
 60eca7f77 chore: session checkpoint [19:52]
-aafd1f962 chore: session checkpoint [19:52]
-990bd0afc chore: session checkpoint [19:52]
 ```
 
 ## Working State
 ```
-clean working tree
+D  packages/shared/src/index.js
+D  packages/shared/src/index.js.map
+D  packages/shared/src/ipc/electron-api.types.js
+D  packages/shared/src/ipc/electron-api.types.js.map
+D  packages/shared/src/schemas/agentLoopState.js
+D  packages/shared/src/schemas/agentLoopState.js.map
+D  packages/shared/src/schemas/api.js
+D  packages/shared/src/schemas/api.js.map
+D  packages/shared/src/schemas/env.schema.js
+D  packages/shared/src/schemas/env.schema.js.map
+D  packages/shared/src/schemas/videoJob.js
+D  packages/shared/src/schemas/videoJob.js.map
+D  packages/shared/src/schemas/workflowState.js
+D  packages/shared/src/schemas/workflowState.js.map
+D  packages/shared/src/services/AuthService.js
+D  packages/shared/src/services/AuthService.js.map
+D  packages/shared/src/services/business-harness/HarnessCompiler.js
+D  packages/shared/src/services/business-harness/HarnessCompiler.js.map
+D  packages/shared/src/services/business-harness/types.js
+D  packages/shared/src/services/business-harness/types.js.map
+D  packages/shared/src/types/ai.dto.js
+D  packages/shared/src/types/ai.dto.js.map
+D  packages/shared/src/types/errors.js
+D  packages/shared/src/types/errors.js.map
 ```
 
 ## Decisions
