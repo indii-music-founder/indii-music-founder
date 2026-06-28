@@ -16,7 +16,7 @@ indii is not just a platform; it is a **Digital Handshake**. It is a multi-tenan
 [![TypeScript](https://img.shields.io/badge/Language-TypeScript-3178C6?logo=typescript)](https://www.typescriptlang.org)
 [![Electron](https://img.shields.io/badge/Desktop-Electron_33-47848F?logo=electron)](https://www.electronjs.org)
 [![Intelligence](https://img.shields.io/badge/Intelligence-Gemini_3-4285F4?logo=google)](https://ai.google.dev)
-[![Node](https://img.shields.io/badge/Node-%3E%3D22.0.0-339933?logo=node.js)](https://nodejs.org)
+[![Node](https://img.shields.io/badge/Node-%3E%3D24.0.0-339933?logo=node.js)](https://nodejs.org)
 
 ---
 
@@ -587,7 +587,7 @@ All AI interactions follow a strict model policy. Manual model string hardcoding
 
 ### Prerequisites
 
-- **Node.js:** >= 22.0.0
+- **Node.js:** >= 24.0.0
 - **Make:** Pre-installed on macOS/Linux (Windows: use WSL or Git Bash)
 - **Firebase CLI:** `npm install -g firebase-tools`
 - **Docker:** (Optional) Required for Agent Zero Sidecar execution

@@ -10,7 +10,7 @@
 
 - **Current Commit:** `5ec4a62e9` (Phase 0: confirmation dialog + test fixes)
 - **Branch:** `main`
-- **Node Version:** >= 22.0.0
+- **Node Version:** >= 24.0.0
 - **Test Command:** `npm test -- --run` (should show 4242 passing)
 
 ---

@@ -44,7 +44,7 @@ fi
 log_ok "Homebrew $(brew --version | head -1 | awk '{print $2}')"
 
 if ! command -v node &>/dev/null; then
-  log_err "Node.js 22+ is required. Install via: brew install node@22"
+  log_err "Node.js 24+ is required. Install via: brew install node@24"
   exit 1
 fi
 NODE_VERSION=$(node --version)
