@@ -74,6 +74,7 @@ export const VideoJobDocumentSchema = z.object({
     inputUris: z.array(z.string().startsWith('gs://')).default([]),
     tempUris: z.array(z.string().startsWith('gs://')).default([]),
     persistentUris: z.array(z.string().startsWith('gs://')).default([]),
+    maskUris: z.array(z.string().startsWith('gs://')).default([]),
     maskMetadata: z.record(z.unknown()).optional(),
     operationName: z.string().optional(),
     provider: z.string().optional(),

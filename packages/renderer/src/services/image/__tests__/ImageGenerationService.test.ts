@@ -304,6 +304,39 @@ describe("ImageGenerationService", () => {
         })
       );
     });
+
+    it("should normalize raw candidate responses into a usable preview url", async () => {
+      const mockDirectResponse = {
+        data: {
+          candidates: [
+            {
+              content: {
+                parts: [
+                  {
+                    inlineData: {
+                      mimeType: "image/png",
+                      data: "candidate-preview-data",
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      };
+
+      mockGenerateImage.mockResolvedValue(mockDirectResponse);
+
+      const result = await ImageGeneration.remixImage({
+        contentImage: { mimeType: "image/jpeg", data: "contentdata" },
+        styleImage: { mimeType: "image/png", data: "styledata" },
+        prompt: "Apply this style",
+      });
+
+      expect(result).toEqual({
+        url: "data:image/png;base64,candidate-preview-data",
+      });
+    });
   });
 
   describe("batchRemix", () => {

@@ -5,7 +5,6 @@ import { getGeminiApiKey, geminiApiKey } from '../../config/secrets';
 import { FUNCTION_INTELLIGENCE_MODELS } from '../../config/models';
 import { getVertexAIClient } from '../../lib/vertexClient';
 import { VideoJobDocumentSchema, type VideoJobDocument, VideoJobDirectorSettingsSchema } from '../../shared/videoJob';
-import { checkOperationBudget } from '../billing/enforceOperationCost';
 import { readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -181,6 +180,7 @@ const GenerateImageSchema = BaseMediaRequest.extend({
 
 const GenerateVideoSchema = BaseMediaRequest.extend({
   mode: z.enum(['video_remix', 'temporal_inpaint']).optional(),
+  skipCostCheck: z.boolean().optional(),
   sourceVideoUri: z.string().startsWith('gs://').optional(),
   firstFrameUri: z.string().startsWith('gs://').optional(),
   lastFrameUri: z.string().startsWith('gs://').optional(),
@@ -298,6 +298,16 @@ async function syncVideoJobUpdate(jobId: string, data: Record<string, unknown>) 
   ]);
 }
 
+async function loadTrackedVideoJob(jobId: string): Promise<Record<string, unknown> | null> {
+  const [videoSnap, creativeSnap] = await Promise.all([
+    getDb().collection('videoJobs').doc(jobId).get(),
+    getDb().collection('creative_jobs').doc(jobId).get(),
+  ]);
+  if (videoSnap.exists) return videoSnap.data() as Record<string, unknown>;
+  if (creativeSnap.exists) return creativeSnap.data() as Record<string, unknown>;
+  return null;
+}
+
 function normalizeImageSize(imageSize?: string): '512' | '1K' | '2K' | '4K' | undefined {
   if (!imageSize) return undefined;
   if (imageSize === '0.5K') return '512';
@@ -396,6 +406,40 @@ const TEMPORAL_INPAINT_ENABLED = process.env.GEMINI_VEO_TEMPORAL_INPAINT_ENABLED
 
 function supportsTemporalInpaint(modelId: string): boolean {
   return TEMPORAL_INPAINT_ENABLED || modelId.includes('temporal') || modelId.includes('inpaint');
+}
+
+async function loadCostReservation(
+  userId: string,
+  costReservationId: string,
+): Promise<{ estimatedCost: number }> {
+  const snapshot = await getDb().collection('costLedger').doc(costReservationId).get();
+  if (!snapshot.exists) {
+    throw new HttpsError('failed-precondition', `Missing cost reservation ${costReservationId}. Reserve cost before submitting the job.`);
+  }
+
+  const data = snapshot.data() as Record<string, unknown>;
+  if (data.userId !== userId) {
+    throw new HttpsError('permission-denied', 'Cost reservation does not belong to the authenticated user.');
+  }
+  if (data.type !== 'video') {
+    throw new HttpsError('failed-precondition', 'Cost reservation type mismatch for video generation.');
+  }
+  if (data.status !== 'APPROVED') {
+    throw new HttpsError('failed-precondition', 'Cost reservation is not approved.');
+  }
+
+  const estimatedCost = typeof data.estimatedCost === 'number'
+    ? data.estimatedCost
+    : Number(data.estimatedCost);
+  if (!Number.isFinite(estimatedCost) || estimatedCost < 0) {
+    throw new HttpsError('failed-precondition', 'Cost reservation contains an invalid estimated cost.');
+  }
+
+  return { estimatedCost };
+}
+
+function resolveVideoJobMode(mode?: string): 'video_remix' | 'temporal_inpaint' {
+  return mode === 'temporal_inpaint' ? 'temporal_inpaint' : 'video_remix';
 }
 
 function toImage(gcsUri?: string): Image | undefined {
@@ -758,6 +802,12 @@ async function pollVideoOperation(ai: GoogleGenAI, operation: GenerateVideosOper
   let attempts = 0;
 
   while (!currentOperation.done && attempts < VIDEO_MAX_POLLS) {
+    const trackedJob = await loadTrackedVideoJob(jobId);
+    const trackedStatus = typeof trackedJob?.status === 'string' ? trackedJob.status.toLowerCase() : '';
+    if (trackedStatus === 'cancelled') {
+      throw new HttpsError('cancelled', 'Video generation cancelled by user.');
+    }
+
     attempts += 1;
     await sleep(VIDEO_POLL_INTERVAL_MS);
     currentOperation = await ai.operations.getVideosOperation({ operation: currentOperation });
@@ -855,6 +905,18 @@ export async function executeVideoJob(jobId: string, job: VideoGenerationJobReco
   const hasFrameInput = !!job.firstFrameUri || !!job.referenceUri || !!job.lastFrameUri;
   const normalizedDuration = normalizeVideoDuration(job.durationSeconds, normalizedResolution, hasFrameInput);
   const modelId = resolveVideoModel(job.model);
+  const effectiveMode = resolveVideoJobMode(job.mode);
+  const sourceVideoUri = job.payload?.sourceVideoUri || job.referenceUri || job.firstFrameUri;
+  const maskUri = job.payload?.maskTrackUri || job.payload?.maskFrameUri;
+  const maskUris = maskUri ? [maskUri] : [];
+  const inputUris = [
+    sourceVideoUri,
+    job.firstFrameUri,
+    job.lastFrameUri,
+    ...(job.referenceUris ?? []),
+    ...maskUris,
+  ].filter((uri): uri is string => !!uri);
+  const serverEstimatedCost = estimateVideoCost(normalizedDuration, modelId, effectiveMode);
 
   await syncVideoJobUpdate(jobId, {
     id: jobId,
@@ -863,13 +925,28 @@ export async function executeVideoJob(jobId: string, job: VideoGenerationJobReco
     type: 'video',
     prompt: job.prompt,
     model: modelId,
+    mode: effectiveMode,
     progress: 0,
-    inputUris: [
-      job.firstFrameUri || job.referenceUri,
-      job.lastFrameUri,
-      ...(job.referenceUris ?? []),
-    ].filter((uri): uri is string => !!uri),
-    maskUris: [],
+    costEstimate: job.costEstimate ?? serverEstimatedCost,
+    costReservationId: job.costReservationId,
+    inputUris,
+    maskUris,
+    payload: {
+      prompt: job.prompt,
+      sourceVideoUri,
+      maskFrameUri: job.payload?.maskFrameUri,
+      maskTrackUri: job.payload?.maskTrackUri,
+      frameRange: job.payload?.frameRange,
+      cameraPhysics: job.payload?.cameraPhysics,
+    },
+    maskMetadata: {
+      mode: effectiveMode,
+      sourceVideoUri,
+      maskFrameUri: job.payload?.maskFrameUri,
+      maskTrackUri: job.payload?.maskTrackUri,
+      frameRange: job.payload?.frameRange,
+      hasTemporalMask: effectiveMode === 'temporal_inpaint',
+    },
     metadata: {
       model: modelId,
       resolution: normalizedResolution,
@@ -878,6 +955,12 @@ export async function executeVideoJob(jobId: string, job: VideoGenerationJobReco
       referenceCount: job.referenceUris?.length ?? 0,
       hasFirstFrame: !!job.firstFrameUri || !!job.referenceUri,
       hasLastFrame: !!job.lastFrameUri,
+      mode: effectiveMode,
+      hasTemporalMask: effectiveMode === 'temporal_inpaint',
+      sourceVideoUri,
+      maskFrameUri: job.payload?.maskFrameUri,
+      maskTrackUri: job.payload?.maskTrackUri,
+      frameRange: job.payload?.frameRange,
     },
     updatedAt: new Date().toISOString(),
   });
@@ -898,6 +981,11 @@ export async function executeVideoJob(jobId: string, job: VideoGenerationJobReco
       ...(job.lastFrameUri ? { lastFrame: toImage(job.lastFrameUri) } : {}),
       ...(referenceImages ? { referenceImages } : {}),
     };
+    if (effectiveMode === 'temporal_inpaint' && sourceVideoUri && maskUri) {
+      config.sourceVideo = { uri: sourceVideoUri, mimeType: 'video/mp4' };
+      config.maskVideo = { uri: maskUri, mimeType: 'image/png' };
+      config.frameRange = job.payload?.frameRange;
+    }
 
     let operation = await ai.models.generateVideos({
       model: modelId,
@@ -932,42 +1020,52 @@ export async function executeVideoJob(jobId: string, job: VideoGenerationJobReco
     await syncVideoJobUpdate(jobId, {
       status: 'completed',
       resultUri: outputUri,
-      downloadUrl: outputUri,
-      videoUrl: outputUri,
-      url: outputUri,
-      progress: 100,
-      output: {
+        downloadUrl: outputUri,
+        videoUrl: outputUri,
         url: outputUri,
-        metadata: {
-          model: modelId,
-          aspectRatio: normalizeVideoAspectRatio(job.aspectRatio ?? '16:9'),
+        progress: 100,
+        actualCost: job.costEstimate ?? serverEstimatedCost,
+        output: {
+          url: outputUri,
+          metadata: {
+            model: modelId,
+            aspectRatio: normalizeVideoAspectRatio(job.aspectRatio ?? '16:9'),
           resolution: normalizedResolution,
           durationSeconds: normalizedDuration,
           mime_type: downloadedVideo.mimeType,
           hasFirstFrame: !!image,
           hasLastFrame: !!job.lastFrameUri,
-          referenceCount: referenceImages?.length ?? 0,
+            referenceCount: referenceImages?.length ?? 0,
+            mode: effectiveMode,
+            hasTemporalMask: effectiveMode === 'temporal_inpaint',
+          },
         },
-      },
-      metadata: {
-        model: modelId,
-        aspectRatio: normalizeVideoAspectRatio(job.aspectRatio ?? '16:9'),
-        resolution: normalizedResolution,
-        durationSeconds: normalizedDuration,
-        mimeType: downloadedVideo.mimeType,
-        hasFirstFrame: !!image,
-        hasLastFrame: !!job.lastFrameUri,
-        referenceCount: referenceImages?.length ?? 0,
-      },
-      completedAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    });
+        metadata: {
+          model: modelId,
+          aspectRatio: normalizeVideoAspectRatio(job.aspectRatio ?? '16:9'),
+          resolution: normalizedResolution,
+          durationSeconds: normalizedDuration,
+          mimeType: downloadedVideo.mimeType,
+          hasFirstFrame: !!image,
+          hasLastFrame: !!job.lastFrameUri,
+          referenceCount: referenceImages?.length ?? 0,
+          mode: effectiveMode,
+          hasTemporalMask: effectiveMode === 'temporal_inpaint',
+        },
+        completedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
 
     return { jobId, resultUri: outputUri };
   } catch (error: unknown) {
+    const errorText = errorMessage(error);
+    const isCancelled = error instanceof HttpsError
+      ? error.code === 'cancelled'
+      : errorText.toLowerCase().includes('cancelled');
     await syncVideoJobUpdate(jobId, {
-      status: 'failed',
-      error: errorMessage(error),
+      status: isCancelled ? 'cancelled' : 'failed',
+      error: errorText,
+      ...(isCancelled ? { cancelledAt: new Date().toISOString() } : {}),
       updatedAt: new Date().toISOString(),
     });
     throw toGatewayError(error, 'Video generation failed');
@@ -1092,8 +1190,13 @@ export const generateVideoV3 = onCall({ timeoutSeconds: 540, secrets: [geminiApi
     referenceUri,
     firstFrameUri,
     lastFrameUri,
+    sourceVideoUri,
+    maskFrameUri,
+    maskTrackUri,
+    frameRange,
     referenceUris,
     aspectRatio,
+    mode,
     model,
     resolution,
     durationSeconds,
@@ -1101,6 +1204,9 @@ export const generateVideoV3 = onCall({ timeoutSeconds: 540, secrets: [geminiApi
     negativePrompt,
     seed,
     enhancePrompt,
+    skipCostCheck,
+    costEstimate,
+    costReservationId,
     directorSettings: requestedDirectorSettings,
   } = parsed.data;
   const userId = request.auth.uid;
@@ -1109,11 +1215,37 @@ export const generateVideoV3 = onCall({ timeoutSeconds: 540, secrets: [geminiApi
   const hasFrameInput = !!firstFrameUri || !!referenceUri || !!lastFrameUri;
   const normalizedDuration = normalizeVideoDuration(durationSeconds, normalizedResolution, hasFrameInput);
   const modelId = resolveVideoModel(model);
+  const effectiveMode = resolveVideoJobMode(mode);
+  const resolvedSourceVideoUri = sourceVideoUri || firstFrameUri || referenceUri;
+  const resolvedMaskUri = maskTrackUri || maskFrameUri;
+  const serverEstimatedCost = estimateVideoCost(normalizedDuration, modelId, effectiveMode);
+  const reservation = !skipCostCheck && costReservationId
+    ? await loadCostReservation(userId, costReservationId)
+    : null;
+  if (!skipCostCheck && !costReservationId) {
+    throw new HttpsError('failed-precondition', 'Missing cost reservation. Reserve cost before submitting the job.');
+  }
+  if (!skipCostCheck && Math.abs((reservation?.estimatedCost ?? serverEstimatedCost) - serverEstimatedCost) > 0.01) {
+    throw new HttpsError('failed-precondition', 'Cost reservation estimate does not match the current job estimate.');
+  }
+
+  if (effectiveMode === 'temporal_inpaint') {
+    if (!supportsTemporalInpaint(modelId)) {
+      throw new HttpsError('failed-precondition', `Model ${modelId} does not support temporal inpaint yet.`);
+    }
+    if (!resolvedSourceVideoUri || !resolvedMaskUri || !frameRange) {
+      throw new HttpsError('invalid-argument', 'Temporal inpaint requires sourceVideoUri, maskFrameUri or maskTrackUri, and frameRange.');
+    }
+  }
+
   const inputUris = [
+    resolvedSourceVideoUri,
     firstFrameUri || referenceUri,
     lastFrameUri,
     ...(referenceUris ?? []),
+    resolvedMaskUri,
   ].filter((uri): uri is string => !!uri);
+  const maskUris = resolvedMaskUri ? [resolvedMaskUri] : [];
   const directorSettings = requestedDirectorSettings ?? {
     fps: 24,
     durationSeconds: normalizedDuration,
@@ -1129,7 +1261,7 @@ export const generateVideoV3 = onCall({ timeoutSeconds: 540, secrets: [geminiApi
     id: jobId,
     schemaVersion: 1,
     userId,
-    mode: 'video_remix',
+    mode: effectiveMode,
     status: 'queued',
     type: 'video',
     prompt,
@@ -1147,20 +1279,30 @@ export const generateVideoV3 = onCall({ timeoutSeconds: 540, secrets: [geminiApi
     progress: 0,
     payload: {
       prompt,
-      sourceVideoUri: firstFrameUri || referenceUri,
-      maskFrameUri: lastFrameUri,
+      sourceVideoUri: resolvedSourceVideoUri,
+      maskFrameUri,
+      maskTrackUri,
+      frameRange,
       cameraPhysics: undefined,
     },
     directorSettings,
     provider: 'google-genai',
     model: modelId,
-    costEstimate: undefined,
-    costReservationId: undefined,
+    costEstimate: reservation?.estimatedCost ?? serverEstimatedCost,
+    costReservationId: skipCostCheck ? undefined : costReservationId,
     retryCount: 0,
     inputUris,
     tempUris: [],
-    persistentUris: inputUris,
-    maskUris: [],
+    persistentUris: [...inputUris, ...maskUris],
+    maskUris,
+    maskMetadata: {
+      mode: effectiveMode,
+      sourceVideoUri: resolvedSourceVideoUri,
+      maskFrameUri,
+      maskTrackUri,
+      frameRange,
+      hasTemporalMask: effectiveMode === 'temporal_inpaint',
+    },
     metadata: {
       model: modelId,
       aspectRatio: normalizeVideoAspectRatio(aspectRatio),
@@ -1169,6 +1311,12 @@ export const generateVideoV3 = onCall({ timeoutSeconds: 540, secrets: [geminiApi
       hasFirstFrame: !!firstFrameUri || !!referenceUri,
       hasLastFrame: !!lastFrameUri,
       referenceCount: referenceUris?.length ?? 0,
+      mode: effectiveMode,
+      hasTemporalMask: effectiveMode === 'temporal_inpaint',
+      sourceVideoUri: resolvedSourceVideoUri,
+      maskFrameUri,
+      maskTrackUri,
+      frameRange,
     },
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -1178,6 +1326,37 @@ export const generateVideoV3 = onCall({ timeoutSeconds: 540, secrets: [geminiApi
   await syncVideoJobDocument(jobId, jobRecord);
 
   return { jobId };
+});
+
+export const cancelVideoJob = onCall({ timeoutSeconds: 30, enforceAppCheck: ENFORCE_APP_CHECK }, async (request) => {
+  if (!request.auth) throw new HttpsError('unauthenticated', 'User must be authenticated.');
+
+  const schema = z.object({ jobId: z.string().min(1) });
+  const parsed = schema.safeParse(request.data);
+  if (!parsed.success) throw new HttpsError('invalid-argument', 'jobId is required.');
+
+  const { jobId } = parsed.data;
+  const existing = await loadTrackedVideoJob(jobId);
+  if (!existing) {
+    throw new HttpsError('not-found', 'Video job not found.');
+  }
+  if (existing.userId !== request.auth.uid) {
+    throw new HttpsError('permission-denied', 'You do not own this video job.');
+  }
+
+  const currentStatus = String(existing.status || '').toLowerCase();
+  if (['completed', 'failed', 'cancelled'].includes(currentStatus)) {
+    return { jobId, status: currentStatus };
+  }
+
+  await syncVideoJobUpdate(jobId, {
+    status: 'cancelled',
+    error: 'Cancelled by user',
+    cancelledAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  });
+
+  return { jobId, status: 'cancelled' };
 });
 
 /**
