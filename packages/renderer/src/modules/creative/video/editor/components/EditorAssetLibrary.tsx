@@ -4,6 +4,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { HistoryItem } from '@/core/store/slices/creative';
 import { Image, Film, Music, FileText } from 'lucide-react';
 import { Virtuoso } from 'react-virtuoso';
+import { useResolvedStorageUrl } from '@/hooks/useResolvedStorageUrl';
 
 interface EditorAssetLibraryProps {
     onDragStart: (e: React.DragEvent, item: HistoryItem) => void;
@@ -16,6 +17,80 @@ const EmptyState = () => (
         Generate some content first!
     </div>
 );
+
+interface AssetLibraryItemProps {
+    item: HistoryItem;
+    onDragStart: (e: React.DragEvent, item: HistoryItem) => void;
+    getIcon: (type: string) => React.ReactNode;
+}
+
+const AssetLibraryItem: React.FC<AssetLibraryItemProps> = ({ item, onDragStart, getIcon }) => {
+    const videoUrlToResolve = item.type === 'video' && !item.localPath ? item.url : null;
+    const imageUrlToResolve = item.type === 'image' ? (item.thumbnailUrl || item.url) : null;
+    const { url: resolvedVideoUrl } = useResolvedStorageUrl(videoUrlToResolve);
+    const { url: resolvedImageUrl } = useResolvedStorageUrl(imageUrlToResolve);
+
+    const playableVideoSrc = item.type === 'video'
+        ? (item.localPath ? `file://${item.localPath}` : resolvedVideoUrl || item.url)
+        : resolvedImageUrl || item.url;
+
+    return (
+        <div
+            draggable
+            onDragStart={(e) => onDragStart(e, item)}
+            className="group relative bg-[#0a0a0a] rounded-md overflow-hidden border border-white/5 hover:border-blue-500/50 cursor-grab active:cursor-grabbing transition-all mb-2 flex flex-col"
+            data-item-id={item.id}
+        >
+            <div className="aspect-video relative">
+                {item.type === 'video' ? (
+                    <video
+                        src={playableVideoSrc}
+                        className="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-opacity"
+                        preload="metadata"
+                        muted
+                        loop
+                        playsInline
+                        onMouseEnter={(e) => {
+                            e.currentTarget.play().catch((err: unknown) => {
+                                // Browser aborted play (usually due to autoplay restrictions or navigation transitions)
+                                if (err instanceof Error && err.name !== 'AbortError') {
+                                    console.error('Asset preview playback error:', err);
+                                }
+                            });
+                        }}
+                        onMouseLeave={(e) => { e.currentTarget.pause(); e.currentTarget.currentTime = 0; }}
+                    />
+                ) : item.type === 'image' ? (
+                    <img
+                        src={playableVideoSrc}
+                        alt={item.prompt}
+                        className="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-opacity"
+                    />
+                ) : (
+                    <div className="w-full h-full flex items-center justify-center text-gray-600 bg-gray-900/50">
+                        <Music size={14} />
+                    </div>
+                )}
+                <div className="absolute top-1 right-1 bg-black/80 px-1 py-0.5 rounded text-white flex items-center justify-center">
+                    {getIcon(item.type)}
+                </div>
+            </div>
+            <div className="px-2 py-1.5 bg-[#0a0a0a]">
+                <p className="text-[10px] font-medium text-gray-300 truncate leading-tight" title={item.prompt}>
+                    {item.prompt || 'Untitled Asset'}
+                </p>
+                {item.type === 'video' && item.localPath && (
+                    <p className="text-[8px] text-emerald-400 mt-0.5 truncate" title={item.localPath}>
+                        Saved locally
+                    </p>
+                )}
+                <p className="text-[9px] text-gray-600 mt-0.5">
+                    {new Date(item.timestamp).toLocaleDateString('en-US')}
+                </p>
+            </div>
+        </div>
+    );
+};
 
 export const EditorAssetLibrary: React.FC<EditorAssetLibraryProps> = ({ onDragStart }) => {
     const { history } = useStore(useShallow((state) => ({
@@ -53,67 +128,11 @@ export const EditorAssetLibrary: React.FC<EditorAssetLibraryProps> = ({ onDragSt
                         style={{ height: '100%' }}
                         data={assets}
                         itemContent={(index, item) => (
-                            (() => {
-                                const playableVideoSrc = item.type === 'video'
-                                    ? (item.localPath ? `file://${item.localPath}` : item.url)
-                                    : item.url;
-                                return (
-                            <div
-                                key={item.id}
-                                draggable
-                                onDragStart={(e) => onDragStart(e, item)}
-                                className="group relative bg-[#0a0a0a] rounded-md overflow-hidden border border-white/5 hover:border-blue-500/50 cursor-grab active:cursor-grabbing transition-all mb-2 flex flex-col"
-                            >
-                                <div className="aspect-video relative">
-                                    {item.type === 'video' ? (
-                                        <video
-                                            src={playableVideoSrc}
-                                            className="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-opacity"
-                                            preload="metadata"
-                                            muted
-                                            loop
-                                            playsInline
-                                            onMouseEnter={(e) => {
-                                                e.currentTarget.play().catch((err: unknown) => {
-                                                    // Browser aborted play (usually due to autoplay restrictions or navigation transitions)
-                                                    if (err instanceof Error && err.name !== 'AbortError') {
-                                                        console.error('Asset preview playback error:', err);
-                                                    }
-                                                });
-                                            }}
-                                            onMouseLeave={(e) => { e.currentTarget.pause(); e.currentTarget.currentTime = 0; }}
-                                        />
-                                    ) : item.type === 'image' ? (
-                                        <img
-                                            src={item.thumbnailUrl || item.url}
-                                            alt={item.prompt}
-                                            className="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-opacity"
-                                        />
-                                    ) : (
-                                        <div className="w-full h-full flex items-center justify-center text-gray-600 bg-gray-900/50">
-                                            <Music size={14} />
-                                        </div>
-                                    )}
-                                    <div className="absolute top-1 right-1 bg-black/80 px-1 py-0.5 rounded text-white flex items-center justify-center">
-                                        {getIcon(item.type)}
-                                    </div>
-                                </div>
-                                <div className="px-2 py-1.5 bg-[#0a0a0a]">
-                                    <p className="text-[10px] font-medium text-gray-300 truncate leading-tight" title={item.prompt}>
-                                        {item.prompt || 'Untitled Asset'}
-                                    </p>
-                                    {item.type === 'video' && item.localPath && (
-                                        <p className="text-[8px] text-emerald-400 mt-0.5 truncate" title={item.localPath}>
-                                            Saved locally
-                                        </p>
-                                    )}
-                                    <p className="text-[9px] text-gray-600 mt-0.5">
-                                        {new Date(item.timestamp).toLocaleDateString('en-US')}
-                                    </p>
-                                </div>
-                            </div>
-                                );
-                            })()
+                            <AssetLibraryItem
+                                item={item}
+                                onDragStart={onDragStart}
+                                getIcon={getIcon}
+                            />
                         )}
                     />
                 )}
