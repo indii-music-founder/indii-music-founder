@@ -46,6 +46,7 @@ export const DirectorSettingsSchema = z.object({
 
 export const VideoGenerationOptionsSchema = z.object({
     prompt: z.string().min(1, "Prompt is required"),
+    mode: z.enum(['video_remix', 'temporal_inpaint']).optional(),
     aspectRatio: VideoAspectRatioSchema.optional(),
     resolution: VideoResolutionSchema.optional(),
     seed: z.number().int().optional(),
@@ -57,6 +58,13 @@ export const VideoGenerationOptionsSchema = z.object({
     image: z.object({
         imageBytes: z.string(),
         mimeType: z.string().optional()
+    }).optional(),
+    sourceVideoUri: z.string().startsWith('gs://').optional(),
+    maskFrameUri: z.string().startsWith('gs://').optional(),
+    maskTrackUri: z.string().startsWith('gs://').optional(),
+    frameRange: z.object({
+        startFrame: z.number().int().min(0),
+        endFrame: z.number().int().min(0),
     }).optional(),
     timeOffset: z.number().optional(),
     ingredients: z.array(z.string()).optional(),
@@ -77,6 +85,8 @@ export const VideoGenerationOptionsSchema = z.object({
     userProfile: z.custom<UserProfile>().optional(), // Typed UserProfile for service compatibility
     jobId: z.string().optional(),
     useGrounding: z.boolean().optional()
+    ,
+    skipCostCheck: z.boolean().optional()
 });
 
 export type VideoGenerationOptions = z.infer<typeof VideoGenerationOptionsSchema>;

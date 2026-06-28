@@ -3,6 +3,7 @@ export interface HistoryItem {
     type: 'image' | 'video' | 'music' | 'text';
     url: string;
     thumbnailUrl?: string; // Small preview for gallery (300x300)
+    storageUri?: string; // Canonical Firebase Storage URI for durable media lookup
     prompt: string;
     timestamp: number;
     projectId: string;

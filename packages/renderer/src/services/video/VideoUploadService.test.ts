@@ -23,7 +23,13 @@ vi.mock('firebase/storage', () => ({
 }));
 
 vi.mock('../firebase', () => ({
-    storage: {},
+    storage: {
+        app: {
+            options: {
+                storageBucket: 'mock-bucket.appspot.com',
+            },
+        },
+    },
 }));
 
 vi.mock('@/core/logger/Logger', () => ({
@@ -66,6 +72,7 @@ describe('VideoUploadService', () => {
         expect(result).toEqual({
             url: 'https://mock-url.com/video.mp4',
             path: 'videos/testuser/test.mp4',
+            storageUri: 'gs://mock-bucket.appspot.com/videos/testuser/test.mp4',
             size: file.size,
             contentType: 'video/mp4',
             thumbnailUrl: undefined,

@@ -5,7 +5,15 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import type { AnalyticsEvent } from '@indii/shared';
+
+type AnalyticsEvent = {
+  id: string;
+  eventType: string;
+  userId: string;
+  sessionId?: string;
+  timestamp: string;
+  data: Record<string, unknown>;
+};
 
 describe('BigQueryEventsPipeline', () => {
   const SAMPLING_RATE = 0.1;
