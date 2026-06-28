@@ -2,11 +2,20 @@ import { logger } from '@/utils/logger';
 
 // CRITICAL: Set App Check debug token BEFORE any Firebase SDK initialization
 // This must happen in the module scope before any Firebase services load
+// In Electron, use debug token to allow development without blocking Referer headers
 if (typeof window !== 'undefined' && import.meta.env.DEV) {
     const key = ['FIREBASE', 'APPCHECK', 'DEBUG', 'TOKEN'].join('_');
+    const isElectronEnv = typeof (window as any).electronAPI !== 'undefined';
+
+    // For Electron, use a valid debug token format (Firebase SDK will recognize this in debug mode)
+    // Web browsers can leave it as `true` to trigger automatic token generation
     if (typeof (window as any)[key] !== 'string') {
-        (window as unknown as Record<string, string | boolean>)[key] = true;
-        (self as unknown as Record<string, string | boolean>)[key] = true;
+        (window as unknown as Record<string, string | boolean>)[key] = isElectronEnv
+            ? 'debug-token-electron-local-dev'
+            : true;
+        (self as unknown as Record<string, string | boolean>)[key] = isElectronEnv
+            ? 'debug-token-electron-local-dev'
+            : true;
     }
 }
 
