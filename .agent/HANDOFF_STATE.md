@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-28 00:34 EDT
+**Updated:** 2026-06-28 00:42 EDT
 **Branch:** `fix/electron-firebase-storage-urls`
 
 ## Recent Commits
 ```
+f7f205b92 fix: use tsc -b to build shared package in CI
+b9a7e80b0 chore: session checkpoint [00:34]
 6c83aa76b chore: session checkpoint [00:25]
 1d4f00404 chore: session checkpoint [00:16]
 511dac282 chore: session checkpoint [00:11]
@@ -12,8 +14,6 @@
 c9e769956 fix: build shared package in CI before main builds
 4749d769f chore: session checkpoint [23:56]
 69aa81087 chore: session checkpoint [23:55]
-b0eafc947 chore: session checkpoint [23:36]
-b44c8be09 chore: session checkpoint [23:20]
 ```
 
 ## Working State
