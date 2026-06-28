@@ -8,13 +8,13 @@ import { Ingredient } from '../components/IngredientDropZone';
 import { SequenceBlock } from '../components/SequenceTimeline';
 import { VideoGenerationJob } from '../components/veo/VideoGenerationProgress';
 import { VideoAspectRatioSchema } from '../video/schemas';
-import { functions, db, auth, storage } from '@/services/firebase';
+import { functions, db, auth } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { doc, onSnapshot } from 'firebase/firestore';
-import { ref, getDownloadURL } from 'firebase/storage';
 import { CreativeStorageService } from '@/services/creative/CreativeStorageService';
 import { VideoGeneration } from '@/services/video/VideoGenerationService';
 import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
+import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
 
 type CallableGenerationError = {
     code?: unknown;
@@ -208,13 +208,7 @@ export function useDirectGeneration() {
 
                 if (data.status === 'completed' && data.resultUri) {
                     try {
-                        let finalUrl = data.resultUri;
-                        if (finalUrl.startsWith('gs://')) {
-                            // Convert gs:// URI to an HTTP download URL for UI rendering
-                            const bucketPath = finalUrl.split('/').slice(3).join('/');
-                            const storageRef = ref(storage, bucketPath);
-                            finalUrl = await getDownloadURL(storageRef);
-                        }
+                        const finalUrl = await resolveStorageUrl(data.resultUri);
 
                         const finalItem: HistoryItem = {
                             id: job.id,
@@ -234,7 +228,7 @@ export function useDirectGeneration() {
                            setViewMode('editor');
                         }
 
-                        toast.success(`\${data.type} generation finished!`);
+                        toast.success(`${data.type} generation finished!`);
 
                         setTimeout(() => {
                             setActiveJobs(prev => prev.filter(j => j.id !== job.id));
@@ -333,7 +327,28 @@ export function useDirectGeneration() {
             referenceUris
         }));
         
-        const data = res.data as { jobId: string };
+        const data = res.data as { jobId: string; resultUri?: string; resultUrl?: string; type?: 'image' | 'video' };
+        const completedUri = data.resultUrl || data.resultUri;
+
+        if (completedUri) {
+            const finalUrl = await resolveStorageUrl(completedUri);
+            const finalItem: HistoryItem = {
+                id: data.jobId,
+                url: finalUrl,
+                type: data.type || 'image',
+                prompt: localPrompt,
+                timestamp: Date.now(),
+                projectId: currentProjectIdRef.current,
+                origin: 'generated' as const
+            };
+
+            addToHistory({ ...finalItem });
+            setSelectedItem(finalItem);
+            setViewMode('editor');
+            toast.success('Image generation finished!');
+            return;
+        }
+
         setActiveJobs(prev => [
             ...prev,
             { id: data.jobId, prompt: localPrompt, status: 'queued' as const, progress: 0 }
