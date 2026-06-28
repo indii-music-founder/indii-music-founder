@@ -52,7 +52,7 @@ async function validateGoogleGenAI() {
 
     // Try to list models (lightweight test)
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-3-flash-preview",
       contents: { role: "user", parts: [{ text: "Test connection" }] },
     });
 
@@ -60,7 +60,7 @@ async function validateGoogleGenAI() {
       name: "Google GenAI API",
       status: "✓",
       message: "API key is valid and reachable",
-      details: `Model: gemini-2.5-flash, Response status: ${response ? "OK" : "No response"}`,
+      details: `Model: gemini-3-flash-preview, Response status: ${response ? "OK" : "No response"}`,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
