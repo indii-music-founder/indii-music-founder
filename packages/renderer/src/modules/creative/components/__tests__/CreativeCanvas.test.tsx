@@ -1,7 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import CreativeCanvas from '../CreativeCanvas';
 import React from 'react';
+import { canvasOps } from '../../services/CanvasOperationsService';
+import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
 
 // Mock dependencies
 vi.mock('@/core/store', () => ({
@@ -66,7 +68,19 @@ vi.mock('@/services/storage/repository', () => ({
     getCanvasStateFromStorage: vi.fn().mockResolvedValue(null),
 }));
 
-vi.mock('../services/CanvasOperationsService', () => ({
+vi.mock('@/services/storage/resolveStorageUrl', () => ({
+    resolveStorageUrl: vi.fn((url: string) => Promise.resolve(url)),
+}));
+
+vi.mock('@/services/creative/CreativeSessionService', () => ({
+    creativeSessionService: {
+        loadSession: vi.fn().mockResolvedValue(null),
+        upsertFromManifest: vi.fn().mockResolvedValue(undefined),
+        updateSession: vi.fn().mockResolvedValue(undefined),
+    },
+}));
+
+vi.mock('../../services/CanvasOperationsService', () => ({
     canvasOps: {
         addRectangle: vi.fn(),
         addCircle: vi.fn(),
@@ -78,6 +92,7 @@ vi.mock('../services/CanvasOperationsService', () => ({
         canUndo: vi.fn().mockReturnValue(false),
         canRedo: vi.fn().mockReturnValue(false),
         toJSON: vi.fn().mockResolvedValue({}),
+        ensureBaseImage: vi.fn().mockResolvedValue(false),
     }
 }));
 
@@ -103,6 +118,7 @@ describe('CreativeCanvas', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        vi.mocked(resolveStorageUrl).mockImplementation((url: string) => Promise.resolve(url));
     });
 
     it('should render nothing if item is null', () => {
@@ -113,6 +129,35 @@ describe('CreativeCanvas', () => {
     it('should render canvas container when item is provided', () => {
         render(<CreativeCanvas item={mockItem} onClose={mockOnClose} />);
         expect(screen.getByTestId('creative-canvas-container')).toBeInTheDocument();
+    });
+
+    it('loads the thumbnail when the canonical image URL cannot resolve for editing', async () => {
+        vi.mocked(resolveStorageUrl).mockImplementation((url: string) => {
+            if (url === 'gs://mock-bucket/missing-full.png') {
+                return Promise.resolve('gs://mock-bucket/missing-full.png');
+            }
+            return Promise.resolve(url);
+        });
+
+        render(
+            <CreativeCanvas
+                item={{
+                    ...mockItem,
+                    url: 'gs://mock-bucket/missing-full.png',
+                    thumbnailUrl: 'https://cdn.example.com/thumb.png',
+                }}
+                onClose={mockOnClose}
+            />
+        );
+
+        await waitFor(() => {
+            expect(canvasOps.initialize).toHaveBeenCalledWith(
+                expect.any(HTMLCanvasElement),
+                'https://cdn.example.com/thumb.png',
+                undefined,
+                expect.any(Function)
+            );
+        });
     });
 
     it('should render the magic fill input', () => {
