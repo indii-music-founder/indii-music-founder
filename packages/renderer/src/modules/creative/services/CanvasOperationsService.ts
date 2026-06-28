@@ -177,7 +177,7 @@ export class CanvasOperationsService {
     initialize(
         canvasElement: HTMLCanvasElement,
         imageUrl?: string,
-        onReady?: () => void,
+        onReady?: () => void | Promise<void>,
         onChange?: () => void
     ): fabric.Canvas {
         // Dynamic sizing: read container dimensions instead of hardcoded 800x600
@@ -196,15 +196,21 @@ export class CanvasOperationsService {
                 .then((img: fabric.Image) => {
                     if (!this.canvas) return;
                     this.placeImageOnCanvas(img, maxWidth, maxHeight);
-                    onReady?.();
+                    void Promise.resolve(onReady?.()).catch((err: unknown) => {
+                        logger.error('[CanvasOps] Canvas ready callback failed:', err);
+                    });
                 })
                 .catch((err: unknown) => {
                     logger.error('[CanvasOps] All image load strategies failed:', err);
                     // Still call onReady so UI doesn't hang, but canvas will be empty
-                    onReady?.();
+                    void Promise.resolve(onReady?.()).catch((readyErr: unknown) => {
+                        logger.error('[CanvasOps] Canvas ready callback failed after image load error:', readyErr);
+                    });
                 });
         } else {
-            onReady?.();
+            void Promise.resolve(onReady?.()).catch((err: unknown) => {
+                logger.error('[CanvasOps] Canvas ready callback failed:', err);
+            });
         }
 
         if (onChange) {
@@ -386,13 +392,34 @@ export class CanvasOperationsService {
     hasBaseImage(): boolean {
         if (!this.canvas) return false;
 
+        const canvasWidth = this.canvas.getWidth();
+        const canvasHeight = this.canvas.getHeight();
+
         return this.canvas.getObjects().some(obj => {
             if (obj.visible === false || obj.type !== 'image') return false;
+            if ((obj.opacity ?? 1) <= 0) return false;
 
             const data = (obj as fabric.Object & { data?: Record<string, unknown> }).data;
             if (data?.isSegmentationMask || data?.isAnnotation || data?.isBoundingBox) {
                 return false;
             }
+
+            const objectWithSize = obj as fabric.Object & {
+                getScaledWidth?: () => number;
+                getScaledHeight?: () => number;
+            };
+            const width = objectWithSize.getScaledWidth?.() ?? ((obj.width ?? 0) * (obj.scaleX ?? 1));
+            const height = objectWithSize.getScaledHeight?.() ?? ((obj.height ?? 0) * (obj.scaleY ?? 1));
+            if (width <= 1 || height <= 1) return false;
+
+            const left = obj.left ?? 0;
+            const top = obj.top ?? 0;
+            const intersectsViewport =
+                left + width > 0 &&
+                top + height > 0 &&
+                left < canvasWidth &&
+                top < canvasHeight;
+            if (!intersectsViewport) return false;
 
             return data?.isBaseImage === true || !this.isAnnotation(obj);
         });
