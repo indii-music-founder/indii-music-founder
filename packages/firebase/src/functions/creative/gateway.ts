@@ -4,10 +4,11 @@ import { z } from 'zod';
 import { getGeminiApiKey, geminiApiKey } from '../../config/secrets';
 import { FUNCTION_INTELLIGENCE_MODELS } from '../../config/models';
 import { getVertexAIClient } from '../../lib/vertexClient';
+import { VideoJobDocumentSchema, type VideoJobDocument, VideoJobDirectorSettingsSchema } from '../../shared/videoJob';
+import { checkOperationBudget } from '../billing/enforceOperationCost';
 import { readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { VideoJobDocumentSchema, type VideoJobDocument, VideoJobDirectorSettingsSchema } from '@indii/shared';
 import {
   GoogleGenAI,
   VideoGenerationReferenceType,
@@ -179,8 +180,16 @@ const GenerateImageSchema = BaseMediaRequest.extend({
 });
 
 const GenerateVideoSchema = BaseMediaRequest.extend({
+  mode: z.enum(['video_remix', 'temporal_inpaint']).optional(),
+  sourceVideoUri: z.string().startsWith('gs://').optional(),
   firstFrameUri: z.string().startsWith('gs://').optional(),
   lastFrameUri: z.string().startsWith('gs://').optional(),
+  maskFrameUri: z.string().startsWith('gs://').optional(),
+  maskTrackUri: z.string().startsWith('gs://').optional(),
+  frameRange: z.object({
+    startFrame: z.number().int().min(0),
+    endFrame: z.number().int().min(0),
+  }).optional(),
   referenceUris: z.array(z.string().startsWith('gs://')).max(3).optional(),
   aspectRatio: z.enum(['16:9', '9:16', '1:1', '3:4', '4:3']).default('16:9'),
   model: z.enum(['lite', 'fast', 'pro']).default('fast'),
@@ -191,6 +200,8 @@ const GenerateVideoSchema = BaseMediaRequest.extend({
   negativePrompt: z.string().max(1000).optional(),
   seed: z.union([z.number().int(), z.string().regex(/^\d+$/)]).optional(),
   enhancePrompt: z.boolean().optional(),
+  costEstimate: z.number().optional(),
+  costReservationId: z.string().optional(),
 });
 
 const GenerateOmniRemixSchema = z.object({
@@ -370,6 +381,21 @@ function normalizePersonGeneration(
   if (personGeneration === 'dont_allow') return 'dont_allow';
   if (personGeneration === 'allow_adult' || personGeneration === 'allow_all') return 'allow_adult';
   return undefined;
+}
+
+function estimateVideoCost(durationSeconds: number, model?: string, mode?: string): number {
+  const normalizedDuration = Math.max(1, durationSeconds);
+  const isPro = !!model && (model.includes('pro') || model === VIDEO_MODEL_IDS.pro);
+  const isLite = !!model && (model.includes('lite') || model === VIDEO_MODEL_IDS.lite);
+  const baseRate = isPro ? 0.4 : isLite ? 0.05 : 0.1;
+  const modeMultiplier = mode === 'temporal_inpaint' ? 1.35 : mode === 'long_form' ? 1.2 : 1;
+  return Math.round(normalizedDuration * baseRate * modeMultiplier * 100) / 100;
+}
+
+const TEMPORAL_INPAINT_ENABLED = process.env.GEMINI_VEO_TEMPORAL_INPAINT_ENABLED === 'true';
+
+function supportsTemporalInpaint(modelId: string): boolean {
+  return TEMPORAL_INPAINT_ENABLED || modelId.includes('temporal') || modelId.includes('inpaint');
 }
 
 function toImage(gcsUri?: string): Image | undefined {
