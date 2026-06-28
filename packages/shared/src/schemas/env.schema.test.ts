@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { CommonEnvSchema } from './env.schema';
+import { CommonEnvSchema } from './env.schema.js';
 
 describe('CommonEnvSchema', () => {
     it('should validate valid env', () => {

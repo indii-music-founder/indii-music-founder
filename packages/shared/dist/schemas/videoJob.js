@@ -32,6 +32,11 @@ export const VideoJobPayloadSchema = z.object({
     prompt: z.string().min(1),
     sourceVideoUri: z.string().startsWith('gs://').optional(),
     maskFrameUri: z.string().startsWith('gs://').optional(),
+    maskTrackUri: z.string().startsWith('gs://').optional(),
+    frameRange: z.object({
+        startFrame: z.number().int().min(0),
+        endFrame: z.number().int().min(0),
+    }).optional(),
     cameraPhysics: VideoJobDirectorPhysicsSchema.optional(),
 }).passthrough();
 export const VideoJobDirectorSettingsSchema = z.object({
@@ -69,6 +74,7 @@ export const VideoJobDocumentSchema = z.object({
     model: z.string().optional(),
     costEstimate: z.number().optional(),
     costReservationId: z.string().optional(),
+    actualCost: z.number().optional(),
     retryCount: z.number().int().min(0).default(0),
     error: z.string().optional(),
     createdAt: z.union([z.string(), z.number()]),

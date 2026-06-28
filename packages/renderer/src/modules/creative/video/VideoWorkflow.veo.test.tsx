@@ -6,6 +6,18 @@ import { useVideoEditorStore } from './store/videoEditorStore';
 import { ToastProvider } from '@/core/context/ToastContext';
 import { processJobUpdate } from './VideoWorkflow';
 
+vi.mock('@/services/storage/resolveStorageUrl', () => ({
+    resolveStorageUrl: vi.fn(async (uri: string) => {
+        if (uri.startsWith('gs://mock-bucket.appspot.com/')) {
+            return uri.replace(
+                'gs://mock-bucket.appspot.com/',
+                'https://mock-bucket.appspot.com/download/'
+            );
+        }
+        return uri;
+    })
+}));
+
 // Mock Store
 vi.mock('@/core/store', () => {
     const mockState: Record<string, any> = {
@@ -130,6 +142,7 @@ describe('Lens: Veo 3.1 Generation Pipeline', () => {
     const mockSetJobStatus = vi.fn();
     const mockSetPrompt = vi.fn();
     const mockSetProgress = vi.fn();
+    const mockSetVideoInputs = vi.fn();
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -147,6 +160,7 @@ describe('Lens: Veo 3.1 Generation Pipeline', () => {
             studioControls: { resolution: '1080p', duration: 5, fps: 24 },
             videoInputs: {},
             setVideoInput: vi.fn(),
+            setVideoInputs: mockSetVideoInputs,
             currentOrganizationId: 'org-lens',
             currentProjectId: 'proj-veo',
             isRightPanelOpen: false,
@@ -324,8 +338,10 @@ describe('Lens: Veo 3.1 Generation Pipeline', () => {
 
 describe('VideoWorkflow - processJobUpdate', () => {
     let mockDeps: any;
+    let mockSetVideoInputs: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {
+        mockSetVideoInputs = vi.fn();
         mockDeps = {
             currentProjectId: 'proj-456',
             currentOrganizationId: 'org-123',
@@ -352,26 +368,109 @@ describe('VideoWorkflow - processJobUpdate', () => {
             fps: 24,
             mime_type: "video/mp4"
         };
+        const directorSettings = {
+            fps: 24,
+            durationSeconds: 5,
+            totalFrames: 120,
+            firstFrameUri: 'gs://mock-bucket.appspot.com/anchors/start.png',
+            lastFrameUri: 'gs://mock-bucket.appspot.com/anchors/end.png',
+        };
 
         const jobData = {
             status: 'completed',
-            videoUrl: 'http://veo.generated/video.mp4',
+            videoUrl: 'gs://mock-bucket.appspot.com/video.mp4',
             prompt: 'Hyper-realistic drone shot',
             metadata: veoMetadata,
+            directorSettings,
+            inputUris: [
+                directorSettings.firstFrameUri,
+                directorSettings.lastFrameUri
+            ],
             progress: 100
         };
 
         await processJobUpdate(jobData, 'veo-job-123', mockDeps);
 
         // Verify that addToHistory was called with the correct metadata
-        expect(mockDeps.addToHistory).toHaveBeenCalledWith(expect.objectContaining({
+        const historyItem = mockDeps.addToHistory.mock.calls[0][0];
+        expect(historyItem).toEqual(expect.objectContaining({
             id: 'veo-job-123',
-            url: 'http://veo.generated/video.mp4',
+            url: 'https://mock-bucket.appspot.com/download/video.mp4',
+            storageUri: 'gs://mock-bucket.appspot.com/video.mp4',
             type: 'video',
-            meta: JSON.stringify(veoMetadata)
+            meta: expect.any(String)
+        }));
+
+        expect(JSON.parse(historyItem.meta)).toEqual(expect.objectContaining({
+            ...veoMetadata,
+            directorSettings,
+            firstFrameUri: directorSettings.firstFrameUri,
+            lastFrameUri: directorSettings.lastFrameUri,
+            inputUris: [directorSettings.firstFrameUri, directorSettings.lastFrameUri],
         }));
 
         expect(mockDeps.setJobStatus).toHaveBeenCalledWith('idle');
         expect(mockDeps.toast.success).toHaveBeenCalledWith('Scene generated!');
+    });
+
+    it('rehydrates keyframe anchors when a saved video is reopened', async () => {
+        const selectedVideo = {
+            id: 'video-reopen-1',
+            type: 'video' as const,
+            url: 'https://mock-bucket.appspot.com/download/video.mp4',
+            prompt: 'Saved scene',
+            timestamp: 1700000000000,
+            projectId: 'proj-veo',
+            meta: JSON.stringify({
+                mime_type: 'video/mp4',
+                directorSettings: {
+                    firstFrameUri: 'gs://mock-bucket.appspot.com/anchors/start.png',
+                    lastFrameUri: 'gs://mock-bucket.appspot.com/anchors/end.png',
+                },
+                hasFirstFrame: true,
+                hasLastFrame: true,
+            }),
+        };
+
+        (useStore as unknown as import("vitest").Mock).mockReturnValue({
+            generatedHistory: [selectedVideo],
+            selectedItem: selectedVideo,
+            pendingPrompt: null,
+            setPendingPrompt: vi.fn(),
+            addToHistory: vi.fn(),
+            creativePrompt: '',
+            setCreativePrompt: vi.fn(),
+            studioControls: { resolution: '1080p', duration: 5, fps: 24 },
+            videoInputs: {},
+            setVideoInput: vi.fn(),
+            setVideoInputs: mockSetVideoInputs,
+            currentOrganizationId: 'org-lens',
+            currentProjectId: 'proj-veo',
+            isRightPanelOpen: false,
+            toggleRightPanel: vi.fn(),
+        });
+
+        render(
+            <ToastProvider>
+                <VideoWorkflow />
+            </ToastProvider>
+        );
+
+        await waitFor(() => {
+            expect(mockSetVideoInputs).toHaveBeenCalledWith(expect.objectContaining({
+                firstFrame: expect.objectContaining({
+                    id: 'video-reopen-1-firstFrame-frame',
+                    url: 'https://mock-bucket.appspot.com/download/anchors/start.png',
+                    storageUri: 'gs://mock-bucket.appspot.com/anchors/start.png',
+                    type: 'image',
+                }),
+                lastFrame: expect.objectContaining({
+                    id: 'video-reopen-1-lastFrame-frame',
+                    url: 'https://mock-bucket.appspot.com/download/anchors/end.png',
+                    storageUri: 'gs://mock-bucket.appspot.com/anchors/end.png',
+                    type: 'image',
+                }),
+            }));
+        });
     });
 });
