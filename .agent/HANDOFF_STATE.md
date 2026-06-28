@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-27 23:36 EDT
-**Branch:** `main`
+**Updated:** 2026-06-27 23:55 EDT
+**Branch:** `fix/electron-firebase-storage-urls`
 
 ## Recent Commits
 ```
+b0eafc947 chore: session checkpoint [23:36]
 b44c8be09 chore: session checkpoint [23:20]
 44483ee90 chore: session checkpoint [23:16]
 0657494b4 chore: session checkpoint [23:15]
@@ -13,7 +14,6 @@ dd00de768 chore: session checkpoint [23:07]
 6719a435e fix: disable App Check in Electron to prevent empty Referer header blocking
 f1a2c5e82 chore: session checkpoint [23:04]
 61f466049 chore: session checkpoint [22:57]
-27ea60f62 chore: update OPEN_ISSUES status for merged creative/video backlog (ISSUE-500-522)
 ```
 
 ## Working State
