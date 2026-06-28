@@ -41,7 +41,7 @@
 | 16 | **Add automated axe-core a11y scans to CI pipeline** | `.github/workflows/deploy.yml` | DONE - axe-core CLI runs against built app in CI |
 | 17 | **Create READMEs for 17 missing modules** (agent, distribution, finance, licensing, etc.) | `src/modules/*/` | DONE - All 27 modules now have READMEs |
 | 18 | **Reduce 737 `any` type declarations** - focus on public API surfaces first | Codebase-wide | DONE - Reduced to 141 (73.6% reduction), type-safe API response mapping in PrintOnDemandService |
-| 19 | **Add Node.js version runtime check** (enforce >= 22.0.0 in app startup) | `src/core/App.tsx` or `vite.config.ts` | DONE - Build-time check in vite.config.ts |
+| 19 | **Add Node.js version runtime check** (enforce >= 24.0.0 in app startup) | `src/core/App.tsx` or `vite.config.ts` | DONE - Build-time check in vite.config.ts |
 | 20 | **Add Sentry error tracking configuration for production** (imported but verify DSN) | `src/lib/sentry.ts` | DONE - Full config with replays, perf monitoring, sensitive data scrubbing; DSN via VITE_SENTRY_DSN env var |
 | 21 | **Create OpenAPI/Swagger specs for Cloud Functions** | `functions/src/` | DONE - Added openapi.yaml spec for critical endpoints |
 | 22 | **Add color contrast testing** (WCAG 2.1 AA compliance) | `e2e/` | DONE - axe-core color-contrast rule in a11y.spec.ts (critical/serious violations flagged) |

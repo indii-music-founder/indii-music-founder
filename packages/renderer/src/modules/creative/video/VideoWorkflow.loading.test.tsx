@@ -20,6 +20,7 @@ const { mockStoreStateData, mockVideoEditorState, mockUseStore, mockUseVideoEdit
         setCreativePrompt: vi.fn(),
         studioControls: { resolution: '1080p' },
         videoInputs: {},
+        setVideoInputs: vi.fn(),
         currentOrganizationId: 'org-123',
         currentProjectId: 'proj-123',
         isRightPanelOpen: false,

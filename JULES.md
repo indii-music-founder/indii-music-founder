@@ -71,7 +71,7 @@ bash .claude/scripts/checkpoint.sh
 - **Version:** 1.55.3
 - **Org:** New Detroit Music LLC
 - **Repo:** `indii-music-founder/indii-music-founder`
-- **Node Requirement:** >= 22.0.0
+- **Node Requirement:** >= 24.0.0
 
 ---
 

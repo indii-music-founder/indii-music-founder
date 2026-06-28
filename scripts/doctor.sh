@@ -34,10 +34,10 @@ if [ "$NODE_VERSION" = "NONE" ]; then
   fail "Node.js: not installed"
 else
   NODE_MAJOR=$(echo "$NODE_VERSION" | sed 's/v//' | cut -d. -f1)
-  if [ "$NODE_MAJOR" -ge 22 ]; then
-    pass "Node.js: $NODE_VERSION (>= 22 required)"
+  if [ "$NODE_MAJOR" -ge 24 ]; then
+    pass "Node.js: $NODE_VERSION (>= 24 required)"
   else
-    fail "Node.js: $NODE_VERSION (>= 22 required)"
+    fail "Node.js: $NODE_VERSION (>= 24 required)"
   fi
 fi
 
