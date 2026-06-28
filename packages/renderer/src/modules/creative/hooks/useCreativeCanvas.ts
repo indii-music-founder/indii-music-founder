@@ -250,8 +250,8 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
             } catch (err: unknown) {
                 logger.warn('[CreativeStudio] Failed to restore canvas state', err);
                 if (isMounted) {
-                    // Fallback to fresh canvas
-                    canvasOps.initialize(canvasEl.current, item.url, undefined, handleCanvasChange);
+                    // Fallback to fresh canvas with resolved URL
+                    canvasOps.initialize(canvasEl.current, await resolveStorageUrl(item.url), undefined, handleCanvasChange);
                 }
             }
         }

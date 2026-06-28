@@ -7,6 +7,7 @@ import { Play, Pause, Image as ImageIcon, Trash2, Maximize2, Upload, ArrowLeftTo
 import { useToast } from '@/core/context/ToastContext';
 import { ActionableEmptyState } from '@/components/shared/ActionableEmptyState';
 import { SendToTarget, SendToPayload } from '@/types/handoff';
+import { useResolvedStorageUrl } from '@/hooks/useResolvedStorageUrl';
 
 import { HistoryItem } from '@/core/store';
 
@@ -40,9 +41,14 @@ interface GalleryItemProps {
 
 const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference, setSelectedItem, toast, generationMode, onDelete, setPrompt, setViewMode, playTrack, pauseTrack, resumeTrack, currentTrack, isPlaying, pinToClipboard, sendToModule }: GalleryItemProps) => {
     const [showSendMenu, setShowSendMenu] = useState(false);
+    const videoUrlToResolve = item.type === 'video' && !item.localPath ? item.url : null;
+    const imageUrlToResolve = item.type === 'image' && item.url !== 'placeholder:dev-data-uri-too-large' ? item.url : null;
+    const { url: resolvedVideoUrl } = useResolvedStorageUrl(videoUrlToResolve);
+    const { url: resolvedImageUrl } = useResolvedStorageUrl(imageUrlToResolve);
+
     const playableVideoSrc = item.type === 'video'
-        ? (item.localPath ? `file://${item.localPath}` : item.url)
-        : item.url;
+        ? (item.localPath ? `file://${item.localPath}` : resolvedVideoUrl || item.url)
+        : resolvedImageUrl || item.url;
     return (
         <div
             draggable
