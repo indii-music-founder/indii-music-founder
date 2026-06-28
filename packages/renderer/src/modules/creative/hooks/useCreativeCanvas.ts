@@ -31,6 +31,26 @@ function debounce<T extends (...args: any[]) => any>(
     };
 }
 
+async function resolveEditableImageUrl(item: HistoryItem): Promise<string> {
+    const candidates = [item.url, item.thumbnailUrl].filter((url): url is string => Boolean(url?.trim()));
+    let unresolvedStorageUri: string | null = null;
+
+    for (const candidate of candidates) {
+        const resolved = await resolveStorageUrl(candidate);
+        if (resolved.startsWith('gs://')) {
+            unresolvedStorageUri = resolved;
+            continue;
+        }
+        return resolved;
+    }
+
+    if (unresolvedStorageUri) {
+        throw new Error('Selected asset is still a gs:// Storage URI and could not be resolved for display.');
+    }
+
+    throw new Error('Selected asset does not include a displayable image URL.');
+}
+
 interface UseCreativeCanvasProps {
     item: HistoryItem | null;
     onClose: () => void;
@@ -177,6 +197,16 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
 
         async function setupCanvas() {
             if (!canvasEl.current || !item || item.type !== 'image') return;
+            let editableImageUrl: string;
+            try {
+                editableImageUrl = await resolveEditableImageUrl(item);
+            } catch (err: unknown) {
+                logger.warn('[CreativeStudio] Selected image asset could not be resolved for editing', err);
+                if (isMounted) {
+                    toast.error('This asset cannot be opened in the editor because its image URL is unavailable.');
+                }
+                return;
+            }
 
             const debouncedSave = debounce(async () => {
                 if (!canvasOps.isInitialized()) return;
@@ -209,7 +239,7 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                         if (!isMounted) return;
 
                         await canvasOps.loadFromJSON(savedState);
-                        const recoveredBase = await canvasOps.ensureBaseImage(await resolveStorageUrl(item.url));
+                        const recoveredBase = await canvasOps.ensureBaseImage(editableImageUrl);
                         if (recoveredBase) {
                             logger.warn('[CreativeStudio] Restored missing base image from selected asset URL', {
                                 itemId: item.id,
@@ -218,25 +248,25 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                     }, handleCanvasChange);
                 } else if (isMounted) {
                     // Initialize WITH base image URL
-                    canvasOps.initialize(canvasEl.current, await resolveStorageUrl(item.url), undefined, handleCanvasChange);
+                    canvasOps.initialize(canvasEl.current, editableImageUrl, undefined, handleCanvasChange);
                 }
 
                 try {
                     const savedSession = await creativeSessionService.loadSession(sessionId);
                     if (savedSession && isMounted) {
-                        setIsHighFidelity(savedSession.settings.modelTier === 'pro');
-                        setMagicFillPrompt(savedSession.prompt);
+                        setIsHighFidelity(savedSession.settings?.modelTier === 'pro');
+                        setMagicFillPrompt(savedSession.prompt || '');
                         const restoredDefinitions = Object.fromEntries(
-                            savedSession.references
+                            (savedSession.references || [])
                                 .filter((ref) => ref.prompt.trim().length > 0)
                                 .map((ref) => [ref.colorId, ref.prompt])
                         );
                         setDefinitions(restoredDefinitions);
                         setReferenceRoles(Object.fromEntries(
-                            savedSession.references.map(ref => [ref.colorId, ref.role || 'objects'])
+                            (savedSession.references || []).map(ref => [ref.colorId, ref.role || 'objects'])
                         ));
 
-                        if (savedSession.generatedCandidates.length > 0) {
+                        if ((savedSession.generatedCandidates || []).length > 0) {
                             setGeneratedCandidates(savedSession.generatedCandidates.map((url) => ({
                                 id: crypto.randomUUID(),
                                 url,
@@ -251,7 +281,7 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                 logger.warn('[CreativeStudio] Failed to restore canvas state', err);
                 if (isMounted) {
                     // Fallback to fresh canvas with resolved URL
-                    canvasOps.initialize(canvasEl.current, await resolveStorageUrl(item.url), undefined, handleCanvasChange);
+                    canvasOps.initialize(canvasEl.current, await resolveEditableImageUrl(item), undefined, handleCanvasChange);
                 }
             }
         }
