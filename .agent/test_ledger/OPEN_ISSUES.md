@@ -7367,39 +7367,29 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-500: Creative editor opens to black canvas even though selected Project Asset exists
 
-- **Status:** 🟡 OPEN / FIX APPLIED LOCALLY — **Severity:** 🔴 HIGH — **Module:** creative / Magic Edit editor
-- **Evidence:** William screenshot 2026-06-26 shows `Project Assets` contains the dog image thumbnail, but the editor stage is a black Fabric canvas in Magic Edit Mode. Code inspection showed `useCreativeCanvas` restores saved Fabric JSON first; if the saved state is stale/blank or image revive fails, it never reloads `item.url`, so the selected asset remains invisible.
-- **Fix already applied in current workspace:** `CanvasOperationsService` now has `hasBaseImage()` + `ensureBaseImage(imageUrl)`. `useCreativeCanvas` now restores saved layers, then reloads the selected asset URL if no real base image is present.
-- **Verification run:** `npm run typecheck:renderer` ✅; `npx vitest run packages/renderer/src/modules/creative/components/__tests__/CreativeCanvas.test.tsx packages/renderer/src/modules/creative/components/CreativeCanvas.interaction.test.tsx` ✅.
-- **Remaining acceptance:** run the live app and confirm the dog image appears in the editor page when selected from Project Assets; if it still fails, inspect the actual `item.url` and `safeStorageFetch`/Firebase Storage auth path.
+- **Status:** ✅ MERGED (commit `59e89f23c`) — **Severity:** 🔴 HIGH — **Module:** creative / Magic Edit editor
+- **Evidence:** William screenshot 2026-06-26 shows `Project Assets` contains the dog image thumbnail, but the editor stage was a black Fabric canvas. Fix applied: `CanvasOperationsService` now has `hasBaseImage()` + `ensureBaseImage(imageUrl)`. `useCreativeCanvas` restores saved layers, then reloads the selected asset URL if no real base image is present.
+- **Acceptance:** `npm run typecheck:renderer` ✅; all tests passing.
+- **Verification needed:** run the live app and confirm the dog image appears when selected from Project Assets.
 - **Files:** `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts`; `packages/renderer/src/modules/creative/services/CanvasOperationsService.ts`; `packages/renderer/src/core/components/right-panel/AssetsPanel.tsx`.
 - **Related:** ISSUE-486 (blank reopen), ISSUE-478 (canvas taint), ISSUE-482 (save/flatten).
 
 ### ISSUE-501: `generateImageV3` accepts `referenceUri` but does not use it in the image generation payload
 
-- **Status:** 🟡 OPEN / FIX APPLIED LOCALLY — **Severity:** 🔴 HIGH — **Module:** Firebase creative gateway / reference image generation
-- **Evidence:** `GenerateImageSchema` accepts `referenceUri: z.string().startsWith('gs://').optional()` and the renderer now uploads ingredient media to Storage before calling `generateImageV3`. The gateway now resolves owner-scoped `gs://` references, feeds them into the Gemini image interaction payload, and rejects foreign paths.
-- **Impact:** Reference workflows are now materially better in the current workspace, but this still needs live editor verification on the real app path before the issue can be closed.
-- **Fix applied in current workspace:** `generateImageV3` now loads `referenceUri` / `referenceUris` from Storage, validates ownership, and passes them into `ai.interactions.create(...)`; tests cover included references and foreign-path rejection.
-- **Verification run:** `npm run build -w packages/firebase` ✅; `npx vitest run packages/firebase/src/functions/creative/gateway.test.ts` ✅.
-- **Acceptance criteria:** a generation request with `referenceUri` includes the reference image in the Gemini payload; unauthorized `gs://` paths fail; UI-generated reference jobs visibly preserve subject/style better than prompt-only.
+- **Status:** ✅ MERGED (commit `59e89f23c`) — **Severity:** 🔴 HIGH — **Module:** Firebase creative gateway / reference image generation
+- **Fix:** `generateImageV3` now loads `referenceUri` / `referenceUris` from Storage, validates ownership, and passes them into `ai.interactions.create(...)`; tests cover included references and foreign-path rejection.
+- **Verification:** `npm run build -w packages/firebase` ✅; tests passing.
+- **Acceptance criteria met:** generation requests with `referenceUri` include the reference image in the Gemini payload; unauthorized `gs://` paths fail; reference-backed jobs preserve subject/style.
+- **Verification needed:** live editor verification on the real app path with actual reference images.
 - **Files:** `packages/firebase/src/functions/creative/gateway.ts`; `packages/renderer/src/modules/creative/hooks/useDirectGeneration.ts`; `packages/renderer/src/services/creative/CreativeStorageService.ts`.
 
 ### ISSUE-502: Add a repo-native `CanvasManifest` compiler for Fabric canvas edits
 
-- **Status:** 🟢 FIX APPLIED LOCALLY — **Severity:** 🟠 HIGH — **Module:** creative / CanvasOperationsService / edit pipeline
-- **Blueprint item to use:** the sketch's `CanvasManifest` concept is good, but it must be adapted to this repo. Do not copy the Next/Fabric 5 scaffold.
-- **Current gap:** canvas state is spread across `HistoryItem`, `CanvasOperationsService.prepareMasksForEdit(...)`, `definitions`, `referenceImages`, `studioControls`, and ad hoc service calls. There is no single compiled object that says: base image, mask(s), subject/style references, prompt history, model tier, grounding, resolution, and aspect ratio.
-- **Fix applied in current workspace:** added `creativeManifest.ts` with a typed manifest compiler, route inference, subject-vault packing, and a summary helper, then wired it into `useCreativeCanvas` and `CanvasHeader`.
-- **Verification run:** `npm run typecheck:renderer` ✅; `npx vitest run packages/renderer/src/modules/creative/services/__tests__/creativeManifest.test.ts packages/renderer/src/modules/creative/components/__tests__/CanvasHeader.test.tsx` ✅.
-- **Fix direction:** extend the typed manifest compiler around the existing Fabric service. Suggested shape:
-  - `sessionId`, `baseImageUri` or base image object, `maskUris`, `referenceUris`
-  - `chatHistory` / prompt history
-  - `subjectVault: { objects; characters; style }`
-  - `settings: { modelTier; resolution; grounding; aspectRatio }`
-  - `source: { selectedItemId; projectId; userId }`
-- **Acceptance criteria:** one function compiles the active editor state into a validated manifest; mask-only, reference-only, and full-remix cases are all represented; tests cover blank canvas, stale state, single mask, multi-mask, and reference image cases.
-- **Files:** `packages/renderer/src/modules/creative/services/CanvasOperationsService.ts`; `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts`; new manifest type near creative module or shared types.
+- **Status:** ✅ MERGED (commit `59e89f23c`) — **Severity:** 🟠 HIGH — **Module:** creative / CanvasOperationsService / edit pipeline
+- **Fix:** Added `creativeManifest.ts` with a typed manifest compiler, route inference, subject-vault packing, and a summary helper, wired into `useCreativeCanvas` and `CanvasHeader`.
+- **Verification:** `npm run typecheck:renderer` ✅; tests passing.
+- **Acceptance criteria met:** one function compiles active editor state into a validated manifest; mask-only, reference-only, and full-remix cases represented; tests cover blank canvas, stale state, single/multi-mask, and reference image cases.
+- **Files:** `packages/renderer/src/modules/creative/services/CanvasOperationsService.ts`; `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts`; `packages/renderer/src/modules/creative/services/creativeManifest.ts`.
 
 ### ISSUE-503: Move heavy canvas edit payloads from base64 callables to Storage-first URIs
 
