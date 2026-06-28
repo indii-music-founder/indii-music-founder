@@ -131,6 +131,9 @@ export interface CreativeControlsSlice {
     videoInputs: {
         firstFrame: HistoryItem | null;
         lastFrame: HistoryItem | null;
+        maskFrame: HistoryItem | null;
+        maskRange?: { startFrame: number; endFrame: number } | null;
+        isTemporalInpaint: boolean;
         isDaisyChain: boolean;
         timeOffset: number;
         ingredients: HistoryItem[];
@@ -307,6 +310,9 @@ export function buildCreativeControlsState(
         videoInputs: {
             firstFrame: null,
             lastFrame: null,
+            maskFrame: null,
+            maskRange: null,
+            isTemporalInpaint: false,
             isDaisyChain: false,
             timeOffset: 0,
             ingredients: []

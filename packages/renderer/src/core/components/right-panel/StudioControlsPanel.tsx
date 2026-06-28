@@ -7,6 +7,7 @@ import { useStore } from '../../store';
 import { useShallow } from 'zustand/react/shallow';
 import { StoreState } from '../../store';
 import { useToast } from '@/core/context/ToastContext';
+import { CreativeStorageService } from '@/services/creative/CreativeStorageService';
 import { z } from 'zod';
 import { AspectRatioSchema, VideoResolutionSchema } from '@/modules/creative/video/schemas';
 import { WhiskDropZone } from '@/modules/creative/components/whisk/WhiskDropZone';
@@ -58,7 +59,7 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
     const {
         studioControls, setStudioControls,
         whiskState, addWhiskItem, removeWhiskItem, toggleWhiskItem, updateWhiskItem, setPreciseReference, setTargetMedia,
-        videoInputs, setVideoInput, viewMode
+        videoInputs, setVideoInput, viewMode, user, currentProjectId, activeSessionId
     } = useStore(useShallow((state: StoreState) => ({
         studioControls: state.studioControls,
         setStudioControls: state.setStudioControls,
@@ -71,7 +72,10 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
         setTargetMedia: state.setTargetMedia,
         videoInputs: state.videoInputs,
         setVideoInput: state.setVideoInput,
-        viewMode: state.viewMode
+        viewMode: state.viewMode,
+        user: state.user,
+        currentProjectId: state.currentProjectId,
+        activeSessionId: state.activeSessionId
     })));
     const toast = useToast();
 
@@ -79,6 +83,25 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
 
     const [expandedSection, setExpandedSection] = useState<string>('mixer');
     const [prevViewMode, setPrevViewMode] = useState(viewMode);
+
+    const persistVideoFrame = async (content: string, label: string) => {
+        const userId = user?.uid;
+        if (!userId) {
+            return { url: content, storageUri: undefined };
+        }
+
+        try {
+            const storageUri = await CreativeStorageService.uploadReferenceMedia(userId, content, 'image', {
+                projectId: currentProjectId || undefined,
+                sessionId: currentProjectId ? undefined : activeSessionId || undefined,
+                scope: 'assets'
+            });
+            return { url: storageUri, storageUri };
+        } catch (error) {
+            toast.warning(`Saved ${label.toLowerCase()} locally. Storage upload failed.`);
+            return { url: content, storageUri: undefined };
+        }
+    };
 
     if (viewMode !== prevViewMode) {
         setPrevViewMode(viewMode);
@@ -437,7 +460,18 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                                                         title=""
                                                         category="subject"
                                                         items={videoInputs.firstFrame ? [{ id: 'ff', type: 'image', content: videoInputs.firstFrame.url, checked: true, category: 'subject' }] : []}
-                                                        onAdd={(type, content) => setVideoInput('firstFrame', { id: `ff_${Date.now()}`, type: 'image', url: content, prompt: 'Start frame', timestamp: Date.now(), projectId: '' })}
+                                                        onAdd={async (_type, content) => {
+                                                            const persisted = await persistVideoFrame(content, 'Start frame');
+                                                            setVideoInput('firstFrame', {
+                                                                id: `ff_${Date.now()}`,
+                                                                type: 'image',
+                                                                url: persisted.url,
+                                                                storageUri: persisted.storageUri,
+                                                                prompt: 'Start frame',
+                                                                timestamp: Date.now(),
+                                                                projectId: currentProjectId || ''
+                                                            });
+                                                        }}
                                                         onRemove={() => setVideoInput('firstFrame', null)}
                                                         onToggle={() => {}}
                                                         onUpdate={(id, updates) => {
@@ -458,7 +492,18 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                                                         title=""
                                                         category="subject"
                                                         items={videoInputs.lastFrame ? [{ id: 'lf', type: 'image', content: videoInputs.lastFrame.url, checked: true, category: 'subject' }] : []}
-                                                        onAdd={(type, content) => setVideoInput('lastFrame', { id: `lf_${Date.now()}`, type: 'image', url: content, prompt: 'End frame', timestamp: Date.now(), projectId: '' })}
+                                                        onAdd={async (_type, content) => {
+                                                            const persisted = await persistVideoFrame(content, 'End frame');
+                                                            setVideoInput('lastFrame', {
+                                                                id: `lf_${Date.now()}`,
+                                                                type: 'image',
+                                                                url: persisted.url,
+                                                                storageUri: persisted.storageUri,
+                                                                prompt: 'End frame',
+                                                                timestamp: Date.now(),
+                                                                projectId: currentProjectId || ''
+                                                            });
+                                                        }}
                                                         onRemove={() => setVideoInput('lastFrame', null)}
                                                         onToggle={() => {}}
                                                         onUpdate={(id, updates) => {

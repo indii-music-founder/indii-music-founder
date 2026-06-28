@@ -7492,11 +7492,12 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-513: Make Cloud Storage the source of truth for large Veo inputs, masks, and outputs
 
-- **Status:** 🔴 OPEN / PLANNED — **Severity:** 🔴 HIGH — **Module:** Storage / video transport / lifecycle
+- **Status:** 🟢 FIX APPLIED LOCALLY — **Severity:** 🔴 HIGH — **Module:** Storage / video transport / lifecycle
 - **Evidence:** image work has moved toward Storage-backed references, but video flows still mix URLs, blob URLs, base64-derived frame anchors, and direct result downloads. Veo outputs and inpainting inputs will routinely exceed comfortable callable/browser payload sizes.
 - **Fix direction:** define owner-scoped Storage paths for video source clips, extracted keyframes, alpha masks, generated outputs, thumbnails/posters, and temporary render artifacts. Enforce content type, max size, ownership, and cleanup/lifecycle rules. Job docs should pass lightweight URIs, not media bytes.
 - **Retention policy decision:** use a hybrid model. Raw extraction frames, scratch alpha masks, temporary thumbnails, and retry intermediates should live under a TTL-managed temp prefix and auto-delete after 24 hours. User-promoted project assets, final generated outputs, selected keyframes, and mask tracks intentionally attached to a project should persist with the project until the user deletes them.
 - **Acceptance criteria:** no large video/blob/base64 payload is sent through callable data; output MP4/WebM files land in owner-scoped Storage paths; stale temp masks/intermediate outputs expire through lifecycle policy; playback uses durable URLs rather than session blob URLs.
+- **Fix applied in current workspace:** video uploads now preserve a canonical `storageUri` alongside the playable URL; `StorageService.saveItem` persists and deletes by `storageUri` when present; `VideoStage` and the right-panel start/end frame handlers upload captured anchors into owner/project/session-scoped Storage before writing them to the store; and generated video history items now retain `storageUri` for durable replay and cleanup.
 - **Files:** `packages/renderer/src/services/creative/CreativeStorageService.ts`; `packages/renderer/src/services/video/VideoGenerationService.ts`; `packages/firebase/storage.rules`; `firebase.json`; `cors.json`.
 
 ### ISSUE-514: Build Director's Bay controls around strict 24 FPS temporal math
@@ -7532,9 +7533,9 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-517: Promote keyframe anchoring into the Video Studio workflow
 
-- **Status:** 🔴 OPEN / PLANNED — **Severity:** 🟡 MEDIUM — **Module:** image-to-video / keyframes / UX
+- **Status:** 🟢 FIX APPLIED LOCALLY — **Severity:** 🟡 MEDIUM — **Module:** image-to-video / keyframes / UX
 - **Evidence:** `VideoGenerationOptionsSchema` and `generateVideoV3` already account for `firstFrameUri` and `lastFrameUri`, but the UI needs an explicit start/end keyframe workflow instead of hidden optional payload fields.
-- **Fix direction:** add a keyframe lane in the Director's Bay where users can choose/upload/extract a start frame and end frame. Store both as Storage URIs, preview them next to the prompt, and submit them through the canonical async job path.
+- **Fix:** The Director's Bay now persists start/end frames as Storage URIs, submits them through the canonical async job path, and restores them when a saved video is reopened. `processJobUpdate()` now preserves `directorSettings`, `firstFrameUri`, `lastFrameUri`, and `inputUris` inside `HistoryItem.meta`, and `VideoWorkflow` rehydrates the frame lane from that metadata.
 - **Acceptance criteria:** start-only, end-only, and start+end jobs validate cleanly; frame assets are uploaded before job creation; backend metadata records `hasFirstFrame` and `hasLastFrame`; UI can reopen the job and show the original anchors.
 - **Files:** `packages/renderer/src/modules/creative/video/VideoWorkflow.tsx`; `packages/renderer/src/modules/creative/video/components/*`; `packages/renderer/src/services/video/VideoGenerationService.ts`; `packages/firebase/src/functions/creative/gateway.ts`.
 
@@ -7592,3 +7593,51 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Evidence:** `packages/landing/src/App.test.tsx:9` — mocked `Home` now accepts `founder` and renders `public-home` for general routes; `packages/firebase/src/__tests__/image_gen.test.ts:29` — the image-generation mock now exposes `interactions.create`.
 - **Files:** `packages/landing/src/App.test.tsx`, `packages/firebase/src/__tests__/image_gen.test.ts`, `packages/renderer/src/services/__tests__/HiggsfieldParity.integration.test.ts`, `packages/renderer/src/modules/creative/components/CreativeCanvas.interaction.test.tsx`, `packages/renderer/src/modules/creative/components/__tests__/CreativeCanvas.test.tsx`
 - **UX Impact:** CI no longer blocks on the stale landing mock or stale creative test payload contracts; production deploy can proceed after the branch is merged and the GitHub workflow reruns.
+
+### ISSUE-CI-28328065016: CI Pipeline Failure (Deploy to Firebase Hosting)
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** CI/CD
+- **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
+- **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/28328065016)
+- **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
+
+### ISSUE-CI-28327872534: CI Pipeline Failure (Deploy to Firebase Hosting)
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** CI/CD
+- **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
+- **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/28327872534)
+- **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
+
+### ISSUE-CI-28327640504: CI Pipeline Failure (Deploy to Firebase Hosting)
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** CI/CD
+- **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
+- **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/28327640504)
+- **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
+
+### ISSUE-CI-28323668753: CI Pipeline Failure (Deploy to Firebase Hosting)
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** CI/CD
+- **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
+- **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/28323668753)
+- **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
+
+### ISSUE-CI-28322057269: CI Pipeline Failure (Deploy to Firebase Hosting)
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** CI/CD
+- **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
+- **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/28322057269)
+- **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
+
+### ISSUE-CI-28321176508: CI Pipeline Failure (Deploy to Firebase Hosting)
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** CI/CD
+- **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
+- **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/28321176508)
+- **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.

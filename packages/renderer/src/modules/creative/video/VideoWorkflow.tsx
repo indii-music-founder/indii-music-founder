@@ -33,9 +33,51 @@ export interface VideoJobUpdateData {
     prompt?: string;
     stitchError?: string;
     metadata?: Record<string, unknown>;
+    directorSettings?: Record<string, unknown>;
+    inputUris?: string[];
+    firstFrameUri?: string;
+    lastFrameUri?: string;
     output?: {
         url?: string;
         metadata?: Record<string, unknown>;
+    };
+}
+
+function extractVideoAnchorUris(source: {
+    directorSettings?: unknown;
+    inputUris?: unknown;
+    firstFrameUri?: unknown;
+    lastFrameUri?: unknown;
+} | null | undefined): {
+    directorSettings?: Record<string, unknown>;
+    firstFrameUri?: string;
+    lastFrameUri?: string;
+} {
+    const directorSettings = source?.directorSettings && typeof source.directorSettings === 'object' && !Array.isArray(source.directorSettings)
+        ? source.directorSettings as Record<string, unknown>
+        : undefined;
+    const inputUris = Array.isArray(source?.inputUris) ? source.inputUris : [];
+
+    const firstFrameUri = typeof directorSettings?.firstFrameUri === 'string'
+        ? directorSettings.firstFrameUri
+        : typeof source?.firstFrameUri === 'string'
+            ? source.firstFrameUri
+            : typeof inputUris[0] === 'string'
+                ? inputUris[0]
+                : undefined;
+
+    const lastFrameUri = typeof directorSettings?.lastFrameUri === 'string'
+        ? directorSettings.lastFrameUri
+        : typeof source?.lastFrameUri === 'string'
+            ? source.lastFrameUri
+            : typeof inputUris[1] === 'string'
+                ? inputUris[1]
+                : undefined;
+
+    return {
+        directorSettings,
+        firstFrameUri,
+        lastFrameUri,
     };
 }
 
@@ -83,6 +125,7 @@ export const processJobUpdate = async (
             useStore.getState().updateJobStatus(currentJobId, 'success');
             const rawVideoUrl = data.videoUrl || data.output?.url || '';
             const playableVideoUrl = await resolveStorageUrl(rawVideoUrl);
+            const storageUri = rawVideoUrl.startsWith('gs://') ? rawVideoUrl : undefined;
             // ⚡ Automatic Local Save (Veo 3.1 Requirement)
             // The Autonomous community/app needs access to this file locally first.
             const filename = `veo_${currentJobId}.mp4`;
@@ -103,17 +146,35 @@ export const processJobUpdate = async (
             }
 
             const metadata = data.output?.metadata || data.metadata;
+            const anchorUris = extractVideoAnchorUris(data);
+            const normalizedMetadata = metadata ? { ...metadata } : undefined;
+
+            if (normalizedMetadata) {
+                if (anchorUris.directorSettings) {
+                    normalizedMetadata.directorSettings = anchorUris.directorSettings;
+                }
+                if (anchorUris.firstFrameUri) {
+                    normalizedMetadata.firstFrameUri = anchorUris.firstFrameUri;
+                }
+                if (anchorUris.lastFrameUri) {
+                    normalizedMetadata.lastFrameUri = anchorUris.lastFrameUri;
+                }
+                if (Array.isArray(data.inputUris) && data.inputUris.length > 0) {
+                    normalizedMetadata.inputUris = data.inputUris;
+                }
+            }
 
             const newAsset = {
                 id: currentJobId,
                 url: playableVideoUrl,
+                storageUri,
                 localPath: '', // Will be updated async
                 prompt: data.prompt || deps.localPrompt,
                 type: 'video' as const,
                 timestamp: Date.now(),
                 projectId: deps.currentProjectId || 'default',
                 orgId: deps.currentOrganizationId,
-                meta: metadata ? JSON.stringify(metadata) : undefined
+                meta: normalizedMetadata ? JSON.stringify(normalizedMetadata) : undefined
             };
             deps.addToHistory(newAsset);
             deps.setActiveVideo(newAsset);
@@ -295,6 +356,66 @@ export default function VideoWorkflow() {
         }
     }, [selectedItem, generatedHistory, activeVideo, currentProjectId]);
 
+    useEffect(() => {
+        if (!activeVideo || activeVideo.type !== 'video') return;
+
+        if (!activeVideo.meta) {
+            setVideoInputs({ firstFrame: null, lastFrame: null });
+            return;
+        }
+
+        let cancelled = false;
+
+        const restoreAnchors = async () => {
+            try {
+                const parsedMeta = JSON.parse(activeVideo.meta) as Record<string, unknown>;
+                const anchorUris = extractVideoAnchorUris(parsedMeta);
+
+                if (!anchorUris.firstFrameUri && !anchorUris.lastFrameUri) {
+                    setVideoInputs({ firstFrame: null, lastFrame: null });
+                    return;
+                }
+
+                const buildFrameItem = async (uri: string, slot: 'firstFrame' | 'lastFrame'): Promise<HistoryItem> => {
+                    const resolvedUrl = await resolveStorageUrl(uri);
+
+                    return {
+                        id: `${activeVideo.id}-${slot}-frame`,
+                        type: 'image',
+                        url: resolvedUrl,
+                        storageUri: uri,
+                        prompt: `${slot === 'firstFrame' ? 'Start' : 'End'} frame from: ${activeVideo.prompt || 'video'}`,
+                        timestamp: activeVideo.timestamp,
+                        projectId: activeVideo.projectId,
+                        orgId: activeVideo.orgId,
+                        origin: activeVideo.origin || 'generated',
+                        parentId: activeVideo.id,
+                    };
+                };
+
+                const [firstFrame, lastFrame] = await Promise.all([
+                    anchorUris.firstFrameUri ? buildFrameItem(anchorUris.firstFrameUri, 'firstFrame') : Promise.resolve(null),
+                    anchorUris.lastFrameUri ? buildFrameItem(anchorUris.lastFrameUri, 'lastFrame') : Promise.resolve(null),
+                ]);
+
+                if (!cancelled) {
+                    setVideoInputs({
+                        firstFrame,
+                        lastFrame,
+                    });
+                }
+            } catch (error) {
+                logger.debug('[VideoWorkflow] No stored keyframe anchors to restore', error);
+            }
+        };
+
+        void restoreAnchors();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [activeVideo, setVideoInputs]);
+
     // Job Listener
     useEffect(() => {
         if (!jobId) return;
@@ -328,8 +449,15 @@ export default function VideoWorkflow() {
 
     const handleGenerate = async (promptOverride?: string) => {
         setJobStatus('queued');
-        const isInterpolation = !!(videoInputs.firstFrame && videoInputs.lastFrame);
-        toast.info(isInterpolation ? 'Queuing interpolation...' : 'Queuing scene generation...');
+        const isTemporalInpaint = !!(videoInputs.isTemporalInpaint && videoInputs.maskFrame && activeVideo?.type === 'video');
+        const isInterpolation = !isTemporalInpaint && !!(videoInputs.firstFrame && videoInputs.lastFrame);
+        toast.info(
+            isTemporalInpaint
+                ? 'Queuing temporal inpaint...'
+                : isInterpolation
+                    ? 'Queuing interpolation...'
+                    : 'Queuing scene generation...'
+        );
 
         // ⚡ Bolt Optimization: Use prompt passed from child component (which has local state)
         // to avoid using stale state due to debounce, falling back to localPrompt.
@@ -351,6 +479,10 @@ export default function VideoWorkflow() {
 
             // Synthesize prompt with Whisk references (SUBJECT, SCENE, STYLE, MOTION)
             let finalPrompt = WhiskService.synthesizeVideoPrompt(promptToUse, whiskState);
+
+            if (isTemporalInpaint) {
+                finalPrompt = `[TEMPORAL INPAINT MODE]: ${finalPrompt}. Preserve the video structure and replace the masked region only.`;
+            }
 
             // 🧠 Thinking Mode: Incorporate advanced reasoning into the prompt for now
             // until a native 'thinking' parameter is supported for Veo models.
@@ -390,8 +522,18 @@ export default function VideoWorkflow() {
                 }))
             ].slice(0, 3);
 
+            const sourceVideoUri = isTemporalInpaint ? (activeVideo?.storageUri || activeVideo?.url) : undefined;
+            const maskFrameUri = isTemporalInpaint ? (videoInputs.maskFrame?.storageUri || videoInputs.maskFrame?.url) : undefined;
+            const frameRange = isTemporalInpaint && videoInputs.maskRange
+                ? videoInputs.maskRange
+                : undefined;
+
+            if (isTemporalInpaint && (!sourceVideoUri || !maskFrameUri)) {
+                throw new Error('Temporal inpaint requires a selected video source and a captured mask frame.');
+            }
+
             // Check for long-form Video (Daisy Chain or duration > 8s)
-            if (studioControls.duration > 8 || videoInputs.isDaisyChain) {
+            if (!isTemporalInpaint && (studioControls.duration > 8 || videoInputs.isDaisyChain)) {
                 results = await VideoGeneration.generateLongFormVideo({
                     prompt: finalPrompt,
                     totalDuration: Math.max(studioControls.duration, 8), // Ensure at least 1 block
@@ -428,6 +570,7 @@ export default function VideoWorkflow() {
                 };
 
                 results = await VideoGeneration.generateVideo({
+                    mode: isTemporalInpaint ? 'temporal_inpaint' : undefined,
                     prompt: finalPrompt,
                     resolution: studioControls.resolution,
                     aspectRatio: effectiveAspectRatio,
@@ -439,6 +582,10 @@ export default function VideoWorkflow() {
                     shotList: studioControls.shotList,
                     firstFrame: videoInputs.firstFrame?.url,
                     lastFrame: videoInputs.lastFrame?.url,
+                    sourceVideoUri,
+                    maskFrameUri,
+                    maskTrackUri: maskFrameUri,
+                    frameRange,
                     timeOffset: videoInputs.timeOffset,
                     referenceImages: combinedReferenceImages,
                     personGeneration: studioControls.personGeneration,
@@ -459,11 +606,13 @@ export default function VideoWorkflow() {
 
                 // If the URL is provided immediately, complete it. Otherwise, set jobId to listen for updates.
                 if (firstResult.url) {
-                    results.forEach(res => {
+                    for (const res of results) {
                         const filename = `veo_${res.id}.mp4`;
+                        const storageUri = res.url.startsWith('gs://') ? res.url : undefined;
+                        const playableUrl = await resolveStorageUrl(res.url);
 
                         if (window.electronAPI?.video?.saveAsset) {
-                            (window.electronAPI.video.saveAsset(res.url, filename) as Promise<string>)
+                            (window.electronAPI.video.saveAsset(playableUrl, filename) as Promise<string>)
                                 .then((path: string) => {
                                     logger.debug('Video saved locally to:', path);
                                     updateHistoryItem(res.id, { localPath: path });
@@ -473,7 +622,8 @@ export default function VideoWorkflow() {
 
                         const newAsset = {
                             id: res.id,
-                            url: res.url,
+                            url: playableUrl,
+                            storageUri,
                             localPath: '', // Will be updated async
                             prompt: res.prompt,
                             type: 'video' as const,
@@ -482,7 +632,7 @@ export default function VideoWorkflow() {
                         };
                         addToHistory(newAsset);
                         setActiveVideo(newAsset);
-                    });
+                    }
                     setJobStatus('completed');
                     toast.success('Scene generated!');
                 } else {
