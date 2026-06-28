@@ -113,7 +113,6 @@ implementation_plan.md
 _archive_pre_monorepo/
 packages/firebase/lib/
 dist/
-packages/shared/dist/
 electron/
 /functions/
 coverage/
