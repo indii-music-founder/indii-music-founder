@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-27 23:07 EDT
+**Updated:** 2026-06-27 23:14 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+884090ee6 fix: set App Check debug token for Electron development
+dd00de768 chore: session checkpoint [23:07]
 6719a435e fix: disable App Check in Electron to prevent empty Referer header blocking
 f1a2c5e82 chore: session checkpoint [23:04]
 61f466049 chore: session checkpoint [22:57]
@@ -12,8 +14,6 @@ f1a2c5e82 chore: session checkpoint [23:04]
 42d7fdaa8 fix: resolve storage URL in canvas init fallback path
 3b29ab514 chore: session checkpoint [22:50]
 737c9238f chore: session checkpoint [22:42]
-5481e8d00 chore: session checkpoint [22:41]
-724a7a1bf chore: session checkpoint [22:39]
 ```
 
 ## Working State
