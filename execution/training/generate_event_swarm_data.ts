@@ -26,7 +26,7 @@ try {
     // gcloud auth has expired, which is fine since we are generating locally
 }
 const projectId = process.env.VITE_FIREBASE_PROJECT_ID || 'indii-music-founder';
-const location = 'us-central1'; // Vertex generation requires regional endpoint for Gemini
+const location = process.env.VERTEX_LOCATION || 'global'; // Preview models require global endpoint
 
 const DATASET_DIR = path.join(__dirname, '../../docs/agent-training/datasets');
 if (!fs.existsSync(DATASET_DIR)) {
