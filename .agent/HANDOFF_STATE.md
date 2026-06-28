@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-27 23:04 EDT
+**Updated:** 2026-06-27 23:07 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+6719a435e fix: disable App Check in Electron to prevent empty Referer header blocking
+f1a2c5e82 chore: session checkpoint [23:04]
 61f466049 chore: session checkpoint [22:57]
 27ea60f62 chore: update OPEN_ISSUES status for merged creative/video backlog (ISSUE-500-522)
 58e184306 fix: resolve storage URLs in creative gallery for Electron compatibility
@@ -12,13 +14,11 @@
 737c9238f chore: session checkpoint [22:42]
 5481e8d00 chore: session checkpoint [22:41]
 724a7a1bf chore: session checkpoint [22:39]
-8f923e67f chore: session checkpoint [22:38]
-936c04955 chore: session checkpoint [22:38]
 ```
 
 ## Working State
 ```
-M  .agent/HANDOFF_STATE.md
+clean working tree
 ```
 
 ## Decisions
