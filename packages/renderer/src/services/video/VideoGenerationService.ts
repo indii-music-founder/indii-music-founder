@@ -326,6 +326,33 @@ export class VideoGenerationService {
             throw new QuotaExceededError('video_duration', tierInfo.tier as any, quotaCheck.reason || 'Limit reached', 1, 1);
         }
 
+        const videoDuration = options.durationSeconds || options.duration || 8;
+        const estimatedCost = this.estimateVideoCost(videoDuration, options.model);
+        let costReservationId: string | undefined;
+        if (!options.skipCostCheck) {
+            const costCheck = await CostControlService.checkAndReserve({
+                operationType: 'video',
+                estimatedCost,
+                userId,
+                metadata: {
+                    durationSeconds: videoDuration,
+                    model: options.model || DEFAULT_VIDEO_MODEL,
+                    resolution: options.resolution,
+                    aspectRatio: options.aspectRatio,
+                    mode: options.mode || 'video_remix',
+                    sourceVideoUri: options.sourceVideoUri,
+                    maskFrameUri: options.maskFrameUri,
+                    maskTrackUri: options.maskTrackUri,
+                },
+            });
+
+            if (!costCheck.allowed) {
+                throw new Error(`Video generation blocked: ${costCheck.reason}`);
+            }
+
+            costReservationId = costCheck.operationId;
+        }
+
         logger.info('[VideoGeneration] 🎬 generateVideo() called (via Gateway):', {
             promptPreview: options.prompt.substring(0, 100),
             userId,
@@ -417,9 +444,14 @@ export class VideoGenerationService {
             const generateVideoV3 = httpsCallable(functions, 'generateVideoV3');
             
             const payload = {
+                mode: options.mode,
                 prompt: enrichedPrompt,
                 firstFrameUri,
                 lastFrameUri,
+                sourceVideoUri: options.sourceVideoUri,
+                maskFrameUri: options.maskFrameUri,
+                maskTrackUri: options.maskTrackUri,
+                frameRange: options.frameRange,
                 referenceUris: referenceUris && referenceUris.length > 0 ? referenceUris : undefined,
                 aspectRatio: options.aspectRatio,
                 model: options.model,
@@ -429,6 +461,8 @@ export class VideoGenerationService {
                 personGeneration: options.personGeneration,
                 negativePrompt: options.negativePrompt,
                 seed: options.seed,
+                costEstimate: estimatedCost,
+                costReservationId,
             };
 
             const compactedPayload = Object.fromEntries(
@@ -609,6 +643,24 @@ export class VideoGenerationService {
             );
         }
 
+        const estimatedCost = this.estimateVideoCost(options.totalDuration, options.model);
+        const costCheck = await CostControlService.checkAndReserve({
+            operationType: 'video',
+            estimatedCost,
+            userId: auth.currentUser?.uid || 'unknown',
+            metadata: {
+                durationSeconds: options.totalDuration,
+                model: options.model || DEFAULT_VIDEO_MODEL,
+                resolution: options.resolution,
+                aspectRatio: options.aspectRatio,
+                mode: 'long_form',
+            },
+        });
+
+        if (!costCheck.allowed) {
+            throw new Error(`Video generation blocked: ${costCheck.reason}`);
+        }
+
         const jobId = `long_${uuidv4()}`;
         const { useStore } = await import('@/core/store');
         const orgId = useStore.getState().currentOrganizationId;
@@ -677,6 +729,7 @@ export class VideoGenerationService {
                         const results = await this.generateVideo({
                             prompt: segmentPrompt,
                             model: options.model || DEFAULT_VIDEO_MODEL,
+                            skipCostCheck: true,
                             image: previousLastFrame
                                 ? { imageBytes: previousLastFrame, mimeType: 'image/jpeg' }
                                 : undefined,

@@ -1,10 +1,12 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { Sparkles, Video } from 'lucide-react';
+import { Loader2, Sparkles, Video, X } from 'lucide-react';
 import { HistoryItem } from '@/core/store';
 import { CreativeSlice } from '@/core/store/slices/creative';
 import { logger } from '@/utils/logger';
 import { VideoJsPlayer, type VideoJsPlayerHandle } from './VideoJsPlayer';
+import { CreativeStorageService } from '@/services/creative/CreativeStorageService';
+import { extractVideoFrameAt } from '@/utils/video';
 
 interface VideoStageProps {
     jobStatus: 'idle' | 'queued' | 'processing' | 'stitching' | 'completed' | 'failed';
@@ -23,46 +25,100 @@ export const VideoStage = React.memo<VideoStageProps>(({
     const [videoError, setVideoError] = React.useState<string | null>(null);
     const [displayProgress, setDisplayProgress] = React.useState(0);
     const [statusMessageIndex, setStatusMessageIndex] = React.useState(0);
+    const [extractionState, setExtractionState] = React.useState<{
+        active: boolean;
+        label: string | null;
+        progress: number;
+        error: string | null;
+    }>({
+        active: false,
+        label: null,
+        progress: 0,
+        error: null,
+    });
     const playerRef = React.useRef<VideoJsPlayerHandle | null>(null);
+    const extractionAbortRef = React.useRef<AbortController | null>(null);
 
-    /**
-     * Captures the current video frame as a base64 JPEG string.
-     * This is essential for daisy-chaining: the Veo API needs actual image data,
-     * not a blob: URL reference (which is session-scoped and un-fetchable by the API).
-     */
-    const captureCurrentFrame = React.useCallback((): string | null => {
-        const frameData = playerRef.current?.captureFrame();
-        if (!frameData) {
-            logger.warn('[VideoStage] Cannot capture frame: video player not ready');
-            return null;
-        }
-        logger.info('[VideoStage] Frame captured successfully', {
-            size: Math.round(frameData.length / 1024) + 'KB'
-        });
-        return frameData;
+    const clearExtraction = React.useCallback(() => {
+        extractionAbortRef.current?.abort();
+        extractionAbortRef.current = null;
+        setExtractionState({ active: false, label: null, progress: 0, error: null });
     }, []);
 
-    /**
-     * Creates a HistoryItem-like anchor from the captured frame.
-     * The URL is a base64 data URI that the Veo API can actually consume.
-     */
-    const createFrameAnchor = React.useCallback((label: 'anchor' | 'end'): HistoryItem | null => {
+    React.useEffect(() => () => clearExtraction(), [clearExtraction]);
+
+    const createFrameAnchor = React.useCallback(async (
+        label: 'anchor' | 'end' | 'mask'
+    ): Promise<HistoryItem | null> => {
         if (!activeVideo) return null;
-        const frameData = captureCurrentFrame();
-        if (!frameData) {
+
+        const currentPlayer = playerRef.current;
+        const fps = 24;
+        const targetTime = label === 'anchor'
+            ? 1 / fps
+            : label === 'end'
+                ? Math.max(0, (currentPlayer?.duration() || 0) - (1 / fps))
+                : currentPlayer?.currentTime() ?? 0;
+
+        const sourceUrl = activeVideo.storageUri || activeVideo.url;
+        const extractionLabel = label === 'mask' ? 'mask frame' : label === 'anchor' ? 'anchor frame' : 'end frame';
+        const controller = new AbortController();
+        extractionAbortRef.current = controller;
+        setExtractionState({ active: true, label: extractionLabel, progress: 0, error: null });
+
+        try {
+            const { useStore } = await import('@/core/store');
+            const { user, currentProjectId, activeSessionId } = useStore.getState();
+            const extracted = await extractVideoFrameAt(sourceUrl, targetTime, {
+                fps,
+                signal: controller.signal,
+                onProgress: ({ progress }) => {
+                    setExtractionState((state) => state.active ? { ...state, progress } : state);
+                },
+            });
+
+            if (user?.uid) {
+                const storageUri = await CreativeStorageService.uploadReferenceMedia(user.uid, extracted.dataUrl, 'image', {
+                    projectId: currentProjectId || activeVideo.projectId || undefined,
+                    sessionId: currentProjectId || activeVideo.projectId ? undefined : activeSessionId || undefined,
+                    scope: label === 'mask' ? 'masks' : 'assets'
+                });
+
+                return {
+                    ...activeVideo,
+                    id: `${activeVideo.id}-${label}-frame`,
+                    url: storageUri,
+                    storageUri,
+                    type: 'image' as const,
+                    prompt: `${label === 'anchor' ? 'First' : label === 'end' ? 'Last' : 'Mask'} frame from: ${activeVideo.prompt || 'video'}`,
+                    timestamp: Date.now(),
+                    mask: label === 'mask' ? storageUri : undefined
+                };
+            }
+        } catch (error) {
+            if (!(error instanceof Error && error.message === 'Operation cancelled')) {
+                logger.warn(`[VideoStage] Failed to persist ${label} frame to Storage; falling back to data URL`, error);
+                setExtractionState((state) => ({ ...state, error: error instanceof Error ? error.message : String(error) }));
+            }
+        }
+
+        const fallbackFrame = playerRef.current?.captureFrame();
+        if (!fallbackFrame) {
             logger.warn(`[VideoStage] Failed to capture ${label} frame — using fallback`);
-            return activeVideo; // Fallback: pass the HistoryItem as-is
+            return activeVideo;
         }
 
         return {
             ...activeVideo,
             id: `${activeVideo.id}-${label}-frame`,
-            url: frameData,
+            url: fallbackFrame,
+            storageUri: undefined,
             type: 'image' as const,
-            prompt: `${label === 'anchor' ? 'First' : 'Last'} frame from: ${activeVideo.prompt || 'video'}`,
-            timestamp: Date.now()
+            prompt: `${label === 'anchor' ? 'First' : label === 'end' ? 'Last' : 'Mask'} frame from: ${activeVideo.prompt || 'video'}`,
+            timestamp: Date.now(),
+            mask: label === 'mask' ? fallbackFrame : undefined
         };
-    }, [activeVideo, captureCurrentFrame]);
+    }, [activeVideo]);
 
     const PROGRESS_MESSAGES = React.useMemo(() => [
         "AI Director is framing the scene...",
@@ -200,6 +256,34 @@ export const VideoStage = React.memo<VideoStageProps>(({
                     </div>
                 ) : activeVideo ? (
                     <div className="relative w-full h-full flex items-center justify-center group/stage">
+                        {extractionState.active && (
+                            <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-black/70 backdrop-blur-md">
+                                <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-black/75 px-4 py-3 shadow-2xl">
+                                    <Loader2 size={18} className="text-purple-400 animate-spin" />
+                                    <div className="min-w-0">
+                                        <p className="text-xs font-semibold text-white truncate">
+                                            Extracting {extractionState.label}
+                                        </p>
+                                        <p className="text-[10px] text-gray-400">
+                                            {Math.round(extractionState.progress)}%
+                                        </p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => clearExtraction()}
+                                        className="ml-2 rounded-md border border-white/10 bg-white/5 p-1.5 text-gray-300 hover:bg-white/10 hover:text-white"
+                                        aria-label="Cancel frame extraction"
+                                    >
+                                        <X size={14} />
+                                    </button>
+                                </div>
+                                {extractionState.error && (
+                                    <p className="mt-3 max-w-sm text-center text-[10px] text-rose-300">
+                                        {extractionState.error}
+                                    </p>
+                                )}
+                            </div>
+                        )}
                         {activeVideo.url.startsWith('data:image') || activeVideo.type === 'image' ? (
                             <img src={activeVideo.url} alt="Preview" className="w-full h-full object-contain" />
                         ) : (
@@ -239,11 +323,12 @@ export const VideoStage = React.memo<VideoStageProps>(({
                         <div className="absolute top-3 right-3 flex gap-1.5 opacity-0 group-hover/stage:opacity-100 transition-opacity duration-300">
                             <button
                                 onClick={() => {
-                                    const anchor = createFrameAnchor('anchor');
-                                    if (anchor) {
-                                        setVideoInputs({ firstFrame: anchor });
-                                        logger.info('[VideoStage] Anchor frame set (captured from canvas)');
-                                    }
+                                    void createFrameAnchor('anchor').then((anchor) => {
+                                        if (anchor) {
+                                            setVideoInputs({ firstFrame: anchor });
+                                            logger.info('[VideoStage] Anchor frame set (captured from canvas)');
+                                        }
+                                    });
                                 }}
                                 data-testid="set-anchor-btn"
                                 aria-label="Set as anchor frame for next generation"
@@ -253,17 +338,40 @@ export const VideoStage = React.memo<VideoStageProps>(({
                             </button>
                             <button
                                 onClick={() => {
-                                    const endFrame = createFrameAnchor('end');
-                                    if (endFrame) {
-                                        setVideoInputs({ lastFrame: endFrame });
-                                        logger.info('[VideoStage] End frame set (captured from canvas)');
-                                    }
+                                    void createFrameAnchor('end').then((endFrame) => {
+                                        if (endFrame) {
+                                            setVideoInputs({ lastFrame: endFrame });
+                                            logger.info('[VideoStage] End frame set (captured from canvas)');
+                                        }
+                                    });
                                 }}
                                 data-testid="set-end-frame-btn"
                                 aria-label="Set as end frame for next generation"
                                 className="px-2.5 py-1.5 bg-black/60 backdrop-blur-md hover:bg-indigo-500/30 rounded-lg text-[10px] font-semibold text-white/80 hover:text-white transition-all border border-white/10 hover:border-indigo-500/40 focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:outline-none"
                             >
                                 🎬 Set End Frame
+                            </button>
+                            <button
+                                onClick={() => {
+                                    void createFrameAnchor('mask').then((maskFrame) => {
+                                        if (maskFrame) {
+                                            setVideoInputs({
+                                                maskFrame,
+                                                maskRange: {
+                                                    startFrame: Math.max(0, Math.round((playerRef.current?.currentTime() || 0) * 24)),
+                                                    endFrame: Math.max(0, Math.round((playerRef.current?.currentTime() || 0) * 24))
+                                                },
+                                                isTemporalInpaint: true
+                                            } as Partial<CreativeSlice['videoInputs']>);
+                                            logger.info('[VideoStage] Mask frame set (captured from video)');
+                                        }
+                                    });
+                                }}
+                                data-testid="set-mask-frame-btn"
+                                aria-label="Set as mask frame for temporal inpaint"
+                                className="px-2.5 py-1.5 bg-black/60 backdrop-blur-md hover:bg-emerald-500/30 rounded-lg text-[10px] font-semibold text-white/80 hover:text-white transition-all border border-white/10 hover:border-emerald-500/40 focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:outline-none"
+                            >
+                                🖌 Set Mask
                             </button>
                         </div>
                     </div>

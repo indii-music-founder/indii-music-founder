@@ -21,6 +21,17 @@ export declare const VideoJobPayloadSchema: z.ZodObject<{
     prompt: z.ZodString;
     sourceVideoUri: z.ZodOptional<z.ZodString>;
     maskFrameUri: z.ZodOptional<z.ZodString>;
+    maskTrackUri: z.ZodOptional<z.ZodString>;
+    frameRange: z.ZodOptional<z.ZodObject<{
+        startFrame: z.ZodNumber;
+        endFrame: z.ZodNumber;
+    }, "strip", z.ZodTypeAny, {
+        startFrame: number;
+        endFrame: number;
+    }, {
+        startFrame: number;
+        endFrame: number;
+    }>>;
     cameraPhysics: z.ZodOptional<z.ZodObject<{
         pan: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
         tilt: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
@@ -41,6 +52,17 @@ export declare const VideoJobPayloadSchema: z.ZodObject<{
     prompt: z.ZodString;
     sourceVideoUri: z.ZodOptional<z.ZodString>;
     maskFrameUri: z.ZodOptional<z.ZodString>;
+    maskTrackUri: z.ZodOptional<z.ZodString>;
+    frameRange: z.ZodOptional<z.ZodObject<{
+        startFrame: z.ZodNumber;
+        endFrame: z.ZodNumber;
+    }, "strip", z.ZodTypeAny, {
+        startFrame: number;
+        endFrame: number;
+    }, {
+        startFrame: number;
+        endFrame: number;
+    }>>;
     cameraPhysics: z.ZodOptional<z.ZodObject<{
         pan: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
         tilt: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
@@ -61,6 +83,17 @@ export declare const VideoJobPayloadSchema: z.ZodObject<{
     prompt: z.ZodString;
     sourceVideoUri: z.ZodOptional<z.ZodString>;
     maskFrameUri: z.ZodOptional<z.ZodString>;
+    maskTrackUri: z.ZodOptional<z.ZodString>;
+    frameRange: z.ZodOptional<z.ZodObject<{
+        startFrame: z.ZodNumber;
+        endFrame: z.ZodNumber;
+    }, "strip", z.ZodTypeAny, {
+        startFrame: number;
+        endFrame: number;
+    }, {
+        startFrame: number;
+        endFrame: number;
+    }>>;
     cameraPhysics: z.ZodOptional<z.ZodObject<{
         pan: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
         tilt: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
@@ -175,6 +208,17 @@ export declare const VideoJobDocumentSchema: z.ZodObject<{
         prompt: z.ZodString;
         sourceVideoUri: z.ZodOptional<z.ZodString>;
         maskFrameUri: z.ZodOptional<z.ZodString>;
+        maskTrackUri: z.ZodOptional<z.ZodString>;
+        frameRange: z.ZodOptional<z.ZodObject<{
+            startFrame: z.ZodNumber;
+            endFrame: z.ZodNumber;
+        }, "strip", z.ZodTypeAny, {
+            startFrame: number;
+            endFrame: number;
+        }, {
+            startFrame: number;
+            endFrame: number;
+        }>>;
         cameraPhysics: z.ZodOptional<z.ZodObject<{
             pan: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
             tilt: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
@@ -195,6 +239,17 @@ export declare const VideoJobDocumentSchema: z.ZodObject<{
         prompt: z.ZodString;
         sourceVideoUri: z.ZodOptional<z.ZodString>;
         maskFrameUri: z.ZodOptional<z.ZodString>;
+        maskTrackUri: z.ZodOptional<z.ZodString>;
+        frameRange: z.ZodOptional<z.ZodObject<{
+            startFrame: z.ZodNumber;
+            endFrame: z.ZodNumber;
+        }, "strip", z.ZodTypeAny, {
+            startFrame: number;
+            endFrame: number;
+        }, {
+            startFrame: number;
+            endFrame: number;
+        }>>;
         cameraPhysics: z.ZodOptional<z.ZodObject<{
             pan: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
             tilt: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
@@ -215,6 +270,17 @@ export declare const VideoJobDocumentSchema: z.ZodObject<{
         prompt: z.ZodString;
         sourceVideoUri: z.ZodOptional<z.ZodString>;
         maskFrameUri: z.ZodOptional<z.ZodString>;
+        maskTrackUri: z.ZodOptional<z.ZodString>;
+        frameRange: z.ZodOptional<z.ZodObject<{
+            startFrame: z.ZodNumber;
+            endFrame: z.ZodNumber;
+        }, "strip", z.ZodTypeAny, {
+            startFrame: number;
+            endFrame: number;
+        }, {
+            startFrame: number;
+            endFrame: number;
+        }>>;
         cameraPhysics: z.ZodOptional<z.ZodObject<{
             pan: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
             tilt: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
@@ -323,6 +389,7 @@ export declare const VideoJobDocumentSchema: z.ZodObject<{
     model: z.ZodOptional<z.ZodString>;
     costEstimate: z.ZodOptional<z.ZodNumber>;
     costReservationId: z.ZodOptional<z.ZodString>;
+    actualCost: z.ZodOptional<z.ZodNumber>;
     retryCount: z.ZodDefault<z.ZodNumber>;
     error: z.ZodOptional<z.ZodString>;
     createdAt: z.ZodUnion<[z.ZodString, z.ZodNumber]>;
@@ -359,6 +426,17 @@ export declare const VideoJobDocumentSchema: z.ZodObject<{
         prompt: z.ZodString;
         sourceVideoUri: z.ZodOptional<z.ZodString>;
         maskFrameUri: z.ZodOptional<z.ZodString>;
+        maskTrackUri: z.ZodOptional<z.ZodString>;
+        frameRange: z.ZodOptional<z.ZodObject<{
+            startFrame: z.ZodNumber;
+            endFrame: z.ZodNumber;
+        }, "strip", z.ZodTypeAny, {
+            startFrame: number;
+            endFrame: number;
+        }, {
+            startFrame: number;
+            endFrame: number;
+        }>>;
         cameraPhysics: z.ZodOptional<z.ZodObject<{
             pan: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
             tilt: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
@@ -379,6 +457,17 @@ export declare const VideoJobDocumentSchema: z.ZodObject<{
         prompt: z.ZodString;
         sourceVideoUri: z.ZodOptional<z.ZodString>;
         maskFrameUri: z.ZodOptional<z.ZodString>;
+        maskTrackUri: z.ZodOptional<z.ZodString>;
+        frameRange: z.ZodOptional<z.ZodObject<{
+            startFrame: z.ZodNumber;
+            endFrame: z.ZodNumber;
+        }, "strip", z.ZodTypeAny, {
+            startFrame: number;
+            endFrame: number;
+        }, {
+            startFrame: number;
+            endFrame: number;
+        }>>;
         cameraPhysics: z.ZodOptional<z.ZodObject<{
             pan: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
             tilt: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
@@ -399,6 +488,17 @@ export declare const VideoJobDocumentSchema: z.ZodObject<{
         prompt: z.ZodString;
         sourceVideoUri: z.ZodOptional<z.ZodString>;
         maskFrameUri: z.ZodOptional<z.ZodString>;
+        maskTrackUri: z.ZodOptional<z.ZodString>;
+        frameRange: z.ZodOptional<z.ZodObject<{
+            startFrame: z.ZodNumber;
+            endFrame: z.ZodNumber;
+        }, "strip", z.ZodTypeAny, {
+            startFrame: number;
+            endFrame: number;
+        }, {
+            startFrame: number;
+            endFrame: number;
+        }>>;
         cameraPhysics: z.ZodOptional<z.ZodObject<{
             pan: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
             tilt: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
@@ -507,6 +607,7 @@ export declare const VideoJobDocumentSchema: z.ZodObject<{
     model: z.ZodOptional<z.ZodString>;
     costEstimate: z.ZodOptional<z.ZodNumber>;
     costReservationId: z.ZodOptional<z.ZodString>;
+    actualCost: z.ZodOptional<z.ZodNumber>;
     retryCount: z.ZodDefault<z.ZodNumber>;
     error: z.ZodOptional<z.ZodString>;
     createdAt: z.ZodUnion<[z.ZodString, z.ZodNumber]>;
@@ -543,6 +644,17 @@ export declare const VideoJobDocumentSchema: z.ZodObject<{
         prompt: z.ZodString;
         sourceVideoUri: z.ZodOptional<z.ZodString>;
         maskFrameUri: z.ZodOptional<z.ZodString>;
+        maskTrackUri: z.ZodOptional<z.ZodString>;
+        frameRange: z.ZodOptional<z.ZodObject<{
+            startFrame: z.ZodNumber;
+            endFrame: z.ZodNumber;
+        }, "strip", z.ZodTypeAny, {
+            startFrame: number;
+            endFrame: number;
+        }, {
+            startFrame: number;
+            endFrame: number;
+        }>>;
         cameraPhysics: z.ZodOptional<z.ZodObject<{
             pan: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
             tilt: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
@@ -563,6 +675,17 @@ export declare const VideoJobDocumentSchema: z.ZodObject<{
         prompt: z.ZodString;
         sourceVideoUri: z.ZodOptional<z.ZodString>;
         maskFrameUri: z.ZodOptional<z.ZodString>;
+        maskTrackUri: z.ZodOptional<z.ZodString>;
+        frameRange: z.ZodOptional<z.ZodObject<{
+            startFrame: z.ZodNumber;
+            endFrame: z.ZodNumber;
+        }, "strip", z.ZodTypeAny, {
+            startFrame: number;
+            endFrame: number;
+        }, {
+            startFrame: number;
+            endFrame: number;
+        }>>;
         cameraPhysics: z.ZodOptional<z.ZodObject<{
             pan: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
             tilt: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
@@ -583,6 +706,17 @@ export declare const VideoJobDocumentSchema: z.ZodObject<{
         prompt: z.ZodString;
         sourceVideoUri: z.ZodOptional<z.ZodString>;
         maskFrameUri: z.ZodOptional<z.ZodString>;
+        maskTrackUri: z.ZodOptional<z.ZodString>;
+        frameRange: z.ZodOptional<z.ZodObject<{
+            startFrame: z.ZodNumber;
+            endFrame: z.ZodNumber;
+        }, "strip", z.ZodTypeAny, {
+            startFrame: number;
+            endFrame: number;
+        }, {
+            startFrame: number;
+            endFrame: number;
+        }>>;
         cameraPhysics: z.ZodOptional<z.ZodObject<{
             pan: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
             tilt: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
@@ -691,6 +825,7 @@ export declare const VideoJobDocumentSchema: z.ZodObject<{
     model: z.ZodOptional<z.ZodString>;
     costEstimate: z.ZodOptional<z.ZodNumber>;
     costReservationId: z.ZodOptional<z.ZodString>;
+    actualCost: z.ZodOptional<z.ZodNumber>;
     retryCount: z.ZodDefault<z.ZodNumber>;
     error: z.ZodOptional<z.ZodString>;
     createdAt: z.ZodUnion<[z.ZodString, z.ZodNumber]>;
