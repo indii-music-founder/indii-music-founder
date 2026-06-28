@@ -14,6 +14,7 @@ import { QuotaExceededError } from '@/shared/types/errors';
 import { metadataPersistenceService } from '@/services/persistence/MetadataPersistenceService';
 import { CreativeStorageService } from '@/services/creative/CreativeStorageService';
 import { CostControlService } from '@/services/billing/CostControlService';
+import { normalizeEditImageResult } from './editResponse';
 // ============================================================================
 // TYPES
 // ============================================================================
@@ -618,9 +619,9 @@ export class ImageGenerationService {
                 model: 'pro'
             });
 
-            const data = result.data as { id: string; url: string; prompt: string } | null;
-            if (!data || !data.url) return null;
-            
+            const data = normalizeEditImageResult(result.data, options.prompt || 'Remix this image');
+            if (!data?.url) return null;
+
             return { url: data.url };
         });
     }
@@ -745,7 +746,7 @@ export class ImageGenerationService {
 
             const editImageFn = httpsCallable(functions, 'editImage');
             const result = await editImageFn(options);
-            return result.data;
+            return normalizeEditImageResult(result.data, options.prompt);
         });
     }
 

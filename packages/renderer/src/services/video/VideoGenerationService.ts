@@ -329,7 +329,7 @@ export class VideoGenerationService {
         const videoDuration = options.durationSeconds || options.duration || 8;
         const estimatedCost = this.estimateVideoCost(videoDuration, options.model);
         let costReservationId: string | undefined;
-        if (!options.skipCostCheck) {
+        if (!options.skipCostCheck && !options.costReservationId) {
             const costCheck = await CostControlService.checkAndReserve({
                 operationType: 'video',
                 estimatedCost,
@@ -352,6 +352,7 @@ export class VideoGenerationService {
 
             costReservationId = costCheck.operationId;
         }
+        const effectiveCostReservationId = options.costReservationId || costReservationId;
 
         logger.info('[VideoGeneration] 🎬 generateVideo() called (via Gateway):', {
             promptPreview: options.prompt.substring(0, 100),
@@ -452,6 +453,7 @@ export class VideoGenerationService {
                 maskFrameUri: options.maskFrameUri,
                 maskTrackUri: options.maskTrackUri,
                 frameRange: options.frameRange,
+                skipCostCheck: options.skipCostCheck,
                 referenceUris: referenceUris && referenceUris.length > 0 ? referenceUris : undefined,
                 aspectRatio: options.aspectRatio,
                 model: options.model,
@@ -462,7 +464,7 @@ export class VideoGenerationService {
                 negativePrompt: options.negativePrompt,
                 seed: options.seed,
                 costEstimate: estimatedCost,
-                costReservationId,
+                costReservationId: effectiveCostReservationId,
             };
 
             const compactedPayload = Object.fromEntries(
@@ -532,7 +534,11 @@ export class VideoGenerationService {
             unsub = this.subscribeToJob(jobId, async (job: VideoJob | null) => {
                 if (!job) return;
 
-                if (job.status === 'completed' || job.status === 'failed') {
+                if (job.status === 'completed' || job.status === 'failed' || job.status === 'cancelled') {
+                    if (job.status === 'cancelled') {
+                        reject(new Error(job.error || 'Video generation cancelled by user.'));
+                        return;
+                    }
                     if (job.status === 'completed') {
                         // Enforce MIME Type Guard for Veo 3.1 Compliance
                         const mimeType = job.output?.metadata?.mime_type;
@@ -660,6 +666,7 @@ export class VideoGenerationService {
         if (!costCheck.allowed) {
             throw new Error(`Video generation blocked: ${costCheck.reason}`);
         }
+        const longFormReservationId = costCheck.operationId;
 
         const jobId = `long_${uuidv4()}`;
         const { useStore } = await import('@/core/store');
@@ -694,6 +701,8 @@ export class VideoGenerationService {
             totalSegments: numBlocks,
             completedSegments: 0,
             segmentUrls: [],
+            costEstimate: estimatedCost,
+            costReservationId: longFormReservationId,
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
         });
@@ -834,12 +843,13 @@ export class VideoGenerationService {
         } catch (error: unknown) {
             const { updateDoc } = await import('firebase/firestore');
             const errorMsg = error instanceof Error ? error.message : String(error);
+            const isCancelled = errorMsg.toLowerCase().includes('cancelled');
 
             await updateDoc(jobRef, {
-                status: 'failed',
+                status: isCancelled ? 'cancelled' : 'failed',
                 error: errorMsg,
                 segmentUrls,
-                'chainState.failedAtSegment': segmentUrls.length,
+                ...(isCancelled ? { cancelledAt: serverTimestamp() } : { 'chainState.failedAtSegment': segmentUrls.length }),
                 updatedAt: serverTimestamp(),
             }).catch(e => logger.warn('[VideoGeneration] Failed to update long-form job status:', e));
 

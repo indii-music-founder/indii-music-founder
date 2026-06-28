@@ -164,6 +164,32 @@ describe('EditingService', () => {
             expect(result).toBeNull();
         });
 
+        it('should normalize raw Gemini candidate responses into a displayable data URL', async () => {
+            mockEditImageFn.mockResolvedValue({
+                data: {
+                    candidates: [{
+                        content: {
+                            parts: [{
+                                inlineData: {
+                                    data: 'candidate-base64-data==',
+                                    mimeType: 'image/png',
+                                }
+                            }]
+                        }
+                    }]
+                }
+            });
+
+            const result = await EditingService.editImage({
+                image: { mimeType: 'image/png', data: 'inputbase64==' },
+                prompt: 'Make it cinematic',
+            });
+
+            expect(result).not.toBeNull();
+            expect(result!.url).toBe('data:image/png;base64,candidate-base64-data==');
+            expect(result!.prompt).toBe('Make it cinematic');
+        });
+
         it('should pass forceHighFidelity to direct SDK', async () => {
             mockEditImageFn.mockResolvedValue({
                 data: {

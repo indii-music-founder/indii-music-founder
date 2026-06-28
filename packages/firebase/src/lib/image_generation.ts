@@ -460,6 +460,17 @@ export class GeminiImageService {
         if (status === 429 || message.includes("429")) {
             throw new functions.https.HttpsError("resource-exhausted", "Gemini API rate limit exceeded. Please try again later.");
         }
+        if (
+            message.includes("No image data found in edit response") ||
+            message.includes("No image data found in response") ||
+            message.includes("No candidates returned from Gemini API") ||
+            message.includes("No content parts in response")
+        ) {
+            throw new functions.https.HttpsError(
+                "failed-precondition",
+                "Gemini did not return an editable image for this request. Try a clearer prompt or a tighter mask."
+            );
+        }
         if (status === 504 || status === 503 || message.includes("deadline") || err.name === 'AbortError') {
             throw new functions.https.HttpsError("deadline-exceeded", "Gemini API timed out during generation. The model may be overloaded.");
         }

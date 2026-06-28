@@ -92,10 +92,10 @@ interface VideoEditorState {
 
     // Job Tracking
     jobId: string | null;
-    status: 'idle' | 'queued' | 'processing' | 'stitching' | 'completed' | 'failed';
+    status: 'idle' | 'queued' | 'processing' | 'stitching' | 'completed' | 'failed' | 'cancelled';
     progress: number;
     setJobId: (id: string | null) => void;
-    setStatus: (status: 'idle' | 'queued' | 'processing' | 'stitching' | 'completed' | 'failed') => void;
+    setStatus: (status: 'idle' | 'queued' | 'processing' | 'stitching' | 'completed' | 'failed' | 'cancelled') => void;
     setProgress: (progress: number) => void;
 
     // Membership

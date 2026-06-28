@@ -1,6 +1,6 @@
 import { StateCreator } from 'zustand';
 
-export type BackgroundJobStatus = 'running' | 'success' | 'error';
+export type BackgroundJobStatus = 'running' | 'success' | 'error' | 'cancelled';
 export type BackgroundJobType = 'video_render' | 'audio_process' | 'ai_generation' | 'export';
 
 export interface BackgroundJob {

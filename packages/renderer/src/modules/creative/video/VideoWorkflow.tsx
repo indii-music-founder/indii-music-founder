@@ -7,6 +7,8 @@ import { useShallow } from 'zustand/react/shallow';
 import { useVideoEditorStore } from './store/videoEditorStore';
 import { VideoGeneration } from "@/services/video/VideoGenerationService";
 import { WhiskService } from "@/services/WhiskService";
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '@/services/firebase';
 // Removed unused imports from motion and lucide-react as they are now in VideoStage
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Layout, Settings, Shuffle, ChevronDown, ChevronUp, Hash, Music, Trash2, Layers, Film } from 'lucide-react';
@@ -23,7 +25,7 @@ const SceneBuilder = lazy(() => import('./visualizer/SceneBuilder').then(m => ({
 import { useToast, ToastContextType } from '@/core/context/ToastContext';
 
 /** Valid job status values for video generation */
-export type JobStatus = 'idle' | 'queued' | 'processing' | 'completed' | 'failed' | 'stitching';
+export type JobStatus = 'idle' | 'queued' | 'processing' | 'completed' | 'failed' | 'stitching' | 'cancelled';
 
 /** Data shape from Firestore video job listener */
 export interface VideoJobUpdateData {
@@ -110,7 +112,7 @@ export const processJobUpdate = async (
         const currentStatus = deps.getCurrentStatus();
         if (newStatus && newStatus !== currentStatus) {
             // Type guard for valid job statuses
-            const validStatuses: JobStatus[] = ['idle', 'queued', 'processing', 'completed', 'failed', 'stitching'];
+            const validStatuses: JobStatus[] = ['idle', 'queued', 'processing', 'completed', 'failed', 'stitching', 'cancelled'];
             if (validStatuses.includes(newStatus as JobStatus)) {
                 deps.setJobStatus(newStatus as JobStatus);
             }
@@ -187,6 +189,12 @@ export const processJobUpdate = async (
             deps.toast.error(data.stitchError ? `Stitching failed: ${data.stitchError}` : 'Generation failed');
             deps.setJobId(null);
             deps.setJobStatus('failed');
+            deps.resetEditorProgress();
+        } else if (newStatus === 'cancelled') {
+            useStore.getState().updateJobStatus(currentJobId, 'cancelled', data.stitchError || 'Generation cancelled');
+            deps.toast.info('Generation cancelled.');
+            deps.setJobId(null);
+            deps.setJobStatus('cancelled');
             deps.resetEditorProgress();
         }
     }
@@ -677,6 +685,21 @@ export default function VideoWorkflow() {
         }
     };
 
+    const handleCancelJob = useCallback(async () => {
+        if (!jobId) return;
+        try {
+            const cancelVideoJob = httpsCallable(functions, 'cancelVideoJob');
+            await cancelVideoJob({ jobId });
+            setJobStatus('cancelled');
+            setJobProgress(0);
+            setJobId(null);
+            toast.info('Video generation cancelled.');
+        } catch (error: unknown) {
+            logger.warn('[VideoWorkflow] Failed to cancel video job', error);
+            toast.error(error instanceof Error ? error.message : 'Failed to cancel video generation.');
+        }
+    }, [jobId, setJobId, setJobProgress, setJobStatus, toast]);
+
     const estimatedCost = VideoGeneration.estimateVideoCost(studioControls.duration || 6, studioControls.model);
 
     return (
@@ -693,12 +716,13 @@ export default function VideoWorkflow() {
 
                 {/* Central Preview Stage (Memoized) */}
                 <div className="flex-1 overflow-hidden px-8 pb-32">
-                    <VideoStage
-                        jobStatus={jobStatus}
-                        jobProgress={jobProgress}
-                        activeVideo={activeVideo}
-                        setVideoInputs={setVideoInputs}
-                    />
+                            <VideoStage
+                                jobStatus={jobStatus}
+                                jobProgress={jobProgress}
+                                activeVideo={activeVideo}
+                                setVideoInputs={setVideoInputs}
+                                onCancelJob={jobStatus === 'queued' || jobStatus === 'processing' || jobStatus === 'stitching' ? handleCancelJob : undefined}
+                            />
                 </div>
 
                 {/* Mode Switcher Shortcut buttons (Overlay) */}

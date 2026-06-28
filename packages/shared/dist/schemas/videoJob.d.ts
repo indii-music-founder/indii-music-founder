@@ -383,6 +383,7 @@ export declare const VideoJobDocumentSchema: z.ZodObject<{
     inputUris: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
     tempUris: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
     persistentUris: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
+    maskUris: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
     maskMetadata: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>;
     operationName: z.ZodOptional<z.ZodString>;
     provider: z.ZodOptional<z.ZodString>;
@@ -601,6 +602,7 @@ export declare const VideoJobDocumentSchema: z.ZodObject<{
     inputUris: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
     tempUris: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
     persistentUris: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
+    maskUris: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
     maskMetadata: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>;
     operationName: z.ZodOptional<z.ZodString>;
     provider: z.ZodOptional<z.ZodString>;
@@ -819,6 +821,7 @@ export declare const VideoJobDocumentSchema: z.ZodObject<{
     inputUris: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
     tempUris: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
     persistentUris: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
+    maskUris: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
     maskMetadata: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>;
     operationName: z.ZodOptional<z.ZodString>;
     provider: z.ZodOptional<z.ZodString>;

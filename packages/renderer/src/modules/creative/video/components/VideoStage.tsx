@@ -9,10 +9,11 @@ import { CreativeStorageService } from '@/services/creative/CreativeStorageServi
 import { extractVideoFrameAt } from '@/utils/video';
 
 interface VideoStageProps {
-    jobStatus: 'idle' | 'queued' | 'processing' | 'stitching' | 'completed' | 'failed';
+    jobStatus: 'idle' | 'queued' | 'processing' | 'stitching' | 'completed' | 'failed' | 'cancelled';
     jobProgress: number;
     activeVideo: HistoryItem | null;
     setVideoInputs: (inputs: Partial<CreativeSlice['videoInputs']>) => void;
+    onCancelJob?: () => void;
 }
 
 // ⚡ Bolt Optimization: Memoize this heavy component to prevent re-renders when parent state (like prompt input) changes
@@ -20,7 +21,8 @@ export const VideoStage = React.memo<VideoStageProps>(({
     jobStatus,
     jobProgress,
     activeVideo,
-    setVideoInputs
+    setVideoInputs,
+    onCancelJob
 }) => {
     const [videoError, setVideoError] = React.useState<string | null>(null);
     const [displayProgress, setDisplayProgress] = React.useState(0);
@@ -245,6 +247,16 @@ export const VideoStage = React.memo<VideoStageProps>(({
                                 transition={{ duration: 0.5 }}
                             />
                         </div>
+                        {onCancelJob && (
+                            <button
+                                type="button"
+                                onClick={onCancelJob}
+                                className="mt-4 rounded-md border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-gray-200 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+                                aria-label="Cancel video generation"
+                            >
+                                Cancel
+                            </button>
+                        )}
                     </div>
                 ) : videoError ? (
                     <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#0a0a0a] z-20">

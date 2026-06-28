@@ -61,6 +61,20 @@ vi.mock('firebase-admin', () => ({
           id: id || 'job-123',
           set: mockSet,
           update: mockUpdate,
+          get: vi.fn(async () => name === 'costLedger'
+            ? ({
+                exists: true,
+                data: () => ({
+                  userId: 'user-123',
+                  type: 'video',
+                  status: 'APPROVED',
+                  estimatedCost: 0.8,
+                }),
+              })
+            : ({
+                exists: false,
+                data: () => undefined,
+              })),
         })),
       };
     }),
@@ -300,6 +314,7 @@ describe('creative gateway generateVideoV3', () => {
         personGeneration: 'allow_adult',
         negativePrompt: 'no blurry faces',
         seed: '42',
+        costReservationId: 'op-123',
       },
     });
 
