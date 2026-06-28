@@ -1,19 +1,28 @@
 # Handoff State
-**Updated:** 2026-06-27 23:36 EDT
+**Updated:** 2026-06-28 08:08 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
-b44c8be09 chore: session checkpoint [23:20]
-44483ee90 chore: session checkpoint [23:16]
-0657494b4 chore: session checkpoint [23:15]
-9e49e7fac chore: session checkpoint [23:14]
+0fe506bb2 chore: normalize package lock metadata
+e42c033e2 fix(creative): load storage images in editor canvas
+8241319ee chore: session checkpoint [08:42]
+4faff1705 chore: session checkpoint [08:38]
+fc08260e7 chore: session checkpoint [08:37]
+9297cbec8 chore: session checkpoint [08:23]
+b04a0cd61 Merge branch 'main' into fix/electron-firebase-storage-urls
+19770da76 fix: update App Check test to reflect Electron bypass behavior
+9109ab6a4 chore: remove shared package build step from CI
+1aae12b2b chore: commit @indii/shared dist folder for CI build
+0146f81a4 fix: use working-directory for shared package build in CI
+d4f0435e3 fix: build shared package with explicit tsconfig path
+f7f205b92 fix: use tsc -b to build shared package in CI
+b0eafc947 chore: session checkpoint [23:36]
 884090ee6 fix: set App Check debug token for Electron development
-dd00de768 chore: session checkpoint [23:07]
 6719a435e fix: disable App Check in Electron to prevent empty Referer header blocking
-f1a2c5e82 chore: session checkpoint [23:04]
-61f466049 chore: session checkpoint [22:57]
 27ea60f62 chore: update OPEN_ISSUES status for merged creative/video backlog (ISSUE-500-522)
+58e184306 fix: resolve storage URLs in creative gallery for Electron compatibility
+42d7fdaa8 fix: resolve storage URL in canvas init fallback path
 ```
 
 ## Working State
