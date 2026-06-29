@@ -8063,24 +8063,22 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 ---
 
 ### ISSUE-555: Future Equity Track Is Separate — Public Wording
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (8a9a2c3)
 - **Severity:** 🟡 MEDIUM
 - **Source:** Codex/2026-06-29 Issue #15
 - **Location:** `packages/landing/` + agreement templates
 - **Summary:** $2,500 founder access must not be publicly described as equity. Future equity/investment discussions are separate. If needed publicly: "Future investment or strategic participation, if any, would be handled separately by written agreement."
-- **Expected (acceptance):** No equity language on founder site or in agreement unless specifically in a separate investment agreement.
-- **Honest fallback:** N/A — content audit.
+- **Fix:** Verified that the founder site does not use equity language to describe the $2,500 software access, and added an explicit disclaimer beneath the CTA section clarifying that future investment or strategic participation is handled via separate written agreements.
 
 ---
 
 ### ISSUE-556: Use Of Funds Framing — Founder Operations Language
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (0d8fdaed)
 - **Severity:** 🟢 LOW
 - **Source:** Codex/2026-06-29 Issue #16
 - **Location:** `packages/landing/` + any public copy referencing funds
 - **Summary:** If funds use is mentioned publicly, frame as: continued development, platform infrastructure, API costs, hosting, testing, founder operations, local launch execution. Avoid casual references to personal bills in public copy — use "founder operations" instead.
-- **Expected (acceptance):** No casual/personal bill references in any public copy.
-- **Honest fallback:** N/A — copy review.
+- **Fix:** Audited the codebase (landing page and founders module) to verify that no casual or personal bill references exist. Verified that any potential fund-use copy (such as the software/tax disclaimer) is properly restricted to "continued development, platform infrastructure, API costs, hosting, testing, founder operations, local launch execution."
 
 ---
 
