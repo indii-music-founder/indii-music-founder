@@ -7686,7 +7686,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
 
 ### ISSUE-CI-28372704271: CI Pipeline Failure (Deploy to Firebase Hosting)
-- **Status:** ⏳ OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
