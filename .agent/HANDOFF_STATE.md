@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-29 17:30 EDT
+**Updated:** 2026-06-29 17:32 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+895fe3680 chore: session checkpoint [17:30]
 42da8d862 chore: session checkpoint [17:30]
 46fba39c4 chore: session checkpoint [17:28]
 8b9fc5506 chore: session checkpoint [17:27]
@@ -13,7 +14,6 @@ e0d665480 chore: session checkpoint [17:24]
 722a90c87 chore: session checkpoint [17:22]
 35a80a316 test(ledger): fix founder tour tracking types and verify compilation
 0e4f3ba94 fix(test): mock storage.googleapis.com URL in LensVideoVerification to satisfy fetch mock
-8538a1c80 test(ledger): resolve ISSUE-555 and ISSUE-556 disclaimers and use of funds framing
 ```
 
 ## Working State
