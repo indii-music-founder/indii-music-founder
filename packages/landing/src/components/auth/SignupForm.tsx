@@ -15,7 +15,10 @@ export default function SignupForm() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-
+    // Detect founder traffic via ?source=founder query param
+    const isFounderSource = typeof window !== 'undefined' &&
+        (window.location.search.includes('source=founder') ||
+         window.location.hostname.startsWith('founder'));
 
     useEffect(() => {
         // Skip if Firebase not initialized (SSR/build time)
@@ -53,9 +56,14 @@ export default function SignupForm() {
     return (
         <div className="w-full max-w-md space-y-8 bg-black/50 p-8 rounded-2xl border border-white/10 backdrop-blur-xl">
             <div className="text-center">
-                <h2 className="text-3xl font-bold tracking-tight text-white">Create account</h2>
+                <h2 className="text-3xl font-bold tracking-tight text-white">
+                    {isFounderSource ? 'Create Your Founder Preview Account' : 'Create account'}
+                </h2>
                 <p className="mt-2 text-sm text-gray-400">
-                    Start your journey with indii
+                    {isFounderSource
+                        ? 'Create your founder preview account to enter the guided walkthrough.'
+                        : 'Start your journey with indii'
+                    }
                 </p>
             </div>
 
