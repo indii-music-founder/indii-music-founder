@@ -4,6 +4,7 @@
 
 ## Recent Commits
 ```
+42da8d862 chore: session checkpoint [17:30]
 46fba39c4 chore: session checkpoint [17:28]
 8b9fc5506 chore: session checkpoint [17:27]
 e432f0c9d chore: session checkpoint [17:26]
@@ -13,7 +14,6 @@ e0d665480 chore: session checkpoint [17:24]
 35a80a316 test(ledger): fix founder tour tracking types and verify compilation
 0e4f3ba94 fix(test): mock storage.googleapis.com URL in LensVideoVerification to satisfy fetch mock
 8538a1c80 test(ledger): resolve ISSUE-555 and ISSUE-556 disclaimers and use of funds framing
-0d8fdaed3 test(ledger): resolve ISSUE-557 product preview copy in ledger
 ```
 
 ## Working State
