@@ -51,6 +51,8 @@ test_output*.txt
 test_failures.txt
 test_results*.txt
 eslint_output.json
+# Loose QA smoke/verify screenshots (regenerated every test run); keep tracked subdirs like artifacts/live-agent-daisy-chain/
+artifacts/*.png
 
 # Build artifacts
 out/
