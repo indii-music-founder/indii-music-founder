@@ -559,18 +559,18 @@ class MembershipServiceImpl {
             currentSpend = usage.totalSpend || 0;
         }
 
-        // Use fixed point arithmetic for currency comparison to avoid float errors
-        const currentSpendFixed = Math.round(currentSpend * 100);
-        const estimatedCostFixed = Math.round(estimatedCost * 100);
-        const maxSpendFixed = Math.round(limits.maxDailySpend * 100);
+        // Use integer cents arithmetic for currency comparison to avoid float errors
+        const currentSpendCents = Math.round(currentSpend * 100);
+        const estimatedCostCents = Math.round(estimatedCost * 100);
+        const maxSpendCents = Math.round(limits.maxDailySpend * 100);
 
-        const remainingBudgetFixed = maxSpendFixed - currentSpendFixed;
-        const allowed = (currentSpendFixed + estimatedCostFixed) <= maxSpendFixed;
+        const remainingBudgetCents = maxSpendCents - currentSpendCents;
+        const allowed = (currentSpendCents + estimatedCostCents) <= maxSpendCents;
 
         // EMERGENCY CIRCUIT BREAKER: Check session-wide limit
         if (this.sessionSpend + estimatedCost > this.MAX_SESSION_SPEND) {
             logger.error(`[MembershipService] EMERGENCY KILL: Session spend ($${this.sessionSpend.toFixed(2)}) + estimate ($${estimatedCost.toFixed(2)}) exceeds session safety limit ($${this.MAX_SESSION_SPEND.toFixed(2)})`);
-            return { allowed: false, remainingBudget: remainingBudgetFixed / 100, requiresApproval: false };
+            return { allowed: false, remainingBudget: remainingBudgetCents / 100, requiresApproval: false };
         }
 
         // Ledger Policy: User must approve every charge over $0.50
@@ -578,7 +578,7 @@ class MembershipServiceImpl {
 
         return {
             allowed,
-            remainingBudget: remainingBudgetFixed / 100,
+            remainingBudget: remainingBudgetCents / 100,
             requiresApproval
         };
     }

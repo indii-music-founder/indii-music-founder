@@ -7005,24 +7005,28 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-476: `DawIntegrationService` uses `(window as any).electronAPI` in 4 methods — no web guard
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟡 MEDIUM
 - **Module:** services / daw / DawIntegrationService
 - **Evidence:** `packages/renderer/src/services/daw/DawIntegrationService.ts:17,23,29,35` — all DAW methods call `(window as any).electronAPI.daw.*` without checking `isElectron()` first.
 - **Impact:** These calls throw in the web build. The only protection is the `isElectronWithDaw()` guard at line 11, but callers outside this class may bypass that guard.
 - **Fix direction:** Use the typed preload interface and add `isElectron()` internal guards in each method as a defence-in-depth measure.
+- **Fix:** Declared the `daw` namespace under `ElectronAPI` type definitions, implemented `isElectron()` helper inside `DawIntegrationService`, and refactored all methods to use the typed `window.electronAPI.daw` calls with strict checks.
+- **Evidence:** `packages/renderer/src/types/electron.d.ts:254-261`, `packages/renderer/src/services/daw/DawIntegrationService.ts:4-30`
 - **Files:** `packages/renderer/src/services/daw/DawIntegrationService.ts:17,23,29,35`
 
 ---
 
 ### ISSUE-477: `MembershipService` — `offlineSpend.toFixed(4)` used in Firestore write path (display format passed as stored value)
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟡 MEDIUM
 - **Module:** services / MembershipService
 - **Evidence:** `packages/renderer/src/services/MembershipService.ts:511` — `logger.info(\`...offline spend of $${offlineSpend.toFixed(4)}...\`)` — this is a logger call, not a Firestore write, so low direct risk. BUT lines 563-565 use `Math.round(x * 100)` and then name variables `Fixed` (e.g., `currentSpendFixed`) while log lines 572 still call `.toFixed(2)` on the raw float for display purposes.
 - **Impact:** Minor inconsistency — the naming convention implies cents-as-int but the values are mixed. No direct data loss but creates confusion and audit risk.
 - **Fix direction:** Standardize: all spend values stored as integer cents in Zustand/Firestore, converted to display string only at render time via a shared `formatCents()` utility.
+- **Fix:** Renamed all internal budget check variables in `checkBudget` from `Fixed` suffix to `Cents` suffix (e.g. `currentSpendCents`) to make it explicit that integer cents are used to bypass floating point errors, ensuring clarity in database audit logs and memory.
+- **Evidence:** `packages/renderer/src/services/MembershipService.ts:563-582`
 - **Files:** `packages/renderer/src/services/MembershipService.ts:511,563-565,572`
 
 ---
