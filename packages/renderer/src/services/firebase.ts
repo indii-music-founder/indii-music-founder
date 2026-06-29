@@ -40,6 +40,9 @@ if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
 }
 
 export const app = initializeApp(firebaseConfig);
+const isLocalhostDev = typeof window !== 'undefined' &&
+    import.meta.env.DEV &&
+    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
 
 // ============================================================================
 // LAZY Firebase Autonomous Initialization
@@ -284,12 +287,14 @@ try {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let remoteConfig: any = null;
 try {
-    // Initialize Remote Config
-    remoteConfig = getRemoteConfig(app);
-    remoteConfig.defaultConfig = {
-        model_name: INTELLIGENCE_MODELS.TEXT.FAST,
-        vertex_location: 'global'
-    };
+    if (!isLocalhostDev) {
+        // Initialize Remote Config
+        remoteConfig = getRemoteConfig(app);
+        remoteConfig.defaultConfig = {
+            model_name: INTELLIGENCE_MODELS.TEXT.FAST,
+            vertex_location: 'global'
+        };
+    }
 } catch (e) {
     logger.error('[Firebase] Failed to initialize RemoteConfig:', e);
 }
@@ -359,7 +364,9 @@ export function getFirebasePerf() {
 }
 // Auto-initialize on load
 if (typeof window !== 'undefined') {
-    getFirebasePerf();
+    if (!isLocalhostDev) {
+        getFirebasePerf();
+    }
 }
 
 // Initialize App Check
@@ -383,7 +390,6 @@ if (typeof window !== 'undefined') {
     // SKIP in Electron unless running in DEV debug mode (ReCaptcha Enterprise requires web origin)
     // ALLOW in DEV if key is present to trigger the Firebase SDK's local debug token logging
     const isElectron = !!window.electronAPI;
-    const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
 
     // Logic:
     // 1. Must have a key.
@@ -393,7 +399,10 @@ if (typeof window !== 'undefined') {
     //    - Firestore/Storage Security Rules enforce authorization without App Check
     // 3. CRITICAL: In DEV mode with Functions emulator, skip App Check entirely to avoid Installations API blocking.
     const skipAppCheckInElectron = isElectron;
-    const skipAppCheckInEmulator = env.DEV && env.VITE_USE_FUNCTIONS_EMULATOR === 'true';
+    const skipAppCheckInEmulator = env.DEV && (
+        env.VITE_USE_FUNCTIONS_EMULATOR === 'true' ||
+        isLocalhostDev
+    );
     const shouldInitAppCheck = !skipAppCheckInElectron && !skipAppCheckInEmulator && !!env.appCheckKey;
 
     if (skipAppCheckInElectron) {
@@ -401,7 +410,7 @@ if (typeof window !== 'undefined') {
     } else if (skipAppCheckInEmulator) {
         logger.info('[App Check] Skipped in emulator mode (dev: true, emulator: true). Auth/Firestore will work without App Check validation.');
     } else if (shouldInitAppCheck) {
-        if (env.DEV && isLocalhost) {
+        if (env.DEV && isLocalhostDev) {
             Logger.warn(TAG,
                 '[indii][AppCheck] Running on localhost without a debug token.\n' +
                 'Google Maps and other protected services will fail until you:\n' +
