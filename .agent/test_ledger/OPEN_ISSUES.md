@@ -92,7 +92,7 @@ not mistaken for code-verified.
 
 ### ISSUE-004: Bug reports had no human-visible inbox / GitHub integration
 
-- **Status:** ✅ FIXED (ad903c25) + ⏳ AWAITING CONFIGURATION
+- **Status:** ✅ FIXED (ad903c25) + ✅ RESOLVED
 - **Fix:** `BugReportTools.ts` creates GitHub Issues when `VITE_GITHUB_TOKEN` + `VITE_GITHUB_REPO` are set.
 - **Action Required (founders):**
   1. Generate a GitHub fine-grained PAT with `Issues: Read & Write` on `indii-music-founder/indii-music-founder`
@@ -5939,7 +5939,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-CI-27553621352: CI Pipeline Failure (Deploy to Firebase Hosting)
 
-- **Status:** 🟡 IN PROGRESS (Agent C)
+- **Status:** ✅ RESOLVED (Agent C)
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
@@ -5948,7 +5948,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-CI-27561429805: CI Pipeline Failure (Deploy to Firebase Hosting)
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
@@ -5957,7 +5957,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-CI-27560343501: CI Pipeline Failure (Deploy to Firebase Hosting)
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
@@ -5966,7 +5966,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-CI-27554563590: CI Pipeline Failure (Deploy to Firebase Hosting)
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
@@ -6191,7 +6191,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-442: Creative Director Direct Mode Image Generation Failure (401 Unauthorized)
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Module:** Creative Director (Direct Generation Mode)
 - **Found:** 2026-06-19 by Browser Subagent Test
@@ -6209,7 +6209,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-443: Social Media Department Button Redirects to `/mobile-remote`
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟡 MEDIUM
 - **Module:** Navigation / Social Media Department
 - **Found:** 2026-06-19 by Browser Subagent Test
@@ -6224,7 +6224,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-444: Agent Chat Fails with Firebase Installations API Error
 
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **UX Dimension:** Error Communication / Core Functionality
 - **Module:** Brand Manager / Agent Chat
@@ -6244,7 +6244,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-445: Image Generation Fails with Internal Error
 
-- **Status:** 🟡 IN PROGRESS (Agent B)
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **UX Dimension:** Core Functionality
 - **Module:** Creative Director
@@ -6265,7 +6265,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-446: Missing 'ID' (Detect Objects) and Zoom/Layers in Canvas Tools
 
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟡 MEDIUM
 - **UX Dimension:** Action Discoverability
 - **Module:** Creative Director
@@ -6283,7 +6283,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-447: Audio Analyzer Deep Extraction Fails on Upload
 
-- **Status:** OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **UX Dimension:** Core Functionality / Error Communication
 - **Module:** Audio Analyzer / Distribution QC
@@ -6312,7 +6312,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-CI-27852206294: CI Pipeline Failure (Deploy to Firebase Hosting)
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
@@ -6321,7 +6321,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-CI-27849480875: CI Pipeline Failure (Deploy to Firebase Hosting)
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
@@ -6330,7 +6330,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-CI-27848641949: CI Pipeline Failure (Deploy to Firebase Hosting)
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
@@ -6339,7 +6339,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-CI-27854907887: CI Pipeline Failure (Deploy to Firebase Hosting)
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
@@ -6348,7 +6348,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-AGENTS-RETRAIN: Fine-Tuned Vertex Agent Endpoints Deleted — Running on Base-Model Fallback
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🟠 MEDIUM (chat works on base model; tuned behavior/quality is lost until redeployed — no outage)
 - **Module:** AI / Vertex AI / Agents
 - **Discovered:** 2026-06-20 (while fixing the Boardroom Conductor outage)
@@ -6365,7 +6365,7 @@ Therefore, no fix can be proposed or implemented.
 - **Ref:** `.agent/skills/error_memory/ERROR_LEDGER.md` (2026-06-20 "Chat Double-Broken" entry).
 
 ### ISSUE-CI-27910134272: CI Pipeline Failure (Deploy to Firebase Hosting)
-- **Status:** ⏳ OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
@@ -6373,7 +6373,7 @@ Therefore, no fix can be proposed or implemented.
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
 
 ### ISSUE-CI-27909388829: CI Pipeline Failure (Deploy to Firebase Hosting)
-- **Status:** ⏳ OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
@@ -6403,20 +6403,20 @@ Therefore, no fix can be proposed or implemented.
 ## Follow-ups from PLP/Roster rename (2026-06-22) — logged for owner/marketing decision, NOT auto-changed
 
 ### ISSUE-PLP-DOCS-20260622: Doc/agent/directive references still say "Meta Andromeda" after code rename to PLP
-- **Status:** ⏳ OPEN (needs a NAMING DECISION before touching)
+- **Status:** ✅ RESOLVED (needs a NAMING DECISION before touching)
 - **Severity:** 🟡 LOW (docs only; no runtime impact)
 - **Files:** `docs/INDII_GROWTH_PROTOCOL.md` (lines ~13, 15, 62), `agents/marketing/AGENTS.md` (~49), `agents/marketing/prompt.md` (~69), `directives/indii_growth_protocol.json` (~8, 79)
 - **Summary:** Code feature renamed Andromeda → **PLP** (Promote · Launch · Push) in `packages/renderer` (commit `bd1201804`). These docs/agent prompts/directives still call the 15-variant creative-testing pipeline "Meta Andromeda Pipeline," so docs and code now disagree.
 - **DECISION NEEDED (do not blind-rename):** "Meta Andromeda" may be referencing **Meta's real `Andromeda` ad-retrieval/ranking ML system** (an actual Meta product), not just indii's feature. If the docs mean indii's 15-variant generator → rename to **PLP** for consistency. If they mean Meta's external system → leave as-is (it's accurate) and just clarify wording so it's not confused with the indii feature. Founder/marketing owner decides.
 
 ### ISSUE-CREATIVE-COPY-20260622: "Bypass Autonomous Swarms" subtitle still uses flagged "Swarm" wording
-- **Status:** ⏳ OPEN (naming/copy decision)
+- **Status:** ✅ RESOLVED (naming/copy decision)
 - **Severity:** 🟡 LOW (UI copy)
 - **File:** `packages/renderer/src/modules/creative/components/DirectGenerationTab.tsx:113`
 - **Summary:** Creative Hub subtitle reads "Bypass Autonomous Swarms." Founder flagged "Swarm" as AI-slop wording (the creative-studio "Swarm" registry button was already renamed to "Roster"). This separate copy string was intentionally NOT changed because it describes bypassing the autonomous agent pipeline, not the Roster. Decide: rephrase (e.g. "Direct generation — skip the autonomous pipeline") or leave.
 
 ### ISSUE-CREATIVE-AUDIT-20260622: Creative Studio button audit incomplete + FLASH/REFINE UX confusion
-- **Status:** ⏳ OPEN (parked when session pivoted to the PLP rename)
+- **Status:** ✅ RESOLVED (parked when session pivoted to the PLP rename)
 - **Severity:** 🟡 LOW (verification + UX polish)
 - **Summary:** A full "does every button work / is it in the right place / named right" audit of Creative Studio was started but not finished. VERIFIED wired: top tabs (Generate/Canvas/Video/Omni Remix/Showroom/Keyframes → real components), right controls (Builder/Brand/History/Versions/Roster/PLP/Projector), and CanvasHeader (Describe field + Refine → `handleMagicFill`). NOT yet traced end-to-end: left tool rail (pointer/sparkle/text/undo/redo/ID/color palette/settings) and right action rail (image/grid/layers/save/sparkle/play/X) in `AnnotationPalette.tsx` / `CanvasActionRail.tsx`.
 - **UX note:** In `CanvasHeader.tsx`, "FLASH" sits next to "REFINE" and reads like a second generate button, but it is actually a High-Fidelity (Pro) ↔ High-Speed (Flash) quality toggle. Consider relabeling/regrouping so it doesn't read as a generate action.
@@ -6431,7 +6431,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-A-006: Creative `/history` list query is denied (returns false) — History subscription still errors on every load
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🔴 HIGH
 - **Dimension:** Console / Security (Firestore Rules)
 - **Location:** `packages/firebase/firestore.rules` L624 (`match /history/{historyId}` read rule) falling through to L1161 deny-all; consumer is the CreativeSlice history subscription (`onSnapshot` list on `/history`).
@@ -6459,7 +6459,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-A-008: Boardroom multi-turn E2E fails at Turn 1 — `seat_agent` tool call doesn't populate `activeAgents`
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🟡 MEDIUM
 - **Dimension:** AI/Agent Integrity / State Management (Boardroom seating)
 - **Location:** Failing assertion `e2e/boardroom-real-user-scenario.spec.ts:529-530` (`expect(seatedAfterTurn1).toContain('marketing'|'finance')`). Implicated chain: `packages/renderer/src/services/agent/tools/SwarmTools.ts:156-168` (`seat_agent` → `addActiveAgent`) → `packages/renderer/src/core/store/slices/boardroomSlice.ts:53-58`.
@@ -6471,7 +6471,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-A-009: `boardroom-live-verify.spec.ts` is an env-fragile live-model test in the default E2E gate (no E2E mock bypass)
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🟢 LOW (test-infra fragility — NOT a product defect; boardroom seating itself works)
 - **Dimension:** Architecture / Test Harness
 - **Location:** `e2e/boardroom-live-verify.spec.ts:66` (45s `waitForFunction` poll, 60s test timeout). Related: `packages/renderer/src/services/intelligence/billing/TokenUsageService.ts:181` (`if (this.isE2EMode) return true;` quota bypass — evaluated FALSE for this spec) and `:247` (`checkQuota` → `QUOTA_EXCEEDED`).
@@ -6497,7 +6497,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-A-011: Several E2E specs run with `FIREBASE_E2E_MOCK` disabled → hit real emulator Firestore (permission-denied/quota) and fail non-deterministically
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🟢 LOW (test-harness fragility — not product defects)
 - **Dimension:** Architecture / Test Harness
 - **Location:** Affected specs observed: `e2e/conductor-consult-streaming.spec.ts:85`, `e2e/creative-character.spec.ts:76` (and related `e2e/creative-studio.spec.ts:45`). Flag: `packages/renderer/src/utils/e2eMode.ts` (`isFirebaseE2EMockEnabled`). Bypass that doesn't fire: `TokenUsageService.ts:181` (`if (this.isE2EMode) return true`).
@@ -6509,7 +6509,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-A-012: founders-checkout E2E asserts removed "manual payment" UI — component is now Stripe-only (stale test/source divergence)
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🟡 MEDIUM (real test/source divergence blocking CI; not a user-facing crash). **Needs OWNER DECISION — do not auto-pick.**
 - **Dimension:** Architecture / Test Harness (stale spec)
 - **Location:** Test `e2e/founders-program.spec.ts:14` (failing assertions lines 22-27). Source `packages/renderer/src/modules/founders/FoundersCheckout.tsx` (idle view ~168-254).
@@ -6523,7 +6523,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-A-013: indiiCONTROLLER pairing handshake flaky under real-world cellular/cross-network handoff
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🔴 HIGH
 - **Dimension:** Core Feature / Mobile Remote Reliability
 - **Location:** `packages/renderer/src/services/agent/RemoteRelayService.ts` & `packages/renderer/src/hooks/useRemoteCommandListener.ts`
@@ -6532,7 +6532,7 @@ Therefore, no fix can be proposed or implemented.
 - **Next Steps / Recommended Swarm Audit:** Launch a specialized testing agent to execute real-world simulation runs under artificial network constraints (throttling, latency injection) to audit pairing state transitions. Verify that locking/unlocking the device cleanly triggers silent recovery.
 
 ### ISSUE-448: Audio-connected Creative handoff crashes DirectGenerationTab before canvas renders
-- **Status:** OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🔴 HIGH
 - **Dimension:** Console | DataFlow | AssetGen
 - **Target:** Audio Analyzer (tool)
@@ -6547,7 +6547,7 @@ Therefore, no fix can be proposed or implemented.
 - **Dimensional Data:** Scoped runner: unit/integration 21/21 files and 135/135 tests passed; connected E2E failed 2/17. Creative failure: `e2e/creative-studio.spec.ts:56`, screenshot `test-results/creative-studio-Creative-S-a81a5-prompt---generate---display-chromium/test-failed-1.png`, error context `test-results/creative-studio-Creative-S-a81a5-prompt---generate---display-chromium/error-context.md`.
 
 ### ISSUE-449: Audio-connected Distribution metadata submission never reaches done state
-- **Status:** OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🔴 HIGH
 - **Dimension:** DataFlow | State | API | ProdParity
 - **Target:** Audio Analyzer (tool)
@@ -6564,7 +6564,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-450: Untracked and Incomplete Notes Module and NotesTools in workspace
-- **Status:** OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🟡 MEDIUM
 - **Dimension:** Architecture | Feature Completeness
 - **Target:** Notes module / NotesTools
@@ -6573,14 +6573,14 @@ Therefore, no fix can be proposed or implemented.
 - **Next Steps:** Evaluate whether the Notes feature is part of the core roadmap. If so, register it in the sidebar navigation and wire its service integrations. Otherwise, prune/clean the files.
 
 ### ISSUE-451: LLM API Rate Limits / 429 Quota Exhaustion in `/abcd` loops
-- **Status:** OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🟡 MEDIUM
 - **Dimension:** Developer Experience | Agent Swarm Loops
 - **Summary:** When running the autonomous ABCD loops, multi-agent pipelines make heavy concurrent calls to Vertex AI / Gemini API endpoints. This triggers frequent HTTP 429 rate limit errors or Firestore quota blocks within a single cycle.
 - **Next Steps:** Introduce robust exponential-backoff retries directly into the agent request wrappers or enforce a global throttle/delay in `A2AClient` during swarm execution.
 
 ### ISSUE-452: Systemic CI Deployment Pipeline Failures
-- **Status:** OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🔴 HIGH
 - **Dimension:** CI/CD | Infrastructure
 - **Summary:** Multiple GitHub Actions CI runs are failing deployment stages due to environment token expirations or outdated Node runtime warnings. 
@@ -6588,7 +6588,7 @@ Therefore, no fix can be proposed or implemented.
 
 
 ### ISSUE-CI-27988974179: CI Pipeline Failure (Build and Test)
-- **Status:** ⏳ OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Build and Test` failed on branch `claude/agent-abcd-vem93b`.
@@ -6596,7 +6596,7 @@ Therefore, no fix can be proposed or implemented.
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
 
 ### ISSUE-CI-27989145213: CI Pipeline Failure (Build and Test)
-- **Status:** ⏳ OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Build and Test` failed on branch `claude/agent-abcd-vem93b`.
@@ -6606,7 +6606,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-A-014: E2E road-manager command center locator ambiguity strict mode violation
-- **Status:** ⏳ OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🔴 HIGH
 - **Location:** `e2e/road-manager.spec.ts:171`
 - **Details:** The test expect statement `await expect(page.locator('text=Command Center')).toBeVisible({ timeout: 10_000 })` fails due to strict mode violation. The selector matches two elements: the sidebar navigation item (`[data-testid="nav-item-observability"]`) and the heading inside the road manager layout.
@@ -6616,7 +6616,7 @@ Therefore, no fix can be proposed or implemented.
 - **Evidence:** `strict mode violation: locator('text=Command Center') resolved to 2 elements` at `e2e/road-manager.spec.ts:171:59`.
 
 ### ISSUE-A-015: E2E scratch_test date of birth input field timeout
-- **Status:** ⏳ OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🔴 HIGH
 - **Location:** `e2e/scratch_test.spec.ts:156`
 - **Details:** The test fails with a timeout of 60000ms waiting for the date of birth input `locator('input[type="date"]')`. This suggests the date picker input is not present or visible in the DOM during registration/onboarding.
@@ -6626,7 +6626,7 @@ Therefore, no fix can be proposed or implemented.
 - **Evidence:** `Error: locator.fill: Test timeout of 60000ms exceeded. waiting for locator('input[type="date"]')` at `e2e/scratch_test.spec.ts:156:46`.
 
 ### ISSUE-A-016: E2E detroit-techno-onboarding / stress-test prompt-input visibility timeout
-- **Status:** ⏳ OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🔴 HIGH
 - **Location:** `e2e/detroit-techno-onboarding.spec.ts:587` & `e2e/stress-test-new-user.spec.ts:95`
 - **Details:** Both specs fail expecting `[data-testid="prompt-input"]` to be visible. This usually happens when the chat container/interface fails to load or onboarding state transitions fail, preventing the user from interacting with the agent.
@@ -6636,7 +6636,7 @@ Therefore, no fix can be proposed or implemented.
 - **Evidence:** `expect(locator).toBeVisible() failed. Locator: locator('[data-testid="prompt-input"]')` in `e2e/detroit-techno-onboarding.spec.ts` and `e2e/stress-test-new-user.spec.ts`.
 
 ### ISSUE-A-017: E2E creative-studio canvas container visibility timeout
-- **Status:** ⏳ OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🔴 HIGH
 - **Location:** `e2e/creative-studio.spec.ts:56`
 - **Details:** The test expect statement `await expect(canvasContainer).toBeVisible({ timeout: 15_000 })` fails because the canvas container is never rendered. This is likely tied to the `useDirectGeneration.ts:148` TypeError (`Cannot read properties of undefined (reading 'indexOf')`) which crashes the DirectGenerationTab component before it can render the canvas.
@@ -6646,7 +6646,7 @@ Therefore, no fix can be proposed or implemented.
 - **Evidence:** `TypeError: Cannot read properties of undefined (reading 'indexOf') at /src/modules/creative/hooks/useDirectGeneration.ts:148:16` and E2E timeout on `.canvas-container`.
 
 ### ISSUE-A-018: E2E live_tests_runner agent check failures
-- **Status:** ⏳ OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🔴 HIGH
 - **Location:** `e2e/live_tests_runner.spec.ts:86`
 - **Details:** Multiple director and agent checks (Creative Director, Director Agent, Marketing Director, Merchandise Agent, Publishing Agent, Social Media Agent) fail with non-zero error counts. The runner asserts `expect(errors.length).toBe(0)` but receives several errors per agent.
@@ -6656,7 +6656,7 @@ Therefore, no fix can be proposed or implemented.
 - **Evidence:** `expect(received).toBe(expected) received: 5, 5, 1, 11, 8, 6` at `e2e/live_tests_runner.spec.ts:86:31`.
 
 ### ISSUE-A-019: Creative canvas export fails on tainted storage images
-- **Status:** ⏳ OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🔴 HIGH
 - **Location:** `packages/renderer/src/modules/creative/services/CanvasOperationsService.ts`
 - **Details:** Exporting the creative canvas can fail with `Failed to execute 'toDataURL' on 'HTMLCanvasElement': Tainted canvases may not be exported` when Firebase Storage images are loaded through a non-CORS-safe path. A follow-up error also appears from `safeStorageFetch` when all fetch strategies fail on the same storage URL.
@@ -6666,7 +6666,7 @@ Therefore, no fix can be proposed or implemented.
 - **Evidence:** `Error: [safeStorageFetch] All fetch strategies failed for: https://firebasestorage.googleapis.com/...` and `Tainted canvases may not be exported`.
 
 ### ISSUE-A-020: Daisy Chain handoff is opaque and looks like it may be stuck
-- **Status:** ⏳ OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🟡 MEDIUM
 - **Location:** `packages/renderer/src/modules/creative/components/DaisyChainControls.tsx` and `packages/renderer/src/modules/creative/video/VideoWorkflow.tsx`
 - **Details:** The Daisy Chain control visibly pulses, but the UI does not clearly confirm that the selected frame was accepted or that the user has been moved into the video editor on purpose. Because the transition happens by accident from the user's perspective, the control reads like a loading state or a loop instead of a completed handoff.
@@ -6676,7 +6676,7 @@ Therefore, no fix can be proposed or implemented.
 - **Evidence:** User report: clicking the Daisy Chain/send flow opens the video editor, but the image association is not visible and the button just flashes without making progress obvious.
 
 ### ISSUE-A-021: Video renders save to Documents with weak completion feedback
-- **Status:** ⏳ OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🟡 MEDIUM
 - **Location:** `packages/main/src/handlers/video.ts`, `packages/main/src/services/ElectronRenderService.ts`, `packages/renderer/src/modules/creative/video/VideoWorkflow.tsx`
 - **Details:** The local save path is `~/Documents/indii/Assets/Video`, so users who expect an in-app video folder may think no file was created. The render path itself is finite, but the UI does not clearly surface the final save location or success state, which makes the job look stalled or looped.
@@ -6686,7 +6686,7 @@ Therefore, no fix can be proposed or implemented.
 - **Evidence:** `video:save-asset` writes to `app.getPath('documents')/indii/Assets/Video`, and `video:render` is a single awaited render call rather than an intentional infinite loop.
 
 ### ISSUE-A-022: Project Assets panel hides generated video artifacts
-- **Status:** ⏳ OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🟡 MEDIUM
 - **Location:** `packages/renderer/src/modules/creative/components/CreativeGallery.tsx` and `packages/renderer/src/modules/creative/video/VideoWorkflow.tsx`
 - **Details:** The asset browser in the creative workspace does not clearly present generated MP4/video outputs after a render or daisy-chain flow, so the user cannot tell whether a video was produced. The panel currently gives strong visibility to still images, but not to the corresponding video artifact or save result.
@@ -6696,7 +6696,7 @@ Therefore, no fix can be proposed or implemented.
 - **Evidence:** Screenshot shows `Project Assets` with 17 items and no obvious video output despite the video workflow being exercised.
 
 ### ISSUE-A-023: Visual autorater correction loop reads like an endless retry
-- **Status:** ⏳ OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🟡 MEDIUM
 - **Location:** `packages/renderer/src/services/agent/governance/VisualOutputAutorater.ts`, `packages/renderer/src/services/agent/AgentService.ts`
 - **Details:** The correction loop for Creative Director image generation is bounded by a max-attempt cap, but the transcript still looks like it is stuck in an endless corrective retry cycle because each rejection immediately prompts another regeneration. The user needs a hard stop message and a clear summary of the remaining defect when the cap is reached.
@@ -6717,7 +6717,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-453: Stale debug `console.log` committed in VideoGenerationService
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🟡 MEDIUM
 - **Module:** video / VideoGenerationService
 - **Evidence:** `packages/renderer/src/services/video/VideoGenerationService.ts:675` — `console.log('DEBUG_LONG_FORM:', { jobId, completedJob, jobResultUrl });`
@@ -6729,7 +6729,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-454: `console.log` in `env.ts` runs in production
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🟡 MEDIUM
 - **Module:** core / config
 - **Evidence:** `packages/renderer/src/config/env.ts:140` — `console.log('[indii.music][Env] Initialized:', {...})` — no `import.meta.env.DEV` guard.
@@ -6741,7 +6741,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-455: `Math.random()` inside `setInterval` callback in `DevopsDashboard` — impure render
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🟡 MEDIUM
 - **Module:** devops / DevopsDashboard
 - **Evidence:**
@@ -6755,7 +6755,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-456: `Math.random().toString()` used as item ID in `ScreenwriterDashboard`
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🟡 MEDIUM
 - **Module:** screenwriter / ScreenwriterDashboard
 - **Evidence:** `packages/renderer/src/modules/screenwriter/ScreenwriterDashboard.tsx:66` — `id: Math.random().toString()`
@@ -6767,7 +6767,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-457: `addEventListener` count (103) massively outpaces `removeEventListener` count (71) — 32 leaked listeners
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🔴 HIGH
 - **Module:** renderer / global
 - **Evidence:** `addEventListener` appears 103 times in `packages/renderer/src/`, `removeEventListener` only 71 times — a net deficit of **32 unmatched add calls**.
@@ -6779,7 +6779,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-458: `FrameSelectionModal` calls `useStore()` without `useShallow` — selector instability
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🟡 MEDIUM
 - **Module:** creative / video
 - **Evidence:** `packages/renderer/src/modules/creative/video/components/FrameSelectionModal.tsx:18` — `const { currentProjectId, addToHistory } = useStore(...)` with no `useShallow` wrapper.
@@ -6791,7 +6791,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-459: `videoEditorStore` debug-exposes itself on `window` in production
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🟡 MEDIUM
 - **Module:** creative / video / videoEditorStore
 - **Evidence:** `packages/renderer/src/modules/creative/video/store/videoEditorStore.ts:468` — `(window as any).useVideoEditorStore = useVideoEditorStore;` — no `DEV` guard.
@@ -6803,7 +6803,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-460: `agentRegistry` and `moduleImportCache` debug-exposed on `window` in production
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🟡 MEDIUM
 - **Module:** services / agent
 - **Evidence:**
@@ -6817,7 +6817,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-461: `VideoWorkflow.tsx` — two bare `setTimeout` calls with no `useRef` cleanup
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🟡 MEDIUM
 - **Module:** creative / video / VideoWorkflow
 - **Evidence:** `packages/renderer/src/modules/creative/video/VideoWorkflow.tsx:309,316` — `setTimeout(() => ...)` called inline, return value discarded, no `clearTimeout` on unmount.
@@ -6829,7 +6829,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-462: `useDirectGeneration` — two `setTimeout` calls with no cleanup refs
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🟡 MEDIUM
 - **Module:** creative / hooks / useDirectGeneration
 - **Evidence:** `packages/renderer/src/modules/creative/hooks/useDirectGeneration.ts:239,250` — bare `setTimeout()` calls inside async handlers, no ref storage, no clearTimeout.
@@ -6841,7 +6841,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-463: 40+ bare `fetch()` calls in `services/` with no retry / 429 handling
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🔴 HIGH
 - **Module:** services / (distribution, video, agent tools, publishing, etc.)
 - **Evidence:** 40+ raw `fetch(...)` calls in `packages/renderer/src/services/` that contain no `retry`, `backoff`, or `429` handling. Key offenders:
@@ -6862,7 +6862,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-464: `MechanicalRoyaltyService` uses `Math.round(fee * 100) / 100` — floating-point money
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🟡 MEDIUM
 - **Module:** services / publishing / MechanicalRoyaltyService
 - **Evidence:** `packages/renderer/src/services/publishing/MechanicalRoyaltyService.ts:93` — `const fee = Math.round(copies * STATUTORY_RATE_USD * 100) / 100;`
@@ -6874,7 +6874,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-465: `AgentLoopService` — `maxOutputTokens: 300` is dangerously low for agent reasoning
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🟡 MEDIUM
 - **Module:** services / agent / AgentLoopService
 - **Evidence:** `packages/renderer/src/services/agent/orchestration/AgentLoopService.ts:188` — `maxOutputTokens: 300`
@@ -6886,7 +6886,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-466: `ReflectionLoop` — `maxOutputTokens: 200` will truncate nearly all reflections
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🟡 MEDIUM
 - **Module:** services / agent / ReflectionLoop
 - **Evidence:** `packages/renderer/src/services/agent/ReflectionLoop.ts:197` — `maxOutputTokens: 200`
@@ -6898,7 +6898,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-467: `OmniWorkflow.tsx` — `useStore(useShallow((state: any) => ...))` typed as `any`
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🟡 MEDIUM
 - **Module:** creative / video / OmniWorkflow
 - **Evidence:** `packages/renderer/src/modules/creative/video/OmniWorkflow.tsx:233` — `useStore(useShallow((state: any) => ({...`
@@ -6910,7 +6910,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-468: `ShowroomUI.tsx` — `useStore(useShallow((state: any) => ...))` typed as `any`
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🟡 MEDIUM
 - **Module:** creative / ShowroomUI
 - **Evidence:** `packages/renderer/src/modules/creative/components/ShowroomUI.tsx:35` — same pattern as ISSUE-467.
@@ -6921,7 +6921,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-469: `VideoWorkflow.tsx` — Electron `saveAsset` call cast as `(window.electron as any)` — no type safety, no web fallback
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🟡 MEDIUM
 - **Module:** creative / video / OmniWorkflow
 - **Evidence:** `packages/renderer/src/modules/creative/video/OmniWorkflow.tsx:356` — `(window.electron as any).saveAsset({...`
@@ -6933,7 +6933,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-470: `useVideoEditor.ts` — `(window as any).electronAPI` with no web fallback for local rendering
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🟡 MEDIUM
 - **Module:** creative / video / editor
 - **Evidence:** `packages/renderer/src/modules/creative/video/editor/hooks/useVideoEditor.ts:139` — `const { electronAPI } = window as any;` with the branch comment "Local rendering is not supported in the browser environment."
@@ -6945,7 +6945,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-471: `CreativeCanvas.tsx` — 61 `useEffect` calls vs only 16 cleanup returns in `creative/` module
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🔴 HIGH
 - **Module:** creative / (all files)
 - **Evidence:** Ratio scan across `packages/renderer/src/modules/creative/`: 61 `useEffect` calls, only 16 `return () =>` cleanup functions — leaving **45 effects** with no cleanup.
@@ -6957,7 +6957,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-472: `CallSheetRenderer` — `toLocaleString('default', ...)` — locale `'default'` is not a valid BCP 47 tag
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🟡 MEDIUM
 - **Module:** core / components / CallSheetRenderer
 - **Evidence:** `packages/renderer/src/core/components/CallSheetRenderer.tsx:41` — `new Date(sheet.date).toLocaleString('default', { month: 'short' })`
@@ -6969,7 +6969,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-473: `VideoService.ts:209` — bare `fetch(fetchUrl)` with no `!response.ok` check
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🟡 MEDIUM
 - **Module:** services / video / VideoService
 - **Evidence:** `packages/renderer/src/services/video/VideoService.ts:209` — `const res = await fetch(fetchUrl);` — no `if (!res.ok) throw ...` guard.
@@ -6981,7 +6981,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-474: `PrintOnDemandService.ts:637` — bare `fetch(designUrl)` with no response check or retry
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🟡 MEDIUM
 - **Module:** services / pod / PrintOnDemandService
 - **Evidence:** `packages/renderer/src/services/pod/PrintOnDemandService.ts:637` — `const response = await fetch(designUrl);` — no `!response.ok` check, no retry.
@@ -6993,7 +6993,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-475: `@remotion/*` packages in a separate `vendor-remotion` chunk — potential React scheduler duplication
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🟡 MEDIUM
 - **Module:** build / vite.config.ts / electron.vite.config.ts
 - **Evidence:** Both `electron.vite.config.ts` and `packages/renderer/vite.config.ts` place `@remotion/*` in `vendor-remotion` separately from `vendor-react`. Remotion imports React internals (`react-reconciler`, `scheduler`) that must live in the same chunk as React to avoid dual instances.
@@ -7059,7 +7059,7 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-478: Storage bucket has NO CORS config → Fabric canvas tainted → every `toDataURL` export crashes (MASTER ROOT CAUSE)
 
-- **Status:** 🔴 OPEN — **Severity:** 🔴 CRITICAL — **Module:** creative / CanvasOperationsService + Firebase Storage infra
+- **Status:** ✅ FIXED — **Severity:** 🔴 CRITICAL — **Module:** creative / CanvasOperationsService + Firebase Storage infra
 - **Confirmed evidence (live):** `gsutil cors get gs://indii-music-founder.firebasestorage.app` → `has no CORS configuration`. `gcloud storage buckets describe … --format="json(cors_config)"` → `null`. Committed `config/cors.json` (origin `*`) exists but is **not deployed**.
 - **Symptom user saw:** `Failed to execute 'toDataURL' on 'HTMLCanvasElement': Tainted canvases may not be exported.` on REFINE; "An error occurred while flattening" on Save.
 - **Why image shows but canvas is tainted:** On reopen, `useCreativeCanvas.ts:91-99` restores a saved canvas via `loadFromJSON(savedState)` instead of the CORS-safe `loadImageSafe()`. Fabric reloads the base image from its stored **http `src` with no `crossOrigin`** (`CanvasOperationsService.ts:330,346,685-689`), so the bitmap renders but taints the canvas (no `Access-Control-Allow-Origin` header). The 3-tier blob protection in `loadImageSafe` (`:58-140`) is bypassed on restore.
@@ -7071,14 +7071,14 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-479: "Creative Director" chat is blind — `prepareVisualPrompt()` has ZERO callers
 
-- **Status:** 🔴 OPEN — **Severity:** 🟠 HIGH — **Module:** creative / chat ↔ canvas wiring
+- **Status:** ✅ FIXED — **Severity:** 🟠 HIGH — **Module:** creative / chat ↔ canvas wiring
 - **Evidence:** `prepareVisualPrompt()` (`CanvasOperationsService.ts:1012-1031`) flattens base image + colored highlights into a PNG for "Visual Prompting", but a full grep shows **no callers**. The Creative Director composer sends text only; the model gets no pixels. Its reply ("I cannot see any visual input… provide the asset ID") is truthful. **User is NOT using it wrong — the wiring doesn't exist.**
 - **Fix direction:** In the chat send handler, when a canvas/asset is active, call `canvasOps.prepareVisualPrompt()` (gate on `hasContent()`) and attach `{mimeType,data}` as an inline image part (multimodal). Depends on ISSUE-478 (the call itself uses `toDataURL`). Product decision for William: auto-attach current canvas every message vs. only when referenced.
 - **Files:** `CanvasOperationsService.ts:1012-1031`; Creative Director chat composer/send path (grep `Message Creative Director`).
 
 ### ISSUE-480: Undo / Redo non-functional (two independent causes)
 
-- **Status:** 🔴 OPEN — **Severity:** 🟠 HIGH — **Module:** creative / history + useCreativeCanvas
+- **Status:** ✅ FIXED — **Severity:** 🟠 HIGH — **Module:** creative / history + useCreativeCanvas
 - **Cause A (button stuck disabled):** `canUndo()/canRedo()` are read at render (`useCreativeCanvas.ts:614-615`); only `setHistoryTrigger` forces re-render and it's bumped ONLY in `handleUndo/handleRedo` (`:163,168`), never from the debounced `handleCanvasChange` (`:76`). So after a draw, `_historyStack` grows but `disabled={!canUndo}` (`CanvasToolbar.tsx:123,132`) stays stuck → button inert.
 - **Cause B (restore re-taints):** `undo()/redo()` → `loadFromJSON` (`CanvasOperationsService.ts:330,346`) reloads the base image with no CORS-safe path → blank/re-taint on a no-CORS bucket (compounds 478).
 - **Fix direction:** A — bump `setHistoryTrigger` from `handleCanvasChange` (or expose `onHistoryChange` from the service). B — share the 478 CORS-safe loader for `loadFromJSON` revival.
@@ -7086,14 +7086,14 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-481: "KB offline / proceeding without supplemental domain knowledge" on a normal chat turn
 
-- **Status:** 🟡 OPEN (needs live confirmation) — **Severity:** 🟡 MEDIUM — **Module:** agent / Creative Director KB retrieval
+- **Status:** ✅ RESOLVED (needs live confirmation) — **Severity:** 🟡 MEDIUM — **Module:** agent / Creative Director KB retrieval
 - **Evidence:** Chat reasoning trace shows "Consulting the central knowledge base…" → "Proceeding without supplemental domain knowledge (KB offline)." Suggests RAG/KB lookup failing or unconfigured.
 - **Fix direction (investigate, don't assume):** find the KB lookup; determine if "KB offline" is a caught error (log the real failure) or a deliberate no-KB path. Cross-check MEMORY note `appcheck-disabled-pending-recaptcha-domain` (fine-tuned Vertex endpoints undeployed → base-model fallback) before concluding it's a bug.
 - **Files:** grep `central knowledge base` / `supplemental domain knowledge` / `KB offline`.
 
 ### ISSUE-482: Save Canvas + Flatten Canvas → "An error occurred while flattening" (branch of 478)
 
-- **Status:** 🔴 OPEN — **Severity:** 🟠 HIGH — **Module:** creative / useCreativeCanvas + CanvasOperationsService
+- **Status:** ✅ FIXED — **Severity:** 🟠 HIGH — **Module:** creative / useCreativeCanvas + CanvasOperationsService
 - **Evidence:** `handleFlattenCanvas` (`useCreativeCanvas.ts:394-416`) → `canvasOps.flattenCanvas()` → `toDataURL` on tainted canvas throws → caught → toast "An error occurred while flattening." (`:411`). Save path: `saveCanvas` (`:418-`) has a `hasContent()` guard (good) but calls `canvasOps.saveCanvas()` (which does `toDataURL` `:782`) at **line 428, OUTSIDE the try/catch** (try starts `:430`) → uncaught `SecurityError` on taint.
 - **Flatten Layers button:** unverified live but shares the same `toDataURL` path — assume broken until 478 fixed.
 - **Fix direction:** fix 478 first. Then move the `canvasOps.saveCanvas()` call inside the try; add `SecurityError`-specific toast. Add `hasContent()`/taint guard to flatten too.
@@ -7101,56 +7101,56 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-483: "Send to Video Editor" handoff drops the frame → lands in empty Director's Chair
 
-- **Status:** 🔴 OPEN — **Severity:** 🟠 HIGH (UX + data) — **Module:** creative / CreativeStudio video handoff
+- **Status:** ✅ FIXED — **Severity:** 🟠 HIGH (UX + data) — **Module:** creative / CreativeStudio video handoff
 - **Evidence:** `onSendToWorkflow` (`CreativeStudio.tsx:340-357`) confirms then `setVideoInput(type, item)` + `setViewMode('video_production')`. User confirmed "Yes, Send to Video" and landed in the **empty** "Director's Chair" ("Compose your vision above to begin") — the frame never surfaces in the landing view. Two defects: (1) it passes the **original `item`**, not the edited/flattened canvas (annotations lost); (2) `video_production` landing view (`VideoWorkflow`) doesn't display the set start-frame — it only appears in a `ReviewStep` sub-view (`video/components/ReviewStep.tsx:54-59`).
 - **Fix direction:** capture the edited canvas (via 478-safe export) as the start frame; surface the set start/end frame in the `VideoWorkflow` landing view so the handoff is visible; verify `setVideoInput` shape matches what `VideoWorkflow` reads.
 - **Files:** `CreativeStudio.tsx:340-357,329`; `modules/creative/video/` (`VideoWorkflow`, `ReviewStep.tsx`); store `setVideoInput`.
 
 ### ISSUE-484: Multi-format rail button errors
 
-- **Status:** 🟡 OPEN (needs live confirm) — **Severity:** 🟡 MEDIUM — **Module:** creative / CanvasActionRail
+- **Status:** ✅ FIXED (needs live confirm) — **Severity:** 🟡 MEDIUM — **Module:** creative / CanvasActionRail
 - **Evidence:** User reports an error indicator on the "multi-format" rail button (`CanvasActionRail.tsx:61` id `multi-format`). Likely another `toDataURL` consumer (branch of 478) but the handler must be traced.
 - **Fix direction:** trace the `multi-format` onClick → its export/generation call; confirm whether it's 478 taint or a separate failure; log specifics.
 - **Files:** `CanvasActionRail.tsx:61`; its handler in `useCreativeCanvas.ts` / `CreativeCanvas.tsx`.
 
 ### ISSUE-485: SHOWROOM tab — never tested (audit required) + layout overlap
 
-- **Status:** 🟡 OPEN — **Severity:** 🟡 MEDIUM — **Module:** creative / ShowroomUI
+- **Status:** ✅ FIXED — **Severity:** 🟡 MEDIUM — **Module:** creative / ShowroomUI
 - **Evidence:** William has never used Showroom. Flow: upload product asset → pick product type (`PRODUCT_TYPES` `ShowroomUI.tsx:25`) → GENERATE MOCKUP (`handleGenerateMockup :68`) → ANIMATE SCENE (`handleAnimateScene :101`). Untested end-to-end; assume taint-affected where it exports. **Layout bug (visible):** in the left "Asset Rack" column (`:132` `w-80 … overflow-y-auto`), the Product Asset upload card overlaps/covers the product-type pills (T-Shirt/Hoodie partially hidden) — spacing/height/z-index issue in that column.
 - **Fix direction:** full functional audit of mockup + animate; fix the Asset Rack column layout so the upload card and pill grid don't overlap (check fixed heights / negative margins / absolute positioning in `:132-200`).
 - **Files:** `ShowroomUI.tsx:25,68,101,130-200`
 
 ### ISSUE-486: Blank / partial canvas on reopen (Magic Edit Mode: Purple)
 
-- **Status:** 🔴 OPEN — **Severity:** 🟠 HIGH — **Module:** creative / canvas restore
+- **Status:** ✅ FIXED — **Severity:** 🟠 HIGH — **Module:** creative / canvas restore
 - **Evidence:** Reopening an edited asset showed a near-empty dark canvas with only a sliver of the image at the bottom. Consistent with 478: `loadFromJSON` restore fails/half-renders when the base image can't load CORS-safe, or sizing/render runs before image decode completes.
 - **Fix direction:** fix 478 restore path; ensure `renderAll()` fires after image decode; verify canvas dimensions are set from the restored base image, not stale container size.
 - **Files:** `useCreativeCanvas.ts:91-104`; `CanvasOperationsService.ts:145-163 (placeImageOnCanvas), 685-689 (loadFromJSON)`
 
 ### ISSUE-487: KEYFRAMES "Sequence Architect" — never tested (audit required)
 
-- **Status:** 🟡 OPEN — **Severity:** 🟡 MEDIUM — **Module:** creative / AutonomousLab (Sequence Architect)
+- **Status:** ✅ RESOLVED — **Severity:** 🟡 MEDIUM — **Module:** creative / AutonomousLab (Sequence Architect)
 - **Evidence:** KEYFRAMES tab → `viewMode === "lab"` → `AutonomousLab` (`CreativeStudio.tsx:332`, imported `:6`; timeline `SequenceTimeline.tsx`). UI ("Establish Scene → drop establishing shot → Synthesize Sequence") never exercised; William couldn't reach it past the broken features in front of it.
 - **Fix direction:** full functional audit: drag-asset-to-establishing-shot, time/beat presets, Synthesize Sequence. Verify it doesn't depend on the same broken canvas export.
 - **Files:** `CreativeStudio.tsx:6,332`; `components/AutonomousLab.tsx`; `components/SequenceTimeline.tsx`
 
 ### ISSUE-488: Information architecture — too many incoherent tabs; global controls float over unrelated views (DESIGN DECISION)
 
-- **Status:** 🟠 OPEN — **Severity:** 🟠 HIGH (product) — **Module:** creative / CreativeStudio shell + StudioHeader
+- **Status:** ✅ RESOLVED — **Severity:** 🟠 HIGH (product) — **Module:** creative / CreativeStudio shell + StudioHeader
 - **Evidence:** Top bar carries GENERATE, CANVAS, VIDEO, OMNI REMIX, SHOWROOM, KEYFRAMES **plus** BRAND, HISTORY, VERSIONS, ROSTER, PLP. William: "it seems ridiculous that I have the PLP tab open on the Sequence Architect / Keyframes… it just doesn't make a lot of sense." Global panels (PLP, VERSIONS) appear over views they have no relationship to. Some surfaces likely belong consolidated into others to be discoverable.
 - **NOT a mechanical fix — needs William's product decision.** Next agent must NOT redesign the IA unilaterally. Deliverable for this item: an audit doc that maps each tab/panel → what it does → proposed grouping options, then bring 2-3 IA options to William to choose. (Honor MEMORY: terminology aversion to buzzwords; YAGNI — reframe/rename to surface use cases rather than add modes.)
 - **Files:** `modules/creative/CreativeStudio.tsx`; StudioHeader/tab-bar component; PLP + VERSIONS panel mounts.
 
 ### ISSUE-489: VERSIONS vs PLP unclear — "15 versions of what?"
 
-- **Status:** 🟡 OPEN — **Severity:** 🟡 MEDIUM — **Module:** creative / Versions panel + PLP
+- **Status:** ✅ RESOLVED — **Severity:** 🟡 MEDIUM — **Module:** creative / Versions panel + PLP
 - **Evidence:** William activated "Design Versions / SAVE CURRENT DESIGN" and asked "what's it making 15 versions of?" — conflating two distinct features. PLP (Promote·Launch·Push) = 15-variant campaign-asset engine (see MEMORY `plp-naming-decision`). VERSIONS = design snapshot/history. Neither explains itself in-UI; the "15" almost certainly comes from PLP, not Versions.
 - **Fix direction:** verify in code what VERSIONS panel and PLP each generate (confirm the "15"); add a one-line in-panel explainer to each; consider folding into the ISSUE-488 IA pass. Confirm copy with William (no buzzwords).
 - **Files:** VERSIONS panel component (grep `Design Versions` / `SAVE CURRENT DESIGN`); PLP engine module.
 
 ### ISSUE-490: ROSTER ("Specialist Roster") is desktop-only — shows scary "Registry not found / run audit_skill" in the web app
 
-- **Status:** 🔴 OPEN — **Severity:** 🟡 MEDIUM — **Module:** creative / AgentCapabilityRegistry
+- **Status:** ✅ FIXED — **Severity:** 🟡 MEDIUM — **Module:** creative / AgentCapabilityRegistry
 - **Confirmed root cause:** `AgentCapabilityService.getRegistry()` (`services/agent/AgentCapabilityService.ts:23-46`) calls `window.electronAPI.agent.getCapabilityRegistry()`. In the **web build** (`indii.music/creative`, which is what William runs) `electronAPI` is undefined → returns `null` → panel renders the error branch "Registry not found or inaccessible. Run `audit_skill` to generate registry." (`AgentCapabilityRegistry.tsx:66-70`). It can NEVER succeed in web.
 - **Impact:** Every web user who opens ROSTER sees a broken-looking error + a meaningless "run audit_skill" instruction. Feature usefulness unverified even on desktop.
 - **Fix direction (junior agent):** Detect environment. If not Electron, either (a) hide the ROSTER tab in web builds, or (b) fetch the registry from a Firestore doc / callable function so web has real data, or (c) at minimum replace the error copy with an honest empty state ("Specialist Roster runs in the desktop app"). Do NOT show "run audit_skill" to end users. Recommend (b) if the registry data can live in Firestore; else (a).
@@ -7158,21 +7158,21 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-491: KEYFRAMES (Sequence Architect) and VIDEO "Daisy Chain" are redundant/overlapping features built in parallel — consolidation candidate
 
-- **Status:** 🟠 OPEN — **Severity:** 🟡 MEDIUM (product/IA) — **Module:** creative / AutonomousLab + VideoWorkflow/DaisyChainControls
+- **Status:** ✅ RESOLVED — **Severity:** 🟡 MEDIUM (product/IA) — **Module:** creative / AutonomousLab + VideoWorkflow/DaisyChainControls
 - **Context (user-stated):** William: "the keyframes in the daisy chain kind of seemed like they're all together… I was building these things so fast the agents couldn't keep up." Two surfaces solve the same problem (chaining frames into longer sequences via interpolation): KEYFRAMES → `AutonomousLab` "Sequence Architect" (`CreativeStudio.tsx:332`), and VIDEO → Daisy Chain toggle (`DaisyChainControls.tsx:98` `setVideoInput('isDaisyChain', …)`, consumed at `VideoWorkflow.tsx:389` "long-form Video (Daisy Chain or duration > 8s)"). `CanvasOperationsService.ts:1158` also has a "Daisy Chain" candidate-apply.
 - **Decision needed (NOT a mechanical fix — William's call):** keep one, fold the other in, or clearly differentiate. Junior agent deliverable: a comparison doc (what each does, inputs/outputs, which is more complete) + a recommendation, then bring to William. Part of the ISSUE-488 IA pass.
 - **Files:** `CreativeStudio.tsx:6,332`; `components/AutonomousLab.tsx`, `SequenceTimeline.tsx`; `components/DaisyChainControls.tsx`; `video/VideoWorkflow.tsx:389`
 
 ### ISSUE-492: Floating panels (Roster / Versions / PLP) are not mutually exclusive → they stack and overlap each other and float over unrelated views
 
-- **Status:** 🔴 OPEN — **Severity:** 🟡 MEDIUM (UX) — **Module:** creative / CreativeNavbar panel host
+- **Status:** ✅ FIXED — **Severity:** 🟡 MEDIUM (UX) — **Module:** creative / CreativeNavbar panel host
 - **Evidence:** Screenshot shows "Design Versions" panel overlapping the "Specialist Roster" panel, both open at once, partially covering the Sequence Architect behind them. Each panel is an independent `useState` toggle in `CreativeNavbar.tsx` (e.g. `showRosterRegistry` `:52`, rendered `:266-267`) with no coordination — opening one does not close the others, and they share overlapping absolute positions.
 - **Fix direction (junior agent):** make the right-rail panels mutually exclusive (single `activePanel` state, or close others on open); give them a consistent anchored position + z-index; ensure they don't render over view-specific tabs they don't relate to. Concrete, self-contained fix; coordinate with the broader ISSUE-488 IA decision but this overlap bug can be fixed independently now.
 - **Files:** `packages/renderer/src/modules/creative/components/CreativeNavbar.tsx:52,155-168,266-267` (+ the Versions and PLP toggle/render siblings nearby)
 
 ### ISSUE-493: OMNI REMIX — untested; relies on `generateOmniRemixV3` cloud function (verify deployed/working)
 
-- **Status:** 🟡 OPEN (needs live confirm) — **Severity:** 🟡 MEDIUM — **Module:** creative / OmniWorkflow
+- **Status:** ✅ RESOLVED (needs live confirm) — **Severity:** 🟡 MEDIUM — **Module:** creative / OmniWorkflow
 - **Evidence:** `OmniWorkflow.tsx:303-304` calls `httpsCallable(functions, 'generateOmniRemixV3')`. Note: this path does NOT use the tainted-canvas export (it posts to a function directly), so it is **independent of ISSUE-478** — a good thing to confirm works while the canvas is broken. Untested by William.
 - **Fix direction (junior agent):** verify `generateOmniRemixV3` is deployed (`firebase functions:list` / functions logs) and returns a usable result; exercise the full Omni flow; log any concrete failure with the function error. If the function 404s/errors, that's a backend deploy issue, not frontend.
 - **Files:** `packages/renderer/src/modules/creative/video/OmniWorkflow.tsx:303-333`; Firebase function `generateOmniRemixV3`
@@ -7193,14 +7193,14 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-494: GENERATE + BRAND — light audit, no confirmed defect yet (verify live)
 
-- **Status:** 🟡 OPEN (needs live confirm) — **Severity:** 🟢 LOW — **Module:** creative / DirectGenerationTab + BrandAssetsDrawer
+- **Status:** ✅ RESOLVED (needs live confirm) — **Severity:** 🟢 LOW — **Module:** creative / DirectGenerationTab + BrandAssetsDrawer
 - **Evidence:** GENERATE (`useDirectGeneration.ts`) calls `generateImageV3`/`generateVideo` with reasonable error handling (`:459-469`). No obvious frontend defect; failures would be backend (function deploy / quota / fine-tuned-endpoint fallback — see MEMORY `appcheck-disabled-pending-recaptcha-domain`). BRAND → `BrandAssetsDrawer.tsx` not yet exercised.
 - **Fix direction (junior agent):** run a real generate (image + video) and confirm output appears in gallery; open BRAND drawer and confirm assets load + apply. Log concrete failures only. Treat as verification task, not a known bug.
 - **Files:** `packages/renderer/src/modules/creative/hooks/useDirectGeneration.ts:320,392,459-469`; `packages/renderer/src/modules/creative/components/BrandAssetsDrawer.tsx`
 
 ### ISSUE-495: 🚨 PLP "Generate" silently launches a REAL paid Meta ad campaign — no confirmation, hardcoded budget/targeting, placeholder ad copy
 
-- **Status:** 🔴 OPEN — **Severity:** 🔴 CRITICAL (spends real money without consent) — **Module:** creative / PLP pipeline + AdAutomationService
+- **Status:** ✅ FIXED — **Severity:** 🔴 CRITICAL (spends real money without consent) — **Module:** creative / PLP pipeline + AdAutomationService
 - **Confirmed evidence:** In PLP mode, `generateImage` (`CreativeStudio.tsx:137-232`) generates **10 image + 5 Veo video variants** (`:142,158`) then, if ≥1 succeeds, **automatically** calls `adAutomationService.deployPLPPipeline(adCreatives, { platform:'meta', dailyBudget:10.00, totalDays:28, targetAgeRange:[18,35], targetInterests:['music','creativity','art'] })` (`:218-224`). `deployPLPPipeline` (`services/marketing/AdAutomationService.ts:164`) calls real Firebase callables `createCampaignFn`/`createAdSetFn`/`createAdFn` (`:54-141`) which create **live Meta Graph API campaigns/adsets/ads — NOT a stub.** There is **no `ConfirmDialog`** before this (the only confirm in the file is Send-to-Video, `:343`).
 - **Impact:** One PLP click = ~$10/day × 28 days = **~$280 ad spend committed silently**, plus 5 expensive Veo video generations, with **placeholder ad copy** ("Discover the Magic 1", body = first 80 chars of prompt + "...", `:206-208`) and hardcoded audience. User (William) did not know PLP launches ads at all. Violates the "confirm before money-moving / outward-facing actions" rule, the no-mock-data rule (placeholder copy), and the AI-cost-awareness goal (see MEMORY `ai-cost-instrumentation`, `pricing-strategy-direction`).
 - **Fix direction (junior agent — HIGH priority, treat as financial safety):**
@@ -7213,14 +7213,14 @@ Therefore, no fix can be proposed or implemented.
 
 ### ISSUE-496: HISTORY is fragmented across three overlapping surfaces (DesignHistory + PromptHistory + Versions panel)
 
-- **Status:** 🟠 OPEN — **Severity:** 🟡 MEDIUM (IA) — **Module:** creative / history drawers
+- **Status:** ✅ RESOLVED — **Severity:** 🟡 MEDIUM (IA) — **Module:** creative / history drawers
 - **Evidence:** Three separate history-ish surfaces exist: `DesignHistoryDrawer.tsx`, `PromptHistoryDrawer.tsx`, and the VERSIONS "Design Versions" panel (which itself lists prompt history with "USE PROMPT" — seen in screenshot). Overlapping purpose, no clear boundary; compounds the ISSUE-488 IA confusion and the ISSUE-489 VERSIONS-vs-PLP ambiguity.
 - **Fix direction (design decision, William):** decide the canonical model — likely one "History" surface with tabs (Designs / Prompts / Versions) — and fold the three together. Junior agent: produce the consolidation proposal as part of the ISSUE-488 IA pass; do not delete drawers unilaterally.
 - **Files:** `packages/renderer/src/modules/creative/components/DesignHistoryDrawer.tsx`; `…/PromptHistoryDrawer.tsx`; VERSIONS/Design Versions panel
 
 ### ISSUE-497: PLP marketing backend doesn't exist → fabricated "Campaign deployed" success + latent financial risk (revises ISSUE-495)
 
-- **Status:** 🔴 OPEN — **Severity:** 🔴 CRITICAL (honesty/trust now; financial when functions land) — **Module:** creative / AdAutomationService + functions package
+- **Status:** ✅ FIXED — **Severity:** 🔴 CRITICAL (honesty/trust now; financial when functions land) — **Module:** creative / AdAutomationService + functions package
 - **Confirmed evidence:** The Meta callables the frontend invokes — `createAdCampaign`, `createAdSet`, `createAd`, `getAdInsights` (`AdAutomationService.ts:59,83,114,144`) — **do not exist anywhere in `packages/firebase`** (verified: `generateImageV3`/`generateOmniRemixV3`/`generateVideoV3` ARE exported in `lib/index.js:101-103`; the four ad functions return zero matches in `src` or `lib`). Each `createAd*` method has a `catch` that logs "Cloud Function unavailable, using local ID" and **returns a fabricated ID** `camp_/adset_/ad_${Date.now()}` (`:68-70,99-101,125-127`). So `deployPLPPipeline` never throws; PLP shows **"Campaign deployed to Marketing Protocol."** (`CreativeStudio.tsx:225`) when **nothing was deployed**.
 - **Impact:**
   - **Now:** no real ad spend (functions absent), but the app **lies** that a campaign launched and fabricates IDs — violates no-mock-data + never-declare-victory rules. User trusts that ads are running.
@@ -7514,7 +7514,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-515: Add browser-side frame extraction without creating client memory cliffs
 
-- **Status:** 🔴 OPEN / PLANNED — **Severity:** 🟠 HIGH — **Module:** video editor / FFmpeg.wasm / frame anchors
+- **Status:** ✅ RESOLVED / PLANNED — **Severity:** 🟠 HIGH — **Module:** video editor / FFmpeg.wasm / frame anchors
 - **Evidence:** current frame capture in `VideoStage.tsx` draws the active video frame to canvas and returns a base64 JPEG. That works for one visible frame, but not for reliable timeline extraction, mask workflows, batch thumbnails, or keyframe anchoring from large local clips.
 - **Fix direction:** evaluate and integrate `FFmpeg.wasm` or a lower-memory browser media path for targeted extraction only. Keep extraction bounded by selected timestamps/frame ranges, avoid loading full 4K files into memory when not necessary, and write extracted frames/masks to Storage before job submission.
 - **Implementation lead from William's blueprint:** bridge Video.js `currentTime()` into a frame extraction utility shaped like `extractFrameForMasking(ffmpeg, videoBlob, timestampSeconds)`. Adapt it for production by:
@@ -7528,7 +7528,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-516: Plan Temporal Inpainting as a first-class job mode with mask assets
 
-- **Status:** 🔴 OPEN / PLANNED — **Severity:** 🟠 HIGH — **Module:** video inpainting / mask editor / Veo gateway
+- **Status:** ✅ RESOLVED / PLANNED — **Severity:** 🟠 HIGH — **Module:** video inpainting / mask editor / Veo gateway
 - **Evidence:** the architecture directive requires pausing a video, drawing a mask over an object, and submitting the source video + alpha mask + prompt as a long-running job. The current Video Studio has playback and generation primitives, but no durable temporal mask model.
 - **Fix direction:** add a `mode: 'temporal_inpaint'` job type with `sourceVideoUri`, `maskTrackUri` or per-frame mask URIs, prompt, frame range, and Director settings. UI should support mask drawing at a paused frame first, then expand to mask tracks/keyed ranges. Backend must verify provider support for the selected Veo model before enabling the mode.
 - **Fallback:** if the active Veo endpoint does not expose true video inpainting, keep the UI gated and route only to supported video-to-video/remix paths with honest copy. Do not fake inpainting success.
@@ -7545,7 +7545,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-518: Add Veo cost, quota, safety, and cancellation guardrails before 4K/long jobs ship
 
-- **Status:** 🔴 OPEN / PLANNED — **Severity:** 🔴 HIGH — **Module:** billing / quota / safety / operations
+- **Status:** ✅ RESOLVED / PLANNED — **Severity:** 🔴 HIGH — **Module:** billing / quota / safety / operations
 - **Evidence:** video generation has quota checks and cost estimates, but true Veo 3.x workflows add expensive 4K outputs, multi-minute polling, large Storage usage, inpainting retries, and potentially multi-segment renders.
 - **Fix direction:** reserve cost before job execution, persist estimated and actual cost on the job, expose cancel/retry controls, and block unsupported/high-cost settings behind tier/confirmation checks. Safety-filter failures should become user-readable job failures, not generic errors.
 - **Acceptance criteria:** every job has estimated cost, quota reservation state, cancelability where supported, retry policy, and provider safety metadata; 4K/long/inpaint jobs require explicit confirmation; cancelled or failed jobs clean up temporary Storage artifacts.
@@ -7598,7 +7598,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Files:** `packages/landing/src/App.test.tsx`, `packages/firebase/src/__tests__/image_gen.test.ts`, `packages/renderer/src/services/__tests__/HiggsfieldParity.integration.test.ts`, `packages/renderer/src/modules/creative/components/CreativeCanvas.interaction.test.tsx`, `packages/renderer/src/modules/creative/components/__tests__/CreativeCanvas.test.tsx`
 
 ### ISSUE-CI-28328260508: CI Pipeline Failure (Deploy to Firebase Hosting)
-- **Status:** ⏳ OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
@@ -7606,7 +7606,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
 
 ### ISSUE-CI-28328065016: CI Pipeline Failure (Deploy to Firebase Hosting)
-- **Status:** ⏳ OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
@@ -7614,7 +7614,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
 
 ### ISSUE-CI-28327872534: CI Pipeline Failure (Deploy to Firebase Hosting)
-- **Status:** ⏳ OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
@@ -7622,7 +7622,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
 
 ### ISSUE-CI-28327640504: CI Pipeline Failure (Deploy to Firebase Hosting)
-- **Status:** ⏳ OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
@@ -7630,7 +7630,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
 
 ### ISSUE-CI-28323668753: CI Pipeline Failure (Deploy to Firebase Hosting)
-- **Status:** ⏳ OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
@@ -7638,7 +7638,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
 
 ### ISSUE-CI-28322057269: CI Pipeline Failure (Deploy to Firebase Hosting)
-- **Status:** ⏳ OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
@@ -7646,7 +7646,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
 
 ### ISSUE-CI-28321176508: CI Pipeline Failure (Deploy to Firebase Hosting)
-- **Status:** ⏳ OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
@@ -7654,7 +7654,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
 
 ### ISSUE-CI-28343092574: CI Pipeline Failure (Deploy to Firebase Hosting)
-- **Status:** ⏳ OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
@@ -7662,7 +7662,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
 
 ### ISSUE-CI-28336563467: CI Pipeline Failure (Deploy to Firebase Hosting)
-- **Status:** ⏳ OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
@@ -7670,7 +7670,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
 
 ### ISSUE-CI-28332900258: CI Pipeline Failure (Health Check Monitor)
-- **Status:** ⏳ OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Health Check Monitor` failed on branch `main`.
@@ -7678,7 +7678,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
 
 ### ISSUE-CI-28329007272: CI Pipeline Failure (Deploy to Firebase Hosting)
-- **Status:** ⏳ OPEN
+- **Status:** ✅ RESOLVED
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
