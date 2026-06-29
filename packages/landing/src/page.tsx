@@ -120,7 +120,7 @@ export default function Home({ founder = true }: { founder?: boolean }) {
             <a href="#capabilities" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">Agents</a>
             <a href="#conductor" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">Conductor</a>
             {founder && <button onClick={() => setIsThesisOpen(true)} className="text-sm font-medium text-gray-400 hover:text-white transition-colors">The Thesis</button>}
-            {founder && <a href="#invest" className="text-sm font-bold text-amber-500 hover:text-amber-400 transition-colors">Founders Round</a>}
+            {founder && <a href="#invest" className="text-sm font-bold text-amber-500 hover:text-amber-400 transition-colors">Founder Access</a>}
           </div>
           <a
             href={getStudioUrl()}
@@ -128,7 +128,7 @@ export default function Home({ founder = true }: { founder?: boolean }) {
           >
             <div className="absolute inset-0 bg-gradient-to-r from-amber-400 to-amber-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             <span className="relative z-10 transition-colors group-hover:text-white">
-              {loading ? 'Verifying...' : user ? 'Resume Session' : 'Launch Studio'}
+              {loading ? 'Verifying...' : user ? 'Resume Session' : (founder ? 'Launch Founder Preview' : 'Launch Studio')}
             </span>
             <ArrowRight size={14} className="relative z-10 transition-transform group-hover:translate-x-1 group-hover:text-white" />
           </a>
@@ -191,7 +191,7 @@ export default function Home({ founder = true }: { founder?: boolean }) {
             href={getStudioUrl()}
             className="group relative inline-flex items-center justify-center gap-3 px-8 py-4 text-base font-bold text-black bg-gradient-to-r from-amber-400 to-amber-600 rounded-full overflow-hidden transition-all hover:scale-105 active:scale-95 shadow-[0_0_30px_rgba(245,158,11,0.4)]"
           >
-            <span className="relative z-10">Launch Studio</span>
+            <span className="relative z-10">{founder ? 'Launch Founder Preview' : 'Launch Studio'}</span>
             <ArrowRight size={18} className="relative z-10 transition-transform group-hover:translate-x-1" />
           </a>
           {founder && (
@@ -375,13 +375,13 @@ export default function Home({ founder = true }: { founder?: boolean }) {
 
           <div className="relative z-10 flex flex-col items-center text-center">
             <div className="inline-flex items-center justify-center px-4 py-1.5 rounded-full bg-amber-500/20 border border-amber-500/50 text-amber-400 font-bold text-[10px] md:text-xs tracking-widest uppercase mb-8 shadow-[0_0_20px_rgba(245,158,11,0.3)]">
-              10 Paid Seats Available • Lifetime Access
+              Private Launch Access • Lifetime Full-Platform Access
             </div>
             <h2 className="text-4xl md:text-6xl font-black tracking-tight text-white mb-6">
-              The Founders Agreement
+              Secure Founder Access
             </h2>
             <p className="text-gray-300 text-lg md:text-xl max-w-2xl mb-12 font-light leading-relaxed">
-              We are opening exactly <strong className="text-white">10 paid lifetime seats (11 total)</strong> to the indii Founders Program. At $2,500, you become a stakeholder in the future of music. Permanent access to the entire indii infrastructure — all 21 agents, the Conductor, and every future update — with no recurring fees. Own the means of production on an architecture of togetherness.
+              Private launch access includes <strong className="text-white">lifetime full-platform access</strong>, beta participation, guided onboarding, Boardroom/Conductor access, and permanent founder recognition. All 21 specialists, every future founder-level update — with no recurring fees. Future pricing will increase as indii moves toward wider release.
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-3xl mb-12 text-left">
@@ -407,10 +407,13 @@ export default function Home({ founder = true }: { founder?: boolean }) {
               href={getStudioUrl()}
               className="group relative inline-flex items-center justify-center gap-3 px-10 py-5 text-lg font-black text-black bg-gradient-to-r from-amber-400 to-amber-600 rounded-full overflow-hidden transition-all hover:scale-105 active:scale-95 shadow-[0_0_30px_rgba(245,158,11,0.4)]"
             >
-              <span className="relative z-10">Claim Your Seat — $2,500</span>
+              <span className="relative z-10">Secure Founder Access — $2,500</span>
               <ArrowRight size={20} className="relative z-10 transition-transform group-hover:translate-x-2" />
             </a>
-            <div className="mt-6 text-sm font-mono text-gray-500 uppercase tracking-widest">Subject to Availability</div>
+            <p className="mt-4 text-xs text-gray-500 max-w-sm text-center leading-relaxed">
+              If you use indii for your music business, founder access may qualify as a deductible software expense. Please confirm with your tax professional.
+            </p>
+            <div className="mt-3 text-sm font-mono text-gray-600 uppercase tracking-widest">Subject to Availability</div>
           </div>
         </div>
       </section>
@@ -427,7 +430,7 @@ export default function Home({ founder = true }: { founder?: boolean }) {
         <div className="flex flex-wrap justify-center gap-6 md:gap-8">
           <a href="/privacy" className="hover:text-white transition-colors font-medium">Privacy Policy</a>
           <a href="/terms" className="hover:text-white transition-colors font-medium">Terms of Service</a>
-          {founder && <a href="mailto:invest@indii.music" className="text-amber-500 hover:text-amber-400 transition-colors font-bold uppercase tracking-widest">Invest</a>}
+          {founder && <a href="mailto:wiil@indii.music" className="text-amber-500 hover:text-amber-400 transition-colors font-bold uppercase tracking-widest">Founder Access</a>}
         </div>
       </footer>
 
