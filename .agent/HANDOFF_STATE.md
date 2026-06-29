@@ -1,9 +1,12 @@
 # Handoff State
-**Updated:** 2026-06-29 17:36 EDT
+**Updated:** 2026-06-29 17:50 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+535bac370 chore: gitignore loose QA smoke screenshots in artifacts/
+cb9683537 chore: e2e mock plumbing, Detroit landing copy, audit doc + stress loop
+1d59f67d3 chore: session checkpoint [17:36]
 c9a1d582b feat(landing): widen thesis crawl, refine intro timing + diffuser
 7926b516a chore: session checkpoint [17:34]
 175cfac9e chore: session checkpoint [17:34]
@@ -11,35 +14,11 @@ b04a6f171 chore: session checkpoint [17:32]
 895fe3680 chore: session checkpoint [17:30]
 42da8d862 chore: session checkpoint [17:30]
 46fba39c4 chore: session checkpoint [17:28]
-8b9fc5506 chore: session checkpoint [17:27]
-e432f0c9d chore: session checkpoint [17:26]
-4a56cb8be chore: session checkpoint [17:25]
 ```
 
 ## Working State
 ```
- M .agent/test_ledger/OPEN_ISSUES.md
- M artifacts/live-agent-daisy-chain/coordination-report.html
- M artifacts/live-agent-daisy-chain/latest.json
- M e2e/live-agent-daisy-chain.spec.ts
- M packages/landing/src/page.tsx
- M packages/renderer/src/modules/agent/components/AgentDashboard.tsx
- M packages/renderer/src/modules/marketing/components/CampaignDashboard.tsx
- M packages/renderer/src/services/StorageService.ts
- M packages/renderer/src/services/firebase.ts
-?? artifacts/founder-login-smoke.png
-?? artifacts/founder-signup-smoke.png
-?? artifacts/landing-smoke.png
-?? artifacts/login-founder-verify.png
-?? artifacts/login-mobile-smoke.png
-?? artifacts/login-smoke.png
-?? artifacts/renderer-login-founder-final.png
-?? artifacts/renderer-login-founder-flag.png
-?? artifacts/renderer-login-founder-smoke.png
-?? artifacts/signup-founder-verify.png
-?? artifacts/signup-mobile-smoke.png
-?? packages/renderer/src/services/agent/definitions/SECURITY_AUDIT.md
-?? scripts/mega_stress_loop.sh
+clean working tree
 ```
 
 ## Decisions
