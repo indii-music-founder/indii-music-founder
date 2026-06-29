@@ -5,6 +5,7 @@ import LoginForm from './components/auth/LoginForm';
 import SignupForm from './components/auth/SignupForm';
 import PasswordResetForm from './components/auth/PasswordResetForm';
 import VerifyEmail from './components/auth/VerifyEmail';
+import LoginBridge from './login-bridge/page';
 import { AuthProvider } from './components/auth/AuthProvider';
 import AuthLayout from './components/layouts/AuthLayout';
 import Privacy from './pages/Privacy';
@@ -18,6 +19,7 @@ const FounderRoutes = () => (
     <Route path="/signup" element={<AuthLayout><SignupForm /></AuthLayout>} />
     <Route path="/reset-password" element={<AuthLayout><PasswordResetForm /></AuthLayout>} />
     <Route path="/verify-email" element={<AuthLayout><VerifyEmail /></AuthLayout>} />
+    <Route path="/login-bridge" element={<LoginBridge />} />
     <Route path="/privacy" element={<Privacy />} />
     <Route path="/terms" element={<Terms />} />
     <Route path="/record" element={<FieldRecorder />} />
@@ -31,6 +33,7 @@ const GeneralRoutes = () => (
     <Route path="/signup" element={<AuthLayout><SignupForm /></AuthLayout>} />
     <Route path="/reset-password" element={<AuthLayout><PasswordResetForm /></AuthLayout>} />
     <Route path="/verify-email" element={<AuthLayout><VerifyEmail /></AuthLayout>} />
+    <Route path="/login-bridge" element={<LoginBridge />} />
     <Route path="/privacy" element={<Privacy />} />
     <Route path="/terms" element={<Terms />} />
   </Routes>

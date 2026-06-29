@@ -837,6 +837,31 @@ describe('Firestore Security Rules', () => {
         });
     });
 
+    describe('founderFunnelEvents/{eventId} (public create / no read)', () => {
+        const eventData = {
+            eventName: 'founder_site_view',
+            path: '/',
+            url: 'https://founder.indii.music/',
+            sessionId: 'ff-12345678',
+            source: 'founder',
+            detailsJson: '{}',
+            occurredAtMs: Date.now(),
+            createdAt: Timestamp.now(),
+        };
+
+        it('unauthenticated: create allowed for founder funnel event', async () => {
+            if (requireEmulator()) return;
+            const db = unauthCtx().firestore();
+            await assertSucceeds(setDoc(doc(db, 'founderFunnelEvents', 'event-1'), eventData));
+        });
+
+        it('authenticated: read denied (write-only telemetry)', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(ALICE_UID).firestore();
+            await assertFails(getDoc(doc(db, 'founderFunnelEvents', 'event-1')));
+        });
+    });
+
     describe('global read-only collections (content_rules, sample_platforms)', () => {
         const readOnlyCollections = ['content_rules', 'sample_platforms'];
 

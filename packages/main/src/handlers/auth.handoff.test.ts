@@ -111,4 +111,19 @@ describe('auth handoff deep link', () => {
     expect(sendMock).toHaveBeenCalledWith('auth:user-update', expect.objectContaining({ idToken }));
   });
 
+  it('preserves founder source through the deep-link handoff', async () => {
+    const payload = Buffer.from(JSON.stringify({ iss: 'https://accounts.google.com', exp: Math.floor(Date.now()/1000)+300 }), 'utf8').toString('base64url');
+    const idToken = `header.${payload}.sig`;
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ idToken, accessToken: 'access-token-12345678901234567890' })
+    });
+    vi.stubGlobal('fetch', fetchMock as any);
+
+    await handleDeepLink('indii://auth/callback?code=one-time-1234&source=founder');
+
+    expect(sendMock).toHaveBeenCalledWith('auth:user-update', expect.objectContaining({ idToken, source: 'founder' }));
+  });
+
 });

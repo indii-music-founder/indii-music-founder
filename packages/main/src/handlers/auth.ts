@@ -58,7 +58,7 @@ export function __resetAuthRateLimit() {
 // NOTIFICATIONS
 // ============================================================================
 
-function notifyAuthSuccess(tokens: { idToken: string; accessToken?: string | null }) {
+function notifyAuthSuccess(tokens: { idToken: string; accessToken?: string | null; source?: string | null }) {
     const wins = BrowserWindow.getAllWindows();
     log.info(`[Auth] Notifying ${wins.length} window(s) of successful auth`);
     wins.forEach(w => {
@@ -236,6 +236,7 @@ export async function handleDeepLink(url: string) {
     try {
         const urlObj = new URL(url);
         const code = urlObj.searchParams.get('code');
+        const source = urlObj.searchParams.get('source');
         const error = urlObj.searchParams.get('error');
 
         if (error) {
@@ -315,7 +316,7 @@ export async function handleDeepLink(url: string) {
 
         if (idToken) {
             log.info(`[Auth] Success: Tokens validated and accepted. ID: ${idToken.substring(0, 20)}..., Access: ${!!accessToken}`);
-            notifyAuthSuccess({ idToken, accessToken });
+            notifyAuthSuccess({ idToken, accessToken, source });
         } else {
             log.info('[Auth] No tokens or errors found in deep link.');
         }

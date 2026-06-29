@@ -546,7 +546,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
             framework: analysisFramework,
             topic: args.industry_or_genre
         }, `Please provide a comprehensive visual trends analysis for "${args.industry_or_genre}" using your internal knowledge, structured around the provided framework.`);
-    })
+    }),
 };
 
 /**
@@ -558,7 +558,7 @@ function handleGenerationError(err: unknown, toolName: string) {
     const error = err as any;
     const message = error.message || String(err);
     const lowerMessage = message.toLowerCase();
-    
+
     if (error.name === 'QuotaExceededError' || error.code === 'QUOTA_EXCEEDED' || message.includes('429') || lowerMessage.includes('quota') || lowerMessage.includes('rate limit')) {
         return toolError(
             `Quota exceeded for ${toolName}. Please wait a moment or try a lower-resolution setting.`,
@@ -579,5 +579,3 @@ function handleGenerationError(err: unknown, toolName: string) {
     // Fallback
     return toolError(`Image generation failed during ${toolName}: ${message}`, 'GENERATION_ERROR');
 }
-
-

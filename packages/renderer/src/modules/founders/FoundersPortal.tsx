@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Logger } from '@/core/logger/Logger';
 import { motion } from 'framer-motion';
 import { useStore } from '@/core/store';
@@ -7,6 +7,7 @@ import { Download, Monitor, Apple, ArrowLeft, Loader2, Key, Mail } from 'lucide-
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '@/services/firebase';
 import InboxTab from '@/modules/agent/components/InboxTab';
+import { flushFounderFunnelQueue, trackFounderFunnelEvent } from '@/services/founders/founderFunnel';
 
 export default function FoundersPortal() {
     const { userProfile, setModule } = useStore(
@@ -20,10 +21,32 @@ export default function FoundersPortal() {
     const [isWinLoading, setIsWinLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<'downloads' | 'inbox'>('downloads');
+    const hasTrackedPortalView = useRef(false);
 
     const isFounder = userProfile?.subscriptionTier === 'founder' || userProfile?.tier === 'founder' || userProfile?.isFounder === true;
 
+    useEffect(() => {
+        flushFounderFunnelQueue();
+        if (isFounder && !hasTrackedPortalView.current) {
+            hasTrackedPortalView.current = true;
+            void trackFounderFunnelEvent('founder_portal_viewed', {
+                surface: 'founders_portal',
+                tab: activeTab,
+            }, {
+                userId: userProfile?.id ?? null,
+                email: userProfile?.email ?? null,
+            });
+        }
+    }, [isFounder, activeTab, userProfile]);
+
     const handleDownload = async (platform: 'mac' | 'windows') => {
+        await trackFounderFunnelEvent('founder_path_selected', {
+            location: 'founders_portal',
+            platform,
+        }, {
+            userId: userProfile?.id ?? null,
+            email: userProfile?.email ?? null,
+        });
         if (platform === 'mac') setIsMacLoading(true);
         else setIsWinLoading(true);
         setError(null);
@@ -55,7 +78,7 @@ export default function FoundersPortal() {
 
             <button
                 onClick={() => setModule('dashboard')}
-                className="fixed top-6 left-6 z-20 flex items-center gap-2 text-xs text-gray-500 hover:text-gray-200 transition-colors group"
+                className="fixed top-6 left-6 z-20 flex items-center gap-2 text-sm text-gray-500 hover:text-gray-200 transition-colors group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black rounded-lg px-1"
             >
                 <ArrowLeft size={14} className="group-hover:-translate-x-0.5 transition-transform" />
                 Return to Studio
@@ -83,7 +106,7 @@ export default function FoundersPortal() {
                         </p>
                         <button
                             onClick={() => setModule('founders-checkout')}
-                            className="bg-red-500/20 hover:bg-red-500/30 text-red-300 px-6 py-3 rounded-lg text-sm font-semibold transition-colors"
+                            className="bg-red-500/20 hover:bg-red-500/30 text-red-300 px-6 py-3 rounded-lg text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
                         >
                             Become a Founder
                         </button>
@@ -94,7 +117,7 @@ export default function FoundersPortal() {
                         <div className="flex justify-center gap-4 mb-12">
                             <button
                                 onClick={() => setActiveTab('downloads')}
-                                className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-colors ${
+                                className={`flex items-center gap-2 min-h-[44px] px-6 py-3 rounded-xl font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black ${
                                     activeTab === 'downloads'
                                         ? 'bg-amber-500 text-black'
                                         : 'bg-white/5 text-white hover:bg-white/10'
@@ -103,8 +126,17 @@ export default function FoundersPortal() {
                                 <Download size={18} /> Downloads
                             </button>
                             <button
-                                onClick={() => setActiveTab('inbox')}
-                                className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-colors ${
+                                    onClick={() => {
+                                        setActiveTab('inbox');
+                                    void trackFounderFunnelEvent('founder_talk_first_selected', {
+                                        location: 'founders_portal',
+                                        tab: 'inbox',
+                                    }, {
+                                        userId: userProfile?.id ?? null,
+                                        email: userProfile?.email ?? null,
+                                    });
+                                }}
+                                className={`flex items-center gap-2 min-h-[44px] px-6 py-3 rounded-xl font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black ${
                                     activeTab === 'inbox'
                                         ? 'bg-amber-500 text-black'
                                         : 'bg-white/5 text-white hover:bg-white/10'
@@ -141,7 +173,7 @@ export default function FoundersPortal() {
                                         <button
                                             onClick={() => handleDownload('mac')}
                                             disabled={isMacLoading || isWinLoading}
-                                            className="w-full flex items-center justify-center gap-3 bg-amber-500 text-black font-bold py-4 rounded-xl hover:bg-amber-400 transition-colors disabled:opacity-50"
+                                            className="w-full flex items-center justify-center gap-3 min-h-[44px] bg-amber-500 text-black font-bold py-4 rounded-xl hover:bg-amber-400 transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/80 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
                                         >
                                             {isMacLoading ? (
                                                 <Loader2 size={18} className="animate-spin" />
@@ -166,7 +198,7 @@ export default function FoundersPortal() {
                                         <button
                                             onClick={() => handleDownload('windows')}
                                             disabled={isMacLoading || isWinLoading}
-                                            className="w-full flex items-center justify-center gap-3 bg-white/10 text-white font-bold py-4 rounded-xl hover:bg-white/20 transition-colors disabled:opacity-50"
+                                            className="w-full flex items-center justify-center gap-3 min-h-[44px] bg-white/10 text-white font-bold py-4 rounded-xl hover:bg-white/20 transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
                                         >
                                             {isWinLoading ? (
                                                 <Loader2 size={18} className="animate-spin" />
@@ -178,7 +210,7 @@ export default function FoundersPortal() {
                                     </div>
                                 </div>
 
-                                <p className="mt-8 text-gray-500 text-xs font-mono">
+                                <p className="mt-8 text-gray-500 text-sm md:text-xs font-mono leading-relaxed">
                                     By downloading indii, you agree to the Founders Agreement and Alpha Testing terms.
                                 </p>
                             </>

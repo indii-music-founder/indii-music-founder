@@ -65,11 +65,11 @@ describe('handleDeepLink', () => {
     });
 
     it('should process valid deep links', () => {
-        handleDeepLink('indii://auth/login?token=123', mockWindow);
+        handleDeepLink('indii://auth/login?token=123&source=founder', mockWindow);
         expect(log.info).toHaveBeenCalledWith(expect.stringContaining('Dispatching deep link'));
         expect(mockWindow.show).toHaveBeenCalled();
         expect(mockWindow.focus).toHaveBeenCalled();
-        expect(mockWindow.webContents.send).toHaveBeenCalledWith('deeplink:received', 'indii://auth/login?token=123');
+        expect(mockWindow.webContents.send).toHaveBeenCalledWith('deeplink:received', 'indii://auth/login?token=123&source=founder');
     });
 
     it('should restore window if minimized', () => {
