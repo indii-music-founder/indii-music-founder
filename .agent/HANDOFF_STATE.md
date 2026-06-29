@@ -4,6 +4,7 @@
 
 ## Recent Commits
 ```
+175cfac9e chore: session checkpoint [17:34]
 b04a6f171 chore: session checkpoint [17:32]
 895fe3680 chore: session checkpoint [17:30]
 42da8d862 chore: session checkpoint [17:30]
@@ -13,7 +14,6 @@ e432f0c9d chore: session checkpoint [17:26]
 4a56cb8be chore: session checkpoint [17:25]
 e0d665480 chore: session checkpoint [17:24]
 722a90c87 chore: session checkpoint [17:22]
-35a80a316 test(ledger): fix founder tour tracking types and verify compilation
 ```
 
 ## Working State
