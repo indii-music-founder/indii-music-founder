@@ -8141,13 +8141,12 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 ---
 
 ### ISSUE-562: Trigger Guided Walkthrough Only After Both Intro Panels Close
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (459a54e93)
 - **Severity:** 🔴 HIGH
 - **Source:** Codex/2026-06-29 Issue #23
 - **Location:** Onboarding/walkthrough system
 - **Summary:** Walkthrough must not fight the two intro panels. Walkthrough starts only when both panels are dismissed. Walkthrough can be restarted. Walkthrough state is persisted so returning users are not re-trapped in repeat onboarding.
-- **Expected (acceptance):** Both panels must be closed before walkthrough triggers. Re-entry is possible but optional.
-- **Honest fallback:** If panel-close detection fails, surface a manual "Start Tour" button. Never auto-trap the user.
+- **Fix:** Subscribed `FirstRunTour` to the `EntryOverlay` dismiss state via appStore (`isEntryAssistantDismissed`) and the cookie consent resolve state (`getConsentPreferences()`). Added a manual "Start Tour" fallback button when the tour is not completed yet, and added custom window event listeners (`indii:start_tour` and `indii:dismiss_tour`) to enable manual restarts or dismissals.
 
 ---
 
