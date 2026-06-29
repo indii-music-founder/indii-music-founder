@@ -227,7 +227,7 @@ export default function Home({ founder = true }: { founder?: boolean }) {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.8 }}
-          className="flex flex-col sm:flex-row items-center gap-4 mt-10"
+          className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-10"
         >
           <a
             href={getStudioUrl()}
@@ -256,6 +256,18 @@ export default function Home({ founder = true }: { founder?: boolean }) {
             Meet Your Team
           </a>
         </motion.div>
+
+        {founder && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1.0 }}
+            className="mt-4 text-xs font-mono text-gray-500 uppercase tracking-widest flex items-center justify-center gap-2"
+          >
+            <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-ping" />
+            No paywall to explore • Interactive guided walkthrough & Boardroom preview immediately open
+          </motion.div>
+        )}
       </motion.section>
 
       {/* ═══════════════ 4. PRODUCT TEASER ═══════════════ */}

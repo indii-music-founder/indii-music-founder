@@ -8085,13 +8085,12 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 ---
 
 ### ISSUE-557: Product Preview Positioning — Founder Site Explains App Is Not Just A Login Wall
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (3fa9a1d)
 - **Severity:** 🟡 MEDIUM
 - **Source:** Codex/2026-06-29 Issue #17
 - **Location:** `packages/landing/` (founder.indii.music)
 - **Summary:** Founder site must make clear the app is not just a login wall. CTA: `Launch Founder Preview`. App-side experience demonstrates: guided tour, Boardroom/Conductor, agent/team structure, image generation, video/campaign workflow if available, modules/pages.
-- **Expected (acceptance):** Founder site CTA copy and framing makes the app experience legible before clicking. App delivers on the promise.
-- **Honest fallback:** N/A — copy/UX change.
+- **Fix:** Appended interactive preview expectation copy directly under the main CTA buttons on the founder site. This explicitly notes: "No paywall to explore • Interactive guided walkthrough & Boardroom preview immediately open" to inform prospects of the live preview path.
 
 ---
 
