@@ -7692,3 +7692,67 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
 - **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/28372704271)
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
+
+---
+
+## E2E Stress Test Validation — 2026-06-29 (AUDIT mode, no fixes applied)
+
+> Findings from local Playwright E2E emulator execution sweep.
+> All failures are cleanly captured with assertion detail and trace links.
+
+---
+
+### ISSUE-524: E2E `conductor-consult-streaming` consult specialist reply fails to render
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Location:** `e2e/conductor-consult-streaming.spec.ts:93`
+- **Details:** The specialist reply text is not matching or rendering in the chat paragraph within the 25,000ms timeout window.
+- **Expected (acceptance):** The streaming or completed response containing `SPECIALIST_REPLY` must render in the chat feed under a specialist response section.
+- **Honest fallback:** Show clear load-failure indicator or error code if streaming connection terminates.
+- **DO NOT:** Falsify reply content or render hardcoded replies without real streaming updates.
+- **Evidence:** `expect(page.locator('p').filter({ hasText: SPECIALIST_REPLY })).toBeVisible({ timeout: 25_000 })` failed.
+- **Files:** `e2e/conductor-consult-streaming.spec.ts`
+
+---
+
+### ISSUE-525: E2E `live-agent-daisy-chain` fails on "Live agent chain ready" selector
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Location:** `e2e/live-agent-daisy-chain.spec.ts:142`
+- **Details:** The test clicks `command-bar-run-btn` but the locator `getByText('Live agent chain ready')` fails to become visible within 15,000ms.
+- **Expected (acceptance):** Setting and executing a daisy-chain task from the Command Bar must trigger a completion notification stating "Live agent chain ready".
+- **Honest fallback:** Show a clear error state when the command runs out of execution slots.
+- **DO NOT:** Hide execution status updates or block button states.
+- **Evidence:** `expect(page.getByText('Live agent chain ready')).toBeVisible({ timeout: 15_000 })` failed.
+- **Files:** `e2e/live-agent-daisy-chain.spec.ts`
+
+---
+
+### ISSUE-526: E2E `mega-stress-test-v4` Settings overlay backdrop selector fails to display
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Location:** `e2e/mega-stress-test-v4.spec.ts:62`
+- **Details:** Clicking the Settings button does not render the modal backdrop using selector `div[data-state="open"].fixed.inset-0` or `.fixed.inset-0.bg-black/50`.
+- **Expected (acceptance):** Settings modal must render a backdrop overlay that can be clicked to dismiss the dialog.
+- **Honest fallback:** Ensure setting layout remains functional and dismissible via ESC key if backdrop fails to mount.
+- **DO NOT:** Disable overlay backdrop exit paths.
+- **Evidence:** `expect(backdrop).toBeVisible({ timeout: 5_000 })` failed.
+- **Files:** `e2e/mega-stress-test-v4.spec.ts`
+
+---
+
+### ISSUE-527: E2E `workflow-strategic-goal` waits indefinitely for Creative Director agent seat
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Location:** `e2e/workflow-strategic-goal.spec.ts:248`
+- **Details:** The strategic goal workflow execution times out after 60,000ms waiting for `useStore.getState().activeAgents` to include the `creative` specialist.
+- **Expected (acceptance):** Seating state must register properly in the global Zustand store and unlock matching canvas tools dynamically.
+- **Honest fallback:** Reject the seat action and alert the user if agent seating limits are exceeded.
+- **DO NOT:** Seat agents silently without state updates.
+- **Evidence:** `waitForFunction` checking `activeAgents.includes('creative')` timed out.
+- **Files:** `e2e/workflow-strategic-goal.spec.ts`
+
