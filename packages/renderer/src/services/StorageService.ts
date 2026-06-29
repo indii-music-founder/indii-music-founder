@@ -9,6 +9,7 @@ import { CloudStorageService } from './CloudStorageService';
 import { OrganizationService } from './OrganizationService';
 import { Logger } from '@/core/logger/Logger';
 import { events } from '@/core/events';
+import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 
 interface HistoryDocument extends Omit<HistoryItem, 'timestamp'> {
     timestamp: Timestamp;
@@ -331,6 +332,16 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
         onUpdate: (items: HistoryItem[]) => void,
         onError: (error: Error) => void
     ): Promise<Unsubscribe> {
+        if (isFirebaseE2EMockEnabled()) {
+            try {
+                const history = await this.loadHistory(limitCount);
+                onUpdate(history);
+            } catch (error) {
+                onError(error instanceof Error ? error : new Error('Failed to load mock history'));
+            }
+            return () => { };
+        }
+
         const orgId = OrganizationService.getCurrentOrgId() || 'personal';
 
         if (!orgId) {

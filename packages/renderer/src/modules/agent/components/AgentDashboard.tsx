@@ -25,6 +25,7 @@ import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { useTranslation } from 'react-i18next';
 import { AgentLoopMonitor } from './AgentLoopMonitor';
+import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 
 const InboxTabNew = React.lazy(() => import('./InboxTab'));
 
@@ -52,7 +53,7 @@ const CampaignsTab: React.FC = () => {
     React.useEffect(() => { fetchCampaigns(); }, [fetchCampaigns]);
 
     React.useEffect(() => {
-        if (!import.meta.env.DEV) return;
+        if (!import.meta.env.DEV && !isFirebaseE2EMockEnabled()) return;
 
         const handleTestSetCampaigns = (event: Event) => {
             const customEvent = event as CustomEvent<{ campaigns?: CampaignAsset[] }>;
