@@ -19,6 +19,13 @@ export interface AuthTokenData {
     accessToken?: string | null;
 }
 
+export interface DAWState {
+    bpm: number;
+    isPlaying: boolean;
+    currentTime: number;
+    trackNames: string[];
+}
+
 export interface AudioAnalysisResult {
     status: 'success' | 'error';
     hash: string;
@@ -243,6 +250,13 @@ export interface ElectronAPI {
     remote?: {
         onMessageFromMobile: (cb: (payload: RemoteMobilePayload) => void) => (() => void);
         broadcast: (msg: Record<string, unknown>) => void;
+    };
+    // DAW Integration (Ableton/Logic/FL Studio Link)
+    daw?: {
+        start: () => Promise<boolean>;
+        stop: () => Promise<boolean>;
+        getState: () => Promise<DAWState | null>;
+        onStateChanged: (callback: (state: DAWState) => void) => () => void;
     };
 }
 
