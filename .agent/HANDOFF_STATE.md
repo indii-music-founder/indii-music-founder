@@ -1,24 +1,45 @@
 # Handoff State
-**Updated:** 2026-06-28 17:43 EDT
+**Updated:** 2026-06-29 17:22 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
-4dbc08833 fix(creative): stabilize image edits and video jobs
-77807e5ee fix(ci): handle already-active version error in staging preview channel deploy
-831511012 test(ledger): log ISSUE-CI pipeline failures
-95c59496b chore(ledger): remove transient billing-related CI issues
-253c2f999 chore: session checkpoint [12:31]
-f76643a45 docs: resolve ISSUE-498 CI deploy auth status in ledger
-4a9572e3a test(ledger): log ISSUE-CI pipeline failures
-5feeaf884 fix: route all Veo/Gemini preview models through global endpoint, replace banned gemini-2.5-flash
-726e622fd docs: add Vertex AI endpoint reference for all agents
-f8c0c3bc9 fix: disable noUnusedLocals in firebase tsconfig to unblock Cloud Functions build
+35a80a316 test(ledger): fix founder tour tracking types and verify compilation
+0e4f3ba94 fix(test): mock storage.googleapis.com URL in LensVideoVerification to satisfy fetch mock
+8538a1c80 test(ledger): resolve ISSUE-555 and ISSUE-556 disclaimers and use of funds framing
+0d8fdaed3 test(ledger): resolve ISSUE-557 product preview copy in ledger
+106fc7cb6 test(ledger): resolve ISSUE-558, ISSUE-563, and update consult streaming spec
+f0eb3ec52 chore: add missing untracked founder funnel source files
+08e47c5e1 test(ledger): resolve ISSUE-562 guided tour trigger conditions in ledger
+459a54e93 feat(tour): implement guided walkthrough triggering conditions and restart hooks
+38996322a fix(test): resolve async timing errors in FoundersPortal/FoundersCheckout tests & fix DirectorTools syntax
+4ce6bbd49 test(ledger): resolve CI failure issues in ledger after isolating firebase mock
 ```
 
 ## Working State
 ```
-clean working tree
+ M .agent/test_ledger/OPEN_ISSUES.md
+ M artifacts/live-agent-daisy-chain/coordination-report.html
+ M artifacts/live-agent-daisy-chain/latest.json
+ M e2e/live-agent-daisy-chain.spec.ts
+ M packages/landing/src/page.tsx
+ M packages/renderer/src/modules/agent/components/AgentDashboard.tsx
+ M packages/renderer/src/modules/marketing/components/CampaignDashboard.tsx
+ M packages/renderer/src/services/StorageService.ts
+ M packages/renderer/src/services/firebase.ts
+?? artifacts/founder-login-smoke.png
+?? artifacts/founder-signup-smoke.png
+?? artifacts/landing-smoke.png
+?? artifacts/login-founder-verify.png
+?? artifacts/login-mobile-smoke.png
+?? artifacts/login-smoke.png
+?? artifacts/renderer-login-founder-final.png
+?? artifacts/renderer-login-founder-flag.png
+?? artifacts/renderer-login-founder-smoke.png
+?? artifacts/signup-founder-verify.png
+?? artifacts/signup-mobile-smoke.png
+?? packages/renderer/src/services/agent/definitions/SECURITY_AUDIT.md
+?? scripts/mega_stress_loop.sh
 ```
 
 ## Decisions
