@@ -7756,3 +7756,402 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Evidence:** `waitForFunction` checking `activeAgents.includes('creative')` timed out.
 - **Files:** `e2e/workflow-strategic-goal.spec.ts`
 
+
+---
+
+## Founder Funnel & Product Platinum — Imported from Codex Agent (2026-06-29)
+
+### ISSUE-528: Update Founder Site CTA Language
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Source:** Codex/2026-06-29 Issue #1
+- **Location:** `packages/landing/` (founder.indii.music)
+- **Summary:** Replace generic/older CTA language with a clearer two-CTA hierarchy. Primary: `Launch Founder Preview`. Commitment: `Secure Founder Access - $2,500`. Avoid "Become a Founder" phrasing. Do not publish a hard founder-seat count.
+- **Expected (acceptance):** Founder site shows `Launch Founder Preview` as primary CTA and `Secure Founder Access - $2,500` as commitment CTA.
+- **Honest fallback:** N/A — copy change only.
+
+---
+
+### ISSUE-529: Clarify Public Founder Offer Copy
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Source:** Codex/2026-06-29 Issue #2
+- **Location:** `packages/landing/` (founder.indii.music)
+- **Summary:** Public offer should be direct: private launch access, lifetime full-platform access, beta participation, guided onboarding, Boardroom/Conductor access, permanent founder recognition. Must NOT imply equity, ROI, repayment, profit share, fixed seat count, or custom arrangements.
+- **Expected (acceptance):** Offer copy live on founder site with all required elements and no banned language.
+- **Honest fallback:** N/A — copy/content change.
+
+---
+
+### ISSUE-530: Add Tax/Software Expense Disclaimer Under Founder Access CTA
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Source:** Codex/2026-06-29 Issue #3
+- **Location:** `packages/landing/` (founder.indii.music)
+- **Summary:** Add line under $2,500 CTA: "If you use indii for your music business, founder access may qualify as a deductible software expense. Please confirm with your tax professional." Do NOT say "100% tax deductible" or link to equity.
+- **Expected (acceptance):** Disclaimer renders below the CTA in readable text, no prohibited language.
+- **Honest fallback:** N/A — copy addition.
+
+---
+
+### ISSUE-531: Keep Documentation Paths Private Until Commitment Step
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Source:** Codex/2026-06-29 Issue #4
+- **Location:** `packages/landing/` + app commitment flow
+- **Summary:** Do not explain the two documentation paths (Business Software Purchase vs. Founding Support) on the public founder page. Present these only after the user chooses to get involved. "Donation" is shorthand only — never use in UI or agreement language.
+- **Expected (acceptance):** Public founder page shows no mention of the two paths. Paths appear only inside the commitment flow.
+- **Honest fallback:** N/A — flow/content architecture.
+
+---
+
+### ISSUE-532: Build "I Want To Get Involved" Commitment Flow
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Source:** Codex/2026-06-29 Issue #5
+- **Location:** `packages/renderer/src/modules/` (existing marketing panel)
+- **Summary:** The "I Want To Get Involved" button/tab should lead to a commitment flow: (1) choose path (Business Software Purchase or Founding Support), (2) review relevant agreement, (3) pay now or talk first via wiil@indii.music.
+- **Expected (acceptance):** Full flow navigable from the existing marketing panel, both paths accessible, payment and "Talk First" contact path functional.
+- **Honest fallback:** If Stripe not wired, show agreement review + contact form only. Never fake a payment confirmation.
+
+---
+
+### ISSUE-533: Create Two Founder Agreement Templates
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Source:** Codex/2026-06-29 Issue #6
+- **Location:** `packages/renderer/src/modules/` legal/agreement component
+- **Summary:** Create two agreement templates — Founder Software Access Agreement and Founding Support Agreement — each with: formal legal body, plain-language explainer, $2,500 amount, founder benefits, no automatic equity/securities language, tax disclaimer (software path), refund/cancellation terms, limitation of liability, privacy reference, electronic acceptance.
+- **Expected (acceptance):** Both agreements rendered and signable (or reviewable with "Talk First" option) in the commitment flow.
+- **Honest fallback:** If e-sig not wired, present agreement for review + contact path. Never fabricate acceptance.
+
+---
+
+### ISSUE-534: Agreement — Founder Benefits In Both Paths
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Source:** Codex/2026-06-29 Issue #7
+- **Location:** Agreement templates (see ISSUE-533)
+- **Summary:** Both agreements must include: lifetime full-platform access, full working account, not tier-limited, all founder-level modules/agents, Boardroom/Conductor access, guided onboarding, beta/founder tester status, future founder-level updates, permanent founder recognition, lifetime message in code/infrastructure. Use protected phrasing: "subject to platform availability, acceptable use, security requirements, and future technical limitations."
+- **Expected (acceptance):** Benefits section present and complete in both agreement templates.
+- **Honest fallback:** N/A — content requirement.
+
+---
+
+### ISSUE-535: Add Founder Recognition Message Capture In Agreement Flow
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Source:** Codex/2026-06-29 Issue #8
+- **Location:** Agreement flow (see ISSUE-532/533)
+- **Summary:** Before signing/payment, capture "Founder Recognition Message" field. Helper text: "Add the name, dedication, message, or identifier you want recorded as part of indii's founder recognition." Allow name, business name, pseudonym, anonymous identifier, short message, dedication. Include approval language in agreement.
+- **Expected (acceptance):** Field present in agreement flow, input saved to Firestore with the founder record.
+- **Honest fallback:** If Firestore write fails, surface error — never silently drop the message.
+
+---
+
+### ISSUE-536: Add Founder Recognition Link Inside App
+- **Status:** ⏳ OPEN
+- **Severity:** 🟢 LOW
+- **Source:** Codex/2026-06-29 Issue #9
+- **Location:** App footer/about section
+- **Summary:** Founder recognition should live inside the app (app footer link "Founders", about/system record page, or subtle sitemap location) — not as a front-page public wall. Promise: "for the life of the software/platform."
+- **Expected (acceptance):** A "Founders" link or page accessible from inside the app showing recognized founders.
+- **Honest fallback:** Page can show placeholder "Founders will be recognized here" until first founder confirms.
+
+---
+
+### ISSUE-537: Preserve Boardroom As Product Identity, Not Sales Agent
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Source:** Codex/2026-06-29 Issue #10
+- **Location:** `packages/renderer/src/modules/boardroom/` or equivalent
+- **Summary:** Boardroom should explain what indii is, what the Conductor does, what agents do, how the user works with the system — not push founder access or payment. Sales context lives in the founder site, marketing panels, and "I want to get involved" path.
+- **Expected (acceptance):** Boardroom prompt/system instruction is product-oriented, no sales language in its default framing.
+- **Honest fallback:** N/A — prompt/copy change.
+
+---
+
+### ISSUE-538: App Sign-In Is A Qualification Event — Update Copy For Founder Traffic
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Source:** Codex/2026-06-29 Issue #11
+- **Location:** `packages/renderer/src/modules/auth/` or login page
+- **Summary:** For founder traffic, update login copy: "Create your founder preview account to enter the guided walkthrough." or "Sign in to preview the indii studio and meet the Conductor." Must still work for normal users without confusion (see ISSUE-540 for routing).
+- **Expected (acceptance):** Founder-sourced traffic sees contextualized login copy. Normal users see standard copy.
+- **Honest fallback:** If source routing not yet built, apply copy globally as interim improvement.
+
+---
+
+### ISSUE-539: Build Post-Sign-In Guided Walkthrough Flow
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Source:** Codex/2026-06-29 Issue #12
+- **Location:** `packages/renderer/src/` (onboarding/walkthrough system)
+- **Summary:** After sign-in: (1) show two existing collapsible marketing/info panels, (2) user closes both, (3) guided walkthrough begins automatically, (4) walkthrough explains layout, modules, where to ask questions, (5) walkthrough ends in Boardroom. Walkthrough must be restartable and state-persisted so returning users are not re-trapped.
+- **Expected (acceptance):** Walkthrough triggers on both-panels-closed, navigates through key surfaces, ends at Boardroom. Persisted in Firestore/localStorage.
+- **Honest fallback:** If step sequencing fails, surface a manual "Start Tour" button. Never trap the user.
+
+---
+
+### ISSUE-540: Add Founder Source Routing (`?source=founder` or `/founder-preview`)
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Source:** Codex/2026-06-29 Issue #22
+- **Location:** `packages/renderer/src/` routing + auth
+- **Summary:** Create a route/query/source flag for founder traffic (e.g. `/?source=founder` or `/auth?mode=founder-preview`). Use it to: show founder-specific auth copy, trigger post-login guided founder walkthrough, preserve qualification analytics. Existing normal login must be unaffected.
+- **Expected (acceptance):** Founder site CTA links to deterministic app route. After sign-in, founder traffic enters correct guided flow. Normal login unaffected.
+- **Honest fallback:** Gracefully fall back to standard flow if source param is missing or invalid.
+
+---
+
+### ISSUE-541: Make Boardroom The Product Closer — Guided Tour Ending
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Source:** Codex/2026-06-29 Issue #24
+- **Location:** Boardroom module + walkthrough ending
+- **Summary:** Walkthrough should end in Boardroom with: "Say hello to your team. Ask the Boardroom what indii is, what it can do, and how the agents work together." Boardroom prompt must be product-oriented. The `I Want To Get Involved` path remains elsewhere in marketing panels.
+- **Expected (acceptance):** Guided tour ends in Boardroom with the prescribed invite copy. Boardroom default prompt is product-focused.
+- **Honest fallback:** N/A — copy/prompt change.
+
+---
+
+### ISSUE-542: Improve App First-Impression Context (Founder Preview Framing)
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Source:** Codex/2026-06-29 Issue #25
+- **Location:** App auth/login screen
+- **Summary:** Add minimal context to auth screen without clutter: "Founder Preview", "Guided walkthrough", "Meet the Conductor", "Private launch access". One or two lines to make the next step obvious to a first-time founder prospect while keeping the screen visually premium.
+- **Expected (acceptance):** Auth screen shows contextual founder framing when source=founder. Visually polished.
+- **Honest fallback:** N/A — copy addition.
+
+---
+
+### ISSUE-543: Add Product Preview Signals Around Auth Screen
+- **Status:** ⏳ OPEN
+- **Severity:** 🟢 LOW
+- **Source:** Codex/2026-06-29 Issue #26
+- **Location:** App auth/login screen
+- **Summary:** Optional additions: small preview strip of modules (Boardroom / Creative / Video / Distribution / Finance / Legal chips), founder preview badge, short "After sign-in" expectation line. Page must not turn into a full landing page.
+- **Expected (acceptance):** Module chips or equivalent are visible below/around the auth form when source=founder. Page stays focused.
+- **Honest fallback:** Skip if it would compromise the clean auth aesthetic.
+
+---
+
+### ISSUE-544: App Accessibility Remediation — Focus States & Small Text
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Source:** Codex/2026-06-29 Issue #19 / #27
+- **Location:** `packages/renderer/src/` (global CSS / auth / layout)
+- **Summary:** Focus outlines appear removed on buttons, links, and inputs. Several text elements under 12px. Legal/footer links and labels very small on mobile. Tasks: restore visible keyboard focus states, ensure focus contrast on dark/neon backgrounds, increase sub-12px interactive/readable text, verify tab order on sign-in/create-account, verify labels and aria names, verify error messages are screen-reader discoverable.
+- **Expected (acceptance):** Keyboard-only user can complete sign-in. Focus position always visible. Mobile text readable without zooming.
+- **Honest fallback:** N/A — CSS/accessibility fix.
+
+---
+
+### ISSUE-545: App Mobile Auth Layout Polish
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Source:** Codex/2026-06-29 Issue #28
+- **Location:** Auth/login component mobile styles
+- **Summary:** Mobile auth layout works but feels like a scaled-down desktop card. Logo/footer/legal text become tiny. Tasks: tune mobile logo scale, tune vertical spacing, make footer legal text readable, avoid overly compressed card feel, verify create-account state fits comfortably.
+- **Expected (acceptance):** Mobile auth looks intentionally designed. No text feels ornamental when legally or functionally relevant.
+- **Honest fallback:** N/A — responsive CSS fix.
+
+---
+
+### ISSUE-546: Founder Site SEO — Title, Meta, Open Graph, Twitter Card
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Source:** Codex/2026-06-29 Issue #18
+- **Location:** `packages/landing/` (founder.indii.music) — `index.html` / head
+- **Summary:** Page title is generic "indii.music". No meta description, no Open Graph, no Twitter card metadata. Add: title aligned with founder access/invitation, meta description, OG title/description/image, Twitter card.
+- **Expected (acceptance):** Founder site link previews correctly on Slack/iMessage/Twitter/LinkedIn. Title reflects founder access.
+- **Honest fallback:** N/A — static metadata addition.
+
+---
+
+### ISSUE-547: App SEO — Meta, Open Graph, Twitter Card, Canonical
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Source:** Codex/2026-06-29 Issue #29
+- **Location:** `packages/renderer/` — `index.html` / head
+- **Summary:** App HTML has no meta description, no OG, no Twitter card, no canonical. Add: app title aligned with product, meta description, OG/Twitter metadata, canonical. Ensure robots.txt/sitemap.xml handle SPA correctly for crawler behavior.
+- **Expected (acceptance):** App link previews look intentional. Private routes handled deliberately.
+- **Honest fallback:** N/A — metadata addition.
+
+---
+
+### ISSUE-548: Audit Client Bundle For Exposed Internal Agent Prompts/Instructions
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Source:** Codex/2026-06-29 Issue #30
+- **Location:** `packages/renderer/src/` (client bundle / agent service files)
+- **Summary:** Client bundle appears to include long internal agent prompts, tool descriptions, and security protocol text. If these are intended to protect behavior or remain private, they must not be shipped in the browser bundle. Move private agent instructions to cloud functions where possible. Remove stray production console.log statements.
+- **Expected (acceptance):** No private/security-sensitive agent instructions exposed in browser assets unless intentionally public. Production bundle does not leak internal architecture.
+- **Honest fallback:** If instructions must stay client-side for offline reasons, document why and add a build-time assertion.
+
+---
+
+### ISSUE-549: Auth Bundle Size Reduction — Lazy-Load Heavy Modules Post-Login
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Source:** Codex/2026-06-29 Issue #31
+- **Location:** `packages/renderer/src/core/App.tsx` + Vite config
+- **Summary:** Main app JS is ~6.2 MB uncompressed / ~1.38 MB gzip. Auth page preloads heavy chunks. Tasks: split auth surface from authenticated app shell, lazy-load heavy modules after login, lazy-load Three.js, Recharts, PDF.js, video systems, agent systems, analytics where possible, avoid modulepreloading non-auth chunks on login screen.
+- **Expected (acceptance):** Auth route loads only auth-critical code. Founder preview entry feels fast on mobile. Heavy modules load when walkthrough/dashboard needs them.
+- **Honest fallback:** N/A — code splitting / dynamic import change.
+
+---
+
+### ISSUE-550: Founder Funnel Analytics — Track Full Funnel Events
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Source:** Codex/2026-06-29 Issue #33
+- **Location:** Analytics service + founder flow components
+- **Summary:** Track: founder site view, Launch Founder Preview click, account created from founder source, intro panels closed, guided walkthrough started/completed, Boardroom reached, "I Want To Get Involved" clicked, path chosen, agreement reviewed, pay now vs talk first. Must not feel invasive.
+- **Expected (acceptance):** Founder can identify who moved from link recipient to serious prospect. Analytics support personal follow-up.
+- **Honest fallback:** If analytics service not wired, log to Firestore `founderFunnelEvents` collection as interim.
+
+---
+
+### ISSUE-551: Product Proof Moments In Walkthrough — Avoid Dead Ends
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Source:** Codex/2026-06-29 Issue #34
+- **Location:** Walkthrough system (see ISSUE-539)
+- **Summary:** The founder walkthrough must show high-confidence proof points: Boardroom/Conductor conversation, agent/team structure, image generation or creative workflow, video/campaign workflow if stable, module navigation, founder-level "full platform" scope. Any unstable feature must be framed as beta, not broken.
+- **Expected (acceptance):** Prospect can feel the full-platform promise. Walkthrough avoids dead ends. Unstable features are labeled beta.
+- **Honest fallback:** Route around any completely broken flows — skip them entirely rather than expose a dead end.
+
+---
+
+### ISSUE-552: Founder Access Copy — Tier Difference Explanation
+- **Status:** ⏳ OPEN
+- **Severity:** 🟢 LOW
+- **Source:** Codex/2026-06-29 Issue #35
+- **Location:** Founder agreement + founder flow
+- **Summary:** Explain founder-level access during founder flow/agreement: "Founder access unlocks the full private-launch platform during beta, including all founder-level modules and future founder-level updates." Avoid making future standard users feel second-class in general app copy.
+- **Expected (acceptance):** Founder value is clear. Copy doesn't over-promise or alienate future standard users.
+- **Honest fallback:** N/A — copy refinement.
+
+---
+
+### ISSUE-553: Founder Site Tone And Narrative Order
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Source:** Codex/2026-06-29 Issue #13
+- **Location:** `packages/landing/` (founder.indii.music)
+- **Summary:** Narrative order: (1) big product dream — "the operating system for musical independence", (2) local/personal founder story, (3) early access and scarcity, (4) app/product preview, (5) founder access commitment path. Do not over-publicize private business flexibility.
+- **Expected (acceptance):** Founder site sections follow this narrative hierarchy.
+- **Honest fallback:** N/A — content/layout change.
+
+---
+
+### ISSUE-554: Keep Private Flexibility Off Public Founder Page
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Source:** Codex/2026-06-29 Issue #14
+- **Location:** `packages/landing/` (founder.indii.music)
+- **Summary:** Do not mention on public page: private exceptions, custom pricing, payment flexibility, friend/family exceptions, special arrangements, future equity arrangements. Public principle: "One founder standard. Personal relationships handled directly."
+- **Expected (acceptance):** Public founder page contains no mention of flexibility/exceptions.
+- **Honest fallback:** N/A — content audit/removal.
+
+---
+
+### ISSUE-555: Future Equity Track Is Separate — Public Wording
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Source:** Codex/2026-06-29 Issue #15
+- **Location:** `packages/landing/` + agreement templates
+- **Summary:** $2,500 founder access must not be publicly described as equity. Future equity/investment discussions are separate. If needed publicly: "Future investment or strategic participation, if any, would be handled separately by written agreement."
+- **Expected (acceptance):** No equity language on founder site or in agreement unless specifically in a separate investment agreement.
+- **Honest fallback:** N/A — content audit.
+
+---
+
+### ISSUE-556: Use Of Funds Framing — Founder Operations Language
+- **Status:** ⏳ OPEN
+- **Severity:** 🟢 LOW
+- **Source:** Codex/2026-06-29 Issue #16
+- **Location:** `packages/landing/` + any public copy referencing funds
+- **Summary:** If funds use is mentioned publicly, frame as: continued development, platform infrastructure, API costs, hosting, testing, founder operations, local launch execution. Avoid casual references to personal bills in public copy — use "founder operations" instead.
+- **Expected (acceptance):** No casual/personal bill references in any public copy.
+- **Honest fallback:** N/A — copy review.
+
+---
+
+### ISSUE-557: Product Preview Positioning — Founder Site Explains App Is Not Just A Login Wall
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Source:** Codex/2026-06-29 Issue #17
+- **Location:** `packages/landing/` (founder.indii.music)
+- **Summary:** Founder site must make clear the app is not just a login wall. CTA: `Launch Founder Preview`. App-side experience demonstrates: guided tour, Boardroom/Conductor, agent/team structure, image generation, video/campaign workflow if available, modules/pages.
+- **Expected (acceptance):** Founder site CTA copy and framing makes the app experience legible before clicking. App delivers on the promise.
+- **Honest fallback:** N/A — copy/UX change.
+
+---
+
+### ISSUE-558: App Console And Runtime Health — Production Clean
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Source:** Codex/2026-06-29 Issue #32
+- **Location:** Global — all production bundle entry paths
+- **Summary:** Maintain: no production console errors, no visible unhandled promise rejections, no broken dynamic imports in deployed app, no missing asset 404s in production.
+- **Expected (acceptance):** Browser console is clean on auth, create-account, guided walkthrough start, and Boardroom entry.
+- **Honest fallback:** N/A — engineering hygiene.
+
+---
+
+### ISSUE-559: Reframe App Login As Founder Preview Entry
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Source:** Codex/2026-06-29 Issue #21
+- **Location:** App auth module
+- **Summary:** App entry looks polished but reads as a generic auth gate. For founder funnel, sign-in is intentional and should be framed as entry into guided preview. Update login/create-account copy for founder traffic. Must still work for normal users.
+- **Expected (acceptance):** Prospect from founder site understands why account creation is required. Login no longer feels like a cold wall. Normal users not confused.
+- **Honest fallback:** N/A — copy/conditional rendering change.
+
+---
+
+### ISSUE-560: Platinum Scoring — Founder Site Visual Polish To 9.5+/10
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Source:** Codex/2026-06-29 Issue #36 (rubric target: founder site)
+- **Location:** `packages/landing/` (founder.indii.music)
+- **Summary:** Audit founder site against platinum rubric: Visual design 9.5+, Brand clarity 9.5+, First-time UX 9.5+, Mobile design 9.5+, Accessibility 9+, SEO/social 9.5+, Security/privacy 9+, Conversion/funnel clarity 9.5+. Founder site sells the dream and offer clearly; no hidden/deceptive fine print; performance and accessibility are professional-grade.
+- **Expected (acceptance):** Each rubric dimension scores at or above target after QA pass.
+- **Honest fallback:** Score each dimension honestly. Flag failing dimensions as sub-issues.
+
+---
+
+### ISSUE-561: Platinum Scoring — App Auth & Walkthrough To 9.5+/10
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Source:** Codex/2026-06-29 Issue #36 (rubric target: app)
+- **Location:** `packages/renderer/src/modules/auth/` + walkthrough system
+- **Summary:** Audit app auth and walkthrough entry against platinum rubric: app proves the product quickly, sign-in feels intentional, guided walkthrough closes the understanding gap, founder-access flow is documented and credible. Code/bundle hygiene 9+.
+- **Expected (acceptance):** App auth and walkthrough pass all platinum rubric dimensions.
+- **Honest fallback:** Score each dimension honestly. Flag failing dimensions.
+
+---
+
+### ISSUE-562: Trigger Guided Walkthrough Only After Both Intro Panels Close
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Source:** Codex/2026-06-29 Issue #23
+- **Location:** Onboarding/walkthrough system
+- **Summary:** Walkthrough must not fight the two intro panels. Walkthrough starts only when both panels are dismissed. Walkthrough can be restarted. Walkthrough state is persisted so returning users are not re-trapped in repeat onboarding.
+- **Expected (acceptance):** Both panels must be closed before walkthrough triggers. Re-entry is possible but optional.
+- **Honest fallback:** If panel-close detection fails, surface a manual "Start Tour" button. Never auto-trap the user.
+
+---
+
+### ISSUE-563: Founder Site Narrative — Personal/Local Story Integration
+- **Status:** ⏳ OPEN
+- **Severity:** 🟢 LOW
+- **Source:** Codex/2026-06-29 Issue #13 (personal story sub-item)
+- **Location:** `packages/landing/` (founder.indii.music)
+- **Summary:** Combine product dream ("the operating system for musical independence") with personal/local founder story: built locally, backed locally, launched by first believers. Narrative should feel personal, not corporate.
+- **Expected (acceptance):** Founder site reads as both vision-forward and authentically personal.
+- **Honest fallback:** N/A — content/copy change.
+

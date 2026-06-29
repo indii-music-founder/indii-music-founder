@@ -12,6 +12,11 @@ export default function LoginForm() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    // Detect founder traffic via ?source=founder query param
+    const isFounderSource = typeof window !== 'undefined' &&
+        (window.location.search.includes('source=founder') ||
+         window.location.hostname.startsWith('founder'));
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
@@ -33,9 +38,14 @@ export default function LoginForm() {
     return (
         <div className="w-full max-w-md space-y-8 bg-black/50 p-8 rounded-2xl border border-white/10 backdrop-blur-xl">
             <div className="text-center">
-                <h2 className="text-3xl font-bold tracking-tight text-white">Welcome back</h2>
+                <h2 className="text-3xl font-bold tracking-tight text-white">
+                    {isFounderSource ? 'Enter the Preview' : 'Welcome back'}
+                </h2>
                 <p className="mt-2 text-sm text-gray-400">
-                    Sign in to your account
+                    {isFounderSource
+                        ? 'Sign in to preview the indii studio and meet the Conductor.'
+                        : 'Sign in to your account'
+                    }
                 </p>
             </div>
 
