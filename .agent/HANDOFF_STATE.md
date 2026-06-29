@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-29 17:22 EDT
+**Updated:** 2026-06-29 17:24 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+722a90c87 chore: session checkpoint [17:22]
 35a80a316 test(ledger): fix founder tour tracking types and verify compilation
 0e4f3ba94 fix(test): mock storage.googleapis.com URL in LensVideoVerification to satisfy fetch mock
 8538a1c80 test(ledger): resolve ISSUE-555 and ISSUE-556 disclaimers and use of funds framing
@@ -13,7 +14,6 @@ f0eb3ec52 chore: add missing untracked founder funnel source files
 08e47c5e1 test(ledger): resolve ISSUE-562 guided tour trigger conditions in ledger
 459a54e93 feat(tour): implement guided walkthrough triggering conditions and restart hooks
 38996322a fix(test): resolve async timing errors in FoundersPortal/FoundersCheckout tests & fix DirectorTools syntax
-4ce6bbd49 test(ledger): resolve CI failure issues in ledger after isolating firebase mock
 ```
 
 ## Working State
@@ -22,6 +22,7 @@ f0eb3ec52 chore: add missing untracked founder funnel source files
  M artifacts/live-agent-daisy-chain/coordination-report.html
  M artifacts/live-agent-daisy-chain/latest.json
  M e2e/live-agent-daisy-chain.spec.ts
+ M packages/landing/src/components/ThesisCrawl.tsx
  M packages/landing/src/page.tsx
  M packages/renderer/src/modules/agent/components/AgentDashboard.tsx
  M packages/renderer/src/modules/marketing/components/CampaignDashboard.tsx
