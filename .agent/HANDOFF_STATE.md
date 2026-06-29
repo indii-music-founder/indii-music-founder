@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-29 17:26 EDT
+**Updated:** 2026-06-29 17:27 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+e432f0c9d chore: session checkpoint [17:26]
 4a56cb8be chore: session checkpoint [17:25]
 e0d665480 chore: session checkpoint [17:24]
 722a90c87 chore: session checkpoint [17:22]
@@ -13,7 +14,6 @@ e0d665480 chore: session checkpoint [17:24]
 0d8fdaed3 test(ledger): resolve ISSUE-557 product preview copy in ledger
 106fc7cb6 test(ledger): resolve ISSUE-558, ISSUE-563, and update consult streaming spec
 f0eb3ec52 chore: add missing untracked founder funnel source files
-08e47c5e1 test(ledger): resolve ISSUE-562 guided tour trigger conditions in ledger
 ```
 
 ## Working State
