@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-29 17:52 EDT
+**Updated:** 2026-06-29 19:57 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+336c37ba2 chore: session checkpoint [17:52]
 7dd39f59d chore: session checkpoint [17:51]
 52233087b chore: session checkpoint [17:50]
 535bac370 chore: gitignore loose QA smoke screenshots in artifacts/
@@ -13,7 +14,6 @@ c9a1d582b feat(landing): widen thesis crawl, refine intro timing + diffuser
 7926b516a chore: session checkpoint [17:34]
 175cfac9e chore: session checkpoint [17:34]
 b04a6f171 chore: session checkpoint [17:32]
-895fe3680 chore: session checkpoint [17:30]
 ```
 
 ## Working State
