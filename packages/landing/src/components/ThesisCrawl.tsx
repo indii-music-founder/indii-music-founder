@@ -134,8 +134,8 @@ export default function ThesisCrawl({ isOpen, onClose }: ThesisCrawlProps) {
       document.body.style.overflow = 'hidden';
       
       // Auto-advance intro steps
-      const introTimer1 = setTimeout(() => setIntroStep(1), 6800);
-      const introTimer2 = setTimeout(() => setIntroStep(2), 11000);
+      const introTimer1 = setTimeout(() => setIntroStep(1), 8800);
+      const introTimer2 = setTimeout(() => setIntroStep(2), 15300);
       
       return () => {
         clearTimeout(introTimer1);
@@ -263,7 +263,7 @@ export default function ThesisCrawl({ isOpen, onClose }: ThesisCrawlProps) {
               initial={{ opacity: 0 }}
               animate={{ opacity: [0, 1, 1, 0] }}
               transition={{ duration: 8.5, times: [0, 0.15, 0.85, 1] }}
-              className="text-[#4bd5ee] text-4xl md:text-6xl lg:text-[4.5rem] text-left max-w-7xl px-12 leading-relaxed font-sans font-light tracking-wide z-10 space-y-10"
+              className="text-[#4bd5ee] text-2xl md:text-4xl lg:text-5xl text-left max-w-5xl px-12 leading-relaxed font-sans font-light tracking-wide z-10 space-y-8"
             >
               <p>In the not too distant future, independent music artists will become independent business owners.</p>
               <p>They will no longer submit to gatekeepers, sign away their masters, or lease their careers.</p>
@@ -276,10 +276,10 @@ export default function ThesisCrawl({ isOpen, onClose }: ThesisCrawlProps) {
             <motion.div
               initial={{ scale: 3.5, opacity: 0 }}
               animate={{ scale: 0.15, opacity: [0, 1, 1, 0] }}
-              transition={{ duration: 4.2, times: [0, 0.15, 0.85, 1], ease: 'easeOut' }}
-              className="font-black text-8xl md:text-[10rem] lg:text-[15rem] text-amber-400 tracking-widest text-center select-none font-sans filter drop-shadow-[0_0_40px_rgba(245,158,11,0.6)] z-10"
+              transition={{ duration: 6.5, times: [0, 0.18, 0.8, 1], ease: [0.85, 0, 0.15, 1] }}
+              className="font-black text-7xl md:text-9xl lg:text-[12rem] text-amber-400 tracking-widest text-center select-none font-sans filter drop-shadow-[0_0_40px_rgba(245,158,11,0.6)] z-10"
             >
-              indii
+              indii.music
             </motion.div>
           )}
 
@@ -288,10 +288,18 @@ export default function ThesisCrawl({ isOpen, onClose }: ThesisCrawlProps) {
             <div className="relative w-full h-full flex flex-col justify-end items-center z-10">
               {/* Fade out mask at the top */}
               <div className="absolute top-0 left-0 right-0 h-[40%] bg-gradient-to-b from-black via-black/85 to-transparent z-20 pointer-events-none" />
+              {/* Diffuser — softly blurs the text as it materializes into the top zone */}
+              <div
+                className="absolute top-0 left-0 right-0 h-[32%] backdrop-blur-[3px] z-20 pointer-events-none"
+                style={{
+                  WebkitMaskImage: 'linear-gradient(to bottom, black 35%, transparent 100%)',
+                  maskImage: 'linear-gradient(to bottom, black 35%, transparent 100%)',
+                }}
+              />
 
               {/* 3D Perspective Area */}
-              <div 
-                className="relative w-full max-w-7xl h-[90%] overflow-hidden flex flex-col justify-end items-center"
+              <div
+                className="relative w-full max-w-[3200px] h-[90%] overflow-hidden flex flex-col justify-end items-center"
                 style={{
                   perspective: '950px',
                   perspectiveOrigin: '50% 20%',
@@ -300,14 +308,14 @@ export default function ThesisCrawl({ isOpen, onClose }: ThesisCrawlProps) {
                 {/* Scrolling content */}
                 <motion.div
                   ref={scrollContainerRef}
-                  initial={{ y: '100%' }}
+                  initial={{ y: '125%' }}
                   animate={isPlaying ? { y: '-220%' } : {}}
                   transition={{
                     duration: 600 / speed,
                     ease: 'linear',
                     repeat: Infinity
                   }}
-                  className="w-[95%] lg:w-[90%] text-center text-amber-400 font-bold text-6xl md:text-8xl lg:text-[7.5rem] leading-[1.6] space-y-64 select-text pb-64"
+                  className="w-[92%] lg:w-[88%] text-center text-amber-400 font-bold text-4xl md:text-6xl lg:text-[4.25rem] leading-[1.6] space-y-64 select-text pb-64"
                   style={{
                     transformOrigin: '50% 100%',
                     rotateX: '15deg',
@@ -315,10 +323,10 @@ export default function ThesisCrawl({ isOpen, onClose }: ThesisCrawlProps) {
                 >
                   {/* Thesis Title */}
                   <div className="space-y-10">
-                    <h1 className="text-9xl md:text-[14rem] lg:text-[20rem] font-black font-sans uppercase tracking-[0.1em] text-transparent bg-clip-text bg-gradient-to-b from-amber-300 via-amber-400 to-amber-600 drop-shadow-[0_0_40px_rgba(245,158,11,0.5)]">
+                    <h1 className="text-7xl md:text-9xl lg:text-[11rem] font-black font-sans uppercase tracking-[0.1em] text-transparent bg-clip-text bg-gradient-to-b from-amber-300 via-amber-400 to-amber-600 drop-shadow-[0_0_40px_rgba(245,158,11,0.5)]">
                       The indii Thesis
                     </h1>
-                    <p className="text-amber-500/80 font-mono text-5xl md:text-6xl lg:text-7xl tracking-widest uppercase">
+                    <p className="text-amber-500/80 font-mono text-3xl md:text-4xl lg:text-5xl tracking-widest uppercase">
                       Episode I: Everything to Everybody
                     </p>
                     <p className="text-amber-500/50 font-mono text-xl md:text-3xl tracking-[0.25em] uppercase mt-8">
@@ -347,7 +355,7 @@ export default function ThesisCrawl({ isOpen, onClose }: ThesisCrawlProps) {
 
                   {/* Chapter II */}
                   <div className="space-y-12 text-justify">
-                    <h3 className="text-white font-sans font-black tracking-widest text-center text-7xl md:text-9xl lg:text-[10rem] mt-24 mb-16">
+                    <h3 className="text-white font-sans font-black tracking-widest text-center text-5xl md:text-6xl lg:text-7xl mt-24 mb-16">
                       EPISODE II: WHAT INDII IS
                     </h3>
                     <p>
@@ -363,7 +371,7 @@ export default function ThesisCrawl({ isOpen, onClose }: ThesisCrawlProps) {
 
                   {/* Chapter III */}
                   <div className="space-y-12 text-justify">
-                    <h3 className="text-white font-sans font-black tracking-widest text-center text-7xl md:text-9xl lg:text-[10rem] mt-24 mb-16">
+                    <h3 className="text-white font-sans font-black tracking-widest text-center text-5xl md:text-6xl lg:text-7xl mt-24 mb-16">
                       EPISODE III: THE ARCHITECTURAL ADVANTAGE
                     </h3>
                     <p>
@@ -382,7 +390,7 @@ export default function ThesisCrawl({ isOpen, onClose }: ThesisCrawlProps) {
 
                   {/* Chapter IV */}
                   <div className="space-y-12 text-justify">
-                    <h3 className="text-white font-sans font-black tracking-widest text-center text-7xl md:text-9xl lg:text-[10rem] mt-24 mb-16">
+                    <h3 className="text-white font-sans font-black tracking-widest text-center text-5xl md:text-6xl lg:text-7xl mt-24 mb-16">
                       EPISODE IV: THE YAGNI PHILOSOPHY
                     </h3>
                     <p>
@@ -398,7 +406,7 @@ export default function ThesisCrawl({ isOpen, onClose }: ThesisCrawlProps) {
 
                   {/* Chapter V */}
                   <div className="space-y-12 text-justify">
-                    <h3 className="text-white font-sans font-black tracking-widest text-center text-7xl md:text-9xl lg:text-[10rem] mt-24 mb-16">
+                    <h3 className="text-white font-sans font-black tracking-widest text-center text-5xl md:text-6xl lg:text-7xl mt-24 mb-16">
                       EPISODE V: THE COMPETITIVE MOAT
                     </h3>
                     <p>
@@ -414,7 +422,7 @@ export default function ThesisCrawl({ isOpen, onClose }: ThesisCrawlProps) {
 
                   {/* Chapter VI */}
                   <div className="space-y-12 text-justify pb-96">
-                    <h3 className="text-white font-sans font-black tracking-widest text-center text-7xl md:text-9xl lg:text-[10rem] mt-24 mb-16">
+                    <h3 className="text-white font-sans font-black tracking-widest text-center text-5xl md:text-6xl lg:text-7xl mt-24 mb-16">
                       EPISODE VI: THE NEW SUPERSTAR
                     </h3>
                     <p>
@@ -435,7 +443,7 @@ export default function ThesisCrawl({ isOpen, onClose }: ThesisCrawlProps) {
 
               {/* Sound prompt instruction banner for better UX */}
               {!audioEnabled && (
-                <div className="absolute bottom-10 z-30 bg-amber-500/10 border border-amber-500/30 rounded-full px-6 py-2 backdrop-blur-md flex items-center gap-2 cursor-pointer hover:bg-amber-500/20 transition-all shadow-[0_0_20px_rgba(245,158,11,0.15)]" onClick={startAudio}>
+                <div className="absolute bottom-10 left-6 z-30 bg-amber-500/10 border border-amber-500/30 rounded-full px-6 py-2 backdrop-blur-md flex items-center gap-2 cursor-pointer hover:bg-amber-500/20 transition-all shadow-[0_0_20px_rgba(245,158,11,0.15)]" onClick={startAudio}>
                   <Info size={14} className="text-amber-400" />
                   <span className="text-amber-400 font-mono text-[10px] font-bold tracking-widest uppercase">Click to enable cosmic theme sound</span>
                 </div>
