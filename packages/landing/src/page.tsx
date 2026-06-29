@@ -505,7 +505,7 @@ export default function Home({ founder = true }: { founder?: boolean }) {
               <ArrowRight size={20} className="relative z-10 transition-transform group-hover:translate-x-2" />
             </a>
             <p className="mt-4 text-xs text-gray-500 max-w-sm text-center leading-relaxed">
-              If you use indii for your music business, founder access may qualify as a deductible software expense. Please confirm with your tax professional.
+              If you use indii for your music business, founder access may qualify as a deductible software expense. Please confirm with your tax professional. Future investment or strategic participation, if any, is handled separately by written agreement and is not part of founder software access.
             </p>
             <div className="mt-3 text-sm font-mono text-gray-600 uppercase tracking-widest">Subject to Availability</div>
           </div>
