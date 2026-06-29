@@ -52,7 +52,8 @@ export async function extractVideoFrameAt(
     options: VideoFrameExtractionOptions = {}
 ): Promise<VideoFrameExtractionResult> {
     const playableUrl = await resolveStorageUrl(videoUrl);
-    const maxDataUriBytes = options.maxDataUriBytes ?? 25 * 1024 * 1024;
+    // ISSUE-515: default 100MB maximum boundary for browser safety
+    const maxDataUriBytes = options.maxDataUriBytes ?? 100 * 1024 * 1024;
 
     if (playableUrl.startsWith('data:') && estimateDataUriBytes(playableUrl) > maxDataUriBytes) {
         throw new Error(`Video is too large for browser-side extraction (${Math.round(maxDataUriBytes / (1024 * 1024))}MB limit). Trim the clip or use a smaller source.`);
