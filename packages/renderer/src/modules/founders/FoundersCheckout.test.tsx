@@ -69,7 +69,9 @@ describe('FoundersCheckout', () => {
         const button = screen.getByText('Proceed to Secure Stripe Checkout');
         fireEvent.click(button);
 
-        // Should show connection status or transition state
-        expect(screen.getByText(/Connecting to Stripe/i)).toBeInTheDocument();
+        // Should show connection status or transition state (using waitFor for async state update)
+        await waitFor(() => {
+            expect(screen.getByText(/Connecting to Stripe/i)).toBeInTheDocument();
+        });
     });
 });
