@@ -14,6 +14,7 @@ import {
 } from '@/services/onboarding/onboardingService';
 import { useToast } from '@/core/context/ToastContext';
 import { onboardingAnalytics } from '@/services/onboarding/onboardingAnalytics';
+import { flushFounderFunnelQueue, trackFounderFunnelEvent } from '@/services/founders/founderFunnel';
 import type { ConversationFile } from '@/modules/workflow/types';
 import { v4 as uuidv4 } from 'uuid';
 import { validateOptions, isSemanticallySimilar, OPENING_GREETINGS } from '../onboardingUtils';
@@ -95,6 +96,20 @@ export function useOnboarding(options: UseOnboardingOptions = {}) {
             setHistory([{ role: 'model', parts: [{ text: randomGreeting ?? '' }] }]);
             if (shouldTrackAnalytics) {
                 onboardingAnalytics.start();
+            }
+            flushFounderFunnelQueue();
+            try {
+                if (typeof window !== 'undefined' && localStorage.getItem('indii_founder_preview_pending') === 'true') {
+                    void trackFounderFunnelEvent('founder_walkthrough_started', {
+                        mode: resolvedMode,
+                        surface: 'onboarding',
+                    }, {
+                        userId: userProfile?.id ?? null,
+                        email: userProfile?.email ?? null,
+                    });
+                }
+            } catch {
+                // localStorage may be unavailable; founder tracking remains best-effort.
             }
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -357,7 +372,18 @@ export function useOnboarding(options: UseOnboardingOptions = {}) {
         // Persist dismissal so the user never gets redirected back to onboarding.
         // This is the escape hatch read by useOnboardingRedirect in App.tsx.
         try {
+            const isFounderPreview = localStorage.getItem('indii_founder_preview_pending') === 'true';
             localStorage.setItem('onboarding_dismissed', 'true');
+            localStorage.removeItem('indii_founder_preview_pending');
+            if (isFounderPreview) {
+                void trackFounderFunnelEvent('founder_walkthrough_completed', {
+                    mode: resolvedMode,
+                    surface: 'onboarding',
+                }, {
+                    userId: userProfile?.id ?? null,
+                    email: userProfile?.email ?? null,
+                });
+            }
         } catch {
             // localStorage may be unavailable (private browsing, quota exceeded)
         }

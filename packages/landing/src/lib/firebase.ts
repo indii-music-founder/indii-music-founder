@@ -27,9 +27,14 @@ let storage: FirebaseStorage | undefined;
 if (typeof window !== 'undefined') {
   try {
     app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
-    auth = getAuth(app);
     db = getFirestore(app);
     storage = getStorage(app);
+    const isLocalDevHost =
+      import.meta.env.DEV &&
+      (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+    if (!isLocalDevHost) {
+      auth = getAuth(app);
+    }
     console.log('[Firebase] Initialization successful');
   } catch (error) {
     console.error('[Firebase] Initialization failed:', error);

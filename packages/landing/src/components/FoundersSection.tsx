@@ -6,6 +6,7 @@ import { getFirestore, doc, getDoc } from 'firebase/firestore';
 import { getApp } from 'firebase/app';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { getStudioUrl } from '@/lib/auth';
+import { trackFounderFunnelEvent } from '@/lib/founderFunnel';
 
 interface FoundersMeta {
   count: number;
@@ -46,9 +47,18 @@ export default function FoundersSection() {
   const programOpen = !metaError && meta !== null && seatsRemaining > 0;
   const ctaReady = !loading && !authLoading && !metaError && meta !== null;
 
-  const handleBecomeFounder = () => {
+  const handleBecomeFounder = async () => {
     // Don't act until both auth and meta have resolved
     if (!ctaReady) return;
+    await trackFounderFunnelEvent('founder_path_selected', {
+      location: 'founders_section',
+      label: 'Become Founder',
+      price: FOUNDER_PRICE,
+      seatsRemaining,
+    }, {
+      userId: user?.uid ?? null,
+      email: user?.email ?? null,
+    });
     // Redirect to studio to complete checkout (user must be signed in)
     const target = user
       ? `${getStudioUrl()}/founders-checkout`

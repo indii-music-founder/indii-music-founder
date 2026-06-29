@@ -22,14 +22,16 @@ vi.mock('framer-motion', () => ({
     AnimatePresence: ({ children }: React.PropsWithChildren) => <>{children}</>,
 }));
 
-// Mock firebase/functions callables
-vi.mock('firebase/functions', async (importOriginal) => {
-    const original = await importOriginal<any>();
-    return {
-        ...original,
-        httpsCallable: vi.fn(),
-    };
-});
+// Mock @/services/firebase
+vi.mock('@/services/firebase', () => ({
+    functions: {},
+}));
+
+// Mock founderFunnel tracking service
+vi.mock('@/services/founders/founderFunnel', () => ({
+    flushFounderFunnelQueue: vi.fn(),
+    trackFounderFunnelEvent: vi.fn().mockResolvedValue(undefined),
+}));
 
 describe('FoundersPortal Component', () => {
     let mockSetModule: any;
@@ -106,10 +108,9 @@ describe('FoundersPortal Component', () => {
         render(<FoundersPortal />);
         fireEvent.click(screen.getByRole('button', { name: 'Download .dmg' }));
 
-        expect(httpsCallable).toHaveBeenCalledWith(expect.any(Object), 'generateReleaseDownloadUrl');
-        expect(mockHttpsCallableInstance).toHaveBeenCalledWith({ platform: 'mac' });
-        
         await waitFor(() => {
+            expect(httpsCallable).toHaveBeenCalledWith(expect.any(Object), 'generateReleaseDownloadUrl');
+            expect(mockHttpsCallableInstance).toHaveBeenCalledWith({ platform: 'mac' });
             expect(window.location.href).toBe('https://storage.googleapis.com/download/indii-Installer.dmg');
         });
     });
@@ -122,9 +123,8 @@ describe('FoundersPortal Component', () => {
         render(<FoundersPortal />);
         fireEvent.click(screen.getByRole('button', { name: 'Download .exe' }));
 
-        expect(mockHttpsCallableInstance).toHaveBeenCalledWith({ platform: 'windows' });
-        
         await waitFor(() => {
+            expect(mockHttpsCallableInstance).toHaveBeenCalledWith({ platform: 'windows' });
             expect(window.location.href).toBe('https://storage.googleapis.com/download/indii-Setup.exe');
         });
     });

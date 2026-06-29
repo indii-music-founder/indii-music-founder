@@ -6,6 +6,11 @@ type RuntimeWindow = Window & {
 const trueLike = (value: unknown): boolean =>
     value === true || value === 'true' || value === '1';
 
+const isLocalDevHost = (): boolean =>
+    import.meta.env.DEV &&
+    typeof window !== 'undefined' &&
+    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
 export const isTestHarnessRuntime = (): boolean => {
     // SECURITY: Ensure E2E mocks are stripped out of production builds
     if (import.meta.env.PROD && import.meta.env.MODE !== 'test') return false;
@@ -25,7 +30,7 @@ export const isTestHarnessRuntime = (): boolean => {
 };
 
 export const isFirebaseE2EMockEnabled = (): boolean => {
-    if (!isTestHarnessRuntime()) return false;
+    if (!isTestHarnessRuntime() && !isLocalDevHost()) return false;
 
     if (typeof window !== 'undefined') {
         const winMock = (window as RuntimeWindow).FIREBASE_E2E_MOCK;
@@ -44,7 +49,7 @@ export const isFirebaseE2EMockEnabled = (): boolean => {
     try {
         return trueLike(import.meta.env.VITE_FIREBASE_E2E_MOCK);
     } catch {
-        return false;
+        return isLocalDevHost();
     }
 };
 
