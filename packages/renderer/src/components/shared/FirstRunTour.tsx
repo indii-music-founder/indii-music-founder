@@ -7,6 +7,7 @@ import { env } from '@/config/env';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { getConsentPreferences } from './CookieConsentBanner';
+import { trackFounderFunnelEvent } from '@/services/founders/founderFunnel';
 
 /**
  * Item 290: Contextual First-Run Tour
@@ -64,6 +65,8 @@ export function FirstRunTour() {
         // Don't show during onboarding flow or if onboarding is bypassed via env
         if (env.skipOnboarding || window.location.hash.includes('onboarding')) return;
 
+        void trackFounderFunnelEvent('founder_tour_started');
+
         const d = driver({
             showProgress: true,
             animate: true,
@@ -78,6 +81,7 @@ export function FirstRunTour() {
             onDestroyStarted: () => {
                 localStorage.setItem(TOUR_KEY, 'true');
                 setTourCompleted(true);
+                void trackFounderFunnelEvent('founder_tour_completed');
                 d.destroy();
             },
             steps: [
@@ -143,7 +147,13 @@ export function FirstRunTour() {
         }
     };
 
+    const trackedIntroClosed = useRef(false);
+
     useEffect(() => {
+        if (isEntryAssistantDismissed && cookieConsentResolved && !trackedIntroClosed.current) {
+            trackedIntroClosed.current = true;
+            void trackFounderFunnelEvent('founder_intro_panels_closed');
+        }
         // Auto-start if not completed, and both panels are dismissed
         if (!tourCompleted && isEntryAssistantDismissed && cookieConsentResolved) {
             const timeout = setTimeout(() => {
@@ -165,6 +175,7 @@ export function FirstRunTour() {
             localStorage.setItem(TOUR_KEY, 'true');
             setTourCompleted(true);
             driverRef.current?.destroy();
+            void trackFounderFunnelEvent('founder_tour_dismissed');
         };
 
         window.addEventListener('indii:start_tour', handleStart);
@@ -193,6 +204,7 @@ export function FirstRunTour() {
                 onClick={() => {
                     localStorage.setItem(TOUR_KEY, 'true');
                     setTourCompleted(true);
+                    void trackFounderFunnelEvent('founder_tour_dismissed');
                 }}
                 className="p-2.5 rounded-xl bg-white/5 text-white/40 hover:text-white hover:bg-white/10 border border-white/5 transition-all"
                 title="Dismiss Tour"
