@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { useAuth } from './components/auth/AuthProvider';
 import { getStudioUrl } from './lib/auth';
+import { flushFounderFunnelQueue, trackFounderFunnelEvent } from './lib/founderFunnel';
 import {
   ShieldCheck, Zap, ArrowRight, Cpu, BrainCircuit,
   Music, Users, Globe2, Disc3, Film,
@@ -82,6 +83,7 @@ const words = "the operating system for your musical independence".split(' ');
 export default function Home({ founder = true }: { founder?: boolean }) {
   const { user, loading } = useAuth();
   const { scrollYProgress } = useScroll();
+  const hasTrackedFounderView = useRef(false);
   const [isThesisOpen, setIsThesisOpen] = useState(() => {
     if (typeof window === 'undefined') return false;
     const { hostname, search, hash } = window.location;
@@ -94,6 +96,42 @@ export default function Home({ founder = true }: { founder?: boolean }) {
   const productRotateX = useTransform(scrollYProgress, [0.05, 0.25], [30, 0]);
   const productScale = useTransform(scrollYProgress, [0.05, 0.25], [0.8, 1]);
   const productOpacity = useTransform(scrollYProgress, [0.05, 0.25], [0, 1]);
+
+  useEffect(() => {
+    flushFounderFunnelQueue();
+    if (founder && !hasTrackedFounderView.current) {
+      hasTrackedFounderView.current = true;
+      void trackFounderFunnelEvent('founder_site_view', {
+        surface: 'landing_home',
+        variant: user ? 'returning' : 'new',
+      }, {
+        userId: user?.uid ?? null,
+        email: user?.email ?? null,
+      });
+    }
+  }, [founder, user]);
+
+  const handleFounderPreviewClick = async (location: string, href: string) => {
+    await trackFounderFunnelEvent('founder_preview_cta_clicked', {
+      location,
+      target: 'studio',
+      label: 'Launch Founder Preview',
+    }, {
+      userId: user?.uid ?? null,
+      email: user?.email ?? null,
+    });
+    window.location.href = href;
+  };
+
+  const handleFounderInterestClick = async (location: string) => {
+    await trackFounderFunnelEvent('founder_interest_clicked', {
+      location,
+      label: 'Founder Access',
+    }, {
+      userId: user?.uid ?? null,
+      email: user?.email ?? null,
+    });
+  };
 
   return (
     <main className="relative flex flex-col items-center justify-start min-h-screen overflow-x-hidden bg-[#030303] text-gray-200 selection:bg-amber-500/30 selection:text-amber-100 font-sans">
@@ -124,6 +162,10 @@ export default function Home({ founder = true }: { founder?: boolean }) {
           </div>
           <a
             href={getStudioUrl()}
+            onClick={(e) => {
+              e.preventDefault();
+              void handleFounderPreviewClick('nav', getStudioUrl());
+            }}
             className="group relative inline-flex items-center justify-center gap-2 px-4 md:px-6 py-2.5 text-xs md:text-sm font-bold text-black bg-white rounded-full overflow-hidden transition-all hover:scale-105 active:scale-95"
           >
             <div className="absolute inset-0 bg-gradient-to-r from-amber-400 to-amber-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -189,6 +231,10 @@ export default function Home({ founder = true }: { founder?: boolean }) {
         >
           <a
             href={getStudioUrl()}
+            onClick={(e) => {
+              e.preventDefault();
+              void handleFounderPreviewClick('hero', getStudioUrl());
+            }}
             className="group relative inline-flex items-center justify-center gap-3 px-8 py-4 text-base font-bold text-black bg-gradient-to-r from-amber-400 to-amber-600 rounded-full overflow-hidden transition-all hover:scale-105 active:scale-95 shadow-[0_0_30px_rgba(245,158,11,0.4)]"
           >
             <span className="relative z-10">{founder ? 'Launch Founder Preview' : 'Launch Studio'}</span>
@@ -405,6 +451,10 @@ export default function Home({ founder = true }: { founder?: boolean }) {
 
             <a
               href={getStudioUrl()}
+              onClick={(e) => {
+                e.preventDefault();
+                void handleFounderPreviewClick('invest', getStudioUrl());
+              }}
               className="group relative inline-flex items-center justify-center gap-3 px-10 py-5 text-lg font-black text-black bg-gradient-to-r from-amber-400 to-amber-600 rounded-full overflow-hidden transition-all hover:scale-105 active:scale-95 shadow-[0_0_30px_rgba(245,158,11,0.4)]"
             >
               <span className="relative z-10">Secure Founder Access — $2,500</span>
@@ -430,7 +480,20 @@ export default function Home({ founder = true }: { founder?: boolean }) {
         <div className="flex flex-wrap justify-center gap-6 md:gap-8">
           <a href="/privacy" className="hover:text-white transition-colors font-medium">Privacy Policy</a>
           <a href="/terms" className="hover:text-white transition-colors font-medium">Terms of Service</a>
-          {founder && <a href="mailto:wiil@indii.music" className="text-amber-500 hover:text-amber-400 transition-colors font-bold uppercase tracking-widest">Founder Access</a>}
+          {founder && (
+            <a
+              href="mailto:wiil@indii.music"
+              onClick={(e) => {
+                e.preventDefault();
+                void handleFounderInterestClick('footer').then(() => {
+                  window.location.href = 'mailto:wiil@indii.music';
+                });
+              }}
+              className="text-amber-500 hover:text-amber-400 transition-colors font-bold uppercase tracking-widest"
+            >
+              Founder Access
+            </a>
+          )}
         </div>
       </footer>
 

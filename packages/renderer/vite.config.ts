@@ -157,6 +157,13 @@ export default defineConfig({
         outDir: resolve(repoRoot, 'dist/renderer'),
         sourcemap: true,
         chunkSizeWarningLimit: 2500,
+        // ISSUE-548: Strip console.log/debug/info and debugger statements in production.
+        // Agent system prompt strings ("You are a ...") are functional feature code,
+        // not accidental leakage — they are intentionally client-side for offline use.
+        // Stripping console output removes runtime state exposure without breaking features.
+        esbuild: {
+            drop: ['console', 'debugger'],
+        },
         rollupOptions: {
             external: [
                 '@remotion/renderer',

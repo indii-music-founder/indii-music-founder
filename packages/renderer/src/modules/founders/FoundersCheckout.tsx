@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useStore } from '@/core/store';
 import { 
@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { createOneTimePayment } from '@/services/payment/PaymentService';
 import { logger } from '@/utils/logger';
+import { flushFounderFunnelQueue, trackFounderFunnelEvent } from '@/services/founders/founderFunnel';
 
 export default function FoundersCheckout() {
     const setModule = useStore(state => state.setModule);
@@ -34,15 +35,36 @@ export default function FoundersCheckout() {
     const [cardCvc, setCardCvc] = useState('');
     const [cardName, setCardName] = useState(user?.displayName || '');
     const [postalCode, setPostalCode] = useState('');
+    const hasTrackedCheckoutView = useRef(false);
 
     useEffect(() => {
+        flushFounderFunnelQueue();
+        if (checkoutState === 'idle' && !hasTrackedCheckoutView.current) {
+            hasTrackedCheckoutView.current = true;
+            void trackFounderFunnelEvent('founder_checkout_viewed', {
+                surface: 'founders_checkout',
+                price: 2500,
+            }, {
+                userId: user?.uid ?? null,
+                email: user?.email ?? null,
+            });
+        }
+        if (checkoutState === 'idle') {
+            void trackFounderFunnelEvent('founder_agreement_reviewed', {
+                surface: 'founders_checkout',
+                price: 2500,
+            }, {
+                userId: user?.uid ?? null,
+                email: user?.email ?? null,
+            });
+        }
         if (user?.email) {
             setTimeout(() => setEmail(user.email!), 0);
         }
         if (user?.displayName) {
             setTimeout(() => setCardName(user.displayName!), 0);
         }
-    }, [user]);
+    }, [checkoutState, user]);
 
     // Handle Card Formatting
     const handleCardNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -78,6 +100,14 @@ export default function FoundersCheckout() {
 
     // Trigger Checkout
     const handleStartCheckout = async () => {
+        await trackFounderFunnelEvent('founder_pay_now_selected', {
+            surface: 'founders_checkout',
+            checkoutState,
+            price: 2500,
+        }, {
+            userId: user?.uid || null,
+            email: user?.email || null,
+        });
         setCheckoutState('initiating');
         setErrorMsg(null);
 
@@ -156,7 +186,7 @@ export default function FoundersCheckout() {
             {checkoutState === 'idle' && (
                 <button
                     onClick={() => setModule('dashboard')}
-                    className="fixed top-6 left-6 z-20 flex items-center gap-2 text-xs text-gray-500 hover:text-gray-200 transition-colors group"
+                    className="fixed top-6 left-6 z-20 flex items-center gap-2 text-sm text-gray-500 hover:text-gray-200 transition-colors group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black rounded-lg px-1"
                 >
                     <ArrowLeft size={14} className="group-hover:-translate-x-0.5 transition-transform" />
                     Return to Studio
@@ -173,7 +203,7 @@ export default function FoundersCheckout() {
                         exit={{ opacity: 0, y: -15 }}
                         className="z-10 max-w-4xl w-full text-center mt-12 mb-12 flex flex-col items-center"
                     >
-                        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-mono tracking-widest uppercase mb-8">
+                        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-xs font-mono tracking-widest uppercase mb-8">
                             Founders Round — 4 Seats Left of 11 Total
                         </div>
                         
@@ -309,7 +339,7 @@ export default function FoundersCheckout() {
                             />
                         </div>
 
-                        <div className="mt-3 text-right font-mono text-[10px] text-gray-600 uppercase tracking-widest">
+                        <div className="mt-3 text-right font-mono text-xs text-gray-600 uppercase tracking-widest">
                             Handshake {redirectProgress}% Complete
                         </div>
                     </motion.div>
@@ -328,8 +358,17 @@ export default function FoundersCheckout() {
                         <div className="w-full md:w-[42%] bg-[#0f172a] p-8 md:p-10 flex flex-col justify-between border-b md:border-b-0 md:border-r border-white/5">
                             <div>
                                 <button 
-                                    onClick={() => setCheckoutState('idle')}
-                                    className="inline-flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-300 transition-colors mb-8 font-semibold"
+                                        onClick={() => {
+                                        void trackFounderFunnelEvent('founder_talk_first_selected', {
+                                            surface: 'founders_checkout',
+                                            location: 'mock_portal_cancel',
+                                        }, {
+                                            userId: user?.uid ?? null,
+                                            email: user?.email ?? null,
+                                        });
+                                        setCheckoutState('idle');
+                                    }}
+                                    className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-300 transition-colors mb-8 font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black rounded-lg px-1"
                                 >
                                     <ArrowLeft size={12} />
                                     <span>Cancel purchase</span>
@@ -361,7 +400,7 @@ export default function FoundersCheckout() {
                                 </div>
                             </div>
 
-                            <div className="mt-8 pt-6 border-t border-white/5 flex items-center gap-2 text-xs text-gray-500 select-none">
+                            <div className="mt-8 pt-6 border-t border-white/5 flex items-center gap-2 text-sm md:text-xs text-gray-500 select-none">
                                 <Lock size={12} className="text-blue-500" />
                                 <span>Powered by <strong className="text-white">stripe</strong></span>
                             </div>
@@ -392,7 +431,7 @@ export default function FoundersCheckout() {
                                             value={email}
                                             onChange={e => setEmail(e.target.value)}
                                             placeholder="you@domain.com"
-                                            className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-blue-500 transition-colors text-sm"
+                                            className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/40 focus-visible:outline-none transition-colors text-sm"
                                         />
                                     </div>
 
@@ -408,9 +447,9 @@ export default function FoundersCheckout() {
                                                     value={cardNumber}
                                                     onChange={handleCardNumberChange}
                                                     placeholder="1234 5678 1234 5678"
-                                                    className="w-full bg-transparent px-4 py-3 text-white placeholder-gray-600 focus:outline-none text-sm pr-12"
+                                                    className="w-full bg-transparent px-4 py-3 text-white placeholder-gray-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 text-sm pr-12"
                                                 />
-                                                <div className="absolute right-4 top-1/2 -translate-y-1/2 font-mono text-[10px] uppercase font-bold text-gray-500 tracking-wider">
+                                                <div className="absolute right-4 top-1/2 -translate-y-1/2 font-mono text-xs uppercase font-bold text-gray-500 tracking-wider">
                                                     {getCardBrand() || 'Card'}
                                                 </div>
                                             </div>
@@ -423,7 +462,7 @@ export default function FoundersCheckout() {
                                                     value={cardExpiry}
                                                     onChange={handleExpiryChange}
                                                     placeholder="MM/YY"
-                                                    className="w-1/2 bg-transparent px-4 py-3 text-white placeholder-gray-600 focus:outline-none text-sm border-r border-white/10 text-center"
+                                                    className="w-1/2 bg-transparent px-4 py-3 text-white placeholder-gray-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 text-sm border-r border-white/10 text-center"
                                                 />
                                                 <input 
                                                     type="password"
@@ -431,7 +470,7 @@ export default function FoundersCheckout() {
                                                     value={cardCvc}
                                                     onChange={handleCvcChange}
                                                     placeholder="CVC"
-                                                    className="w-1/2 bg-transparent px-4 py-3 text-white placeholder-gray-600 focus:outline-none text-sm text-center"
+                                                    className="w-1/2 bg-transparent px-4 py-3 text-white placeholder-gray-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 text-sm text-center"
                                                 />
                                             </div>
                                         </div>
@@ -446,7 +485,7 @@ export default function FoundersCheckout() {
                                             value={cardName}
                                             onChange={e => setCardName(e.target.value)}
                                             placeholder="Full Name as printed on card"
-                                            className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-blue-500 transition-colors text-sm"
+                                            className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/40 focus-visible:outline-none transition-colors text-sm"
                                         />
                                     </div>
 
@@ -459,7 +498,7 @@ export default function FoundersCheckout() {
                                             value={postalCode}
                                             onChange={e => setPostalCode(e.target.value)}
                                             placeholder="90210"
-                                            className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-blue-500 transition-colors text-sm"
+                                            className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/40 focus-visible:outline-none transition-colors text-sm"
                                         />
                                     </div>
                                 </div>
@@ -468,13 +507,13 @@ export default function FoundersCheckout() {
                             <div className="mt-8">
                                 <button
                                     type="submit"
-                                    className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-bold py-4 px-8 rounded-xl shadow-lg flex items-center justify-center gap-2 group transition-all cursor-pointer"
+                                    className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-bold py-4 px-8 rounded-xl shadow-lg flex items-center justify-center gap-2 group transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
                                 >
                                     <CreditCard size={16} />
                                     <span>Pay $2,500.00</span>
                                 </button>
 
-                                <p className="text-[10px] text-gray-500 mt-3 text-center leading-relaxed">
+                                <p className="text-xs text-gray-500 mt-3 text-center leading-relaxed">
                                     By proceeding, you authorize New Detroit Music LLC to process this simulated transaction to activate your studio environment seat.
                                 </p>
                             </div>

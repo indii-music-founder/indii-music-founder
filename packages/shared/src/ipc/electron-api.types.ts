@@ -27,10 +27,18 @@ export interface SFTPConfig {
     privateKey?: string;
 }
 
+export interface ElectronAuthTokenData {
+    idToken: string;
+    accessToken?: string | null;
+    source?: string | null;
+}
+
 // ── Namespace Interfaces ──────────────────────────────────────────────────
 
 export interface ElectronAuthAPI {
     logout: () => Promise<void>;
+    onUserUpdate: (callback: (user: ElectronAuthTokenData | null) => void) => () => void;
+    onError: (callback: (data: { message: string }) => void) => () => void;
 }
 
 export interface ElectronCredentialsAPI {

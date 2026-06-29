@@ -328,12 +328,17 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, _get) => ({
 
         // 6. Electron Auth Handoff Listener (Item 518)
         let electronUnsub: (() => void) | null = null;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const electronAuth = typeof window !== 'undefined' ? (window.electronAPI?.auth as any) : null;
+        const electronAuth = typeof window !== 'undefined' ? window.electronAPI?.auth : null;
         if (electronAuth && electronAuth.onUserUpdate) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            electronUnsub = electronAuth.onUserUpdate(async (tokens: any) => {
+            electronUnsub = electronAuth.onUserUpdate(async (tokens) => {
                 if (tokens) {
+                    if (tokens.source === 'founder') {
+                        try {
+                            localStorage.setItem('indii_founder_preview_pending', 'true');
+                        } catch {
+                            // localStorage may be unavailable; the app will still sign in.
+                        }
+                    }
                     logger.info('[Auth] Received handoff tokens from Main Process. Signing in...');
                     try {
                         set({ authLoading: true, authError: null });
