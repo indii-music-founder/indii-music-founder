@@ -154,7 +154,7 @@ describe('🎥 Lens: Veo 3.1 & Gemini 3 Integration Verification', () => {
                     callback({
                         exists: () => true,
                         id: mockJobId,
-                        data: () => ({ status: 'completed', url: 'http://fast.url' })
+                        data: () => ({ status: 'completed', url: 'https://storage.googleapis.com/fast.url' })
                     } as unknown as import('firebase/firestore').DocumentSnapshot);
                 }, 500); // 0.5s
                 return vi.fn();
