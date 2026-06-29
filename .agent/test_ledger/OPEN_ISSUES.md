@@ -7916,46 +7916,50 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 ---
 
 ### ISSUE-542: Improve App First-Impression Context (Founder Preview Framing)
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-06-29)
 - **Severity:** 🟡 MEDIUM
 - **Source:** Codex/2026-06-29 Issue #25
 - **Location:** App auth/login screen
 - **Summary:** Add minimal context to auth screen without clutter: "Founder Preview", "Guided walkthrough", "Meet the Conductor", "Private launch access". One or two lines to make the next step obvious to a first-time founder prospect while keeping the screen visually premium.
 - **Expected (acceptance):** Auth screen shows contextual founder framing when source=founder. Visually polished.
 - **Honest fallback:** N/A — copy addition.
+- **Fix:** Added a dedicated founder preview context panel to login and signup, with founder-specific copy, module chips, and a short post-sign-in expectation line. Verified on `/login?source=founder` and `/signup?source=founder`.
 
 ---
 
 ### ISSUE-543: Add Product Preview Signals Around Auth Screen
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-06-29)
 - **Severity:** 🟢 LOW
 - **Source:** Codex/2026-06-29 Issue #26
 - **Location:** App auth/login screen
 - **Summary:** Optional additions: small preview strip of modules (Boardroom / Creative / Video / Distribution / Finance / Legal chips), founder preview badge, short "After sign-in" expectation line. Page must not turn into a full landing page.
 - **Expected (acceptance):** Module chips or equivalent are visible below/around the auth form when source=founder. Page stays focused.
 - **Honest fallback:** Skip if it would compromise the clean auth aesthetic.
+- **Fix:** Added a compact founder preview strip with module chips and a founder badge to both auth forms. The card remains focused and does not become a marketing page.
 
 ---
 
 ### ISSUE-544: App Accessibility Remediation — Focus States & Small Text
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-06-29)
 - **Severity:** 🔴 HIGH
 - **Source:** Codex/2026-06-29 Issue #19 / #27
 - **Location:** `packages/renderer/src/` (global CSS / auth / layout)
 - **Summary:** Focus outlines appear removed on buttons, links, and inputs. Several text elements under 12px. Legal/footer links and labels very small on mobile. Tasks: restore visible keyboard focus states, ensure focus contrast on dark/neon backgrounds, increase sub-12px interactive/readable text, verify tab order on sign-in/create-account, verify labels and aria names, verify error messages are screen-reader discoverable.
 - **Expected (acceptance):** Keyboard-only user can complete sign-in. Focus position always visible. Mobile text readable without zooming.
 - **Honest fallback:** N/A — CSS/accessibility fix.
+- **Fix:** Restored visible keyboard focus states and raised sub-12px text across the renderer auth and founder surfaces. Verified by browser screenshots plus `npm run typecheck:renderer` and targeted renderer founder/login tests.
 
 ---
 
 ### ISSUE-545: App Mobile Auth Layout Polish
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-06-29)
 - **Severity:** 🟡 MEDIUM
 - **Source:** Codex/2026-06-29 Issue #28
 - **Location:** Auth/login component mobile styles
 - **Summary:** Mobile auth layout works but feels like a scaled-down desktop card. Logo/footer/legal text become tiny. Tasks: tune mobile logo scale, tune vertical spacing, make footer legal text readable, avoid overly compressed card feel, verify create-account state fits comfortably.
 - **Expected (acceptance):** Mobile auth looks intentionally designed. No text feels ornamental when legally or functionally relevant.
 - **Honest fallback:** N/A — responsive CSS fix.
+- **Fix:** Polished the mobile auth experience so the founder preview card, controls, and footer remain readable on small viewports. Verified with mobile Playwright screenshots for `/signup?source=founder` and `/login?source=founder`.
 
 ---
 
@@ -8103,13 +8107,14 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 ---
 
 ### ISSUE-559: Reframe App Login As Founder Preview Entry
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-06-29)
 - **Severity:** 🔴 HIGH
 - **Source:** Codex/2026-06-29 Issue #21
 - **Location:** App auth module
 - **Summary:** App entry looks polished but reads as a generic auth gate. For founder funnel, sign-in is intentional and should be framed as entry into guided preview. Update login/create-account copy for founder traffic. Must still work for normal users.
 - **Expected (acceptance):** Prospect from founder site understands why account creation is required. Login no longer feels like a cold wall. Normal users not confused.
 - **Honest fallback:** N/A — copy/conditional rendering change.
+- **Fix:** `packages/landing/src/login-bridge/page.tsx` now renders `Founder Preview`, `Sign in to enter the guided walkthrough and continue into the app`, and a graceful local fallback note. `packages/landing/src/App.tsx` now routes `/login-bridge` so the founder handoff is reachable. Verified by targeted tests, production build, and browser snapshot.
 
 ---
 
@@ -8155,3 +8160,26 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Expected (acceptance):** Founder site reads as both vision-forward and authentically personal.
 - **Honest fallback:** N/A — content/copy change.
 
+### ISSUE-CI-28385947617: CI Pipeline Failure (Deploy to Firebase Hosting)
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** CI/CD
+- **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
+- **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/28385947617)
+- **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
+
+### ISSUE-CI-28381689558: CI Pipeline Failure (Deploy to Firebase Hosting)
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** CI/CD
+- **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
+- **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/28381689558)
+- **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
+
+### ISSUE-CI-28374673349: CI Pipeline Failure (Deploy to Firebase Hosting)
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** CI/CD
+- **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
+- **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/28374673349)
+- **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
