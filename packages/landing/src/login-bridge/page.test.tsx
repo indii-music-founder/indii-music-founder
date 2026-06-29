@@ -23,7 +23,8 @@ vi.mock('firebase/auth', () => ({
 }));
 
 vi.mock('../lib/firebase', () => ({
-    default: {},
+  default: {},
+  db: undefined,
 }));
 
 describe('LoginBridge deep-link flows', () => {
@@ -66,6 +67,7 @@ describe('LoginBridge deep-link flows', () => {
 
         expect(container.textContent).toContain('Success! Redirecting to app...');
         expect(window.location.href).toContain('indii://auth/callback?');
+        expect(window.location.href).toContain('source=founder');
     });
 
     it('renders deep-link timeout fallback after redirect does not leave page', async () => {

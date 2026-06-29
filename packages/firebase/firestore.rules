@@ -912,6 +912,56 @@ service cloud.firestore {
       allow create: if (isVerifiedUser() && request.resource.data.get('userId', null) == request.auth.uid) || (isGuest() && request.resource.data.get('userId', null) == 'founder-demo-uid');
       allow read, update, delete: if (isAuthenticated() && resource.data.get('userId', null) == request.auth.uid) || (isGuest() && resource.data.get('userId', null) == 'founder-demo-uid');
     }
+    match /founderFunnelEvents/{eventId} {
+      allow create: if
+        request.resource.data.keys().hasOnly([
+          'eventName',
+          'path',
+          'url',
+          'sessionId',
+          'source',
+          'userId',
+          'email',
+          'detailsJson',
+          'occurredAtMs',
+          'createdAt'
+        ]) &&
+        request.resource.data.eventName in [
+          'founder_site_view',
+          'founder_preview_cta_clicked',
+          'founder_auth_viewed',
+          'founder_auth_submitted',
+          'founder_auth_completed',
+          'founder_walkthrough_started',
+          'founder_walkthrough_completed',
+          'founder_intro_panels_closed',
+          'founder_portal_viewed',
+          'founder_checkout_viewed',
+          'founder_boardroom_reached',
+          'founder_agreement_reviewed',
+          'founder_path_selected',
+          'founder_pay_now_selected',
+          'founder_talk_first_selected',
+          'founder_interest_clicked'
+        ] &&
+        request.resource.data.source == 'founder' &&
+        request.resource.data.path is string &&
+        request.resource.data.path.size() > 0 &&
+        request.resource.data.path.size() <= 200 &&
+        request.resource.data.url is string &&
+        request.resource.data.url.size() > 0 &&
+        request.resource.data.url.size() <= 500 &&
+        request.resource.data.sessionId is string &&
+        request.resource.data.sessionId.size() >= 8 &&
+        request.resource.data.sessionId.size() <= 80 &&
+        request.resource.data.detailsJson is string &&
+        request.resource.data.detailsJson.size() <= 2000 &&
+        request.resource.data.occurredAtMs is number &&
+        request.resource.data.createdAt is timestamp &&
+        (!('userId' in request.resource.data) || request.resource.data.userId == null || request.resource.data.userId is string) &&
+        (!('email' in request.resource.data) || request.resource.data.email == null || request.resource.data.email is string);
+      allow read, update, delete: if false;
+    }
     match /projects/{projectId}/livingPlans/{planId} {
       allow read, write: if exists(/databases/$(database)/documents/projects/$(projectId)) &&
         (

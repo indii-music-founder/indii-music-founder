@@ -14,6 +14,7 @@ import { LivingPlansTracker } from './components/LivingPlansTracker';
 import { SwarmCollaborationFeed } from './components/SwarmCollaborationFeed';
 
 import { useToast } from '@/core/context/ToastContext';
+import { trackFounderFunnelEvent } from '@/services/founders/founderFunnel';
 
 /**
  * BoardroomModule — The virtual multi-agent boardroom.
@@ -37,6 +38,7 @@ export function BoardroomModule() {
         conversationMode, 
         boardroomMessages, 
         activeAgents, 
+        userProfile,
         setConversationMode,
         consumeHandoff,
         addReferencedAsset
@@ -45,6 +47,7 @@ export function BoardroomModule() {
             conversationMode: state.conversationMode,
             boardroomMessages: state.boardroomMessages,
             activeAgents: state.activeAgents,
+            userProfile: state.userProfile,
             setConversationMode: state.setConversationMode,
             consumeHandoff: state.consumeHandoff,
             addReferencedAsset: state.addReferencedAsset
@@ -57,10 +60,28 @@ export function BoardroomModule() {
     const activeCount = activeAgents?.length || 0;
     const [isTrackerOpen, setIsTrackerOpen] = React.useState(false);
     const [isSwarmFeedOpen, setIsSwarmFeedOpen] = React.useState(false);
+    const hasTrackedBoardroomView = React.useRef(false);
 
     // Staged Handoff Hook Interceptor
     React.useEffect(() => {
         if (isBoardroomMode) {
+            const isFounderAccess =
+                userProfile?.subscriptionTier === 'founder' ||
+                userProfile?.tier === 'founder' ||
+                userProfile?.isFounder === true ||
+                (typeof window !== 'undefined' && window.localStorage.getItem('indii_founder_preview_pending') === 'true');
+
+            if (isFounderAccess && !hasTrackedBoardroomView.current) {
+                hasTrackedBoardroomView.current = true;
+                void trackFounderFunnelEvent('founder_boardroom_reached', {
+                    surface: 'boardroom',
+                    activeAgents: activeCount,
+                }, {
+                    userId: userProfile?.id ?? null,
+                    email: userProfile?.email ?? null,
+                });
+            }
+
             const payload = consumeHandoff('boardroom');
             if (payload) {
                 addReferencedAsset({
@@ -72,7 +93,7 @@ export function BoardroomModule() {
                 toast.success(`Creative graphic "${payload.prompt || 'staged asset'}" loaded into Boardroom references!`);
             }
         }
-    }, [isBoardroomMode, consumeHandoff, addReferencedAsset, toast]);
+    }, [isBoardroomMode, consumeHandoff, addReferencedAsset, toast, userProfile, activeCount]);
 
     if (!isBoardroomMode) return null;
 

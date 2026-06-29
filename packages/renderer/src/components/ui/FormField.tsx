@@ -42,19 +42,19 @@ export function FormField({ label, hint, error, required, className, children }:
         <div className={className}>
             <label
                 htmlFor={inputId}
-                className="block text-[10px] font-bold text-gray-500 tracking-wider uppercase mb-1.5"
+                className="block text-xs font-bold text-gray-500 tracking-wider uppercase mb-1.5"
             >
                 {label}
                 {required && <span className="text-red-400 ml-0.5" aria-hidden="true">*</span>}
             </label>
             {enhancedChild}
             {hint && (
-                <p id={hintId} className="mt-1 text-[9px] text-gray-600">
+                <p id={hintId} className="mt-1 text-xs text-gray-500">
                     {hint}
                 </p>
             )}
             {error && (
-                <p id={errorId} className="mt-1 text-[9px] text-red-400" role="alert">
+                <p id={errorId} className="mt-1 text-xs text-red-400" role="alert">
                     {error}
                 </p>
             )}

@@ -17,6 +17,7 @@ export interface RemoteMobilePayload {
 export interface AuthTokenData {
     idToken: string;
     accessToken?: string | null;
+    source?: string | null;
 }
 
 export interface DAWState {

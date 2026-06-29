@@ -72,6 +72,7 @@ import { UpdaterMonitor } from './components/UpdaterMonitor';
 import { CookieConsentBanner } from '@/components/shared/CookieConsentBanner';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { logger } from '@/utils/logger';
+import { flushFounderFunnelQueue } from '@/services/founders/founderFunnel';
 import '@/core/i18n'; // Initialize i18next — must run before any component renders
 import { FirstRunTour } from '@/components/shared/FirstRunTour';
 import { BusinessActivityTracker } from '@/services/business-harness/BusinessActivityTracker';
@@ -277,8 +278,17 @@ function useOnboardingRedirect() {
         // The localStorage escape hatch prevents loops for users who intentionally skip.
         const profileStillPending = userProfile?.id === 'pending';
         const hasExplicitlySkipped = typeof window !== 'undefined' && localStorage.getItem('onboarding_dismissed') === 'true';
+        const hasFounderPreviewPending = typeof window !== 'undefined' && localStorage.getItem('indii_founder_preview_pending') === 'true';
 
-        if (profileStillPending && !hasExplicitlySkipped) {
+        if ((profileStillPending || hasFounderPreviewPending) && !hasExplicitlySkipped) {
+            if (hasFounderPreviewPending) {
+                try {
+                    localStorage.setItem('indii_founder_funnel_active', 'true');
+                    localStorage.removeItem('indii_founder_preview_pending');
+                } catch {
+                    // localStorage may be unavailable; onboarding redirect still proceeds.
+                }
+            }
             setModule('onboarding');
         }
     }, [user, authLoading, currentModule, setModule, userProfile]);
@@ -461,6 +471,7 @@ export default function App() {
 
     // Defer non-critical startup work to avoid blocking FCP
     useEffect(() => { cleanupLocalStorage(); }, []);
+    useEffect(() => { flushFounderFunnelQueue(); }, []);
 
     const shortcutsModal = useGlobalShortcutsModal();
 
