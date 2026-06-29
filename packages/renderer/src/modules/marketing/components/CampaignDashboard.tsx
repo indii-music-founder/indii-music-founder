@@ -23,6 +23,7 @@ import { BarChart3, Image, Sparkles, Radio } from 'lucide-react';
 import { logger } from '@/utils/logger';
 import { SkeletonList, SkeletonStat } from '@/components/shared/SkeletonLoader';
 import { useStore } from '@/core/store';
+import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 import { useShallow } from 'zustand/react/shallow';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 
@@ -115,13 +116,13 @@ const CampaignDashboard: React.FC = () => {
             }
         };
 
-        if (import.meta.env.DEV) {
+        if (import.meta.env.DEV || isFirebaseE2EMockEnabled()) {
             window.addEventListener('TEST_INJECT_SET_CAMPAIGN', handleTestSetCampaign);
         }
 
         return () => {
             window.removeEventListener('TEST_INJECT_CAMPAIGN_UPDATE', handleTestInjection);
-            if (import.meta.env.DEV) {
+            if (import.meta.env.DEV || isFirebaseE2EMockEnabled()) {
                 window.removeEventListener('TEST_INJECT_SET_CAMPAIGN', handleTestSetCampaign);
             }
         };

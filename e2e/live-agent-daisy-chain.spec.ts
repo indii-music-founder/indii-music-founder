@@ -434,44 +434,22 @@ async function installLiveAgentMocks(page: Page, scenario: LiveScenario, chain: 
     'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-client-version, X-HTTP-Session-Id, X-Goog-Api-Key, X-Goog-Api-Client, X-Firebase-Client',
   };
 
-  await page.route(/.*(firebasevertexai|generativelanguage)\.googleapis\.com.*/, async (route) => {
-    if (route.request().method() === 'OPTIONS') {
-      await route.fulfill({ status: 204, headers: corsHeaders });
-      return;
-    }
+  await page.route('**/generateContentStream', async (route) => {
+    const aiResponseText = [
+      'Live agent chain ready.',
+      `Campaign: ${scenario.campaign.title}`,
+      `Assets: ${scenario.campaign.attachedAssets.join(', ')}`,
+      `Trace: ${chain.traceId}`,
+    ].join('\n');
 
-    const aiResponse = {
-      candidates: [{
-        content: {
-          role: 'model',
-          parts: [{
-            text: [
-              'Live agent chain ready.',
-              `Campaign: ${scenario.campaign.title}`,
-              `Assets: ${scenario.campaign.attachedAssets.join(', ')}`,
-              `Trace: ${chain.traceId}`,
-            ].join('\n'),
-          }],
-        },
-        finishReason: 'STOP',
-      }],
+    const conductorPayload = {
+      text: aiResponseText,
     };
-
-    if (route.request().url().includes('streamGenerateContent') && route.request().url().includes('alt=sse')) {
-      await route.fulfill({
-        status: 200,
-        headers: corsHeaders,
-        contentType: 'text/event-stream',
-        body: `data: ${JSON.stringify(aiResponse)}\n\n`,
-      });
-      return;
-    }
 
     await route.fulfill({
       status: 200,
-      headers: corsHeaders,
-      contentType: 'application/json',
-      body: JSON.stringify(aiResponse),
+      contentType: 'text/event-stream',
+      body: `data: ${JSON.stringify(conductorPayload)}\n`,
     });
   });
 

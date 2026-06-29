@@ -282,18 +282,18 @@ export default function Home({ founder = true }: { founder?: boolean }) {
                 </div>
                 
                 <h2 className="text-3xl md:text-5xl font-black tracking-tight text-white mb-6">
-                  Built Locally. Backed by Believers.
+                  Built in Detroit. Backed by Local Believers.
                 </h2>
-                
+
                 <div className="space-y-6 text-gray-400 text-lg leading-relaxed font-light">
                   <p>
-                    indii.music wasn&apos;t conceived in a Silicon Valley boardroom, and it isn&apos;t funded by venture capitalists who want to rent-seek on your royalties. It was built right here in Detroit, born out of the late nights and grit of local studios.
+                    indii.music started in Detroit because that&apos;s where the problem was loudest. I kept hearing the same thing from people I know here: too much time lost to admin, too much energy spent fighting broken systems, and not enough left for the music itself.
                   </p>
                   <p>
-                    We saw our friends—extraordinary songwriters, producers, and independent artists—spending 80% of their energy on administrative friction, legal overhead, and formatting metadata instead of making music. The system was designed to exhaust you. So we decided to build a platform to protect you.
+                    This platform was built with local studios, local artists, and local independent founders in mind. It is designed to protect the work, keep the artist in control, and make the day-to-day load lighter without turning the experience into something corporate or distant.
                   </p>
                   <p>
-                    Every line of code has been written locally. We are backed by a small group of first believers—local studio owners, musicians, and independent founders—who refuse to let corporate labels control the culture. When you secure founder access, you aren&apos;t just buying software. You are backing a movement to build the first self-sovereign digital ecosystem for music.
+                    Every line of code has been written locally. The first believers are studio owners, musicians, and independent founders from this city who want a music system that serves the people making the culture. When you secure founder access, you are backing the local build of indii from the ground up.
                   </p>
                   <p className="text-white font-medium mt-8 flex items-center gap-3">
                     <span className="h-px w-8 bg-amber-500" />
