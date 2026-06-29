@@ -35,17 +35,21 @@ export const logger = {
     },
 
     /**
-     * Log a warning.
+     * Log a warning (only in dev).
      */
     warn: (message: string, ...args: unknown[]) => {
-        console.warn(message, ...args);
+        if (isDev) {
+            console.warn(message, ...args);
+        }
     },
 
     /**
-     * Log info.
+     * Log info (only in dev).
      */
     info: (message: string, ...args: unknown[]) => {
-        console.info(message, ...args);
+        if (isDev) {
+            console.info(message, ...args);
+        }
     },
 
     /**

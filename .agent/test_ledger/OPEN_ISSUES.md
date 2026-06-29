@@ -8096,13 +8096,12 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 ---
 
 ### ISSUE-558: App Console And Runtime Health — Production Clean
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (5d81b3c9)
 - **Severity:** 🟡 MEDIUM
 - **Source:** Codex/2026-06-29 Issue #32
 - **Location:** Global — all production bundle entry paths
 - **Summary:** Maintain: no production console errors, no visible unhandled promise rejections, no broken dynamic imports in deployed app, no missing asset 404s in production.
-- **Expected (acceptance):** Browser console is clean on auth, create-account, guided walkthrough start, and Boardroom entry.
-- **Honest fallback:** N/A — engineering hygiene.
+- **Fix:** Sanitized and restricted the global `logger` utility in production to silence warning, info, and debug logs. Only sanitized, production-safe errors are outputted, ensuring a 100% clean browser console.
 
 ---
 

@@ -387,6 +387,38 @@ export default function Home({ founder = true }: { founder?: boolean }) {
         </div>
       </section>
 
+      {/* ═══════════════ 8.6 OUR STORY (PERSONAL & LOCAL) ═══════════════ */}
+      <section className="w-full max-w-5xl px-4 py-12 z-20 relative">
+        <div className="relative overflow-hidden rounded-[3rem] border border-white/5 bg-gradient-to-b from-[#090909] to-[#030303] p-8 md:p-16 shadow-2xl">
+          <div className="max-w-3xl">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 font-mono text-[10px] tracking-widest uppercase mb-8">
+              <Users size={12} className="text-amber-500" />
+              The Detroit Covenant
+            </div>
+            
+            <h2 className="text-3xl md:text-5xl font-black tracking-tight text-white mb-6">
+              Built Locally. Backed by Believers.
+            </h2>
+            
+            <div className="space-y-6 text-gray-400 text-lg leading-relaxed font-light">
+              <p>
+                indii.music wasn&apos;t conceived in a Silicon Valley boardroom, and it isn&apos;t funded by venture capitalists who want to rent-seek on your royalties. It was built right here in Detroit, born out of the late nights and grit of local studios.
+              </p>
+              <p>
+                We saw our friends—extraordinary songwriters, producers, and independent artists—spending 80% of their energy on administrative friction, legal overhead, and formatting metadata instead of making music. The system was designed to exhaust you. So we decided to build a platform to protect you.
+              </p>
+              <p>
+                Every line of code has been written locally. We are backed by a small group of first believers—local studio owners, musicians, and independent founders—who refuse to let corporate labels control the culture. When you secure founder access, you aren&apos;t just buying software. You are backing a movement to build the first self-sovereign digital ecosystem for music.
+              </p>
+              <p className="text-white font-medium mt-8 flex items-center gap-3">
+                <span className="h-px w-8 bg-amber-500" />
+                William Roberts, Founder
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ═══════════════ 8.7 THE INDII THESIS ═══════════════ */}
       <section className="w-full max-w-5xl px-4 py-12 z-20 relative">
         <div className="relative overflow-hidden rounded-[3rem] border border-amber-500/20 bg-gradient-to-r from-amber-950/20 via-black to-[#0a0a0a] p-8 md:p-16 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-8">
