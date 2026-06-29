@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-29 17:34 EDT
+**Updated:** 2026-06-29 17:36 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+c9a1d582b feat(landing): widen thesis crawl, refine intro timing + diffuser
+7926b516a chore: session checkpoint [17:34]
 175cfac9e chore: session checkpoint [17:34]
 b04a6f171 chore: session checkpoint [17:32]
 895fe3680 chore: session checkpoint [17:30]
@@ -12,8 +14,6 @@ b04a6f171 chore: session checkpoint [17:32]
 8b9fc5506 chore: session checkpoint [17:27]
 e432f0c9d chore: session checkpoint [17:26]
 4a56cb8be chore: session checkpoint [17:25]
-e0d665480 chore: session checkpoint [17:24]
-722a90c87 chore: session checkpoint [17:22]
 ```
 
 ## Working State
@@ -22,7 +22,6 @@ e0d665480 chore: session checkpoint [17:24]
  M artifacts/live-agent-daisy-chain/coordination-report.html
  M artifacts/live-agent-daisy-chain/latest.json
  M e2e/live-agent-daisy-chain.spec.ts
- M packages/landing/src/components/ThesisCrawl.tsx
  M packages/landing/src/page.tsx
  M packages/renderer/src/modules/agent/components/AgentDashboard.tsx
  M packages/renderer/src/modules/marketing/components/CampaignDashboard.tsx
