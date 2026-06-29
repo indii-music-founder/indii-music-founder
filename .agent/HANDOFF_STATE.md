@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-29 17:24 EDT
+**Updated:** 2026-06-29 17:25 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+e0d665480 chore: session checkpoint [17:24]
 722a90c87 chore: session checkpoint [17:22]
 35a80a316 test(ledger): fix founder tour tracking types and verify compilation
 0e4f3ba94 fix(test): mock storage.googleapis.com URL in LensVideoVerification to satisfy fetch mock
@@ -13,7 +14,6 @@
 f0eb3ec52 chore: add missing untracked founder funnel source files
 08e47c5e1 test(ledger): resolve ISSUE-562 guided tour trigger conditions in ledger
 459a54e93 feat(tour): implement guided walkthrough triggering conditions and restart hooks
-38996322a fix(test): resolve async timing errors in FoundersPortal/FoundersCheckout tests & fix DirectorTools syntax
 ```
 
 ## Working State
