@@ -1,9 +1,12 @@
 # Handoff State
-**Updated:** 2026-06-30 13:53 EDT
+**Updated:** 2026-06-30 14:10 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+caa96740b fix(ci): correct Python heredoc syntax in deploy.yml
+a5c75fd8c fix(ci): correct Python indentation in deploy.yml staging URL extraction
+a4990b401 chore: session checkpoint [13:53]
 dec2b21f7 chore: session checkpoint [13:52]
 71fa591ba fix(ISSUE-565): close guard scope gap — import HarnessAgentBrief in FinanceCompiler + ActivityTimeValueCompiler
 caeff83af chore: session checkpoint [13:47]
@@ -11,9 +14,6 @@ e40b59725 chore: session checkpoint [13:47]
 3fa3aab83 fix(ISSUE-565): durable static agent-ID guard + nail remaining offenders + workflow guardrails
 b2460dc11 chore: session checkpoint [13:36]
 3958d85b1 fix(ISSUE-565): complete agent-ID cleanup across compilers + sync tests
-cd293dcc2 chore: session checkpoint [13:30]
-057895dd3 fix(ci): make Firebase Hosting releases idempotent + correct harness ledger
-483ed884a chore: session checkpoint [13:25]
 ```
 
 ## Working State
