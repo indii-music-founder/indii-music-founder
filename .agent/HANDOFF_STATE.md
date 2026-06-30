@@ -4,6 +4,7 @@
 
 ## Recent Commits
 ```
+e40b59725 chore: session checkpoint [13:47]
 3fa3aab83 fix(ISSUE-565): durable static agent-ID guard + nail remaining offenders + workflow guardrails
 b2460dc11 chore: session checkpoint [13:36]
 3958d85b1 fix(ISSUE-565): complete agent-ID cleanup across compilers + sync tests
@@ -13,7 +14,6 @@ cd293dcc2 chore: session checkpoint [13:30]
 ddcf3a8f8 chore: session checkpoint [13:24]
 891dcb75c chore: session checkpoint [13:22]
 874d5b72a fix(ISSUE-565,572): remaining invalid agent IDs + stray debug log
-80417a6a7 chore: session checkpoint [13:20]
 ```
 
 ## Working State
