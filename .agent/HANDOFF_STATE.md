@@ -1,24 +1,24 @@
 # Handoff State
-**Updated:** 2026-06-30 07:51 EDT
+**Updated:** 2026-06-30 08:14 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+57fa17e87 feat(perf): split auth bundle from app shell (ISSUE-549, ISSUE-564)
+e79b039a0 feat(perf): slim App.tsx router and simplify modulePreload filters (ISSUE-549 §2, §3)
+723272f2c test(ledger): log ISSUE-CI pipeline failures
+875153476 chore: save handoff state
+49b089064 chore(perf): untrack E2E daisy chain runtime artifacts (ISSUE-564)
+cbbf9510e chore: session checkpoint [07:51]
 3d32685a3 chore: add auth-split architecture flowchart and sync ledger
 de2a62a8b chore: session checkpoint [07:49]
 1e93e35f2 chore: session checkpoint [07:48]
 dc3e5c393 chore: session checkpoint [07:45]
-7f7dd29c1 chore: session checkpoint [07:42]
-65a410240 chore: session checkpoint [07:35]
-bf0f8c851 test(ledger): log ISSUE-CI pipeline failures
-2b18c5d29 fix(founders): update checkout unit tests and lazy-load boardroom/transmission components
-64f2b0fa6 chore: session checkpoint [21:14]
-04eba73d1 test(sidebar): update snapshot with Founders portal button
 ```
 
 ## Working State
 ```
-M  .agent/HANDOFF_STATE.md
+clean working tree
 ```
 
 ## Decisions
