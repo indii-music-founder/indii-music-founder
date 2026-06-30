@@ -36,12 +36,17 @@ async function resolveEditableImageUrl(item: HistoryItem): Promise<string> {
     let unresolvedStorageUri: string | null = null;
 
     for (const candidate of candidates) {
-        const resolved = await resolveStorageUrl(candidate);
-        if (resolved.startsWith('gs://')) {
-            unresolvedStorageUri = resolved;
+        try {
+            const resolved = await resolveStorageUrl(candidate);
+            if (resolved.startsWith('gs://')) {
+                unresolvedStorageUri = resolved;
+                continue;
+            }
+            return resolved;
+        } catch (err: unknown) {
+            logger.warn('Failed to resolve asset URL:', err);
             continue;
         }
-        return resolved;
     }
 
     if (unresolvedStorageUri) {
