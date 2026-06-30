@@ -4,6 +4,7 @@
 
 ## Recent Commits
 ```
+4b2fb302a chore: session checkpoint [15:31]
 6728c5cef chore: session checkpoint [15:22]
 d467e4265 chore: session checkpoint [14:43]
 068236375 chore(shared): rebuild shared package dist typings
@@ -13,7 +14,6 @@ e083c1ff7 chore(pre-commit): add Stage 4 — unit test enforcement (CLOSES THE G
 39b5139f5 chore: session checkpoint [14:31]
 fe54ff50e chore: session checkpoint [14:29]
 18d6fe9e6 docs: add RightsOps harness registration submit flow diagram
-1ab9bd36f chore: session checkpoint [14:26]
 ```
 
 ## Working State
