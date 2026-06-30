@@ -76,7 +76,7 @@ export class RoyaltyRevenueCompiler implements HarnessCompiler<RoyaltyRevenueInp
         priority: 'high',
         title: 'Process Unpaid Royalties',
         detail: `Process pending payouts to clear $${totalUnpaidBalance} in unpaid balances.`,
-        ownerAgentId: 'finance_agent',
+        ownerAgentId: 'finance',
         approvalRequired: true,
       });
 
@@ -109,7 +109,7 @@ export class RoyaltyRevenueCompiler implements HarnessCompiler<RoyaltyRevenueInp
 
     if (pendingStatementCount > 0) {
       agentBriefs.push({
-        agentId: 'finance_agent',
+        agentId: 'finance',
         brief: `Import and process ${pendingStatementCount} pending statements containing ${pendingRevenueItems} uningested items.`,
         inputs: ['Statements list', 'Revenue mapping'],
         blockedBy: [],

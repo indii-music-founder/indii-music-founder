@@ -67,7 +67,7 @@ export class FanCrmCompiler implements HarnessCompiler<FanCrmInput, FanCrmOutput
         priority: 'high',
         title: 'VIP Merchandise Offer',
         detail: `Trigger VIP treatment flow for ${superfans.length} superfans.`,
-        ownerAgentId: 'agent_marketing',
+        ownerAgentId: 'marketing',
         approvalRequired: true,
       });
 
@@ -80,7 +80,7 @@ export class FanCrmCompiler implements HarnessCompiler<FanCrmInput, FanCrmOutput
       });
 
       agentBriefs.push({
-        agentId: 'agent_marketing',
+        agentId: 'marketing',
         brief: `Design a VIP merch campaign for ${superfans.length} superfans.`,
         inputs: ['fan_crm_output'],
       });
@@ -93,7 +93,7 @@ export class FanCrmCompiler implements HarnessCompiler<FanCrmInput, FanCrmOutput
         priority: 'medium',
         title: 'Churn Win-back Campaign',
         detail: `Retargeting flow for ${churnRisks.length} at-risk fans.`,
-        ownerAgentId: 'agent_marketing',
+        ownerAgentId: 'marketing',
         approvalRequired: false,
       });
     }

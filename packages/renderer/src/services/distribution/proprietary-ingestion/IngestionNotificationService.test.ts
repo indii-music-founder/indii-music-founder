@@ -35,7 +35,6 @@ describe('IngestionNotificationService', () => {
 
     it('should generate a valid IngestionNotification object from metadata', async () => {
         const result = await ingestionNotificationService.generateIngestionNotification(MOCK_METADATA);
-        console.log('RESULT', result);
         expect(result.success).toBe(true);
         expect(result.xml).toBeDefined();
         // Basic XML check
