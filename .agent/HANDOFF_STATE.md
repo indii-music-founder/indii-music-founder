@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-30 12:30 EDT
+**Updated:** 2026-06-30 12:34 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+2ff496761 fix(creative): fix image generation by exporting functions after initialization
+bdb5e0e44 chore: session checkpoint [12:30]
 227edfb9c chore: session checkpoint [12:29]
 4db78ab89 chore: session checkpoint [11:06]
 b35055a67 test(ledger): log ISSUE-CI pipeline failures
@@ -12,8 +14,6 @@ fb3cd65f5 chore: session checkpoint [10:21]
 8b9f79dad chore: session checkpoint [10:20]
 cdd0da35b chore: session checkpoint [10:18]
 a40b5fb8f feat(ISSUE-570): browser pause-states at certification & final submit
-0b5235903 chore: session checkpoint [10:16]
-3afe7dd98 feat(ISSUE-571): readiness gates block workflow state advancement
 ```
 
 ## Working State
