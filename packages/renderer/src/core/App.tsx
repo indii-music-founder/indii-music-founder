@@ -37,10 +37,8 @@ import { ApprovalManager } from '@/components/instruments/InstrumentApprovalModa
 import { useRemoteCommandListener } from '@/hooks/useRemoteCommandListener';
 import { useConnectivityMonitor } from '@/hooks/useConnectivityMonitor';
 import { useAutoSleep } from '@/hooks/useAutoSleep';
-import { BoardroomModule } from '@/modules/boardroom/BoardroomModule';
 
 import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
-import { TransmissionMonitor } from '@/modules/distribution/components/TransmissionMonitor';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { SessionTimeoutOverlay } from '@/components/shared/SessionTimeoutOverlay';
 import { STANDALONE_MODULES, type ModuleId } from './constants';
@@ -141,6 +139,9 @@ const CRMDashboard = lazyWithRetry(() => import('../modules/crm/CRMDashboard'));
 
 // Lazy-load AudioVisualizer to defer Three.js initialization until component is rendered
 const AudioVisualizer = lazyWithRetry(() => import('@/components/shared/AudioVisualizer').then(m => ({ default: m.AudioVisualizer })));
+
+const BoardroomModule = lazyWithRetry(() => import('../modules/boardroom/BoardroomModule').then(m => ({ default: m.BoardroomModule })));
+const TransmissionMonitor = lazyWithRetry(() => import('../modules/distribution/components/TransmissionMonitor').then(m => ({ default: m.TransmissionMonitor })));
 
 // ============================================================================
 // Module Router - Maps module IDs to components
@@ -638,14 +639,18 @@ function AppContent({ currentModule, showChrome, isDesktop, isAnyPhone, shortcut
                 <CostWarningModal />
                 <ApprovalManager />
                 <PWAInstallPrompt />
-                <TransmissionMonitor />
+                <Suspense fallback={null}>
+                    <TransmissionMonitor />
+                </Suspense>
                 <UpdaterMonitor />
 
                 {/* Global Command Menu (CMD+K) */}
                 <UnifiedCommandMenu />
 
                 {/* The Boardroom (Zen Mode) */}
-                <BoardroomModule />
+                <Suspense fallback={null}>
+                    <BoardroomModule />
+                </Suspense>
 
                 {/* Global Upload Manager Queue */}
                 <UploadQueueMonitor />
