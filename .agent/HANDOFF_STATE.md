@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-30 07:49 EDT
+**Updated:** 2026-06-30 07:51 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+3d32685a3 chore: add auth-split architecture flowchart and sync ledger
+de2a62a8b chore: session checkpoint [07:49]
 1e93e35f2 chore: session checkpoint [07:48]
 dc3e5c393 chore: session checkpoint [07:45]
 7f7dd29c1 chore: session checkpoint [07:42]
@@ -12,14 +14,11 @@ bf0f8c851 test(ledger): log ISSUE-CI pipeline failures
 2b18c5d29 fix(founders): update checkout unit tests and lazy-load boardroom/transmission components
 64f2b0fa6 chore: session checkpoint [21:14]
 04eba73d1 test(sidebar): update snapshot with Founders portal button
-b63e55b2c test(founders): update FoundersCheckout unit tests to support step-based layout
-ab376789e fix(e2e): fix strategic workflow E2E spec
 ```
 
 ## Working State
 ```
- M .agent/test_ledger/OPEN_ISSUES.md
-?? docs/flowcharts/issue-549-564-auth-split.md
+clean working tree
 ```
 
 ## Decisions
