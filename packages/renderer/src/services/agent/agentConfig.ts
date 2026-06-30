@@ -25,6 +25,7 @@ import { AnalyticsAgent } from './definitions/AnalyticsAgent';
 import { FinanceTaxAgent } from '@/agents/finance/workers/tax.config';
 import { FinanceRoyaltyAgent } from '@/agents/finance/workers/royalty.config';
 import { FinanceAccountingAgent } from '@/agents/finance/workers/accounting.config';
+import { RightsAgent } from '@/agents/rights/config';
 
 export const AGENT_CONFIGS: AgentConfig[] = [
     MarketingAgent,
@@ -49,9 +50,9 @@ export const AGENT_CONFIGS: AgentConfig[] = [
     CreativeAgent,
     AnalyticsAgent,
     FinanceTaxAgent,
-
     FinanceRoyaltyAgent,
-    FinanceAccountingAgent
+    FinanceAccountingAgent,
+    RightsAgent
 ];
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
