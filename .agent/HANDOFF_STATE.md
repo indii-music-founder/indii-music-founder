@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-30 07:45 EDT
+**Updated:** 2026-06-30 07:48 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+dc3e5c393 chore: session checkpoint [07:45]
 7f7dd29c1 chore: session checkpoint [07:42]
 65a410240 chore: session checkpoint [07:35]
 bf0f8c851 test(ledger): log ISSUE-CI pipeline failures
@@ -13,12 +14,12 @@ bf0f8c851 test(ledger): log ISSUE-CI pipeline failures
 b63e55b2c test(founders): update FoundersCheckout unit tests to support step-based layout
 ab376789e fix(e2e): fix strategic workflow E2E spec
 7f8410c71 test(ledger): log ISSUE-CI pipeline failures
-52f4e8da6 fix(e2e): update Settings overlay test to Settings page navigation in mega-stress-test-v4
 ```
 
 ## Working State
 ```
  M .agent/test_ledger/OPEN_ISSUES.md
+?? docs/flowcharts/issue-549-564-auth-split.md
 ```
 
 ## Decisions
