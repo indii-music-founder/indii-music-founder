@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-30 10:20 EDT
+**Updated:** 2026-06-30 10:21 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+8b9f79dad chore: session checkpoint [10:20]
 cdd0da35b chore: session checkpoint [10:18]
 a40b5fb8f feat(ISSUE-570): browser pause-states at certification & final submit
 0b5235903 chore: session checkpoint [10:16]
@@ -13,7 +14,6 @@ cf1e20b3b chore: session checkpoint [10:14]
 5f506f7cd chore: session checkpoint [10:12]
 bd7860c56 feat(ISSUE-567): approval freshness via Song Passport hash
 c523f87e3 chore: session checkpoint [09:56]
-23ddee6c6 feat(ISSUE-566): gate registration submit path through harness
 ```
 
 ## Working State
