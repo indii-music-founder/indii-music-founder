@@ -298,62 +298,77 @@ export function useDirectGeneration() {
             throw new Error('User must be authenticated to generate images.');
         }
 
-        // Verify auth token is available before calling backend
-        const token = await auth.currentUser?.getIdToken();
-        if (!token) {
-            throw new Error('Failed to obtain auth token. Please re-authenticate.');
+        try {
+            // Verify auth token is available before calling backend
+            const token = await auth.currentUser?.getIdToken();
+            if (!token) {
+                throw new Error('Failed to obtain auth token. Please re-authenticate.');
+            }
+
+            let referenceUri: string | undefined;
+            let referenceUris: string[] | undefined;
+            const ingredientsList = (videoInputs?.ingredients || []).filter(ingredient => !!ingredient?.url);
+            if (ingredientsList.length > 0) {
+                try {
+                    referenceUris = (await Promise.all(
+                        ingredientsList.slice(0, 14).map(ingredient => CreativeStorageService.uploadReferenceMedia(userId, ingredient.url, 'image', { scope: 'objects' }))
+                    )).filter((uri): uri is string => !!uri);
+                    referenceUri = referenceUris[0];
+                } catch (uploadError: unknown) {
+                    logger.warn('Reference image upload failed, proceeding without references:', uploadError);
+                    // Continue without references rather than fail
+                }
+            }
+
+            const generateImageV3 = httpsCallable(functions, 'generateImageV3');
+            const res = await generateImageV3(compactCallablePayload({
+                prompt: finalPrompt,
+                sessionId: currentProjectId ? `creative_${currentProjectId}` : undefined,
+                aspectRatio: studioControls.aspectRatio,
+                model: studioControls.model,
+                imageSize: studioControls.imageSize,
+                thinkingLevel: studioControls.thinkingLevel,
+                useGoogleSearch: studioControls.useGrounding,
+                referenceUri,
+                referenceUris
+            }));
+
+            const data = res.data as { jobId: string; resultUri?: string; resultUrl?: string; type?: 'image' | 'video' };
+            const completedUri = data.resultUrl || data.resultUri;
+
+            if (completedUri) {
+                try {
+                    const finalUrl = await resolveStorageUrl(completedUri);
+                    const finalItem: HistoryItem = {
+                        id: data.jobId,
+                        url: finalUrl,
+                        type: data.type || 'image',
+                        prompt: localPrompt,
+                        timestamp: Date.now(),
+                        projectId: currentProjectIdRef.current,
+                        origin: 'generated' as const
+                    };
+
+                    addToHistory({ ...finalItem });
+                    setSelectedItem(finalItem);
+                    setViewMode('editor');
+                    toast.success('Image generation finished!');
+                    return;
+                } catch (urlError: unknown) {
+                    logger.error('Failed to resolve image URL:', urlError);
+                    throw new Error('Generated image is ready but couldn\'t be displayed. Try refreshing.');
+                }
+            }
+
+            setActiveJobs(prev => [
+                ...prev,
+                { id: data.jobId, prompt: localPrompt, status: 'queued' as const, progress: 0 }
+            ]);
+            toast.info('Image job queued. Check gallery for progress.');
+        } catch (error: unknown) {
+            logger.error('Image generation inner error:', error);
+            throw error; // Re-throw for handleGenerate to catch
         }
-
-        let referenceUri: string | undefined;
-        let referenceUris: string[] | undefined;
-        const ingredientsList = (videoInputs?.ingredients || []).filter(ingredient => !!ingredient?.url);
-        if (ingredientsList.length > 0) {
-            referenceUris = (await Promise.all(
-                ingredientsList.slice(0, 14).map(ingredient => CreativeStorageService.uploadReferenceMedia(userId, ingredient.url, 'image', { scope: 'objects' }))
-            )).filter((uri): uri is string => !!uri);
-            referenceUri = referenceUris[0];
-        }
-
-        const generateImageV3 = httpsCallable(functions, 'generateImageV3');
-        const res = await generateImageV3(compactCallablePayload({
-            prompt: finalPrompt,
-            sessionId: currentProjectId ? `creative_${currentProjectId}` : undefined,
-            aspectRatio: studioControls.aspectRatio,
-            model: studioControls.model,
-            imageSize: studioControls.imageSize,
-            thinkingLevel: studioControls.thinkingLevel,
-            useGoogleSearch: studioControls.useGrounding,
-            referenceUri,
-            referenceUris
-        }));
-        
-        const data = res.data as { jobId: string; resultUri?: string; resultUrl?: string; type?: 'image' | 'video' };
-        const completedUri = data.resultUrl || data.resultUri;
-
-        if (completedUri) {
-            const finalUrl = await resolveStorageUrl(completedUri);
-            const finalItem: HistoryItem = {
-                id: data.jobId,
-                url: finalUrl,
-                type: data.type || 'image',
-                prompt: localPrompt,
-                timestamp: Date.now(),
-                projectId: currentProjectIdRef.current,
-                origin: 'generated' as const
-            };
-
-            addToHistory({ ...finalItem });
-            setSelectedItem(finalItem);
-            setViewMode('editor');
-            toast.success('Image generation finished!');
-            return;
-        }
-
-        setActiveJobs(prev => [
-            ...prev,
-            { id: data.jobId, prompt: localPrompt, status: 'queued' as const, progress: 0 }
-        ]);
-        toast.info('Image job queued. Check gallery for progress.');
 
     }, [studioControls.aspectRatio, studioControls.model, studioControls.imageSize, studioControls.thinkingLevel, studioControls.useGrounding, localPrompt, videoInputs?.ingredients, toast]);
 
@@ -363,11 +378,12 @@ export function useDirectGeneration() {
             throw new Error('User must be authenticated to generate videos.');
         }
 
-        // Verify auth token is available before calling backend
-        const token = await auth.currentUser?.getIdToken();
-        if (!token) {
-            throw new Error('Failed to obtain auth token. Please re-authenticate.');
-        }
+        try {
+            // Verify auth token is available before calling backend
+            const token = await auth.currentUser?.getIdToken();
+            if (!token) {
+                throw new Error('Failed to obtain auth token. Please re-authenticate.');
+            }
 
         let effectiveResolution = studioControls.resolution;
         if (effectiveResolution === '4k') {
@@ -459,6 +475,10 @@ export function useDirectGeneration() {
                 { id: results[0]!.id, prompt: localPrompt, status: 'queued' as const, progress: 0 }
             ]);
             toast.info('Video job queued. Check gallery for progress.');
+        }
+        } catch (error: unknown) {
+            logger.error('Video generation inner error:', error);
+            throw error; // Re-throw for handleGenerate to catch
         }
     }, [studioControls, localPrompt, sequence, bpm, videoInputs, characterReferences, whiskState, toast]);
 
