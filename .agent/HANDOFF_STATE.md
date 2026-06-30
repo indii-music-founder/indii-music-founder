@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-30 12:58 EDT
+**Updated:** 2026-06-30 13:01 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+50d38eeae fix(patterns): remove dead messaging export + add error handling to service-worker
+1487bdd76 chore: session checkpoint [12:58]
 bfd488ea5 refactor(creative): add granular error handling to image/video generation
 1eb868685 chore: session checkpoint [12:54]
 8c9c375cd chore: session checkpoint [12:53]
@@ -12,8 +14,6 @@ bfd488ea5 refactor(creative): add granular error handling to image/video generat
 c17cad782 chore: session checkpoint [12:52]
 cb2581908 feat(workflow): integrate pattern health checks into session lifecycle
 a448f09e1 chore: session checkpoint [12:46]
-dc8523993 docs: comprehensive guide to hidden bug prevention system
-6a35544f6 test(patterns): comprehensive hidden bug detection system for 7 critical patterns
 ```
 
 ## Working State
