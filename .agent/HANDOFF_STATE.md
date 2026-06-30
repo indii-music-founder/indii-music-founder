@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-30 15:32 EDT
+**Updated:** 2026-06-30 15:36 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+6777753af chore: session checkpoint [15:32]
 d0b4c2765 chore: session checkpoint [15:31]
 4b2fb302a chore: session checkpoint [15:31]
 6728c5cef chore: session checkpoint [15:22]
@@ -13,7 +14,6 @@ c7c1dcbff chore(shared): strictly type agentId and ownerAgentId as ValidAgentId 
 c6c1a9219 chore: session checkpoint [14:34]
 e083c1ff7 chore(pre-commit): add Stage 4 — unit test enforcement (CLOSES THE GAP)
 39b5139f5 chore: session checkpoint [14:31]
-fe54ff50e chore: session checkpoint [14:29]
 ```
 
 ## Working State
@@ -24,6 +24,7 @@ fe54ff50e chore: session checkpoint [14:29]
  M packages/renderer/index.html
  M packages/renderer/src/services/firebase.ts
  M packages/renderer/src/utils/e2eMode.ts
+?? docs/flowcharts/workspace-sync-resume-handoff.md
 ```
 
 ## Decisions
