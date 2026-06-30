@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-30 10:12 EDT
+**Updated:** 2026-06-30 10:14 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+5f506f7cd chore: session checkpoint [10:12]
 bd7860c56 feat(ISSUE-567): approval freshness via Song Passport hash
 c523f87e3 chore: session checkpoint [09:56]
 23ddee6c6 feat(ISSUE-566): gate registration submit path through harness
@@ -13,12 +14,12 @@ c8e4cd3ad fix(ISSUE-565,568): agent-ID integrity + rights agent
 67f3a7710 chore: session checkpoint [09:42]
 d997851d2 chore: session checkpoint [09:39]
 833efdfc8 chore: session checkpoint [09:36]
-173bc63b3 chore: session checkpoint [09:34]
 ```
 
 ## Working State
 ```
-clean working tree
+M  packages/renderer/src/agents/licensing/prompt.md
+M  packages/renderer/src/agents/publishing/prompt.md
 ```
 
 ## Decisions
