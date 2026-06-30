@@ -185,7 +185,7 @@ export class RoadTravelCompiler implements HarnessCompiler<RoadTravelInput, Road
         confidence: 'high',
       });
       agentBriefs.push({
-        agentId: 'road',
+        agentId: 'touring',
         brief: `Evaluate split-drive or layover requirements for ${route.driveTimeHours} hour drive to ${route.destination}.`,
         inputs: ['route'],
       });

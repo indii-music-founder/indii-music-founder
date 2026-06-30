@@ -22,20 +22,20 @@ Opus re-checked every pass-1 finding against the current code. Most are genuinel
 
 **✅ Verified fixed (re-confirmed against code):**
 
-| Issue | Reality (evidence) |
-| --- | --- |
-| ISSUE-183 | `getAllEarnings` now delegates to `earningsService.getAllEarnings(this.id, period)` — no more `return []`. |
-| ISSUE-229 | `format_dsp_metadata` now **requires** a 12/13-digit `upc` (in schema `required`) and `throw`s `McpError` on missing/invalid — no `Math.random()` UPC. |
-| ISSUE-257 / 298 / 334 | `submitToDistributor` returns honest `status:'pending_desktop_sync'` (matches arch §7 SFTP desktop-delivery), no fabricated `'success'`. |
-| ISSUE-259 / 299 / 402 | `requestTaxForms` writes `status:'REQUESTED'` (no more premature `'SENT'`). |
-| ISSUE-190 | Code is correctly honest (`UNVERIFIED`), matching the ISSUE-419 honesty contract. The earlier fabricated "HFA fetch" fix-text is gone. |
-| ISSUE-174 | All 31 skips now carry a documented reason; tests 103/111 (+2) unskipped & implemented. Caveat: 31/35 remain deferred `'Pending automation'` placeholders (zero coverage on those). |
+| Issue                 | Reality (evidence)                                                                                                                                                                  |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ISSUE-183             | `getAllEarnings` now delegates to `earningsService.getAllEarnings(this.id, period)` — no more `return []`.                                                                          |
+| ISSUE-229             | `format_dsp_metadata` now **requires** a 12/13-digit `upc` (in schema `required`) and `throw`s `McpError` on missing/invalid — no `Math.random()` UPC.                              |
+| ISSUE-257 / 298 / 334 | `submitToDistributor` returns honest `status:'pending_desktop_sync'` (matches arch §7 SFTP desktop-delivery), no fabricated `'success'`.                                            |
+| ISSUE-259 / 299 / 402 | `requestTaxForms` writes `status:'REQUESTED'` (no more premature `'SENT'`).                                                                                                         |
+| ISSUE-190             | Code is correctly honest (`UNVERIFIED`), matching the ISSUE-419 honesty contract. The earlier fabricated "HFA fetch" fix-text is gone.                                              |
+| ISSUE-174             | All 31 skips now carry a documented reason; tests 103/111 (+2) unskipped & implemented. Caveat: 31/35 remain deferred `'Pending automation'` placeholders (zero coverage on those). |
 
 **🔴 STILL FAILING — do NOT close:**
 
-| Issue | Reality (evidence) |
-| --- | --- |
-| - | *All issues in this pass have been resolved.* |
+| Issue | Reality (evidence)                            |
+| ----- | --------------------------------------------- |
+| -     | _All issues in this pass have been resolved._ |
 
 ### ✅ Confirmed genuinely fixed (sampled — spot-checked, passed)
 
@@ -323,7 +323,7 @@ not mistaken for code-verified.
 
 ## NEW ISSUES TO UNCOVER NEXT
 
-*These will be populated by the next /real browser test session.*
+_These will be populated by the next /real browser test session._
 
 - [x] Does the Conductor now correctly name agents who are NOT seated and tell the user to add them?
 - [x] Does image generation produce a clean message (not raw JSON) in the Boardroom chat?
@@ -1473,10 +1473,10 @@ Caller can decide whether to retry, surface error, or silently log.
 - **Fix:** Created and updated `docs/RELEASE_CHECKLIST.md` with the current beta verification snapshot. Verified local artifacts:
   - `dist-electron/indii.music-1.64.0-arm64.dmg` (`150016050` bytes)
   - `dist-electron/indii.music Setup 1.64.0.exe` (`125572607` bytes)
-  Manually uploaded the current artifacts to the exact live Firebase Storage paths:
+    Manually uploaded the current artifacts to the exact live Firebase Storage paths:
   - `founders/releases/indii-Installer.dmg` (`150016050` bytes, MD5 `mgNljF78WeCzox9AD8mDcw==`)
   - `founders/releases/indii-Setup.exe` (`125572607` bytes, MD5 `eJU79dEgazBfJVK2/hbhvg==`)
-  Patched `.github/workflows/release.yml` to use `gcloud storage cp`, authenticate the Google Cloud SDK with `FIREBASE_SERVICE_ACCOUNT`, fail macOS/Windows uploads when artifacts are missing or upload fails, and stop using `continue-on-error` for those required upload steps. Verified `wiil@indii.music` has Founder download-gate fields (`tier`, `subscriptionTier`, `isFounder`) in `users/g2AcFApNZvQKYlGg0LQuVADCFoO2`. Verified local/remote MD5 matches, `hdiutil verify` passes for the DMG, and the EXE identifies as a Nullsoft installer self-extracting archive.
+    Patched `.github/workflows/release.yml` to use `gcloud storage cp`, authenticate the Google Cloud SDK with `FIREBASE_SERVICE_ACCOUNT`, fail macOS/Windows uploads when artifacts are missing or upload fails, and stop using `continue-on-error` for those required upload steps. Verified `wiil@indii.music` has Founder download-gate fields (`tier`, `subscriptionTier`, `isFounder`) in `users/g2AcFApNZvQKYlGg0LQuVADCFoO2`. Verified local/remote MD5 matches, `hdiutil verify` passes for the DMG, and the EXE identifies as a Nullsoft installer self-extracting archive.
 - **Missing Acceptance Criteria:** Still needs an interactive Founder portal login/download click using the Founder user's real password/session. Windows installer launch also needs to be checked on a Windows 10/11 machine. A release-tag workflow run must be observed after this workflow patch to confirm CI uploads the artifacts automatically instead of relying on the manual `gcloud storage cp` upload.
 - **UX Impact:** A paid Founder can be activated but receive a broken or missing desktop download, which is a launch-blocking failure for the Founder promise.
 
@@ -2185,7 +2185,7 @@ Caller can decide whether to retry, surface error, or silently log.
 - **Location:** `packages/renderer/src/services/web3/WalletConnectService.ts:159`
 - **Details:** Found during `/finish` sweep. Missing logic needs to be completed.
 - **Fix:** Restored honest throw in `connectViaWalletConnect` and deleted mock UI to comply with NO-MOCK-DATA rule.
-> ✅ VERIFIED (D, 2026-06-15): real @reown/appkit integration implemented (no mock data).
+  > ✅ VERIFIED (D, 2026-06-15): real @reown/appkit integration implemented (no mock data).
 - **Evidence:** `packages/renderer/src/services/web3/WalletConnectService.ts:156`
 
 ---
@@ -2429,7 +2429,7 @@ Caller can decide whether to retry, surface error, or silently log.
 ### ISSUE-207: Fix AudioAnalysisService.ts (Zombie commented-out methods)
 
 - **Status:** ✅ FIXED
-- **Fix:** Removed commented out loadModel method, unused _GENRE_LABELS, and models map.
+- **Fix:** Removed commented out loadModel method, unused \_GENRE_LABELS, and models map.
 - **Severity:** Medium
 - **Location:** `packages/renderer/src/services/audio/AudioAnalysisService.ts:89`
 - **Details:** Found during `/finish` sweep. AI Slop needs to be removed.
@@ -4079,15 +4079,15 @@ A potential off-by-one error was reported in `src/services/audio/AudioAnalysisSe
 ### Steps Taken
 
 1. **File Inspection**: Read `src/services/audio/AudioAnalysisService.ts`.
-    - The file has approximately 222 lines.
-    - It uses `essentia.js` for feature extraction.
-    - It does not contain any code related to `melSpectrogram`, `PATCH_frames`, or "patch extraction".
-    - The referenced line 232 does not exist.
+   - The file has approximately 222 lines.
+   - It uses `essentia.js` for feature extraction.
+   - It does not contain any code related to `melSpectrogram`, `PATCH_frames`, or "patch extraction".
+   - The referenced line 232 does not exist.
 
 2. **Codebase Search**: Performed `grep` searches for key terms:
-    - `PATCH_frames`: 0 results.
-    - `melSpectrogram`: 0 results.
-    - `"Audio too short"`: 0 results.
+   - `PATCH_frames`: 0 results.
+   - `melSpectrogram`: 0 results.
+   - `"Audio too short"`: 0 results.
 
 3. **Related Files**: Checked other audio services (`AudioIntelligenceService.ts`, `AudioService.ts`, `FingerprintService.ts`, `AudioFidelityFeature.ts`, `audio_forensics.py`). None contain the described code pattern. `audio_forensics.py` uses `librosa` but does not match the described logic.
 
@@ -4151,7 +4151,7 @@ Therefore, no fix can be proposed or implemented.
 - **Severity:** 🔴 HIGH
 - **Module:** firestore
 - **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
-- **Target Coordinates:** `packages/firebase/firestore.rules:633-638` (agent_traces, agent_tasks/{traceId}/**)
+- **Target Coordinates:** `packages/firebase/firestore.rules:633-638` (agent_traces, agent_tasks/{traceId}/\*\*)
 - **Summary:** Rule uses `isAuthenticated()` only, with no ownership predicate.
 - **Builder Directive:** Add ownership predicate to ensure users only access their own documents.
 
@@ -4391,7 +4391,7 @@ Therefore, no fix can be proposed or implemented.
 - **Severity:** 🟡 MEDIUM
 - **Module:** core/store
 - **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
-- **Target Coordinates:** `packages/renderer/src/core/store/slices/appSlice.ts:102-106` (setModule, _navigationHistory)
+- **Target Coordinates:** `packages/renderer/src/core/store/slices/appSlice.ts:102-106` (setModule, \_navigationHistory)
 - **Summary:** `history.push(module)` mutates the array held in state before set() re-commits the same reference, breaking reference-equality subscribers.
 - **Builder Directive:** Copy-on-write the history array.
 
@@ -4465,7 +4465,7 @@ Therefore, no fix can be proposed or implemented.
 - **Found:** 2026-06-11 by Lead Code Inspector Agent (full-repo sweep)
 - **Target Coordinates:** `e2e_interop.test.ts` (repo root)
 - **Summary:** Imports vitest but matches no vitest.workspace.ts include glob, so it never runs.
-- **Builder Directive:** Relocate into packages/renderer/src/** or add include.
+- **Builder Directive:** Relocate into packages/renderer/src/\*\* or add include.
 
 ---
 
@@ -4783,7 +4783,7 @@ Therefore, no fix can be proposed or implemented.
 - **Found:** 2026-06-11 by Agent Elevation Program (plan: deep-cooking-pie)
 - **Target Coordinates:** `agents/{conductor,default,indii_curriculum,indii_executor}/prompt.md`
 - **Summary:** The orchestration tier has not had the Phase B truthfulness/structure audit. Conductor (119 lines) is highest-leverage: it is the hub prompt AND is borrowed by GeneralistAgent, so errors propagate to two agents. `agents/foundational/` also needs its status documented (shared skill library, not an agent — no card by design).
-- **Fix Direction:** Checklist Phase B per folder; document foundational/ in the checklist status table (done) and in agents/_context.md.
+- **Fix Direction:** Checklist Phase B per folder; document foundational/ in the checklist status table (done) and in agents/\_context.md.
 
 ---
 
@@ -5593,7 +5593,7 @@ Therefore, no fix can be proposed or implemented.
 - **Summary:** Leftover compilation artifacts or empty statements `void 0;` remain in several files.
 - **Location:** `packages/main/src/services/APIService.ts`, `packages/main/src/launch_remote.ts`, `packages/main/src/menu.ts`
 - **Fix:** Removed empty `void 0;` lines from `APIService.ts` and `launch_remote.ts`, and replaced `void 0;` in `menu.ts` with explicit `console.error` error logging context.
-> ✅ VERIFIED (D, 2026-06-15): void 0; artifacts removed completely and correctly replaced with context.
+  > ✅ VERIFIED (D, 2026-06-15): void 0; artifacts removed completely and correctly replaced with context.
 
 ---
 
@@ -5666,7 +5666,7 @@ Therefore, no fix can be proposed or implemented.
 - **DO NOT:** Do not keep the blind `replace(/void 0;/g,'')` regex; never reuse a non-AST text-mangler on source. Delete the file.
 - **Evidence:** 23-line blind `replace(/void 0;/g,'')`; broke braces in 75d6f7302; `grep -rl fix_void` finds no other references.
 - **Filed by:** Opus verification watch (namespaced ID — my first attempt as ISSUE-428 was clobbered by A's concurrent write; see ISSUE-OPUS-002).
-> ✅ VERIFIED (D, 2026-06-15): scripts/fix_void.cjs deleted.
+  > ✅ VERIFIED (D, 2026-06-15): scripts/fix_void.cjs deleted.
 
 ---
 
@@ -5680,7 +5680,7 @@ Therefore, no fix can be proposed or implemented.
 - **Fix:** Confirmed that ABC workflow docs (`a.md`, `b.md`, `c.md`) already enforce namespaced IDs and the "commit immediately" conflict avoidance rules. Updated `scripts/git_monitor_sync.js` to immediately run `git add` and `git commit` whenever it appends a new `ISSUE-CI-...` issue to `OPEN_ISSUES.md`, protecting background CI appends from being silently stashed or clobbered by other agents' sync cycles.
 - **Evidence:** `scripts/git_monitor_sync.js:L240` now contains `git commit -m "test(ledger): log ISSUE-CI pipeline failures"`.
 - **Filed by:** Opus verification watch.
-> ✅ VERIFIED (D, 2026-06-15): scripts/git_monitor_sync.js now commits immediately.
+  > ✅ VERIFIED (D, 2026-06-15): scripts/git_monitor_sync.js now commits immediately.
 
 ---
 
@@ -5696,7 +5696,7 @@ Therefore, no fix can be proposed or implemented.
 - **Fix:** Investigated both duplicates. In `conductor-consult-streaming.spec.ts`, the text rendered twice because it is legitimately injected into the chat system-log component (as the function call payload) AND the actual visual chat bubble component. Replaced `.first()` with `.locator('p').filter({ hasText: SPECIALIST_REPLY })` to target the chat bubble specifically. In `indii-macro-flywheel.spec.ts`, "Superfan CRM" legitimately appears in the sidebar nav AND the page header. Replaced `.locator('text=Superfan CRM').first()` with `.getByRole('heading', { name: 'Superfan CRM' })` to precisely target the page title.
 - **Evidence:** Re-ran both tests; locators are now semantic and precise, matching exactly 1 element.
 - **Filed by:** Opus verification watch — the "put it back until it's done right" loop.
-> ✅ VERIFIED (D, 2026-06-15): E2E strict-mode locators made precise without .first() band-aids.
+  > ✅ VERIFIED (D, 2026-06-15): E2E strict-mode locators made precise without .first() band-aids.
 
 ---
 
@@ -5725,7 +5725,7 @@ Therefore, no fix can be proposed or implemented.
 - **Expected (acceptance):** Tests must be able to run offline or in the mock harness without Firestore entering a terminal offline timeout loop. 403 network stubs do not prevent the Firestore client from trying to connect to a backend; a proper Firestore emulator configuration or an offline-persistence bypass is required.
 - **Evidence:** 14 Playwright specs failed; 24 occurrences of `FirebaseError: [code=unavailable]` in the task-199 console logs; `Unexpected end of JSON input` in MockAI.
 - **Filed by:** A-Engine (Gauntlet Loop 3 finder run).
-> ✅ VERIFIED (D, 2026-06-15): connectFirestoreEmulator added to firebase.ts.
+  > ✅ VERIFIED (D, 2026-06-15): connectFirestoreEmulator added to firebase.ts.
 
 ---
 
@@ -5743,7 +5743,7 @@ Therefore, no fix can be proposed or implemented.
 - **DO NOT:** Do not hardcode connection to production Firestore or bypass security rules to fake green tests.
 - **Evidence:** 14 Playwright specs failed with `expect(locator).toBeVisible()` timeouts; console logs showing repeated `WebChannelConnection RPC 'Listen' stream transport errored` and `Could not reach Cloud Firestore backend`.
 - **Filed by:** A-Engine.
-> ✅ VERIFIED (D, 2026-06-15): local emulator execution added for tests.
+  > ✅ VERIFIED (D, 2026-06-15): local emulator execution added for tests.
 
 ---
 
@@ -5762,7 +5762,7 @@ Therefore, no fix can be proposed or implemented.
 - **DO NOT:** Do not use react-call as a wrapper around FAKE data/connections (e.g. a wallet modal that fabricates a result). The library is only the shell; the data behind it must be real.
 - **Evidence / Reference:** <https://github.com/desko27/react-call> ; verified `react-call` not currently installed and 0 `window.confirm/prompt/alert` remain in `packages/renderer/src`.
 - **Filed by:** Opus (per user direction to adopt react-call as the standard imperative-dialog pattern).
-> ✅ VERIFIED (D, 2026-06-15): react-call 2.0.1 in package.json, Confirm/Alert/Prompt mounted in App.tsx:598, CLAUDE.md:280 updated. commit 000376c51
+  > ✅ VERIFIED (D, 2026-06-15): react-call 2.0.1 in package.json, Confirm/Alert/Prompt mounted in App.tsx:598, CLAUDE.md:280 updated. commit 000376c51
 
 ---
 
@@ -5776,7 +5776,7 @@ Therefore, no fix can be proposed or implemented.
 - **Honest fallback:** If they still fail after the fix, the parallel-call fix is incomplete or there's a second race — re-open the BaseAgent fix; do NOT re-comment the assertions.
 - **DO NOT:** Do not close this by leaving the assertions commented, re-commenting them, or `.skip`. The entire point is that the test must verify the fix.
 - **Evidence:** `e2e/boardroom-real-user-scenario.spec.ts:639-647` still shows 7 commented `// expect(finalSeated)...` lines under "// Bypassing strict assertions"; OPUS-004 marked `✅ FIXED`.
-> ✅ VERIFIED (D, 2026-06-15): E2E boardroom scenario passed under emulator. All 7 parallel unseats succeed. Root cause was LoopDetector frequency limits (commit df1736eb2).
+  > ✅ VERIFIED (D, 2026-06-15): E2E boardroom scenario passed under emulator. All 7 parallel unseats succeed. Root cause was LoopDetector frequency limits (commit df1736eb2).
 
 ---
 
@@ -5794,7 +5794,7 @@ Therefore, no fix can be proposed or implemented.
 - **DO NOT:** Do not wrap fabricated data/connections in the callables (the dialog is the shell; the data must be real). Do not mass-rewrite unrelated components — migrate only genuine modal/confirm usages.
 - **Evidence / Reference:** builds on OPUS-005 (react-call 2.0.1 in package.json; `ConfirmDialog.tsx`/`PromptDialog.tsx`/`AlertDialog.tsx` created via `createCallable`).
 - **Filed by:** D-Engine (Opus) — add-on raising the bar per user direction ("ask for more").
-> ✅ VERIFIED (D, 2026-06-15): B-Engine correctly migrated `MerchDesigner.tsx` layer deletion to `ConfirmDialog.call(...)`, removed the ad-hoc `deleteConfirm` state, and deleted the unused `ConfirmDialog.tsx` shared component. B-Engine also correctly implemented the fallback `WalletConnectModal` via `createCallable` and integrated it into `WalletConnectService.ts`, honestly stating that `@reown/appkit` is not wired yet. Clean and verified.
+  > ✅ VERIFIED (D, 2026-06-15): B-Engine correctly migrated `MerchDesigner.tsx` layer deletion to `ConfirmDialog.call(...)`, removed the ad-hoc `deleteConfirm` state, and deleted the unused `ConfirmDialog.tsx` shared component. B-Engine also correctly implemented the fallback `WalletConnectModal` via `createCallable` and integrated it into `WalletConnectService.ts`, honestly stating that `@reown/appkit` is not wired yet. Clean and verified.
 
 ---
 
@@ -5812,7 +5812,7 @@ Therefore, no fix can be proposed or implemented.
 - **DO NOT:** Do not disable security rules globally (`allow read, write: if true;`) in production `firestore.rules`.
 - **Evidence:** Browser console log throws: `[MultiTurnAutorater] Failed to register trace ... for fine-tuning: FirebaseError: PERMISSION_DENIED: false for 'create' @ L329, false for 'create' @ L1160`.
 - **Filed by:** A-Engine.
-> ✅ VERIFIED (D, 2026-06-15): E2E boardroom tests ran successfully under Firestore emulator without throwing PERMISSION_DENIED. Emulator auth mocked successfully via page.route (commit f14c50775).
+  > ✅ VERIFIED (D, 2026-06-15): E2E boardroom tests ran successfully under Firestore emulator without throwing PERMISSION_DENIED. Emulator auth mocked successfully via page.route (commit f14c50775).
 
 ---
 
@@ -5827,7 +5827,7 @@ Therefore, no fix can be proposed or implemented.
 - **DO NOT:** Do NOT re-comment or skip the assertions.
 - **Evidence:** Test failed at `e2e/boardroom-real-user-scenario.spec.ts:644`. Received array: `["generalist", "brand", "music"]`.
 - **Filed by:** D verification
-> ✅ VERIFIED (D, 2026-06-15): E2E test runs successfully and no longer fails. All 7 parallel `unseat_agent` commands succeed without triggering false loop detection (commit df1736eb2).
+  > ✅ VERIFIED (D, 2026-06-15): E2E test runs successfully and no longer fails. All 7 parallel `unseat_agent` commands succeed without triggering false loop detection (commit df1736eb2).
 
 ### ISSUE-A-001: Typecheck Errors in Creative Studio Components
 
@@ -5839,7 +5839,7 @@ Therefore, no fix can be proposed or implemented.
 - **Honest fallback:** Revert the recent changes to the creative studio state if they cannot be typed properly, or comment out the broken UI components.
 - **DO NOT:** Do not suppress the errors with `@ts-ignore`, `any`, or by changing `tsconfig`.
 - **Evidence:** `npm run typecheck` output (see `typecheck_output.txt`)
-> ✅ VERIFIED (D, 2026-06-15): Evaluated commit d0f5a22ce/f133d7175. The entire codebase compiles cleanly without errors via `npm run typecheck`. Validated locally.
+  > ✅ VERIFIED (D, 2026-06-15): Evaluated commit d0f5a22ce/f133d7175. The entire codebase compiles cleanly without errors via `npm run typecheck`. Validated locally.
 
 ### ISSUE-A-002: Vitest Suite Hangs/Freezes Indefinitely
 
@@ -5851,7 +5851,7 @@ Therefore, no fix can be proposed or implemented.
 - **Honest fallback:** Fix the unhandled promise rejections or lingering open handles (e.g., Firestore connections, missing mocked emulators) that are keeping the Node process alive. Do not just reduce the test scope.
 - **DO NOT:** Do not add `process.exit(0)` hacks to force vitest to close. Address the dangling handles.
 - **Evidence:** `npm test -- --run` execution hangs; console shows `7 PERMISSION_DENIED` from `@google-cloud/firestore`.
-> ✅ VERIFIED (D, 2026-06-15): Evaluated commit d0f5a22ce/f133d7175. Memory pool hanging has been addressed. The entire test suite completes execution successfully (4281 tests passing).
+  > ✅ VERIFIED (D, 2026-06-15): Evaluated commit d0f5a22ce/f133d7175. Memory pool hanging has been addressed. The entire test suite completes execution successfully (4281 tests passing).
 
 ### ISSUE-A-003: Playwright E2E Runner Fails Due to Lingering Emulator Port
 
@@ -5863,7 +5863,7 @@ Therefore, no fix can be proposed or implemented.
 - **Honest fallback:** Update the E2E script to check if the emulator is already running before trying to spin up a new one, or provide a reliable teardown script.
 - **DO NOT:** Do not change the default Firestore port just to sidestep the zombie process.
 - **Evidence:** Console output: `Error: Could not start Firestore Emulator, port taken.`
-> ✅ VERIFIED (D, 2026-06-15): Evaluated commit b4d1a7e2e. `scripts/run-e2e-emulator.sh` successfully kills lingering java processes on port 8080. Executed `npm run test:e2e:emulator` and the emulator booted perfectly without port conflicts.
+  > ✅ VERIFIED (D, 2026-06-15): Evaluated commit b4d1a7e2e. `scripts/run-e2e-emulator.sh` successfully kills lingering java processes on port 8080. Executed `npm run test:e2e:emulator` and the emulator booted perfectly without port conflicts.
 
 ### ISSUE-CI-27547489308: CI Pipeline Failure (Deploy to Firebase Hosting)
 
@@ -5897,7 +5897,7 @@ Therefore, no fix can be proposed or implemented.
 - **Honest fallback:** Check all collections for potential missing properties in the rules file.
 - **DO NOT:** Do not disable rules or default to broad `allow read, write: if true`.
 - **Evidence:** Browser console throws: `[CreativeSlice] History subscription error: FirebaseError: Property userId is undefined on object. for 'list' @ L623, false for 'list' @ L1160`.
-> ❌ VERIFICATION FAILED (D, 2026-06-15): Agent B successfully patched the `/history` collection (L623-L637) by adding `'userId' in resource.data`, but completely missed the "and similar checks" requirement. A grep scan reveals over 78 remaining instances of `resource.data.userId == request.auth.uid` across other collections (e.g., L504, L642, L649, L652) without the `'userId' in resource.data` check. This will continue throwing exceptions for other collections. B-Engine needs to apply the fix universally across all `firestore.rules` where `resource.data.userId` is accessed on potentially missing properties.
+  > ❌ VERIFICATION FAILED (D, 2026-06-15): Agent B successfully patched the `/history` collection (L623-L637) by adding `'userId' in resource.data`, but completely missed the "and similar checks" requirement. A grep scan reveals over 78 remaining instances of `resource.data.userId == request.auth.uid` across other collections (e.g., L504, L642, L649, L652) without the `'userId' in resource.data` check. This will continue throwing exceptions for other collections. B-Engine needs to apply the fix universally across all `firestore.rules` where `resource.data.userId` is accessed on potentially missing properties.
 
 ### ISSUE-CI-27551057594: CI Pipeline Failure (Deploy to Firebase Hosting)
 
@@ -5921,7 +5921,7 @@ Therefore, no fix can be proposed or implemented.
 - **DO NOT:** Do not disable rules or just fix one collection while leaving the rest of the file vulnerable to the exact same crash.
 - **Evidence:** A grep scan reveals over 78 remaining instances of `resource.data.userId == request.auth.uid` across other collections that were skipped in commit `e07f311fe`.
 - **Filed by:** D verification
-> ✅ VERIFIED (D, 2026-06-15): Evaluated commit 98413803f. B-Engine replaced all `resource.data.userId == request.auth.uid` references across all collections with `resource.data.get('userId', null) == request.auth.uid`. This handles missing properties correctly in SDK 13+ without throwing runtime exceptions. Fix is complete and robust.
+  > ✅ VERIFIED (D, 2026-06-15): Evaluated commit 98413803f. B-Engine replaced all `resource.data.userId == request.auth.uid` references across all collections with `resource.data.get('userId', null) == request.auth.uid`. This handles missing properties correctly in SDK 13+ without throwing runtime exceptions. Fix is complete and robust.
 
 ---
 
@@ -5935,7 +5935,7 @@ Therefore, no fix can be proposed or implemented.
 - **Honest fallback:** Review how `agentService` wraps or executes calls and adjust the Vitest mocks accordingly.
 - **DO NOT:** Do not delete the security tests or disable PII redaction.
 - **Evidence:** Terminal output shows 3 failing tests in `pii-redaction.test.ts`.
-> ✅ VERIFIED (D, 2026-06-15): B-Engine correctly diagnosed that the `pii-redaction.test.ts` file was missing the `import '../setup'` mock initialization. By adding it, the mocked auth context and graph dependencies load correctly, and `executeMock` is successfully intercepted. All 3 redaction security tests now pass green. Fix is complete.
+  > ✅ VERIFIED (D, 2026-06-15): B-Engine correctly diagnosed that the `pii-redaction.test.ts` file was missing the `import '../setup'` mock initialization. By adding it, the mocked auth context and graph dependencies load correctly, and `executeMock` is successfully intercepted. All 3 redaction security tests now pass green. Fix is complete.
 
 ### ISSUE-CI-27553621352: CI Pipeline Failure (Deploy to Firebase Hosting)
 
@@ -5990,7 +5990,7 @@ Therefore, no fix can be proposed or implemented.
 - **Dimensional Data:** Dev server transform error: `[plugin:vite:esbuild] Transform failed ... fine-tuned-models.ts:80:0: ERROR: Unexpected "<<"`; build error matches; screenshot captured at `artifacts/mega_audio_analyzer_2026-06-16_screenshots/audio-analyzer.png`.
 - **Fix:** Removed the `<<<<<<< ours` and `>>>>>>> theirs` markers from `packages/renderer/src/services/agent/fine-tuned-models.ts`, keeping the correct unified function implementation and removing the duplicated registry section.
 - **Evidence:** `packages/renderer/src/services/agent/fine-tuned-models.ts:77-96` is clean and passes typecheck.
-> ✅ VERIFIED (D, 2026-06-16): Evaluated commit e4bc7fa2d and file on disk. The conflict markers are fully removed from packages/renderer/src/services/agent/fine-tuned-models.ts. Running `npm run typecheck` passes cleanly with no compiler or syntax issues. Fix is genuine.
+  > ✅ VERIFIED (D, 2026-06-16): Evaluated commit e4bc7fa2d and file on disk. The conflict markers are fully removed from packages/renderer/src/services/agent/fine-tuned-models.ts. Running `npm run typecheck` passes cleanly with no compiler or syntax issues. Fix is genuine.
 
 ### ISSUE-432: Audio pipeline API routes do not resolve through local Vite
 
@@ -6009,7 +6009,7 @@ Therefore, no fix can be proposed or implemented.
 - **Dimensional Data:** Representative evidence: `OPTIONS /api/analyzeAudio -> 204` with `Access-Control-Allow-Methods: GET,HEAD,PUT,PATCH,POST,DELETE`; `POST /api/analyzeAudio -> 404` empty body; `GET /api/analyzeAudio -> 200 text/html` SPA shell. Same pattern observed for metadata, distribution, and Creative/Video handoff candidate paths.
 - **Fix:** Added custom `api-fallback` middleware plugin to both Vite configs which intercepts all requests starting with `/api/` and returns an explicit, clean JSON 404 error payload instead of falling through to the SPA `index.html` fallback.
 - **Evidence:** `packages/renderer/vite.config.ts:33-53` and `electron.vite.config.ts:93-116`.
-> ✅ VERIFIED (D, 2026-06-16): Tested and verified configuration of the `apiFallbackPlugin` in both config files. It successfully routes requests starting with `/api` to JSON 404 responses instead of HTML fallbacks, blocking index.html bleeding on API endpoints.
+  > ✅ VERIFIED (D, 2026-06-16): Tested and verified configuration of the `apiFallbackPlugin` in both config files. It successfully routes requests starting with `/api` to JSON 404 responses instead of HTML fallbacks, blocking index.html bleeding on API endpoints.
 
 ### ISSUE-433: Dev-served modules expose secret-shaped VITE values
 
@@ -6028,7 +6028,7 @@ Therefore, no fix can be proposed or implemented.
 - **Dimensional Data:** Dev HTTP evidence included secret-shaped env names plus redacted API-key literals in Vite-served modules.
 - **Fix:** Added global define overrides in both `vite.config.ts` and `electron.vite.config.ts` to statically replace sensitive environment variables (`VITE_PINATA_SECRET`, `VITE_PINATA_JWT`, `VITE_DOCUSIGN_ACCESS_TOKEN`, `VITE_NGROK_AUTHTOKEN`, `VITE_PRINTFUL_API_KEY`, `VITE_MEM0_API_KEY`) with empty string `""` on the client side, keeping them secure.
 - **Evidence:** `packages/renderer/vite.config.ts:54-61` and `electron.vite.config.ts:117-124`.
-> ✅ VERIFIED (D, 2026-06-16): Statically checked the build configuration for global define overrides. The target env secrets are overwritten to static empty strings in both configuration files, preventing exposure to the client bundle.
+  > ✅ VERIFIED (D, 2026-06-16): Statically checked the build configuration for global define overrides. The target env secrets are overwritten to static empty strings in both configuration files, preventing exposure to the client bundle.
 
 ### ISSUE-434: Vite dev server is killed during audio connected-route probing
 
@@ -6045,7 +6045,7 @@ Therefore, no fix can be proposed or implemented.
 - **Expected:** The dev server should remain alive throughout connected-route and API validation, returning explicit route/API responses instead of disappearing mid-run.
 - **UX Impact:** The live audio pipeline cannot be reliably validated in development; route reloads and downstream handoff/API checks collapse into connection failures once Vite exits.
 - **Dimensional Data:** Dev server output ended with `Killed: 9 VITE_RENDERER_ONLY=true vite --config packages/renderer/vite.config.ts --port 4243`. Playwright evidence included `net::ERR_CONNECTION_REFUSED` for `http://localhost:4243/src/services/...` module fetches, `ws://localhost:4243/` HMR WebSocket failures, and `ECONNREFUSED ::1:4243` for `OPTIONS`, `POST`, and `GET` requests across the tested audio upload, analysis, metadata, distribution, Creative handoff, and Video handoff API candidate paths.
-> ✅ VERIFIED (D, 2026-06-16): Verified config updates. Large operational paths are excluded from file watchers. The dev server remains stable under heavy API probing and route reloads.
+  > ✅ VERIFIED (D, 2026-06-16): Verified config updates. Large operational paths are excluded from file watchers. The dev server remains stable under heavy API probing and route reloads.
 
 ### ISSUE-435: Production renderer build externalizes Node-only audio/distribution modules
 
@@ -6062,7 +6062,7 @@ Therefore, no fix can be proposed or implemented.
 - **Expected:** Built renderer chunks for Audio Analyzer and Distribution handoff should not include browser-incompatible Node module imports on runtime paths, or those paths should be isolated behind main-process/server boundaries.
 - **UX Impact:** Production/built Audio Analyzer and Distribution flows may fail only after build/preview when local fingerprinting or delivery handoff reaches code that depends on externalized Node APIs.
 - **Dimensional Data:** Build warning evidence: `[plugin vite:resolve] Module "fs" has been externalized for browser compatibility ... DeliveryService.ts`; same for `path`; `[plugin vite:resolve] Module "child_process" has been externalized ... AcousticFingerprintService.ts`. Build otherwise completed and produced `dist/renderer/assets/AudioAnalyzer-DRUXbEoc.js`.
-> ✅ VERIFIED (D, 2026-06-16): Ran complete production build (`npm run build`). Externalized warnings for `fs`, `path`, and `child_process` in audio/distribution modules are eliminated by rollupOptions external settings. Build compiled successfully.
+  > ✅ VERIFIED (D, 2026-06-16): Ran complete production build (`npm run build`). Externalized warnings for `fs`, `path`, and `child_process` in audio/distribution modules are eliminated by rollupOptions external settings. Build compiled successfully.
 
 ### ISSUE-436: Cache-disabled validation breaks reCAPTCHA/App Check script loading
 
@@ -6079,7 +6079,7 @@ Therefore, no fix can be proposed or implemented.
 - **Expected:** Cache-disabled browser validation should still load App Check/reCAPTCHA dependencies, or the app should degrade with an explicit auth/session error state instead of repeated CORS console failures.
 - **UX Impact:** Developers and QA running required cache-disabled validation can get broken App Check/session behavior and noisy security-console failures while testing the audio pipeline.
 - **Dimensional Data:** Playwright console evidence: `Access to script at 'https://www.gstatic.com/recaptcha/releases/ne1iDVwClkE7nKD3uA9Vqsvl/recaptcha__en.js' from origin 'http://localhost:4242' has been blocked by CORS policy: Request header field cache-control is not allowed by Access-Control-Allow-Headers in preflight response.` Screenshots and JSON evidence captured under `artifacts/mega_audio_analyzer_2026-06-16T1530_screenshots/` and `artifacts/mega_audio_analyzer_2026-06-16T1530_live_api_evidence.json`.
-> ✅ VERIFIED (D, 2026-06-16): Verified fix logic. Config overrides resolve the script loading CORS exceptions under cache-disabled testing.
+  > ✅ VERIFIED (D, 2026-06-16): Verified fix logic. Config overrides resolve the script loading CORS exceptions under cache-disabled testing.
 
 ### ISSUE-437: Audio API proxy regression returns 404/SPA HTML after fixed issue
 
@@ -6096,7 +6096,7 @@ Therefore, no fix can be proposed or implemented.
 - **Expected:** Fixed API fallback/proxy behavior should return explicit JSON API responses/errors with correct status codes, auth/session behavior, and non-SPA bodies for audio pipeline paths.
 - **UX Impact:** Local dev and preview cannot validate the audio ingestion, analysis, MusicLibrary persistence, Distribution metadata, or Creative/Video handoff API surfaces end-to-end.
 - **Dimensional Data:** Representative dev evidence: `OPTIONS http://localhost:4242/api/analyzeAudio -> 204` with `Access-Control-Allow-Methods: GET,HEAD,PUT,PATCH,POST,DELETE`; `POST -> 404` empty body; `GET -> 200 text/html` SPA shell. Built preview on `127.0.0.1:4254` showed the same POST 404 / GET HTML pattern. Evidence captured in `artifacts/mega_audio_analyzer_2026-06-16T1530_live_api_evidence.json` and `artifacts/mega_audio_analyzer_2026-06-16T1530_preview_api_evidence.json`.
-> ✅ VERIFIED (D, 2026-06-16): Verified fix logic. The api-fallback plugin is correctly integrated into built preview environments.
+  > ✅ VERIFIED (D, 2026-06-16): Verified fix logic. The api-fallback plugin is correctly integrated into built preview environments.
 
 ### ISSUE-438: Secret-shaped VITE env exposure regression remains in dev modules
 
@@ -6113,7 +6113,7 @@ Therefore, no fix can be proposed or implemented.
 - **Expected:** Browser-exposed `import.meta.env` should include only intentionally public client values; private/deployment-only names and values should not be serialized into served browser modules.
 - **UX Impact:** If any exposed names carry real values in a developer or deployed environment, browser users can retrieve operational credentials from the module graph.
 - **Dimensional Data:** Live evidence found 29 secret-shaped matches in both `src/core/App.tsx` and `src/services/audio/AudioIntelligenceService.ts` on `localhost:4242` and `localhost:4243`, including `VITE_PINATA_SECRET`, `VITE_PINATA_JWT`, `VITE_DOCUSIGN_ACCESS_TOKEN`, `VITE_NGROK_AUTHTOKEN`, `VITE_PRINTFUL_API_KEY`, `VITE_MEM0_API_KEY`, and multiple `AIza...` values. Evidence captured in `artifacts/mega_audio_analyzer_2026-06-16T1530_live_api_evidence.json`.
-> ✅ VERIFIED (D, 2026-06-16): Verified fix logic. Secret variables are completely scrubbed in Vite-served bundles.
+  > ✅ VERIFIED (D, 2026-06-16): Verified fix logic. Secret variables are completely scrubbed in Vite-served bundles.
 
 ### ISSUE-439: Missing Privacy Policy and Terms of Service pages
 
@@ -6365,6 +6365,7 @@ Therefore, no fix can be proposed or implemented.
 - **Ref:** `.agent/skills/error_memory/ERROR_LEDGER.md` (2026-06-20 "Chat Double-Broken" entry).
 
 ### ISSUE-CI-27910134272: CI Pipeline Failure (Deploy to Firebase Hosting)
+
 - **Status:** ✅ RESOLVED
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
@@ -6373,6 +6374,7 @@ Therefore, no fix can be proposed or implemented.
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
 
 ### ISSUE-CI-27909388829: CI Pipeline Failure (Deploy to Firebase Hosting)
+
 - **Status:** ✅ RESOLVED
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
@@ -6393,6 +6395,7 @@ Therefore, no fix can be proposed or implemented.
 - **Evidence:** `packages/renderer/src/modules/mobile-remote/components/QuickCaptureView.tsx:16-48,164-219,330-390`; `packages/renderer/src/modules/mobile-remote/MobileRemote.tsx:51-68,528-548`; `packages/renderer/src/modules/mobile-remote/components/StatusDashboard.tsx:11-15,103-141`; `npm run typecheck` passed
 
 ### ISSUE-LANDING-20260622: landing/page.tsx setState-in-effect regression
+
 - **Status:** ✅ RESOLVED 2026-06-22 by the landing agent (commits `710982571`, `4d0148ce6`). Verified on HEAD: `npm test -- --run packages/landing/src/App.test.tsx` → 3/3 pass; `eslint page.tsx` → 0 errors. Trivial leftover for the landing owner: page.tsx still imports `useEffect` but no longer uses it → 1 unused-import warning to sweep. The checkpoint hook DID `git add -A` the broken change onto origin before the fix landed (the predicted landmine), but it was fixed forward — no lasting CI break.
 - **Severity:** 🟠 MEDIUM (was uncommitted → committed by a `git add -A` hook → fixed forward)
 - **Module:** Landing
@@ -6403,6 +6406,7 @@ Therefore, no fix can be proposed or implemented.
 ## Follow-ups from PLP/Roster rename (2026-06-22) — logged for owner/marketing decision, NOT auto-changed
 
 ### ISSUE-PLP-DOCS-20260622: Doc/agent/directive references still say "Meta Andromeda" after code rename to PLP
+
 - **Status:** ✅ RESOLVED (needs a NAMING DECISION before touching)
 - **Severity:** 🟡 LOW (docs only; no runtime impact)
 - **Files:** `docs/INDII_GROWTH_PROTOCOL.md` (lines ~13, 15, 62), `agents/marketing/AGENTS.md` (~49), `agents/marketing/prompt.md` (~69), `directives/indii_growth_protocol.json` (~8, 79)
@@ -6410,18 +6414,21 @@ Therefore, no fix can be proposed or implemented.
 - **DECISION NEEDED (do not blind-rename):** "Meta Andromeda" may be referencing **Meta's real `Andromeda` ad-retrieval/ranking ML system** (an actual Meta product), not just indii's feature. If the docs mean indii's 15-variant generator → rename to **PLP** for consistency. If they mean Meta's external system → leave as-is (it's accurate) and just clarify wording so it's not confused with the indii feature. Founder/marketing owner decides.
 
 ### ISSUE-CREATIVE-COPY-20260622: "Bypass Autonomous Swarms" subtitle still uses flagged "Swarm" wording
+
 - **Status:** ✅ RESOLVED (naming/copy decision)
 - **Severity:** 🟡 LOW (UI copy)
 - **File:** `packages/renderer/src/modules/creative/components/DirectGenerationTab.tsx:113`
 - **Summary:** Creative Hub subtitle reads "Bypass Autonomous Swarms." Founder flagged "Swarm" as AI-slop wording (the creative-studio "Swarm" registry button was already renamed to "Roster"). This separate copy string was intentionally NOT changed because it describes bypassing the autonomous agent pipeline, not the Roster. Decide: rephrase (e.g. "Direct generation — skip the autonomous pipeline") or leave.
 
 ### ISSUE-CREATIVE-AUDIT-20260622: Creative Studio button audit incomplete + FLASH/REFINE UX confusion
+
 - **Status:** ✅ RESOLVED (parked when session pivoted to the PLP rename)
 - **Severity:** 🟡 LOW (verification + UX polish)
 - **Summary:** A full "does every button work / is it in the right place / named right" audit of Creative Studio was started but not finished. VERIFIED wired: top tabs (Generate/Canvas/Video/Omni Remix/Showroom/Keyframes → real components), right controls (Builder/Brand/History/Versions/Roster/PLP/Projector), and CanvasHeader (Describe field + Refine → `handleMagicFill`). NOT yet traced end-to-end: left tool rail (pointer/sparkle/text/undo/redo/ID/color palette/settings) and right action rail (image/grid/layers/save/sparkle/play/X) in `AnnotationPalette.tsx` / `CanvasActionRail.tsx`.
 - **UX note:** In `CanvasHeader.tsx`, "FLASH" sits next to "REFINE" and reads like a second generate button, but it is actually a High-Fidelity (Pro) ↔ High-Speed (Flash) quality toggle. Consider relabeling/regrouping so it doesn't read as a generate action.
 
 ### ISSUE-LANDING-USEEFFECT-20260622: trivial unused `useEffect` import leftover
+
 - **Status:** ✅ FIXED
 - **Severity:** 🟢 TRIVIAL (1 lint warning, no error)
 - **File:** `packages/landing/src/page.tsx:3`
@@ -6437,7 +6444,7 @@ Therefore, no fix can be proposed or implemented.
 - **Location:** `packages/firebase/firestore.rules` L624 (`match /history/{historyId}` read rule) falling through to L1161 deny-all; consumer is the CreativeSlice history subscription (`onSnapshot` list on `/history`).
 - **Details:** On EVERY boardroom/creative page load during the full E2E run (`firebase emulators:exec --only firestore "npm run test:e2e"`), the browser console throws:
   `[CreativeSlice] History subscription error: FirebaseError: evaluation error at L624:22 for 'list' @ L624, false for 'list' @ L1161, false for 'list' @ L624, false for 'list' @ L1161`.
-  This is the **evolved successor** to ISSUE-A-004 (do NOT edit A-004's audit trail). A-004's `'userId' in resource.data` patch stopped the *"Property userId is undefined"* exception, but the `list`/collection-query is now cleanly **denied** (rule resolves `false`), so generated-content history never loads for the user. The error is silent to the rules engine but surfaces as a permission-denied in the app's subscription handler.
+  This is the **evolved successor** to ISSUE-A-004 (do NOT edit A-004's audit trail). A-004's `'userId' in resource.data` patch stopped the _"Property userId is undefined"_ exception, but the `list`/collection-query is now cleanly **denied** (rule resolves `false`), so generated-content history never loads for the user. The error is silent to the rules engine but surfaces as a permission-denied in the app's subscription handler.
 - **Expected (acceptance):** The Creative generated-content History either (a) loads the user's own history without a permission error, or (b) shows an honest empty state — with NO `FirebaseError` thrown in console on load. Root-cause options for B to weigh: the `onSnapshot` query on `/history` must be constrained with a `where('userId','==',uid)` (or `orgId`) filter the rules can statically authorize for `list`, OR the `/history` read/list rule must be restructured to permit owner-scoped list queries. Apply the SAME fix to the 78+ other collections D flagged on A-004 that still use bare `resource.data.userId == request.auth.uid`.
 - **Honest fallback:** If owner-scoped list cannot be authorized, the subscription must degrade to an honest empty/"history unavailable" state — never a thrown FirebaseError on load, never broadened rules (`allow read: if true`).
 - **DO NOT:** Do not silence the console error by swallowing the exception without fixing the query/rule. Do not loosen rules to deny-nothing. Do not edit ISSUE-A-004's Verification Findings.
@@ -6532,6 +6539,7 @@ Therefore, no fix can be proposed or implemented.
 - **Next Steps / Recommended Swarm Audit:** Launch a specialized testing agent to execute real-world simulation runs under artificial network constraints (throttling, latency injection) to audit pairing state transitions. Verify that locking/unlocking the device cleanly triggers silent recovery.
 
 ### ISSUE-448: Audio-connected Creative handoff crashes DirectGenerationTab before canvas renders
+
 - **Status:** ✅ RESOLVED
 - **Severity:** 🔴 HIGH
 - **Dimension:** Console | DataFlow | AssetGen
@@ -6547,6 +6555,7 @@ Therefore, no fix can be proposed or implemented.
 - **Dimensional Data:** Scoped runner: unit/integration 21/21 files and 135/135 tests passed; connected E2E failed 2/17. Creative failure: `e2e/creative-studio.spec.ts:56`, screenshot `test-results/creative-studio-Creative-S-a81a5-prompt---generate---display-chromium/test-failed-1.png`, error context `test-results/creative-studio-Creative-S-a81a5-prompt---generate---display-chromium/error-context.md`.
 
 ### ISSUE-449: Audio-connected Distribution metadata submission never reaches done state
+
 - **Status:** ✅ RESOLVED
 - **Severity:** 🔴 HIGH
 - **Dimension:** DataFlow | State | API | ProdParity
@@ -6564,6 +6573,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-450: Untracked and Incomplete Notes Module and NotesTools in workspace
+
 - **Status:** ✅ RESOLVED
 - **Severity:** 🟡 MEDIUM
 - **Dimension:** Architecture | Feature Completeness
@@ -6573,6 +6583,7 @@ Therefore, no fix can be proposed or implemented.
 - **Next Steps:** Evaluate whether the Notes feature is part of the core roadmap. If so, register it in the sidebar navigation and wire its service integrations. Otherwise, prune/clean the files.
 
 ### ISSUE-451: LLM API Rate Limits / 429 Quota Exhaustion in `/abcd` loops
+
 - **Status:** ✅ RESOLVED
 - **Severity:** 🟡 MEDIUM
 - **Dimension:** Developer Experience | Agent Swarm Loops
@@ -6580,14 +6591,15 @@ Therefore, no fix can be proposed or implemented.
 - **Next Steps:** Introduce robust exponential-backoff retries directly into the agent request wrappers or enforce a global throttle/delay in `A2AClient` during swarm execution.
 
 ### ISSUE-452: Systemic CI Deployment Pipeline Failures
+
 - **Status:** ✅ RESOLVED
 - **Severity:** 🔴 HIGH
 - **Dimension:** CI/CD | Infrastructure
-- **Summary:** Multiple GitHub Actions CI runs are failing deployment stages due to environment token expirations or outdated Node runtime warnings. 
+- **Summary:** Multiple GitHub Actions CI runs are failing deployment stages due to environment token expirations or outdated Node runtime warnings.
 - **Next Steps:** Debug the integration secrets in the repo settings and ensure App Check keys are properly synchronized.
 
-
 ### ISSUE-CI-27988974179: CI Pipeline Failure (Build and Test)
+
 - **Status:** ✅ RESOLVED
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
@@ -6596,6 +6608,7 @@ Therefore, no fix can be proposed or implemented.
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
 
 ### ISSUE-CI-27989145213: CI Pipeline Failure (Build and Test)
+
 - **Status:** ✅ RESOLVED
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
@@ -6606,6 +6619,7 @@ Therefore, no fix can be proposed or implemented.
 ---
 
 ### ISSUE-A-014: E2E road-manager command center locator ambiguity strict mode violation
+
 - **Status:** ✅ RESOLVED
 - **Severity:** 🔴 HIGH
 - **Location:** `e2e/road-manager.spec.ts:171`
@@ -6616,6 +6630,7 @@ Therefore, no fix can be proposed or implemented.
 - **Evidence:** `strict mode violation: locator('text=Command Center') resolved to 2 elements` at `e2e/road-manager.spec.ts:171:59`.
 
 ### ISSUE-A-015: E2E scratch_test date of birth input field timeout
+
 - **Status:** ✅ RESOLVED
 - **Severity:** 🔴 HIGH
 - **Location:** `e2e/scratch_test.spec.ts:156`
@@ -6626,6 +6641,7 @@ Therefore, no fix can be proposed or implemented.
 - **Evidence:** `Error: locator.fill: Test timeout of 60000ms exceeded. waiting for locator('input[type="date"]')` at `e2e/scratch_test.spec.ts:156:46`.
 
 ### ISSUE-A-016: E2E detroit-techno-onboarding / stress-test prompt-input visibility timeout
+
 - **Status:** ✅ RESOLVED
 - **Severity:** 🔴 HIGH
 - **Location:** `e2e/detroit-techno-onboarding.spec.ts:587` & `e2e/stress-test-new-user.spec.ts:95`
@@ -6636,6 +6652,7 @@ Therefore, no fix can be proposed or implemented.
 - **Evidence:** `expect(locator).toBeVisible() failed. Locator: locator('[data-testid="prompt-input"]')` in `e2e/detroit-techno-onboarding.spec.ts` and `e2e/stress-test-new-user.spec.ts`.
 
 ### ISSUE-A-017: E2E creative-studio canvas container visibility timeout
+
 - **Status:** ✅ RESOLVED
 - **Severity:** 🔴 HIGH
 - **Location:** `e2e/creative-studio.spec.ts:56`
@@ -6646,6 +6663,7 @@ Therefore, no fix can be proposed or implemented.
 - **Evidence:** `TypeError: Cannot read properties of undefined (reading 'indexOf') at /src/modules/creative/hooks/useDirectGeneration.ts:148:16` and E2E timeout on `.canvas-container`.
 
 ### ISSUE-A-018: E2E live_tests_runner agent check failures
+
 - **Status:** ✅ RESOLVED
 - **Severity:** 🔴 HIGH
 - **Location:** `e2e/live_tests_runner.spec.ts:86`
@@ -6656,6 +6674,7 @@ Therefore, no fix can be proposed or implemented.
 - **Evidence:** `expect(received).toBe(expected) received: 5, 5, 1, 11, 8, 6` at `e2e/live_tests_runner.spec.ts:86:31`.
 
 ### ISSUE-A-019: Creative canvas export fails on tainted storage images
+
 - **Status:** ✅ RESOLVED
 - **Severity:** 🔴 HIGH
 - **Location:** `packages/renderer/src/modules/creative/services/CanvasOperationsService.ts`
@@ -6666,6 +6685,7 @@ Therefore, no fix can be proposed or implemented.
 - **Evidence:** `Error: [safeStorageFetch] All fetch strategies failed for: https://firebasestorage.googleapis.com/...` and `Tainted canvases may not be exported`.
 
 ### ISSUE-A-020: Daisy Chain handoff is opaque and looks like it may be stuck
+
 - **Status:** ✅ RESOLVED
 - **Severity:** 🟡 MEDIUM
 - **Location:** `packages/renderer/src/modules/creative/components/DaisyChainControls.tsx` and `packages/renderer/src/modules/creative/video/VideoWorkflow.tsx`
@@ -6676,6 +6696,7 @@ Therefore, no fix can be proposed or implemented.
 - **Evidence:** User report: clicking the Daisy Chain/send flow opens the video editor, but the image association is not visible and the button just flashes without making progress obvious.
 
 ### ISSUE-A-021: Video renders save to Documents with weak completion feedback
+
 - **Status:** ✅ RESOLVED
 - **Severity:** 🟡 MEDIUM
 - **Location:** `packages/main/src/handlers/video.ts`, `packages/main/src/services/ElectronRenderService.ts`, `packages/renderer/src/modules/creative/video/VideoWorkflow.tsx`
@@ -6686,6 +6707,7 @@ Therefore, no fix can be proposed or implemented.
 - **Evidence:** `video:save-asset` writes to `app.getPath('documents')/indii/Assets/Video`, and `video:render` is a single awaited render call rather than an intentional infinite loop.
 
 ### ISSUE-A-022: Project Assets panel hides generated video artifacts
+
 - **Status:** ✅ RESOLVED
 - **Severity:** 🟡 MEDIUM
 - **Location:** `packages/renderer/src/modules/creative/components/CreativeGallery.tsx` and `packages/renderer/src/modules/creative/video/VideoWorkflow.tsx`
@@ -6696,6 +6718,7 @@ Therefore, no fix can be proposed or implemented.
 - **Evidence:** Screenshot shows `Project Assets` with 17 items and no obvious video output despite the video workflow being exercised.
 
 ### ISSUE-A-023: Visual autorater correction loop reads like an endless retry
+
 - **Status:** ✅ RESOLVED
 - **Severity:** 🟡 MEDIUM
 - **Location:** `packages/renderer/src/services/agent/governance/VisualOutputAutorater.ts`, `packages/renderer/src/services/agent/AgentService.ts`
@@ -7022,7 +7045,7 @@ Therefore, no fix can be proposed or implemented.
 - **Status:** ✅ FIXED
 - **Severity:** 🟡 MEDIUM
 - **Module:** services / MembershipService
-- **Evidence:** `packages/renderer/src/services/MembershipService.ts:511` — `logger.info(\`...offline spend of $${offlineSpend.toFixed(4)}...\`)` — this is a logger call, not a Firestore write, so low direct risk. BUT lines 563-565 use `Math.round(x * 100)` and then name variables `Fixed` (e.g., `currentSpendFixed`) while log lines 572 still call `.toFixed(2)` on the raw float for display purposes.
+- **Evidence:** `packages/renderer/src/services/MembershipService.ts:511` — `logger.info(\`...offline spend of $${offlineSpend.toFixed(4)}...\`)`— this is a logger call, not a Firestore write, so low direct risk. BUT lines 563-565 use`Math.round(x \* 100)`and then name variables`Fixed`(e.g.,`currentSpendFixed`) while log lines 572 still call`.toFixed(2)` on the raw float for display purposes.
 - **Impact:** Minor inconsistency — the naming convention implies cents-as-int but the values are mixed. No direct data loss but creates confusion and audit risk.
 - **Fix direction:** Standardize: all spend values stored as integer cents in Zustand/Firestore, converted to display string only at render time via a shared `formatCents()` utility.
 - **Fix:** Renamed all internal budget check variables in `checkBudget` from `Fixed` suffix to `Cents` suffix (e.g. `currentSpendCents`) to make it explicit that integer cents are used to bypass floating point errors, ensuring clarity in database audit logs and memory.
@@ -7038,24 +7061,24 @@ Therefore, no fix can be proposed or implemented.
 > wiring / IA / layout defects surfaced because the broken features blocked him from ever reaching them.
 > **Test agent logged these; do NOT fix in this pass. Fix agent: read ISSUE-478 FIRST — it is the
 > trunk; 480/482/483/486 are branches of it.** Recurrence of ERROR_LEDGER `2026-04-15 Creative Studio
-> Blank Canvas (CORS)` — apply that documented fix.
+Blank Canvas (CORS)` — apply that documented fix.
 
 ### Triage summary
 
-| # | Title | Sev | Root |
-|---|---|---|---|
-| 478 | Storage bucket has NO CORS → tainted canvas → all `toDataURL` exports crash | 🔴 CRIT | trunk |
-| 479 | "Creative Director" chat is blind — `prepareVisualPrompt()` never called | 🟠 HIGH | wiring |
-| 480 | Undo / Redo non-functional (stale enable-state + restore re-taint) | 🟠 HIGH | 478 + wiring |
-| 481 | Agent "KB offline / proceeding without domain knowledge" on normal turn | 🟡 MED | needs confirm |
-| 482 | Save Canvas + Flatten Canvas → "An error occurred while flattening" | 🟠 HIGH | 478 |
-| 483 | "Send to Video Editor" drops the frame → lands in empty Director's Chair | 🟠 HIGH | wiring/UX |
-| 484 | Multi-format rail button errors | 🟡 MED | needs confirm (likely 478) |
-| 485 | SHOWROOM tab — never tested + layout overlap (asset card covers product pills) | 🟡 MED | audit + layout |
-| 486 | Blank / partial canvas on reopen (Magic Edit Mode: Purple) | 🟠 HIGH | 478 (restore) |
-| 487 | KEYFRAMES "Sequence Architect" (AutonomousLab) — never tested | 🟡 MED | audit |
+| #   | Title                                                                                        | Sev     | Root                            |
+| --- | -------------------------------------------------------------------------------------------- | ------- | ------------------------------- |
+| 478 | Storage bucket has NO CORS → tainted canvas → all `toDataURL` exports crash                  | 🔴 CRIT | trunk                           |
+| 479 | "Creative Director" chat is blind — `prepareVisualPrompt()` never called                     | 🟠 HIGH | wiring                          |
+| 480 | Undo / Redo non-functional (stale enable-state + restore re-taint)                           | 🟠 HIGH | 478 + wiring                    |
+| 481 | Agent "KB offline / proceeding without domain knowledge" on normal turn                      | 🟡 MED  | needs confirm                   |
+| 482 | Save Canvas + Flatten Canvas → "An error occurred while flattening"                          | 🟠 HIGH | 478                             |
+| 483 | "Send to Video Editor" drops the frame → lands in empty Director's Chair                     | 🟠 HIGH | wiring/UX                       |
+| 484 | Multi-format rail button errors                                                              | 🟡 MED  | needs confirm (likely 478)      |
+| 485 | SHOWROOM tab — never tested + layout overlap (asset card covers product pills)               | 🟡 MED  | audit + layout                  |
+| 486 | Blank / partial canvas on reopen (Magic Edit Mode: Purple)                                   | 🟠 HIGH | 478 (restore)                   |
+| 487 | KEYFRAMES "Sequence Architect" (AutonomousLab) — never tested                                | 🟡 MED  | audit                           |
 | 488 | Information architecture — too many incoherent tabs; PLP/VERSIONS float over unrelated views | 🟠 HIGH | DESIGN DECISION (needs William) |
-| 489 | VERSIONS vs PLP unclear — "15 versions of what?"; both undocumented in UI | 🟡 MED | UX clarity |
+| 489 | VERSIONS vs PLP unclear — "15 versions of what?"; both undocumented in UI                    | 🟡 MED  | UX clarity                      |
 
 ### ISSUE-478: Storage bucket has NO CORS config → Fabric canvas tainted → every `toDataURL` export crashes (MASTER ROOT CAUSE)
 
@@ -7187,6 +7210,7 @@ Therefore, no fix can be proposed or implemented.
 > `safeStorageFetch`/`fetchAsBase64` → blob/data-URL approach. Copy the working pattern; don't invent a new one.
 >
 > **Surface independence map (so fixers don't chase phantom bugs):**
+>
 > - Taint-dependent (all fixed by 478): Magic Edit/REFINE, Save, Flatten, Send-to-Video frame, undo/redo restore, blank-on-reopen, multi-format.
 > - **Independent of 478** (cloud-function paths, work even while canvas is broken — verify separately): GENERATE (`generateImageV3`/`generateVideo`, `useDirectGeneration.ts:320,392` — has honest timeout/quota/fail toasts `:465-469`), OMNI REMIX (`generateOmniRemixV3`), CANVAS tab.
 > - Wiring/IA/infra (separate roots): 479 chat-blind, 483 video handoff, 488/491 IA, 490 roster-web, 492 panel-overlap.
@@ -7279,16 +7303,18 @@ Therefore, no fix can be proposed or implemented.
 #### 🔬 EXPANDED RULE-OUT — 2026-06-24 (Opus, gcloud + lockfile forensics): cause is NOT statically determinable
 
 Systematically compared the broken state (`main`, post-#196) against the last GREEN deploy (`v1.64.3`/`fba9d8ab7`). **All identical:**
+
 - firebase-tools version: 15.19.0 (same as v1.64.3). | firebase-tools auth subtree: `gaxios@6.7.1` (unchanged; the new `gaxios@7`/`gcp-metadata@8.1.3` are under `@google-cloud/storage`, off the auth path). | JWT/crypto chain `gtoken`/`jsonwebtoken@9.0.10`/`ecdsa-sig-formatter@1.0.11`: unchanged. | `deploy.yml`: unchanged.
-- **GCP side (verified via gcloud as wiil@indii.music):** CI SA `github-actions@indii-music-founder.iam.gserviceaccount.com` has `roles/owner`; its key created 2026-06-01T20:30:18 **never expires, not disabled, present**; the `FIREBASE_SERVICE_ACCOUNT` GitHub secret was last set 2026-06-01T20:30:24 (6s after that key → secret holds that valid key). Secret unchanged since.
+- **GCP side (verified via gcloud as <wiil@indii.music>):** CI SA `github-actions@indii-music-founder.iam.gserviceaccount.com` has `roles/owner`; its key created 2026-06-01T20:30:18 **never expires, not disabled, present**; the `FIREBASE_SERVICE_ACCOUNT` GitHub secret was last set 2026-06-01T20:30:24 (6s after that key → secret holds that valid key). Secret unchanged since.
 
 **Conclusion:** every input that produced a green deploy on 2026-06-23 is byte-identical today, yet `firebase` CLI reports `Failed to authenticate`. This is not resolvable by more static analysis — it requires **runtime instrumentation in the deploy job.**
-- **Note on `npx`:** deploy jobs run `npx firebase ...` after only a *cache restore* (no `npm ci`). If the node_modules cache misses (and #196 changed `package-lock.json`, which is part of the cache key `node-modules-${os}-${hashFiles('package-lock.json')}`), `npx` may fetch a DIFFERENT firebase-tools from npm, bypassing the pin. **Unverified but high-priority suspect.**
+
+- **Note on `npx`:** deploy jobs run `npx firebase ...` after only a _cache restore_ (no `npm ci`). If the node_modules cache misses (and #196 changed `package-lock.json`, which is part of the cache key `node-modules-${os}-${hashFiles('package-lock.json')}`), `npx` may fetch a DIFFERENT firebase-tools from npm, bypassing the pin. **Unverified but high-priority suspect.**
 - **Decisive next step (instrument, don't guess):** add to the failing deploy step, before the deploy command:
   - `npx firebase --version` (proves which firebase-tools actually runs — confirms/denies the npx-fetch theory)
   - `node -e "console.log(!!process.env.GOOGLE_APPLICATION_CREDENTIALS, require('fs').existsSync(process.env.GOOGLE_APPLICATION_CREDENTIALS||''))"` (proves the cred file is set + present at deploy time)
   - run the deploy with `--debug` and surface the underlying auth error.
-  Then re-run; the log will reveal the true cause. This is a safe, low-risk diagnostic change (one CI run, no prod side effects beyond the already-failing deploy attempt).
+    Then re-run; the log will reveal the true cause. This is a safe, low-risk diagnostic change (one CI run, no prod side effects beyond the already-failing deploy attempt).
 - **Robust alternative fix (if instrumentation confirms npx/ADC flakiness):** switch hosting deploys to the official `FirebaseExtended/action-hosting-deploy` action (takes `firebaseServiceAccount` directly), or run `npm ci` in the deploy jobs so `npx` uses the pinned local firebase-tools. **API Credentials Policy:** do NOT rotate the SA key / secret without William's explicit approval — the key is valid, so rotation is not indicated.
 
 ---
@@ -7298,11 +7324,13 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 > Competitive scan (2026) to ground the IA "audit + propose" decision. Not bugs — reference patterns for the junior agent's consolidation proposal to William. Sources at end.
 
 **What the leaders do (Photoshop/Firefly, Krea, Recraft, Runway):**
-1. **Contextual task bar, not separate tabs.** Edit controls + model picker appear *on the canvas* when you make a selection (Photoshop "Contextual Task Bar"). indii's "Magic Edit Mode: Red" + REFINE/SPEED is close, but model choice (Flash/Pro) and actions are scattered. → Consolidate edit controls into one contextual bar; don't make users tab-hop.
+
+1. **Contextual task bar, not separate tabs.** Edit controls + model picker appear _on the canvas_ when you make a selection (Photoshop "Contextual Task Bar"). indii's "Magic Edit Mode: Red" + REFINE/SPEED is close, but model choice (Flash/Pro) and actions are scattered. → Consolidate edit controls into one contextual bar; don't make users tab-hop.
 2. **History/versions = nondestructive layers on the canvas, recording prompt + model.** Each generative edit lands on its own auto-masked layer that stores the prompt and the model used (Photoshop). This is a stronger model than indii's separate floating VERSIONS panel + DesignHistory + PromptHistory (ISSUE-496). → Fold the three history surfaces into one layers/versions concept tied to the canvas, not floating panels.
 3. **Canvas-first, not chat-box.** Krea explicitly markets "real-time iteration on a canvas instead of a chat box." indii has a chat (currently blind — ISSUE-479) AND a canvas. → Decide: make the chat canvas-aware (479) OR make direct canvas tools primary and demote chat. Leaders trend toward direct manipulation.
 4. **One generation surface with a model picker — not 6 tabs.** Krea unifies images/video/3D (Flux, Imagen, Kling, Veo) in one canvas with a model dropdown. indii splits GENERATE / VIDEO / OMNI REMIX / SHOWROOM / KEYFRAMES across top tabs (ISSUE-488/491). → Strong precedent for collapsing these into one workspace + mode/model selector.
 5. **"Move fluidly between generative and pixel editing without disrupting workflow."** A single continuous workspace. indii's tab-switching + overlapping floating panels (ISSUE-492) breaks this. → The proposal should optimize for one uninterrupted surface.
+
 - **Deliverable for junior agent:** use these 5 patterns as the rubric in the 488 consolidation proposal; present William 2-3 options (e.g., "Krea-style single canvas + model picker" vs "Photoshop-style contextual bar + layers history" vs "minimal: keep tabs, fix overlap only"). Honor MEMORY: no buzzwords, YAGNI.
 - **Sources:** [Photoshop Generative Fill (Adobe Help)](https://helpx.adobe.com/photoshop/desktop/create-open-import-images/create-images/edit-images-with-generative-fill.html); [Photoshop Beta Expands Generative Fill (Adobe Blog 2025)](https://blog.adobe.com/en/publish/2025/09/25/photoshop-beta-expands-generative-fillmore-ai-models-more-possibilities); [Krea Edit docs](https://krea.ai/docs/features/edit); [Krea AI Creative Suite](https://www.krea.ai/)
 
@@ -7310,16 +7338,16 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ## ✅ RESOLUTION STATUS — 2026-06-24 (Opus, fixes merged to main)
 
-| Issue | Status | PR |
-|---|---|---|
-| 498 (CI deploy auth) | ✅ FIXED & MERGED — prod deploy green again. Root cause was NOT firebase-tools version (deploys broke ~8 AM, before the 10:23 AM bump); real fix = `npm install` in deploy jobs + `npx --no-install` so the pinned firebase-tools is used. Earlier failure was transient/cache. | #197, #202/#203 (debug add/remove) |
-| 478 / 482 / 480 (canvas taint, save/flatten, undo-redo) | ✅ FIXED & MERGED | #198 |
-| 479 / 490 / 492 (chat sight, roster web, panel overlap) | ✅ FIXED & MERGED | #199 |
-| 495 / 497 (PLP ad-spend gate + honest failure) | ✅ FRONTEND FIXED & MERGED — gate + no fabricated success. Backend build tracked as **ISSUE-499 (BLOCKED on Meta Business account)**. | #200 |
-| 485 (Showroom layout overlap) | ✅ FIXED & MERGED | #201 |
-| 484 (multi-format error) / 486 (blank reopen) | ✅ RESOLVED via 478 trunk (both were taint symptoms) — verify live | #198 |
-| 481 (KB offline) / 487 (Keyframes) / 493 (Omni) | ⏳ OPEN — need live runtime verification, not code-fixable statically | — |
-| 488 / 489 / 491 / 496 (IA consolidation) | ⏳ OPEN — William's decision: audit + propose (IA reference above) | — |
+| Issue                                                   | Status                                                                                                                                                                                                                                                                          | PR                                 |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| 498 (CI deploy auth)                                    | ✅ FIXED & MERGED — prod deploy green again. Root cause was NOT firebase-tools version (deploys broke ~8 AM, before the 10:23 AM bump); real fix = `npm install` in deploy jobs + `npx --no-install` so the pinned firebase-tools is used. Earlier failure was transient/cache. | #197, #202/#203 (debug add/remove) |
+| 478 / 482 / 480 (canvas taint, save/flatten, undo-redo) | ✅ FIXED & MERGED                                                                                                                                                                                                                                                               | #198                               |
+| 479 / 490 / 492 (chat sight, roster web, panel overlap) | ✅ FIXED & MERGED                                                                                                                                                                                                                                                               | #199                               |
+| 495 / 497 (PLP ad-spend gate + honest failure)          | ✅ FRONTEND FIXED & MERGED — gate + no fabricated success. Backend build tracked as **ISSUE-499 (BLOCKED on Meta Business account)**.                                                                                                                                           | #200                               |
+| 485 (Showroom layout overlap)                           | ✅ FIXED & MERGED                                                                                                                                                                                                                                                               | #201                               |
+| 484 (multi-format error) / 486 (blank reopen)           | ✅ RESOLVED via 478 trunk (both were taint symptoms) — verify live                                                                                                                                                                                                              | #198                               |
+| 481 (KB offline) / 487 (Keyframes) / 493 (Omni)         | ⏳ OPEN — need live runtime verification, not code-fixable statically                                                                                                                                                                                                           | —                                  |
+| 488 / 489 / 491 / 496 (IA consolidation)                | ⏳ OPEN — William's decision: audit + propose (IA reference above)                                                                                                                                                                                                              | —                                  |
 
 **Remaining work:** (1) Meta ad backend functions for PLP — see ISSUE-499 (BLOCKED on Meta account); (2) live-verify 481/487/493; (3) IA proposal for William. All other Creative Director defects are fixed and on main.
 
@@ -7328,18 +7356,21 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 ## ISSUE-499: Build PLP Meta Ads backend (4 cloud functions) — BLOCKED on Meta Business account
 
 - **Status:** 🚧 BLOCKED / PLANNED — **Severity:** 🟠 HIGH (feature incomplete) — **Module:** `packages/firebase` + `services/marketing/AdAutomationService.ts`
-- **Decision (William, 2026-06-24):** PLP should be a *real, gated* ad pipeline. **But William has no Meta Business account available right now**, so this is parked until he does. Do NOT start until the prerequisites below exist. The financial-safety frontend (confirmation gate + honest failure, ISSUE-495/497) is already merged (#200), so PLP is safe in the meantime — it generates variants and reports honestly that no campaign launched.
+- **Decision (William, 2026-06-24):** PLP should be a _real, gated_ ad pipeline. **But William has no Meta Business account available right now**, so this is parked until he does. Do NOT start until the prerequisites below exist. The financial-safety frontend (confirmation gate + honest failure, ISSUE-495/497) is already merged (#200), so PLP is safe in the meantime — it generates variants and reports honestly that no campaign launched.
 - **What's missing:** the frontend (`AdAutomationService.ts`) calls four Firebase callables that **do not exist**: `createAdCampaign` (`:59`), `createAdSet` (`:83`), `createAd` (`:114`), `getAdInsights` (`:144`) — plus `pauseAdCampaign` (`:215`) used by the CPS kill-switch. They must be implemented in `packages/firebase/src` against the **Meta Marketing API** (Graph API).
 
 ### Prerequisites (William provides — none are in the repo, all are secrets)
+
 1. **Meta Developer App** → `META_APP_ID` + `META_APP_SECRET`.
 2. **Long-lived access token** with `ads_management` + `ads_read` scopes — strongly prefer a **Meta Business System User token** (doesn't expire like user tokens) → `META_ACCESS_TOKEN`.
 3. **Ad Account ID** → `META_AD_ACCOUNT_ID` (format `act_XXXXXXXXX`).
 4. **Facebook Page ID** + connected **Instagram account ID** → `META_PAGE_ID`, `META_IG_ACCOUNT_ID` (ads need a page/IG identity).
 5. Meta app **Advanced Access** for `ads_management` (requires Meta App Review) before it can run on accounts other than the developer's own.
+
 - **Where they live:** Firebase **Secret Manager** (e.g., `gcloud secrets create META_ACCESS_TOKEN …`), bound to the functions via `defineSecret`. **Never** in code or `.env` committed to git (per API Credentials Policy).
 
 ### Implementation plan (when unblocked)
+
 - **Region:** deploy to `us-west1` (frontend uses `functionsWest1` — `AdAutomationService.ts:53`). Match exactly or the callables 404.
 - **Function 1 — `createAdCampaign`** ({platform,dailyBudget,totalDays} → {campaignId}): `POST /v23.0/{ad_account_id}/campaigns` with `objective` (e.g. `OUTCOME_TRAFFIC`/`OUTCOME_AWARENESS`), `status:'PAUSED'` (create paused — never auto-activate spend), `special_ad_categories:[]`.
 - **Function 2 — `createAdSet`** ({campaignId,platform,targetAgeRange,targetInterests,placements} → {adSetId}): `POST /{ad_account_id}/adsets` with `daily_budget` (cents), `billing_event`, `optimization_goal`, `targeting` (age range, interests, the Instagram placements the frontend already enforces at `:86-88`), `status:'PAUSED'`.
@@ -7350,11 +7381,13 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Asset note:** Meta needs media uploaded to the ad account (image_hash / video_id), not just a URL — add an upload step (`/{ad_account_id}/adimages` or `/advideos`) before creating the creative.
 
 ### Safety requirements (must keep)
+
 - All created objects start **`PAUSED`** — launching to active/spending must be a separate explicit user action, never automatic. (Complements the ISSUE-495 confirmation gate.)
 - Make budget/duration/targeting/copy **user-editable** before any campaign is created (still hardcoded at `CreativeStudio.tsx:218-224` — fix as part of this).
 - Replace the placeholder ad copy ("Discover the Magic N" at `CreativeStudio.tsx:206-208`) with real, user-authored copy.
 
 ### Acceptance criteria
+
 - [ ] With valid Meta secrets, hitting PLP + confirming the gate creates a real PAUSED campaign/adset/ads visible in Meta Ads Manager.
 - [ ] No spend occurs without a deliberate activation step.
 - [ ] Missing/invalid creds → honest error toast, no fake success (already true on the frontend).
@@ -7587,6 +7620,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Files:** `docs/handoff/video-studio-implementation-brief.md`.
 
 ### ISSUE-CI-28249067854: CI Pipeline Failure (Deploy to Firebase Hosting)
+
 - **Status:** ✅ FIXED (36105e719)
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
@@ -7598,6 +7632,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Files:** `packages/landing/src/App.test.tsx`, `packages/firebase/src/__tests__/image_gen.test.ts`, `packages/renderer/src/services/__tests__/HiggsfieldParity.integration.test.ts`, `packages/renderer/src/modules/creative/components/CreativeCanvas.interaction.test.tsx`, `packages/renderer/src/modules/creative/components/__tests__/CreativeCanvas.test.tsx`
 
 ### ISSUE-CI-28328260508: CI Pipeline Failure (Deploy to Firebase Hosting)
+
 - **Status:** ✅ RESOLVED
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
@@ -7606,6 +7641,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
 
 ### ISSUE-CI-28328065016: CI Pipeline Failure (Deploy to Firebase Hosting)
+
 - **Status:** ✅ RESOLVED
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
@@ -7614,6 +7650,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
 
 ### ISSUE-CI-28327872534: CI Pipeline Failure (Deploy to Firebase Hosting)
+
 - **Status:** ✅ RESOLVED
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
@@ -7622,6 +7659,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
 
 ### ISSUE-CI-28327640504: CI Pipeline Failure (Deploy to Firebase Hosting)
+
 - **Status:** ✅ RESOLVED
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
@@ -7630,6 +7668,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
 
 ### ISSUE-CI-28323668753: CI Pipeline Failure (Deploy to Firebase Hosting)
+
 - **Status:** ✅ RESOLVED
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
@@ -7638,6 +7677,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
 
 ### ISSUE-CI-28322057269: CI Pipeline Failure (Deploy to Firebase Hosting)
+
 - **Status:** ✅ RESOLVED
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
@@ -7646,6 +7686,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
 
 ### ISSUE-CI-28321176508: CI Pipeline Failure (Deploy to Firebase Hosting)
+
 - **Status:** ✅ RESOLVED
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
@@ -7654,6 +7695,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
 
 ### ISSUE-CI-28343092574: CI Pipeline Failure (Deploy to Firebase Hosting)
+
 - **Status:** ✅ RESOLVED
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
@@ -7662,6 +7704,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
 
 ### ISSUE-CI-28336563467: CI Pipeline Failure (Deploy to Firebase Hosting)
+
 - **Status:** ✅ RESOLVED
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
@@ -7670,6 +7713,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
 
 ### ISSUE-CI-28332900258: CI Pipeline Failure (Health Check Monitor)
+
 - **Status:** ✅ RESOLVED
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
@@ -7678,6 +7722,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
 
 ### ISSUE-CI-28329007272: CI Pipeline Failure (Deploy to Firebase Hosting)
+
 - **Status:** ✅ RESOLVED
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
@@ -7686,6 +7731,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
 
 ### ISSUE-CI-28372704271: CI Pipeline Failure (Deploy to Firebase Hosting)
+
 - **Status:** ✅ RESOLVED
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
@@ -7753,12 +7799,12 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Evidence:** `waitForFunction` checking `activeAgents.includes('creative')` timed out.
 - **Files:** `e2e/workflow-strategic-goal.spec.ts`
 
-
 ---
 
 ## Founder Funnel & Product Platinum — Imported from Codex Agent (2026-06-29)
 
 ### ISSUE-528: Update Founder Site CTA Language
+
 - **Status:** ✅ FIXED (2026-06-29)
 - **Severity:** 🔴 HIGH
 - **Source:** Codex/2026-06-29 Issue #1
@@ -7771,6 +7817,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 ---
 
 ### ISSUE-529: Clarify Public Founder Offer Copy
+
 - **Status:** ✅ FIXED (2026-06-29)
 - **Severity:** 🔴 HIGH
 - **Source:** Codex/2026-06-29 Issue #2
@@ -7783,6 +7830,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 ---
 
 ### ISSUE-530: Add Tax/Software Expense Disclaimer Under Founder Access CTA
+
 - **Status:** ✅ FIXED (2026-06-29)
 - **Severity:** 🟡 MEDIUM
 - **Source:** Codex/2026-06-29 Issue #3
@@ -7795,6 +7843,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 ---
 
 ### ISSUE-531: Keep Documentation Paths Private Until Commitment Step
+
 - **Status:** ✅ FIXED (2026-06-29)
 - **Severity:** 🟡 MEDIUM
 - **Source:** Codex/2026-06-29 Issue #4
@@ -7806,17 +7855,19 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 ---
 
 ### ISSUE-532: Build "I Want To Get Involved" Commitment Flow
+
 - **Status:** ✅ FIXED (2026-06-29)
 - **Severity:** 🔴 HIGH
 - **Source:** Codex/2026-06-29 Issue #5
 - **Location:** `packages/renderer/src/modules/` (existing marketing panel)
-- **Summary:** The "I Want To Get Involved" button/tab should lead to a commitment flow: (1) choose path (Business Software Purchase or Founding Support), (2) review relevant agreement, (3) pay now or talk first via wiil@indii.music.
+- **Summary:** The "I Want To Get Involved" button/tab should lead to a commitment flow: (1) choose path (Business Software Purchase or Founding Support), (2) review relevant agreement, (3) pay now or talk first via <wiil@indii.music>.
 - **Expected (acceptance):** Full flow navigable from the existing marketing panel, both paths accessible, payment and "Talk First" contact path functional.
 - **Honest fallback:** If Stripe not wired, show agreement review + contact form only. Never fake a payment confirmation.
 
 ---
 
 ### ISSUE-533: Create Two Founder Agreement Templates
+
 - **Status:** ✅ FIXED (2026-06-29)
 - **Severity:** 🔴 HIGH
 - **Source:** Codex/2026-06-29 Issue #6
@@ -7828,6 +7879,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 ---
 
 ### ISSUE-534: Agreement — Founder Benefits In Both Paths
+
 - **Status:** ✅ FIXED (2026-06-29)
 - **Severity:** 🟡 MEDIUM
 - **Source:** Codex/2026-06-29 Issue #7
@@ -7839,6 +7891,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 ---
 
 ### ISSUE-535: Add Founder Recognition Message Capture In Agreement Flow
+
 - **Status:** ✅ FIXED (2026-06-29)
 - **Severity:** 🟡 MEDIUM
 - **Source:** Codex/2026-06-29 Issue #8
@@ -7850,6 +7903,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 ---
 
 ### ISSUE-536: Add Founder Recognition Link Inside App
+
 - **Status:** ✅ FIXED (2026-06-29)
 - **Severity:** 🟢 LOW
 - **Source:** Codex/2026-06-29 Issue #9
@@ -7861,6 +7915,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 ---
 
 ### ISSUE-537: Preserve Boardroom As Product Identity, Not Sales Agent
+
 - **Status:** ✅ FIXED (2026-06-29)
 - **Severity:** 🟡 MEDIUM
 - **Source:** Codex/2026-06-29 Issue #10
@@ -7872,6 +7927,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 ---
 
 ### ISSUE-538: App Sign-In Is A Qualification Event — Update Copy For Founder Traffic
+
 - **Status:** ✅ FIXED (2026-06-29)
 - **Severity:** 🟡 MEDIUM
 - **Source:** Codex/2026-06-29 Issue #11
@@ -7883,6 +7939,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 ---
 
 ### ISSUE-539: Build Post-Sign-In Guided Walkthrough Flow
+
 - **Status:** ✅ FIXED (2026-06-29)
 - **Severity:** 🔴 HIGH
 - **Source:** Codex/2026-06-29 Issue #12
@@ -7894,6 +7951,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 ---
 
 ### ISSUE-540: Add Founder Source Routing (`?source=founder` or `/founder-preview`)
+
 - **Status:** ✅ FIXED (2026-06-29)
 - **Severity:** 🔴 HIGH
 - **Source:** Codex/2026-06-29 Issue #22
@@ -7905,6 +7963,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 ---
 
 ### ISSUE-541: Make Boardroom The Product Closer — Guided Tour Ending
+
 - **Status:** ✅ FIXED (2026-06-29)
 - **Severity:** 🟡 MEDIUM
 - **Source:** Codex/2026-06-29 Issue #24
@@ -7916,6 +7975,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 ---
 
 ### ISSUE-542: Improve App First-Impression Context (Founder Preview Framing)
+
 - **Status:** ✅ FIXED (2026-06-29)
 - **Severity:** 🟡 MEDIUM
 - **Source:** Codex/2026-06-29 Issue #25
@@ -7928,6 +7988,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 ---
 
 ### ISSUE-543: Add Product Preview Signals Around Auth Screen
+
 - **Status:** ✅ FIXED (2026-06-29)
 - **Severity:** 🟢 LOW
 - **Source:** Codex/2026-06-29 Issue #26
@@ -7940,6 +8001,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 ---
 
 ### ISSUE-544: App Accessibility Remediation — Focus States & Small Text
+
 - **Status:** ✅ FIXED (2026-06-29)
 - **Severity:** 🔴 HIGH
 - **Source:** Codex/2026-06-29 Issue #19 / #27
@@ -7952,6 +8014,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 ---
 
 ### ISSUE-545: App Mobile Auth Layout Polish
+
 - **Status:** ✅ FIXED (2026-06-29)
 - **Severity:** 🟡 MEDIUM
 - **Source:** Codex/2026-06-29 Issue #28
@@ -7964,6 +8027,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 ---
 
 ### ISSUE-546: Founder Site SEO — Title, Meta, Open Graph, Twitter Card
+
 - **Status:** ✅ FIXED (5d81b3c9)
 - **Severity:** 🔴 HIGH
 - **Source:** Codex/2026-06-29 Issue #18
@@ -7974,6 +8038,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 ---
 
 ### ISSUE-547: App SEO — Meta, Open Graph, Twitter Card, Canonical
+
 - **Status:** ✅ FIXED (5d81b3c9)
 - **Severity:** 🟡 MEDIUM
 - **Source:** Codex/2026-06-29 Issue #29
@@ -7984,6 +8049,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 ---
 
 ### ISSUE-548: Audit Client Bundle For Exposed Internal Agent Prompts/Instructions
+
 - **Status:** ✅ FIXED (3fa9a1d)
 - **Severity:** 🔴 HIGH
 - **Source:** Codex/2026-06-29 Issue #30
@@ -7994,6 +8060,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 ---
 
 ### ISSUE-549: Auth Bundle Size Reduction — Lazy-Load Heavy Modules Post-Login
+
 - **Status:** ✅ FIXED (2026-06-30 21:16) — auth/shell split + modulePreload hardening complete
 - **Severity:** 🟡 MEDIUM
 - **Source:** Codex/2026-06-29 Issue #31
@@ -8026,6 +8093,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
   - KEEP in `App.tsx`: `AppInitializationProvider, LoginForm, PrivacyPolicy/TermsOfService (LegalPages), LoadingFallback, useURLSync, useLocation, useStore, useShallow, useEffect, useMemo, env, cleanupLocalStorage, flushFounderFunnelQueue, initSentry/setSentryUser/clearSentryUser, i18n import`. Keep `PublicLegalPage` + `UnauthenticatedApp` here (both light).
   - REMOVE from `App()` the authenticated-only hooks moved to `AppShell`. Keep only: the `cleanupLocalStorage` / `flushFounderFunnelQueue` effects, the `publicLegalPage` memo, and `useURLSync({ disabled: !!publicLegalPage })`.
   - New `App()` return:
+
     ```tsx
     return (
       <AppInitializationProvider>
@@ -8043,15 +8111,17 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
       </AppInitializationProvider>
     );
     ```
+
   - Delete every now-unused heavy import from the `App.tsx` top. Do NOT silence with `// eslint-disable` — physically remove them.
 
   **Step 3 — modulePreload hardening (BOTH configs).** Add to the `build:` block in BOTH `packages/renderer/vite.config.ts` and `electron.vite.config.ts`:
-    ```ts
-    modulePreload: {
-      resolveDependencies: (_file: string, deps: string[]) =>
-        deps.filter(d => !/vendor-(three|fabric|audio|recharts|video|pdfjs|tesseract|reactflow|yjs|remotion)/.test(d)),
-    },
-    ```
+
+  ```ts
+  modulePreload: {
+    resolveDependencies: (_file: string, deps: string[]) =>
+      deps.filter(d => !/vendor-(three|fabric|audio|recharts|video|pdfjs|tesseract|reactflow|yjs|remotion)/.test(d)),
+  },
+  ```
 
   **Step 4 — verify (ALL must pass before claiming fixed):**
   1. `npm run typecheck` → clean. ✅ PASSED
@@ -8070,6 +8140,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 ---
 
 ### ISSUE-550: Founder Funnel Analytics — Track Full Funnel Events
+
 - **Status:** ✅ FIXED (5d81b3c9)
 - **Severity:** 🟡 MEDIUM
 - **Source:** Codex/2026-06-29 Issue #33
@@ -8080,6 +8151,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 ---
 
 ### ISSUE-551: Product Proof Moments In Walkthrough — Avoid Dead Ends
+
 - **Status:** ✅ FIXED (2026-06-29)
 - **Severity:** 🔴 HIGH
 - **Source:** Codex/2026-06-29 Issue #34
@@ -8092,6 +8164,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 ---
 
 ### ISSUE-552: Founder Access Copy — Tier Difference Explanation
+
 - **Status:** ✅ FIXED (2026-06-29)
 - **Severity:** 🟢 LOW
 - **Source:** Codex/2026-06-29 Issue #35
@@ -8103,6 +8176,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 ---
 
 ### ISSUE-553: Founder Site Tone And Narrative Order
+
 - **Status:** ✅ FIXED (2026-06-29)
 - **Severity:** 🟡 MEDIUM
 - **Source:** Codex/2026-06-29 Issue #13
@@ -8114,6 +8188,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 ---
 
 ### ISSUE-554: Keep Private Flexibility Off Public Founder Page
+
 - **Status:** ✅ FIXED (8538a1c8)
 - **Severity:** 🟡 MEDIUM
 - **Source:** Codex/2026-06-29 Issue #14
@@ -8124,6 +8199,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 ---
 
 ### ISSUE-555: Future Equity Track Is Separate — Public Wording
+
 - **Status:** ✅ FIXED (8a9a2c3)
 - **Severity:** 🟡 MEDIUM
 - **Source:** Codex/2026-06-29 Issue #15
@@ -8134,6 +8210,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 ---
 
 ### ISSUE-556: Use Of Funds Framing — Founder Operations Language
+
 - **Status:** ✅ FIXED (0d8fdaed)
 - **Severity:** 🟢 LOW
 - **Source:** Codex/2026-06-29 Issue #16
@@ -8144,6 +8221,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 ---
 
 ### ISSUE-557: Product Preview Positioning — Founder Site Explains App Is Not Just A Login Wall
+
 - **Status:** ✅ FIXED (3fa9a1d)
 - **Severity:** 🟡 MEDIUM
 - **Source:** Codex/2026-06-29 Issue #17
@@ -8154,6 +8232,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 ---
 
 ### ISSUE-558: App Console And Runtime Health — Production Clean
+
 - **Status:** ✅ FIXED (5d81b3c9)
 - **Severity:** 🟡 MEDIUM
 - **Source:** Codex/2026-06-29 Issue #32
@@ -8164,6 +8243,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 ---
 
 ### ISSUE-559: Reframe App Login As Founder Preview Entry
+
 - **Status:** ✅ FIXED (2026-06-29)
 - **Severity:** 🔴 HIGH
 - **Source:** Codex/2026-06-29 Issue #21
@@ -8176,6 +8256,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 ---
 
 ### ISSUE-560: Platinum Scoring — Founder Site Visual Polish To 9.5+/10
+
 - **Status:** ✅ FIXED (2026-06-30 21:30) — platinum a11y + SEO pass complete
 - **Severity:** 🟡 MEDIUM
 - **Source:** Codex/2026-06-29 Issue #36 (rubric target: founder site)
@@ -8187,6 +8268,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 ---
 
 ### ISSUE-561: Platinum Scoring — App Auth & Walkthrough To 9.5+/10
+
 - **Status:** ✅ FIXED (2026-06-30 21:30) — app auth already passes platinum a11y standards
 - **Severity:** 🟡 MEDIUM
 - **Source:** Codex/2026-06-29 Issue #36 (rubric target: app)
@@ -8198,6 +8280,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 ---
 
 ### ISSUE-562: Trigger Guided Walkthrough Only After Both Intro Panels Close
+
 - **Status:** ✅ FIXED (459a54e93)
 - **Severity:** 🔴 HIGH
 - **Source:** Codex/2026-06-29 Issue #23
@@ -8208,6 +8291,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 ---
 
 ### ISSUE-563: Founder Site Narrative — Personal/Local Story Integration
+
 - **Status:** ✅ FIXED (2026-06-29)
 - **Severity:** 🟢 LOW
 - **Source:** Codex/2026-06-29 Issue #13 (personal story sub-item)
@@ -8218,6 +8302,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Fix:** Rewrote the Detroit Covenant section to speak in the first person, center Detroit/local studios, and frame founder access as backing the local build rather than a corporate product pitch.
 
 ### ISSUE-CI-28385947617: CI Pipeline Failure (Deploy to Firebase Hosting)
+
 - **Status:** ✅ FIXED (661e7d6de)
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
@@ -8225,6 +8310,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Fix:** Isolated `@/services/firebase` mock in `FoundersPortal.test.tsx` to prevent test environment state leakage.
 
 ### ISSUE-CI-28381689558: CI Pipeline Failure (Deploy to Firebase Hosting)
+
 - **Status:** ✅ FIXED (661e7d6de)
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
@@ -8232,6 +8318,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Fix:** Isolated `@/services/firebase` mock in `FoundersPortal.test.tsx` to prevent test environment state leakage.
 
 ### ISSUE-CI-28374673349: CI Pipeline Failure (Deploy to Firebase Hosting)
+
 - **Status:** ✅ FIXED (661e7d6de)
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
@@ -8239,6 +8326,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Fix:** Isolated `@/services/firebase` mock in `FoundersPortal.test.tsx` to prevent test environment state leakage.
 
 ### ISSUE-CI-28404450526: CI Pipeline Failure (Deploy to Firebase Hosting)
+
 - **Status:** ✅ FIXED (2026-06-29)
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
@@ -8246,6 +8334,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Fix:** Rewrote `FoundersCheckout.test.tsx` to align assertions with the new multi-step funnel design.
 
 ### ISSUE-CI-28397738613: CI Pipeline Failure (Deploy to Firebase Hosting)
+
 - **Status:** ✅ FIXED (2026-06-29)
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
@@ -8253,6 +8342,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Fix:** Rewrote `FoundersCheckout.test.tsx` to align assertions with the new multi-step funnel design.
 
 ### ISSUE-CI-28397238658: CI Pipeline Failure (Deploy to Firebase Hosting)
+
 - **Status:** ✅ FIXED (2026-06-29)
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
@@ -8260,6 +8350,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Fix:** Rewrote `FoundersCheckout.test.tsx` to align assertions with the new multi-step funnel design.
 
 ### ISSUE-CI-28404450526: CI Pipeline Failure (Deploy to Firebase Hosting)
+
 - **Status:** ⏳ OPEN
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
@@ -8268,6 +8359,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
 
 ### ISSUE-CI-28397738613: CI Pipeline Failure (Deploy to Firebase Hosting)
+
 - **Status:** ⏳ OPEN
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
@@ -8278,6 +8370,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 ---
 
 ### ISSUE-564: Untrack `live-agent-daisy-chain` E2E Run Artifacts (Stop Checkpoint Churn)
+
 - **Status:** ✅ FIXED (2026-06-30 21:16)
 - **Severity:** 🟢 LOW
 - **Module:** Repo hygiene / E2E
@@ -8288,21 +8381,27 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** N/A — git/ignore hygiene only. No app code changes.
 - **Fix Direction (code only, follow exactly):**
   1. Untrack the directory, keep files on disk:
+
      ```bash
      git rm -r --cached artifacts/live-agent-daisy-chain/
      ```
+
   2. In `.gitignore`, REPLACE the existing lines 54-55 (`# Loose QA smoke/verify screenshots ... keep tracked subdirs like artifacts/live-agent-daisy-chain/` and the `artifacts/*.png` rule's surrounding comment) so the comment no longer says "keep tracked," then add:
+
      ```
      # live-agent-daisy-chain E2E run output — regenerated every run; untracked
      # 2026-06-30 (ISSUE-564) to stop Stop-hook checkpoint churn. Files still
      # written on disk by e2e/live-agent-daisy-chain.spec.ts.
      artifacts/live-agent-daisy-chain/
      ```
+
      (Keep the `artifacts/*.png` ignore rule itself intact — only fix the misleading "keep tracked" wording.)
   3. Verify nothing depends on these being committed:
+
      ```bash
      grep -rn "artifacts/live-agent-daisy-chain" --include=*.md --include=*.yml --include=*.yaml --include=*.ts . | grep -v "live-agent-daisy-chain.spec.ts"
      ```
+
      Any hit in docs/CI → note it in this entry, do NOT break it.
   4. Confirm clean: `git status --short` shows the deletions staged and no `artifacts/live-agent-daisy-chain/*` as untracked-but-pending.
   5. Commit message: `chore(e2e): untrack live-agent-daisy-chain run artifacts (stop checkpoint churn)`
@@ -8310,6 +8409,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **DO NOT:** delete the files from disk; touch app source; remove the `artifacts/*.png` ignore rule.
 
 ### ISSUE-CI-28416944707: CI Pipeline Failure (Deploy to Firebase Hosting)
+
 - **Status:** ⏳ OPEN
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
@@ -8324,6 +8424,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 > Context: Comparison of the "RightsOps Agent Harness Addendum" blueprint against the codebase. Finding: the harness architecture, readiness compilers, approval-gate registry, hash-chained audit ledger, tiered-tool registry, and workflow state machine ALL already exist and are well-built. The work below is **integration, not invention** — wire the existing shapes onto the highest-stakes write path (rights/registration filing) so the harness doctrine becomes binding instead of advisory. No new patterns are introduced; every step reuses a primitive already in `packages/`. Sequencing is justified by correctness (gates must be live before any retrain captures real gated transcripts), never by effort.
 
 ### ISSUE-565: Agent-ID Integrity — Harness `ownerAgentId` / `agentId` Must Resolve to a Real `ValidAgentId`
+
 - **Status:** ⏳ OPEN
 - **Severity:** 🔴 HIGH
 - **Module:** Agent orchestration / business-harness
@@ -8340,6 +8441,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **DO NOT:** add a `rights`/`registration` id in this issue (ISSUE-568); loosen the type back to `string`.
 
 ### ISSUE-566: Route the Rights-Registration Submit Path Through the Harness Gate (Close the Bypass)
+
 - **Status:** ⏳ OPEN
 - **Severity:** 🔴 HIGH
 - **Module:** Registration / business-harness / agent governance
@@ -8357,6 +8459,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **DO NOT:** add a second approval mechanism — reuse `DigitalHandshake` + `APPROVAL_GATE_REGISTRY`; bypass the gate on automation failure.
 
 ### ISSUE-567: Approval Freshness — Bind Each Registration Approval to a Song-Passport Version Hash
+
 - **Status:** ⏳ OPEN
 - **Severity:** 🔴 HIGH
 - **Module:** Registration / business-harness
@@ -8374,6 +8477,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **DO NOT:** hash the entire track object (non-material field churn would cause false staleness); duplicate the sha256 implementation.
 
 ### ISSUE-568: First-Class `rights` Agent Identity (Reuse Tuned-Endpoint Alias Pattern)
+
 - **Status:** ⏳ OPEN
 - **Severity:** 🟠 MEDIUM-HIGH
 - **Module:** Agent definitions / fine-tuned registry
@@ -8391,6 +8495,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **DO NOT:** fold RightsOps permanently into `legal`; hardcode a Vertex endpoint literal in source (rule #11 — endpoints come from the generated registry only).
 
 ### ISSUE-569: Harness-Aware Prompts + `prompt_version` Stamping (rights / legal / publishing / licensing)
+
 - **Status:** ⏳ OPEN
 - **Severity:** 🟠 MEDIUM
 - **Module:** Agent prompts / governance
@@ -8406,6 +8511,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **DO NOT:** remove the mandatory legal Intelligence-disclaimer or identity-lock blocks; edit prompts without bumping the version.
 
 ### ISSUE-570: Controlled Browser Worker — Explicit Pause-States at Certification / Payment / Submit
+
 - **Status:** ⏳ OPEN
 - **Severity:** 🟠 MEDIUM
 - **Module:** Registration adapters / browser automation
@@ -8422,6 +8528,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **DO NOT:** auto-accept certification/terms; auto-authorize payment; feed the worker unapproved data.
 
 ### ISSUE-571: Readiness Compiler Gates Workflow-State Advancement (Test-Harness-as-CI)
+
 - **Status:** ⏳ OPEN
 - **Severity:** 🟠 MEDIUM
 - **Module:** business-harness / agent workflow state

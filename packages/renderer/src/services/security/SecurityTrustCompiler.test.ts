@@ -52,7 +52,7 @@ describe('SecurityTrustCompiler', () => {
     const result = compiler.compile(input, baseCtx);
     
     expect(result.approvalGates.find(g => g.id === 'gate_credential_handling')).toBeDefined();
-    expect(result.agentBriefs.find(b => b.agentId === 'devops_agent')).toBeDefined();
+    expect(result.agentBriefs.find(b => b.agentId === 'devops')).toBeDefined();
   });
 
   it('should set spending risk gate for large amounts', () => {
@@ -89,7 +89,7 @@ describe('SecurityTrustCompiler', () => {
     
     expect(result.output.actionApproved).toBe(false);
     expect(result.findings.find(f => f.id === 'finding_evidence_tampered')).toBeDefined();
-    expect(result.agentBriefs.find(b => b.agentId === 'legal_agent')).toBeDefined();
+    expect(result.agentBriefs.find(b => b.agentId === 'legal')).toBeDefined();
   });
 
   it('should properly emit normalized HarnessRun', () => {
