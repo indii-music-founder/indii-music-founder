@@ -129,7 +129,9 @@ export interface HarnessTimelineItem {
 }
 
 export interface HarnessAgentBrief {
-  agentId: 'distribution' | 'marketing' | 'creative' | 'legal' | 'finance' | 'timeline';
+  // Must be ValidAgentIds. Release-plan/milestone orchestration routes to the
+  // Conductor hub ('generalist') — there is no standalone 'timeline' agent.
+  agentId: 'distribution' | 'marketing' | 'creative' | 'legal' | 'finance' | 'generalist';
   brief: string;
   inputs: string[];
   blockedBy?: string[];
