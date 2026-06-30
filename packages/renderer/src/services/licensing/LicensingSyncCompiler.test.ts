@@ -62,7 +62,7 @@ describe('LicensingSyncCompiler', () => {
     expect(run.output.rightsClearanceStatus).toBe('cleared');
     expect(run.output.pitchPackageGenerated).toBe(true);
     expect(run.recommendations.some(r => r.title === 'Auto-Pitch Recommendation')).toBe(true);
-    expect(run.agentBriefs.some(b => b.agentId === 'marketing_agent')).toBe(true);
+    expect(run.agentBriefs.some(b => b.agentId === 'marketing')).toBe(true);
   });
 
   it('missing multiple assets significantly reduces readiness', () => {
