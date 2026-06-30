@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-30 13:30 EDT
+**Updated:** 2026-06-30 13:36 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+3958d85b1 fix(ISSUE-565): complete agent-ID cleanup across compilers + sync tests
+cd293dcc2 chore: session checkpoint [13:30]
 057895dd3 fix(ci): make Firebase Hosting releases idempotent + correct harness ledger
 483ed884a chore: session checkpoint [13:25]
 ddcf3a8f8 chore: session checkpoint [13:24]
@@ -12,8 +14,6 @@ ddcf3a8f8 chore: session checkpoint [13:24]
 80417a6a7 chore: session checkpoint [13:20]
 2cd4c8b89 chore: session checkpoint [13:16]
 5ff7f769d chore: session checkpoint [13:16]
-be31b1ed6 fix(workflow): add mandatory commit & push step to /end
-c04049d0d chore: session checkpoint [13:15]
 ```
 
 ## Working State
