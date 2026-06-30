@@ -98,14 +98,14 @@ export default function ScreenwriterDashboard() {
             headerIcon={<Film size={18} className="text-white" />}
             title="AI Screenwriter & Storyboarder"
             subtitle="Draft scripts, build scene-by-scene storyboards, and sync text-to-video Veo cues"
-            bgBlobClass="bg-purple-500/10"
-            iconBgClass="bg-linear-to-br from-purple-500 to-purple-400"
-            iconShadowClass="shadow-purple-500/20"
+            bgBlobClass="bg-green-500/10"
+            iconBgClass="bg-linear-to-br from-green-500 to-green-400"
+            iconShadowClass="shadow-green-500/20"
             leftPanel={
                 <div className="flex flex-col gap-4">
                     {/* Script Navigation */}
                     <div className="p-4 rounded-xl border border-white/5 bg-white/2 backdrop-blur-md">
-                        <span className="text-[10px] font-black uppercase tracking-wider text-purple-400 font-mono block mb-3">Storyboard Scenes</span>
+                        <span className="text-[10px] font-black uppercase tracking-wider text-green-400 font-mono block mb-3">Storyboard Scenes</span>
                         <div className="space-y-1 max-h-64 overflow-y-auto pr-1 custom-scrollbar">
                             {scenes.map((scene) => (
                                 <button
@@ -113,7 +113,7 @@ export default function ScreenwriterDashboard() {
                                     onClick={() => setSelectedSceneId(scene.id)}
                                     className={`w-full flex items-center justify-between p-2 rounded text-left transition-colors ${
                                         selectedSceneId === scene.id 
-                                        ? 'bg-purple-500/20 text-white font-bold border border-purple-500/30' 
+                                        ? 'bg-green-500/20 text-white font-bold border border-green-500/30' 
                                         : 'hover:bg-white/5 text-gray-400 hover:text-white border border-transparent'
                                     }`}
                                 >
@@ -129,7 +129,7 @@ export default function ScreenwriterDashboard() {
                         <button 
                             onClick={generateNextScene}
                             disabled={isGenerating}
-                            className="w-full flex items-center justify-center gap-1.5 mt-3 py-1.5 border border-dashed border-purple-500/30 hover:border-purple-500/60 rounded text-xs font-bold text-purple-400 hover:text-purple-300 transition-colors"
+                            className="w-full flex items-center justify-center gap-1.5 mt-3 py-1.5 border border-dashed border-green-500/30 hover:border-green-500/60 rounded text-xs font-bold text-green-400 hover:text-green-300 transition-colors"
                         >
                             {isGenerating ? <RotateCw size={12} className="animate-spin" /> : <Plus size={12} />}
                             {isGenerating ? 'Drafting with AI...' : 'Draft Next Scene'}
@@ -138,7 +138,7 @@ export default function ScreenwriterDashboard() {
 
                     {/* Meta Analysis Panel */}
                     <div className="p-4 rounded-xl border border-white/5 bg-white/2 backdrop-blur-md">
-                        <span className="text-[10px] font-black uppercase tracking-wider text-purple-400 font-mono block mb-2">Metrics Summary</span>
+                        <span className="text-[10px] font-black uppercase tracking-wider text-green-400 font-mono block mb-2">Metrics Summary</span>
                         <div className="space-y-2 text-xs">
                             <div className="flex justify-between py-1 border-b border-white/[0.02]">
                                 <span className="text-gray-400">Total Playtime</span>
@@ -162,7 +162,7 @@ export default function ScreenwriterDashboard() {
                 <div className="flex flex-col gap-4">
                     {/* Creative Sync Setup */}
                     <div className="p-4 rounded-xl border border-white/5 bg-white/2 backdrop-blur-md">
-                        <span className="text-[10px] font-black uppercase tracking-wider text-purple-400 font-mono block mb-3">AI Prompter Controls</span>
+                        <span className="text-[10px] font-black uppercase tracking-wider text-green-400 font-mono block mb-3">AI Prompter Controls</span>
                         <div className="space-y-3">
                             <div>
                                 <label className="text-[10px] text-gray-400 font-bold block mb-1">STORYBOARD TONE</label>
@@ -173,7 +173,7 @@ export default function ScreenwriterDashboard() {
                                             onClick={() => setSelectedTone(tone)}
                                             className={`text-[10px] font-bold py-1 rounded capitalize transition-all ${
                                                 selectedTone === tone 
-                                                ? 'bg-purple-500 text-white shadow' 
+                                                ? 'bg-green-500 text-white shadow' 
                                                 : 'text-gray-400 hover:text-white'
                                             }`}
                                         >
@@ -194,7 +194,7 @@ export default function ScreenwriterDashboard() {
 
                     {/* Export Actions */}
                     <div className="p-4 rounded-xl border border-white/5 bg-white/2 backdrop-blur-md">
-                        <span className="text-[10px] font-black uppercase tracking-wider text-purple-400 font-mono block mb-3">Distribution</span>
+                        <span className="text-[10px] font-black uppercase tracking-wider text-green-400 font-mono block mb-3">Distribution</span>
                         <div className="space-y-2">
                             <button 
                                 onClick={() => {
@@ -230,11 +230,11 @@ export default function ScreenwriterDashboard() {
                             onClick={() => setActiveTab(id)}
                             className={`flex items-center gap-2 text-xs font-bold border-b-2 px-1 transition-all ${
                                 activeTab === id 
-                                ? 'border-purple-500 text-white font-black' 
+                                ? 'border-green-500 text-white font-black' 
                                 : 'border-transparent text-gray-500 hover:text-gray-300'
                             }`}
                         >
-                            <Icon size={14} className={activeTab === id ? 'text-purple-400' : ''} />
+                            <Icon size={14} className={activeTab === id ? 'text-green-400' : ''} />
                             {label}
                         </button>
                     ))}
@@ -254,21 +254,21 @@ export default function ScreenwriterDashboard() {
                         >
                             {/* AI Prompt Input Card */}
                             <div className="p-5 rounded-xl border border-white/5 bg-white/1">
-                                <h3 className="text-xs font-black uppercase text-purple-400 tracking-wider font-mono mb-2 flex items-center gap-1.5">
+                                <h3 className="text-xs font-black uppercase text-green-400 tracking-wider font-mono mb-2 flex items-center gap-1.5">
                                     <Sparkles size={12} /> AI Story Concept Input
                                 </h3>
                                 <textarea
                                     value={songConcept}
                                     onChange={(e) => setSongConcept(e.target.value)}
                                     placeholder="Write a brief prompt details detailing the song's story theme, imagery, or narrative arc..."
-                                    className="w-full min-h-[70px] bg-black/40 border border-white/10 rounded-lg p-3 text-xs text-gray-200 placeholder-gray-600 focus:outline-none focus:border-purple-500 mb-3"
+                                    className="w-full min-h-[70px] bg-black/40 border border-white/10 rounded-lg p-3 text-xs text-gray-200 placeholder-gray-600 focus:outline-none focus:border-green-500 mb-3"
                                 />
                                 <div className="flex justify-between items-center">
                                     <span className="text-[10px] text-gray-500 font-mono">Dynamic contextual generation utilizes Gemini-3-pro-preview</span>
                                     <button 
                                         onClick={generateNextScene}
                                         disabled={isGenerating}
-                                        className="px-4 py-1.5 bg-purple-500 hover:bg-purple-400 text-white font-black text-xs rounded transition-all flex items-center gap-1"
+                                        className="px-4 py-1.5 bg-green-500 hover:bg-green-400 text-white font-black text-xs rounded transition-all flex items-center gap-1"
                                     >
                                         {isGenerating ? <RotateCw size={12} className="animate-spin" /> : <Sparkles size={12} />} Expand Script
                                     </button>
@@ -289,13 +289,13 @@ export default function ScreenwriterDashboard() {
                                             onClick={() => setSelectedSceneId(scene.id)}
                                             className={`p-3 rounded-lg border transition-all cursor-pointer ${
                                                 selectedSceneId === scene.id 
-                                                ? 'border-purple-500/40 bg-purple-500/[0.03]' 
+                                                ? 'border-green-500/40 bg-green-500/[0.03]' 
                                                 : 'border-transparent hover:border-white/5 hover:bg-white/[0.01]'
                                             }`}
                                         >
                                             <div className="flex justify-between items-center mb-2">
                                                 <span className="font-bold text-gray-200">{scene.heading}</span>
-                                                <span className="text-[9px] text-purple-400 bg-purple-500/10 px-1.5 py-0.5 rounded border border-purple-500/20 uppercase">SCENE {scene.sceneNumber}</span>
+                                                <span className="text-[9px] text-green-400 bg-green-500/10 px-1.5 py-0.5 rounded border border-green-500/20 uppercase">SCENE {scene.sceneNumber}</span>
                                             </div>
                                             <p className="text-gray-400 mb-2 pl-4 border-l border-white/5 italic">{scene.description}</p>
                                             <div className="text-right text-[10px] text-gray-500 font-bold">
@@ -319,18 +319,18 @@ export default function ScreenwriterDashboard() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 {/* Visual Panel Frame */}
                                 <div className="p-5 rounded-xl border border-white/5 bg-white/1 flex flex-col justify-between h-80 relative overflow-hidden">
-                                    <div className="absolute inset-0 bg-linear-to-b from-purple-900/10 to-black pointer-events-none" />
+                                    <div className="absolute inset-0 bg-linear-to-b from-green-900/10 to-black pointer-events-none" />
                                     
                                     {/* Mock Visual representation */}
                                     <div className="relative z-10 flex-1 flex flex-col justify-center items-center text-center p-4">
-                                        <Film size={40} className="text-purple-400/50 mb-3 animate-pulse" />
-                                        <span className="text-[10px] font-black uppercase text-purple-400 tracking-widest font-mono">SCENE {activeScene.sceneNumber} SHOT MATRIX</span>
+                                        <Film size={40} className="text-green-400/50 mb-3 animate-pulse" />
+                                        <span className="text-[10px] font-black uppercase text-green-400 tracking-widest font-mono">SCENE {activeScene.sceneNumber} SHOT MATRIX</span>
                                         <p className="text-xs text-gray-400 mt-2 max-w-xs">{activeScene.cameraAngle}</p>
                                     </div>
 
                                     <div className="relative z-10 p-3 bg-black/60 rounded border border-white/5 flex justify-between items-center text-[10px] font-mono">
                                         <span className="text-gray-400">TIMING: {activeScene.duration}s duration</span>
-                                        <span className="text-purple-400 font-bold">ASPECT: 16:9 Cinema</span>
+                                        <span className="text-green-400 font-bold">ASPECT: 16:9 Cinema</span>
                                     </div>
                                 </div>
 
@@ -344,7 +344,7 @@ export default function ScreenwriterDashboard() {
                                             type="text"
                                             value={activeScene.heading}
                                             onChange={(e) => updateScene(activeScene.id, { heading: e.target.value })}
-                                            className="w-full bg-black border border-white/10 rounded px-3 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-purple-500 font-mono"
+                                            className="w-full bg-black border border-white/10 rounded px-3 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-green-500 font-mono"
                                         />
                                     </div>
 
@@ -353,7 +353,7 @@ export default function ScreenwriterDashboard() {
                                         <textarea
                                             value={activeScene.description}
                                             onChange={(e) => updateScene(activeScene.id, { description: e.target.value })}
-                                            className="w-full min-h-[80px] bg-black border border-white/10 rounded p-3 text-xs text-gray-200 focus:outline-none focus:border-purple-500"
+                                            className="w-full min-h-[80px] bg-black border border-white/10 rounded p-3 text-xs text-gray-200 focus:outline-none focus:border-green-500"
                                         />
                                     </div>
 
@@ -364,7 +364,7 @@ export default function ScreenwriterDashboard() {
                                                 type="text"
                                                 value={activeScene.cameraAngle}
                                                 onChange={(e) => updateScene(activeScene.id, { cameraAngle: e.target.value })}
-                                                className="w-full bg-black border border-white/10 rounded px-3 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-purple-500"
+                                                className="w-full bg-black border border-white/10 rounded px-3 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-green-500"
                                             />
                                         </div>
                                         <div>
@@ -373,7 +373,7 @@ export default function ScreenwriterDashboard() {
                                                 type="number"
                                                 value={activeScene.duration}
                                                 onChange={(e) => updateScene(activeScene.id, { duration: Number(e.target.value) })}
-                                                className="w-full bg-black border border-white/10 rounded px-3 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-purple-500 font-mono"
+                                                className="w-full bg-black border border-white/10 rounded px-3 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-green-500 font-mono"
                                             />
                                         </div>
                                     </div>
@@ -409,7 +409,7 @@ export default function ScreenwriterDashboard() {
                                         <textarea
                                             value={activeScene.veoPrompt}
                                             onChange={(e) => updateScene(activeScene.id, { veoPrompt: e.target.value })}
-                                            className="w-full min-h-[80px] bg-black border border-white/10 rounded p-3 text-xs text-gray-200 focus:outline-none focus:border-purple-500 font-mono"
+                                            className="w-full min-h-[80px] bg-black border border-white/10 rounded p-3 text-xs text-gray-200 focus:outline-none focus:border-green-500 font-mono"
                                         />
                                     </div>
 

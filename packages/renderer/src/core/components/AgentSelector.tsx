@@ -60,7 +60,7 @@ export const AgentSelector = ({ onClose }: { onClose: () => void }) => {
             <div className="p-6 border-b border-white/5 bg-white/[0.02]">
                 <div className="flex items-center justify-between mb-4">
                     <h4 className="text-[11px] font-bold text-gray-400 uppercase tracking-[0.2em] flex items-center gap-3">
-                        <div className="w-2 h-2 rounded-full bg-purple-500 shadow-[0_0_10px_rgba(168,85,247,1)] animate-pulse" />
+                        <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_10px_rgba(168,85,247,1)] animate-pulse" />
                         Council Directory
                     </h4>
                     <button onClick={onClose} className="text-gray-500 hover:text-white transition-colors">
@@ -69,12 +69,12 @@ export const AgentSelector = ({ onClose }: { onClose: () => void }) => {
                 </div>
 
                 <div className="relative group">
-                    <div className="absolute inset-0 bg-purple-500/5 blur-xl group-focus-within:bg-purple-500/10 transition-all"></div>
+                    <div className="absolute inset-0 bg-green-500/5 blur-xl group-focus-within:bg-green-500/10 transition-all"></div>
                     <Search size={14} className="absolute left-3.5 top-3 text-gray-500" />
                     <input
                         type="text"
                         placeholder="SUMMON SPECIALIST..."
-                        className="w-full bg-black/40 border border-white/10 rounded-2xl pl-10 pr-4 py-2.5 text-xs text-white placeholder:text-gray-600 focus:outline-none focus:border-purple-500/50 focus:ring-4 focus:ring-purple-500/5 transition-all font-mono tracking-tight"
+                        className="w-full bg-black/40 border border-white/10 rounded-2xl pl-10 pr-4 py-2.5 text-xs text-white placeholder:text-gray-600 focus:outline-none focus:border-green-500/50 focus:ring-4 focus:ring-green-500/5 transition-all font-mono tracking-tight"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         autoFocus
@@ -85,7 +85,7 @@ export const AgentSelector = ({ onClose }: { onClose: () => void }) => {
             <div className="p-4 max-h-[420px] overflow-y-auto custom-scrollbar grid grid-cols-1 gap-3 min-h-[200px]">
                 {isLoadingAgents ? (
                     <div className="flex flex-col items-center justify-center h-full text-gray-500 gap-3 py-12">
-                        <Loader2 size={24} className="animate-spin text-purple-500" />
+                        <Loader2 size={24} className="animate-spin text-green-500" />
                         <span className="text-xs uppercase tracking-wider">Summoning Agents...</span>
                     </div>
                 ) : agentsError ? (
@@ -106,14 +106,14 @@ export const AgentSelector = ({ onClose }: { onClose: () => void }) => {
                                 whileHover={isPresent ? {} : { scale: 1.01, backgroundColor: 'rgba(255,255,255,0.04)' }}
                                 whileTap={isPresent ? {} : { scale: 0.99 }}
                                 className={`relative p-4 rounded-2xl border transition-all duration-300 flex items-center justify-between group ${isPresent
-                                    ? 'bg-purple-500/5 border-purple-500/20 mix-blend-screen opacity-60'
+                                    ? 'bg-green-500/5 border-green-500/20 mix-blend-screen opacity-60'
                                     : 'bg-white/5 border-white/5 hover:border-white/10 cursor-pointer shadow-sm'
                                     }`}
                                 onClick={() => !isPresent && handleInvite(agent.id)}
                             >
                                 <div className="flex items-center gap-4">
-                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center border transition-all duration-500 ${isPresent ? 'bg-purple-500/20 border-purple-500/40' : 'bg-black/40 border-white/10 group-hover:border-purple-500/30'}`}>
-                                        <Sparkles size={16} className={isPresent ? 'text-purple-300' : 'text-gray-500 group-hover:text-purple-400'} />
+                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center border transition-all duration-500 ${isPresent ? 'bg-green-500/20 border-green-500/40' : 'bg-black/40 border-white/10 group-hover:border-green-500/30'}`}>
+                                        <Sparkles size={16} className={isPresent ? 'text-green-300' : 'text-gray-500 group-hover:text-green-400'} />
                                     </div>
                                     <div>
                                         <div className="text-[13px] font-bold text-gray-200 tracking-tight">{agent.name}</div>
@@ -122,7 +122,7 @@ export const AgentSelector = ({ onClose }: { onClose: () => void }) => {
                                 </div>
 
                                 {isPresent ? (
-                                    <div className="flex items-center gap-2 text-[10px] font-bold text-purple-400 bg-purple-500/10 px-2 py-1 rounded-full border border-purple-500/20">
+                                    <div className="flex items-center gap-2 text-[10px] font-bold text-green-400 bg-green-500/10 px-2 py-1 rounded-full border border-green-500/20">
                                         <Check size={10} strokeWidth={3} />
                                         ACTIVE
                                     </div>

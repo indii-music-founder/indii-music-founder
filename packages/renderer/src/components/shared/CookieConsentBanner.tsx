@@ -100,7 +100,7 @@ function ConsentToggle({ label, description, checked, onChange, disabled = false
                     onClick={() => !disabled && onChange(!checked)}
                     className={cn(
                         'relative w-10 h-5 rounded-full transition-colors duration-200',
-                        checked ? 'bg-purple-600' : 'bg-gray-600',
+                        checked ? 'bg-green-600' : 'bg-gray-600',
                         disabled && 'opacity-60 cursor-not-allowed'
                     )}
                 >
@@ -207,8 +207,8 @@ export function CookieConsentBanner() {
                     {/* Header */}
                     <div className="p-5 pb-0">
                         <div className="flex items-center gap-3 mb-3">
-                            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-purple-500/10">
-                                <Cookie className="w-5 h-5 text-purple-400" />
+                            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-green-500/10">
+                                <Cookie className="w-5 h-5 text-green-400" />
                             </div>
                             <div className="flex-1">
                                 <h3 className="text-base font-semibold text-white">Cookie Preferences</h3>
@@ -284,7 +284,7 @@ export function CookieConsentBanner() {
                                 <div className="flex-1" />
                                 <button
                                     onClick={handleSaveCustom}
-                                    className="px-6 py-2.5 text-sm font-medium bg-purple-600 hover:bg-purple-500 text-white rounded-xl transition-colors"
+                                    className="px-6 py-2.5 text-sm font-medium bg-green-600 hover:bg-green-500 text-white rounded-xl transition-colors"
                                 >
                                     Save Preferences
                                 </button>
@@ -307,7 +307,7 @@ export function CookieConsentBanner() {
                                 <div className="flex-1 order-1 sm:order-3" />
                                 <button
                                     onClick={handleAcceptAll}
-                                    className="w-full sm:w-auto px-6 py-2.5 text-sm font-medium bg-purple-600 hover:bg-purple-500 text-white rounded-xl transition-colors order-1 sm:order-4"
+                                    className="w-full sm:w-auto px-6 py-2.5 text-sm font-medium bg-green-600 hover:bg-green-500 text-white rounded-xl transition-colors order-1 sm:order-4"
                                 >
                                     Accept All
                                 </button>

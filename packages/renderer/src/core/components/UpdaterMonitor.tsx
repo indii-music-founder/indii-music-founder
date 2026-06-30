@@ -82,7 +82,7 @@ export const UpdaterMonitor: React.FC = () => {
                             <div className="flex items-center gap-2">
                                 <div className={`p-2 rounded-lg ${status === 'error' ? 'bg-red-500/20 text-red-400' :
                                     status === 'downloaded' ? 'bg-emerald-500/20 text-emerald-400' :
-                                        'bg-purple-500/20 text-purple-400'
+                                        'bg-green-500/20 text-green-400'
                                     }`}>
                                     {status === 'checking' && <RefreshCw className="w-4 h-4 animate-spin" />}
                                     {status === 'available' && <Download className="w-4 h-4 animate-bounce" />}
@@ -107,7 +107,7 @@ export const UpdaterMonitor: React.FC = () => {
                             <div className="space-y-2">
                                 <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
                                     <motion.div
-                                        className="h-full bg-linear-to-r from-purple-500 to-blue-500"
+                                        className="h-full bg-linear-to-r from-green-500 to-blue-500"
                                         initial={{ width: 0 }}
                                         animate={{ width: `${progress.percent}%` }}
                                         transition={{ type: 'spring', damping: 20, stiffness: 100 }}
@@ -123,11 +123,11 @@ export const UpdaterMonitor: React.FC = () => {
                         {status === 'downloaded' && (
                             <div className="space-y-3">
                                 <p className="text-xs text-gray-400 leading-relaxed">
-                                    Version <span className="text-purple-400 font-mono">{version}</span> has been downloaded and is ready to install.
+                                    Version <span className="text-green-400 font-mono">{version}</span> has been downloaded and is ready to install.
                                 </p>
                                 <button
                                     onClick={handleInstall}
-                                    className="w-full py-2.5 bg-linear-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold rounded-xl transition-all shadow-lg shadow-purple-900/20 active:scale-[0.98]"
+                                    className="w-full py-2.5 bg-linear-to-r from-green-600 to-indigo-600 hover:from-green-500 hover:to-indigo-500 text-white text-xs font-bold rounded-xl transition-all shadow-lg shadow-green-900/20 active:scale-[0.98]"
                                 >
                                     Restart and Install
                                 </button>
@@ -142,7 +142,7 @@ export const UpdaterMonitor: React.FC = () => {
 
                         {status === 'available' && !progress && (
                             <p className="text-xs text-gray-400 leading-relaxed">
-                                Preparing to download update <span className="text-purple-400 font-mono">{version}</span>...
+                                Preparing to download update <span className="text-green-400 font-mono">{version}</span>...
                             </p>
                         )}
                     </div>

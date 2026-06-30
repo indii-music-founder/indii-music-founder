@@ -36,7 +36,7 @@ export const TimelineClip = memo(({
 
     return (
         <div
-            className={`absolute top-2 border rounded cursor-pointer transition-all group/clip ${isSelected ? 'bg-purple-600 border-purple-400 ring-1 ring-white' : 'bg-purple-600/30 border-purple-500/50 hover:bg-purple-600/50'}`}
+            className={`absolute top-2 border rounded cursor-pointer transition-all group/clip ${isSelected ? 'bg-green-600 border-green-400 ring-1 ring-white' : 'bg-green-600/30 border-green-500/50 hover:bg-green-600/50'}`}
             style={{
                 left: clip.startFrame * PIXELS_PER_FRAME,
                 width: clip.durationInFrames * PIXELS_PER_FRAME,
@@ -68,7 +68,7 @@ export const TimelineClip = memo(({
                         onRemove(clip.id);
                     }}
                     data-testid={`clip-remove-${clip.id}`}
-                    className="opacity-0 group-hover/clip:opacity-100 text-purple-200 hover:text-white transition-opacity pointer-events-auto"
+                    className="opacity-0 group-hover/clip:opacity-100 text-green-200 hover:text-white transition-opacity pointer-events-auto"
                     aria-label={`Remove clip ${clip.name}`}
                 >
                     <XIcon size={12} />

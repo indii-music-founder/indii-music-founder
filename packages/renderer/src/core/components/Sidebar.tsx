@@ -256,7 +256,7 @@ export default function Sidebar() {
                         aria-label="Open Command Menu"
                     >
                         <span className="flex items-center gap-2">
-                            <Search size={14} className="text-gray-500 group-hover:text-purple-400 transition-colors" />
+                            <Search size={14} className="text-gray-500 group-hover:text-green-400 transition-colors" />
                             Search...
                         </span>
                         <div className="flex items-center gap-1">
@@ -269,7 +269,7 @@ export default function Sidebar() {
                 <div className="flex items-center justify-center pt-4 pb-2 border-b border-white/5 border-dashed">
                     <button
                         onClick={() => useStore.getState().setCommandMenuOpen(true)}
-                        className="p-2 rounded-lg text-gray-400 hover:text-purple-400 hover:bg-white/10 transition-colors shadow-sm"
+                        className="p-2 rounded-lg text-gray-400 hover:text-green-400 hover:bg-white/10 transition-colors shadow-sm"
                         aria-label="Open Command Menu"
                         title="Search (⌘K)"
                     >

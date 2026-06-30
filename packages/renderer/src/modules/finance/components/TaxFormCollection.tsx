@@ -150,7 +150,7 @@ export function TaxFormCollection() {
                                         <td className="px-3 py-2.5 text-center">
                                             <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${collab.formType === 'W-9'
                                                     ? 'text-blue-400 bg-blue-500/10'
-                                                    : 'text-purple-400 bg-purple-500/10'
+                                                    : 'text-green-400 bg-green-500/10'
                                                 }`}>
                                                 {collab.formType}
                                             </span>

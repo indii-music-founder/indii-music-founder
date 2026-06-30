@@ -138,7 +138,7 @@ export default function MIDIController() {
                 {!connected && supported && (
                     <button
                         onClick={handleConnect}
-                        className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-xs font-bold transition-colors"
+                        className="px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg text-xs font-bold transition-colors"
                     >
                         Connect
                     </button>
@@ -155,7 +155,7 @@ export default function MIDIController() {
                         {devices.map(d => (
                             <div key={d.id} className="rounded-xl bg-white/[0.02] border border-white/5 p-3 flex items-center gap-3">
                                 {d.type === 'input' ? (
-                                    <Activity size={16} className="text-purple-400 flex-shrink-0" />
+                                    <Activity size={16} className="text-green-400 flex-shrink-0" />
                                 ) : (
                                     <Sliders size={16} className="text-blue-400 flex-shrink-0" />
                                 )}
@@ -207,13 +207,13 @@ export default function MIDIController() {
                                     </span>
                                     <span className="text-gray-400">Ch {e.channel}</span>
                                     {e.note !== undefined && (
-                                        <span className="text-purple-300">{noteName(e.note)} (vel {e.velocity})</span>
+                                        <span className="text-green-300">{noteName(e.note)} (vel {e.velocity})</span>
                                     )}
                                     {e.controller !== undefined && (
-                                        <span className="text-purple-300">CC{e.controller} = {e.value}</span>
+                                        <span className="text-green-300">CC{e.controller} = {e.value}</span>
                                     )}
                                     {e.type === 'Pitch Bend' && (
-                                        <span className="text-purple-300">{e.value}</span>
+                                        <span className="text-green-300">{e.value}</span>
                                     )}
                                 </motion.div>
                             ))}

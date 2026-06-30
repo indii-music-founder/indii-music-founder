@@ -140,7 +140,7 @@ export const CreativeVideoPlayer: React.FC<CreativeVideoPlayerProps> = ({
     if (status === 'processing') {
         return (
             <div className={`relative flex flex-col items-center justify-center bg-[#0a0a0a] rounded-xl overflow-hidden border border-white/10 ${className}`}>
-                <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-pink-500/10 animate-pulse" />
+                <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-pink-500/10 animate-pulse" />
                 <Loader2 size={48} className="text-white/50 animate-spin mb-4" />
                 <p className="text-sm font-medium text-white/70">Generating Video...</p>
                 <p className="text-xs text-white/40 mt-2 max-w-[80%] text-center">
@@ -215,7 +215,7 @@ export const CreativeVideoPlayer: React.FC<CreativeVideoPlayerProps> = ({
                     onClick={handleSeek}
                 >
                     <div 
-                        className="absolute top-0 left-0 h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-100 ease-linear"
+                        className="absolute top-0 left-0 h-full bg-gradient-to-r from-green-500 to-pink-500 transition-all duration-100 ease-linear"
                         style={{ width: `${progress}%` }}
                     />
                     <div 
@@ -226,19 +226,19 @@ export const CreativeVideoPlayer: React.FC<CreativeVideoPlayerProps> = ({
 
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                        <button onClick={togglePlay} className="text-white hover:text-purple-400 transition-colors">
+                        <button onClick={togglePlay} className="text-white hover:text-green-400 transition-colors">
                             {isPlaying ? <Pause size={20} /> : <Play size={20} />}
                         </button>
-                        <button onClick={toggleMute} className="text-white hover:text-purple-400 transition-colors">
+                        <button onClick={toggleMute} className="text-white hover:text-green-400 transition-colors">
                             {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
                         </button>
                     </div>
 
                     <div className="flex items-center gap-4">
-                        <button onClick={handleDownload} className="text-white hover:text-purple-400 transition-colors" title="Download">
+                        <button onClick={handleDownload} className="text-white hover:text-green-400 transition-colors" title="Download">
                             <Download size={20} />
                         </button>
-                        <button onClick={toggleFullscreen} className="text-white hover:text-purple-400 transition-colors" title="Fullscreen">
+                        <button onClick={toggleFullscreen} className="text-white hover:text-green-400 transition-colors" title="Fullscreen">
                             <Maximize size={20} />
                         </button>
                     </div>

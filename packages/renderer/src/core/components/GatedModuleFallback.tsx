@@ -27,9 +27,9 @@ export function GatedModuleFallback({ moduleName }: { moduleName: string }) {
                 <motion.div
                     animate={{ y: [0, -6, 0] }}
                     transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
-                    className="w-20 h-20 rounded-2xl bg-linear-to-br from-purple-600/20 to-indigo-600/20 border border-purple-500/20 flex items-center justify-center"
+                    className="w-20 h-20 rounded-2xl bg-linear-to-br from-green-600/20 to-indigo-600/20 border border-green-500/20 flex items-center justify-center"
                 >
-                    <Rocket size={36} className="text-purple-400" />
+                    <Rocket size={36} className="text-green-400" />
                 </motion.div>
 
                 <div className="space-y-2">
@@ -42,9 +42,9 @@ export function GatedModuleFallback({ moduleName }: { moduleName: string }) {
                     </p>
                 </div>
 
-                <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-purple-500/10 border border-purple-500/20">
-                    <div className="w-2 h-2 rounded-full bg-purple-400 animate-pulse" />
-                    <span className="text-xs font-medium text-purple-300">In Development</span>
+                <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-green-500/10 border border-green-500/20">
+                    <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                    <span className="text-xs font-medium text-green-300">In Development</span>
                 </div>
 
                 <button

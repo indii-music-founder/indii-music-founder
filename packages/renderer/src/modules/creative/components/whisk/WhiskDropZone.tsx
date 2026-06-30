@@ -138,7 +138,7 @@ export const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggl
                             {title}
                         </h3>
                         {activeItems.length > 0 && (
-                            <span className="flex items-center gap-1 text-[9px] text-purple-400 bg-purple-500/20 px-1.5 py-0.5 rounded">
+                            <span className="flex items-center gap-1 text-[9px] text-green-400 bg-green-500/20 px-1.5 py-0.5 rounded">
                                 <Lock size={8} />
                                 {activeItems.length}
                             </span>
@@ -157,7 +157,7 @@ export const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggl
                         </button>
                         <button
                             onClick={() => setIsAdding(!isAdding)}
-                            className={`p-1.5 rounded transition-all ${isAdding ? 'text-red-400 rotate-45 bg-red-500/10' : 'text-purple-400 hover:text-purple-300 hover:bg-purple-500/10'}`}
+                            className={`p-1.5 rounded transition-all ${isAdding ? 'text-red-400 rotate-45 bg-red-500/10' : 'text-green-400 hover:text-green-300 hover:bg-green-500/10'}`}
                             aria-label={isAdding ? "Cancel adding item" : `Add new ${title}`}
                             aria-expanded={isAdding}
                         >
@@ -190,7 +190,7 @@ export const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggl
                                             <button
                                                 key={i}
                                                 onClick={() => selectInspiration(idea)}
-                                                className="w-full text-left text-[10px] text-gray-300 p-1.5 rounded bg-black/30 hover:bg-purple-500/20 hover:text-white transition-colors"
+                                                className="w-full text-left text-[10px] text-gray-300 p-1.5 rounded bg-black/30 hover:bg-green-500/20 hover:text-white transition-colors"
                                             >
                                                 {idea}
                                             </button>
@@ -228,7 +228,7 @@ export const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggl
                                                 }
                                             }}
                                             placeholder={`Describe ${category}...`}
-                                            className="flex-1 bg-black/60 border border-gray-700 rounded-lg px-3 py-2 text-xs text-white focus:border-purple-500 focus:ring-1 focus:ring-purple-500/50 outline-none placeholder:text-gray-600"
+                                            className="flex-1 bg-black/60 border border-gray-700 rounded-lg px-3 py-2 text-xs text-white focus:border-green-500 focus:ring-1 focus:ring-green-500/50 outline-none placeholder:text-gray-600"
                                             autoFocus
                                             aria-label={`Enter ${category} description`}
                                         />
@@ -252,7 +252,7 @@ export const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggl
                             onDragLeave={() => setIsDragOver(false)}
                             onDrop={handleDrop}
                             className={`relative transition-all duration-200 ${compact ? 'min-h-[60px]' : 'min-h-[80px]'} rounded-xl border-2 border-dashed ${isDragOver
-                                ? 'border-purple-500 bg-purple-500/10 shadow-[0_0_20px_rgba(147,51,234,0.3)]'
+                                ? 'border-green-500 bg-green-500/10 shadow-[0_0_20px_rgba(147,51,234,0.3)]'
                                 : hasItems
                                     ? 'border-transparent bg-[#111]'
                                     : 'border-gray-700 bg-[#0d0d0d] hover:border-gray-600'
@@ -261,8 +261,8 @@ export const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggl
                             {/* Empty State */}
                             {!hasItems && (
                                 <div className="absolute inset-0 flex flex-col items-center justify-center p-4 pointer-events-none">
-                                    <ImageIcon size={24} className={`mb-2 ${isDragOver ? 'text-purple-400' : 'text-gray-600'}`} />
-                                    <p className={`text-[10px] text-center ${isDragOver ? 'text-purple-300' : 'text-gray-500'}`}>
+                                    <ImageIcon size={24} className={`mb-2 ${isDragOver ? 'text-green-400' : 'text-gray-600'}`} />
+                                    <p className={`text-[10px] text-center ${isDragOver ? 'text-green-300' : 'text-gray-500'}`}>
                                         {isDragOver ? 'Drop to add reference' : description}
                                     </p>
                                 </div>
@@ -279,7 +279,7 @@ export const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggl
                                             animate={{ opacity: 1, scale: 1 }}
                                             exit={{ opacity: 0, scale: 0.9 }}
                                             className={`group relative flex items-center gap-3 p-2 rounded-lg transition-all ${item.checked
-                                                ? 'bg-linear-to-r from-purple-900/30 to-purple-900/10 border border-purple-500/40 shadow-[0_0_10px_rgba(147,51,234,0.15)]'
+                                                ? 'bg-linear-to-r from-green-900/30 to-green-900/10 border border-green-500/40 shadow-[0_0_10px_rgba(147,51,234,0.15)]'
                                                 : 'bg-[#1a1a1a] border border-gray-800/50 opacity-50'
                                                 }`}
                                         >
@@ -287,7 +287,7 @@ export const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggl
                                             <button
                                                 onClick={() => onToggle?.(item.id)}
                                                 className={`shrink-0 w-5 h-5 rounded flex items-center justify-center border-2 transition-all ${item.checked
-                                                    ? 'bg-purple-500 border-purple-400 text-white shadow-[0_0_8px_rgba(147,51,234,0.5)]'
+                                                    ? 'bg-green-500 border-green-400 text-white shadow-[0_0_8px_rgba(147,51,234,0.5)]'
                                                     : 'bg-transparent border-gray-600 hover:border-gray-400'
                                                     }`}
                                                 role="checkbox"
@@ -305,7 +305,7 @@ export const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggl
                                                             type="text"
                                                             value={editValue}
                                                             onChange={(e) => setEditValue(e.target.value)}
-                                                            className="flex-1 bg-black/60 border border-gray-700 rounded-md px-2 py-1 text-xs text-white outline-none focus:border-purple-500"
+                                                            className="flex-1 bg-black/60 border border-gray-700 rounded-md px-2 py-1 text-xs text-white outline-none focus:border-green-500"
                                                             autoFocus
                                                             onKeyDown={(e) => {
                                                                 if (e.key === 'Enter' && editValue.trim()) {

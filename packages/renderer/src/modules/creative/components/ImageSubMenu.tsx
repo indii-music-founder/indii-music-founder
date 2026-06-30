@@ -37,11 +37,11 @@ export default function ImageSubMenu({ onShowBrandAssets, showBrandAssets, onTog
             >
                 Gallery
             </button>
-            <button className="text-xs text-purple-400 font-bold px-2 py-1 bg-purple-900/20 rounded">Image</button>
+            <button className="text-xs text-green-400 font-bold px-2 py-1 bg-green-900/20 rounded">Image</button>
 
             <button
                 onClick={onTogglePromptBuilder}
-                className={`text-xs px-2 py-1 rounded transition-colors flex items-center gap-1 ${showPromptBuilder ? 'bg-purple-500/20 text-purple-300' : 'text-gray-400 hover:text-white'}`}
+                className={`text-xs px-2 py-1 rounded transition-colors flex items-center gap-1 ${showPromptBuilder ? 'bg-green-500/20 text-green-300' : 'text-gray-400 hover:text-white'}`}
             >
                 <Tags size={12} /> Chips
             </button>

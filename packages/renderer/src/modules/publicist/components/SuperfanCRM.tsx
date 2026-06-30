@@ -21,9 +21,9 @@ const TIER_CONFIG: Record<FanTier, { color: string; bg: string; border: string; 
         threshold: '$500+ spend',
     },
     VIP: {
-        color: 'text-purple-400',
-        bg: 'bg-purple-400/10',
-        border: 'border-purple-400/30',
+        color: 'text-green-400',
+        bg: 'bg-green-400/10',
+        border: 'border-green-400/30',
         icon: <Star size={12} />,
         threshold: '$100–$499',
     },

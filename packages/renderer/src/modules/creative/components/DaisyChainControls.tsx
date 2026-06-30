@@ -22,7 +22,7 @@ export default function DaisyChainControls({ onOpenFrameModal }: DaisyChainContr
         <div className="flex items-center gap-2 md:gap-3.5 border-l border-r border-white/6 px-2 md:px-4 mx-1 md:mx-2 h-9 bg-white/[0.01] backdrop-blur-md rounded-lg">
             {/* Group Label */}
             <div className="flex items-center gap-2 hidden xl:flex">
-                <span className="w-1.5 h-1.5 rounded-full bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.6)]" />
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(168,85,247,0.6)]" />
                 <span className="text-[10px] text-gray-400 uppercase tracking-widest font-extrabold font-mono">Composition</span>
             </div>
 
@@ -33,8 +33,8 @@ export default function DaisyChainControls({ onOpenFrameModal }: DaisyChainContr
                     data-testid="first-frame-slot"
                     className={`relative w-20 h-8 bg-black/60 rounded-lg border transition-all duration-300 overflow-hidden flex items-center justify-center group cursor-pointer ${
                         videoInputs.firstFrame 
-                            ? 'border-purple-500 shadow-[0_0_12px_rgba(168,85,247,0.15)] bg-purple-950/5' 
-                            : 'border-white/10 hover:border-purple-500/40 hover:bg-purple-500/[0.02]'
+                            ? 'border-green-500 shadow-[0_0_12px_rgba(168,85,247,0.15)] bg-green-950/5' 
+                            : 'border-white/10 hover:border-green-500/40 hover:bg-green-500/[0.02]'
                     }`}
                 >
                     {videoInputs.firstFrame ? (
@@ -50,7 +50,7 @@ export default function DaisyChainControls({ onOpenFrameModal }: DaisyChainContr
                         </>
                     ) : (
                         <div className="flex items-center gap-1 px-1.5 py-1">
-                            <Plus size={10} className="text-purple-400 group-hover:text-purple-300" />
+                            <Plus size={10} className="text-green-400 group-hover:text-green-300" />
                             <span className="text-[8px] text-gray-500 group-hover:text-gray-300 font-bold uppercase tracking-widest font-mono select-none">Start</span>
                         </div>
                     )}
@@ -59,9 +59,9 @@ export default function DaisyChainControls({ onOpenFrameModal }: DaisyChainContr
 
             {/* Flow Connector Link Line */}
             <div className="flex items-center gap-1 shrink-0">
-                <div className={`h-[1px] w-2 transition-all duration-300 ${videoInputs.isDaisyChain ? 'bg-purple-500' : 'bg-white/10'}`} />
-                <ArrowRight size={10} className={`transition-colors duration-300 ${videoInputs.isDaisyChain ? 'text-purple-400 animate-pulse' : 'text-gray-600'}`} />
-                <div className={`h-[1px] w-2 transition-all duration-300 ${videoInputs.isDaisyChain ? 'bg-purple-500' : 'bg-white/10'}`} />
+                <div className={`h-[1px] w-2 transition-all duration-300 ${videoInputs.isDaisyChain ? 'bg-green-500' : 'bg-white/10'}`} />
+                <ArrowRight size={10} className={`transition-colors duration-300 ${videoInputs.isDaisyChain ? 'text-green-400 animate-pulse' : 'text-gray-600'}`} />
+                <div className={`h-[1px] w-2 transition-all duration-300 ${videoInputs.isDaisyChain ? 'bg-green-500' : 'bg-white/10'}`} />
             </div>
 
             {/* Last Frame Slot */}
@@ -71,8 +71,8 @@ export default function DaisyChainControls({ onOpenFrameModal }: DaisyChainContr
                     data-testid="last-frame-slot"
                     className={`relative w-20 h-8 bg-black/60 rounded-lg border transition-all duration-300 overflow-hidden flex items-center justify-center group cursor-pointer ${
                         videoInputs.lastFrame 
-                            ? 'border-purple-500 shadow-[0_0_12px_rgba(168,85,247,0.15)] bg-purple-950/5' 
-                            : 'border-white/10 hover:border-purple-500/40 hover:bg-purple-500/[0.02]'
+                            ? 'border-green-500 shadow-[0_0_12px_rgba(168,85,247,0.15)] bg-green-950/5' 
+                            : 'border-white/10 hover:border-green-500/40 hover:bg-green-500/[0.02]'
                     }`}
                 >
                     {videoInputs.lastFrame ? (
@@ -88,7 +88,7 @@ export default function DaisyChainControls({ onOpenFrameModal }: DaisyChainContr
                         </>
                     ) : (
                         <div className="flex items-center gap-1 px-1.5 py-1">
-                            <Plus size={10} className="text-purple-400 group-hover:text-purple-300" />
+                            <Plus size={10} className="text-green-400 group-hover:text-green-300" />
                             <span className="text-[8px] text-gray-500 group-hover:text-gray-300 font-bold uppercase tracking-widest font-mono select-none">End</span>
                         </div>
                     )}
@@ -101,10 +101,10 @@ export default function DaisyChainControls({ onOpenFrameModal }: DaisyChainContr
                 data-testid="daisy-chain-toggle"
                 className={`ml-1 text-[9px] px-2.5 py-1 rounded-md border font-bold uppercase tracking-widest transition-all duration-300 flex items-center gap-1.5 shrink-0
                     ${videoInputs.isDaisyChain 
-                        ? 'bg-purple-500/15 border-purple-500/40 text-purple-300 shadow-[0_0_10px_rgba(168,85,247,0.15)] hover:bg-purple-500/20' 
+                        ? 'bg-green-500/15 border-green-500/40 text-green-300 shadow-[0_0_10px_rgba(168,85,247,0.15)] hover:bg-green-500/20' 
                         : 'bg-white/3 border-white/6 text-gray-400 hover:text-gray-200 hover:bg-white/6 hover:border-white/10'}`}
             >
-                <span className={`w-1.5 h-1.5 rounded-full transition-colors duration-300 ${videoInputs.isDaisyChain ? 'bg-purple-400 animate-pulse' : 'bg-gray-600'}`} />
+                <span className={`w-1.5 h-1.5 rounded-full transition-colors duration-300 ${videoInputs.isDaisyChain ? 'bg-green-400 animate-pulse' : 'bg-gray-600'}`} />
                 <span className="hidden lg:inline">Daisy Chain</span>
             </button>
 

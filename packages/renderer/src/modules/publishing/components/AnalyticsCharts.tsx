@@ -78,7 +78,7 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
                 <div className="flex p-1 bg-gray-900 rounded-xl border border-gray-800">
                     <button
                         onClick={() => onMetricChange('revenue')}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${isRevenue ? 'bg-purple-500/10 text-purple-400 shadow-sm' : 'text-gray-500 hover:text-gray-300'
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${isRevenue ? 'bg-green-500/10 text-green-400 shadow-sm' : 'text-gray-500 hover:text-gray-300'
                             }`}
                     >
                         <DollarSign size={14} />

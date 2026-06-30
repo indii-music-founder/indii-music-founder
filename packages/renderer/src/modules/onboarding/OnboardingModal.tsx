@@ -256,7 +256,7 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
                                     {file.type === 'image' ? (
                                         <img src={file.preview} alt="preview" className="w-full h-full object-cover" />
                                     ) : file.type === 'audio' ? (
-                                        <div className="w-full h-full flex items-center justify-center text-purple-400 bg-purple-500/10">
+                                        <div className="w-full h-full flex items-center justify-center text-green-400 bg-green-500/10">
                                             <Music size={24} />
                                         </div>
                                     ) : (

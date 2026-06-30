@@ -94,6 +94,7 @@ export const VALID_AGENT_IDS = [
     'creative',
     'publishing',
     'licensing',
+    'rights',       // Rights & Registration orchestration (filing packets, portal workflows)
     'brand',
     'devops',
     'security',

@@ -301,7 +301,7 @@ export default function PublicistDashboard() {
                                             <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Total Contacts</div>
                                         </div>
                                         <div className="glass-panel p-6 rounded-2xl flex flex-col items-center justify-center text-center">
-                                            <div className="text-3xl font-black text-purple-400 mb-1">{contacts.filter(c => c.tier === 'Top').length}</div>
+                                            <div className="text-3xl font-black text-green-400 mb-1">{contacts.filter(c => c.tier === 'Top').length}</div>
                                             <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Top Tier</div>
                                         </div>
                                         <div className="glass-panel p-6 rounded-2xl flex flex-col items-center justify-center text-center">
@@ -393,7 +393,7 @@ function NavButton({ isActive, onClick, icon: Icon, label, disabled }: { isActiv
             className={`
                 w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all group
                 ${isActive
-                    ? 'bg-purple-600/10 text-white shadow-[0_0_15px_rgba(168,85,247,0.15)] border border-purple-500/20'
+                    ? 'bg-green-600/10 text-white shadow-[0_0_15px_rgba(168,85,247,0.15)] border border-green-500/20'
                     : disabled
                         ? 'text-slate-600 cursor-not-allowed'
                         : 'text-slate-400 hover:text-white hover:bg-white/5'}
@@ -403,12 +403,12 @@ function NavButton({ isActive, onClick, icon: Icon, label, disabled }: { isActiv
                 size={18}
                 className={`
                     transition-colors 
-                    ${isActive ? 'text-purple-400' : disabled ? 'text-slate-700' : 'text-slate-500 group-hover:text-slate-300'}
+                    ${isActive ? 'text-green-400' : disabled ? 'text-slate-700' : 'text-slate-500 group-hover:text-slate-300'}
                 `}
             />
             <span>{label}</span>
             {disabled && <span className="ml-auto text-[8px] bg-white/5 px-1.5 py-0.5 rounded text-slate-600 uppercase font-bold">Soon</span>}
-            {isActive && <motion.div layoutId="active-indicator" className="ml-auto w-1.5 h-1.5 rounded-full bg-purple-400 shadow-[0_0_8px_rgba(168,85,247,0.8)]" />}
+            {isActive && <motion.div layoutId="active-indicator" className="ml-auto w-1.5 h-1.5 rounded-full bg-green-400 shadow-[0_0_8px_rgba(168,85,247,0.8)]" />}
         </button>
     );
 }

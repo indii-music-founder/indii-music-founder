@@ -67,12 +67,12 @@ export default function GlobalSettings() {
 
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 text-gray-300 text-sm">
-                        <Monitor size={14} className={darkMode ? "text-purple-400" : "text-gray-500"} />
+                        <Monitor size={14} className={darkMode ? "text-green-400" : "text-gray-500"} />
                         Dark Mode (OLED)
                     </div>
                     <button
                         onClick={handleThemeToggle}
-                        className={`w-12 h-7 rounded-full relative transition-colors duration-200 ${darkMode ? 'bg-purple-600' : 'bg-gray-700'}`}
+                        className={`w-12 h-7 rounded-full relative transition-colors duration-200 ${darkMode ? 'bg-green-600' : 'bg-gray-700'}`}
                     >
                         <div className={`absolute top-1.5 w-4 h-4 bg-white rounded-full transition-all duration-200 ${darkMode ? 'right-1.5' : 'left-1.5'}`}></div>
                     </button>

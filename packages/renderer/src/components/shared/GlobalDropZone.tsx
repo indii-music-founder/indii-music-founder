@@ -251,7 +251,7 @@ export const GlobalDropZone: React.FC<{ children: React.ReactNode }> = ({ childr
         <div className="relative w-full h-full">
             {children}
             {isDragging && (
-                <div className="absolute inset-0 z-[99999] bg-black/60 backdrop-blur-sm border-4 border-dashed border-purple-500 rounded-lg flex flex-col items-center justify-center animate-in fade-in duration-200 m-4">
+                <div className="absolute inset-0 z-[99999] bg-black/60 backdrop-blur-sm border-4 border-dashed border-green-500 rounded-lg flex flex-col items-center justify-center animate-in fade-in duration-200 m-4">
                     <div className="bg-[#1a1a1a] p-8 rounded-2xl shadow-2xl flex flex-col items-center text-center max-w-md border border-gray-800">
                         <div className="flex gap-4 mb-6">
                             <div className="p-4 bg-blue-500/20 rounded-full text-blue-400">

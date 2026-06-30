@@ -49,9 +49,9 @@ export const DailyItem = React.memo<DailyItemProps>(({
             data-testid={`daily-item-${video.id}`}
             className={`
                 relative h-20 aspect-video rounded-lg overflow-hidden cursor-pointer group flex-shrink-0 transition-all border
-                focus-visible:ring-2 focus-visible:ring-purple-500/50 focus-visible:outline-none bg-[#0a0a0a]
+                focus-visible:ring-2 focus-visible:ring-green-500/50 focus-visible:outline-none bg-[#0a0a0a]
                 ${isSelected
-                    ? 'border-purple-500/50 shadow-[0_0_15px_rgba(168,85,247,0.3)] scale-105 z-10'
+                    ? 'border-green-500/50 shadow-[0_0_15px_rgba(168,85,247,0.3)] scale-105 z-10'
                     : 'border-white/5 hover:border-white/20 hover:scale-105'
                 }
             `}

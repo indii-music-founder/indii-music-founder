@@ -41,7 +41,7 @@ export default function ScenarioBuilder({ scenePrompt, motionPrompt, onSceneChan
     return (
         <div className={`flex flex-col h-full p-6 relative transition-colors duration-500 ${containerClass}`}>
             <div className="flex items-center gap-3 mb-8">
-                <div className="h-8 w-1 bg-linear-to-b from-purple-500 to-pink-500 rounded-full" />
+                <div className="h-8 w-1 bg-linear-to-b from-green-500 to-pink-500 rounded-full" />
                 <h2 className={`text-xl font-bold tracking-tight ${textClass}`}>The Scenario</h2>
             </div>
 
@@ -62,7 +62,7 @@ export default function ScenarioBuilder({ scenePrompt, motionPrompt, onSceneChan
                             whileTap={{ scale: 0.95 }}
                             className={`px-4 py-2 rounded-full text-xs font-medium transition-colors flex items-center gap-2 ${theme ? theme.colors.surfaceHighlight : 'bg-white/5'} ${theme ? theme.colors.border : 'border-white/10 border'} ${theme ? theme.colors.text : 'text-gray-300'}`}
                         >
-                            <Sparkles className={`w-3 h-3 ${theme ? 'text-current' : 'text-purple-400'}`} />
+                            <Sparkles className={`w-3 h-3 ${theme ? 'text-current' : 'text-green-400'}`} />
                             {p.label}
                         </motion.button>
                     ))}
@@ -80,7 +80,7 @@ export default function ScenarioBuilder({ scenePrompt, motionPrompt, onSceneChan
                         <textarea
                             value={scenePrompt}
                             onChange={(e) => onSceneChange(e.target.value)}
-                            className={`w-full h-full border rounded-xl p-4 text-sm outline-none resize-none transition-all placeholder:text-gray-600 ${inputBg} ${theme ? theme.colors.border : 'border-white/10'} ${textClass} focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50`}
+                            className={`w-full h-full border rounded-xl p-4 text-sm outline-none resize-none transition-all placeholder:text-gray-600 ${inputBg} ${theme ? theme.colors.border : 'border-white/10'} ${textClass} focus:border-green-500/50 focus:ring-1 focus:ring-green-500/50`}
                             placeholder="Describe the environment, lighting, and model..."
                         />
                         <div className="absolute inset-0 rounded-xl pointer-events-none border border-white/0 group-hover:border-white/5 transition-colors" />

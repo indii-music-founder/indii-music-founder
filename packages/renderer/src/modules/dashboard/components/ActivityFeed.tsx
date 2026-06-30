@@ -77,7 +77,7 @@ export default function ActivityFeed() {
                     const action = data as AgentActionEvent;
                     item = {
                         id,
-                        icon: <Zap size={12} className="text-purple-400" />,
+                        icon: <Zap size={12} className="text-green-400" />,
                         text: `${action.action}: ${action.details}`,
                         time: formatTime(Date.now()),
                         color: 'border-l-purple-500/40',
@@ -111,7 +111,7 @@ export default function ActivityFeed() {
             items.push({
                 id: msg.id,
                 icon: isAgent
-                    ? <Bot size={12} className="text-purple-400" />
+                    ? <Bot size={12} className="text-green-400" />
                     : <MessageSquare size={12} className="text-blue-400" />,
                 text: isAgent
                     ? `indii: "${truncate(msg.text, 50)}"`

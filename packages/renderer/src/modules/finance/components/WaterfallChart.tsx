@@ -130,7 +130,7 @@ export const WaterfallChart: React.FC<WaterfallChartProps> = ({
                     <p className="text-xs text-gray-500">Gross to Net Breakdown</p>
                 </div>
                 <div className="flex gap-3 text-xs">
-                    <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-purple-500" /> Gross</div>
+                    <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-green-500" /> Gross</div>
                     <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-red-500" /> Fees/Splits</div>
                     <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-green-500" /> Net Profit</div>
                 </div>

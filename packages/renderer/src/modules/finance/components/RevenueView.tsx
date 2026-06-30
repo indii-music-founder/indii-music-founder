@@ -67,7 +67,7 @@ const SourceBreakdown = ({ sources, counts }: { sources: Record<string, number>,
 
   const sourceColors: Record<string, string> = {
     streaming: 'bg-blue-500',
-    merch: 'bg-purple-500',
+    merch: 'bg-green-500',
     licensing: 'bg-emerald-500',
     social: 'bg-pink-500'
   };
@@ -158,7 +158,7 @@ export const RevenueView: React.FC = () => {
                 data-testid={`revenue-period-${p}`}
                 className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
                   period === p 
-                    ? 'bg-purple-600 text-white shadow-lg' 
+                    ? 'bg-green-600 text-white shadow-lg' 
                     : 'text-gray-400 hover:text-white'
                 }`}
               >
@@ -181,7 +181,7 @@ export const RevenueView: React.FC = () => {
           value={`$${stats.totalRevenue.toLocaleString('en-US')}`}
           change={stats.revenueChange}
           icon={DollarSign}
-          color="bg-purple-500"
+          color="bg-green-500"
         />
         <StatCard 
           title="Units Sold" 
@@ -210,7 +210,7 @@ export const RevenueView: React.FC = () => {
         <div className="lg:col-span-2 bg-[#161b22] border border-gray-800 rounded-2xl p-6">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-lg font-bold text-white flex items-center gap-2">
-              <BarChart3 size={20} className="text-purple-500" />
+              <BarChart3 size={20} className="text-green-500" />
               Revenue History
             </h3>
           </div>
@@ -226,7 +226,7 @@ export const RevenueView: React.FC = () => {
                     <motion.div 
                       initial={{ height: 0 }}
                       animate={{ height: `${height}%` }}
-                      className="bg-purple-500/20 group-hover:bg-purple-500/40 rounded-t-sm transition-colors border-t border-purple-500/50"
+                      className="bg-green-500/20 group-hover:bg-green-500/40 rounded-t-sm transition-colors border-t border-green-500/50"
                     />
                     <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-gray-900 border border-gray-700 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10 shadow-2xl">
                       {h.date}: ${h.amount.toLocaleString('en-US')}
@@ -267,7 +267,7 @@ export const RevenueView: React.FC = () => {
                   <span className="text-white font-medium truncate max-w-[150px]">
                     {productId}
                   </span>
-                  <span className="text-purple-400 font-bold">
+                  <span className="text-green-400 font-bold">
                     ${amount.toLocaleString('en-US')}
                   </span>
                 </div>

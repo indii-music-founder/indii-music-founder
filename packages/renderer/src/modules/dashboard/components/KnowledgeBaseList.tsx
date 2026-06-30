@@ -30,7 +30,7 @@ export const KnowledgeBaseList: React.FC = () => {
                             <div className="flex justify-between items-start mb-3">
                                 <ThreeDCardItem translateZ="20" className="p-2 bg-white/5 rounded-lg">
                                     {doc.type === 'image' || doc.name.match(/\.(jpg|jpeg|png|webp)$/i) ? (
-                                        <Image size={16} className="text-purple-400" />
+                                        <Image size={16} className="text-green-400" />
                                     ) : (
                                         <FileText size={16} className="text-blue-400" />
                                     )}

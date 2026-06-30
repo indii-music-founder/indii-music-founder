@@ -250,7 +250,7 @@ export const PlanningTab: React.FC<PlanningTabProps> = ({
                                             <td className="p-4">{stop.city}</td>
                                             <td className="p-4 text-blue-400 group-hover:text-blue-300 transition-colors">{stop.venue || "TBD"}</td>
                                             <td className="p-4">
-                                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${stop.type === 'Show' ? 'bg-purple-500/20 text-purple-400' :
+                                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${stop.type === 'Show' ? 'bg-green-500/20 text-green-400' :
                                                     stop.type === 'Travel' ? 'bg-blue-500/20 text-blue-400' :
                                                         'bg-gray-700 text-gray-400'
                                                     }`}>

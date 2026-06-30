@@ -122,7 +122,7 @@ export default function MarketingAssetGeneratorUI() {
             <div className="max-w-4xl w-full mx-auto z-10 flex flex-col gap-8">
                 {/* Header */}
                 <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-linear-to-br from-dept-marketing to-purple-500 p-px shadow-lg shadow-dept-marketing/20">
+                    <div className="w-12 h-12 rounded-xl bg-linear-to-br from-dept-marketing to-green-500 p-px shadow-lg shadow-dept-marketing/20">
                         <div className="w-full h-full bg-background rounded-[11px] flex items-center justify-center">
                             <Wand2 className="text-dept-marketing" size={24} />
                         </div>
@@ -292,7 +292,7 @@ export default function MarketingAssetGeneratorUI() {
                                     <button
                                         disabled={generatorMode === 'reel' ? !prompt.trim() : false}
                                         onClick={handleGenerate}
-                                        className="btn-primary bg-linear-to-r from-dept-marketing to-purple-600 hover:opacity-90 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-[0_0_20px_rgba(var(--color-dept-marketing),0.3)]"
+                                        className="btn-primary bg-linear-to-r from-dept-marketing to-green-600 hover:opacity-90 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-[0_0_20px_rgba(var(--color-dept-marketing),0.3)]"
                                     >
                                         <Wand2 size={18} /> {generatorMode === 'reel' ? 'Generate Video' : 'Begin Lip-Sync'}
                                     </button>

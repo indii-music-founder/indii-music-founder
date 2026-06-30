@@ -21,7 +21,7 @@ const TagButton = memo(({ tag, onClick, variant = 'creative' }: TagButtonProps) 
         onClick={onClick}
         role="menuitem"
         data-testid={`tag-${tag}-btn`}
-        className={`px-2 py-1 text-[10px] bg-background/40 hover:${variant === 'royalties' ? 'bg-dept-royalties/20' : 'bg-purple-500/20'} text-gray-300 hover:text-white rounded border border-white/5 hover:border-${variant === 'royalties' ? 'dept-royalties' : 'purple-500'}/50 transition-colors text-left backdrop-blur-sm`}
+        className={`px-2 py-1 text-[10px] bg-background/40 hover:${variant === 'royalties' ? 'bg-dept-royalties/20' : 'bg-green-500/20'} text-gray-300 hover:text-white rounded border border-white/5 hover:border-${variant === 'royalties' ? 'dept-royalties' : 'purple-500'}/50 transition-colors text-left backdrop-blur-sm`}
     >
         {tag}
     </button>
@@ -61,7 +61,7 @@ const CategoryDropdown = memo(({ category, values, isOpen, onToggle, onTagClick,
                 aria-controls={dropdownId}
                 data-testid={`category-${category}-trigger`}
                 className={`px-3 py-1.5 text-xs rounded-full border transition-all flex items-center gap-1 ${isOpen
-                    ? variant === 'royalties' ? 'bg-dept-royalties/20 border-dept-royalties/50 text-dept-royalties' : 'bg-purple-500/20 border-purple-500/50 text-purple-300'
+                    ? variant === 'royalties' ? 'bg-dept-royalties/20 border-dept-royalties/50 text-dept-royalties' : 'bg-green-500/20 border-green-500/50 text-green-300'
                     : 'bg-background/40 border-white/10 text-gray-400 hover:border-white/30 backdrop-blur-md'
                     }`}
             >
@@ -238,13 +238,13 @@ export function IntelligencePromptInput({ prompt, onChange, onGenerate, disabled
                     {builderTags.map((tag, index) => (
                         <span
                             key={`${tag}-${index}`}
-                            className="inline-flex items-center gap-1 pl-2 pr-1 py-0.5 text-[10px] bg-purple-500/15 text-purple-300 border border-purple-500/30 rounded-md"
+                            className="inline-flex items-center gap-1 pl-2 pr-1 py-0.5 text-[10px] bg-green-500/15 text-green-300 border border-green-500/30 rounded-md"
                         >
                             <span>{tag}</span>
                             <button
                                 onClick={() => handleRemoveBuilderTag(index)}
                                 disabled={disabled}
-                                className="rounded-md hover:bg-purple-500/30 p-0.5 transition-colors shrink-0 disabled:opacity-50"
+                                className="rounded-md hover:bg-green-500/30 p-0.5 transition-colors shrink-0 disabled:opacity-50"
                             >
                                 <X size={10} />
                             </button>
@@ -254,7 +254,7 @@ export function IntelligencePromptInput({ prompt, onChange, onGenerate, disabled
             )}
             
             <div className="relative w-full group">
-            <div className={`absolute inset-0 bg-gradient-to-r ${mode === 'image' ? 'from-dept-creative/10 to-dept-marketing/10' : 'from-purple-500/10 to-pink-500/10'} rounded-xl blur-sm opacity-0 group-focus-within:opacity-100 transition-opacity`} />
+            <div className={`absolute inset-0 bg-gradient-to-r ${mode === 'image' ? 'from-dept-creative/10 to-dept-marketing/10' : 'from-green-500/10 to-pink-500/10'} rounded-xl blur-sm opacity-0 group-focus-within:opacity-100 transition-opacity`} />
             <div className={`relative bg-white/5 border border-white/10 rounded-xl flex items-start gap-1 focus-within:border-${mode === 'image' ? 'dept-creative' : 'purple-500'}/50 focus-within:ring-1 focus-within:ring-${mode === 'image' ? 'dept-creative' : 'purple-500'}/20 transition-all z-10 p-2`}>
                 <div className="pt-2 pl-1 text-muted-foreground flex-shrink-0">
                     {mode === 'image' ? <ImageIcon size={16} /> : <Video size={16} />}
@@ -283,7 +283,7 @@ export function IntelligencePromptInput({ prompt, onChange, onGenerate, disabled
                             onClick={handleImprove}
                             disabled={isImproving || !prompt.trim() || disabled}
                             title="Improve with Intelligence"
-                            className="p-1.5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-purple-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            className="p-1.5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-green-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
                             {isImproving ? (
                                 <motion.div

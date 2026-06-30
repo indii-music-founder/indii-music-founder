@@ -28,7 +28,7 @@ function getFileIcon(type?: FileNode['fileType']) {
 
 function getFileIconColor(type?: FileNode['fileType']) {
     switch (type) {
-        case 'image': return 'text-purple-400';
+        case 'image': return 'text-green-400';
         case 'audio': return 'text-pink-400';
         case 'video': return 'text-blue-400';
         case 'document': return 'text-yellow-400';

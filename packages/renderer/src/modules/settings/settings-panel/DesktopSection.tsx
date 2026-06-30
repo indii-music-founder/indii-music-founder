@@ -221,7 +221,7 @@ const DesktopSection: React.FC = () => {
             idle: { icon: <Info size={12} />, text: 'Not checked', color: 'text-slate-500 bg-slate-800/60' },
             checking: { icon: <Loader2 size={12} className="animate-spin" />, text: 'Checking...', color: 'text-cyan-400 bg-cyan-500/10' },
             available: { icon: <Download size={12} />, text: `v${availableVersion} available`, color: 'text-amber-400 bg-amber-500/10' },
-            downloading: { icon: <Loader2 size={12} className="animate-spin" />, text: `Downloading ${downloadProgress.toFixed(0)}%`, color: 'text-purple-400 bg-purple-500/10' },
+            downloading: { icon: <Loader2 size={12} className="animate-spin" />, text: `Downloading ${downloadProgress.toFixed(0)}%`, color: 'text-green-400 bg-green-500/10' },
             downloaded: { icon: <CheckCircle size={12} />, text: `v${availableVersion} ready`, color: 'text-emerald-400 bg-emerald-500/10' },
             'up-to-date': { icon: <CheckCircle size={12} />, text: 'Up to date', color: 'text-emerald-400 bg-emerald-500/10' },
             error: { icon: <AlertTriangle size={12} />, text: 'Check failed', color: 'text-red-400 bg-red-500/10' },
@@ -357,7 +357,7 @@ const DesktopSection: React.FC = () => {
             <div className="mb-6 p-4 rounded-xl bg-linear-to-br from-slate-800/60 to-slate-900/60 border border-slate-700/50">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-linear-to-br from-cyan-500/20 to-purple-500/20 flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-xl bg-linear-to-br from-cyan-500/20 to-green-500/20 flex items-center justify-center">
                             <Monitor size={18} className="text-cyan-400" />
                         </div>
                         <div>
@@ -385,7 +385,7 @@ const DesktopSection: React.FC = () => {
                         >
                             <div className="h-1.5 w-full bg-slate-700/50 rounded-full overflow-hidden">
                                 <motion.div
-                                    className="h-full bg-linear-to-r from-purple-500 to-cyan-500"
+                                    className="h-full bg-linear-to-r from-green-500 to-cyan-500"
                                     initial={{ width: 0 }}
                                     animate={{ width: `${downloadProgress}%` }}
                                     transition={{ type: 'spring', damping: 20, stiffness: 100 }}

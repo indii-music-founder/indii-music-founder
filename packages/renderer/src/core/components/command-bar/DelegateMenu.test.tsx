@@ -207,14 +207,14 @@ describe('DelegateMenu — Keyboard Shortcuts & Navigation', () => {
     it('shows indii button with active styling when isIndiiMode is true', () => {
         renderMenu({ isIndiiMode: true });
         const indiiBtn = screen.getByText('indii').closest('button');
-        expect(indiiBtn).toHaveClass('bg-purple-600/20');
-        expect(indiiBtn).toHaveClass('text-purple-200');
+        expect(indiiBtn).toHaveClass('bg-green-600/20');
+        expect(indiiBtn).toHaveClass('text-green-200');
     });
 
     it('shows indii button with inactive styling when isIndiiMode is false', () => {
         renderMenu({ isIndiiMode: false });
         const indiiBtn = screen.getByText('indii').closest('button');
-        expect(indiiBtn).not.toHaveClass('bg-purple-600/20');
+        expect(indiiBtn).not.toHaveClass('bg-green-600/20');
         expect(indiiBtn).toHaveClass('text-gray-400');
     });
 

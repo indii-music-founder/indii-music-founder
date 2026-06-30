@@ -361,7 +361,7 @@ export const CharacterLibrary: React.FC = () => {
                                     title="Style Reference (Art Style/Aesthetic)"
                                     aria-label="Set as Style reference"
                                     className={`px-1.5 py-0.5 rounded text-[8px] font-bold uppercase transition-all ${ref.referenceType === 'style'
-                                        ? 'bg-purple-500/30 text-purple-300 border border-purple-500/40'
+                                        ? 'bg-green-500/30 text-green-300 border border-green-500/40'
                                         : 'text-gray-500 hover:text-gray-300'
                                         }`}
                                 >

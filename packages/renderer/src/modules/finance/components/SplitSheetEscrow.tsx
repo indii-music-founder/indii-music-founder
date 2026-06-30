@@ -260,7 +260,7 @@ export function SplitSheetEscrow() {
                         <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">Split Breakdown</h4>
                         <div className="flex w-full h-3 rounded-full overflow-hidden gap-px">
                             {collaborators.map((c, i) => {
-                                const colors = ['bg-blue-500', 'bg-purple-500', 'bg-emerald-500', 'bg-amber-500'];
+                                const colors = ['bg-blue-500', 'bg-green-500', 'bg-emerald-500', 'bg-amber-500'];
                                 return (
                                     <div
                                         key={c.id}
@@ -273,8 +273,8 @@ export function SplitSheetEscrow() {
                         </div>
                         <div className="flex flex-wrap gap-3 mt-3">
                             {collaborators.map((c, i) => {
-                                const colors = ['text-blue-400', 'text-purple-400', 'text-emerald-400', 'text-amber-400'];
-                                const dots = ['bg-blue-500', 'bg-purple-500', 'bg-emerald-500', 'bg-amber-500'];
+                                const colors = ['text-blue-400', 'text-green-400', 'text-emerald-400', 'text-amber-400'];
+                                const dots = ['bg-blue-500', 'bg-green-500', 'bg-emerald-500', 'bg-amber-500'];
                                 return (
                                     <div key={c.id} className="flex items-center gap-1.5">
                                         <div className={`w-2 h-2 rounded-full ${dots[i % dots.length]}`} />

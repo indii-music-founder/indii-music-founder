@@ -37,7 +37,7 @@ export default function HistoryDrawer({ onClose }: { onClose: () => void }) {
                     onClick={() => setTab('prompts')}
                     data-testid="history-tab-prompts"
                     className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${tab === 'prompts'
-                        ? 'bg-purple-500/15 text-purple-300'
+                        ? 'bg-green-500/15 text-green-300'
                         : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
                 >
                     <Clock size={12} /> Prompts

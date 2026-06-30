@@ -17,8 +17,8 @@ export function SystemProtocolsWidget({
     if (protocols.length === 0) return null;
 
     return (
-        <div className="rounded-xl bg-purple-500/5 border border-purple-500/10 p-3">
-            <h3 className="text-[10px] font-bold text-purple-400 uppercase tracking-widest mb-3 px-1 flex items-center gap-1.5">
+        <div className="rounded-xl bg-green-500/5 border border-green-500/10 p-3">
+            <h3 className="text-[10px] font-bold text-green-400 uppercase tracking-widest mb-3 px-1 flex items-center gap-1.5">
                 <Zap size={10} /> System Protocols
             </h3>
             <div className="space-y-1">
@@ -28,11 +28,11 @@ export function SystemProtocolsWidget({
                         onClick={() => onLoad(p)}
                         className={`w-full text-left flex items-center gap-2 py-2 px-2 rounded-lg transition-colors text-xs ${
                             `protocol-${p.id}` === currentWorkflowId
-                                ? 'bg-purple-500/20 text-purple-300'
+                                ? 'bg-green-500/20 text-green-300'
                                 : 'text-gray-400 hover:bg-white/[0.04] hover:text-white'
                         }`}
                     >
-                        <GitBranch size={12} className="flex-shrink-0 text-purple-400" />
+                        <GitBranch size={12} className="flex-shrink-0 text-green-400" />
                         <span className="truncate">{p.name}</span>
                     </button>
                 ))}
@@ -66,7 +66,7 @@ export function SavedWorkflowsWidget({
                         onClick={() => onLoad(w)}
                         className={`w-full text-left flex items-center gap-2 py-2 px-2 rounded-lg transition-colors text-xs ${
                             w.id === currentWorkflowId
-                                ? 'bg-purple-500/10 text-purple-400'
+                                ? 'bg-green-500/10 text-green-400'
                                 : 'text-gray-400 hover:bg-white/[0.04] hover:text-white'
                         }`}
                     >

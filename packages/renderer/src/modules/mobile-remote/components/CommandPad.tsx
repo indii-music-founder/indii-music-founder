@@ -190,8 +190,8 @@ export default function CommandPad({ onSendCommand, isPaired }: CommandPadProps)
       description: 'Highest velocity releases',
       moduleId: 'marketing',
       agentPrompt: 'Draft an aggressive, target-audience marketing sprint focusing on maximizing playlist placements and TikTok engagement for our top-performing track.',
-      color: 'border-purple-500/25 bg-purple-500/[0.03] text-purple-400 hover:bg-purple-500/[0.08]',
-      glow: 'shadow-purple-500/5 hover:shadow-purple-500/15',
+      color: 'border-green-500/25 bg-green-500/[0.03] text-green-400 hover:bg-green-500/[0.08]',
+      glow: 'shadow-green-500/5 hover:shadow-green-500/15',
     },
     {
       id: 'agent_activity',
@@ -256,7 +256,7 @@ export default function CommandPad({ onSendCommand, isPaired }: CommandPadProps)
   ];
 
   const moduleButtons = [
-    { id: 'creative', icon: Palette, label: 'Creative', accent: 'text-purple-400 border-purple-500/15 hover:bg-purple-500/5' },
+    { id: 'creative', icon: Palette, label: 'Creative', accent: 'text-green-400 border-green-500/15 hover:bg-green-500/5' },
     { id: 'video', icon: Video, label: 'Video', accent: 'text-pink-400 border-pink-500/15 hover:bg-pink-500/5' },
     { id: 'audio-analyzer', icon: Music, label: 'Audio', accent: 'text-amber-400 border-amber-500/15 hover:bg-amber-500/5' },
     { id: 'distribution', icon: Globe, label: 'Distro', accent: 'text-blue-400 border-blue-500/15 hover:bg-blue-500/5' },
