@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-30 09:53 EDT
+**Updated:** 2026-06-30 09:56 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+23ddee6c6 feat(ISSUE-566): gate registration submit path through harness
+1dfb5de42 chore: session checkpoint [09:53]
 c8e4cd3ad fix(ISSUE-565,568): agent-ID integrity + rights agent
 7cdf8b453 chore: session checkpoint [09:45]
 67f3a7710 chore: session checkpoint [09:42]
@@ -12,8 +14,6 @@ d997851d2 chore: session checkpoint [09:39]
 173bc63b3 chore: session checkpoint [09:34]
 b3eace84e chore: session checkpoint [09:29]
 fefd3e396 chore: session checkpoint [09:25]
-bb1e65e86 chore: session checkpoint [09:23]
-f5ddee592 chore: session checkpoint [09:22]
 ```
 
 ## Working State
