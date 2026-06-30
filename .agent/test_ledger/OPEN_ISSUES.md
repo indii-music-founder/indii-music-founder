@@ -8542,3 +8542,35 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
   3. Vitest: a step with an unapproved split cannot advance; the same step advances once the compiler is clean.
 - **Why / future reference:** Turns the already-built readiness compilers into hard advancement gates — the blueprint's "tests block CI" applied to the workflow state machine. Composes with ISSUE-566 (submit gate) and ISSUE-567 (freshness).
 - **DO NOT:** create a parallel state machine or a second test framework — the compilers ARE the tests; `WorkflowStateService` IS the state machine.
+
+### ISSUE-CI-28451450526: CI Pipeline Failure (Deploy to Firebase Hosting)
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** CI/CD
+- **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
+- **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/28451450526)
+- **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
+
+### ISSUE-CI-28451058111: CI Pipeline Failure (Deploy to Firebase Hosting)
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** CI/CD
+- **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
+- **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/28451058111)
+- **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
+
+### ISSUE-CI-28447623312: CI Pipeline Failure (Deploy to Firebase Hosting)
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** CI/CD
+- **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
+- **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/28447623312)
+- **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
+
+### ISSUE-CI-28442227172: CI Pipeline Failure (Deploy to Firebase Hosting)
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** CI/CD
+- **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
+- **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/28442227172)
+- **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
