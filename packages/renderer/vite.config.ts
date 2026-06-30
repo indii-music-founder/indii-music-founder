@@ -155,23 +155,20 @@ export default defineConfig({
     },
     build: {
         modulePreload: {
-            resolveDependencies(filename, deps, { hostId }) {
-                if (hostId.includes('LoginForm') || hostId.includes('UnauthenticatedApp')) {
-                    return deps.filter(dep => {
-                        const isHeavy = dep.includes('vendor-three') ||
-                                        dep.includes('vendor-fabric') ||
-                                        dep.includes('vendor-audio') ||
-                                        dep.includes('vendor-recharts') ||
-                                        dep.includes('vendor-video') ||
-                                        dep.includes('vendor-pdfjs') ||
-                                        dep.includes('vendor-tesseract') ||
-                                        dep.includes('vendor-reactflow') ||
-                                        dep.includes('vendor-yjs') ||
-                                        dep.includes('vendor-remotion');
-                        return !isHeavy;
-                    });
-                }
-                return deps;
+            resolveDependencies(filename, deps) {
+                return deps.filter(dep => {
+                    const isHeavy = dep.includes('vendor-three') ||
+                                    dep.includes('vendor-fabric') ||
+                                    dep.includes('vendor-audio') ||
+                                    dep.includes('vendor-recharts') ||
+                                    dep.includes('vendor-video') ||
+                                    dep.includes('vendor-pdfjs') ||
+                                    dep.includes('vendor-tesseract') ||
+                                    dep.includes('vendor-reactflow') ||
+                                    dep.includes('vendor-yjs') ||
+                                    dep.includes('vendor-remotion');
+                    return !isHeavy;
+                });
             }
         },
         outDir: resolve(repoRoot, 'dist/renderer'),
