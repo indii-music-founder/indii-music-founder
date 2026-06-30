@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-30 09:56 EDT
+**Updated:** 2026-06-30 10:12 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+bd7860c56 feat(ISSUE-567): approval freshness via Song Passport hash
+c523f87e3 chore: session checkpoint [09:56]
 23ddee6c6 feat(ISSUE-566): gate registration submit path through harness
 1dfb5de42 chore: session checkpoint [09:53]
 c8e4cd3ad fix(ISSUE-565,568): agent-ID integrity + rights agent
@@ -12,13 +14,11 @@ c8e4cd3ad fix(ISSUE-565,568): agent-ID integrity + rights agent
 d997851d2 chore: session checkpoint [09:39]
 833efdfc8 chore: session checkpoint [09:36]
 173bc63b3 chore: session checkpoint [09:34]
-b3eace84e chore: session checkpoint [09:29]
-fefd3e396 chore: session checkpoint [09:25]
 ```
 
 ## Working State
 ```
- M .agent/test_ledger/OPEN_ISSUES.md
+clean working tree
 ```
 
 ## Decisions
