@@ -53,15 +53,21 @@ test.describe('Mega Stress Test v4.0 (Core Shell Integrity)', () => {
         }
     });
 
-    test('104. Settings overlay opens and closes cleanly', async ({ authedPage: page }) => {
-        const settingsBtn = page.getByRole('button', { name: /settings/i }).first();
+    test('104. Settings page opens and navigates away cleanly', async ({ authedPage: page }) => {
+        const settingsBtn = page.locator('[data-testid="nav-item-settings"]').first();
         await expect(settingsBtn).toBeVisible({ timeout: 15_000 });
         await settingsBtn.click();
 
-        const backdrop = page.locator('div[data-state="open"].fixed.inset-0, .fixed.inset-0.bg-black\\/50').first();
-        await expect(backdrop).toBeVisible({ timeout: 5_000 });
-        await backdrop.click({ position: { x: 10, y: 10 } });
-        await expect(backdrop).not.toBeVisible({ timeout: 3_000 });
+        // Verify settings page is visible
+        const profileHeader = page.getByRole('heading', { name: /profile/i }).first();
+        await expect(profileHeader).toBeVisible({ timeout: 5_000 });
+
+        // Navigate back to dashboard to "close" it
+        const dashboardBtn = page.locator('[data-testid="return-hq-btn"]').first();
+        await expect(dashboardBtn).toBeVisible({ timeout: 5_000 });
+        await dashboardBtn.click();
+
+        await expect(profileHeader).not.toBeVisible({ timeout: 3_000 });
     });
 
     test('105. Mobile remote entrypoint remains accessible from the shell', async ({ authedPage: page }) => {
