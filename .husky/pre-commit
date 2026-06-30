@@ -26,5 +26,32 @@ npm run security:frontend-api-boundary > /dev/null 2>&1 || {
   exit 1
 }
 
+# Stage 4: Run affected unit tests (CRITICAL: Closes the pre-commit gap)
+# If any .ts/.tsx source files are staged, run their corresponding tests.
+# This catches broken assertions, type mismatches, mock/stub issues before commit.
+# Enforces: "rename → run tests → commit", not "commit → tests fail in CI"
+echo "  4️⃣  Running affected unit tests..."
+STAGED_SOURCE=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(ts|tsx)$' | grep -v '\.test\.' | grep -v 'node_modules' | head -50)
+if [ -n "$STAGED_SOURCE" ]; then
+  TEST_FILES=""
+  for FILE in $STAGED_SOURCE; do
+    # Convert packages/renderer/src/services/foo/Bar.ts → packages/renderer/src/services/foo/Bar.test.ts
+    TEST_FILE="${FILE%.ts}.test.ts"
+    TEST_FILE="${TEST_FILE%.tsx}.test.tsx"
+    if [ -f "$TEST_FILE" ]; then
+      TEST_FILES="$TEST_FILES $TEST_FILE"
+    fi
+  done
+
+  if [ -n "$TEST_FILES" ]; then
+    echo "    Testing: $(echo $TEST_FILES | wc -w) files"
+    npm test -- --run $TEST_FILES > /dev/null 2>&1 || {
+      echo "  ❌ Unit test failures in affected files. Fix and retry:"
+      npm test -- --run $TEST_FILES
+      exit 1
+    }
+  fi
+fi
+
 echo "  ✅ All pre-commit gates passed!"
 exit 0
