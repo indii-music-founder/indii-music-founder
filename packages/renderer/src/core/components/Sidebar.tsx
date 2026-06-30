@@ -355,6 +355,23 @@ export default function Sidebar() {
                 </button>
             </div>
 
+            {/* Founders Recognition Link */}
+            <div className="px-4 pb-2">
+                <button
+                    onClick={() => throttledSetModule('founders-recognition')}
+                    className={cn(
+                        "w-full flex items-center justify-center p-2 rounded-lg transition-all text-xs font-mono tracking-wider",
+                        currentModule === 'founders-recognition'
+                            ? "bg-amber-500/10 border border-amber-500/30 text-amber-300"
+                            : "text-gray-600 hover:text-gray-400 hover:bg-white/5"
+                    )}
+                    title="View Founder Recognition"
+                    aria-label="Founders"
+                >
+                    {isSidebarOpen ? "Founders" : "⭐"}
+                </button>
+            </div>
+
             <div className="flex-1 py-4 space-y-2">
                 {/* Projects */}
                 <ProjectList isSidebarOpen={isSidebarOpen} />
