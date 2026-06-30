@@ -8194,3 +8194,19 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main` due to stale assertions in `FoundersCheckout.test.tsx` failing during build validation.
 - **Fix:** Rewrote `FoundersCheckout.test.tsx` to align assertions with the new multi-step funnel design.
+
+### ISSUE-CI-28404450526: CI Pipeline Failure (Deploy to Firebase Hosting)
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** CI/CD
+- **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
+- **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/28404450526)
+- **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
+
+### ISSUE-CI-28397738613: CI Pipeline Failure (Deploy to Firebase Hosting)
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** CI/CD
+- **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
+- **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/28397738613)
+- **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
