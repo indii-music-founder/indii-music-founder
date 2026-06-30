@@ -4,6 +4,7 @@
 
 ## Recent Commits
 ```
+b9cc534dc chore: session checkpoint [15:46]
 5dda5cd42 chore: session checkpoint [15:37]
 13dd41136 chore: session checkpoint [15:36]
 6777753af chore: session checkpoint [15:32]
@@ -13,12 +14,10 @@ d0b4c2765 chore: session checkpoint [15:31]
 d467e4265 chore: session checkpoint [14:43]
 068236375 chore(shared): rebuild shared package dist typings
 c7c1dcbff chore(shared): strictly type agentId and ownerAgentId as ValidAgentId in business-harness types
-c6c1a9219 chore: session checkpoint [14:34]
 ```
 
 ## Working State
 ```
-M  .agent/HANDOFF_STATE.md
  M electron.vite.config.ts
  M packages/firebase/firestore.rules
  M packages/firebase/src/functions/creative/gateway.ts
