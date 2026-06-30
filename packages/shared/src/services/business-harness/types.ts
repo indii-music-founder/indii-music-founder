@@ -82,13 +82,49 @@ export interface HarnessFinding {
   legalBasisRefs?: string[];
 }
 
+export const VALID_AGENT_IDS = [
+  'marketing',
+  'legal',
+  'legal.contracts',
+  'legal.compliance',
+  'finance',
+  'finance.accounting',
+  'finance.tax',
+  'finance.royalty',
+  'producer',
+  'director',
+  'screenwriter',
+  'video',
+  'social',
+  'publicist',
+  'road',
+  'hospitality',
+  'event-planner',
+  'creative',
+  'publishing',
+  'licensing',
+  'rights',
+  'brand',
+  'devops',
+  'security',
+  'merchandise',
+  'distribution',
+  'music',
+  'analytics',
+  'curriculum',
+  'keeper',
+  'generalist'
+] as const;
+
+export type ValidAgentId = typeof VALID_AGENT_IDS[number];
+
 export interface HarnessRecommendation {
   id: string;
   domain: HarnessDomain;
   priority: HarnessSeverity;
   title: string;
   detail: string;
-  ownerAgentId: string;
+  ownerAgentId: ValidAgentId;
   approvalRequired: boolean;
   nextAction?: string;
 }
@@ -125,7 +161,7 @@ export interface HarnessCostLine {
 }
 
 export interface HarnessAgentBrief {
-  agentId: string;
+  agentId: ValidAgentId;
   departmentId?: string;
   brief: string;
   inputs: string[];
