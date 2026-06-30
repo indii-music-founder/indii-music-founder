@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { HelpCircle, Loader2, CheckCircle2, ExternalLink, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { OrgAdapter, CatalogTrack, FormValues, RegistrationField, SubmissionResult } from '../types';
+import { compileHarness } from '@/services/business-harness/HarnessCompiler';
+import type { HarnessRun } from '@indii/shared';
+import type { PublishingRightsOutput } from '@/services/publishing/PublishingRightsCompiler';
 
 interface RegistrationFormProps {
   adapter: OrgAdapter;
@@ -55,6 +58,8 @@ export function RegistrationForm({ adapter, track, userId, onSubmitComplete }: R
   const [values, setValues] = useState<FormValues>(() => autoFillFromTrack(adapter.fields, track));
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<SubmissionResult | null>(null);
+  const [harnessRun, setHarnessRun] = useState<HarnessRun<PublishingRightsOutput> | null>(null);
+  const [approvalGranted, setApprovalGranted] = useState(false);
 
   // Re-fill if track or adapter changes — keyed by .id to avoid
   // unnecessary re-fills on shallow prop reference changes.
@@ -76,6 +81,46 @@ export function RegistrationForm({ adapter, track, userId, onSubmitComplete }: R
     e.preventDefault();
     setSubmitting(true);
     try {
+      // ISSUE-566: Compile readiness harness before submission
+      if (!harnessRun) {
+         
+        const run = await compileHarness('publishing_rights', {
+          songId: track.id,
+          songTitle: track.title,
+          writers: track.writersAndContributors || [],
+          proRegistrationStatus: 'unregistered',
+          mlcRegistrationStatus: 'unregistered',
+        }, { userId, save: true }) as HarnessRun<PublishingRightsOutput>;
+        setHarnessRun(run);
+
+        // Check for blockers
+        if (run.output.blockers && run.output.blockers.length > 0) {
+          setResult({
+            success: false,
+            errorMessage: `Registration blocked: ${run.output.blockers[0]}`,
+            submittedAt: new Date(),
+          });
+          setSubmitting(false);
+          return;
+        }
+
+        // Check for approval gate
+        const fileRegGate = run.approvalGates.find(g => g.id === 'file_registration' || g.riskTier === 'approval');
+        if (fileRegGate && !approvalGranted) {
+          // Gate exists and not approved — halt and show approval dialog
+          setResult({
+            success: false,
+            errorMessage: `Awaiting approval: ${fileRegGate.reason}`,
+            submittedAt: new Date(),
+          });
+          setSubmitting(false);
+          return;
+        }
+
+        setApprovalGranted(true);
+      }
+
+      // All gates passed — proceed with submission
       const res = await adapter.submit(values, track, userId);
       setResult(res);
       onSubmitComplete(res);
