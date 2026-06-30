@@ -97,7 +97,7 @@ export class GearAssetCompiler implements HarnessCompiler<GearAssetInput, GearAs
           priority: 'low',
           title: 'Consider Bulk Purchasing',
           detail: `You buy ${input.category}s frequently. Buying in bulk might save money.`,
-          ownerAgentId: 'finance_agent',
+          ownerAgentId: 'finance',
           approvalRequired: false,
         });
       }
@@ -149,7 +149,7 @@ export class GearAssetCompiler implements HarnessCompiler<GearAssetInput, GearAs
       
       if (safePurchasePrice >= 2000) {
         agentBriefs.push({
-          agentId: 'finance_agent',
+          agentId: 'finance',
           departmentId: 'finance',
           brief: `High value asset ${input.name} acquired. Ensure insurance policy is updated.`,
           inputs: [input.assetId]
@@ -204,7 +204,7 @@ export class GearAssetCompiler implements HarnessCompiler<GearAssetInput, GearAs
             confidence: 'high'
           });
           agentBriefs.push({
-            agentId: 'music_agent',
+            agentId: 'music',
             departmentId: 'music',
             brief: `Verify condition of ${input.name} before warranty expires on ${input.warrantyExpirationDate}.`,
             inputs: [input.assetId]
