@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-30 15:54 EDT
+**Updated:** 2026-06-30 15:55 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+007735764 fix: improve Firestore mocks in WorkspaceSyncService tests
+7367bd6a9 chore: session checkpoint [15:54]
 8d418ff0f chore: session checkpoint [15:49]
 4f79ff462 chore: session checkpoint [15:48]
 3473d1c26 feat: cross-device workspace sync (Phase 1 Resume/Handoff)
@@ -12,8 +14,6 @@ b9cc534dc chore: session checkpoint [15:46]
 5dda5cd42 chore: session checkpoint [15:37]
 13dd41136 chore: session checkpoint [15:36]
 6777753af chore: session checkpoint [15:32]
-d0b4c2765 chore: session checkpoint [15:31]
-4b2fb302a chore: session checkpoint [15:31]
 ```
 
 ## Working State
