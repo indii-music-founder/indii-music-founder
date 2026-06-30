@@ -4,9 +4,12 @@ import { workspaceSyncService, type WorkspaceSnapshot } from './WorkspaceSyncSer
 // Mock Firestore
 vi.mock('firebase/firestore', () => ({
     doc: vi.fn((db, ...path) => ({ _path: path })),
-    getDoc: vi.fn(),
-    setDoc: vi.fn(),
-    onSnapshot: vi.fn(),
+    getDoc: vi.fn(async () => ({
+        exists: () => false,
+        data: () => undefined,
+    })),
+    setDoc: vi.fn(async () => undefined),
+    onSnapshot: vi.fn(() => () => undefined),
     serverTimestamp: vi.fn(() => ({ _type: 'serverTimestamp' })),
     Timestamp: {
         now: vi.fn(() => ({ toMillis: () => Date.now() })),
