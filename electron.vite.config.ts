@@ -185,6 +185,26 @@ export default defineConfig({
             apiFallbackPlugin()
         ],
         build: {
+            modulePreload: {
+                resolveDependencies(filename, deps, { hostId }) {
+                    if (hostId.includes('LoginForm') || hostId.includes('UnauthenticatedApp')) {
+                        return deps.filter(dep => {
+                            const isHeavy = dep.includes('vendor-three') ||
+                                            dep.includes('vendor-fabric') ||
+                                            dep.includes('vendor-audio') ||
+                                            dep.includes('vendor-recharts') ||
+                                            dep.includes('vendor-video') ||
+                                            dep.includes('vendor-pdfjs') ||
+                                            dep.includes('vendor-tesseract') ||
+                                            dep.includes('vendor-reactflow') ||
+                                            dep.includes('vendor-yjs') ||
+                                            dep.includes('vendor-remotion');
+                            return !isHeavy;
+                        });
+                    }
+                    return deps;
+                }
+            },
             outDir: resolve(__dirname, 'dist/renderer'),
             sourcemap: true,
             // WO-14: Warn when any chunk exceeds 2.5 MB (unminified).
