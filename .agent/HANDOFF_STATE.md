@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-30 14:26 EDT
+**Updated:** 2026-06-30 14:29 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+18d6fe9e6 docs: add RightsOps harness registration submit flow diagram
+1ab9bd36f chore: session checkpoint [14:26]
 c555be0f5 chore: session checkpoint [14:25]
 1933484fb chore: session checkpoint [14:24]
 0be5d2117 chore: session checkpoint [14:11]
@@ -12,8 +14,6 @@ db6f19b16 chore: session checkpoint [14:10]
 caa96740b fix(ci): correct Python heredoc syntax in deploy.yml
 a5c75fd8c fix(ci): correct Python indentation in deploy.yml staging URL extraction
 a4990b401 chore: session checkpoint [13:53]
-dec2b21f7 chore: session checkpoint [13:52]
-71fa591ba fix(ISSUE-565): close guard scope gap — import HarnessAgentBrief in FinanceCompiler + ActivityTimeValueCompiler
 ```
 
 ## Working State
