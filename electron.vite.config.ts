@@ -14,6 +14,7 @@ import tailwindcss from '@tailwindcss/vite';
 const envSanitizerPlugin = () => ({
     name: 'env-sanitizer',
     configResolved(config) {
+        const isProd = config.command === 'build' || config.mode === 'production';
         const secrets = [
             'VITE_PINATA_SECRET',
             'VITE_PINATA_JWT',
@@ -21,7 +22,7 @@ const envSanitizerPlugin = () => ({
             'VITE_NGROK_AUTHTOKEN',
             'VITE_PRINTFUL_API_KEY',
             'VITE_MEM0_API_KEY',
-            'VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN',
+            ...(isProd ? ['VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN'] : []),
             'VITE_GOOGLE_MAPS_API_KEY',
             'VITE_GOOGLE_MAPS_KEY',
         ];

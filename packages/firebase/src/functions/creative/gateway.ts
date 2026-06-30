@@ -1122,23 +1122,60 @@ export const generateImageV3 = onCall({ timeoutSeconds: 120, memory: '1GiB', sec
         }]
       : undefined;
 
-    const interaction = await ai.interactions.create({
-      model: modelId,
-      input: interactionInput,
-      response_modalities: ['image'],
-      generation_config: {
-        image_config: {
-          aspect_ratio: aspectRatio,
-          ...(normalizedImageSize ? { image_size: normalizedImageSize } : {}),
-        },
-        ...(normalizedThinkingLevel && model === 'fast'
-          ? { thinking_level: normalizedThinkingLevel }
-          : {}),
-      },
-      ...(googleSearchTool ? { tools: googleSearchTool } : {}),
-    });
+    let image: { data: string; mimeType: string };
 
-    const image = extractInteractionImage(interaction);
+    if ((ai as any).interactions) {
+      const interaction = await (ai as any).interactions.create({
+        model: modelId,
+        input: interactionInput,
+        response_modalities: ['image'],
+        generation_config: {
+          image_config: {
+            aspect_ratio: aspectRatio,
+            ...(normalizedImageSize ? { image_size: normalizedImageSize } : {}),
+          },
+          ...(normalizedThinkingLevel && model === 'fast'
+            ? { thinking_level: normalizedThinkingLevel }
+            : {}),
+        },
+        ...(googleSearchTool ? { tools: googleSearchTool } : {}),
+      });
+      image = extractInteractionImage(interaction);
+    } else {
+      console.log('[generateImageV3] ai.interactions is undefined (Vertex AI mode). Falling back to models.generateContent...');
+      const response = await (ai.models as any).generateContent({
+        model: modelId,
+        contents: interactionInput,
+        config: {
+          responseModalities: ['IMAGE'],
+          imageConfig: {
+            aspectRatio: aspectRatio,
+            ...(normalizedImageSize ? { imageSize: normalizedImageSize } : {}),
+          },
+          ...(normalizedThinkingLevel && model === 'fast'
+            ? { thinkingConfig: { thinkingLevel: normalizedThinkingLevel.charAt(0).toUpperCase() + normalizedThinkingLevel.slice(1) } }
+            : {}),
+          ...(googleSearchTool ? { tools: googleSearchTool } : {}),
+        }
+      });
+
+      const candidates = (response as any).candidates;
+      if (!candidates || candidates.length === 0) {
+        throw new Error('No candidates returned from Gemini API.');
+      }
+      const parts = candidates[0].content?.parts;
+      if (!parts || parts.length === 0) {
+        throw new Error('No parts in response.');
+      }
+      const part = parts.find((p: any) => p.inlineData);
+      if (!part || !part.inlineData) {
+        throw new Error('No image data found in response.');
+      }
+      image = {
+        data: part.inlineData.data,
+        mimeType: part.inlineData.mimeType || 'image/png'
+      };
+    }
     
     const buffer = Buffer.from(image.data, 'base64');
     

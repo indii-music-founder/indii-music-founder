@@ -284,6 +284,14 @@ service cloud.firestore {
         allow read, write: if isOwner(userId);
       }
 
+      // =========================================================================
+      // Workspace Sync (Cross-Device State Replication)
+      // =========================================================================
+      // Workspace snapshot document (users push/pull workspace state here)
+      match /workspace/{docId} {
+        allow read, write: if isOwner(userId);
+      }
+
       match /contracts/{contractId} {
         allow read, create, update: if isOwner(userId);
         allow delete: if false;

@@ -17,6 +17,7 @@ import { useGlobalShortcutsModal } from '@/components/shared/GlobalKeyboardShort
 import { useRemoteCommandListener } from '@/hooks/useRemoteCommandListener';
 import { useConnectivityMonitor } from '@/hooks/useConnectivityMonitor';
 import { useAutoSleep } from '@/hooks/useAutoSleep';
+import { useWorkspaceSync } from '@/hooks/useWorkspaceSync';
 import { LoadingFallback } from '@/core/components/LoadingFallbacks';
 import { cleanupLocalStorage } from '@/lib/storageHealth';
 import { flushFounderFunnelQueue } from '@/services/founders/founderFunnel';
@@ -100,6 +101,9 @@ export default function App() {
 
     // Auto-sleep the desktop to the tray after configurable idle (Electron only)
     useAutoSleep();
+
+    // Cross-device workspace sync (push/pull, debounced)
+    useWorkspaceSync();
 
     const publicLegalPage = useMemo(() => {
         const path = location.pathname.replace(/\/+$/, '') || '/';
