@@ -125,36 +125,37 @@ export function useWorkspaceSync(): void {
     // -----------------------------------------------------------------------
 
     useEffect(() => {
+        let prevRootState = useStore.getState();
+        let prevPlanState = useLivingPlanSlice.getState();
+
         // Subscribe to root store changes
-        const unsubRoot = useStore.subscribe(
-            (state, prevState) => {
-                // Shallow check: if major fields changed, queue a push
-                if (
-                    state.boardroomMessages !== prevState.boardroomMessages ||
-                    state.activeAgents !== prevState.activeAgents ||
-                    state.referencedAssets !== prevState.referencedAssets ||
-                    state.currentModule !== prevState.currentModule ||
-                    state.conversationMode !== prevState.conversationMode ||
-                    state.notes !== prevState.notes ||
-                    state.selectedNoteId !== prevState.selectedNoteId ||
-                    state.creativePrompt !== prevState.creativePrompt
-                ) {
-                    queuePush();
-                }
+        const unsubRoot = useStore.subscribe((state) => {
+            // Shallow check: if major fields changed, queue a push
+            if (
+                state.boardroomMessages !== prevRootState.boardroomMessages ||
+                state.activeAgents !== prevRootState.activeAgents ||
+                state.referencedAssets !== prevRootState.referencedAssets ||
+                state.currentModule !== prevRootState.currentModule ||
+                state.conversationMode !== prevRootState.conversationMode ||
+                state.notes !== prevRootState.notes ||
+                state.selectedNoteId !== prevRootState.selectedNoteId ||
+                state.creativePrompt !== prevRootState.creativePrompt
+            ) {
+                queuePush();
             }
-        );
+            prevRootState = state;
+        });
 
         // Subscribe to plan slice changes
-        const unsubPlan = useLivingPlanSlice.subscribe(
-            (state, prevState) => {
-                if (
-                    state.selectedPlan !== prevState.selectedPlan ||
-                    state.selectedPlanId !== prevState.selectedPlanId
-                ) {
-                    queuePush();
-                }
+        const unsubPlan = useLivingPlanSlice.subscribe((state) => {
+            if (
+                state.selectedPlan !== prevPlanState.selectedPlan ||
+                state.selectedPlanId !== prevPlanState.selectedPlanId
+            ) {
+                queuePush();
             }
-        );
+            prevPlanState = state;
+        });
 
         return () => {
             unsubRoot();
