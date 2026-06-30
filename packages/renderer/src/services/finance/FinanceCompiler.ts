@@ -7,7 +7,8 @@ import {
   createHarnessRun,
   BusinessActivityEvent,
   HarnessFinding,
-  HarnessScore
+  HarnessScore,
+  HarnessAgentBrief
 } from '@indii/shared';
 import { activityValueService } from '../business-harness/ActivityValueService';
 import type { Expense } from '@/modules/finance/schemas';
