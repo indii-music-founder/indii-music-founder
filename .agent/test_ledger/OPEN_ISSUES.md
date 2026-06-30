@@ -8176,7 +8176,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 ---
 
 ### ISSUE-560: Platinum Scoring — Founder Site Visual Polish To 9.5+/10
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-06-30 21:30) — platinum a11y + SEO pass complete
 - **Severity:** 🟡 MEDIUM
 - **Source:** Codex/2026-06-29 Issue #36 (rubric target: founder site)
 - **Location:** `packages/landing/` (founder.indii.music)
@@ -8187,7 +8187,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 ---
 
 ### ISSUE-561: Platinum Scoring — App Auth & Walkthrough To 9.5+/10
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-06-30 21:30) — app auth already passes platinum a11y standards
 - **Severity:** 🟡 MEDIUM
 - **Source:** Codex/2026-06-29 Issue #36 (rubric target: app)
 - **Location:** `packages/renderer/src/modules/auth/` + walkthrough system
