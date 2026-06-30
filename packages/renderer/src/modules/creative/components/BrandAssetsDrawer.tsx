@@ -243,7 +243,8 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
                     url: downloadUrl,
                     prompt: prompt,
                     timestamp: Date.now(),
-                    projectId: currentProjectId || 'personal'
+                    projectId: currentProjectId || 'personal',
+                    origin: 'uploaded'
                 });
 
                 setPrompt('');
@@ -384,8 +385,8 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
                             <p className="text-xs text-gray-600 italic text-center py-4">No reference images.</p>
                         ) : (
                             <div className="grid grid-cols-3 gap-2">
-                                {refImages.map((img: BrandAsset, i: number) => (
-                                    <div key={i} className="aspect-square bg-[#0f0f0f] rounded border border-gray-800 overflow-hidden group relative">
+                                {refImages.map((img: BrandAsset) => (
+                                    <div key={img.id || img.url} className="aspect-square bg-[#0f0f0f] rounded border border-gray-800 overflow-hidden group relative">
                                         <img src={img.url} alt={img.description} title={img.description} className="w-full h-full object-cover" />
                                         
                                         {/* Persistent bottom label */}
@@ -446,8 +447,8 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
                             <p className="text-xs text-gray-600 italic text-center py-4">No assets yet.</p>
                         ) : (
                             <div className="grid grid-cols-3 gap-2">
-                                {assets.map((asset: BrandAsset, i: number) => (
-                                    <div key={i} className="aspect-square bg-[#0f0f0f] rounded border border-gray-800 overflow-hidden p-1 group relative">
+                                {assets.map((asset: BrandAsset) => (
+                                    <div key={asset.id || asset.url} className="aspect-square bg-[#0f0f0f] rounded border border-gray-800 overflow-hidden p-1 group relative">
                                         <img src={asset.url} alt={asset.description} title={asset.description} className="w-full h-full object-contain" />
                                         
                                         {/* Persistent bottom label */}
