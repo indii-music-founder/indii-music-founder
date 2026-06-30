@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-30 13:25 EDT
+**Updated:** 2026-06-30 13:30 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+057895dd3 fix(ci): make Firebase Hosting releases idempotent + correct harness ledger
+483ed884a chore: session checkpoint [13:25]
 ddcf3a8f8 chore: session checkpoint [13:24]
 891dcb75c chore: session checkpoint [13:22]
 874d5b72a fix(ISSUE-565,572): remaining invalid agent IDs + stray debug log
@@ -12,8 +14,6 @@ ddcf3a8f8 chore: session checkpoint [13:24]
 5ff7f769d chore: session checkpoint [13:16]
 be31b1ed6 fix(workflow): add mandatory commit & push step to /end
 c04049d0d chore: session checkpoint [13:15]
-2cdb0f78e chore: session checkpoint [13:14]
-261efe3c6 chore: session checkpoint [13:09]
 ```
 
 ## Working State
