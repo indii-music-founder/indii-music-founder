@@ -62,6 +62,9 @@ export function RegistrationForm({ adapter, track, userId, onSubmitComplete }: R
   const [harnessRun, setHarnessRun] = useState<HarnessRun<PublishingRightsOutput> | null>(null);
   const [approvalGranted, setApprovalGranted] = useState(false);
   const [approvalPassportHash, setApprovalPassportHash] = useState<string | null>(null);
+  // ISSUE-570: Pause gates at critical user-confirmation steps
+  const [pausePhase, setPausePhase] = useState<'certification' | 'payment' | 'final_submit' | null>(null);
+  const [pauseConfirmed, setPauseConfirmed] = useState(false);
 
   // Re-fill if track or adapter changes — keyed by .id to avoid
   // unnecessary re-fills on shallow prop reference changes.
@@ -83,6 +86,13 @@ export function RegistrationForm({ adapter, track, userId, onSubmitComplete }: R
     e.preventDefault();
     setSubmitting(true);
     try {
+      // ISSUE-570: Pause gate 1 — certification review
+      if (!pausePhase) {
+        setPausePhase('certification');
+        setSubmitting(false);
+        return;
+      }
+
       // ISSUE-566: Compile readiness harness before submission
       if (!harnessRun) {
          
@@ -145,9 +155,18 @@ export function RegistrationForm({ adapter, track, userId, onSubmitComplete }: R
         setApprovalGranted(true);
       }
 
+      // ISSUE-570: Pause gate 2 — final submission confirmation
+      if (pausePhase === 'certification' && !pauseConfirmed) {
+        setPausePhase('final_submit');
+        setSubmitting(false);
+        return;
+      }
+
       // All gates passed — proceed with submission
       const res = await adapter.submit(values, track, userId);
       setResult(res);
+      setPausePhase(null);
+      setPauseConfirmed(false);
       onSubmitComplete(res);
     } catch (err) {
       const errResult: SubmissionResult = {
@@ -161,6 +180,74 @@ export function RegistrationForm({ adapter, track, userId, onSubmitComplete }: R
       setSubmitting(false);
     }
   };
+
+  // ISSUE-570: Pause-gate confirmation dialogs
+  if (pausePhase === 'certification' && !pauseConfirmed) {
+    return (
+      <div className="space-y-4 py-4">
+        <div className="flex items-start gap-3 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+          <AlertCircle size={16} className="text-blue-400 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm text-blue-200 font-semibold">Certification Review</p>
+            <p className="text-xs text-blue-200/70 mt-1">Please review the form data and catalog details below before submitting. Once submitted, this filing is binding.</p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => {
+            setPauseConfirmed(true);
+            setSubmitting(true);
+            handleSubmit({ preventDefault: () => {} } as any);
+          }}
+          className="w-full py-3 rounded-xl font-semibold text-sm bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/20 transition-all duration-200"
+        >
+          I've reviewed — proceed to filing
+        </button>
+        <button
+          type="button"
+          onClick={() => setPausePhase(null)}
+          className="w-full text-xs text-gray-600 hover:text-gray-400 transition-colors"
+        >
+          Cancel & review form
+        </button>
+      </div>
+    );
+  }
+
+  if (pausePhase === 'final_submit' && pauseConfirmed) {
+    return (
+      <div className="space-y-4 py-4">
+        <div className="flex items-start gap-3 p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+          <AlertCircle size={16} className="text-amber-400 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm text-amber-200 font-semibold">Final Submission Confirmation</p>
+            <p className="text-xs text-amber-200/70 mt-1">This submission to {adapter.name} is binding and cannot be undone. Confirm you want to proceed.</p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => {
+            setPauseConfirmed(false);
+            setSubmitting(true);
+            handleSubmit({ preventDefault: () => {} } as any);
+          }}
+          className="w-full py-3 rounded-xl font-semibold text-sm bg-amber-600 hover:bg-amber-500 text-white shadow-lg shadow-amber-500/20 transition-all duration-200"
+        >
+          Confirm & submit to {adapter.name}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setPausePhase(null);
+            setPauseConfirmed(false);
+          }}
+          className="w-full text-xs text-gray-600 hover:text-gray-400 transition-colors"
+        >
+          Cancel
+        </button>
+      </div>
+    );
+  }
 
   if (result) {
     return <SubmissionResultView result={result} adapter={adapter} onReset={() => setResult(null)} />;
