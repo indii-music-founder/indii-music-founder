@@ -37,7 +37,7 @@ export function OrgStatusCard({ adapter, status, confirmationNumber, isSelected,
       className={cn(
         'w-full text-left rounded-xl border p-4 transition-all duration-200 group',
         isSelected
-          ? 'border-purple-500/60 bg-purple-500/10 shadow-[0_0_0_1px_rgba(168,85,247,0.3)]'
+          ? 'border-green-500/60 bg-green-500/10 shadow-[0_0_0_1px_rgba(168,85,247,0.3)]'
           : 'border-white/[0.06] bg-white/[0.02] hover:border-white/10 hover:bg-white/[0.04]'
       )}
     >
@@ -64,7 +64,7 @@ export function OrgStatusCard({ adapter, status, confirmationNumber, isSelected,
           </div>
           <ChevronRight
             size={14}
-            className={cn('text-gray-600 transition-transform', isSelected && 'rotate-90 text-purple-400')}
+            className={cn('text-gray-600 transition-transform', isSelected && 'rotate-90 text-green-400')}
           />
         </div>
       </div>

@@ -92,13 +92,13 @@ export function RegistrationAutonomousRail({ focusedAdapter, track, className }:
       <div className="px-4 py-3 border-b border-white/[0.05] flex items-center gap-2 flex-shrink-0">
         <div className={cn(
           'w-6 h-6 rounded-full flex items-center justify-center',
-          isActive ? 'bg-purple-500/30 animate-pulse' : 'bg-white/[0.06]'
+          isActive ? 'bg-green-500/30 animate-pulse' : 'bg-white/[0.06]'
         )}>
-          <Bot size={13} className="text-purple-400" />
+          <Bot size={13} className="text-green-400" />
         </div>
         <span className="text-xs font-semibold text-gray-300">indii Co-Pilot</span>
         {isActive && (
-          <span className="text-[10px] text-purple-400 ml-auto flex items-center gap-1">
+          <span className="text-[10px] text-green-400 ml-auto flex items-center gap-1">
             <Sparkles size={10} />
             Active
           </span>
@@ -119,7 +119,7 @@ export function RegistrationAutonomousRail({ focusedAdapter, track, className }:
             className={cn(
               'text-xs leading-relaxed rounded-xl px-3 py-2.5 max-w-[90%]',
               msg.role === 'ai'
-                ? 'bg-purple-500/10 border border-purple-500/20 text-purple-100/90'
+                ? 'bg-green-500/10 border border-green-500/20 text-green-100/90'
                 : 'bg-white/[0.04] border border-white/[0.06] text-gray-200 ml-auto'
             )}
           >
@@ -137,12 +137,12 @@ export function RegistrationAutonomousRail({ focusedAdapter, track, className }:
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSend()}
             placeholder="Ask anything about this registration…"
-            className="flex-1 bg-white/[0.04] border border-white/[0.06] rounded-lg px-3 py-2 text-xs text-white placeholder-gray-600 outline-none focus:border-purple-500/30"
+            className="flex-1 bg-white/[0.04] border border-white/[0.06] rounded-lg px-3 py-2 text-xs text-white placeholder-gray-600 outline-none focus:border-green-500/30"
           />
           <button
             onClick={handleSend}
             disabled={!input.trim()}
-            className="px-3 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs font-medium transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            className="px-3 py-2 rounded-lg bg-green-600 hover:bg-green-500 text-white text-xs font-medium transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
           >
             Send
           </button>

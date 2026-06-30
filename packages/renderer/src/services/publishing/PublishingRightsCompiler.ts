@@ -155,7 +155,7 @@ export class PublishingRightsCompiler implements HarnessCompiler<PublishingRight
         priority: 'medium',
         title: 'Register for ISWC',
         detail: 'Register the song with your PRO to get an ISWC assigned.',
-        ownerAgentId: 'legal_agent', // Legal or royalty agent
+        ownerAgentId: 'publishing',
         approvalRequired: false,
       });
     } else {
@@ -224,7 +224,7 @@ export class PublishingRightsCompiler implements HarnessCompiler<PublishingRight
     const agentBriefs: HarnessAgentBrief[] = [];
     if (!registrationReady) {
       agentBriefs.push({
-        agentId: 'legal_agent',
+        agentId: 'legal',
         brief: 'Resolve publishing split sheet blocks and verify share totals.',
         inputs: ['Publishing splits', 'Writer signatures'],
         blockedBy: blockers,

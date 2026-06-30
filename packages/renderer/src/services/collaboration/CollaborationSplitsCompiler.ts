@@ -139,7 +139,7 @@ export class CollaborationSplitsCompiler implements HarnessCompiler<Collaboratio
 
     if (!readyForSplitSheet) {
       agentBriefs.push({
-        agentId: 'legal_agent',
+        agentId: 'legal',
         departmentId: 'legal',
         brief: `Track "${input.trackTitle}" is not ready for split sheets. Total split: ${totalSplit}%. Disputed: ${isDisputed}. Missing agreements: ${missingAgreements.length}.`,
         inputs: ['collaboration_splits'],

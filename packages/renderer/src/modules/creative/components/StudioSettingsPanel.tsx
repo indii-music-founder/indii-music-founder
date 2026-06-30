@@ -58,10 +58,10 @@ function CyclableControl<T extends string>({
                     onClick={() => cycle(1)}
                     data-testid={`${testId}-value`}
                     className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg
-                        bg-white/4 border border-white/8 hover:border-purple-500/30
-                        hover:bg-purple-500/5 transition-all cursor-pointer select-none"
+                        bg-white/4 border border-white/8 hover:border-green-500/30
+                        hover:bg-green-500/5 transition-all cursor-pointer select-none"
                 >
-                    {current.icon && <span className="text-purple-400">{current.icon}</span>}
+                    {current.icon && <span className="text-green-400">{current.icon}</span>}
                     <div className="text-center">
                         <div className="text-xs font-bold text-gray-200">{current.label}</div>
                         {current.sublabel && (
@@ -86,7 +86,7 @@ function CyclableControl<T extends string>({
                         onClick={() => onChange(opt.value)}
                         className={`w-1.5 h-1.5 rounded-full transition-all ${
                             i === currentIdx
-                                ? 'bg-purple-400 shadow-[0_0_6px_rgba(168,85,247,0.5)]'
+                                ? 'bg-green-400 shadow-[0_0_6px_rgba(168,85,247,0.5)]'
                                 : 'bg-white/10 hover:bg-white/20'
                         }`}
                         aria-label={opt.label}
@@ -203,7 +203,7 @@ export default function StudioSettingsPanel({ onClose }: { onClose: () => void }
                             <p className="text-[9px] uppercase tracking-widest text-gray-500 font-bold">Video timing</p>
                             <p className="text-[11px] font-mono font-bold text-white">{directorFps} fps · {directorFrames} frames</p>
                         </div>
-                        <span className="text-[9px] uppercase tracking-widest text-purple-300 bg-purple-500/10 border border-purple-500/20 rounded-full px-2 py-1">
+                        <span className="text-[9px] uppercase tracking-widest text-green-300 bg-green-500/10 border border-green-500/20 rounded-full px-2 py-1">
                             Locked
                         </span>
                     </div>
@@ -263,7 +263,7 @@ export default function StudioSettingsPanel({ onClose }: { onClose: () => void }
                                     onClick={() => setStudioControls({ thinkingLevel: level.value })}
                                     className={`px-2 py-1 rounded text-[9px] font-semibold transition-colors ${
                                         studioControls.thinkingLevel === level.value
-                                            ? 'bg-purple-500/25 text-purple-200'
+                                            ? 'bg-green-500/25 text-green-200'
                                             : 'text-gray-400 hover:text-gray-200'
                                     }`}
                                 >
@@ -311,7 +311,7 @@ export default function StudioSettingsPanel({ onClose }: { onClose: () => void }
                             data-testid="settings-negative-prompt"
                             className="w-full bg-white/3 border border-white/6 rounded-md px-2.5 py-1
                                 text-[10px] text-gray-300 placeholder:text-gray-600 focus:outline-none
-                                focus:border-purple-500/30 transition-colors"
+                                focus:border-green-500/30 transition-colors"
                         />
                     </div>
                 </div>

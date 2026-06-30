@@ -116,7 +116,7 @@ export default function AccountCreationWizard({ onClose }: AccountCreationWizard
                 <button
                     onClick={handleGenerateIdentity}
                     disabled={isGenerating}
-                    className="text-sm flex items-center gap-2 text-purple-400 hover:text-purple-300 disabled:opacity-50"
+                    className="text-sm flex items-center gap-2 text-green-400 hover:text-green-300 disabled:opacity-50"
                 >
                     {isGenerating ? <Loader2 size={16} className="animate-spin" /> : <Wand2 size={16} />}
                     {generatedIdentity ? 'Regenerate' : 'Generate Ideas'}

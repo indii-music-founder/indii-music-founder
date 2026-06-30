@@ -13,7 +13,7 @@ import { useInventory } from '../hooks/useInventory';
 
 const CHANNEL_COLORS: Record<string, string> = {
     Printful: 'text-blue-400',
-    Printify: 'text-purple-400',
+    Printify: 'text-green-400',
     Shopify: 'text-green-400',
     Direct: 'text-[#FFE135]',
 };

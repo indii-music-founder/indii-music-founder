@@ -132,14 +132,14 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                     <div className="flex gap-1 bg-white/5 p-0.5 rounded-lg border border-white/5">
                         <button
                             onClick={() => setActiveTab('create')}
-                            className={`p-1.5 rounded-md transition-all ${activeTab === 'create' ? 'bg-purple-500/15 text-purple-400 shadow-[0_0_12px_rgba(168,85,247,0.1)]' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
+                            className={`p-1.5 rounded-md transition-all ${activeTab === 'create' ? 'bg-green-500/15 text-green-400 shadow-[0_0_12px_rgba(168,85,247,0.1)]' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
                             title="Create"
                         >
                             <Wand2 size={14} />
                         </button>
                         <button
                             onClick={() => setActiveTab('history')}
-                            className={`p-1.5 rounded-md transition-all ${activeTab === 'history' ? 'bg-purple-500/15 text-purple-400 shadow-[0_0_12px_rgba(168,85,247,0.1)]' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
+                            className={`p-1.5 rounded-md transition-all ${activeTab === 'history' ? 'bg-green-500/15 text-green-400 shadow-[0_0_12px_rgba(168,85,247,0.1)]' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
                             title="History"
                         >
                             <History size={14} />
@@ -164,12 +164,12 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                             title={
                                 <div className="flex items-center justify-between w-full">
                                     <span>Omni Stage Controls</span>
-                                    <span className="text-[9px] text-purple-400 font-mono font-medium ml-2 bg-purple-500/10 px-1.5 py-0.5 rounded animate-pulse">
+                                    <span className="text-[9px] text-green-400 font-mono font-medium ml-2 bg-green-500/10 px-1.5 py-0.5 rounded animate-pulse">
                                         V2V Active
                                     </span>
                                 </div>
                             }
-                            icon={<Sparkles className="text-purple-400" size={14} />}
+                            icon={<Sparkles className="text-green-400" size={14} />}
                         >
                             <div className="space-y-4">
                                 <div className="space-y-1.5">
@@ -177,13 +177,13 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                                     <div className="grid grid-cols-2 gap-1 p-1 bg-black/60 rounded-lg border border-white/5 font-mono text-[9px]">
                                         <button
                                             onClick={() => setStudioControls({ omniPipelineMode: 'pure-omni' })}
-                                            className={`py-1 rounded transition-colors ${studioControls.omniPipelineMode === 'pure-omni' ? 'bg-purple-500/20 text-purple-400 font-bold border border-purple-500/20' : 'text-gray-400 hover:text-white'}`}
+                                            className={`py-1 rounded transition-colors ${studioControls.omniPipelineMode === 'pure-omni' ? 'bg-green-500/20 text-green-400 font-bold border border-green-500/20' : 'text-gray-400 hover:text-white'}`}
                                         >
                                             Pure Omni
                                         </button>
                                         <button
                                             onClick={() => setStudioControls({ omniPipelineMode: 'hybrid-veo' })}
-                                            className={`py-1 rounded transition-colors ${studioControls.omniPipelineMode === 'hybrid-veo' ? 'bg-purple-500/20 text-purple-400 font-bold border border-purple-500/20' : 'text-gray-400 hover:text-white'}`}
+                                            className={`py-1 rounded transition-colors ${studioControls.omniPipelineMode === 'hybrid-veo' ? 'bg-green-500/20 text-green-400 font-bold border border-green-500/20' : 'text-gray-400 hover:text-white'}`}
                                         >
                                             Hybrid Veo
                                         </button>
@@ -224,7 +224,7 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                                 <div className="space-y-2">
                                     <div className="flex justify-between text-[10px] font-bold text-gray-500 uppercase font-mono tracking-wide">
                                         <span>Pose Preservation</span>
-                                        <span className="text-purple-400">{(studioControls.posePreservation * 100).toFixed(0)}%</span>
+                                        <span className="text-green-400">{(studioControls.posePreservation * 100).toFixed(0)}%</span>
                                     </div>
                                     <input
                                         type="range" min="0" max="1" step="0.05"
@@ -237,7 +237,7 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                                 <div className="space-y-2">
                                     <div className="flex justify-between text-[10px] font-bold text-gray-500 uppercase font-mono tracking-wide">
                                         <span>Beat Motion Pulse</span>
-                                        <span className="text-purple-400">{(studioControls.beatPulse * 100).toFixed(0)}%</span>
+                                        <span className="text-green-400">{(studioControls.beatPulse * 100).toFixed(0)}%</span>
                                     </div>
                                     <input
                                         type="range" min="0" max="1" step="0.05"
@@ -250,7 +250,7 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                                 <div className="space-y-1.5">
                                     <div className="flex justify-between items-center text-[9px] font-bold text-gray-500 uppercase font-mono tracking-widest">
                                         <span>Waveform Theme Color</span>
-                                        <span className="font-mono text-purple-400 text-[8px]">{studioControls.visualizerColor}</span>
+                                        <span className="font-mono text-green-400 text-[8px]">{studioControls.visualizerColor}</span>
                                     </div>
                                     <div className="flex items-center gap-2 p-1.5 bg-black/40 rounded-lg border border-white/5">
                                         <input
@@ -273,13 +273,13 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                                 </div>
 
                                 <div className="space-y-1.5 border-t border-white/5 pt-3">
-                                    <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest font-mono flex items-center gap-1"><Music size={11} className="text-purple-400" /> Kinetic Lyric Text</span>
+                                    <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest font-mono flex items-center gap-1"><Music size={11} className="text-green-400" /> Kinetic Lyric Text</span>
                                     <textarea
                                         value={studioControls.lyricsText}
                                         onChange={(e) => setStudioControls({ lyricsText: e.target.value })}
                                         rows={2}
                                         placeholder="Type song lyrics to overlay..."
-                                        className="w-full bg-black/60 text-[9px] p-2.5 rounded-lg border border-white/10 outline-none text-white font-mono resize-none focus:border-purple-500/30"
+                                        className="w-full bg-black/60 text-[9px] p-2.5 rounded-lg border border-white/10 outline-none text-white font-mono resize-none focus:border-green-500/30"
                                     />
                                 </div>
 
@@ -300,7 +300,7 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
 
                                 <div className="p-2 rounded-xl bg-black/40 border border-white/5 space-y-2">
                                     <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest font-mono flex items-center gap-1">
-                                        <Languages size={11} className="text-purple-400" />
+                                        <Languages size={11} className="text-green-400" />
                                         Lip-Sync Dubbing
                                     </span>
                                     <select
@@ -347,7 +347,7 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                                 (whiskState.styles?.filter((i: { checked?: boolean }) => i.checked).length || 0) +
                                 
                                 (whiskState.motion?.filter((i: { checked?: boolean }) => i.checked).length || 0)) > 0 && (
-                                    <span className="text-[9px] text-purple-400 normal-case ml-2">
+                                    <span className="text-[9px] text-green-400 normal-case ml-2">
                                         
                                         {(whiskState.subjects?.filter((i: { checked?: boolean }) => i.checked).length || 0) +
                                             
@@ -359,7 +359,7 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                                     </span>
                                 )}
                         </div>}
-                        icon={<Sparkles className="text-purple-400" size={14} />}
+                        icon={<Sparkles className="text-green-400" size={14} />}
                     >
                         <div className="space-y-4">
                             <div className="flex items-center justify-end mb-2">
@@ -368,7 +368,7 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                                     <button
                                         onClick={() => setPreciseReference(!whiskState.preciseReference)}
                                         className={`w-8 h-4 rounded-full relative transition-all ${whiskState.preciseReference
-                                            ? 'bg-purple-600 shadow-[0_0_10px_rgba(147,51,234,0.5)]'
+                                            ? 'bg-green-600 shadow-[0_0_10px_rgba(147,51,234,0.5)]'
                                             : 'bg-gray-800'
                                             }`}
                                         title={whiskState.preciseReference ? 'Precise: ON' : 'Precise: OFF'}
@@ -386,7 +386,7 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                                 <button
                                     onClick={() => setTargetMedia('image')}
                                     className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md text-[10px] font-medium uppercase transition-all ${whiskState.targetMedia === 'image'
-                                        ? 'bg-purple-500/30 text-purple-300 shadow-[0_0_8px_rgba(147,51,234,0.3)]'
+                                        ? 'bg-green-500/30 text-green-300 shadow-[0_0_8px_rgba(147,51,234,0.3)]'
                                         : 'text-gray-500 hover:text-gray-300'
                                         }`}
                                 >
@@ -406,7 +406,7 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                                 <button
                                     onClick={() => setTargetMedia('both')}
                                     className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md text-[10px] font-medium uppercase transition-all ${whiskState.targetMedia === 'both'
-                                        ? 'bg-linear-to-r from-purple-500/30 to-blue-500/30 text-white shadow-[0_0_8px_rgba(147,51,234,0.2)]'
+                                        ? 'bg-linear-to-r from-green-500/30 to-blue-500/30 text-white shadow-[0_0_8px_rgba(147,51,234,0.2)]'
                                         : 'text-gray-500 hover:text-gray-300'
                                         }`}
                                 >
@@ -622,7 +622,7 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                                     </button>
                                     <button
                                         onClick={() => setStudioControls({ model: 'pro' })}
-                                        className={`flex-1 relative z-10 text-[10px] font-bold uppercase transition-colors ${studioControls.model === 'pro' ? 'text-purple-300' : 'text-gray-500'}`}
+                                        className={`flex-1 relative z-10 text-[10px] font-bold uppercase transition-colors ${studioControls.model === 'pro' ? 'text-green-300' : 'text-gray-500'}`}
                                         title="Nano Banana Pro (Gemini 3 Pro) — Max quality, 14 refs, 5 chars"
                                     >
                                         Pro
@@ -649,7 +649,7 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                             <div className="space-y-2">
                                 <div className="flex items-center justify-between">
                                     <span className="text-[10px] font-bold text-gray-400 tracking-wider flex items-center gap-1.5">
-                                        <Brain size={11} className={studioControls.model === 'pro' || studioControls.thinkingLevel !== 'none' ? 'text-purple-400 animate-pulse' : 'text-gray-500'} />
+                                        <Brain size={11} className={studioControls.model === 'pro' || studioControls.thinkingLevel !== 'none' ? 'text-green-400 animate-pulse' : 'text-gray-500'} />
                                         THINKING
                                     </span>
                                     {(studioControls.model === 'pro' || studioControls.thinkingLevel !== 'none') && (
@@ -657,7 +657,7 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                                             <span className="text-[9px] text-gray-500">Show thoughts</span>
                                             <button
                                                 onClick={() => setStudioControls({ includeThoughts: !studioControls.includeThoughts })}
-                                                className={`w-6 h-3.5 rounded-full relative transition-all ${studioControls.includeThoughts ? 'bg-purple-600' : 'bg-gray-800'}`}
+                                                className={`w-6 h-3.5 rounded-full relative transition-all ${studioControls.includeThoughts ? 'bg-green-600' : 'bg-gray-800'}`}
                                             >
                                                 <motion.div
                                                     animate={{ x: studioControls.includeThoughts ? 10 : 2 }}
@@ -670,9 +670,9 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                                 </div>
                                 {studioControls.model === 'pro' ? (
                                     /* Pro: Thinking is always on, cannot be disabled */
-                                    <div className="flex items-center gap-2 bg-purple-500/10 px-3 py-2 rounded-lg border border-purple-500/20">
-                                        <div className="w-2 h-2 rounded-full bg-purple-400 animate-pulse" />
-                                        <span className="text-[10px] text-purple-300 font-medium">Always On — Generates interim thought images</span>
+                                    <div className="flex items-center gap-2 bg-green-500/10 px-3 py-2 rounded-lg border border-green-500/20">
+                                        <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                                        <span className="text-[10px] text-green-300 font-medium">Always On — Generates interim thought images</span>
                                     </div>
                                 ) : (
                                     /* Flash (NB2): Off / Minimal / High */
@@ -685,7 +685,7 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                                                     studioControls.thinkingLevel === level
                                                         ? level === 'none'
                                                             ? 'bg-white/10 text-gray-200'
-                                                            : 'bg-purple-500/25 text-purple-200 shadow-[0_0_8px_rgba(168,85,247,0.3)]'
+                                                            : 'bg-green-500/25 text-green-200 shadow-[0_0_8px_rgba(168,85,247,0.3)]'
                                                         : 'text-gray-500 hover:text-gray-300'
                                                 }`}
                                             >
@@ -955,7 +955,7 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                                         value={studioControls.seed || ''}
                                         onChange={(e) => setStudioControls({ seed: e.target.value })}
                                         placeholder="Random"
-                                        className="w-full bg-black/40 text-white text-xs p-2.5 rounded-xl border border-white/10 outline-none focus:border-purple-500/50 placeholder:text-gray-600"
+                                        className="w-full bg-black/40 text-white text-xs p-2.5 rounded-xl border border-white/10 outline-none focus:border-green-500/50 placeholder:text-gray-600"
                                     />
                                 </div>
                             )}
@@ -1020,7 +1020,7 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                             isOpen={expandedSection === 'shotlist'}
                             onToggle={() => setExpandedSection(expandedSection === 'shotlist' ? '' : 'shotlist')}
                             title="Shot List"
-                            icon={<Video className="text-purple-400" size={14} />}
+                            icon={<Video className="text-green-400" size={14} />}
                         >
                             <div className="space-y-3">
                                 <div className="flex justify-between items-center">

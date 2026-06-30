@@ -163,7 +163,7 @@ export const QCVisualizer: React.FC<QCVisualizerProps> = ({ initialFilePath, onS
 
     const statusBadge = (() => {
         if (runState === 'idle') return null;
-        if (runState === 'running') return <div className="text-purple-300">Analyzing...</div>;
+        if (runState === 'running') return <div className="text-green-300">Analyzing...</div>;
         if (runState === 'error') return <div className="text-red-400">Error</div>;
         if (allPassed) return <div className="text-green-400 font-bold" data-testid="qc-passed-badge">Cleared for Delivery</div>;
         return <div className="text-red-400 font-bold">Delivery Blocked</div>;
@@ -206,12 +206,12 @@ export const QCVisualizer: React.FC<QCVisualizerProps> = ({ initialFilePath, onS
                                 onClick={handleRunQC}
                                 disabled={!isElectron}
                                 data-testid="qc-run-audio-analysis"
-                                className="flex-1 py-3 bg-purple-600 text-white rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="flex-1 py-3 bg-green-600 text-white rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {isElectron ? 'Run Audio QC Analysis' : 'Audio QC requires desktop app'}
                             </button>
                 ) : runState === 'running' ? (
-                    <button disabled className="flex-1 py-3 bg-purple-800/40 text-purple-300 rounded-xl">Analyzing...</button>
+                    <button disabled className="flex-1 py-3 bg-green-800/40 text-green-300 rounded-xl">Analyzing...</button>
                 ) : (
                     <button
                         id="qc-execute-delivery-button"

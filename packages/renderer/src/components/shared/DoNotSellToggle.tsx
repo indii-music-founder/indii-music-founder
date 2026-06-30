@@ -140,7 +140,7 @@ export function DoNotSellToggle() {
             <div className="mt-4 pt-3 border-t border-gray-700/50">
                 <a
                     href="/legal/privacy"
-                    className="flex items-center gap-1.5 text-xs text-purple-400 hover:text-purple-300 transition-colors"
+                    className="flex items-center gap-1.5 text-xs text-green-400 hover:text-green-300 transition-colors"
                 >
                     <ExternalLink className="w-3 h-3" />
                     View Privacy Policy

@@ -470,7 +470,7 @@ export default function MerchDesigner() {
                                 <button
                                     onClick={toggleWorkMode}
                                     className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 font-medium text-sm transition-all ${workMode === 'agent'
-                                        ? 'bg-purple-500/20 border-purple-500 text-purple-300'
+                                        ? 'bg-green-500/20 border-green-500 text-green-300'
                                         : 'bg-blue-500/20 border-blue-500 text-blue-300'
                                         }`}
                                     title={workMode === 'agent' ? 'Autonomous assistance' : 'Full manual control'}

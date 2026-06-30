@@ -27,7 +27,7 @@ interface SavedReceipt extends ExtractedReceipt {
 
 const CATEGORY_COLORS: Record<string, string> = {
     Equipment: 'text-blue-400 bg-blue-500/10',
-    Software: 'text-purple-400 bg-purple-500/10',
+    Software: 'text-green-400 bg-green-500/10',
     Studio: 'text-amber-400 bg-amber-500/10',
     Meals: 'text-green-400 bg-green-500/10',
     Travel: 'text-cyan-400 bg-cyan-500/10',

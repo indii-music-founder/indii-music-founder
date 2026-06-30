@@ -181,7 +181,7 @@ export default function AssetsPanel({ toggleRightPanel }: AssetsPanelProps) {
 
     const getTypeColor = (type: string) => {
         switch (type) {
-            case 'image': return 'text-purple-400 bg-purple-500/15';
+            case 'image': return 'text-green-400 bg-green-500/15';
             case 'video': return 'text-blue-400 bg-blue-500/15';
             case 'music': return 'text-amber-400 bg-amber-500/15';
             default: return 'text-gray-400 bg-white/10';

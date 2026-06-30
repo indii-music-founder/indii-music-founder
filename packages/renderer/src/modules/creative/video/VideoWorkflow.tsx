@@ -736,7 +736,7 @@ export default function VideoWorkflow() {
                     </button>
                     <button
                         onClick={() => setViewMode('editor')}
-                        className="w-10 h-10 bg-black/40 border border-white/10 rounded-lg flex items-center justify-center text-gray-400 hover:text-purple-400 hover:bg-purple-500/10 transition-all shadow-xl backdrop-blur-md"
+                        className="w-10 h-10 bg-black/40 border border-white/10 rounded-lg flex items-center justify-center text-gray-400 hover:text-green-400 hover:bg-green-500/10 transition-all shadow-xl backdrop-blur-md"
                         title="Open Timeline Editor"
                     >
                         <Settings size={18} />
@@ -853,7 +853,7 @@ export default function VideoWorkflow() {
                     <div className="flex items-center gap-4 justify-center max-w-4xl mx-auto w-full">
                         <div className="flex-1 flex flex-col gap-2 relative">
                             {useVideoEditorStore.getState().inputAudio && (
-                                <div className="absolute -top-8 left-1/2 -translate-x-1/2 flex items-center gap-2 px-3 py-1 bg-purple-500/90 backdrop-blur-md rounded-full border border-purple-400/50 shadow-lg shadow-purple-500/20 animate-in fade-in zoom-in duration-300">
+                                <div className="absolute -top-8 left-1/2 -translate-x-1/2 flex items-center gap-2 px-3 py-1 bg-green-500/90 backdrop-blur-md rounded-full border border-green-400/50 shadow-lg shadow-green-500/20 animate-in fade-in zoom-in duration-300">
                                     <Music className="w-3 h-3 text-white animate-pulse" />
                                     <span className="text-[10px] font-bold text-white uppercase tracking-tighter">Custom Audio Attached</span>
                                     <button
@@ -975,7 +975,7 @@ export default function VideoWorkflow() {
                                 <ChevronDown size={20} className="rotate-90" />
                             </button>
                             <h2 className="text-white font-bold uppercase tracking-wider text-xs flex items-center gap-2">
-                                <Layers size={14} className="text-purple-400 animate-pulse" />
+                                <Layers size={14} className="text-green-400 animate-pulse" />
                                 Audio-Storyboard Sync Workspace
                             </h2>
                         </div>

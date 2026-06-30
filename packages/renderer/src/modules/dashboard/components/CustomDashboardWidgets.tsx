@@ -180,7 +180,7 @@ function StreamsTodayWidget() {
             <div>
                 <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center border border-purple-500/30 shadow-[0_0_15px_rgba(168,85,247,0.2)] group-hover/widget:bg-purple-500 group-hover/widget:text-black transition-all duration-500">
+                        <div className="w-10 h-10 rounded-xl bg-green-500/20 flex items-center justify-center border border-green-500/30 shadow-[0_0_15px_rgba(168,85,247,0.2)] group-hover/widget:bg-green-500 group-hover/widget:text-black transition-all duration-500">
                             <Music size={18} className="group-hover/widget:scale-110 transition-transform" />
                         </div>
                         <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">Live Streams</span>
@@ -206,9 +206,9 @@ function StreamsTodayWidget() {
                         initial={{ height: 0 }}
                         animate={{ height: `${Math.max(8, (val / maxVal) * 100)}%` }}
                         transition={{ delay: i * 0.05, duration: 0.5, ease: "easeOut" }}
-                        className="flex-1 rounded-t-sm bg-linear-to-t from-purple-500/5 to-purple-500/40 group-hover/widget:to-purple-400 transition-colors relative"
+                        className="flex-1 rounded-t-sm bg-linear-to-t from-green-500/5 to-green-500/40 group-hover/widget:to-green-400 transition-colors relative"
                     >
-                        <div className="absolute inset-x-0 top-0 h-[1px] bg-purple-300/40" />
+                        <div className="absolute inset-x-0 top-0 h-[1px] bg-green-300/40" />
                     </motion.div>
                 ))}
             </div>
@@ -952,7 +952,7 @@ function RevenueAggregatedWidget() {
         <div className="flex flex-col h-full justify-between group/widget cursor-pointer" onClick={() => setModule('finance')} data-testid="revenue-aggregated-widget">
             <div>
                 <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center border border-purple-500/30 shadow-[0_0_15px_rgba(168,85,247,0.2)] group-hover/widget:bg-purple-500 group-hover/widget:text-black transition-all duration-500">
+                    <div className="w-10 h-10 rounded-xl bg-green-500/20 flex items-center justify-center border border-green-500/30 shadow-[0_0_15px_rgba(168,85,247,0.2)] group-hover/widget:bg-green-500 group-hover/widget:text-black transition-all duration-500">
                         <TrendingUp size={18} className="group-hover/widget:scale-110 transition-transform" />
                     </div>
                     <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">Aggregate Revenue</span>
@@ -979,7 +979,7 @@ function RevenueAggregatedWidget() {
                         const percentage = stats.totalRevenue > 0 ? (value / stats.totalRevenue) * 100 : 0;
                         const colors: Record<string, string> = {
                             streaming: 'bg-blue-500',
-                            merch: 'bg-purple-500',
+                            merch: 'bg-green-500',
                             licensing: 'bg-emerald-500',
                             social: 'bg-pink-500'
                         };
@@ -997,7 +997,7 @@ function RevenueAggregatedWidget() {
                 </div>
                 <div className="mt-2 flex justify-between items-center">
                     <span className="text-[8px] font-black text-white/20 uppercase tracking-widest">Multi-Stream Distribution</span>
-                    <span className="text-[8px] font-black text-purple-400 uppercase tracking-widest group-hover/widget:translate-x-1 transition-transform">View Details →</span>
+                    <span className="text-[8px] font-black text-green-400 uppercase tracking-widest group-hover/widget:translate-x-1 transition-transform">View Details →</span>
                 </div>
             </div>
         </div>

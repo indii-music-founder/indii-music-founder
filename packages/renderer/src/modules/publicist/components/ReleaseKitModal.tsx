@@ -81,7 +81,7 @@ export const ReleaseKitModal: React.FC<ReleaseKitModalProps> = ({ isOpen, onClos
                     {/* Header */}
                     <div className="p-6 border-b border-white/10 flex justify-between items-center bg-black/40">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center text-purple-400">
+                            <div className="w-10 h-10 rounded-xl bg-green-500/20 flex items-center justify-center text-green-400">
                                 <Sparkles size={20} />
                             </div>
                             <div>
@@ -107,7 +107,7 @@ export const ReleaseKitModal: React.FC<ReleaseKitModalProps> = ({ isOpen, onClos
                                                 type="text"
                                                 value={formData.trackTitle}
                                                 onChange={e => setFormData({ ...formData, trackTitle: e.target.value })}
-                                                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-purple-500 transition-colors"
+                                                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-green-500 transition-colors"
                                                 placeholder={t('publicist.hints.release_title')}
                                             />
                                         </div>
@@ -118,7 +118,7 @@ export const ReleaseKitModal: React.FC<ReleaseKitModalProps> = ({ isOpen, onClos
                                                 type="text"
                                                 value={formData.artistName}
                                                 onChange={e => setFormData({ ...formData, artistName: e.target.value })}
-                                                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-purple-500 transition-colors"
+                                                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-green-500 transition-colors"
                                                 placeholder={t('publicist.hints.release_genre')}
                                             />
                                         </div>
@@ -130,7 +130,7 @@ export const ReleaseKitModal: React.FC<ReleaseKitModalProps> = ({ isOpen, onClos
                                             type="date"
                                             value={formData.releaseDate}
                                             onChange={e => setFormData({ ...formData, releaseDate: e.target.value })}
-                                            className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-purple-500 transition-colors"
+                                            className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-green-500 transition-colors"
                                         />
                                     </div>
                                     <div className="space-y-2">
@@ -140,7 +140,7 @@ export const ReleaseKitModal: React.FC<ReleaseKitModalProps> = ({ isOpen, onClos
                                             type="text"
                                             value={formData.musicalStyle}
                                             onChange={e => setFormData({ ...formData, musicalStyle: e.target.value })}
-                                            className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-purple-500 transition-colors"
+                                            className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-green-500 transition-colors"
                                             placeholder={t('publicist.hints.release_tags')}
                                         />
                                     </div>
@@ -150,14 +150,14 @@ export const ReleaseKitModal: React.FC<ReleaseKitModalProps> = ({ isOpen, onClos
                                             id="rk-target-audience"
                                             value={formData.targetAudience}
                                             onChange={e => setFormData({ ...formData, targetAudience: e.target.value })}
-                                            className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-purple-500 transition-colors min-h-[100px]"
+                                            className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-green-500 transition-colors min-h-[100px]"
                                             placeholder={t('publicist.hints.target_audience')}
                                         />
                                     </div>
                                 </div>
                                 <button
                                     onClick={handleGenerate}
-                                    className="w-full py-4 bg-linear-to-r from-purple-600 to-indigo-600 rounded-xl font-bold text-white shadow-lg shadow-purple-500/20 hover:from-purple-500 hover:to-indigo-500 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                                    className="w-full py-4 bg-linear-to-r from-green-600 to-indigo-600 rounded-xl font-bold text-white shadow-lg shadow-green-500/20 hover:from-green-500 hover:to-indigo-500 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
                                 >
                                     <Sparkles size={18} />
                                     Generate Release Kit
@@ -170,7 +170,7 @@ export const ReleaseKitModal: React.FC<ReleaseKitModalProps> = ({ isOpen, onClos
                                 <div className="relative">
                                     <div className="w-20 h-20 rounded-full border-4 border-white/10 border-t-purple-500 animate-spin" />
                                     <div className="absolute inset-0 flex items-center justify-center">
-                                        <Sparkles size={24} className="text-purple-400 animate-pulse" />
+                                        <Sparkles size={24} className="text-green-400 animate-pulse" />
                                     </div>
                                 </div>
                                 <div className="text-center space-y-2">
@@ -185,19 +185,19 @@ export const ReleaseKitModal: React.FC<ReleaseKitModalProps> = ({ isOpen, onClos
                                 <div className="flex gap-4 mb-6 border-b border-white/10 pb-1">
                                     <button
                                         onClick={() => setActiveTab('press')}
-                                        className={`px-4 py-2 text-sm font-bold border-b-2 transition-colors ${activeTab === 'press' ? 'border-purple-500 text-white' : 'border-transparent text-gray-500 hover:text-gray-300'}`}
+                                        className={`px-4 py-2 text-sm font-bold border-b-2 transition-colors ${activeTab === 'press' ? 'border-green-500 text-white' : 'border-transparent text-gray-500 hover:text-gray-300'}`}
                                     >
                                         Press Release
                                     </button>
                                     <button
                                         onClick={() => setActiveTab('social')}
-                                        className={`px-4 py-2 text-sm font-bold border-b-2 transition-colors ${activeTab === 'social' ? 'border-purple-500 text-white' : 'border-transparent text-gray-500 hover:text-gray-300'}`}
+                                        className={`px-4 py-2 text-sm font-bold border-b-2 transition-colors ${activeTab === 'social' ? 'border-green-500 text-white' : 'border-transparent text-gray-500 hover:text-gray-300'}`}
                                     >
                                         Social Media
                                     </button>
                                     <button
                                         onClick={() => setActiveTab('email')}
-                                        className={`px-4 py-2 text-sm font-bold border-b-2 transition-colors ${activeTab === 'email' ? 'border-purple-500 text-white' : 'border-transparent text-gray-500 hover:text-gray-300'}`}
+                                        className={`px-4 py-2 text-sm font-bold border-b-2 transition-colors ${activeTab === 'email' ? 'border-green-500 text-white' : 'border-transparent text-gray-500 hover:text-gray-300'}`}
                                     >
                                         Email Blast
                                     </button>
@@ -225,7 +225,7 @@ export const ReleaseKitModal: React.FC<ReleaseKitModalProps> = ({ isOpen, onClos
                                             </div>
                                             <div className="pt-6 border-t border-white/10">
                                                 <p className="text-sm text-gray-500 font-bold uppercase">Media Contact</p>
-                                                <p className="text-purple-400">{assets.pressRelease.contactInfo}</p>
+                                                <p className="text-green-400">{assets.pressRelease.contactInfo}</p>
                                             </div>
                                         </div>
                                     )}

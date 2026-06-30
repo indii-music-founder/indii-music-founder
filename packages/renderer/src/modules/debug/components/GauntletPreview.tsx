@@ -24,9 +24,9 @@ export function GauntletPreview({ loading, step, resultImage, videoJobId }: Gaun
                 )}
                 {loading && (
                     <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center text-center p-4">
-                        <Loader2 className="w-12 h-12 text-purple-500 animate-spin mb-4" />
+                        <Loader2 className="w-12 h-12 text-green-500 animate-spin mb-4" />
                         <p className="text-xl font-bold italic tracking-widest text-white">IF IT WORKED...</p>
-                        <p className="text-sm text-purple-400 font-mono mt-2 animate-pulse">PROCESSING STEP {step}</p>
+                        <p className="text-sm text-green-400 font-mono mt-2 animate-pulse">PROCESSING STEP {step}</p>
                     </div>
                 )}
                 {!loading && !resultImage && (
@@ -37,13 +37,13 @@ export function GauntletPreview({ loading, step, resultImage, videoJobId }: Gaun
                 )}
             </div>
             {videoJobId && (
-                <div className="mt-4 p-3 bg-purple-900/20 border border-purple-500/30 rounded flex items-center gap-3">
-                    <Video className="w-5 h-5 text-purple-400" />
+                <div className="mt-4 p-3 bg-green-900/20 border border-green-500/30 rounded flex items-center gap-3">
+                    <Video className="w-5 h-5 text-green-400" />
                     <div className="flex-1">
                         <p className="text-xs font-bold text-white leading-none">Job ID Detected</p>
-                        <p className="text-[10px] font-mono text-purple-300 opacity-80">{videoJobId}</p>
+                        <p className="text-[10px] font-mono text-green-300 opacity-80">{videoJobId}</p>
                     </div>
-                    <div className="text-[10px] font-bold px-2 py-1 bg-purple-500/40 rounded uppercase tracking-tighter">Live</div>
+                    <div className="text-[10px] font-bold px-2 py-1 bg-green-500/40 rounded uppercase tracking-tighter">Live</div>
                 </div>
             )}
         </Card>

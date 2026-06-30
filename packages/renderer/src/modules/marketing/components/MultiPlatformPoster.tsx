@@ -29,7 +29,7 @@ interface ScheduledPost {
 const PLATFORMS: Platform[] = [
     { id: 'tiktok', name: 'TikTok', color: 'bg-pink-500', maxDuration: 60, ratio: '9:16' },
     { id: 'youtube_shorts', name: 'YouTube Shorts', color: 'bg-red-500', maxDuration: 60, ratio: '9:16' },
-    { id: 'meta_reels', name: 'IG Reels', color: 'bg-purple-500', maxDuration: 90, ratio: '9:16' },
+    { id: 'meta_reels', name: 'IG Reels', color: 'bg-green-500', maxDuration: 90, ratio: '9:16' },
 ];
 
 const INITIAL_POSTS: ScheduledPost[] = [];

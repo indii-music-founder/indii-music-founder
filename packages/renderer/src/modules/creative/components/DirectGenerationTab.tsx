@@ -143,11 +143,11 @@ export default function DirectGenerationTab() {
                             onClick={() => handleModeSwitch('video')}
                             data-testid="direct-video-mode-btn"
                             className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg transition-all duration-300 relative ${mode === 'video'
-                                ? 'bg-gradient-to-r from-purple-500/25 to-pink-500/10 text-white border border-purple-500/30 font-bold shadow-lg shadow-purple-500/10'
+                                ? 'bg-gradient-to-r from-green-500/25 to-pink-500/10 text-white border border-green-500/30 font-bold shadow-lg shadow-green-500/10'
                                 : 'text-gray-400 hover:text-gray-200 hover:bg-white/3'
                                 }`}
                         >
-                            <Video size={14} className={mode === 'video' ? 'text-purple-400' : ''} />
+                            <Video size={14} className={mode === 'video' ? 'text-green-400' : ''} />
                             <span className="text-[10px] font-bold uppercase tracking-wider">Video Creator</span>
                         </button>
                     </div>
@@ -213,7 +213,7 @@ export default function DirectGenerationTab() {
                                                 <p className="text-[9px] uppercase tracking-widest text-gray-500 font-bold">Director timing</p>
                                                 <p className="text-[11px] font-mono font-bold text-white/85">{directorFps} fps · {directorFrames} frames</p>
                                             </div>
-                                            <span className="text-[9px] uppercase tracking-widest text-purple-300 bg-purple-500/10 border border-purple-500/20 rounded-full px-2 py-1">
+                                            <span className="text-[9px] uppercase tracking-widest text-green-300 bg-green-500/10 border border-green-500/20 rounded-full px-2 py-1">
                                                 24 FPS locked
                                             </span>
                                         </div>
@@ -231,7 +231,7 @@ export default function DirectGenerationTab() {
                                                             key={move}
                                                             onClick={() => setStudioControls({ cameraMovement: move })}
                                                             className={`px-3 py-1.5 rounded-lg text-[9px] font-bold uppercase border transition-all ${isSelected
-                                                                ? 'bg-purple-500/10 border-purple-500/30 text-purple-300 shadow-[0_0_8px_rgba(168,85,247,0.1)]'
+                                                                ? 'bg-green-500/10 border-green-500/30 text-green-300 shadow-[0_0_8px_rgba(168,85,247,0.1)]'
                                                                 : 'bg-white/2 border-white/5 text-gray-500 hover:text-gray-300 hover:bg-white/4'}`}
                                                         >
                                                             {move}
@@ -254,7 +254,7 @@ export default function DirectGenerationTab() {
                                                             key={dur}
                                                             onClick={() => setStudioControls({ duration: dur })}
                                                             className={`py-2 rounded-lg text-[10px] font-mono font-bold uppercase border transition-all ${isSelected
-                                                                ? 'bg-purple-500/10 border-purple-500/30 text-purple-300 shadow-[0_0_8px_rgba(168,85,247,0.1)]'
+                                                                ? 'bg-green-500/10 border-green-500/30 text-green-300 shadow-[0_0_8px_rgba(168,85,247,0.1)]'
                                                                 : 'bg-white/2 border-white/5 text-gray-500 hover:text-gray-300 hover:bg-white/4'}`}
                                                         >
                                                             {dur}s
@@ -270,7 +270,7 @@ export default function DirectGenerationTab() {
                                                 <label className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">
                                                     Motion Strength
                                                 </label>
-                                                <span className="text-[10px] font-mono font-extrabold text-purple-400">{Math.round(studioControls.motionStrength * 100)}%</span>
+                                                <span className="text-[10px] font-mono font-extrabold text-green-400">{Math.round(studioControls.motionStrength * 100)}%</span>
                                             </div>
                                             <div className="grid grid-cols-3 gap-1.5">
                                                 {[
@@ -284,7 +284,7 @@ export default function DirectGenerationTab() {
                                                             key={preset.label}
                                                             onClick={() => setStudioControls({ motionStrength: preset.val })}
                                                             className={`py-1.5 rounded-lg text-[9px] font-bold uppercase border transition-all ${isSelected
-                                                                ? 'bg-purple-500/10 border-purple-500/30 text-purple-300'
+                                                                ? 'bg-green-500/10 border-green-500/30 text-green-300'
                                                                 : 'bg-white/2 border-white/5 text-gray-500 hover:text-gray-300'}`}
                                                         >
                                                             {preset.label}
@@ -495,7 +495,7 @@ export default function DirectGenerationTab() {
             <div className="flex-1 bg-[#060507] p-8 overflow-y-auto flex flex-col justify-start relative select-none h-full">
                 
                 {/* mesh background accent */}
-                <div className="absolute top-0 right-0 w-96 h-96 bg-radial-gradient from-purple-900/10 to-transparent pointer-events-none filter blur-3xl" />
+                <div className="absolute top-0 right-0 w-96 h-96 bg-radial-gradient from-green-900/10 to-transparent pointer-events-none filter blur-3xl" />
 
                 {results.length === 0 && activeJobs.length === 0 ? (
                     <motion.div 
@@ -506,7 +506,7 @@ export default function DirectGenerationTab() {
                     >
                         <div className="relative mb-6">
                             {/* Glowing animated orb */}
-                            <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-dept-creative via-purple-500 to-pink-500 opacity-20 blur-xl animate-pulse" />
+                            <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-dept-creative via-green-500 to-pink-500 opacity-20 blur-xl animate-pulse" />
                             <div className="w-16 h-16 rounded-2xl bg-white/3 border border-white/6 flex items-center justify-center text-dept-creative shadow-2xl relative">
                                 <Sparkles size={28} className="animate-bounce" />
                             </div>
@@ -557,7 +557,7 @@ export default function DirectGenerationTab() {
                                         exit={{ opacity: 0, scale: 0.8 }}
                                         transition={{ type: 'spring', bounce: 0, duration: 0.45 }}
                                         key={item.id}
-                                        className="group relative aspect-square bg-white/2 rounded-2xl overflow-hidden border border-white/5 hover:border-white/15 hover:shadow-2xl hover:shadow-purple-500/5 transition-all cursor-pointer"
+                                        className="group relative aspect-square bg-white/2 rounded-2xl overflow-hidden border border-white/5 hover:border-white/15 hover:shadow-2xl hover:shadow-green-500/5 transition-all cursor-pointer"
                                         onClick={() => {
                                             setSelectedItem(item);
                                             setViewMode('editor');
@@ -582,7 +582,7 @@ export default function DirectGenerationTab() {
                                                     className="w-full h-full border-none rounded-none"
                                                 />
                                                 <div className="absolute top-3 left-3 px-2 py-0.5 rounded bg-black/60 border border-white/5 backdrop-blur-md flex items-center gap-1 pointer-events-none">
-                                                    <Video size={9} className="text-purple-400" />
+                                                    <Video size={9} className="text-green-400" />
                                                     <span className="text-[8px] font-bold text-white uppercase tracking-widest font-mono">Video</span>
                                                 </div>
                                             </div>

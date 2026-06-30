@@ -272,7 +272,7 @@ export default function OnboardingPage() {
                                         className="flex justify-start"
                                     >
                                         <div className="bg-white/5 border border-white/10 p-4 rounded-2xl flex items-center gap-3">
-                                            <Loader2 className="animate-spin text-purple-400" size={18} />
+                                            <Loader2 className="animate-spin text-green-400" size={18} />
                                             <span className="text-xs text-gray-400 font-bold uppercase tracking-widest">indii is thinking...</span>
                                         </div>
                                     </motion.div>

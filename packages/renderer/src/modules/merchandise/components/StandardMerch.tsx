@@ -115,7 +115,7 @@ export const StandardMerch: React.FC = () => {
                         <p className="text-muted-foreground text-sm font-bold">New drops every Sunday 10AM EST.</p>
                     </div>
                 </div>
-                <div className="bg-linear-to-br from-indigo-400/20 to-purple-400/20 rounded-3xl p-8 border border-indigo-500/20 h-48 flex items-end">
+                <div className="bg-linear-to-br from-indigo-400/20 to-green-400/20 rounded-3xl p-8 border border-indigo-500/20 h-48 flex items-end">
                     <div>
                         <h4 className="text-2xl font-black text-foreground tracking-tighter uppercase">Artist Collabs</h4>
                         <p className="text-muted-foreground text-sm font-bold">Limited run exclusively for fans.</p>

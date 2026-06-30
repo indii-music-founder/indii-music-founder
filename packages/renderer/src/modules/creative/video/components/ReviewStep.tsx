@@ -60,7 +60,7 @@ const ReviewStep: React.FC<ReviewStepProps> = ({
                                 <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity flex items-center justify-center gap-2">
                                     <button
                                         onClick={() => onDesignFrame('start')}
-                                        className="p-2 bg-gray-700 rounded-full hover:bg-gray-600 text-white focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:outline-none"
+                                        className="p-2 bg-gray-700 rounded-full hover:bg-gray-600 text-white focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:outline-none"
                                         title="Edit Start Frame"
                                         aria-label="Edit Start Frame"
                                     >
@@ -79,7 +79,7 @@ const ReviewStep: React.FC<ReviewStepProps> = ({
                         ) : (
                             <button
                                 onClick={() => onDesignFrame('start')}
-                                className="w-40 aspect-video rounded-lg border-2 border-dashed border-gray-700 hover:border-purple-500 hover:bg-purple-500/5 flex flex-col items-center justify-center gap-2 text-gray-500 hover:text-purple-400 transition-all"
+                                className="w-40 aspect-video rounded-lg border-2 border-dashed border-gray-700 hover:border-green-500 hover:bg-green-500/5 flex flex-col items-center justify-center gap-2 text-gray-500 hover:text-green-400 transition-all"
                             >
                                 <ImageIcon size={24} />
                                 <span className="text-xs font-medium">Add Start Frame</span>
@@ -96,7 +96,7 @@ const ReviewStep: React.FC<ReviewStepProps> = ({
                                 <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity flex items-center justify-center gap-2">
                                     <button
                                         onClick={() => onDesignFrame('end')}
-                                        className="p-2 bg-gray-700 rounded-full hover:bg-gray-600 text-white focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:outline-none"
+                                        className="p-2 bg-gray-700 rounded-full hover:bg-gray-600 text-white focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:outline-none"
                                         title="Edit End Frame"
                                         aria-label="Edit End Frame"
                                     >
@@ -115,7 +115,7 @@ const ReviewStep: React.FC<ReviewStepProps> = ({
                         ) : (
                             <button
                                 onClick={() => onDesignFrame('end')}
-                                className="w-40 aspect-video rounded-lg border-2 border-dashed border-gray-700 hover:border-purple-500 hover:bg-purple-500/5 flex flex-col items-center justify-center gap-2 text-gray-500 hover:text-purple-400 transition-all"
+                                className="w-40 aspect-video rounded-lg border-2 border-dashed border-gray-700 hover:border-green-500 hover:bg-green-500/5 flex flex-col items-center justify-center gap-2 text-gray-500 hover:text-green-400 transition-all"
                             >
                                 <ImageIcon size={24} />
                                 <span className="text-xs font-medium">Add End Frame</span>
@@ -156,7 +156,7 @@ const ReviewStep: React.FC<ReviewStepProps> = ({
                     {ingredients.length < 3 && (
                         <button
                             onClick={onAddIngredient}
-                            className="aspect-square rounded-lg border-2 border-dashed border-gray-700 hover:border-purple-500 hover:bg-purple-500/5 flex flex-col items-center justify-center gap-2 text-gray-500 hover:text-purple-400 transition-all"
+                            className="aspect-square rounded-lg border-2 border-dashed border-gray-700 hover:border-green-500 hover:bg-green-500/5 flex flex-col items-center justify-center gap-2 text-gray-500 hover:text-green-400 transition-all"
                         >
                             <ImageIcon size={24} />
                             <span className="text-xs font-medium">Add Reference</span>

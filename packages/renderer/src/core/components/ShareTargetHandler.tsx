@@ -119,7 +119,7 @@ export function ShareTargetHandler() {
                                         <div className="grid grid-cols-2 gap-2">
                                             {sharedItem.files.map((file, idx) => (
                                                 <div key={idx} className="flex items-center gap-2 bg-white/5 p-2 rounded overflow-hidden">
-                                                    {file.type.startsWith('image/') ? <ImageIcon size={14} className="text-purple-400 shrink-0" /> :
+                                                    {file.type.startsWith('image/') ? <ImageIcon size={14} className="text-green-400 shrink-0" /> :
                                                         file.type.startsWith('audio/') ? <Music size={14} className="text-green-400 shrink-0" /> :
                                                             <FileIcon size={14} className="text-gray-400 shrink-0" />}
                                                     <span className="text-xs text-gray-300 truncate">{file.name}</span>

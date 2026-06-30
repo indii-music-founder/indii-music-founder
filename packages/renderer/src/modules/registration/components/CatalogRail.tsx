@@ -60,7 +60,7 @@ export function CatalogRail({ tracks, selectedTrackId, registrationStates, onSel
                 className={cn(
                   'w-full text-left px-3 py-2.5 flex items-center gap-2.5 transition-colors group',
                   selectedTrackId === track.id
-                    ? 'bg-purple-500/10 border-r-2 border-purple-500'
+                    ? 'bg-green-500/10 border-r-2 border-green-500'
                     : 'hover:bg-white/[0.02]'
                 )}
               >

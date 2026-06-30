@@ -56,12 +56,12 @@ export default function FileDashboard() {
         <div className="flex h-full bg-background overflow-hidden relative">
             {/* Ambient Background Effect */}
             <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-500/10 rounded-full blur-[120px] pointer-events-none" />
-            <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[120px] pointer-events-none" />
+            <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-green-500/10 rounded-full blur-[120px] pointer-events-none" />
 
             {/* Left Sidebar (Internal Navigation) */}
             <div className="w-64 border-r border-white/5 bg-surface/30 backdrop-blur-xl flex flex-col z-10">
                 <div className="p-6">
-                    <h1 className="text-2xl font-black tracking-tight text-transparent bg-clip-text bg-linear-to-r from-blue-400 to-purple-500">
+                    <h1 className="text-2xl font-black tracking-tight text-transparent bg-clip-text bg-linear-to-r from-blue-400 to-green-500">
                         ASSETS
                     </h1>
                     <p className="text-xs text-muted-foreground font-medium uppercase tracking-widest mt-1">Project Vault</p>

@@ -11,7 +11,7 @@ export const LicensingAgent: AgentConfig = {
     id: 'licensing',
     name: 'Licensing Director',
     description: 'Manages sync licensing, master usage rights, and clearance pipelines.',
-    color: 'bg-purple-600',
+    color: 'bg-green-600',
     category: 'department',
     systemPrompt,
     functions: {

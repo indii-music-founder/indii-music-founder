@@ -68,7 +68,7 @@ export const AudioWaveformViewer: React.FC<AudioWaveformViewerProps> = ({
             <button
                 onClick={handlePlayPause}
                 disabled={!isReady}
-                className="w-12 h-12 flex-shrink-0 flex items-center justify-center rounded-full bg-purple-600 hover:bg-purple-500 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-12 h-12 flex-shrink-0 flex items-center justify-center rounded-full bg-green-600 hover:bg-green-500 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
                 {isPlaying ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" className="ml-1" />}
             </button>

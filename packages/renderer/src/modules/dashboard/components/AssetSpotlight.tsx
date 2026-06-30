@@ -10,7 +10,7 @@ import {
 /* ── type badge config ───────────────────────────────────────────── */
 const BADGE: Record<string, { icon: LucideIcon; label: string; cls: string }> = {
     image: { icon: Image, label: 'Image', cls: 'text-blue-400 bg-blue-500/15' },
-    video: { icon: Film, label: 'Video', cls: 'text-purple-400 bg-purple-500/15' },
+    video: { icon: Film, label: 'Video', cls: 'text-green-400 bg-green-500/15' },
     music: { icon: Music, label: 'Audio', cls: 'text-amber-400 bg-amber-500/15' },
     text: { icon: Sparkles, label: 'Text', cls: 'text-emerald-400 bg-emerald-500/15' },
 };
@@ -77,7 +77,7 @@ export default function AssetSpotlight() {
         return (
             <div className="bg-[#161b22]/50 border border-white/5 rounded-xl p-4">
                 <div className="flex items-center gap-2 mb-3">
-                    <Sparkles size={14} className="text-purple-400" />
+                    <Sparkles size={14} className="text-green-400" />
                     <h3 className="text-xs font-bold text-white uppercase tracking-wider">Your Creations</h3>
                 </div>
                 <div className="flex items-center justify-center py-6 text-center">
@@ -99,7 +99,7 @@ export default function AssetSpotlight() {
         <div className="bg-[#161b22]/50 border border-white/5 rounded-xl p-3">
             {/* Header */}
             <div className="flex items-center gap-2 mb-2.5 px-0.5">
-                <Sparkles size={13} className="text-purple-400" />
+                <Sparkles size={13} className="text-green-400" />
                 <h3 className="text-[11px] font-bold text-white uppercase tracking-wider">Your Creations</h3>
                 <span className="text-[9px] text-gray-600 ml-auto">{assets.length}</span>
             </div>
@@ -115,7 +115,7 @@ export default function AssetSpotlight() {
                             key={asset.id}
                             onClick={() => setSelIdx(isSelected ? null : i)}
                             className={`rounded-lg overflow-hidden border transition-all text-left flex flex-col ${isSelected
-                                ? 'border-purple-500/50 ring-1 ring-purple-500/20'
+                                ? 'border-green-500/50 ring-1 ring-green-500/20'
                                 : 'border-white/5 hover:border-white/15'
                                 }`}
                             initial={{ opacity: 0, scale: 0.95 }}
@@ -206,7 +206,7 @@ export default function AssetSpotlight() {
                             <div className="flex gap-1.5">
                                 <button
                                     onClick={() => handleDiscuss(sel)}
-                                    className="flex items-center gap-1 px-2 py-1 rounded-md bg-purple-500/15 text-purple-400 text-[10px] font-medium hover:bg-purple-500/25 transition-colors"
+                                    className="flex items-center gap-1 px-2 py-1 rounded-md bg-green-500/15 text-green-400 text-[10px] font-medium hover:bg-green-500/25 transition-colors"
                                 >
                                     <MessageCircle size={10} />
                                     Discuss

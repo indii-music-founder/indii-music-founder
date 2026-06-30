@@ -56,12 +56,12 @@ export const WhiteGloveIngestionHub: React.FC = () => {
             <Card 
                 {...getRootProps()} 
                 className={`border-2 border-dashed bg-black/40 backdrop-blur-md transition-all duration-300 ease-in-out cursor-pointer group ${
-                    isDragging ? 'border-purple-500 bg-purple-500/10' : 'border-gray-800 hover:border-purple-500/50 hover:bg-gray-900/50'
+                    isDragging ? 'border-green-500 bg-green-500/10' : 'border-gray-800 hover:border-green-500/50 hover:bg-gray-900/50'
                 }`}
             >
                 <input {...getInputProps()} />
                 <CardContent className="flex flex-col items-center justify-center py-20 text-center gap-6">
-                    <div className={`p-4 rounded-full transition-colors duration-300 ${isDragging ? 'bg-purple-500/20 text-purple-400' : 'bg-gray-900 text-gray-500 group-hover:bg-purple-500/10 group-hover:text-purple-400'}`}>
+                    <div className={`p-4 rounded-full transition-colors duration-300 ${isDragging ? 'bg-green-500/20 text-green-400' : 'bg-gray-900 text-gray-500 group-hover:bg-green-500/10 group-hover:text-green-400'}`}>
                         <UploadCloud size={48} strokeWidth={1.5} />
                     </div>
                     <div className="space-y-1">
@@ -80,7 +80,7 @@ export const WhiteGloveIngestionHub: React.FC = () => {
                         {uploadQueue.map(item => (
                             <Card key={item.id} className="bg-gray-900/50 border-gray-800 overflow-hidden">
                                 <CardContent className="p-4 flex items-center gap-4">
-                                    <div className="p-3 bg-black rounded-lg text-purple-400">
+                                    <div className="p-3 bg-black rounded-lg text-green-400">
                                         <File size={24} />
                                     </div>
                                     <div className="flex-1 space-y-2">
@@ -99,7 +99,7 @@ export const WhiteGloveIngestionHub: React.FC = () => {
                                                 indicatorClassName={
                                                     item.status === 'error' ? 'bg-red-500' :
                                                     item.status === 'success' || item.status === 'post-processing' ? 'bg-green-500' : 
-                                                    'bg-purple-500'
+                                                    'bg-green-500'
                                                 }
                                             />
                                             <span className="text-xs font-medium w-16 text-right text-gray-400">

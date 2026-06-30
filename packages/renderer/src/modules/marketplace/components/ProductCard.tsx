@@ -19,7 +19,7 @@ function StemPackBadge({ stems }: { stems: StemFile[] }) {
             {stems.map(s => (
                 <span
                     key={s.label}
-                    className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-purple-900/50 text-purple-300 border border-purple-700/40"
+                    className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-green-900/50 text-green-300 border border-green-700/40"
                 >
                     {STEM_LABEL_DISPLAY[s.label] ?? s.label}
                 </span>
@@ -81,7 +81,7 @@ const ProductCard = React.memo(({ product, variant = 'default', source, sourceId
                             decoding="async"
                         />
                     ) : (
-                        <div className="w-full h-full bg-linear-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center">
+                        <div className="w-full h-full bg-linear-to-br from-indigo-500/20 to-green-500/20 flex items-center justify-center">
                             <ShoppingBag className="text-white/20" size={24} aria-hidden="true" />
                         </div>
                     )}
@@ -92,7 +92,7 @@ const ProductCard = React.memo(({ product, variant = 'default', source, sourceId
                         <div>
                             <h4 className="font-semibold text-white text-sm line-clamp-1">{product.title}</h4>
                             <p className="text-xs text-gray-400 capitalize flex items-center gap-1">
-                                {isStemPack && <Music size={10} className="text-purple-400" aria-hidden="true" />}
+                                {isStemPack && <Music size={10} className="text-green-400" aria-hidden="true" />}
                                 {isStemPack ? 'Stem Pack' : product.type} • {product.inventory} left
                             </p>
                         </div>
@@ -142,7 +142,7 @@ const ProductCard = React.memo(({ product, variant = 'default', source, sourceId
                         decoding="async"
                     />
                 ) : (
-                    <div className="w-full h-full bg-linear-to-br from-indigo-500/10 to-purple-500/10 flex items-center justify-center group-hover:from-indigo-500/20 group-hover:to-purple-500/20 transition-colors">
+                    <div className="w-full h-full bg-linear-to-br from-indigo-500/10 to-green-500/10 flex items-center justify-center group-hover:from-indigo-500/20 group-hover:to-green-500/20 transition-colors">
                         <ShoppingBag className="text-white/20 group-hover:text-white/40 transition-colors" size={48} aria-hidden="true" />
                     </div>
                 )}
@@ -170,7 +170,7 @@ const ProductCard = React.memo(({ product, variant = 'default', source, sourceId
                 <div className="flex items-center justify-between pt-2 border-t border-gray-800">
                     <span className={`text-xs font-medium px-2 py-1 rounded capitalize flex items-center gap-1
                         ${isStemPack
-                            ? 'bg-purple-900/40 text-purple-300 border border-purple-700/40'
+                            ? 'bg-green-900/40 text-green-300 border border-green-700/40'
                             : 'bg-gray-800 text-gray-300'
                         }`}
                     >

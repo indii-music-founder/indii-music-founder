@@ -355,7 +355,7 @@ function StoreStatsWidget({ stats }: { stats: MerchStats }) {
     const items = [
         { label: 'Revenue', value: formatCurrency(stats.totalRevenue), color: 'text-[#FFE135]' },
         { label: 'Units Sold', value: stats.unitsSold.toString(), color: 'text-green-400' },
-        { label: 'Conversion', value: `${stats.conversionRate ?? 0}%`, color: 'text-purple-400' },
+        { label: 'Conversion', value: `${stats.conversionRate ?? 0}%`, color: 'text-green-400' },
     ];
 
     return (

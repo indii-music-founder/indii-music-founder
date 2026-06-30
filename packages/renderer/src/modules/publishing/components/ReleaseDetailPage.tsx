@@ -185,7 +185,7 @@ export const ReleaseDetailPage: React.FC<ReleaseDetailPageProps> = ({
                                     </div>
                                     <div className="w-1.5 h-1.5 rounded-full bg-gray-800" />
                                     <div className="flex items-center gap-2">
-                                        <Disc size={16} className="text-purple-500" />
+                                        <Disc size={16} className="text-green-500" />
                                         {metadata.labelName || 'Independent'}
                                     </div>
                                 </div>

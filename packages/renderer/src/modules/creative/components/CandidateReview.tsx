@@ -130,7 +130,7 @@ export function CandidateReview({ candidates, onApply, onClose, onRegenerate }: 
                                             key={cand.id}
                                             className={`relative group rounded-xl overflow-hidden border-2 transition-all cursor-pointer ${
                                                 isSelected
-                                                    ? 'border-purple-500 ring-1 ring-purple-500/30 shadow-[0_0_16px_rgba(168,85,247,0.15)]'
+                                                    ? 'border-green-500 ring-1 ring-green-500/30 shadow-[0_0_16px_rgba(168,85,247,0.15)]'
                                                     : 'border-white/5 hover:border-white/20'
                                             }`}
                                             onClick={() => toggleSelection(cand.id)}
@@ -148,7 +148,7 @@ export function CandidateReview({ candidates, onApply, onClose, onRegenerate }: 
                                                 {/* Checkbox Overlay — Top Left */}
                                                 <div className={`absolute top-2 left-2 w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
                                                     isSelected
-                                                        ? 'bg-purple-500 border-purple-400'
+                                                        ? 'bg-green-500 border-green-400'
                                                         : 'bg-black/40 border-white/30 group-hover:border-white/50'
                                                 }`}>
                                                     {isSelected && <Check size={12} className="text-white" strokeWidth={3} />}
@@ -172,7 +172,7 @@ export function CandidateReview({ candidates, onApply, onClose, onRegenerate }: 
 
                                                 {/* Selection Glow */}
                                                 {isSelected && (
-                                                    <div className="absolute inset-0 bg-purple-500/5 pointer-events-none" />
+                                                    <div className="absolute inset-0 bg-green-500/5 pointer-events-none" />
                                                 )}
                                             </div>
 
@@ -221,7 +221,7 @@ export function CandidateReview({ candidates, onApply, onClose, onRegenerate }: 
                                 data-testid="candidate-apply-btn"
                                 className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${
                                     selected.size > 0
-                                        ? 'bg-purple-600 hover:bg-purple-500 text-white shadow-[0_0_12px_rgba(168,85,247,0.3)] hover:shadow-[0_0_20px_rgba(168,85,247,0.4)]'
+                                        ? 'bg-green-600 hover:bg-green-500 text-white shadow-[0_0_12px_rgba(168,85,247,0.3)] hover:shadow-[0_0_20px_rgba(168,85,247,0.4)]'
                                         : 'bg-gray-800 text-gray-600 cursor-not-allowed'
                                 }`}
                             >

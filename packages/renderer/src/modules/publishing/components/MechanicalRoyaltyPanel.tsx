@@ -315,7 +315,7 @@ export function MechanicalRoyaltyPanel({ releaseId = 'default' }: Props) {
             <div className="flex items-start justify-between">
                 <div>
                     <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                        <FileText size={20} className="text-purple-400" />
+                        <FileText size={20} className="text-green-400" />
                         Mechanical Licenses
                     </h2>
                     <p className="text-sm text-gray-400 mt-1">
