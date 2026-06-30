@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-30 09:45 EDT
+**Updated:** 2026-06-30 09:53 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+c8e4cd3ad fix(ISSUE-565,568): agent-ID integrity + rights agent
+7cdf8b453 chore: session checkpoint [09:45]
 67f3a7710 chore: session checkpoint [09:42]
 d997851d2 chore: session checkpoint [09:39]
 833efdfc8 chore: session checkpoint [09:36]
@@ -12,13 +14,10 @@ b3eace84e chore: session checkpoint [09:29]
 fefd3e396 chore: session checkpoint [09:25]
 bb1e65e86 chore: session checkpoint [09:23]
 f5ddee592 chore: session checkpoint [09:22]
-a90d30b37 test(remote): skip local P2P WebSocket init inside Vitest to prevent EnvironmentTeardownError
-6c6dd8ad1 chore: session checkpoint [08:26]
 ```
 
 ## Working State
 ```
-M  .agent/HANDOFF_STATE.md
  M .agent/test_ledger/OPEN_ISSUES.md
 ```
 
