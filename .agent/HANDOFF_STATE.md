@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-30 13:06 EDT
+**Updated:** 2026-06-30 13:09 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+98c515ac2 fix(creative): convert whisk base64 to gs:// URIs in VideoWorkflow
+b5176a617 chore: session checkpoint [13:06]
 a2f8d75fb refactor(creative): add error handling to URL resolution in canvas
 b90f21a75 feat(patterns): add Firebase service guards to prevent undefined errors
 ec943b199 chore: session checkpoint [13:01]
@@ -12,8 +14,6 @@ ec943b199 chore: session checkpoint [13:01]
 bfd488ea5 refactor(creative): add granular error handling to image/video generation
 1eb868685 chore: session checkpoint [12:54]
 8c9c375cd chore: session checkpoint [12:53]
-39e2590f2 feat(workflow): add pattern health checkpoint to /middle workflow
-460b2e0a2 chore: session checkpoint [12:52]
 ```
 
 ## Working State
