@@ -8590,3 +8590,26 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** N/A — trivial deletion.
 - **DO NOT:** Remove any actual assertions or test logic; only remove the debug log statement.
 - **Fix:** Removed the debug `console.log` statement. All 8 tests in the file pass (Vitest 4.1.8).
+
+---
+
+## /middle Findings (2026-06-30) — Workspace Sync Phase 1 Session
+
+### ISSUE-CI-28478558122-AUDIT: npm audit — Uncontrolled Resource Consumption in @ai-sdk/provider-utils
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Dependencies / Build
+- **Summary:** `npm audit --audit-level=high` fails the `Audit dependencies for vulnerabilities` CI job. `@ai-sdk/provider-utils <=3.0.97` has a known Uncontrolled Resource Consumption advisory (GHSA-866g-f22w-33x8), pulled in transitively via `@ai-sdk/react`, `@ai-sdk/ui-utils`, `@mastra/core`, and `ai` across multiple `node_modules` locations.
+- **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/28478558122)
+- **Fix Direction:** `npm audit fix --force` resolves it but installs `@mastra/core@1.47.0`, a **breaking change** — needs scoped testing of all Mastra/AI-SDK call sites before merging, not a blind force-fix. Per CLAUDE.md API Credentials/Dependency policy, this requires explicit user approval before the breaking upgrade.
+- **DO NOT:** Run `npm audit fix --force` unattended — it can silently break AI generation pipelines (Mastra agent orchestration).
+- **Confirmed unrelated to workspace-sync changes** — pre-existing dependency state, verified via `git log` on package.json/package-lock.json before logging (see error_memory/ERROR_LEDGER.md "Never Dismiss CI Failure Without Blame Check").
+
+### ISSUE-CI-28478558122-DEPLOY: Deploy Cloud Functions — transient GCP 503
+- **Status:** ⏳ OPEN (likely transient, re-verify on next deploy)
+- **Severity:** 🟡 MEDIUM
+- **Module:** CI/CD / Deploy
+- **Summary:** `deploy-production > Deploy Cloud Functions` failed with `HTTP Error: 503, The service is currently unavailable` from `cloudfunctions.googleapis.com generateUploadUrl`. Firebase CLI suggested verifying App Engine instance setup, but this reads as GCP-side transient unavailability, not a config defect.
+- **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/28478558122)
+- **Fix Direction:** Re-run the deploy job. If it recurs across multiple runs, escalate to GCP status check + verify App Engine instance at console.cloud.google.com/appengine.
+- **Confirmed unrelated to workspace-sync changes** — unit-tests job (the one touching sync code) passed clean across all 8 shards (497-616 tests passing per shard, 0 failures).
