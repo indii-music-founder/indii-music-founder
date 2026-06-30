@@ -166,6 +166,7 @@ function PairingModal({ onClose }: { onClose: () => void }) {
         const { signInWithCustomToken } = await import('firebase/auth');
         await signInWithCustomToken(auth, data.customToken);
         logger.info('[MobileRemote] Signed in successfully!');
+        // Workspace sync is auto-triggered by useWorkspaceSync hook when auth.currentUser is set
         onClose();
       } else {
         throw new Error('No customToken returned');
@@ -196,11 +197,11 @@ function PairingModal({ onClose }: { onClose: () => void }) {
           <QrCode className="w-7 h-7 text-blue-400" />
         </div>
 
-        <h2 className="text-2xl font-bold text-white mb-2 text-center tracking-tight">Connect Remote</h2>
+        <h2 className="text-2xl font-bold text-white mb-2 text-center tracking-tight">Link Device</h2>
         <p className="text-[#a1a1a6] text-center text-sm mb-8 leading-relaxed">
           {isPhoneMode
-            ? 'Enter the 64-character pairing code from your desktop studio Settings panel to link this remote.'
-            : 'Scan this code to link your phone. Once connected, you can control your studio from anywhere in the world.'}
+            ? 'Enter the 64-character pairing code from your desktop studio Settings panel to sync workspace and control remotely.'
+            : 'Scan this code to link your phone. Sync your workspace and control your studio from anywhere in the world.'}
         </p>
 
         <div className="bg-white p-5 rounded-3xl mb-8 shadow-[0_0_40px_rgba(255,255,255,0.1)] flex items-center justify-center w-[220px] h-[220px]">

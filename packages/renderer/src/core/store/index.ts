@@ -35,6 +35,8 @@ import { HandoffSlice, createHandoffSlice } from './slices/handoffSlice';
 import { CRMSlice, createCRMSlice } from './slices/crmSlice';
 import { MapSlice, createMapSlice } from './slices/mapSlice';
 import { NotesSlice, createNotesSlice } from './slices/notesSlice';
+import { useLivingPlanSlice } from './slices/livingPlanSlice';
+import type { WorkspaceSnapshot } from '@/services/sync/WorkspaceSyncService';
 
 export type { AgentMessage, AgentThought } from './slices/agent';
 
@@ -158,4 +160,72 @@ useStore.subscribe((state, prevState) => {
 // Expose store for testing purposes
 if (typeof window !== 'undefined') {
     window.useStore = useStore;
+}
+
+// ---------------------------------------------------------------------------
+// Workspace Sync: Snapshot Selector & Applier
+// ---------------------------------------------------------------------------
+
+/**
+ * Extract workspace snapshot from the root store + living plan slice.
+ * Pure selector; does not mutate state.
+ */
+export function getWorkspaceSnapshot(state: StoreState): WorkspaceSnapshot {
+    const planState = useLivingPlanSlice.getState();
+
+    return {
+        schemaVersion: 1,
+        boardroomMessages: (state as any).boardroomMessages || [],
+        activeAgents: (state as any).activeAgents || ['generalist'],
+        referencedAssets: (state as any).referencedAssets || [],
+        selectedPlan: planState.selectedPlan || null,
+        selectedPlanId: planState.selectedPlanId || null,
+        currentModule: (state as any).currentModule || 'dashboard',
+        conversationMode: (state as any).conversationMode || 'normal',
+        notes: (state as any).notes || [],
+        selectedNoteId: (state as any).selectedNoteId || null,
+        creativePrompt: (state as any).creativePrompt || '',
+    };
+}
+
+/**
+ * Apply a workspace snapshot to the root store + living plan slice.
+ * Merges fields, guarding against missing keys (forward compatibility with older schemaVersion).
+ */
+export function applyWorkspaceSnapshot(snapshot: Partial<WorkspaceSnapshot>): void {
+    const state = useStore.getState() as any;
+    const planState = useLivingPlanSlice.getState();
+
+    // Merge into root store
+    if (snapshot.boardroomMessages !== undefined) {
+        state.boardroomMessages = snapshot.boardroomMessages;
+    }
+    if (snapshot.activeAgents !== undefined) {
+        state.activeAgents = snapshot.activeAgents;
+    }
+    if (snapshot.referencedAssets !== undefined) {
+        state.referencedAssets = snapshot.referencedAssets;
+    }
+    if (snapshot.currentModule !== undefined) {
+        state.currentModule = snapshot.currentModule;
+    }
+    if (snapshot.conversationMode !== undefined) {
+        state.conversationMode = snapshot.conversationMode;
+    }
+    if (snapshot.notes !== undefined) {
+        state.notes = snapshot.notes;
+    }
+    if (snapshot.selectedNoteId !== undefined) {
+        state.selectedNoteId = snapshot.selectedNoteId;
+    }
+    if (snapshot.creativePrompt !== undefined) {
+        state.creativePrompt = snapshot.creativePrompt;
+    }
+
+    // Restore plan from separate store
+    if (snapshot.selectedPlan !== undefined) {
+        planState.setSelectedPlan(snapshot.selectedPlan as any);
+    } else if (snapshot.selectedPlanId !== undefined) {
+        planState.setSelectedPlanId(snapshot.selectedPlanId);
+    }
 }
