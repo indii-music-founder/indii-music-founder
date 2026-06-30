@@ -91,6 +91,17 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
     </button>
   </div>
   <div
+    class="px-4 pb-2"
+  >
+    <button
+      aria-label="Founders"
+      class="w-full flex items-center justify-center p-2 rounded-lg transition-all text-xs font-mono tracking-wider text-gray-600 hover:text-gray-400 hover:bg-white/5"
+      title="View Founder Recognition"
+    >
+      ⭐
+    </button>
+  </div>
+  <div
     class="flex-1 py-4 space-y-2"
   >
     <div
@@ -661,6 +672,17 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
       <div
         class="absolute inset-0 rounded-xl bg-linear-to-r from-transparent via-amber-400/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 pointer-events-none"
       />
+    </button>
+  </div>
+  <div
+    class="px-4 pb-2"
+  >
+    <button
+      aria-label="Founders"
+      class="w-full flex items-center justify-center p-2 rounded-lg transition-all text-xs font-mono tracking-wider text-gray-600 hover:text-gray-400 hover:bg-white/5"
+      title="View Founder Recognition"
+    >
+      Founders
     </button>
   </div>
   <div
