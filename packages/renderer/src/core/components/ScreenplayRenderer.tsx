@@ -75,7 +75,7 @@ export default function ScreenplayRenderer({ data }: ScreenplayRendererProps) {
                                 <div key={idx} className="group relative mt-8 mb-4">
                                     <button
                                         onClick={() => handleGenerateScene(el.text)}
-                                        className="absolute -left-10 top-0 p-1.5 text-gray-400 hover:text-purple-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                                        className="absolute -left-10 top-0 p-1.5 text-gray-400 hover:text-green-600 opacity-0 group-hover:opacity-100 transition-opacity"
                                         title="Breakdown this scene"
                                     >
                                         <Clapperboard size={16} />

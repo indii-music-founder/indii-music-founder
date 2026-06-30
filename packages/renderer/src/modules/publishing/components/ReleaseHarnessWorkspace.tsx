@@ -123,10 +123,10 @@ export function ReleaseHarnessWorkspace({
 
   return (
     <div className="space-y-6">
-      <div className="rounded-lg border border-purple-500/30 bg-purple-500/10 p-5">
+      <div className="rounded-lg border border-green-500/30 bg-green-500/10 p-5">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <div className="flex items-center gap-2 text-purple-200">
+            <div className="flex items-center gap-2 text-green-200">
               <GitBranch size={20} />
               <h3 className="text-lg font-semibold">Release Harness</h3>
             </div>
@@ -138,7 +138,7 @@ export function ReleaseHarnessWorkspace({
             type="button"
             onClick={compile}
             disabled={isCompiling}
-            className="inline-flex items-center justify-center gap-2 rounded-lg bg-purple-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-purple-400 disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-green-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-green-400 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isCompiling ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} />}
             Compile Harness
@@ -246,7 +246,7 @@ export function ReleaseHarnessWorkspace({
             <div className="mt-4 space-y-3">
               {result.timelineDraft.map(item => (
                 <div key={`${item.offsetDays}-${item.title}`} className="flex gap-3 text-sm">
-                  <div className="w-14 shrink-0 text-purple-300">{item.offsetDays >= 0 ? `+${item.offsetDays}` : item.offsetDays}d</div>
+                  <div className="w-14 shrink-0 text-green-300">{item.offsetDays >= 0 ? `+${item.offsetDays}` : item.offsetDays}d</div>
                   <div>
                     <div className="font-medium text-gray-100">{item.title}</div>
                     <div className="text-gray-400">{item.description}</div>

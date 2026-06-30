@@ -62,19 +62,19 @@ interface CreativeDirectionCardProps {
 }
 
 export const CreativeDirectionCard = ({ suggestion, rationale, examples }: CreativeDirectionCardProps) => (
-    <div className="mt-4 bg-linear-to-br from-purple-500/10 via-purple-500/5 to-transparent border border-purple-500/20 rounded-xl p-4 animate-in fade-in slide-in-from-bottom-4 duration-500 shadow-lg shadow-purple-900/5">
+    <div className="mt-4 bg-linear-to-br from-green-500/10 via-green-500/5 to-transparent border border-green-500/20 rounded-xl p-4 animate-in fade-in slide-in-from-bottom-4 duration-500 shadow-lg shadow-green-900/5">
         <div className="flex items-start gap-4">
-            <div className="p-2.5 bg-purple-500/10 rounded-lg border border-purple-500/30">
-                <Zap size={20} className="text-purple-400" />
+            <div className="p-2.5 bg-green-500/10 rounded-lg border border-green-500/30">
+                <Zap size={20} className="text-green-400" />
             </div>
             <div className="flex-1">
-                <p className="text-[10px] text-purple-500/80 font-bold uppercase tracking-[0.15em] mb-1.5">Creative Evolution</p>
+                <p className="text-[10px] text-green-500/80 font-bold uppercase tracking-[0.15em] mb-1.5">Creative Evolution</p>
                 <p className="text-sm text-gray-200 leading-relaxed font-medium">{suggestion}</p>
                 <p className="text-xs text-gray-400/80 mt-2.5 leading-relaxed">{rationale}</p>
                 {examples && examples.length > 0 && (
                     <div className="flex gap-2 mt-4 flex-wrap">
                         {examples.map((ex: string, idx: number) => (
-                            <span key={idx} className="text-[10px] uppercase font-bold tracking-wider bg-purple-500/10 text-purple-300 px-2.5 py-1 rounded-md border border-purple-500/20">
+                            <span key={idx} className="text-[10px] uppercase font-bold tracking-wider bg-green-500/10 text-green-300 px-2.5 py-1 rounded-md border border-green-500/20">
                                 {ex}
                             </span>
                         ))}

@@ -8316,3 +8316,122 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
 - **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/28416944707)
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
+
+---
+
+## RightsOps Harness Wiring (2026-06-30) — Make the Existing Harness Binding on the Rights/Registration Department
+
+> Context: Comparison of the "RightsOps Agent Harness Addendum" blueprint against the codebase. Finding: the harness architecture, readiness compilers, approval-gate registry, hash-chained audit ledger, tiered-tool registry, and workflow state machine ALL already exist and are well-built. The work below is **integration, not invention** — wire the existing shapes onto the highest-stakes write path (rights/registration filing) so the harness doctrine becomes binding instead of advisory. No new patterns are introduced; every step reuses a primitive already in `packages/`. Sequencing is justified by correctness (gates must be live before any retrain captures real gated transcripts), never by effort.
+
+### ISSUE-565: Agent-ID Integrity — Harness `ownerAgentId` / `agentId` Must Resolve to a Real `ValidAgentId`
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** Agent orchestration / business-harness
+- **Location:** `packages/renderer/src/services/publishing/PublishingRightsCompiler.ts` (and sibling compilers under `packages/renderer/src/services/**/*Compiler.ts`), `packages/renderer/src/services/agent/types.ts` (`VALID_AGENT_IDS`), `packages/shared/src/services/business-harness/types.ts` (`HarnessAgentBrief`, `HarnessRecommendation`)
+- **Summary:** Harness compilers emit `ownerAgentId`/agent references that do not exist in `VALID_AGENT_IDS`: confirmed values include `legal_agent`, `finance_agent`, `creative_agent`, and `agent_marketing`, whereas the real ids are `legal`, `finance`, `creative`, `marketing`. Every `HarnessAgentBrief`/`HarnessRecommendation` carrying a dead id means the department-gate routing the blueprint depends on (§5) silently points at nothing. Verified by grep across compilers vs. the `VALID_AGENT_IDS` const.
+- **Expected (acceptance):** Every `ownerAgentId`, `HarnessAgentBrief.agentId`, and `HarnessRecommendation.ownerAgentId` produced anywhere resolves to a member of `VALID_AGENT_IDS`. A compile-time/test guard makes an unregistered id impossible to ship.
+- **Honest fallback:** N/A — this is a pure correctness fix; no infra dependency.
+- **Fix Direction (code only, reuse existing shapes):**
+  1. Grep every literal: `grep -rnoE "ownerAgentId: '[a-z_]+'|agentId: '[a-z_]+'" packages/renderer/src packages/shared/src`.
+  2. Replace each non-conforming id with its canonical `ValidAgentId` (`legal_agent`→`legal`, `finance_agent`→`finance`, `creative_agent`→`creative`, `agent_marketing`→`marketing`). Do not invent new ids here — ISSUE-568 owns adding `rights`.
+  3. Tighten the types: change `HarnessAgentBrief.agentId` and `HarnessRecommendation.ownerAgentId` from `string` to `ValidAgentId` in `packages/shared/src/services/business-harness/types.ts` (import the union from shared). Fix any resulting type errors at the call sites — those errors ARE the remaining defects.
+  4. Add a Vitest that asserts, for every registered `HarnessCompiler`, a sample `compile()` run's `agentBriefs[].agentId` and `recommendations[].ownerAgentId` are all in `VALID_AGENT_IDS`.
+- **Why / future reference:** Department gates are decorative until briefs route to a resolvable agent. This is table-stakes hygiene under the Platinum standard.
+- **DO NOT:** add a `rights`/`registration` id in this issue (ISSUE-568); loosen the type back to `string`.
+
+### ISSUE-566: Route the Rights-Registration Submit Path Through the Harness Gate (Close the Bypass)
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** Registration / business-harness / agent governance
+- **Location:** `packages/renderer/src/modules/registration/components/RegistrationForm.tsx` (`handleSubmit`, ~line 75-89), `packages/renderer/src/modules/registration/adapters/*Adapter.ts` (`submit()`), `packages/renderer/src/services/publishing/PublishingRightsCompiler.ts`, `packages/renderer/src/services/business-harness/ApprovalGateRegistry.ts` (`'file registration'`), `packages/renderer/src/services/agent/governance/DigitalHandshake.ts`, `packages/renderer/src/services/business-harness/HarnessStorage.ts`
+- **Summary:** `RegistrationForm.handleSubmit` calls `adapter.submit()` directly on button click. It does NOT run `compileHarness('publishing_rights')`, does NOT enforce the resulting `approvalGates`, does NOT consult `APPROVAL_GATE_REGISTRY['file registration']` (which already classifies filing as an irreversible action requiring approval), and does NOT go through `DigitalHandshake`. The highest-stakes write in the department bypasses the entire harness. Blueprint §1/§12: no portal/registration action without readiness + approval + recorded state. Verified: grep for any harness/handshake/compiler call inside `modules/registration` returns empty.
+- **Expected (acceptance):** No `adapter.submit()` can fire unless (a) `PublishingRightsCompiler` reports `registrationReady === true` with zero `blocked` `approvalGates`, AND (b) a `DigitalHandshake` approval for the `'file registration'` gate has been granted for that exact track+org. The produced `HarnessRun` is persisted via `HarnessStorage` before submission. Attempting to submit with open blockers is impossible from the UI and throws if called programmatically.
+- **Honest fallback:** If a live PRO/portal call can't be reached, behavior is the existing `requiresManualStep` web fallback — but ONLY after the gate passes. The gate is never skipped because automation is unavailable.
+- **Fix Direction (code only, reuse existing shapes):**
+  1. Build a `RegistrationGate` step in front of `adapter.submit()`: call `compileHarness('publishing_rights', input, { userId, save: true })` (the compiler + registry already exist) to get a `HarnessRun`.
+  2. If any `approvalGate.riskTier === 'blocked'` or `output.registrationReady === false`, render the blockers in the form and disable submit. Reuse `OrgStatusCard`/existing UI; no new modal pattern.
+  3. For the `'file registration'` gate (already in `APPROVAL_GATE_REGISTRY`), require an explicit approval through `DigitalHandshake.require(...)` before calling `adapter.submit()`. Reuse the existing handshake → memory-inbox → audit flow.
+  4. Persist the `HarnessRun` via `HarnessStorage` and link its `runId` onto the `OrgRegistrationRecord` (extend `formSnapshot`/record shape) so the submission references the exact readiness decision it passed.
+  5. Tests: a Vitest proving `submit()` is unreachable when the compiler returns a blocker, and reachable only after handshake approval.
+- **Why / future reference:** This is the single change that makes the harness binding rather than advisory for RightsOps. Pairs with ISSUE-567 (freshness) and ISSUE-571 (state-machine gating).
+- **DO NOT:** add a second approval mechanism — reuse `DigitalHandshake` + `APPROVAL_GATE_REGISTRY`; bypass the gate on automation failure.
+
+### ISSUE-567: Approval Freshness — Bind Each Registration Approval to a Song-Passport Version Hash
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** Registration / business-harness
+- **Location:** `packages/renderer/src/modules/registration/types/index.ts` (`OrgRegistrationRecord`), `packages/renderer/src/services/business-harness/SongDnaCompiler.ts` (Song-Passport equivalent), `packages/renderer/src/services/legal/LegalAuditService.ts` (reuse its `sha256` hashing pattern), `packages/shared/src/services/business-harness/types.ts` (`HarnessRun.schemaVersion`)
+- **Summary:** The blueprint (§9) requires that if the Song Passport (writers, splits, claimant, master owner, publication status) changes after an approval, the approval goes STALE and must be renewed — enforced via approval snapshot hashes. No such mechanism exists for the rights domain: grep for stale/freshness/approval-hash logic returns only unrelated cache/session uses. `formSnapshot` and template versioning exist but nothing ties a granted approval to the Passport state it was granted against.
+- **Expected (acceptance):** Each granted `'file registration'` approval stores a `passportHash` (SHA-256 of the canonical rights-relevant fields of the `CatalogTrack`/SongDna at approval time). Before `adapter.submit()`, the current Passport is re-hashed; if it differs, the approval is treated as stale, submission is blocked, and the user is prompted to re-approve. Editing any rights-relevant field invalidates the prior approval.
+- **Honest fallback:** N/A — deterministic hashing; no infra dependency.
+- **Fix Direction (code only, reuse existing shapes):**
+  1. Add a `canonicalRightsFields(track)` helper that serializes only the legally-material fields (writersAndContributors + percentages + IPIs, copyrightClaimant, publisherName/Number, isPublished, iswc).
+  2. Hash it with the SAME `sha256` Web Crypto helper already in `LegalAuditService.ts` (extract to a shared util rather than duplicating).
+  3. Persist `passportHash` + `approvalRunId` on `OrgRegistrationRecord` at approval time (ISSUE-566 grants the approval).
+  4. In the ISSUE-566 gate, recompute and compare before submit; mismatch ⇒ block with a "rights changed since approval — re-approve" state.
+  5. Vitest: approve → mutate a split → assert submission blocked as stale.
+- **Why / future reference:** Prevents a filing from going out against splits/claimant the user already changed — the exact integrity failure the blueprint calls out. Reuses the existing hash-chain hashing approach.
+- **DO NOT:** hash the entire track object (non-material field churn would cause false staleness); duplicate the sha256 implementation.
+
+### ISSUE-568: First-Class `rights` Agent Identity (Reuse Tuned-Endpoint Alias Pattern)
+- **Status:** ⏳ OPEN
+- **Severity:** 🟠 MEDIUM-HIGH
+- **Module:** Agent definitions / fine-tuned registry
+- **Location:** `packages/renderer/src/services/agent/types.ts` (`VALID_AGENT_IDS`), `packages/renderer/src/services/agent/fine-tuned-models.ts` (`FINE_TUNED_MODEL_ALIASES`), `packages/renderer/src/agents/` (new `rights/` dir with `config.ts` + `prompt.md` mirroring `agents/legal/`), `packages/renderer/src/services/agent/ToolRiskRegistry.ts`
+- **Summary:** RightsOps is a full department in the blueprint (its own state machine, packets, portal workflow) but no agent owns it. The Registration Center "Co-Pilot" (`RegistrationAutonomousRail.tsx`) is a thin `AutonomousIntelligence.generateText()` chat wrapper with no identity, tools, or gating — not a registered agent. The platinum target is a dedicated `rights` agent with its own scoped identity, tools, and prompt.
+- **Expected (acceptance):** `rights` is a member of `VALID_AGENT_IDS`, has an `agents/rights/config.ts` + `prompt.md`, resolves to a fine-tuned endpoint, and is the registered owner of registration recommendations/briefs. The Registration Center co-pilot is backed by this agent (with tools + gating), not an inline prompt.
+- **Honest fallback:** Until a dedicated R9 endpoint is minted, `rights` resolves via a `FINE_TUNED_MODEL_ALIASES` entry (`rights: 'legal'`) — the SAME deliberate alias mechanism already used for `legal.contracts → legal`. This keeps it on a tuned endpoint behind the harness gates (which enforce correctness regardless of weights) as a correct staging state toward its own endpoint, not a permanent reuse. Endpoint state must be re-synced from Vertex (`scripts/sync-fine-tuned-endpoints.mjs`, rule #11) before claiming the agent is live.
+- **Fix Direction (code only, reuse existing shapes):**
+  1. Add `'rights'` to `VALID_AGENT_IDS`.
+  2. Add `rights: 'legal'` to `FINE_TUNED_MODEL_ALIASES` so the strict registry resolves it (mirrors existing aliases).
+  3. Create `agents/rights/config.ts` + `prompt.md` modeled on `agents/legal/`; scope tools to the registration/readiness surface (`compile_release_harness`, `generate_release_identifiers`, registration-prep tools) — all already in `ToolRiskRegistry`.
+  4. Back `RegistrationAutonomousRail` with the registered `rights` agent (tools + `DigitalHandshake` path), replacing the inline `generateText` prompt.
+  5. Re-point ISSUE-565's registration `ownerAgentId`s to `rights` once it exists.
+- **Why / future reference:** Separates RightsOps (deploy worker) from Legal (protected-branch reviewer) per the blueprint, while reusing the existing alias mechanism rather than blocking on a training run.
+- **DO NOT:** fold RightsOps permanently into `legal`; hardcode a Vertex endpoint literal in source (rule #11 — endpoints come from the generated registry only).
+
+### ISSUE-569: Harness-Aware Prompts + `prompt_version` Stamping (rights / legal / publishing / licensing)
+- **Status:** ⏳ OPEN
+- **Severity:** 🟠 MEDIUM
+- **Module:** Agent prompts / governance
+- **Location:** `packages/renderer/src/agents/{rights,legal,publishing,licensing}/prompt.md` + `config.ts`, agent output assembly (where `AgentConfig` results are emitted)
+- **Summary:** The legal agent prompt (`agents/legal/prompt.md`) is strong on identity/disclaimer/scope but has zero awareness of the `HarnessRun` decision object, `approvalGates`, the readiness-compiler output, or the "prepare the packet, never execute the filing" doctrine. Same for publishing/licensing. The blueprint (§11) also wants `agent_version` + `prompt_version` + `schema_version` stamped on every agent output; only `HarnessRun.schemaVersion` exists today.
+- **Expected (acceptance):** Each rights-adjacent agent prompt instructs the agent to (a) call the readiness compiler, (b) respect `approvalGates`, (c) only ever PREPARE filing packets and route execution through the harness/human, and (d) every agent output carries `agentVersion` + `promptVersion` + `schemaVersion`.
+- **Honest fallback:** N/A — prompt + metadata change; no model retrain required for this issue (retrain is ISSUE-deferred; harness enforces safety regardless of prompt quality).
+- **Fix Direction (code only, reuse existing shapes):**
+  1. Add a shared "Harness Discipline" prompt block (decision object, approval gates, prepare-don't-execute) and include it in the four prompts; bump each prompt's version header.
+  2. Add `promptVersion`/`agentVersion` constants to each `config.ts` and stamp them onto emitted agent output alongside the existing `schemaVersion`.
+  3. Treat prompt files as versioned/reviewed artifacts (no silent edits) per blueprint §11.
+- **Why / future reference:** Quality lever, not a safety prerequisite — the harness (ISSUE-566/567/571) enforces correctness even with an untrained prompt. Versioned prompts make a later R9 retrain reproducible.
+- **DO NOT:** remove the mandatory legal Intelligence-disclaimer or identity-lock blocks; edit prompts without bumping the version.
+
+### ISSUE-570: Controlled Browser Worker — Explicit Pause-States at Certification / Payment / Submit
+- **Status:** ⏳ OPEN
+- **Severity:** 🟠 MEDIUM
+- **Module:** Registration adapters / browser automation
+- **Location:** `packages/renderer/src/modules/registration/adapters/*Adapter.ts`, `packages/renderer/src/modules/registration/adapters/automationResult.ts`, `packages/renderer/src/services/agent/ToolRiskRegistry.ts` (`browser_action` is `write`)
+- **Summary:** Blueprint §12 requires the browser worker to pause at certification, payment, final submit, ownership surprises, portal warnings, and CAPTCHA, and to accept approved-packet-only input. Today the adapters do `requiresDesktop` + a coarse `requiresManualStep` fallback (punt to a manual link when automation fails) + `getConfirmedAutomationResult` (rejects non-confirmation strings). There is no formal browser state machine with explicit gated pause points.
+- **Expected (acceptance):** The desktop/portal automation path emits explicit pause-states (`AWAITING_CERTIFICATION`, `AWAITING_PAYMENT`, `AWAITING_FINAL_SUBMIT`, plus surprise/CAPTCHA/conflict) that hand control to the user; it only ever consumes the approved packet from ISSUE-566; certification/payment/final-submit are never auto-completed.
+- **Honest fallback:** Where a portal can't be automated at all, fall back to the existing manual-step link — but the pause-state contract still applies (the worker never certifies/pays on the user's behalf).
+- **Fix Direction (code only, reuse existing shapes):**
+  1. Model the browser pause-states on the existing `WorkflowStateService` state-machine pattern (reuse, don't invent a parallel machine).
+  2. Feed the worker ONLY the approved-packet/`HarnessRun` from ISSUE-566; reject any other data source.
+  3. Keep `getConfirmedAutomationResult`'s confirmation guard; add explicit pause emissions at certification/payment/submit rather than treating them as failures.
+  4. Capture a confirmation/screenshot `HarnessEvidenceRef` on success (the evidence shape already exists in shared types).
+- **Why / future reference:** Stops automation from ever being the source of truth on a binding legal action. Builds on ISSUE-566's approved packet.
+- **DO NOT:** auto-accept certification/terms; auto-authorize payment; feed the worker unapproved data.
+
+### ISSUE-571: Readiness Compiler Gates Workflow-State Advancement (Test-Harness-as-CI)
+- **Status:** ⏳ OPEN
+- **Severity:** 🟠 MEDIUM
+- **Module:** business-harness / agent workflow state
+- **Location:** `packages/renderer/src/services/agent/WorkflowStateService.ts` (`advanceStep`), `packages/renderer/src/services/publishing/PublishingRightsCompiler.ts` and sibling compilers, `packages/shared/src/services/business-harness/types.ts`
+- **Summary:** Blueprint §10 wants CI-style tests that BLOCK workflow-state advancement (e.g. `writer_splits_total_test`, `approval_freshness_test`). The readiness compilers already compute exactly these checks as `blockers`/`approvalGates`, and `WorkflowStateService` already tracks discrete steps — but the two aren't connected: a step can advance without the relevant compiler passing.
+- **Expected (acceptance):** A rights/registration workflow step cannot transition past its readiness checkpoint while the owning compiler reports blockers. The failing checks are recorded on the step (a `failedChecks` field), mirroring the blueprint's `test_run` object, and stored alongside the existing step state.
+- **Honest fallback:** N/A — deterministic gating using existing compiler output.
+- **Fix Direction (code only, reuse existing shapes):**
+  1. At the relevant `advanceStep` for rights/registration steps, run the owning `HarnessCompiler` (reuse `compileHarness`) and refuse the transition if `blockers.length > 0`, recording `failedChecks` on the `WorkflowStepExecution`.
+  2. Reuse the existing idempotency-lock + status pattern in `WorkflowStateService`; do not build a separate test runner.
+  3. Vitest: a step with an unapproved split cannot advance; the same step advances once the compiler is clean.
+- **Why / future reference:** Turns the already-built readiness compilers into hard advancement gates — the blueprint's "tests block CI" applied to the workflow state machine. Composes with ISSUE-566 (submit gate) and ISSUE-567 (freshness).
+- **DO NOT:** create a parallel state machine or a second test framework — the compilers ARE the tests; `WorkflowStateService` IS the state machine.

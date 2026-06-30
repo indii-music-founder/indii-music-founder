@@ -169,7 +169,7 @@ const BrowserAgentTester: React.FC = () => {
                     </div>
                 </div>
                 <div className="bg-slate-900/50 border border-slate-800/50 p-4 rounded-xl flex items-start gap-3">
-                    <div className="bg-purple-500/10 p-2 rounded-lg text-purple-400">
+                    <div className="bg-green-500/10 p-2 rounded-lg text-green-400">
                         <CheckCircle2 size={18} />
                     </div>
                     <div>

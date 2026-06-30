@@ -213,7 +213,7 @@ export function RoyaltiesPrediction() {
                 </div>
                 <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
                     <div className="flex items-center gap-2 mb-1">
-                        <Music size={12} className="text-purple-400" />
+                        <Music size={12} className="text-green-400" />
                         <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wide">Forecast Streams</span>
                     </div>
                     <p className="text-2xl font-black text-white">
@@ -239,11 +239,11 @@ export function RoyaltiesPrediction() {
                                 <span className="text-gray-400">Actual</span>
                             </div>
                             <div className="flex items-center gap-1.5">
-                                <div className="w-3 h-0.5 bg-purple-400 rounded border-dashed" style={{ borderTop: '2px dashed #a78bfa' }} />
+                                <div className="w-3 h-0.5 bg-green-400 rounded border-dashed" style={{ borderTop: '2px dashed #a78bfa' }} />
                                 <span className="text-gray-400">Forecast</span>
                             </div>
                             <div className="flex items-center gap-1.5">
-                                <div className="w-3 h-2 bg-purple-500/20 rounded" />
+                                <div className="w-3 h-2 bg-green-500/20 rounded" />
                                 <span className="text-gray-400">Confidence ±15%</span>
                             </div>
                         </div>

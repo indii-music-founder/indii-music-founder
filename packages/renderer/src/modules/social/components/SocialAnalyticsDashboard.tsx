@@ -185,7 +185,7 @@ export default function SocialAnalyticsDashboard() {
                 </div>
                 <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-4">
                     <div className="flex items-center gap-2 mb-1">
-                        <Eye size={14} className="text-purple-400" />
+                        <Eye size={14} className="text-green-400" />
                         <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">Impressions</span>
                     </div>
                     <p className="text-2xl font-black text-white">

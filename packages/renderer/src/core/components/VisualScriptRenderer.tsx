@@ -52,8 +52,8 @@ export default function VisualScriptRenderer({ data }: VisualScriptRendererProps
 
     return (
         <div className="bg-[#1a1a1a] rounded-xl border border-gray-800 overflow-hidden my-4 shadow-2xl">
-            <div className="bg-linear-to-r from-purple-900/50 to-gray-900/50 p-4 border-b border-gray-700 flex items-center gap-3">
-                <div className="p-2 bg-purple-600 rounded-lg">
+            <div className="bg-linear-to-r from-green-900/50 to-gray-900/50 p-4 border-b border-gray-700 flex items-center gap-3">
+                <div className="p-2 bg-green-600 rounded-lg">
                     <Clapperboard size={20} className="text-white" />
                 </div>
                 <div>
@@ -68,7 +68,7 @@ export default function VisualScriptRenderer({ data }: VisualScriptRendererProps
                         <div className="flex items-start justify-between gap-4">
                             <div className="flex-1 space-y-2">
                                 <div className="flex items-center gap-2">
-                                    <span className="text-xs font-bold text-purple-400 bg-purple-900/20 px-1.5 py-0.5 rounded">Beat {beat.beat}</span>
+                                    <span className="text-xs font-bold text-green-400 bg-green-900/20 px-1.5 py-0.5 rounded">Beat {beat.beat}</span>
                                     <span className="text-sm font-semibold text-gray-200">{beat.name}</span>
                                 </div>
                                 <p className="text-sm text-gray-300 leading-relaxed">{beat.action}</p>
@@ -84,7 +84,7 @@ export default function VisualScriptRenderer({ data }: VisualScriptRendererProps
 
                             <button
                                 onClick={() => handleGenerate(beat)}
-                                className="opacity-0 group-hover:opacity-100 transition-opacity p-2 bg-purple-600 text-white rounded-lg hover:bg-purple-500 shadow-lg"
+                                className="opacity-0 group-hover:opacity-100 transition-opacity p-2 bg-green-600 text-white rounded-lg hover:bg-green-500 shadow-lg"
                                 title="Generate Cinematic Grid for this Beat"
                             >
                                 <Play size={16} fill="currentColor" />

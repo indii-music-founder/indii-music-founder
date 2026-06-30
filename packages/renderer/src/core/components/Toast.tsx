@@ -57,7 +57,7 @@ export const Toast: React.FC<ToastProps> = ({ toast, onDismiss }) => {
         error: <AlertCircle size={18} className="text-red-400" />,
         info: <Info size={18} className="text-blue-400" />,
         warning: <AlertTriangle size={18} className="text-yellow-400" />,
-        loading: <Loader2 size={18} className="text-purple-400 animate-spin" />
+        loading: <Loader2 size={18} className="text-green-400 animate-spin" />
     };
 
     const bgColors = {
@@ -65,7 +65,7 @@ export const Toast: React.FC<ToastProps> = ({ toast, onDismiss }) => {
         error: 'bg-red-900/20 border-red-900/50',
         info: 'bg-blue-900/20 border-blue-900/50',
         warning: 'bg-yellow-900/20 border-yellow-900/50',
-        loading: 'bg-purple-900/20 border-purple-900/50'
+        loading: 'bg-green-900/20 border-green-900/50'
     };
 
     return (
@@ -93,7 +93,7 @@ export const Toast: React.FC<ToastProps> = ({ toast, onDismiss }) => {
             {toast.type === 'loading' && toast.progress !== undefined && (
                 <div className="w-full bg-gray-800 rounded-full h-1.5 overflow-hidden">
                     <motion.div
-                        className="h-full bg-purple-500 rounded-full"
+                        className="h-full bg-green-500 rounded-full"
                         initial={{ width: 0 }}
                         animate={{ width: `${toast.progress}%` }}
                         transition={{ duration: 0.3 }}

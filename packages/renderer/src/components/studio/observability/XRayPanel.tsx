@@ -19,7 +19,7 @@ export function XRayPanel({ trace }: XRayPanelProps) {
 
     const getStepIcon = (type: TraceStep['type']) => {
         switch (type) {
-            case 'thought': return <Brain size={14} className="text-purple-400" />;
+            case 'thought': return <Brain size={14} className="text-green-400" />;
             case 'tool_call': return <Wrench size={14} className="text-blue-400" />;
             case 'tool_result': return <CheckCircle size={14} className="text-green-400" />;
             case 'routing': return <MessageSquare size={14} className="text-orange-400" />;
@@ -33,7 +33,7 @@ export function XRayPanel({ trace }: XRayPanelProps) {
             <div className="p-4 border-b border-white/10 flex justify-between items-center">
                 <div>
                     <h3 className="font-bold flex items-center gap-2">
-                        <Brain size={18} className="text-purple-500" />
+                        <Brain size={18} className="text-green-500" />
                         X-Ray: {trace.agentId}
                     </h3>
                     <p className="text-[10px] text-muted-foreground font-mono">{trace.id}</p>
@@ -60,7 +60,7 @@ export function XRayPanel({ trace }: XRayPanelProps) {
                                     </span>
                                 </div>
 
-                                <div className={`text-sm p-3 rounded-lg border ${step.type === 'thought' ? 'bg-purple-900/10 border-purple-500/20 text-purple-100/90 italic quote' :
+                                <div className={`text-sm p-3 rounded-lg border ${step.type === 'thought' ? 'bg-green-900/10 border-green-500/20 text-green-100/90 italic quote' :
                                     step.type === 'tool_call' ? 'bg-blue-900/10 border-blue-500/20 font-mono text-blue-100/90' :
                                         step.type === 'error' ? 'bg-red-900/10 border-red-500/20 text-red-100/90' :
                                             'bg-white/5 border-white/10 text-gray-300'

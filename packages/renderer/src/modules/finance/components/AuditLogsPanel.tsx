@@ -213,7 +213,7 @@ export function AuditLogsPanel() {
                                     <td className="px-3 py-2 font-mono text-gray-500 whitespace-nowrap">{log.timestamp}</td>
                                     <td className="px-3 py-2 text-gray-400 max-w-[120px] truncate">
                                         {log.user === 'system' ? (
-                                            <span className="text-purple-400">system</span>
+                                            <span className="text-green-400">system</span>
                                         ) : (
                                             <span className="truncate" title={log.user}>
                                                 {log.user.split('@')[0]}

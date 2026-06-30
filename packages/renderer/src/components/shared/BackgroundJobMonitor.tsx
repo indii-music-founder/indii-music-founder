@@ -27,7 +27,7 @@ export const BackgroundJobMonitor: React.FC = () => {
 
     const getIconForType = (type: string) => {
         switch (type) {
-            case 'video_render': return <Film size={16} className="text-purple-400" />;
+            case 'video_render': return <Film size={16} className="text-green-400" />;
             case 'audio_process': return <Music size={16} className="text-orange-400" />;
             case 'ai_generation': return <Cpu size={16} className="text-blue-400" />;
             default: return <Loader2 size={16} className="text-gray-400" />;
@@ -54,7 +54,7 @@ export const BackgroundJobMonitor: React.FC = () => {
                     <h3 className="text-sm font-semibold text-white flex items-center gap-2">
                         Background Tasks
                         {inProgressCount > 0 && (
-                            <span className="bg-purple-500/20 text-purple-400 text-[10px] px-1.5 py-0.5 rounded-full font-bold">
+                            <span className="bg-green-500/20 text-green-400 text-[10px] px-1.5 py-0.5 rounded-full font-bold">
                                 {inProgressCount} active
                             </span>
                         )}
@@ -101,7 +101,7 @@ export const BackgroundJobMonitor: React.FC = () => {
                                                 {item.status === 'running' && (
                                                     <div className="flex-1 h-1.5 bg-white/5 rounded-full overflow-hidden">
                                                         <div
-                                                            className="h-full bg-linear-to-r from-purple-500 to-blue-500 rounded-full transition-all duration-300 relative"
+                                                            className="h-full bg-linear-to-r from-green-500 to-blue-500 rounded-full transition-all duration-300 relative"
                                                             style={{ width: `${Math.max(item.progress, 5)}%` }}
                                                         >
                                                             <div className="absolute inset-0 bg-white/20 animate-pulse" />
@@ -113,7 +113,7 @@ export const BackgroundJobMonitor: React.FC = () => {
                                             </div>
                                         </div>
                                         <div className="shrink-0">
-                                            {item.status === 'running' && <Loader2 size={14} className="text-purple-400 animate-spin" />}
+                                            {item.status === 'running' && <Loader2 size={14} className="text-green-400 animate-spin" />}
                                             {item.status === 'success' && <CheckCircle size={14} className="text-green-500" />}
                                             {item.status === 'error' && <AlertCircle size={14} className="text-red-500" />}
                                         </div>

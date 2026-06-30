@@ -295,8 +295,8 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIde
                             {agentIdentity.initials}
                         </div>
                     ) : (
-                        <div className={`${variant === 'compact' ? 'w-6 h-6' : 'w-9 h-9'} rounded-full bg-linear-to-br from-purple-600 to-purple-800 flex items-center justify-center text-xs font-bold relative z-10 border border-purple-500/30`}>
-                            <Bot size={variant === 'compact' ? 12 : 18} className="text-purple-200" />
+                        <div className={`${variant === 'compact' ? 'w-6 h-6' : 'w-9 h-9'} rounded-full bg-linear-to-br from-green-600 to-green-800 flex items-center justify-center text-xs font-bold relative z-10 border border-green-500/30`}>
+                            <Bot size={variant === 'compact' ? 12 : 18} className="text-green-200" />
                         </div>
                     )}
                 </div>
@@ -346,10 +346,10 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIde
                             
                             if (tool.name === 'analyze_brand_consistency' && tool.json.analysis) {
                                 return (
-                                    <div key={`ext-tool-${idx}`} className="my-4 bg-purple-900/10 rounded-xl border border-purple-500/20 p-4">
+                                    <div key={`ext-tool-${idx}`} className="my-4 bg-green-900/10 rounded-xl border border-green-500/20 p-4">
                                         <div className="flex items-center gap-2 mb-3 pb-2 border-b border-white/5">
-                                            <div className="w-2 h-2 rounded-full bg-purple-400 animate-pulse" />
-                                            <span className="text-xs font-bold text-purple-300 uppercase tracking-widest">Brand Analysis Report</span>
+                                            <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                                            <span className="text-xs font-bold text-green-300 uppercase tracking-widest">Brand Analysis Report</span>
                                         </div>
                                         <div className="prose prose-invert prose-sm max-w-none">
                                             <ReactMarkdown components={{ p: ({ children }: { children?: React.ReactNode }) => <span className="block mb-2 last:mb-0">{children}</span> }}>
@@ -448,17 +448,17 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIde
                         <motion.div
                             animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }}
                             transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
-                            className="w-1.5 h-1.5 bg-purple-500 rounded-full"
+                            className="w-1.5 h-1.5 bg-green-500 rounded-full"
                         />
                         <motion.div
                             animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }}
                             transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut", delay: 0.2 }}
-                            className="w-1.5 h-1.5 bg-purple-500/60 rounded-full"
+                            className="w-1.5 h-1.5 bg-green-500/60 rounded-full"
                         />
                         <motion.div
                             animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }}
                             transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut", delay: 0.4 }}
-                            className="w-1.5 h-1.5 bg-purple-500/30 rounded-full"
+                            className="w-1.5 h-1.5 bg-green-500/30 rounded-full"
                         />
                     </div>
                 )}
@@ -471,12 +471,12 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIde
                                 whileHover={{ scale: 1.05, rotate: 2 }}
                                 className="relative group/att"
                             >
-                                <div className="absolute inset-0 bg-purple-500/20 blur opacity-0 group-hover/att:opacity-100 transition-opacity rounded-xl"></div>
+                                <div className="absolute inset-0 bg-green-500/20 blur opacity-0 group-hover/att:opacity-100 transition-opacity rounded-xl"></div>
                                 {att.mimeType && !att.mimeType.startsWith('image/') ? (
                                     <div className="w-24 h-24 rounded-xl border border-white/10 shadow-lg relative z-10 flex flex-col items-center justify-center bg-gray-900/50 p-2 text-center overflow-hidden">
                                         <div className="flex-1 flex items-center justify-center">
                                             {att.mimeType.startsWith('audio/') ? (
-                                                <svg className="w-8 h-8 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <svg className="w-8 h-8 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
                                                 </svg>
                                             ) : (

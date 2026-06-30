@@ -28,8 +28,8 @@ export function BrandKitPreview({
     return (
         <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-6 shadow-2xl backdrop-blur-xl group hover:border-white/10 transition-all duration-500">
             <h3 className="text-white font-bold text-lg mb-6 flex items-center gap-3">
-                <div className="p-2 bg-purple-500/10 rounded-lg border border-purple-500/20">
-                    <Sparkles size={18} className="text-purple-400 group-hover:rotate-12 transition-transform" />
+                <div className="p-2 bg-green-500/10 rounded-lg border border-green-500/20">
+                    <Sparkles size={18} className="text-green-400 group-hover:rotate-12 transition-transform" />
                 </div>
                 Artist Identity
             </h3>
@@ -43,7 +43,7 @@ export function BrandKitPreview({
                             <button
                                 onClick={onRegenerateBio}
                                 disabled={isRegenerating}
-                                className="p-1.5 text-gray-500 hover:text-purple-400 transition-colors disabled:opacity-50"
+                                className="p-1.5 text-gray-500 hover:text-green-400 transition-colors disabled:opacity-50"
                                 title="Regenerate Bio"
                             >
                                 <RotateCcw size={14} className={isRegenerating ? 'animate-spin' : ''} />
@@ -65,7 +65,7 @@ export function BrandKitPreview({
                                 <textarea
                                     value={editedBio}
                                     onChange={(e) => onBioChange(e.target.value)}
-                                    className="w-full h-32 bg-white/5 border border-white/10 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-purple-500/50 resize-none font-medium leading-relaxed"
+                                    className="w-full h-32 bg-white/5 border border-white/10 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-green-500/50 resize-none font-medium leading-relaxed"
                                     placeholder="Write your artist bio..."
                                 />
                                 <div className="flex justify-end gap-2">
@@ -92,7 +92,7 @@ export function BrandKitPreview({
                         <p className="text-sm text-gray-600 italic mb-4 font-medium">Bio will appear here...</p>
                         <button
                             onClick={onEditBio}
-                            className="text-xs bg-white/5 text-purple-400 hover:bg-purple-500/10 px-4 py-2 rounded-lg border border-purple-500/20 transition-all font-bold"
+                            className="text-xs bg-white/5 text-green-400 hover:bg-green-500/10 px-4 py-2 rounded-lg border border-green-500/20 transition-all font-bold"
                         >
                             + Add manually
                         </button>
@@ -112,7 +112,7 @@ export function BrandKitPreview({
                             <span className="bg-white/5 px-2.5 py-1.5 rounded-md text-gray-300 font-bold border border-white/5 uppercase tracking-wider">{userProfile.brandKit?.releaseDetails?.genre}</span>
                         )}
                         {userProfile.brandKit?.releaseDetails?.type && (
-                            <span className="bg-purple-500/10 px-2.5 py-1.5 rounded-md text-purple-300 font-bold border border-purple-500/20 uppercase tracking-wider">{userProfile.brandKit?.releaseDetails?.type}</span>
+                            <span className="bg-green-500/10 px-2.5 py-1.5 rounded-md text-green-300 font-bold border border-green-500/20 uppercase tracking-wider">{userProfile.brandKit?.releaseDetails?.type}</span>
                         )}
                     </div>
                 </div>
@@ -141,7 +141,7 @@ export function BrandKitPreview({
                     {userProfile.brandKit?.aestheticStyle && (
                         <div>
                             <p className="text-[10px] text-gray-500 uppercase font-bold tracking-[0.15em] mb-2">Visual Language</p>
-                            <span className="inline-block text-[11px] uppercase font-bold tracking-widest text-purple-400 bg-purple-500/10 px-3 py-2 rounded-lg border border-purple-500/20">
+                            <span className="inline-block text-[11px] uppercase font-bold tracking-widest text-green-400 bg-green-500/10 px-3 py-2 rounded-lg border border-green-500/20">
                                 {userProfile.brandKit.aestheticStyle}
                             </span>
                         </div>

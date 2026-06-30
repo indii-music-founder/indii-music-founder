@@ -31,7 +31,7 @@ function matchScore(brief: SyncBrief, track: CatalogTrack): number {
 
 const TYPE_COLORS: Record<string, string> = {
     TV: 'text-blue-400 bg-blue-400/10 border-blue-400/20',
-    Film: 'text-purple-400 bg-purple-400/10 border-purple-400/20',
+    Film: 'text-green-400 bg-green-400/10 border-green-400/20',
     Ad: 'text-[#FFE135] bg-[#FFE135]/10 border-[#FFE135]/20',
     Game: 'text-green-400 bg-green-400/10 border-green-400/20',
     Trailer: 'text-orange-400 bg-orange-400/10 border-orange-400/20',
@@ -446,7 +446,7 @@ export function SyncBriefMatcher() {
                     { label: 'Open Briefs', value: loading ? '…' : briefs.length, icon: <Film size={13} />, color: 'text-emerald-400' },
                     { label: 'High Match (75%+)', value: loading ? '…' : highMatchCount, icon: <Star size={13} />, color: 'text-[#FFE135]' },
                     { label: 'Catalog Tracks', value: loading ? '…' : catalog.length, icon: <Music2 size={13} />, color: 'text-green-400' },
-                    { label: 'Top Budget', value: loading ? '…' : topBudgetLabel, icon: <Zap size={13} />, color: 'text-purple-400' },
+                    { label: 'Top Budget', value: loading ? '…' : topBudgetLabel, icon: <Zap size={13} />, color: 'text-green-400' },
                 ].map(s => (
                     <div key={s.label} className="bg-white/[0.02] border border-white/5 rounded-xl p-3">
                         <div className={`${s.color} mb-1`}>{s.icon}</div>

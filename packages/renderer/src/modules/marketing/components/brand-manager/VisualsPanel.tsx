@@ -116,7 +116,7 @@ const VisualsPanel: React.FC<VisualsPanelProps> = ({
                             className="group relative"
                         >
                             <div
-                                className="w-24 h-24 rounded-xl cursor-pointer transition-all transform hover:scale-105 border border-gray-700 overflow-hidden relative ring-offset-[#111] ring-offset-2 hover:ring-2 hover:ring-purple-500/50"
+                                className="w-24 h-24 rounded-xl cursor-pointer transition-all transform hover:scale-105 border border-gray-700 overflow-hidden relative ring-offset-[#111] ring-offset-2 hover:ring-2 hover:ring-green-500/50"
                                 style={{ backgroundColor: color }}
                             >
                                 <input
@@ -160,7 +160,7 @@ const VisualsPanel: React.FC<VisualsPanelProps> = ({
                         </div>
                     </div>
                     <div className="p-6 bg-[#0a0a0a] rounded-xl border border-gray-800 relative overflow-hidden group transition-all hover:border-dept-marketing/30">
-                        <div className="absolute top-0 right-0 p-12 bg-purple-500/5 blur-[40px] rounded-full group-hover:bg-purple-500/10 transition-colors" />
+                        <div className="absolute top-0 right-0 p-12 bg-green-500/5 blur-[40px] rounded-full group-hover:bg-green-500/10 transition-colors" />
                         <p className="text-base font-bold text-white mb-2 tracking-tight transition-all" style={{ fontFamily: brandKit.fonts }}>AaBb</p>
                         <div className="flex items-center gap-2 mt-2">
                             <span className="text-[10px] bg-white/5 px-2 py-0.5 rounded text-gray-400 font-mono">{brandKit.fonts || 'Inter'}</span>

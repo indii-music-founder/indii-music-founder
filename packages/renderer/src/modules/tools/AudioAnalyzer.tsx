@@ -311,7 +311,7 @@ const AudioAnalyzer: React.FC = () => {
                                     </div>
 
                                     {/* Box 2: Visual & Agent Hooks */}
-                                    <div className="lg:col-span-2 bg-linear-to-br from-indigo-900/20 to-purple-900/20 border border-indigo-500/20 rounded-2xl p-6">
+                                    <div className="lg:col-span-2 bg-linear-to-br from-indigo-900/20 to-green-900/20 border border-indigo-500/20 rounded-2xl p-6">
                                         <h3 className="text-sm font-bold text-indigo-100 uppercase tracking-widest flex items-center gap-2 mb-6">
                                             <BrainCircuit size={16} className="text-indigo-400" />
                                             Creative Intelligence
@@ -350,7 +350,7 @@ const AudioAnalyzer: React.FC = () => {
                                         <div className="flex flex-wrap gap-3 mt-6 pt-5 border-t border-indigo-500/20">
                                             <Button
                                                 data-testid="send-to-video-studio-btn"
-                                                className="bg-linear-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold shadow-lg shadow-purple-500/20 transition-all duration-200 hover:shadow-purple-500/40 hover:scale-[1.02] active:scale-[0.98]"
+                                                className="bg-linear-to-r from-green-600 to-indigo-600 hover:from-green-500 hover:to-indigo-500 text-white font-bold shadow-lg shadow-green-500/20 transition-all duration-200 hover:shadow-green-500/40 hover:scale-[1.02] active:scale-[0.98]"
                                                 onClick={() => {
                                                     window.dispatchEvent(new Event('indii:dismiss_tour'));
                                                     setPendingPrompt(profile.semantic.targetPrompts.veo);

@@ -28,7 +28,7 @@ export class GeneralistAgent extends BaseAgent {
     id = 'generalist';
     name = 'indii Conductor';
     description = 'Central Studio Head and Creative Orchestrator.';
-    color = 'bg-purple-600';
+    color = 'bg-green-600';
     category: 'manager' | 'department' | 'specialist' = 'manager';
 
     private readonly CONDUCTOR_PROTOCOL = systemPrompt;
@@ -52,7 +52,7 @@ export class GeneralistAgent extends BaseAgent {
             id: 'generalist',
             name: 'indii',
             description: 'Creative orchestrator — plans, delegates, and executes across all departments.',
-            color: 'bg-purple-500',
+            color: 'bg-green-500',
             category: 'manager',
             systemPrompt: systemPrompt,
             tools: []

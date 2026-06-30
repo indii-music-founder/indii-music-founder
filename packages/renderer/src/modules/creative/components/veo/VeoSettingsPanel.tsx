@@ -33,7 +33,7 @@ export function VeoSettingsPanel({ isOpen }: VeoSettingsPanelProps) {
                 >
                     <div className="bg-white/5 border border-white/10 rounded-xl p-4 mt-2 backdrop-blur-md shadow-lg flex flex-col gap-4">
                         <div className="flex items-center gap-2 mb-2">
-                            <Sparkles size={16} className="text-purple-400" />
+                            <Sparkles size={16} className="text-green-400" />
                             <h3 className="text-sm font-bold text-white">Veo 3.1 Settings</h3>
                         </div>
                         <div className="flex items-center justify-between rounded-lg border border-white/8 bg-white/3 px-3 py-2">
@@ -59,7 +59,7 @@ export function VeoSettingsPanel({ isOpen }: VeoSettingsPanelProps) {
                                             className={clsx(
                                                 "px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
                                                 studioControls.aspectRatio === ar
-                                                    ? "bg-purple-500/20 text-purple-300 border border-purple-500/50 shadow-[0_0_12px_rgba(168,85,247,0.3)]"
+                                                    ? "bg-green-500/20 text-green-300 border border-green-500/50 shadow-[0_0_12px_rgba(168,85,247,0.3)]"
                                                     : "bg-white/5 text-gray-400 border border-white/5 hover:bg-white/10 hover:text-white"
                                             )}
                                         >

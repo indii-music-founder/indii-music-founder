@@ -168,7 +168,7 @@ export function AgentModePicker({
                                                             className={cn(
                                                                 "flex items-center justify-between p-2 rounded-lg border transition-all duration-200",
                                                                 isSelected 
-                                                                    ? "bg-purple-600/20 border-purple-500/50 text-white" 
+                                                                    ? "bg-green-600/20 border-green-500/50 text-white" 
                                                                     : "bg-white/5 border-white/5 text-white/50 hover:bg-white/10 hover:border-white/10"
                                                             )}
                                                         >
@@ -176,7 +176,7 @@ export function AgentModePicker({
                                                                 <span className="text-[11px] font-semibold">{displayName}</span>
                                                                 <span className="text-[8px] opacity-40">{agentId === dept.headId ? 'Department Head' : 'Specialist Worker'}</span>
                                                             </div>
-                                                            {isSelected && <Check className="w-3 h-3 text-purple-400" />}
+                                                            {isSelected && <Check className="w-3 h-3 text-green-400" />}
                                                         </button>
                                                     );
                                                 })}

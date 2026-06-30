@@ -60,7 +60,7 @@ export function CanvasViewport({
                         data-testid="creative-canvas-element"
                     />
                     {item.type === 'video' && item.url.startsWith('data:image') && (
-                        <div className="absolute top-4 left-4 bg-purple-600/90 text-white text-xs font-bold px-3 py-1 rounded-md backdrop-blur-sm shadow-lg border border-white/20 pointer-events-none">
+                        <div className="absolute top-4 left-4 bg-green-600/90 text-white text-xs font-bold px-3 py-1 rounded-md backdrop-blur-sm shadow-lg border border-white/20 pointer-events-none">
                             STORYBOARD PREVIEW
                         </div>
                     )}

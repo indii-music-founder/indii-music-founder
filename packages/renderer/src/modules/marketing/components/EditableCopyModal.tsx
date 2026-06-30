@@ -52,7 +52,7 @@ const EditableCopyModal: React.FC<EditableCopyModalProps> = ({ post, onClose, on
                         <textarea
                             value={content}
                             onChange={(e) => setContent(e.target.value)}
-                            className="w-full h-64 bg-black/50 border border-gray-700 rounded-xl p-4 text-white focus:outline-none focus:border-purple-500 transition-colors resize-none font-mono text-sm"
+                            className="w-full h-64 bg-black/50 border border-gray-700 rounded-xl p-4 text-white focus:outline-none focus:border-green-500 transition-colors resize-none font-mono text-sm"
                             placeholder="Write your post copy here..."
                         />
                     </div>
@@ -67,7 +67,7 @@ const EditableCopyModal: React.FC<EditableCopyModalProps> = ({ post, onClose, on
                     </button>
                     <button
                         onClick={handleSave}
-                        className="px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-500 transition-colors font-bold"
+                        className="px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-500 transition-colors font-bold"
                     >
                         Save Changes
                     </button>

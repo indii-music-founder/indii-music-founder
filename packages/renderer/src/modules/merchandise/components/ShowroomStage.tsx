@@ -24,7 +24,7 @@ export default function ShowroomStage({
     return (
         <div className="flex flex-col h-full bg-[#0a0a0a] p-6 relative overflow-hidden backdrop-blur-2xl">
             {/* Background Glows */}
-            <div className="absolute top-0 left-0 w-full h-full bg-linear-to-br from-blue-900/10 via-black to-purple-900/10 pointer-events-none" />
+            <div className="absolute top-0 left-0 w-full h-full bg-linear-to-br from-blue-900/10 via-black to-green-900/10 pointer-events-none" />
 
             <div className="flex items-center gap-3 mb-8 relative z-10">
                 <div className="h-8 w-1 bg-linear-to-b from-blue-400 to-indigo-500 rounded-full" />
@@ -112,12 +112,12 @@ export default function ShowroomStage({
                     className={`
                         group relative px-8 py-4 rounded-xl font-bold flex items-center gap-3 transition-all duration-300 overflow-hidden
                         ${canAnimate
-                            ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 hover:bg-purple-500'
+                            ? 'bg-green-600 text-white shadow-lg shadow-green-500/25 hover:shadow-green-500/40 hover:bg-green-500'
                             : 'bg-white/5 text-gray-600 cursor-not-allowed border border-white/5'}
                     `}
                 >
                     {canAnimate && (
-                        <div className="absolute inset-0 bg-[size:200%_200%] animate-gradient bg-linear-to-r from-purple-600 via-pink-600 to-purple-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div className="absolute inset-0 bg-[size:200%_200%] animate-gradient bg-linear-to-r from-green-600 via-pink-600 to-green-600 opacity-0 group-hover:opacity-100 transition-opacity" />
                     )}
                     <span className="relative z-10 flex items-center gap-3">
                         <Play className={`w-5 h-5 ${canAnimate ? 'text-white fill-current' : 'text-gray-600'}`} />

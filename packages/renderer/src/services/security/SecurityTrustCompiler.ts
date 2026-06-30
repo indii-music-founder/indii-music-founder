@@ -77,7 +77,7 @@ export class SecurityTrustCompiler implements HarnessCompiler<SecurityTrustInput
         riskTier: 'approval'
       });
       agentBriefs.push({
-        agentId: 'devops_agent',
+        agentId: 'devops',
         departmentId: 'DevOps',
         brief: 'Handle secure injection of external API credentials for the requested action.',
         inputs: ['actionDetails.credentials']
@@ -134,7 +134,7 @@ export class SecurityTrustCompiler implements HarnessCompiler<SecurityTrustInput
         riskTier: 'blocked'
       });
       agentBriefs.push({
-        agentId: 'legal_agent',
+        agentId: 'legal',
         departmentId: 'Legal',
         brief: 'Review tampered evidence packet and advise on compliance mitigation.',
         inputs: ['actionDetails.evidence']
@@ -142,7 +142,7 @@ export class SecurityTrustCompiler implements HarnessCompiler<SecurityTrustInput
     }
 
     agentBriefs.push({
-      agentId: 'security_agent',
+      agentId: 'security',
       departmentId: 'Security',
       brief: `Monitor sensitive action of type ${input.actionType}.`,
       inputs: ['actionDetails']

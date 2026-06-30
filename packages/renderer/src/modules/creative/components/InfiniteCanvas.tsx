@@ -1108,7 +1108,7 @@ export default function InfiniteCanvas() {
                     }}
                 >
                     <div className="flex items-center gap-2 mb-1">
-                        <Sparkles className="w-4 h-4 text-purple-400" />
+                        <Sparkles className="w-4 h-4 text-green-400" />
                         <span className="text-xs text-white/70 font-medium">Generate & Outpaint</span>
                     </div>
                     <textarea
@@ -1116,7 +1116,7 @@ export default function InfiniteCanvas() {
                         value={promptText}
                         onChange={e => setPromptText(e.target.value)}
                         placeholder="Describe what you want to see..."
-                        className="w-full bg-black/40 border border-white/10 rounded p-2 text-sm text-white resize-none focus:outline-none focus:border-purple-500/50"
+                        className="w-full bg-black/40 border border-white/10 rounded p-2 text-sm text-white resize-none focus:outline-none focus:border-green-500/50"
                         rows={3}
                         onKeyDown={(e) => {
                             if (e.key === 'Enter' && !e.shiftKey) {
@@ -1148,7 +1148,7 @@ export default function InfiniteCanvas() {
                                 }
                             }}
                             disabled={!promptText.trim()}
-                            className="px-3 py-1 text-xs bg-purple-600 hover:bg-purple-500 text-white rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                            className="px-3 py-1 text-xs bg-green-600 hover:bg-green-500 text-white rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
                         >
                             Generate <Send className="w-3 h-3" />
                         </button>
@@ -1186,7 +1186,7 @@ export default function InfiniteCanvas() {
                         </button>
                         <button 
                             onClick={() => handleCrop(cropOverlay.sx, cropOverlay.sy, cropOverlay.w, cropOverlay.h, true)}
-                            className="w-full px-3 py-2 text-sm text-white bg-purple-600 hover:bg-purple-700 rounded transition-colors flex items-center justify-center gap-2"
+                            className="w-full px-3 py-2 text-sm text-white bg-green-600 hover:bg-green-700 rounded transition-colors flex items-center justify-center gap-2"
                         >
                             <Sparkles className="w-4 h-4" />
                             Adaptive Fill (Autonomous)
@@ -1206,7 +1206,7 @@ export default function InfiniteCanvas() {
             {isGenerating && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-50">
                     <div className="flex flex-col items-center gap-4">
-                        <Loader2 size={48} className="animate-spin text-purple-500" />
+                        <Loader2 size={48} className="animate-spin text-green-500" />
                         <p className="text-white font-bold animate-pulse">Dreaming...</p>
                     </div>
                 </div>

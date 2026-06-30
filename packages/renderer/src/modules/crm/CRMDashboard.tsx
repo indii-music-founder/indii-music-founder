@@ -72,7 +72,7 @@ export default function CRMDashboard() {
 
     const getTypeColor = (type: Campaign['type']) => {
         switch (type) {
-            case 'Digital Vinyl': return 'from-purple-500/20 to-indigo-500/20 border-purple-500/30 text-purple-400';
+            case 'Digital Vinyl': return 'from-green-500/20 to-indigo-500/20 border-green-500/30 text-green-400';
             case 'Exclusive Audio': return 'from-blue-500/20 to-cyan-500/20 border-blue-500/30 text-blue-400';
             case 'VIP Package': return 'from-amber-500/20 to-orange-500/20 border-amber-500/30 text-amber-400';
             case 'Merch Bundle': return 'from-emerald-500/20 to-teal-500/20 border-emerald-500/30 text-emerald-400';
@@ -82,7 +82,7 @@ export default function CRMDashboard() {
 
     const getTypeBadgeColor = (type: Campaign['type']) => {
         switch (type) {
-            case 'Digital Vinyl': return 'bg-purple-500/10 text-purple-400 border-purple-500/20';
+            case 'Digital Vinyl': return 'bg-green-500/10 text-green-400 border-green-500/20';
             case 'Exclusive Audio': return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
             case 'VIP Package': return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
             case 'Merch Bundle': return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
@@ -120,7 +120,7 @@ export default function CRMDashboard() {
                 <div className="p-4 bg-background/50 border border-border/80 rounded-2xl flex flex-col gap-2">
                     <div className="flex justify-between items-center text-text-secondary">
                         <span className="text-xs font-semibold uppercase tracking-wider">Total Campaigns</span>
-                        <div className="p-2 bg-purple-500/10 rounded-lg text-purple-400">
+                        <div className="p-2 bg-green-500/10 rounded-lg text-green-400">
                             <Layers className="w-4 h-4" />
                         </div>
                     </div>

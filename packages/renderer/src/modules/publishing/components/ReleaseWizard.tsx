@@ -413,7 +413,7 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
                 className={`
                   px-4 py-2 rounded-lg border text-sm capitalize transition-all
                   ${isSelected
-                    ? 'bg-purple-500/10 border-purple-500/50 text-purple-400'
+                    ? 'bg-green-500/10 border-green-500/50 text-green-400'
                     : 'bg-gray-800/30 border-gray-700 text-gray-400 hover:border-gray-600'
                   }
                 `}

@@ -186,7 +186,7 @@ export default function CreateProductModal({ onClose, onProductCreated }: Create
                     {isStemPack && (
                         <div className="space-y-3 pt-2">
                             <div className="flex items-center gap-2 mb-1">
-                                <Music size={15} className="text-purple-400" />
+                                <Music size={15} className="text-green-400" />
                                 <span className="text-sm font-semibold text-gray-300">
                                     Upload 4 Stems
                                 </span>
@@ -202,7 +202,7 @@ export default function CreateProductModal({ onClose, onProductCreated }: Create
                                         key={label}
                                         className={`flex items-center gap-3 p-3 rounded-lg border transition-colors cursor-pointer
                                             ${file
-                                                ? 'border-purple-500/50 bg-purple-900/10'
+                                                ? 'border-green-500/50 bg-green-900/10'
                                                 : 'border-gray-700 bg-bg-dark hover:border-gray-600'
                                             }`}
                                         onClick={() => fileRefs.current[label]?.click()}
@@ -212,7 +212,7 @@ export default function CreateProductModal({ onClose, onProductCreated }: Create
                                         aria-label={`Upload ${display} stem`}
                                     >
                                         <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold
-                                            ${file ? 'bg-purple-600 text-white' : 'bg-gray-800 text-gray-500'}`}
+                                            ${file ? 'bg-green-600 text-white' : 'bg-gray-800 text-gray-500'}`}
                                         >
                                             {file ? '✓' : label[0]!.toUpperCase()}
                                         </div>

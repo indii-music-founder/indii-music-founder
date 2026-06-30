@@ -88,9 +88,9 @@ const CampaignDetail: React.FC<CampaignDetailProps> = ({ campaign, onBack, onExe
                         <button
                             onClick={onExecute}
                             disabled={isExecuting || campaign.status === CampaignStatus.DONE}
-                            className={`flex items-center gap-2 px-6 py-2.5 font-bold rounded-xl transition-all shadow-lg shadow-purple-900/20 ${isExecuting ? 'bg-purple-900/50 text-purple-200 cursor-wait' :
+                            className={`flex items-center gap-2 px-6 py-2.5 font-bold rounded-xl transition-all shadow-lg shadow-green-900/20 ${isExecuting ? 'bg-green-900/50 text-green-200 cursor-wait' :
                                 campaign.status === CampaignStatus.DONE ? 'bg-gray-800 text-gray-400 cursor-not-allowed' :
-                                    'bg-linear-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white'
+                                    'bg-linear-to-r from-green-600 to-pink-600 hover:from-green-500 hover:to-pink-500 text-white'
                                 }`}
                         >
                             {isExecuting ? (
@@ -105,7 +105,7 @@ const CampaignDetail: React.FC<CampaignDetailProps> = ({ campaign, onBack, onExe
                 {/* Stats Row */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <StatCard label="Total Posts" value={campaign.posts?.length || 0} icon={<ImageIconComponent size={16} className="text-blue-400" />} />
-                    <StatCard label="Duration" value={`${campaign.durationDays} Days`} icon={<ClockIcon size={16} className="text-purple-400" />} />
+                    <StatCard label="Duration" value={`${campaign.durationDays} Days`} icon={<ClockIcon size={16} className="text-green-400" />} />
                     <StatCard label="Platform Reach" value="--" subtext="Connect analytics" icon={<CalendarIcon size={16} className="text-pink-400" />} />
                     <StatCard label="Engagement" value="--" subtext="Connect analytics" icon={<CheckCircleIcon size={16} className="text-green-400" />} />
                 </div>

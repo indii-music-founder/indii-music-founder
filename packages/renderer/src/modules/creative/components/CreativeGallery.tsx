@@ -76,7 +76,7 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                             decoding="async"
                             className="w-full h-full object-contain bg-black"
                         />
-                        <div className="absolute top-2 left-2 bg-purple-600/80 text-white text-[10px] font-bold px-2 py-0.5 rounded backdrop-blur-sm">
+                        <div className="absolute top-2 left-2 bg-green-600/80 text-white text-[10px] font-bold px-2 py-0.5 rounded backdrop-blur-sm">
                             STORYBOARD
                         </div>
                     </div>
@@ -126,7 +126,7 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                                 <button
                                     onClick={(e) => { e.stopPropagation(); setVideoInput('lastFrame', item); toast.success("Set as Last Frame"); }}
                                     data-testid="set-last-frame-btn"
-                                    className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-purple-600 transition-colors"
+                                    className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-green-600 transition-colors"
                                     title="Set as Last Frame"
                                     aria-label="Set as Last Frame"
                                 >

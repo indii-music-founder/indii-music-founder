@@ -98,7 +98,7 @@ const ReleasePanel: React.FC<ReleasePanelProps> = ({
                             </div>
                             <div className="h-4 w-px bg-gray-800 hidden md:block" />
                             <div className="flex items-center gap-3 bg-[#151515] border border-gray-800 rounded-lg px-4 py-2 flex-1 max-w-sm hover:border-gray-700 transition-colors">
-                                <Hash size={14} className="text-purple-500 opacity-50" />
+                                <Hash size={14} className="text-green-500 opacity-50" />
                                 <input
                                     type="text"
                                     value={release.genre}

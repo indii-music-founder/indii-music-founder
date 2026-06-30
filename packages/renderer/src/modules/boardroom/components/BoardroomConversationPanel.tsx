@@ -127,7 +127,7 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
                                                     {identity.initials}
                                                 </span>
                                             ) : (
-                                                <Bot size={14} className="text-purple-300" />
+                                                <Bot size={14} className="text-green-300" />
                                             )}
                                         </div>
                                     )}

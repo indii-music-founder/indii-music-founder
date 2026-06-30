@@ -4,7 +4,7 @@ import { AlertTriangle, Check, X } from 'lucide-react';
 
 const TYPE_CONFIG: Record<string, { icon: React.ReactNode; color: string; label: string }> = {
     'social-post': { icon: <AlertTriangle className="w-5 h-5" />, color: 'text-blue-400', label: 'Social Media Post' },
-    'email': { icon: <AlertTriangle className="w-5 h-5" />, color: 'text-purple-400', label: 'Email' },
+    'email': { icon: <AlertTriangle className="w-5 h-5" />, color: 'text-green-400', label: 'Email' },
     'payment': { icon: <AlertTriangle className="w-5 h-5" />, color: 'text-red-400', label: 'Payment' },
     'file-operation': { icon: <AlertTriangle className="w-5 h-5" />, color: 'text-orange-400', label: 'File Operation' },
     'api-call': { icon: <AlertTriangle className="w-5 h-5" />, color: 'text-cyan-400', label: 'External API Call' },

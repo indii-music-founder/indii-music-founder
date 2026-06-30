@@ -13,7 +13,7 @@ import { ipfsPinataService } from '@/services/blockchain/IPFSPinataService';
 
 const ACTION_CONFIG: Record<LedgerEntry['action'], { color: string; bg: string; label: string }> = {
     UPLOAD: { color: 'text-blue-400', bg: 'bg-blue-400/10', label: 'Upload' },
-    METADATA_UPDATE: { color: 'text-purple-400', bg: 'bg-purple-400/10', label: 'Metadata' },
+    METADATA_UPDATE: { color: 'text-green-400', bg: 'bg-green-400/10', label: 'Metadata' },
     SPLIT_EXECUTION: { color: 'text-[#FFE135]', bg: 'bg-[#FFE135]/10', label: 'Split' },
     TOKEN_MINT: { color: 'text-green-400', bg: 'bg-green-400/10', label: 'Mint' },
 };

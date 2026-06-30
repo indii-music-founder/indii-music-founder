@@ -357,7 +357,7 @@ function ReleaseStatsPanel({ stats, earnings }: { stats: { total: number; live: 
         { label: 'Total Releases', value: stats.total.toString(), icon: Music, color: 'text-blue-400' },
         { label: 'Live on DSPs', value: stats.live.toString(), icon: Globe, color: 'text-green-400' },
         { label: 'Pending Review', value: stats.pending.toString(), icon: Clock, color: 'text-yellow-400' },
-        { label: 'Total Earnings', value: earnings ? `$${earnings.toFixed(2)}` : '$0.00', icon: DollarSign, color: 'text-purple-400' },
+        { label: 'Total Earnings', value: earnings ? `$${earnings.toFixed(2)}` : '$0.00', icon: DollarSign, color: 'text-green-400' },
     ];
 
     return (
