@@ -4,6 +4,7 @@
 
 ## Recent Commits
 ```
+c9c588826 chore: session checkpoint [20:08]
 5c60d9cc5 feat(founders): enhance checkout flow with path selection + agreements
 c15706b47 chore: session checkpoint [19:57]
 336c37ba2 chore: session checkpoint [17:52]
@@ -13,7 +14,6 @@ c15706b47 chore: session checkpoint [19:57]
 cb9683537 chore: e2e mock plumbing, Detroit landing copy, audit doc + stress loop
 1d59f67d3 chore: session checkpoint [17:36]
 c9a1d582b feat(landing): widen thesis crawl, refine intro timing + diffuser
-7926b516a chore: session checkpoint [17:34]
 ```
 
 ## Working State
