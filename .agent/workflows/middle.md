@@ -27,6 +27,20 @@ Invoke the **Recursive Execution Loop**:
 - Run **`/get-git`** periodically to ensure local commits are validated and pushed, and remote changes are integrated.
 - Unstick blockers using the Error Ledger as defined in `/go`.
 
+## 2.5 Pattern Health Checkpoint (via `/health`)
+Mid-session pattern monitoring to catch emerging issues:
+- Run pattern detector: `npm run detect:bugs`
+- **Compare to baseline:** Did patterns increase while coding?
+  - ✅ Same or improved: Continue work
+  - ⚠️ Increased slightly (1-10 points): Document, monitor closely
+  - ❌ Increased significantly (10+ points): Stop and fix new patterns first
+- **Action if patterns increased:**
+  - Identify what patterns you added (unprotected awaits, Base64 payloads, etc.)
+  - Add try-catch, error handling, or validation tests
+  - Re-run detector to verify improvement
+  - Resume original task
+- This is **optional but recommended** at natural breakpoints (after completing a module, finishing a feature component, etc.)
+
 ## 3. Dynamic Technical Diagramming (via `/flowchart`)
 As complex logic, state transitions, or component architectures are built:
 - Invoke the **`/flowchart`** command to generate micro/technical diagrams (e.g., Zustand state flows, Component renders, Firestore queries).
