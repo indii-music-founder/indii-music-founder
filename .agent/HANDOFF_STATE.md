@@ -4,6 +4,7 @@
 
 ## Recent Commits
 ```
+85a286c26 feat(ISSUE-569): harness-aware prompts with version stamping
 5f506f7cd chore: session checkpoint [10:12]
 bd7860c56 feat(ISSUE-567): approval freshness via Song Passport hash
 c523f87e3 chore: session checkpoint [09:56]
@@ -13,13 +14,11 @@ c8e4cd3ad fix(ISSUE-565,568): agent-ID integrity + rights agent
 7cdf8b453 chore: session checkpoint [09:45]
 67f3a7710 chore: session checkpoint [09:42]
 d997851d2 chore: session checkpoint [09:39]
-833efdfc8 chore: session checkpoint [09:36]
 ```
 
 ## Working State
 ```
-M  packages/renderer/src/agents/licensing/prompt.md
-M  packages/renderer/src/agents/publishing/prompt.md
+clean working tree
 ```
 
 ## Decisions
