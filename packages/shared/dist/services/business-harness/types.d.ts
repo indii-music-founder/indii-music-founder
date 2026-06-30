@@ -43,13 +43,14 @@ export interface HarnessFinding {
     evidenceRefs?: HarnessEvidenceRef[];
     legalBasisRefs?: string[];
 }
+import type { ValidAgentId } from '@/services/agent/types';
 export interface HarnessRecommendation {
     id: string;
     domain: HarnessDomain;
     priority: HarnessSeverity;
     title: string;
     detail: string;
-    ownerAgentId: string;
+    ownerAgentId: ValidAgentId;
     approvalRequired: boolean;
     nextAction?: string;
 }
@@ -74,7 +75,7 @@ export interface HarnessCostLine {
     createdAt: string;
 }
 export interface HarnessAgentBrief {
-    agentId: string;
+    agentId: ValidAgentId;
     departmentId?: string;
     brief: string;
     inputs: string[];
