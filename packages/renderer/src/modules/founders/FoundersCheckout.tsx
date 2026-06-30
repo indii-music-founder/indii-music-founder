@@ -1,18 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useStore } from '@/core/store';
-import { 
-    ArrowLeft, 
-    CheckCircle2, 
-    Lock, 
-    CreditCard, 
-    ShieldCheck, 
-    Loader2, 
-    Sparkles, 
-    Check, 
-    ArrowRight, 
-    Globe, 
-    AlertTriangle 
+import {
+    ArrowLeft,
+    CheckCircle2,
+    Lock,
+    CreditCard,
+    ShieldCheck,
+    Loader2,
+    Sparkles,
+    Check,
+    ArrowRight,
+    Globe,
+    AlertTriangle,
+    Mail
 } from 'lucide-react';
 import { createOneTimePayment } from '@/services/payment/PaymentService';
 import { logger } from '@/utils/logger';
@@ -23,8 +24,10 @@ export default function FoundersCheckout() {
     const user = useStore(state => state.user);
 
     // Checkout Flow States:
-    // 'idle' | 'initiating' | 'mock_redirect' | 'mock_stripe_portal' | 'mock_processing' | 'success'
-    const [checkoutState, setCheckoutState] = useState<'idle' | 'initiating' | 'mock_redirect' | 'mock_stripe_portal' | 'mock_processing' | 'success'>('idle');
+    // 'path-select' | 'agreement-review' | 'payment-option' | 'initiating' | 'mock_redirect' | 'mock_stripe_portal' | 'mock_processing' | 'success'
+    const [checkoutState, setCheckoutState] = useState<'path-select' | 'agreement-review' | 'payment-option' | 'initiating' | 'mock_redirect' | 'mock_stripe_portal' | 'mock_processing' | 'success'>('path-select');
+    const [selectedPath, setSelectedPath] = useState<'software-purchase' | 'founding-support' | null>(null);
+    const [recognitionMessage, setRecognitionMessage] = useState('');
     const [redirectProgress, setRedirectProgress] = useState(0);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -39,7 +42,7 @@ export default function FoundersCheckout() {
 
     useEffect(() => {
         flushFounderFunnelQueue();
-        if (checkoutState === 'idle' && !hasTrackedCheckoutView.current) {
+        if (checkoutState === 'path-select' && !hasTrackedCheckoutView.current) {
             hasTrackedCheckoutView.current = true;
             void trackFounderFunnelEvent('founder_checkout_viewed', {
                 surface: 'founders_checkout',
@@ -49,10 +52,11 @@ export default function FoundersCheckout() {
                 email: user?.email ?? null,
             });
         }
-        if (checkoutState === 'idle') {
+        if (checkoutState === 'agreement-review' && selectedPath) {
             void trackFounderFunnelEvent('founder_agreement_reviewed', {
                 surface: 'founders_checkout',
                 price: 2500,
+                path: selectedPath,
             }, {
                 userId: user?.uid ?? null,
                 email: user?.email ?? null,
@@ -64,7 +68,7 @@ export default function FoundersCheckout() {
         if (user?.displayName) {
             setTimeout(() => setCardName(user.displayName!), 0);
         }
-    }, [checkoutState, user]);
+    }, [checkoutState, user, selectedPath]);
 
     // Handle Card Formatting
     const handleCardNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -183,7 +187,7 @@ export default function FoundersCheckout() {
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-amber-500/5 via-background to-background pointer-events-none" />
 
             {/* Top Navigation */}
-            {checkoutState === 'idle' && (
+            {(checkoutState === 'path-select' || checkoutState === 'agreement-review' || checkoutState === 'payment-option') && (
                 <button
                     onClick={() => setModule('dashboard')}
                     className="fixed top-6 left-6 z-20 flex items-center gap-2 text-sm text-gray-500 hover:text-gray-200 transition-colors group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black rounded-lg px-1"
@@ -194,25 +198,136 @@ export default function FoundersCheckout() {
             )}
 
             <AnimatePresence mode="wait">
-                {/* IDLE VIEW: Landing and Offer details */}
-                {checkoutState === 'idle' && (
+                {/* PATH SELECT VIEW: Choose software vs support */}
+                {checkoutState === 'path-select' && (
                     <motion.div
-                        key="idle-view"
+                        key="path-select-view"
+                        initial={{ opacity: 0, y: 15 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -15 }}
+                        className="z-10 max-w-3xl w-full text-center mt-12 mb-12 flex flex-col items-center"
+                    >
+                        <h1 className="text-3xl md:text-5xl font-black tracking-tighter text-white mb-4">Secure Founder Access</h1>
+                        <p className="text-gray-400 mb-12 max-w-xl">Choose how you'd like to participate in indii's launch:</p>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full mb-8">
+                            <button
+                                onClick={() => { setSelectedPath('software-purchase'); setCheckoutState('agreement-review'); }}
+                                className="p-6 rounded-2xl border-2 border-amber-500/20 hover:border-amber-500/60 bg-white/[0.02] hover:bg-amber-500/5 transition-all text-left group"
+                            >
+                                <h3 className="text-lg font-bold text-white mb-2 group-hover:text-amber-300">Business Software Purchase</h3>
+                                <p className="text-sm text-gray-400 mb-4">Acquire lifetime platform access as a business software expense.</p>
+                                <div className="text-xs text-amber-300 font-mono">Tax-deductible software license</div>
+                            </button>
+
+                            <button
+                                onClick={() => { setSelectedPath('founding-support'); setCheckoutState('agreement-review'); }}
+                                className="p-6 rounded-2xl border-2 border-cyan-500/20 hover:border-cyan-500/60 bg-white/[0.02] hover:bg-cyan-500/5 transition-all text-left group"
+                            >
+                                <h3 className="text-lg font-bold text-white mb-2 group-hover:text-cyan-300">Founding Support</h3>
+                                <p className="text-sm text-gray-400 mb-4">Support indii's mission and receive full platform access and founder benefits.</p>
+                                <div className="text-xs text-cyan-300 font-mono">Founder commitment & support</div>
+                            </button>
+                        </div>
+                    </motion.div>
+                )}
+
+                {/* AGREEMENT REVIEW VIEW */}
+                {checkoutState === 'agreement-review' && (
+                    <motion.div
+                        key="agreement-view"
+                        initial={{ opacity: 0, y: 15 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -15 }}
+                        className="z-10 max-w-3xl w-full text-center mt-8 mb-12 flex flex-col items-center"
+                    >
+                        <button onClick={() => setCheckoutState('path-select')} className="mb-4 text-sm text-gray-400 hover:text-white flex items-center gap-1">
+                            <ArrowLeft size={14} /> Change Path
+                        </button>
+                        <h2 className="text-2xl font-bold text-white mb-2">
+                            {selectedPath === 'software-purchase' ? 'Founder Software Access Agreement' : 'Founding Support Agreement'}
+                        </h2>
+                        <p className="text-xs text-gray-500 mb-6">{selectedPath === 'software-purchase' ? 'Software Purchase Agreement' : 'Founding Support Agreement'}</p>
+
+                        <div className="bg-white/[0.02] border border-white/10 rounded-xl p-6 max-h-96 overflow-y-auto mb-6 text-left text-sm text-gray-300 w-full">
+                            <p className="mb-4 font-semibold">AGREEMENT TERMS</p>
+                            <p className="mb-3">This agreement grants you:</p>
+                            <ul className="list-disc list-inside space-y-2 mb-4 text-xs">
+                                <li>Lifetime full-platform access to indii Studio</li>
+                                <li>All current and future founder-level modules and features</li>
+                                <li>Boardroom and Conductor access for agent orchestration</li>
+                                <li>Guided onboarding and beta participation status</li>
+                                <li>Permanent founder recognition in the indii platform</li>
+                                <li>Desktop application installers (macOS DMG, Windows EXE)</li>
+                                <li>Future founder-level updates and priority feature voting</li>
+                            </ul>
+                            <p className="text-xs text-gray-500">
+                                {selectedPath === 'software-purchase'
+                                    ? 'Tax Disclaimer: If you use indii for your music business, this purchase may qualify as a deductible software expense. Please confirm with your tax professional.'
+                                    : 'This commitment supports indii\'s development and launch.'}
+                            </p>
+                        </div>
+
+                        <div className="mb-6 w-full">
+                            <label className="text-xs font-semibold text-gray-400 mb-2 block">Founder Recognition Message (Optional)</label>
+                            <textarea
+                                value={recognitionMessage}
+                                onChange={(e) => setRecognitionMessage(e.target.value)}
+                                placeholder="Your name, business name, pseudonym, or dedication message..."
+                                className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white text-sm placeholder-gray-600 focus:border-amber-500 focus:outline-none"
+                                maxLength={200}
+                                rows={3}
+                            />
+                            <p className="text-xs text-gray-500 mt-1">Your message will be recorded as part of indii's permanent founder recognition.</p>
+                        </div>
+
+                        <div className="flex flex-col sm:flex-row gap-3 w-full">
+                            <button
+                                onClick={() => setCheckoutState('payment-option')}
+                                className="flex-1 bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 px-6 rounded-lg transition-all"
+                            >
+                                <CreditCard size={16} className="inline mr-2" />
+                                Proceed to Payment
+                            </button>
+                            <button
+                                onClick={() => {
+                                    void trackFounderFunnelEvent('founder_talk_first_selected', { path: selectedPath });
+                                    window.location.href = 'mailto:wiil@indii.music?subject=indii%20Founder%20Access%20-%20Talk%20First';
+                                }}
+                                className="flex-1 bg-white/10 hover:bg-white/20 text-white font-bold py-3 px-6 rounded-lg transition-all border border-white/20"
+                            >
+                                <Mail size={16} className="inline mr-2" />
+                                Talk First: wiil@indii.music
+                            </button>
+                        </div>
+                    </motion.div>
+                )}
+
+                {/* PAYMENT OPTION VIEW (was IDLE VIEW) */}
+                {checkoutState === 'payment-option' && (
+                    <motion.div
+                        key="payment-view"
                         initial={{ opacity: 0, y: 15 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -15 }}
                         className="z-10 max-w-4xl w-full text-center mt-12 mb-12 flex flex-col items-center"
                     >
+                        <button onClick={() => setCheckoutState('agreement-review')} className="mb-4 text-sm text-gray-400 hover:text-white flex items-center gap-1">
+                            <ArrowLeft size={14} /> Back to Agreement
+                        </button>
+
                         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-xs font-mono tracking-widest uppercase mb-8">
-                            Founders Round — 4 Seats Left of 11 Total
+                            Founder Access — ${2500}
                         </div>
-                        
+
                         <h1 className="text-4xl md:text-6xl font-black tracking-tighter text-white mb-6">
-                            Back The <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-500 to-amber-300">Vision</span>.
+                            Complete Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-500 to-amber-300">Access</span>.
                         </h1>
-                        
+
                         <p className="text-gray-400 text-base md:text-lg max-w-2xl mx-auto leading-relaxed mb-10">
-                            Secure your place as an early backer. Get lifetime platform access, priority feature voting rights, and a permanent cryptographic signature in the indii core architecture.
+                            {selectedPath === 'software-purchase'
+                                ? 'Pay securely via Stripe. Your lifetime access begins immediately.'
+                                : 'Support indii\'s launch and receive full platform access.'}
                         </p>
 
                         {/* Premium Pricing & Checkout Board */}
@@ -366,7 +481,7 @@ export default function FoundersCheckout() {
                                             userId: user?.uid ?? null,
                                             email: user?.email ?? null,
                                         });
-                                        setCheckoutState('idle');
+                                        setCheckoutState('payment-option');
                                     }}
                                     className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-300 transition-colors mb-8 font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black rounded-lg px-1"
                                 >

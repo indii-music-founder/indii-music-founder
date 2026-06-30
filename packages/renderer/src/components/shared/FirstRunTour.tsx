@@ -129,6 +129,17 @@ export function FirstRunTour() {
                         align: 'center',
                     },
                 },
+                {
+                    // Step 5: Boardroom (final step)
+                    element: '[data-testid="nav-item-boardroom"], button:has-text("Boardroom")',
+                    popover: {
+                        title: 'Meet Your Boardroom',
+                        description:
+                            'Say hello to your team. Ask the Boardroom what indii is, what it can do, and how the agents work together. The Boardroom is your virtual conference room with all your specialists.',
+                        side: 'right',
+                        align: 'start',
+                    },
+                },
             ],
         });
 
