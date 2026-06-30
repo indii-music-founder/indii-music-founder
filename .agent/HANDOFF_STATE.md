@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-30 08:26 EDT
+**Updated:** 2026-06-30 09:22 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+a90d30b37 test(remote): skip local P2P WebSocket init inside Vitest to prevent EnvironmentTeardownError
+6c6dd8ad1 chore: session checkpoint [08:26]
 c486c33d4 feat(platinum): a11y + SEO polish for founder site & app auth (ISSUE-560, ISSUE-561)
 bd25e996a chore: session checkpoint [08:23]
 0a5fe74f7 chore: session checkpoint [08:18]
@@ -12,13 +14,11 @@ bd25e996a chore: session checkpoint [08:23]
 b4d0f44fd chore(flowchart): update section header to pass CI validation
 0760ac4a4 chore: session checkpoint [08:15]
 5ed5859c9 chore: session checkpoint [08:15]
-c36cb6d13 chore: session checkpoint [08:14]
-57fa17e87 feat(perf): split auth bundle from app shell (ISSUE-549, ISSUE-564)
 ```
 
 ## Working State
 ```
- M packages/renderer/src/services/agent/RemoteRelayService.ts
+clean working tree
 ```
 
 ## Decisions
