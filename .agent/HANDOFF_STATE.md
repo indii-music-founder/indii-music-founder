@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-30 14:31 EDT
+**Updated:** 2026-06-30 14:34 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+e083c1ff7 chore(pre-commit): add Stage 4 — unit test enforcement (CLOSES THE GAP)
+39b5139f5 chore: session checkpoint [14:31]
 fe54ff50e chore: session checkpoint [14:29]
 18d6fe9e6 docs: add RightsOps harness registration submit flow diagram
 1ab9bd36f chore: session checkpoint [14:26]
@@ -12,8 +14,6 @@ c555be0f5 chore: session checkpoint [14:25]
 0be5d2117 chore: session checkpoint [14:11]
 13d32781c fix(ci): simplify Python snippet to single line in deploy.yml
 db6f19b16 chore: session checkpoint [14:10]
-caa96740b fix(ci): correct Python heredoc syntax in deploy.yml
-a5c75fd8c fix(ci): correct Python indentation in deploy.yml staging URL extraction
 ```
 
 ## Working State
