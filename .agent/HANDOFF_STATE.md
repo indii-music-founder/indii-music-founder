@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-30 14:43 EDT
+**Updated:** 2026-06-30 15:22 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+d467e4265 chore: session checkpoint [14:43]
 068236375 chore(shared): rebuild shared package dist typings
 c7c1dcbff chore(shared): strictly type agentId and ownerAgentId as ValidAgentId in business-harness types
 c6c1a9219 chore: session checkpoint [14:34]
@@ -13,12 +14,16 @@ fe54ff50e chore: session checkpoint [14:29]
 18d6fe9e6 docs: add RightsOps harness registration submit flow diagram
 1ab9bd36f chore: session checkpoint [14:26]
 c555be0f5 chore: session checkpoint [14:25]
-1933484fb chore: session checkpoint [14:24]
 ```
 
 ## Working State
 ```
-clean working tree
+ M electron.vite.config.ts
+ M packages/firebase/src/functions/creative/gateway.ts
+ M packages/main/src/security/index.ts
+ M packages/renderer/index.html
+ M packages/renderer/src/services/firebase.ts
+ M packages/renderer/src/utils/e2eMode.ts
 ```
 
 ## Decisions
