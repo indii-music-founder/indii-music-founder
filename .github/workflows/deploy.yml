@@ -533,12 +533,43 @@ jobs:
       - name: Deploy landing page to Firebase Hosting
         run: |
           export GOOGLE_APPLICATION_CREDENTIALS="${{ steps.auth.outputs.credentials_file_path }}"
-          npx --no-install firebase deploy --only hosting:landing --project indii-music-founder --non-interactive
+          set +e
+          OUTPUT=$(npx --no-install firebase deploy --only hosting:landing --project indii-music-founder --non-interactive 2>&1)
+          STATUS=$?
+          set -e
+          echo "$OUTPUT"
+          if [ "$STATUS" -ne 0 ]; then
+            # Firebase rejects re-releasing a version that is already the current
+            # active version (HTTP 400). When the landing content is unchanged the
+            # uploaded version matches what is already live, so this is a no-op
+            # success, not a real failure. Any other error still fails the job.
+            if echo "$OUTPUT" | grep -q "is the current active version"; then
+              echo "::notice::Landing version already live (content unchanged) — treating as success."
+            else
+              echo "::error::Landing page deploy failed."
+              exit "$STATUS"
+            fi
+          fi
 
       - name: Deploy studio app to Firebase Hosting
         run: |
           export GOOGLE_APPLICATION_CREDENTIALS="${{ steps.auth.outputs.credentials_file_path }}"
-          npx --no-install firebase deploy --only hosting:app --project indii-music-founder --non-interactive
+          set +e
+          OUTPUT=$(npx --no-install firebase deploy --only hosting:app --project indii-music-founder --non-interactive 2>&1)
+          STATUS=$?
+          set -e
+          echo "$OUTPUT"
+          if [ "$STATUS" -ne 0 ]; then
+            # Same idempotency guard as the landing deploy: an unchanged app build
+            # produces a version that is already the current active version, which
+            # Firebase rejects with HTTP 400. Treat that single case as success.
+            if echo "$OUTPUT" | grep -q "is the current active version"; then
+              echo "::notice::App version already live (content unchanged) — treating as success."
+            else
+              echo "::error::Studio app deploy failed."
+              exit "$STATUS"
+            fi
+          fi
 
       - name: Deploy Cloud Functions
         env:
