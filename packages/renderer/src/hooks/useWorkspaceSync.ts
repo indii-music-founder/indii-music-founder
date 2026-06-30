@@ -125,6 +125,12 @@ export function useWorkspaceSync(): void {
     // -----------------------------------------------------------------------
 
     useEffect(() => {
+        // Defensive: ensure stores have subscribe method before mounting listeners
+        if (typeof useStore.subscribe !== 'function' || typeof useLivingPlanSlice.subscribe !== 'function') {
+            logger.warn('[WorkspaceSync] Store subscribe methods unavailable, skipping sync setup');
+            return;
+        }
+
         let prevRootState = useStore.getState();
         let prevPlanState = useLivingPlanSlice.getState();
 
