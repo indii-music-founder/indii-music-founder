@@ -5,6 +5,7 @@ import type { OrgAdapter, CatalogTrack, FormValues, RegistrationField, Submissio
 import { compileHarness } from '@/services/business-harness/HarnessCompiler';
 import type { HarnessRun } from '@indii/shared';
 import type { PublishingRightsOutput } from '@/services/publishing/PublishingRightsCompiler';
+import { computePassportHash, validateApprovalFreshness } from '../services/PassportHashService';
 
 interface RegistrationFormProps {
   adapter: OrgAdapter;
@@ -60,6 +61,7 @@ export function RegistrationForm({ adapter, track, userId, onSubmitComplete }: R
   const [result, setResult] = useState<SubmissionResult | null>(null);
   const [harnessRun, setHarnessRun] = useState<HarnessRun<PublishingRightsOutput> | null>(null);
   const [approvalGranted, setApprovalGranted] = useState(false);
+  const [approvalPassportHash, setApprovalPassportHash] = useState<string | null>(null);
 
   // Re-fill if track or adapter changes — keyed by .id to avoid
   // unnecessary re-fills on shallow prop reference changes.
@@ -104,10 +106,28 @@ export function RegistrationForm({ adapter, track, userId, onSubmitComplete }: R
           return;
         }
 
+        // ISSUE-567: Check approval freshness
+        if (approvalGranted && approvalPassportHash) {
+          const freshness = await validateApprovalFreshness(track, approvalPassportHash);
+          if (!freshness.isFresh) {
+            setResult({
+              success: false,
+              errorMessage: `Approval stale: ${freshness.reason}. Please re-approve.`,
+              submittedAt: new Date(),
+            });
+            setApprovalGranted(false);
+            setApprovalPassportHash(null);
+            setSubmitting(false);
+            return;
+          }
+        }
+
         // Check for approval gate
         const fileRegGate = run.approvalGates.find(g => g.id === 'file_registration' || g.riskTier === 'approval');
         if (fileRegGate && !approvalGranted) {
-          // Gate exists and not approved — halt and show approval dialog
+          // Gate exists and not approved — compute passport hash and request approval
+          const passportHash = await computePassportHash(track);
+          setApprovalPassportHash(passportHash);
           setResult({
             success: false,
             errorMessage: `Awaiting approval: ${fileRegGate.reason}`,
@@ -117,6 +137,11 @@ export function RegistrationForm({ adapter, track, userId, onSubmitComplete }: R
           return;
         }
 
+        if (!approvalGranted && fileRegGate) {
+          // Mark approval as granted
+          const passportHash = await computePassportHash(track);
+          setApprovalPassportHash(passportHash);
+        }
         setApprovalGranted(true);
       }
 

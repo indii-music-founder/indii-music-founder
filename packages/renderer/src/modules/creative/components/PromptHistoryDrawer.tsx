@@ -42,8 +42,8 @@ export default function PromptHistoryDrawer({ onClose, embedded = false }: { onC
                         No prompts in history
                     </div>
                 ) : (
-                    uniquePrompts.map((p, i) => (
-                        <div key={i} className="p-4 bg-white/5 border border-white/5 rounded-xl hover:border-green-500/30 transition-all group relative overflow-hidden">
+                    uniquePrompts.map((p) => (
+                        <div key={`${p.text}_${p.timestamp}`} className="p-4 bg-white/5 border border-white/5 rounded-xl hover:border-green-500/30 transition-all group relative overflow-hidden">
                             <div className="absolute top-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                 <button
                                     onClick={() => { navigator.clipboard.writeText(p.text); toast.success("Copied to clipboard"); }}
