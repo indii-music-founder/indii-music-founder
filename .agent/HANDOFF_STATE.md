@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-30 11:06 EDT
+**Updated:** 2026-06-30 12:29 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+4db78ab89 chore: session checkpoint [11:06]
 b35055a67 test(ledger): log ISSUE-CI pipeline failures
 abab345ed fix(tests): resolve failing unit tests and formatting issues
 fb3cd65f5 chore: session checkpoint [10:21]
@@ -13,12 +14,16 @@ a40b5fb8f feat(ISSUE-570): browser pause-states at certification & final submit
 0b5235903 chore: session checkpoint [10:16]
 3afe7dd98 feat(ISSUE-571): readiness gates block workflow state advancement
 cf1e20b3b chore: session checkpoint [10:14]
-85a286c26 feat(ISSUE-569): harness-aware prompts with version stamping
 ```
 
 ## Working State
 ```
-clean working tree
+ M .agent/test_ledger/OPEN_ISSUES.md
+ M .agent/test_ledger/UNFINISHED_WORK.md
+ M packages/renderer/src/services/distribution/proprietary-ingestion/IngestionNotificationService.test.ts
+ M packages/renderer/src/services/finance/GearAssetCompiler.ts
+ M packages/renderer/src/services/finance/RoyaltyRevenueCompiler.ts
+ M packages/renderer/src/services/marketing/crm/FanCrmCompiler.ts
 ```
 
 ## Decisions
