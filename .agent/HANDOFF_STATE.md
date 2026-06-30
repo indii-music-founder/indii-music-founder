@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-30 15:31 EDT
+**Updated:** 2026-06-30 15:32 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+d0b4c2765 chore: session checkpoint [15:31]
 4b2fb302a chore: session checkpoint [15:31]
 6728c5cef chore: session checkpoint [15:22]
 d467e4265 chore: session checkpoint [14:43]
@@ -13,7 +14,6 @@ c6c1a9219 chore: session checkpoint [14:34]
 e083c1ff7 chore(pre-commit): add Stage 4 — unit test enforcement (CLOSES THE GAP)
 39b5139f5 chore: session checkpoint [14:31]
 fe54ff50e chore: session checkpoint [14:29]
-18d6fe9e6 docs: add RightsOps harness registration submit flow diagram
 ```
 
 ## Working State
