@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-30 17:52 EDT
+**Updated:** 2026-06-30 17:59 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+45eb580c1 fix: revert App Check Electron skip-logic regression from workspace sync commit
+6eb2c9b26 chore: session checkpoint [17:52]
 519fa24cf chore: session checkpoint [17:49]
 5feb481a6 fix: add defensive checks for store subscribe methods in tests
 49e27e476 fix: Zustand subscribe listener signature (state only, not prevState)
@@ -12,8 +14,6 @@ c963f5f59 chore: session checkpoint [15:55]
 007735764 fix: improve Firestore mocks in WorkspaceSyncService tests
 7367bd6a9 chore: session checkpoint [15:54]
 8d418ff0f chore: session checkpoint [15:49]
-4f79ff462 chore: session checkpoint [15:48]
-3473d1c26 feat: cross-device workspace sync (Phase 1 Resume/Handoff)
 ```
 
 ## Working State
