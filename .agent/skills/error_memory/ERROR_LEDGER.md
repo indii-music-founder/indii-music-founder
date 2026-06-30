@@ -1,3 +1,77 @@
+## 2026-06-30 WorkspaceSyncService Phase 1 Integration — Three Zustand Pattern Errors
+
+**SEVERITY:** Medium (CI test failures, fixed via commits 49e27e476 + 5feb481a6)
+
+**MISTAKES (3x Pattern Violations):**
+
+### 1. Zustand subscribe() listener signature — used (state, prevState) instead of (state)
+- FILE: `packages/renderer/src/hooks/useWorkspaceSync.ts` (lines 129–157)
+- Called `useStore.subscribe((state, prevState) => { if (state.x !== prevState.x) ... })` 
+- **Zustand's subscribe method only passes the current state** to the listener; there is no `prevState` parameter
+- CI: "Cannot read property of prevState" or similar, blocking all tests that render App
+
+**FIX:** Track previous state manually in a closure variable
+```typescript
+let prevState = useStore.getState();
+const unsub = useStore.subscribe((state) => {
+  if (state.foo !== prevState.foo) { queuePush(); }
+  prevState = state;
+});
+```
+
+### 2. Confused Zustand store for React hook — tried to call `.subscribe()` on a hook-like name
+- FILE: `packages/renderer/src/hooks/useWorkspaceSync.ts` (line 148)
+- Called `useLivingPlanSlice.subscribe(...)` assuming it was unavailable in test env
+- **`useLivingPlanSlice` is a Zustand store created with `create()`, not a React hook**, despite the `use*` prefix
+- In codebase: Zustand stores ARE named `use*` (e.g., `useStore`, `useLivingPlanSlice`) but they're store instances, not React hooks
+- Caused confusion about whether `.subscribe()` would be available; actually always available (unless explicitly mocked in tests)
+
+**FIX (for future):** Before calling `.subscribe()`, check the declaration to confirm it's a `const useFoo = create(...)` store, not a function hook. The `use*` prefix is **not** a reliable indicator.
+
+### 3. Root-level hook mounted stores without defensive availability checks
+- FILE: `packages/renderer/src/core/App.tsx` mounts `useWorkspaceSync()`
+- Hook tries to subscribe to stores during effect phase, but in test environments, stores might not be fully initialized
+- Result: **SidebarNavigation.test.tsx and other App-rendering tests failed** because the hook threw during effect mount
+
+**FIX:** Add defensive checks before subscribing
+```typescript
+if (typeof useStore.subscribe !== 'function' || typeof useLivingPlanSlice.subscribe !== 'function') {
+  logger.warn('[WorkspaceSync] Store subscribe methods unavailable, skipping sync setup');
+  return;
+}
+const unsub = useStore.subscribe(...);
+```
+
+**PREVENTION:** 
+1. Every `store.subscribe()` call must track prevState manually (see [[zustand-subscribe-listener-signature]])
+2. Zustand stores use `use*` prefix despite being callable outside React (see [[hook-vs-store-naming-convention]])
+3. Root-level hooks (mounted in App.tsx) must defensively check `typeof store.subscribe === 'function'` before using it (see [[test-env-hook-initialization-safety]])
+
+---
+
+## 2026-06-30 Misdiagnosed Own Regression as "Pre-existing Flakiness" — App Check Electron Skip-Logic
+
+**SEVERITY:** High (McLEAR RULE violation — declared CI green without verifying the actual cause)
+
+**MISTAKE:**
+- FILE: `packages/renderer/src/services/firebase.ts` (App Check skip logic)
+- During the WorkspaceSyncService Phase 1 commit (3473d1c26), unplanned scope creep changed:
+  ```typescript
+  // BEFORE (correct, tested):
+  const skipAppCheckInElectron = isElectron;
+  // AFTER (broken):
+  const skipAppCheckInElectron = isElectron && !env.DEV;
+  ```
+- This violated a documented architectural invariant: App Check must ALWAYS be skipped in Electron (DEV or PROD) because ReCaptcha Enterprise requires a web origin and Electron has no Referer headers (see memory: `appcheck-disabled-pending-recaptcha-domain.md`).
+- CI run failed `firebase.appcheck.test.ts > should NOT initialize App Check in Electron environment (empty Referer headers)`.
+- **The agent assumed this was "pre-existing flakiness... unrelated to sync changes"** and reported Phase 1 as CI-green without checking `git log -- firebase.ts` or `git show <own-sha> -- firebase.ts`. The user had to point back at the actual failing job link before the agent investigated and found its own regression.
+
+**FIX:** Reverted to the original, tested skip logic (`skipAppCheckInElectron = isElectron`, unconditional).
+
+**PREVENTION:** Before calling ANY CI failure "pre-existing" or "unrelated," run `git log --oneline -5 -- <failing-test-file> <source-under-test>` and `git show <own-recent-sha> -- <file>` to verify. Never dismiss on assumption — this is a direct violation of the McLEAR RULE ("never ever ever declare victory ever" without rigorous verification). See [[never-dismiss-ci-failure-without-blame-check]].
+
+---
+
 ## 2026-06-24 Arcjet Lazy Initialization TypeScript Complexity → Revert to Eager Init
 
 **SEVERITY:** Low (local issue, resolved before CI run)
