@@ -46,7 +46,7 @@ describe('FanCrmCompiler', () => {
     expect(gate?.riskTier).toBe('approval');
     
     // Agent briefs
-    const brief = result.agentBriefs.find(b => b.agentId === 'agent_marketing');
+    const brief = result.agentBriefs.find(b => b.agentId === 'marketing');
     expect(brief).toBeDefined();
     expect(brief?.brief).toContain('VIP merch campaign');
   });

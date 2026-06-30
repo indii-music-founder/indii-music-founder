@@ -57,7 +57,7 @@ export class LicensingSyncCompiler implements HarnessCompiler<LicensingSyncInput
         priority: 'medium',
         title: 'Upload Stems',
         detail: 'Upload stems to increase sync readiness score.',
-        ownerAgentId: 'creative_agent',
+        ownerAgentId: 'creative',
         approvalRequired: false
       });
     }
@@ -126,7 +126,7 @@ export class LicensingSyncCompiler implements HarnessCompiler<LicensingSyncInput
       });
 
       agentBriefs.push({
-        agentId: 'legal_agent',
+        agentId: 'legal',
         brief: 'Clear samples for track.',
         inputs: [input.trackId]
       });
@@ -152,12 +152,12 @@ export class LicensingSyncCompiler implements HarnessCompiler<LicensingSyncInput
           priority: 'high',
           title: 'Auto-Pitch Recommendation',
           detail: 'Perfect opportunity fit score triggers auto-pitch recommendation.',
-          ownerAgentId: 'marketing_agent',
+          ownerAgentId: 'marketing',
           approvalRequired: true
         });
 
         agentBriefs.push({
-          agentId: 'marketing_agent',
+          agentId: 'marketing',
           brief: 'Execute auto-pitch for perfect match opportunity.',
           inputs: [input.trackId]
         });
