@@ -43,7 +43,8 @@ export interface HarnessFinding {
     evidenceRefs?: HarnessEvidenceRef[];
     legalBasisRefs?: string[];
 }
-import type { ValidAgentId } from '@/services/agent/types';
+export declare const VALID_AGENT_IDS: readonly ["marketing", "legal", "legal.contracts", "legal.compliance", "finance", "finance.accounting", "finance.tax", "finance.royalty", "producer", "director", "screenwriter", "video", "social", "publicist", "road", "hospitality", "event-planner", "creative", "publishing", "licensing", "rights", "brand", "devops", "security", "merchandise", "distribution", "music", "analytics", "curriculum", "keeper", "generalist"];
+export type ValidAgentId = typeof VALID_AGENT_IDS[number];
 export interface HarnessRecommendation {
     id: string;
     domain: HarnessDomain;
