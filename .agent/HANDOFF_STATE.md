@@ -1,9 +1,12 @@
 # Handoff State
-**Updated:** 2026-06-30 10:21 EDT
+**Updated:** 2026-06-30 11:06 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+b35055a67 test(ledger): log ISSUE-CI pipeline failures
+abab345ed fix(tests): resolve failing unit tests and formatting issues
+fb3cd65f5 chore: session checkpoint [10:21]
 8b9f79dad chore: session checkpoint [10:20]
 cdd0da35b chore: session checkpoint [10:18]
 a40b5fb8f feat(ISSUE-570): browser pause-states at certification & final submit
@@ -11,9 +14,6 @@ a40b5fb8f feat(ISSUE-570): browser pause-states at certification & final submit
 3afe7dd98 feat(ISSUE-571): readiness gates block workflow state advancement
 cf1e20b3b chore: session checkpoint [10:14]
 85a286c26 feat(ISSUE-569): harness-aware prompts with version stamping
-5f506f7cd chore: session checkpoint [10:12]
-bd7860c56 feat(ISSUE-567): approval freshness via Song Passport hash
-c523f87e3 chore: session checkpoint [09:56]
 ```
 
 ## Working State
