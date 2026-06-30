@@ -30,26 +30,45 @@ export const isTestHarnessRuntime = (): boolean => {
 };
 
 export const isFirebaseE2EMockEnabled = (): boolean => {
-    if (!isTestHarnessRuntime() && !isLocalDevHost()) return false;
+    if (!isTestHarnessRuntime() && !isLocalDevHost()) {
+        console.log('[e2eMode] Disabled: not test harness and not local dev host');
+        return false;
+    }
 
     if (typeof window !== 'undefined') {
         const winMock = (window as RuntimeWindow).FIREBASE_E2E_MOCK;
-        if (winMock === false || winMock === 'false') return false;
-        if (trueLike(winMock)) return true;
+        if (winMock === false || winMock === 'false') {
+            console.log('[e2eMode] Disabled: window.FIREBASE_E2E_MOCK is false');
+            return false;
+        }
+        if (trueLike(winMock)) {
+            console.log('[e2eMode] Enabled: window.FIREBASE_E2E_MOCK is true');
+            return true;
+        }
     }
 
     try {
         const lsMock = localStorage.getItem('FIREBASE_E2E_MOCK');
-        if (lsMock === 'false') return false;
-        if (trueLike(lsMock)) return true;
-    } catch {
-        // ignore
+        if (lsMock === 'false') {
+            console.log('[e2eMode] Disabled: localStorage FIREBASE_E2E_MOCK is false');
+            return false;
+        }
+        if (trueLike(lsMock)) {
+            console.log('[e2eMode] Enabled: localStorage FIREBASE_E2E_MOCK is true');
+            return true;
+        }
+    } catch (e) {
+        console.warn('[e2eMode] Failed to read localStorage:', e);
     }
 
     try {
-        return trueLike(import.meta.env.VITE_FIREBASE_E2E_MOCK);
-    } catch {
-        return isLocalDevHost();
+        const envMock = typeof import.meta !== 'undefined' && import.meta.env
+            ? import.meta.env.VITE_FIREBASE_E2E_MOCK
+            : undefined;
+        return trueLike(envMock);
+    } catch (e) {
+        console.warn('[e2eMode] import.meta.env check failed, defaulting to false:', e);
+        return false;
     }
 };
 
