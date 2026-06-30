@@ -25,6 +25,14 @@ Before finalizing, verify patterns didn't get worse:
 - **Update ledger:** If you discovered new patterns, add to `.agent/test_ledger/GENERATION_FAILURES.md`
 - **Report delta:** "Baseline 100 → Final 95 (-5 improvement)"
 
+## 2.5 Commit & Push All Work (MANDATORY)
+Ensure agent work is saved to GitHub **before** closing:
+- **Check status:** `git status --short`
+- **Commit any uncommitted changes:** If dirty files exist, commit them with conventional message
+- **Push to GitHub:** `git push origin $(git branch --show-current)`
+- **Verify remote:** Confirm commits arrived on GitHub (no "ahead of origin")
+- **This step is MANDATORY:** No session ends with unpushed work
+
 ## 3. Standardized Closing Process
 Execute the formal note-taking and checkpointing process:
 - **Documentation:** Generate a summary of the session's learnings, key decisions made, bugs fixed, and pattern improvements. Update `.agent/skills/error_memory/ERROR_LEDGER.md` with any new patterns discovered.
