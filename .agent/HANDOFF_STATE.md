@@ -18,7 +18,7 @@ bf0f8c851 test(ledger): log ISSUE-CI pipeline failures
 
 ## Working State
 ```
-clean working tree
+M  .agent/HANDOFF_STATE.md
 ```
 
 ## Decisions
