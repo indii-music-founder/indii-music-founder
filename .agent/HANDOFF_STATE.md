@@ -1,9 +1,12 @@
 # Handoff State
-**Updated:** 2026-06-29 21:14 EDT
+**Updated:** 2026-06-30 07:35 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+bf0f8c851 test(ledger): log ISSUE-CI pipeline failures
+2b18c5d29 fix(founders): update checkout unit tests and lazy-load boardroom/transmission components
+64f2b0fa6 chore: session checkpoint [21:14]
 04eba73d1 test(sidebar): update snapshot with Founders portal button
 b63e55b2c test(founders): update FoundersCheckout unit tests to support step-based layout
 ab376789e fix(e2e): fix strategic workflow E2E spec
@@ -11,15 +14,11 @@ ab376789e fix(e2e): fix strategic workflow E2E spec
 52f4e8da6 fix(e2e): update Settings overlay test to Settings page navigation in mega-stress-test-v4
 9941a423d fix(e2e): wait for campaigns refresh button to mount in live-agent-daisy-chain test
 2c33a5b6b chore: session checkpoint [20:18]
-5d7257e9c chore: session checkpoint [20:16]
-30dcf1ffa chore: session checkpoint [20:15]
-352bc82ec chore: session checkpoint [20:14]
 ```
 
 ## Working State
 ```
- M artifacts/live-agent-daisy-chain/coordination-report.html
- M artifacts/live-agent-daisy-chain/latest.json
+M  .agent/HANDOFF_STATE.md
 ```
 
 ## Decisions
