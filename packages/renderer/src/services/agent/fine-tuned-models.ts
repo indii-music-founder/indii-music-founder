@@ -41,6 +41,7 @@ export const FINE_TUNED_MODEL_ALIASES = {
     'finance.royalty': 'finance',
     'legal.contracts': 'legal',
     'legal.compliance': 'legal',
+    rights: 'legal',  // Rights orchestration uses the legal endpoint (awaiting its own R9 tune)
     creative: 'director',
     analytics: 'marketing',
     keeper: 'generalist',

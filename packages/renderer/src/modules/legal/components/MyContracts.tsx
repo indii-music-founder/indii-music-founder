@@ -152,7 +152,7 @@ export function MyContracts({ onNewContract }: MyContractsProps) {
         [ContractStatus.DRAFT]: { bg: 'bg-yellow-500/10 border-yellow-500/20', text: 'text-yellow-400', label: 'Draft' },
         [ContractStatus.REVIEW]: { bg: 'bg-blue-500/10 border-blue-500/20', text: 'text-blue-400', label: 'In Review' },
         [ContractStatus.FINAL]: { bg: 'bg-green-500/10 border-green-500/20', text: 'text-green-400', label: 'Final' },
-        [ContractStatus.SIGNED]: { bg: 'bg-purple-500/10 border-purple-500/20', text: 'text-purple-400', label: 'Signed' },
+        [ContractStatus.SIGNED]: { bg: 'bg-green-500/10 border-green-500/20', text: 'text-green-400', label: 'Signed' },
     };
 
     // ── Loading state ──────────────────────────────────────────────
@@ -264,7 +264,7 @@ export function MyContracts({ onNewContract }: MyContractsProps) {
                                 <button
                                     onClick={() => openSendDialog(contract)}
                                     disabled={sendingId === contract.id}
-                                    className="p-1.5 rounded-lg hover:bg-purple-500/10 text-gray-500 hover:text-purple-400 transition-colors"
+                                    className="p-1.5 rounded-lg hover:bg-green-500/10 text-gray-500 hover:text-green-400 transition-colors"
                                     title="Send via Email"
                                     aria-label={`Send ${contract.title} via email`}
                                     data-testid={`send-contract-${contract.id}`}
@@ -322,7 +322,7 @@ export function MyContracts({ onNewContract }: MyContractsProps) {
                                 <div className="flex gap-2 mt-4 pt-3 border-t border-white/5">
                                     <button
                                         onClick={() => openSendDialog(contract)}
-                                        className="flex items-center gap-1.5 px-3 py-2 bg-purple-600 hover:bg-purple-500 text-white text-[10px] font-bold rounded-lg transition-colors"
+                                        className="flex items-center gap-1.5 px-3 py-2 bg-green-600 hover:bg-green-500 text-white text-[10px] font-bold rounded-lg transition-colors"
                                     >
                                         <Send size={11} />
                                         Send via Email
@@ -359,8 +359,8 @@ export function MyContracts({ onNewContract }: MyContractsProps) {
                         {/* Header */}
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center">
-                                    <Send size={14} className="text-purple-400" />
+                                <div className="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center">
+                                    <Send size={14} className="text-green-400" />
                                 </div>
                                 <div>
                                     <h4 className="text-sm font-bold text-white">Send Contract</h4>
@@ -386,7 +386,7 @@ export function MyContracts({ onNewContract }: MyContractsProps) {
                                 onChange={e => setEmailDialog(prev => prev ? { ...prev, recipientEmail: e.target.value } : null)}
                                 onKeyDown={e => e.key === 'Enter' && handleSendEmail()}
                                 placeholder="recipient@example.com"
-                                className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all"
+                                className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500/50 transition-all"
                                 data-testid="send-contract-email-input"
                             />
                         </div>
@@ -399,7 +399,7 @@ export function MyContracts({ onNewContract }: MyContractsProps) {
                                 onChange={e => setEmailDialog(prev => prev ? { ...prev, message: e.target.value } : null)}
                                 placeholder="Add a personal note..."
                                 rows={3}
-                                className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all resize-none"
+                                className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500/50 transition-all resize-none"
                                 data-testid="send-contract-message-input"
                             />
                         </div>
@@ -421,7 +421,7 @@ export function MyContracts({ onNewContract }: MyContractsProps) {
                             <button
                                 onClick={handleSendEmail}
                                 disabled={!emailDialog.recipientEmail.trim() || sendingId === emailDialog.contract.id}
-                                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-purple-600 hover:bg-purple-500 disabled:bg-gray-700 disabled:text-gray-500 text-white text-xs font-bold rounded-xl transition-colors"
+                                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-500 disabled:bg-gray-700 disabled:text-gray-500 text-white text-xs font-bold rounded-xl transition-colors"
                                 data-testid="send-contract-submit"
                             >
                                 {sendingId === emailDialog.contract.id ? (

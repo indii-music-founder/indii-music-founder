@@ -530,7 +530,7 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
                             "w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300 cursor-pointer",
                             selectedMode === 'boardroom' ? "bg-blue-500/10 text-blue-400 border border-blue-500/20" :
                             selectedMode === 'department' ? "bg-indigo-500/10 text-indigo-400 border border-indigo-500/20" :
-                            "bg-purple-500/10 text-purple-400 border border-purple-500/20"
+                            "bg-green-500/10 text-green-400 border border-green-500/20"
                         )}
                         style={{ minWidth: '44px', minHeight: '44px' }}
                     >

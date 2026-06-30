@@ -15,7 +15,7 @@ export function TermsOfService() {
     return (
         <div className="max-w-3xl mx-auto px-6 py-12 text-gray-300">
             <div className="flex items-center gap-3 mb-8">
-                <Scale className="w-8 h-8 text-purple-400" />
+                <Scale className="w-8 h-8 text-green-400" />
                 <h1 className="text-lg font-bold text-white">Terms of Service</h1>
             </div>
             <p className="text-xs text-gray-500 mb-8 font-mono">
@@ -89,7 +89,7 @@ export function TermsOfService() {
 
                 <section>
                     <h2 className="text-xl font-semibold text-white mb-3">11. Contact</h2>
-                    <p>For questions about these Terms, contact us at <a href="mailto:legal@indii.music" className="text-purple-400 hover:underline">legal@indii.music</a>.</p>
+                    <p>For questions about these Terms, contact us at <a href="mailto:legal@indii.music" className="text-green-400 hover:underline">legal@indii.music</a>.</p>
                 </section>
             </div>
 
@@ -108,7 +108,7 @@ export function PrivacyPolicy() {
     return (
         <div className="max-w-3xl mx-auto px-6 py-12 text-gray-300">
             <div className="flex items-center gap-3 mb-8">
-                <Shield className="w-8 h-8 text-purple-400" />
+                <Shield className="w-8 h-8 text-green-400" />
                 <h1 className="text-lg font-bold text-white">Privacy Policy</h1>
             </div>
             <p className="text-xs text-gray-500 mb-8 font-mono">
@@ -196,7 +196,7 @@ export function PrivacyPolicy() {
 
                 <section>
                     <h2 className="text-xl font-semibold text-white mb-3">8. Contact</h2>
-                    <p>Data Protection Officer: <a href="mailto:privacy@indii.music" className="text-purple-400 hover:underline">privacy@indii.music</a></p>
+                    <p>Data Protection Officer: <a href="mailto:privacy@indii.music" className="text-green-400 hover:underline">privacy@indii.music</a></p>
                 </section>
             </div>
 
@@ -215,7 +215,7 @@ export function DMCAPolicy() {
     return (
         <div className="max-w-3xl mx-auto px-6 py-12 text-gray-300">
             <div className="flex items-center gap-3 mb-8">
-                <FileText className="w-8 h-8 text-purple-400" />
+                <FileText className="w-8 h-8 text-green-400" />
                 <h1 className="text-lg font-bold text-white">DMCA Policy</h1>
             </div>
             <p className="text-xs text-gray-500 mb-8 font-mono">
@@ -234,7 +234,7 @@ export function DMCAPolicy() {
                         <p><strong className="text-white">Name:</strong> Legal Department, DMCA Agent</p>
                         <p><strong className="text-white">Organization:</strong> New Detroit Music LLC</p>
                         <p><strong className="text-white">Address:</strong> 123 Innovation Drive, Suite 400, Detroit, MI 48226</p>
-                        <p><strong className="text-white">Email:</strong> <a href="mailto:dmca@indii.music" className="text-purple-400 hover:underline">dmca@indii.music</a></p>
+                        <p><strong className="text-white">Email:</strong> <a href="mailto:dmca@indii.music" className="text-green-400 hover:underline">dmca@indii.music</a></p>
                         <p><strong className="text-white">Phone:</strong> (313) 555-0199</p>
                     </div>
                 </section>

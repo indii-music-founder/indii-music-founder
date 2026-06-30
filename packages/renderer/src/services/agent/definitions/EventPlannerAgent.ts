@@ -12,7 +12,7 @@ export const EventPlannerAgent: AgentConfig = {
     id: 'event-planner',
     name: 'Event Production Director',
     description: 'Designs and executes end-to-end event production through planning and vendor coordination.',
-    color: 'bg-purple-500',
+    color: 'bg-green-500',
     category: 'department',
     systemPrompt: systemPrompt,
     get functions() {

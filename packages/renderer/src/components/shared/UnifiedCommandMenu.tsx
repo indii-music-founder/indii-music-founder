@@ -96,7 +96,7 @@ export function UnifiedCommandMenu() {
 
                     <Command.Group heading="Navigation" className="mb-2 text-slate-500 px-2 [&_[cmdk-item]]:px-4 [&_[cmdk-item]]:py-3 [&_[cmdk-item]]:rounded-lg [&_[cmdk-item]]:text-slate-300 [&_[cmdk-item][data-selected]]:bg-white/10 [&_[cmdk-item][data-selected]]:text-white">
                         <Command.Item onSelect={() => runCommand(() => setModule('dashboard'))} className="flex items-center gap-3 cursor-pointer">
-                            <LayoutDashboard className="w-4 h-4 text-purple-400" />
+                            <LayoutDashboard className="w-4 h-4 text-green-400" />
                             <span>Dashboard</span>
                         </Command.Item>
                         <Command.Item onSelect={() => runCommand(() => setModule('creative'))} className="flex items-center gap-3 cursor-pointer">
@@ -150,7 +150,7 @@ export function UnifiedCommandMenu() {
                             <span>Audio Fidelity Analyzer</span>
                         </Command.Item>
                         <Command.Item onSelect={() => runCommand(() => setModule('history'))} className="flex items-center gap-3 cursor-pointer">
-                            <FolderOpen className="w-4 h-4 text-purple-300" />
+                            <FolderOpen className="w-4 h-4 text-green-300" />
                             <span>History & Vault</span>
                         </Command.Item>
                         <Command.Item onSelect={() => runCommand(() => setModule('workflow'))} className="flex items-center gap-3 cursor-pointer">

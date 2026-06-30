@@ -18,6 +18,7 @@ a90d30b37 test(remote): skip local P2P WebSocket init inside Vitest to prevent E
 
 ## Working State
 ```
+M  .agent/HANDOFF_STATE.md
  M .agent/test_ledger/OPEN_ISSUES.md
 ```
 

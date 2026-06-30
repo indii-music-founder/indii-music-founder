@@ -199,7 +199,7 @@ export default function RegistrationCenter() {
         <span className="text-red-400">{loadError}</span>
         <button
           onClick={() => window.location.reload()}
-          className="text-xs text-purple-400 hover:text-purple-300 underline"
+          className="text-xs text-green-400 hover:text-green-300 underline"
         >
           Retry
         </button>

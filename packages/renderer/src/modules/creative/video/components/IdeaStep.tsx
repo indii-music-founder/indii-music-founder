@@ -19,7 +19,7 @@ const IdeaStep: React.FC<IdeaStepProps> = ({ initialPrompt, onPromptChange, onNe
                     value={initialPrompt}
                     onChange={(e) => onPromptChange(e.target.value)}
                     placeholder="e.g., A futuristic city with flying cars in a cyberpunk style..."
-                    className="w-full h-40 bg-black/50 border border-gray-700 rounded-lg p-4 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 transition-colors resize-none"
+                    className="w-full h-40 bg-black/50 border border-gray-700 rounded-lg p-4 text-white placeholder-gray-500 focus:outline-none focus:border-green-500 transition-colors resize-none"
                 />
             </div>
 

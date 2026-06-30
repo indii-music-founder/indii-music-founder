@@ -43,7 +43,7 @@ export default function PromptHistoryDrawer({ onClose, embedded = false }: { onC
                     </div>
                 ) : (
                     uniquePrompts.map((p, i) => (
-                        <div key={i} className="p-4 bg-white/5 border border-white/5 rounded-xl hover:border-purple-500/30 transition-all group relative overflow-hidden">
+                        <div key={i} className="p-4 bg-white/5 border border-white/5 rounded-xl hover:border-green-500/30 transition-all group relative overflow-hidden">
                             <div className="absolute top-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                 <button
                                     onClick={() => { navigator.clipboard.writeText(p.text); toast.success("Copied to clipboard"); }}
@@ -84,7 +84,7 @@ export default function PromptHistoryDrawer({ onClose, embedded = false }: { onC
         <div className="absolute top-full right-0 mt-2 mr-2 w-80 bg-[#0f0f0f]/95 backdrop-blur-xl border border-white/10 rounded-xl z-50 flex flex-col max-h-[80vh] overflow-hidden shadow-2xl animate-in slide-in-from-top-2 fade-in duration-200">
             <div className="p-4 border-b border-white/10 flex items-center justify-between bg-white/5">
                 <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                    <Clock size={16} className="text-purple-400" />
+                    <Clock size={16} className="text-green-400" />
                     Prompt History
                 </h3>
                 <button onClick={onClose} aria-label="Close prompt history" className="p-1 hover:bg-white/10 rounded-full text-gray-500 hover:text-white transition-colors">

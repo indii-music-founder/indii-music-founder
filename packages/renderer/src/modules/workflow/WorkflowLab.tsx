@@ -364,9 +364,9 @@ export default function WorkflowLab() {
                 <div id="tour-workflow-controls" className="w-64 border-r border-gray-800 bg-[#1a1a1a] flex flex-col flex-shrink-0">
                     <div className="p-4 border-b border-gray-800 flex items-center justify-between">
                         <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                            <GitBranch className="text-purple-500" /> Workflow Lab
+                            <GitBranch className="text-green-500" /> Workflow Lab
                         </h2>
-                        <button onClick={startTour} className="p-1.5 rounded-lg bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 hover:text-white transition-colors" title="Take a Tour">
+                        <button onClick={startTour} className="p-1.5 rounded-lg bg-green-500/10 text-green-400 hover:bg-green-500/20 hover:text-white transition-colors" title="Take a Tour">
                             <HelpCircle size={16} />
                         </button>
                     </div>
@@ -377,7 +377,7 @@ export default function WorkflowLab() {
                                 type="text"
                                 value={workflowName}
                                 onChange={(e) => setWorkflowName(e.target.value)}
-                                className="w-full bg-gray-800 text-white px-3 py-2 rounded-lg border border-gray-700 focus:border-purple-500 outline-none text-sm"
+                                className="w-full bg-gray-800 text-white px-3 py-2 rounded-lg border border-gray-700 focus:border-green-500 outline-none text-sm"
                                 placeholder="Workflow Name"
                             />
                             <div className="flex justify-end mt-1">
@@ -424,7 +424,7 @@ export default function WorkflowLab() {
                         <button
                             id="tour-workflow-generator"
                             onClick={() => setShowGenerator(true)}
-                            className="w-full py-2 px-4 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-purple-900/20"
+                            className="w-full py-2 px-4 bg-green-600 hover:bg-green-500 text-white rounded-lg font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-green-900/20"
                         >
                             <Sparkles size={16} />
                             Generate with AI
@@ -547,7 +547,7 @@ export default function WorkflowLab() {
 
 function NodeLibraryPanel() {
     const nodeDefs = [
-        { name: 'Autonomous Generate', nodeType: 'departmentNode', data: { departmentName: 'Autonomous Department' }, icon: Sparkles, category: 'Autonomous', color: 'text-purple-400' },
+        { name: 'Autonomous Generate', nodeType: 'departmentNode', data: { departmentName: 'Autonomous Department' }, icon: Sparkles, category: 'Autonomous', color: 'text-green-400' },
         { name: 'Process Audio', nodeType: 'audioSegmentNode', data: {}, icon: Music, category: 'Audio', color: 'text-blue-400' },
         { name: 'Generate Image', nodeType: 'departmentNode', data: { departmentName: 'Art Department' }, icon: Image, category: 'Autonomous', color: 'text-pink-400' },
         { name: 'Send Email', nodeType: 'outputNode', data: {}, icon: Mail, category: 'Action', color: 'text-green-400' },
@@ -606,7 +606,7 @@ function NodeInspectorPanel({ nodes }: { nodes: Array<{ id: string; selected?: b
             <div className="space-y-2">
                 <div className="flex items-center justify-between p-2 rounded-lg bg-white/[0.02]">
                     <span className="text-[11px] text-gray-400">Total Nodes</span>
-                    <span className="text-xs font-bold text-purple-400">{totalCount}</span>
+                    <span className="text-xs font-bold text-green-400">{totalCount}</span>
                 </div>
                 <div className="flex items-center justify-between p-2 rounded-lg bg-white/[0.02]">
                     <span className="text-[11px] text-gray-400">Selected</span>
@@ -616,8 +616,8 @@ function NodeInspectorPanel({ nodes }: { nodes: Array<{ id: string; selected?: b
                 </div>
                 {selectedCount > 0 ? (
                     selectedNodes.slice(0, 4).map((n) => (
-                        <div key={n.id} className="flex items-center gap-2 py-1.5 px-2 rounded-lg bg-purple-500/5 border border-purple-500/10">
-                            <Cpu size={10} className="text-purple-400 flex-shrink-0" />
+                        <div key={n.id} className="flex items-center gap-2 py-1.5 px-2 rounded-lg bg-green-500/5 border border-green-500/10">
+                            <Cpu size={10} className="text-green-400 flex-shrink-0" />
                             <span className="text-[11px] text-gray-300 truncate">
                                 {n.data?.departmentName || n.data?.label || n.type || n.id}
                             </span>
@@ -646,8 +646,8 @@ function HelpDocsPanel() {
     ];
 
     return (
-        <div className="rounded-xl bg-purple-500/5 border border-purple-500/10 p-3">
-            <h3 className="text-[10px] font-bold text-purple-400 uppercase tracking-widest mb-3 px-1 flex items-center gap-1.5">
+        <div className="rounded-xl bg-green-500/5 border border-green-500/10 p-3">
+            <h3 className="text-[10px] font-bold text-green-400 uppercase tracking-widest mb-3 px-1 flex items-center gap-1.5">
                 <HelpCircle size={10} /> Help & Docs
             </h3>
             <div className="space-y-1">
@@ -657,7 +657,7 @@ function HelpDocsPanel() {
                         onClick={l.onClick}
                         className="w-full flex items-center gap-2 py-2 px-2 rounded-lg hover:bg-white/[0.04] transition-colors text-left"
                     >
-                        <l.icon size={12} className="text-purple-400 flex-shrink-0" />
+                        <l.icon size={12} className="text-green-400 flex-shrink-0" />
                         <div className="flex-1 min-w-0">
                             <p className="text-xs text-gray-300">{l.label}</p>
                             <p className="text-[10px] text-gray-600">{l.desc}</p>

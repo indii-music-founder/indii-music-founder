@@ -95,7 +95,7 @@ export function PlatformCard() {
                     transition={{ duration: 0.3, ease: 'easeInOut' }}
                     className="relative overflow-hidden border-b border-white/5"
                 >
-                    <div className="absolute inset-0 bg-linear-to-r from-indigo-900/10 via-transparent to-purple-900/10 pointer-events-none" />
+                    <div className="absolute inset-0 bg-linear-to-r from-indigo-900/10 via-transparent to-green-900/10 pointer-events-none" />
 
                     {/* Dismiss button — top right */}
                     <button

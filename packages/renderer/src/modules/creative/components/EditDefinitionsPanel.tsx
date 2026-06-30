@@ -53,13 +53,13 @@ export default function EditDefinitionsPanel({
         >
             <div className="flex items-center justify-between p-4 border-b border-gray-800 bg-[#111]">
                 <h3 className="font-bold text-white flex items-center gap-2">
-                    <Sparkles className="text-purple-500" size={16} />
+                    <Sparkles className="text-green-500" size={16} />
                     Edit Definitions
                 </h3>
                 <button
                     onClick={onClose}
                     aria-label="Close edit definitions"
-                    className="text-gray-400 hover:text-white transition-colors focus-visible:ring-2 focus-visible:ring-purple-500 rounded"
+                    className="text-gray-400 hover:text-white transition-colors focus-visible:ring-2 focus-visible:ring-green-500 rounded"
                 >
                     <X size={18} />
                 </button>
@@ -88,7 +88,7 @@ export default function EditDefinitionsPanel({
                                 onChange={(e) => onUpdateDefinition(color.id, e.target.value)}
                                 placeholder={`e.g. Turn into ${color.name.toLowerCase()} neon lights...`}
                                 aria-label={`Edit definition for ${color.name}`}
-                                className="w-full bg-transparent text-sm text-white placeholder-gray-600 border-none outline-none resize-none h-20 focus:ring-0 focus-visible:ring-1 focus-visible:ring-purple-500/50 rounded-sm"
+                                className="w-full bg-transparent text-sm text-white placeholder-gray-600 border-none outline-none resize-none h-20 focus:ring-0 focus-visible:ring-1 focus-visible:ring-green-500/50 rounded-sm"
                             />
 
                             {/* Reference Image Input */}
@@ -110,7 +110,7 @@ export default function EditDefinitionsPanel({
                                     </div>
                                 ) : (
                                     onUpdateReferenceImage && (
-                                        <label className="flex items-center gap-2 px-2 py-1.5 bg-gray-800 hover:bg-gray-700 rounded cursor-pointer transition-colors text-xs text-gray-400 border border-transparent hover:border-gray-600 focus-within:ring-2 focus-within:ring-purple-500 focus-within:ring-offset-1 focus-within:ring-offset-[#1a1a1a]">
+                                        <label className="flex items-center gap-2 px-2 py-1.5 bg-gray-800 hover:bg-gray-700 rounded cursor-pointer transition-colors text-xs text-gray-400 border border-transparent hover:border-gray-600 focus-within:ring-2 focus-within:ring-green-500 focus-within:ring-offset-1 focus-within:ring-offset-[#1a1a1a]">
                                             <span className="text-[10px]">+ Ref Scan</span>
                                             <input
                                                 type="file"

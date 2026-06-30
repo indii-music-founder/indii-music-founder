@@ -201,7 +201,7 @@ export default function ShowroomUI() {
             {/* Column 2: Scenario */}
             <div className="flex-1 border-r border-white/10 flex flex-col p-6 space-y-6 overflow-y-auto scrollbar-hide bg-white/[0.01]">
                 <div className="flex items-center gap-2 mb-2">
-                    <div className="p-2 rounded-lg bg-purple-500/20 text-purple-400">
+                    <div className="p-2 rounded-lg bg-green-500/20 text-green-400">
                         <Layers size={20} />
                     </div>
                     <h2 className="text-lg font-bold tracking-tight text-white">Scenario</h2>
@@ -217,7 +217,7 @@ export default function ShowroomUI() {
                             value={showroomState.sceneDescription}
                             onChange={(e) => setShowroomState({ sceneDescription: e.target.value })}
                             placeholder="Describe the environment, lighting, and mood (e.g. A cyberpunk street at night with neon reflections)..."
-                            className="w-full h-32 bg-white/5 border border-white/10 rounded-xl p-4 text-sm text-white focus:outline-none focus:border-purple-500/50 transition-colors resize-none leading-relaxed"
+                            className="w-full h-32 bg-white/5 border border-white/10 rounded-xl p-4 text-sm text-white focus:outline-none focus:border-green-500/50 transition-colors resize-none leading-relaxed"
                         />
                     </div>
 
@@ -230,7 +230,7 @@ export default function ShowroomUI() {
                             value={showroomState.motionDescription}
                             onChange={(e) => setShowroomState({ motionDescription: e.target.value })}
                             placeholder="Describe how the camera or subject moves (e.g. Slow cinematic zoom towards the chest)..."
-                            className="w-full h-32 bg-white/5 border border-white/10 rounded-xl p-4 text-sm text-white focus:outline-none focus:border-purple-500/50 transition-colors resize-none leading-relaxed"
+                            className="w-full h-32 bg-white/5 border border-white/10 rounded-xl p-4 text-sm text-white focus:outline-none focus:border-green-500/50 transition-colors resize-none leading-relaxed"
                         />
                     </div>
 
@@ -241,7 +241,7 @@ export default function ShowroomUI() {
                                 <button 
                                     key={preset}
                                     onClick={() => setShowroomState({ sceneDescription: preset })}
-                                    className="px-4 py-2 rounded-full bg-white/5 border border-white/10 hover:border-purple-500/50 text-[11px] font-medium transition-all hover:bg-purple-500/5 text-muted-foreground hover:text-white"
+                                    className="px-4 py-2 rounded-full bg-white/5 border border-white/10 hover:border-green-500/50 text-[11px] font-medium transition-all hover:bg-green-500/5 text-muted-foreground hover:text-white"
                                 >
                                     {preset}
                                 </button>
@@ -370,7 +370,7 @@ export default function ShowroomUI() {
                                 "w-full py-4 rounded-xl flex items-center justify-center gap-3 font-bold uppercase tracking-widest text-xs transition-all",
                                 !showroomState.mockupResult || showroomState.isGeneratingMockup || showroomState.isGeneratingVideo
                                     ? "bg-white/5 text-muted-foreground cursor-not-allowed border border-white/5"
-                                    : "bg-purple-600 text-white hover:bg-purple-700 shadow-lg shadow-purple-500/20 active:scale-[0.98]"
+                                    : "bg-green-600 text-white hover:bg-green-700 shadow-lg shadow-green-500/20 active:scale-[0.98]"
                             )}
                         >
                             {showroomState.isGeneratingVideo ? (

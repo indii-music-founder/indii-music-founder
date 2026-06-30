@@ -100,7 +100,7 @@ export default function FinanceDashboard() {
             <Tabs defaultValue="overview" className="flex-1 flex flex-col overflow-hidden">
                 <div className="px-4 md:px-6 border-b border-white/5 flex-shrink-0 overflow-x-auto">
                     <TabsList className="bg-transparent gap-4 p-0 h-12 flex-nowrap">
-                        <TabsTrigger value="overview" data-testid="finance-tab-overview" className="text-muted-foreground data-[state=active]:text-purple-400 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-purple-400 rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
+                        <TabsTrigger value="overview" data-testid="finance-tab-overview" className="text-muted-foreground data-[state=active]:text-green-400 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-green-400 rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
                             <TrendingUp size={14} /> Revenue Overview
                         </TabsTrigger>
                         <TabsTrigger value="earnings" data-testid="finance-tab-earnings" className="text-muted-foreground data-[state=active]:text-emerald-400 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-emerald-400 rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
@@ -544,7 +544,7 @@ function ExpenseBreakdownPanel({ expenses, loading }: ExpenseBreakdownPanelProps
         }
 
         const colorMap: Record<string, string> = {
-            'Equipment': 'bg-purple-500',
+            'Equipment': 'bg-green-500',
             'Software / Plugins': 'bg-blue-500',
             'Marketing': 'bg-cyan-500',
             'Travel': 'bg-emerald-500',

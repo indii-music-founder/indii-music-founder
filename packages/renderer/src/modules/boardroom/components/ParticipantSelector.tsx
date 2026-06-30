@@ -13,7 +13,7 @@ const AVAILABLE_AGENTS = [
     { id: 'finance', name: 'Finance Dept.', icon: DollarSign, color: 'text-emerald-400', glow: 'shadow-[0_0_25px_rgba(52,211,153,0.6)]', bg: 'bg-emerald-500/20' },
     { id: 'legal', name: 'Legal Dept.', icon: Scale, color: 'text-amber-400', glow: 'shadow-[0_0_25px_rgba(251,191,36,0.6)]', bg: 'bg-amber-500/20' },
     { id: 'brand', name: 'Brand Manager', icon: Briefcase, color: 'text-fuchsia-400', glow: 'shadow-[0_0_25px_rgba(192,132,252,0.6)]', bg: 'bg-fuchsia-500/20' },
-    { id: 'creative', name: 'Creative Director', icon: Palette, color: 'text-purple-400', glow: 'shadow-[0_0_25px_rgba(168,85,247,0.6)]', bg: 'bg-purple-500/20' },
+    { id: 'creative', name: 'Creative Director', icon: Palette, color: 'text-green-400', glow: 'shadow-[0_0_25px_rgba(168,85,247,0.6)]', bg: 'bg-green-500/20' },
     { id: 'video', name: 'Video Producer', icon: Film, color: 'text-sky-400', glow: 'shadow-[0_0_25px_rgba(56,189,248,0.6)]', bg: 'bg-sky-500/20' },
     { id: 'social', name: 'Social Media', icon: Share2, color: 'text-blue-400', glow: 'shadow-[0_0_25px_rgba(96,165,250,0.6)]', bg: 'bg-blue-500/20' },
     { id: 'publishing', name: 'Publishing', icon: Library, color: 'text-orange-400', glow: 'shadow-[0_0_25px_rgba(251,146,60,0.6)]', bg: 'bg-orange-500/20' }

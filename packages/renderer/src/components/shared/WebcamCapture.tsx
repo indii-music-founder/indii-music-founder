@@ -97,7 +97,7 @@ export default function WebcamCapture({ onCapture, onClose }: WebcamCaptureProps
                 </div>
 
                 <div className="relative aspect-video bg-black rounded-lg overflow-hidden flex items-center justify-center">
-                    {isInitializing && <Loader2 className="animate-spin text-purple-400" size={32} />}
+                    {isInitializing && <Loader2 className="animate-spin text-green-400" size={32} />}
 
                     {error && (
                         <div className="text-red-400 text-center px-4">
@@ -136,7 +136,7 @@ export default function WebcamCapture({ onCapture, onClose }: WebcamCaptureProps
                         <button
                             onClick={handleCapture}
                             disabled={!!error || isInitializing}
-                            className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-full font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-full font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <Camera size={20} />
                             Capture

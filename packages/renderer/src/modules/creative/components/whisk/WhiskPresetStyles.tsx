@@ -54,7 +54,7 @@ export default function WhiskPresetStyles({ onSelectPreset }: WhiskPresetStylesP
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 className={`relative flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-medium uppercase tracking-wide transition-all border ${isActive
-                    ? 'bg-purple-500/20 border-purple-500/50 text-purple-300 shadow-[0_0_10px_rgba(147,51,234,0.3)]'
+                    ? 'bg-green-500/20 border-green-500/50 text-green-300 shadow-[0_0_10px_rgba(147,51,234,0.3)]'
                     : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:border-white/20 hover:text-gray-200'
                     }`}
             >

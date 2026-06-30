@@ -144,7 +144,7 @@ export default function CreatePostModal({ onClose, onSave }: CreatePostModalProp
                             <button
                                 onClick={handleGenerateCopy}
                                 disabled={isGenerating}
-                                className="text-xs flex items-center gap-1.5 text-purple-400 hover:text-purple-300 transition-colors disabled:opacity-50"
+                                className="text-xs flex items-center gap-1.5 text-green-400 hover:text-green-300 transition-colors disabled:opacity-50"
                             >
                                 {isGenerating ? <Loader2 size={12} className="animate-spin" aria-hidden="true" /> : <Wand2 size={12} aria-hidden="true" />}
                                 {isGenerating ? 'Generating...' : 'Generate with AI'}

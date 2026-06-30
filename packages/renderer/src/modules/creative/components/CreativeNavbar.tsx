@@ -102,7 +102,7 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
                         {generationMode === 'video' ? (
                             <Video size={15} className="text-blue-400" />
                         ) : (
-                            <Palette size={15} className="text-purple-400" />
+                            <Palette size={15} className="text-green-400" />
                         )}
                         <h1 className="text-xs font-bold text-gray-300 tracking-tight hidden sm:block">
                             {generationMode === 'video' ? 'Video Producer' : 'Studio'}
@@ -125,11 +125,11 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
                                     // Single-view modes carry the original view testId so e2e/nav tests still resolve.
                                     data-testid={isSingle ? mode.views[0]!.testId : `mode-${mode.id}-btn`}
                                     className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] uppercase font-bold tracking-wider transition-all ${isActive
-                                        ? 'bg-purple-500/15 text-purple-300 shadow-[0_0_12px_rgba(168,85,247,0.1)]'
+                                        ? 'bg-green-500/15 text-green-300 shadow-[0_0_12px_rgba(168,85,247,0.1)]'
                                         : 'text-gray-500 hover:text-gray-300 hover:bg-white/4'
                                         }`}
                                   >
-                                    <Icon size={11} className={isActive ? 'text-purple-400' : ''} />
+                                    <Icon size={11} className={isActive ? 'text-green-400' : ''} />
                                     <span className="hidden lg:inline">{mode.label}</span>
                                 </button>
                             );
@@ -169,20 +169,20 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
                                 data-testid="builder-btn"
                                 className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-all text-[10px] font-bold uppercase tracking-wider
                                     ${showPromptBuilder
-                                        ? 'bg-purple-500/15 text-purple-300 shadow-[0_0_12px_rgba(168,85,247,0.1)]'
+                                        ? 'bg-green-500/15 text-green-300 shadow-[0_0_12px_rgba(168,85,247,0.1)]'
                                         : 'text-gray-500 hover:text-gray-300 hover:bg-white/4'}`}
                             >
-                                <MessageSquare size={11} className={showPromptBuilder ? 'text-purple-400' : ''} />
+                                <MessageSquare size={11} className={showPromptBuilder ? 'text-green-400' : ''} />
                                 <span className="hidden xl:inline">Builder</span>
                             </button>
                             <button
                                 onClick={() => togglePanel('brand')}
                                 className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-all text-[10px] font-bold uppercase tracking-wider
                                     ${showBrandAssets
-                                        ? 'bg-purple-500/15 text-purple-300 shadow-[0_0_12px_rgba(168,85,247,0.1)]'
+                                        ? 'bg-green-500/15 text-green-300 shadow-[0_0_12px_rgba(168,85,247,0.1)]'
                                         : 'text-gray-500 hover:text-gray-300 hover:bg-white/4'}`}
                             >
-                                <Sparkles size={11} className={showBrandAssets ? 'text-purple-400' : ''} />
+                                <Sparkles size={11} className={showBrandAssets ? 'text-green-400' : ''} />
                                 <span className="hidden xl:inline">Brand</span>
                             </button>
                             <button
@@ -190,20 +190,20 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
                                 data-testid="history-btn"
                                 className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-all text-[10px] font-bold uppercase tracking-wider
                                     ${showHistory
-                                        ? 'bg-purple-500/15 text-purple-300 shadow-[0_0_12px_rgba(168,85,247,0.1)]'
+                                        ? 'bg-green-500/15 text-green-300 shadow-[0_0_12px_rgba(168,85,247,0.1)]'
                                         : 'text-gray-500 hover:text-gray-300 hover:bg-white/4'}`}
                             >
-                                <Clock size={11} className={showHistory ? 'text-purple-400' : ''} />
+                                <Clock size={11} className={showHistory ? 'text-green-400' : ''} />
                                 <span className="hidden xl:inline">History</span>
                             </button>
                             <button
                                 onClick={() => togglePanel('roster')}
                                 className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-all text-[10px] font-bold uppercase tracking-wider
                                     ${showRosterRegistry
-                                        ? 'bg-purple-500/15 text-purple-300 shadow-[0_0_12px_rgba(168,85,247,0.1)]'
+                                        ? 'bg-green-500/15 text-green-300 shadow-[0_0_12px_rgba(168,85,247,0.1)]'
                                         : 'text-gray-500 hover:text-gray-300 hover:bg-white/4'}`}
                             >
-                                <Cpu size={11} className={showRosterRegistry ? 'text-purple-400' : ''} />
+                                <Cpu size={11} className={showRosterRegistry ? 'text-green-400' : ''} />
                                 <span className="hidden xl:inline">Roster</span>
                             </button>
                         </div>

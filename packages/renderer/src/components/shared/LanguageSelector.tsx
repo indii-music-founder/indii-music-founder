@@ -27,7 +27,7 @@ export function LanguageSelector() {
         id="language-select"
         value={currentLanguage}
         onChange={(e) => changeLanguage(e.target.value as Language)}
-        className="px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+        className="px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
       >
         {availableLanguages.map((lang) => (
           <option key={lang} value={lang}>

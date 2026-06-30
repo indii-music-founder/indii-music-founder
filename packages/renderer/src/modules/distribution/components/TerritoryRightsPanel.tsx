@@ -79,8 +79,8 @@ export default function TerritoryRightsPanel({ config, onChange }: TerritoryRigh
             {/* Header + toggle */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-xl bg-purple-500/10 flex items-center justify-center">
-                        <Globe size={16} className="text-purple-400" />
+                    <div className="w-8 h-8 rounded-xl bg-green-500/10 flex items-center justify-center">
+                        <Globe size={16} className="text-green-400" />
                     </div>
                     <div>
                         <h3 className="text-sm font-bold text-white">Territory Rights Splits</h3>
@@ -91,7 +91,7 @@ export default function TerritoryRightsPanel({ config, onChange }: TerritoryRigh
                 <button
                     data-testid="territory-toggle"
                     onClick={() => onChange({ ...config, enabled: !config.enabled })}
-                    className={`relative w-11 h-6 rounded-full transition-colors ${config.enabled ? 'bg-purple-500' : 'bg-white/10'}`}
+                    className={`relative w-11 h-6 rounded-full transition-colors ${config.enabled ? 'bg-green-500' : 'bg-white/10'}`}
                     aria-label="Toggle territory splits"
                 >
                     <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${config.enabled ? 'translate-x-5' : 'translate-x-0'}`} />
@@ -159,7 +159,7 @@ export default function TerritoryRightsPanel({ config, onChange }: TerritoryRigh
                                             value={split.rightsHolder}
                                             onChange={e => updateSplit(index, { rightsHolder: e.target.value })}
                                             placeholder="Publisher name, label, or artist entity"
-                                            className="w-full px-4 py-3 bg-white/[0.03] border border-white/10 rounded-xl text-sm text-white focus:outline-none focus:border-purple-500/50 transition-all placeholder:text-gray-700"
+                                            className="w-full px-4 py-3 bg-white/[0.03] border border-white/10 rounded-xl text-sm text-white focus:outline-none focus:border-green-500/50 transition-all placeholder:text-gray-700"
                                         />
                                     </div>
 
@@ -170,7 +170,7 @@ export default function TerritoryRightsPanel({ config, onChange }: TerritoryRigh
                                                 data-testid={`territory-input-type-${index}`}
                                                 value={split.rightsType}
                                                 onChange={e => updateSplit(index, { rightsType: e.target.value as TerritoryRightsSplit['rightsType'] })}
-                                                className="w-full px-4 py-3 bg-white/[0.03] border border-white/10 rounded-xl text-sm text-white focus:outline-none focus:border-purple-500/50 transition-all"
+                                                className="w-full px-4 py-3 bg-white/[0.03] border border-white/10 rounded-xl text-sm text-white focus:outline-none focus:border-green-500/50 transition-all"
                                             >
                                                 {RIGHTS_TYPES.map(t => (
                                                     <option key={t} value={t} className="bg-[#0d0d0d]">
@@ -189,7 +189,7 @@ export default function TerritoryRightsPanel({ config, onChange }: TerritoryRigh
                                                     max={100}
                                                     value={split.percentage}
                                                     onChange={e => updateSplit(index, { percentage: Number(e.target.value) })}
-                                                    className="w-full px-4 py-3 bg-white/[0.03] border border-white/10 rounded-xl text-sm text-white focus:outline-none focus:border-purple-500/50 transition-all"
+                                                    className="w-full px-4 py-3 bg-white/[0.03] border border-white/10 rounded-xl text-sm text-white focus:outline-none focus:border-green-500/50 transition-all"
                                                 />
                                                 <span className="text-gray-500 text-sm">%</span>
                                             </div>
@@ -244,7 +244,7 @@ export default function TerritoryRightsPanel({ config, onChange }: TerritoryRigh
                                             value={split.accountId || ''}
                                             onChange={e => updateSplit(index, { accountId: e.target.value })}
                                             placeholder="acct_..."
-                                            className="w-full px-4 py-3 bg-white/[0.03] border border-white/10 rounded-xl text-sm text-white focus:outline-none focus:border-purple-500/50 transition-all placeholder:text-gray-700 font-mono"
+                                            className="w-full px-4 py-3 bg-white/[0.03] border border-white/10 rounded-xl text-sm text-white focus:outline-none focus:border-green-500/50 transition-all placeholder:text-gray-700 font-mono"
                                         />
                                     </div>
                                 </div>

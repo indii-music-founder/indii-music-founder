@@ -42,7 +42,7 @@ export const OrganizationSelector = () => {
                 onClick={() => setIsOpen(!isOpen)}
                 className="flex items-center gap-3 px-4 py-2 bg-[#1a1a1a] border border-gray-800 rounded-xl hover:border-gray-600 transition-colors"
             >
-                <div className="w-8 h-8 rounded-lg bg-linear-to-br from-purple-600 to-blue-600 flex items-center justify-center text-white font-bold">
+                <div className="w-8 h-8 rounded-lg bg-linear-to-br from-green-600 to-blue-600 flex items-center justify-center text-white font-bold">
                     {currentOrg.name.substring(0, 2).toUpperCase()}
                 </div>
                 <div className="text-left hidden md:block">
@@ -74,7 +74,7 @@ export const OrganizationSelector = () => {
                                         key={org.id}
                                         onClick={() => { setOrganization(org.id); setIsOpen(false); }}
                                         className={`w-full flex items-center justify-between px-3 py-2 rounded-lg transition-colors ${currentOrganizationId === org.id
-                                            ? 'bg-purple-600/20 text-purple-400'
+                                            ? 'bg-green-600/20 text-green-400'
                                             : 'hover:bg-gray-800 text-gray-300'
                                             }`}
                                     >
@@ -106,7 +106,7 @@ export const OrganizationSelector = () => {
                                             value={newOrgName}
                                             onChange={(e) => setNewOrgName(e.target.value)}
                                             placeholder="Org Name..."
-                                            className="w-full bg-black/50 border border-gray-700 rounded px-2 py-1 text-sm text-white mb-2 focus:border-purple-500 outline-none"
+                                            className="w-full bg-black/50 border border-gray-700 rounded px-2 py-1 text-sm text-white mb-2 focus:border-green-500 outline-none"
                                             autoFocus
                                             onKeyDown={(e) => e.key === 'Enter' && handleCreateOrg()}
                                         />
@@ -114,7 +114,7 @@ export const OrganizationSelector = () => {
                                             <button
                                                 onClick={handleCreateOrg}
                                                 disabled={!newOrgName.trim()}
-                                                className="flex-1 bg-purple-600 text-white text-xs font-bold py-1 rounded hover:bg-purple-500 disabled:opacity-50"
+                                                className="flex-1 bg-green-600 text-white text-xs font-bold py-1 rounded hover:bg-green-500 disabled:opacity-50"
                                             >
                                                 Create
                                             </button>

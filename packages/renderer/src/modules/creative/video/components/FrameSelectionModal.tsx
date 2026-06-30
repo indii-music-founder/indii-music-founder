@@ -126,7 +126,7 @@ export default function FrameSelectionModal({ isOpen, onClose, onSelect, target 
                                         placeholder="Search assets..."
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="w-full bg-[#1a1a1a] border border-gray-700 rounded-lg pl-9 pr-4 py-2 text-sm text-white focus:ring-1 focus:ring-purple-500 outline-none"
+                                        className="w-full bg-[#1a1a1a] border border-gray-700 rounded-lg pl-9 pr-4 py-2 text-sm text-white focus:ring-1 focus:ring-green-500 outline-none"
                                     />
                                 </div>
                             </div>
@@ -143,7 +143,7 @@ export default function FrameSelectionModal({ isOpen, onClose, onSelect, target 
                     {/* Generate Tab */}
                     {activeTab === 'generate' && (
                         <div className="h-full flex flex-col items-center justify-center max-w-lg mx-auto text-center p-4">
-                            <div className="w-16 h-16 bg-purple-900/20 rounded-full flex items-center justify-center mb-4 text-purple-400">
+                            <div className="w-16 h-16 bg-green-900/20 rounded-full flex items-center justify-center mb-4 text-green-400">
                                 <Sparkles size={32} />
                             </div>
                             <h3 className="text-lg font-bold text-white mb-2">Generate a New Frame</h3>
@@ -156,12 +156,12 @@ export default function FrameSelectionModal({ isOpen, onClose, onSelect, target 
                                     value={prompt}
                                     onChange={(e) => setPrompt(e.target.value)}
                                     placeholder="A cinematic shot of..."
-                                    className="w-full bg-[#1a1a1a] border border-gray-700 rounded-xl p-4 text-white focus:ring-1 focus:ring-purple-500 outline-none resize-none h-32 mb-4"
+                                    className="w-full bg-[#1a1a1a] border border-gray-700 rounded-xl p-4 text-white focus:ring-1 focus:ring-green-500 outline-none resize-none h-32 mb-4"
                                 />
                                 <button
                                     onClick={handleGenerate}
                                     disabled={isGenerating || !prompt.trim()}
-                                    className="w-full bg-purple-600 hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all"
+                                    className="w-full bg-green-600 hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all"
                                 >
                                     {isGenerating ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} />}
                                     Generate Frame

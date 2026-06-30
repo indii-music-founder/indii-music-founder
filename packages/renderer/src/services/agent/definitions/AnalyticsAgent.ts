@@ -13,7 +13,7 @@ export const AnalyticsAgent: AgentConfig = {
     id: "analytics",
     name: "Analytics Director",
     description: "Analyzes audience intelligence, streaming data, and career metrics for independent artists.",
-    color: "bg-purple-600",
+    color: "bg-green-600",
     category: "specialist",
     systemPrompt: systemPrompt,
     get functions() {

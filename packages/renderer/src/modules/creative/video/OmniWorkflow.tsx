@@ -414,9 +414,9 @@ export default function OmniWorkflow() {
             {/* Left Panel: Stage & Live Preview */}
             <div className="flex-1 flex flex-col p-6 min-w-0 border-r border-white/5 relative">
                 <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-sm font-bold uppercase tracking-wider text-purple-400 flex items-center gap-2">
-                        <div className="p-1 bg-purple-500/10 rounded-lg">
-                            <Video size={14} className="text-purple-400" />
+                    <h2 className="text-sm font-bold uppercase tracking-wider text-green-400 flex items-center gap-2">
+                        <div className="p-1 bg-green-500/10 rounded-lg">
+                            <Video size={14} className="text-green-400" />
                         </div>
                         Gemini Omni Stage
                     </h2>
@@ -448,7 +448,7 @@ export default function OmniWorkflow() {
                     />
 
                     {/* Background glows */}
-                    <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-600/5 rounded-full blur-[100px] pointer-events-none" />
+                    <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-green-600/5 rounded-full blur-[100px] pointer-events-none" />
                     <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-600/5 rounded-full blur-[100px] pointer-events-none" />
 
                     {outputVideoUrl ? (
@@ -472,7 +472,7 @@ export default function OmniWorkflow() {
                             {studioControls.lyricsText && (
                                 <div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-20 text-center select-none max-w-lg px-6 py-3 rounded-xl backdrop-blur-md border border-white/10 shadow-2xl bg-black/60">
                                     <p className={`text-base font-bold tracking-wide transition-all ${
-                                        studioControls.typographyStyle === 'cyberpunk' ? 'font-mono text-purple-400 uppercase tracking-widest animate-pulse' :
+                                        studioControls.typographyStyle === 'cyberpunk' ? 'font-mono text-green-400 uppercase tracking-widest animate-pulse' :
                                         studioControls.typographyStyle === 'kinetic-neon' ? 'font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 uppercase' :
                                         studioControls.typographyStyle === 'liquid-gold' ? 'font-serif italic text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-400 to-amber-200 drop-shadow-md' :
                                         'font-sans text-white font-medium tracking-normal'
@@ -485,7 +485,7 @@ export default function OmniWorkflow() {
 
                             <button 
                                 onClick={handleDownload}
-                                className="absolute bottom-6 right-6 bg-purple-600 hover:bg-purple-500 text-white p-3 rounded-full shadow-2xl hover:scale-105 transition-all flex items-center justify-center border border-purple-400/30 z-20"
+                                className="absolute bottom-6 right-6 bg-green-600 hover:bg-green-500 text-white p-3 rounded-full shadow-2xl hover:scale-105 transition-all flex items-center justify-center border border-green-400/30 z-20"
                                 title="Download Synthesized Master"
                             >
                                 <Download size={16} />
@@ -495,7 +495,7 @@ export default function OmniWorkflow() {
                         <div className="absolute inset-0 flex flex-col justify-between p-4 z-10">
                             {/* Overlay Badge */}
                             <div className="flex items-center gap-2 self-start px-2.5 py-1.5 bg-black/60 rounded-lg border border-white/10 backdrop-blur-md">
-                                <Film size={12} className="text-purple-400 animate-pulse" />
+                                <Film size={12} className="text-green-400 animate-pulse" />
                                 <span className="text-[10px] font-bold uppercase font-mono tracking-wider">Base Performance Active</span>
                             </div>
 
@@ -503,7 +503,7 @@ export default function OmniWorkflow() {
                             {studioControls.lyricsText && (
                                 <div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-20 text-center select-none max-w-lg px-6 py-3 rounded-xl backdrop-blur-md border border-white/10 shadow-2xl bg-black/60">
                                     <p className={`text-base font-bold tracking-wide transition-all ${
-                                        studioControls.typographyStyle === 'cyberpunk' ? 'font-mono text-purple-400 uppercase tracking-widest animate-pulse' :
+                                        studioControls.typographyStyle === 'cyberpunk' ? 'font-mono text-green-400 uppercase tracking-widest animate-pulse' :
                                         studioControls.typographyStyle === 'kinetic-neon' ? 'font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 uppercase' :
                                         studioControls.typographyStyle === 'liquid-gold' ? 'font-serif italic text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-400 to-amber-200 drop-shadow-md' :
                                         'font-sans text-white font-medium tracking-normal'
@@ -568,15 +568,15 @@ export default function OmniWorkflow() {
 
                             <div className="flex items-center justify-between mt-auto z-10">
                                 <span className="text-[10px] font-mono text-gray-500 bg-black/40 px-2 py-1 rounded border border-white/5 truncate max-w-[200px]">{refVideoFile?.name || "base_performance.mp4"}</span>
-                                <span className="text-[9px] font-mono text-purple-400 font-bold uppercase tracking-widest">{studioControls.omniPipelineMode === 'hybrid-veo' ? 'OMNI + VEO 3.1 HYBRID' : 'PURE OMNI V2V ENGINE'}</span>
+                                <span className="text-[9px] font-mono text-green-400 font-bold uppercase tracking-widest">{studioControls.omniPipelineMode === 'hybrid-veo' ? 'OMNI + VEO 3.1 HYBRID' : 'PURE OMNI V2V ENGINE'}</span>
                             </div>
                         </div>
                     ) : (
                         <div 
                             onClick={() => fileInputRef.current?.click()}
-                            className="flex flex-col items-center justify-center p-12 cursor-pointer select-none text-center hover:bg-white/[0.04] transition-all rounded-xl h-full w-full border border-dashed border-white/10 hover:border-purple-500/40"
+                            className="flex flex-col items-center justify-center p-12 cursor-pointer select-none text-center hover:bg-white/[0.04] transition-all rounded-xl h-full w-full border border-dashed border-white/10 hover:border-green-500/40"
                         >
-                            <div className="p-4 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 mb-4 group-hover:scale-115 transition-all shadow-inner shadow-purple-500/5">
+                            <div className="p-4 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 mb-4 group-hover:scale-115 transition-all shadow-inner shadow-green-500/5">
                                 <Upload size={28} />
                             </div>
                             <span className="text-xs font-bold uppercase tracking-widest text-white">Upload Artist Base Performance</span>
@@ -599,10 +599,10 @@ export default function OmniWorkflow() {
                     <div className="flex items-center justify-between">
                         <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider font-mono">Storyboard Sequences (Flow Builder)</span>
                         <div className="flex items-center gap-2">
-                            <span className="text-[9px] text-purple-400 uppercase font-mono tracking-widest">{storyboard.length} Scenes Synced</span>
+                            <span className="text-[9px] text-green-400 uppercase font-mono tracking-widest">{storyboard.length} Scenes Synced</span>
                             <button
                                 onClick={() => setIsAddingFrame(true)}
-                                className="flex items-center gap-1 px-2 py-1 bg-purple-600 hover:bg-purple-500 text-[9px] font-bold uppercase font-mono tracking-wider rounded transition-colors"
+                                className="flex items-center gap-1 px-2 py-1 bg-green-600 hover:bg-green-500 text-[9px] font-bold uppercase font-mono tracking-wider rounded transition-colors"
                             >
                                 <Plus size={10} /> Add Frame
                             </button>
@@ -620,7 +620,7 @@ export default function OmniWorkflow() {
                                 whileHover={{ y: -2, borderColor: 'rgba(147, 51, 234, 0.4)' }}
                                 onClick={() => setActiveFrameIndex(i)}
                                 className={`w-52 bg-white/[0.03] rounded-xl border p-2 flex flex-col justify-between shrink-0 relative cursor-pointer transition-all ${
-                                    activeFrameIndex === i ? 'border-purple-500 shadow-[0_0_15px_rgba(147,51,234,0.15)] bg-purple-500/[0.02]' : 'border-white/10'
+                                    activeFrameIndex === i ? 'border-green-500 shadow-[0_0_15px_rgba(147,51,234,0.15)] bg-green-500/[0.02]' : 'border-white/10'
                                 }`}
                             >
                                 <div className="h-24 bg-black rounded-lg flex items-center justify-center overflow-hidden border border-white/5 relative">
@@ -631,7 +631,7 @@ export default function OmniWorkflow() {
                                             Prompt only
                                         </div>
                                     )}
-                                    <div className="absolute top-2 left-2 px-1.5 py-0.5 bg-black/75 rounded text-[8px] font-mono text-purple-300 border border-white/10">
+                                    <div className="absolute top-2 left-2 px-1.5 py-0.5 bg-black/75 rounded text-[8px] font-mono text-green-300 border border-white/10">
                                         Frame {i + 1} ({frame.timestamp}s)
                                     </div>
                                     <button 
@@ -651,8 +651,8 @@ export default function OmniWorkflow() {
 
             {/* Right Panel: Omni Controller & Dubbing */}
             <div className="w-80 border-l border-white/5 flex flex-col bg-[#08080a] p-4 shrink-0 overflow-y-auto custom-scrollbar">
-                <h3 className="text-xs font-bold uppercase tracking-widest text-purple-400 mb-4 flex items-center gap-2">
-                    <Sliders size={14} className="text-purple-400" />
+                <h3 className="text-xs font-bold uppercase tracking-widest text-green-400 mb-4 flex items-center gap-2">
+                    <Sliders size={14} className="text-green-400" />
                     Omni Controller
                 </h3>
 
@@ -660,13 +660,13 @@ export default function OmniWorkflow() {
                     {/* Conversational Remix Box */}
                     <div className="space-y-2">
                         <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest font-mono flex items-center gap-1.5">
-                            <Sparkle size={11} className="text-purple-400" />
+                            <Sparkle size={11} className="text-green-400" />
                             Remix Style Directives
                         </label>
                         <textarea
                             value={remixPrompt}
                             onChange={(e) => setRemixPrompt(e.target.value)}
-                            className="w-full bg-black/60 text-white text-xs p-3 rounded-xl border border-white/10 outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/10 h-24 resize-none placeholder:text-gray-600 transition-all font-mono leading-relaxed"
+                            className="w-full bg-black/60 text-white text-xs p-3 rounded-xl border border-white/10 outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/10 h-24 resize-none placeholder:text-gray-600 transition-all font-mono leading-relaxed"
                             placeholder="Describe how to augment the performance (backgrounds, style, effects)..."
                         />
                     </div>
@@ -699,7 +699,7 @@ export default function OmniWorkflow() {
                         <div className="space-y-2">
                             <div className="flex justify-between text-[10px] font-bold text-gray-404 uppercase font-mono tracking-wider">
                                 <span>Pose Preservation</span>
-                                <span className="font-mono text-purple-400">{(studioControls.posePreservation * 100).toFixed(0)}%</span>
+                                <span className="font-mono text-green-400">{(studioControls.posePreservation * 100).toFixed(0)}%</span>
                             </div>
                             <input 
                                 type="range" min="0" max="1" step="0.05"
@@ -712,7 +712,7 @@ export default function OmniWorkflow() {
                         <div className="space-y-2">
                             <div className="flex justify-between text-[10px] font-bold text-gray-404 uppercase font-mono tracking-wider">
                                 <span>Beat Motion Pulse</span>
-                                <span className="font-mono text-purple-400">{(studioControls.beatPulse * 100).toFixed(0)}%</span>
+                                <span className="font-mono text-green-400">{(studioControls.beatPulse * 100).toFixed(0)}%</span>
                             </div>
                             <input 
                                 type="range" min="0" max="1" step="0.05"
@@ -726,7 +726,7 @@ export default function OmniWorkflow() {
                     {/* Dubbing & Lip-Sync */}
                     <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/10 space-y-3">
                         <span className="text-[10px] font-bold text-white uppercase tracking-widest font-mono flex items-center gap-1.5">
-                            <Languages size={12} className="text-purple-400" />
+                            <Languages size={12} className="text-green-400" />
                             Multilingual Dubbing
                         </span>
                         
@@ -734,7 +734,7 @@ export default function OmniWorkflow() {
                             <select 
                                 value={studioControls.selectedLanguage}
                                 onChange={(e) => setStudioControls({ selectedLanguage: e.target.value })}
-                                className="w-full bg-black/60 text-[10px] p-2.5 rounded-lg border border-white/10 outline-none text-gray-200 appearance-none font-mono focus:border-purple-500/50"
+                                className="w-full bg-black/60 text-[10px] p-2.5 rounded-lg border border-white/10 outline-none text-gray-200 appearance-none font-mono focus:border-green-500/50"
                             >
                                 <option value="es">Spanish Dub (AI Lip-Sync)</option>
                                 <option value="ja">Japanese Dub (AI Lip-Sync)</option>
@@ -746,14 +746,14 @@ export default function OmniWorkflow() {
                         
                         <div className="space-y-2">
                             {audioDubFile ? (
-                                <div className="flex items-center justify-between p-2 rounded-lg bg-purple-500/5 border border-purple-500/25">
-                                    <span className="text-[9px] font-mono text-purple-300 truncate w-40">{audioDubFile.name}</span>
-                                    <CheckCircle size={12} className="text-purple-400 shrink-0" />
+                                <div className="flex items-center justify-between p-2 rounded-lg bg-green-500/5 border border-green-500/25">
+                                    <span className="text-[9px] font-mono text-green-300 truncate w-40">{audioDubFile.name}</span>
+                                    <CheckCircle size={12} className="text-green-400 shrink-0" />
                                 </div>
                             ) : (
                                 <button 
                                     onClick={() => audioInputRef.current?.click()}
-                                    className="w-full flex items-center justify-center gap-1.5 py-2 bg-purple-500/10 hover:bg-purple-500/15 border border-purple-500/20 rounded-lg text-[10px] font-bold uppercase transition-colors tracking-widest font-mono text-purple-300"
+                                    className="w-full flex items-center justify-center gap-1.5 py-2 bg-green-500/10 hover:bg-green-500/15 border border-green-500/20 rounded-lg text-[10px] font-bold uppercase transition-colors tracking-widest font-mono text-green-300"
                                 >
                                     <Music size={12} /> Upload translation audio
                                 </button>
@@ -797,16 +797,16 @@ export default function OmniWorkflow() {
                     <button 
                         onClick={handleStartRemix}
                         disabled={!studioControls.omniReferenceVideo || isRemixing}
-                        className="w-full mt-6 py-3.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 disabled:from-gray-850 disabled:to-gray-850 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl text-xs font-bold uppercase tracking-widest font-mono flex items-center justify-center gap-2 shadow-xl shadow-purple-500/10 border border-purple-400/20 hover:scale-[1.01] active:scale-[0.99] transition-all shrink-0 text-white"
+                        className="w-full mt-6 py-3.5 bg-gradient-to-r from-green-600 to-indigo-600 hover:from-green-500 hover:to-indigo-500 disabled:from-gray-850 disabled:to-gray-850 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl text-xs font-bold uppercase tracking-widest font-mono flex items-center justify-center gap-2 shadow-xl shadow-green-500/10 border border-green-400/20 hover:scale-[1.01] active:scale-[0.99] transition-all shrink-0 text-white"
                     >
                         {isRemixing ? (
                             <>
-                                <RefreshCw size={14} className="animate-spin text-purple-200" />
+                                <RefreshCw size={14} className="animate-spin text-green-200" />
                                 Synthesizing Remix...
                             </>
                         ) : (
                             <>
-                                <Sparkles size={14} fill="white" className="text-purple-200 animate-pulse" />
+                                <Sparkles size={14} fill="white" className="text-green-200 animate-pulse" />
                                 Synthesize Omni Remix
                             </>
                         )}
@@ -830,7 +830,7 @@ export default function OmniWorkflow() {
                             >
                                 <X size={16} />
                             </button>
-                            <h3 className="text-sm font-bold uppercase tracking-wider text-purple-400 mb-4 flex items-center gap-2">
+                            <h3 className="text-sm font-bold uppercase tracking-wider text-green-400 mb-4 flex items-center gap-2">
                                 <Plus size={16} /> Add Storyboard Scene Frame
                             </h3>
                             <div className="space-y-4">
@@ -842,7 +842,7 @@ export default function OmniWorkflow() {
                                         min="0"
                                         value={newFrameTimestamp}
                                         onChange={(e) => setNewFrameTimestamp(parseFloat(e.target.value) || 0)}
-                                        className="w-full bg-black/60 border border-white/10 rounded-lg p-2.5 outline-none focus:border-purple-500/40 text-xs font-mono text-white"
+                                        className="w-full bg-black/60 border border-white/10 rounded-lg p-2.5 outline-none focus:border-green-500/40 text-xs font-mono text-white"
                                     />
                                 </div>
                                 <div className="space-y-1.5">
@@ -852,12 +852,12 @@ export default function OmniWorkflow() {
                                         value={newFramePrompt}
                                         onChange={(e) => setNewFramePrompt(e.target.value)}
                                         placeholder="Describe the styling, action, or camera movement..."
-                                        className="w-full bg-black/60 border border-white/10 rounded-lg p-2.5 outline-none focus:border-purple-500/40 text-xs font-mono text-white resize-none"
+                                        className="w-full bg-black/60 border border-white/10 rounded-lg p-2.5 outline-none focus:border-green-500/40 text-xs font-mono text-white resize-none"
                                     />
                                 </div>
                                 <button 
                                     onClick={handleAddFrame}
-                                    className="w-full py-3 bg-purple-600 hover:bg-purple-500 rounded-xl text-xs font-bold uppercase tracking-widest font-mono transition-colors text-white"
+                                    className="w-full py-3 bg-green-600 hover:bg-green-500 rounded-xl text-xs font-bold uppercase tracking-widest font-mono transition-colors text-white"
                                 >
                                     Add Frame to Sequence
                                 </button>

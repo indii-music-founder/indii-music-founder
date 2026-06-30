@@ -146,7 +146,7 @@ export const OnTheRoadTab: React.FC<OnTheRoadTabProps> = ({
                 <Card className="bg-[#161b22] border-gray-800 shadow-xl flex flex-col gap-4">
                     <CardHeader className="pb-0">
                         <CardTitle className="text-lg font-bold text-white flex items-center gap-2">
-                            <Fuel className="text-purple-500" size={18} />
+                            <Fuel className="text-green-500" size={18} />
                             Logistics Radar
                         </CardTitle>
                         <p className="text-xs text-gray-500 font-mono uppercase tracking-wider">Nearby Services</p>
@@ -159,7 +159,7 @@ export const OnTheRoadTab: React.FC<OnTheRoadTabProps> = ({
                                 placeholder={t('touring.hints.current_location')}
                                 value={currentLocation}
                                 onChange={(e) => setCurrentLocation(e.target.value)}
-                                className="flex-1 bg-bg-dark border border-gray-700 rounded-lg p-2 text-sm text-white focus:border-purple-500 outline-none"
+                                className="flex-1 bg-bg-dark border border-gray-700 rounded-lg p-2 text-sm text-white focus:border-green-500 outline-none"
                             />
                             <Button
                                 onClick={handleLocateMe}
@@ -172,7 +172,7 @@ export const OnTheRoadTab: React.FC<OnTheRoadTabProps> = ({
                             <Button
                                 onClick={handleFindGasStations}
                                 disabled={isFindingPlaces}
-                                className="bg-purple-500 hover:bg-purple-600"
+                                className="bg-green-500 hover:bg-green-600"
                             >
                                 {isFindingPlaces ? <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }}><Navigation size={18} /></motion.div> : <Navigation size={18} />}
                             </Button>
@@ -182,7 +182,7 @@ export const OnTheRoadTab: React.FC<OnTheRoadTabProps> = ({
                             {nearbyPlaces.length > 0 ? (
                                 <div className="space-y-2">
                                     {nearbyPlaces.map((place, i) => (
-                                        <div key={i} className="flex items-center justify-between p-3 bg-gray-800/30 rounded border border-gray-800 hover:border-purple-500/50 transition-colors">
+                                        <div key={i} className="flex items-center justify-between p-3 bg-gray-800/30 rounded border border-gray-800 hover:border-green-500/50 transition-colors">
                                             <div>
                                                 <div className="text-sm font-bold text-white">{place.name}</div>
                                                 <div className="text-xs text-gray-500">{place.vicinity}</div>

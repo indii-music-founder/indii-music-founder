@@ -225,12 +225,12 @@ export const VideoStage = React.memo<VideoStageProps>(({
                 {jobStatus === 'processing' || jobStatus === 'queued' || jobStatus === 'stitching' ? (
                     <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm z-20">
                         <div className="w-24 h-24 relative mb-4">
-                            <div className="absolute inset-0 rounded-full border-t-2 border-purple-500 animate-spin"></div>
+                            <div className="absolute inset-0 rounded-full border-t-2 border-green-500 animate-spin"></div>
                             <div className="absolute inset-2 rounded-full border-r-2 border-indigo-500 animate-spin flex items-center justify-center">
-                                <Sparkles size={24} className="text-purple-400 animate-pulse" />
+                                <Sparkles size={24} className="text-green-400 animate-pulse" />
                             </div>
                         </div>
-                        <h3 className="text-xl font-bold bg-clip-text text-transparent bg-linear-to-r from-purple-400 to-pink-600 animate-pulse capitalize">
+                        <h3 className="text-xl font-bold bg-clip-text text-transparent bg-linear-to-r from-green-400 to-pink-600 animate-pulse capitalize">
                             {jobStatus === 'stitching' ? 'Stitching Masterpiece...' : 'Imaginating Scene...'}
                         </h3>
                         <p className="text-gray-400 text-sm mt-2 font-medium">
@@ -241,7 +241,7 @@ export const VideoStage = React.memo<VideoStageProps>(({
                         {/* Progress Bar */}
                         <div className="w-64 h-1.5 bg-white/5 rounded-full mt-6 overflow-hidden">
                             <motion.div
-                                className="h-full bg-linear-to-r from-purple-500 to-indigo-500"
+                                className="h-full bg-linear-to-r from-green-500 to-indigo-500"
                                 initial={{ width: 0 }}
                                 animate={{ width: `${displayProgress}%` }}
                                 transition={{ duration: 0.5 }}
@@ -271,7 +271,7 @@ export const VideoStage = React.memo<VideoStageProps>(({
                         {extractionState.active && (
                             <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-black/70 backdrop-blur-md">
                                 <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-black/75 px-4 py-3 shadow-2xl">
-                                    <Loader2 size={18} className="text-purple-400 animate-spin" />
+                                    <Loader2 size={18} className="text-green-400 animate-spin" />
                                     <div className="min-w-0">
                                         <p className="text-xs font-semibold text-white truncate">
                                             Extracting {extractionState.label}
@@ -344,7 +344,7 @@ export const VideoStage = React.memo<VideoStageProps>(({
                                 }}
                                 data-testid="set-anchor-btn"
                                 aria-label="Set as anchor frame for next generation"
-                                className="px-2.5 py-1.5 bg-black/60 backdrop-blur-md hover:bg-purple-500/30 rounded-lg text-[10px] font-semibold text-white/80 hover:text-white transition-all border border-white/10 hover:border-purple-500/40 focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:outline-none"
+                                className="px-2.5 py-1.5 bg-black/60 backdrop-blur-md hover:bg-green-500/30 rounded-lg text-[10px] font-semibold text-white/80 hover:text-white transition-all border border-white/10 hover:border-green-500/40 focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:outline-none"
                             >
                                 ⚓ Set Anchor
                             </button>

@@ -102,7 +102,7 @@ export const EarningsDashboard: React.FC = () => {
                 ) : earnings ? (
                     <div>
                         <div className="flex items-baseline gap-1 mb-6">
-                            <span className="text-2xl font-bold text-purple-500 tracking-tighter">$</span>
+                            <span className="text-2xl font-bold text-green-500 tracking-tighter">$</span>
                             <span className="text-5xl font-black text-white tracking-tighter">
                                 {earnings.totalNetRevenue.toFixed(2)}
                             </span>
@@ -121,7 +121,7 @@ export const EarningsDashboard: React.FC = () => {
                             </div>
                             <div className="flex items-center justify-between p-3 bg-gray-900/40 rounded-xl border border-gray-800/50">
                                 <div className="flex items-center gap-2">
-                                    <DollarSign size={14} className="text-purple-400" />
+                                    <DollarSign size={14} className="text-green-400" />
                                     <span className="text-sm text-gray-400 font-medium">Estimated Unprocessed</span>
                                 </div>
                                 <span className="text-sm font-bold text-white tracking-tight">${(earnings.totalGrossRevenue - earnings.totalNetRevenue).toFixed(2)}</span>
@@ -144,7 +144,7 @@ export const EarningsDashboard: React.FC = () => {
                     </div>
                 )}
 
-                <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/5 blur-[100px] pointer-events-none -mr-32 -mt-32" />
+                <div className="absolute top-0 right-0 w-64 h-64 bg-green-500/5 blur-[100px] pointer-events-none -mr-32 -mt-32" />
             </div>
 
             {/* Always show breakdown below the summary card if we have data */}

@@ -206,7 +206,7 @@ export function AnomalyDetector() {
                         <div className="flex items-center gap-4 mb-4 text-[10px]">
                             {Object.entries(TRACK_NAMES).map(([key, name]) => (
                                 <div key={key} className="flex items-center gap-1.5">
-                                    <div className={`w-2 h-2 rounded-sm ${key === 'trackA' ? 'bg-purple-500' : key === 'trackB' ? 'bg-blue-500' : 'bg-emerald-500'
+                                    <div className={`w-2 h-2 rounded-sm ${key === 'trackA' ? 'bg-green-500' : key === 'trackB' ? 'bg-blue-500' : 'bg-emerald-500'
                                         }`} />
                                     <span className="text-gray-400">{name}</span>
                                 </div>

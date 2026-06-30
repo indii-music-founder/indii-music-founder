@@ -17,7 +17,7 @@ export function FilterItem({ icon: Icon, label, active, onClick }: FilterItemPro
             className={cn(
                 "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-medium",
                 active
-                    ? "bg-purple-500/20 text-purple-300 shadow-[0_0_15px_rgba(168,85,247,0.1)] border border-purple-500/30"
+                    ? "bg-green-500/20 text-green-300 shadow-[0_0_15px_rgba(168,85,247,0.1)] border border-green-500/30"
                     : "text-gray-400 hover:text-gray-200 hover:bg-white/5 border border-transparent"
             )}
         >

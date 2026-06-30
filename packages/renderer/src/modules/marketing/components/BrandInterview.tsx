@@ -202,8 +202,8 @@ const BrandInterview: React.FC = () => {
                                     {file.type === 'image' ? (
                                         <img src={file.preview} alt="" className="w-14 h-14 rounded-xl object-cover border-2 border-white/10 shadow-lg" />
                                     ) : file.type === 'audio' ? (
-                                        <div className="w-14 h-14 rounded-xl bg-purple-500/10 border-2 border-white/10 flex items-center justify-center shadow-lg">
-                                            <Music size={20} className="text-purple-400" />
+                                        <div className="w-14 h-14 rounded-xl bg-green-500/10 border-2 border-white/10 flex items-center justify-center shadow-lg">
+                                            <Music size={20} className="text-green-400" />
                                         </div>
                                     ) : (
                                         <div className="w-14 h-14 rounded-xl bg-white/5 border-2 border-white/10 flex flex-col items-center justify-center p-2 shadow-lg">

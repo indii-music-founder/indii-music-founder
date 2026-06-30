@@ -81,7 +81,7 @@ export function TypeaheadMenu({ context, onSelect }: TypeaheadMenuProps) {
                             )}
                         >
                             <div className="flex-shrink-0 w-8 h-8 rounded-full bg-black/40 flex items-center justify-center border border-white/5">
-                                {context.type === '@' ? <User size={14} className="text-cyan-400" /> : context.type === '/' ? <FileText size={14} className="text-amber-400" /> : <FileText size={14} className="text-purple-400" />}
+                                {context.type === '@' ? <User size={14} className="text-cyan-400" /> : context.type === '/' ? <FileText size={14} className="text-amber-400" /> : <FileText size={14} className="text-green-400" />}
                             </div>
                             <div className="flex-1 min-w-0">
                                 <p className="text-sm font-medium text-gray-200 truncate">{item.name}</p>

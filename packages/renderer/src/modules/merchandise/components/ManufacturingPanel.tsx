@@ -241,7 +241,7 @@ export default function ManufacturingPanel({ theme, productType, productId, desi
                         <button
                             onClick={() => setFulfillmentMode('pod')}
                             className={`p-3 rounded-lg border text-left transition-all relative ${fulfillmentMode === 'pod'
-                                ? 'bg-purple-500/20 border-purple-400 text-purple-400'
+                                ? 'bg-green-500/20 border-green-400 text-green-400'
                                 : 'bg-neutral-800 border-neutral-700 text-neutral-400 hover:border-neutral-500'
                                 }`}
                         >
@@ -260,7 +260,7 @@ export default function ManufacturingPanel({ theme, productType, productId, desi
 
                     {/* POD Provider Selection (when POD mode is active) */}
                     {fulfillmentMode === 'pod' && (
-                        <div className="mt-3 p-3 bg-purple-500/10 border border-purple-500/20 rounded-lg">
+                        <div className="mt-3 p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
                             {podConfigured ? (
                                 <div className="flex items-center gap-2">
                                     <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
@@ -269,14 +269,14 @@ export default function ManufacturingPanel({ theme, productType, productId, desi
                                         href="https://www.printful.com/dashboard"
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="ml-auto text-xs text-purple-400 hover:text-purple-300 flex items-center gap-1"
+                                        className="ml-auto text-xs text-green-400 hover:text-green-300 flex items-center gap-1"
                                     >
                                         Dashboard <ExternalLink className="w-3 h-3" />
                                     </a>
                                 </div>
                             ) : (
                                 <div className="space-y-2">
-                                    <p className="text-xs text-purple-300">
+                                    <p className="text-xs text-green-300">
                                         Connect your Printful account to enable automatic order fulfillment.
                                     </p>
                                     <p className="text-[10px] text-neutral-500">

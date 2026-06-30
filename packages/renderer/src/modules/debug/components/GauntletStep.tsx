@@ -22,7 +22,7 @@ export function GauntletStep({ num, title, status, detail }: GauntletStepProps) 
     const isComplete = status === 'complete';
 
     return (
-        <div className={`p-3 rounded-lg border transition-all duration-500 ${isActive ? 'bg-purple-900/30 border-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.2)]' :
+        <div className={`p-3 rounded-lg border transition-all duration-500 ${isActive ? 'bg-green-900/30 border-green-500 shadow-[0_0_15px_rgba(168,85,247,0.2)]' :
             isComplete ? 'bg-green-900/10 border-green-500/30' :
                 'bg-surface/30 border-white/5 opacity-50'
             }`}
@@ -30,7 +30,7 @@ export function GauntletStep({ num, title, status, detail }: GauntletStepProps) 
             data-status={status}
         >
             <div className="flex items-center gap-3">
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${isActive ? 'bg-purple-500 text-white animate-pulse' :
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${isActive ? 'bg-green-500 text-white animate-pulse' :
                     isComplete ? 'bg-green-500 text-black' :
                         'bg-white/10 text-white'
                     }`}>
@@ -42,7 +42,7 @@ export function GauntletStep({ num, title, status, detail }: GauntletStepProps) 
                     </p>
                     <p className="text-[10px] opacity-60 leading-tight mt-0.5">{detail}</p>
                 </div>
-                {isActive && <div className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-ping" />}
+                {isActive && <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-ping" />}
             </div>
         </div>
     );

@@ -202,7 +202,7 @@ export default function UnifiedAssetLibrary({
                 <button
                     onClick={() => setActiveCollection('referenceImages')}
                     className={`px-4 py-2 text-xs font-bold rounded-t-lg transition-all ${activeCollection === 'referenceImages'
-                            ? 'bg-purple-500/20 text-purple-400 border-b-2 border-purple-500'
+                            ? 'bg-green-500/20 text-green-400 border-b-2 border-green-500'
                             : 'text-gray-500 hover:text-gray-300'
                         }`}
                 >

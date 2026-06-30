@@ -140,7 +140,7 @@ export function RegistrationForm({ adapter, track, userId, onSubmitComplete }: R
           'w-full py-3 rounded-xl font-semibold text-sm transition-all duration-200',
           submitting
             ? 'bg-white/5 text-gray-500 cursor-not-allowed'
-            : 'bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-500/20'
+            : 'bg-green-600 hover:bg-green-500 text-white shadow-lg shadow-green-500/20'
         )}
       >
         {submitting ? (
@@ -178,7 +178,7 @@ function FormField({
   const baseInput = cn(
     'w-full bg-white/[0.04] border rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 outline-none transition-colors',
     highlight
-      ? 'border-purple-500/40 focus:border-purple-400'
+      ? 'border-green-500/40 focus:border-green-400'
       : 'border-white/[0.06] focus:border-white/20'
   );
 
@@ -186,7 +186,7 @@ function FormField({
     <div>
       <label className="block text-xs text-gray-400 mb-1.5 flex items-center gap-0.5">
         {field.label}
-        {field.required && <span className="text-purple-400 ml-0.5">*</span>}
+        {field.required && <span className="text-green-400 ml-0.5">*</span>}
         {field.helpText && <FieldTooltip text={field.helpText} />}
       </label>
 
@@ -195,12 +195,12 @@ function FormField({
           <button
             type="button"
             onClick={() => onChange(field.id, true)}
-            className={cn('px-4 py-1.5 rounded-lg text-sm border transition-colors', value === true ? 'bg-purple-600 border-purple-500 text-white' : 'border-white/10 text-gray-400 hover:border-white/20')}
+            className={cn('px-4 py-1.5 rounded-lg text-sm border transition-colors', value === true ? 'bg-green-600 border-green-500 text-white' : 'border-white/10 text-gray-400 hover:border-white/20')}
           >Yes</button>
           <button
             type="button"
             onClick={() => onChange(field.id, false)}
-            className={cn('px-4 py-1.5 rounded-lg text-sm border transition-colors', value === false ? 'bg-purple-600 border-purple-500 text-white' : 'border-white/10 text-gray-400 hover:border-white/20')}
+            className={cn('px-4 py-1.5 rounded-lg text-sm border transition-colors', value === false ? 'bg-green-600 border-green-500 text-white' : 'border-white/10 text-gray-400 hover:border-white/20')}
           >No</button>
         </div>
       ) : field.type === 'select' ? (

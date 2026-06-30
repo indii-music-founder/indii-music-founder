@@ -223,7 +223,7 @@ export default function GenerationMonitor() {
                     >
                         <div className="flex items-center justify-between px-1">
                             <div className="flex items-center gap-2">
-                                <LayoutGrid className="w-3.5 h-3.5 text-purple-400" />
+                                <LayoutGrid className="w-3.5 h-3.5 text-green-400" />
                                 <span className="text-[10px] font-bold uppercase tracking-widest text-[#8e8e93]">Recent Generates</span>
                             </div>
                             <span className="text-[10px] font-bold text-white/40">{generatedImages.length} items</span>
@@ -286,7 +286,7 @@ export default function GenerationMonitor() {
                                             initial={{ width: 0 }}
                                             animate={{ width: '100%' }}
                                             transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
-                                            className="h-full bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 shadow-[0_0_10px_rgba(59,130,246,0.4)]"
+                                            className="h-full bg-gradient-to-r from-blue-500 via-indigo-500 to-green-600 shadow-[0_0_10px_rgba(59,130,246,0.4)]"
                                         />
                                     </div>
                                     <div className="flex justify-between items-center text-[9px] font-bold text-white/20 uppercase tracking-widest">

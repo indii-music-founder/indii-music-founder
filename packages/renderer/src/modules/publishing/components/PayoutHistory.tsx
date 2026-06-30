@@ -132,7 +132,7 @@ export const PayoutHistory: React.FC<PayoutHistoryProps> = ({
 
             <div className="p-4 bg-gray-900/30 border-t border-gray-800 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                    <ArrowUpRight size={14} className="text-purple-500" />
+                    <ArrowUpRight size={14} className="text-green-500" />
                     <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Total Lifetime Earnings</span>
                 </div>
                 <span className="text-sm font-black text-white tracking-tighter">

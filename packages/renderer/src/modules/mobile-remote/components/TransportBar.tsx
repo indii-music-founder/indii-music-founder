@@ -155,7 +155,7 @@ export default function TransportBar({ track, onNext }: TransportBarProps) {
                                     initial={{ width: 0 }}
                                     animate={{ width: `${progress}%` }}
                                     transition={{ duration: 0.3, ease: "linear" }}
-                                    className="absolute inset-0 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 shadow-[0_0_15px_rgba(59,130,246,0.6)]"
+                                    className="absolute inset-0 bg-gradient-to-r from-blue-500 via-indigo-500 to-green-600 shadow-[0_0_15px_rgba(59,130,246,0.6)]"
                                 />
                             </div>
                             <div className="flex justify-between items-center px-1">
@@ -212,7 +212,7 @@ export default function TransportBar({ track, onNext }: TransportBarProps) {
 
             {/* Ambient Background Blur */}
             <div className="absolute -top-12 -left-12 w-32 h-32 bg-blue-500/10 blur-3xl pointer-events-none" />
-            <div className="absolute -bottom-12 -right-12 w-32 h-32 bg-purple-500/10 blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-12 -right-12 w-32 h-32 bg-green-500/10 blur-3xl pointer-events-none" />
         </motion.div>
     );
 }

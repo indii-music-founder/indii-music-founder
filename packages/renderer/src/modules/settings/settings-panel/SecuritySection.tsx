@@ -164,7 +164,7 @@ const SecuritySection: React.FC = () => {
                 </div>
 
                 {/* Data Export Premium Card */}
-                <div className="p-4 rounded-xl bg-linear-to-r from-indigo-500/10 to-purple-500/5 border border-indigo-500/20">
+                <div className="p-4 rounded-xl bg-linear-to-r from-indigo-500/10 to-green-500/5 border border-indigo-500/20">
                     <div className="flex items-start justify-between">
                         <div>
                             <h3 className="text-sm font-semibold text-indigo-300 flex items-center gap-2">
