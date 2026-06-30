@@ -124,9 +124,10 @@
 
   </head>
   <body>
-    <!-- Enforce Custom Domain -->
     <script>
-      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      // Allow enabling E2E mock via query parameters (e.g. ?e2e=true or ?mock=true)
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('e2e') === 'true' || params.get('mock') === 'true') {
         try {
           window.FIREBASE_E2E_MOCK = true;
           localStorage.setItem('FIREBASE_E2E_MOCK', 'true');

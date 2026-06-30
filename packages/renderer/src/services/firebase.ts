@@ -7,15 +7,24 @@ if (typeof window !== 'undefined' && import.meta.env.DEV) {
     const key = ['FIREBASE', 'APPCHECK', 'DEBUG', 'TOKEN'].join('_');
     const isElectronEnv = typeof (window as any).electronAPI !== 'undefined';
 
+    // Auto-prune stale E2E mock flags from persistent localStorage in local dev
+    if (import.meta.env.VITE_FIREBASE_E2E_MOCK !== 'true' && import.meta.env.VITE_E2E !== 'true') {
+        try {
+            localStorage.removeItem('FIREBASE_E2E_MOCK');
+        } catch (e) {
+            // ignore
+        }
+    }
+
+    // Use the registered debug token if available from env
+    const debugToken = import.meta.env.VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN;
+
     // For Electron, use a valid debug token format (Firebase SDK will recognize this in debug mode)
     // Web browsers can leave it as `true` to trigger automatic token generation
     if (typeof (window as any)[key] !== 'string') {
-        (window as unknown as Record<string, string | boolean>)[key] = isElectronEnv
-            ? 'debug-token-electron-local-dev'
-            : true;
-        (self as unknown as Record<string, string | boolean>)[key] = isElectronEnv
-            ? 'debug-token-electron-local-dev'
-            : true;
+        const val = debugToken || (isElectronEnv ? 'debug-token-electron-local-dev' : true);
+        (window as unknown as Record<string, string | boolean>)[key] = val;
+        (self as unknown as Record<string, string | boolean>)[key] = val;
     }
 }
 
@@ -393,16 +402,11 @@ if (typeof window !== 'undefined') {
 
     // Logic:
     // 1. Must have a key.
-    // 2. CRITICAL: Always skip App Check in Electron (DEV or PROD) because:
-    //    - ReCaptcha Enterprise requires a web origin (Electron is not a web origin)
-    //    - Electron has empty/missing Referer headers which Firebase blocks
-    //    - Firestore/Storage Security Rules enforce authorization without App Check
+    // 2. CRITICAL: Skip App Check in production Electron because ReCaptcha Enterprise 
+    //    requires a web origin, but allow it in DEV mode so we can use debug tokens.
     // 3. CRITICAL: In DEV mode with Functions emulator, skip App Check entirely to avoid Installations API blocking.
-    const skipAppCheckInElectron = isElectron;
-    const skipAppCheckInEmulator = env.DEV && (
-        env.VITE_USE_FUNCTIONS_EMULATOR === 'true' ||
-        isLocalhostDev
-    );
+    const skipAppCheckInElectron = isElectron && !env.DEV;
+    const skipAppCheckInEmulator = env.DEV && env.VITE_USE_FUNCTIONS_EMULATOR === 'true';
     const shouldInitAppCheck = !skipAppCheckInElectron && !skipAppCheckInEmulator && !!env.appCheckKey;
 
     if (skipAppCheckInElectron) {
