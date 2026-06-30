@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-30 13:47 EDT
+**Updated:** 2026-06-30 13:52 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+71fa591ba fix(ISSUE-565): close guard scope gap — import HarnessAgentBrief in FinanceCompiler + ActivityTimeValueCompiler
+caeff83af chore: session checkpoint [13:47]
 e40b59725 chore: session checkpoint [13:47]
 3fa3aab83 fix(ISSUE-565): durable static agent-ID guard + nail remaining offenders + workflow guardrails
 b2460dc11 chore: session checkpoint [13:36]
@@ -12,8 +14,6 @@ cd293dcc2 chore: session checkpoint [13:30]
 057895dd3 fix(ci): make Firebase Hosting releases idempotent + correct harness ledger
 483ed884a chore: session checkpoint [13:25]
 ddcf3a8f8 chore: session checkpoint [13:24]
-891dcb75c chore: session checkpoint [13:22]
-874d5b72a fix(ISSUE-565,572): remaining invalid agent IDs + stray debug log
 ```
 
 ## Working State
