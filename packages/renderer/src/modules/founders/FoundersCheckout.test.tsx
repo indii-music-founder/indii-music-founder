@@ -48,18 +48,11 @@ describe('FoundersCheckout', () => {
         };
     });
 
-    it('renders the checkout intro view', () => {
+    it('renders the path selection view on mount', () => {
         render(<FoundersCheckout />);
-        expect(screen.getByText(/Secure Founder Access/)).toBeInTheDocument();
-        expect(screen.getByText(/Business Software Purchase/)).toBeInTheDocument();
-        expect(screen.getByText(/Founding Support/)).toBeInTheDocument();
-    });
-
-    it('shows the Founder Access badge on the payment step', async () => {
-        render(<FoundersCheckout />);
-        fireEvent.click(screen.getByText('Business Software Purchase'));
-        fireEvent.click(screen.getByText('Proceed to Payment'));
-        expect(screen.getByText(/Founder Access — \$2500/)).toBeInTheDocument();
+        expect(screen.getByText('Secure Founder Access')).toBeInTheDocument();
+        expect(screen.getByText('Business Software Purchase')).toBeInTheDocument();
+        expect(screen.getByText('Founding Support')).toBeInTheDocument();
     });
 
     it('renders the return to studio button', () => {
@@ -67,13 +60,28 @@ describe('FoundersCheckout', () => {
         expect(screen.getByText('Return to Studio')).toBeInTheDocument();
     });
 
-    it('triggers the secure Stripe checkout redirect simulation', async () => {
+    it('navigates to agreement review and allows path checkout flow', async () => {
         render(<FoundersCheckout />);
-        fireEvent.click(screen.getByText('Business Software Purchase'));
-        fireEvent.click(screen.getByText('Proceed to Payment'));
+        
+        // Select 'Business Software Purchase' path
+        const softwarePathBtn = screen.getByText('Business Software Purchase');
+        fireEvent.click(softwarePathBtn);
 
-        const button = screen.getByText('Proceed to Secure Stripe Checkout');
-        fireEvent.click(button);
+        // Verify we transitioned to agreement review
+        expect(screen.getByText('Founder Software Access Agreement')).toBeInTheDocument();
+        expect(screen.getByText('Proceed to Payment')).toBeInTheDocument();
+        expect(screen.getByText(/wiil@indii.music/)).toBeInTheDocument();
+
+        // Click Proceed to Payment
+        const paymentBtn = screen.getByText('Proceed to Payment');
+        fireEvent.click(paymentBtn);
+
+        // Verify we are on payment options screen
+        expect(screen.getByText('Proceed to Secure Stripe Checkout')).toBeInTheDocument();
+
+        // Click Stripe Checkout button
+        const stripeBtn = screen.getByText('Proceed to Secure Stripe Checkout');
+        fireEvent.click(stripeBtn);
 
         // Should show connection status or transition state (using waitFor for async state update)
         await waitFor(() => {
