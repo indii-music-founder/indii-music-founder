@@ -131,6 +131,7 @@ const GrowthIntelligenceDashboard = lazyWithRetry(() => import('../modules/analy
 const DesktopDashboard = lazyWithRetry(() => import('../modules/desktop/DesktopDashboard'));
 const FoundersCheckout = lazyWithRetry(() => import('../modules/founders/FoundersCheckout'));
 const FoundersPortal = lazyWithRetry(() => import('../modules/founders/FoundersPortal'));
+const FoundersRecognition = lazyWithRetry(() => import('../modules/founders/FoundersRecognition'));
 const VideoPopout = lazyWithRetry(() => import('../modules/creative/video/editor/VideoPopout'));
 const RegistrationCenter = lazyWithRetry(() => import('../modules/registration/RegistrationCenter'));
 const SecurityDashboard = lazyWithRetry(() => import('../modules/security/SecurityDashboard'));
@@ -188,6 +189,7 @@ const MODULE_COMPONENTS: Partial<Record<ModuleId, React.LazyExoticComponent<Reac
     'desktop': DesktopDashboard,
     'founders-checkout': FoundersCheckout,
     'founders-portal': FoundersPortal,
+    'founders-recognition': FoundersRecognition,
     'video-popout': VideoPopout,
     'registration': RegistrationCenter,
     'security': SecurityDashboard,
