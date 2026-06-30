@@ -50,13 +50,16 @@ describe('FoundersCheckout', () => {
 
     it('renders the checkout intro view', () => {
         render(<FoundersCheckout />);
-        expect(screen.getByText(/Back The/)).toBeInTheDocument();
-        expect(screen.getByText(/Proceed to Secure Stripe Checkout/)).toBeInTheDocument();
+        expect(screen.getByText(/Secure Founder Access/)).toBeInTheDocument();
+        expect(screen.getByText(/Business Software Purchase/)).toBeInTheDocument();
+        expect(screen.getByText(/Founding Support/)).toBeInTheDocument();
     });
 
-    it('shows the Founders Round badge', () => {
+    it('shows the Founder Access badge on the payment step', async () => {
         render(<FoundersCheckout />);
-        expect(screen.getByText(/Founders Round — 4 Seats Left/)).toBeInTheDocument();
+        fireEvent.click(screen.getByText('Business Software Purchase'));
+        fireEvent.click(screen.getByText('Proceed to Payment'));
+        expect(screen.getByText(/Founder Access — \$2500/)).toBeInTheDocument();
     });
 
     it('renders the return to studio button', () => {
@@ -66,6 +69,9 @@ describe('FoundersCheckout', () => {
 
     it('triggers the secure Stripe checkout redirect simulation', async () => {
         render(<FoundersCheckout />);
+        fireEvent.click(screen.getByText('Business Software Purchase'));
+        fireEvent.click(screen.getByText('Proceed to Payment'));
+
         const button = screen.getByText('Proceed to Secure Stripe Checkout');
         fireEvent.click(button);
 
@@ -75,3 +81,4 @@ describe('FoundersCheckout', () => {
         });
     });
 });
+
