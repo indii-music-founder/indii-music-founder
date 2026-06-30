@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-29 20:14 EDT
+**Updated:** 2026-06-29 20:15 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+352bc82ec chore: session checkpoint [20:14]
 f2fe6477a feat(founders): add founders recognition page + sidebar link
 aff40f825 chore: session checkpoint [20:08]
 c9c588826 chore: session checkpoint [20:08]
@@ -13,7 +14,6 @@ c15706b47 chore: session checkpoint [19:57]
 7dd39f59d chore: session checkpoint [17:51]
 52233087b chore: session checkpoint [17:50]
 535bac370 chore: gitignore loose QA smoke screenshots in artifacts/
-cb9683537 chore: e2e mock plumbing, Detroit landing copy, audit doc + stress loop
 ```
 
 ## Working State
