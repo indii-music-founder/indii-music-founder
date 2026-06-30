@@ -103,6 +103,9 @@ self.addEventListener('notificationclick', (event: NotificationEvent) => {
             } else {
                 self.clients.openWindow('/');
             }
+        }).catch((err: unknown) => {
+            console.error('[ServiceWorker] Notification click handler failed:', err);
+            // Silently fail - user notification clicked but couldn't navigate
         })
     );
 });

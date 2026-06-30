@@ -341,8 +341,7 @@ export async function getFirebaseMessaging(): Promise<Messaging | null> {
     }
 }
 
-// Backwards-compat: eager reference (null until first async call)
-export const messaging = null as Messaging | null;
+// Use getFirebaseMessaging() function below instead of direct messaging export
 
 // Item 259: Initialize Firebase Performance Monitoring
 // Lazy-loaded to avoid adding to the critical path
