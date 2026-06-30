@@ -8351,7 +8351,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-CI-28404450526: CI Pipeline Failure (Deploy to Firebase Hosting)
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ DUPLICATE — same run ID as FIXED entry at L8328 (FoundersCheckout.test.tsx fix, 2026-06-29)
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
@@ -8360,7 +8360,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-CI-28397738613: CI Pipeline Failure (Deploy to Firebase Hosting)
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ DUPLICATE — same run ID as FIXED entry at L8336 (FoundersCheckout.test.tsx fix, 2026-06-29)
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
@@ -8574,3 +8574,19 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
 - **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/28442227172)
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
+
+---
+
+## /finish Sweep Findings (2026-06-30)
+
+### ISSUE-572: Stray Debug `console.log` in IngestionNotificationService Test
+
+- **Status:** ✅ FIXED (2026-06-30)
+- **Severity:** 🟢 LOW
+- **Module:** Distribution / DDEX
+- **Location:** `packages/renderer/src/services/distribution/proprietary-ingestion/IngestionNotificationService.test.ts:38`
+- **Details:** Line 38 contains `console.log('RESULT', result);` — a leftover debug statement in a unit test. While not production code, it pollutes test output and violates the Boy Scout Rule. The test file is otherwise clean and all assertions pass.
+- **Expected (acceptance):** The `console.log('RESULT', result);` line is removed from the test file. Test still passes (`npm test -- --run IngestionNotificationService`).
+- **Honest fallback:** N/A — trivial deletion.
+- **DO NOT:** Remove any actual assertions or test logic; only remove the debug log statement.
+- **Fix:** Removed the debug `console.log` statement. All 8 tests in the file pass (Vitest 4.1.8).
