@@ -145,6 +145,11 @@ test.describe('Live coordinated agent daisy chain', () => {
     const campaignsTab = page.getByRole('button', { name: 'Campaigns' });
     await expect(campaignsTab).toBeVisible({ timeout: 10_000 });
     await campaignsTab.click();
+
+    // Wait for campaigns tab content to mount and show the refresh button
+    const refreshBtn = page.getByRole('button', { name: 'Refresh campaigns' });
+    await expect(refreshBtn).toBeVisible({ timeout: 10_000 });
+
     await page.evaluate((campaign) => {
       window.dispatchEvent(new CustomEvent('TEST_INJECT_AGENT_CAMPAIGNS', { detail: { campaigns: [campaign] } }));
     }, scenario.campaign);
