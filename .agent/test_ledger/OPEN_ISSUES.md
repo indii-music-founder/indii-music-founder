@@ -8308,3 +8308,11 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
   5. Commit message: `chore(e2e): untrack live-agent-daisy-chain run artifacts (stop checkpoint churn)`
 - **Why / future reference:** Recorded in agent memory `daisy-chain-artifacts-untracked.md`. If any doc, CI step, or demo later expects these files to exist in the repo, this is why they're absent — they're now gitignored generated output, NOT deleted. Regenerate by running the daisy-chain E2E spec.
 - **DO NOT:** delete the files from disk; touch app source; remove the `artifacts/*.png` ignore rule.
+
+### ISSUE-CI-28416944707: CI Pipeline Failure (Deploy to Firebase Hosting)
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** CI/CD
+- **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
+- **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/28416944707)
+- **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
