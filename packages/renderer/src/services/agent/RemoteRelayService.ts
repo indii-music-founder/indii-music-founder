@@ -269,6 +269,9 @@ class RemoteRelayService {
     private wsRetryCount = 0;
 
     constructor() {
+        if (typeof process !== 'undefined' && process.env.VITEST) {
+            return;
+        }
         if (typeof window !== 'undefined' && typeof WebSocket !== 'undefined') {
             const isLocalServer = window.location.port === '3333' || isPrivateIP(window.location.hostname);
             if (isLocalServer) {
