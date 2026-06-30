@@ -123,6 +123,51 @@ export default function Home({ founder = true }: { founder?: boolean }) {
     window.location.href = href;
   };
 
+  // Inject schema.org JSON-LD for SEO + accessibility
+  useEffect(() => {
+    const schemaScript = document.createElement('script');
+    schemaScript.type = 'application/ld+json';
+    schemaScript.textContent = JSON.stringify({
+      '@context': 'https://schema.org',
+      '@graph': [
+        {
+          '@type': 'Organization',
+          '@id': 'https://indii.music/#organization',
+          'name': 'indii',
+          'url': 'https://indii.music',
+          'logo': 'https://indii.music/logo.png',
+          'description': 'The operating system for your musical independence. A platform for independent music artists.',
+        },
+        {
+          '@type': 'WebSite',
+          '@id': 'https://founder.indii.music/#website',
+          'url': 'https://founder.indii.music',
+          'name': 'indii Founder Access',
+          'description': 'Lifetime full-platform access including Boardroom, all founder-level features, and permanent recognition.',
+          'publisher': { '@id': 'https://indii.music/#organization' }
+        },
+        {
+          '@type': 'Product',
+          '@id': 'https://founder.indii.music/#product',
+          'name': 'Founder Access',
+          'description': 'Lifetime full-platform access to indii including Boardroom collaboration, all founder-level modules, beta features, and permanent founder recognition.',
+          'price': '2500',
+          'priceCurrency': 'USD',
+          'offers': {
+            '@type': 'Offer',
+            'url': 'https://founder.indii.music',
+            'price': '2500',
+            'priceCurrency': 'USD',
+            'availability': 'https://schema.org/InStock',
+            'seller': { '@id': 'https://indii.music/#organization' }
+          }
+        }
+      ]
+    });
+    document.head.appendChild(schemaScript);
+    return () => schemaScript.remove();
+  }, []);
+
   const handleFounderInterestClick = async (location: string) => {
     await trackFounderFunnelEvent('founder_interest_clicked', {
       location,
@@ -145,20 +190,20 @@ export default function Home({ founder = true }: { founder?: boolean }) {
       </div>
 
       {/* ═══════════════ 2. NAVIGATION ═══════════════ */}
-      <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 md:px-8 py-4 md:py-5 bg-[#030303]/60 backdrop-blur-3xl border-b border-white/[0.04]">
-        <div className="flex items-center gap-3 group cursor-pointer">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-gray-800 to-black border border-white/10 flex items-center justify-center shadow-[0_0_15px_rgba(245,158,11,0.1)] group-hover:shadow-[0_0_20px_rgba(245,158,11,0.3)] transition-shadow duration-500">
+      <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 md:px-8 py-4 md:py-5 bg-[#030303]/60 backdrop-blur-3xl border-b border-white/[0.04]" role="navigation" aria-label="Main navigation">
+        <a href="#home" className="flex items-center gap-3 group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 rounded-lg" aria-label="indii.music home">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-gray-800 to-black border border-white/10 flex items-center justify-center shadow-[0_0_15px_rgba(245,158,11,0.1)] group-hover:shadow-[0_0_20px_rgba(245,158,11,0.3)] transition-shadow duration-500" aria-hidden="true">
             <span className="text-amber-500 font-black text-[10px] tracking-tighter">indii</span>
           </div>
           <span className="font-bold tracking-tight text-white/90 group-hover:text-amber-400 transition-colors duration-500">indii.music</span>
-        </div>
+        </a>
 
         <div className="flex items-center gap-8">
           <div className="hidden md:flex items-center gap-8 bg-white/[0.02] border border-white/5 rounded-full px-6 py-2 backdrop-blur-md shadow-xl">
-            <a href="#capabilities" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">Agents</a>
-            <a href="#conductor" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">Conductor</a>
-            {founder && <button onClick={() => setIsThesisOpen(true)} className="text-sm font-medium text-gray-400 hover:text-white transition-colors">The Thesis</button>}
-            {founder && <a href="#invest" className="text-sm font-bold text-amber-500 hover:text-amber-400 transition-colors">Founder Access</a>}
+            <a href="#capabilities" className="text-sm font-medium text-gray-400 hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 rounded px-2 py-1" aria-label="View agents and capabilities">Agents</a>
+            <a href="#conductor" className="text-sm font-medium text-gray-400 hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 rounded px-2 py-1" aria-label="Learn about the Conductor">Conductor</a>
+            {founder && <button onClick={() => setIsThesisOpen(true)} className="text-sm font-medium text-gray-400 hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 rounded px-2 py-1" aria-label="Open the thesis modal">The Thesis</button>}
+            {founder && <a href="#invest" className="text-sm font-bold text-amber-500 hover:text-amber-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 rounded px-2 py-1" aria-label="Founder Access - $2,500 lifetime platform access">Founder Access</a>}
           </div>
           <a
             href={getStudioUrl()}
@@ -166,13 +211,14 @@ export default function Home({ founder = true }: { founder?: boolean }) {
               e.preventDefault();
               void handleFounderPreviewClick('nav', getStudioUrl());
             }}
-            className="group relative inline-flex items-center justify-center gap-2 px-4 md:px-6 py-2.5 text-xs md:text-sm font-bold text-black bg-white rounded-full overflow-hidden transition-all hover:scale-105 active:scale-95"
+            className="group relative inline-flex items-center justify-center gap-2 px-4 md:px-6 py-2.5 text-xs md:text-sm font-bold text-black bg-white rounded-full overflow-hidden transition-all hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
+            aria-label={loading ? 'Verifying access...' : user ? 'Resume your session' : (founder ? 'Launch Founder Preview - explore the platform' : 'Launch Studio')}
           >
             <div className="absolute inset-0 bg-gradient-to-r from-amber-400 to-amber-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             <span className="relative z-10 transition-colors group-hover:text-white">
               {loading ? 'Verifying...' : user ? 'Resume Session' : (founder ? 'Launch Founder Preview' : 'Launch Studio')}
             </span>
-            <ArrowRight size={14} className="relative z-10 transition-transform group-hover:translate-x-1 group-hover:text-white" />
+            <ArrowRight size={14} className="relative z-10 transition-transform group-hover:translate-x-1 group-hover:text-white" aria-hidden="true" />
           </a>
         </div>
       </nav>
@@ -181,21 +227,24 @@ export default function Home({ founder = true }: { founder?: boolean }) {
       <motion.section
         style={{ scale: heroScale, opacity: heroOpacity, y: heroTranslateY }}
         className="relative z-10 flex flex-col items-center justify-center w-full max-w-5xl px-4 min-h-[100vh] pt-20 pb-0 text-center"
+        role="banner"
+        aria-label="Hero section - The operating system for your musical independence"
       >
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
           className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[9px] md:text-[11px] font-bold tracking-[0.2em] shadow-[0_0_20px_rgba(245,158,11,0.15)] uppercase mb-8 backdrop-blur-md text-center"
+          aria-label="Key value propositions: A team of 21 specialists providing musical independence and complete ownership"
         >
-          <span className="relative flex h-2 w-2">
+          <span className="relative flex h-2 w-2" aria-hidden="true">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
             <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500" />
           </span>
           A Team of 21 Specialists • Musical Independence • Complete Ownership
         </motion.div>
 
-        <h1 className="text-5xl md:text-7xl lg:text-[5.5rem] font-black tracking-tighter text-white leading-[1.05] md:leading-[0.9] drop-shadow-2xl flex flex-wrap justify-center max-w-6xl">
+        <h1 className="text-5xl md:text-7xl lg:text-[5.5rem] font-black tracking-tighter text-white leading-[1.05] md:leading-[0.9] drop-shadow-2xl flex flex-wrap justify-center max-w-6xl" id="home">
           {words.map((word, i) => (
             <motion.span
               initial={{ opacity: 0, y: 20, filter: 'blur(10px)' }}
