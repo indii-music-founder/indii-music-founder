@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-30 08:15 EDT
+**Updated:** 2026-06-30 08:17 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+b4d0f44fd chore(flowchart): update section header to pass CI validation
+0760ac4a4 chore: session checkpoint [08:15]
 5ed5859c9 chore: session checkpoint [08:15]
 c36cb6d13 chore: session checkpoint [08:14]
 57fa17e87 feat(perf): split auth bundle from app shell (ISSUE-549, ISSUE-564)
@@ -12,8 +14,6 @@ e79b039a0 feat(perf): slim App.tsx router and simplify modulePreload filters (IS
 875153476 chore: save handoff state
 49b089064 chore(perf): untrack E2E daisy chain runtime artifacts (ISSUE-564)
 cbbf9510e chore: session checkpoint [07:51]
-3d32685a3 chore: add auth-split architecture flowchart and sync ledger
-de2a62a8b chore: session checkpoint [07:49]
 ```
 
 ## Working State
