@@ -1,9 +1,12 @@
 # Handoff State
-**Updated:** 2026-06-30 13:01 EDT
+**Updated:** 2026-06-30 13:06 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+a2f8d75fb refactor(creative): add error handling to URL resolution in canvas
+b90f21a75 feat(patterns): add Firebase service guards to prevent undefined errors
+ec943b199 chore: session checkpoint [13:01]
 50d38eeae fix(patterns): remove dead messaging export + add error handling to service-worker
 1487bdd76 chore: session checkpoint [12:58]
 bfd488ea5 refactor(creative): add granular error handling to image/video generation
@@ -11,9 +14,6 @@ bfd488ea5 refactor(creative): add granular error handling to image/video generat
 8c9c375cd chore: session checkpoint [12:53]
 39e2590f2 feat(workflow): add pattern health checkpoint to /middle workflow
 460b2e0a2 chore: session checkpoint [12:52]
-c17cad782 chore: session checkpoint [12:52]
-cb2581908 feat(workflow): integrate pattern health checks into session lifecycle
-a448f09e1 chore: session checkpoint [12:46]
 ```
 
 ## Working State
