@@ -114,8 +114,6 @@ try {
     logger.error('[Firebase] Failed to initialize core services (likely missing config):', e);
 }
 
-export { db, storage, functions, functionsWest1 };
-
 import { Auth, User } from 'firebase/auth';
 let rawAuth: Auth;
 if (isFirebaseE2EMockEnabled()) {
@@ -283,6 +281,9 @@ try {
 } catch (e) {
     logger.error('[Firebase] Failed to initialize Functions:', e);
 }
+
+// Export after functions initialization
+export { db, storage, functions, functionsWest1 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let remoteConfig: any = null;
