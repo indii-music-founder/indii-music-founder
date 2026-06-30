@@ -141,7 +141,9 @@ export function buildAgentBriefs(strategy: ReleaseStrategy, distribution: Distri
       inputs: [`Strategy score: ${strategy.score}`],
     },
     {
-      agentId: 'timeline',
+      // Release-plan/milestone orchestration is owned by the Conductor hub —
+      // there is no standalone 'timeline' agent.
+      agentId: 'generalist',
       brief: 'Convert the harness timeline into a draft release plan with gated milestones.',
       inputs: strategy.nextTasks,
     },

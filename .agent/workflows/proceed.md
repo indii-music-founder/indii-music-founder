@@ -19,6 +19,7 @@ Perform a rigorous automated scan against our core development constraints:
 - **Model Policy Verification:** Ensure imports map to standard model constants (`AI_MODELS`) and that no banned models are configured or used.
 - **Security Check:** Scan local diffs for OpenAI secrets (`sk-`), Google API keys (`AIza`), or Github tokens (`ghp_`). Proactively quarantine them if found.
 - **Styling Consistency:** Verify that new styling changes follow Vanilla CSS patterns and do not inject ad-hoc utility frameworks unless explicitly approved.
+- **Test-Impact Check (the pre-commit gap):** Pre-commit runs lint + typecheck + security only — NOT the unit suite. If the diff renames or re-values any symbol referenced elsewhere by string/literal (agent ids, domain strings, status/enum unions), run the affected `npm test -- --run <files>` before continuing — a rename can pass typecheck and still break test assertions or routing. For an easily-mistyped class of literal, prefer a static guard test that scans all source so the entire class is caught at once.
 
 ## 3. Gap Filling Analysis
 - **Identify gaps:** Compare the original goals of the prompt or PRD vs what is currently represented in the codebase and task tracking.
