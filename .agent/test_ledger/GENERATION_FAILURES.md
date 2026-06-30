@@ -36,6 +36,26 @@
 
 ---
 
+## Codebase Pattern Audit (2026-06-30)
+
+Comprehensive scan found **7 major patterns** that cause silent failures:
+
+| Pattern | Count | Risk Level | Examples |
+|---------|-------|-----------|----------|
+| Module export order bugs | 4 | 🔴 Critical | `messaging`, `functions`, `identifyPlatform` |
+| Base64/imageBytes sent to APIs | 15+ | 🔴 Critical | Whisk media in video generation |
+| Unvalidated httpsCallable payloads | 46 | 🔴 Critical | generateImageV3, renderVideo, etc. |
+| Unprotected async/await | 49+ | 🟠 High | Missing try-catch in useDirectGeneration |
+| Firebase import tight coupling | 21 | 🟠 High | Direct Firebase imports in 21 modules |
+| Async error chains broken | 15+ | 🟠 High | .then() without .catch() |
+| String enum validation missing | 10+ | 🟡 Medium | model, aspectRatio, resolution comparisons |
+
+**New test suites created to catch these:**
+- `e2e/service-initialization.integration.test.ts` — 5 tests for module init order
+- `e2e/payload-validation.integration.test.ts` — 7 tests for API payloads
+- `e2e/async-error-handling.integration.test.ts` — 8 tests for error safety
+- `scripts/detect-hidden-bugs.sh` — Weekly pattern scanner
+
 ## Pattern Analysis
 
 ### Anti-Pattern #1: Mock Tests Miss Backend Contracts
