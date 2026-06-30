@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-30 13:20 EDT
+**Updated:** 2026-06-30 13:22 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+874d5b72a fix(ISSUE-565,572): remaining invalid agent IDs + stray debug log
+80417a6a7 chore: session checkpoint [13:20]
 2cd4c8b89 chore: session checkpoint [13:16]
 5ff7f769d chore: session checkpoint [13:16]
 be31b1ed6 fix(workflow): add mandatory commit & push step to /end
@@ -12,18 +14,11 @@ c04049d0d chore: session checkpoint [13:15]
 261efe3c6 chore: session checkpoint [13:09]
 98c515ac2 fix(creative): convert whisk base64 to gs:// URIs in VideoWorkflow
 b5176a617 chore: session checkpoint [13:06]
-a2f8d75fb refactor(creative): add error handling to URL resolution in canvas
-b90f21a75 feat(patterns): add Firebase service guards to prevent undefined errors
 ```
 
 ## Working State
 ```
- M .agent/test_ledger/OPEN_ISSUES.md
- M .agent/test_ledger/UNFINISHED_WORK.md
- M packages/renderer/src/services/distribution/proprietary-ingestion/IngestionNotificationService.test.ts
- M packages/renderer/src/services/finance/GearAssetCompiler.ts
- M packages/renderer/src/services/finance/RoyaltyRevenueCompiler.ts
- M packages/renderer/src/services/marketing/crm/FanCrmCompiler.ts
+clean working tree
 ```
 
 ## Decisions
