@@ -396,17 +396,20 @@ if (typeof window !== 'undefined') {
     }
 
     // Initialize App Check if we have a valid key
-    // SKIP in Electron unless running in DEV debug mode (ReCaptcha Enterprise requires web origin)
-    // ALLOW in DEV if key is present to trigger the Firebase SDK's local debug token logging
     const isElectron = !!window.electronAPI;
 
     // Logic:
     // 1. Must have a key.
-    // 2. CRITICAL: Skip App Check in production Electron because ReCaptcha Enterprise 
-    //    requires a web origin, but allow it in DEV mode so we can use debug tokens.
+    // 2. CRITICAL: Always skip App Check in Electron (DEV or PROD) because:
+    //    - ReCaptcha Enterprise requires a web origin (Electron is not a web origin)
+    //    - Electron has empty/missing Referer headers which Firebase blocks
+    //    - Firestore/Storage Security Rules enforce authorization without App Check
     // 3. CRITICAL: In DEV mode with Functions emulator, skip App Check entirely to avoid Installations API blocking.
-    const skipAppCheckInElectron = isElectron && !env.DEV;
-    const skipAppCheckInEmulator = env.DEV && env.VITE_USE_FUNCTIONS_EMULATOR === 'true';
+    const skipAppCheckInElectron = isElectron;
+    const skipAppCheckInEmulator = env.DEV && (
+        env.VITE_USE_FUNCTIONS_EMULATOR === 'true' ||
+        isLocalhostDev
+    );
     const shouldInitAppCheck = !skipAppCheckInElectron && !skipAppCheckInEmulator && !!env.appCheckKey;
 
     if (skipAppCheckInElectron) {
