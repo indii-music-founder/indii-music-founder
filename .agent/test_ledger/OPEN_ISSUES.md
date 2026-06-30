@@ -7994,14 +7994,78 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 ---
 
 ### ISSUE-549: Auth Bundle Size Reduction — Lazy-Load Heavy Modules Post-Login
-- **Status:** ✅ FIXED (2026-06-29)
+- **Status:** ⚠️ REOPENED (2026-06-30) — prior "fix" was cosmetic, acceptance NOT met
 - **Severity:** 🟡 MEDIUM
 - **Source:** Codex/2026-06-29 Issue #31
-- **Location:** `packages/renderer/src/core/App.tsx` + Vite config
-- **Summary:** Main app JS is ~6.2 MB uncompressed / ~1.38 MB gzip. Auth page preloads heavy chunks. Tasks: split auth surface from authenticated app shell, lazy-load heavy modules after login, lazy-load Three.js, Recharts, PDF.js, video systems, agent systems, analytics where possible, avoid modulepreloading non-auth chunks on login screen.
-- **Expected (acceptance):** Auth route loads only auth-critical code. Founder preview entry feels fast on mobile. Heavy modules load when walkthrough/dashboard needs them.
+- **Location:** `packages/renderer/src/core/App.tsx`, `packages/renderer/src/main.tsx`, `packages/renderer/vite.config.ts`, `electron.vite.config.ts`
+- **Summary:** Main app JS is ~6.2 MB uncompressed / ~1.38 MB gzip. Auth page downloads the whole authenticated shell. Tasks: split auth surface from authenticated app shell, lazy-load heavy modules after login (Three.js, Recharts, PDF.js, video, agent systems, analytics), avoid modulepreloading non-auth chunks on the login screen.
+- **Expected (acceptance):** Auth route loads ONLY auth-critical code (react + firebase + ui + i18n + login). Founder preview entry feels fast on mobile. Heavy vendors load only after login.
 - **Honest fallback:** N/A — code splitting / dynamic import change.
-- **Fix:** Lazy-loaded the BoardroomModule and TransmissionMonitor components in App.tsx and wrapped them in Suspense boundaries, ensuring that heavy workspace modules and their sub-components are only evaluated and loaded once the user successfully logs into the application.
+- **Why reopened:** The 2026-06-29 "fix" only lazy-loaded `BoardroomModule` + `TransmissionMonitor` (`App.tsx:143-144`). Those are post-auth modules already — the change does nothing for the login screen. `main.tsx:19` eagerly imports `App`, and `App.tsx` statically imports ~60 authenticated-shell modules at the top, so the unauthenticated login route still downloads the entire app. Acceptance not met.
+- **Verified safety fact (do not re-derive):** Providers `MotionConfig / ResponsiveLayoutProvider / VoiceProvider / ThemeProvider / ToastProvider` already wrap ONLY the authenticated branch (`App.tsx:529-545`). `LoginForm` renders WITHOUT them today. Moving them into the new shell is behavior-preserving — do NOT add providers around `LoginForm`.
+
+- **Fix Direction (full spec — code only, follow exactly):**
+
+  **Step 1 — create `packages/renderer/src/core/AppShell.tsx`.** Cut (not copy) the following OUT of `App.tsx` INTO `AppShell.tsx`:
+  - `lazyWithRetry` helper + its `importWithRetry` import + the `@typescript-eslint/no-explicit-any` disable above it (`App.tsx:88-94`).
+  - ALL lazy module consts (`App.tsx:95-144`) — `CreativeStudio` … `BoardroomModule` … `TransmissionMonitor`.
+  - `ModuleProps` interface + `MODULE_COMPONENTS` record (`App.tsx:150-200`).
+  - `DevPortWarning` (`App.tsx:209-220`).
+  - `COMMERCIAL_MODULES` + `useOnboardingRedirect` (`App.tsx:226-298`).
+  - `GuestGate`, `UpgradeGate`, `ModuleRenderer` (`App.tsx:315-420`).
+  - `AppContent` (`App.tsx:556-693`).
+
+  Make `AppShell` self-contained so `App.tsx` renders `<AppShell />` with NO props. Move the authenticated-only hooks/derivations currently inside `App()` into `AppShell`:
+  - `useGlobalShortcutsModal`, `useRemoteCommandListener`, `useConnectivityMonitor`, `useAutoSleep`, `useMediaQuery('(min-width: 768px)')`, `useMobile`, the `isAnyPhone` auto-route effect (`App.tsx:511-518`), and the `showChrome` / `activeModule` / `activeShowChrome` derivations.
+  - The `AppShell` default export wraps `AppContent` in the exact provider stack from `App.tsx:529-545`: `MotionConfig reducedMotion="user"` → `ResponsiveLayoutProvider` → `VoiceProvider` → `ThemeProvider` → `ToastProvider` → `AppContent`. It reads `currentModule` from the store internally (replacing the props it used to receive).
+
+  Move the matching imports from `App.tsx` top into `AppShell.tsx` (everything used only by moved code): `Sidebar, RightPanel, MotionConfig, VoiceProvider, ThemeProvider, ToastProvider, ResponsiveLayoutProvider, ModuleErrorBoundary, ModuleAmbientBackground, MobileTabBar, MobileHeader, ApprovalModal, CostWarningModal, ApprovalManager, BiometricGate, PWAInstallPrompt, ShareTargetHandler, useRemoteCommandListener, useConnectivityMonitor, useAutoSleep, GlobalKeyboardShortcuts, useGlobalShortcutsModal, UnifiedCommandMenu, GlobalDropZone, UploadQueueMonitor, BackgroundJobMonitor, AudioPIPPlayer, UpdaterMonitor, CookieConsentBanner, FirstRunTour, BusinessActivityTracker, AgentFeedbackWidget, TaskPlanWidget, AgentCanvasPanel, ChatOverlay, useSubscription, useMediaQuery, useMobile, getGatedModuleIds, GatedModuleFallback, SubscriptionTier, type Subscription/UsageStats, ConfirmDialog, AlertDialog, PromptDialog, WalletConnectDialog, importWithRetry` plus the React/router/store primitives those need (`lazy, Suspense, useEffect, useMemo, useShallow, useStore, useLocation, STANDALONE_MODULES, ModuleId, env, LoadingFallback`).
+
+  **Step 2 — slim `App.tsx`.**
+  - Add: `const AppShell = lazy(() => importWithRetry(() => import('./AppShell')));` (keep the `importWithRetry` import in `App.tsx`).
+  - KEEP in `App.tsx`: `AppInitializationProvider, LoginForm, PrivacyPolicy/TermsOfService (LegalPages), LoadingFallback, useURLSync, useLocation, useStore, useShallow, useEffect, useMemo, env, cleanupLocalStorage, flushFounderFunnelQueue, initSentry/setSentryUser/clearSentryUser, i18n import`. Keep `PublicLegalPage` + `UnauthenticatedApp` here (both light).
+  - REMOVE from `App()` the authenticated-only hooks moved to `AppShell`. Keep only: the `cleanupLocalStorage` / `flushFounderFunnelQueue` effects, the `publicLegalPage` memo, and `useURLSync({ disabled: !!publicLegalPage })`.
+  - New `App()` return:
+    ```tsx
+    return (
+      <AppInitializationProvider>
+        {publicLegalPage ? (
+          <PublicLegalPage type={publicLegalPage} />
+        ) : authLoading ? (
+          <LoadingFallback />
+        ) : !user ? (
+          <UnauthenticatedApp />
+        ) : (
+          <Suspense fallback={<LoadingFallback />}>
+            <AppShell />
+          </Suspense>
+        )}
+      </AppInitializationProvider>
+    );
+    ```
+  - Delete every now-unused heavy import from the `App.tsx` top. Do NOT silence with `// eslint-disable` — physically remove them.
+
+  **Step 3 — modulePreload hardening (BOTH configs).** Add to the `build:` block in BOTH `packages/renderer/vite.config.ts` and `electron.vite.config.ts`:
+    ```ts
+    modulePreload: {
+      resolveDependencies: (_file: string, deps: string[]) =>
+        deps.filter(d => !/vendor-(three|fabric|audio|recharts|video|pdfjs|tesseract|reactflow|yjs|remotion)/.test(d)),
+    },
+    ```
+
+  **Step 4 — verify (ALL must pass before claiming fixed):**
+  1. `npm run typecheck` → clean.
+  2. `npm run lint` → clean (no new disables).
+  3. `npm run build:studio` → succeeds.
+  4. Confirm split: in `dist/renderer`, the entry/index + login chunks must NOT pull `vendor-three|fabric|audio|recharts|video|pdfjs|tesseract|reactflow|yjs|remotion`. Inspect generated `index.html` `modulepreload` links — none of those vendors may appear.
+  5. `npm test -- --run` for App / login / founder specs → green.
+  6. Record before/after gzip of what loads on unauthenticated `/` (before ≈ 1.38 MB gzip). Write the numbers into this entry's `Fix` line.
+
+- **Guardrails:**
+  - `AppShell.tsx` must NOT import `App.tsx` (circular). Shared consts already live in `core/constants.ts`.
+  - Do NOT wrap `LoginForm` / `UnauthenticatedApp` in Theme/Toast/Voice. First verify: `grep -rn "useTheme\|useToast\|useVoice" packages/renderer/src/core/components/auth/LoginForm.tsx`. Only if a hit appears, wrap ONLY that single minimal provider in `App.tsx` — never the heavy stack.
+  - Keep `useURLSync` in `App.tsx` (deep-link / login routing must work pre-auth).
+- **DO NOT:** mark FIXED until Step 4 items 1–6 all pass and the before/after gzip numbers are recorded here.
 
 ---
 
@@ -8210,3 +8274,37 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
 - **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/28397738613)
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
+
+---
+
+### ISSUE-564: Untrack `live-agent-daisy-chain` E2E Run Artifacts (Stop Checkpoint Churn)
+- **Status:** ⏳ OPEN
+- **Severity:** 🟢 LOW
+- **Module:** Repo hygiene / E2E
+- **Location:** `artifacts/live-agent-daisy-chain/`, `.gitignore`
+- **Summary:** The files under `artifacts/live-agent-daisy-chain/` (`coordination-report.html`, `latest.json`, `campaign.json`, `neon-altar-cover.svg`, `neon-altar-vertical-teaser.svg`, `press-release.md`) are run output written at runtime by `e2e/live-agent-daisy-chain.spec.ts` (≈ lines 122 and 339). They are currently TRACKED in git (`.gitignore:54-55` even carries a "keep tracked subdirs like artifacts/live-agent-daisy-chain/" note — only `artifacts/*.png` is ignored). Every local E2E run rewrites them → dirty working tree → Stop-hook checkpoint commits churn them on every session. This is the checkpoint/"unpushed" treadmill.
+- **Decision (William, 2026-06-30):** Option B — stop tracking them. Kills the treadmill. Accepted cost: lose the committed "last good run" snapshot.
+- **Expected (acceptance):** `git status` stays clean after running the daisy-chain E2E spec. Files still written to disk locally; nothing references them as committed artifacts.
+- **Honest fallback:** N/A — git/ignore hygiene only. No app code changes.
+- **Fix Direction (code only, follow exactly):**
+  1. Untrack the directory, keep files on disk:
+     ```bash
+     git rm -r --cached artifacts/live-agent-daisy-chain/
+     ```
+  2. In `.gitignore`, REPLACE the existing lines 54-55 (`# Loose QA smoke/verify screenshots ... keep tracked subdirs like artifacts/live-agent-daisy-chain/` and the `artifacts/*.png` rule's surrounding comment) so the comment no longer says "keep tracked," then add:
+     ```
+     # live-agent-daisy-chain E2E run output — regenerated every run; untracked
+     # 2026-06-30 (ISSUE-564) to stop Stop-hook checkpoint churn. Files still
+     # written on disk by e2e/live-agent-daisy-chain.spec.ts.
+     artifacts/live-agent-daisy-chain/
+     ```
+     (Keep the `artifacts/*.png` ignore rule itself intact — only fix the misleading "keep tracked" wording.)
+  3. Verify nothing depends on these being committed:
+     ```bash
+     grep -rn "artifacts/live-agent-daisy-chain" --include=*.md --include=*.yml --include=*.yaml --include=*.ts . | grep -v "live-agent-daisy-chain.spec.ts"
+     ```
+     Any hit in docs/CI → note it in this entry, do NOT break it.
+  4. Confirm clean: `git status --short` shows the deletions staged and no `artifacts/live-agent-daisy-chain/*` as untracked-but-pending.
+  5. Commit message: `chore(e2e): untrack live-agent-daisy-chain run artifacts (stop checkpoint churn)`
+- **Why / future reference:** Recorded in agent memory `daisy-chain-artifacts-untracked.md`. If any doc, CI step, or demo later expects these files to exist in the repo, this is why they're absent — they're now gitignored generated output, NOT deleted. Regenerate by running the daisy-chain E2E spec.
+- **DO NOT:** delete the files from disk; touch app source; remove the `artifacts/*.png` ignore rule.
