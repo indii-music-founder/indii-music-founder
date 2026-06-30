@@ -7,7 +7,8 @@ import {
   HarnessCostLine,
   HarnessDomain,
   HarnessScore,
-  HarnessInputRef
+  HarnessInputRef,
+  HarnessAgentBrief
 } from '@indii/shared';
 
 export interface ActivityTimeValueInput {
