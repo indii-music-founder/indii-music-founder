@@ -76,6 +76,10 @@ export interface OrgRegistrationRecord {
   formSnapshot?: Record<string, unknown>;  // what was submitted
   errorMessage?: string;
   lastUpdated: Date;
+  // ISSUE-567: Approval freshness tracking
+  approvalRunId?: string;                    // HarnessRun ID that was approved
+  approvalPassportHash?: string;             // SHA-256 of Song Passport at approval time
+  approvalGrantedAt?: Date;                  // when user approved this filing
 }
 
 // Per-track aggregated registration state
