@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-30 08:17 EDT
+**Updated:** 2026-06-30 08:18 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+3295d435b chore: session checkpoint [08:17]
 482b6059c chore: session checkpoint [08:17]
 b4d0f44fd chore(flowchart): update section header to pass CI validation
 0760ac4a4 chore: session checkpoint [08:15]
@@ -13,7 +14,6 @@ c36cb6d13 chore: session checkpoint [08:14]
 e79b039a0 feat(perf): slim App.tsx router and simplify modulePreload filters (ISSUE-549 §2, §3)
 723272f2c test(ledger): log ISSUE-CI pipeline failures
 875153476 chore: save handoff state
-49b089064 chore(perf): untrack E2E daisy chain runtime artifacts (ISSUE-564)
 ```
 
 ## Working State
