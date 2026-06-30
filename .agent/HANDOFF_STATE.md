@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-30 10:14 EDT
+**Updated:** 2026-06-30 10:16 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+3afe7dd98 feat(ISSUE-571): readiness gates block workflow state advancement
+cf1e20b3b chore: session checkpoint [10:14]
 85a286c26 feat(ISSUE-569): harness-aware prompts with version stamping
 5f506f7cd chore: session checkpoint [10:12]
 bd7860c56 feat(ISSUE-567): approval freshness via Song Passport hash
@@ -12,8 +14,6 @@ c523f87e3 chore: session checkpoint [09:56]
 1dfb5de42 chore: session checkpoint [09:53]
 c8e4cd3ad fix(ISSUE-565,568): agent-ID integrity + rights agent
 7cdf8b453 chore: session checkpoint [09:45]
-67f3a7710 chore: session checkpoint [09:42]
-d997851d2 chore: session checkpoint [09:39]
 ```
 
 ## Working State
