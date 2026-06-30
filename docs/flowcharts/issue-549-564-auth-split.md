@@ -37,7 +37,7 @@ flowchart LR
     HeavyVendors -.->|lazy-loaded only<br/>after login| User
 ```
 
-## Execution Sequence
+## Step-by-Step Transition Breakdown
 
 1. **ISSUE-564 (Artifact Untrack)** — Quick git hygiene (~5 min)
    - `git rm --cached artifacts/live-agent-daisy-chain/`
