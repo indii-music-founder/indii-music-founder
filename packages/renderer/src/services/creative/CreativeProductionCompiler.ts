@@ -166,8 +166,8 @@ export class CreativeProductionCompiler implements HarnessCompiler<CreativeProdu
           inputs: ['artwork']
         });
         agentBriefs.push({
-          agentId: 'merch',
-          departmentId: 'merch',
+          agentId: 'merchandise',
+          departmentId: 'merchandise',
           brief: 'Review artwork for brand safety.',
           inputs: ['artwork']
         });
@@ -176,7 +176,9 @@ export class CreativeProductionCompiler implements HarnessCompiler<CreativeProdu
 
     if (deliveryReady) {
       agentBriefs.push({
-        agentId: 'release',
+        // Release scheduling is cross-department orchestration owned by the
+        // Conductor hub — there is no standalone 'release' agent.
+        agentId: 'generalist',
         departmentId: 'release',
         brief: 'Creative assets are complete and ready for release scheduling.',
         inputs: ['tracks', 'artwork']
@@ -209,8 +211,8 @@ export class CreativeProductionCompiler implements HarnessCompiler<CreativeProdu
 
     if (input.artwork?.hasArtwork && !input.artwork.hasLegalIssue && !input.artwork.hasBrandIssue) {
       agentBriefs.push({
-        agentId: 'merch',
-        departmentId: 'merch',
+        agentId: 'merchandise',
+        departmentId: 'merchandise',
         brief: 'Approved artwork is available for merchandise design.',
         inputs: ['artwork']
       });
