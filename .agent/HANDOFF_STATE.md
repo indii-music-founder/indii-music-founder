@@ -1,9 +1,12 @@
 # Handoff State
-**Updated:** 2026-06-30 14:34 EDT
+**Updated:** 2026-06-30 14:43 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+068236375 chore(shared): rebuild shared package dist typings
+c7c1dcbff chore(shared): strictly type agentId and ownerAgentId as ValidAgentId in business-harness types
+c6c1a9219 chore: session checkpoint [14:34]
 e083c1ff7 chore(pre-commit): add Stage 4 — unit test enforcement (CLOSES THE GAP)
 39b5139f5 chore: session checkpoint [14:31]
 fe54ff50e chore: session checkpoint [14:29]
@@ -11,9 +14,6 @@ fe54ff50e chore: session checkpoint [14:29]
 1ab9bd36f chore: session checkpoint [14:26]
 c555be0f5 chore: session checkpoint [14:25]
 1933484fb chore: session checkpoint [14:24]
-0be5d2117 chore: session checkpoint [14:11]
-13d32781c fix(ci): simplify Python snippet to single line in deploy.yml
-db6f19b16 chore: session checkpoint [14:10]
 ```
 
 ## Working State
