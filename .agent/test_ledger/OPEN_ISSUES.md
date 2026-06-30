@@ -8171,3 +8171,27 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main` due to `FoundersPortal.test.tsx` failing from parallel state leak/mock pollution.
 - **Fix:** Isolated `@/services/firebase` mock in `FoundersPortal.test.tsx` to prevent test environment state leakage.
+
+### ISSUE-CI-28404450526: CI Pipeline Failure (Deploy to Firebase Hosting)
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** CI/CD
+- **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
+- **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/28404450526)
+- **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
+
+### ISSUE-CI-28397738613: CI Pipeline Failure (Deploy to Firebase Hosting)
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** CI/CD
+- **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
+- **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/28397738613)
+- **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
+
+### ISSUE-CI-28397238658: CI Pipeline Failure (Deploy to Firebase Hosting)
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** CI/CD
+- **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
+- **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/28397238658)
+- **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
