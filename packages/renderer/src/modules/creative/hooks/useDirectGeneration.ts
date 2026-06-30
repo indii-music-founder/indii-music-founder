@@ -392,6 +392,18 @@ export function useDirectGeneration() {
         const firstFrame = firstIngredient?.url || videoInputs?.firstFrame?.url || firstCharRef?.image?.url;
         const lastFrame = videoInputs?.lastFrame?.url;
 
+        // Upload Whisk source media to storage and convert to gs:// URIs
+        const whiskMediaUris = await Promise.all(
+            (WhiskService.getSourceMedia(whiskState) || []).map(async w => {
+                try {
+                    const dataUrl = `data:${w.mimeType};base64,${w.data}`;
+                    return await CreativeStorageService.uploadReferenceMedia(userId, dataUrl, 'image', { scope: 'objects' });
+                } catch {
+                    return undefined;
+                }
+            })
+        );
+
         const combinedReferenceImages = [
             ...(characterReferences || [])
                 .filter(ref => ref?.image?.url)
@@ -399,10 +411,12 @@ export function useDirectGeneration() {
                     image: { uri: ref.image.url },
                     referenceType: 'asset' as const
                 })),
-            ...(WhiskService.getSourceMedia(whiskState) || []).map(w => ({
-                image: { imageBytes: w.data, mimeType: w.mimeType },
-                referenceType: 'asset' as const
-            }))
+            ...whiskMediaUris
+                .filter((uri): uri is string => !!uri)
+                .map(uri => ({
+                    image: { uri },
+                    referenceType: 'asset' as const
+                }))
         ].slice(0, 3);
 
         const parsedSeed = studioControls.seed ? Number(studioControls.seed) : undefined;
