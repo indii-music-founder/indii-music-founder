@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-06-30 14:10 EDT
+**Updated:** 2026-06-30 14:11 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+13d32781c fix(ci): simplify Python snippet to single line in deploy.yml
+db6f19b16 chore: session checkpoint [14:10]
 caa96740b fix(ci): correct Python heredoc syntax in deploy.yml
 a5c75fd8c fix(ci): correct Python indentation in deploy.yml staging URL extraction
 a4990b401 chore: session checkpoint [13:53]
@@ -12,8 +14,6 @@ dec2b21f7 chore: session checkpoint [13:52]
 caeff83af chore: session checkpoint [13:47]
 e40b59725 chore: session checkpoint [13:47]
 3fa3aab83 fix(ISSUE-565): durable static agent-ID guard + nail remaining offenders + workflow guardrails
-b2460dc11 chore: session checkpoint [13:36]
-3958d85b1 fix(ISSUE-565): complete agent-ID cleanup across compilers + sync tests
 ```
 
 ## Working State
