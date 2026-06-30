@@ -186,12 +186,16 @@ class WorkflowStateServiceImpl {
     /**
      * Advance a step to WorkflowStepStatusEnum.enum.STEP_COMPLETE and persist the result.
      * If this was the last step, the entire workflow transitions to WorkflowExecutionStatusEnum.enum.COMPLETED.
+     *
+     * ISSUE-571: If blockers are provided, the step fails instead of completing.
+     * This enforces readiness gates: workflow steps cannot advance if the harness reports blockers.
      */
     async advanceStep(
         userId: string,
         executionId: string,
         stepId: string,
-        result: string
+        result: string,
+        blockers?: string[]
     ): Promise<WorkflowExecution> {
         const service = this.getService(userId);
         const execution = await service.get(executionId);
@@ -202,6 +206,18 @@ class WorkflowStateServiceImpl {
         const step = execution.steps[stepId];
         if (!step) {
             throw new Error(`Step ${stepId} not found in execution ${executionId}`);
+        }
+
+        // ISSUE-571: If readiness blockers exist, fail the step instead of completing it
+        if (blockers && blockers.length > 0) {
+            step.status = WorkflowStepStatusEnum.enum.FAILED;
+            step.result = `Blocked by readiness: ${blockers.join('; ')}`;
+            step.completedAt = Date.now();
+            execution.status = WorkflowExecutionStatusEnum.enum.FAILED;
+            execution.updatedAt = Date.now();
+            await service.set(executionId, execution);
+            logger.warn(`[WorkflowState] Step ${stepId} failed due to readiness blockers: ${blockers.join(', ')}`);
+            return execution;
         }
 
         step.status = WorkflowStepStatusEnum.enum.STEP_COMPLETE;
