@@ -8425,7 +8425,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-565: Agent-ID Integrity — Harness `ownerAgentId` / `agentId` Must Resolve to a Real `ValidAgentId`
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-06-30 — c8e4cd3ad core + 874d5b72a remaining compilers; HarnessAgentIdValidation.test.ts guard added)
 - **Severity:** 🔴 HIGH
 - **Module:** Agent orchestration / business-harness
 - **Location:** `packages/renderer/src/services/publishing/PublishingRightsCompiler.ts` (and sibling compilers under `packages/renderer/src/services/**/*Compiler.ts`), `packages/renderer/src/services/agent/types.ts` (`VALID_AGENT_IDS`), `packages/shared/src/services/business-harness/types.ts` (`HarnessAgentBrief`, `HarnessRecommendation`)
@@ -8442,7 +8442,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-566: Route the Rights-Registration Submit Path Through the Harness Gate (Close the Bypass)
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-06-30 — 23ddee6c6; RegistrationForm compiles harness + enforces blockers/approval gate before adapter.submit())
 - **Severity:** 🔴 HIGH
 - **Module:** Registration / business-harness / agent governance
 - **Location:** `packages/renderer/src/modules/registration/components/RegistrationForm.tsx` (`handleSubmit`, ~line 75-89), `packages/renderer/src/modules/registration/adapters/*Adapter.ts` (`submit()`), `packages/renderer/src/services/publishing/PublishingRightsCompiler.ts`, `packages/renderer/src/services/business-harness/ApprovalGateRegistry.ts` (`'file registration'`), `packages/renderer/src/services/agent/governance/DigitalHandshake.ts`, `packages/renderer/src/services/business-harness/HarnessStorage.ts`
@@ -8460,7 +8460,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-567: Approval Freshness — Bind Each Registration Approval to a Song-Passport Version Hash
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-06-30 — bd7860c56; PassportHashService SHA-256 + OrgRegistrationRecord approvalPassportHash, stale-approval block)
 - **Severity:** 🔴 HIGH
 - **Module:** Registration / business-harness
 - **Location:** `packages/renderer/src/modules/registration/types/index.ts` (`OrgRegistrationRecord`), `packages/renderer/src/services/business-harness/SongDnaCompiler.ts` (Song-Passport equivalent), `packages/renderer/src/services/legal/LegalAuditService.ts` (reuse its `sha256` hashing pattern), `packages/shared/src/services/business-harness/types.ts` (`HarnessRun.schemaVersion`)
@@ -8478,7 +8478,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-568: First-Class `rights` Agent Identity (Reuse Tuned-Endpoint Alias Pattern)
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-06-30 — c8e4cd3ad; 'rights' in VALID_AGENT_IDS, rights→legal alias, agents/rights/{config.ts,prompt.md})
 - **Severity:** 🟠 MEDIUM-HIGH
 - **Module:** Agent definitions / fine-tuned registry
 - **Location:** `packages/renderer/src/services/agent/types.ts` (`VALID_AGENT_IDS`), `packages/renderer/src/services/agent/fine-tuned-models.ts` (`FINE_TUNED_MODEL_ALIASES`), `packages/renderer/src/agents/` (new `rights/` dir with `config.ts` + `prompt.md` mirroring `agents/legal/`), `packages/renderer/src/services/agent/ToolRiskRegistry.ts`
@@ -8496,7 +8496,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-569: Harness-Aware Prompts + `prompt_version` Stamping (rights / legal / publishing / licensing)
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-06-30 — 85a286c26; harness-discipline block + version stamps added to rights/legal/publishing/licensing prompts)
 - **Severity:** 🟠 MEDIUM
 - **Module:** Agent prompts / governance
 - **Location:** `packages/renderer/src/agents/{rights,legal,publishing,licensing}/prompt.md` + `config.ts`, agent output assembly (where `AgentConfig` results are emitted)
@@ -8512,7 +8512,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-570: Controlled Browser Worker — Explicit Pause-States at Certification / Payment / Submit
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-06-30 — a40b5fb8f; certification + final-submit pause gates in RegistrationForm, user-confirmed binding action)
 - **Severity:** 🟠 MEDIUM
 - **Module:** Registration adapters / browser automation
 - **Location:** `packages/renderer/src/modules/registration/adapters/*Adapter.ts`, `packages/renderer/src/modules/registration/adapters/automationResult.ts`, `packages/renderer/src/services/agent/ToolRiskRegistry.ts` (`browser_action` is `write`)
@@ -8529,7 +8529,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-571: Readiness Compiler Gates Workflow-State Advancement (Test-Harness-as-CI)
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-06-30 — 3afe7dd98; WorkflowStateService.advanceStep accepts blockers[], fails the step instead of completing)
 - **Severity:** 🟠 MEDIUM
 - **Module:** business-harness / agent workflow state
 - **Location:** `packages/renderer/src/services/agent/WorkflowStateService.ts` (`advanceStep`), `packages/renderer/src/services/publishing/PublishingRightsCompiler.ts` and sibling compilers, `packages/shared/src/services/business-harness/types.ts`
