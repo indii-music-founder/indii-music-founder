@@ -3,13 +3,17 @@ import { test } from './fixtures/auth';
 
 test.describe('Boardroom Strategic Workflow Scenario', () => {
     test('should execute the complete flowchart dependency chain with dynamic seating and pulse unlock', async ({ authedPage: page }) => {
+        let seatedCreative = false;
+        let seatedRoad = false;
+        let seatedMarketing = false;
+        let seatedSocial = false;
+
         // Enforce full desktop window size
         await page.setViewportSize({ width: 1280, height: 800 });
 
-        // Setup custom Vertex AI multi-turn route interceptor with stateless state-machine parsing history
-        await page.route(
-            /.*(firebasevertexai|generativelanguage)\.googleapis\.com.*/,
-            async (route) => {
+        // Intercept backend-only generateContentStream Cloud Function calls.
+        await page.route('**/generateContentStream', async (route) => {
+
                 const method = route.request().method();
                 if (method === 'OPTIONS') {
                     await route.fulfill({ status: 204, headers: { 'Access-Control-Allow-Origin': '*' } });
@@ -18,6 +22,11 @@ test.describe('Boardroom Strategic Workflow Scenario', () => {
 
                 const postData = route.request().postData() || '';
                 console.log(`[E2E:MockAI] Intercepted request. Payload size: ${postData.length} chars.`);
+                if (postData.length < 3000) {
+                    console.log(`[E2E:DEBUG] Short payload: ${postData}`);
+                } else {
+                    console.log(`[E2E:DEBUG] Long payload snippet: ${postData.substring(0, 1000)} ... [TRUNCATED] ... ${postData.substring(postData.length - 1000)}`);
+                }
 
                 if (!postData) {
                     await route.continue();
@@ -55,6 +64,11 @@ test.describe('Boardroom Strategic Workflow Scenario', () => {
                 if (userMessage.includes('CURRENT REQUEST:')) {
                     const parts = userMessage.split('CURRENT REQUEST:');
                     actualRequest = parts[parts.length - 1].split('\n')[0].trim();
+                } else {
+                    const lines = userMessage.split('\n').map(l => l.trim()).filter(Boolean);
+                    if (lines.length > 0) {
+                        actualRequest = lines[lines.length - 1];
+                    }
                 }
                 console.log(`[E2E:MockAI] Extracted Actual Request: "${actualRequest}"`);
 
@@ -99,92 +113,123 @@ test.describe('Boardroom Strategic Workflow Scenario', () => {
 
                 const requestLower = actualRequest.toLowerCase();
                 const postDataLower = postData.toLowerCase();
+                let systemInstruction = "";
+                try {
+                    const parsed = JSON.parse(postData);
+                    const contents = parsed.contents || [];
+                    systemInstruction = contents[0]?.parts?.map((p: any) => p.text || '').join(' ') || "";
+                } catch (e) {}
+                const sysLower = systemInstruction.toLowerCase();
 
-                // 2. Main strategic workflow state machine
-                if (requestLower.includes('done') || requestLower.includes('clear') || requestLower.includes('unseat') || requestLower.includes('excuse')) {
-                    const hasUnseatedCreative = requestLower.includes('[tool: unseat_agent]') && requestLower.includes('creative');
-                    const hasUnseatedRoad = requestLower.includes('[tool: unseat_agent]') && requestLower.includes('road');
-                    const hasUnseatedMarketing = requestLower.includes('[tool: unseat_agent]') && requestLower.includes('marketing');
-                    const hasUnseatedSocial = requestLower.includes('[tool: unseat_agent]') && requestLower.includes('social');
+                // 2. Identify the calling agent to isolate specialist responses from generalist seating
+                const firstLines = sysLower.split('\n').slice(0, 3).join('\n');
+                console.log(`[E2E:DEBUG] First lines of instructions: "${firstLines.replace(/\n/g, ' | ')}"`);
 
-                    if (!hasUnseatedCreative) {
-                        parts = [
-                            { text: "[indii Conductor]: Strategic goal successfully met! Excusing Creative Director first." },
-                            { functionCall: { name: 'unseat_agent', args: { targetAgentId: 'creative' } } }
-                        ];
-                    } else if (!hasUnseatedRoad) {
-                        parts = [
-                            { text: "Creative Director excused. Excusing Road Manager next." },
-                            { functionCall: { name: 'unseat_agent', args: { targetAgentId: 'road' } } }
-                        ];
-                    } else if (!hasUnseatedMarketing) {
-                        parts = [
-                            { text: "Road Manager excused. Excusing Marketing next." },
-                            { functionCall: { name: 'unseat_agent', args: { targetAgentId: 'marketing' } } }
-                        ];
-                    } else if (!hasUnseatedSocial) {
-                        parts = [
-                            { text: "Marketing excused. Excusing Social Specialist finally." },
-                            { functionCall: { name: 'unseat_agent', args: { targetAgentId: 'social' } } }
-                        ];
-                    } else {
-                        parts = [
-                            { text: "[indii Conductor]: All agents excused. Boardroom table cleared successfully." }
-                        ];
-                    }
-                } else if (requestLower.includes('materials') || requestLower.includes('drafts') || requestLower.includes('schedule')) {
+                const isCreativeAgent = firstLines.includes('creative');
+                const isRoadAgent = firstLines.includes('road') || firstLines.includes('touring') || firstLines.includes('booking');
+                const isMarketingAgent = firstLines.includes('marketing');
+                const isSocialAgent = firstLines.includes('social');
+
+                if (isCreativeAgent) {
                     parts = [
-                        { text: "[Marketing Dept.]: EPK materials are drafted and aligned with the new album styling." },
-                        { text: "[Social Media Dept.]: Draft announcement flyer scheduled for Instagram & Twitter rollout." }
+                        { text: "[Creative Director]: Generating general album imagery for the launch... Saved to Firebase Gallery." }
                     ];
-                } else if (requestLower.includes('locked') || requestLower.includes('rollout') || requestLower.includes('pulse')) {
-                    const hasSeatedMarketing = requestLower.includes('[tool: seat_agent]') && requestLower.includes('marketing');
-                    const hasSeatedSocial = requestLower.includes('[tool: seat_agent]') && requestLower.includes('social');
-
-                    if (!hasSeatedMarketing) {
-                        parts = [
-                            { text: "[indii Conductor]: Pulse trigger! Album art is saved to Firebase Gallery and Detroit dates are confirmed. Seating Marketing first." },
-                            { functionCall: { name: 'seat_agent', args: { targetAgentId: 'marketing' } } }
-                        ];
-                    } else if (!hasSeatedSocial) {
-                        parts = [
-                            { text: "Marketing is seated. Seating Social Specialist next." },
-                            { functionCall: { name: 'seat_agent', args: { targetAgentId: 'social' } } }
-                        ];
-                    } else {
-                        parts = [
-                            { text: "[indii Conductor]: Marketing and Social Specialist are seated. Dynamic rollout team active." }
-                        ];
-                    }
-                } else if (requestLower.includes('generate') || requestLower.includes('advance')) {
+                } else if (isRoadAgent) {
                     parts = [
-                        { text: "[Creative Director]: Generating general album imagery for the launch... Saved to Firebase Gallery." },
                         { text: "[Road Director]: Planning Detroit venue advance & driving logistics. Confirmed tour dates established." }
                     ];
-                } else if (requestLower.includes('detroit') || requestLower.includes('tour')) {
-                    const hasSeatedCreative = requestLower.includes('[tool: seat_agent]') && requestLower.includes('creative');
-                    const hasSeatedRoad = requestLower.includes('[tool: seat_agent]') && requestLower.includes('road');
-
-                    if (!hasSeatedCreative) {
+                } else if (isMarketingAgent) {
+                    parts = [
+                        { text: "[Marketing Dept.]: EPK materials are drafted and aligned with the new album styling." }
+                    ];
+                } else if (isSocialAgent) {
+                    parts = [
+                        { text: "[Social Media Dept.]: Draft announcement flyer scheduled for Instagram & Twitter rollout." }
+                    ];
+                } else {
+                    // 3. Main strategic workflow state machine for the Generalist Conductor
+                    if (postDataLower.includes('clear the boardroom table')) {
+                        if (seatedCreative) {
+                            seatedCreative = false;
+                            parts = [
+                                { text: "[indii Conductor]: Strategic goal successfully met! Excusing Creative Director first." },
+                                { functionCall: { name: 'unseat_agent', args: { targetAgentId: 'creative' } } }
+                            ];
+                        } else if (seatedRoad) {
+                            seatedRoad = false;
+                            parts = [
+                                { text: "Creative Director excused. Excusing Road Manager next." },
+                                { functionCall: { name: 'unseat_agent', args: { targetAgentId: 'road' } } }
+                            ];
+                        } else if (seatedMarketing) {
+                            seatedMarketing = false;
+                            parts = [
+                                { text: "Road Manager excused. Excusing Marketing next." },
+                                { functionCall: { name: 'unseat_agent', args: { targetAgentId: 'marketing' } } }
+                            ];
+                        } else if (seatedSocial) {
+                            seatedSocial = false;
+                            parts = [
+                                { text: "Marketing excused. Excusing Social Specialist finally." },
+                                { functionCall: { name: 'unseat_agent', args: { targetAgentId: 'social' } } }
+                            ];
+                        } else {
+                            parts = [
+                                { text: "[indii Conductor]: All agents excused. Boardroom table cleared successfully." }
+                            ];
+                        }
+                    } else if (postDataLower.includes('rollout materials') || postDataLower.includes('schedule drafts')) {
                         parts = [
-                            { text: "[indii Conductor]: Starting the Detroit Tour & Album Launch strategy. Seating the Creative Director first." },
-                            { functionCall: { name: 'seat_agent', args: { targetAgentId: 'creative' } } }
+                            { text: "[indii Conductor]: Generating rollout materials and scheduling drafts." }
                         ];
-                    } else if (!hasSeatedRoad) {
+                    } else if (postDataLower.includes('locked')) {
+                        if (!seatedMarketing) {
+                            seatedMarketing = true;
+                            parts = [
+                                { text: "[indii Conductor]: Pulse trigger! Album art is saved to Firebase Gallery and Detroit dates are confirmed. Seating Marketing first." },
+                                { functionCall: { name: 'seat_agent', args: { targetAgentId: 'marketing' } } }
+                            ];
+                        } else if (!seatedSocial) {
+                            seatedSocial = true;
+                            parts = [
+                                { text: "Marketing is seated. Seating Social Specialist next." },
+                                { functionCall: { name: 'seat_agent', args: { targetAgentId: 'social' } } }
+                            ];
+                        } else {
+                            parts = [
+                                { text: "[indii Conductor]: Marketing and Social Specialist are seated. Dynamic rollout team active." }
+                            ];
+                        }
+                    } else if (postDataLower.includes('generate the art') || postDataLower.includes('plan detroit advance')) {
                         parts = [
-                            { text: "Creative Director is seated. Seating Road Manager next." },
-                            { functionCall: { name: 'seat_agent', args: { targetAgentId: 'road' } } }
+                            { text: "[indii Conductor]: Instructing Creative Director and Road Manager to execute tasks." }
                         ];
+                    } else if (postDataLower.includes('detroit tour') || postDataLower.includes('plan a detroit tour')) {
+                        if (!seatedCreative) {
+                            seatedCreative = true;
+                            parts = [
+                                { text: "[indii Conductor]: Starting the Detroit Tour & Album Launch strategy. Seating the Creative Director first." },
+                                { functionCall: { name: 'seat_agent', args: { targetAgentId: 'creative' } } }
+                            ];
+                        } else if (!seatedRoad) {
+                            seatedRoad = true;
+                            parts = [
+                                { text: "Creative Director is seated. Seating Road Manager next." },
+                                { functionCall: { name: 'seat_agent', args: { targetAgentId: 'road' } } }
+                            ];
+                        } else {
+                            parts = [
+                                { text: "[indii Conductor]: Strategic swarm activated. Creative Director and Road Manager are seated at the table." }
+                            ];
+                        }
                     } else {
                         parts = [
-                            { text: "[indii Conductor]: Strategic swarm activated. Creative Director and Road Manager are seated at the table." }
+                            { text: "Meeting in progress." }
                         ];
                     }
-                } else {
-                    parts = [
-                        { text: "Meeting in progress." }
-                    ];
                 }
+
+
 
                 const responseObj = {
                     candidates: [
@@ -198,7 +243,7 @@ test.describe('Boardroom Strategic Workflow Scenario', () => {
                     ]
                 };
 
-                const isSSE = route.request().url().includes('streamGenerateContent');
+                const isSSE = true;
 
                 if (isSSE) {
                     await route.fulfill({
