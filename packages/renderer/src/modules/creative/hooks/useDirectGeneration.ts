@@ -10,6 +10,7 @@ import { VideoGenerationJob } from '../components/veo/VideoGenerationProgress';
 import { VideoAspectRatioSchema } from '../video/schemas';
 import { functions, db, auth } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
+import { getFirebaseFunction } from '@/services/firebase-guards';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { CreativeStorageService } from '@/services/creative/CreativeStorageService';
 import { VideoGeneration } from '@/services/video/VideoGenerationService';
@@ -320,7 +321,12 @@ export function useDirectGeneration() {
                 }
             }
 
-            const generateImageV3 = httpsCallable(functions, 'generateImageV3');
+            const fbFunctions = getFirebaseFunction('generateImageV3');
+            if (!fbFunctions) {
+                throw new Error('Firebase Functions service not available. Please refresh the page.');
+            }
+
+            const generateImageV3 = httpsCallable(fbFunctions, 'generateImageV3');
             const res = await generateImageV3(compactCallablePayload({
                 prompt: finalPrompt,
                 sessionId: currentProjectId ? `creative_${currentProjectId}` : undefined,
