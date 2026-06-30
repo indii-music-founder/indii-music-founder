@@ -4,6 +4,7 @@
 
 ## Recent Commits
 ```
+5ed5859c9 chore: session checkpoint [08:15]
 c36cb6d13 chore: session checkpoint [08:14]
 57fa17e87 feat(perf): split auth bundle from app shell (ISSUE-549, ISSUE-564)
 e79b039a0 feat(perf): slim App.tsx router and simplify modulePreload filters (ISSUE-549 §2, §3)
@@ -13,7 +14,6 @@ e79b039a0 feat(perf): slim App.tsx router and simplify modulePreload filters (IS
 cbbf9510e chore: session checkpoint [07:51]
 3d32685a3 chore: add auth-split architecture flowchart and sync ledger
 de2a62a8b chore: session checkpoint [07:49]
-1e93e35f2 chore: session checkpoint [07:48]
 ```
 
 ## Working State
