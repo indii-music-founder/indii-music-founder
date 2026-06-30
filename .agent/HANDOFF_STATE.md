@@ -4,6 +4,7 @@
 
 ## Recent Commits
 ```
+c17cad782 chore: session checkpoint [12:52]
 cb2581908 feat(workflow): integrate pattern health checks into session lifecycle
 a448f09e1 chore: session checkpoint [12:46]
 dc8523993 docs: comprehensive guide to hidden bug prevention system
@@ -13,13 +14,13 @@ be1e5085f chore: session checkpoint [12:41]
 e64a98654 chore: session checkpoint [12:37]
 c27369fcc chore: session checkpoint [12:36]
 cc8a3eb71 fix(creative): convert whisk base64 media to gs:// URIs for video generation
-9b87e78ba chore: session checkpoint [12:34]
 ```
 
 ## Working State
 ```
  M .agent/test_ledger/OPEN_ISSUES.md
  M .agent/test_ledger/UNFINISHED_WORK.md
+ M .agent/workflows/middle.md
  M packages/renderer/src/services/distribution/proprietary-ingestion/IngestionNotificationService.test.ts
  M packages/renderer/src/services/finance/GearAssetCompiler.ts
  M packages/renderer/src/services/finance/RoyaltyRevenueCompiler.ts
