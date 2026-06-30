@@ -159,7 +159,7 @@ export class LegalComplianceCompiler implements HarnessCompiler<LegalComplianceI
             confidence: 'high'
           });
           agentBriefs.push({
-            agentId: 'distribution_agent',
+            agentId: 'distribution',
             brief: 'Release is missing ISRC or UPC codes. Auto-generate or request from user before generating DDEX.',
             inputs: [item.id]
           });
