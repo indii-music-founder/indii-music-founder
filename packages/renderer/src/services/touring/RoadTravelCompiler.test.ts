@@ -120,7 +120,7 @@ describe('RoadTravelCompiler', () => {
 
     // Should have an excessive drive time finding
     expect(run.findings.some(f => f.title === 'Excessive Drive Time')).toBe(true);
-    expect(run.agentBriefs.some(b => b.agentId === 'touring')).toBe(true);
+    expect(run.agentBriefs.some(b => b.agentId === 'road')).toBe(true);
   });
 
   it('should compile and trigger border/visa warnings', () => {

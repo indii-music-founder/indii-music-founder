@@ -75,7 +75,7 @@ describe('GearAssetCompiler', () => {
 
     expect(result.output.warrantyStatus).toBe('expiring_soon');
     expect(result.findings.some(f => f.title === 'Warranty Expiring Soon')).toBe(true);
-    expect(result.agentBriefs.some(b => b.agentId === 'music_agent')).toBe(true);
+    expect(result.agentBriefs.some(b => b.agentId === 'music')).toBe(true);
   });
 
   it('handles project allocation', () => {

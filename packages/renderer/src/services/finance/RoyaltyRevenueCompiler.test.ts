@@ -49,7 +49,7 @@ describe('RoyaltyRevenueCompiler', () => {
     const pendingFinding = run.findings.find(f => f.id === 'pending_statement_stmt_2');
     expect(pendingFinding).toBeDefined();
 
-    const financeAgentBrief = run.agentBriefs.find(b => b.agentId === 'finance_agent');
+    const financeAgentBrief = run.agentBriefs.find(b => b.agentId === 'finance');
     expect(financeAgentBrief).toBeDefined();
     expect(financeAgentBrief?.brief).toContain('1 pending statements');
   });
