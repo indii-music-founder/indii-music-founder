@@ -18,6 +18,7 @@ import { auth } from '@/services/firebase';
 import { CostControlService } from '@/services/billing/CostControlService';
 import { estimateCostUsd } from '@/services/intelligence/billing/ModelPricing';
 import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
+import { CloudStorageService } from '@/services/CloudStorageService';
 
 // Basic debounce helper
 function debounce<T extends (...args: any[]) => any>(
@@ -77,8 +78,11 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
     const [isMagicFillMode, setIsMagicFillMode] = useState(false);
     const [isSelectingEndFrame, setIsSelectingEndFrame] = useState(false);
     const [isDefinitionsOpen, setIsDefinitionsOpen] = useState(false);
+    const [isLayersPanelOpen, setIsLayersPanelOpen] = useState(false);
+    const [selectedLayerId, setSelectedLayerId] = useState<string | null>(null);
+    const [hasDetections, setHasDetections] = useState(false);
     const [activeTool, setActiveTool] = useState<'select' | 'line' | 'polygon' | 'text' | 'brush'>('brush');
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+     
     const [historyTrigger, setHistoryTrigger] = useState(0); // Used to force UI update for canUndo/canRedo
 
     // Data State
@@ -343,13 +347,46 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
     const handleAddCircle = () => canvasOps.addCircle(activeColor.hex);
     const handleAddText = () => canvasOps.addText('New Text', activeColor.hex);
 
-    const handleUndo = () => {
-        canvasOps.undo();
+    const handleUndo = async () => {
+        await canvasOps.undo();
         setHistoryTrigger(prev => prev + 1);
     };
 
-    const handleRedo = () => {
-        canvasOps.redo();
+    const handleRedo = async () => {
+        await canvasOps.redo();
+        setHistoryTrigger(prev => prev + 1);
+    };
+
+    // Layers panel: derived from historyTrigger so the list stays in sync with
+    // every canvas mutation (add/remove/reorder/undo/redo) without a separate
+    // subscription.
+    const layers = useMemo(() => canvasOps.getLayers(), [historyTrigger]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    const toggleLayersPanel = () => setIsLayersPanelOpen(prev => !prev);
+
+    const handleSelectLayer = (id: string) => {
+        setSelectedLayerId(id);
+        canvasOps.selectLayer(id);
+    };
+
+    const handleToggleLayerVisibility = (id: string) => {
+        canvasOps.toggleLayerVisibility(id);
+        setHistoryTrigger(prev => prev + 1);
+    };
+
+    const handleToggleLayerLock = (id: string) => {
+        canvasOps.toggleLayerLock(id);
+        setHistoryTrigger(prev => prev + 1);
+    };
+
+    const handleDeleteLayer = (id: string) => {
+        canvasOps.deleteLayer(id);
+        if (selectedLayerId === id) setSelectedLayerId(null);
+        setHistoryTrigger(prev => prev + 1);
+    };
+
+    const handleReorderLayer = (id: string, direction: 'up' | 'down') => {
+        canvasOps.reorderLayer(id, direction);
         setHistoryTrigger(prev => prev + 1);
     };
 
@@ -401,6 +438,7 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                         setProcessingStatus('');
                     }
                 });
+                setHasDetections(true);
                 toast.success(`Detected ${objects.length} objects.`);
             } else {
                 toast.info('No prominent objects detected.');
@@ -417,6 +455,7 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
     const handleClearDetections = () => {
         if (!canvasOps.isInitialized()) return;
         canvasOps.clearDetections();
+        setHasDetections(false);
         toast.info('Cleared detections from canvas.');
     };
 
@@ -813,8 +852,10 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                 const { addToHistory } = useStore.getState();
                 
                 const saveToCloud = async (url: string, suffix: string) => {
-                    const res = await fetch(url);
-                    const blob = await res.blob();
+                    // `url` is a canvas.toDataURL() result (a data: URI), not a network
+                    // URL — fetch() on a data: URI is blocked by this app's CSP
+                    // connect-src directive, which made every batch export fail.
+                    const blob = await CloudStorageService.dataURItoBlob(url);
                     const assetId = await saveAssetToStorage(blob);
                     
                     const formatAsset: HistoryItem = {
@@ -853,6 +894,10 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
         isMagicFillMode: activeTool === 'brush',
         isSelectingEndFrame,
         isDefinitionsOpen,
+        isLayersPanelOpen,
+        layers,
+        selectedLayerId,
+        hasDetections,
         prompt,
         activeColor,
         definitions,
@@ -869,6 +914,7 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
         setIsSelectingEndFrame,
         setEndFrameItem,
         setIsDefinitionsOpen,
+        toggleLayersPanel,
         setActiveColor,
         setMagicFillPrompt: handlePromptChange,
         setIsHighFidelity,
@@ -882,6 +928,11 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
         handleMagicFill,
         handleDetectObjects,
         handleClearDetections,
+        handleSelectLayer,
+        handleToggleLayerVisibility,
+        handleToggleLayerLock,
+        handleDeleteLayer,
+        handleReorderLayer,
         handleAnimate,
         handleCandidateSelect,
         saveCanvas,

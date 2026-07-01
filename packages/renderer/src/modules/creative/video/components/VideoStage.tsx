@@ -12,6 +12,8 @@ interface VideoStageProps {
     jobStatus: 'idle' | 'queued' | 'processing' | 'stitching' | 'completed' | 'failed' | 'cancelled';
     jobProgress: number;
     activeVideo: HistoryItem | null;
+    firstFrame?: HistoryItem | null;
+    lastFrame?: HistoryItem | null;
     setVideoInputs: (inputs: Partial<CreativeSlice['videoInputs']>) => void;
     onCancelJob?: () => void;
 }
@@ -21,6 +23,8 @@ export const VideoStage = React.memo<VideoStageProps>(({
     jobStatus,
     jobProgress,
     activeVideo,
+    firstFrame,
+    lastFrame,
     setVideoInputs,
     onCancelJob
 }) => {
@@ -48,6 +52,55 @@ export const VideoStage = React.memo<VideoStageProps>(({
     }, []);
 
     React.useEffect(() => () => clearExtraction(), [clearExtraction]);
+
+    // The /creative route runs with Cross-Origin-Embedder-Policy: require-corp
+    // (needed elsewhere for SharedArrayBuffer/wasm audio processing). A plain
+    // <img src="https://firebasestorage..."> gets silently blocked under that
+    // policy because GCS never sends a Cross-Origin-Resource-Policy header —
+    // same failure mode CanvasOperationsService.loadImageSafe already works
+    // around for the canvas. Mirror that here: resolve remote frame URLs to a
+    // same-origin blob: URL before handing them to <img>.
+    const frameItem = firstFrame || lastFrame;
+    const [resolvedFrameUrl, setResolvedFrameUrl] = React.useState<string | null>(null);
+    const [frameImageFailed, setFrameImageFailed] = React.useState(false);
+
+    React.useEffect(() => {
+        let cancelled = false;
+        let objectUrl: string | null = null;
+        setResolvedFrameUrl(null);
+        setFrameImageFailed(false);
+
+        const url = frameItem?.url;
+        if (!url) return;
+
+        if (url.startsWith('blob:') || url.startsWith('data:')) {
+            setResolvedFrameUrl(url);
+            return;
+        }
+
+        (async () => {
+            try {
+                const { safeStorageFetch } = await import('@/services/storage/safeStorageFetch');
+                const { blob } = await safeStorageFetch(url);
+                if (cancelled) return;
+                objectUrl = URL.createObjectURL(blob);
+                setResolvedFrameUrl(objectUrl);
+            } catch (error) {
+                // Don't fall back to the raw cross-origin URL — this route runs under
+                // Cross-Origin-Embedder-Policy: require-corp, so a direct <img src>
+                // to Storage is blocked the same way safeStorageFetch's own direct-fetch
+                // attempt just was. Go straight to the graceful placeholder instead of
+                // rendering an <img> that's guaranteed to fail.
+                logger.warn('[VideoStage] Failed to resolve start/end frame preview', error);
+                if (!cancelled) setFrameImageFailed(true);
+            }
+        })();
+
+        return () => {
+            cancelled = true;
+            if (objectUrl) URL.revokeObjectURL(objectUrl);
+        };
+    }, [frameItem?.id, frameItem?.url]);
 
     const createFrameAnchor = React.useCallback(async (
         label: 'anchor' | 'end' | 'mask'
@@ -385,6 +438,68 @@ export const VideoStage = React.memo<VideoStageProps>(({
                             >
                                 🖌 Set Mask
                             </button>
+                        </div>
+                    </div>
+                ) : firstFrame || lastFrame ? (
+                    <div className="relative w-full h-full flex items-center justify-center">
+                        {resolvedFrameUrl && !frameImageFailed ? (
+                            <img
+                                src={resolvedFrameUrl}
+                                alt={firstFrame ? 'Start frame' : 'End frame'}
+                                className="w-full h-full object-contain"
+                                onError={() => setFrameImageFailed(true)}
+                                onLoad={(e) => {
+                                    // Some COEP/network blocks report the <img> as "loaded"
+                                    // (complete=true) without ever firing onError, leaving a
+                                    // blank 0x0 image with no visible failure signal.
+                                    if (e.currentTarget.naturalWidth === 0) {
+                                        setFrameImageFailed(true);
+                                    }
+                                }}
+                            />
+                        ) : frameImageFailed ? (
+                            <div className="flex flex-col items-center gap-2 text-white/30">
+                                <Video size={48} strokeWidth={1} />
+                                <p className="text-xs font-medium">Preview unavailable — frame is still set and ready to use</p>
+                            </div>
+                        ) : (
+                            <Loader2 size={32} className="text-white/30 animate-spin" />
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent pointer-events-none" />
+
+                        {firstFrame && (
+                            <div className="absolute top-3 left-3 flex items-center gap-2 bg-black/70 backdrop-blur-md px-3 py-2 rounded-lg border border-green-500/40">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-green-400">⚓ Start Frame Set</span>
+                                <button
+                                    type="button"
+                                    onClick={() => setVideoInputs({ firstFrame: null })}
+                                    data-testid="clear-first-frame-btn"
+                                    aria-label="Remove start frame"
+                                    className="text-gray-400 hover:text-white transition-colors"
+                                >
+                                    <X size={12} />
+                                </button>
+                            </div>
+                        )}
+                        {lastFrame && (
+                            <div className="absolute top-3 right-3 flex items-center gap-2 bg-black/70 backdrop-blur-md px-3 py-2 rounded-lg border border-indigo-500/40">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-400">🎬 End Frame Set</span>
+                                <button
+                                    type="button"
+                                    onClick={() => setVideoInputs({ lastFrame: null })}
+                                    data-testid="clear-last-frame-btn"
+                                    aria-label="Remove end frame"
+                                    className="text-gray-400 hover:text-white transition-colors"
+                                >
+                                    <X size={12} />
+                                </button>
+                            </div>
+                        )}
+
+                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-center">
+                            <p className="text-sm font-medium text-white/70 max-w-xs">
+                                Describe your shot below, then Generate to bring it to life.
+                            </p>
                         </div>
                     </div>
                 ) : (

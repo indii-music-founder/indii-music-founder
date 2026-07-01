@@ -1,8 +1,10 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { CanvasToolbar } from './CanvasToolbar';
 
 describe('CanvasToolbar', () => {
+    beforeEach(() => vi.clearAllMocks());
+
     const mockProps = {
         addRectangle: vi.fn(),
         addCircle: vi.fn(),
@@ -15,6 +17,9 @@ describe('CanvasToolbar', () => {
         activeTool: 'select' as const,
         handleDetectObjects: vi.fn(),
         handleClearDetections: vi.fn(),
+        hasDetections: false,
+        toggleLayersPanel: vi.fn(),
+        isLayersPanelOpen: false,
     };
 
     it('renders all tool buttons with accessible names', () => {
@@ -22,8 +27,25 @@ describe('CanvasToolbar', () => {
         expect(screen.getByRole('button', { name: /Add Text/i })).toBeInTheDocument();
         expect(screen.getByRole('button', { name: /Magic Fill/i })).toBeInTheDocument();
         expect(screen.getByRole('button', { name: /ID Objects/i })).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: /Zoom Controls Coming Soon/i })).toBeDisabled();
-        expect(screen.getByRole('button', { name: /Layers Panel Coming Soon/i })).toBeDisabled();
+        expect(screen.getByRole('button', { name: /^Layers Panel$/i })).toBeEnabled();
+    });
+
+    it('does not render any "Coming Soon" placeholder buttons', () => {
+        render(<CanvasToolbar {...mockProps} />);
+        expect(screen.queryByRole('button', { name: /Coming Soon/i })).not.toBeInTheDocument();
+    });
+
+    it('clears detections instead of detecting when detections already exist', () => {
+        render(<CanvasToolbar {...mockProps} hasDetections={true} />);
+        fireEvent.click(screen.getByRole('button', { name: /Clear Object Detections/i }));
+        expect(mockProps.handleClearDetections).toHaveBeenCalledOnce();
+        expect(mockProps.handleDetectObjects).not.toHaveBeenCalled();
+    });
+
+    it('calls toggleLayersPanel when the layers button is clicked', () => {
+        render(<CanvasToolbar {...mockProps} />);
+        fireEvent.click(screen.getByRole('button', { name: /^Layers Panel$/i }));
+        expect(mockProps.toggleLayersPanel).toHaveBeenCalledOnce();
     });
 
     it('calls setTool when magic fill button is clicked', () => {

@@ -3,6 +3,7 @@ import { X, ImagePlus, Upload, Film, ArrowRightLeft, Camera } from 'lucide-react
 import { useToast } from '@/core/context/ToastContext';
 import { useStore } from '@/core/store';
 import { PhotoSourcePanel } from './PhotoSourcePanel';
+import { CloudStorageService } from '@/services/CloudStorageService';
 
 export type IngredientMode = 'reference' | 'base_video' | 'transition';
 
@@ -160,9 +161,10 @@ export function IngredientDropZone({ ingredients, onChange, mode = 'reference', 
                     <div className="w-full max-w-md">
                         <PhotoSourcePanel 
                             onCapture={(image) => {
-                                // Convert dataURL to File object
-                                fetch(`data:${image.mimeType};base64,${image.data}`)
-                                    .then(res => res.blob())
+                                // Convert dataURL to File object. Decodes the base64 payload
+                                // directly (dataURItoBlob) instead of fetch()ing the data: URI,
+                                // which is blocked by this app's CSP connect-src directive.
+                                CloudStorageService.dataURItoBlob(`data:${image.mimeType};base64,${image.data}`)
                                     .then(blob => {
                                         const file = new File([blob], `capture_${Date.now()}.jpg`, { type: image.mimeType });
                                         const newIngredient: Ingredient = {

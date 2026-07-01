@@ -11,7 +11,6 @@
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { storage } from './firebase';
 import { Logger } from '@/core/logger/Logger';
-import { fetchWithRetry } from '@/utils/async';
 
 export interface ImageCompressionOptions {
     maxWidth?: number;
@@ -110,11 +109,24 @@ export class CloudStorageService {
     }
 
     /**
-     * Convert data URI to Blob
+     * Convert data URI to Blob.
+     *
+     * Decodes the base64 payload directly instead of fetch()ing the data: URI —
+     * fetch() on a data: URI is blocked by this app's CSP connect-src directive
+     * (data: is not an allowed scheme there), which made every caller of this
+     * method fail silently.
      */
     static async dataURItoBlob(dataURI: string): Promise<Blob> {
-        const response = await fetchWithRetry(dataURI);
-        return response.blob();
+        const [header, base64] = dataURI.split(',');
+        const mimeMatch = /data:(.*?)(;base64)?$/.exec(header);
+        const mimeType = mimeMatch?.[1] || 'application/octet-stream';
+
+        const byteString = atob(base64);
+        const bytes = new Uint8Array(byteString.length);
+        for (let i = 0; i < byteString.length; i++) {
+            bytes[i] = byteString.charCodeAt(i);
+        }
+        return new Blob([bytes], { type: mimeType });
     }
 
     /**
