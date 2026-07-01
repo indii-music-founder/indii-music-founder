@@ -165,7 +165,7 @@ export const CanvasActionRail: React.FC<CanvasActionRailProps> = ({
                                                     className={action.className}
                                                     aria-label={action.label}
                                                 >
-                                                    <Icon size={18} className={action.spin ? 'animate-spin' : undefined} />
+                                                    <Icon size={16} className={action.spin ? 'animate-spin' : undefined} />
                                                 </button>
                                             </TooltipTrigger>
                                             <TooltipContent side="left">{action.label}</TooltipContent>
@@ -186,7 +186,7 @@ export const CanvasActionRail: React.FC<CanvasActionRailProps> = ({
                             aria-label="Close canvas"
                             className={closeButtonClass}
                         >
-                            <X size={18} />
+                            <X size={16} />
                         </button>
                     </TooltipTrigger>
                     <TooltipContent side="left">Close Canvas</TooltipContent>
