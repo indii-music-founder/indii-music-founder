@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-30 19:54 EDT
+**Updated:** 2026-06-30 21:05 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+af880b1b2 chore: session checkpoint [19:54]
 826c2fcc4 chore: session checkpoint [19:36]
 27625fade chore: session checkpoint [19:16]
 00b874ac1 chore: session checkpoint [19:10]
@@ -13,11 +14,11 @@ d8ce203c7 chore: session checkpoint [18:38]
 3cb77aa9c chore: session checkpoint [18:21]
 f7c24ad30 chore: session checkpoint [18:16]
 b3172bbb6 chore: session checkpoint [18:14]
-3d9b096e9 chore: session checkpoint [18:12]
 ```
 
 ## Working State
 ```
+ M firebase.json
  M packages/renderer/src/modules/creative/components/CanvasActionRail.tsx
  M packages/renderer/src/modules/creative/components/CanvasToolbar.test.tsx
  M packages/renderer/src/modules/creative/components/CanvasToolbar.tsx
@@ -29,6 +30,8 @@ b3172bbb6 chore: session checkpoint [18:14]
  M packages/renderer/src/modules/creative/components/__tests__/CreativeCanvas.test.tsx
  M packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts
  M packages/renderer/src/modules/creative/services/CanvasOperationsService.ts
+ M packages/renderer/src/modules/creative/video/VideoWorkflow.tsx
+ M packages/renderer/src/modules/creative/video/components/VideoStage.tsx
  M packages/renderer/src/services/CloudStorageService.ts
 ?? packages/renderer/src/modules/creative/components/LayersPanel.tsx
 ```
