@@ -8613,3 +8613,19 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/28478558122)
 - **Fix Direction:** Re-run the deploy job. If it recurs across multiple runs, escalate to GCP status check + verify App Engine instance at console.cloud.google.com/appengine.
 - **Confirmed unrelated to workspace-sync changes** — unit-tests job (the one touching sync code) passed clean across all 8 shards (497-616 tests passing per shard, 0 failures).
+
+---
+
+## /finish Sweep Findings (2026-07-01)
+
+### ISSUE-573: Reopen Apple Music analytics fallback still using fabricated estimates and zero history
+
+- **Status:** ✅ FIXED (2026-07-01)
+- **Severity:** 🟡 MEDIUM
+- **Location:** `packages/renderer/src/services/analytics/AppleMusicService.ts:239`
+- **Details:** `OPEN_ISSUES.md` previously marked ISSUE-573 as fixed, but the live code still fell back to fabricated analytics. `buildPlatformData()` estimated streams as `librarySongs.length * 1000`, `fetchPartnerAnalytics()` and `fetchPartnerStreamHistory()` both hard-returned `null`, and `buildStreamHistory()` returned a synthetic 30-day all-zero series when no backend gateway existed.
+- **Expected (acceptance):** Apple Music analytics must either load from a real secured backend/provider path or fail honestly without inventing metrics. Specifically, `buildPlatformData()` must not synthesize stream counts from library-song counts, and `buildStreamHistory()` must not return a fabricated zero-filled history that looks authoritative. The UI/service should surface an explicit unavailable/unverified state until a real backend integration is present.
+- **Honest fallback:** If no secured Apple Music for Artists backend exists yet, return a clear unavailable/unverified result and keep Apple Music disconnected from aggregate analytics rather than fabricating streams/history. `WONTFIX` is acceptable only if the product explicitly removes Apple Music analytics support for now.
+- **DO NOT:** Do not keep the `librarySongs.length * 1000` estimate, do not ship mock/sandbox analytics as if they were real artist metrics, and do not close this by updating comments/docs alone.
+- **Fix:** Removed Apple Music sandbox connection state, mock library/catalog fallbacks, fabricated `librarySongs.length * 1000` stream estimates, and zero-filled stream history. `AppleMusicService` now returns `null` for platform data/history unless real partner data is available; `PlatformDataService` omits Apple Music when that null is returned; `PlatformConnector` renders Apple Music as unavailable with a disabled action until a secured backend exists.
+- **Verification:** `npm --prefix packages/renderer test -- --run src/services/analytics/AppleMusicService.test.ts src/services/analytics/PlatformDataService.test.ts src/modules/analytics/components/PlatformConnector.test.tsx src/services/commands/EntryCommandSecurityRules.test.ts src/services/business-harness/HarnessAgentIdValidation.test.ts src/modules/creative/video/components/DailyItem.a11y.test.tsx` passed (6 files, 23 tests). `npm --prefix packages/renderer run typecheck` passed. Full `npm --prefix packages/renderer test -- --run` passed (593 files, 3662 tests; 22 files skipped, 54 tests skipped).

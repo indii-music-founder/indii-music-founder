@@ -12,7 +12,7 @@
  *  - YouTube       (Google reauth via YouTubeAnalyticsService)
  *  - TikTok        (OAuth 2.0 via TikTokAnalyticsService)
  *  - Instagram     (Facebook Login / Meta OAuth via InstagramAnalyticsService)
- *  - Apple Music   (MusicKit — coming soon)
+ *  - Apple Music   (requires secured Apple Music for Artists backend)
  */
 
 import React, { useEffect, useState, useCallback } from 'react';
@@ -33,6 +33,7 @@ interface PlatformDef {
     label: string;
     description: string;
     dataPoints: string[];
+    unavailableReason?: string;
     color: string;
     bgColor: string;
     borderColor: string;
@@ -99,8 +100,9 @@ const PLATFORMS: PlatformDef[] = [
     {
         id: 'apple_music',
         label: 'Apple Music',
-        description: 'Connect your Apple ID via MusicKit JS. Note: stream counts require Apple Music for Artists partner access (not yet public).',
-        dataPoints: ['Library saves (your tracks saved by user)', 'Catalog presence verification', 'Completion rate estimate (72% platform avg)', 'Stream counts when Artists API is available'],
+        description: 'Apple Music analytics require a secured Apple Music for Artists backend before indii can import real metrics.',
+        dataPoints: ['Backend partner integration required', 'No estimated stream counts', 'No mock stream history'],
+        unavailableReason: 'Apple Music analytics are unavailable until the secured backend integration is configured.',
         color: 'text-rose-400',
         bgColor: 'bg-rose-500/10',
         borderColor: 'border-rose-500/30',
@@ -114,7 +116,16 @@ const PLATFORMS: PlatformDef[] = [
 
 // ── Status pill ───────────────────────────────────────────────────────────────
 
-function StatusPill({ connected }: { connected: boolean }) {
+function StatusPill({ connected, unavailable = false }: { connected: boolean; unavailable?: boolean }) {
+    if (unavailable) {
+        return (
+            <span className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                <AlertCircle size={10} />
+                Unavailable
+            </span>
+        );
+    }
+
     return (
         <span className={`flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${
             connected
@@ -258,6 +269,7 @@ export function PlatformConnector({ onConnectionChange }: PlatformConnectorProps
                         const isConnected = status[platform.id];
                         const isLoading   = !!loading[platform.id];
                         const error       = errors[platform.id];
+                        const isUnavailable = !!platform.unavailableReason;
 
                         return (
                             <motion.div
@@ -281,7 +293,7 @@ export function PlatformConnector({ onConnectionChange }: PlatformConnectorProps
                                                 {platform.label}
                                             </p>
                                             <div className="mt-0.5">
-                                                <StatusPill connected={isConnected} />
+                                                <StatusPill connected={isConnected} unavailable={isUnavailable} />
                                             </div>
                                         </div>
                                     </div>
@@ -304,15 +316,19 @@ export function PlatformConnector({ onConnectionChange }: PlatformConnectorProps
 
                                 {/* Error */}
                                 <AnimatePresence>
-                                    {error && (
+                                    {(error || platform.unavailableReason) && (
                                         <motion.div
                                             initial={{ opacity: 0, height: 0 }}
                                             animate={{ opacity: 1, height: 'auto' }}
                                             exit={{ opacity: 0, height: 0 }}
-                                            className="mb-3 flex items-start gap-1.5 text-[11px] text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-2 py-2"
+                                            className={`mb-3 flex items-start gap-1.5 text-[11px] border rounded-lg px-2 py-2 ${
+                                                error
+                                                    ? 'text-red-400 bg-red-500/10 border-red-500/20'
+                                                    : 'text-amber-300 bg-amber-500/10 border-amber-500/20'
+                                            }`}
                                         >
                                             <AlertCircle size={11} className="shrink-0 mt-0.5" />
-                                            {error}
+                                            {error || platform.unavailableReason}
                                         </motion.div>
                                     )}
                                 </AnimatePresence>
@@ -320,7 +336,7 @@ export function PlatformConnector({ onConnectionChange }: PlatformConnectorProps
                                 {/* Action button */}
                                 <button
                                     onClick={() => isConnected ? handleDisconnect(platform.id) : handleConnect(platform.id)}
-                                    disabled={isLoading}
+                                    disabled={isLoading || isUnavailable}
                                     className={`w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-150 disabled:opacity-50 ${
                                         isConnected
                                             ? 'bg-slate-700 hover:bg-slate-600 text-slate-300 border border-white/10'
@@ -331,6 +347,8 @@ export function PlatformConnector({ onConnectionChange }: PlatformConnectorProps
                                         <Loader2 size={12} className="animate-spin" />
                                     ) : isConnected ? (
                                         'Disconnect'
+                                    ) : isUnavailable ? (
+                                        'Unavailable'
                                     ) : (
                                         <>
                                             <ExternalLink size={11} />

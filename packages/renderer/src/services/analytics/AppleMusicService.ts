@@ -19,7 +19,8 @@
  *
  * What this service provides:
  *   - Fails closed for browser-side Apple Music access
- *   - Placeholder for future Apple Music for Artists API when documented
+ *   - Honest unavailable results until a secured Apple Music for Artists
+ *     backend is configured
  *
  * Setup requirements:
  *   1. Apple Developer account with MusicKit capability enabled
@@ -99,7 +100,8 @@ interface MusicKitSearchResults {
 
 export class AppleMusicService {
     private _kit: MusicKitInstance | null = null;
-    private _sandboxConnected = false;
+    static readonly UNAVAILABLE_MESSAGE =
+        'Apple Music analytics require a secured Apple Music for Artists backend integration.';
 
     // ── Initialization ────────────────────────────────────────────────────────
 
@@ -119,14 +121,12 @@ export class AppleMusicService {
 
     /**
      * Prompt the user to sign in with their Apple ID.
-     * Opens Apple's native sign-in popup via MusicKit JS, or connects sandbox.
+     * Opens Apple's native sign-in popup via MusicKit JS when configured.
      */
     async connect(): Promise<void> {
         await this.initialize();
         if (!this._kit) {
-            logger.info('[AppleMusicService] MusicKit not initialized. Simulating connection in sandbox mode.');
-            this._sandboxConnected = true;
-            return;
+            throw new Error(AppleMusicService.UNAVAILABLE_MESSAGE);
         }
         try {
             await this._kit.authorize();
@@ -141,7 +141,6 @@ export class AppleMusicService {
      * Sign out and revoke the MusicKit user token.
      */
     async disconnect(): Promise<void> {
-        this._sandboxConnected = false;
         if (!this._kit) return;
         try {
             await this._kit.unauthorize();
@@ -160,7 +159,7 @@ export class AppleMusicService {
         try {
             await this.initialize();
             if (!this._kit) {
-                return this._sandboxConnected;
+                return false;
             }
             return this._kit.isAuthorized;
         } catch (err: unknown) {
@@ -185,8 +184,7 @@ export class AppleMusicService {
     async getLibrarySongs(limit = 100): Promise<MusicKitLibrarySong[]> {
         await this.initialize();
         if (!this._kit) {
-            logger.info('[AppleMusicService] Running in sandbox mode. Returning mock library songs.');
-            return this.getMockLibrarySongs(limit);
+            throw new Error(AppleMusicService.UNAVAILABLE_MESSAGE);
         }
         if (!this._kit.isAuthorized) {
             throw new Error('Apple Music not connected.');
@@ -200,8 +198,7 @@ export class AppleMusicService {
     async searchCatalog(artistName: string, limit = 25): Promise<NonNullable<MusicKitSearchResults['songs']>['data']> {
         await this.initialize();
         if (!this._kit) {
-            logger.info('[AppleMusicService] Running in sandbox mode. Returning mock catalog search results.');
-            return this.getMockCatalogSearch(artistName, limit);
+            throw new Error(AppleMusicService.UNAVAILABLE_MESSAGE);
         }
         const results = await this._kit.api.search(artistName, { types: 'songs', limit });
         return results.songs?.data ?? [];
@@ -233,13 +230,11 @@ export class AppleMusicService {
 
     /**
      * Build PlatformData for the analytics engine.
-     * Tries to fetch real analytics via partner service routes first. If they are
-     * unavailable, falls back gracefully to library-based estimations or sandbox simulation.
+     * Returns null unless real partner analytics are available.
      */
-    async buildPlatformData(artistId?: string): Promise<PlatformData> {
+    async buildPlatformData(artistId?: string): Promise<PlatformData | null> {
         await this.initialize();
 
-        // 1. Try partner service API first if artistId is present
         if (artistId) {
             const partnerData = await this.fetchPartnerAnalytics(artistId);
             if (partnerData) {
@@ -248,35 +243,14 @@ export class AppleMusicService {
             }
         }
 
-        // 2. Fallback: Library song presence estimation
-        logger.info(
-            '[AppleMusicService] Apple Music for Artists direct API not available. ' +
-            'Calculating estimate based on library presence.'
-        );
-
-        let librarySongs: MusicKitLibrarySong[] = [];
-        try {
-            librarySongs = await this.getLibrarySongs(100);
-        } catch (err: unknown) {
-            logger.warn('[AppleMusicService] Could not retrieve library songs. Returning default empty platform data structure.', err);
-        }
-
-        const savesCount = librarySongs.length;
-        const estimatedStreams = savesCount > 0 ? savesCount * 1000 : 0;
-
-        return {
-            platform: 'apple_music',
-            streams: estimatedStreams,
-            saves: savesCount,
-            completionRate: savesCount > 0 ? 0.72 : 0,
-            creatorCount: 0,
-        };
+        logger.warn('[AppleMusicService] Apple Music analytics unavailable: no secured partner analytics backend is configured.');
+        return null;
     }
 
     /**
-     * Build a 30-day stream history.
+     * Build stream history from real partner data.
      */
-    async buildStreamHistory(trackIdOrArtistId?: string): Promise<StreamDataPoint[]> {
+    async buildStreamHistory(trackIdOrArtistId?: string): Promise<StreamDataPoint[] | null> {
         logger.info('[AppleMusicService] Building Apple Music stream history.');
 
         if (trackIdOrArtistId) {
@@ -287,84 +261,8 @@ export class AppleMusicService {
             }
         }
 
-        const history: StreamDataPoint[] = [];
-        for (let i = 29; i >= 0; i--) {
-            const d = new Date();
-            d.setDate(d.getDate() - i);
-            history.push({
-                date:             d.toISOString().split('T')[0]!,
-                streams:          0,
-                saves:            0,
-                completions:      0,
-                uniqueListeners:  0,
-                shares:           0,
-                newFollowers:     0,
-                playlistAdditions: 0,
-            });
-        }
-        return history;
-    }
-
-    // ── Sandbox Mock Generators ───────────────────────────────────────────────
-
-    private getMockLibrarySongs(limit: number): MusicKitLibrarySong[] {
-        const mockSongs: MusicKitLibrarySong[] = [
-            {
-                id: 'mock-am-1',
-                attributes: {
-                    name: 'Starlight Dreamer',
-                    artistName: 'indii founder',
-                    albumName: 'Neon Horizons',
-                    durationInMillis: 215000,
-                    artwork: { url: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=120&h=120&fit=crop', width: 120, height: 120 },
-                    releaseDate: '2026-01-15',
-                    genreNames: ['Electronic', 'Synthwave']
-                }
-            },
-            {
-                id: 'mock-am-2',
-                attributes: {
-                    name: 'Midnight Pulse',
-                    artistName: 'indii founder',
-                    albumName: 'Neon Horizons',
-                    durationInMillis: 198000,
-                    artwork: { url: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=120&h=120&fit=crop', width: 120, height: 120 },
-                    releaseDate: '2026-02-10',
-                    genreNames: ['Electronic', 'Dance']
-                }
-            }
-        ];
-        return mockSongs.slice(0, limit);
-    }
-
-    private getMockCatalogSearch(term: string, limit: number): NonNullable<MusicKitSearchResults['songs']>['data'] {
-        const mockCatalog = [
-            {
-                id: 'catalog-am-1',
-                attributes: {
-                    name: 'Starlight Dreamer',
-                    artistName: term,
-                    albumName: 'Neon Horizons',
-                    durationInMillis: 215000,
-                    artwork: { url: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=120&h=120&fit=crop' },
-                    releaseDate: '2026-01-15',
-                    url: 'https://music.apple.com/us/album/neon-horizons/mock-album-1'
-                }
-            },
-            {
-                id: 'catalog-am-2',
-                attributes: {
-                    name: 'Midnight Pulse',
-                    artistName: term,
-                    albumName: 'Neon Horizons',
-                    durationInMillis: 198000,
-                    artwork: { url: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=120&h=120&fit=crop' },
-                    releaseDate: '2026-02-10',
-                    url: 'https://music.apple.com/us/album/neon-horizons/mock-album-2'
-                }
-            }
-        ];
-        return mockCatalog.slice(0, limit);
+        logger.warn('[AppleMusicService] Apple Music stream history unavailable: no secured partner history backend is configured.');
+        return null;
     }
 }
 
