@@ -23,6 +23,7 @@
     "build": "npm run preflight:prod && electron-vite build",
     "build:ci": "npm run typecheck && npm run lint && electron-vite build",
     "build:studio": "electron-vite build",
+    "build:mcp": "npm run build -w packages/mcp-server-local && npm run build -w packages/mcp-server-harness",
     "build:firebase": "npm run build -w packages/firebase",
     "build:landing": "npm run build -w packages/landing",
     "deploy": "npm run preflight:prod && electron-vite build && firebase deploy --only hosting:app",
