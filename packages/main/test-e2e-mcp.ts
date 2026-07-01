@@ -1,6 +1,7 @@
 import { mcpClientService } from './src/services/mcp/MCPClientService';
 import fs from 'fs';
 import path from 'path';
+import { jsPDF } from 'jspdf';
 
 async function runE2ETest() {
     console.log('--- indii MCP E2E Test ---');
@@ -22,18 +23,16 @@ async function runE2ETest() {
         console.log('✅ Remote Tool Result:', JSON.stringify(remoteResult, null, 2));
 
         console.log('\n4. Testing Local Tool: read_pdf_contracts');
-        // Let's create a dummy file to test success or fall back to error checking
         const dummyPath = path.resolve(__dirname, 'dummy_test.pdf');
-        fs.writeFileSync(dummyPath, 'fake pdf content');
+        const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+        doc.text('E2E PDF Contract', 72, 72);
+        doc.text('This file is a real PDF for parser verification.', 72, 96);
+        fs.writeFileSync(dummyPath, Buffer.from(doc.output('arraybuffer')));
 
-        try {
-            await mcpClientService.executeTool('read_pdf_contracts', { filePath: dummyPath });
-            console.log('✅ Local Tool executed successfully (or properly handled fake PDF)');
-        } catch (err: unknown) {
-            console.log('✅ Local Tool returned expected parsing error:', (err as Error).message);
-        } finally {
-            if (fs.existsSync(dummyPath)) fs.unlinkSync(dummyPath);
-        }
+        const pdfResult = await mcpClientService.executeTool('read_pdf_contracts', { filePath: dummyPath });
+        console.log('✅ Local Tool Result:', JSON.stringify(pdfResult, null, 2));
+
+        if (fs.existsSync(dummyPath)) fs.unlinkSync(dummyPath);
 
         console.log('\n🎉 ALL TESTS PASSED!');
     } catch (e) {
