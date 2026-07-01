@@ -93,6 +93,12 @@ vi.mock('../../services/CanvasOperationsService', () => ({
         canRedo: vi.fn().mockReturnValue(false),
         toJSON: vi.fn().mockResolvedValue({}),
         ensureBaseImage: vi.fn().mockResolvedValue(false),
+        getLayers: vi.fn().mockReturnValue([]),
+        selectLayer: vi.fn(),
+        toggleLayerVisibility: vi.fn(),
+        toggleLayerLock: vi.fn(),
+        deleteLayer: vi.fn(),
+        reorderLayer: vi.fn(),
     }
 }));
 
