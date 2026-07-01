@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-06-30 21:05 EDT
+**Updated:** 2026-06-30 21:29 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+2127e7998 chore: session checkpoint [21:05]
 af880b1b2 chore: session checkpoint [19:54]
 826c2fcc4 chore: session checkpoint [19:36]
 27625fade chore: session checkpoint [19:16]
@@ -13,12 +14,12 @@ d8ce203c7 chore: session checkpoint [18:38]
 5c2fc2a30 chore: session checkpoint [18:31]
 3cb77aa9c chore: session checkpoint [18:21]
 f7c24ad30 chore: session checkpoint [18:16]
-b3172bbb6 chore: session checkpoint [18:14]
 ```
 
 ## Working State
 ```
  M firebase.json
+ M packages/renderer/src/core/components/right-panel/AssetsPanel.tsx
  M packages/renderer/src/modules/creative/components/CanvasActionRail.tsx
  M packages/renderer/src/modules/creative/components/CanvasToolbar.test.tsx
  M packages/renderer/src/modules/creative/components/CanvasToolbar.tsx
@@ -33,6 +34,7 @@ b3172bbb6 chore: session checkpoint [18:14]
  M packages/renderer/src/modules/creative/video/VideoWorkflow.tsx
  M packages/renderer/src/modules/creative/video/components/VideoStage.tsx
  M packages/renderer/src/services/CloudStorageService.ts
+?? packages/renderer/src/hooks/useSafeImageUrl.ts
 ?? packages/renderer/src/modules/creative/components/LayersPanel.tsx
 ```
 
