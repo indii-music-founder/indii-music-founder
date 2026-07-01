@@ -1,6 +1,8 @@
 # Harness MCP & Agent Interaction Flowchart
 
-This flowchart demonstrates how decentralized AI Swarm Agents (like the LegalAgent or MarketingAgent) trigger the deterministic Business Harnesses via the `indii-harness` MCP Server, and how risk is contained.
+This flowchart demonstrates the intended harness contract for decentralized AI Swarm Agents (like the LegalAgent or MarketingAgent) via the `indii-harness` MCP Server, and how risk is contained.
+
+Current state: the MCP server exposes the live harness catalog and static agent guidance, but runtime compilation/retrieval tools return explicit unavailable errors until a Node-safe shared harness backend exists.
 
 ```mermaid
 graph TD
@@ -13,19 +15,19 @@ graph TD
     %% Protocol Boundary
     subgraph MCPBoundary ["Model Context Protocol (MCP) Boundary"]
         MCPServer["indii-harness MCP Server (Local/Shared)"]
-        SkillInject["Injects Product Skills (SKILL.md) into Agent"]
+        SkillInject["Exposes catalog-driven agent guidance"]
     end
 
     %% Exposed Tools
     subgraph MCPTools ["Exposed MCP Tools"]
         ListCatalog["`list_harness_catalog()`"]
-        CompileHarness["`compile_harness(domain, input)`"]
-        GetRun["`get_harness_run(runId)`"]
+        CompileHarness["`compile_harness(domain, input)`<br/>Current: unavailable until backend exists"]
+        GetRun["`get_harness_run(runId)`<br/>Current: unavailable until backend exists"]
     end
 
     %% Core System
     subgraph CoreRails ["indii Business Core"]
-        CoreAPI["`compileHarness()` Core API"]
+        CoreAPI["`compileHarness()` Core API<br/>(future shared backend)"]
         RiskVocab["Risk Vocabulary Enforcer"]
     end
 
@@ -63,8 +65,8 @@ graph TD
 
 ## Interaction Breakdown
 
-1. **Skill Injection:** The `indii-harness` MCP Server isn't just a dumb RPC interface. When an agent connects, the server injects specific Product Skills (via `SKILL.md` files). This teaches the agent *how* and *when* to use the harness tools (e.g., "Always run the Merch Harness before suggesting a new T-shirt drop").
-2. **Catalog Discovery:** The agent uses `list_harness_catalog()` to dynamically discover what business domains are currently active or planned in the system.
-3. **Execution Request:** The agent calls `compile_harness` with a specific domain and normalized input. 
-4. **The Security Boundary:** This is the most important part of the interaction. The MCP server delegates to the deterministic `compileHarness` Core API. The Core API generates the `HarnessRun` payload.
-5. **Risk Vocabulary Enforcement:** Before passing the result back across the MCP boundary to the probabilistic AI agent, the **Risk Vocabulary Enforcer** intercepts it. If the `HarnessRun` contains Approval Gates for irreversible actions (like "Spend $500 on ads"), the MCP server *cannot* execute them automatically. It can only return the *Draft* status to the agent, forcing the agent to ask the human user for explicit approval in the UI.
+1. **Catalog-driven guidance:** The `indii-harness` MCP Server exposes the live catalog and static guidance so agents can reason about which harness exists, who owns it, and what kind of approvals it needs.
+2. **Catalog discovery:** The agent uses `list_harness_catalog()` to discover the supported harness domains and their ownership/risk metadata.
+3. **Runtime requests:** Calls such as `compile_harness`, `get_harness_run`, `list_harness_runs`, `create_boardroom_decision`, and `explain_approval_gates` currently return explicit unavailable errors instead of fabricated runs.
+4. **Future security boundary:** When the Node-safe shared harness backend lands, it should delegate to the deterministic `compileHarness()` Core API and return real `HarnessRun` payloads.
+5. **Risk vocabulary enforcement:** Once a real run backend exists, approval gates should continue to block irreversible actions instead of auto-executing them.
