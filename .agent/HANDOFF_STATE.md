@@ -1,25 +1,52 @@
 # Handoff State
-**Updated:** 2026-07-01 13:09 EDT
+**Updated:** 2026-07-01 16:12 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+08f81bfa3 fix(mcp): make harness tools honest
+e4654d6c5 fix(mcp): replace pdf placeholder with real parser
+65e647328 fix(mcp): skip missing local server builds
+93455a32c chore: session checkpoint [13:09]
 e56e9649d docs(flowcharts): document apple music analytics availability
 87434bdb6 fix(analytics): remove misleading stream estimate copy
 b51864a22 fix(analytics): make apple music unavailable without backend
 4f3b8fe97 chore: session checkpoint [11:45]
 b4c29e529 feat(creative): enhance canvas operations, add layers panel and video stage improvements
 57e77f389 chore: session checkpoint [11:36]
-a39516f40 chore: session checkpoint [11:35]
-25fac3528 chore: session checkpoint [11:30]
-df7d03690 chore: session checkpoint [11:04]
-e9d00aefd chore: session checkpoint [10:52]
 ```
 
 ## Working State
 ```
- M .agent/HANDOFF_STATE.md
+ M docs/GEMINI_ENTERPRISE_AGENT_PLATFORM.md
+ M docs/flowcharts/12-knowledge-base-rag.md
+ M docs/flowcharts/big-brain-memory-engine.md
+ M packages/firebase/src/functions/agent/manageSemanticMemory.ts
+ M packages/renderer/src/modules/devops/DevopsDashboard.tsx
+ M packages/renderer/src/modules/founders/FoundersCheckout.test.tsx
+ M packages/renderer/src/modules/founders/FoundersCheckout.tsx
+ M packages/renderer/src/modules/marketing/components/CampaignDashboard.tsx
+ M packages/renderer/src/modules/marketing/components/MarketingSidebar.tsx
+ M packages/renderer/src/modules/marketing/components/PreSaveCampaignBuilder.tsx
+ M packages/renderer/src/modules/mobile-remote/components/QuickCaptureView.tsx
+ M packages/renderer/src/modules/mobile-remote/components/StatusDashboard.tsx
+ M packages/renderer/src/modules/observability/components/MetricsDashboard.tsx
+ M packages/renderer/src/modules/publicist/PublicistDashboard.test.tsx
+ M packages/renderer/src/modules/publicist/PublicistDashboard.tsx
+ M packages/renderer/src/modules/screenwriter/ScreenwriterDashboard.tsx
+ M packages/renderer/src/modules/social/components/SocialFeed.interaction.test.tsx
+ M packages/renderer/src/modules/social/components/SocialFeed.tsx
+ M packages/renderer/src/services/agent/observability/MetricsService.ts
+?? packages/firebase/src/functions/agent/manageSemanticMemory.test.ts
 ?? packages/renderer/python/
+?? packages/renderer/src/modules/devops/DevopsDashboard.test.tsx
+?? packages/renderer/src/modules/marketing/components/MarketingSidebar.test.tsx
+?? packages/renderer/src/modules/marketing/components/PreSaveCampaignBuilder.test.tsx
+?? packages/renderer/src/modules/mobile-remote/components/QuickCaptureView.test.tsx
+?? packages/renderer/src/modules/mobile-remote/components/StatusDashboard.test.tsx
+?? packages/renderer/src/modules/observability/components/MetricsDashboard.test.tsx
+?? packages/renderer/src/modules/screenwriter/ScreenwriterDashboard.test.tsx
+?? packages/renderer/src/services/agent/observability/__tests__/MetricsService.test.ts
 ```
 
 ## Decisions
