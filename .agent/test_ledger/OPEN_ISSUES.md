@@ -8629,3 +8629,657 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **DO NOT:** Do not keep the `librarySongs.length * 1000` estimate, do not ship mock/sandbox analytics as if they were real artist metrics, and do not close this by updating comments/docs alone.
 - **Fix:** Removed Apple Music sandbox connection state, mock library/catalog fallbacks, fabricated `librarySongs.length * 1000` stream estimates, and zero-filled stream history. `AppleMusicService` now returns `null` for platform data/history unless real partner data is available; `PlatformDataService` omits Apple Music when that null is returned; `PlatformConnector` renders Apple Music as unavailable with a disabled action until a secured backend exists.
 - **Verification:** `npm --prefix packages/renderer test -- --run src/services/analytics/AppleMusicService.test.ts src/services/analytics/PlatformDataService.test.ts src/modules/analytics/components/PlatformConnector.test.tsx src/services/commands/EntryCommandSecurityRules.test.ts src/services/business-harness/HarnessAgentIdValidation.test.ts src/modules/creative/video/components/DailyItem.a11y.test.tsx` passed (6 files, 23 tests). `npm --prefix packages/renderer run typecheck` passed. Full `npm --prefix packages/renderer test -- --run` passed (593 files, 3662 tests; 22 files skipped, 54 tests skipped).
+
+### ISSUE-574: Earnings dashboard exposes a dead `Download Report` button
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Finance / earnings dashboard
+- **Location:** `packages/renderer/src/modules/finance/components/EarningsDashboard.tsx:179-191`
+- **Summary:** The earnings header renders a visible `Download Report` CTA, but the component wires no `onClick` handler or download flow for it. The adjacent period pill is also rendered as a button despite only displaying the current month/year. That leaves an active-looking control pair with no behavior.
+- **Expected (acceptance):** Either connect `Download Report` to a real report export/download path or render it as an explicitly unavailable/disabled control until that backend exists. If the period control is meant to be interactive, wire the handler and state; otherwise render it as static text instead of a button.
+- **Honest fallback:** If report export is not implemented yet, label the control as unavailable and keep it visibly disabled rather than leaving a live-looking button that does nothing.
+- **Fix Direction:** Add the report export/download action or downgrade the CTA to an honest disabled state with clear unavailable copy. Do not leave a non-functional primary action in the dashboard header.
+- **DO NOT:** Keep the `Download Report` CTA looking actionable when it has no handler.
+
+### ISSUE-575: Mobile remote renders `Legal Review` as a dead button
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Mobile Remote / status dashboard
+- **Location:** `packages/renderer/src/modules/mobile-remote/components/StatusDashboard.tsx:98-104`
+- **Summary:** The live mobile remote surface renders `Legal Review` as a disabled button with unavailable copy, but the control still reads like an action target inside the 2x2 quick-action grid. This is visible in the app at `http://localhost:4243/mobile-remote` after sign-in.
+- **Expected (acceptance):** If remote legal approvals are not wired yet, render the item as a non-interactive status card or hide it until the workflow exists. If it must remain visible, it should not present as a button.
+- **Honest fallback:** Keep the unavailable message, but remove button semantics so the UI does not advertise an action that cannot be taken.
+- **Fix Direction:** Replace the dead button with a static unavailable indicator or a clearly labeled disabled tile that is not styled as an action.
+- **DO NOT:** Leave a button-shaped control that promises legal review when no mobile execution path exists.
+
+### ISSUE-576: Marketing sidebar exposes disabled future-module navigation buttons
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Marketing / sidebar navigation
+- **Location:** `packages/renderer/src/modules/marketing/components/MarketingSidebar.tsx:52-166`
+- **Summary:** The marketing sidebar shows multiple disabled navigation buttons labeled `Soon` (`Calendar`, `Analytics`, `History`, `Audiences`, `Settings`). The live dashboard also says the sidebar exposes future modules that are not wired yet, which confirms these are dead controls rather than real navigation.
+- **Expected (acceptance):** Future modules should be hidden, grouped under a non-interactive teaser, or surfaced as honest informational labels until they are wired to actual routes.
+- **Honest fallback:** Keep the roadmap visibility, but remove the button affordance so users do not try to navigate to dead tabs.
+- **Fix Direction:** Replace disabled nav buttons with static labels or a read-only roadmap panel that is obviously not interactive.
+- **DO NOT:** Keep multiple inactive nav buttons in the primary sidebar when they do not route anywhere.
+
+### ISSUE-577: Publicist sidebar exposes a disabled `Analytics & Reports` nav button
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Publicist / sidebar navigation
+- **Location:** `packages/renderer/src/modules/publicist/PublicistDashboard.tsx:387-410`
+- **Summary:** The publicist sidebar includes a disabled `Analytics & Reports` nav button with `Soon` copy. This is a button-shaped dead control in a primary navigation area, matching the same pattern we found in Marketing.
+- **Expected (acceptance):** Future tabs should be hidden, rendered as plain roadmap labels, or clearly marked as non-interactive text rather than action buttons.
+- **Honest fallback:** Preserve the roadmap cue, but remove the click affordance so the UI does not advertise a route that cannot be reached.
+- **Fix Direction:** Replace the disabled nav button with static text or an obviously informational card until the route exists.
+- **DO NOT:** Leave a dead nav button in the sidebar that suggests a working analytics page when none exists.
+
+### ISSUE-589: Distribution quick actions render as dead buttons when no handlers are passed
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Distribution / quick actions
+- **Locations:** `packages/renderer/src/modules/distribution/DistributionDashboard.tsx:42-46`, `packages/renderer/src/modules/distribution/components/QuickLinksPanel.tsx:10-30`
+- **Summary:** The live distribution dashboard renders `QuickLinksPanel` without any handlers, so all three quick-action buttons (`Connect Distributor`, `Test Delivery`, `View API Keys`) are visibly disabled and inert on the page. This is a user-facing dead control pattern, not a temporary loading state.
+- **Expected (acceptance):** If these actions are not wired in this build, render them as a read-only roadmap/status card or hide the panel entirely. If they remain visible, they should not look like actionable buttons.
+- **Honest fallback:** Keep the titles as informational labels, but remove the button affordance until at least one handler exists for the panel.
+- **Fix Direction:** Pass real handlers from `DistributionDashboard` or convert the panel to static quick-info items with no button semantics.
+- **DO NOT:** Keep three disabled-looking buttons in a primary dashboard sidebar when they cannot do anything.
+
+### ISSUE-596: Files sidebar exposes button-shaped nav items with no action
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Files / sidebar navigation
+- **Locations:** `packages/renderer/src/modules/files/FileDashboard.tsx:70-88`, `packages/renderer/src/modules/files/components/NavItem.tsx:14-37`
+- **Summary:** The live Files dashboard renders `Upload Asset`, `Recent`, `Favorites`, and `Trash` as buttons, but the first three are wired without click handlers and the `NavItem` component always renders a button even when `onClick` is absent. On the live page at `http://localhost:4243/files`, those controls are visible and inert.
+- **Expected (acceptance):** Non-interactive items should render as static labels, status chips, or disabled controls that clearly communicate they are not actionable. If a button is shown, it should be wired.
+- **Honest fallback:** Keep the labels, but remove button semantics for items without handlers.
+- **Fix Direction:** Wire `Upload Asset` and the sidebar items to real behavior or replace them with non-interactive elements until those actions exist.
+- **DO NOT:** Leave visible primary sidebar buttons with no handler, especially not in a file-management surface.
+
+### ISSUE-597: Social profile header renders an unhandled `Edit Profile` button
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Social / profile header
+- **Location:** `packages/renderer/src/modules/social/components/UserProfileHeader.tsx:145-159`
+- **Summary:** The own-profile state renders an `Edit Profile` button, but the button has no `onClick` handler and does not open a modal or route anywhere. On the live profile header this presents as a real action, but it is inert.
+- **Expected (acceptance):** Profile editing should either open the actual edit flow or be rendered as a non-interactive label until the flow exists.
+- **Honest fallback:** Keep the profile affordance visible, but remove the button semantics until there is a working edit path.
+- **Fix Direction:** Wire `Edit Profile` to a real editor or replace it with a read-only profile badge.
+- **DO NOT:** Leave a primary profile action that looks clickable but cannot do anything.
+
+### ISSUE-598: Social feed exposes a disabled `Add Media` button as a future action
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Social / feed composer
+- **Location:** `packages/renderer/src/modules/social/components/SocialFeed.tsx:160-172`
+- **Summary:** The feed composer shows an `Add Media` button with `disabled`, `aria-disabled`, and `coming soon` copy. It is visually presented as a control but cannot do anything in the current build, which is the same dead-action pattern we have been removing elsewhere.
+- **Expected (acceptance):** Future composer capabilities should be represented as plain roadmap text or hidden until wired, not as disabled action buttons.
+- **Honest fallback:** Keep the roadmap note, but remove the button affordance until media attachments are actually supported.
+- **Fix Direction:** Convert the media attachment affordance into a non-interactive roadmap badge or wire it to a working upload flow.
+- **DO NOT:** Leave a disabled primary composer button that suggests a supported media attachment flow when none exists.
+
+### ISSUE-599: Legal analyzer renders inert upload buttons inside clickable drop zones
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Legal / contract analyzer
+- **Location:** `packages/renderer/src/modules/legal/LegalDashboard.tsx:259-286`
+- **Summary:** The analyzer cards show `Browse Files` and `Open Camera` as button-shaped controls, but they are styled with `pointer-events-none` and the actual interaction lives on the surrounding drop zone/input. On the live screen the buttons read as actions even though they cannot be clicked.
+- **Expected (acceptance):** If the card itself is the control, the CTA text should be rendered as a label or a non-button element. If a button is shown, it should be the thing that actually handles the action.
+- **Honest fallback:** Keep the upload affordance visible, but remove button semantics from the decorative CTA labels.
+- **Fix Direction:** Replace the inert CTA buttons with plain text labels or move the real upload behavior onto the buttons themselves.
+- **DO NOT:** Leave decorative button-shaped labels that suggest a separate clickable action when none exists.
+
+### ISSUE-600: Publishing release wizard shows inert `Choose File` and `Choose Image` buttons
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Publishing / release wizard uploads
+- **Location:** `packages/renderer/src/modules/publishing/components/ReleaseWizard.tsx:600-662`
+- **Summary:** The audio and cover-art upload cards render `Choose File` and `Choose Image` as button-shaped CTAs, but the actual interaction is driven by transparent file inputs layered above them. The visible buttons themselves are not the interactive control, so the UI still reads like it has clickable actions that it does not actually expose.
+- **Expected (acceptance):** Either the button should own the file-picker action or the upload affordance should be rendered as plain text/label content without button semantics.
+- **Honest fallback:** Keep the upload instructions visible, but strip button styling from the non-interactive labels.
+- **Fix Direction:** Move the file-picker action onto the visible button or replace the button copy with a non-action label.
+- **DO NOT:** Leave decorative upload buttons that look clickable but are only there under a transparent file input.
+
+### ISSUE-584: Distribution release list shows dead `Create New Release` and overflow menu buttons
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Distribution / release list
+- **Location:** `packages/renderer/src/modules/distribution/components/ReleaseStatusList.tsx:22-32`, `packages/renderer/src/modules/distribution/components/ReleaseStatusList.tsx:76-83`
+- **Summary:** The empty-state `Create New Release` CTA and the per-row overflow `MoreHorizontal` button are rendered without any handlers in this component. The file also accepts `onDeliver` and `onViewReport` props but never wires them into visible controls, so the live list still exposes button-shaped actions that cannot do anything.
+- **Expected (acceptance):** Empty states and release rows should either wire to real navigation/actions or be rendered as plain informational content until the actions exist.
+- **Honest fallback:** Keep the release list visible, but remove button semantics for controls that are not wired.
+- **Fix Direction:** Connect the CTAs to a real creation flow and attach the row menu to actual release actions, or replace them with non-interactive labels.
+- **DO NOT:** Leave primary distribution controls in the UI when the component does not use the handlers it already receives.
+
+### ISSUE-585: Licensing catalog search renders inert `Filters` and add-track buttons
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Licensing / catalog search
+- **Location:** `packages/renderer/src/modules/licensing/components/CatalogSearchTab.tsx:79-82`, `packages/renderer/src/modules/licensing/components/CatalogSearchTab.tsx:166-171`
+- **Summary:** The catalog search toolbar shows a `Filters` button with no handler, and each track card shows a circular `+` button with no handler. Both controls are visible in the live search surface, but neither performs any action in the current build.
+- **Expected (acceptance):** If filtering or track actions are not implemented, the controls should be rendered as plain labels or hidden until they are wired.
+- **Honest fallback:** Keep the search results visible, but remove button semantics from the inert filter and add controls.
+- **Fix Direction:** Wire the filter panel and track action to real behavior or convert the controls into non-interactive affordances.
+- **DO NOT:** Present icon buttons in the catalog UI when they cannot change state or open a flow.
+
+### ISSUE-586: Publishing release card includes an unhandled edit button
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Publishing / release cards
+- **Location:** `packages/renderer/src/modules/publishing/components/ReleaseStatusCard.tsx:112-128`
+- **Summary:** The release card renders an edit button with only icon styling and no `onClick` handler, so the visible control does nothing. The adjacent delete and external-link buttons are wired, which makes the edit control stand out as an inert action instead of a deliberate label.
+- **Expected (acceptance):** If edit is not supported yet, the control should be hidden or rendered as plain status text. If it is supported, it should open the actual edit flow.
+- **Honest fallback:** Keep the release card actions visible, but remove button semantics from the unimplemented edit affordance.
+- **Fix Direction:** Wire the edit control to a real edit flow or replace it with a non-interactive label.
+- **DO NOT:** Leave a primary release-card action button that cannot do anything while adjacent actions do work.
+
+### ISSUE-587: Royalty action panel renders an unhandled helper chat button
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Royalty / release action panel
+- **Location:** `packages/renderer/src/modules/royalty/components/ActionPanel.tsx:20-30`
+- **Summary:** The helper CTA `Need help? Chat with Publishing Agent` is rendered as a button, but this component never attaches an `onClick` handler or link and nothing else wires it up. In the live release flow it presents as a support action while doing nothing.
+- **Expected (acceptance):** Support/help affordances should either open a real chat flow or be rendered as plain informational text until the flow exists.
+- **Honest fallback:** Keep the hint visible, but remove button semantics from the unimplemented helper CTA.
+- **Fix Direction:** Wire the button to the actual publishing-agent chat flow or convert it to non-interactive help text.
+- **DO NOT:** Leave a support-looking button in the footer when it has no destination.
+
+### ISSUE-588: Finance revenue overview shows an inert period selector button
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Finance / revenue overview
+- **Location:** `packages/renderer/src/modules/finance/components/RevenueView.tsx:176-187`
+- **Summary:** The current month/year pill in the revenue header is rendered as a button, but it has no `onClick` handler and no picker or menu is attached. It looks like an interactive period selector even though it only displays the reporting month.
+- **Expected (acceptance):** If the period is not switchable, the date should be rendered as plain text. If it is meant to be interactive, it should open the actual selector.
+- **Honest fallback:** Keep the reporting period visible, but remove button semantics from the static date pill.
+- **Fix Direction:** Wire the pill to a date-range selector or convert it to non-interactive header text.
+- **DO NOT:** Leave a clickable-looking period chip that does not change anything.
+
+### ISSUE-589: Publicist contact drawer shows inert `Email` and `Website` shortcut buttons
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Publicist / contact details drawer
+- **Location:** `packages/renderer/src/modules/publicist/components/ContactDetailsModal.tsx:100-112`
+- **Summary:** The quick-action cards for `Email` and `Website` are rendered as buttons, but this component does not attach any handler or link to either one. They look like contact shortcuts while doing nothing.
+- **Expected (acceptance):** Contact actions should open the relevant mail/client or website, or be shown as non-interactive labels until those integrations exist.
+- **Honest fallback:** Keep the shortcuts visible, but remove button semantics from the unimplemented actions.
+- **Fix Direction:** Wire the shortcuts to the contact's actual email and website or replace them with static contact metadata.
+- **DO NOT:** Leave contact shortcut buttons in the drawer when they cannot launch anything.
+
+### ISSUE-596: Dashboard widgets expose dead zero-state buttons for releases and storefronts
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Dashboard / custom widgets
+- **Locations:** `packages/renderer/src/modules/dashboard/components/CustomDashboardWidgets.tsx:336-343`, `packages/renderer/src/modules/dashboard/components/CustomDashboardWidgets.tsx:852-857`
+- **Summary:** The deployment and sales widgets render `Initialize Release` and `Connect Storefront` as button-shaped CTAs, but neither control has an attached handler in this component. They read as actionable zero-state prompts while doing nothing in the live UI.
+- **Expected (acceptance):** Zero-state widgets should either route to the real workflow or render as informational labels until the workflow exists.
+- **Honest fallback:** Keep the empty-state messaging visible, but strip button semantics from the unimplemented CTAs.
+- **Fix Direction:** Wire the buttons to the release and storefront setup flows or convert them to non-interactive prompts.
+- **DO NOT:** Leave empty-state dashboard buttons that imply a working setup path when none exists.
+
+### ISSUE-597: Licensing dashboard renders dead quick-action buttons
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Licensing / dashboard quick actions
+- **Location:** `packages/renderer/src/modules/licensing/LicensingDashboard.tsx:331-337`
+- **Summary:** The quick actions panel renders `Draft New Deal` and `Review Agreements` as full buttons, but this component does not attach any click handlers or route the actions anywhere. The panel therefore advertises shortcuts that do nothing.
+- **Expected (acceptance):** Quick actions should either navigate to real workflows or be downgraded to informational tiles until the workflows exist.
+- **Honest fallback:** Keep the quick-action labels visible, but remove button semantics from the inert actions.
+- **Fix Direction:** Wire the buttons to the real deal-drafting and agreement-review flows or replace them with non-interactive labels.
+- **DO NOT:** Leave high-visibility licensing actions in the dashboard when the buttons are dead.
+
+### ISSUE-598: Marketing toolbar exposes inert notifications and filter icon buttons
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Marketing / top toolbar
+- **Location:** `packages/renderer/src/modules/marketing/components/MarketingToolbar.tsx:38-47`
+- **Summary:** The toolbar renders `Bell` and `Filter` as standalone icon buttons, but this component does not attach any `onClick` handler to either control. They appear in the primary app chrome as actionable icons while doing nothing.
+- **Expected (acceptance):** Top-bar utilities should either open the real notification/filter flows or be rendered as static icons until they exist.
+- **Honest fallback:** Keep the toolbar icons visible, but remove button semantics from the inert controls.
+- **Fix Direction:** Wire the icons to the actual notification and filter panels or convert them to non-interactive status icons.
+- **DO NOT:** Leave primary toolbar icon buttons that do not open anything.
+
+### ISSUE-599: Publishing payout history exposes a dead export button and inert clickable rows
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Publishing / payout history
+- **Location:** `packages/renderer/src/modules/publishing/components/PayoutHistory.tsx:47-56`, `packages/renderer/src/modules/publishing/components/PayoutHistory.tsx:79-84`
+- **Summary:** The `Export CSV` button is rendered without a handler, and each payout row is given a `cursor-pointer`/`onClick` affordance even though the parent dashboard does not pass `onViewDetails`. On the live screen the history list looks interactive in both places, but neither action actually does anything.
+- **Expected (acceptance):** Export and row drill-down should be wired to real behavior, or the affordances should be rendered as non-interactive content.
+- **Honest fallback:** Keep the payout history visible, but remove button/click semantics from the unimplemented export and detail actions.
+- **Fix Direction:** Wire `Export CSV` and payout-row drill-down to real behavior or convert them to static history labels.
+- **DO NOT:** Leave a financial history panel that advertises exports and detail drill-downs that do not exist.
+
+### ISSUE-600: Publishing earnings panel exposes dead download and withdrawal buttons
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Publishing / earnings summary
+- **Location:** `packages/renderer/src/modules/publishing/components/EarningsDashboard.tsx:87-92`, `packages/renderer/src/modules/publishing/components/EarningsDashboard.tsx:128-133`
+- **Summary:** The earnings summary card renders a `Download` icon button with no handler, and the `Request Withdrawal` CTA below it is also a button with no `onClick` or linked workflow. On the live royalties page these controls look ready to act, but they are inert.
+- **Expected (acceptance):** Summary actions should either trigger the real download/withdrawal flow or be shown as non-interactive labels until those flows exist.
+- **Honest fallback:** Keep the royalties data visible, but strip button semantics from the unimplemented summary actions.
+- **Fix Direction:** Wire the buttons to real export and withdrawal workflows or convert them to informational affordances.
+- **DO NOT:** Leave a finance summary with primary buttons that cannot complete any action.
+
+### ISSUE-601: Publishing release list view renders a dead external-link icon button
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Publishing / release list view
+- **Location:** `packages/renderer/src/modules/publishing/components/ReleaseListView.tsx:321-325`
+- **Summary:** The row actions include an `ExternalLink` icon button, but the component does not attach any click handler or destination to that control. The row itself may be clickable elsewhere, but the icon is still surfaced as an action with no behavior.
+- **Expected (acceptance):** If the release row is the only navigation surface, the icon should be removed or rendered as a non-interactive marker. If the icon is shown, it should open the actual release destination.
+- **Honest fallback:** Keep the list view visible, but remove button semantics from the unimplemented icon action.
+- **Fix Direction:** Wire the external-link icon to the release detail or external destination flow, or replace it with a static status glyph.
+- **DO NOT:** Leave an icon button in the release list that suggests a secondary action when none exists.
+
+### ISSUE-602: Publishing distributor progress shows a dead `View Releases` footer button
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Publishing / distributor progress
+- **Location:** `packages/renderer/src/modules/publishing/components/MultiDistributorProgress.tsx:144-149`
+- **Summary:** The completion footer renders `View Releases` as a full button, but this component never accepts or calls a handler for that action. When distribution completes, the UI presents a final navigation action that cannot actually take the user anywhere.
+- **Expected (acceptance):** Completion state should either navigate to the real releases screen or render the footer as a non-interactive status panel.
+- **Honest fallback:** Keep the completion message visible, but remove button semantics from the unimplemented footer CTA.
+- **Fix Direction:** Wire the footer button to the releases view or replace it with a static completion message.
+- **DO NOT:** Leave a completion-state button that implies a follow-up destination when none exists.
+
+### ISSUE-603: Campaign card exposes a dead overflow menu button
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Marketing / campaign cards
+- **Location:** `packages/renderer/src/modules/marketing/components/CampaignCard.tsx:63-74`
+- **Summary:** The top-right overflow button is rendered with a menu label and icon, but its handlers only stop event propagation and never open a menu or perform any action. The card presents a standard affordance for more options while the control is effectively inert.
+- **Expected (acceptance):** If there is no overflow menu yet, the control should be hidden or rendered as a static glyph. If options exist, the button should open the actual menu.
+- **Honest fallback:** Keep the campaign card visible, but remove button semantics from the unimplemented overflow affordance.
+- **Fix Direction:** Wire the overflow button to a real options menu or replace it with a non-interactive status icon.
+- **DO NOT:** Leave a menu-looking button that cannot surface any actions.
+
+### ISSUE-604: Editable copy modal renders a dead `Enhance with AI` button
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Marketing / editable copy modal
+- **Location:** `packages/renderer/src/modules/marketing/components/EditableCopyModal.tsx:44-50`
+- **Summary:** The `Enhance with AI` button only flips `showEnhanceModal`, but no enhancement modal is rendered anywhere in the component and the helper state is otherwise unused. The control looks like an AI editing action yet produces no visible UI change.
+- **Expected (acceptance):** The button should either open a real enhancement flow or be removed until that flow exists.
+- **Honest fallback:** Keep the post editor visible, but remove button semantics from the unimplemented enhancement affordance.
+- **Fix Direction:** Wire the enhancement button to the actual AI copy workflow or convert it to static helper text.
+- **DO NOT:** Leave a prominent AI action button that cannot surface any output or editor.
+
+### ISSUE-605: Campaign details modal renders a dead `Delete Campaign` button
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Publicist / campaign details modal
+- **Location:** `packages/renderer/src/modules/publicist/components/CampaignDetailsModal.tsx:151-155`
+- **Summary:** The details modal shows a `Delete Campaign` button in the footer, but the component never attaches an `onClick` handler or delete workflow to it. The button looks like a destructive action even though it cannot remove anything.
+- **Expected (acceptance):** If campaign deletion is not implemented, the control should be hidden or rendered as static text. If it is supported, it should call the real delete flow.
+- **Honest fallback:** Keep the campaign details visible, but remove button semantics from the unimplemented delete affordance.
+- **Fix Direction:** Wire the delete button to the actual campaign deletion flow or replace it with a non-interactive label.
+- **DO NOT:** Leave a destructive-looking button in a modal when it cannot actually delete the campaign.
+
+### ISSUE-606: Earnings table exposes an inert `View Report Details` context action
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Finance / earnings table
+- **Location:** `packages/renderer/src/modules/finance/components/EarningsTable.tsx:108-112`
+- **Summary:** The row context menu includes `View Report Details`, but the menu item has no `onSelect` handler or destination. It is surfaced alongside real copy actions, so it reads like a valid drill-down even though it does nothing.
+- **Expected (acceptance):** If report details are not implemented, the menu item should be removed. If they are, the item should open the real detail view.
+- **Honest fallback:** Keep the table visible, but remove the unimplemented report-details action from the context menu.
+- **Fix Direction:** Wire the menu item to the actual report-details flow or replace it with a static label.
+- **DO NOT:** Leave a menu action that suggests row drill-down when there is no destination.
+
+### ISSUE-607: Campaign dashboard exposes a dead `+ more assets` affordance
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟢 LOW
+- **Module:** Marketing / dashboard
+- **Location:** `packages/renderer/src/modules/marketing/components/CampaignDashboard.tsx:315-318`
+- **Summary:** The asset summary renders `+ N more assets` with pointer styling, but it is only a paragraph element and has no click handler or navigation target. It looks interactive without doing anything.
+- **Expected (acceptance):** Either open the full asset library or render the text as static copy.
+- **Honest fallback:** Keep the asset count visible, but remove the interactive styling unless a real action exists.
+- **Fix Direction:** Attach a real drill-in action or drop the pointer affordance.
+- **DO NOT:** Leave a clickable-looking label that cannot be used.
+
+### ISSUE-608: Brand health recent-scan rows look clickable but do nothing
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟢 LOW
+- **Module:** Marketing / brand manager
+- **Location:** `packages/renderer/src/modules/marketing/components/brand-manager/HealthPanel.tsx:162-165`
+- **Summary:** Each recent scan row is styled with `cursor-pointer` and hover affordances, but there is no selection, detail view, or keyboard interaction. The list reads like a navigable history view without any navigation.
+- **Expected (acceptance):** Either open a scan detail view or remove the interactive styling.
+- **Honest fallback:** Keep the recent scans visible, but render them as plain static rows.
+- **Fix Direction:** Make the rows functional or clearly static.
+- **DO NOT:** Keep history items visually clickable when they are inert.
+
+### ISSUE-609: Release panel cover-art tile looks clickable but has no upload action
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟢 LOW
+- **Module:** Marketing / brand manager
+- **Location:** `packages/renderer/src/modules/marketing/components/brand-manager/ReleasePanel.tsx:52-60`
+- **Summary:** The cover-art placeholder is styled as a clickable upload tile and even labels itself `Upload Artwork`, but there is no `onClick`, file input, or drop target wired to it. The affordance suggests image upload support that is not actually present.
+- **Expected (acceptance):** Either open a file picker / upload flow or render the area as static placeholder art.
+- **Honest fallback:** Keep the artwork placeholder visible, but remove the clickable styling until upload is real.
+- **Fix Direction:** Wire the tile to an actual upload handler or remove the fake interaction cue.
+- **DO NOT:** Leave upload-looking chrome on a dead control.
+
+### ISSUE-610: Release status card exposes a dead DDEX preview icon button
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟢 LOW
+- **Module:** Publishing / release status
+- **Location:** `packages/renderer/src/modules/publishing/components/ReleaseStatusCard.tsx:129-137`
+- **Summary:** The blue external-link icon button renders with a click handler stub, but the handler only stops propagation and contains a comment. It looks like a DDEX or live-link action even though it never opens anything.
+- **Expected (acceptance):** If a DDEX preview or live link exists, open it. Otherwise remove the icon button.
+- **Honest fallback:** Keep the release status card visible, but render the icon as static decoration until the preview exists.
+- **Fix Direction:** Wire the button to the real preview/link flow or remove it.
+- **DO NOT:** Leave an interactive-looking icon button that intentionally does nothing.
+
+### ISSUE-611: Earnings dashboard exposes a dead `Download Report` button
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟢 LOW
+- **Module:** Finance / earnings dashboard
+- **Location:** `packages/renderer/src/modules/finance/components/EarningsDashboard.tsx:189-191`
+- **Summary:** The summary header renders a `Download Report` button with no `onClick` or download flow. It looks like a report export action, but it cannot do anything.
+- **Expected (acceptance):** Either trigger the actual report export or remove the button.
+- **Honest fallback:** Keep the summary visible, but convert the control to static text until export is implemented.
+- **Fix Direction:** Wire the button to the report download path or remove it.
+- **DO NOT:** Leave an export-looking button that cannot export.
+
+### ISSUE-612: Social platform filters render clickable rows with no filter behavior
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟢 LOW
+- **Module:** Social / dashboard
+- **Location:** `packages/renderer/src/modules/social/SocialDashboard.tsx:254-260`
+- **Summary:** The platform filter rows are styled as clickable controls, but they have no click handler, no state update, and no keyboard affordance. They read like interactive filters without filtering anything.
+- **Expected (acceptance):** Either make the rows toggle filters or render them as static indicators.
+- **Honest fallback:** Keep the platform list visible, but remove the clickable styling until the filters work.
+- **Fix Direction:** Wire the rows to actual filter state or stop implying interactivity.
+- **DO NOT:** Leave filter-looking rows that cannot change anything.
+
+### ISSUE-613: Distribution dashboard exposes a dead `View Preferred Partners` CTA
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟢 LOW
+- **Module:** Distribution / connections
+- **Location:** `packages/renderer/src/modules/distribution/components/DistributorConnectionsPanel.tsx:90-92`
+- **Summary:** The recommendation card renders a `View Preferred Partners` button, but it has no handler or destination. It suggests a partner marketplace path that is not implemented.
+- **Expected (acceptance):** Either open the partner flow or remove the button.
+- **Honest fallback:** Keep the recommendation card visible, but make the CTA static until the partner flow exists.
+- **Fix Direction:** Wire the CTA to the real partner screen or delete it.
+- **DO NOT:** Leave a marketplace-looking button with nowhere to go.
+
+### ISSUE-614: Release detail track row looks clickable but has no detail action
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟢 LOW
+- **Module:** Publishing / release detail
+- **Location:** `packages/renderer/src/modules/publishing/components/ReleaseDetailPage.tsx:235-245`
+- **Summary:** The single track row in the release detail tracklist is styled as a clickable card, but there is no `onClick`, drill-down, or keyboard behavior. It suggests a track detail surface that does not exist.
+- **Expected (acceptance):** Either open a track detail surface or remove the clickable styling.
+- **Honest fallback:** Keep the tracklist visible, but render the row as static content until interaction is implemented.
+- **Fix Direction:** Wire the row to a real detail view or remove the fake affordance.
+- **DO NOT:** Leave a track row that looks interactive when it isn’t.
+
+### ISSUE-615: Social calendar campaign chip looks clickable but has no action
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟢 LOW
+- **Module:** Social / calendar
+- **Location:** `packages/renderer/src/modules/social/SocialDashboard.tsx:83-89`
+- **Summary:** The scheduled campaign chip in the monthly calendar uses `cursor-pointer` and hover styling, but it has no click handler or keyboard affordance. It reads like a drill-in surface without any destination.
+- **Expected (acceptance):** Either open the scheduled post or make the chip static.
+- **Honest fallback:** Keep the calendar visible, but remove the clickable styling until a detail view exists.
+- **Fix Direction:** Wire the chip to a post detail/edit flow or remove the fake interactivity.
+- **DO NOT:** Leave calendar items that look selectable when they are not.
+
+### ISSUE-616: Social feed author/avatar look clickable but have no profile action
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟢 LOW
+- **Module:** Social / feed
+- **Location:** `packages/renderer/src/modules/social/components/SocialFeed.tsx:299-310`
+- **Summary:** The post author avatar and name are styled with `cursor-pointer` and hover affordances, but neither opens a profile or triggers any action. They look like profile links without navigation.
+- **Expected (acceptance):** Either open the author profile or remove the link-like styling.
+- **Honest fallback:** Keep the feed layout visible, but render the author area as static text until profile navigation is implemented.
+- **Fix Direction:** Wire the author/avatar to a profile surface or remove the fake link treatment.
+- **DO NOT:** Leave profile-looking elements with no profile action.
+
+### ISSUE-617: Analytics upgrade CTA is styled as a link but has no destination
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟢 LOW
+- **Module:** Analytics / dashboard
+- **Location:** `packages/renderer/src/modules/analytics/components/CustomizableAnalyticsDashboard.tsx:301-307`
+- **Summary:** The free-tier banner renders `Upgrade to Pro` as a clickable, underlined span, but it has no handler, route, or keyboard affordance. It reads like a purchase path without any implementation.
+- **Expected (acceptance):** Either open the upgrade flow or render the copy as static text.
+- **Honest fallback:** Keep the banner visible, but remove the clickable styling until an upgrade destination exists.
+- **Fix Direction:** Wire the CTA to the real upgrade path or stop implying interactivity.
+- **DO NOT:** Leave a link-looking upgrade affordance that goes nowhere.
+
+### ISSUE-618: Desktop widget card looks clickable but has no action
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟢 LOW
+- **Module:** Desktop / widget
+- **Location:** `packages/renderer/src/modules/desktop/components/DesktopWidget.tsx:4-29`
+- **Summary:** The dashboard widget uses `cursor-pointer` and hover styling on the entire card, but there is no click handler or keyboard behavior. It presents itself like a drill-in surface even though it is static.
+- **Expected (acceptance):** Either wire the widget to a real detail surface or remove the clickable styling.
+- **Honest fallback:** Keep the widget visible, but make it read as static until interaction exists.
+- **Fix Direction:** Add a real action or drop the fake affordance.
+- **DO NOT:** Leave a dashboard card that suggests navigation when none exists.
+
+### ISSUE-619: Social profile stats row looks interactive but has no profile drill-in
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟢 LOW
+- **Module:** Social / profile header
+- **Location:** `packages/renderer/src/modules/social/components/UserProfileHeader.tsx:136-147`
+- **Summary:** The Followers, Following, and Drops stats are styled with `cursor-pointer` and hover states, but none of the rows opens a list, profile view, or other action. They look interactive without any destination.
+- **Expected (acceptance):** Either wire the stat rows to a detail surface or render them as static metrics.
+- **Honest fallback:** Keep the profile summary visible, but remove the clickable treatment until the drill-ins exist.
+- **Fix Direction:** Add real stat-row navigation or stop implying it.
+- **DO NOT:** Leave social stats styled like links when they do nothing.
+
+### ISSUE-620: Touring sidebar settings icon is clickable-looking but inert
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟢 LOW
+- **Module:** Touring / sidebar
+- **Location:** `packages/renderer/src/modules/touring/components/RoadManagerSidebar.tsx:86-94`
+- **Summary:** The System Status block includes a settings gear with `cursor-pointer`, but there is no attached handler, menu, or keyboard affordance. It looks like a settings entry point without one.
+- **Expected (acceptance):** Either open a settings surface or render the icon as decorative.
+- **Honest fallback:** Keep the status block visible, but remove the pointer affordance until a settings action exists.
+- **Fix Direction:** Wire the gear to a real settings panel or drop the fake interactivity.
+- **DO NOT:** Leave a settings icon that cannot do anything.
+
+### ISSUE-621: Top-selling merch item card looks clickable but has no action
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟢 LOW
+- **Module:** Merchandise / top sellers
+- **Location:** `packages/renderer/src/modules/merchandise/components/TopSellingProductItem.tsx:11-31`
+- **Summary:** The top-selling product item is wrapped in a `cursor-pointer` card with hover styling, but the component does not accept or fire any click handler. It presents a drill-in surface without any destination.
+- **Expected (acceptance):** Either open a product detail view or render the item as static content.
+- **Honest fallback:** Keep the product row visible, but remove the clickable styling until interaction exists.
+- **Fix Direction:** Add a real detail action or stop implying the card is interactive.
+- **DO NOT:** Leave merch cards that look selectable when they are not.
+
+### ISSUE-622: Social feed post actions are rendered as live buttons but have no handlers
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟢 LOW
+- **Module:** Social / feed
+- **Location:** `packages/renderer/src/modules/social/components/SocialFeed.tsx:316-370`
+- **Summary:** The post overflow, Like, Comment, and Share controls are all rendered as enabled buttons with hover/focus styling, but none of them fires any action. The card presents a full engagement bar that is visually interactive but functionally dead.
+- **Expected (acceptance):** Either wire the post actions to real behavior or render the controls as inert placeholders.
+- **Honest fallback:** Keep the feed layout visible, but make the action bar explicitly unavailable until it is implemented.
+- **Fix Direction:** Add the real post actions or remove the fake engagement affordances.
+- **DO NOT:** Leave a social action bar that pretends to work.
+
+### ISSUE-623: File dashboard exposes dead upload and file-action buttons
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟢 LOW
+- **Module:** Files / dashboard
+- **Location:** `packages/renderer/src/modules/files/FileDashboard.tsx:70-73`, `:177-199`, `:259-269`
+- **Summary:** The primary `Upload Asset` button has no handler, and each file card exposes hover buttons for Open in Studio, Download File, More, and Delete File without any attached action. The dashboard presents a full asset-management toolbar that does not execute anything.
+- **Expected (acceptance):** Either wire the upload and file actions to real behavior or remove the fake controls.
+- **Honest fallback:** Keep the file browser visible, but make the controls explicitly unavailable until they are implemented.
+- **Fix Direction:** Add the real file-management actions or strip the interactive styling.
+- **DO NOT:** Leave asset-management buttons that look live but do nothing.
+
+### ISSUE-624: Release status list shows dead creation and overflow actions
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟢 LOW
+- **Module:** Distribution / release status
+- **Location:** `packages/renderer/src/modules/distribution/components/ReleaseStatusList.tsx:31-33`, `:80-83`
+- **Summary:** The empty-state `Create New Release` button and each row’s overflow menu button are rendered as active controls, but neither has a handler or destination. The component suggests a create/detail workflow that is not wired up.
+- **Expected (acceptance):** Either open the real release flow and row menu or render those controls as inert.
+- **Honest fallback:** Keep the release list visible, but make the create/overflow controls explicitly unavailable until the actions exist.
+- **Fix Direction:** Wire the buttons to actual release flows or remove the fake affordances.
+- **DO NOT:** Leave release-management buttons that appear functional but do nothing.
+
+### ISSUE-625: Licensing quick actions render live-looking buttons with no handlers
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟢 LOW
+- **Module:** Licensing / dashboard
+- **Location:** `packages/renderer/src/modules/licensing/LicensingDashboard.tsx:326-337`
+- **Summary:** The quick-actions panel renders `Draft New Deal` and `Review Agreements` as enabled buttons, but neither button has a click handler or destination. It presents a workflow launcher that does nothing.
+- **Expected (acceptance):** Either wire the actions to real licensing flows or render them as inert copy.
+- **Honest fallback:** Keep the panel visible, but mark the controls unavailable until the flows exist.
+- **Fix Direction:** Hook the quick actions up to actual screens or remove the fake buttons.
+- **DO NOT:** Leave licensing actions that look live but are functionless.
+
+### ISSUE-626: Design toolbar exposes a dead AI synthesis button
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟢 LOW
+- **Module:** Design / toolbar
+- **Location:** `packages/renderer/src/modules/design/components/DesignToolbar.tsx:42-49`
+- **Summary:** The toolbar’s `AI Synthesis` button is rendered as a primary action with hover styling, but it has no click handler or keyboard path. It looks like a launch point for an AI feature while doing nothing.
+- **Expected (acceptance):** Either wire the synthesis action to a real flow or render the control as decorative.
+- **Honest fallback:** Keep the toolbar visible, but remove the button semantics until the feature exists.
+- **Fix Direction:** Connect the button to a real AI synthesis surface or stop implying it is actionable.
+- **DO NOT:** Leave a primary toolbar action that cannot execute.
+
+### ISSUE-627: Settings profile avatar overlay is clickable-looking but inert
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟢 LOW
+- **Module:** Settings / profile
+- **Location:** `packages/renderer/src/modules/settings/settings-panel/ProfileSection.tsx:85-99`
+- **Summary:** The avatar area renders a full-surface camera overlay button on hover, but the button has no handler and does not open an upload flow. It suggests profile-image editing that is not implemented.
+- **Expected (acceptance):** Either open a real avatar update flow or render the overlay as static decoration.
+- **Honest fallback:** Keep the avatar visible, but remove the interactive overlay until upload/edit exists.
+- **Fix Direction:** Wire the camera control to avatar editing or drop the fake affordance.
+- **DO NOT:** Leave a profile-photo edit button that cannot do anything.
+
+---
+
+## Gemini Omni Flash — Omni page build + cross-stage handoff (planned 2026-07-01)
+
+> **Full spec:** `~/.claude/plans/omni-flash-integration_plan.md` (Part A = backend Omni Flash API; Part B = cross-stage handoff). **Source of truth for all Omni Flash API shapes = NotebookLM notebook `Gemini Omni Flash API (Jul 2026)`, id `gemini-omni-flash-api-jul-2026`.** Omni Flash is post-cutoff — do NOT invent API shapes; ask the notebook (one fact per question, `source_format:"none"`) before coding any `[CONFIRM]` field.
+
+### ISSUE-595: Omni page — replace Veo stub in `generateOmniRemixV3` with the real Gemini Omni Flash Interactions API
+
+- **Status:** ✅ COMPLETED (2026-07-01 18:03)
+- **Type:** FEATURE (Part A)
+- **Severity:** 🔴 HIGH
+- **Module:** Creative / Omni video (backend)
+- **Location:** `packages/firebase/src/functions/creative/gateway.ts:1406` (`generateOmniRemixV3`), `:338` (`resolveOmniFlashModel`), `:1418` (hard gate)
+- **Summary:** `generateOmniRemixV3` currently calls the **old Veo** long-running API (`ai.models.generateVideos` + `pollVideoOperation`/`extractGeneratedVideo`/`downloadGeneratedVideo`) and falls back to `veo-3.1-fast-generate-preview`. Omni Flash requires the **new Interactions API** (`ai.interactions.create` → `POST /v1beta/interactions`, poll `GET /v1beta/interactions/{id}` until `ACTIVE`), model `gemini-omni-flash-preview`, plain Gemini API key. `generateImageV3` (`:1078`) already uses this exact pattern for images — mirror it for video.
+- **Scope:** Flip `resolveOmniFlashModel()` default to `gemini-omni-flash-preview` (env override kept); remove the model-env hard gate; add helpers `loadVideoInput`, `pollInteraction`, `fetchInteractionVideo` (+`loadAudioInput` if needed); rewrite the generation block to `ai.interactions.create({ model, input, response_modalities:['video'], generation_config:{ video_config:{ tasks, aspect_ratio, duration_seconds, resolution } }, response_format:{ delivery:'uri' } })`. Keep the `{ jobId, resultUri }` return + `catch` unchanged. **Omni page = pure Omni; the `hybrid-veo` in-call blend is retired (moved to handoff, ISSUE-583).**
+- **[CONFIRM] via notebook before coding:** (1) how the source video is passed (inline base64 vs URI, videos >4MB); (2) `video_config` nesting; (3) `response_format` placement; (4) `output_video` shape + sync-vs-poll; (5) audio-part shape; (6) `edit` vs `reference_to_video`; (7) `response_modalities` + max duration.
+- **Expected (acceptance):** With a real Gemini API key, an Omni remix from the UI produces a playable `resultUri` in the Showroom; Firestore job → `completed`. Payload matches the notebook.
+- **Honest fallback:** Missing/invalid API key or Vertex-only client → typed `HttpsError('failed-precondition', 'Omni Flash requires a Gemini API key …')`. Never a fake success or placeholder video.
+- **Tests:** Update the honest-fail test (`gateway.test.ts:439`) to target missing-API-key; add success/polling/timeout tests against `mockInteractionsCreate`; keep Thin-Client (only `gs://` crosses the boundary) and `mockGenerateVideos` NOT called.
+- **DO NOT:** Keep the Veo `generateVideos` path for Omni; touch `generateVideoV3` (Veo stays its own environment); hardcode any infra-minted id (rule #11 — the public model string is fine); synthesize music (visuals only).
+
+### ISSUE-596: Cross-stage handoff foundation — stage targets + store channel
+
+- **Status:** ✅ COMPLETED (2026-07-01 19:22)
+- **Type:** FEATURE (Part B — foundation for 597/598/599/600)
+- **Commit:** e4883ac8c
+- **Severity:** 🟡 MEDIUM
+- **Module:** Creative / store + types
+- **Location:** `packages/renderer/src/types/handoff.ts`, `packages/renderer/src/core/store/slices/creative/creativeControlsSlice.ts` (or new `creativeHandoffSlice.ts`)
+- **Summary:** The existing handoff system (`SendToTarget = merch|marketing|boardroom|touring`) only reaches **external modules** — there is no channel to move an asset **between the three creative stages** (Image · Veo · Omni). The shared bus already exists (`generatedHistory`/Showroom; `HistoryItem.storageUri` is the canonical `gs://` transport; `parentId` tracks lineage) — only the routing is missing.
+- **Scope:** Add `CreativeStage = 'image'|'veo'|'omni'` and `StageHandoffPayload { item: HistoryItem; role: 'source-video'|'first-frame'|'last-frame'|'reference-image'|'reference-audio'|'image-input'; originStage; timestamp }`. Add store `pendingStageHandoff: Record<CreativeStage, StageHandoffPayload|null>`, `sendToStage(target, payload)` (validates asset `type` fits `role`; sets pending; switches `viewMode` via `appSlice.setViewMode`), and `consumeStageHandoff(target)` (read-and-clear). Leave `SendToTarget`/`sendToModule` untouched.
+- **Expected (acceptance):** `sendToStage` type-validates (rejects image→source-video), sets/clears pending, and navigates to the target stage. Unit-tested.
+- **DO NOT:** Overload the external `sendToModule` path; drop `storageUri` from the payload (backend needs the `gs://`).
+
+### ISSUE-597: Omni stage consumes cross-stage handoff (accept assets from Image/Veo, not upload-only)
+
+- **Status:** ⏳ OPEN
+- **Type:** FEATURE (Part B) · **Depends on:** ISSUE-579
+- **Severity:** 🟡 MEDIUM
+- **Module:** Creative / Omni video (frontend)
+- **Location:** `packages/renderer/src/modules/creative/video/OmniWorkflow.tsx` (input state `:244`, `omniReferenceVideo` set only from local upload `:268`)
+- **Summary:** Omni's source video is currently set **only from a local file upload**; it ignores the shared Showroom and other stages. Wire it to consume `pendingStageHandoff.omni`: `source-video` → set **both** `omniReferenceVideo` (preview `item.url`) and the backend `referenceVideoUri` (**`item.storageUri` — the `gs://` the callable needs**); `reference-image`/`reference-audio` → `referenceUris`/`audioUri`. Then `consumeStageHandoff('omni')`.
+- **Expected (acceptance):** Sending a Veo output (or gallery image) to Omni pre-fills the remix inputs with a valid `gs://` and enables Start Remix with **no manual re-upload**.
+- **DO NOT:** Set only the preview URL (backend would get no `gs://`); require re-upload of an asset already in the Showroom.
+
+### ISSUE-598: Veo stage consumes cross-stage handoff
+
+- **Status:** ⏳ OPEN
+- **Type:** FEATURE (Part B) · **Depends on:** ISSUE-579
+- **Severity:** 🟡 MEDIUM
+- **Module:** Creative / Veo video (frontend)
+- **Location:** `packages/renderer/src/modules/creative/video/VideoWorkflow.tsx`; setters `creativeControlsSlice.setVideoInput`/`setVideoInputs` (`:142/:320`), `addCharacterReference` (`:151`)
+- **Summary:** Map `pendingStageHandoff.veo` → `videoInputs` by role (`first-frame`→firstFrame, `last-frame`→lastFrame, `source-video`→sourceVideo, `reference-image`→referenceUris/character ref) using `item.storageUri`; then consume. Veo remains its own environment — this only lets it **receive** assets.
+- **Expected (acceptance):** Sending a gallery image to Veo as `first-frame` populates `videoInputs.firstFrame` with the `gs://` and the frame preview appears.
+- **DO NOT:** Change Veo's generation logic or model; couple Veo to Omni beyond asset receipt.
+
+### ISSUE-599: Image stage consumes cross-stage handoff
+
+- **Status:** ⏳ OPEN
+- **Type:** FEATURE (Part B) · **Depends on:** ISSUE-579
+- **Severity:** 🟢 LOW
+- **Module:** Creative / Image (frontend)
+- **Location:** `packages/renderer/src/modules/creative/CreativeStudio.tsx` + image generation path
+- **Summary:** Consume `pendingStageHandoff.image` (`image-input`/`reference-image`) to seed the image prompt's `referenceUri`/character reference from `item.storageUri`; then consume.
+- **Expected (acceptance):** Sending an image to the Image stage as a reference pre-fills the reference slot without re-upload.
+- **DO NOT:** Auto-trigger a generation on receipt — only pre-fill the input.
+
+### ISSUE-600: "Send to stage" outbound actions (Gallery + Showroom + each stage output) with lineage
+
+- **Status:** ⏳ OPEN
+- **Type:** FEATURE (Part B) · **Depends on:** ISSUE-579
+- **Severity:** 🟡 MEDIUM
+- **Module:** Creative / gallery, showroom, stage output panels
+- **Location:** `packages/renderer/src/modules/creative/components/CreativeGallery.tsx` (GalleryItem menu `:171-228`), `packages/renderer/src/modules/creative/components/ShowroomUI.tsx`, each stage output panel (Omni `outputVideoUrl`, Veo result, Image result)
+- **Summary:** Add type-gated **Send to Veo / Send to Omni / Use as Image reference** actions (video → Veo source/frame or Omni source; image → Veo frame, Omni reference, or Image reference) that call `sendToStage(...)` with the item. Add a "Send to next stage" button on each stage's output panel and set `parentId` on the downstream job for lineage.
+- **Expected (acceptance):** Round-trip works end-to-end: Image → (send) → Veo → (send output) → Omni remix, each hop pre-filled with no re-upload, and the `parentId` chain is recorded.
+- **DO NOT:** Offer type-invalid targets (e.g. "Send image as source-video"); lose lineage (`parentId`) across hops.
