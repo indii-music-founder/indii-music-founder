@@ -11,6 +11,7 @@ import ffprobeStatic from 'ffprobe-static';
 import fs from 'fs';
 import path from 'path';
 import * as dotenv from 'dotenv';
+import { extractPdfContractText } from './pdf.js';
 
 // Load env variables from the root .env file
 dotenv.config({ path: path.resolve(__dirname, '../../../../.env') });
@@ -138,13 +139,17 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         }
 
         try {
-            // Minimal placeholder logic for PDF reading if actual pdf-parse isn't fully integrated yet
-            // To ensure 100% stable execution immediately without massive dependencies
+            const pdfExtraction = await extractPdfContractText(filePath);
             return {
                 content: [
                     {
                         type: 'text',
-                        text: `[PDF Parsing Placeholder] Read file at ${filePath}`,
+                        text: JSON.stringify({
+                            filePath: pdfExtraction.filePath,
+                            pageCount: pdfExtraction.pageCount,
+                            hasSelectableText: pdfExtraction.hasSelectableText,
+                            text: pdfExtraction.text,
+                        }, null, 2),
                     },
                 ],
             };
