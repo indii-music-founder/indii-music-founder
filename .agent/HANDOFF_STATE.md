@@ -4,6 +4,7 @@
 
 ## Recent Commits
 ```
+82e526aa3 chore: session checkpoint [17:37]
 265cf4951 chore: session checkpoint [17:14]
 b356aa06e chore: session checkpoint [16:52]
 76124aecf chore: session checkpoint [16:17]
@@ -13,7 +14,6 @@ f518afd21 chore: session checkpoint [16:14]
 08f81bfa3 fix(mcp): make harness tools honest
 e4654d6c5 fix(mcp): replace pdf placeholder with real parser
 65e647328 fix(mcp): skip missing local server builds
-93455a32c chore: session checkpoint [13:09]
 ```
 
 ## Working State
