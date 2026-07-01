@@ -537,16 +537,13 @@ if (!gotTheLock) {
         SchedulerService.registerBuiltInTasks();
 
         // Initialize Local MCP Client
-        mcpClientService.connectLocal().then(async () => {
-            log.info('[MCP] Successfully connected to local server');
-            try {
-                // Test call just to prove the protocol works on startup
-                const res = await mcpClientService.executeTool('read_wav_tags', { filePath: '/invalid/path.wav' });
-                log.info(`[MCP] Test call result: ${JSON.stringify(res)}`);
-            } catch (e: unknown) {
-                const msg = e instanceof Error ? e.message : String(e);
-                log.info(`[MCP] Test call (expected) error: ${msg}`);
+        mcpClientService.connectLocal().then(async (connected) => {
+            if (!connected) {
+                log.warn('[MCP] Local server unavailable; MCP tools disabled for this session.');
+                return;
             }
+
+            log.info('[MCP] Successfully connected to local server');
         }).catch(err => {
             log.error(`[MCP] Failed to connect to local server: ${err?.message}`);
         });
