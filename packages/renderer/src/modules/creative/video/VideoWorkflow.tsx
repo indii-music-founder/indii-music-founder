@@ -738,6 +738,8 @@ export default function VideoWorkflow() {
                                 jobStatus={jobStatus}
                                 jobProgress={jobProgress}
                                 activeVideo={activeVideo}
+                                firstFrame={videoInputs.firstFrame}
+                                lastFrame={videoInputs.lastFrame}
                                 setVideoInputs={setVideoInputs}
                                 onCancelJob={jobStatus === 'queued' || jobStatus === 'processing' || jobStatus === 'stitching' ? handleCancelJob : undefined}
                             />

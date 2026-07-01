@@ -8,12 +8,25 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/lib/utils';
+import { useSafeImageUrl } from '@/hooks/useSafeImageUrl';
 
 type AssetFilter = 'all' | 'images' | 'videos' | 'audio' | 'files';
 type ViewStyle = 'grid' | 'list';
 
 interface AssetsPanelProps {
     toggleRightPanel: () => void;
+}
+
+/**
+ * Renders an asset thumbnail via a same-origin blob: URL instead of a raw
+ * <img src="https://firebasestorage..."> — this panel can render under
+ * routes (e.g. /creative) with Cross-Origin-Embedder-Policy: require-corp,
+ * which silently blocks direct cross-origin image loads.
+ */
+function AssetThumbnail({ src, alt, className, onError }: { src: string; alt: string; className: string; onError?: () => void }) {
+    const resolvedSrc = useSafeImageUrl(src);
+    if (!resolvedSrc) return null;
+    return <img src={resolvedSrc} alt={alt} className={className} loading="lazy" onError={onError} />;
 }
 
 export default function AssetsPanel({ toggleRightPanel }: AssetsPanelProps) {
@@ -299,12 +312,10 @@ export default function AssetsPanel({ toggleRightPanel }: AssetsPanelProps) {
                                             onError={(e) => { (e.target as HTMLVideoElement).style.display = 'none'; }}
                                         />
                                     ) : asset.type === 'image' ? (
-                                        <img
+                                        <AssetThumbnail
                                             src={asset.thumbnailUrl || asset.url}
                                             alt={asset.prompt || ''}
                                             className="w-full h-full object-cover"
-                                            loading="lazy"
-                                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                                         />
                                     ) : null}
 
@@ -359,7 +370,11 @@ export default function AssetsPanel({ toggleRightPanel }: AssetsPanelProps) {
                                     {/* Mini thumbnail */}
                                     <div className="w-10 h-10 rounded-md overflow-hidden bg-white/[0.04] flex-shrink-0 flex items-center justify-center">
                                         {asset.type === 'image' && asset.url ? (
-                                            <img src={asset.thumbnailUrl || asset.url} alt="" className="w-full h-full object-cover" loading="lazy" />
+                                            <AssetThumbnail
+                                                src={asset.thumbnailUrl || asset.url}
+                                                alt=""
+                                                className="w-full h-full object-cover"
+                                            />
                                         ) : (
                                             <div className={cn("p-1.5 rounded", getTypeColor(asset.type))}>
                                                 {getTypeIcon(asset.type)}

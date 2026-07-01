@@ -28,6 +28,16 @@ export interface PreparedMasks {
     masks: MaskData[];
 }
 
+export interface LayerInfo {
+    id: string;
+    name: string;
+    type: string;
+    visible: boolean;
+    locked: boolean;
+    isBaseImage: boolean;
+    isAnnotation: boolean;
+}
+
 export class CanvasOperationsService {
     private canvas: fabric.Canvas | null = null;
     private _pathCreatedHandler: ((e: { path: fabric.FabricObject }) => void) | null = null;
@@ -330,7 +340,7 @@ export class CanvasOperationsService {
         }
     }
 
-    undo(): void {
+    async undo(): Promise<void> {
         if (!this.canvas || this._historyStack.length <= 1) return;
 
         this._isUndoingRedoing = true;
@@ -341,29 +351,26 @@ export class CanvasOperationsService {
 
         const previousState = this._historyStack[this._historyStack.length - 1];
         if (previousState) {
-            this.canvas.loadFromJSON(JSON.parse(previousState), () => {
-                this.canvas?.renderAll();
-                this._isUndoingRedoing = false;
-            });
-        } else {
-            this._isUndoingRedoing = false;
+            // Route through the CORS-safe loadFromJSON (ISSUE-478) instead of calling
+            // fabric's loadFromJSON directly — the raw call reloads the base image
+            // straight from its remote http src with no crossOrigin handling, so a
+            // flaky/missing CORS header on the storage bucket silently drops the
+            // image while every vector annotation (text, bounding boxes) still loads.
+            await this.loadFromJSON(previousState);
         }
+        this._isUndoingRedoing = false;
     }
 
-    redo(): void {
+    async redo(): Promise<void> {
         if (!this.canvas || this._redoStack.length === 0) return;
 
         this._isUndoingRedoing = true;
         const nextState = this._redoStack.pop();
         if (nextState) {
             this._historyStack.push(nextState);
-            this.canvas.loadFromJSON(JSON.parse(nextState), () => {
-                this.canvas?.renderAll();
-                this._isUndoingRedoing = false;
-            });
-        } else {
-            this._isUndoingRedoing = false;
+            await this.loadFromJSON(nextState);
         }
+        this._isUndoingRedoing = false;
     }
 
     canUndo(): boolean {
@@ -715,11 +722,13 @@ export class CanvasOperationsService {
                 annotationObjects.forEach((obj, i) => (obj.visible = visibilitySnapshot[i] ?? true));
             }
 
-            return new Promise((resolve) => {
-                this.canvas!.loadFromJSON(jsonState, () => {
-                    resolve(dataUrl);
-                });
-            });
+            // Route through the CORS-safe loadFromJSON (ISSUE-478) instead of calling
+            // fabric's loadFromJSON directly — same base-image-drop risk as the
+            // undo()/redo() bug this export restore step shared the pattern with.
+            this._isUndoingRedoing = true;
+            await this.loadFromJSON(jsonState);
+            this._isUndoingRedoing = false;
+            return dataUrl;
         };
 
         try {
@@ -745,11 +754,22 @@ export class CanvasOperationsService {
     }
 
     /**
-     * Export canvas to JSON string
+     * Export canvas to JSON string.
+     *
+     * Strips ephemeral AI-detection overlays (ID Objects bounding boxes and
+     * their label text) before serializing. Those are transient analysis
+     * artifacts for reasoning about the scene — persisting them meant every
+     * reload resurrected the green detection boxes with no way to tell they
+     * weren't part of the artwork. Segmentation masks are kept because they
+     * carry the user's magic-fill edit intent for the session.
      */
     async toJSON(): Promise<unknown> {
         if (!this.canvas) return null;
-        return this.canvas.toJSON(['data', 'id']);
+        const json = this.canvas.toJSON(['data', 'id']) as { objects?: Array<{ data?: Record<string, unknown> }> };
+        if (json && Array.isArray(json.objects)) {
+            json.objects = json.objects.filter(obj => !obj?.data?.isBoundingBox);
+        }
+        return json;
     }
 
     /**
@@ -1477,34 +1497,137 @@ export class CanvasOperationsService {
     }
 
     /**
-     * Get all layers (objects) on the canvas
+     * Find a canvas object by its stable layer id, assigning one if missing.
      */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    getLayers(): any[] {
-        if (!this.canvas) return [];
-        return this.canvas.getObjects().map(obj => {
-            const fabricObj = obj as unknown as { data?: Record<string, unknown>; id?: string };
-            const data = fabricObj.data || {};
-            return {
-                id: fabricObj.id || `layer_${crypto.randomUUID().substring(0, 8)}`,
-                type: obj.type,
-                visible: obj.visible,
-                isBaseImage: !!data.isBaseImage,
-                isAnnotation: this.isAnnotation(obj),
-                colorId: data.colorId,
-                label: data.label,
-                object: obj
-            };
-        });
+    private getOrAssignLayerId(obj: fabric.Object): string {
+        const fabricObj = obj as unknown as { id?: string };
+        if (!fabricObj.id) {
+            fabricObj.id = `layer_${crypto.randomUUID().substring(0, 8)}`;
+        }
+        return fabricObj.id;
+    }
+
+    private findLayerObject(id: string): fabric.Object | undefined {
+        if (!this.canvas) return undefined;
+        return this.canvas.getObjects().find(obj => (obj as unknown as { id?: string }).id === id);
+    }
+
+    private describeLayerName(obj: fabric.Object, data: Record<string, unknown>): string {
+        if (data.isBaseImage) return 'Background';
+        if (typeof data.label === 'string' && data.label) return data.label as string;
+        switch (obj.type) {
+            case 'image': return 'Image';
+            case 'i-text':
+            case 'text': return (obj as fabric.IText).text?.slice(0, 24) || 'Text';
+            case 'rect': return 'Rectangle';
+            case 'circle': return 'Circle';
+            case 'path': return 'Drawing';
+            case 'group': return 'Group';
+            default: return obj.type ? obj.type[0]!.toUpperCase() + obj.type.slice(1) : 'Layer';
+        }
     }
 
     /**
-     * Toggle visibility of a specific layer/object
+     * Get all user-facing layers (objects) on the canvas, top of stack first.
+     * Excludes ephemeral AI annotation overlays (ID Objects bounding boxes,
+     * segmentation masks) — those are working data for the AI/agent to reason
+     * about the scene, not artwork the user composes with, so they don't
+     * belong in the layer list. Use clearDetections() to remove them.
      */
-    toggleLayerVisibility(obj: fabric.Object, visible: boolean): void {
+    getLayers(): LayerInfo[] {
+        if (!this.canvas) return [];
+        return this.canvas.getObjects()
+            .map(obj => {
+                const fabricObj = obj as unknown as { data?: Record<string, unknown> };
+                const data = fabricObj.data || {};
+                return { obj, data };
+            })
+            .filter(({ data }) => !data.isBoundingBox && !data.isSegmentationMask)
+            .map(({ obj, data }) => ({
+                id: this.getOrAssignLayerId(obj),
+                name: this.describeLayerName(obj, data),
+                type: obj.type ?? 'object',
+                visible: obj.visible !== false,
+                locked: obj.selectable === false,
+                isBaseImage: !!data.isBaseImage,
+                isAnnotation: this.isAnnotation(obj),
+            }))
+            .reverse();
+    }
+
+    /**
+     * Select a layer on the canvas (drives selection highlight + properties).
+     */
+    selectLayer(id: string): void {
         if (!this.canvas) return;
-        obj.set('visible', visible);
+        const obj = this.findLayerObject(id);
+        if (!obj || obj.selectable === false) return;
+        this.canvas.setActiveObject(obj);
         this.canvas.renderAll();
+    }
+
+    /**
+     * Toggle visibility of a specific layer/object by id.
+     */
+    toggleLayerVisibility(id: string): void {
+        if (!this.canvas) return;
+        const obj = this.findLayerObject(id);
+        if (!obj) return;
+        obj.set('visible', !(obj.visible !== false));
+        this.canvas.renderAll();
+        this.saveHistoryState();
+    }
+
+    /**
+     * Toggle lock (selectable/editable) state of a specific layer/object by id.
+     */
+    toggleLayerLock(id: string): void {
+        if (!this.canvas) return;
+        const obj = this.findLayerObject(id);
+        if (!obj) return;
+        const nextLocked = obj.selectable !== false;
+        obj.set({
+            selectable: !nextLocked,
+            evented: !nextLocked,
+            lockMovementX: nextLocked,
+            lockMovementY: nextLocked,
+        });
+        if (nextLocked && this.canvas.getActiveObject() === obj) {
+            this.canvas.discardActiveObject();
+        }
+        this.canvas.renderAll();
+        this.saveHistoryState();
+    }
+
+    /**
+     * Delete a layer/object by id. The base image cannot be deleted this way —
+     * use a fresh asset selection instead, since an empty canvas with no base
+     * image is the exact state the Undo bug (ISSUE-478) used to produce.
+     */
+    deleteLayer(id: string): void {
+        if (!this.canvas) return;
+        const obj = this.findLayerObject(id);
+        const fabricObj = obj as unknown as { data?: Record<string, unknown> } | undefined;
+        if (!obj || fabricObj?.data?.isBaseImage) return;
+        this.canvas.remove(obj);
+        this.canvas.renderAll();
+        // object:removed already triggers saveHistoryState via the canvas event handler.
+    }
+
+    /**
+     * Move a layer one step up/down in the stacking order by id.
+     */
+    reorderLayer(id: string, direction: 'up' | 'down'): void {
+        if (!this.canvas) return;
+        const obj = this.findLayerObject(id);
+        if (!obj) return;
+        if (direction === 'up') {
+            this.canvas.bringObjectForward(obj);
+        } else {
+            this.canvas.sendObjectBackwards(obj);
+        }
+        this.canvas.renderAll();
+        this.saveHistoryState();
     }
 }
 

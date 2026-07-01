@@ -5,6 +5,7 @@ import { CanvasHeader } from './CanvasHeader';
 import { CanvasToolbar } from './CanvasToolbar';
 import AnnotationPalette from './AnnotationPalette';
 import EditDefinitionsPanel from './EditDefinitionsPanel';
+import LayersPanel from './LayersPanel';
 import { CanvasViewport } from './CanvasViewport';
 import { CanvasActionRail } from './CanvasActionRail';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -24,6 +25,10 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
         isMagicFillMode,
         isSelectingEndFrame,
         isDefinitionsOpen,
+        isLayersPanelOpen,
+        layers,
+        selectedLayerId,
+        hasDetections,
         activeColor,
         definitions,
         referenceImages,
@@ -41,6 +46,7 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
         setIsSelectingEndFrame,
         setEndFrameItem,
         setIsDefinitionsOpen,
+        toggleLayersPanel,
         setActiveColor,
         setMagicFillPrompt,
         setIsHighFidelity,
@@ -54,6 +60,11 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
         handleUpdateReferenceRole,
         handleMagicFill,
         handleClearDetections,
+        handleSelectLayer,
+        handleToggleLayerVisibility,
+        handleToggleLayerLock,
+        handleDeleteLayer,
+        handleReorderLayer,
         handleAnimate,
         handleCandidateSelect,
         saveCanvas,
@@ -117,6 +128,9 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                                     activeTool={activeTool}
                                     handleDetectObjects={handleDetectObjects}
                                     handleClearDetections={handleClearDetections}
+                                    hasDetections={hasDetections}
+                                    toggleLayersPanel={toggleLayersPanel}
+                                    isLayersPanelOpen={isLayersPanelOpen}
                                     orientation="vertical"
                                 />
                                 <div className="my-2 h-px w-8 bg-white/10" />
@@ -183,6 +197,9 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                             activeTool={activeTool}
                             handleDetectObjects={handleDetectObjects}
                             handleClearDetections={handleClearDetections}
+                            hasDetections={hasDetections}
+                            toggleLayersPanel={toggleLayersPanel}
+                            isLayersPanelOpen={isLayersPanelOpen}
                         />
                     </div>
 
@@ -196,6 +213,18 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                     onUpdateReferenceImage={handleUpdateReferenceImage}
                     referenceRoles={referenceRoles}
                     onUpdateReferenceRole={handleUpdateReferenceRole}
+                />
+
+                <LayersPanel
+                    isOpen={isLayersPanelOpen}
+                    onClose={toggleLayersPanel}
+                    layers={layers}
+                    selectedLayerId={selectedLayerId}
+                    onSelectLayer={handleSelectLayer}
+                    onToggleVisibility={handleToggleLayerVisibility}
+                    onToggleLock={handleToggleLayerLock}
+                    onDeleteLayer={handleDeleteLayer}
+                    onReorderLayer={handleReorderLayer}
                 />
                 </div>
             </motion.div>
