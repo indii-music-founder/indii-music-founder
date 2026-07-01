@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-07-01 17:38 EDT
+**Updated:** 2026-07-01 18:03 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+97b3361a8 chore: session checkpoint [17:38]
 e76b560a8 chore: session checkpoint [17:37]
 82e526aa3 chore: session checkpoint [17:37]
 265cf4951 chore: session checkpoint [17:14]
@@ -13,7 +14,6 @@ b356aa06e chore: session checkpoint [16:52]
 f518afd21 chore: session checkpoint [16:14]
 8f8ee7a20 chore: session checkpoint [16:12]
 08f81bfa3 fix(mcp): make harness tools honest
-e4654d6c5 fix(mcp): replace pdf placeholder with real parser
 ```
 
 ## Working State
@@ -24,6 +24,8 @@ e4654d6c5 fix(mcp): replace pdf placeholder with real parser
  M docs/flowcharts/big-brain-memory-engine.md
  M electron.vite.config.ts
  M packages/firebase/src/functions/agent/manageSemanticMemory.ts
+ M packages/firebase/src/functions/creative/gateway.test.ts
+ M packages/firebase/src/functions/creative/gateway.ts
  M packages/main/src/main.ts
  M packages/main/src/security.test.ts
  M packages/main/src/security/index.ts
