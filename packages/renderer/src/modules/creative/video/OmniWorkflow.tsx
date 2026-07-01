@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -15,6 +15,7 @@ import { httpsCallable } from 'firebase/functions';
 import { getDownloadURL, ref } from 'firebase/storage';
 import { auth, functions, storage } from '@/services/firebase';
 import { CreativeStorageService } from '@/services/creative/CreativeStorageService';
+import { StageHandoffPayload } from '@/types/handoff';
 
 interface StoryboardFrame {
     id: string;
@@ -224,17 +225,21 @@ export default function OmniWorkflow() {
     const audioInputRef = useRef<HTMLInputElement>(null);
 
     // Global Store State Connection
-    const { 
-        studioControls, 
-        setStudioControls, 
-        addToHistory, 
-        currentProjectId 
+    const {
+        studioControls,
+        setStudioControls,
+        addToHistory,
+        currentProjectId,
+        pendingStageHandoff,
+        consumeStageHandoff
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } = useStore(useShallow((state: any) => ({
         studioControls: state.studioControls,
         setStudioControls: state.setStudioControls,
         addToHistory: state.addToHistory,
-        currentProjectId: state.currentProjectId
+        currentProjectId: state.currentProjectId,
+        pendingStageHandoff: state.pendingStageHandoff,
+        consumeStageHandoff: state.consumeStageHandoff
     })));
 
     // Local Interactive States
@@ -254,6 +259,30 @@ export default function OmniWorkflow() {
 
     // Flow Storyboard frames (dynamic state)
     const [storyboard, setStoryboard] = useState<StoryboardFrame[]>([]);
+
+    // Consume cross-stage handoff if asset sent from Veo or Image stage
+    useEffect(() => {
+        const handoff = pendingStageHandoff?.omni;
+        if (handoff) {
+            if (handoff.role === 'source-video' && handoff.item.type === 'video') {
+                // Set both preview URL and gs:// URI for backend
+                setRefVideoFile(null);
+                setReferenceVideoUri(handoff.item.storageUri || '');
+                setStudioControls({ omniReferenceVideo: handoff.item.url });
+                toast.success(`Loaded performance from ${handoff.originStage} stage — ready to remix!`);
+            } else if (handoff.role === 'reference-image' && handoff.item.type === 'image') {
+                // Image as reference for styling (optional enhancement)
+                toast.info(`Using image from ${handoff.originStage} as visual reference.`);
+            } else if (handoff.role === 'reference-audio' && handoff.item.type === 'music') {
+                // Optional audio reference for sync
+                setAudioDubUri(handoff.item.storageUri || '');
+                setAudioDubFile(null);
+                toast.info(`Using audio track for remix sync.`);
+            }
+            // Consume the handoff (clear pending)
+            consumeStageHandoff('omni');
+        }
+    }, [pendingStageHandoff?.omni, consumeStageHandoff, setStudioControls, toast]);
 
     const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
