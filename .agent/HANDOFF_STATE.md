@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-07-01 17:37 EDT
+**Updated:** 2026-07-01 17:38 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+e76b560a8 chore: session checkpoint [17:37]
 82e526aa3 chore: session checkpoint [17:37]
 265cf4951 chore: session checkpoint [17:14]
 b356aa06e chore: session checkpoint [16:52]
@@ -13,7 +14,6 @@ f518afd21 chore: session checkpoint [16:14]
 8f8ee7a20 chore: session checkpoint [16:12]
 08f81bfa3 fix(mcp): make harness tools honest
 e4654d6c5 fix(mcp): replace pdf placeholder with real parser
-65e647328 fix(mcp): skip missing local server builds
 ```
 
 ## Working State
