@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { readFileSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { resolve } from 'path';
 
-const rules = readFileSync(resolve(process.cwd(), 'packages/firebase/firestore.rules'), 'utf8');
+const rendererCwdPath = resolve(process.cwd(), '../firebase/firestore.rules');
+const repoCwdPath = resolve(process.cwd(), 'packages/firebase/firestore.rules');
+const rulesPath = existsSync(rendererCwdPath) ? rendererCwdPath : repoCwdPath;
+const rules = readFileSync(rulesPath, 'utf8');
 
 describe('Entry command Firestore rules', () => {
   it('defines validation for persisted custom entry commands', () => {

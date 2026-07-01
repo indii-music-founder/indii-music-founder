@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync, statSync } from 'fs';
-import { join } from 'path';
+import { dirname, join, relative } from 'path';
+import { fileURLToPath } from 'url';
 import { VALID_AGENT_IDS } from '@/services/agent/types';
 import { PublishingRightsCompiler } from '@/services/publishing/PublishingRightsCompiler';
 import { CollaborationSplitsCompiler } from '@/services/collaboration/CollaborationSplitsCompiler';
@@ -143,9 +144,12 @@ describe('Harness Agent ID Integrity (ISSUE-565)', () => {
  */
 describe('Harness Agent ID Integrity — static source scan (ISSUE-565 durable guard)', () => {
   const validIds = new Set<string>(VALID_AGENT_IDS);
+  const testDir = dirname(fileURLToPath(import.meta.url));
+  const rendererSrc = join(testDir, '..', '..');
+  const sharedSrc = join(testDir, '..', '..', '..', '..', 'shared', 'src');
   const SCAN_ROOTS = [
-    join(process.cwd(), 'packages/renderer/src'),
-    join(process.cwd(), 'packages/shared/src'),
+    rendererSrc,
+    sharedSrc,
   ];
   const SELF = 'HarnessAgentIdValidation.test.ts';
   // Only files that build harness briefs/recommendations carry the routed id.
@@ -194,7 +198,7 @@ describe('Harness Agent ID Integrity — static source scan (ISSUE-565 durable g
       const content = readFileSync(file, 'utf8');
       for (const m of content.matchAll(ASSIGN_RE)) {
         if (!validIds.has(m[2])) {
-          offenders.push(`${file.replace(process.cwd() + '/', '')}: "${m[2]}"`);
+          offenders.push(`${relative(join(testDir, '..', '..', '..', '..'), file)}: "${m[2]}"`);
         }
       }
     }
@@ -207,7 +211,7 @@ describe('Harness Agent ID Integrity — static source scan (ISSUE-565 durable g
       const content = readFileSync(file, 'utf8');
       for (const m of content.matchAll(COMPARE_RE)) {
         if (!validIds.has(m[2])) {
-          offenders.push(`${file.replace(process.cwd() + '/', '')}: "${m[2]}"`);
+          offenders.push(`${relative(join(testDir, '..', '..', '..', '..'), file)}: "${m[2]}"`);
         }
       }
     }
