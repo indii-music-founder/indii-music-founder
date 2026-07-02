@@ -33,9 +33,9 @@ export const TimelineTrack = memo(({
                 <div className="w-48 border-r border-gray-800 p-2 flex flex-col justify-between bg-gray-900 shrink-0 z-10">
                     <div className="flex items-center justify-between">
                         <span className="text-[10px] font-medium text-gray-300 truncate" title={track.name}>{track.name}</span>
-                        <div className="flex gap-1">
-                            <button data-testid={`track-toggle-visibility-${track.id}`} className="text-gray-600 hover:text-gray-400" aria-label={`Toggle visibility for track ${track.name}`}><Eye size={12} /></button>
-                            <button data-testid={`track-toggle-mute-${track.id}`} className="text-gray-600 hover:text-gray-400" aria-label={`Toggle mute for track ${track.name}`}><Volume2 size={12} /></button>
+                        <div className="flex gap-1 text-gray-600">
+                            <Eye size={12} />
+                            <Volume2 size={12} />
                         </div>
                     </div>
                     <div className="flex gap-1.5">
