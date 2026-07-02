@@ -434,19 +434,47 @@ describe('creative gateway generateVideoV3', () => {
 describe('creative gateway generateOmniRemixV3', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockDownload.mockResolvedValue([Buffer.from('video-bytes')]);
+    mockGetMetadata.mockResolvedValue([{ contentType: 'video/mp4' }]);
   });
 
-  it('fails honestly until the Gemini Omni Flash API model is configured', async () => {
-    await expect(callGenerateOmniRemix({
+  it('generates a video via the Omni Flash Interactions API with correct payload', async () => {
+    mockInteractionsCreate.mockResolvedValueOnce({
+      id: 'interaction-123',
+      status: 'ACTIVE',
+      output_video: {
+        data: Buffer.from('omni-video-bytes').toString('base64'),
+        mime_type: 'video/mp4',
+      },
+    });
+
+    const result = await callGenerateOmniRemix({
       auth: { uid: 'user-123' },
       data: {
-        prompt: 'Edit this performance with beat-synced neon effects',
+        prompt: 'Add neon glow effects to the performance',
         referenceVideoUri: 'gs://test-bucket/base/performance.mp4',
+        aspectRatio: '16:9',
+        durationSeconds: 8,
       },
-    })).rejects.toMatchObject({
-      code: 'failed-precondition',
-      message: expect.stringContaining('Gemini Omni Flash is not configured'),
     });
+
+    expect(mockInteractionsCreate).toHaveBeenCalledWith(expect.objectContaining({
+      model: 'gemini-omni-flash-preview',
+      response_modalities: ['video'],
+      generation_config: expect.objectContaining({
+        video_config: expect.objectContaining({
+          tasks: 'edit',
+          aspect_ratio: '16:9',
+          duration_seconds: 8,
+          resolution: '1080p',
+        }),
+      }),
+      response_format: { delivery: 'uri' },
+    }));
     expect(mockGenerateVideos).not.toHaveBeenCalled();
+    expect(result).toEqual(expect.objectContaining({
+      jobId: 'job-123',
+      resultUri: expect.stringContaining('gs://test-bucket/creative/user-123/'),
+    }));
   });
 });

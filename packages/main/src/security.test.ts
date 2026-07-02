@@ -142,8 +142,8 @@ describe('Sentinel: IPC Validation Security', () => {
         });
 
         it('should accept Dev Server URL', () => {
-            process.env.VITE_DEV_SERVER_URL = 'http://localhost:4242';
-            expect(() => validateSender(mockEvent('http://localhost:4242/'))).not.toThrow();
+            process.env.VITE_DEV_SERVER_URL = 'http://localhost:4243';
+            expect(() => validateSender(mockEvent('http://localhost:4243/'))).not.toThrow();
             delete process.env.VITE_DEV_SERVER_URL;
         });
 

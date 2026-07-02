@@ -121,7 +121,7 @@ if (app.isPackaged) {
 }
 
 const createWindow = async () => {
-    const devServerUrl = process.env.VITE_DEV_SERVER_URL || 'http://localhost:4242';
+    const devServerUrl = process.env.VITE_DEV_SERVER_URL || 'http://localhost:4243';
 
     interface IWindowStore {
         get(key: string, defaultValue: unknown): unknown;
@@ -242,7 +242,7 @@ const createWindow = async () => {
                 'https://indii.music', 
                 'https://indii-music-founder.firebaseapp.com',
                 'http://localhost:3000',
-                'http://localhost:4242',
+                'http://localhost:4243',
                 'http://localhost:9099'
             ];
 

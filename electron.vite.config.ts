@@ -339,7 +339,7 @@ export default defineConfig({
             },
         },
         server: {
-            port: 4242,
+            port: 4243,
             host: '127.0.0.1',
             watch: {
                 ignored: [

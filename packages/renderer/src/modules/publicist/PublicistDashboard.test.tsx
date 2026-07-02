@@ -112,6 +112,7 @@ describe('PublicistDashboard', () => {
         expect(screen.getByText('Publicist')).toBeDefined();
         expect(screen.getByText('PR & Media')).toBeDefined(); // Tagline in Sidebar
         expect(screen.getByText('Main Menu')).toBeDefined();
+        expect(screen.getByRole('button', { name: /analytics & reports.*soon/i })).toBeDisabled();
     });
 
     it('renders stats ticker in sidebar', () => {
@@ -206,4 +207,3 @@ describe('PublicistDashboard', () => {
         expect(screen.getByText('Total Contacts')).toBeDefined();
     });
 });
-

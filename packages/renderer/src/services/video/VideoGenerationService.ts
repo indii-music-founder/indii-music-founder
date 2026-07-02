@@ -5,7 +5,7 @@ import { db, auth } from '@/services/firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { subscriptionService } from '@/services/subscription/SubscriptionService';
 import { QuotaExceededError } from '@/shared/types/errors';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 import { CostControlService } from '@/services/billing/CostControlService';
 import { UserProfile } from '@/modules/workflow/types';
 import { getVideoConstraints } from '../onboarding/DistributorContext';
@@ -465,6 +465,7 @@ export class VideoGenerationService {
                 seed: options.seed,
                 costEstimate: estimatedCost,
                 costReservationId: effectiveCostReservationId,
+                parentId: options.parentId,
             };
 
             const compactedPayload = Object.fromEntries(
