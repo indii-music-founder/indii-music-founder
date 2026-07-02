@@ -9501,7 +9501,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-652: Gmail and Outlook mutation calls ignore failed HTTP responses
 
-- **Status:** ⏳ OPEN
+- **Status:** 🟡 IN PROGRESS (Agent B)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Renderer / email providers
 - **Location:** `packages/renderer/src/services/email/GmailProvider.ts:294-328`, `packages/renderer/src/services/email/OutlookProvider.ts:225-261`, `packages/renderer/src/modules/agent/components/InboxTab.tsx:533-555`
