@@ -105,11 +105,6 @@ export const EarningsTable = React.memo(({ data, pageSize = 10 }: EarningsTableP
                                                 Copy Release Name
                                             </ContextMenu.Item>
                                             <ContextMenu.Separator className="h-px bg-white/10 my-1" />
-                                            <ContextMenu.Item
-                                                className="flex items-center gap-2 px-2 py-1.5 text-xs text-dept-licensing hover:bg-dept-licensing/10 rounded outline-none cursor-pointer font-bold"
-                                            >
-                                                View Report Details
-                                            </ContextMenu.Item>
                                         </ContextMenu.Content>
                                     </ContextMenu.Portal>
                                 </ContextMenu.Root>
