@@ -4,6 +4,7 @@ import { VideoAspectRatioSchema } from '@/modules/creative/video/schemas';
 import React, { useState, useEffect, useRef, useMemo, useCallback, lazy, Suspense } from 'react';
 import { useStore, HistoryItem } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
+import { StageHandoffPayload } from '@/types/handoff';
 import { useVideoEditorStore } from './store/videoEditorStore';
 import { VideoGeneration } from "@/services/video/VideoGenerationService";
 import { WhiskService } from "@/services/WhiskService";
@@ -223,7 +224,10 @@ export default function VideoWorkflow() {
         isRightPanelOpen,
         toggleRightPanel,
         isPromptBuilderOpen,
-        togglePromptBuilder
+        togglePromptBuilder,
+        pendingStageHandoff,
+        consumeStageHandoff,
+        addCharacterReference
     } = useStore(useShallow((state: import('@/core/store').StoreState) => ({
         generatedHistory: state.generatedHistory,
         addToHistory: state.addToHistory,
@@ -244,7 +248,10 @@ export default function VideoWorkflow() {
         isRightPanelOpen: state.isRightPanelOpen,
         toggleRightPanel: state.toggleRightPanel,
         isPromptBuilderOpen: state.isPromptBuilderOpen,
-        togglePromptBuilder: state.togglePromptBuilder
+        togglePromptBuilder: state.togglePromptBuilder,
+        pendingStageHandoff: state.pendingStageHandoff,
+        consumeStageHandoff: state.consumeStageHandoff,
+        addCharacterReference: state.addCharacterReference
     })));
 
     // Editor Store
@@ -310,6 +317,45 @@ export default function VideoWorkflow() {
             setPendingPrompt(null);
         }
     }, [pendingPrompt, setCreativePrompt, setPendingPrompt]);
+
+    // Consume cross-stage handoff for Veo
+    useEffect(() => {
+        const handoff = pendingStageHandoff?.veo;
+        if (handoff) {
+            const { item, role } = handoff;
+            const updates: Partial<typeof videoInputs> = {};
+
+            switch (role) {
+                case 'first-frame':
+                    updates.firstFrame = item;
+                    break;
+                case 'last-frame':
+                    updates.lastFrame = item;
+                    break;
+                case 'reference-image':
+                    // Add as character reference for styling guidance
+                    addCharacterReference({
+                        image: item,
+                        referenceType: 'reference',
+                        name: item.prompt || 'Reference Image'
+                    });
+                    break;
+                case 'source-video':
+                    // Veo doesn't have a source video concept (it generates from scratch or frames)
+                    logger.warn('[veo-handoff] source-video role not applicable to Veo generation', { role });
+                    break;
+                default:
+                    logger.warn('[veo-handoff] Unknown role', { role });
+            }
+
+            if (Object.keys(updates).length > 0) {
+                setVideoInputs(updates);
+            }
+
+            consumeStageHandoff('veo');
+            toast.success('Asset received in Veo');
+        }
+    }, [pendingStageHandoff?.veo, setVideoInputs, consumeStageHandoff, addCharacterReference, toast]);
 
     // Keyboard Shortcut for Mode Toggle
     useGlobalShortcut({
