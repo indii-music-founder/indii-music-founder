@@ -9715,7 +9715,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-667: Marketing provider service layer references undeployed callables and returns fake fallback statuses
 
-- **Status:** ⏳ OPEN
+- **Status:** 🟡 IN PROGRESS (Fable)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Marketing / provider service contracts
 - **Location:** `packages/renderer/src/services/marketing/SMSMarketingService.ts:38-85`, `packages/renderer/src/services/marketing/EmailMarketingService.ts:39-121`, `packages/renderer/src/services/marketing/SocialAutoPosterService.ts:95-128`
