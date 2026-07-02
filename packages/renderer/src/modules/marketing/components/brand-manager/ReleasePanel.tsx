@@ -49,7 +49,7 @@ const ReleasePanel: React.FC<ReleasePanelProps> = ({
                 <div className="flex flex-col md:flex-row gap-8 relative z-10">
                     {/* Cover Art Placeholder */}
                     <div className="shrink-0 group">
-                        <div className="w-48 h-48 bg-[#111] border border-gray-800 rounded shadow-2xl flex flex-col items-center justify-center text-gray-600 hover:border-dept-marketing/50 transition-colors cursor-pointer relative overflow-hidden">
+                        <div className="w-48 h-48 bg-[#111] border border-gray-800 rounded shadow-2xl flex flex-col items-center justify-center text-gray-600 relative overflow-hidden">
                             {release.coverArtUrl ? (
                                 <img src={release.coverArtUrl} alt="Cover" className="w-full h-full object-cover" />
                             ) : (

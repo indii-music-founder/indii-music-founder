@@ -161,7 +161,7 @@ const HealthPanel: React.FC<HealthPanelProps> = ({
                     </h3>
                     <div className="flex-1 overflow-y-auto custom-scrollbar space-y-3">
                         {analysisHistory.map((entry) => (
-                            <div key={entry.id} className="flex items-center justify-between p-3 rounded-lg bg-[#0a0a0a] border border-gray-800 hover:border-gray-700 transition-all cursor-pointer group">
+                            <div key={entry.id} className="flex items-center justify-between p-3 rounded-lg bg-[#0a0a0a] border border-gray-800 transition-all group">
                                 <div className="min-w-0">
                                     <p className="text-[10px] font-bold text-white truncate">{entry.content}</p>
                                     <div className="flex items-center gap-2 mt-1">

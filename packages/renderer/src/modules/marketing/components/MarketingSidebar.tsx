@@ -50,11 +50,11 @@ export const MarketingSidebar: React.FC<MarketingSidebarProps> = ({ activeTab, o
     ];
 
     const secondaryNav = [
-        { id: 'calendar', label: 'Calendar', icon: Calendar },
-        { id: 'analytics', label: 'Analytics', icon: BarChart },
-        { id: 'history', label: 'History', icon: History },
-        { id: 'audiences', label: 'Audiences', icon: Target },
-        { id: 'settings', label: 'Settings', icon: Settings },
+        { id: 'calendar', label: 'Calendar', icon: Calendar, available: false, reason: 'Not connected yet' },
+        { id: 'analytics', label: 'Analytics', icon: BarChart, available: false, reason: 'Not connected yet' },
+        { id: 'history', label: 'History', icon: History, available: false, reason: 'Not connected yet' },
+        { id: 'audiences', label: 'Audiences', icon: Target, available: false, reason: 'Not connected yet' },
+        { id: 'settings', label: 'Settings', icon: Settings, available: false, reason: 'Not connected yet' },
     ];
 
     return (
@@ -137,18 +137,32 @@ export const MarketingSidebar: React.FC<MarketingSidebarProps> = ({ activeTab, o
                         {secondaryNav.map((item) => (
                             <button
                                 key={item.id}
-                                onClick={() => onTabChange(item.id)}
-                                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group ${activeTab === item.id
-                                    ? 'bg-dept-marketing/10 text-dept-marketing font-medium'
-                                    : 'text-gray-400 hover:bg-white/5 hover:text-gray-200'
+                                onClick={() => item.available && onTabChange(item.id)}
+                                disabled={!item.available}
+                                aria-disabled={!item.available}
+                                title={item.available ? item.label : item.reason}
+                                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group ${item.available
+                                    ? activeTab === item.id
+                                        ? 'bg-dept-marketing/10 text-dept-marketing font-medium'
+                                        : 'text-gray-400 hover:bg-white/5 hover:text-gray-200'
+                                    : 'text-gray-600 opacity-70 cursor-not-allowed'
                                     }`}
                             >
                                 <item.icon
                                     size={18}
-                                    className={`transition-colors ${activeTab === item.id ? 'text-dept-marketing' : 'text-gray-500 group-hover:text-gray-400'
+                                    className={`transition-colors ${item.available
+                                        ? activeTab === item.id
+                                            ? 'text-dept-marketing'
+                                            : 'text-gray-500 group-hover:text-gray-400'
+                                        : 'text-gray-600'
                                         }`}
                                 />
                                 <span>{item.label}</span>
+                                {!item.available && (
+                                    <span className="ml-auto rounded-full border border-white/10 px-2 py-0.5 text-[9px] uppercase tracking-widest text-gray-500">
+                                        Soon
+                                    </span>
+                                )}
                             </button>
                         ))}
                     </div>
