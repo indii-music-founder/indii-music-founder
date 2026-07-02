@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-07-01 23:44 EDT
+**Updated:** 2026-07-01 23:52 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+c857b26e1 fix(tests): update FileDashboard test for removed Upload Asset affordance; exclude package dist dirs from vitest
+5e0989419 chore: session checkpoint [23:44]
 1df3c03db chore: session checkpoint [23:43]
 2e6d25ce2 fix(tests): update CampaignCard + StandardProductCard tests for removed dead affordances
 5676a0943 chore: session checkpoint [23:41]
@@ -12,8 +14,6 @@ c768e7602 chore: session checkpoint [23:36]
 1fefb6789 chore: session checkpoint [23:27]
 079a6d561 chore: session checkpoint [22:56]
 1d6f3483c chore: session checkpoint [22:41]
-c2c9858ee chore: session checkpoint [22:41]
-0b2c9993f feat: STAGE 4 — Lineage tracking via parentId for cross-stage handoffs
 ```
 
 ## Working State
