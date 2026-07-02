@@ -85,8 +85,6 @@
     "@axe-core/playwright": "^4.11.1",
     "@electron/rebuild": "^4.0.4",
     "@eslint/js": "9.39.1",
-    "@mastra/core": "^0.13.1",
-    "@mastra/mcp": "^0.10.12",
     "@playwright/test": "^1.58.2",
     "@vitest/coverage-v8": "^4.1.8",
     "axe-core": "4.11.1",
@@ -247,7 +245,7 @@
     "ssh2-sftp-client": "12.0.1",
     "stripe": "20.1.2",
     "utf-8-validate": "^5.0.2",
-    "vite": "6.4.2",
+    "vite": "6.4.3",
     "ws": "^8.18.0"
   }
 }
