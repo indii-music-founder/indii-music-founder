@@ -9956,21 +9956,24 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
 
 ### ISSUE-601: VisualOutputAutorater Infinite Generation Loop
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, hunter session — verified by Fable)
+- **Fix evidence:** `AgentService.sendMessage` accepts `originalBrief` via options (`AgentService.ts:116,153`); the corrective retry passes the TRUE brief through (`AgentService.ts:1711`), so `getVisualAutoraterRetryKey` hashes stay stable and `MAX_CORRECTION_ATTEMPTS` caps retries. ERROR_LEDGER 2026-07-02 "Autorater Prompt Mutation Loop"; commit 808290959. Regression suite `VisualOutputAutorater.test.ts` present.
 - **Severity:** 🔴 HIGH
 - **Module:** AgentService / VisualOutputAutorater
 - **Summary:** When image generation times out but eventually completes in the background, `triggerVisualAutorater` evaluates the image. If it fails, it sends a corrective prompt. However, the `originalBrief` passed to the next retry is the *entire corrective message*, causing the `originalImageId` hash to change. This completely bypasses the `MAX_CORRECTION_ATTEMPTS` cap and causes a runaway loop of infinite image generations.
 - **Fix Direction:** Extract or pass the true `originalBrief` through the corrective `sendMessage` options so the autorater correctly increments the attempt counter for the original generation request.
 
 ### ISSUE-602: Boardroom Messages Not Persisting Across Reloads
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, hunter session — verified by Fable)
+- **Fix evidence:** `useWorkspaceSync` echo-guard now bypasses when local state is empty after reload and auto-rehydrates from the device snapshot (`useWorkspaceSync.ts:78`). ERROR_LEDGER 2026-07-02 "Local Zustand State Lost on Reload"; commit 808290959.
 - **Severity:** 🔴 HIGH
 - **Module:** Boardroom HQ / AgentSessionSlice
 - **Summary:** When the user closes and restarts the browser, recent Boardroom chat history is lost ("didn't recall much of the original"). `addBoardroomMessage`, `updateBoardroomMessage`, and `removeBoardroomMessage` only update local Zustand state and fail to call `sessionService.updateSession(...)` to persist to Firestore, unlike standard `addAgentMessage`.
 - **Fix Direction:** Ensure boardroom messages are persisted to the active session in Firestore just like direct agent messages, or synced appropriately so a reload doesn't wipe them.
 
 ### ISSUE-603: Image Generation Unprompted Subject Inclusion
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, hunter session — verified by Fable)
+- **Fix evidence:** `ImageGenerationInstrument` description + prompt schema now carry a CRITICAL no-unsolicited-humans rule, and `personGeneration` defaults to `ALLOW_NONE` (`ImageGenerationInstrument.ts:28,73,115-118`). ERROR_LEDGER 2026-07-02 "Image Generation Subject Hallucination"; commit 808290959.
 - **Severity:** 🟡 MEDIUM
 - **Module:** Creative Studio / Image Generation
 - **Summary:** When users prompt for images (e.g. "a literal cassette tape cover"), the system defaults to generating images containing people/faces that are not the user, despite no pictures being shared or explicitly requested. 
