@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { Music, Edit2, Trash2, CheckSquare, Globe, Clock } from 'lucide-react';
+import { Music, Trash2, CheckSquare, Globe, Clock } from 'lucide-react';
 import { ClientReleaseRecord } from '@/modules/publishing/hooks/useReleases';
 interface ReleaseStatusCardProps {
     release: ClientReleaseRecord;
@@ -114,9 +114,6 @@ export const ReleaseStatusCard: React.FC<ReleaseStatusCardProps> = ({
                 </div>
 
                 <div className="flex items-center gap-1">
-                    <button className="p-2 text-gray-600 hover:text-white hover:bg-gray-800 rounded-lg transition-colors">
-                        <Edit2 size={16} />
-                    </button>
                     <button
                         onClick={(e) => {
                             e.stopPropagation();

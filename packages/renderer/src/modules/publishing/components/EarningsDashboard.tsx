@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useEarnings } from '../hooks/useEarnings';
 import { EarningsBreakdown } from './EarningsBreakdown';
-import { DollarSign, Globe, TrendingUp, Download } from 'lucide-react';
+import { DollarSign, Globe, TrendingUp } from 'lucide-react';
 import { SkeletonText, Skeleton } from '@/components/ui/Skeleton';
 
 // Compute default period outside component to satisfy react-compiler purity rules
@@ -86,11 +86,6 @@ export const EarningsDashboard: React.FC = () => {
             <div className="bg-[#121212] border border-gray-800/50 rounded-2xl p-6 shadow-xl relative overflow-hidden flex flex-col">
                 <div className="flex items-center justify-between mb-2">
                     <h3 className="text-lg font-bold text-white tracking-tight">Royalties</h3>
-                    <div className="flex gap-2">
-                        <button className="p-1.5 text-gray-500 hover:text-white rounded-lg transition-colors">
-                            <Download size={16} />
-                        </button>
-                    </div>
                 </div>
                 <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-6 px-1">Active Balance (USD)</p>
 
@@ -128,9 +123,9 @@ export const EarningsDashboard: React.FC = () => {
                             </div>
                         </div>
 
-                        <button className="w-full mt-6 py-3 bg-white text-black rounded-xl font-bold text-sm hover:bg-gray-200 transition-all active:scale-[0.98] shadow-lg shadow-white/5">
-                            Request Withdrawal
-                        </button>
+                        <p className="w-full mt-6 py-3 text-center text-xs text-gray-500 border border-dashed border-gray-800 rounded-xl">
+                            Withdrawals aren't wired yet — royalties settle through your connected payout method.
+                        </p>
                     </div>
                 ) : (
                     <div className="text-center py-10 px-4 bg-gray-900/20 rounded-2xl border border-dashed border-gray-800">

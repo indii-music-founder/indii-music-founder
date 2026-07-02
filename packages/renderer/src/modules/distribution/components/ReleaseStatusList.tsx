@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { DistributorId } from '@/services/distribution/types/distributor';
-import { MoreHorizontal, FileText, CheckCircle, AlertCircle, Clock, Loader2 } from 'lucide-react';
+import { FileText, CheckCircle, AlertCircle, Clock, Loader2 } from 'lucide-react';
 
 interface ReleaseItem {
     id: string; // Internal ID
@@ -74,11 +74,7 @@ export default function ReleaseStatusList({ releases, onDeliver, onViewReport }:
                                         ))}
                                     </div>
                                 </td>
-                                <td className="py-4 px-6 text-right">
-                                    <button className="p-2 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-lg transition-colors">
-                                        <MoreHorizontal size={18} />
-                                    </button>
-                                </td>
+                                <td className="py-4 px-6 text-right" />
                             </tr>
                         ))}
                     </tbody>
