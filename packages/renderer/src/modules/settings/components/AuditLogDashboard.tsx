@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ShieldAlert, Database } from 'lucide-react';
+import { ShieldAlert } from 'lucide-react';
 import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
 import { db } from '@/services/firebase';
 import { safeUnsubscribe } from '@/utils/safeUnsubscribe';
@@ -95,11 +95,6 @@ export const AuditLogDashboard: React.FC = () => {
                 </table>
             </div>
 
-            <div className="mt-6 flex justify-end">
-                <button className="flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 text-sm font-medium rounded-lg border border-gray-700 transition-colors">
-                    <Database size={16} /> Export CSV
-                </button>
-            </div>
         </div>
     );
 };
