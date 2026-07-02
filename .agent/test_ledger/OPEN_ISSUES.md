@@ -9206,6 +9206,294 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Fix Direction:** Wire the camera control to avatar editing or drop the fake affordance.
 - **DO NOT:** Leave a profile-photo edit button that cannot do anything.
 
+### ISSUE-628: Merch dashboard shows dead `View All` and `Launch Campaign` buttons
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟢 LOW
+- **Module:** Merchandise / dashboard
+- **Location:** `packages/renderer/src/modules/merchandise/MerchDashboard.tsx:249-253`, `:489-499`
+- **Summary:** The `Top Performing Products` section renders a `View All` button with no handler, and the `Campaign Ready` card renders `Launch Campaign` without any action. Both controls present a workflow path that does not exist in the current build.
+- **Expected (acceptance):** Either open the real merch list/campaign flow or render those buttons as inert text.
+- **Honest fallback:** Keep the merch panels visible, but remove the button styling until the flows are wired.
+- **Fix Direction:** Connect the buttons to real screens or strip the fake CTA affordances.
+- **DO NOT:** Leave merch dashboard CTAs that appear clickable but go nowhere.
+
+### ISSUE-629: Agent sidebar settings button is clickable-looking but inert
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟢 LOW
+- **Module:** Agent / sidebar
+- **Location:** `packages/renderer/src/modules/agent/components/AgentSidebar.tsx:54-60`
+- **Summary:** The sidebar renders a settings button with hover styling and an accessible label, but it has no click handler or menu destination. It appears to open configuration while doing nothing.
+- **Expected (acceptance):** Either open the settings surface or render the control as decorative.
+- **Honest fallback:** Keep the sidebar visible, but remove the button semantics until a settings flow exists.
+- **Fix Direction:** Wire the settings button to real configuration UI or remove the fake affordance.
+- **DO NOT:** Leave a sidebar settings control that cannot act.
+
+### ISSUE-630: Distributor card exposes an inert `Connection Settings` button
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟢 LOW
+- **Module:** Distribution / distributors
+- **Location:** `packages/renderer/src/modules/distribution/components/DistributorCard.tsx:95-99`
+- **Summary:** When a distributor is connected, the card renders a `Connection Settings` button, but the button has no handler or destination. It suggests a configuration surface that is not implemented.
+- **Expected (acceptance):** Either open the distributor settings flow or render the control as static text.
+- **Honest fallback:** Keep the distributor status card visible, but remove the button styling until settings exists.
+- **Fix Direction:** Wire the button to a real connection settings screen or remove the fake affordance.
+- **DO NOT:** Leave a settings button that cannot open anything.
+
+### ISSUE-631: Investor dashboard exposes dead dossier and send actions
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟢 LOW
+- **Module:** Investor / dashboard
+- **Location:** `packages/renderer/src/modules/investor/components/EquityDashboard.tsx:60-63`, `:200-202`
+- **Summary:** The top-level `[ DL_DOSSIER ]` button and the `SEND` action in the advisory panel are rendered as live controls, but neither has an attached handler. The investor surface advertises download and message workflows that do not execute.
+- **Expected (acceptance):** Either wire the dossier/download and send flows or render the controls as inert.
+- **Honest fallback:** Keep the investor dashboard visible, but remove the button semantics until the workflows exist.
+- **Fix Direction:** Connect the actions to real investor flows or strip the fake affordances.
+- **DO NOT:** Leave investor controls that look actionable when they are not.
+
+### ISSUE-632: God Mode canvas exposes a dead maximize button
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟢 LOW
+- **Module:** Core / God Mode
+- **Location:** `packages/renderer/src/modules/core/components/GodModeCanvas.tsx:21-24`
+- **Summary:** The floating maximize button is rendered as an active control, but there is no click handler or target behavior. It looks like it should expand the canvas, but it does nothing.
+- **Expected (acceptance):** Either wire the maximize action or render the icon as decorative.
+- **Honest fallback:** Keep the canvas visible, but remove the button semantics until a maximize flow exists.
+- **Fix Direction:** Connect the button to a real expand action or strip the fake affordance.
+- **DO NOT:** Leave a maximize button that cannot change the view.
+
+### ISSUE-633: Standard merch product card exposes a dead `ADD TO CART` CTA
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟢 LOW
+- **Module:** Merchandise / product card
+- **Location:** `packages/renderer/src/modules/merchandise/components/StandardProductCard.tsx:28-32`
+- **Summary:** The overlay renders `ADD TO CART` as a prominent button, but the button has no handler. It suggests a checkout path on a product card that cannot actually add anything to cart.
+- **Expected (acceptance):** Either wire the add-to-cart flow or render the CTA as static text.
+- **Honest fallback:** Keep the product card visible, but remove the button styling until checkout exists.
+- **Fix Direction:** Hook the CTA to a real cart action or stop implying interactivity.
+- **DO NOT:** Leave a product card with a fake checkout button.
+
+### ISSUE-634: Timeline track header buttons are rendered without mute/visibility actions
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟢 LOW
+- **Module:** Creative / video timeline
+- **Location:** `packages/renderer/src/modules/creative/video/editor/components/TimelineTrack.tsx:37-39`
+- **Summary:** The visibility and mute icons are rendered as buttons, but they have no click handlers. The track header suggests toggles for track state that are not implemented.
+- **Expected (acceptance):** Either wire the mute/visibility toggles or render the icons as non-interactive.
+- **Honest fallback:** Keep the track controls visible, but remove the button semantics until the toggles exist.
+- **Fix Direction:** Attach real track-state actions or strip the fake affordances.
+- **DO NOT:** Leave timeline control buttons that cannot toggle anything.
+
+### ISSUE-635: Pro merch showcase cards look clickable but have no action
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟢 LOW
+- **Module:** Merchandise / pro showcase
+- **Location:** `packages/renderer/src/modules/merchandise/components/ProMerch.tsx:69-91`
+- **Summary:** The showcase cards use `cursor-pointer` and a prominent `SECURE ITEM` CTA, but there is no click handler or navigation attached to either the card or the button. The page reads like a purchase flow while remaining static.
+- **Expected (acceptance):** Either wire the showcase to a real product detail/checkout flow or render it as a non-interactive gallery.
+- **Honest fallback:** Keep the product showcase visible, but remove the clickable styling until the flow exists.
+- **Fix Direction:** Connect the cards and CTA to a real merch path or remove the fake interactivity.
+- **DO NOT:** Leave a merch showcase that looks shoppable when it is not.
+
+### ISSUE-636: File tree chevron button is rendered without its own toggle handler
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟢 LOW
+- **Module:** Files / tree navigation
+- **Location:** `packages/renderer/src/modules/files/components/FileTree.tsx:116-120`
+- **Summary:** Folder rows are clickable, but the nested chevron button is rendered as a separate button with no `onClick` handler of its own. The control looks like a dedicated expand/collapse affordance even though it does not independently do anything.
+- **Expected (acceptance):** Either wire the chevron button to toggle the folder or render it as a decorative icon.
+- **Honest fallback:** Keep the tree visible, but remove the button semantics from the chevron until it has its own action.
+- **Fix Direction:** Attach a real expand/collapse handler or strip the fake affordance.
+- **DO NOT:** Leave a folder toggle button that cannot act by itself.
+
+### ISSUE-637: Dailies strip exposes an inert options button
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟢 LOW
+- **Module:** Creative video / dailies strip
+- **Location:** `packages/renderer/src/modules/creative/video/components/DailiesStrip.tsx:38-44`
+- **Summary:** The dailies header renders a `MoreHorizontal` options button with a test id and focus styling, but there is no click handler or menu attached. It presents a context menu entry point that goes nowhere.
+- **Expected (acceptance):** Either open a real options menu or render the icon as static decoration.
+- **Honest fallback:** Keep the dailies strip visible, but remove the button semantics until the menu exists.
+- **Fix Direction:** Wire the button to an actual options menu or remove the fake affordance.
+- **DO NOT:** Leave a dailies options control that cannot open anything.
+
+### ISSUE-638: Audit log dashboard exposes a dead export button
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟢 LOW
+- **Module:** Settings / audit logs
+- **Location:** `packages/renderer/src/modules/settings/components/AuditLogDashboard.tsx:98-101`
+- **Summary:** The dashboard renders `Export CSV` as a visible button, but it has no click handler or download logic. It looks like a working export action on the live audit surface while doing nothing.
+- **Expected (acceptance):** Either wire the export to real CSV generation or render it as static text.
+- **Honest fallback:** Keep the audit log table visible, but remove the button semantics until export exists.
+- **Fix Direction:** Connect the export button to actual CSV output or strip the fake affordance.
+- **DO NOT:** Leave an audit-log export control that cannot export anything.
+
+### ISSUE-639: Release status card shows a dead `VIEW DETAILS` button
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟢 LOW
+- **Module:** Distribution / release status card
+- **Location:** `packages/renderer/src/modules/distribution/components/ReleaseStatusCard.tsx:184-189`
+- **Summary:** The `VIEW DETAILS` button is rendered as a prominent action, but there is no click handler or target view attached. It suggests a drill-down path that does not exist in the current build.
+- **Expected (acceptance):** Either open the release details view or render the button as inert copy.
+- **Honest fallback:** Keep the card visible, but remove the button semantics until the details flow exists.
+- **Fix Direction:** Wire the button to the real detail surface or remove the fake action.
+- **DO NOT:** Leave a release card CTA that cannot open details.
+
+### ISSUE-640: SceneBuilder exposes a dead `Preview Camera` button
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟢 LOW
+- **Module:** Creative video / scene builder
+- **Location:** `packages/renderer/src/modules/creative/video/visualizer/SceneBuilder.tsx:160-163`
+- **Summary:** The header renders a `Preview Camera` button with primary styling, but it has no click handler or preview behavior. It implies a camera preview function that is not wired up.
+- **Expected (acceptance):** Either open the camera preview or render the control as static decoration.
+- **Honest fallback:** Keep the scene builder visible, but remove the button semantics until preview exists.
+- **Fix Direction:** Wire the button to a real preview flow or remove the fake affordance.
+- **DO NOT:** Leave a preview button that cannot preview anything.
+
+### ISSUE-641: Image sub-menu renders a button-shaped `Image` tab with no action
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟢 LOW
+- **Module:** Creative / image sub-menu
+- **Location:** `packages/renderer/src/modules/creative/components/ImageSubMenu.tsx:34-40`
+- **Summary:** The sub-menu renders `Gallery`, `Image`, `Chips`, and `Edit` as tabs, but `Gallery`, `Chips`, and `Edit` are the only interactive controls. `Image` is styled as a button but has no click handler, making it a static label wearing button chrome.
+- **Expected (acceptance):** Either wire the `Image` tab to a real action or render it as a non-interactive active-state label.
+- **Honest fallback:** Keep the tab row visible, but remove the button semantics from the `Image` pill until it becomes actionable.
+- **Fix Direction:** Convert the active `Image` label to a span/badge or connect it to actual behavior.
+- **DO NOT:** Leave a tab-looking button that cannot be clicked.
+
+### ISSUE-642: Standard merch editor exposes a dead `Design new asset` CTA
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟢 LOW
+- **Module:** Merchandise / standard merch
+- **Location:** `packages/renderer/src/modules/merchandise/components/StandardMerch.tsx:90-103`
+- **Summary:** The empty-state merch panel renders a large `Design new asset` button and `Open Designer` affordance, but the button has no click handler. It looks like the primary path into the merch designer while remaining static.
+- **Expected (acceptance):** Either open the merch designer or render the empty state as non-interactive copy.
+- **Honest fallback:** Keep the empty state visible, but remove the button semantics until the designer path exists.
+- **Fix Direction:** Wire the CTA to the real designer flow or strip the fake affordance.
+- **DO NOT:** Leave a merch entrypoint that cannot launch anything.
+
+### ISSUE-643: Manufacturing panel exposes a clickable-looking item spec card with no action
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟢 LOW
+- **Module:** Merchandise / manufacturing panel
+- **Location:** `packages/renderer/src/modules/merchandise/components/ManufacturingPanel.tsx:297-304`
+- **Summary:** The `Item Spec` card is styled as a clickable surface, but it has no click handler, keyboard affordance, or destination. It reads like an interactive configuration step even though it is static.
+- **Expected (acceptance):** Either wire the card to an edit/detail flow or render it as plain informational content.
+- **Honest fallback:** Keep the manufacturing details visible, but remove the pointer affordance until interaction exists.
+- **Fix Direction:** Attach a real action or stop implying the card is interactive.
+- **DO NOT:** Leave a spec card that looks selectable when it is not.
+
+### ISSUE-644: Distributor connection rows look interactive but have no row action
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟢 LOW
+- **Module:** Distribution / connections
+- **Location:** `packages/renderer/src/modules/publishing/components/DistributorConnectionsPanel.tsx:38-49`
+- **Summary:** Each distributor row is styled as a clickable list item with hover states and a trailing external-link icon, but there is no handler attached to the row. The list implies a drill-in or settings path that does not exist.
+- **Expected (acceptance):** Either open the connection details/settings view or render the rows as static status indicators.
+- **Honest fallback:** Keep the connections list visible, but remove the clickable treatment until the row action exists.
+- **Fix Direction:** Wire the row to a real detail surface or remove the fake affordance.
+- **DO NOT:** Leave connection rows that look actionable but do nothing.
+
+### ISSUE-645: Token-gated preview shows a dead `Connect Wallet to Unlock` CTA
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟢 LOW
+- **Module:** Merchandise / token-gated preview
+- **Location:** `packages/renderer/src/modules/merchandise/components/TokenGatedPreview.tsx:100-103`
+- **Summary:** The locked track state renders a prominent `Connect Wallet to Unlock` button, but the button has no click handler or wallet connection logic. It suggests an unlock flow that the component does not actually implement.
+- **Expected (acceptance):** Either connect the wallet flow or render the locked state as non-interactive copy.
+- **Honest fallback:** Keep the locked preview visible, but remove the button semantics until unlock exists.
+- **Fix Direction:** Wire the CTA to a real wallet connection path or strip the fake affordance.
+- **DO NOT:** Leave an unlock button that cannot unlock anything.
+
+### ISSUE-646: Email manager exposes dead alias-management actions
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟢 LOW
+- **Module:** Admin dashboard / email manager
+- **Location:** `packages/admin-dashboard/src/components/modules/EmailManager.tsx:116,242-246`
+- **Summary:** The `New Alias` button in the header and the per-alias edit/delete icon buttons are rendered as interactive controls, but there are no handlers or linked flows attached to any of them. The UI implies alias creation and management that the module does not implement.
+- **Expected (acceptance):** Either wire the alias creation/edit/delete flows or render the controls as non-interactive status text.
+- **Honest fallback:** Keep the alias list visible, but remove the button semantics until real management actions exist.
+- **Fix Direction:** Attach real alias-management actions or strip the fake affordances.
+- **DO NOT:** Leave alias controls that look actionable but do nothing.
+
+### ISSUE-647: Studio shot list exposes dead settings and add-shot controls
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟢 LOW
+- **Module:** Renderer / studio controls panel
+- **Location:** `packages/renderer/src/core/components/right-panel/StudioControlsPanel.tsx:1048-1058`
+- **Summary:** The shot list renders a per-shot settings icon button and an `Add New Shot` CTA, but neither control has any handler or destination. Both elements look like they should edit or create sequence items, but the panel only shows static placeholders.
+- **Expected (acceptance):** Either wire the shot settings/add-shot flow or render the shot list as static non-interactive preview content.
+- **Honest fallback:** Keep the shot list visible, but remove the button affordances until real sequence editing exists.
+- **Fix Direction:** Attach real shot editing/creation actions or strip the fake affordances.
+- **DO NOT:** Leave shot-list controls that look actionable but do nothing.
+
+### ISSUE-648: GoogleHub Drive download button only triggers an alert placeholder
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟢 LOW
+- **Module:** Admin dashboard / GoogleHub drive
+- **Location:** `packages/admin-dashboard/src/components/modules/GoogleHub.tsx:539-545`
+- **Summary:** The Drive file card renders a `Download` button, but the click handler only calls `alert(...)` with the file ID. That is a mock placeholder, not a real download action, so the control appears functional while doing nothing useful.
+- **Expected (acceptance):** Either wire the button to a real download/open flow or render it as non-interactive copy.
+- **Honest fallback:** Keep the file card visible, but remove the button semantics until the actual download path exists.
+- **Fix Direction:** Replace the alert stub with a real file transfer/download action or strip the fake affordance.
+- **DO NOT:** Leave a download button whose only behavior is a placeholder alert.
+
+### ISSUE-649: Admin login path exposes a mock token bypass
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Admin dashboard / authentication
+- **Location:** `packages/admin-dashboard/src/components/LoginScreen.tsx:126-129`, `packages/admin-dashboard/src/App.tsx:33-58`
+- **Summary:** The admin login flow accepts a hard-coded `0707` passcode fallback that writes `MOCK_ADMIN_TOKEN` to localStorage, and `App.tsx` treats that token as a valid developer admin session. This creates a fake authenticated state in the live admin surface instead of failing honestly when real auth is unavailable.
+- **Expected (acceptance):** Either remove the developer bypass from the production admin path or confine it behind an explicit development-only guard that cannot be reached in normal builds.
+- **Honest fallback:** Keep the login form visible, but fail cleanly when real auth is unavailable.
+- **Fix Direction:** Eliminate the mock token path from user-facing auth or make it unambiguously development-only.
+- **DO NOT:** Leave a hidden passcode that manufactures an admin session.
+
+### ISSUE-650: Landing page uses clickable styling without a real destination
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟢 LOW
+- **Module:** Landing page / feature showcase
+- **Location:** `packages/landing/src/components/FeatureShowcase.tsx:95-97`, `packages/landing/src/components/ConductorSection.tsx:103-110`
+- **Summary:** The feature showcase renders a `See Documentation` affordance with cursor-pointer styling, and the conductor orbit renders each node as a hoverable clickable target, but neither component attaches a handler or link. The landing page is implying navigation and drill-in behavior that does not exist.
+- **Expected (acceptance):** Either wire the documentation/drill-in destinations or render the affordances as non-interactive decorative content.
+- **Honest fallback:** Keep the showcase visible, but remove the clickable styling until real destinations exist.
+- **Fix Direction:** Attach actual navigation targets or strip the fake interactivity.
+- **DO NOT:** Leave landing-page elements that look clickable but go nowhere.
+
+### ISSUE-651: Admin backend exposes a mock auth bypass and mock OAuth defaults
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Admin dashboard / server auth
+- **Location:** `packages/admin-dashboard/server.ts:36-56,88-94,295-310`
+- **Summary:** The admin backend accepts `MOCK_ADMIN_TOKEN` as a valid auth credential, issues a Firebase custom token for the hard-coded `0707` passcode, and falls back to `MOCK_GOOGLE_CLIENT_ID` / `MOCK_GOOGLE_CLIENT_SECRET` when OAuth env vars are missing. That means the API boundary can manufacture a fake admin session and a fake Google integration instead of failing honestly.
+- **Expected (acceptance):** Either remove the bypasses or confine them to an explicit dev-only path that cannot be reached in normal builds.
+- **Honest fallback:** Keep the backend endpoints available, but reject authentication and OAuth setup cleanly when real credentials are absent.
+- **Fix Direction:** Eliminate the mock admin token/passcode path and require real Google OAuth configuration.
+- **DO NOT:** Leave backend auth or OAuth code that silently falls back to mock secrets or manufactured sessions.
+
 ---
 
 ## Gemini Omni Flash — Omni page build + cross-stage handoff (planned 2026-07-01)
@@ -9242,8 +9530,9 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-597: Omni stage consumes cross-stage handoff (accept assets from Image/Veo, not upload-only)
 
-- **Status:** ⏳ OPEN
-- **Type:** FEATURE (Part B) · **Depends on:** ISSUE-579
+- **Status:** ✅ COMPLETED (2026-07-01 19:35)
+- **Commit:** 2c63cbc3d
+- **Type:** FEATURE (Part B) · **Depends on:** ISSUE-596 (done)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Creative / Omni video (frontend)
 - **Location:** `packages/renderer/src/modules/creative/video/OmniWorkflow.tsx` (input state `:244`, `omniReferenceVideo` set only from local upload `:268`)
@@ -9254,7 +9543,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 ### ISSUE-598: Veo stage consumes cross-stage handoff
 
 - **Status:** ⏳ OPEN
-- **Type:** FEATURE (Part B) · **Depends on:** ISSUE-579
+- **Type:** FEATURE (Part B) · **Depends on:** ISSUE-596 (done)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Creative / Veo video (frontend)
 - **Location:** `packages/renderer/src/modules/creative/video/VideoWorkflow.tsx`; setters `creativeControlsSlice.setVideoInput`/`setVideoInputs` (`:142/:320`), `addCharacterReference` (`:151`)
@@ -9265,7 +9554,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 ### ISSUE-599: Image stage consumes cross-stage handoff
 
 - **Status:** ⏳ OPEN
-- **Type:** FEATURE (Part B) · **Depends on:** ISSUE-579
+- **Type:** FEATURE (Part B) · **Depends on:** ISSUE-596 (done)
 - **Severity:** 🟢 LOW
 - **Module:** Creative / Image (frontend)
 - **Location:** `packages/renderer/src/modules/creative/CreativeStudio.tsx` + image generation path
@@ -9276,7 +9565,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 ### ISSUE-600: "Send to stage" outbound actions (Gallery + Showroom + each stage output) with lineage
 
 - **Status:** ⏳ OPEN
-- **Type:** FEATURE (Part B) · **Depends on:** ISSUE-579
+- **Type:** FEATURE (Part B) · **Depends on:** ISSUE-596 (done)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Creative / gallery, showroom, stage output panels
 - **Location:** `packages/renderer/src/modules/creative/components/CreativeGallery.tsx` (GalleryItem menu `:171-228`), `packages/renderer/src/modules/creative/components/ShowroomUI.tsx`, each stage output panel (Omni `outputVideoUrl`, Veo result, Image result)
