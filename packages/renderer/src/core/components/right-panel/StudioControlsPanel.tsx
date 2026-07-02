@@ -1,7 +1,7 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { useState, useMemo, useEffect } from 'react';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { Wand2, History, ChevronRight, ChevronDown, Sliders, Zap, Brain, Layers, Video, Move, Plus, Settings, Sparkles, Image as ImageIcon, Film, ImagePlay, Loader2, Shield, Languages, Eye, Music } from 'lucide-react';
+import { Wand2, History, ChevronRight, ChevronDown, Sliders, Zap, Brain, Layers, Video, Move, Sparkles, Image as ImageIcon, Film, ImagePlay, Loader2, Shield, Languages, Eye, Music } from 'lucide-react';
 import CreativeGallery from '../../../modules/creative/components/CreativeGallery';
 import { useStore } from '../../store';
 import { useShallow } from 'zustand/react/shallow';
@@ -1045,17 +1045,8 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                                                 </div>
                                                 <p className="text-[9px] text-gray-500 truncate">Cinematic drone shot over mountains...</p>
                                             </div>
-                                            <div className="absolute right-2 bottom-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <button className="p-1 hover:bg-white/10 rounded"><Settings size={10} className="text-gray-400" /></button>
-                                            </div>
                                         </motion.div>
                                     ))}
-                                    <button
-                                        data-testid="add-shot-btn"
-                                        className="w-full py-2.5 border border-dashed border-white/10 rounded-xl text-[11px] text-gray-500 hover:text-gray-300 hover:border-white/20 hover:bg-white/5 transition-all flex items-center justify-center gap-2"
-                                    >
-                                        <Plus size={12} /> Add New Shot
-                                    </button>
                                 </div>
                             </div>
                         </SectionCard>
