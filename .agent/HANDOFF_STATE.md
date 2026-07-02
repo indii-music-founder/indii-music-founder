@@ -1,19 +1,19 @@
 # Handoff State
-**Updated:** 2026-07-02 15:39 EDT
+**Updated:** 2026-07-02 17:46 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+be2b769ce fix(email): reject failed mail mutations
+da7f3b7fc docs(ledger): claim ISSUE-652
+4d2b0b6ca docs(workflows): add session start routing flowchart
+bfe78dff6 test(ledger): log ISSUE-CI pipeline failures
+9f4c2a53d chore: session checkpoint [15:39]
 abfc28391 chore: session checkpoint [15:37]
 2a7c895bb test(renderer): mock boardroom store in router context
 3954460b0 test(distribution): mock tunecore in verification suite
 eebcc3e30 test(renderer): add boardroom store mock
 a6a9f2f2f test(distribution): mock tunecore success path
-50469c31b docs(test-ledger): update audit findings
-dad4d3885 docs(test-ledger): update open issues
-2b442aae9 chore(renderer): save local changes
-366452d90 chore: session checkpoint [14:03]
-db5a9948d chore: session checkpoint [14:01]
 ```
 
 ## Working State
