@@ -8596,6 +8596,16 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ## /middle Findings (2026-06-30) — Workspace Sync Phase 1 Session
 
+### ISSUE-671: npm audit backlog — ~50 transitive findings beyond the resolved provider-utils issue
+
+- **Status:** 🟡 IN PROGRESS (dep-remediation agent; Fable verifying on landing)
+- **Severity:** 🟠 MODERATE (mixed: mostly moderate/low; a few high in wallet SDKs)
+- **Module:** dependencies / package-lock
+- **Summary:** After ISSUE-CI-28478558122-AUDIT closed (@mastra removal), `npm audit` still reports ~50 findings in transitive deps: @arcjet/* (moderate), @coinbase/*+@base-org/account (high, wallet SDKs), @google-cloud/* (moderate), @ai-sdk/react|ui-utils (low), ws, vite, and others. None were tracked in the ledger before this entry.
+- **Current work:** A concurrent agent has in-flight manifest bumps (`ws` ^8.18.0→8.21.0, `vite` 6.4.2→6.4.3 across root/admin-dashboard/firebase) as of 2026-07-02 19:40 EDT. Per CLAUDE.md guardrail #9, no other agent may run npm install/audit-fix until that lands.
+- **Expected (acceptance):** `npm audit --audit-level=high` reports 0 high/critical; remaining moderate/low findings each have a documented disposition (fixed, accepted-risk with reason, or blocked-upstream). Typecheck/lint/tests green after every bump.
+- **DO NOT:** Run `npm audit fix --force` (major-version churn), or run npm installs concurrently with another agent's dependency work.
+
 ### ISSUE-CI-28478558122-AUDIT: npm audit — Uncontrolled Resource Consumption in @ai-sdk/provider-utils
 - **Status:** ✅ FIXED (2026-07-02)
 - **Severity:** ⚪ LOW
@@ -8628,6 +8638,15 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
   - `npm run typecheck` passes.
   - Focused tests pass: `npx vitest run packages/main/src/services/mcp/MCPClientService.test.ts packages/mcp-server-harness/src/toolResponses.test.ts packages/renderer/src/services/agent/orchestration/MastraService.ts packages/renderer/src/services/agent/BaseAgentValidation.test.ts packages/renderer/src/services/agent/utils/ZodUtils.test.ts --config vitest.config.ts`.
   - `npm run lint` exits `0` with pre-existing warnings only.
+- **Follow-up Audit Reduction (2026-07-02, Codex):** Applied the next low-risk dependency moves after the Mastra removal: bumped Vite from `6.4.2` to `6.4.3` across root/admin/firebase/renderer resolution, bumped the Remotion family from `4.0.445` to `4.0.484`, and pinned the direct root `ws` dependency to `8.21.0`. Re-ran `npm install`.
+- **Follow-up Verification (2026-07-02, Codex):**
+  - `npm audit --json` moved from `50 total / 17 high` after the Mastra fix to `44 total / 16 high`; Vite is no longer present as an audit finding and Remotion's `@remotion/renderer -> ws` high path now resolves to `ws@8.21.0`.
+  - Remaining high findings are isolated to the Reown/AppKit stack: `@reown/appkit`, `@reown/appkit-adapter-ethers`, `viem`, and `viem -> ws@8.20.1`. Latest published Reown packages are already `1.8.21`, and latest `viem@2.54.1` still declares exact `ws@8.20.1`, so there is no upstream fixed version available yet. `npm audit fix --force` suggests downgrading AppKit to `1.0.7`, which is not an acceptable unattended fix for the live WalletConnect integration.
+  - Attempted scoped npm overrides for `viem -> ws@8.21.0`; npm preserved `viem`'s exact nested `ws@8.20.1`. A global `ws` override was rejected as too broad because it would force unrelated tooling, including Firebase CLI dependencies, across a major `ws` boundary. The override attempt was backed out.
+  - `npm run typecheck` passes.
+  - Focused MCP/agent tests pass: `npx vitest run packages/main/src/services/mcp/MCPClientService.test.ts packages/mcp-server-harness/src/toolResponses.test.ts packages/renderer/src/services/agent/BaseAgentValidation.test.ts packages/renderer/src/services/agent/utils/ZodUtils.test.ts --config vitest.config.ts`.
+  - `npm run lint` exits `0` with pre-existing warnings only.
+  - `npm ls vite @remotion/renderer @remotion/cloudrun @remotion/bundler remotion ws --depth=2` shows the intended versions but exits `ELSPROBLEMS` because `react-call@2.0.1` declares optional `vite >=8`; this peer mismatch existed at the package-policy level and should be scoped separately from this audit fix.
 
 ### ISSUE-CI-28478558122-DEPLOY: Deploy Cloud Functions — transient GCP 503
 - **Status:** ✅ RESOLVED (2026-07-02, Fable) — re-verified: deploy-production succeeded on run 28614340383; the GCP 503 was transient as suspected
@@ -9678,7 +9697,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-658: Distributor adapters report pending review without confirmed DSP delivery
 
-- **Status:** 🟡 IN PROGRESS (Agent B)
+- **Status:** ✅ FIXED (2026-07-02, Agent B commits 9c03b1b47/a0e5f5c49 — verified & closed by Fable)
 - **Severity:** 🔴 HIGH
 - **Module:** Renderer / distribution adapters
 - **GitHub:** https://github.com/indii-music-founder/indii-music-founder/issues/217
@@ -9688,6 +9707,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** If automatic API/SFTP delivery is unavailable, return an honest manual-required result without a synthetic provider submission id or pending-review claim.
 - **Fix Direction:** Make each adapter fail or return manual-required when API/SFTP delivery is unavailable or rejected. Require Symphonic to fail if ERN generation/staging/upload is not confirmed. Update tests so rejected `fetch` and missing API credentials do not produce `success: true` delivery results.
 - **DO NOT:** Tell artists a release is in DSP review unless a real provider endpoint or SFTP drop accepted the package.
+- **Verification (Fable):** `success:true`+`pending_review` now requires a real accepted API response — TuneCore returns `failed`/`DELIVERY_REJECTED` on non-OK HTTP, `ready_for_manual_submission`/`DELIVERY_UNAVAILABLE` when the API is unreachable, and `MANUAL_DELIVERY_REQUIRED` with no key (TuneCoreAdapter.ts:108-155); Believe/OneRPM/UnitedMasters carry the same honest fallback codes; Symphonic gates `success:true` on every step confirmed (ERN, staging, upload — SymphonicAdapter.ts:83-123, comment cites ISSUE-658). Test suite updated: the success case now mocks an ACCEPTED response instead of a rejected fetch (DistributionAdapters.test.ts:232-244) and asserts no `takedown_requested` without a real call. `npm test -- --run …/distribution`: 126 passed.
 
 ### ISSUE-659: Distributor takedown adapters fabricate requested state without provider calls
 
