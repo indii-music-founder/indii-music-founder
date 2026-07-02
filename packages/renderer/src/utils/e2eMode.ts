@@ -1,3 +1,5 @@
+import { logger } from '@/utils/logger';
+
 type RuntimeWindow = Window & {
     FIREBASE_E2E_MOCK?: unknown;
     FIREBASE_USER_MOCK?: Record<string, unknown>;
@@ -31,18 +33,18 @@ export const isTestHarnessRuntime = (): boolean => {
 
 export const isFirebaseE2EMockEnabled = (): boolean => {
     if (!isTestHarnessRuntime() && !isLocalDevHost()) {
-        console.log('[e2eMode] Disabled: not test harness and not local dev host');
+        logger.debug('[e2eMode] Disabled: not test harness and not local dev host');
         return false;
     }
 
     if (typeof window !== 'undefined') {
         const winMock = (window as RuntimeWindow).FIREBASE_E2E_MOCK;
         if (winMock === false || winMock === 'false') {
-            console.log('[e2eMode] Disabled: window.FIREBASE_E2E_MOCK is false');
+            logger.debug('[e2eMode] Disabled: window.FIREBASE_E2E_MOCK is false');
             return false;
         }
         if (trueLike(winMock)) {
-            console.log('[e2eMode] Enabled: window.FIREBASE_E2E_MOCK is true');
+            logger.debug('[e2eMode] Enabled: window.FIREBASE_E2E_MOCK is true');
             return true;
         }
     }
@@ -50,15 +52,15 @@ export const isFirebaseE2EMockEnabled = (): boolean => {
     try {
         const lsMock = localStorage.getItem('FIREBASE_E2E_MOCK');
         if (lsMock === 'false') {
-            console.log('[e2eMode] Disabled: localStorage FIREBASE_E2E_MOCK is false');
+            logger.debug('[e2eMode] Disabled: localStorage FIREBASE_E2E_MOCK is false');
             return false;
         }
         if (trueLike(lsMock)) {
-            console.log('[e2eMode] Enabled: localStorage FIREBASE_E2E_MOCK is true');
+            logger.debug('[e2eMode] Enabled: localStorage FIREBASE_E2E_MOCK is true');
             return true;
         }
     } catch (e) {
-        console.warn('[e2eMode] Failed to read localStorage:', e);
+        logger.warn('[e2eMode] Failed to read localStorage:', e);
     }
 
     try {
@@ -67,7 +69,7 @@ export const isFirebaseE2EMockEnabled = (): boolean => {
             : undefined;
         return trueLike(envMock);
     } catch (e) {
-        console.warn('[e2eMode] import.meta.env check failed, defaulting to false:', e);
+        logger.warn('[e2eMode] import.meta.env check failed, defaulting to false:', e);
         return false;
     }
 };

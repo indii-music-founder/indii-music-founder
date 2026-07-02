@@ -44,7 +44,26 @@ describe('LicensingSyncCompiler', () => {
     expect(run.findings.some(f => f.title === 'Missing Stems')).toBe(true);
   });
 
-  it('perfect match triggers auto-pitch recommendation', () => {
+  it('unknown clearance stays pending and keeps the approval gate active', () => {
+    const input: LicensingSyncInput = {
+      trackId: 'track_pending',
+      hasStems: true,
+      hasInstrumental: true,
+      hasLyrics: true,
+      hasUnClearedSamples: false,
+      metadataComplete: true,
+      catalogSearchable: true,
+    };
+
+    const run = compiler.compile(input, baseCtx);
+
+    expect(run.output.rightsClearanceStatus).toBe('pending');
+    expect(run.output.pitchPackageGenerated).toBe(false);
+    expect(run.scores.find(s => s.label === 'Rights Clearance')?.status).toBe('watch');
+    expect(run.approvalGates.some(g => g.id === 'gate_clearance_evidence')).toBe(true);
+  });
+
+  it('verified clearance evidence is required before the compiler can mark a pitch cleared', () => {
     const input: LicensingSyncInput = {
       trackId: 'track_3',
       hasStems: true,
@@ -53,6 +72,14 @@ describe('LicensingSyncCompiler', () => {
       hasUnClearedSamples: false,
       metadataComplete: true,
       catalogSearchable: true,
+      verifiedClearanceEvidenceRefs: [
+        {
+          id: 'clearance-doc-1',
+          type: 'document',
+          label: 'Approved clearance letter',
+          url: 'https://example.com/clearance-letter.pdf',
+        },
+      ],
       opportunityFitScore: 98, // Perfect match >= 95
     };
 
@@ -63,6 +90,7 @@ describe('LicensingSyncCompiler', () => {
     expect(run.output.pitchPackageGenerated).toBe(true);
     expect(run.recommendations.some(r => r.title === 'Auto-Pitch Recommendation')).toBe(true);
     expect(run.agentBriefs.some(b => b.agentId === 'marketing')).toBe(true);
+    expect(run.evidenceRefs).toHaveLength(1);
   });
 
   it('missing multiple assets significantly reduces readiness', () => {

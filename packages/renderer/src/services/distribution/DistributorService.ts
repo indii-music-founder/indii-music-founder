@@ -181,7 +181,7 @@ class DistributorServiceImpl {
         features: {
           canCreateRelease: true,
           canUpdateRelease: true,
-          canTakedown: true,
+          canTakedown: adapter.supportsAutomatedTakedown === true,
           canFetchEarnings: true,
           canFetchAnalytics: true,
         },

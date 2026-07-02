@@ -9,6 +9,7 @@ import {
   HarnessRecommendation,
   HarnessAgentBrief,
   HarnessApprovalGate,
+  HarnessEvidenceRef,
 } from '../business-harness/types';
 
 export interface LicensingSyncInput {
@@ -19,6 +20,7 @@ export interface LicensingSyncInput {
   hasUnClearedSamples: boolean;
   metadataComplete: boolean;
   catalogSearchable: boolean;
+  verifiedClearanceEvidenceRefs?: HarnessEvidenceRef[];
   opportunityFitScore?: number; // 0 to 100
 }
 
@@ -101,7 +103,10 @@ export class LicensingSyncCompiler implements HarnessCompiler<LicensingSyncInput
       rationale: 'Based on presence of stems, instrumentals, lyrics, and metadata.'
     });
 
-    let rightsClearanceStatus: 'cleared' | 'blocked' | 'pending' = 'cleared';
+    const verifiedClearanceEvidenceRefs = input.verifiedClearanceEvidenceRefs ?? [];
+    const hasVerifiedClearanceEvidence = verifiedClearanceEvidenceRefs.length > 0;
+
+    let rightsClearanceStatus: 'cleared' | 'blocked' | 'pending' = hasVerifiedClearanceEvidence ? 'cleared' : 'pending';
     
     // Un-cleared sample blocks sync pitch
     if (input.hasUnClearedSamples) {
@@ -130,14 +135,26 @@ export class LicensingSyncCompiler implements HarnessCompiler<LicensingSyncInput
         brief: 'Clear samples for track.',
         inputs: [input.trackId]
       });
+    } else if (!hasVerifiedClearanceEvidence) {
+      approvalGates.push({
+        id: 'gate_clearance_evidence',
+        label: 'Verified clearance evidence required',
+        reason: 'Sync pitches stay manual until approved clearance documents, provider verification, or legal review evidence is attached.',
+        requiredFor: 'pitch_package',
+        riskTier: 'approval'
+      });
     }
 
     scores.push({
       label: 'Rights Clearance',
-      value: rightsClearanceStatus === 'cleared' ? 100 : 0,
+      value: rightsClearanceStatus === 'cleared' ? 100 : rightsClearanceStatus === 'pending' ? 50 : 0,
       max: 100,
-      status: rightsClearanceStatus === 'cleared' ? 'good' : 'blocked',
-      rationale: rightsClearanceStatus === 'cleared' ? 'All rights cleared.' : 'Un-cleared samples present.'
+      status: rightsClearanceStatus === 'cleared' ? 'good' : rightsClearanceStatus === 'pending' ? 'watch' : 'blocked',
+      rationale: rightsClearanceStatus === 'cleared'
+        ? 'Verified clearance evidence attached.'
+        : rightsClearanceStatus === 'pending'
+          ? 'No verified clearance evidence attached yet.'
+          : 'Un-cleared samples present.'
     });
 
     // perfect match triggers auto-pitch recommendation
@@ -181,10 +198,10 @@ export class LicensingSyncCompiler implements HarnessCompiler<LicensingSyncInput
       recommendations,
       costLines: [],
       legalBasis: [],
-      evidenceRefs: [],
+      evidenceRefs: verifiedClearanceEvidenceRefs,
       agentBriefs,
       approvalGates,
-      assumptions: ['Assuming provided metadata and clearance statuses are accurate.'],
+      assumptions: ['Assuming provided metadata and verified clearance evidence are accurate.'],
       confidence: 0.9,
       output: {
         syncReadinessScore,
