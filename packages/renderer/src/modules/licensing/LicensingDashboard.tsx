@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { FileText, Clock, CheckCircle2, AlertCircle, ExternalLink, ShieldCheck, Scale, TrendingUp } from 'lucide-react';
+import { FileText, Clock, CheckCircle2, AlertCircle, ExternalLink, ShieldCheck, TrendingUp } from 'lucide-react';
 import { licensingService } from '@/services/licensing/LicensingService';
 import type { LicenseRequest, License } from '@/services/licensing/types';
 import { motion, AnimatePresence } from 'motion/react';
@@ -85,7 +85,6 @@ export default function LicensingDashboard() {
                         projectedValue={projectedValue}
                     />
                     <RecentClearancesPanel requests={requests} onDraft={handleDraftAction} />
-                    <ActionButtonsPanel toast={toast} />
                 </>
             }
             rightPanel={
@@ -319,14 +318,6 @@ function RecentClearancesPanel({ requests, onDraft }: { requests: LicenseRequest
                     ))}
                 </div>
             )}
-        </div>
-    );
-}
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function ActionButtonsPanel({ toast }: { toast: ReturnType<typeof useToast> }) {
-    return (
-        <div className="rounded-xl bg-white/[0.02] border border-white/5 p-3">
         </div>
     );
 }

@@ -13,7 +13,6 @@ import {
   Heart, 
   MessageCircle, 
   Share2, 
-  MoreHorizontal, 
   Image as ImageIcon, 
   Send, 
   ShoppingBag, 
@@ -313,12 +312,6 @@ const FeedItem = React.memo(({ post }: FeedItemProps) => {
                                 {formatDate(post.timestamp, true)}
                             </span>
                         </div>
-                        <button
-                            className="text-gray-500 hover:text-white opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 transition-opacity focus-visible:ring-2 focus-visible:ring-blue-500 rounded p-1 focus-visible:outline-none"
-                            aria-label={`More options for post by ${post.authorName}`}
-                        >
-                            <MoreHorizontal size={16} />
-                        </button>
                     </div>
 
                     <p className="text-gray-200 mt-1 whitespace-pre-wrap">{post.content}</p>

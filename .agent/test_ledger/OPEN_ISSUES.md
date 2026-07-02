@@ -8633,7 +8633,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-574: Earnings dashboard exposes a dead `Download Report` button
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Finance / earnings dashboard
 - **Location:** `packages/renderer/src/modules/finance/components/EarningsDashboard.tsx:179-191`
@@ -8642,10 +8642,11 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** If report export is not implemented yet, label the control as unavailable and keep it visibly disabled rather than leaving a live-looking button that does nothing.
 - **Fix Direction:** Add the report export/download action or downgrade the CTA to an honest disabled state with clear unavailable copy. Do not leave a non-functional primary action in the dashboard header.
 - **DO NOT:** Keep the `Download Report` CTA looking actionable when it has no handler.
+- **Fix (2026-07-02, Fable):** Inert period `<button>` converted to a static `<span>` label (no period selector exists); the dead `Download Report` button was already removed in a prior pass.
 
 ### ISSUE-575: Mobile remote renders `Legal Review` as a dead button
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Mobile Remote / status dashboard
 - **Location:** `packages/renderer/src/modules/mobile-remote/components/StatusDashboard.tsx:98-104`
@@ -8654,10 +8655,11 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** Keep the unavailable message, but remove button semantics so the UI does not advertise an action that cannot be taken.
 - **Fix Direction:** Replace the dead button with a static unavailable indicator or a clearly labeled disabled tile that is not styled as an action.
 - **DO NOT:** Leave a button-shaped control that promises legal review when no mobile execution path exists.
+- **Fix (2026-07-02, Fable):** Audit: already resolved — `Legal Review` ActionButton is `disabled` with an honest "not wired up in mobile yet" description.
 
 ### ISSUE-576: Marketing sidebar exposes disabled future-module navigation buttons
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Marketing / sidebar navigation
 - **Location:** `packages/renderer/src/modules/marketing/components/MarketingSidebar.tsx:52-166`
@@ -8666,10 +8668,11 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** Keep the roadmap visibility, but remove the button affordance so users do not try to navigate to dead tabs.
 - **Fix Direction:** Replace disabled nav buttons with static labels or a read-only roadmap panel that is obviously not interactive.
 - **DO NOT:** Keep multiple inactive nav buttons in the primary sidebar when they do not route anywhere.
+- **Fix (2026-07-02, Fable):** Audit: already resolved — secondaryNav items carry `available: false`, `disabled`, `aria-disabled`, a reason tooltip, and a `Soon` badge.
 
 ### ISSUE-577: Publicist sidebar exposes a disabled `Analytics & Reports` nav button
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Publicist / sidebar navigation
 - **Location:** `packages/renderer/src/modules/publicist/PublicistDashboard.tsx:387-410`
@@ -8678,10 +8681,11 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** Preserve the roadmap cue, but remove the click affordance so the UI does not advertise a route that cannot be reached.
 - **Fix Direction:** Replace the disabled nav button with static text or an obviously informational card until the route exists.
 - **DO NOT:** Leave a dead nav button in the sidebar that suggests a working analytics page when none exists.
+- **Fix (2026-07-02, Fable):** Audit: already resolved — NavButton renders disabled state with `disabled`, `aria-disabled`, and a `Soon` tag.
 
 ### ISSUE-589: Distribution quick actions render as dead buttons when no handlers are passed
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Distribution / quick actions
 - **Locations:** `packages/renderer/src/modules/distribution/DistributionDashboard.tsx:42-46`, `packages/renderer/src/modules/distribution/components/QuickLinksPanel.tsx:10-30`
@@ -8690,10 +8694,11 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** Keep the titles as informational labels, but remove the button affordance until at least one handler exists for the panel.
 - **Fix Direction:** Pass real handlers from `DistributionDashboard` or convert the panel to static quick-info items with no button semantics.
 - **DO NOT:** Keep three disabled-looking buttons in a primary dashboard sidebar when they cannot do anything.
+- **Fix (2026-07-02, Fable):** Removed the dead `Email`/`Website` quick-action buttons — the `Contact` type has no email/website fields, so the shortcuts could never act; unused icon imports cleaned.
 
 ### ISSUE-596: Files sidebar exposes button-shaped nav items with no action
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Files / sidebar navigation
 - **Locations:** `packages/renderer/src/modules/files/FileDashboard.tsx:70-88`, `packages/renderer/src/modules/files/components/NavItem.tsx:14-37`
@@ -8702,10 +8707,11 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** Keep the labels, but remove button semantics for items without handlers.
 - **Fix Direction:** Wire `Upload Asset` and the sidebar items to real behavior or replace them with non-interactive elements until those actions exist.
 - **DO NOT:** Leave visible primary sidebar buttons with no handler, especially not in a file-management surface.
+- **Fix (2026-07-02, Fable):** Audit: NO LOCATION recorded; the described files-sidebar nav items now carry real `onClick` filter handlers (FileDashboard NavItems). Covered by ISSUE-623 fix.
 
 ### ISSUE-597: Social profile header renders an unhandled `Edit Profile` button
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Social / profile header
 - **Location:** `packages/renderer/src/modules/social/components/UserProfileHeader.tsx:145-159`
@@ -8714,10 +8720,11 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** Keep the profile affordance visible, but remove the button semantics until there is a working edit path.
 - **Fix Direction:** Wire `Edit Profile` to a real editor or replace it with a read-only profile badge.
 - **DO NOT:** Leave a primary profile action that looks clickable but cannot do anything.
+- **Fix (2026-07-02, Fable):** UserProfileHeader `Edit Profile` now navigates to the Settings module (`setModule('settings')`, where the profile section lives). Licensing dashboard variant: dead quick-action panel removed entirely (empty `ActionButtonsPanel` deleted).
 
 ### ISSUE-598: Social feed exposes a disabled `Add Media` button as a future action
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Social / feed composer
 - **Location:** `packages/renderer/src/modules/social/components/SocialFeed.tsx:160-172`
@@ -8726,10 +8733,11 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** Keep the roadmap note, but remove the button affordance until media attachments are actually supported.
 - **Fix Direction:** Convert the media attachment affordance into a non-interactive roadmap badge or wire it to a working upload flow.
 - **DO NOT:** Leave a disabled primary composer button that suggests a supported media attachment flow when none exists.
+- **Fix (2026-07-02, Fable):** Audit: SocialFeed `Add Media` already honest (`disabled`, `aria-disabled`, "coming soon" title). MarketingToolbar variant: removed the dead `Bell` notifications and `Filter` icon buttons.
 
 ### ISSUE-599: Legal analyzer renders inert upload buttons inside clickable drop zones
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Legal / contract analyzer
 - **Location:** `packages/renderer/src/modules/legal/LegalDashboard.tsx:259-286`
@@ -8738,10 +8746,11 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** Keep the upload affordance visible, but remove button semantics from the decorative CTA labels.
 - **Fix Direction:** Replace the inert CTA buttons with plain text labels or move the real upload behavior onto the buttons themselves.
 - **DO NOT:** Leave decorative button-shaped labels that suggest a separate clickable action when none exists.
+- **Fix (2026-07-02, Fable):** Audit: LegalDashboard drop zones already wire real `<input type=file>` overlays (decorative buttons are `pointer-events-none`). PayoutHistory variant: `Export CSV` now performs a real client-side CSV download of the payout data (disabled when empty); rows only render `cursor-pointer`/onClick when an `onViewDetails` handler is provided.
 
 ### ISSUE-600: Publishing release wizard shows inert `Choose File` and `Choose Image` buttons
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Publishing / release wizard uploads
 - **Location:** `packages/renderer/src/modules/publishing/components/ReleaseWizard.tsx:600-662`
@@ -8750,10 +8759,11 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** Keep the upload instructions visible, but strip button styling from the non-interactive labels.
 - **Fix Direction:** Move the file-picker action onto the visible button or replace the button copy with a non-action label.
 - **DO NOT:** Leave decorative upload buttons that look clickable but are only there under a transparent file input.
+- **Fix (2026-07-02, Fable):** Audit: ReleaseWizard `Choose File`/`Choose Image` already wire real file inputs (decorative buttons `pointer-events-none`). Publishing EarningsDashboard variant: removed the dead download icon; dead `Request Withdrawal` replaced with an honest "Withdrawals aren't wired yet" note (no fake money-moving CTA).
 
 ### ISSUE-584: Distribution release list shows dead `Create New Release` and overflow menu buttons
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Distribution / release list
 - **Location:** `packages/renderer/src/modules/distribution/components/ReleaseStatusList.tsx:22-32`, `packages/renderer/src/modules/distribution/components/ReleaseStatusList.tsx:76-83`
@@ -8762,10 +8772,11 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** Keep the release list visible, but remove button semantics for controls that are not wired.
 - **Fix Direction:** Connect the CTAs to a real creation flow and attach the row menu to actual release actions, or replace them with non-interactive labels.
 - **DO NOT:** Leave primary distribution controls in the UI when the component does not use the handlers it already receives.
+- **Fix (2026-07-02, Fable):** Empty state's dead `Create New Release` was already removed; removed the remaining dead `MoreHorizontal` overflow button from each row (no menu exists) and its unused import.
 
 ### ISSUE-585: Licensing catalog search renders inert `Filters` and add-track buttons
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Licensing / catalog search
 - **Location:** `packages/renderer/src/modules/licensing/components/CatalogSearchTab.tsx:79-82`, `packages/renderer/src/modules/licensing/components/CatalogSearchTab.tsx:166-171`
@@ -8774,10 +8785,11 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** Keep the search results visible, but remove button semantics from the inert filter and add controls.
 - **Fix Direction:** Wire the filter panel and track action to real behavior or convert the controls into non-interactive affordances.
 - **DO NOT:** Present icon buttons in the catalog UI when they cannot change state or open a flow.
+- **Fix (2026-07-02, Fable):** Removed the dead `Filters` button (no filter UI exists) and the dead hover `+` add-track button (no add-to-project action exists); unused `SlidersHorizontal`/`Plus` imports cleaned.
 
 ### ISSUE-586: Publishing release card includes an unhandled edit button
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Publishing / release cards
 - **Location:** `packages/renderer/src/modules/publishing/components/ReleaseStatusCard.tsx:112-128`
@@ -8786,10 +8798,11 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** Keep the release card actions visible, but remove button semantics from the unimplemented edit affordance.
 - **Fix Direction:** Wire the edit control to a real edit flow or replace it with a non-interactive label.
 - **DO NOT:** Leave a primary release-card action button that cannot do anything while adjacent actions do work.
+- **Fix (2026-07-02, Fable):** Removed the dead `Edit2` icon button (no edit flow exists); the wired delete button remains.
 
 ### ISSUE-587: Royalty action panel renders an unhandled helper chat button
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Royalty / release action panel
 - **Location:** `packages/renderer/src/modules/royalty/components/ActionPanel.tsx:20-30`
@@ -8798,10 +8811,11 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** Keep the hint visible, but remove button semantics from the unimplemented helper CTA.
 - **Fix Direction:** Wire the button to the actual publishing-agent chat flow or convert it to non-interactive help text.
 - **DO NOT:** Leave a support-looking button in the footer when it has no destination.
+- **Fix (2026-07-02, Fable):** Removed the dead `Chat with Publishing Agent` helper button (no chat hook exists in that surface); layout spacer preserved.
 
 ### ISSUE-588: Finance revenue overview shows an inert period selector button
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Finance / revenue overview
 - **Location:** `packages/renderer/src/modules/finance/components/RevenueView.tsx:176-187`
@@ -8810,10 +8824,11 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** Keep the reporting period visible, but remove button semantics from the static date pill.
 - **Fix Direction:** Wire the pill to a date-range selector or convert it to non-interactive header text.
 - **DO NOT:** Leave a clickable-looking period chip that does not change anything.
+- **Fix (2026-07-02, Fable):** Audit: already resolved — only the wired refresh button remains; no inert period selector in RevenueView.
 
 ### ISSUE-589: Publicist contact drawer shows inert `Email` and `Website` shortcut buttons
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Publicist / contact details drawer
 - **Location:** `packages/renderer/src/modules/publicist/components/ContactDetailsModal.tsx:100-112`
@@ -8825,7 +8840,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-596: Dashboard widgets expose dead zero-state buttons for releases and storefronts
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Dashboard / custom widgets
 - **Locations:** `packages/renderer/src/modules/dashboard/components/CustomDashboardWidgets.tsx:336-343`, `packages/renderer/src/modules/dashboard/components/CustomDashboardWidgets.tsx:852-857`
@@ -8837,7 +8852,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-597: Licensing dashboard renders dead quick-action buttons
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Licensing / dashboard quick actions
 - **Location:** `packages/renderer/src/modules/licensing/LicensingDashboard.tsx:331-337`
@@ -8849,7 +8864,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-598: Marketing toolbar exposes inert notifications and filter icon buttons
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Marketing / top toolbar
 - **Location:** `packages/renderer/src/modules/marketing/components/MarketingToolbar.tsx:38-47`
@@ -8861,7 +8876,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-599: Publishing payout history exposes a dead export button and inert clickable rows
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Publishing / payout history
 - **Location:** `packages/renderer/src/modules/publishing/components/PayoutHistory.tsx:47-56`, `packages/renderer/src/modules/publishing/components/PayoutHistory.tsx:79-84`
@@ -8873,7 +8888,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-600: Publishing earnings panel exposes dead download and withdrawal buttons
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Publishing / earnings summary
 - **Location:** `packages/renderer/src/modules/publishing/components/EarningsDashboard.tsx:87-92`, `packages/renderer/src/modules/publishing/components/EarningsDashboard.tsx:128-133`
@@ -8911,7 +8926,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-603: Campaign card exposes a dead overflow menu button
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Marketing / campaign cards
 - **Location:** `packages/renderer/src/modules/marketing/components/CampaignCard.tsx:63-74`
@@ -8920,10 +8935,11 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** Keep the campaign card visible, but remove button semantics from the unimplemented overflow affordance.
 - **Fix Direction:** Wire the overflow button to a real options menu or replace it with a non-interactive status icon.
 - **DO NOT:** Leave a menu-looking button that cannot surface any actions.
+- **Fix (2026-07-02, Fable):** Audit: already resolved — CampaignCard no longer renders an overflow menu button.
 
 ### ISSUE-604: Editable copy modal renders a dead `Enhance with AI` button
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Marketing / editable copy modal
 - **Location:** `packages/renderer/src/modules/marketing/components/EditableCopyModal.tsx:44-50`
@@ -8932,10 +8948,11 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** Keep the post editor visible, but remove button semantics from the unimplemented enhancement affordance.
 - **Fix Direction:** Wire the enhancement button to the actual AI copy workflow or convert it to static helper text.
 - **DO NOT:** Leave a prominent AI action button that cannot surface any output or editor.
+- **Fix (2026-07-02, Fable):** Audit: already resolved — EditableCopyModal has only wired Cancel/Save buttons; no `Enhance with AI`.
 
 ### ISSUE-605: Campaign details modal renders a dead `Delete Campaign` button
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Publicist / campaign details modal
 - **Location:** `packages/renderer/src/modules/publicist/components/CampaignDetailsModal.tsx:151-155`
@@ -8944,10 +8961,11 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** Keep the campaign details visible, but remove button semantics from the unimplemented delete affordance.
 - **Fix Direction:** Wire the delete button to the actual campaign deletion flow or replace it with a non-interactive label.
 - **DO NOT:** Leave a destructive-looking button in a modal when it cannot actually delete the campaign.
+- **Fix (2026-07-02, Fable):** Audit: already resolved — CampaignDetailsModal renders only wired Cancel/Save; no `Delete Campaign`.
 
 ### ISSUE-606: Earnings table exposes an inert `View Report Details` context action
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Finance / earnings table
 - **Location:** `packages/renderer/src/modules/finance/components/EarningsTable.tsx:108-112`
@@ -8956,10 +8974,11 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** Keep the table visible, but remove the unimplemented report-details action from the context menu.
 - **Fix Direction:** Wire the menu item to the actual report-details flow or replace it with a static label.
 - **DO NOT:** Leave a menu action that suggests row drill-down when there is no destination.
+- **Fix (2026-07-02, Fable):** Audit: already resolved — EarningsTable uses a real Radix ContextMenu with working `Copy Release Name`; no inert `View Report Details`.
 
 ### ISSUE-607: Campaign dashboard exposes a dead `+ more assets` affordance
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🟢 LOW
 - **Module:** Marketing / dashboard
 - **Location:** `packages/renderer/src/modules/marketing/components/CampaignDashboard.tsx:315-318`
@@ -8968,10 +8987,11 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** Keep the asset count visible, but remove the interactive styling unless a real action exists.
 - **Fix Direction:** Attach a real drill-in action or drop the pointer affordance.
 - **DO NOT:** Leave a clickable-looking label that cannot be used.
+- **Fix (2026-07-02, Fable):** Audit: already resolved — `+ N more assets` is a static `<p>` count, not an affordance.
 
 ### ISSUE-608: Brand health recent-scan rows look clickable but do nothing
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🟢 LOW
 - **Module:** Marketing / brand manager
 - **Location:** `packages/renderer/src/modules/marketing/components/brand-manager/HealthPanel.tsx:162-165`
@@ -8980,10 +9000,11 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** Keep the recent scans visible, but render them as plain static rows.
 - **Fix Direction:** Make the rows functional or clearly static.
 - **DO NOT:** Keep history items visually clickable when they are inert.
+- **Fix (2026-07-02, Fable):** Audit: already resolved — recent-scan rows are plain divs with no cursor/click pretense.
 
 ### ISSUE-609: Release panel cover-art tile looks clickable but has no upload action
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🟢 LOW
 - **Module:** Marketing / brand manager
 - **Location:** `packages/renderer/src/modules/marketing/components/brand-manager/ReleasePanel.tsx:52-60`
@@ -8992,6 +9013,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** Keep the artwork placeholder visible, but remove the clickable styling until upload is real.
 - **Fix Direction:** Wire the tile to an actual upload handler or remove the fake interaction cue.
 - **DO NOT:** Leave upload-looking chrome on a dead control.
+- **Fix (2026-07-02, Fable):** Cover-art placeholder text changed from "Upload Artwork" (implied a click action that didn't exist) to honest "No Artwork Yet (needs 3000x3000px)".
 
 ### ISSUE-610: Release status card exposes a dead DDEX preview icon button
 
@@ -9008,7 +9030,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-611: Earnings dashboard exposes a dead `Download Report` button
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🟢 LOW
 - **Module:** Finance / earnings dashboard
 - **Location:** `packages/renderer/src/modules/finance/components/EarningsDashboard.tsx:189-191`
@@ -9017,10 +9039,11 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** Keep the summary visible, but convert the control to static text until export is implemented.
 - **Fix Direction:** Wire the button to the report download path or remove it.
 - **DO NOT:** Leave an export-looking button that cannot export.
+- **Fix (2026-07-02, Fable):** Same fix as ISSUE-574 — static period label; Download Report already gone.
 
 ### ISSUE-612: Social platform filters render clickable rows with no filter behavior
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🟢 LOW
 - **Module:** Social / dashboard
 - **Location:** `packages/renderer/src/modules/social/SocialDashboard.tsx:254-260`
@@ -9029,10 +9052,11 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** Keep the platform list visible, but remove the clickable styling until the filters work.
 - **Fix Direction:** Wire the rows to actual filter state or stop implying interactivity.
 - **DO NOT:** Leave filter-looking rows that cannot change anything.
+- **Fix (2026-07-02, Fable):** Audit: already resolved — platform rows are plain divs; the active checkbox is a status display, not a fake control.
 
 ### ISSUE-613: Distribution dashboard exposes a dead `View Preferred Partners` CTA
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🟢 LOW
 - **Module:** Distribution / connections
 - **Location:** `packages/renderer/src/modules/distribution/components/DistributorConnectionsPanel.tsx:90-92`
@@ -9041,6 +9065,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** Keep the recommendation card visible, but make the CTA static until the partner flow exists.
 - **Fix Direction:** Wire the CTA to the real partner screen or delete it.
 - **DO NOT:** Leave a marketplace-looking button with nowhere to go.
+- **Fix (2026-07-02, Fable):** Audit: already resolved — the partners banner has no CTA button.
 
 ### ISSUE-614: Release detail track row looks clickable but has no detail action
 
@@ -9057,7 +9082,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-615: Social calendar campaign chip looks clickable but has no action
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🟢 LOW
 - **Module:** Social / calendar
 - **Location:** `packages/renderer/src/modules/social/SocialDashboard.tsx:83-89`
@@ -9066,10 +9091,11 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** Keep the calendar visible, but remove the clickable styling until a detail view exists.
 - **Fix Direction:** Wire the chip to a post detail/edit flow or remove the fake interactivity.
 - **DO NOT:** Leave calendar items that look selectable when they are not.
+- **Fix (2026-07-02, Fable):** Audit: already resolved — campaign chip is static; day cells expose a real wired `Create post` button.
 
 ### ISSUE-616: Social feed author/avatar look clickable but have no profile action
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🟢 LOW
 - **Module:** Social / feed
 - **Location:** `packages/renderer/src/modules/social/components/SocialFeed.tsx:299-310`
@@ -9078,10 +9104,11 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** Keep the feed layout visible, but render the author area as static text until profile navigation is implemented.
 - **Fix Direction:** Wire the author/avatar to a profile surface or remove the fake link treatment.
 - **DO NOT:** Leave profile-looking elements with no profile action.
+- **Fix (2026-07-02, Fable):** Audit: already resolved — author/avatar are plain elements without click affordance.
 
 ### ISSUE-617: Analytics upgrade CTA is styled as a link but has no destination
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🟢 LOW
 - **Module:** Analytics / dashboard
 - **Location:** `packages/renderer/src/modules/analytics/components/CustomizableAnalyticsDashboard.tsx:301-307`
@@ -9090,10 +9117,11 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** Keep the banner visible, but remove the clickable styling until an upgrade destination exists.
 - **Fix Direction:** Wire the CTA to the real upgrade path or stop implying interactivity.
 - **DO NOT:** Leave a link-looking upgrade affordance that goes nowhere.
+- **Fix (2026-07-02, Fable):** Audit: already resolved — upgrade banner is informational text, not a link-styled control.
 
 ### ISSUE-618: Desktop widget card looks clickable but has no action
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🟢 LOW
 - **Module:** Desktop / widget
 - **Location:** `packages/renderer/src/modules/desktop/components/DesktopWidget.tsx:4-29`
@@ -9102,10 +9130,11 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** Keep the widget visible, but make it read as static until interaction exists.
 - **Fix Direction:** Add a real action or drop the fake affordance.
 - **DO NOT:** Leave a dashboard card that suggests navigation when none exists.
+- **Fix (2026-07-02, Fable):** Audit: already resolved — DesktopWidget is a static display card with honest `--`/`No task connected` placeholders.
 
 ### ISSUE-619: Social profile stats row looks interactive but has no profile drill-in
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🟢 LOW
 - **Module:** Social / profile header
 - **Location:** `packages/renderer/src/modules/social/components/UserProfileHeader.tsx:136-147`
@@ -9114,10 +9143,11 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** Keep the profile summary visible, but remove the clickable treatment until the drill-ins exist.
 - **Fix Direction:** Add real stat-row navigation or stop implying it.
 - **DO NOT:** Leave social stats styled like links when they do nothing.
+- **Fix (2026-07-02, Fable):** Audit: already resolved — stats row is plain text, no drill-in pretense.
 
 ### ISSUE-620: Touring sidebar settings icon is clickable-looking but inert
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🟢 LOW
 - **Module:** Touring / sidebar
 - **Location:** `packages/renderer/src/modules/touring/components/RoadManagerSidebar.tsx:86-94`
@@ -9126,10 +9156,11 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** Keep the status block visible, but remove the pointer affordance until a settings action exists.
 - **Fix Direction:** Wire the gear to a real settings panel or drop the fake interactivity.
 - **DO NOT:** Leave a settings icon that cannot do anything.
+- **Fix (2026-07-02, Fable):** Audit: already resolved — Settings glyph is a non-interactive icon, not a button.
 
 ### ISSUE-621: Top-selling merch item card looks clickable but has no action
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🟢 LOW
 - **Module:** Merchandise / top sellers
 - **Location:** `packages/renderer/src/modules/merchandise/components/TopSellingProductItem.tsx:11-31`
@@ -9138,10 +9169,11 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** Keep the product row visible, but remove the clickable styling until interaction exists.
 - **Fix Direction:** Add a real detail action or stop implying the card is interactive.
 - **DO NOT:** Leave merch cards that look selectable when they are not.
+- **Fix (2026-07-02, Fable):** Audit: already resolved — card is a display item; hover styling is cosmetic, no click semantics.
 
 ### ISSUE-622: Social feed post actions are rendered as live buttons but have no handlers
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🟢 LOW
 - **Module:** Social / feed
 - **Location:** `packages/renderer/src/modules/social/components/SocialFeed.tsx:316-370`
@@ -9150,10 +9182,11 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** Keep the feed layout visible, but make the action bar explicitly unavailable until it is implemented.
 - **Fix Direction:** Add the real post actions or remove the fake engagement affordances.
 - **DO NOT:** Leave a social action bar that pretends to work.
+- **Fix (2026-07-02, Fable):** Removed the dead per-post `MoreHorizontal` options button; like/comment counts and share glyph are display-only icons, not buttons.
 
 ### ISSUE-623: File dashboard exposes dead upload and file-action buttons
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🟢 LOW
 - **Module:** Files / dashboard
 - **Location:** `packages/renderer/src/modules/files/FileDashboard.tsx:70-73`, `:177-199`, `:259-269`
@@ -9162,10 +9195,11 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** Keep the file browser visible, but make the controls explicitly unavailable until they are implemented.
 - **Fix Direction:** Add the real file-management actions or strip the interactive styling.
 - **DO NOT:** Leave asset-management buttons that look live but do nothing.
+- **Fix (2026-07-02, Fable):** Hover `Open`/`Download` actions now only render for files with a real URL and actually open/download it; dead grid+list `MoreVertical` buttons removed; detail-panel `Download File` wired to the real URL (disabled without one), dead `Open in Studio` removed, `Delete File` wired to `fileSystemSlice.deleteNode` behind a destructive ConfirmDialog; fabricated `Created: Today` now shows the real `createdAt` date or `Unknown`.
 
 ### ISSUE-624: Release status list shows dead creation and overflow actions
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🟢 LOW
 - **Module:** Distribution / release status
 - **Location:** `packages/renderer/src/modules/distribution/components/ReleaseStatusList.tsx:31-33`, `:80-83`
@@ -9174,10 +9208,11 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** Keep the release list visible, but make the create/overflow controls explicitly unavailable until the actions exist.
 - **Fix Direction:** Wire the buttons to actual release flows or remove the fake affordances.
 - **DO NOT:** Leave release-management buttons that appear functional but do nothing.
+- **Fix (2026-07-02, Fable):** Same file as ISSUE-584 — dead creation CTA was already gone; dead row overflow button removed.
 
 ### ISSUE-625: Licensing quick actions render live-looking buttons with no handlers
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🟢 LOW
 - **Module:** Licensing / dashboard
 - **Location:** `packages/renderer/src/modules/licensing/LicensingDashboard.tsx:326-337`
@@ -9186,10 +9221,11 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** Keep the panel visible, but mark the controls unavailable until the flows exist.
 - **Fix Direction:** Hook the quick actions up to actual screens or remove the fake buttons.
 - **DO NOT:** Leave licensing actions that look live but are functionless.
+- **Fix (2026-07-02, Fable):** Dead quick-action panel fully removed (`ActionButtonsPanel` component and its usage deleted — it had already been stripped to an empty box).
 
 ### ISSUE-626: Design toolbar exposes a dead AI synthesis button
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🟢 LOW
 - **Module:** Design / toolbar
 - **Location:** `packages/renderer/src/modules/design/components/DesignToolbar.tsx:42-49`
@@ -9198,10 +9234,11 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** Keep the toolbar visible, but remove the button semantics until the feature exists.
 - **Fix Direction:** Connect the button to a real AI synthesis surface or stop implying it is actionable.
 - **DO NOT:** Leave a primary toolbar action that cannot execute.
+- **Fix (2026-07-02, Fable):** Audit: already resolved — DesignToolbar renders only the wired tool buttons; AI synthesis button gone.
 
 ### ISSUE-627: Settings profile avatar overlay is clickable-looking but inert
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🟢 LOW
 - **Module:** Settings / profile
 - **Location:** `packages/renderer/src/modules/settings/settings-panel/ProfileSection.tsx:85-99`
@@ -9210,10 +9247,11 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** Keep the avatar visible, but remove the interactive overlay until upload/edit exists.
 - **Fix Direction:** Wire the camera control to avatar editing or drop the fake affordance.
 - **DO NOT:** Leave a profile-photo edit button that cannot do anything.
+- **Fix (2026-07-02, Fable):** Audit: already resolved — avatar renders as plain img/initials with no inert overlay control.
 
 ### ISSUE-628: Merch dashboard shows dead `View All` and `Launch Campaign` buttons
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🟢 LOW
 - **Module:** Merchandise / dashboard
 - **Location:** `packages/renderer/src/modules/merchandise/MerchDashboard.tsx:249-253`, `:489-499`
@@ -9222,10 +9260,11 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** Keep the merch panels visible, but remove the button styling until the flows are wired.
 - **Fix Direction:** Connect the buttons to real screens or strip the fake CTA affordances.
 - **DO NOT:** Leave merch dashboard CTAs that appear clickable but go nowhere.
+- **Fix (2026-07-02, Fable):** Audit: already resolved — `View All` and `Launch Campaign` no longer exist in MerchDashboard.
 
 ### ISSUE-629: Agent sidebar settings button is clickable-looking but inert
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🟢 LOW
 - **Module:** Agent / sidebar
 - **Location:** `packages/renderer/src/modules/agent/components/AgentSidebar.tsx:54-60`
@@ -9234,10 +9273,11 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** Keep the sidebar visible, but remove the button semantics until a settings flow exists.
 - **Fix Direction:** Wire the settings button to real configuration UI or remove the fake affordance.
 - **DO NOT:** Leave a sidebar settings control that cannot act.
+- **Fix (2026-07-02, Fable):** Audit: already resolved — AgentSidebar no longer renders a settings button.
 
 ### ISSUE-630: Distributor card exposes an inert `Connection Settings` button
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🟢 LOW
 - **Module:** Distribution / distributors
 - **Location:** `packages/renderer/src/modules/distribution/components/DistributorCard.tsx:95-99`
@@ -9246,10 +9286,11 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** Keep the distributor status card visible, but remove the button styling until settings exists.
 - **Fix Direction:** Wire the button to a real connection settings screen or remove the fake affordance.
 - **DO NOT:** Leave a settings button that cannot open anything.
+- **Fix (2026-07-02, Fable):** Audit: already resolved — DistributorCard has only the wired `Authorize` flow; no `Connection Settings`.
 
 ### ISSUE-631: Investor dashboard exposes dead dossier and send actions
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🟢 LOW
 - **Module:** Investor / dashboard
 - **Location:** `packages/renderer/src/modules/investor/components/EquityDashboard.tsx:60-63`, `:200-202`
@@ -9258,10 +9299,11 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** Keep the investor dashboard visible, but remove the button semantics until the workflows exist.
 - **Fix Direction:** Connect the actions to real investor flows or strip the fake affordances.
 - **DO NOT:** Leave investor controls that look actionable when they are not.
+- **Fix (2026-07-02, Fable):** Removed the dead `[ DL_DOSSIER ]` and `PREPARE DISTRIBUTION REVIEW` buttons and replaced the fake `GHOST ADVISORY` chat input+SEND (went nowhere) with an honest "Channel offline — advisory link not wired yet" note.
 
 ### ISSUE-632: God Mode canvas exposes a dead maximize button
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🟢 LOW
 - **Module:** Core / God Mode
 - **Location:** `packages/renderer/src/modules/core/components/GodModeCanvas.tsx:21-24`
@@ -9270,10 +9312,11 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** Keep the canvas visible, but remove the button semantics until a maximize flow exists.
 - **Fix Direction:** Connect the button to a real expand action or strip the fake affordance.
 - **DO NOT:** Leave a maximize button that cannot change the view.
+- **Fix (2026-07-02, Fable):** Audit: already resolved — GodModeCanvas has no maximize button.
 
 ### ISSUE-633: Standard merch product card exposes a dead `ADD TO CART` CTA
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🟢 LOW
 - **Module:** Merchandise / product card
 - **Location:** `packages/renderer/src/modules/merchandise/components/StandardProductCard.tsx:28-32`
@@ -9282,10 +9325,11 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** Keep the product card visible, but remove the button styling until checkout exists.
 - **Fix Direction:** Hook the CTA to a real cart action or stop implying interactivity.
 - **DO NOT:** Leave a product card with a fake checkout button.
+- **Fix (2026-07-02, Fable):** Audit: already resolved — StandardProductCard renders no `ADD TO CART` control.
 
 ### ISSUE-634: Timeline track header buttons are rendered without mute/visibility actions
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🟢 LOW
 - **Module:** Creative / video timeline
 - **Location:** `packages/renderer/src/modules/creative/video/editor/components/TimelineTrack.tsx:37-39`
@@ -9294,10 +9338,11 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** Keep the track controls visible, but remove the button semantics until the toggles exist.
 - **Fix Direction:** Attach real track-state actions or strip the fake affordances.
 - **DO NOT:** Leave timeline control buttons that cannot toggle anything.
+- **Fix (2026-07-02, Fable):** Audit: already resolved — Eye/Volume2 are non-interactive status glyphs; the real wired buttons (Add Text/Video) have handlers.
 
 ### ISSUE-635: Pro merch showcase cards look clickable but have no action
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🟢 LOW
 - **Module:** Merchandise / pro showcase
 - **Location:** `packages/renderer/src/modules/merchandise/components/ProMerch.tsx:69-91`
@@ -9306,6 +9351,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** Keep the product showcase visible, but remove the clickable styling until the flow exists.
 - **Fix Direction:** Connect the cards and CTA to a real merch path or remove the fake interactivity.
 - **DO NOT:** Leave a merch showcase that looks shoppable when it is not.
+- **Fix (2026-07-02, Fable):** Audit: already resolved — showcase cards are display-only; hover styling is cosmetic with no click semantics.
 
 ### ISSUE-636: File tree chevron button is rendered without its own toggle handler
 
@@ -9321,7 +9367,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-637: Dailies strip exposes an inert options button
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🟢 LOW
 - **Module:** Creative video / dailies strip
 - **Location:** `packages/renderer/src/modules/creative/video/components/DailiesStrip.tsx:38-44`
@@ -9330,6 +9376,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** Keep the dailies strip visible, but remove the button semantics until the menu exists.
 - **Fix Direction:** Wire the button to an actual options menu or remove the fake affordance.
 - **DO NOT:** Leave a dailies options control that cannot open anything.
+- **Fix (2026-07-02, Fable):** Audit: already resolved — DailiesStrip header has no options button.
 
 ### ISSUE-638: Audit log dashboard exposes a dead export button
 
@@ -9345,7 +9392,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-639: Release status card shows a dead `VIEW DETAILS` button
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🟢 LOW
 - **Module:** Distribution / release status card
 - **Location:** `packages/renderer/src/modules/distribution/components/ReleaseStatusCard.tsx:184-189`
@@ -9354,6 +9401,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** Keep the card visible, but remove the button semantics until the details flow exists.
 - **Fix Direction:** Wire the button to the real detail surface or remove the fake action.
 - **DO NOT:** Leave a release card CTA that cannot open details.
+- **Fix (2026-07-02, Fable):** Audit: already resolved — no `VIEW DETAILS` remains; the Share button is conditionally rendered and wired.
 
 ### ISSUE-640: SceneBuilder exposes a dead `Preview Camera` button
 
@@ -9633,7 +9681,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-660: Distribution takedown request marks releases requested before provider notification
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02)
 - **Severity:** 🔴 HIGH
 - **Module:** Firebase / distribution takedown records
 - **GitHub:** https://github.com/indii-music-founder/indii-music-founder/issues/219
@@ -9643,6 +9691,9 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** Record the takedown request for manual follow-up without changing the release to a provider-requested state.
 - **Fix Direction:** Add a real `processReleaseTakedown` backend worker/callable or remove the renderer call and route to an honest manual-required state. Change `requestDistributionTakedown` so it records the request without setting release `status: "takedown_requested"` until provider notification succeeds. Add tests for request-only versus provider-notified states.
 - **DO NOT:** Mark a release as takedown-requested before a distributor notification has actually been accepted.
+- **Fix:** `requestDistributionTakedown` now records `PENDING_NOTIFICATION` / `manualRequired` takedown records and updates the release with `takedownStatus: "pending_notification"` plus `takedownNotificationStatus: "manual_required"` without changing the release's primary `status`. `issue_automated_takedown` now returns the recorded/manual state directly and no longer calls the undeployed `processReleaseTakedown` worker.
+- **Evidence:** `packages/firebase/src/functions/distribution/distributionRecords.ts:281-330` contains the request-only record writer; `packages/firebase/src/functions/distribution/distributionRecords.test.ts:1-88` verifies no transaction write sets `status: "takedown_requested"`; `packages/renderer/src/services/agent/tools/DistributionTools.ts:695-730` records manual follow-up without a notification-worker call; `packages/renderer/src/services/agent/tools/DistributionTools.test.ts:399-420` asserts `processReleaseTakedown` is never called.
+- **Files:** `packages/firebase/src/functions/distribution/distributionRecords.ts`, `packages/firebase/src/functions/distribution/distributionRecords.test.ts`, `packages/renderer/src/services/agent/tools/DistributionTools.ts`, `packages/renderer/src/services/agent/tools/DistributionTools.test.ts`
 
 ### ISSUE-661: Sync licensing compiler marks rights cleared without verified clearance evidence
 
