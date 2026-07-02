@@ -1251,3 +1251,21 @@ Before pushing any branch, run `/plat` (see `.claude/commands/plat.md`). It exec
   2. DIAGNOSE FROM LOGS, NOT THE SYMPTOM STRING: a backend 401/"App Check" error can mask a cold-start crash on a stale revision. Always pull `functions_get_logs` for the **specific function the client calls** before assuming the error string is the cause.
   3. KNOW WHICH FUNCTION THE CLIENT HITS: the Boardroom Conductor calls `generateContentStream` (see `FirebaseIntelligenceService.getBackendStreamUrl()`), NOT `agentStreamResponse`. Deploying/fixing the wrong function wastes a cycle.
   4. After deploy, verify the **target** function's revision actually updated (deploy can reject a function with status 3 while reporting overall success for the rest).
+
+## 2026-07-02 Hunter Session - Autorater Prompt Mutation Loop
+- SEVERITY: High
+- FILE: packages/renderer/src/services/agent/AgentService.ts
+- BUG: The VisualOutputAutorater passed the full "correction prompt" as the `originalBrief` back into `sendMessage`. Because the correction prompt contains dynamic error messages, the hashing algorithm generated a new hash every time, circumventing the `MAX_CORRECTION_ATTEMPTS` limit and causing an infinite generation loop.
+- FIX: Updated `sendMessage` signature to accept `originalBrief` via options, and passed the original brief through untouched to `triggerVisualAutorater`.
+
+## 2026-07-02 Hunter Session - Local Zustand State Lost on Reload
+- SEVERITY: High
+- FILE: packages/renderer/src/hooks/useWorkspaceSync.ts
+- BUG: Boardroom messages are stored locally in Zustand and do not automatically sync to Firestore sessions. The `WorkspaceSyncService` syncs the entire workspace state, but `useWorkspaceSync` had an "echo guard" that rejected loading the cloud snapshot if it originated from the same device ID. This caused all boardroom messages to disappear if the user simply refreshed their browser tab.
+- FIX: Added a bypass to the echo guard in `useWorkspaceSync`: if the local state is completely empty but the cloud snapshot has messages, it will auto-rehydrate regardless of the device ID.
+
+## 2026-07-02 Hunter Session - Image Generation Subject Hallucination
+- SEVERITY: Medium
+- FILE: packages/renderer/src/services/agent/instruments/ImageGenerationInstrument.ts
+- BUG: The image generation tool defaulted to adding human subjects to the generated images when the prompt was vague, even if the user never requested humans or shared pictures of themselves.
+- FIX: Explicitly updated the instrument `description` and input `schema` to strictly instruct the model NOT to hallucinate people/human subjects unless the user explicitly asks for them.
