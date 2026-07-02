@@ -1,7 +1,7 @@
 import { logger } from '@/utils/logger';
 import { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import { db } from '@/services/firebase';
-import { Timestamp, FieldValue, collection, doc, runTransaction, setDoc, serverTimestamp } from 'firebase/firestore';
+import { Timestamp, FieldValue, doc, runTransaction, setDoc, serverTimestamp } from 'firebase/firestore';
 
 export interface RevenueReportItem {
     transactionId: string;
@@ -30,21 +30,58 @@ export interface RecoupmentBalance {
     updatedAt: Timestamp | FieldValue;
 }
 
+export interface RoyaltyReportClaim {
+    reportId: string;
+    releaseId: string;
+    payoutCount: number;
+    recoupmentApplied: number;
+    processedAt: Timestamp | FieldValue;
+}
+
+export interface RevenueIngestionResult {
+    success: boolean;
+    /** Payout docs written by THIS ingestion (0 when the report was already processed). */
+    payoutCount: number;
+    /** Release groups processed by this call. */
+    processedGroups: number;
+    /** Release groups skipped because a claim for (reportId, releaseId) already existed. */
+    skippedGroups: number;
+    /** True when every release group in the report had already been ingested. */
+    alreadyProcessed: boolean;
+    error?: string;
+}
+
 export class RoyaltyService {
     private static readonly PAYOUTS_COLLECTION = 'payouts';
     private static readonly RECOUPMENT_COLLECTION = 'recoupment_balances';
+    private static readonly REPORT_CLAIMS_COLLECTION = 'royalty_report_claims';
 
     /**
      * Ingest a batch of revenue items and calculate payouts, applying recoupment.
+     *
+     * Idempotent per (reportId, releaseId): each release group is claimed by a
+     * `royalty_report_claims` doc written in the same transaction as its payouts
+     * and recoupment update, so re-ingesting the same report (double upload,
+     * retry after a partial failure) never duplicates payouts or deducts
+     * recoupment twice — already-claimed groups are skipped, unclaimed groups
+     * from a partial failure are picked up.
      */
     static async ingestRevenueReport(
         reportId: string,
         items: RevenueReportItem[],
         metadataMap: Record<string, ExtendedGoldenMetadata>
-    ): Promise<{ success: boolean; payoutCount: number; error?: string }> {
+    ): Promise<RevenueIngestionResult> {
+        if (!reportId?.trim()) {
+            return {
+                success: false,
+                payoutCount: 0,
+                processedGroups: 0,
+                skippedGroups: 0,
+                alreadyProcessed: false,
+                error: 'reportId is required: ingestion is idempotent per report and cannot claim an unidentified report'
+            };
+        }
         try {
-            let totalPayoutsStored = 0;
-
             // Group items by releaseId to minimize database queries
             const releaseGroups: Record<string, RevenueReportItem[]> = {};
 
@@ -61,8 +98,21 @@ export class RoyaltyService {
 
             const transactionPromises = Object.entries(releaseGroups).map(async ([releaseId, groupItems]) => {
                 let payoutsStoredInThisTx = 0;
-                // Use transaction for atomic recoupment update and payout recording per release
+                let claimAlreadyExisted = false;
+                // Use transaction for atomic claim + recoupment update + payout recording per release
                 await runTransaction(db, async (transaction) => {
+                    // Firestore may re-run this callback on contention — reset per attempt
+                    payoutsStoredInThisTx = 0;
+                    claimAlreadyExisted = false;
+
+                    // All reads must precede all writes inside a Firestore transaction.
+                    const claimRef = doc(db, this.REPORT_CLAIMS_COLLECTION, this.buildClaimId(reportId, releaseId));
+                    const claimDoc = await transaction.get(claimRef);
+                    if (claimDoc.exists()) {
+                        claimAlreadyExisted = true;
+                        return; // this (report, release) group was already ingested — no writes
+                    }
+
                     const recoupRef = doc(db, this.RECOUPMENT_COLLECTION, releaseId);
                     const recoupDoc = await transaction.get(recoupRef);
 
@@ -74,6 +124,10 @@ export class RoyaltyService {
                     }
 
                     const initialBalance = currentBalance;
+
+                    // Deterministic payout ids make a re-run overwrite instead of duplicate;
+                    // identical (report, transaction, isrc, payee, role) keys merge amounts.
+                    const payoutsById = new Map<string, PayoutRecord>();
 
                     for (const item of groupItems) {
                         const trackData = metadataMap[item.isrc];
@@ -92,17 +146,27 @@ export class RoyaltyService {
                         // Calculate splits on the remaining revenue for this item
                         const payouts = this.calculateSplitsFromUnallocated(unallocatedRevenue, trackData, item);
 
-                        // Record each payout in the transaction
                         for (const payout of payouts) {
-                            const payoutRef = doc(collection(db, this.PAYOUTS_COLLECTION));
-                            transaction.set(payoutRef, {
-                                ...payout,
-                                reportId,
-                                status: 'pending',
-                                createdAt: serverTimestamp()
-                            });
-                            payoutsStoredInThisTx++;
+                            const payoutId = this.buildPayoutId(reportId, item, payout);
+                            const existing = payoutsById.get(payoutId);
+                            if (existing) {
+                                existing.amount = Number((existing.amount + payout.amount).toFixed(4));
+                            } else {
+                                payoutsById.set(payoutId, payout);
+                            }
                         }
+                    }
+
+                    // Record each payout in the transaction
+                    for (const [payoutId, payout] of payoutsById) {
+                        const payoutRef = doc(db, this.PAYOUTS_COLLECTION, payoutId);
+                        transaction.set(payoutRef, {
+                            ...payout,
+                            reportId,
+                            status: 'pending',
+                            createdAt: serverTimestamp()
+                        });
+                        payoutsStoredInThisTx++;
                     }
 
                     if (initialBalance !== currentBalance) {
@@ -112,18 +176,61 @@ export class RoyaltyService {
                         });
                         logger.debug(`[RoyaltyService] Recooped ${initialBalance - currentBalance} for ${releaseId}. Remaining: ${currentBalance}`);
                     }
+
+                    const claim: RoyaltyReportClaim = {
+                        reportId,
+                        releaseId,
+                        payoutCount: payoutsStoredInThisTx,
+                        recoupmentApplied: initialBalance - currentBalance,
+                        processedAt: serverTimestamp()
+                    };
+                    transaction.set(claimRef, claim);
                 });
-                return payoutsStoredInThisTx;
+                return { payouts: payoutsStoredInThisTx, skipped: claimAlreadyExisted };
             });
 
             const results = await Promise.all(transactionPromises);
-            totalPayoutsStored = results.reduce((acc, count) => acc + count, 0);
+            const skippedGroups = results.filter(r => r.skipped).length;
+            const processedGroups = results.length - skippedGroups;
+            const totalPayoutsStored = results.reduce((acc, r) => acc + (r.skipped ? 0 : r.payouts), 0);
 
-            return { success: true, payoutCount: totalPayoutsStored };
+            if (skippedGroups > 0) {
+                logger.info(`[RoyaltyService] Report ${reportId}: skipped ${skippedGroups} already-ingested release group(s).`);
+            }
+
+            return {
+                success: true,
+                payoutCount: totalPayoutsStored,
+                processedGroups,
+                skippedGroups,
+                alreadyProcessed: results.length > 0 && processedGroups === 0
+            };
         } catch (error: unknown) {
             logger.error('[RoyaltyService] Ingestion failed:', error);
-            return { success: false, payoutCount: 0, error: error instanceof Error ? error.message : 'Unknown error' };
+            return {
+                success: false,
+                payoutCount: 0,
+                processedGroups: 0,
+                skippedGroups: 0,
+                alreadyProcessed: false,
+                error: error instanceof Error ? error.message : 'Unknown error'
+            };
         }
+    }
+
+    /** Firestore doc ids cannot contain '/'; every segment feeding a deterministic id must sanitize identically on every run. */
+    private static sanitizeIdSegment(value: string): string {
+        return value.trim().replace(/[/\s]+/g, '_');
+    }
+
+    private static buildClaimId(reportId: string, releaseId: string): string {
+        return `${this.sanitizeIdSegment(reportId)}--${this.sanitizeIdSegment(releaseId)}`;
+    }
+
+    private static buildPayoutId(reportId: string, item: RevenueReportItem, payout: PayoutRecord): string {
+        return [reportId, item.transactionId, item.isrc, payout.userId, payout.role]
+            .map(segment => this.sanitizeIdSegment(segment))
+            .join('--');
     }
 
     /**
