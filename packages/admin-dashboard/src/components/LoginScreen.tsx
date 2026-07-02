@@ -1,16 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { isSignInWithEmailLink, signInWithEmailLink, sendSignInLinkToEmail, signInWithCustomToken } from 'firebase/auth';
-import { ShieldCheck, Loader2, Mail, Lock, CheckCircle2, AlertCircle } from 'lucide-react';
+import { isSignInWithEmailLink, signInWithEmailLink, sendSignInLinkToEmail } from 'firebase/auth';
+import { ShieldCheck, Loader2, Mail, CheckCircle2, AlertCircle } from 'lucide-react';
 import { auth } from '../firebase';
 
 /**
- * Admin sign-in via magic link (email link auth) or passcode bypass.
- * Fully redesigned with high-fidelity glassmorphism and animated glows.
+ * Admin sign-in via magic link (email link auth) only.
+ * ISSUE-649/651: the passcode/mock-token bypass was removed — real Firebase
+ * session or nothing.
  */
 export const LoginScreen: React.FC = () => {
-  const [loginMode, setLoginMode] = useState<'magic-link' | 'passcode'>('magic-link');
   const [email, setEmail] = useState('');
-  const [passcode, setPasscode] = useState('');
   const [sentEmail, setSentEmail] = useState('');
   const [linkSent, setLinkSent] = useState(false);
   const [checking, setChecking] = useState(() => isSignInWithEmailLink(auth, window.location.href));
@@ -101,34 +100,6 @@ export const LoginScreen: React.FC = () => {
     }
   };
 
-  const handlePasscodeSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setSubmitting(true);
-
-    try {
-      const res = await fetch('/api/auth/login-passcode', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ passcode: passcode.trim() }),
-      });
-
-      if (!res.ok) {
-        const json = await res.json() as { error?: string };
-        throw new Error(json.error || 'Invalid passcode');
-      }
-
-      const { customToken } = await res.json() as { customToken: string };
-      await signInWithCustomToken(auth, customToken);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Authentication failed';
-      
-      setError(msg);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
   return (
     <div className="flex h-screen w-screen items-center justify-center bg-[#030303] text-white font-sans relative overflow-hidden">
       {/* Dynamic Ambient Background Blobs */}
@@ -159,39 +130,8 @@ export const LoginScreen: React.FC = () => {
             </div>
           </div>
 
-          {/* Tab Selector */}
-          {!linkSent && (
-            <div className="flex bg-white/[0.03] border border-white/5 rounded-2xl p-1 relative">
-              <button
-                type="button"
-                onClick={() => { setLoginMode('magic-link'); setError(null); }}
-                className={`flex-1 py-2 rounded-xl text-xs font-semibold tab-btn cursor-pointer transition-all duration-300 relative z-10 ${
-                  loginMode === 'magic-link' ? 'text-white' : 'text-white/40 hover:text-white/70'
-                }`}
-              >
-                Magic Link
-                {loginMode === 'magic-link' && (
-                  <div className="absolute inset-0 bg-white/5 border border-white/10 rounded-xl -z-10 shadow-sm" />
-                )}
-              </button>
-              <button
-                type="button"
-                onClick={() => { setLoginMode('passcode'); setError(null); }}
-                className={`flex-1 py-2 rounded-xl text-xs font-semibold tab-btn cursor-pointer transition-all duration-300 relative z-10 ${
-                  loginMode === 'passcode' ? 'text-white' : 'text-white/40 hover:text-white/70'
-                }`}
-              >
-                Passcode
-                {loginMode === 'passcode' && (
-                  <div className="absolute inset-0 bg-white/5 border border-white/10 rounded-xl -z-10 shadow-sm" />
-                )}
-              </button>
-            </div>
-          )}
-
           {/* Login Form Layout */}
-          {loginMode === 'magic-link' ? (
-            <form onSubmit={handleSendLink} className="space-y-6">
+          <form onSubmit={handleSendLink} className="space-y-6">
               {linkSent ? (
                 <div className="space-y-5">
                   <div className="flex flex-col items-center text-center p-6 bg-green-500/5 border border-green-500/10 rounded-2xl space-y-3">
@@ -251,42 +191,6 @@ export const LoginScreen: React.FC = () => {
                 </div>
               )}
             </form>
-          ) : (
-            <form onSubmit={handlePasscodeSubmit} className="space-y-5">
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
-                <input
-                  type="password"
-                  required
-                  autoFocus
-                  placeholder="••••"
-                  value={passcode}
-                  onChange={(e) => setPasscode(e.target.value)}
-                  disabled={submitting}
-                  className="w-full pl-11 pr-4 py-3 rounded-xl text-lg text-white placeholder-white/20 tracking-[0.25em] text-center font-bold glass-input outline-none disabled:opacity-50"
-                />
-              </div>
-
-              {error && (
-                <div className="flex items-start gap-2.5 bg-red-500/5 border border-red-500/10 rounded-xl p-3.5 text-xs text-red-400">
-                  <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                  <span>{error}</span>
-                </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={submitting}
-                className="w-full flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 active:scale-[0.98] disabled:opacity-50 text-white font-semibold text-sm rounded-xl transition-all shadow-md shadow-blue-500/10 cursor-pointer"
-              >
-                {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Sign In'}
-              </button>
-
-              <p className="text-[10px] text-white/20 text-center leading-relaxed">
-                Enter your assigned 4-digit administrator passcode.
-              </p>
-            </form>
-          )}
         </div>
       </div>
     </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Mail, Plus, Trash2, Edit2, ShieldAlert, ArrowLeft, CheckCircle2, ShieldCheck, RefreshCw } from 'lucide-react';
+import { Mail, ShieldAlert, ArrowLeft, CheckCircle2, ShieldCheck, RefreshCw } from 'lucide-react';
 
 interface Message {
   id: string;
@@ -233,15 +233,10 @@ export const EmailManager: React.FC = () => {
                         </span>
                       </div>
                     </td>
+                    {/* ISSUE-646: alias edit/delete removed — no alias-management
+                        backend exists; aliases are managed in Google Workspace. */}
                     <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button className="p-1.5 hover:bg-white/10 rounded-lg text-white/40 hover:text-white transition-colors cursor-pointer">
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button className="p-1.5 hover:bg-red-500/20 rounded-lg text-white/40 hover:text-red-400 transition-colors cursor-pointer">
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
+                      <span className="text-[10px] text-white/25">Managed in Google Workspace</span>
                     </td>
                   </tr>
                 ))}
