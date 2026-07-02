@@ -262,6 +262,11 @@ vi.mock('@/core/store', () => {
         clearCompletedUploads: vi.fn(),
         toggleUploadQueue: vi.fn(),
         // Common slice methods to prevent "is not a function" errors
+        boardroomMessages: [],
+        addBoardroomMessage: vi.fn(),
+        updateBoardroomMessage: vi.fn(),
+        removeBoardroomMessage: vi.fn(),
+        loadBoardroomMessages: vi.fn().mockResolvedValue(vi.fn()),
         addAgentMessage: vi.fn(),
         updateAgentMessage: vi.fn(),
         setAgentStatus: vi.fn(),
