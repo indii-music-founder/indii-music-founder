@@ -94,9 +94,6 @@ const ProfileSection: React.FC = () => {
                             <span className="text-2xl font-bold text-white">{getInitials()}</span>
                         </div>
                     )}
-                    <button className="absolute inset-0 rounded-2xl bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Camera size={20} className="text-white" />
-                    </button>
                 </div>
                 <div>
                     <p className="text-sm font-medium text-white">{displayName || t('settings.profile.noName')}</p>

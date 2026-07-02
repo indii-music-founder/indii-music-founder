@@ -67,11 +67,6 @@ export default function FileDashboard() {
                     <p className="text-xs text-muted-foreground font-medium uppercase tracking-widest mt-1">Project Vault</p>
                 </div>
 
-                <div className="px-4 pb-4">
-                    <button className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-3 rounded-xl font-bold transition-all shadow-lg shadow-blue-900/20 active:scale-95">
-                        <Upload size={16} /> Upload Asset
-                    </button>
-                </div>
 
                 <nav className="flex-1 overflow-y-auto px-3 space-y-1">
                     <NavItem icon={Clock} label="Recent" active />
