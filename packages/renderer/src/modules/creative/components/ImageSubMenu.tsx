@@ -3,6 +3,7 @@ import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/core/context/ToastContext';
 import { Sparkles, Tags } from 'lucide-react';
+import { parseColor } from '@/utils/colorUtils';
 
 interface ImageSubMenuProps {
     onShowBrandAssets: () => void;
@@ -99,23 +100,26 @@ export default function ImageSubMenu({ onShowBrandAssets, showBrandAssets, onTog
                 </button>
                 {(userProfile.brandKit?.colors?.length || 0) > 0 && !showBrandAssets && (
                     <div className="flex gap-1">
-                        {userProfile.brandKit?.colors?.map((color, i) => (
-                            <button
-                                key={i}
-                                type="button"
-                                aria-label={`Copy color ${color}`}
-                                className="w-4 h-4 rounded-full border border-gray-600 hover:scale-110 cursor-pointer focus-visible:ring-2 focus-visible:ring-yellow-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a] transition-transform relative group outline-none"
-                                style={{ backgroundColor: color }}
-                                onClick={() => {
-                                    navigator.clipboard.writeText(color);
-                                    toast.success(`Copied ${color}`);
-                                }}
-                            >
-                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-1.5 py-0.5 bg-black text-white text-[9px] rounded opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none">
-                                    {color}
-                                </div>
-                            </button>
-                        ))}
+                        {userProfile.brandKit?.colors?.map((color, i) => {
+                            const parsed = parseColor(color);
+                            return (
+                                <button
+                                    key={i}
+                                    type="button"
+                                    aria-label={`Copy color ${parsed.label}`}
+                                    className="w-4 h-4 rounded-full border border-gray-600 hover:scale-110 cursor-pointer focus-visible:ring-2 focus-visible:ring-yellow-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a] transition-transform relative group outline-none"
+                                    style={{ backgroundColor: parsed.hex }}
+                                    onClick={() => {
+                                        navigator.clipboard.writeText(parsed.hex);
+                                        toast.success(`Copied ${parsed.label} (${parsed.hex})`);
+                                    }}
+                                >
+                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-1.5 py-0.5 bg-black text-white text-[9px] rounded opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none">
+                                        {parsed.label}
+                                    </div>
+                                </button>
+                            );
+                        })}
                     </div>
                 )}
             </div>
