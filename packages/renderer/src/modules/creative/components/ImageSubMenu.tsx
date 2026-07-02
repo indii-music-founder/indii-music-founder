@@ -37,7 +37,7 @@ export default function ImageSubMenu({ onShowBrandAssets, showBrandAssets, onTog
             >
                 Gallery
             </button>
-            <button className="text-xs text-green-400 font-bold px-2 py-1 bg-green-900/20 rounded">Image</button>
+            <span className="text-xs text-green-400 font-bold px-2 py-1 bg-green-900/20 rounded">Image</span>
 
             <button
                 onClick={onTogglePromptBuilder}
