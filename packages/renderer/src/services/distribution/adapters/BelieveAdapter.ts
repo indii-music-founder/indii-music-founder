@@ -142,33 +142,51 @@ export class BelieveAdapter extends BaseDistributorAdapter {
                         }),
                     });
 
-                    if (response.ok) {
-                        const data = await response.json();
+                    if (!response.ok) {
+                        logger.warn(`[Believe] API rejected the release (HTTP ${response.status}) — no delivery occurred.`);
                         return {
-                            success: true,
+                            success: false,
                             releaseId,
-                            distributorReleaseId: data.id || `BLV-${releaseId}`,
-                            status: 'pending_review',
-                            metadata: {
-                                estimatedLiveDate: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString(),
-                                reviewRequired: true,
-                            }
+                            status: 'failed',
+                            errors: [{ code: 'DELIVERY_REJECTED', message: `Believe API rejected the release (HTTP ${response.status}). Nothing was delivered.` }]
                         };
                     }
+
+                    const data = await response.json();
+                    return {
+                        success: true,
+                        releaseId,
+                        distributorReleaseId: data.id || `BLV-${releaseId}`,
+                        status: 'pending_review',
+                        metadata: {
+                            estimatedLiveDate: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString(),
+                            reviewRequired: true,
+                        }
+                    };
                 } catch (apiErr: unknown) {
-                    logger.warn('[Believe] API delivery failed, returning ERN-ready status:', apiErr);
+                    logger.warn('[Believe] API delivery unavailable — ERN is ready for manual submission, nothing was delivered:', apiErr);
+                    return {
+                        success: false,
+                        releaseId,
+                        status: 'ready_for_manual_submission',
+                        errors: [{ code: 'DELIVERY_UNAVAILABLE', message: 'Believe API delivery failed before acceptance. The DDEX ERN was generated — submit the release manually through your Believe partner account.' }],
+                        metadata: {
+                            reviewRequired: true,
+                            note: 'ERN generated. No delivery to Believe occurred.',
+                        }
+                    };
                 }
             }
 
+            // No API key: honest manual handoff — ERN generated, nothing delivered (ISSUE-658)
             return {
-                success: true,
+                success: false,
                 releaseId,
-                distributorReleaseId: `BLV-${releaseId}`,
-                status: 'pending_review',
+                status: 'ready_for_manual_submission',
+                errors: [{ code: 'MANUAL_DELIVERY_REQUIRED', message: 'No Believe API key configured — nothing was delivered. Add one in Settings > Integrations for automatic delivery, or submit the generated ERN manually through your Believe partner account.' }],
                 metadata: {
-                    estimatedLiveDate: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString(),
                     reviewRequired: true,
-                    note: 'Add Believe API key in Settings > Integrations for automatic delivery.',
+                    note: 'ERN generated. No delivery to Believe occurred.',
                 }
             };
         } catch (e: unknown) {

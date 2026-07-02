@@ -133,33 +133,51 @@ export class OnerpmAdapter extends BaseDistributorAdapter {
                         }),
                     });
 
-                    if (response.ok) {
-                        const data = await response.json();
+                    if (!response.ok) {
+                        logger.warn(`[OneRPM] API rejected the release (HTTP ${response.status}) — no delivery occurred.`);
                         return {
-                            success: true,
+                            success: false,
                             releaseId,
-                            distributorReleaseId: data.id || `ORP-${releaseId}`,
-                            status: 'pending_review',
-                            metadata: {
-                                estimatedLiveDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-                                reviewRequired: true,
-                            }
+                            status: 'failed',
+                            errors: [{ code: 'DELIVERY_REJECTED', message: `OneRPM API rejected the release (HTTP ${response.status}). Nothing was delivered.` }]
                         };
                     }
+
+                    const data = await response.json();
+                    return {
+                        success: true,
+                        releaseId,
+                        distributorReleaseId: data.id || `ORP-${releaseId}`,
+                        status: 'pending_review',
+                        metadata: {
+                            estimatedLiveDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+                            reviewRequired: true,
+                        }
+                    };
                 } catch (apiErr: unknown) {
-                    logger.warn('[OneRPM] API delivery failed, returning ERN-ready status:', apiErr);
+                    logger.warn('[OneRPM] API delivery unavailable — ERN is ready for manual submission, nothing was delivered:', apiErr);
+                    return {
+                        success: false,
+                        releaseId,
+                        status: 'ready_for_manual_submission',
+                        errors: [{ code: 'DELIVERY_UNAVAILABLE', message: 'OneRPM API delivery failed before acceptance. The DDEX ERN was generated — submit the release manually from your OneRPM account.' }],
+                        metadata: {
+                            reviewRequired: true,
+                            note: 'ERN generated. No delivery to OneRPM occurred.',
+                        }
+                    };
                 }
             }
 
+            // No API key: honest manual handoff — ERN generated, nothing delivered (ISSUE-658)
             return {
-                success: true,
+                success: false,
                 releaseId,
-                distributorReleaseId: `ORP-${releaseId}`,
-                status: 'pending_review',
+                status: 'ready_for_manual_submission',
+                errors: [{ code: 'MANUAL_DELIVERY_REQUIRED', message: 'No OneRPM API key configured — nothing was delivered. Add one in Settings > Integrations for automatic delivery, or submit the generated ERN manually from your OneRPM account.' }],
                 metadata: {
-                    estimatedLiveDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
                     reviewRequired: true,
-                    note: 'Add OneRPM API key in Settings > Integrations for automatic delivery.',
+                    note: 'ERN generated. No delivery to OneRPM occurred.',
                 }
             };
         } catch (e: unknown) {
