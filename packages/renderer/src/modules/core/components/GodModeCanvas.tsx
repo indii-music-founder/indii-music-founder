@@ -18,11 +18,6 @@ export const GodModeCanvas: React.FC = () => {
                 </div>
             </div>
 
-            <div className="absolute bottom-8 right-8 z-20">
-                <button className="bg-white/10 hover:bg-white/20 text-white p-3 rounded-full backdrop-blur transition-all">
-                    <Maximize2 size={20} />
-                </button>
-            </div>
 
             <motion.div
                 drag
