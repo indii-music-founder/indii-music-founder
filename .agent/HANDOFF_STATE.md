@@ -1,24 +1,25 @@
 # Handoff State
-**Updated:** 2026-07-02 00:06 EDT
+**Updated:** 2026-07-02 09:01 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+9b1521f64 test(ledger): log ISSUE-CI pipeline failures
+2a7d24f0d chore(ledger): ISSUE-656 FIXED with evidence (Agent B)
+9bc23be5e fix(rights): remove fabricated PRO setlist submission success path (ISSUE-656)
+505b64a2f chore(ledger): Agent B claims ISSUE-656
+6d1e4b383 chore(ledger): record hunt audit + ISSUE-652..657 from Agent A sweep
+a79267494 chore: session checkpoint [00:06]
 0b1989292 chore: session checkpoint [23:52]
 c857b26e1 fix(tests): update FileDashboard test for removed Upload Asset affordance; exclude package dist dirs from vitest
 5e0989419 chore: session checkpoint [23:44]
 1df3c03db chore: session checkpoint [23:43]
-2e6d25ce2 fix(tests): update CampaignCard + StandardProductCard tests for removed dead affordances
-5676a0943 chore: session checkpoint [23:41]
-b4ad151ed chore: session checkpoint [23:39]
-c768e7602 chore: session checkpoint [23:36]
-1fefb6789 chore: session checkpoint [23:27]
-079a6d561 chore: session checkpoint [22:56]
 ```
 
 ## Working State
 ```
-clean working tree
+ M .agent/test_ledger/HUNT_AUDIT_20260702T122852Z.md
+ M .agent/workflows/hunter.md
 ```
 
 ## Decisions
