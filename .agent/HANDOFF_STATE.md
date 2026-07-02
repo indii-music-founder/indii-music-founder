@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-07-01 21:26 EDT
+**Updated:** 2026-07-01 21:27 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+bfcbd19bd chore: session checkpoint [21:26]
 f70753f6d chore: session checkpoint [21:26]
 eac234263 chore: session checkpoint [21:19]
 d2744ac97 fix: remove dead track controls (ISSUE-634)
@@ -13,7 +14,6 @@ c0a3d6de4 fix: remove dead affordances in modules (ISSUE-623,625,626,627,629,632
 5834593bc fix(ui): ISSUE-621,628,633,635,642,643,645 — remove dead affordances in merchandise module
 ad10fd496 fix(ui): ISSUE-613,624,630,639 — remove dead controls in distribution
 1ac1374c5 fix(ui): ISSUE-612,615,616,619,622 — remove dead affordances in social module
-a58423b27 fix(ui): ISSUE-606,611,617 — remove dead affordances in finance/analytics
 ```
 
 ## Working State
