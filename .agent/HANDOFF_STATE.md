@@ -1,19 +1,19 @@
 # Handoff State
-**Updated:** 2026-07-02 17:46 EDT
+**Updated:** 2026-07-02 19:29 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
-be2b769ce fix(email): reject failed mail mutations
-da7f3b7fc docs(ledger): claim ISSUE-652
-4d2b0b6ca docs(workflows): add session start routing flowchart
-bfe78dff6 test(ledger): log ISSUE-CI pipeline failures
-9f4c2a53d chore: session checkpoint [15:39]
-abfc28391 chore: session checkpoint [15:37]
-2a7c895bb test(renderer): mock boardroom store in router context
-3954460b0 test(distribution): mock tunecore in verification suite
-eebcc3e30 test(renderer): add boardroom store mock
-a6a9f2f2f test(distribution): mock tunecore success path
+8b5985617 docs(ledger): scope npm-audit finding to @mastra/core 1.x migration (ISSUE-CI-28478558122-AUDIT)
+ace0e71af docs(ledger): verify + close ISSUE-659 (takedown honesty landed in 9c03b1b47)
+15424030a fix(test): add missing sftp.isConnected and uploadDirectory mocks to global test setup
+5229999d3 docs(ledger): mark ISSUE-601/602/603 (hunter dup set) fixed with code evidence
+a0e5f5c49 fix(firebase): harden distribution records, image gen tests, video tests, marketing lib and workspace snapshot test
+9c03b1b47 fix(services): harden distribution adapters, licensing, bounty, avatar gen and log hygiene
+d0dbab356 fix(ui): dead-affordance sweep — remove/wire ~40 inert controls across modules (ISSUE-574..639)
+3ccf196e0 docs(ledger): resolve 12 stale CI pipeline issues — workflow green on run 28614340383
+77d107310 fix(landing): remove fake 'See Documentation' affordance; close dead-affordance sweep (ISSUE-640..645/650)
+fd07b3d7d fix(admin): remove dead passcode auth path and dead alias/download affordances (ISSUE-649/646/648)
 ```
 
 ## Working State
