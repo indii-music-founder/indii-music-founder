@@ -30,33 +30,9 @@ const ADMIN_EMAIL_DOMAIN = '@indii.music';
  * modules can call the (token-gated) backend. No bypass — real session or login.
  */
 const App: React.FC = () => {
-  const [user, setUser] = useState<User | null>(() => {
-    try {
-      const devToken = localStorage.getItem(ADMIN_TOKEN_KEY);
-      if (devToken === 'MOCK_ADMIN_TOKEN') {
-        return {
-          email: 'admin@indii.music',
-          displayName: 'Developer Admin',
-          uid: 'dev-admin-id',
-        } as unknown as User;
-      }
-    } catch {
-      // localStorage check failed
-    }
-    return null;
-  });
+  const [user, setUser] = useState<User | null>(null);
 
-  const [checking, setChecking] = useState(() => {
-    try {
-      const devToken = localStorage.getItem(ADMIN_TOKEN_KEY);
-      if (devToken === 'MOCK_ADMIN_TOKEN') {
-        return false;
-      }
-    } catch {
-      // localStorage check failed
-    }
-    return true;
-  });
+  const [checking, setChecking] = useState(true);
 
   const handleSignOut = () => {
     localStorage.removeItem(ADMIN_TOKEN_KEY);
@@ -66,13 +42,6 @@ const App: React.FC = () => {
   };
 
   useEffect(() => {
-    try {
-      const devToken = localStorage.getItem(ADMIN_TOKEN_KEY);
-      if (devToken === 'MOCK_ADMIN_TOKEN') return;
-    } catch {
-      // localStorage check failed
-    }
-
     return onAuthStateChanged(auth, async (u) => {
       if (u && u.email?.endsWith(ADMIN_EMAIL_DOMAIN)) {
         try {
