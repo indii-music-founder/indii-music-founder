@@ -60,18 +60,6 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, onSelect }) => {
                         </div>
                         <p className="text-sm text-gray-400 line-clamp-1">{campaign.description || "No description provided."}</p>
                     </div>
-                    <button
-                        className="text-gray-500 hover:text-white transition-colors p-1 rounded-full hover:bg-white/5 focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:outline-none"
-                        aria-label="More options"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                        }}
-                        onKeyDown={(e) => {
-                            e.stopPropagation();
-                        }}
-                    >
-                        <MoreHorizontalIcon size={18} />
-                    </button>
                 </div>
 
                 {/* Stats Grid */}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Save, Trash2, Calendar, BarChart2, Disc } from 'lucide-react';
+import { X, Save, Calendar, BarChart2, Disc } from 'lucide-react';
 import { Campaign } from '../types';
 import { PublicistService } from '@/services/publicist/PublicistService';
 import { useToast } from '@/core/context/ToastContext';
@@ -148,11 +148,7 @@ export const CampaignDetailsModal: React.FC<CampaignDetailsModalProps> = ({ isOp
                             </div>
 
                             {/* Actions */}
-                            <div className="flex justify-between items-center pt-4 border-t border-white/10">
-                                <button className="text-red-500 hover:text-red-400 text-sm font-bold flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-red-500/10 transition-colors">
-                                    <Trash2 size={16} />
-                                    Delete Campaign
-                                </button>
+                            <div className="flex justify-end items-center pt-4 border-t border-white/10">
                                 <div className="flex gap-3">
                                     <button onClick={onClose} className="px-5 py-2.5 rounded-xl font-bold text-slate-400 hover:text-white hover:bg-white/5 transition-all">
                                         Cancel
