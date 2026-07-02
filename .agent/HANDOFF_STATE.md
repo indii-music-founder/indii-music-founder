@@ -1,9 +1,12 @@
 # Handoff State
-**Updated:** 2026-07-01 22:23 EDT
+**Updated:** 2026-07-01 22:34 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+e9be3ea41 chore: mark ISSUE-636,638,647 COMPLETED
+6927817cb fix: wire FileTree chevron toggle + strip AuditLog export + remove shot controls (ISSUE-636,638,647)
+f570ecd38 chore: session checkpoint [22:23]
 a245e9bc7 chore: session checkpoint [22:21]
 e6602cac3 chore: session checkpoint [22:20]
 ade326930 chore: session checkpoint [22:19]
@@ -11,14 +14,10 @@ ade326930 chore: session checkpoint [22:19]
 3bf2ad966 fix: remove mock auth bypass from admin dashboard (ISSUE-649,651)
 d04cc6071 fix: remove dead affordances in landing and admin (ISSUE-650,646,648)
 100753c43 fix: remove dead controls in creative modules (ISSUE-637,640,641)
-58fa61d08 chore: session checkpoint [21:27]
-bfcbd19bd chore: session checkpoint [21:26]
-f70753f6d chore: session checkpoint [21:26]
 ```
 
 ## Working State
 ```
- M .agent/test_ledger/OPEN_ISSUES.md
  M docs/GEMINI_ENTERPRISE_AGENT_PLATFORM.md
  M docs/flowcharts/12-knowledge-base-rag.md
  M docs/flowcharts/big-brain-memory-engine.md
@@ -33,6 +32,7 @@ f70753f6d chore: session checkpoint [21:26]
  M packages/main/src/utils/ipc-security.ts
  M packages/renderer/src/core/App.tsx
  M packages/renderer/src/main.tsx
+ M packages/renderer/src/modules/creative/video/OmniWorkflow.tsx
  M packages/renderer/src/modules/devops/DevopsDashboard.tsx
  M packages/renderer/src/modules/founders/FoundersCheckout.test.tsx
  M packages/renderer/src/modules/founders/FoundersCheckout.tsx
@@ -44,6 +44,7 @@ f70753f6d chore: session checkpoint [21:26]
  M packages/renderer/src/modules/screenwriter/ScreenwriterDashboard.tsx
  M packages/renderer/src/services/agent/observability/MetricsService.ts
  M packages/renderer/src/services/video/VideoGenerationService.ts
+ M packages/renderer/src/types/handoff.ts
 ?? packages/firebase/src/functions/agent/manageSemanticMemory.test.ts
 ?? packages/renderer/python/
 ?? packages/renderer/src/modules/devops/DevopsDashboard.test.tsx
