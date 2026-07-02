@@ -213,8 +213,8 @@ const CampaignDashboard: React.FC = () => {
                         ) : (
                             <div className="h-full flex flex-col items-center justify-center text-gray-500 gap-3">
                                 <Sparkles size={24} className="text-gray-600" />
-                                <p className="text-sm font-medium text-gray-400">This feature is launching soon</p>
-                                <p className="text-xs text-gray-600 max-w-xs text-center">We're putting the finishing touches on this experience. In the meantime, explore your active campaigns.</p>
+                                <p className="text-sm font-medium text-gray-400">This section is unavailable</p>
+                                <p className="text-xs text-gray-600 max-w-xs text-center">The sidebar still exposes a few future modules that are not wired into this build yet.</p>
                             </div>
                         )}
                     </div>
@@ -314,7 +314,7 @@ function AssetLibraryPanel() {
                     ))}
                     {totalAssets > 4 && (
                         <div className="col-span-2 text-center pt-2">
-                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest cursor-pointer hover:text-white">+ {totalAssets - 4} more assets</p>
+                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">+ {totalAssets - 4} more assets</p>
                         </div>
                     )}
                 </div>
