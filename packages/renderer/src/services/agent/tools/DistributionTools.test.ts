@@ -5,6 +5,8 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+const callableNames = vi.hoisted(() => [] as string[]);
+
 // Mock Firebase before importing tools
 vi.mock('@/services/firebase', () => ({
     db: {},
@@ -25,7 +27,7 @@ vi.mock('firebase/firestore', () => ({
     setDoc: vi.fn(),
     getDoc: vi.fn(),
     collection: vi.fn(),
-    addDoc: vi.fn(),
+    addDoc: vi.fn(async () => ({ id: 'mock-doc-id' })),
     serverTimestamp: vi.fn(() => new Date().toISOString())
 }));
 
@@ -44,6 +46,21 @@ vi.mock('@/services/identity/IdentifierService', () => ({
         validateISRC: vi.fn().mockReturnValue(true),
         validateUPC: vi.fn().mockReturnValue(true)
     }
+}));
+
+vi.mock('firebase/functions', () => ({
+    httpsCallable: vi.fn((_functions: unknown, name: string) => {
+        callableNames.push(name);
+        return vi.fn(async () => {
+            if (name === 'createSftpIngestionRecord') {
+                return { data: { ingestionId: 'ing-123' } };
+            }
+            if (name === 'requestDistributionTakedown') {
+                return { data: { takedownId: 'td-123' } };
+            }
+            return { data: {} };
+        });
+    }),
 }));
 
 // Mock electronAPI
@@ -77,6 +94,7 @@ function disableElectron() {
 describe('DistributionTools', () => {
     beforeEach(async () => {
         vi.clearAllMocks();
+        callableNames.length = 0;
         disableElectron();
 
         // Reset validation mocks to pass by default
@@ -348,6 +366,58 @@ describe('DistributionTools', () => {
             const parsed = result;
             expect(parsed.success).toBe(false);
             expect(parsed.error).toContain('Invalid UPC format');
+        });
+    });
+
+    describe('manual fallback paths', () => {
+        it('labels premium video distribution as manual-only when no DSP worker is deployed', async () => {
+            const { DistributionTools } = await import('./DistributionTools');
+
+            const result = await DistributionTools.distribute_premium_video({
+                videoTitle: 'Live Visual',
+                artistName: 'Test Artist',
+                videoUrl: 'https://example.com/video.mp4',
+                targetDSP: 'VEVO',
+            });
+
+            expect(result.success).toBe(true);
+            expect(result.data.deliveryStatus).toBe('QUEUED_FOR_MANUAL_REVIEW');
+            expect(result.data.note).toContain('manual processing');
+            expect(callableNames).not.toContain('distributeVideoToDSP');
+        });
+
+        it('labels SFTP ingestion as manual-only when the server-side worker is unavailable', async () => {
+            const { DistributionTools } = await import('./DistributionTools');
+
+            const result = await DistributionTools.sftp_direct_ingestion({
+                targetDSP: 'VEVO',
+                releaseFolder: '/releases/live-visual',
+            });
+
+            expect(result.success).toBe(true);
+            expect(result.data.sftpStatus).toBe('PENDING_MANUAL');
+            expect(result.data.note).toContain('Manual processing is required');
+            expect(callableNames).not.toContain('sftpDeliverRelease');
+        });
+
+        it('records takedowns for manual follow-up without calling undeployed notification workers', async () => {
+            const { getDoc } = await import('firebase/firestore');
+            vi.mocked(getDoc).mockResolvedValue({
+                exists: () => true,
+                data: () => ({}),
+            } as never);
+            const { DistributionTools } = await import('./DistributionTools');
+
+            const result = await DistributionTools.issue_automated_takedown({
+                releaseId: 'release-123',
+                reason: 'voluntary withdrawal',
+            });
+
+            expect(result.success).toBe(true);
+            expect(result.data.status).toBe('RECORDED_PENDING_NOTIFICATION');
+            expect(result.data.note).toContain('manual follow-up');
+            expect(callableNames).toContain('requestDistributionTakedown');
+            expect(callableNames).not.toContain('processReleaseTakedown');
         });
     });
 });

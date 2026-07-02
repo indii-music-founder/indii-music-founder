@@ -293,6 +293,7 @@ export interface DistributorAdapter {
   readonly id: DistributorId;
   readonly name: string;
   readonly requirements: DistributorRequirements;
+  readonly supportsAutomatedTakedown?: boolean;
 
   // Connection
   isConnected(): Promise<boolean>;

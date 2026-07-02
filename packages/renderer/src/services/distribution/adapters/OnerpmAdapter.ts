@@ -230,7 +230,15 @@ export class OnerpmAdapter extends BaseDistributorAdapter {
     }
 
     async takedownRelease(releaseId: string): Promise<ReleaseResult> {
-        return { success: true, status: 'takedown_requested', distributorReleaseId: releaseId };
+        return {
+            success: false,
+            status: 'ready_for_manual_submission',
+            distributorReleaseId: releaseId,
+            errors: [{
+                code: 'TAKEDOWN_MANUAL_REQUIRED',
+                message: 'OneRPM takedown automation is not wired. Submit the takedown manually through OneRPM before marking it requested.',
+            }],
+        };
     }
 
     async getEarnings(releaseId: string, period: DateRange): Promise<DistributorEarnings> {

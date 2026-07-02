@@ -181,11 +181,14 @@ export class SymphonicAdapter extends BaseDistributorAdapter {
         if (!isConnected) {
             throw new Error('Not connected to Symphonic');
         }
-        logger.info(`[Symphonic] Issuing Takedown for ${releaseId}`);
         return {
-            success: true,
-            status: 'takedown_requested',
+            success: false,
+            status: 'ready_for_manual_submission',
             distributorReleaseId: releaseId,
+            errors: [{
+                code: 'TAKEDOWN_MANUAL_REQUIRED',
+                message: 'Symphonic takedown automation is not wired. Submit the takedown manually through the Symphonic dashboard or a confirmed SFTP takedown package.',
+            }],
         };
     }
 

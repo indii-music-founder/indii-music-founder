@@ -230,8 +230,12 @@ export class TuneCoreAdapter extends BaseDistributorAdapter {
 
     async takedownRelease(_releaseId: string): Promise<ReleaseResult> {
         return {
-            success: true,
-            status: 'takedown_requested'
+            success: false,
+            status: 'ready_for_manual_submission',
+            errors: [{
+                code: 'TAKEDOWN_MANUAL_REQUIRED',
+                message: 'TuneCore takedown automation is not wired. Submit the takedown manually through TuneCore before marking it requested.',
+            }],
         };
     }
 
