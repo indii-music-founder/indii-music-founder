@@ -127,7 +127,9 @@ if (typeof window !== 'undefined') {
             sftp: {
                 connectDistributor: vi.fn().mockResolvedValue({ success: true }),
                 uploadRelease: vi.fn().mockResolvedValue({ success: true, url: 'sftp://mock' }),
-                disconnect: vi.fn().mockResolvedValue({ success: true })
+                uploadDirectory: vi.fn().mockResolvedValue({ success: true }),
+                disconnect: vi.fn().mockResolvedValue({ success: true }),
+                isConnected: vi.fn().mockResolvedValue(false),
             }
         }
     });
