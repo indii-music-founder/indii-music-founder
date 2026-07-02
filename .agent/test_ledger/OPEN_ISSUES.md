@@ -8411,7 +8411,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-CI-28416944707: CI Pipeline Failure (Deploy to Firebase Hosting)
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02)
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
@@ -9689,7 +9689,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-665: SMS and email marketing panels fabricate delivered confirmations
 
-- **Status:** ⏳ OPEN
+- **Status:** 🟡 IN PROGRESS (Fable)
 - **Severity:** 🔴 HIGH
 - **Module:** Marketing / SMS and email campaign UI
 - **GitHub:** https://github.com/indii-music-founder/indii-music-founder/issues/221
@@ -9702,7 +9702,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-666: Multi-platform poster reports all selected platforms posted after dispatching only one
 
-- **Status:** ⏳ OPEN
+- **Status:** 🟡 IN PROGRESS (Fable)
 - **Severity:** 🔴 HIGH
 - **Module:** Marketing / social auto-poster
 - **GitHub:** https://github.com/indii-music-founder/indii-music-founder/issues/222
@@ -9739,7 +9739,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-669: Sync brief matcher marks tracks submitted after only internal clearance upload
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02)
 - **Severity:** 🔴 HIGH
 - **Module:** Licensing / sync brief submissions
 - **GitHub:** https://github.com/indii-music-founder/indii-music-founder/issues/224
@@ -9749,6 +9749,9 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** Keep clearance upload available, but label it `Clearance uploaded for review` and do not mark the track submitted to a brief until a real pitch/reviewer workflow succeeds.
 - **Fix Direction:** Wire the submit flow to the existing pitching/supervisor portal service or change copy/state to internal clearance-only. Persist submission state from backend records and add tests for clearance-only, pitch-created, and unavailable states.
 - **DO NOT:** Tell artists a licensor will review or that a track was submitted when the app only saved internal clearance metadata.
+- **Fix:** The matcher now treats this as an internal clearance upload only: the upload record writes `status: 'uploaded'`, the success modal says `Clearance uploaded`, the row badge says `Uploaded`, and no `Submitted`/licensor-review claim remains. The button label/ARIA also says `Upload clearance` instead of `Submit`.
+- **Evidence:** `packages/renderer/src/modules/licensing/components/SyncBriefMatcher.tsx:67-240` contains the upload-only modal and copy; `packages/renderer/src/modules/licensing/components/SyncBriefMatcher.tsx:249-360` contains the row badge/state update; `packages/renderer/src/modules/licensing/components/SyncBriefMatcher.test.tsx:42-70` verifies the UI says clearance uploaded, does not say `Submission received`, and ends in `Uploaded` rather than `Submitted`.
+- **Files:** `packages/renderer/src/modules/licensing/components/SyncBriefMatcher.tsx`, `packages/renderer/src/modules/licensing/components/SyncBriefMatcher.test.tsx`
 
 ### ISSUE-670: Sync brief service generates and caches fabricated licensing opportunities
 
