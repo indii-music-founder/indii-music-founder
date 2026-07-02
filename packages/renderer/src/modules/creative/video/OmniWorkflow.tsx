@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
+import {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    Video, Film, Music, Shield, Sliders, Play, 
+    Video, Film, Music, Shield, Sliders, Play,
     Sparkles, RefreshCw, Upload, Languages, Eye,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     Sparkle, Info, Download, CheckCircle, Volume2, Plus, Trash2, X
@@ -231,7 +231,8 @@ export default function OmniWorkflow() {
         addToHistory,
         currentProjectId,
         pendingStageHandoff,
-        consumeStageHandoff
+        consumeStageHandoff,
+        sendToStage
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } = useStore(useShallow((state: any) => ({
         studioControls: state.studioControls,
@@ -239,7 +240,8 @@ export default function OmniWorkflow() {
         addToHistory: state.addToHistory,
         currentProjectId: state.currentProjectId,
         pendingStageHandoff: state.pendingStageHandoff,
-        consumeStageHandoff: state.consumeStageHandoff
+        consumeStageHandoff: state.consumeStageHandoff,
+        sendToStage: state.sendToStage
     })));
 
     // Local Interactive States
@@ -512,13 +514,39 @@ export default function OmniWorkflow() {
                                 </div>
                             )}
 
-                            <button 
-                                onClick={handleDownload}
-                                className="absolute bottom-6 right-6 bg-green-600 hover:bg-green-500 text-white p-3 rounded-full shadow-2xl hover:scale-105 transition-all flex items-center justify-center border border-green-400/30 z-20"
-                                title="Download Synthesized Master"
-                            >
-                                <Download size={16} />
-                            </button>
+                            <div className="absolute bottom-6 right-6 flex gap-2 z-20">
+                                <button
+                                    onClick={() => {
+                                        if (outputVideoUrl) {
+                                            sendToStage('veo', {
+                                                item: {
+                                                    id: crypto.randomUUID(),
+                                                    url: outputVideoUrl,
+                                                    type: 'video',
+                                                    prompt: remixPrompt,
+                                                    timestamp: Date.now(),
+                                                    projectId: currentProjectId
+                                                },
+                                                role: 'source-video',
+                                                originStage: 'omni',
+                                                timestamp: Date.now()
+                                            });
+                                            toast.success('Sent to Veo for further remixing!');
+                                        }
+                                    }}
+                                    className="bg-cyan-600 hover:bg-cyan-500 text-white p-3 rounded-full shadow-2xl hover:scale-105 transition-all flex items-center justify-center border border-cyan-400/30"
+                                    title="Send to Veo for further remixing"
+                                >
+                                    <Video size={16} />
+                                </button>
+                                <button
+                                    onClick={handleDownload}
+                                    className="bg-green-600 hover:bg-green-500 text-white p-3 rounded-full shadow-2xl hover:scale-105 transition-all flex items-center justify-center border border-green-400/30"
+                                    title="Download Synthesized Master"
+                                >
+                                    <Download size={16} />
+                                </button>
+                            </div>
                         </div>
                     ) : studioControls.omniReferenceVideo ? (
                         <div className="absolute inset-0 flex flex-col justify-between p-4 z-10">
