@@ -1,19 +1,19 @@
 # Handoff State
-**Updated:** 2026-07-01 20:17 EDT
+**Updated:** 2026-07-01 20:31 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+f537467b9 chore: update ISSUE-600 progress (Gallery + Showroom done, outputs pending)
+341fc80bc feat(creative): ISSUE-600 — Showroom mockups expose send to Veo action
+ebeb11ac5 chore: mark ISSUE-598/599 COMPLETED, update ISSUE-600 progress
+eac17e033 feat(creative): ISSUE-600 — Gallery items expose cross-stage send actions
+4a8704504 feat(creative): ISSUE-599 — Image stage consumes cross-stage handoff
+2d7fd64d3 feat(creative): ISSUE-598 — Veo stage consumes cross-stage handoff
+1c95c9202 chore: session checkpoint [20:17]
 ad45262dc chore: session checkpoint [20:10]
 bf86c6162 chore: session checkpoint [20:09]
 1fe6f89d2 chore: mark ISSUE-597 COMPLETED; fix stale ISSUE-579 dep refs → ISSUE-596
-e7bdf146c chore: session checkpoint [19:25]
-2c63cbc3d feat(creative): ISSUE-597 — Omni stage consumes cross-stage handoff
-b57e6ece5 chore: session checkpoint [19:21]
-d0b6019c1 chore: mark ISSUE-596 COMPLETED (2026-07-01 19:22)
-e4883ac8c feat(creative): Part B foundation — cross-stage handoff infrastructure (ISSUE-596)
-9d266b5e4 chore: session checkpoint [18:36]
-8fdafa333 chore: session checkpoint [18:34]
 ```
 
 ## Working State
