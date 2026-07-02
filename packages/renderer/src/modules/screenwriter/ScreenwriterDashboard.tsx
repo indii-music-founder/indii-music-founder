@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ThreePanelDashboard } from '@/components/layout/ThreePanelDashboard';
 import {
-    FileText, Video, Sparkles, Plus, Trash2, Download, Send, Play, Film,
-    Sliders, Compass, Eye, Edit3, RotateCw, Check, Clock, Volume2
+    FileText, Video, Sparkles, Plus, Trash2, Download, Send, Film, Compass, RotateCw
 } from 'lucide-react';
+import { useToast } from '@/core/context/ToastContext';
+import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 
 interface StoryboardScene {
     id: string;
@@ -18,6 +20,15 @@ interface StoryboardScene {
 
 export default function ScreenwriterDashboard() {
     const [activeTab, setActiveTab] = useState<'scriptwriter' | 'storyboard' | 'veoprompts'>('scriptwriter');
+    const toast = useToast();
+    const { setModule, setGenerationMode, setViewMode, setCreativePrompt } = useStore(useShallow(state => ({
+        setModule: state.setModule,
+        setGenerationMode: state.setGenerationMode,
+        setViewMode: state.setViewMode,
+        setCreativePrompt: state.setCreativePrompt
+    })));
+    const [isExporting, setIsExporting] = useState(false);
+    const [isHandoffLoading, setIsHandoffLoading] = useState(false);
     
     // Default Script Mood & Song Outline
     const [songConcept, setSongConcept] = useState('An independent artist walking through a neon-lit rain-slicked city alleyway, with reflections of holographic advertisements detailing their journey.');
@@ -56,6 +67,76 @@ export default function ScreenwriterDashboard() {
     ]);
 
     const [selectedSceneId, setSelectedSceneId] = useState<string>('1');
+
+    const buildStoryboardArtifact = () => {
+        const sceneSections = scenes.map(scene => [
+            `### Scene ${scene.sceneNumber}`,
+            `- Heading: ${scene.heading}`,
+            `- Duration: ${scene.duration}s`,
+            `- Camera: ${scene.cameraAngle}`,
+            `- Description: ${scene.description}`,
+            `- Veo Prompt: ${scene.veoPrompt}`,
+        ].join('\n')).join('\n\n');
+
+        return [
+            '# Screenwriter Draft',
+            '',
+            `## Concept`,
+            songConcept,
+            '',
+            `## Tone`,
+            selectedTone,
+            '',
+            `## Scene List`,
+            sceneSections,
+        ].join('\n');
+    };
+
+    const handleExportScript = async () => {
+        if (!window.electronAPI?.agent?.createArtifact) {
+            toast.error('Script export is only available in the desktop app.');
+            return;
+        }
+
+        setIsExporting(true);
+        try {
+            const result = await window.electronAPI.agent.createArtifact(
+                `screenwriter-script-${Date.now()}.md`,
+                buildStoryboardArtifact(),
+                { artifactType: 'walkthrough' }
+            );
+
+            if (result.success) {
+                toast.success('Script exported to an artifact.');
+            } else {
+                toast.error(result.error || 'Failed to export script.');
+            }
+        } catch (error: unknown) {
+            toast.error(error instanceof Error ? error.message : 'Failed to export script.');
+        } finally {
+            setIsExporting(false);
+        }
+    };
+
+    const handleOpenCreativeStudio = async () => {
+        setIsHandoffLoading(true);
+        try {
+            const handoffPrompt = [
+                `Song concept: ${songConcept}`,
+                `Tone: ${selectedTone}`,
+                'Storyboard beats:',
+                ...scenes.map(scene => `${scene.sceneNumber}. ${scene.heading} - ${scene.veoPrompt}`)
+            ].join('\n');
+
+            setCreativePrompt(handoffPrompt);
+            setGenerationMode('video');
+            setViewMode('video_production');
+            await setModule('creative');
+            toast.success('Storyboard loaded into Creative Studio.');
+        } finally {
+            setIsHandoffLoading(false);
+        }
+    };
 
     // Simulate AI generation of next scene
     const generateNextScene = () => {
@@ -194,23 +275,21 @@ export default function ScreenwriterDashboard() {
 
                     {/* Export Actions */}
                     <div className="p-4 rounded-xl border border-white/5 bg-white/2 backdrop-blur-md">
-                        <span className="text-[10px] font-black uppercase tracking-wider text-green-400 font-mono block mb-3">Distribution</span>
+                        <span className="text-[10px] font-black uppercase tracking-wider text-green-400 font-mono block mb-3">Creative Handoff</span>
                         <div className="space-y-2">
                             <button 
-                                onClick={() => {
-                                    alert('Script exported successfully to markdown file.');
-                                }}
-                                className="w-full flex items-center justify-between px-3 py-2 text-xs font-bold bg-white text-black hover:bg-gray-200 rounded-lg transition-all active:scale-[0.98]"
+                                onClick={handleExportScript}
+                                disabled={isExporting}
+                                className="w-full flex items-center justify-between px-3 py-2 text-xs font-bold bg-white text-black hover:bg-gray-200 rounded-lg transition-all active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
                             >
-                                <span className="flex items-center gap-1.5"><Download size={12} /> Export Script (TXT)</span>
+                                <span className="flex items-center gap-1.5"><Download size={12} /> {isExporting ? 'Exporting...' : 'Export Script'}</span>
                             </button>
                             <button 
-                                onClick={() => {
-                                    alert('Compiled storyboard assets sent to Director Agent timeline.');
-                                }}
-                                className="w-full flex items-center justify-between px-3 py-2 text-xs font-bold border border-white/10 text-white hover:bg-white/5 rounded-lg transition-colors"
+                                onClick={handleOpenCreativeStudio}
+                                disabled={isHandoffLoading}
+                                className="w-full flex items-center justify-between px-3 py-2 text-xs font-bold border border-white/10 text-white hover:bg-white/5 rounded-lg transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                             >
-                                <span className="flex items-center gap-1.5"><Send size={12} /> Send to Video Swarm</span>
+                                <span className="flex items-center gap-1.5"><Send size={12} /> {isHandoffLoading ? 'Loading...' : 'Open Creative Studio'}</span>
                             </button>
                         </div>
                     </div>

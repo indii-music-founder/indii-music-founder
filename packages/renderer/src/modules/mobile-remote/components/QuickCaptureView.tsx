@@ -3,10 +3,12 @@ import { Mic, Image as ImageIcon, Video, Send, Loader2, MapPin, FileText, Keyboa
 import { motion, AnimatePresence } from 'framer-motion';
 import { remoteRelayService } from '@/services/agent/RemoteRelayService';
 import { StorageService } from '@/services/StorageService';
+import { useToast } from '@/core/context/ToastContext';
 import { cn } from '@/lib/utils';
 import { triggerHaptic } from '../MobileRemote';
 
 export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
+    const toast = useToast();
     const [isRecording, setIsRecording] = useState(false);
     const [isDispatching, setIsDispatching] = useState(false);
     const [capturedAudioBlob, setCapturedAudioBlob] = useState<Blob | null>(null);
@@ -14,6 +16,7 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
     const [capturedVideoBlob, setCapturedVideoBlob] = useState<File | null>(null);
     const [momentText, setMomentText] = useState('');
     const [reviewUrl, setReviewUrl] = useState<string | null>(null);
+    const [geoError, setGeoError] = useState<string | null>(null);
     
     const photoInputRef = useRef<HTMLInputElement>(null);
     const docInputRef = useRef<HTMLInputElement>(null);
@@ -31,6 +34,7 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
                 : capturedVideoBlob
                     ? 'video'
                     : null;
+    const hasGeolocation = typeof navigator !== 'undefined' && !!navigator.geolocation;
 
     useEffect(() => {
         const source = capturedAudioBlob ?? capturedImageBlob?.file ?? capturedVideoBlob;
@@ -106,9 +110,12 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
     const handlePinDrop = () => {
         if (!isPaired || isDispatching) return;
         triggerHaptic(50);
+        setGeoError(null);
         
-        if (!navigator.geolocation) {
-            alert("Geolocation is not supported by your browser");
+        if (!hasGeolocation) {
+            const message = 'Location capture is unavailable in this browser.';
+            setGeoError(message);
+            toast.error(message);
             return;
         }
 
@@ -133,6 +140,8 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
             },
             (error) => {
                 console.error("Error getting location", error);
+                setGeoError('Location capture failed. Please try again.');
+                toast.error('Location capture failed. Please try again.');
                 triggerHaptic([100, 200, 100]);
                 setIsDispatching(false);
             }
@@ -291,13 +300,23 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
 
                     <button
                         onClick={handlePinDrop}
-                        disabled={!isPaired || isDispatching || isRecording}
+                        disabled={!isPaired || isDispatching || isRecording || !hasGeolocation}
                         className="flex flex-col items-center gap-2 p-3 rounded-2xl border border-white/10 bg-[#1c1c1e] text-[#8e8e93] hover:text-[#F0F0F0] hover:bg-white/10 transition-colors disabled:opacity-50"
                     >
                         <MapPin className="w-6 h-6" />
-                        <span className="text-[9px] font-bold uppercase tracking-wider">Pin</span>
+                        <span className="text-[9px] font-bold uppercase tracking-wider">{hasGeolocation ? 'Pin' : 'Pin N/A'}</span>
                     </button>
                 </div>
+                {!hasGeolocation && (
+                    <p className="w-full max-w-sm text-center text-[11px] text-[#8e8e93] -mt-2">
+                        Location capture is unavailable in this browser.
+                    </p>
+                )}
+                {geoError && (
+                    <p className="w-full max-w-sm text-center text-[11px] text-[#ff8f8f] -mt-2">
+                        {geoError}
+                    </p>
+                )}
             </div>
 
             {/* Silent Text Command */}

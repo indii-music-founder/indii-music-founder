@@ -202,6 +202,7 @@ const GenerateVideoSchema = BaseMediaRequest.extend({
   enhancePrompt: z.boolean().optional(),
   costEstimate: z.number().optional(),
   costReservationId: z.string().optional(),
+  parentId: z.string().optional(),
 });
 
 const GenerateOmniRemixSchema = z.object({
@@ -212,6 +213,7 @@ const GenerateOmniRemixSchema = z.object({
   pipelineMode: z.enum(['pure-omni', 'hybrid-veo']).default('pure-omni'),
   aspectRatio: z.enum(['16:9', '9:16']).default('16:9'),
   durationSeconds: z.number().min(4).max(12).default(8),
+  parentId: z.string().optional(),
   posePreservation: z.number().min(0).max(1).optional(),
   beatPulse: z.number().min(0).max(1).optional(),
   characterXRay: z.boolean().optional(),
@@ -335,12 +337,10 @@ function resolveVideoModel(model: string | undefined): VideoModelId {
   return VIDEO_MODEL_IDS.fast;
 }
 
+const OMNI_FLASH_DEFAULT_MODEL = 'gemini-omni-flash-preview'; // per NotebookLM Omni Flash API source
+
 function resolveOmniFlashModel(): string {
-  if (!OMNI_FLASH_MODEL_ID) {
-    console.warn('[creativeGateway] GEMINI_OMNI_FLASH_MODEL is not set. Falling back to veo-3.1-fast-generate-preview.');
-    return 'veo-3.1-fast-generate-preview';
-  }
-  return OMNI_FLASH_MODEL_ID;
+  return process.env.GEMINI_OMNI_FLASH_MODEL || OMNI_FLASH_DEFAULT_MODEL;
 }
 
 function sleep(ms: number): Promise<void> {
@@ -898,6 +898,7 @@ export type VideoGenerationJobRecord = VideoJobDocument & {
   personGeneration?: z.infer<typeof GenerateVideoSchema>['personGeneration'];
   seed?: z.infer<typeof GenerateVideoSchema>['seed'];
   enhancePrompt?: boolean;
+  parentId?: string;
 };
 
 export async function executeVideoJob(jobId: string, job: VideoGenerationJobRecord): Promise<{ jobId: string; resultUri: string }> {
@@ -1245,6 +1246,7 @@ export const generateVideoV3 = onCall({ timeoutSeconds: 540, secrets: [geminiApi
     costEstimate,
     costReservationId,
     directorSettings: requestedDirectorSettings,
+    parentId,
   } = parsed.data;
   const userId = request.auth.uid;
   const jobId = getDb().collection('creative_jobs').doc().id;
@@ -1355,6 +1357,7 @@ export const generateVideoV3 = onCall({ timeoutSeconds: 540, secrets: [geminiApi
       maskTrackUri,
       frameRange,
     },
+    parentId,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
@@ -1397,7 +1400,114 @@ export const cancelVideoJob = onCall({ timeoutSeconds: 30, enforceAppCheck: ENFO
 });
 
 /**
- * generateOmniRemixV3 - Contract for Gemini Omni Flash video-to-video remixing.
+ * loadVideoInput - Download a gs:// video and return as an Interactions API input part.
+ * [CONFIRM notebook] Videos >4MB: inline base64 vs URI handling.
+ */
+async function loadVideoInput(gsUri: string): Promise<{ type: 'video'; mime_type: string; data: string }> {
+  const [bucket, ...pathParts] = gsUri.replace('gs://', '').split('/');
+  const path = pathParts.join('/');
+  const file = getStorage().bucket(bucket).file(path);
+  const [buffer] = await file.download();
+  return {
+    type: 'video',
+    mime_type: 'video/mp4',
+    data: buffer.toString('base64'),
+  };
+}
+
+/**
+ * loadAudioInput - Download a gs:// audio file and return as an Interactions API input part.
+ * [CONFIRM notebook] Audio/music reference for beat-sync/dubbing: input part type + field shape.
+ */
+async function loadAudioInput(gsUri: string): Promise<{ type: 'audio'; mime_type: string; data: string }> {
+  const [bucket, ...pathParts] = gsUri.replace('gs://', '').split('/');
+  const path = pathParts.join('/');
+  const file = getStorage().bucket(bucket).file(path);
+  const [buffer] = await file.download();
+  return {
+    type: 'audio',
+    mime_type: 'audio/mpeg',
+    data: buffer.toString('base64'),
+  };
+}
+
+/**
+ * pollInteraction - Poll an Omni Flash Interactions API call until ACTIVE.
+ * [CONFIRM notebook] `GET /v1beta/interactions/{id}` vs SDK `interactions.get()`; output ready sync vs poll.
+ */
+async function pollInteraction(
+  ai: GoogleGenAI,
+  interaction: any,
+  jobId: string,
+): Promise<any> {
+  let current = interaction;
+  let pollCount = 0;
+
+  while (pollCount < VIDEO_MAX_POLLS) {
+    const status = current.status || current.state || '';
+    if (status.toUpperCase() === 'ACTIVE' || status === 'COMPLETED') {
+      return current;
+    }
+
+    if (status.toUpperCase() === 'FAILED' || status === 'CANCELLED') {
+      throw new Error(`Interaction failed with status: ${status}`);
+    }
+
+    await sleep(VIDEO_POLL_INTERVAL_MS);
+    pollCount++;
+
+    const interactionId = current.id || current.name?.split('/').pop();
+    if (!interactionId) {
+      throw new Error('No interaction ID found for polling');
+    }
+
+    try {
+      current = await (ai as any).interactions.get({ id: interactionId });
+      const progress = Math.round((pollCount / VIDEO_MAX_POLLS) * 100);
+      await safeDbUpdate(jobId, { progress });
+    } catch (error) {
+      console.error('[pollInteraction] Poll request failed:', error);
+      throw new Error(`Failed to poll interaction: ${(error as Error).message}`);
+    }
+  }
+
+  throw new HttpsError('deadline-exceeded', `Omni video generation timed out after ${pollCount * VIDEO_POLL_INTERVAL_MS / 1000}s`);
+}
+
+/**
+ * fetchInteractionVideo - Extract the output video from an Omni Flash Interactions response.
+ * [CONFIRM notebook] output_video shape (uri vs data); handling both SDK sync + URI-poll paths.
+ */
+async function fetchInteractionVideo(
+  ai: GoogleGenAI,
+  interaction: any,
+): Promise<{ buffer: Buffer; mimeType: string }> {
+  const output = interaction.output_video || interaction.outputVideo;
+
+  if (output?.data) {
+    return {
+      buffer: Buffer.from(output.data, 'base64'),
+      mimeType: output.mime_type || output.mimeType || 'video/mp4',
+    };
+  }
+
+  if (output?.uri) {
+    const response = await fetch(output.uri);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch video from URI: ${response.statusText}`);
+    }
+    const buffer = await response.arrayBuffer();
+    return {
+      buffer: Buffer.from(buffer),
+      mimeType: output.mime_type || output.mimeType || 'video/mp4',
+    };
+  }
+
+  throw new MediaGenerationError('video', 'NO_VIDEO', `No output_video found in interaction response`);
+}
+
+/**
+ * generateOmniRemixV3 - Gemini Omni Flash video-to-video remixing via Interactions API.
  *
  * Google has announced Gemini Omni Flash for video creation/editing in Gemini app,
  * Flow, and Shorts, with API access rolling out later. This callable is wired so
@@ -1415,10 +1525,6 @@ export const generateOmniRemixV3 = onCall({ timeoutSeconds: 540, secrets: [gemin
   const userId = request.auth.uid;
   const jobId = getDb().collection('creative_jobs').doc().id;
 
-  if (!process.env.GEMINI_OMNI_FLASH_MODEL) {
-    throw new HttpsError('failed-precondition', 'Omni remix failed: Gemini Omni Flash is not configured.');
-  }
-
   const modelId = resolveOmniFlashModel();
 
   await safeDbSet(jobId, {
@@ -1429,6 +1535,7 @@ export const generateOmniRemixV3 = onCall({ timeoutSeconds: 540, secrets: [gemin
     prompt: data.prompt,
     model: modelId,
     progress: 0,
+    parentId: data.parentId,
     metadata: {
       pipelineMode: data.pipelineMode,
       hasAudioReference: !!data.audioUri,
@@ -1440,31 +1547,46 @@ export const generateOmniRemixV3 = onCall({ timeoutSeconds: 540, secrets: [gemin
 
   try {
     const ai = getAiClient('video');
-    const referenceImages = toReferenceImages(data.referenceUris);
-    const config: Record<string, unknown> = {
-      numberOfVideos: 1,
-      aspectRatio: data.aspectRatio,
-      durationSeconds: normalizeVideoDuration(data.durationSeconds > 8 ? 8 : data.durationSeconds, '1080p', true),
-      resolution: '1080p',
-      enhancePrompt: true,
-      ...(referenceImages ? { referenceImages } : {}),
-    };
 
-    let operation = await ai.models.generateVideos({
+    if (!(ai as any).interactions) {
+      throw new HttpsError('failed-precondition',
+        'Omni Flash requires a Gemini API key (Interactions API unavailable in Vertex mode).');
+    }
+
+    const sourceVideo = await loadVideoInput(data.referenceVideoUri);
+    const referenceImages = await loadReferenceImages(userId, { referenceUris: data.referenceUris });
+    const audio = data.audioUri ? await loadAudioInput(data.audioUri) : undefined;
+
+    const input = [
+      { type: 'text' as const, text: buildOmniPrompt(data) },
+      sourceVideo,
+      ...referenceImages.map(r => ({ type: 'image' as const, mime_type: r.mimeType as 'image/png' | 'image/jpeg' | 'image/webp' | 'image/heic' | 'image/heif' | 'image/gif' | 'image/bmp' | 'image/tiff', data: r.data })),
+      ...(audio ? [audio] : []),
+    ];
+
+    const durationSeconds = Math.min(12, Math.max(4, data.durationSeconds));
+    const interaction = await (ai as any).interactions.create({
       model: modelId,
-      video: { uri: data.referenceVideoUri, mimeType: 'video/mp4' },
-      prompt: buildOmniPrompt(data),
-      config: config as Parameters<typeof ai.models.generateVideos>[0]['config'],
+      input,
+      response_modalities: ['video'],
+      generation_config: {
+        video_config: {
+          tasks: 'edit',
+          aspect_ratio: data.aspectRatio,
+          duration_seconds: durationSeconds,
+          resolution: '1080p',
+        },
+      },
+      response_format: { delivery: 'uri' },
     });
 
-    operation = await pollVideoOperation(ai, operation, jobId);
-    const video = extractGeneratedVideo(operation);
-    const downloadedVideo = await downloadGeneratedVideo(ai, video, jobId);
+    const finished = await pollInteraction(ai, interaction, jobId);
+    const { buffer, mimeType } = await fetchInteractionVideo(ai, finished);
     const outputUri = await uploadToStorage(
       userId,
-      downloadedVideo.buffer,
-      extensionForMime(downloadedVideo.mimeType, 'mp4'),
-      downloadedVideo.mimeType,
+      buffer,
+      extensionForMime(mimeType, 'mp4'),
+      mimeType,
       {
         jobId,
         category: 'video',
@@ -1480,10 +1602,10 @@ export const generateOmniRemixV3 = onCall({ timeoutSeconds: 540, secrets: [gemin
         model: modelId,
         pipelineMode: data.pipelineMode,
         aspectRatio: data.aspectRatio,
-        durationSeconds: config.durationSeconds,
-        mimeType: downloadedVideo.mimeType,
+        durationSeconds,
+        mimeType,
         hasAudioReference: !!data.audioUri,
-        referenceCount: referenceImages?.length ?? 0,
+        referenceCount: data.referenceUris?.length ?? 0,
         synthIdRequested: data.synthIdEnabled ?? true,
       },
       completedAt: new Date().toISOString()
