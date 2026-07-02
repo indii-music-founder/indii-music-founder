@@ -3,7 +3,7 @@
  * Shows quick entry buttons for typical mobile tasks.
  */
 
-import { Mic, FileText, ShoppingBag, Receipt, PenTool, LayoutDashboard } from 'lucide-react';
+import { Mic, ShoppingBag, Receipt, PenTool, LayoutDashboard } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { triggerHaptic } from '../MobileRemote';
@@ -52,6 +52,11 @@ function ActionButton({ icon: Icon, label, description, delay = 0, onClick, disa
             <div className="flex-1 min-w-0 mt-2">
                 <p className="text-sm font-bold text-[#F0F0F0] tracking-tight">{label}</p>
                 <p className="text-[10px] text-[#8e8e93] font-medium leading-tight mt-1">{description}</p>
+                {disabled && (
+                    <span className="mt-3 inline-flex items-center rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.2em] text-[#8e8e93]">
+                        Unavailable
+                    </span>
+                )}
             </div>
         </motion.button>
     );
@@ -92,11 +97,10 @@ export default function StatusDashboard({ connectionStatus, isPaired, onTabChang
                 />
                 <ActionButton
                     icon={PenTool}
-                    label="Contract Sign"
-                    description="Review pending legal tasks"
+                    label="Legal Review"
+                    description="Remote legal approvals are not wired up in mobile yet."
                     delay={0.4}
-                    disabled={!isPaired}
-                    onClick={() => onTabChange?.('home')} // placeholder
+                    disabled
                 />
             </div>
 

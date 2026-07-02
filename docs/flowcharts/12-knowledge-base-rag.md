@@ -32,7 +32,7 @@ graph TD
     subgraph BACKEND ["☁️ Backend RAG Engine"]
         PROXY["RAG Proxy Endpoint"]
         EMBED["Generate Embeddings<br/>(Vertex AI text-embedding)"]
-        VECTOR_DB["Vector Database Search<br/>(Firestore Vector Search)"]
+        VECTOR_DB["Vector Database Search<br/>(Firestore Vector Search, SDK-dependent)"]
         LLM["Contextual Synthesis<br/>(Gemini 3 Pro)"]
     end
 
@@ -65,5 +65,5 @@ graph TD
 2. **Environment Protection (ISSUE-039)**: The `GeminiRetrievalService` evaluates the current environment configuration. Previously, a stale `.env.example` led to production builds attempting to hit `http://localhost:3001` (crashing the fetch). The service now explicitly detects localhost URLs and automatically falls back to the production Cloud Function endpoint (`ragProxy/v1beta`) if the client is not actively in development mode.
 3. **Endpoint Routing**: The query payload is securely dispatched to the chosen RAG Proxy endpoint.
 4. **Vectorization**: The backend uses Vertex AI text-embedding models to convert the user's natural language query into a mathematical vector.
-5. **Similarity Search**: The query vector is compared against the pre-computed document embeddings stored in the Vector Database (Firestore Vector Search integration). The system retrieves the top *K* most semantically similar text chunks.
+5. **Similarity Search**: The query vector is compared against the pre-computed document embeddings stored in the Vector Database (Firestore Vector Search integration, when the current Firestore SDK supports it). The system retrieves the top *K* most semantically similar text chunks.
 6. **Synthesis**: The retrieved contextual chunks are bundled with the original query and sent to the Gemini 3 Pro LLM, which synthesizes a precise, cited answer. The final text block and document links are returned to the UI.

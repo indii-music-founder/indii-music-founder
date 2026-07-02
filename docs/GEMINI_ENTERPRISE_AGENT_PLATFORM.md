@@ -368,7 +368,7 @@ Layer 5: Big Brain Engine (BigBrainEngine)        → Orchestrates all layers wi
 |-------|---------|-------------|--------|
 | Captain's Log | `CaptainsLogService` | Memory Bank (episodic) | Migrate — GEAP auto-curates |
 | CORE Vault | `CoreVaultService` | **Keep local** | This is our moat — structured, authoritative |
-| Deep Hive | `DeepHiveService` | Memory Bank (long-term) | Migrate — GEAP provides vector search |
+| Deep Hive | `DeepHiveService` | Memory Bank (long-term) | Migrate — GEAP can provide vector search |
 | User Alignment | `UserMemoryService` | Memory Profiles | Hybrid — supplement with auto-extraction |
 | Big Brain | `BigBrainEngine` | Memory Bank orchestration | Keep as orchestrator, delegate storage |
 

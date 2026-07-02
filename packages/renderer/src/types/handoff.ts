@@ -42,6 +42,7 @@ export interface StageHandoffPayload {
     role: HandoffRole;
     originStage: CreativeStage;
     timestamp: number;
+    parentJobId?: string;
 }
 
 // Type validation: which asset types are valid for each role
