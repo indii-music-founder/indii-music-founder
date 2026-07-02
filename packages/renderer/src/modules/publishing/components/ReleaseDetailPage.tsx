@@ -232,7 +232,7 @@ export const ReleaseDetailPage: React.FC<ReleaseDetailPageProps> = ({
                                 Tracklist
                                 <span className="px-2 py-0.5 bg-gray-900 rounded-md text-[10px] font-bold text-gray-400">1 Track</span>
                             </h4>
-                            <div className="mt-4 p-4 bg-gray-900/30 rounded-2xl border border-gray-800/50 flex items-center justify-between group cursor-pointer hover:bg-gray-900/50 transition-all">
+                            <div className="mt-4 p-4 bg-gray-900/30 rounded-2xl border border-gray-800/50 flex items-center justify-between group transition-all">
                                 <div className="flex items-center gap-4">
                                     <span className="text-xs font-black text-gray-700 w-4 tracking-tighter">01</span>
                                     <div className="w-10 h-10 bg-gray-900 rounded-lg flex items-center justify-center text-blue-500 group-hover:scale-110 transition-transform">

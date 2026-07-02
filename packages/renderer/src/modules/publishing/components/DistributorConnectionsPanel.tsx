@@ -1,6 +1,6 @@
 import React from 'react';
 import { useDistributorConnections } from '../hooks/useDistributorConnections';
-import { Globe, Loader2, AlertCircle, ExternalLink, Plus } from 'lucide-react';
+import { Globe, Loader2, AlertCircle, Plus } from 'lucide-react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -36,17 +36,14 @@ export const DistributorConnectionsPanel: React.FC = () => {
                 ) : (
                     <div className="space-y-3">
                         {connections.map((conn) => (
-                            <div key={conn.distributorId} className="flex items-center justify-between p-3 bg-gray-900/40 hover:bg-gray-900/60 rounded-xl border border-gray-800/50 transition-colors group cursor-pointer">
+                            <div key={conn.distributorId} className="flex items-center justify-between p-3 bg-gray-900/40 rounded-xl border border-gray-800/50 transition-colors group">
                                 <div className="flex items-center gap-3">
                                     <div className={`w-2 h-2 rounded-full ${conn.isConnected ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.3)]' : 'bg-gray-600'}`} />
                                     <span className={`text-sm font-medium ${conn.isConnected ? "text-gray-300" : "text-gray-600"}`}>
                                         {conn.distributorId.charAt(0).toUpperCase() + conn.distributorId.slice(1)}
                                     </span>
                                 </div>
-                                <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">{conn.isConnected ? 'Synced' : 'Inactive'}</span>
-                                    <ExternalLink size={14} className="text-gray-700 group-hover:text-white transition-colors" />
-                                </div>
+                                <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">{conn.isConnected ? 'Synced' : 'Inactive'}</span>
                             </div>
                         ))}
 
