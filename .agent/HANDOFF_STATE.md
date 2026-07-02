@@ -1,19 +1,19 @@
 # Handoff State
-**Updated:** 2026-07-02 14:03 EDT
+**Updated:** 2026-07-02 15:37 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+2a7c895bb test(renderer): mock boardroom store in router context
+3954460b0 test(distribution): mock tunecore in verification suite
+eebcc3e30 test(renderer): add boardroom store mock
+a6a9f2f2f test(distribution): mock tunecore success path
+50469c31b docs(test-ledger): update audit findings
+dad4d3885 docs(test-ledger): update open issues
+2b442aae9 chore(renderer): save local changes
+366452d90 chore: session checkpoint [14:03]
 db5a9948d chore: session checkpoint [14:01]
 6f3dd6085 docs(ledger): record brand manager fixes in error ledger
-eb19b4cfb fix(brand): resolve color rendering issues and link brand assets to creative character library
-808290959 fix(hunter): resolve deep logic bugs in agent and sync loops
-003389b25 chore(ledger): Agent B claims ISSUE-658
-e518359c9 chore(ledger): ISSUE-655 FIXED with evidence (Agent B)
-25d28050b fix(rights): keep provider rights flows server-side; renderer sends metadata only (ISSUE-655)
-e5447abfb chore(ledger): Agent B claims ISSUE-655
-4151363fd chore: session checkpoint [09:15]
-56e5563a5 chore(ledger): ISSUE-657 FIXED with evidence (Agent B)
 ```
 
 ## Working State
