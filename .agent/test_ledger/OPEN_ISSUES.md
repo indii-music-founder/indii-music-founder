@@ -9357,7 +9357,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-640: SceneBuilder exposes a dead `Preview Camera` button
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🟢 LOW
 - **Module:** Creative video / scene builder
 - **Location:** `packages/renderer/src/modules/creative/video/visualizer/SceneBuilder.tsx:160-163`
@@ -9366,10 +9366,11 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** Keep the scene builder visible, but remove the button semantics until preview exists.
 - **Fix Direction:** Wire the button to a real preview flow or remove the fake affordance.
 - **DO NOT:** Leave a preview button that cannot preview anything.
+- **Fix (2026-07-02, Fable audit):** Already resolved in committed code — the SceneBuilder header renders only the wired `Clear Stage` button; `grep -n 'Preview Camera'` returns nothing. Marking fixed with evidence.
 
 ### ISSUE-641: Image sub-menu renders a button-shaped `Image` tab with no action
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🟢 LOW
 - **Module:** Creative / image sub-menu
 - **Location:** `packages/renderer/src/modules/creative/components/ImageSubMenu.tsx:34-40`
@@ -9378,10 +9379,11 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** Keep the tab row visible, but remove the button semantics from the `Image` pill until it becomes actionable.
 - **Fix Direction:** Convert the active `Image` label to a span/badge or connect it to actual behavior.
 - **DO NOT:** Leave a tab-looking button that cannot be clicked.
+- **Fix (2026-07-02, Fable audit):** Already resolved — `Image` renders as a `<span>` status label (ImageSubMenu.tsx:41), not button chrome. Only wired controls remain interactive.
 
 ### ISSUE-642: Standard merch editor exposes a dead `Design new asset` CTA
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🟢 LOW
 - **Module:** Merchandise / standard merch
 - **Location:** `packages/renderer/src/modules/merchandise/components/StandardMerch.tsx:90-103`
@@ -9390,10 +9392,11 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** Keep the empty state visible, but remove the button semantics until the designer path exists.
 - **Fix Direction:** Wire the CTA to the real designer flow or strip the fake affordance.
 - **DO NOT:** Leave a merch entrypoint that cannot launch anything.
+- **Fix (2026-07-02, Fable audit):** Already resolved — `grep 'Design new asset|Open Designer'` across `modules/merchandise` returns nothing; the dead CTA is gone from StandardMerch.
 
 ### ISSUE-643: Manufacturing panel exposes a clickable-looking item spec card with no action
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🟢 LOW
 - **Module:** Merchandise / manufacturing panel
 - **Location:** `packages/renderer/src/modules/merchandise/components/ManufacturingPanel.tsx:297-304`
@@ -9402,6 +9405,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** Keep the manufacturing details visible, but remove the pointer affordance until interaction exists.
 - **Fix Direction:** Attach a real action or stop implying the card is interactive.
 - **DO NOT:** Leave a spec card that looks selectable when it is not.
+- **Fix (2026-07-02, Fable audit):** Already resolved — the Item Spec card (ManufacturingPanel.tsx:295) is a static info card with no onClick/cursor-pointer; no clickable pretense remains.
 
 ### ISSUE-644: Distributor connection rows look interactive but have no row action
 
@@ -9418,7 +9422,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-645: Token-gated preview shows a dead `Connect Wallet to Unlock` CTA
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🟢 LOW
 - **Module:** Merchandise / token-gated preview
 - **Location:** `packages/renderer/src/modules/merchandise/components/TokenGatedPreview.tsx:100-103`
@@ -9427,6 +9431,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** Keep the locked preview visible, but remove the button semantics until unlock exists.
 - **Fix Direction:** Wire the CTA to a real wallet connection path or strip the fake affordance.
 - **DO NOT:** Leave an unlock button that cannot unlock anything.
+- **Fix (2026-07-02, Fable audit):** Already resolved — the locked state renders an honest non-interactive `Content Locked` label (`<p>`, TokenGatedPreview.tsx:100) with the token requirement, no fake wallet-connect button.
 
 ### ISSUE-646: Email manager exposes dead alias-management actions
 
@@ -9481,7 +9486,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-650: Landing page uses clickable styling without a real destination
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🟢 LOW
 - **Module:** Landing page / feature showcase
 - **Location:** `packages/landing/src/components/FeatureShowcase.tsx:95-97`, `packages/landing/src/components/ConductorSection.tsx:103-110`
@@ -9490,6 +9495,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** Keep the showcase visible, but remove the clickable styling until real destinations exist.
 - **Fix Direction:** Attach actual navigation targets or strip the fake interactivity.
 - **DO NOT:** Leave landing-page elements that look clickable but go nowhere.
+- **Fix (2026-07-02, Fable):** Removed the fake `See Documentation →` affordance from `FeatureShowcase.tsx` — no public docs destination exists anywhere in `packages/landing`, so the row implied navigation that could not happen. ConductorSection audit: no onClick/cursor-pointer remains (already resolved). Landing `tsc --noEmit` clean.
 
 ### ISSUE-651: Admin backend exposes a mock auth bypass and mock OAuth defaults
 
