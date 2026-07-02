@@ -81,7 +81,7 @@ export default function SocialDashboard() {
                 <div key={i} className="h-28 bg-white/[0.01] border border-white/5 p-2 relative group hover:bg-white/[0.03] transition-colors">
                     <span className="text-gray-500 text-xs font-mono">{i}</span>
                     {campaign && (
-                        <div className="mt-1 p-1.5 rounded bg-dept-creative/10 border border-dept-creative/30 text-[10px] cursor-pointer hover:bg-dept-creative/20 transition-colors">
+                        <div className="mt-1 p-1.5 rounded bg-dept-creative/10 border border-dept-creative/30 text-[10px] transition-colors">
                             <div className="font-bold text-dept-creative truncate">{campaign.title}</div>
                             <div className="text-dept-creative/70 flex items-center gap-1 mt-0.5">
                                 <span className="w-1 h-1 rounded-full bg-dept-creative"></span>
@@ -251,7 +251,7 @@ function PlatformFiltersPanel() {
             <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 px-1">Platforms</h3>
             <div className="space-y-1">
                 {platforms.map((p) => (
-                    <div key={p.name} className="flex items-center gap-2 py-2 px-2 rounded-lg hover:bg-white/[0.04] transition-colors cursor-pointer">
+                    <div key={p.name} className="flex items-center gap-2 py-2 px-2 rounded-lg transition-colors">
                         <div className={`w-2 h-2 rounded-full ${p.color}`} />
                         <span className="text-xs text-gray-300 flex-1">{p.name}</span>
                         <div className={`w-3 h-3 rounded-sm border flex items-center justify-center ${p.active ? 'bg-dept-creative/20 border-dept-creative/40' : 'border-white/10'}`}>
