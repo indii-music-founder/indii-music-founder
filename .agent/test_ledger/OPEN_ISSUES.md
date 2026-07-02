@@ -9650,7 +9650,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-662: Creative video and avatar services call missing Firebase callables
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Creative / video callable contracts
 - **Location:** `packages/renderer/src/modules/creative/video/VideoWorkflow.tsx:758-770`, `packages/firebase/src/functions/creative/gateway.ts:1371-1395`, `packages/firebase/src/index.ts:29-30`, `packages/renderer/src/services/video/AvatarGenerationService.ts:53-92`
@@ -9659,10 +9659,13 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** If avatar generation is not wired, keep the feature disabled and show a clear unavailable message. If video cancellation is unavailable, do not expose a cancel action that can only fail.
 - **Fix Direction:** Export `cancelVideoJob` from the Firebase root entry. Implement/export `dispatchAvatarJob` and `getAvatarJobStatus` or remove/disable the avatar service path. Add a callable-contract test that compares static renderer callable names against Firebase root exports.
 - **DO NOT:** Leave UI/service paths that call undeployed Firebase callable names.
+- **Fix:** `cancelVideoJob` is now exported from the Firebase root entry for the existing video cancellation flow. The avatar path no longer references undeployed callable names; `AvatarGenerationService` now returns honest unavailable errors for lip-sync generation/status, and the marketing UI disables the avatar mode with explicit unavailable copy.
+- **Evidence:** `packages/firebase/src/index.ts:29-31` exports `cancelVideoJob`; `packages/renderer/src/services/video/AvatarGenerationService.ts:1-35` contains the no-backend unavailable boundary; `packages/renderer/src/modules/marketing/components/MarketingAssetGeneratorUI.tsx:1-35` and `:140-159` disable avatar mode with unavailable copy; `packages/renderer/src/services/video/AvatarGenerationService.test.ts:1-14` and `packages/firebase/src/__tests__/video.test.ts:160-178` verify the unavailable behavior and root export.
+- **Files:** `packages/firebase/src/index.ts`, `packages/renderer/src/services/video/AvatarGenerationService.ts`, `packages/renderer/src/services/video/AvatarGenerationService.test.ts`, `packages/renderer/src/modules/marketing/components/MarketingAssetGeneratorUI.tsx`, `packages/firebase/src/__tests__/video.test.ts`
 
 ### ISSUE-663: Distribution automation workers are referenced but missing
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Distribution / agent tool callable contracts
 - **Location:** `packages/renderer/src/services/agent/tools/DistributionTools.ts:485-528`, `packages/renderer/src/services/agent/tools/DistributionTools.ts:621-708`
@@ -9671,6 +9674,9 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** Keep the current queued/manual state, but label it as manual-only until the worker exists and avoid implying automated processing will occur by itself.
 - **Fix Direction:** Implement/export `distributeVideoToDSP` and `sftpDeliverRelease`, or remove the callable attempts and route these paths explicitly to manual processing. Add callable-contract coverage so renderer tools cannot reference undeployed worker names.
 - **DO NOT:** Leave automation paths dependent on Firebase callable names that are not deployed.
+- **Fix:** `distribute_premium_video` now persists the release record and returns `QUEUED_FOR_MANUAL_REVIEW` with explicit manual-processing copy instead of calling a missing DSP worker. `sftp_direct_ingestion` keeps the Electron IPC transfer path and, when the server-side worker is unavailable, updates the ingestion record to `PENDING_MANUAL` without attempting the missing `sftpDeliverRelease` callable.
+- **Evidence:** `packages/renderer/src/services/agent/tools/DistributionTools.ts:485-528` returns the manual-only DSP state; `packages/renderer/src/services/agent/tools/DistributionTools.ts:621-708` keeps the Electron SFTP path and removes the server-side delivery attempt; `packages/renderer/src/services/agent/tools/DistributionTools.test.ts:367-398` verifies both manual-only outcomes and asserts that `distributeVideoToDSP` and `sftpDeliverRelease` are never called.
+- **Files:** `packages/renderer/src/services/agent/tools/DistributionTools.ts`, `packages/renderer/src/services/agent/tools/DistributionTools.test.ts`
 
 ### ISSUE-664: Fan enrichment falls back to fabricated scores when provider credentials are missing
 
@@ -9689,7 +9695,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-665: SMS and email marketing panels fabricate delivered confirmations
 
-- **Status:** 🟡 IN PROGRESS (Fable)
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🔴 HIGH
 - **Module:** Marketing / SMS and email campaign UI
 - **GitHub:** https://github.com/indii-music-founder/indii-music-founder/issues/221
@@ -9699,10 +9705,11 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** If Twilio, Mailchimp, or Klaviyo is not configured, disable the send action or show a clear unavailable/manual-required state.
 - **Fix Direction:** Wire the panels to real provider-backed services, remove fake verification/send timers and hardcoded audience counts, and add tests for provider-unavailable and provider-confirmed states.
 - **DO NOT:** Tell users a campaign was delivered to fans when no external provider accepted or sent it.
+- **Fix (2026-07-02):** Both panels rewritten to zero fabrication. SMS: fake `setTimeout` verify/send, hardcoded segment counts (3142/847/234), and the "Delivered … via Twilio" banner removed; the composer stays usable, sending goes through `smsMarketingService.broadcastSMS` and is disabled with an honest "No SMS audience connected yet" notice (no fan phone list with SMS consent is wired). Email: fake send timer, hardcoded 2,847 subscriber count, and "Delivered … via Mailchimp/Klaviyo" banner removed; deploy goes through `emailMarketingService.deployCampaign`, disabled with an honest "No subscriber list connected yet" notice; failed AI subject generation now surfaces an error instead of planting a canned line. Success toasts only fire after the provider callable resolves. Evidence: `providerHonesty.test.ts` (7 tests green), `CampaignDashboard.test.tsx` green, lint/typecheck clean on touched files.
 
 ### ISSUE-666: Multi-platform poster reports all selected platforms posted after dispatching only one
 
-- **Status:** 🟡 IN PROGRESS (Fable)
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🔴 HIGH
 - **Module:** Marketing / social auto-poster
 - **GitHub:** https://github.com/indii-music-founder/indii-music-founder/issues/222
@@ -9712,10 +9719,11 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** If multi-platform scheduling is not fully wired, allow one explicitly selected supported platform at a time and label unsupported platforms unavailable.
 - **Fix Direction:** Persist scheduled posts through the backend, dispatch all selected platforms, map YouTube Shorts consistently, and only mark a platform posted/queued after that platform is confirmed.
 - **DO NOT:** Mark TikTok, YouTube Shorts, and IG Reels as posted after only one platform call succeeds.
+- **Fix (2026-07-02):** `MultiPlatformPoster` now dispatches EVERY selected platform independently via `socialAutoPosterService.queuePost` and records a per-platform `{queued|failed}` result; toasts report exactly which platforms were queued and which failed; history renders per-platform chips ("TikTok: Queued for delivery" / "YouTube Shorts: Failed") instead of a blanket "Posted". The fabricated "Schedule in 2h" pretense is now an explicit local "Save Draft" (labeled "saved on this device only") since no future-scheduling callable exists for this surface. Backend platform-name rejection (youtube_shorts) surfaces as an honest per-platform failure. Evidence: `MultiPlatformPoster.test.tsx` (2 tests: per-platform outcomes incl. one-succeeds-one-fails; failure never shown as queued).
 
 ### ISSUE-667: Marketing provider service layer references undeployed callables and returns fake fallback statuses
 
-- **Status:** 🟡 IN PROGRESS (Fable)
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Marketing / provider service contracts
 - **Location:** `packages/renderer/src/services/marketing/SMSMarketingService.ts:38-85`, `packages/renderer/src/services/marketing/EmailMarketingService.ts:39-121`, `packages/renderer/src/services/marketing/SocialAutoPosterService.ts:95-128`
@@ -9724,6 +9732,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** Return typed unavailable/configuration errors for missing provider functions or credentials, and let the UI present manual-required or disabled states.
 - **Fix Direction:** Implement/export the missing provider callables or remove the calls and expose unavailable states. Add callable-contract coverage and service tests for missing-provider behavior.
 - **DO NOT:** Return `pending`/zero metrics/queued messages as if a provider workflow exists when no callable is deployed.
+- **Fix (2026-07-02):** New typed `MarketingProviderUnavailableError` (`services/marketing/providerErrors.ts`). `SMSMarketingService.dispatchToTwilio`/`getSMSStatus`, `EmailMarketingService.syncToProvider`/`getCampaignStats`, and `SocialAutoPosterService.getPostInsights` now throw it instead of returning fabricated "queued locally", `'pending'`, or zero-filled stats; `revokePost` throws instead of fabricating `true` (no revoke backend exists). `deployCampaign` already threw honestly. UI callers present the typed message. Evidence: `providerHonesty.test.ts` — 7 tests covering every method's unavailable path plus the Twilio-accepted success path, run green.
 
 ### ISSUE-668: Influencer bounty tracking, leaderboard, and payout paths are not wired end-to-end
 

@@ -621,11 +621,21 @@ vi.mock('@react-three/drei', () => ({
     },
 }));
 
-// Mock ToastContext globally
+// Mock ToastContext globally — mirrors the full ToastContextType API so
+// components calling toast.success()/error()/etc. don't crash in tests.
 vi.mock('@/core/context/ToastContext', () => ({
     useToast: vi.fn(() => ({
         addToast: vi.fn(),
-        removeToast: vi.fn()
+        removeToast: vi.fn(),
+        showToast: vi.fn(),
+        success: vi.fn(),
+        error: vi.fn(),
+        info: vi.fn(),
+        warning: vi.fn(),
+        loading: vi.fn(() => 'toast-id'),
+        updateProgress: vi.fn(),
+        dismiss: vi.fn(),
+        promise: vi.fn((p: Promise<unknown>) => p)
     })),
     ToastProvider: ({ children }: { children: React.ReactNode }) => children
 }));
