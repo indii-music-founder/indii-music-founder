@@ -1,5 +1,6 @@
 import React, { useEffect, lazy, Suspense } from 'react';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { CampaignConfigDialog } from '@/components/ui/CampaignConfigDialog';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 import CreativeNavbar from './components/CreativeNavbar';
 import InfiniteCanvas from './components/InfiniteCanvas';
@@ -215,7 +216,7 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                         const results = await Promise.allSettled(allPromises);
 
                         let successCount = 0;
-                        const adCreatives: { creativeId: string; postId: string; headline: string; body: string; callToAction: 'LEARN_MORE' | 'SHOP_NOW' | 'LISTEN_NOW' }[] = [];
+                        const creativeSeeds: { creativeId: string; index: number; isVideo: boolean }[] = [];
 
                         results.forEach((res, index) => {
                             if (res.status === 'fulfilled' && res.value.length > 0) {
@@ -233,13 +234,7 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                                     origin: 'generated'
                                 });
 
-                                adCreatives.push({
-                                    creativeId: item.id,
-                                    postId: `post_${Date.now()}_${index}`,
-                                    headline: isVideo ? `Experience the Vision ${index + 1}` : `Discover the Magic ${index + 1}`,
-                                    body: pendingPrompt.slice(0, 80) + "...",
-                                    callToAction: isVideo ? 'LEARN_MORE' : 'SHOP_NOW'
-                                });
+                                creativeSeeds.push({ creativeId: item.id, index, isVideo });
                             } else if (res.status === 'rejected') {
                                 logger.warn(`[PLP] Variant ${index + 1} failed:`, res.reason);
                             }
@@ -249,26 +244,30 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                             toast.success(`PLP: ${successCount}/15 Variants generated.`);
 
                             // ISSUE-495: deploying to a REAL paid Meta ad campaign spends money.
-                            // Never auto-launch — require an explicit confirmation that shows the
-                            // actual budget, duration, and targeting before any spend.
-                            const adBudget = {
-                                platform: 'meta' as const,
-                                dailyBudget: 10.00,
-                                totalDays: 28,
-                                targetAgeRange: [18, 35] as [number, number],
-                                targetInterests: ['music', 'creativity', 'art'],
-                            };
-                            const estTotal = (adBudget.dailyBudget * adBudget.totalDays).toFixed(2);
-                            const deployConfirmed = await ConfirmDialog.call({
-                                title: 'Launch a real paid ad campaign?',
-                                message: `This deploys ${successCount} creatives to a live ${adBudget.platform} ad campaign and spends real money — about $${adBudget.dailyBudget.toFixed(2)}/day for ${adBudget.totalDays} days (~$${estTotal} total), targeting ages ${adBudget.targetAgeRange[0]}–${adBudget.targetAgeRange[1]} interested in ${adBudget.targetInterests.join(', ')}. Your ${successCount} variants are already saved either way.`,
-                                confirmText: 'Yes, launch campaign',
-                                cancelText: 'No, just keep the variants',
+                            // Never auto-launch — the user reviews and edits budget, duration,
+                            // targeting, and ad copy in the dialog before any spend.
+                            const launch = await CampaignConfigDialog.call({
+                                variantCount: successCount,
+                                defaultBody: pendingPrompt.slice(0, 120),
                             });
 
-                            if (!deployConfirmed) {
+                            if (!launch) {
                                 toast.info('Variants saved. No ad campaign was launched.');
                             } else {
+                                const adBudget = {
+                                    platform: 'meta' as const,
+                                    dailyBudget: launch.dailyBudget,
+                                    totalDays: launch.totalDays,
+                                    targetAgeRange: [launch.targetAgeMin, launch.targetAgeMax] as [number, number],
+                                    targetInterests: launch.targetInterests,
+                                };
+                                const adCreatives = creativeSeeds.map(seed => ({
+                                    creativeId: seed.creativeId,
+                                    postId: `post_${Date.now()}_${seed.index}`,
+                                    headline: launch.headline,
+                                    body: launch.body,
+                                    callToAction: (seed.isVideo ? 'LEARN_MORE' : 'SHOP_NOW') as 'LEARN_MORE' | 'SHOP_NOW',
+                                }));
                                 try {
                                     await adAutomationService.deployPLPPipeline(adCreatives, adBudget);
                                     toast.success('Campaign deployed to Marketing Protocol.');
