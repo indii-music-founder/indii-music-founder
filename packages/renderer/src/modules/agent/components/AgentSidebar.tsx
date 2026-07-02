@@ -51,13 +51,6 @@ export const AgentSidebar: React.FC<AgentSidebarProps> = ({ activeTab, setActive
 
                 <div className="flex-1" />
 
-                <button
-                    className="p-3 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all duration-200"
-                    title={t('common.settings')}
-                    aria-label={t('common.settings')}
-                >
-                    <Settings size={22} />
-                </button>
             </div>
         </div>
     );

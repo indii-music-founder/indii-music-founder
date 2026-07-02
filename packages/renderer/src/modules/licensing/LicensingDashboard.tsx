@@ -327,15 +327,6 @@ function RecentClearancesPanel({ requests, onDraft }: { requests: LicenseRequest
 function ActionButtonsPanel({ toast }: { toast: ReturnType<typeof useToast> }) {
     return (
         <div className="rounded-xl bg-white/[0.02] border border-white/5 p-3">
-            <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 px-1">Quick Actions</h3>
-            <div className="space-y-2">
-                <button className="w-full flex items-center gap-2 p-2.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 transition-colors text-xs text-emerald-300 font-medium border border-emerald-500/10">
-                    <FileText size={12} /> Draft New Deal
-                </button>
-                <button className="w-full flex items-center gap-2 p-2.5 rounded-lg bg-white/[0.02] hover:bg-white/[0.06] transition-colors text-xs text-white font-medium">
-                    <Scale size={12} /> Review Agreements
-                </button>
-            </div>
         </div>
     );
 }
