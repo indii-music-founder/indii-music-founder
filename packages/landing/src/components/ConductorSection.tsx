@@ -101,7 +101,7 @@ function OrbitalVisualization() {
 
               {/* Node */}
               <div
-                className="w-9 h-9 rounded-xl border border-white/10 flex items-center justify-center backdrop-blur-md transition-all duration-300 hover:scale-125 cursor-pointer group relative"
+                className="w-9 h-9 rounded-xl border border-white/10 flex items-center justify-center backdrop-blur-md transition-all duration-300 hover:scale-125 group relative"
                 style={{
                   background: `${spoke.color}15`,
                   boxShadow: `0 0 12px ${spoke.color}20`,

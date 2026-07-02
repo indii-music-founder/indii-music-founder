@@ -536,13 +536,6 @@ export const GoogleHub: React.FC = () => {
                             <span>{new Date(file.modifiedTime).toLocaleDateString()}</span>
                           </div>
                         </div>
-                        <button 
-                          className="mt-4 py-2 px-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-[10px] font-bold text-white/60 hover:text-white flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                          onClick={() => alert(`Initiating file transfer for ID: ${file.id}`)}
-                        >
-                          <Download className="w-3 h-3" />
-                          Download
-                        </button>
                       </div>
                     ))}
                   </div>
