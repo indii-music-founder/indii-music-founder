@@ -50,6 +50,12 @@ vi.mock('@/services/distribution/proprietary-ingestion/IngestionNotificationServ
 
 vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('Network unavailable in tests')));
 
+const mockTuneCoreSuccessResponse = (releaseId: string, isrc: string) => ({
+    ok: true,
+    status: 200,
+    json: vi.fn().mockResolvedValue({ id: releaseId, isrc })
+}) as unknown as Response;
+
 describe('All Distribution Adapters Integration', () => {
     let tempDir: string;
     let audioPath: string;
@@ -143,6 +149,12 @@ describe('All Distribution Adapters Integration', () => {
         });
 
         it('should create release successfully', async () => {
+            if (adapter.name === 'TuneCore') {
+                vi.mocked(fetch).mockResolvedValueOnce(
+                    mockTuneCoreSuccessResponse('TC-TEST-RELEASE', mockMetadata.isrc)
+                );
+            }
+
             const result = await adapter.createRelease(mockMetadata, mockAssets);
             expect(result.success).toBe(true);
 
