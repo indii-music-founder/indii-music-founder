@@ -9537,7 +9537,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-655: Rights provider credentials are loaded and used directly in the renderer
 
-- **Status:** ⏳ OPEN
+- **Status:** 🟡 IN PROGRESS (Agent B)
 - **Severity:** 🔴 HIGH
 - **Module:** Renderer / rights provider integrations
 - **GitHub:** https://github.com/indii-music-founder/indii-music-founder/issues/214
