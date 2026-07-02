@@ -3,7 +3,7 @@ import { Activity, Bot } from 'lucide-react';
 
 export const DesktopWidget: React.FC = () => {
     return (
-        <div className="w-[300px] h-[160px] bg-black/60 backdrop-blur-xl border border-white/10 rounded-3xl p-5 shadow-2xl flex flex-col justify-between overflow-hidden relative group cursor-pointer transition-all hover:bg-black/70">
+        <div className="w-[300px] h-[160px] bg-black/60 backdrop-blur-xl border border-white/10 rounded-3xl p-5 shadow-2xl flex flex-col justify-between overflow-hidden relative group transition-all">
             {/* Background ambient glow */}
             <div className="absolute -top-10 -right-10 w-32 h-32 bg-green-500/20 blur-3xl rounded-full pointer-events-none" />
 

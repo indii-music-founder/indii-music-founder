@@ -90,7 +90,7 @@ export const RoadManagerSidebar: React.FC<RoadManagerSidebarProps> = ({ activeTa
                         <div className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">System Status</div>
                         <div className="text-xs text-white font-mono">ONLINE</div>
                     </div>
-                    <Settings size={14} className="text-gray-600 hover:text-white cursor-pointer transition-colors" />
+                    <Settings size={14} className="text-gray-600 transition-colors" />
                 </div>
             </div>
         </div>
