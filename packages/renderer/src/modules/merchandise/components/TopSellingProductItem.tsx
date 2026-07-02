@@ -10,7 +10,7 @@ interface TopSellingProductItemProps {
 
 function TopSellingProductItemComponent({ product }: TopSellingProductItemProps) {
     return (
-        <MerchCard className="group p-4 flex items-center gap-4 cursor-pointer">
+        <MerchCard className="group p-4 flex items-center gap-4">
             <div className="w-20 h-24 bg-neutral-800 rounded-lg flex items-center justify-center relative overflow-hidden">
                 {product.image ? (
                     <img src={product.image} alt={product.title} className="w-full h-full object-cover" />
