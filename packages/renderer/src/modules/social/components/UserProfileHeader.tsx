@@ -135,14 +135,14 @@ export default function UserProfileHeader({ userId }: UserProfileHeaderProps) {
 
                         {/* Meta Row */}
                         <div className="flex items-center gap-6 mt-4 text-sm text-gray-300">
-                            <div className="flex items-center gap-1.5 hover:text-white transition-colors cursor-pointer">
+                            <div className="flex items-center gap-1.5">
                                 <Users size={16} className="text-gray-500" />
                                 <span className="font-bold text-white">{socialStats?.followers || 0}</span> Followers
                             </div>
-                            <div className="flex items-center gap-1.5 hover:text-white transition-colors cursor-pointer">
+                            <div className="flex items-center gap-1.5">
                                 <span className="font-bold text-white">{socialStats?.following || 0}</span> Following
                             </div>
-                            <div className="flex items-center gap-1.5 hover:text-white transition-colors cursor-pointer">
+                            <div className="flex items-center gap-1.5">
                                 <span className="font-bold text-white">{socialStats?.drops || 0}</span> Drops
                             </div>
                         </div>

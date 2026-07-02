@@ -140,4 +140,12 @@ describe('SocialFeed Interaction: Send Button', () => {
         expect(sendButton).not.toBeDisabled();
         expect(screen.queryByText('Posting...')).not.toBeInTheDocument();
     });
+
+    it('keeps Add Media unavailable until the feature is wired up', () => {
+        render(<SocialFeed userId="user-123" />);
+
+        const addMediaButton = screen.getByTitle('Add Media (coming soon)');
+        expect(addMediaButton).toBeDisabled();
+        expect(addMediaButton).toHaveAttribute('aria-disabled', 'true');
+    });
 });
