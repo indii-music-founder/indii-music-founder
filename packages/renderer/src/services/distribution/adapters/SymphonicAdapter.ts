@@ -80,18 +80,44 @@ export class SymphonicAdapter extends BaseDistributorAdapter {
                     metadata, INGESTION_CONFIG.SYSTEM_IDENTIFIER, 'symphonic', assets
                 );
 
-                if (ernResult.success && ernResult.xml && window.electronAPI.distribution?.stageRelease) {
-                    const stagingResult = await window.electronAPI.distribution.stageRelease(
-                        folderReleaseId,
-                        [{ type: 'content', data: ernResult.xml, name: 'batch.xml' }]
-                    );
-
-                    if (stagingResult.success && stagingResult.packagePath) {
-                        // Item 213: Execute real SFTP delivery via base class uploadBundle
-                        await this.uploadBundle(stagingResult.packagePath, `/deliveries/${folderReleaseId}`);
-                        logger.info(`[Symphonic] SFTP delivery complete for ${folderReleaseId}`);
-                    }
+                // success:true requires every delivery step to be confirmed (ISSUE-658):
+                // a skipped ERN, staging, or upload step must never report processing.
+                if (!ernResult.success || !ernResult.xml) {
+                    return {
+                        success: false,
+                        status: 'failed',
+                        releaseId,
+                        errors: [{ code: 'ERN_FAILED', message: ernResult.error || 'ERN generation failed — nothing was delivered to Symphonic.' }]
+                    };
                 }
+
+                if (!window.electronAPI.distribution?.stageRelease) {
+                    return {
+                        success: false,
+                        status: 'failed',
+                        releaseId,
+                        errors: [{ code: 'STAGING_UNAVAILABLE', message: 'Release staging is unavailable in this environment — nothing was delivered to Symphonic.' }]
+                    };
+                }
+
+                const stagingResult = await window.electronAPI.distribution.stageRelease(
+                    folderReleaseId,
+                    [{ type: 'content', data: ernResult.xml, name: 'batch.xml' }]
+                );
+
+                if (!stagingResult.success || !stagingResult.packagePath) {
+                    return {
+                        success: false,
+                        status: 'failed',
+                        releaseId,
+                        errors: [{ code: 'STAGING_FAILED', message: 'Failed to stage the release package — nothing was delivered to Symphonic.' }]
+                    };
+                }
+
+                // Item 213: Execute real SFTP delivery via base class uploadBundle
+                // (throws on failure, which the outer catch reports as failed)
+                await this.uploadBundle(stagingResult.packagePath, `/deliveries/${folderReleaseId}`);
+                logger.info(`[Symphonic] SFTP delivery complete for ${folderReleaseId}`);
 
                 return {
                     success: true,

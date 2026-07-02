@@ -9832,3 +9832,24 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
 - **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/28558762727)
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
+
+### ISSUE-601: VisualOutputAutorater Infinite Generation Loop
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** AgentService / VisualOutputAutorater
+- **Summary:** When image generation times out but eventually completes in the background, `triggerVisualAutorater` evaluates the image. If it fails, it sends a corrective prompt. However, the `originalBrief` passed to the next retry is the *entire corrective message*, causing the `originalImageId` hash to change. This completely bypasses the `MAX_CORRECTION_ATTEMPTS` cap and causes a runaway loop of infinite image generations.
+- **Fix Direction:** Extract or pass the true `originalBrief` through the corrective `sendMessage` options so the autorater correctly increments the attempt counter for the original generation request.
+
+### ISSUE-602: Boardroom Messages Not Persisting Across Reloads
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** Boardroom HQ / AgentSessionSlice
+- **Summary:** When the user closes and restarts the browser, recent Boardroom chat history is lost ("didn't recall much of the original"). `addBoardroomMessage`, `updateBoardroomMessage`, and `removeBoardroomMessage` only update local Zustand state and fail to call `sessionService.updateSession(...)` to persist to Firestore, unlike standard `addAgentMessage`.
+- **Fix Direction:** Ensure boardroom messages are persisted to the active session in Firestore just like direct agent messages, or synced appropriately so a reload doesn't wipe them.
+
+### ISSUE-603: Image Generation Unprompted Subject Inclusion
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Creative Studio / Image Generation
+- **Summary:** When users prompt for images (e.g. "a literal cassette tape cover"), the system defaults to generating images containing people/faces that are not the user, despite no pictures being shared or explicitly requested. 
+- **Fix Direction:** Update the `ImageGenerationInstrument` system prompt or default negative prompts to strongly discourage including unauthorized human subjects or defaulting to portraits unless explicitly requested by the user.

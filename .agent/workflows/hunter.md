@@ -1,5 +1,5 @@
 ---
-description: Full-spectrum codebase bug hunter — surfaces security, data integrity, performance, and correctness issues across the entire indii stack. Covers both Big Game (surface-level) and Small Game (subtle) bugs. Fully autonomous — finds AND fixes all issues, then verifies and commits.
+description: Full-spectrum codebase bug hunter — surfaces security, data integrity, performance, and correctness issues across the entire indii stack. Covers both Big Game (surface-level) and Small Game (subtle) bugs. In HUNT mode it fixes, verifies, and commits; in AUDIT mode it records findings in OPEN_ISSUES.md and preserves supporting evidence only.
 ---
 
 # /hunter — Full-Spectrum Bug Hunter
@@ -9,7 +9,7 @@ description: Full-spectrum codebase bug hunter — surfaces security, data integ
 ## Mode Selection (NEW)
 
 - **HUNT** (default): Find ALL bugs + fix + verify + commit in this session.
-- **AUDIT** (find-only): Find ALL bugs + document for another agent to fix. Output: findings doc + GitHub issues.
+- **AUDIT** (find-only): Find ALL bugs + document for another agent to fix. Output: `.agent/test_ledger/OPEN_ISSUES.md` entries + supporting evidence doc + GitHub issues for Critical/High findings.
 
 Infer from context:
 - Explicit "audit" or "find-only" → AUDIT mode
@@ -285,20 +285,26 @@ If any check fails, fix the error and re-run. Apply the **Two-Strike Rule**: if 
 
 ### AUDIT Mode (find-only + handoff)
 
-1. **Consolidated findings doc** (`.agent/test_ledger/HUNT_AUDIT_<timestamp>.md`):
-   - House style: status | severity | module | evidence | files | fix direction | verified?
-   - One section per Big/Small Game phase so the fix agent can work methodically
-   - Include any "false leads" you discarded (grep artifacts, etc.) so fix agent doesn't re-check them
+1. **Open issues ledger** (`.agent/test_ledger/OPEN_ISSUES.md`):
+   - This is the source of truth for every confirmed finding.
+   - Add one issue block per finding using the existing ledger style: status, severity, module, location, summary, expected acceptance, honest fallback when relevant, fix direction, and DO NOT guardrail.
+   - Before adding a new issue, search for duplicates by feature, file path, and failure mode.
 
-2. **GitHub issues** (label `triage/ready-for-agent`):
+2. **Supporting findings doc** (`.agent/test_ledger/HUNT_AUDIT_<timestamp>.md`):
+   - Keep concise evidence, command results, and false leads only.
+   - Cross-reference the `OPEN_ISSUES.md` issue ID for each confirmed finding.
+   - Do not treat this file as the canonical fix queue.
+
+3. **GitHub issues** (label `triage/ready-for-agent`):
    - One issue per Critical/High finding
    - Body = finding block + fix direction + acceptance criteria
-   - Cross-link to findings doc
+   - Cross-link to the `OPEN_ISSUES.md` issue ID and supporting findings doc
 
-3. **Report:**
+4. **Report:**
    ```
    ✅ AUDIT COMPLETE
-   - Findings: .agent/test_ledger/HUNT_AUDIT_<timestamp>.md
+   - Ledger: .agent/test_ledger/OPEN_ISSUES.md
+   - Evidence: .agent/test_ledger/HUNT_AUDIT_<timestamp>.md
    - Issues: #<issue>, #<issue>, ... (highest severity)
    - Hand off — do not commit, push, or modify code
    ```
@@ -322,6 +328,7 @@ Do NOT commit, push, or log to Error Ledger/mem0 in AUDIT mode. The fixing agent
 ### AUDIT Mode (find-only)
 
 1. **DO NOT FIX.** Document only.
-2. **DO NOT COMMIT.** Hand off the findings doc + GitHub issues to the fixing agent.
+2. **DO NOT COMMIT.** Hand off `OPEN_ISSUES.md`, the supporting findings doc, and GitHub issues to the fixing agent.
 3. **DO NOT LOG to Error Ledger / mem0.** The fixing agent owns the record-keeping after they fix.
 4. **Every finding gets characterized.** Severity, evidence, files, fix direction, verified-or-recon.
+5. **Every confirmed finding goes in `OPEN_ISSUES.md`.** The audit doc is supporting evidence only, not the source of truth.
