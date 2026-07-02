@@ -9550,7 +9550,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-656: PRO setlist submission fabricates success and writes `Submitted`
 
-- **Status:** 🟡 IN PROGRESS (Agent B)
+- **Status:** ✅ FIXED (9bc23be5e)
 - **Severity:** 🔴 HIGH
 - **Module:** Renderer / rights live setlist submission
 - **GitHub:** https://github.com/indii-music-founder/indii-music-founder/issues/215
@@ -9560,6 +9560,9 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** If ASCAP/BMI live submission is not wired, return an honest unavailable/manual-required result and leave Firestore in a pending/manual state.
 - **Fix Direction:** Remove the mock success path. Route live setlist submission through a real backend integration or downgrade the renderer path to a manual handoff queue that never claims provider submission.
 - **DO NOT:** Tell artists a PRO setlist was submitted when no external submission occurred.
+- **Fix:** Deleted `submitSetlistToPRO` and its `PROSetlistSubmissionResult` interface entirely (zero callers repo-wide — verified by grep across all packages) and dropped the now-unused `updateDoc` import. No renderer path can now stamp `submissionStatus: 'Submitted'` or mint fake `SUB-` ids. The only remaining setlist path is the honest `log_live_setlist_for_pro` agent tool (`packages/renderer/src/services/agent/tools/RoadTools.ts:329-360`), which persists setlists as `'Queued'` and tells the artist "saved for PRO submission" — never "submitted". A deletion-site comment routes future live-submission work to a secured backend per ISSUE-655.
+- **Evidence:** `packages/renderer/src/services/rights/PRORightsService.ts:508-512` — deletion-site comment is all that remains; `grep -n "mockResponseOk\|submitSetlistToPRO\|PROSetlistSubmissionResult" packages/renderer/src/services/rights/PRORightsService.ts` matches only that comment, no code. `npm run typecheck` + ESLint green (pre-commit gates passed on commit 9bc23be5e).
+- **Files:** `packages/renderer/src/services/rights/PRORightsService.ts`
 
 ### ISSUE-657: Royalty report ingestion is not idempotent and can duplicate payouts
 
@@ -9599,6 +9602,44 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** If automated takedown is not wired, surface manual platform instructions and do not mark the takedown as requested.
 - **Fix Direction:** Implement provider-specific takedown integrations or change each adapter to honest unsupported/manual-required behavior. Make `DistributorService.getConnectionStatus()` derive `canTakedown` from real adapter capabilities instead of hardcoding `true`. Add tests proving no adapter reports `takedown_requested` without an external call or explicit accepted handoff.
 - **DO NOT:** Tell artists a DSP takedown was requested when no removal request was sent.
+
+### ISSUE-660: Distribution takedown request marks releases requested before provider notification
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** Firebase / distribution takedown records
+- **GitHub:** https://github.com/indii-music-founder/indii-music-founder/issues/219
+- **Location:** `packages/firebase/src/functions/distribution/distributionRecords.ts:281-329`, `packages/renderer/src/services/agent/tools/DistributionTools.ts:770-788`, `packages/firebase/src/index.ts:94-101`
+- **Summary:** The backend `requestDistributionTakedown` callable creates internal takedown request records and immediately mutates the release document to `status: "takedown_requested"`, before any distributor/provider notification has been sent. The renderer then attempts to call `processReleaseTakedown` to notify distributors, but that callable is not exported or implemented under `packages/firebase/src`.
+- **Expected (acceptance):** Internal request creation should use an honest request-only state such as `takedown_pending_notification` or `manual_required`. The release should not move to `takedown_requested` until a real provider endpoint, SFTP takedown message, or verified backend worker accepts the handoff.
+- **Honest fallback:** Record the takedown request for manual follow-up without changing the release to a provider-requested state.
+- **Fix Direction:** Add a real `processReleaseTakedown` backend worker/callable or remove the renderer call and route to an honest manual-required state. Change `requestDistributionTakedown` so it records the request without setting release `status: "takedown_requested"` until provider notification succeeds. Add tests for request-only versus provider-notified states.
+- **DO NOT:** Mark a release as takedown-requested before a distributor notification has actually been accepted.
+
+### ISSUE-661: Sync licensing compiler marks rights cleared without verified clearance evidence
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** Renderer / licensing sync harness
+- **GitHub:** https://github.com/indii-music-founder/indii-music-founder/issues/220
+- **Location:** `packages/renderer/src/services/licensing/LicensingSyncCompiler.ts:104-146`, `packages/renderer/src/services/licensing/SyncLicensingClearanceService.ts:165-193`, `packages/renderer/src/services/licensing/LicensingSyncCompiler.test.ts:47-65`
+- **Summary:** `LicensingSyncCompiler` defaults `rightsClearanceStatus` to `cleared` unless the caller explicitly passes `hasUnClearedSamples: true`. It does not consult clearance documents, `SyncLicensingClearanceService`, provider-backed license checks, or legal review before outputting `All rights cleared` and generating a pitch package. The current test suite codifies this by expecting `hasUnClearedSamples: false` to produce `cleared` and `pitchPackageGenerated: true`.
+- **Expected (acceptance):** Unknown clearance should be `pending`, not `cleared`. The compiler should only output `cleared` when approved clearance documents or provider/legal-review evidence exists.
+- **Honest fallback:** Generate draft/manual-review-only pitch materials when clearance is unknown, and keep the approval gate active until evidence is attached.
+- **Fix Direction:** Extend compiler input to include verified clearance status/evidence references, or compile from `SyncLicensingClearanceService` results. Default unknown clearance to `pending`; update tests so `hasUnClearedSamples: false` alone is insufficient to claim `cleared` or generate a non-draft pitch package.
+- **DO NOT:** Tell artists, agents, or supervisors that sync rights are cleared without verified clearance evidence.
+
+### ISSUE-662: Creative video and avatar services call missing Firebase callables
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Creative / video callable contracts
+- **Location:** `packages/renderer/src/modules/creative/video/VideoWorkflow.tsx:758-770`, `packages/firebase/src/functions/creative/gateway.ts:1371-1395`, `packages/firebase/src/index.ts:29-30`, `packages/renderer/src/services/video/AvatarGenerationService.ts:53-92`
+- **Summary:** The renderer calls creative video/avatar Firebase callables that are not available from the deployed root functions entry. `VideoWorkflow` calls `cancelVideoJob`; the callable exists in `gateway.ts`, but `packages/firebase/src/index.ts` does not export it. `AvatarGenerationService` calls `dispatchAvatarJob` and `getAvatarJobStatus`, but no backend implementation or root export exists for either name under `packages/firebase/src`.
+- **Expected (acceptance):** Every static renderer callable name should resolve to an exported Firebase function, or the feature path should be disabled with an honest unavailable state.
+- **Honest fallback:** If avatar generation is not wired, keep the feature disabled and show a clear unavailable message. If video cancellation is unavailable, do not expose a cancel action that can only fail.
+- **Fix Direction:** Export `cancelVideoJob` from the Firebase root entry. Implement/export `dispatchAvatarJob` and `getAvatarJobStatus` or remove/disable the avatar service path. Add a callable-contract test that compares static renderer callable names against Firebase root exports.
+- **DO NOT:** Leave UI/service paths that call undeployed Firebase callable names.
 
 ---
 
