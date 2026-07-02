@@ -92,11 +92,6 @@ export const DistributorCard: React.FC<DistributorCardProps> = ({ connection, on
                         )}
                     </button>
 
-                    {connection.isConnected && (
-                        <button className="w-full text-[10px] font-bold text-gray-500 hover:text-white transition-colors uppercase tracking-widest text-center py-1">
-                            Connection Settings
-                        </button>
-                    )}
                 </div>
             </div>
 
