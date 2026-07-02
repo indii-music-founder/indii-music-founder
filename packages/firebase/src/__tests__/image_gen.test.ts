@@ -98,6 +98,13 @@ vi.mock('firebase-functions/v1', () => {
     const objectBuilder = { onArchive: handler, onDelete: handler, onFinalize: handler, onMetadataUpdate: handler };
 
     const builder: Record<string, unknown> = {
+        logger: {
+            info: vi.fn(),
+            warn: vi.fn(),
+            error: vi.fn(),
+            debug: vi.fn(),
+            log: vi.fn(),
+        },
         region: vi.fn().mockReturnThis(),
         runWith: vi.fn().mockReturnThis(),
         pubsub: {
@@ -150,7 +157,7 @@ vi.mock('firebase-functions/params', () => ({
 }));
 
 // Mock specific logic in index.ts if needed, but here we test the exported functions
-import { generateImageV3, editImage, generateContentStream } from '../index';
+import { generateImageV3, editImage, generateContentStream, enrichFanData } from '../index';
 
 describe('Image and Content Generation Functions', () => {
     beforeEach(() => {
@@ -295,6 +302,87 @@ describe('Image and Content Generation Functions', () => {
             expect(res.write).toHaveBeenCalledWith(JSON.stringify({ text: ' world' }) + '\n');
             expect(res.end).toHaveBeenCalled();
 
+        });
+    });
+
+    describe('enrichFanData', () => {
+        beforeEach(() => {
+            mocks.secrets.value.mockReturnValue('mock-api-key');
+            vi.stubGlobal('fetch', vi.fn());
+        });
+
+        afterEach(() => {
+            vi.unstubAllGlobals();
+        });
+
+        it.each([
+            { provider: 'Clearbit', label: 'Clearbit' },
+            { provider: 'Apollo', label: 'Apollo' },
+        ])('fails honestly when $label is unconfigured', async ({ provider, label }) => {
+            mocks.secrets.value.mockReturnValueOnce('');
+
+            const callEnrichFanData = enrichFanData as any;
+
+            await expect(callEnrichFanData({
+                fans: [{ email: 'fan@example.com' }],
+                provider,
+                orgId: 'personal',
+            }, {
+                auth: { uid: 'user123' },
+            })).rejects.toMatchObject({
+                code: 'failed-precondition',
+                message: `${label} enrichment is unavailable because the API key is not configured.`,
+            });
+
+            expect(fetch).not.toHaveBeenCalled();
+        });
+
+        it('passes through real Clearbit enrichment results when configured', async () => {
+            vi.mocked(fetch).mockResolvedValueOnce(
+                new Response(JSON.stringify({
+                    person: {
+                        location: 'Nashville',
+                        geo: { countryCode: 'US' },
+                        seniority: 'director',
+                        bio: 'Artist bio',
+                        avatar: 'https://avatar.example/fan.jpg',
+                    },
+                }), {
+                    status: 200,
+                    headers: { 'Content-Type': 'application/json' },
+                })
+            );
+
+            const callEnrichFanData = enrichFanData as any;
+            const result = await callEnrichFanData({
+                fans: [{ email: 'fan@example.com' }],
+                provider: 'Clearbit',
+                orgId: 'personal',
+            }, {
+                auth: { uid: 'user123' },
+            });
+
+            expect(fetch).toHaveBeenCalledWith(
+                'https://person.clearbit.com/v2/combined/find?email=fan%40example.com',
+                expect.objectContaining({
+                    headers: { Authorization: 'Bearer mock-api-key' },
+                })
+            );
+            expect(result).toEqual({
+                results: [
+                    expect.objectContaining({
+                        email: 'fan@example.com',
+                        city: 'Nashville',
+                        country: 'US',
+                        provider: 'clearbit',
+                        enrichmentScore: 85,
+                    }),
+                ],
+                metadata: expect.objectContaining({
+                    provider: 'clearbit',
+                    count: 1,
+                }),
+            });
         });
     });
 });

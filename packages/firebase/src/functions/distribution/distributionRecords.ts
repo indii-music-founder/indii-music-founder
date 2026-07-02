@@ -300,7 +300,8 @@ export const requestDistributionTakedown = functions.https.onCall(
                 distributorId,
                 reason,
                 requestedBy: uid,
-                status: "INITIATED",
+                status: "PENDING_NOTIFICATION",
+                manualRequired: true,
                 createdAt: now,
             });
             tx.set(distributionRequestRef, {
@@ -308,14 +309,16 @@ export const requestDistributionTakedown = functions.https.onCall(
                 distributorId,
                 reason,
                 requestedBy: uid,
-                status: "pending",
-                requestedAt: now,
+                status: "pending_notification",
+                manualRequired: true,
+                recordedAt: now,
             });
             tx.set(releaseRef, {
-                status: "takedown_requested",
+                takedownStatus: "pending_notification",
+                takedownNotificationStatus: "manual_required",
                 takedownReason: reason,
-                takedownRequestedAt: now,
-                takedownRequestedBy: uid,
+                takedownRecordedAt: now,
+                takedownRecordedBy: uid,
             }, { merge: true });
         });
 
@@ -324,7 +327,8 @@ export const requestDistributionTakedown = functions.https.onCall(
             distributionRequestId: distributionRequestRef.id,
             releaseId,
             distributorId,
-            status: "INITIATED",
+            status: "PENDING_NOTIFICATION",
+            manualRequired: true,
         };
     },
 );
