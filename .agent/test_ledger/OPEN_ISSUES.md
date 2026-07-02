@@ -9566,12 +9566,12 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-600: "Send to stage" outbound actions (Gallery + Showroom + each stage output) with lineage
 
-- **Status:** 🟡 IN PROGRESS (Gallery ✅ done, Showroom + outputs pending)
-- **Commits:** eac17e033 (Gallery)
+- **Status:** 🟡 IN PROGRESS (Gallery + Showroom ✅, stage outputs pending)
+- **Commits:** eac17e033 (Gallery), 341fc80bc (Showroom)
 - **Type:** FEATURE (Part B) · **Depends on:** ISSUE-596 (done)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Creative / gallery, showroom, stage output panels
-- **Remaining:** `packages/renderer/src/modules/creative/components/ShowroomUI.tsx`, each stage output panel (Omni `outputVideoUrl`, Veo result, Image result)
+- **Remaining:** Stage output panels — Omni (outputVideoUrl), Veo (result), Image (result) with Send-to-next-stage buttons and lineage tracking (parentId)
 - **Summary:** Add type-gated **Send to Veo / Send to Omni / Use as Image reference** actions (video → Veo source/frame or Omni source; image → Veo frame, Omni reference, or Image reference) that call `sendToStage(...)` with the item. Add a "Send to next stage" button on each stage's output panel and set `parentId` on the downstream job for lineage.
 - **Expected (acceptance):** Round-trip works end-to-end: Image → (send) → Veo → (send output) → Omni remix, each hop pre-filled with no re-upload, and the `parentId` chain is recorded.
 - **DO NOT:** Offer type-invalid targets (e.g. "Send image as source-video"); lose lineage (`parentId`) across hops.
