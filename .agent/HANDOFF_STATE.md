@@ -1,23 +1,24 @@
 # Handoff State
-**Updated:** 2026-07-01 20:40 EDT
+**Updated:** 2026-07-01 21:02 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+5834593bc fix(ui): ISSUE-621,628,633,635,642,643,645 — remove dead affordances in merchandise module
+ad10fd496 fix(ui): ISSUE-613,624,630,639 — remove dead controls in distribution
+1ac1374c5 fix(ui): ISSUE-612,615,616,619,622 — remove dead affordances in social module
+a58423b27 fix(ui): ISSUE-606,611,617 — remove dead affordances in finance/analytics
+4c12f1d4f fix(ui): ISSUE-603–609 — remove dead affordances in marketing/publicist
+6b8ffa00c fix(ui): ISSUE-601–644 — remove dead affordances in publishing module
+4f746c0a2 chore: session checkpoint [20:40]
 1f23a4571 chore: session checkpoint [20:39]
 217d23d34 chore: mark ISSUE-600 COMPLETED — full cross-stage send actions
 94f82f687 feat(creative): ISSUE-600 — Veo output panel exposes 'Send to Omni' action
-f0f8eac66 chore: session checkpoint [20:35]
-5f371edd5 feat(creative): ISSUE-600 — Omni output panel exposes 'Send to Veo' action
-243d3cbb4 chore: session checkpoint [20:32]
-31a0bcfed chore: session checkpoint [20:31]
-f537467b9 chore: update ISSUE-600 progress (Gallery + Showroom done, outputs pending)
-341fc80bc feat(creative): ISSUE-600 — Showroom mockups expose send to Veo action
-ebeb11ac5 chore: mark ISSUE-598/599 COMPLETED, update ISSUE-600 progress
 ```
 
 ## Working State
 ```
+ M .agent/test_ledger/OPEN_ISSUES.md
  M docs/GEMINI_ENTERPRISE_AGENT_PLATFORM.md
  M docs/flowcharts/12-knowledge-base-rag.md
  M docs/flowcharts/big-brain-memory-engine.md
@@ -32,31 +33,22 @@ ebeb11ac5 chore: mark ISSUE-598/599 COMPLETED, update ISSUE-600 progress
  M packages/main/src/utils/ipc-security.ts
  M packages/renderer/src/core/App.tsx
  M packages/renderer/src/main.tsx
+ M packages/renderer/src/modules/desktop/components/DesktopWidget.tsx
  M packages/renderer/src/modules/devops/DevopsDashboard.tsx
  M packages/renderer/src/modules/founders/FoundersCheckout.test.tsx
  M packages/renderer/src/modules/founders/FoundersCheckout.tsx
- M packages/renderer/src/modules/marketing/components/CampaignDashboard.tsx
- M packages/renderer/src/modules/marketing/components/MarketingSidebar.tsx
- M packages/renderer/src/modules/marketing/components/PreSaveCampaignBuilder.tsx
  M packages/renderer/src/modules/mobile-remote/components/QuickCaptureView.tsx
  M packages/renderer/src/modules/mobile-remote/components/StatusDashboard.tsx
  M packages/renderer/src/modules/observability/components/MetricsDashboard.tsx
  M packages/renderer/src/modules/publicist/PublicistDashboard.test.tsx
  M packages/renderer/src/modules/publicist/PublicistDashboard.tsx
- M packages/renderer/src/modules/publishing/components/DistributorConnectionsPanel.tsx
- M packages/renderer/src/modules/publishing/components/MultiDistributorProgress.tsx
- M packages/renderer/src/modules/publishing/components/ReleaseDetailPage.tsx
- M packages/renderer/src/modules/publishing/components/ReleaseListView.tsx
- M packages/renderer/src/modules/publishing/components/ReleaseStatusCard.tsx
  M packages/renderer/src/modules/screenwriter/ScreenwriterDashboard.tsx
- M packages/renderer/src/modules/social/components/SocialFeed.interaction.test.tsx
- M packages/renderer/src/modules/social/components/SocialFeed.tsx
+ M packages/renderer/src/modules/touring/components/RoadManagerSidebar.tsx
  M packages/renderer/src/services/agent/observability/MetricsService.ts
+ M packages/renderer/src/services/video/VideoGenerationService.ts
 ?? packages/firebase/src/functions/agent/manageSemanticMemory.test.ts
 ?? packages/renderer/python/
 ?? packages/renderer/src/modules/devops/DevopsDashboard.test.tsx
-?? packages/renderer/src/modules/marketing/components/MarketingSidebar.test.tsx
-?? packages/renderer/src/modules/marketing/components/PreSaveCampaignBuilder.test.tsx
 ?? packages/renderer/src/modules/mobile-remote/components/QuickCaptureView.test.tsx
 ?? packages/renderer/src/modules/mobile-remote/components/StatusDashboard.test.tsx
 ?? packages/renderer/src/modules/observability/components/MetricsDashboard.test.tsx
