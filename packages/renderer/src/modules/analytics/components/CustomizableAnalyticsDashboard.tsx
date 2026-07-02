@@ -303,7 +303,7 @@ export const CustomizableAnalyticsDashboard: React.FC = () => {
                             <div className="mt-5 p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-xl flex items-center gap-2.5">
                                 <Sparkles size={14} className="text-indigo-400 animate-pulse shrink-0" />
                                 <div className="text-[10px] text-indigo-200">
-                                    Unlock 10GB storage, 500 daily images and 4K resolution exports. <span className="underline font-bold cursor-pointer hover:text-white">Upgrade to Pro</span>
+                                    Unlock 10GB storage, 500 daily images and 4K resolution exports. <span className="font-bold">Upgrade to Pro</span>
                                 </div>
                             </div>
                         )}
