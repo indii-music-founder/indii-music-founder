@@ -12,7 +12,7 @@ import { httpsCallable } from 'firebase/functions';
 import { functions } from '@/services/firebase';
 // Removed unused imports from motion and lucide-react as they are now in VideoStage
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { Layout, Settings, Shuffle, ChevronDown, ChevronUp, Hash, Music, Trash2, Layers, Film } from 'lucide-react';
+import { Layout, Settings, Shuffle, ChevronDown, ChevronUp, Hash, Music, Trash2, Layers, Film, Send } from 'lucide-react';
 import { ErrorBoundary } from '@/core/components/ErrorBoundary';
 import { StoryboardTimeline } from './components/StoryboardTimeline';
 
@@ -227,7 +227,8 @@ export default function VideoWorkflow() {
         togglePromptBuilder,
         pendingStageHandoff,
         consumeStageHandoff,
-        addCharacterReference
+        addCharacterReference,
+        sendToStage
     } = useStore(useShallow((state: import('@/core/store').StoreState) => ({
         generatedHistory: state.generatedHistory,
         addToHistory: state.addToHistory,
@@ -251,7 +252,8 @@ export default function VideoWorkflow() {
         togglePromptBuilder: state.togglePromptBuilder,
         pendingStageHandoff: state.pendingStageHandoff,
         consumeStageHandoff: state.consumeStageHandoff,
-        addCharacterReference: state.addCharacterReference
+        addCharacterReference: state.addCharacterReference,
+        sendToStage: state.sendToStage
     })));
 
     // Editor Store
@@ -779,7 +781,7 @@ export default function VideoWorkflow() {
 
 
                 {/* Central Preview Stage (Memoized) */}
-                <div className="flex-1 overflow-hidden px-8 pb-32">
+                <div className="flex-1 overflow-hidden px-8 pb-32 relative">
                             <VideoStage
                                 jobStatus={jobStatus}
                                 jobProgress={jobProgress}
@@ -789,6 +791,26 @@ export default function VideoWorkflow() {
                                 setVideoInputs={setVideoInputs}
                                 onCancelJob={jobStatus === 'queued' || jobStatus === 'processing' || jobStatus === 'stitching' ? handleCancelJob : undefined}
                             />
+                            {/* Send Output Actions */}
+                            {activeVideo && activeVideo.type === 'video' && (
+                                <div className="absolute bottom-6 right-8 flex gap-2 z-20">
+                                    <button
+                                        onClick={() => {
+                                            sendToStage('omni', {
+                                                item: activeVideo,
+                                                role: 'source-video',
+                                                originStage: 'veo',
+                                                timestamp: Date.now()
+                                            });
+                                            toast.info('Sent to Omni for remixing!');
+                                        }}
+                                        className="bg-purple-600 hover:bg-purple-500 text-white p-3 rounded-full shadow-2xl hover:scale-105 transition-all flex items-center justify-center border border-purple-400/30"
+                                        title="Send to Omni for remixing"
+                                    >
+                                        <Send size={16} />
+                                    </button>
+                                </div>
+                            )}
                 </div>
 
                 {/* Mode Switcher Shortcut buttons (Overlay) */}
