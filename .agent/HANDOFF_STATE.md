@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-07-01 23:39 EDT
+**Updated:** 2026-07-01 23:41 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+b4ad151ed chore: session checkpoint [23:39]
 c768e7602 chore: session checkpoint [23:36]
 1fefb6789 chore: session checkpoint [23:27]
 079a6d561 chore: session checkpoint [22:56]
@@ -13,12 +14,12 @@ c2c9858ee chore: session checkpoint [22:41]
 cb9511ef9 chore: session checkpoint [22:34]
 e9be3ea41 chore: mark ISSUE-636,638,647 COMPLETED
 6927817cb fix: wire FileTree chevron toggle + strip AuditLog export + remove shot controls (ISSUE-636,638,647)
-f570ecd38 chore: session checkpoint [22:23]
 ```
 
 ## Working State
 ```
-clean working tree
+ M packages/renderer/src/modules/marketing/components/CampaignCard.test.tsx
+ M packages/renderer/src/modules/merchandise/components/StandardProductCard.responsive.test.tsx
 ```
 
 ## Decisions
