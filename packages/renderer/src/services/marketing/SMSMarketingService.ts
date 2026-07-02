@@ -6,6 +6,7 @@
  */
 
 import { logger } from '@/utils/logger';
+import { MarketingProviderUnavailableError } from './providerErrors';
 
 export interface SMSMember {
     phone: string;
@@ -35,7 +36,7 @@ export class SMSMarketingService {
         return superfansOnly.length;
     }
 
-    private async dispatchToTwilio(members: SMSMember[], message: SMSMessage): Promise<boolean> {
+    private async dispatchToTwilio(members: SMSMember[], message: SMSMessage): Promise<void> {
         // Item 145: Dispatch SMS via Cloud Function → Twilio API
         try {
             const { functionsWest1 } = await import('@/services/firebase');
@@ -54,11 +55,10 @@ export class SMSMarketingService {
             });
 
             logger.info(`[SMSMarketing] Twilio broadcast complete: ${result.data.sent} sent, ${result.data.failed} failed.`);
-            return true;
         } catch (error: unknown) {
-            logger.warn('[SMSMarketing] Twilio Cloud Function unavailable:', error);
-            logger.info(`[SMSMarketing] SMS blast queued locally for ${members.length} recipients. Deploy Cloud Function 'sendSMSBlast' for live Twilio integration.`);
-            return false;
+            // ISSUE-667: never pretend a blast was queued when no provider accepted it.
+            logger.error('[SMSMarketing] Twilio Cloud Function unavailable — no SMS was sent:', error);
+            throw new MarketingProviderUnavailableError('Twilio', "the 'sendSMSBlast' backend is not deployed or rejected the request", { cause: error });
         }
     }
 
@@ -79,9 +79,10 @@ export class SMSMarketingService {
 
             const result = await getStatusFn({ messageId });
             return result.data.status;
-        } catch (__error: unknown) {
-            logger.warn(`[SMSMarketing] Status check unavailable for ${messageId}. Deploy Cloud Function 'getSMSDeliveryStatus'.`);
-            return 'pending';
+        } catch (error: unknown) {
+            // ISSUE-667: 'pending' implied a real delivery pipeline; fail honestly instead.
+            logger.error(`[SMSMarketing] Status check unavailable for ${messageId}:`, error);
+            throw new MarketingProviderUnavailableError('Twilio', "the 'getSMSDeliveryStatus' backend is not deployed or rejected the request", { cause: error });
         }
     }
 }
