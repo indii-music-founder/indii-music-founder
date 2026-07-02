@@ -35,13 +35,6 @@ export const DailiesStrip = React.memo<DailiesStripProps>(({
                     <Film size={12} className="text-yellow-500" aria-hidden="true" />
                     Dailies Bin ({videos.length})
                 </span>
-                <button
-                    className="text-gray-600 hover:text-white transition-colors focus-visible:ring-2 focus-visible:ring-white/50 outline-none rounded-sm"
-                    aria-label="Dailies Options"
-                    data-testid="dailies-options-btn"
-                >
-                    <MoreHorizontal size={14} aria-hidden="true" />
-                </button>
             </div>
 
             {/* Strip */}
