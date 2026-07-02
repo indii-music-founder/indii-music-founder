@@ -92,7 +92,7 @@ export default function FeatureShowcase() {
                                     {feature.description}
                                 </p>
 
-                                <div className="flex items-center gap-2 text-sm font-medium text-white/60 group-hover:text-white transition-colors cursor-pointer">
+                                <div className="flex items-center gap-2 text-sm font-medium text-white/60 group-hover:text-white transition-colors">
                                     See Documentation <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
                                 </div>
                             </div>
