@@ -16,6 +16,7 @@
 import { logger } from '@/utils/logger';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '@/services/firebase';
+import { assertEmailMutationOk } from './mutationErrors';
 import type {
     EmailProviderInterface,
     EmailMessage,
@@ -292,7 +293,7 @@ export class GmailProvider implements EmailProviderInterface {
     }
 
     async markAsRead(accessToken: string, messageId: string): Promise<void> {
-        await fetch(`${GMAIL_API_BASE}/messages/${messageId}/modify`, {
+        const response = await fetch(`${GMAIL_API_BASE}/messages/${messageId}/modify`, {
             method: 'POST',
             headers: {
                 Authorization: `Bearer ${accessToken}`,
@@ -300,6 +301,7 @@ export class GmailProvider implements EmailProviderInterface {
             },
             body: JSON.stringify({ removeLabelIds: ['UNREAD'] }),
         });
+        await assertEmailMutationOk('Gmail', 'mark as read', messageId, response);
     }
 
     async toggleStar(
@@ -311,7 +313,7 @@ export class GmailProvider implements EmailProviderInterface {
             ? { addLabelIds: ['STARRED'] }
             : { removeLabelIds: ['STARRED'] };
 
-        await fetch(`${GMAIL_API_BASE}/messages/${messageId}/modify`, {
+        const response = await fetch(`${GMAIL_API_BASE}/messages/${messageId}/modify`, {
             method: 'POST',
             headers: {
                 Authorization: `Bearer ${accessToken}`,
@@ -319,13 +321,15 @@ export class GmailProvider implements EmailProviderInterface {
             },
             body: JSON.stringify(body),
         });
+        await assertEmailMutationOk('Gmail', 'toggle star', messageId, response);
     }
 
     async trashMessage(accessToken: string, messageId: string): Promise<void> {
-        await fetch(`${GMAIL_API_BASE}/messages/${messageId}/trash`, {
+        const response = await fetch(`${GMAIL_API_BASE}/messages/${messageId}/trash`, {
             method: 'POST',
             headers: { Authorization: `Bearer ${accessToken}` },
         });
+        await assertEmailMutationOk('Gmail', 'trash message', messageId, response);
     }
 
     async getMessage(
