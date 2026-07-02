@@ -113,10 +113,6 @@ export const EmailManager: React.FC = () => {
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </button>
-          <button className="px-5 py-2.5 bg-purple-500 hover:bg-purple-600 text-white font-bold text-sm rounded-xl transition-all flex items-center gap-2 shadow-[0_0_15px_rgba(168,85,247,0.3)] cursor-pointer">
-            <Plus className="w-4 h-4" />
-            New Alias
-          </button>
         </div>
       </div>
 
