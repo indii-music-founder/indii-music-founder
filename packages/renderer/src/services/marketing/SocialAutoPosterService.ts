@@ -7,6 +7,7 @@
 
 import { logger } from '@/utils/logger';
 import { useStore } from '@/core/store';
+import { MarketingProviderUnavailableError } from './providerErrors';
 
 export type SocialPlatform = 'tiktok' | 'youtube_shorts' | 'meta_reels';
 
@@ -93,9 +94,10 @@ export class SocialAutoPosterService {
      * Revokes or deletes a scheduled post if it hasn't been published yet.
      */
     async revokePost(id: string): Promise<boolean> {
-        logger.info(`[SocialPost] Revoking post ${id}...`);
-        // Logic to delete scheduled trigger in Firebase
-        return true;
+        // ISSUE-667: there is no backend revoke path yet — returning true fabricated
+        // a cancellation that never happened. Fail honestly until one exists.
+        logger.error(`[SocialPost] Cannot revoke post ${id}: no revoke backend is deployed.`);
+        throw new MarketingProviderUnavailableError('Social poster', 'no post-revocation backend is deployed — the scheduled post was NOT cancelled');
     }
 
     /**
@@ -116,15 +118,10 @@ export class SocialAutoPosterService {
 
             const result = await getInsightsFn({ externalId, platform });
             return result.data;
-        } catch (__error: unknown) {
-            logger.warn(`[SocialPost] Insights Cloud Function unavailable for ${platform}:${externalId}. Deploy Cloud Function 'getSocialPostInsights'.`);
-            return {
-                views: 0,
-                likes: 0,
-                shares: 0,
-                comments: 0,
-                avgWatchTime: 0
-            };
+        } catch (error: unknown) {
+            // ISSUE-667: zero-filled metrics read as "no engagement", not "unavailable". Fail honestly.
+            logger.error(`[SocialPost] Insights Cloud Function unavailable for ${platform}:${externalId}:`, error);
+            throw new MarketingProviderUnavailableError(platform, "the 'getSocialPostInsights' backend is not deployed or rejected the request", { cause: error });
         }
     }
 }
