@@ -8884,8 +8884,9 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-601: Publishing release list view renders a dead external-link icon button
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ COMPLETED (2026-07-01)
 - **Severity:** 🟡 MEDIUM
+- **Fix:** Deleted handler-less ExternalLink icon from row actions
 - **Module:** Publishing / release list view
 - **Location:** `packages/renderer/src/modules/publishing/components/ReleaseListView.tsx:321-325`
 - **Summary:** The row actions include an `ExternalLink` icon button, but the component does not attach any click handler or destination to that control. The row itself may be clickable elsewhere, but the icon is still surfaced as an action with no behavior.
@@ -8896,8 +8897,9 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-602: Publishing distributor progress shows a dead `View Releases` footer button
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ COMPLETED (2026-07-01)
 - **Severity:** 🟡 MEDIUM
+- **Fix:** Replaced button with static "Distribution complete." message
 - **Module:** Publishing / distributor progress
 - **Location:** `packages/renderer/src/modules/publishing/components/MultiDistributorProgress.tsx:144-149`
 - **Summary:** The completion footer renders `View Releases` as a full button, but this component never accepts or calls a handler for that action. When distribution completes, the UI presents a final navigation action that cannot actually take the user anywhere.
@@ -8992,8 +8994,9 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-610: Release status card exposes a dead DDEX preview icon button
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ COMPLETED (2026-07-01)
 - **Severity:** 🟢 LOW
+- **Fix:** Deleted stub-handler ExternalLink icon button
 - **Module:** Publishing / release status
 - **Location:** `packages/renderer/src/modules/publishing/components/ReleaseStatusCard.tsx:129-137`
 - **Summary:** The blue external-link icon button renders with a click handler stub, but the handler only stops propagation and contains a comment. It looks like a DDEX or live-link action even though it never opens anything.
@@ -9040,8 +9043,9 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-614: Release detail track row looks clickable but has no detail action
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ COMPLETED (2026-07-01)
 - **Severity:** 🟢 LOW
+- **Fix:** Removed cursor-pointer and hover:bg class from track row
 - **Module:** Publishing / release detail
 - **Location:** `packages/renderer/src/modules/publishing/components/ReleaseDetailPage.tsx:235-245`
 - **Summary:** The single track row in the release detail tracklist is styled as a clickable card, but there is no `onClick`, drill-down, or keyboard behavior. It suggests a track detail surface that does not exist.
@@ -9304,14 +9308,14 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-636: File tree chevron button is rendered without its own toggle handler
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-01 22:23)
+- **Commit:** 6927817cb
 - **Severity:** 🟢 LOW
 - **Module:** Files / tree navigation
 - **Location:** `packages/renderer/src/modules/files/components/FileTree.tsx:116-120`
 - **Summary:** Folder rows are clickable, but the nested chevron button is rendered as a separate button with no `onClick` handler of its own. The control looks like a dedicated expand/collapse affordance even though it does not independently do anything.
+- **Fix:** Wired chevron button's onClick to call `toggleFolder(node.id)` using the store's toggle handler.
 - **Expected (acceptance):** Either wire the chevron button to toggle the folder or render it as a decorative icon.
-- **Honest fallback:** Keep the tree visible, but remove the button semantics from the chevron until it has its own action.
-- **Fix Direction:** Attach a real expand/collapse handler or strip the fake affordance.
 - **DO NOT:** Leave a folder toggle button that cannot act by itself.
 
 ### ISSUE-637: Dailies strip exposes an inert options button
@@ -9328,14 +9332,14 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-638: Audit log dashboard exposes a dead export button
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-01 22:23)
+- **Commit:** 6927817cb
 - **Severity:** 🟢 LOW
 - **Module:** Settings / audit logs
 - **Location:** `packages/renderer/src/modules/settings/components/AuditLogDashboard.tsx:98-101`
 - **Summary:** The dashboard renders `Export CSV` as a visible button, but it has no click handler or download logic. It looks like a working export action on the live audit surface while doing nothing.
+- **Fix:** Removed dead export button and unused Database icon import. Honest fallback: keep audit log table visible without false affordance.
 - **Expected (acceptance):** Either wire the export to real CSV generation or render it as static text.
-- **Honest fallback:** Keep the audit log table visible, but remove the button semantics until export exists.
-- **Fix Direction:** Connect the export button to actual CSV output or strip the fake affordance.
 - **DO NOT:** Leave an audit-log export control that cannot export anything.
 
 ### ISSUE-639: Release status card shows a dead `VIEW DETAILS` button
@@ -9400,8 +9404,9 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-644: Distributor connection rows look interactive but have no row action
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ COMPLETED (2026-07-01)
 - **Severity:** 🟢 LOW
+- **Fix:** Removed cursor-pointer/hover classes and deleted ExternalLink icon from rows
 - **Module:** Distribution / connections
 - **Location:** `packages/renderer/src/modules/publishing/components/DistributorConnectionsPanel.tsx:38-49`
 - **Summary:** Each distributor row is styled as a clickable list item with hover states and a trailing external-link icon, but there is no handler attached to the row. The list implies a drill-in or settings path that does not exist.
@@ -9436,14 +9441,14 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-647: Studio shot list exposes dead settings and add-shot controls
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-01 22:23)
+- **Commit:** 6927817cb
 - **Severity:** 🟢 LOW
 - **Module:** Renderer / studio controls panel
 - **Location:** `packages/renderer/src/core/components/right-panel/StudioControlsPanel.tsx:1048-1058`
 - **Summary:** The shot list renders a per-shot settings icon button and an `Add New Shot` CTA, but neither control has any handler or destination. Both elements look like they should edit or create sequence items, but the panel only shows static placeholders.
+- **Fix:** Removed shot settings icon button and Add New Shot CTA. Removed unused Plus and Settings icon imports.
 - **Expected (acceptance):** Either wire the shot settings/add-shot flow or render the shot list as static non-interactive preview content.
-- **Honest fallback:** Keep the shot list visible, but remove the button affordances until real sequence editing exists.
-- **Fix Direction:** Attach real shot editing/creation actions or strip the fake affordances.
 - **DO NOT:** Leave shot-list controls that look actionable but do nothing.
 
 ### ISSUE-648: GoogleHub Drive download button only triggers an alert placeholder
