@@ -11,6 +11,7 @@
 import { logger } from '@/utils/logger';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '@/services/firebase';
+import { assertEmailMutationOk } from './mutationErrors';
 import type {
     EmailProviderInterface,
     EmailMessage,
@@ -223,7 +224,7 @@ export class OutlookProvider implements EmailProviderInterface {
     }
 
     async markAsRead(accessToken: string, messageId: string): Promise<void> {
-        await fetch(`${GRAPH_API_BASE}/messages/${messageId}`, {
+        const response = await fetch(`${GRAPH_API_BASE}/messages/${messageId}`, {
             method: 'PATCH',
             headers: {
                 Authorization: `Bearer ${accessToken}`,
@@ -231,6 +232,7 @@ export class OutlookProvider implements EmailProviderInterface {
             },
             body: JSON.stringify({ isRead: true }),
         });
+        await assertEmailMutationOk('Outlook', 'mark as read', messageId, response);
     }
 
     async toggleStar(
@@ -238,7 +240,7 @@ export class OutlookProvider implements EmailProviderInterface {
         messageId: string,
         starred: boolean
     ): Promise<void> {
-        await fetch(`${GRAPH_API_BASE}/messages/${messageId}`, {
+        const response = await fetch(`${GRAPH_API_BASE}/messages/${messageId}`, {
             method: 'PATCH',
             headers: {
                 Authorization: `Bearer ${accessToken}`,
@@ -248,10 +250,11 @@ export class OutlookProvider implements EmailProviderInterface {
                 flag: { flagStatus: starred ? 'flagged' : 'notFlagged' },
             }),
         });
+        await assertEmailMutationOk('Outlook', 'toggle star', messageId, response);
     }
 
     async trashMessage(accessToken: string, messageId: string): Promise<void> {
-        await fetch(`${GRAPH_API_BASE}/messages/${messageId}/move`, {
+        const response = await fetch(`${GRAPH_API_BASE}/messages/${messageId}/move`, {
             method: 'POST',
             headers: {
                 Authorization: `Bearer ${accessToken}`,
@@ -259,6 +262,7 @@ export class OutlookProvider implements EmailProviderInterface {
             },
             body: JSON.stringify({ destinationId: 'deleteditems' }),
         });
+        await assertEmailMutationOk('Outlook', 'trash message', messageId, response);
     }
 
     async getMessage(
