@@ -9542,7 +9542,8 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-598: Veo stage consumes cross-stage handoff
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ COMPLETED (2026-07-01 20:27)
+- **Commit:** 2d7fd64d3
 - **Type:** FEATURE (Part B) · **Depends on:** ISSUE-596 (done)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Creative / Veo video (frontend)
@@ -9553,7 +9554,8 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-599: Image stage consumes cross-stage handoff
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ COMPLETED (2026-07-01 20:24)
+- **Commit:** 4a8704504
 - **Type:** FEATURE (Part B) · **Depends on:** ISSUE-596 (done)
 - **Severity:** 🟢 LOW
 - **Module:** Creative / Image (frontend)
@@ -9564,11 +9566,12 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-600: "Send to stage" outbound actions (Gallery + Showroom + each stage output) with lineage
 
-- **Status:** ⏳ OPEN
+- **Status:** 🟡 IN PROGRESS (Gallery ✅ done, Showroom + outputs pending)
+- **Commits:** eac17e033 (Gallery)
 - **Type:** FEATURE (Part B) · **Depends on:** ISSUE-596 (done)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Creative / gallery, showroom, stage output panels
-- **Location:** `packages/renderer/src/modules/creative/components/CreativeGallery.tsx` (GalleryItem menu `:171-228`), `packages/renderer/src/modules/creative/components/ShowroomUI.tsx`, each stage output panel (Omni `outputVideoUrl`, Veo result, Image result)
+- **Remaining:** `packages/renderer/src/modules/creative/components/ShowroomUI.tsx`, each stage output panel (Omni `outputVideoUrl`, Veo result, Image result)
 - **Summary:** Add type-gated **Send to Veo / Send to Omni / Use as Image reference** actions (video → Veo source/frame or Omni source; image → Veo frame, Omni reference, or Image reference) that call `sendToStage(...)` with the item. Add a "Send to next stage" button on each stage's output panel and set `parentId` on the downstream job for lineage.
 - **Expected (acceptance):** Round-trip works end-to-end: Image → (send) → Veo → (send output) → Omni remix, each hop pre-filled with no re-upload, and the `parentId` chain is recorded.
 - **DO NOT:** Offer type-invalid targets (e.g. "Send image as source-video"); lose lineage (`parentId`) across hops.
