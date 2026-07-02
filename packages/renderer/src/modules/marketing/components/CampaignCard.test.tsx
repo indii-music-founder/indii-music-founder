@@ -98,14 +98,8 @@ describe('CampaignCard', () => {
         expect(progressBar).toHaveAttribute('aria-valuemax', '100');
     });
 
-    it('does not trigger onSelect when More Options button is clicked or interacted with', () => {
+    it('does not render the removed More Options dead affordance (ISSUE-603–609)', () => {
         render(<CampaignCard campaign={mockCampaign} onSelect={mockOnSelect} />);
-        const moreOptionsButton = screen.getByRole('button', { name: /More options/i });
-
-        fireEvent.click(moreOptionsButton);
-        expect(mockOnSelect).not.toHaveBeenCalled();
-
-        fireEvent.keyDown(moreOptionsButton, { key: 'Enter' });
-        expect(mockOnSelect).not.toHaveBeenCalled();
+        expect(screen.queryByRole('button', { name: /More options/i })).not.toBeInTheDocument();
     });
 });
