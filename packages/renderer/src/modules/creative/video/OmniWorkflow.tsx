@@ -253,6 +253,7 @@ export default function OmniWorkflow() {
     const [audioDubUri, setAudioDubUri] = useState<string | null>(null);
     const [activeFrameIndex, setActiveFrameIndex] = useState(0);
     const [outputVideoUrl, setOutputVideoUrl] = useState<string | null>(null);
+    const [sourceJobId, setSourceJobId] = useState<string | null>(null);
 
     // Storyboard frame modal/creator state
     const [isAddingFrame, setIsAddingFrame] = useState(false);
@@ -270,6 +271,7 @@ export default function OmniWorkflow() {
                 // Set both preview URL and gs:// URI for backend
                 setRefVideoFile(null);
                 setReferenceVideoUri(handoff.item.storageUri || '');
+                setSourceJobId(handoff.item.id);
                 setStudioControls({ omniReferenceVideo: handoff.item.url });
                 toast.success(`Loaded performance from ${handoff.originStage} stage — ready to remix!`);
             } else if (handoff.role === 'reference-image' && handoff.item.type === 'image') {
@@ -348,6 +350,7 @@ export default function OmniWorkflow() {
                 lyricsText: studioControls.lyricsText || undefined,
                 typographyStyle: studioControls.typographyStyle,
                 visualizerColor: studioControls.visualizerColor,
+                parentId: sourceJobId || undefined,
             });
             const data = response.data as { jobId: string; resultUri: string };
             const videoUrl = await resolveStorageUrl(data.resultUri);
@@ -518,6 +521,8 @@ export default function OmniWorkflow() {
                                 <button
                                     onClick={() => {
                                         if (outputVideoUrl) {
+                                            // Capture source job ID (from input video, not current output)
+                                            const sourceJobId = referenceVideoUri ? undefined : undefined; // Omni remixes from input; track via payload
                                             sendToStage('veo', {
                                                 item: {
                                                     id: crypto.randomUUID(),
@@ -529,7 +534,8 @@ export default function OmniWorkflow() {
                                                 },
                                                 role: 'source-video',
                                                 originStage: 'omni',
-                                                timestamp: Date.now()
+                                                timestamp: Date.now(),
+                                                parentJobId: sourceJobId
                                             });
                                             toast.success('Sent to Veo for further remixing!');
                                         }

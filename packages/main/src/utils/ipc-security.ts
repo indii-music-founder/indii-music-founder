@@ -71,7 +71,7 @@ export function validateSender(event: IpcMainInvokeEvent): void {
 
     // Fallback for unpackaged dev mode (e.g. tests)
     if (!devServerUrl && !app.isPackaged) {
-        devServerUrl = 'http://localhost:4242';
+        devServerUrl = 'http://localhost:4243';
     }
 
     if (devServerUrl) {

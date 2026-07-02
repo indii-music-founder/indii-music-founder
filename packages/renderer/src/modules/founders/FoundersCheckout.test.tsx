@@ -88,5 +88,16 @@ describe('FoundersCheckout', () => {
             expect(screen.getByText(/Connecting to Stripe/i)).toBeInTheDocument();
         });
     });
-});
 
+    it('shows an honest unavailable message when Stripe checkout cannot be created', async () => {
+        render(<FoundersCheckout />);
+
+        fireEvent.click(screen.getByText('Business Software Purchase'));
+        fireEvent.click(screen.getByText('Proceed to Payment'));
+        fireEvent.click(screen.getByText('Proceed to Secure Stripe Checkout'));
+
+        await waitFor(() => {
+            expect(screen.getByText('Stripe checkout is temporarily unavailable. Please try again or contact support.')).toBeInTheDocument();
+        });
+    });
+});

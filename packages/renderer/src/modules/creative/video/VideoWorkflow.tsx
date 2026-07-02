@@ -288,6 +288,7 @@ export default function VideoWorkflow() {
 
     // Director State
     const [activeVideo, setActiveVideo] = useState<HistoryItem | null>(null);
+    const [sourceJobId, setSourceJobId] = useState<string | null>(null);
     const [showSettings, setShowSettings] = useState(false);
 
     const randomizeSeed = useCallback(() => {
@@ -330,9 +331,11 @@ export default function VideoWorkflow() {
             switch (role) {
                 case 'first-frame':
                     updates.firstFrame = item;
+                    setSourceJobId(item.id);
                     break;
                 case 'last-frame':
                     updates.lastFrame = item;
+                    setSourceJobId(item.id);
                     break;
                 case 'reference-image':
                     // Add as character reference for styling guidance
@@ -671,7 +674,8 @@ export default function VideoWorkflow() {
                     inputAudio: useVideoEditorStore.getState().inputAudio || undefined,
                     thinkingLevel: studioControls.thinkingLevel,
                     model: studioControls.model,
-                    useGrounding: studioControls.useGrounding
+                    useGrounding: studioControls.useGrounding,
+                    parentId: sourceJobId || undefined
                 });
             }
 

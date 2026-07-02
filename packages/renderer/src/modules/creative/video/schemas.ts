@@ -87,6 +87,7 @@ export const VideoGenerationOptionsSchema = z.object({
     useGrounding: z.boolean().optional(),
     skipCostCheck: z.boolean().optional(),
     costReservationId: z.string().optional(),
+    parentId: z.string().optional(),
 });
 
 export type VideoGenerationOptions = z.infer<typeof VideoGenerationOptionsSchema>;

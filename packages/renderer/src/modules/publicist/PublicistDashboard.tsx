@@ -126,7 +126,6 @@ export default function PublicistDashboard() {
                         {/* Reports & Identity - Future / Lower priority tabs */}
                         <NavButton
                             isActive={false}
-                            onClick={() => { }} // Placeholder
                             icon={ArrowUpRight}
                             label="Analytics & Reports"
                             disabled
@@ -385,11 +384,12 @@ export default function PublicistDashboard() {
 }
 
 // Sub-component for Sidebar Navigation Buttons
-function NavButton({ isActive, onClick, icon: Icon, label, disabled }: { isActive: boolean; onClick: () => void; icon: LucideIcon; label: string; disabled?: boolean }) {
+function NavButton({ isActive, onClick, icon: Icon, label, disabled }: { isActive: boolean; onClick?: () => void; icon: LucideIcon; label: string; disabled?: boolean }) {
     return (
         <button
-            onClick={onClick}
+            onClick={disabled ? undefined : onClick}
             disabled={disabled}
+            aria-disabled={disabled}
             className={`
                 w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all group
                 ${isActive
