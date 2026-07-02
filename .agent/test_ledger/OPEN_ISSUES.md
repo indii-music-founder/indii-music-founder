@@ -9586,7 +9586,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-658: Distributor adapters report pending review without confirmed DSP delivery
 
-- **Status:** ⏳ OPEN
+- **Status:** 🟡 IN PROGRESS (Agent B)
 - **Severity:** 🔴 HIGH
 - **Module:** Renderer / distribution adapters
 - **GitHub:** https://github.com/indii-music-founder/indii-music-founder/issues/217
