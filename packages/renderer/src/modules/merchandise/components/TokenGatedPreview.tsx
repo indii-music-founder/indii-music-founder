@@ -97,10 +97,10 @@ function FanPreviewMockup({ track, walletConnected }: { track: GatedTrack; walle
                                 <span className="text-xs text-neutral-400">Token required to listen</span>
                             </div>
                         </div>
-                        <button className="w-full flex items-center justify-center gap-2 py-2.5 bg-[#FFE135] text-black text-xs font-black rounded-xl hover:bg-[#FFD700] transition-colors">
+                        <p className="w-full flex items-center justify-center gap-2 py-2.5 text-xs font-black text-gray-400">
                             <Wallet size={13} />
-                            Connect Wallet to Unlock
-                        </button>
+                            Content Locked
+                        </p>
                         <p className="text-[10px] text-neutral-600">
                             Must hold token #{track.tokenId} from contract {track.contractAddress}
                         </p>

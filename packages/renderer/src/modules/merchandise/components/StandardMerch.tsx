@@ -87,21 +87,6 @@ export const StandardMerch: React.FC = () => {
                                 <StandardProductCard key={product.id} product={product} />
                             ))}
 
-                            {/* Add New Placeholder */}
-                            <button
-                                type="button"
-                                aria-label="Design new asset"
-                                className="w-full h-full text-left border-2 border-dashed border-border/50 rounded-2xl flex flex-col items-center justify-center p-8 hover:border-primary/50 hover:bg-primary/5 transition-all cursor-pointer group min-h-[400px] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
-                            >
-                                <div className="w-20 h-20 bg-secondary/50 rounded-2xl flex items-center justify-center mb-6 border border-border/50 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-300">
-                                    <Tag className="text-primary" size={32} />
-                                </div>
-                                <h4 className="text-foreground font-black text-lg tracking-tight">DESIGN NEW ASSET</h4>
-                                <p className="text-muted-foreground text-sm text-center mt-2 max-w-[200px]">Launch a new merch drop in minutes with AI.</p>
-                                <div className="mt-8 text-primary font-black text-xs uppercase tracking-widest border-b-2 border-primary pb-1 hover:text-primary/70 hover:border-primary/70 transition-all">
-                                    Open Designer
-                                </div>
-                            </button>
                         </>
                     )}
                 </div>
