@@ -113,7 +113,7 @@ export class AgentService {
         text: string,
         attachments?: { mimeType: string; base64: string }[],
         forcedAgentId?: string,
-        options?: { source?: 'desktop' | 'mobile-remote' | 'background' | 'api' }
+        options?: { source?: 'desktop' | 'mobile-remote' | 'background' | 'api', originalBrief?: string }
     ): Promise<void> {
         if (this.isProcessing) {
             logger.warn('[AgentService] sendMessage blocked: already processing');
@@ -150,6 +150,7 @@ export class AgentService {
             // PII Redaction for Agent/LLM Input AND Storage
             // We redact BEFORE storage to prevent PII from leaking into the Context Pipeline via chat history.
             const redactedText = this.redactPII(text);
+            const originalBrief = options?.originalBrief || redactedText;
             if (redactedText !== text) {
                 logger.debug("[SECURITY] PII Detected and Redacted from Agent Input");
             }
@@ -282,7 +283,7 @@ export class AgentService {
                             if (resultMsg.text && this.containsImageToolOutput(resultMsg)) {
                                 this.triggerVisualAutorater(
                                     resultMsg.text,
-                                    redactedText,
+                                    originalBrief,
                                     resultMsg.agentId || 'generalist',
                                     responseId,
                                     isBoardroomMode
@@ -1707,7 +1708,7 @@ The user will see this plan and can approve it to start execution.`;
             const correctiveMessage = `[Visual Autorater Correction ${attemptNumber}/${VisualOutputAutorater.MAX_CORRECTION_ATTEMPTS}] The previously generated image did not match the brief. Remaining gaps: ${score.gapsFound}. Regenerate one corrected image using these corrections: ${score.correctivePrompt}. Original brief: "${originalBrief}"`;
 
             // Re-enter sendMessage to trigger a corrective generation
-            await this.sendMessage(correctiveMessage, undefined, agentId, { source: 'background' });
+            await this.sendMessage(correctiveMessage, undefined, agentId, { source: 'background', originalBrief });
         } catch (error) {
             logger.error('[AgentService] Visual autorater failed:', error);
         }

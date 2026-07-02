@@ -83,7 +83,8 @@ export class TuneCoreAdapter extends BaseDistributorAdapter {
 
             const releaseId = metadata.id || `TC-${Date.now()}`;
 
-            // 2. Attempt HTTP API delivery when API key is present (Item 211)
+            // 2. Attempt HTTP API delivery when API key is present (Item 211).
+            // success:true is reserved for a real accepted delivery (ISSUE-658).
             if (this.credentials?.apiKey) {
                 try {
                     const response = await fetch(`${this.apiBaseUrl}/releases`, {
@@ -104,37 +105,54 @@ export class TuneCoreAdapter extends BaseDistributorAdapter {
                         }),
                     });
 
-                    if (response.ok) {
-                        const data = await response.json();
+                    if (!response.ok) {
+                        logger.warn(`[TuneCore] API rejected the release (HTTP ${response.status}) — no delivery occurred.`);
                         return {
-                            success: true,
+                            success: false,
                             releaseId,
-                            distributorReleaseId: data.id || `TC-${releaseId}`,
-                            status: 'pending_review',
-                            metadata: {
-                                estimatedLiveDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-                                reviewRequired: true,
-                                isrcAssigned: data.isrc || metadata.isrc,
-                            }
+                            status: 'failed',
+                            errors: [{ code: 'DELIVERY_REJECTED', message: `TuneCore API rejected the release (HTTP ${response.status}). Nothing was delivered.` }]
                         };
                     }
-                    logger.warn('[TuneCore] HTTP API returned non-OK, falling back to pending status');
+
+                    const data = await response.json();
+                    return {
+                        success: true,
+                        releaseId,
+                        distributorReleaseId: data.id || `TC-${releaseId}`,
+                        status: 'pending_review',
+                        metadata: {
+                            estimatedLiveDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+                            reviewRequired: true,
+                            isrcAssigned: data.isrc || metadata.isrc,
+                        }
+                    };
                 } catch (apiErr: unknown) {
-                    logger.warn('[TuneCore] HTTP API delivery failed, returning ERN-ready status:', apiErr);
+                    logger.warn('[TuneCore] API delivery unavailable — ERN is ready for manual submission, nothing was delivered:', apiErr);
+                    return {
+                        success: false,
+                        releaseId,
+                        status: 'ready_for_manual_submission',
+                        errors: [{ code: 'DELIVERY_UNAVAILABLE', message: 'TuneCore API delivery failed before acceptance. The DDEX ERN was generated — submit the release manually from your TuneCore account.' }],
+                        metadata: {
+                            reviewRequired: true,
+                            isrcAssigned: metadata.isrc,
+                            note: 'ERN generated. No delivery to TuneCore occurred.',
+                        }
+                    };
                 }
             }
 
-            // 3. Fallback: ERN generated and ready for manual submission
+            // 3. No API key: honest manual handoff — ERN generated, nothing delivered
             return {
-                success: true,
+                success: false,
                 releaseId,
-                distributorReleaseId: `TC-${releaseId}`,
-                status: 'pending_review',
+                status: 'ready_for_manual_submission',
+                errors: [{ code: 'MANUAL_DELIVERY_REQUIRED', message: 'No TuneCore API key configured — nothing was delivered. Add one in Settings > Integrations for automatic delivery, or submit the generated ERN manually from your TuneCore account.' }],
                 metadata: {
-                    estimatedLiveDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
                     reviewRequired: true,
-                    isrcAssigned: metadata.isrc || 'Pending Assignment',
-                    note: 'Add TuneCore API key in Settings > Integrations for automatic delivery.',
+                    isrcAssigned: metadata.isrc,
+                    note: 'ERN generated. No delivery to TuneCore occurred.',
                 }
             };
         } catch (e: unknown) {

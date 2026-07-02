@@ -133,33 +133,51 @@ export class UnitedMastersAdapter extends BaseDistributorAdapter {
                         }),
                     });
 
-                    if (response.ok) {
-                        const data = await response.json();
+                    if (!response.ok) {
+                        logger.warn(`[UnitedMasters] API rejected the release (HTTP ${response.status}) — no delivery occurred.`);
                         return {
-                            success: true,
+                            success: false,
                             releaseId,
-                            distributorReleaseId: data.id || `UM-${releaseId}`,
-                            status: 'pending_review',
-                            metadata: {
-                                estimatedLiveDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
-                                reviewRequired: false, // UM Select is typically fast
-                            }
+                            status: 'failed',
+                            errors: [{ code: 'DELIVERY_REJECTED', message: `UnitedMasters API rejected the release (HTTP ${response.status}). Nothing was delivered.` }]
                         };
                     }
+
+                    const data = await response.json();
+                    return {
+                        success: true,
+                        releaseId,
+                        distributorReleaseId: data.id || `UM-${releaseId}`,
+                        status: 'pending_review',
+                        metadata: {
+                            estimatedLiveDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+                            reviewRequired: false, // UM Select is typically fast
+                        }
+                    };
                 } catch (apiErr: unknown) {
-                    logger.warn('[UnitedMasters] API delivery failed:', apiErr);
+                    logger.warn('[UnitedMasters] API delivery unavailable — ERN is ready for manual submission, nothing was delivered:', apiErr);
+                    return {
+                        success: false,
+                        releaseId,
+                        status: 'ready_for_manual_submission',
+                        errors: [{ code: 'DELIVERY_UNAVAILABLE', message: 'UnitedMasters API delivery failed before acceptance. The DDEX ERN was generated — submit the release manually from your UnitedMasters account.' }],
+                        metadata: {
+                            reviewRequired: true,
+                            note: 'ERN generated. No delivery to UnitedMasters occurred.',
+                        }
+                    };
                 }
             }
 
+            // No API key: honest manual handoff — ERN generated, nothing delivered (ISSUE-658)
             return {
-                success: true,
+                success: false,
                 releaseId,
-                distributorReleaseId: `UM-${releaseId}`,
-                status: 'pending_review',
+                status: 'ready_for_manual_submission',
+                errors: [{ code: 'MANUAL_DELIVERY_REQUIRED', message: 'No UnitedMasters API key configured — nothing was delivered. Add one in Settings > Integrations for automatic delivery, or submit the generated ERN manually from your UnitedMasters account.' }],
                 metadata: {
-                    estimatedLiveDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
-                    reviewRequired: false,
-                    note: 'Add UnitedMasters API key in Settings > Integrations for automatic delivery.',
+                    reviewRequired: true,
+                    note: 'ERN generated. No delivery to UnitedMasters occurred.',
                 }
             };
         } catch (e: unknown) {

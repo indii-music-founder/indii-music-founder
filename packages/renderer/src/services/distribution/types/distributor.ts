@@ -145,6 +145,7 @@ export interface ReleaseResult {
 export type ReleaseStatus =
   | 'draft'
   | 'validating'
+  | 'ready_for_manual_submission'
   | 'pending_review'
   | 'in_review'
   | 'approved'
