@@ -6,7 +6,7 @@ import { Play, Pause, Image as ImageIcon, Trash2, Maximize2, Upload, ArrowLeftTo
 
 import { useToast } from '@/core/context/ToastContext';
 import { ActionableEmptyState } from '@/components/shared/ActionableEmptyState';
-import { SendToTarget, SendToPayload } from '@/types/handoff';
+import { SendToTarget, SendToPayload, CreativeStage, StageHandoffPayload } from '@/types/handoff';
 import { useResolvedStorageUrl } from '@/hooks/useResolvedStorageUrl';
 
 import { HistoryItem } from '@/core/store';
@@ -36,10 +36,11 @@ interface GalleryItemProps {
     isPlaying: boolean;
     pinToClipboard: (item: HistoryItem) => void;
     sendToModule: (target: SendToTarget, payload: SendToPayload) => void;
+    sendToStage: (target: CreativeStage, payload: StageHandoffPayload) => void;
     key?: React.Key;
 }
 
-const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference, setSelectedItem, toast, generationMode, onDelete, setPrompt, setViewMode, playTrack, pauseTrack, resumeTrack, currentTrack, isPlaying, pinToClipboard, sendToModule }: GalleryItemProps) => {
+const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference, setSelectedItem, toast, generationMode, onDelete, setPrompt, setViewMode, playTrack, pauseTrack, resumeTrack, currentTrack, isPlaying, pinToClipboard, sendToModule, sendToStage }: GalleryItemProps) => {
     const [showSendMenu, setShowSendMenu] = useState(false);
     const videoUrlToResolve = item.type === 'video' && !item.localPath ? item.url : null;
     const imageUrlToResolve = item.type === 'image' && item.url !== 'placeholder:dev-data-uri-too-large' ? item.url : null;
@@ -241,6 +242,81 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                                             >
                                                 <span>Tour Tech Rider</span>
                                             </button>
+                                            <div className="px-2.5 py-1 text-[8px] font-bold text-gray-500 uppercase tracking-widest border-t border-b border-white/5">
+                                                Creative Stages
+                                            </div>
+                                            {item.type === 'video' && (
+                                                <>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            sendToStage('veo', {
+                                                                item,
+                                                                role: 'source-video',
+                                                                originStage: 'image',
+                                                                timestamp: Date.now()
+                                                            });
+                                                            toast.success("Sent to Veo for remixing!");
+                                                            setShowSendMenu(false);
+                                                        }}
+                                                        className="w-full px-2.5 py-1.5 text-[10px] text-gray-300 hover:bg-cyan-600/20 hover:text-cyan-300 transition-colors"
+                                                    >
+                                                        <span>→ Veo (source)</span>
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            sendToStage('omni', {
+                                                                item,
+                                                                role: 'source-video',
+                                                                originStage: 'image',
+                                                                timestamp: Date.now()
+                                                            });
+                                                            toast.success("Sent to Omni for remixing!");
+                                                            setShowSendMenu(false);
+                                                        }}
+                                                        className="w-full px-2.5 py-1.5 text-[10px] text-gray-300 hover:bg-purple-600/20 hover:text-purple-300 transition-colors"
+                                                    >
+                                                        <span>→ Omni (source)</span>
+                                                    </button>
+                                                </>
+                                            )}
+                                            {item.type === 'image' && (
+                                                <>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            sendToStage('veo', {
+                                                                item,
+                                                                role: 'first-frame',
+                                                                originStage: 'image',
+                                                                timestamp: Date.now()
+                                                            });
+                                                            toast.success("Sent to Veo as first frame!");
+                                                            setShowSendMenu(false);
+                                                        }}
+                                                        className="w-full px-2.5 py-1.5 text-[10px] text-gray-300 hover:bg-cyan-600/20 hover:text-cyan-300 transition-colors"
+                                                    >
+                                                        <span>→ Veo (frame)</span>
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            sendToStage('omni', {
+                                                                item,
+                                                                role: 'reference-image',
+                                                                originStage: 'image',
+                                                                timestamp: Date.now()
+                                                            });
+                                                            toast.success("Sent to Omni as reference!");
+                                                            setShowSendMenu(false);
+                                                        }}
+                                                        className="w-full px-2.5 py-1.5 text-[10px] text-gray-300 hover:bg-purple-600/20 hover:text-purple-300 transition-colors"
+                                                    >
+                                                        <span>→ Omni (ref)</span>
+                                                    </button>
+                                                </>
+                                            )}
                                         </div>
                                     )}
                                 </div>
@@ -373,7 +449,7 @@ export default function CreativeGallery({ compact = false, onSelect, className =
         setVideoInput, selectedItem, setSelectedItem, addCharacterReference, setPrompt, setViewMode,
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         playTrack, stopTrack, currentTrack, isPlaying, pauseTrack, resumeTrack,
-        pinToClipboard, sendToModule
+        pinToClipboard, sendToModule, sendToStage
     } = useStore(useShallow(state => ({
         generatedHistory: state.generatedHistory,
         removeItemFromProject: state.removeItemFromProject,
@@ -398,7 +474,8 @@ export default function CreativeGallery({ compact = false, onSelect, className =
         pauseTrack: state.pauseTrack,
         resumeTrack: state.resumeTrack,
         pinToClipboard: state.pinToClipboard,
-        sendToModule: state.sendToModule
+        sendToModule: state.sendToModule,
+        sendToStage: state.sendToStage
     })));
     const fileInputRef = useRef<HTMLInputElement>(null);
     const toast = useToast();
@@ -611,6 +688,7 @@ export default function CreativeGallery({ compact = false, onSelect, className =
                                             isPlaying={isPlaying}
                                             pinToClipboard={pinToClipboard}
                                             sendToModule={sendToModule}
+                                            sendToStage={sendToStage}
                                         />
                                     ))}
                                 </div>
