@@ -42,18 +42,6 @@ const requireAdminAuth = async (req: express.Request, res: express.Response, nex
   const token = req.headers.authorization?.split('Bearer ')[1];
   if (!token) return res.status(401).json({ error: 'Unauthorized' });
 
-  // Local development authentication bypass
-  if (token === 'MOCK_ADMIN_TOKEN') {
-    Object.assign(req, {
-      user: {
-        email: 'admin@indii.music',
-        name: 'Developer Admin',
-        uid: 'dev-admin-id',
-      },
-    });
-    return next();
-  }
-
   try {
     const decodedToken = await admin.auth().verifyIdToken(token);
     if (decodedToken.email?.endsWith(ADMIN_EMAIL_DOMAIN)) {
@@ -87,28 +75,6 @@ app.get('/api/health', async (req, res) => {
 // Passcode login endpoint for quick admin entry.
 // Validates passcode '0707', creates a Firebase custom auth token for admin@indii.music,
 // and returns it to the client.
-app.post('/api/auth/login-passcode', async (req, res) => {
-  try {
-    const { passcode } = req.body;
-    if (passcode === '0707') {
-      // Create custom token with administrative payload
-      const customToken = await admin.auth().createCustomToken('admin_nexus_user', {
-        email: 'admin@indii.music',
-        email_verified: true,
-        admin: true
-      });
-      res.json({ success: true, customToken });
-    } else {
-      res.status(401).json({ error: 'Invalid passcode' });
-    }
-  } catch (error) {
-    const msg = error instanceof Error ? error.message : String(error);
-    console.error('[Auth] Failed to generate custom token:', error);
-    res.status(500).json({ 
-      error: `Internal auth generation failed: ${msg}` 
-    });
-  }
-});
 
 // ─── Token Usage / AI Cost ───────────────────────────────────────────────────
 // Serves REAL per-user AI spend aggregated from the `user_usage_stats` Firestore
@@ -291,9 +257,12 @@ app.post('/api/webhooks/ci-alerts', async (req, res) => {
 });
 
 // ─── Google Workspace OAuth & API Integration ──────────────────────────────────
+if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+  throw new Error('GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET environment variables are required');
+}
 const oauth2Client = new google.auth.OAuth2(
-  process.env.GOOGLE_CLIENT_ID || 'MOCK_GOOGLE_CLIENT_ID',
-  process.env.GOOGLE_CLIENT_SECRET || 'MOCK_GOOGLE_CLIENT_SECRET',
+  process.env.GOOGLE_CLIENT_ID,
+  process.env.GOOGLE_CLIENT_SECRET,
   process.env.GOOGLE_REDIRECT_URI || 'http://localhost:5174/api/google/oauth/callback'
 );
 

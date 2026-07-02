@@ -123,13 +123,6 @@ export const LoginScreen: React.FC = () => {
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Authentication failed';
       
-      // Developer bypass if running locally without service account configuration
-      if (passcode.trim() === '0707' && (msg.includes('service account') || msg.includes('metadata') || msg.includes('auth generation'))) {
-        localStorage.setItem('indii_admin_token', 'MOCK_ADMIN_TOKEN');
-        window.location.reload();
-        return;
-      }
-      
       setError(msg);
     } finally {
       setSubmitting(false);
