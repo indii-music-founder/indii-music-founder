@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    Play, Clock, CheckCircle2, XCircle,
-    Plus, Trash2, Video, Calendar, Loader2
+    Clock, CheckCircle2, XCircle,
+    Plus, Trash2, Video, Loader2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { socialAutoPosterService, type SocialPlatform } from '@/services/marketing/SocialAutoPosterService';
@@ -16,14 +15,18 @@ interface Platform {
     ratio: string;
 }
 
-interface ScheduledPost {
+// ISSUE-666: each selected platform is dispatched independently and gets its
+// own confirmed status — never a blanket "posted to all" after one call.
+type PlatformDispatchStatus = 'queued' | 'failed';
+
+interface DraftPost {
     id: string;
     title: string;
     mediaUrl: string;
     platforms: SocialPlatform[];
-    scheduledAt: Date;
-    status: 'queued' | 'posting' | 'posted' | 'failed';
+    status: 'draft' | 'posting' | 'done';
     caption: string;
+    platformResults: Partial<Record<SocialPlatform, { status: PlatformDispatchStatus; error?: string }>>;
 }
 
 const PLATFORMS: Platform[] = [
@@ -32,35 +35,11 @@ const PLATFORMS: Platform[] = [
     { id: 'meta_reels', name: 'IG Reels', color: 'bg-green-500', maxDuration: 90, ratio: '9:16' },
 ];
 
-const INITIAL_POSTS: ScheduledPost[] = [];
-
-const STATUS_ICONS = {
-    queued: <Clock size={14} className="text-yellow-400" />,
-    posting: <Loader2 size={14} className="animate-spin text-blue-400" />,
-    posted: <CheckCircle2 size={14} className="text-green-400" />,
-    failed: <XCircle size={14} className="text-red-400" />,
-};
-
-const STATUS_LABELS = {
-    queued: 'Scheduled',
-    posting: 'Posting…',
-    posted: 'Posted',
-    failed: 'Failed',
-};
-
-function formatSchedule(date: Date): string {
-    const now = new Date();
-    const diff = date.getTime() - now.getTime();
-    if (diff < 0) return 'Completed';
-    const h = Math.floor(diff / 3600000);
-    const m = Math.floor((diff % 3600000) / 60000);
-    if (h > 24) return `In ${Math.floor(h / 24)}d`;
-    if (h > 0) return `In ${h}h ${m}m`;
-    return `In ${m}m`;
-}
+const platformName = (id: SocialPlatform): string =>
+    PLATFORMS.find(p => p.id === id)?.name ?? id;
 
 export default function MultiPlatformPoster() {
-    const [posts, setPosts] = useState<ScheduledPost[]>(INITIAL_POSTS);
+    const [posts, setPosts] = useState<DraftPost[]>([]);
     const [showNewPost, setShowNewPost] = useState(false);
     const [newTitle, setNewTitle] = useState('');
     const [newMediaUrl, setNewMediaUrl] = useState('');
@@ -75,16 +54,16 @@ export default function MultiPlatformPoster() {
         );
     };
 
-    const handleSchedule = () => {
+    const handleSaveDraft = () => {
         if (!newTitle.trim() || !newMediaUrl.trim() || newPlatforms.length === 0) return;
-        const post: ScheduledPost = {
+        const post: DraftPost = {
             id: Date.now().toString(),
             title: newTitle.trim(),
             mediaUrl: newMediaUrl.trim(),
             platforms: newPlatforms,
-            scheduledAt: new Date(Date.now() + 7200000),
-            status: 'queued',
+            status: 'draft',
             caption: newCaption.trim() || '',
+            platformResults: {},
         };
         setPosts(prev => [post, ...prev]);
         setNewTitle('');
@@ -94,35 +73,49 @@ export default function MultiPlatformPoster() {
         setShowNewPost(false);
     };
 
-    const handlePostNow = async (post: ScheduledPost) => {
+    const handlePostNow = async (post: DraftPost) => {
         setIsPosting(post.id);
         setPosts(prev => prev.map(p => p.id === post.id ? { ...p, status: 'posting' } : p));
 
-        try {
-            await socialAutoPosterService.queuePost({
-                id: post.id,
-                mediaUrl: post.mediaUrl,
-                caption: post.caption,
-                hashtags: [],
-                platform: post.platforms[0] as SocialPlatform
-            });
+        // Dispatch every selected platform independently; record per-platform outcomes.
+        const results: DraftPost['platformResults'] = {};
+        await Promise.all(post.platforms.map(async platform => {
+            try {
+                await socialAutoPosterService.queuePost({
+                    id: `${post.id}_${platform}`,
+                    mediaUrl: post.mediaUrl,
+                    caption: post.caption,
+                    hashtags: [],
+                    platform,
+                });
+                results[platform] = { status: 'queued' };
+            } catch (error: unknown) {
+                results[platform] = {
+                    status: 'failed',
+                    error: error instanceof Error ? error.message : 'Dispatch failed',
+                };
+            }
+        }));
 
-            toast.success(`Post dispatched to ${post.platforms.join(', ')}`);
-            setPosts(prev => prev.map(p => p.id === post.id ? { ...p, status: 'posted', scheduledAt: new Date() } : p));
-        } catch (_error: unknown) {
-            toast.error("Failed to post now.");
-            setPosts(prev => prev.map(p => p.id === post.id ? { ...p, status: 'failed' } : p));
-        } finally {
-            setIsPosting(null);
+        const queuedNames = post.platforms.filter(p => results[p]?.status === 'queued').map(platformName);
+        const failedNames = post.platforms.filter(p => results[p]?.status === 'failed').map(platformName);
+        if (queuedNames.length > 0) {
+            toast.success(`Queued for delivery: ${queuedNames.join(', ')}`);
         }
+        if (failedNames.length > 0) {
+            toast.error(`Not queued: ${failedNames.join(', ')}`);
+        }
+
+        setPosts(prev => prev.map(p => p.id === post.id ? { ...p, status: 'done', platformResults: results } : p));
+        setIsPosting(null);
     };
 
     const handleDelete = (postId: string) => {
         setPosts(prev => prev.filter(p => p.id !== postId));
     };
 
-    const queued = posts.filter(p => p.status === 'queued');
-    const completed = posts.filter(p => p.status === 'posted' || p.status === 'failed');
+    const drafts = posts.filter(p => p.status === 'draft' || p.status === 'posting');
+    const completed = posts.filter(p => p.status === 'done');
 
     return (
         <div className="p-6 space-y-6 max-w-3xl mx-auto">
@@ -140,14 +133,14 @@ export default function MultiPlatformPoster() {
                     onClick={() => setShowNewPost(true)}
                     className="flex items-center gap-2 px-4 py-2 bg-dept-marketing hover:bg-dept-marketing/80 text-white rounded-lg text-xs font-bold transition-colors"
                 >
-                    <Plus size={14} /> Schedule Post
+                    <Plus size={14} /> New Post
                 </button>
             </div>
 
             {/* Platform Status */}
             <div className="grid grid-cols-3 gap-3">
                 {PLATFORMS.map(p => {
-                    const count = posts.filter(post => post.platforms.includes(p.id) && post.status === 'queued').length;
+                    const count = drafts.filter(post => post.platforms.includes(p.id)).length;
                     return (
                         <div key={p.id} className="rounded-xl bg-white/[0.02] border border-white/5 p-4">
                             <div className="flex items-center gap-2 mb-2">
@@ -155,7 +148,7 @@ export default function MultiPlatformPoster() {
                                 <span className="text-xs font-bold text-white">{p.name}</span>
                             </div>
                             <p className="text-2xl font-black text-white">{count}</p>
-                            <p className="text-[10px] text-gray-500">queued · {p.ratio}</p>
+                            <p className="text-[10px] text-gray-500">drafted · {p.ratio}</p>
                         </div>
                     );
                 })}
@@ -170,7 +163,7 @@ export default function MultiPlatformPoster() {
                         exit={{ opacity: 0, y: -10 }}
                         className="rounded-xl bg-white/[0.03] border border-white/10 p-5 space-y-4"
                     >
-                        <h3 className="text-sm font-bold text-white">New Scheduled Post</h3>
+                        <h3 className="text-sm font-bold text-white">New Post</h3>
 
                         <div>
                             <label className="text-[10px] text-gray-500 uppercase tracking-widest block mb-1">Video Title</label>
@@ -224,11 +217,11 @@ export default function MultiPlatformPoster() {
 
                         <div className="flex gap-2">
                             <button
-                                onClick={handleSchedule}
+                                onClick={handleSaveDraft}
                                 disabled={!newTitle.trim() || !newMediaUrl.trim() || newPlatforms.length === 0}
                                 className="px-4 py-2 bg-dept-marketing hover:bg-dept-marketing/80 disabled:opacity-40 text-white rounded-lg text-xs font-bold transition-colors"
                             >
-                                Schedule in 2h
+                                Save Draft
                             </button>
                             <button
                                 onClick={() => setShowNewPost(false)}
@@ -241,14 +234,14 @@ export default function MultiPlatformPoster() {
                 )}
             </AnimatePresence>
 
-            {/* Queued Posts */}
-            {queued.length > 0 && (
+            {/* Drafts (this device only — not yet dispatched anywhere) */}
+            {drafts.length > 0 && (
                 <div>
                     <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">
-                        Scheduled ({queued.length})
+                        Drafts ({drafts.length}) · saved on this device only
                     </h3>
                     <div className="space-y-2">
-                        {queued.map(post => (
+                        {drafts.map(post => (
                             <motion.div
                                 key={post.id}
                                 layout
@@ -269,19 +262,16 @@ export default function MultiPlatformPoster() {
                                                 </span>
                                             ) : null;
                                         })}
-                                        <span className="text-[10px] text-gray-600">·</span>
-                                        <span className="flex items-center gap-1 text-[10px] text-yellow-500">
-                                            <Calendar size={10} />
-                                            {formatSchedule(post.scheduledAt)}
-                                        </span>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2 flex-shrink-0">
-                                    {STATUS_ICONS[post.status]}
+                                    {post.status === 'posting'
+                                        ? <Loader2 size={14} className="animate-spin text-blue-400" />
+                                        : <Clock size={14} className="text-yellow-400" />}
                                     <button
                                         onClick={() => handlePostNow(post)}
                                         disabled={isPosting === post.id}
-                                        className="px-3 py-1 bg-dept-marketing/10 hover:bg-dept-marketing/20 text-dept-marketing rounded-lg text-[10px] font-bold transition-colors"
+                                        className="px-3 py-1 bg-dept-marketing/10 hover:bg-dept-marketing/20 text-dept-marketing rounded-lg text-[10px] font-bold transition-colors disabled:opacity-50"
                                     >
                                         Post Now
                                     </button>
@@ -298,7 +288,7 @@ export default function MultiPlatformPoster() {
                 </div>
             )}
 
-            {/* Completed Posts */}
+            {/* Dispatched posts — per-platform confirmed outcomes */}
             {completed.length > 0 && (
                 <div>
                     <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">
@@ -306,21 +296,28 @@ export default function MultiPlatformPoster() {
                     </h3>
                     <div className="space-y-2">
                         {completed.map(post => (
-                            <div key={post.id} className="rounded-xl bg-white/[0.01] border border-white/[0.03] p-4 flex items-center gap-4 opacity-60">
+                            <div key={post.id} className="rounded-xl bg-white/[0.01] border border-white/[0.03] p-4 flex items-center gap-4 opacity-80">
                                 <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center flex-shrink-0">
                                     <Video size={18} className="text-gray-600" />
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <p className="text-sm font-bold text-white truncate">{post.title}</p>
-                                    <p className="text-[10px] text-gray-600 mt-0.5">
-                                        {post.platforms.map(pid => PLATFORMS.find(p => p.id === pid)?.name).filter(Boolean).join(' · ')}
-                                    </p>
-                                </div>
-                                <div className="flex items-center gap-1.5 flex-shrink-0">
-                                    {STATUS_ICONS[post.status]}
-                                    <span className={`text-[10px] font-bold ${post.status === 'posted' ? 'text-green-400' : 'text-red-400'}`}>
-                                        {STATUS_LABELS[post.status]}
-                                    </span>
+                                    <div className="flex items-center gap-3 mt-1 flex-wrap">
+                                        {post.platforms.map(pid => {
+                                            const result = post.platformResults[pid];
+                                            const queuedOk = result?.status === 'queued';
+                                            return (
+                                                <span
+                                                    key={pid}
+                                                    title={result?.error}
+                                                    className={`flex items-center gap-1 text-[10px] font-bold ${queuedOk ? 'text-green-400' : 'text-red-400'}`}
+                                                >
+                                                    {queuedOk ? <CheckCircle2 size={11} /> : <XCircle size={11} />}
+                                                    {platformName(pid)}: {queuedOk ? 'Queued for delivery' : 'Failed'}
+                                                </span>
+                                            );
+                                        })}
+                                    </div>
                                 </div>
                             </div>
                         ))}

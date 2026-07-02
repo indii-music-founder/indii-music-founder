@@ -6,6 +6,7 @@
  */
 
 import { logger } from '@/utils/logger';
+import { MarketingProviderUnavailableError } from './providerErrors';
 
 export type EmailProvider = 'mailchimp' | 'klaviyo';
 
@@ -56,9 +57,9 @@ export class EmailMarketingService {
             logger.info(`[EmailMarketing] ${provider} sync complete: ${result.data.synced} synced, ${result.data.failed} failed.`);
             return true;
         } catch (error: unknown) {
-            logger.warn(`[EmailMarketing] ${provider} sync Cloud Function unavailable:`, error);
-            logger.info(`[EmailMarketing] ${provider} sync queued locally for list ${listId} (${members.length} members). Deploy Cloud Function 'syncEmailList' for live integration.`);
-            return false;
+            // ISSUE-667: never pretend a sync was queued when no provider accepted it.
+            logger.error(`[EmailMarketing] ${provider} sync Cloud Function unavailable — nothing was synced:`, error);
+            throw new MarketingProviderUnavailableError(provider, "the 'syncEmailList' backend is not deployed or rejected the request", { cause: error });
         }
     }
 
@@ -110,14 +111,10 @@ export class EmailMarketingService {
 
             const result = await getStatsFn({ campaignId, provider });
             return result.data;
-        } catch (_error: unknown) {
-            logger.warn(`[EmailMarketing] Stats Cloud Function unavailable for campaign ${campaignId}. Deploy Cloud Function 'getEmailCampaignStats'.`);
-            return {
-                openRate: 0,
-                clickRate: 0,
-                unsubscribes: 0,
-                delivered: 0
-            };
+        } catch (error: unknown) {
+            // ISSUE-667: zero-filled stats read as "0% open rate", not "unavailable". Fail honestly.
+            logger.error(`[EmailMarketing] Stats Cloud Function unavailable for campaign ${campaignId}:`, error);
+            throw new MarketingProviderUnavailableError(provider, "the 'getEmailCampaignStats' backend is not deployed or rejected the request", { cause: error });
         }
     }
 }
