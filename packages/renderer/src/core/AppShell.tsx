@@ -19,6 +19,7 @@ import CostWarningModal from './components/CostWarningModal';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { AlertDialog } from '@/components/ui/AlertDialog';
 import { PromptDialog } from '@/components/ui/PromptDialog';
+import { CampaignConfigDialog } from '@/components/ui/CampaignConfigDialog';
 import { WalletConnectDialog } from '@/components/ui/WalletConnectDialog';
 import { BiometricGate } from './components/auth/BiometricGate';
 import { ResponsiveLayoutProvider } from '@/providers/ResponsiveLayoutProvider';
@@ -435,6 +436,7 @@ function AppContent({ currentModule, showChrome, isDesktop, isAnyPhone, shortcut
                 <ConfirmDialog />
                 <AlertDialog />
                 <PromptDialog />
+                <CampaignConfigDialog />
                 <WalletConnectDialog />
             </GlobalDropZone>
         </div>
