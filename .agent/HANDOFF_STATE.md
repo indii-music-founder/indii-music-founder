@@ -1,25 +1,24 @@
 # Handoff State
-**Updated:** 2026-07-02 09:15 EDT
+**Updated:** 2026-07-02 14:01 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+6f3dd6085 docs(ledger): record brand manager fixes in error ledger
+eb19b4cfb fix(brand): resolve color rendering issues and link brand assets to creative character library
+808290959 fix(hunter): resolve deep logic bugs in agent and sync loops
+003389b25 chore(ledger): Agent B claims ISSUE-658
+e518359c9 chore(ledger): ISSUE-655 FIXED with evidence (Agent B)
+25d28050b fix(rights): keep provider rights flows server-side; renderer sends metadata only (ISSUE-655)
+e5447abfb chore(ledger): Agent B claims ISSUE-655
+4151363fd chore: session checkpoint [09:15]
 56e5563a5 chore(ledger): ISSUE-657 FIXED with evidence (Agent B)
 62db6aa65 fix(finance): make royalty report ingestion idempotent per (reportId, releaseId) (ISSUE-657)
-f7d1e630e chore(ledger): Agent B claims ISSUE-657
-75c28587d chore: session checkpoint [09:01]
-9b1521f64 test(ledger): log ISSUE-CI pipeline failures
-2a7d24f0d chore(ledger): ISSUE-656 FIXED with evidence (Agent B)
-9bc23be5e fix(rights): remove fabricated PRO setlist submission success path (ISSUE-656)
-505b64a2f chore(ledger): Agent B claims ISSUE-656
-6d1e4b383 chore(ledger): record hunt audit + ISSUE-652..657 from Agent A sweep
-a79267494 chore: session checkpoint [00:06]
 ```
 
 ## Working State
 ```
- M .agent/test_ledger/HUNT_AUDIT_20260702T122852Z.md
- M .agent/workflows/hunter.md
+clean working tree
 ```
 
 ## Decisions
