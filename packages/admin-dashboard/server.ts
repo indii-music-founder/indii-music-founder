@@ -72,10 +72,6 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
-// Passcode login endpoint for quick admin entry.
-// Validates passcode '0707', creates a Firebase custom auth token for admin@indii.music,
-// and returns it to the client.
-
 // ─── Token Usage / AI Cost ───────────────────────────────────────────────────
 // Serves REAL per-user AI spend aggregated from the `user_usage_stats` Firestore
 // collection (written by TokenUsageService.trackUsage). No mock data — if there is
@@ -274,9 +270,10 @@ async function getGoogleAuthClient() {
       return null;
     }
     const { tokens } = doc.data() as { tokens: Record<string, unknown> };
+    // Real credentials only — startup already throws if these are unset.
     const auth = new google.auth.OAuth2(
-      process.env.GOOGLE_CLIENT_ID || 'MOCK_GOOGLE_CLIENT_ID',
-      process.env.GOOGLE_CLIENT_SECRET || 'MOCK_GOOGLE_CLIENT_SECRET',
+      process.env.GOOGLE_CLIENT_ID,
+      process.env.GOOGLE_CLIENT_SECRET,
       process.env.GOOGLE_REDIRECT_URI || 'http://localhost:5174/api/google/oauth/callback'
     );
     auth.setCredentials(tokens);
