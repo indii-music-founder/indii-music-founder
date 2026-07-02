@@ -1,19 +1,19 @@
 # Handoff State
-**Updated:** 2026-07-01 21:02 EDT
+**Updated:** 2026-07-01 21:19 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+d2744ac97 fix: remove dead track controls (ISSUE-634)
+c0a3d6de4 fix: remove dead affordances in modules (ISSUE-623,625,626,627,629,632)
+26f262238 fix(ui): ISSUE-618,620 — remove dead affordances in desktop/touring
+0109ebda7 chore: session checkpoint [21:02]
 5834593bc fix(ui): ISSUE-621,628,633,635,642,643,645 — remove dead affordances in merchandise module
 ad10fd496 fix(ui): ISSUE-613,624,630,639 — remove dead controls in distribution
 1ac1374c5 fix(ui): ISSUE-612,615,616,619,622 — remove dead affordances in social module
 a58423b27 fix(ui): ISSUE-606,611,617 — remove dead affordances in finance/analytics
 4c12f1d4f fix(ui): ISSUE-603–609 — remove dead affordances in marketing/publicist
 6b8ffa00c fix(ui): ISSUE-601–644 — remove dead affordances in publishing module
-4f746c0a2 chore: session checkpoint [20:40]
-1f23a4571 chore: session checkpoint [20:39]
-217d23d34 chore: mark ISSUE-600 COMPLETED — full cross-stage send actions
-94f82f687 feat(creative): ISSUE-600 — Veo output panel exposes 'Send to Omni' action
 ```
 
 ## Working State
@@ -33,7 +33,6 @@ a58423b27 fix(ui): ISSUE-606,611,617 — remove dead affordances in finance/anal
  M packages/main/src/utils/ipc-security.ts
  M packages/renderer/src/core/App.tsx
  M packages/renderer/src/main.tsx
- M packages/renderer/src/modules/desktop/components/DesktopWidget.tsx
  M packages/renderer/src/modules/devops/DevopsDashboard.tsx
  M packages/renderer/src/modules/founders/FoundersCheckout.test.tsx
  M packages/renderer/src/modules/founders/FoundersCheckout.tsx
@@ -43,7 +42,6 @@ a58423b27 fix(ui): ISSUE-606,611,617 — remove dead affordances in finance/anal
  M packages/renderer/src/modules/publicist/PublicistDashboard.test.tsx
  M packages/renderer/src/modules/publicist/PublicistDashboard.tsx
  M packages/renderer/src/modules/screenwriter/ScreenwriterDashboard.tsx
- M packages/renderer/src/modules/touring/components/RoadManagerSidebar.tsx
  M packages/renderer/src/services/agent/observability/MetricsService.ts
  M packages/renderer/src/services/video/VideoGenerationService.ts
 ?? packages/firebase/src/functions/agent/manageSemanticMemory.test.ts
