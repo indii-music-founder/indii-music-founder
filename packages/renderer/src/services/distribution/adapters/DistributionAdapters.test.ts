@@ -67,6 +67,12 @@ vi.mock('@/services/distribution/proprietary-ingestion/IngestionNotificationServ
 
 vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('Network unavailable in tests')));
 
+const mockTuneCoreSuccessResponse = (releaseId: string, isrc: string) => ({
+    ok: true,
+    status: 200,
+    json: vi.fn().mockResolvedValue({ id: releaseId, isrc })
+}) as unknown as Response;
+
 vi.mock('fs', () => {
     return {
         existsSync: vi.fn(),
@@ -201,6 +207,9 @@ describe('Distribution Adapters', () => {
         it('should simulate API delivery success', async () => {
             const adapter = new TuneCoreAdapter();
             await adapter.connect({ apiKey: 'test-api-key' });
+            vi.mocked(fetch).mockResolvedValueOnce(
+                mockTuneCoreSuccessResponse('TC-TEST-RELEASE', mockMetadata.isrc)
+            );
 
             const result = await adapter.createRelease(mockMetadata, mockAssets);
 
