@@ -25,7 +25,7 @@ export class ImageGenerationInstrument implements Instrument {
   metadata: InstrumentMetadata = {
     id: 'generate_image',
     name: 'Generate Image',
-    description: 'Generate Intelligence images using text prompts with support for various aspect ratios and styles',
+    description: 'Generate Intelligence images using text prompts. Do NOT hallucinate people/human subjects unless the user explicitly asks for them in their brief.',
     category: 'generation',
     version: '1.0.0',
     author: 'indii Core Team',
@@ -70,7 +70,7 @@ export class ImageGenerationInstrument implements Instrument {
   inputs: InstrumentInput[] = [
     {
       name: 'prompt',
-      description: 'Text description of the desired image',
+      description: 'Text description of the desired image. CRITICAL: Do NOT add people or human subjects to the prompt unless explicitly requested.',
       required: true,
       schema: {
         type: 'string',

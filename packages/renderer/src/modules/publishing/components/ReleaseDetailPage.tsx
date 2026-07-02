@@ -47,6 +47,7 @@ export const ReleaseDetailPage: React.FC<ReleaseDetailPageProps> = ({
 }) => {
     const statusMap: Record<ReleaseStatus, { label: string; color: string; icon: React.ReactNode }> = {
         'draft': { label: 'Draft', color: 'gray', icon: <Edit2 size={12} /> },
+        'ready_for_manual_submission': { label: 'Ready for Submission', color: 'blue', icon: <CheckCircle2 size={12} /> },
         'validating': { label: 'Validating', color: 'blue', icon: <Clock size={12} /> },
         'pending_review': { label: 'Review', color: 'yellow', icon: <AlertTriangle size={12} /> },
         'in_review': { label: 'Review', color: 'yellow', icon: <AlertTriangle size={12} /> },

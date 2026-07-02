@@ -33,7 +33,7 @@ export interface ReleaseDeploymentDocument extends BaseDocument {
     userId: string;
     orgId: string;
     distributorId: string;
-    status: 'validating' | 'pending_review' | 'in_review' | 'processing' | 'submitted' | 'failed' | 'delivered' | 'live' | 'takedown_pending' | 'takedown_complete';
+    status: 'validating' | 'ready_for_manual_submission' | 'pending_review' | 'in_review' | 'processing' | 'submitted' | 'failed' | 'delivered' | 'live' | 'takedown_pending' | 'takedown_complete';
     externalId?: string;
     submittedAt?: Timestamp;
     lastCheckedAt?: Timestamp;
