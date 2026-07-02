@@ -4,6 +4,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { User, X, Upload, AlertTriangle, Grid3x3, Eye, Palette, Pencil, ImagePlus } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { logger } from '@/utils/logger';
+import { BrandAsset } from '@/types/User';
 
 /** Maximum file size for character reference images: 10MB */
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
@@ -39,14 +40,15 @@ interface CharacterRefDimensions {
 
 export const CharacterLibrary: React.FC = () => {
     const toast = useToast();
-    const { characterReferences, addCharacterReference, removeCharacterReference, updateCharacterReference, currentProjectId, addUploadedImage, generatedHistory } = useStore(useShallow(state => ({
+    const { characterReferences, addCharacterReference, removeCharacterReference, updateCharacterReference, currentProjectId, addUploadedImage, generatedHistory, userProfile } = useStore(useShallow(state => ({
         characterReferences: state.characterReferences,
         addCharacterReference: state.addCharacterReference,
         removeCharacterReference: state.removeCharacterReference,
         updateCharacterReference: state.updateCharacterReference,
         currentProjectId: state.currentProjectId,
         addUploadedImage: state.addUploadedImage,
-        generatedHistory: state.generatedHistory
+        generatedHistory: state.generatedHistory,
+        userProfile: state.userProfile
     })));
 
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -164,6 +166,31 @@ export const CharacterLibrary: React.FC = () => {
         setDimensions(prev => ({ ...prev, [newItem.id]: dims }));
         setShowAddOptions(false);
         toast.success(`Character reference added from Creative Director.`);
+    }, [characterReferences.length, addUploadedImage, addCharacterReference, currentProjectId, toast]);
+
+    const handleSelectBrandAsset = useCallback(async (asset: BrandAsset) => {
+        if (characterReferences.length >= 3) {
+            toast.error("Maximum 3 character references allowed.");
+            return;
+        }
+
+        const dims = await getImageDimensions(asset.url).catch(() => ({ width: 1024, height: 1024 }));
+
+        const newItem = {
+            id: crypto.randomUUID(),
+            url: asset.url,
+            prompt: asset.description || "Brand HQ Import",
+            type: 'image' as const,
+            timestamp: Date.now(),
+            category: 'headshot' as const,
+            projectId: currentProjectId || 'default-project'
+        };
+
+        addUploadedImage(newItem);
+        addCharacterReference({ image: newItem, referenceType: 'subject', name: asset.description || `Character ${characterReferences.length + 1}` });
+        setDimensions(prev => ({ ...prev, [newItem.id]: dims }));
+        setShowAddOptions(false);
+        toast.success(`Character reference added from Brand HQ.`);
     }, [characterReferences.length, addUploadedImage, addCharacterReference, currentProjectId, toast]);
 
     /** Drag-and-Drop Handlers */
@@ -429,6 +456,31 @@ export const CharacterLibrary: React.FC = () => {
                                     </div>
                                 ) : (
                                     <div className="text-xs text-gray-500 italic p-4 text-center bg-white/5 rounded-lg border border-dashed border-white/10">No recent images generated yet. Go to Creative Director to make some!</div>
+                                )}
+                            </div>
+                            
+                            {/* Brand HQ Assets Section */}
+                            <div className="mb-6 border-t border-white/10 pt-6">
+                                <h4 className="text-xs font-bold text-gray-400 mb-3 uppercase tracking-wider">Import from Brand HQ</h4>
+                                {((userProfile?.brandKit?.brandAssets || []).length > 0 || (userProfile?.brandKit?.referenceImages || []).length > 0) ? (
+                                    <div className="grid grid-cols-4 gap-3 max-h-48 overflow-y-auto custom-scrollbar p-1">
+                                        {[
+                                            ...(userProfile?.brandKit?.brandAssets || []),
+                                            ...(userProfile?.brandKit?.referenceImages || [])
+                                        ].map((asset, idx) => (
+                                            <div key={asset.id || idx} onClick={() => handleSelectBrandAsset(asset)} className="aspect-square bg-black rounded-lg border border-white/10 hover:border-blue-500/50 cursor-pointer overflow-hidden relative group">
+                                                <img src={asset.url} alt={asset.description || "Brand Asset"} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
+                                                <div className="absolute top-1 left-1 bg-black/75 px-1 rounded text-[7px] uppercase tracking-wider font-bold text-gray-400">
+                                                    {asset.category || 'Asset'}
+                                                </div>
+                                                <div className="absolute inset-0 bg-blue-500/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                                                    <span className="text-[9px] font-bold text-white bg-blue-600/80 px-2 py-0.5 rounded">Select</span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="text-xs text-gray-500 italic p-4 text-center bg-white/5 rounded-lg border border-dashed border-white/10">No Brand HQ assets found. Go to Brand HQ / Visual DNA to upload some!</div>
                                 )}
                             </div>
                             <div className="border-t border-white/10 pt-6">

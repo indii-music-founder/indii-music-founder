@@ -10,6 +10,7 @@ import { useToast } from '@/core/context/ToastContext';
 import { FontSelector } from './BrandSubComponents';
 import UnifiedAssetLibrary from '../UnifiedAssetLibrary';
 import type { BrandManagerTabProps } from './types';
+import { parseColor } from '@/utils/colorUtils';
 
 interface VisualsPanelProps extends BrandManagerTabProps {}
 
@@ -50,7 +51,13 @@ const VisualsPanel: React.FC<VisualsPanelProps> = ({
 
     const handleUpdateColor = (index: number, color: string) => {
         const newColors = [...(brandKit.colors || [])];
-        newColors[index] = color;
+        const originalColor = newColors[index] || '';
+        const parsed = parseColor(originalColor);
+        if (parsed.label && parsed.label !== parsed.hex) {
+            newColors[index] = `${parsed.label} (${color})`;
+        } else {
+            newColors[index] = color;
+        }
         updateBrandKit({ colors: newColors });
     };
 
@@ -108,37 +115,40 @@ const VisualsPanel: React.FC<VisualsPanelProps> = ({
                 </div>
 
                 <div className="flex flex-wrap gap-4">
-                    {brandKit.colors?.map((color, idx) => (
-                        <motion.div
-                            key={idx}
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            className="group relative"
-                        >
-                            <div
-                                className="w-24 h-24 rounded-xl cursor-pointer transition-all transform hover:scale-105 border border-gray-700 overflow-hidden relative ring-offset-[#111] ring-offset-2 hover:ring-2 hover:ring-green-500/50"
-                                style={{ backgroundColor: color }}
+                    {brandKit.colors?.map((color, idx) => {
+                        const parsed = parseColor(color);
+                        return (
+                            <motion.div
+                                key={idx}
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className="group relative"
                             >
-                                <input
-                                    type="color"
-                                    value={color}
-                                    onChange={(e) => handleUpdateColor(idx, e.target.value)}
-                                    onBlur={() => saveBrandKit({ colors: brandKit.colors })}
-                                    className="opacity-0 w-full h-full cursor-pointer absolute inset-0"
-                                />
-                                <div className="absolute inset-x-0 bottom-0 bg-black/60 backdrop-blur-sm p-1.5 flex justify-between items-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <p className="text-[8px] text-white font-mono uppercase font-bold">{color}</p>
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); handleRemoveColor(idx); }}
-                                        className="text-red-400 hover:text-red-300"
-                                        aria-label={`Remove color ${color}`}
-                                    >
-                                        <Trash2 size={10} />
-                                    </button>
+                                <div
+                                    className="w-24 h-24 rounded-xl cursor-pointer transition-all transform hover:scale-105 border border-gray-700 overflow-hidden relative ring-offset-[#111] ring-offset-2 hover:ring-2 hover:ring-green-500/50"
+                                    style={{ backgroundColor: parsed.hex }}
+                                >
+                                    <input
+                                        type="color"
+                                        value={parsed.hex}
+                                        onChange={(e) => handleUpdateColor(idx, e.target.value)}
+                                        onBlur={() => saveBrandKit({ colors: brandKit.colors })}
+                                        className="opacity-0 w-full h-full cursor-pointer absolute inset-0"
+                                    />
+                                    <div className="absolute inset-x-0 bottom-0 bg-black/60 backdrop-blur-sm p-1.5 flex justify-between items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <p className="text-[8px] text-white font-mono uppercase font-bold">{parsed.label}</p>
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); handleRemoveColor(idx); }}
+                                            className="text-red-400 hover:text-red-300"
+                                            aria-label={`Remove color ${color}`}
+                                        >
+                                            <Trash2 size={10} />
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
-                        </motion.div>
-                    ))}
+                            </motion.div>
+                        );
+                    })}
                 </div>
             </div>
 
