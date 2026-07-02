@@ -9490,7 +9490,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-651: Admin backend exposes a mock auth bypass and mock OAuth defaults
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Admin dashboard / server auth
 - **Location:** `packages/admin-dashboard/server.ts:36-56,88-94,295-310`
@@ -9499,6 +9499,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** Keep the backend endpoints available, but reject authentication and OAuth setup cleanly when real credentials are absent.
 - **Fix Direction:** Eliminate the mock admin token/passcode path and require real Google OAuth configuration.
 - **DO NOT:** Leave backend auth or OAuth code that silently falls back to mock secrets or manufactured sessions.
+- **Fix (2026-07-02):** Audit found `MOCK_ADMIN_TOKEN` and the `0707` passcode endpoint already removed in a prior pass (only auth path is `admin.auth().verifyIdToken` + `@indii.music` domain check; startup throws without real `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`). Removed the two residuals: `MOCK_GOOGLE_CLIENT_ID`/`MOCK_GOOGLE_CLIENT_SECRET` fallbacks in `getGoogleAuthClient` (now uses the validated env vars only) and the stale 0707 passcode comment block. Evidence: `grep -c "MOCK" server.ts` → 0; `tsc --noEmit` clean.
 
 ### ISSUE-652: Gmail and Outlook mutation calls ignore failed HTTP responses
 
@@ -9533,7 +9534,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-654: Workspace snapshot rehydrate mutates Zustand state directly
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Renderer / workspace sync
 - **Location:** `packages/renderer/src/core/store/index.ts:195-223`, `packages/renderer/src/hooks/useWorkspaceSync.ts:100-102`
@@ -9542,6 +9543,9 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** If a cloud snapshot cannot be applied safely, surface a restore error instead of silently mutating an object that may not re-render the app.
 - **Fix Direction:** Build a root-store patch and call `useStore.setState(patch, false)` for snapshot fields, while continuing to use living-plan slice setters for plan state. Add a focused regression test that subscribes to `useStore`, calls `applyWorkspaceSnapshot`, and verifies subscriber notification plus field updates.
 - **DO NOT:** Restore cross-device workspace state by mutating `getState()` fields directly.
+- **Fix:** `applyWorkspaceSnapshot` now builds a patch object and applies it via `useStore.setState(patch, false)` so subscribers and persistence middleware are notified, while plan fields continue through the living-plan slice setters.
+- **Evidence:** `packages/renderer/src/core/store/index.ts:192-230` contains the `useStore.setState` patch path; `packages/renderer/src/core/store/applyWorkspaceSnapshot.test.ts:1-51` proves a subscriber is notified and the root + plan fields update when a snapshot is applied; `packages/renderer/src/hooks/useWorkspaceSync.ts:73-110` already consumes the helper through the guarded rehydrate path.
+- **Files:** `packages/renderer/src/core/store/index.ts`, `packages/renderer/src/core/store/applyWorkspaceSnapshot.test.ts`, `packages/renderer/src/hooks/useWorkspaceSync.ts`
 
 ### ISSUE-655: Rights provider credentials are loaded and used directly in the renderer
 
