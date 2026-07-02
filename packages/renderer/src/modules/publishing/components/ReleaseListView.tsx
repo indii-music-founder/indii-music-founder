@@ -6,7 +6,7 @@ import {
     Search, Plus,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     Circle,
-    LayoutGrid, List as ListIcon, Trash2, Archive, ExternalLink
+    LayoutGrid, List as ListIcon, Trash2, Archive
 } from 'lucide-react';
 import { ReleaseStatusCard } from './ReleaseStatusCard';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
@@ -320,9 +320,6 @@ export const ReleaseListView: React.FC<ReleaseListViewProps> = ({ onNewRelease, 
                                     </td>
                                     <td className="px-6 py-4 text-right" onClick={() => onReleaseClick?.(release.id)}>
                                         <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <button className="p-2 text-gray-400 hover:text-white rounded-lg transition-colors">
-                                                <ExternalLink size={16} />
-                                            </button>
                                             <button
                                                 onClick={(e) => { e.stopPropagation(); deleteRelease(release.id); }}
                                                 className="p-2 text-gray-400 hover:text-red-400 rounded-lg transition-colors"
