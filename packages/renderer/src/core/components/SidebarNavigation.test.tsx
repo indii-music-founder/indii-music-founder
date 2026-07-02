@@ -111,6 +111,7 @@ describe('Sidebar Navigation Integration', () => {
         },
         initializeHistory: mockInitializeHistory,
         loadProjects: mockLoadProjects,
+        loadBoardroomMessages: vi.fn().mockResolvedValue(vi.fn()),
         loadSessions: vi.fn(),
         pendingCount: 0,
         isSyncing: false,
