@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-07-01 20:31 EDT
+**Updated:** 2026-07-01 20:32 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+31a0bcfed chore: session checkpoint [20:31]
 f537467b9 chore: update ISSUE-600 progress (Gallery + Showroom done, outputs pending)
 341fc80bc feat(creative): ISSUE-600 — Showroom mockups expose send to Veo action
 ebeb11ac5 chore: mark ISSUE-598/599 COMPLETED, update ISSUE-600 progress
@@ -13,7 +14,6 @@ eac17e033 feat(creative): ISSUE-600 — Gallery items expose cross-stage send ac
 1c95c9202 chore: session checkpoint [20:17]
 ad45262dc chore: session checkpoint [20:10]
 bf86c6162 chore: session checkpoint [20:09]
-1fe6f89d2 chore: mark ISSUE-597 COMPLETED; fix stale ISSUE-579 dep refs → ISSUE-596
 ```
 
 ## Working State
