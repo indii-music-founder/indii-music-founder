@@ -9566,7 +9566,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-657: Royalty report ingestion is not idempotent and can duplicate payouts
 
-- **Status:** 🟡 IN PROGRESS (Agent B)
+- **Status:** ✅ FIXED (62db6aa65)
 - **Severity:** 🔴 HIGH
 - **Module:** Renderer / finance royalty ingestion
 - **GitHub:** https://github.com/indii-music-founder/indii-music-founder/issues/216
@@ -9576,6 +9576,9 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** If a report cannot be claimed idempotently, reject ingestion with a clear retry-safe error and do not write payout or recoupment changes.
 - **Fix Direction:** Add a processed-report ledger or deterministic payout IDs using `reportId`, source transaction id, ISRC, and payee. Claim/check the report inside a Firestore transaction before calculating payouts. Add regression tests for duplicate report ingestion and partial retry behavior.
 - **DO NOT:** Create royalty payout docs with random IDs for source reports that may be retried or uploaded twice.
+- **Fix:** `ingestRevenueReport` now claims each (reportId, releaseId) group with a `royalty_report_claims/{reportId--releaseId}` doc written in the SAME transaction as that group's payouts and recoupment update; the claim is read first (all reads before writes), and an existing claim skips the group with zero writes. Payout docs moved from random ids to deterministic `payouts/{reportId--transactionId--isrc--payee--role}`; identical payee+role splits merge amounts; blank `reportId` is rejected before any write (retry-safe error). Result type extended to `RevenueIngestionResult` with `processedGroups`/`skippedGroups`/`alreadyProcessed` so duplicate ingestion returns an explicit no-op.
+- **Evidence:** `packages/renderer/src/services/finance/RoyaltyService.ts:109-114` — claim get + skip before any write; `RoyaltyService.ts:180-187` — claim set in-transaction; `RoyaltyService.ts:150` + `RoyaltyService.ts:226-234` — deterministic payout ids from reportId/transactionId/isrc/payee/role (grep `doc(collection(db` in the file returns nothing). Regression suite `packages/renderer/src/services/finance/RoyaltyService.test.ts` (5 tests, run green via `npx vitest run …/RoyaltyService.test.ts`): duplicate ingestion no-op keeps payout docs at 25/25 (a guardless re-run would rewrite 75/75), partial retry processes only the unclaimed release, blank reportId writes nothing, duplicate splits merge. Typecheck + ESLint green (pre-commit gates on 62db6aa65).
+- **Files:** `packages/renderer/src/services/finance/RoyaltyService.ts`, `packages/renderer/src/services/finance/RoyaltyService.test.ts`
 
 ### ISSUE-658: Distributor adapters report pending review without confirmed DSP delivery
 
@@ -9664,6 +9667,56 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** Keep CSV parsing and upload available, but mark enrichment as unavailable until a real Clearbit/Apollo provider call succeeds.
 - **Fix Direction:** Remove the credential-missing mock fallback, return a typed unavailable response or `HttpsError('failed-precondition', ...)`, and add tests for missing Clearbit/Apollo secrets plus successful provider pass-through.
 - **DO NOT:** Present deterministic placeholder enrichment scores as if a third-party enrichment provider processed the fan list.
+
+### ISSUE-665: SMS and email marketing panels fabricate delivered confirmations
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** Marketing / SMS and email campaign UI
+- **GitHub:** https://github.com/indii-music-founder/indii-music-founder/issues/221
+- **Location:** `packages/renderer/src/modules/marketing/components/SMSMarketingPanel.tsx:32-49`, `packages/renderer/src/modules/marketing/components/SMSMarketingPanel.tsx:156-190`, `packages/renderer/src/modules/marketing/components/EmailMarketingPanel.tsx:44-50`, `packages/renderer/src/modules/marketing/components/EmailMarketingPanel.tsx:161-199`
+- **Summary:** The SMS panel verifies a Twilio sender and marks blasts sent using only `setTimeout`; it then renders `SMS Blast Sent` and `Delivered ... via Twilio`. The email panel similarly uses `setTimeout` to mark campaigns sent/scheduled and renders `Email Sent Successfully` / `Delivered ... via Mailchimp/Klaviyo`. Neither panel calls the service layer or a backend provider before showing delivery.
+- **Expected (acceptance):** SMS and email actions should call real backend/service paths and show sent/scheduled/delivered only after provider confirmation.
+- **Honest fallback:** If Twilio, Mailchimp, or Klaviyo is not configured, disable the send action or show a clear unavailable/manual-required state.
+- **Fix Direction:** Wire the panels to real provider-backed services, remove fake verification/send timers and hardcoded audience counts, and add tests for provider-unavailable and provider-confirmed states.
+- **DO NOT:** Tell users a campaign was delivered to fans when no external provider accepted or sent it.
+
+### ISSUE-666: Multi-platform poster reports all selected platforms posted after dispatching only one
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** Marketing / social auto-poster
+- **GitHub:** https://github.com/indii-music-founder/indii-music-founder/issues/222
+- **Location:** `packages/renderer/src/modules/marketing/components/MultiPlatformPoster.tsx:78-95`, `packages/renderer/src/modules/marketing/components/MultiPlatformPoster.tsx:102-111`, `packages/firebase/src/lib/marketing.ts:56-65`, `packages/firebase/src/lib/marketing.ts:143-173`
+- **Summary:** `MultiPlatformPoster` stores scheduled posts only in local React state, then `Post Now` calls `socialAutoPosterService.queuePost` with only `post.platforms[0]`. After that one call resolves, the UI toasts `Post dispatched to ${post.platforms.join(', ')}` and marks the whole post `posted`. The backend `dispatchSocialPost` also rejects YouTube-style platform names even though the UI offers YouTube Shorts.
+- **Expected (acceptance):** Each selected platform should be queued/delivered independently with per-platform status, and platform identifiers should align across UI, dispatch callable, and scheduled delivery worker.
+- **Honest fallback:** If multi-platform scheduling is not fully wired, allow one explicitly selected supported platform at a time and label unsupported platforms unavailable.
+- **Fix Direction:** Persist scheduled posts through the backend, dispatch all selected platforms, map YouTube Shorts consistently, and only mark a platform posted/queued after that platform is confirmed.
+- **DO NOT:** Mark TikTok, YouTube Shorts, and IG Reels as posted after only one platform call succeeds.
+
+### ISSUE-667: Marketing provider service layer references undeployed callables and returns fake fallback statuses
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Marketing / provider service contracts
+- **Location:** `packages/renderer/src/services/marketing/SMSMarketingService.ts:38-85`, `packages/renderer/src/services/marketing/EmailMarketingService.ts:39-121`, `packages/renderer/src/services/marketing/SocialAutoPosterService.ts:95-128`
+- **Summary:** The marketing service layer calls `sendSMSBlast`, `getSMSDeliveryStatus`, `syncEmailList`, `deployEmailCampaign`, `getEmailCampaignStats`, and `getSocialPostInsights`, but no backend implementations or root exports exist under `packages/firebase/src`. Several catch paths then return local fallback states such as queued SMS, `pending` SMS status, or zero-filled email/social stats.
+- **Expected (acceptance):** Service methods should only call deployed provider functions and should not return fake delivery/status/analytics values when providers are unavailable.
+- **Honest fallback:** Return typed unavailable/configuration errors for missing provider functions or credentials, and let the UI present manual-required or disabled states.
+- **Fix Direction:** Implement/export the missing provider callables or remove the calls and expose unavailable states. Add callable-contract coverage and service tests for missing-provider behavior.
+- **DO NOT:** Return `pending`/zero metrics/queued messages as if a provider workflow exists when no callable is deployed.
+
+### ISSUE-668: Influencer bounty tracking, leaderboard, and payout paths are not wired end-to-end
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Marketing / influencer bounty board
+- **Location:** `packages/firebase/src/lib/marketing.ts:202-214`, `packages/renderer/src/modules/marketing/components/InfluencerBountyBoard.tsx:41-113`, `packages/renderer/src/modules/marketing/components/InfluencerBountyBoard.tsx:230-318`, `packages/renderer/src/services/marketing/InfluencerBountyService.ts:81-149`
+- **Summary:** `createInfluencerBounty` writes backend records to `influencerBounties`, but `InfluencerBountyBoard` keeps created bounties and leaderboard data only in local React state, so the board is empty after reload. The copy action ignores the returned backend link and hardcodes `https://indii.vip/ref/${refCode}`. The service's `trackEvent` is a no-op, `initiatePayout` returns a fake `pyt_${Date.now()}` without a transfer, and `getTopInfluencers` queries `bountyLinks` even though the backend writes `influencerBounties`.
+- **Expected (acceptance):** Bounty creation, link copy, tracking, leaderboard, and payout status should all use the same persisted backend records and real transfer/tracking workflows.
+- **Honest fallback:** If tracking or payout is not implemented, show created bounties as draft/active-link-only and hide payout/leaderboard claims until real event and payout processing exists.
+- **Fix Direction:** Read bounties from the backend collection written by `createInfluencerBounty`, copy the returned `link`, implement tracking/payout workers or remove those service methods, and add tests for collection consistency plus link-copy behavior.
+- **DO NOT:** Keep local-only bounty/leaderboard state or fake payout IDs for influencer compensation workflows.
 
 ---
 
