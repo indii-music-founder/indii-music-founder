@@ -67,6 +67,17 @@ export const SoundExchangeAdapter: OrgAdapter = {
 
       await persistOrgRecord(userId, track.id, 'soundexchange', data, result.enrollmentId);
 
+      if (!result.success) {
+        return {
+          success: false,
+          errorMessage: result.error ?? 'SoundExchange enrollment requires manual completion.',
+          submittedAt: new Date(),
+          requiresManualStep: true,
+          manualStepUrl: 'https://www.soundexchange.com/member-login',
+          manualStepInstructions: 'Log in to SoundExchange and enroll your ISRC manually.',
+        };
+      }
+
       return { success: true, confirmationNumber: result.enrollmentId, submittedAt: new Date() };
     } catch (err: unknown) {
       logger.error('[SoundExchangeAdapter] Enrollment failed:', err);

@@ -5,14 +5,27 @@
  * mechanical licensing verification for each release submission.
  *
  * Items 229-232:
- *   229 — ASCAP Work Registration API
+ *   229 — ASCAP Work Registration
  *   230 — BMI Songwriting Registration
  *   231 — SoundExchange Digital Performance Enrollment
  *   232 — Harry Fox / Music Reports Cover Song Verification
+ *
+ * HONESTY + SECURITY CONTRACT (ISSUE-655, covenant of ISSUE-419):
+ * Provider credentials must NEVER be loaded or used in the renderer, and no
+ * ASCAP/BMI/SoundExchange/Music Reports registration API integration exists
+ * (all require partner agreements indii does not hold). This service therefore
+ * only sends release METADATA to secured backend callables:
+ *   - `queueRightsRegistration` records an honest 'manual_required' request
+ *     server-side and returns real member-portal guidance — never 'registered'.
+ *   - `verifyMechanicalLicense` (ISSUE-419) never claims a license is verified
+ *     without a real licensing API response.
+ * The only Firestore read here is the user's OWN manually-confirmed cover
+ * license doc — user data, not a provider secret.
  */
 
-import { db } from '@/services/firebase';
-import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { db, functions } from '@/services/firebase';
+import { doc, getDoc } from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions';
 import { logger } from '@/utils/logger';
 import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
 
@@ -46,307 +59,149 @@ export interface CoverSongVerificationResult {
 }
 
 // ────────────────────────────────────────────────────────────────────
-// Item 229: ASCAP Work Registration
+// Backend boundary — the renderer sends release metadata ONLY
 // ────────────────────────────────────────────────────────────────────
 
+type QueueableProvider = 'ascap' | 'bmi' | 'soundexchange';
+
+interface RightsRegistrationMetadata {
+    trackTitle: string;
+    iswc?: string;
+    isrc?: string;
+    upc?: string;
+    composerName?: string;
+    composerIPI?: string;
+    artistName?: string;
+    labelName?: string;
+    publisherName?: string;
+    publisherShare?: number;
+    releaseDate?: string;
+}
+
+interface QueuedRightsRegistrationResponse {
+    queued: true;
+    provider: QueueableProvider;
+    status: 'manual_required';
+    organization: string;
+    manualUrl: string;
+    guidance: string;
+    recordPath: string;
+    submittedAt: number;
+}
+
 /**
- * Register a musical work with ASCAP via their Work Registration API.
- * Requires an ASCAP publisher/writer account API token (stored in Firestore).
- *
- * ASCAP API: https://api.ascap.com/works/register
- * Production: Requires ASCAP data licensing agreement + partner credentials.
+ * Whitelist-picks the metadata fields the backend accepts. Nothing else —
+ * especially no credential-shaped values — may cross this boundary.
  */
-export async function registerWithASCAP(
-    uid: string,
+function toRegistrationMetadata(metadata: ExtendedGoldenMetadata): RightsRegistrationMetadata {
+    return {
+        trackTitle: metadata.trackTitle,
+        iswc: metadata.iswc || undefined,
+        isrc: metadata.isrc || undefined,
+        upc: metadata.upc || undefined,
+        composerName: metadata.composerName || metadata.artistName || undefined,
+        composerIPI: metadata.composerIPI || undefined,
+        artistName: metadata.artistName || undefined,
+        labelName: metadata.labelName || undefined,
+        publisherName: metadata.publisherName || undefined,
+        publisherShare: typeof metadata.publisherShare === 'number' ? metadata.publisherShare : undefined,
+        releaseDate: metadata.releaseDate || undefined,
+    };
+}
+
+async function queueRegistrationWithBackend(
+    provider: QueueableProvider,
     metadata: ExtendedGoldenMetadata
+): Promise<QueuedRightsRegistrationResponse> {
+    const queueFn = httpsCallable<
+        { provider: QueueableProvider; metadata: RightsRegistrationMetadata },
+        QueuedRightsRegistrationResponse
+    >(functions, 'queueRightsRegistration');
+    const { data } = await queueFn({ provider, metadata: toRegistrationMetadata(metadata) });
+    return data;
+}
+
+// ────────────────────────────────────────────────────────────────────
+// Item 229/230: ASCAP + BMI Work Registration (queued, manual completion)
+// ────────────────────────────────────────────────────────────────────
+
+async function queuePRORegistration(
+    organization: 'ASCAP' | 'BMI',
+    provider: 'ascap' | 'bmi',
+    metadata: ExtendedGoldenMetadata,
+    manualFallbackUrl: string
 ): Promise<PRORegistrationResult> {
     const submittedAt = Date.now();
-
     try {
-        // Retrieve stored ASCAP API credentials
-        const credRef = doc(db, 'users', uid, 'proCredentials', 'ascap');
-        const credSnap = await getDoc(credRef);
-        const creds = credSnap.data() as { apiKey?: string; accountId?: string } | undefined;
-
-        if (!creds?.apiKey) {
-            logger.warn('[PRORightsService] ASCAP API key not configured, queuing for manual registration');
-            // Queue for manual registration tracking in Firestore
-            await setDoc(
-                doc(db, 'users', uid, 'proRegistrations', `ascap-${metadata.id || Date.now()}`),
-                {
-                    organization: 'ASCAP',
-                    status: 'pending_credentials',
-                    workTitle: metadata.trackTitle,
-                    composerName: metadata.composerName || metadata.artistName,
-                    iswc: metadata.iswc || null,
-                    isrc: metadata.isrc || null,
-                    submittedAt: serverTimestamp(),
-                },
-                { merge: true }
-            );
-            return {
-                success: false,
-                organization: 'ASCAP',
-                error: 'ASCAP API credentials not configured. Work queued for manual registration. Go to Settings > Rights to add your ASCAP account.',
-                requiresManualReview: true,
-                submittedAt,
-            };
-        }
-
-        const workPayload = {
-            title: metadata.trackTitle,
-            writers: [
-                {
-                    name: metadata.composerName || metadata.artistName,
-                    ipi: metadata.composerIPI || null,
-                    role: 'Composer/Lyricist',
-                    ownership: 100,
-                }
-            ],
-            publishers: [
-                {
-                    name: metadata.labelName || metadata.publisherName || 'Self-Published',
-                    role: 'Original Publisher',
-                    ownership: metadata.publisherShare || 50,
-                }
-            ],
-            iswc: metadata.iswc || null,
-            isrc: metadata.isrc || null,
-            duration: metadata.durationSeconds || null,
-        };
-
-        const response = await fetch('https://api.ascap.com/v1/works/register', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${creds.apiKey}`,
-                'Content-Type': 'application/json',
-                'X-ASCAP-Account': creds.accountId || '',
-            },
-            body: JSON.stringify(workPayload),
-            signal: AbortSignal.timeout(15000),
-        });
-
-        if (!response.ok) {
-            const errData = await response.json().catch((e) => { logger.warn('[PRORightsService] Failed to parse JSON error response:', e); return {}; }) as { message?: string };
-            return {
-                success: false,
-                organization: 'ASCAP',
-                error: errData.message || `ASCAP API error ${response.status}`,
-                requiresManualReview: true,
-                submittedAt,
-            };
-        }
-
-        const data = await response.json() as { workId?: string; iswc?: string };
-
-        // Persist registration record
-        await setDoc(
-            doc(db, 'users', uid, 'proRegistrations', `ascap-${data.workId || Date.now()}`),
-            {
-                organization: 'ASCAP',
-                status: 'registered',
-                workId: data.workId,
-                iswc: data.iswc,
-                workTitle: metadata.trackTitle,
-                submittedAt: serverTimestamp(),
-            },
-            { merge: true }
-        );
-
-        logger.info(`[PRORightsService] ASCAP registration successful: ${data.workId}`);
-        return { success: true, organization: 'ASCAP', workId: data.workId, iswc: data.iswc, submittedAt };
-
-    } catch (err: unknown) {
-        logger.error('[PRORightsService] ASCAP registration error:', err);
+        const queued = await queueRegistrationWithBackend(provider, metadata);
+        logger.info(`[PRORightsService] ${organization} registration queued for manual completion (${queued.recordPath}).`);
+        // Honest state: the work is queued, not registered. `success` means a
+        // completed provider registration and no such integration exists.
         return {
             success: false,
-            organization: 'ASCAP',
-            error: err instanceof Error ? err.message : 'ASCAP registration failed',
+            organization,
+            error: queued.guidance,
+            requiresManualReview: true,
+            submittedAt,
+        };
+    } catch (err: unknown) {
+        logger.error(`[PRORightsService] ${organization} registration queueing failed:`, err);
+        return {
+            success: false,
+            organization,
+            error: `Could not save the ${organization} registration request (${err instanceof Error ? err.message : 'service unavailable'}). Register the work manually at ${manualFallbackUrl}.`,
             requiresManualReview: true,
             submittedAt,
         };
     }
 }
 
-// ────────────────────────────────────────────────────────────────────
-// Item 230: BMI Songwriting Registration
-// ────────────────────────────────────────────────────────────────────
-
 /**
- * Register a musical work with BMI via the BMI Works Express API.
- * Requires a BMI publisher account and API credentials.
- *
- * BMI API: https://worksexpress.bmi.com (requires BMI publisher membership)
+ * Queue an ASCAP work registration. Identity comes from the authenticated
+ * session (the backend uses the caller's auth token, never a client-sent uid).
  */
-export async function registerWithBMI(
-    uid: string,
+export async function registerWithASCAP(
+    _uid: string,
     metadata: ExtendedGoldenMetadata
 ): Promise<PRORegistrationResult> {
-    const submittedAt = Date.now();
+    return queuePRORegistration('ASCAP', 'ascap', metadata, 'https://www.ascap.com/myascap');
+}
 
-    try {
-        const credRef = doc(db, 'users', uid, 'proCredentials', 'bmi');
-        const credSnap = await getDoc(credRef);
-        const creds = credSnap.data() as { username?: string; password?: string; publisherNumber?: string } | undefined;
-
-        if (!creds?.username || !creds?.password) {
-            await setDoc(
-                doc(db, 'users', uid, 'proRegistrations', `bmi-${metadata.id || Date.now()}`),
-                {
-                    organization: 'BMI',
-                    status: 'pending_credentials',
-                    workTitle: metadata.trackTitle,
-                    submittedAt: serverTimestamp(),
-                },
-                { merge: true }
-            );
-            return {
-                success: false,
-                organization: 'BMI',
-                error: 'BMI credentials not configured. Work queued for manual registration. Go to Settings > Rights to add your BMI account.',
-                requiresManualReview: true,
-                submittedAt,
-            };
-        }
-
-        // BMI Works Express uses form-based auth + XML submission
-        // Step 1: Get session token
-        const authRes = await fetch('https://worksexpress.bmi.com/api/auth', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username: creds.username, password: creds.password }),
-            signal: AbortSignal.timeout(10000),
-        });
-
-        if (!authRes.ok) {
-            return { success: false, organization: 'BMI', error: `BMI auth failed: ${authRes.status}`, requiresManualReview: true, submittedAt };
-        }
-
-        const { token } = await authRes.json() as { token: string };
-
-        // Step 2: Register work
-        const workRes = await fetch('https://worksexpress.bmi.com/api/works', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                workTitle: metadata.trackTitle,
-                iswc: metadata.iswc || null,
-                isrc: metadata.isrc || null,
-                writers: [{
-                    name: metadata.composerName || metadata.artistName,
-                    ipi: metadata.composerIPI || null,
-                    role: 'CA', // Composer/Author
-                    share: 100,
-                }],
-                publishers: [{
-                    number: creds.publisherNumber,
-                    share: metadata.publisherShare || 50,
-                }],
-            }),
-            signal: AbortSignal.timeout(15000),
-        });
-
-        if (!workRes.ok) {
-            const err = await workRes.json().catch((e) => { logger.warn('[PRORightsService] Failed to parse JSON error response:', e); return {}; }) as { message?: string };
-            return { success: false, organization: 'BMI', error: err.message || `BMI API error ${workRes.status}`, requiresManualReview: true, submittedAt };
-        }
-
-        const data = await workRes.json() as { workId?: string; iswc?: string };
-
-        await setDoc(
-            doc(db, 'users', uid, 'proRegistrations', `bmi-${data.workId || Date.now()}`),
-            { organization: 'BMI', status: 'registered', workId: data.workId, iswc: data.iswc, workTitle: metadata.trackTitle, submittedAt: serverTimestamp() },
-            { merge: true }
-        );
-
-        logger.info(`[PRORightsService] BMI registration successful: ${data.workId}`);
-        return { success: true, organization: 'BMI', workId: data.workId, iswc: data.iswc, submittedAt };
-
-    } catch (err: unknown) {
-        logger.error('[PRORightsService] BMI registration error:', err);
-        return { success: false, organization: 'BMI', error: err instanceof Error ? err.message : 'BMI registration failed', requiresManualReview: true, submittedAt };
-    }
+/**
+ * Queue a BMI work registration. Identity comes from the authenticated
+ * session (the backend uses the caller's auth token, never a client-sent uid).
+ */
+export async function registerWithBMI(
+    _uid: string,
+    metadata: ExtendedGoldenMetadata
+): Promise<PRORegistrationResult> {
+    return queuePRORegistration('BMI', 'bmi', metadata, 'https://worksexpress.bmi.com');
 }
 
 // ────────────────────────────────────────────────────────────────────
-// Item 231: SoundExchange Digital Performance Enrollment
+// Item 231: SoundExchange Digital Performance Enrollment (queued)
 // ────────────────────────────────────────────────────────────────────
 
-/**
- * Enroll sound recordings with SoundExchange for digital performance royalties.
- * SoundExchange collects royalties for satellite (SiriusXM) and internet radio plays.
- *
- * Enrollment is typically a one-time setup per release, not per track.
- * Uses SoundExchange's registration form API (requires partner agreement).
- */
 export async function enrollWithSoundExchange(
-    uid: string,
+    _uid: string,
     metadata: ExtendedGoldenMetadata
 ): Promise<SoundExchangeEnrollmentResult> {
     const submittedAt = Date.now();
-
     try {
-        const credRef = doc(db, 'users', uid, 'proCredentials', 'soundexchange');
-        const credSnap = await getDoc(credRef);
-        const creds = credSnap.data() as { apiKey?: string; memberId?: string } | undefined;
-
-        const enrollmentData = {
-            isrc: metadata.isrc,
-            trackTitle: metadata.trackTitle,
-            artistName: metadata.artistName,
-            labelName: metadata.labelName || 'Self-Released',
-            releaseYear: metadata.releaseDate ? new Date(metadata.releaseDate).getFullYear() : new Date().getFullYear(),
-            upc: metadata.upc || null,
+        const queued = await queueRegistrationWithBackend('soundexchange', metadata);
+        logger.info(`[PRORightsService] SoundExchange enrollment queued for manual completion (${queued.recordPath}).`);
+        return {
+            success: false,
+            error: queued.guidance,
+            submittedAt,
         };
-
-        if (!creds?.apiKey) {
-            // Queue enrollment in Firestore for manual processing
-            const docRef = doc(db, 'users', uid, 'soundExchangeEnrollments', `se-${metadata.isrc || Date.now()}`);
-            await setDoc(docRef, {
-                status: 'pending_credentials',
-                ...enrollmentData,
-                submittedAt: serverTimestamp(),
-            }, { merge: true });
-
-            return {
-                success: false,
-                error: 'SoundExchange credentials not configured. Enrollment queued. Go to Settings > Rights to configure.',
-                submittedAt,
-            };
-        }
-
-        const response = await fetch('https://api.soundexchange.com/v1/enrollments', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${creds.apiKey}`,
-                'X-SE-Member': creds.memberId || '',
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(enrollmentData),
-            signal: AbortSignal.timeout(15000),
-        });
-
-        if (!response.ok) {
-            return { success: false, error: `SoundExchange enrollment failed: ${response.status}`, submittedAt };
-        }
-
-        const data = await response.json() as { enrollmentId?: string };
-
-        await setDoc(
-            doc(db, 'users', uid, 'soundExchangeEnrollments', `se-${data.enrollmentId || Date.now()}`),
-            { status: 'enrolled', enrollmentId: data.enrollmentId, ...enrollmentData, submittedAt: serverTimestamp() },
-            { merge: true }
-        );
-
-        logger.info(`[PRORightsService] SoundExchange enrollment: ${data.enrollmentId}`);
-        return { success: true, enrollmentId: data.enrollmentId, submittedAt };
-
     } catch (err: unknown) {
-        logger.error('[PRORightsService] SoundExchange enrollment error:', err);
-        return { success: false, error: err instanceof Error ? err.message : 'Enrollment failed', submittedAt };
+        logger.error('[PRORightsService] SoundExchange enrollment queueing failed:', err);
+        return {
+            success: false,
+            error: `Could not save the SoundExchange enrollment request (${err instanceof Error ? err.message : 'service unavailable'}). Enroll manually at https://www.soundexchange.com/member-login.`,
+            submittedAt,
+        };
     }
 }
 
@@ -354,12 +209,22 @@ export async function enrollWithSoundExchange(
 // Item 232: Harry Fox / Music Reports Cover Song Verification
 // ────────────────────────────────────────────────────────────────────
 
+interface MechanicalLicenseCheckResponse {
+    status: string;
+    requiresClearance: boolean;
+    songCode: string | null;
+    publisher: string | null;
+    rate: number;
+    guidance?: string;
+}
+
 /**
- * Verify mechanical license issuance for cover songs via Music Reports Inc.
- * (Formerly Harry Fox Agency — HFA was acquired by Music Reports in 2015.)
+ * Verify mechanical license coverage for a cover song.
  *
- * Required before delivering a cover song to any distributor.
- * API: Music Reports Songfile API (requires MRI partner agreement)
+ * The only path to `isVerified: true` for a cover is the user's own manually
+ * confirmed license doc (`users/{uid}/coverLicenses/{isrc}`). The backend
+ * `verifyMechanicalLicense` callable honestly returns UNVERIFIED until a real
+ * licensing API is integrated (ISSUE-419) — this function never upgrades that.
  */
 export async function verifyCoverSongLicense(
     uid: string,
@@ -373,13 +238,9 @@ export async function verifyCoverSongLicense(
     }
 
     try {
-        const credRef = doc(db, 'users', uid, 'proCredentials', 'musicreports');
-        const credSnap = await getDoc(credRef);
-        const creds = credSnap.data() as { apiKey?: string } | undefined;
-
-        if (!creds?.apiKey) {
-            // Check if license was manually confirmed
-            const licenseRef = doc(db, 'users', uid, 'coverLicenses', metadata.isrc || `cover-${Date.now()}`);
+        // 1) A manually confirmed license recorded by the user is real evidence.
+        if (metadata.isrc) {
+            const licenseRef = doc(db, 'users', uid, 'coverLicenses', metadata.isrc);
             const licenseSnap = await getDoc(licenseRef);
             if (licenseSnap.exists() && licenseSnap.data()?.status === 'confirmed') {
                 return {
@@ -390,56 +251,28 @@ export async function verifyCoverSongLicense(
                     submittedAt,
                 };
             }
-
-            return {
-                isVerified: false,
-                requiresLicense: true,
-                error: 'Music Reports API not configured and no manual license confirmation found. You must obtain a mechanical license before delivering this cover song.',
-                submittedAt,
-            };
         }
 
-        // Search for existing license via Music Reports Songfile
-        const searchRes = await fetch(
-            `https://api.musicreports.com/v1/licenses/search?isrc=${encodeURIComponent(metadata.isrc || '')}&title=${encodeURIComponent(metadata.originalSongTitle || metadata.trackTitle)}`,
-            {
-                headers: { 'Authorization': `Bearer ${creds.apiKey}` },
-                signal: AbortSignal.timeout(10000),
-            }
-        );
+        // 2) Ask the backend. It returns UNVERIFIED + clearance guidance until a
+        //    real HFA/MusicReports/MLC integration exists.
+        const verifyFn = httpsCallable<
+            { trackTitle: string; originalArtist: string },
+            MechanicalLicenseCheckResponse
+        >(functions, 'verifyMechanicalLicense');
+        // The metadata schema has no original-artist field; the covering artist
+        // is recorded for the audit trail.
+        const { data } = await verifyFn({
+            trackTitle: metadata.originalSongTitle || metadata.trackTitle,
+            originalArtist: metadata.artistName || 'Unknown',
+        });
 
-        if (!searchRes.ok) {
-            return {
-                isVerified: false,
-                requiresLicense: true,
-                error: `Music Reports API error: ${searchRes.status}`,
-                submittedAt,
-            };
-        }
-
-        const data = await searchRes.json() as { licenses?: Array<{ licenseNumber: string; type: string; royaltyRate: number }> };
-        const license = data.licenses?.[0];
-
-        if (license) {
-            logger.info(`[PRORightsService] Cover song license verified: ${license.licenseNumber}`);
-            return {
-                isVerified: true,
-                licenseNumber: license.licenseNumber,
-                licenseType: license.type as CoverSongVerificationResult['licenseType'],
-                royaltyRate: license.royaltyRate,
-                requiresLicense: true,
-                submittedAt,
-            };
-        }
-
-        // No license found — needs to be obtained
         return {
             isVerified: false,
             requiresLicense: true,
-            error: 'No mechanical license found for this cover song. Obtain a license via Songfile (musicreports.com) before distribution.',
+            royaltyRate: data.rate,
+            error: data.guidance || 'No mechanical license verified for this cover song. Obtain a license (e.g. via Songfile or The MLC) and confirm it before distribution.',
             submittedAt,
         };
-
     } catch (err: unknown) {
         logger.error('[PRORightsService] Cover song verification error:', err);
         return {
@@ -510,4 +343,3 @@ export async function runRightsCheck(
 // `Submitted` without any external call. Setlists are queued honestly via the
 // `log_live_setlist_for_pro` agent tool (RoadTools.ts); real ASCAP OnStage /
 // BMI Live submission must go through a secured backend per ISSUE-655.
-
