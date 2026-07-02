@@ -17,6 +17,7 @@ export abstract class BaseDistributorAdapter implements DistributorAdapter {
   abstract readonly id: DistributorId;
   abstract readonly name: string;
   abstract readonly requirements: DistributorRequirements;
+  readonly supportsAutomatedTakedown = false;
 
   protected connected = false;
   protected credentials?: DistributorCredentials;

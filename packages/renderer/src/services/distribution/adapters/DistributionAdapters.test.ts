@@ -4,6 +4,9 @@ import { SymphonicAdapter } from './SymphonicAdapter';
 import { DistroKidAdapter } from './DistroKidAdapter';
 import { TuneCoreAdapter } from './TuneCoreAdapter';
 import { CDBabyAdapter } from './CDBabyAdapter';
+import { BelieveAdapter } from './BelieveAdapter';
+import { OnerpmAdapter } from './OnerpmAdapter';
+import { UnitedMastersAdapter } from './UnitedMastersAdapter';
 import { ExtendedGoldenMetadata, INITIAL_METADATA } from '@/services/metadata/types';
 import { ReleaseAssets } from '../types/distributor';
 
@@ -17,6 +20,28 @@ vi.mock('../DistributionPersistenceService', () => {
             getDeploymentsForRelease: vi.fn().mockResolvedValue([{ id: 'mock-deployment-id' }])
         }
     };
+});
+
+describe('Distributor adapter takedown honesty', () => {
+    it('does not report provider-requested takedowns without a confirmed provider handoff', async () => {
+        const adapters = [
+            new SymphonicAdapter(),
+            new TuneCoreAdapter(),
+            new BelieveAdapter(),
+            new OnerpmAdapter(),
+            new UnitedMastersAdapter(),
+        ];
+
+        await adapters[0]!.connect({ username: 'test-account' });
+
+        for (const adapter of adapters) {
+            const result = await adapter.takedownRelease('release-123');
+
+            expect(result.success).toBe(false);
+            expect(result.status).not.toBe('takedown_requested');
+            expect(result.errors?.[0]?.code).toBe('TAKEDOWN_MANUAL_REQUIRED');
+        }
+    });
 });
 
 // Mock Earnings Service (used by adapters now)
