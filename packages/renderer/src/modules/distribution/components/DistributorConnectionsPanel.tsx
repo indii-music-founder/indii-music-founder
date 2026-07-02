@@ -87,9 +87,6 @@ export const DistributorConnectionsPanel: React.FC = () => {
                             Looking for better metadata handling or higher royalty splits? indii power partners offer exclusive terms for our users.
                         </p>
                     </div>
-                    <button className="px-8 py-3 bg-white text-black rounded-xl font-black text-[12px] uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-2xl shadow-white/5">
-                        View Preferred Partners
-                    </button>
                 </div>
 
                 {/* Background Decoration */}

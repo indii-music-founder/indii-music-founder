@@ -28,9 +28,6 @@ export default function ReleaseStatusList({ releases, onDeliver, onViewReport }:
                 </div>
                 <h3 className="text-lg font-bold text-white mb-1">No Releases Yet</h3>
                 <p className="text-gray-400 max-w-sm mb-6">Create your first release in the Studio to start distributing to platforms.</p>
-                <button className="px-5 py-2.5 bg-white text-black rounded-lg font-semibold hover:bg-gray-200 transition-colors">
-                    Create New Release
-                </button>
             </div>
         );
     }
