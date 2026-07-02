@@ -1,9 +1,9 @@
 import React from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import { 
-    Package, 
-    Image as ImageIcon, 
+import {
+    Package,
+    Image as ImageIcon,
     Layers,
     Play,
     Loader2,
@@ -12,7 +12,8 @@ import {
     Trash2,
     Zap,
     Video,
-    Pin
+    Pin,
+    Send
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '@/core/context/ToastContext';
@@ -21,23 +22,26 @@ import FileUpload from '@/components/kokonutui/file-upload';
 import { cn } from '@/lib/utils';
 import { HistoryItem } from '@/core/types/history';
 import { showroomService } from '@/services/creative/ShowroomService';
+import { StageHandoffPayload, CreativeStage } from '@/types/handoff';
 
 const PRODUCT_TYPES = ['T-Shirt', 'Hoodie', 'Mug', 'Bottle', 'Poster', 'Phone Screen'] as const;
 
 export default function ShowroomUI() {
-    const { 
-        showroomState, 
+    const {
+        showroomState,
         setShowroomState,
         currentProjectId,
         addToHistory,
-        pinToClipboard
+        pinToClipboard,
+        sendToStage
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } = useStore(useShallow((state: any) => ({
         showroomState: state.showroomState,
         setShowroomState: state.setShowroomState,
         currentProjectId: state.currentProjectId,
         addToHistory: state.addToHistory,
-        pinToClipboard: state.pinToClipboard
+        pinToClipboard: state.pinToClipboard,
+        sendToStage: state.sendToStage
     })));
 
     const toast = useToast();
@@ -274,24 +278,49 @@ export default function ShowroomUI() {
                                         className="w-full h-full object-cover" 
                                         alt="Mockup result" 
                                     />
-                                    {/* Hover Pin Button */}
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            pinToClipboard({
-                                                id: showroomState.mockupResult.id,
-                                                url: showroomState.mockupResult.url,
-                                                prompt: showroomState.mockupResult.prompt || `${showroomState.productType} Mockup`,
-                                                type: showroomState.mockupResult.type || 'image',
-                                                timestamp: Date.now()
-                                            });
-                                            toast.success("Pinned to Creative Clipboard!");
-                                        }}
-                                        className="absolute bottom-3 left-3 bg-black/75 backdrop-blur-md text-white p-2.5 rounded-full shadow-lg border border-white/10 hover:bg-violet-600 transition-all opacity-0 group-hover/preview:opacity-100 flex items-center justify-center z-20"
-                                        title="Pin to Visual Clipboard"
-                                    >
-                                        <Pin size={14} className="text-violet-400" />
-                                    </button>
+                                    {/* Hover Controls */}
+                                    <div className="absolute bottom-3 left-3 flex gap-2 opacity-0 group-hover/preview:opacity-100 transition-opacity">
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                pinToClipboard({
+                                                    id: showroomState.mockupResult.id,
+                                                    url: showroomState.mockupResult.url,
+                                                    prompt: showroomState.mockupResult.prompt || `${showroomState.productType} Mockup`,
+                                                    type: showroomState.mockupResult.type || 'image',
+                                                    timestamp: Date.now()
+                                                });
+                                                toast.success("Pinned to Creative Clipboard!");
+                                            }}
+                                            className="bg-black/75 backdrop-blur-md text-white p-2.5 rounded-full shadow-lg border border-white/10 hover:bg-violet-600 transition-all flex items-center justify-center z-20"
+                                            title="Pin to Visual Clipboard"
+                                        >
+                                            <Pin size={14} className="text-violet-400" />
+                                        </button>
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                sendToStage('veo', {
+                                                    item: {
+                                                        id: showroomState.mockupResult.id,
+                                                        url: showroomState.mockupResult.url,
+                                                        prompt: showroomState.mockupResult.prompt || `${showroomState.productType} Mockup`,
+                                                        type: showroomState.mockupResult.type || 'image',
+                                                        timestamp: Date.now(),
+                                                        projectId: currentProjectId
+                                                    },
+                                                    role: 'first-frame',
+                                                    originStage: 'image',
+                                                    timestamp: Date.now()
+                                                });
+                                                toast.success("Sent to Veo!");
+                                            }}
+                                            className="bg-black/75 backdrop-blur-md text-white p-2.5 rounded-full shadow-lg border border-cyan-600/40 hover:bg-cyan-600/20 transition-all flex items-center justify-center z-20"
+                                            title="Send to Veo for video generation"
+                                        >
+                                            <Send size={14} className="text-cyan-400" />
+                                        </button>
+                                    </div>
                                 </div>
                             ) : showroomState.productAsset ? (
                                 <motion.div 
