@@ -9501,7 +9501,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-652: Gmail and Outlook mutation calls ignore failed HTTP responses
 
-- **Status:** 🟡 IN PROGRESS (Agent B)
+- **Status:** ✅ FIXED (da7f3b7fc)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Renderer / email providers
 - **Location:** `packages/renderer/src/services/email/GmailProvider.ts:294-328`, `packages/renderer/src/services/email/OutlookProvider.ts:225-261`, `packages/renderer/src/modules/agent/components/InboxTab.tsx:533-555`
@@ -9510,6 +9510,10 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** If the provider mutation cannot be confirmed, keep the local UI state unchanged or revert it and surface an error toast.
 - **Fix Direction:** Add a shared mutation-response checker or per-method `if (!res.ok)` handling in both providers, then add focused failure-path tests for Gmail/Outlook mutations and the Inbox optimistic update path.
 - **DO NOT:** Let destructive or stateful mail actions report success when the provider rejected the operation.
+- **Fix:** Added a shared mutation response guard for Gmail and Outlook, then updated InboxTab to restore read/star/trash state and surface an error toast when a provider rejects the action.
+- **Evidence:** `packages/renderer/src/services/email/GmailProvider.ts:295-332`, `packages/renderer/src/services/email/OutlookProvider.ts:226-265`, `packages/renderer/src/modules/agent/components/InboxTab.tsx:524-565`
+- **Files:** `packages/renderer/src/services/email/mutationErrors.ts`, `packages/renderer/src/services/email/GmailProvider.ts`, `packages/renderer/src/services/email/OutlookProvider.ts`, `packages/renderer/src/modules/agent/components/InboxTab.tsx`, `packages/renderer/src/services/email/__tests__/EmailMutationFailures.test.ts`, `packages/renderer/src/modules/agent/components/InboxTab.email-actions.test.tsx`
+- **UX Impact:** Failed Gmail/Outlook mail actions now fail honestly, and the inbox no longer leaves the message list or selected message in a stale optimistic state after provider rejection.
 
 ### ISSUE-653: E2E mock guard logs harness diagnostics in normal runtime paths
 
