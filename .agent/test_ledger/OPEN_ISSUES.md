@@ -9499,6 +9499,94 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Fix Direction:** Eliminate the mock admin token/passcode path and require real Google OAuth configuration.
 - **DO NOT:** Leave backend auth or OAuth code that silently falls back to mock secrets or manufactured sessions.
 
+### ISSUE-652: Gmail and Outlook mutation calls ignore failed HTTP responses
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Renderer / email providers
+- **Location:** `packages/renderer/src/services/email/GmailProvider.ts:294-328`, `packages/renderer/src/services/email/OutlookProvider.ts:225-261`, `packages/renderer/src/modules/agent/components/InboxTab.tsx:533-555`
+- **Summary:** Gmail and Outlook provider methods for `markAsRead`, `toggleStar`, and `trashMessage` await `fetch(...)` but never inspect `response.ok`. The public `EmailService` methods therefore resolve successfully on provider 4xx/5xx responses, and `InboxTab` depends on rejection to revert optimistic star state or show trash failure.
+- **Expected (acceptance):** Every provider mutation should throw on non-2xx responses with enough provider/status context for the caller to show a failure and revert optimistic UI where appropriate.
+- **Honest fallback:** If the provider mutation cannot be confirmed, keep the local UI state unchanged or revert it and surface an error toast.
+- **Fix Direction:** Add a shared mutation-response checker or per-method `if (!res.ok)` handling in both providers, then add focused failure-path tests for Gmail/Outlook mutations and the Inbox optimistic update path.
+- **DO NOT:** Let destructive or stateful mail actions report success when the provider rejected the operation.
+
+### ISSUE-653: E2E mock guard logs harness diagnostics in normal runtime paths
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟢 LOW
+- **Module:** Renderer / E2E mode guard
+- **Location:** `packages/renderer/src/utils/e2eMode.ts:32-58`
+- **Summary:** `isFirebaseE2EMockEnabled()` uses `console.log` for normal disabled/enabled control-flow branches. In normal production runtime, the first branch logs `Disabled: not test harness and not local dev host` whenever the helper is called, adding test-harness noise to the browser console.
+- **Expected (acceptance):** Normal E2E guard branches should not write to the browser console in production. Diagnostic output should be removed or routed through a dev/test-only debug logger.
+- **Honest fallback:** Keep warning/error output only for actual exceptional reads, such as unexpected localStorage/env access failures.
+- **Fix Direction:** Remove the branch `console.log` calls or guard them behind dev/test logging. Preserve the functional mock-mode checks.
+- **DO NOT:** Leave test harness diagnostics visible in normal user runtime.
+
+### ISSUE-654: Workspace snapshot rehydrate mutates Zustand state directly
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Renderer / workspace sync
+- **Location:** `packages/renderer/src/core/store/index.ts:195-223`, `packages/renderer/src/hooks/useWorkspaceSync.ts:100-102`
+- **Summary:** `useWorkspaceSync` calls `applyWorkspaceSnapshot(snapshot)` when the user accepts a newer cloud snapshot, but `applyWorkspaceSnapshot` assigns directly into the object returned by `useStore.getState()` (`state.boardroomMessages = ...`, `state.currentModule = ...`, `state.notes = ...`). Those assignments bypass Zustand's `setState` notification path.
+- **Expected (acceptance):** Applying a workspace snapshot should update root-store fields through Zustand so React subscribers, persistence middleware, and sync subscribers are notified.
+- **Honest fallback:** If a cloud snapshot cannot be applied safely, surface a restore error instead of silently mutating an object that may not re-render the app.
+- **Fix Direction:** Build a root-store patch and call `useStore.setState(patch, false)` for snapshot fields, while continuing to use living-plan slice setters for plan state. Add a focused regression test that subscribes to `useStore`, calls `applyWorkspaceSnapshot`, and verifies subscriber notification plus field updates.
+- **DO NOT:** Restore cross-device workspace state by mutating `getState()` fields directly.
+
+### ISSUE-655: Rights provider credentials are loaded and used directly in the renderer
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** Renderer / rights provider integrations
+- **GitHub:** https://github.com/indii-music-founder/indii-music-founder/issues/214
+- **Location:** `packages/renderer/src/services/rights/PRORightsService.ts:66-127`, `packages/renderer/src/services/rights/PRORightsService.ts:187-249`, `packages/renderer/src/services/rights/PRORightsService.ts:292-329`, `packages/renderer/src/services/rights/PRORightsService.ts:402-408`
+- **Summary:** `PRORightsService` reads third-party rights credentials from Firestore into the renderer and calls ASCAP, BMI, SoundExchange, and Music Reports endpoints directly from client code. ASCAP API keys, BMI username/password session auth, SoundExchange API keys, and Music Reports bearer credentials all enter renderer memory and client network paths.
+- **Expected (acceptance):** Rights provider credentials should stay server-side. The renderer should call a Firebase/Cloud Run endpoint with release metadata, and the backend should verify Firebase Auth/App Check, load provider credentials, call the provider, and return typed statuses.
+- **Honest fallback:** If a provider backend is not available, the app should queue/manual-mark the registration as `pending_credentials` or `manual_required` without asking the renderer to handle provider secrets.
+- **Fix Direction:** Move ASCAP, BMI, SoundExchange, and Music Reports integrations to secured backend functions and delete direct provider fetches from renderer code. Add tests proving the renderer sends metadata only and never handles provider API secrets.
+- **DO NOT:** Keep PRO, neighboring-rights, or mechanical-license provider credentials in browser/Electron renderer memory.
+
+### ISSUE-656: PRO setlist submission fabricates success and writes `Submitted`
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** Renderer / rights live setlist submission
+- **GitHub:** https://github.com/indii-music-founder/indii-music-founder/issues/215
+- **Location:** `packages/renderer/src/services/rights/PRORightsService.ts:564-588`
+- **Summary:** `submitSetlistToPRO` logs that it is submitting to an ASCAP/BMI gateway and computes a `gatewayUrl`, but never calls the gateway. Instead it hardcodes `const mockResponseOk = true`, generates a fake `SUB-${targetPRO}-...` ID, writes `submissionStatus: 'Submitted'` to Firestore, and returns success.
+- **Expected (acceptance):** A setlist should only be marked submitted after a real secured provider/backend submission confirms success.
+- **Honest fallback:** If ASCAP/BMI live submission is not wired, return an honest unavailable/manual-required result and leave Firestore in a pending/manual state.
+- **Fix Direction:** Remove the mock success path. Route live setlist submission through a real backend integration or downgrade the renderer path to a manual handoff queue that never claims provider submission.
+- **DO NOT:** Tell artists a PRO setlist was submitted when no external submission occurred.
+
+### ISSUE-657: Royalty report ingestion is not idempotent and can duplicate payouts
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** Renderer / finance royalty ingestion
+- **GitHub:** https://github.com/indii-music-founder/indii-music-founder/issues/216
+- **Location:** `packages/renderer/src/services/finance/RoyaltyService.ts:40-116`, `packages/renderer/src/services/finance/RoyaltyService.test.ts:82-89`
+- **Summary:** `RoyaltyService.ingestRevenueReport()` accepts a `reportId`, but does not use it to guard duplicate processing. It opens per-release transactions without checking whether the report was already processed, deducts recoupment, and writes each payout to a fresh random Firestore document with `doc(collection(db, this.PAYOUTS_COLLECTION))`. Re-running the same report can therefore create a second set of pending payouts and mutate recoupment a second time.
+- **Expected (acceptance):** Royalty report ingestion should be idempotent per `reportId` and source transaction/payee. Duplicate ingestion should return an already-processed/no-op result or update deterministic payout docs without increasing payout count or changing recoupment again.
+- **Honest fallback:** If a report cannot be claimed idempotently, reject ingestion with a clear retry-safe error and do not write payout or recoupment changes.
+- **Fix Direction:** Add a processed-report ledger or deterministic payout IDs using `reportId`, source transaction id, ISRC, and payee. Claim/check the report inside a Firestore transaction before calculating payouts. Add regression tests for duplicate report ingestion and partial retry behavior.
+- **DO NOT:** Create royalty payout docs with random IDs for source reports that may be retried or uploaded twice.
+
+### ISSUE-658: Distributor adapters report pending review without confirmed DSP delivery
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** Renderer / distribution adapters
+- **GitHub:** https://github.com/indii-music-founder/indii-music-founder/issues/217
+- **Location:** `packages/renderer/src/services/distribution/adapters/TuneCoreAdapter.ts:87-139`, `packages/renderer/src/services/distribution/adapters/BelieveAdapter.ts:122-173`, `packages/renderer/src/services/distribution/adapters/OnerpmAdapter.ts:116-164`, `packages/renderer/src/services/distribution/adapters/UnitedMastersAdapter.ts:117-164`, `packages/renderer/src/services/distribution/adapters/SymphonicAdapter.ts:73-101`, `packages/renderer/src/services/distribution/adapters/DistributionAdapters.test.ts:68`
+- **Summary:** Several distributor adapters return `success: true` and `status: 'pending_review'` even when no DSP delivery was confirmed. TuneCore, Believe, OneRPM, and UnitedMasters attempt API delivery, but if the API call fails, returns non-OK, or is unavailable, they fall back to synthetic distributor release IDs and success states. Symphonic returns success from the SFTP branch even if ERN generation, staging, or upload did not actually run because nested success checks were false. The adapter test suite mocks `fetch` to reject while still expecting TuneCore create-release success as simulated API delivery.
+- **Expected (acceptance):** `success: true` should mean a real DSP API call or SFTP upload was accepted. ERN/manual-ready states should use explicit non-delivery statuses such as `manual_required`, `delivery_unavailable`, or `ready_for_manual_submission`.
+- **Honest fallback:** If automatic API/SFTP delivery is unavailable, return an honest manual-required result without a synthetic provider submission id or pending-review claim.
+- **Fix Direction:** Make each adapter fail or return manual-required when API/SFTP delivery is unavailable or rejected. Require Symphonic to fail if ERN generation/staging/upload is not confirmed. Update tests so rejected `fetch` and missing API credentials do not produce `success: true` delivery results.
+- **DO NOT:** Tell artists a release is in DSP review unless a real provider endpoint or SFTP drop accepted the package.
+
 ---
 
 ## Gemini Omni Flash — Omni page build + cross-stage handoff (planned 2026-07-01)
