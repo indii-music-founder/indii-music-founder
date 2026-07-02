@@ -9722,6 +9722,32 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Fix Direction:** Read bounties from the backend collection written by `createInfluencerBounty`, copy the returned `link`, implement tracking/payout workers or remove those service methods, and add tests for collection consistency plus link-copy behavior.
 - **DO NOT:** Keep local-only bounty/leaderboard state or fake payout IDs for influencer compensation workflows.
 
+### ISSUE-669: Sync brief matcher marks tracks submitted after only internal clearance upload
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** Licensing / sync brief submissions
+- **GitHub:** https://github.com/indii-music-founder/indii-music-founder/issues/224
+- **Location:** `packages/renderer/src/modules/licensing/components/SyncBriefMatcher.tsx:91-109`, `packages/renderer/src/modules/licensing/components/SyncBriefMatcher.tsx:230-237`, `packages/renderer/src/modules/licensing/components/SyncBriefMatcher.tsx:325-358`, `packages/renderer/src/services/licensing/SyncPitchingService.ts:50-66`
+- **Summary:** The sync brief matcher says a track can be submitted to a brief with clearance docs, but the flow only uploads files and writes an internal `licensing_clearances` document. It does not call `SyncPitchingService.createPitch`, create a supervisor portal, notify a licensor, or perform an external submission. The modal then says `Submission received` and promises licensor review within 5 business days, while the row is marked `Submitted` via component-local state.
+- **Expected (acceptance):** A sync brief submission should create a real persisted pitch/supervisor handoff or be labeled as an internal clearance upload only.
+- **Honest fallback:** Keep clearance upload available, but label it `Clearance uploaded for review` and do not mark the track submitted to a brief until a real pitch/reviewer workflow succeeds.
+- **Fix Direction:** Wire the submit flow to the existing pitching/supervisor portal service or change copy/state to internal clearance-only. Persist submission state from backend records and add tests for clearance-only, pitch-created, and unavailable states.
+- **DO NOT:** Tell artists a licensor will review or that a track was submitted when the app only saved internal clearance metadata.
+
+### ISSUE-670: Sync brief service generates and caches fabricated licensing opportunities
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** Licensing / sync brief discovery
+- **GitHub:** https://github.com/indii-music-founder/indii-music-founder/issues/223
+- **Location:** `packages/renderer/src/services/licensing/LicensingService.ts:250-268`, `packages/renderer/src/services/licensing/LicensingService.ts:315-333`, `packages/renderer/src/modules/licensing/components/SyncBriefMatcher.tsx:367-385`
+- **Summary:** When a user's `syncBriefs` collection is empty, `LicensingService.getSyncBriefs()` calls `seedSyncBriefs()`, asks `AutonomousIntelligence` to generate realistic briefs with network names, project titles, budgets, moods, BPM ranges, and deadlines, then writes them to Firestore. `SyncBriefMatcher` displays those generated records as matchable sync opportunities with submit controls and no sample/demo labeling.
+- **Expected (acceptance):** Production sync briefs should come only from verified provider/admin/imported sources with provenance.
+- **Honest fallback:** If no real briefs exist, show an empty/unavailable state or clearly labeled sample briefs that cannot enter real submission flows.
+- **Fix Direction:** Remove AI-generated production brief seeding, add provenance/source fields for real briefs, and test that an empty collection does not fabricate opportunities.
+- **DO NOT:** Persist AI-invented networks, budgets, deadlines, or project names as if they are real licensing opportunities.
+
 ---
 
 ## Gemini Omni Flash — Omni page build + cross-stage handoff (planned 2026-07-01)
