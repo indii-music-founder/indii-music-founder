@@ -9,6 +9,7 @@ import CreativeCanvas from './components/CreativeCanvas';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/core/context/ToastContext';
+import { StageHandoffPayload } from '@/types/handoff';
 
 import { WhiskService } from '@/services/WhiskService';
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
@@ -44,7 +45,10 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
         characterReferences,
         chatImportContext,
         clearChatImportContext,
-        initializeDesignHistory
+        initializeDesignHistory,
+        pendingStageHandoff,
+        consumeStageHandoff,
+        addCharacterReference
     } = useStore(useShallow(state => ({
         viewMode: state.viewMode,
         setViewMode: state.setViewMode,
@@ -65,7 +69,10 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
         characterReferences: state.characterReferences,
         chatImportContext: state.chatImportContext,
         clearChatImportContext: state.clearChatImportContext,
-        initializeDesignHistory: state.initializeDesignHistory
+        initializeDesignHistory: state.initializeDesignHistory,
+        pendingStageHandoff: state.pendingStageHandoff,
+        consumeStageHandoff: state.consumeStageHandoff,
+        addCharacterReference: state.addCharacterReference
     })));
     const toast = useToast();
     const [activeMobileTab, setActiveMobileTab] = React.useState<'controls' | 'studio'>('studio');
@@ -73,6 +80,31 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
     useEffect(() => {
         initializeDesignHistory();
     }, [initializeDesignHistory]);
+
+    // Consume cross-stage handoff for Image
+    useEffect(() => {
+        const handoff = pendingStageHandoff?.image;
+        if (handoff) {
+            const { item, role } = handoff;
+
+            switch (role) {
+                case 'reference-image':
+                case 'image-input':
+                    // Add as character reference for styling/composition guidance
+                    addCharacterReference({
+                        image: item,
+                        referenceType: 'reference',
+                        name: item.prompt || 'Reference Image'
+                    });
+                    break;
+                default:
+                    logger.warn('[image-handoff] Unexpected role for image stage', { role });
+            }
+
+            consumeStageHandoff('image');
+            toast.success('Asset received in Image Studio');
+        }
+    }, [pendingStageHandoff?.image, consumeStageHandoff, addCharacterReference, toast]);
 
     const isDirty = React.useMemo(() => (prompt && prompt.length > 0) || isGenerating, [prompt, isGenerating]);
     useUnsavedChanges(isDirty);
