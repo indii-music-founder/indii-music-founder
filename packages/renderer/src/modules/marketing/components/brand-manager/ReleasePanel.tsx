@@ -55,7 +55,7 @@ const ReleasePanel: React.FC<ReleasePanelProps> = ({
                             ) : (
                                 <>
                                     <ImageIcon size={32} className="mb-2 opacity-50 group-hover:opacity-100 transition-opacity" />
-                                    <span className="text-[9px] font-bold uppercase tracking-widest text-center px-4">Upload Artwork<br />(3000x3000px)</span>
+                                    <span className="text-[9px] font-bold uppercase tracking-widest text-center px-4">No Artwork Yet<br />(needs 3000x3000px)</span>
                                 </>
                             )}
                         </div>

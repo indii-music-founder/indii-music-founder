@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import React from 'react';
 import { motion } from 'framer-motion';
-import { TrendingUp, PieChart, Download, DollarSign, Users, Activity, Radio, UploadCloud, MessageSquare } from 'lucide-react';
+import { TrendingUp, PieChart, DollarSign, Users, Activity, UploadCloud, MessageSquare } from 'lucide-react';
 import { secureRandomInt } from '@/utils/crypto-random';
 
 interface EquityDashboardProps {
@@ -57,10 +57,6 @@ export const EquityDashboard = ({ architect }: EquityDashboardProps) => {
                             <span className="bg-[#ff3366]/20 px-2 py-1">CLEARANCE: {architect.clearance}</span>
                         </div>
                     </div>
-                    <button className="relative z-10 px-6 py-3 bg-[#00ff66] text-black font-black uppercase text-sm tracking-widest hover:bg-white hover:text-black transition-colors transform hover:-translate-y-1 hover:shadow-[4px_4px_0px_#ff3366] active:translate-y-0 active:shadow-none flex items-center gap-2">
-                        <Download className="w-4 h-4" />
-                        [ DL_DOSSIER ]
-                    </button>
                 </div>
             </div>
 
@@ -169,14 +165,6 @@ export const EquityDashboard = ({ architect }: EquityDashboardProps) => {
                                 <span className="text-xs font-mono text-[#00ff66]/50">Not assigned</span>
                             </div>
 
-                            <motion.button
-                                whileHover={{ scale: 1.02, boxShadow: "0 0 15px rgba(0, 255, 102, 0.4)" }}
-                                whileTap={{ scale: 0.98 }}
-                                className="w-full py-3 border-2 border-[#00ff66] text-[#00ff66] font-bold text-xs uppercase tracking-widest hover:bg-[#00ff66] hover:text-black transition-all duration-300 relative overflow-hidden group/btn"
-                            >
-                                <span className="relative z-10">PREPARE DISTRIBUTION REVIEW</span>
-                                <div className="absolute inset-0 bg-[#00ff66] opacity-0 group-hover/btn:opacity-100 transition-opacity" />
-                            </motion.button>
                         </div>
                     </div>
                 </div>
@@ -191,15 +179,8 @@ export const EquityDashboard = ({ architect }: EquityDashboardProps) => {
                     <div className="flex-1 space-y-4 relative z-10 overflow-y-auto min-h-[150px] mb-4 pr-2 custom-scrollbar">
                         <div className="text-xs text-[#e0e0e0] opacity-50 italic">Secure channel established. Waiting for connection...</div>
                     </div>
-                    <div className="relative z-10 mt-auto flex gap-2">
-                        <input
-                            type="text"
-                            placeholder="TRANSMIT DIRECTIVE..."
-                            className="flex-1 bg-transparent border-b-2 border-[#1a1a1a] focus:border-[#ff3366] outline-none text-sm font-mono pb-2 text-white placeholder:text-[#8b949e] transition-colors"
-                        />
-                        <button className="text-[#ff3366] font-bold text-xs uppercase tracking-widest hover:text-white transition-colors flex items-center gap-1">
-                            <Radio className="w-4 h-4" /> SEND
-                        </button>
+                    <div className="relative z-10 mt-auto">
+                        <p className="text-[10px] font-mono uppercase tracking-widest text-[#8b949e]">Channel offline — advisory link not wired yet.</p>
                     </div>
                 </div>
 

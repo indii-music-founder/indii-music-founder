@@ -176,7 +176,8 @@ export const EarningsDashboard: React.FC = () => {
                     </div>
                 </div>
                 <div className="flex items-center space-x-2">
-                    <button className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-sm text-gray-300 transition-colors">
+                    {/* Static period label — no period selector exists yet (ISSUE-574/611) */}
+                    <span className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-gray-300">
                         {(() => {
                             if (!earningsSummary?.period?.endDate) {
                                 const m = new Date().toLocaleString('default', { month: 'long' });
@@ -185,7 +186,7 @@ export const EarningsDashboard: React.FC = () => {
                             const d = new Date(earningsSummary.period.endDate);
                             return d.toLocaleString('default', { month: 'long', year: 'numeric' });
                         })()}
-                    </button>
+                    </span>
                 </div>
             </motion.div>
 

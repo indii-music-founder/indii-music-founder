@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Bell, Plus, Filter, Command } from 'lucide-react';
+import { Search, Plus, Command } from 'lucide-react';
 
 interface MarketingToolbarProps {
     title?: string;
@@ -38,15 +38,6 @@ export const MarketingToolbar: React.FC<MarketingToolbarProps> = ({
 
             {/* Right: Actions */}
             <div className="flex items-center gap-3">
-                <button className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors relative">
-                    <Bell size={18} />
-                    <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border border-black" />
-                </button>
-
-                <button className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
-                    <Filter size={18} />
-                </button>
-
                 {onGeoBounty && (
                     <button
                         onClick={onGeoBounty}
