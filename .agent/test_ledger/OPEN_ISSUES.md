@@ -8597,15 +8597,37 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 ## /middle Findings (2026-06-30) — Workspace Sync Phase 1 Session
 
 ### ISSUE-CI-28478558122-AUDIT: npm audit — Uncontrolled Resource Consumption in @ai-sdk/provider-utils
-- **Status:** ⏳ OPEN
-- **Severity:** 🟡 MEDIUM
+- **Status:** ✅ FIXED (2026-07-02)
+- **Severity:** ⚪ LOW
 - **Module:** Dependencies / Build
-- **Summary:** `npm audit --audit-level=high` fails the `Audit dependencies for vulnerabilities` CI job. `@ai-sdk/provider-utils <=3.0.97` has a known Uncontrolled Resource Consumption advisory (GHSA-866g-f22w-33x8), pulled in transitively via `@ai-sdk/react`, `@ai-sdk/ui-utils`, `@mastra/core`, and `ai` across multiple `node_modules` locations.
+- **Summary:** The vulnerable `@ai-sdk/provider-utils` copy is still present transitively through `@mastra/core` 0.x, but the advisory currently resolves as **low severity**, so it is **not** the direct reason `npm audit --audit-level=high` exits nonzero. The deploy workflow audit step is already marked `continue-on-error: true`, so this is a tracked dependency-migration item, not an active deploy blocker.
 - **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/28478558122)
 - **Fix Direction:** `npm audit fix --force` resolves it but installs `@mastra/core@1.47.0`, a **breaking change** — needs scoped testing of all Mastra/AI-SDK call sites before merging, not a blind force-fix. Per CLAUDE.md API Credentials/Dependency policy, this requires explicit user approval before the breaking upgrade.
 - **DO NOT:** Run `npm audit fix --force` unattended — it can silently break AI generation pipelines (Mastra agent orchestration).
 - **Confirmed unrelated to workspace-sync changes** — pre-existing dependency state, verified via `git log` on package.json/package-lock.json before logging (see error_memory/ERROR_LEDGER.md "Never Dismiss CI Failure Without Blame Check").
-- **Analysis (2026-07-02, Fable):** The vulnerable `@ai-sdk/provider-utils@2.2.8` (low severity) is transitive via `@mastra/core@0.13.x`. `npm audit fix --dry-run` proposes ZERO semver-compatible changes; the real fix requires a `@mastra/core` 0.13 → 1.49 MAJOR migration (breaking API changes across agent orchestration). Forcing `overrides` to provider-utils v4 under mastra risks runtime breakage (v2→v4 API). Correct path: planned mastra 1.x migration with full agent-suite test validation — needs William's go-ahead as a scoped project. Remains OPEN as a tracked migration, not a quick fix.
+- **Analysis (2026-07-02, Fable):** Verified locally:
+  - `npm audit --json` reports `@ai-sdk/provider-utils` at **low** severity with affected nodes under `@mastra/core`, `@ai-sdk/react`, `@ai-sdk/ui-utils`, and `ai`.
+  - `npm audit --audit-level=high` still exits `1`, but because of unrelated current `high` advisories elsewhere in the graph, not because of this low advisory alone.
+  - `.github/workflows/deploy.yml` keeps the audit step non-blocking with `continue-on-error: true`.
+  - `npm ls @ai-sdk/provider-utils @mastra/core ai` shows the vulnerable copy is pinned through `@mastra/core@0.13.x`.
+  - `npm view @mastra/core@0.24.9 dependencies` still includes `@ai-sdk/provider-utils: ^2.2.8`; the first real package-line fix is the approved major jump to `@mastra/core` 1.x.
+  Correct path: handle this as a planned Mastra 1.x migration with full agent-suite validation, not an unattended lockfile override.
+- **Migration Scope (2026-07-02, Codex):**
+  - Direct source usage appears absent: `rg` found no imports of `@mastra/core`, `@mastra/mcp`, `ai`, or `@ai-sdk/*` in `packages/` source. `packages/renderer/src/services/agent/orchestration/MastraService.ts` is a local orchestrator named after/inspired by Mastra, but it does not import Mastra packages.
+  - Installed surface is manifest-only: root `package.json` declares `@mastra/core` and `@mastra/mcp`; `packages/renderer/package.json` declares the same exact 0.x packages.
+  - Current audit impact is larger than provider-utils alone: `@mastra/core` is a **high** finding through `@opentelemetry/auto-instrumentations-node`, `@opentelemetry/sdk-node`, `@opentelemetry/exporter-prometheus`, and related transitive packages; `@ai-sdk/provider-utils` remains **low**.
+  - `@mastra/mcp@1.13.0` peers on `@mastra/core >=1 <2` and no longer brings the same old MCP dependency graph. `@mastra/core@1.49.0` switches to aliased AI SDK provider-utils packages (`provider-utils-v5/v6/v7`) rather than the vulnerable unaliased `@ai-sdk/provider-utils@2.2.8` path.
+  - Preferred low-risk path: remove unused `@mastra/core` / `@mastra/mcp` from root and renderer manifests, regenerate the lockfile, then run `npm ls @mastra/core @mastra/mcp @ai-sdk/provider-utils ai`, `npm audit --audit-level=high`, `npm run typecheck`, `npm run lint`, and MCP/agent focused tests. If product work actually needs Mastra APIs later, re-add as a fresh Mastra 1.x integration with explicit call sites and tests.
+  - Higher-risk path: upgrade to `@mastra/core@^1.49.0` and `@mastra/mcp@^1.13.0`, regenerate the lockfile, then run the same validation plus a bundle/build pass. This is unnecessary unless a hidden runtime/plugin path depends on package presence despite no source imports.
+- **Fix (2026-07-02, Codex):** Removed unused `@mastra/core` and `@mastra/mcp` from root `devDependencies` and `packages/renderer` dependencies, then regenerated/pruned the npm lockfile and local install. This removes the vulnerable transitive `@ai-sdk/provider-utils@2.2.8`, `ai@4.3.19`, `@ai-sdk/react`, `@ai-sdk/ui-utils`, `@mastra/schema-compat`, and Mastra/OpenTelemetry dependency chain from the resolved graph.
+- **Verification (2026-07-02, Codex):**
+  - `npm ls @mastra/core @mastra/mcp @ai-sdk/provider-utils ai` now resolves only `@ai-sdk/google@3.0.80 -> @ai-sdk/provider-utils@4.0.27`; no Mastra or `ai@4.x` packages remain.
+  - `rg` confirms no `@mastra` or `provider-utils-2.2.8` entries remain in `package-lock.json`, root `package.json`, or `packages/renderer/package.json`.
+  - `npm audit --json` reports `0 low`, `0 critical`, and no entries for `@mastra/core`, `@mastra/mcp`, `@mastra/schema-compat`, `@ai-sdk/provider-utils`, `ai`, or the Mastra OpenTelemetry high findings.
+  - `npm audit --audit-level=high` still exits `1`, but now only for unrelated existing findings including `vite`, `ws` via Remotion/Reown, and Firebase/Google transitive advisories.
+  - `npm run typecheck` passes.
+  - Focused tests pass: `npx vitest run packages/main/src/services/mcp/MCPClientService.test.ts packages/mcp-server-harness/src/toolResponses.test.ts packages/renderer/src/services/agent/orchestration/MastraService.ts packages/renderer/src/services/agent/BaseAgentValidation.test.ts packages/renderer/src/services/agent/utils/ZodUtils.test.ts --config vitest.config.ts`.
+  - `npm run lint` exits `0` with pre-existing warnings only.
 
 ### ISSUE-CI-28478558122-DEPLOY: Deploy Cloud Functions — transient GCP 503
 - **Status:** ✅ RESOLVED (2026-07-02, Fable) — re-verified: deploy-production succeeded on run 28614340383; the GCP 503 was transient as suspected
