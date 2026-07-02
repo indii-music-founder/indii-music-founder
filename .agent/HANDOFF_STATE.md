@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-07-02 19:31 EDT
+**Updated:** 2026-07-02 19:51 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+d70954003 chore(deps): remove unused @mastra/core + @mastra/mcp (ISSUE-CI-28478558122-AUDIT)
+a86bb673b chore: session checkpoint [19:31]
 b721dd012 chore: session checkpoint [19:29]
 8b5985617 docs(ledger): scope npm-audit finding to @mastra/core 1.x migration (ISSUE-CI-28478558122-AUDIT)
 ace0e71af docs(ledger): verify + close ISSUE-659 (takedown honesty landed in 9c03b1b47)
@@ -12,13 +14,14 @@ ace0e71af docs(ledger): verify + close ISSUE-659 (takedown honesty landed in 9c0
 a0e5f5c49 fix(firebase): harden distribution records, image gen tests, video tests, marketing lib and workspace snapshot test
 9c03b1b47 fix(services): harden distribution adapters, licensing, bounty, avatar gen and log hygiene
 d0dbab356 fix(ui): dead-affordance sweep — remove/wire ~40 inert controls across modules (ISSUE-574..639)
-3ccf196e0 docs(ledger): resolve 12 stale CI pipeline issues — workflow green on run 28614340383
-77d107310 fix(landing): remove fake 'See Documentation' affordance; close dead-affordance sweep (ISSUE-640..645/650)
 ```
 
 ## Working State
 ```
- M .agent/test_ledger/OPEN_ISSUES.md
+ M package-lock.json
+ M package.json
+ M packages/admin-dashboard/package.json
+ M packages/firebase/package.json
 ```
 
 ## Decisions
