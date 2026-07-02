@@ -9430,7 +9430,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-646: Email manager exposes dead alias-management actions
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🟢 LOW
 - **Module:** Admin dashboard / email manager
 - **Location:** `packages/admin-dashboard/src/components/modules/EmailManager.tsx:116,242-246`
@@ -9439,6 +9439,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** Keep the alias list visible, but remove the button semantics until real management actions exist.
 - **Fix Direction:** Attach real alias-management actions or strip the fake affordances.
 - **DO NOT:** Leave alias controls that look actionable but do nothing.
+- **Fix (2026-07-02, Fable):** Dead per-alias `Edit2`/`Trash2` icon buttons removed (no alias-management backend exists) and replaced with an honest "Managed in Google Workspace" label; the dead `New Alias` header button was already gone. Unused lucide imports cleaned. `tsc --noEmit -p tsconfig.app.json` clean.
 
 ### ISSUE-647: Studio shot list exposes dead settings and add-shot controls
 
@@ -9454,7 +9455,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-648: GoogleHub Drive download button only triggers an alert placeholder
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🟢 LOW
 - **Module:** Admin dashboard / GoogleHub drive
 - **Location:** `packages/admin-dashboard/src/components/modules/GoogleHub.tsx:539-545`
@@ -9463,10 +9464,11 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** Keep the file card visible, but remove the button semantics until the actual download path exists.
 - **Fix Direction:** Replace the alert stub with a real file transfer/download action or strip the fake affordance.
 - **DO NOT:** Leave a download button whose only behavior is a placeholder alert.
+- **Fix (2026-07-02, Fable):** The `alert(...)` placeholder Download button was already removed from the Drive file card in a prior pass; removed the dangling unused `Download` import that proved it. File cards now render metadata only — no fake affordance. `tsc --noEmit` clean.
 
 ### ISSUE-649: Admin login path exposes a mock token bypass
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Admin dashboard / authentication
 - **Location:** `packages/admin-dashboard/src/components/LoginScreen.tsx:126-129`, `packages/admin-dashboard/src/App.tsx:33-58`
@@ -9475,6 +9477,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** Keep the login form visible, but fail cleanly when real auth is unavailable.
 - **Fix Direction:** Eliminate the mock token path from user-facing auth or make it unambiguously development-only.
 - **DO NOT:** Leave a hidden passcode that manufactures an admin session.
+- **Fix (2026-07-02, Fable):** `App.tsx` already gates on a real Firebase session (`onAuthStateChanged` + `@indii.music` check, no token bypass). Removed the LoginScreen "Passcode" tab and `handlePasscodeSubmit` entirely — its `/api/auth/login-passcode` endpoint no longer exists on the server (ISSUE-651), so the tab was a dead auth path implying a bypass. Magic-link (email link) is now the only sign-in. `grep -rn MOCK_ADMIN packages/admin-dashboard/src` → 0 hits; `tsc --noEmit` clean.
 
 ### ISSUE-650: Landing page uses clickable styling without a real destination
 
@@ -9637,7 +9640,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-661: Sync licensing compiler marks rights cleared without verified clearance evidence
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02)
 - **Severity:** 🔴 HIGH
 - **Module:** Renderer / licensing sync harness
 - **GitHub:** https://github.com/indii-music-founder/indii-music-founder/issues/220
@@ -9647,6 +9650,9 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** Generate draft/manual-review-only pitch materials when clearance is unknown, and keep the approval gate active until evidence is attached.
 - **Fix Direction:** Extend compiler input to include verified clearance status/evidence references, or compile from `SyncLicensingClearanceService` results. Default unknown clearance to `pending`; update tests so `hasUnClearedSamples: false` alone is insufficient to claim `cleared` or generate a non-draft pitch package.
 - **DO NOT:** Tell artists, agents, or supervisors that sync rights are cleared without verified clearance evidence.
+- **Fix:** `LicensingSyncCompiler` now defaults rights clearance to `pending` unless verified clearance evidence refs are provided, adds an approval gate for missing evidence, and only marks the pitch package generated when verified evidence is attached and there are no un-cleared samples. The test suite now covers pending clearance, verified clearance evidence, and blocked sample cases.
+- **Evidence:** `packages/renderer/src/services/licensing/LicensingSyncCompiler.ts:1-202` adds `verifiedClearanceEvidenceRefs`, pending defaulting, the clearance-evidence approval gate, and evidence-backed output; `packages/renderer/src/services/licensing/LicensingSyncCompiler.test.ts:1-95` verifies pending clearance stays pending, verified clearance enables auto-pitch, and un-cleared samples still block the run.
+- **Files:** `packages/renderer/src/services/licensing/LicensingSyncCompiler.ts`, `packages/renderer/src/services/licensing/LicensingSyncCompiler.test.ts`
 
 ### ISSUE-662: Creative video and avatar services call missing Firebase callables
 
@@ -9736,7 +9742,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-668: Influencer bounty tracking, leaderboard, and payout paths are not wired end-to-end
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Marketing / influencer bounty board
 - **Location:** `packages/firebase/src/lib/marketing.ts:202-214`, `packages/renderer/src/modules/marketing/components/InfluencerBountyBoard.tsx:41-113`, `packages/renderer/src/modules/marketing/components/InfluencerBountyBoard.tsx:230-318`, `packages/renderer/src/services/marketing/InfluencerBountyService.ts:81-149`
@@ -9745,6 +9751,9 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** If tracking or payout is not implemented, show created bounties as draft/active-link-only and hide payout/leaderboard claims until real event and payout processing exists.
 - **Fix Direction:** Read bounties from the backend collection written by `createInfluencerBounty`, copy the returned `link`, implement tracking/payout workers or remove those service methods, and add tests for collection consistency plus link-copy behavior.
 - **DO NOT:** Keep local-only bounty/leaderboard state or fake payout IDs for influencer compensation workflows.
+- **Fix:** The bounty board now reloads saved referrals from `influencerBounties`, renders them as honest `Link only` entries, and copies the saved backend `link` instead of reconstructing a URL from `refCode`. The leaderboard/payout block was replaced with a clear `Tracking Unavailable` notice so the UI no longer implies click attribution or payouts exist. The service layer now has a `listBountyLinks()` loader, returns honest unavailable errors from `trackEvent` and `initiatePayout`, and returns an empty leaderboard instead of querying the wrong collection. The backend bounty creator now stores the optional `action` so the chosen campaign action survives reloads.
+- **Evidence:** `packages/renderer/src/services/marketing/InfluencerBountyService.ts:1-149` adds the persisted-link loader and honest unavailable errors; `packages/renderer/src/modules/marketing/components/InfluencerBountyBoard.tsx:1-300` reloads saved links, copies the saved URL, and replaces the leaderboard with the unavailable notice; `packages/firebase/src/lib/marketing.ts:179-215` stores the optional action; `packages/renderer/src/services/marketing/InfluencerBountyService.test.ts:1-116` covers action pass-through, saved-link loading, and unavailable tracking/payout; `packages/renderer/src/modules/marketing/components/InfluencerBountyBoard.test.tsx:1-68` proves the board reloads a saved link and copies the real backend URL.
+- **Files:** `packages/firebase/src/lib/marketing.ts`, `packages/renderer/src/modules/marketing/components/InfluencerBountyBoard.tsx`, `packages/renderer/src/modules/marketing/components/InfluencerBountyBoard.test.tsx`, `packages/renderer/src/services/marketing/InfluencerBountyService.ts`, `packages/renderer/src/services/marketing/InfluencerBountyService.test.ts`
 
 ### ISSUE-669: Sync brief matcher marks tracks submitted after only internal clearance upload
 
