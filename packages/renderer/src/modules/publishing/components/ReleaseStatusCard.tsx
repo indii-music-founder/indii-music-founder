@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { Music, Edit2, Trash2, CheckSquare, ExternalLink, Globe, Clock } from 'lucide-react';
+import { Music, Edit2, Trash2, CheckSquare, Globe, Clock } from 'lucide-react';
 import { ClientReleaseRecord } from '@/modules/publishing/hooks/useReleases';
 interface ReleaseStatusCardProps {
     release: ClientReleaseRecord;
@@ -125,15 +125,6 @@ export const ReleaseStatusCard: React.FC<ReleaseStatusCardProps> = ({
                         className="p-2 text-gray-600 hover:text-red-400 hover:bg-gray-800 rounded-lg transition-colors"
                     >
                         <Trash2 size={16} />
-                    </button>
-                    <button
-                        className="p-2 text-gray-600 hover:text-blue-400 hover:bg-gray-800 rounded-lg transition-colors"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            // Logic to open DDEX preview/link
-                        }}
-                    >
-                        <ExternalLink size={16} />
                     </button>
                 </div>
             </div>
