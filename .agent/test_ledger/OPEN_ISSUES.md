@@ -8545,7 +8545,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **DO NOT:** create a parallel state machine or a second test framework — the compilers ARE the tests; `WorkflowStateService` IS the state machine.
 
 ### ISSUE-CI-28451450526: CI Pipeline Failure (Deploy to Firebase Hosting)
-- **Status:** ⏳ OPEN
+- **Status:** ✅ RESOLVED (2026-07-02, Fable) — superseded by subsequent fix commits; workflow fully green on run 28614340383 (2026-07-02 18:55 UTC, all jobs incl. deploy-production success)
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
@@ -8553,7 +8553,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
 
 ### ISSUE-CI-28451058111: CI Pipeline Failure (Deploy to Firebase Hosting)
-- **Status:** ⏳ OPEN
+- **Status:** ✅ RESOLVED (2026-07-02, Fable) — superseded by subsequent fix commits; workflow fully green on run 28614340383 (2026-07-02 18:55 UTC, all jobs incl. deploy-production success)
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
@@ -8561,7 +8561,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
 
 ### ISSUE-CI-28447623312: CI Pipeline Failure (Deploy to Firebase Hosting)
-- **Status:** ⏳ OPEN
+- **Status:** ✅ RESOLVED (2026-07-02, Fable) — superseded by subsequent fix commits; workflow fully green on run 28614340383 (2026-07-02 18:55 UTC, all jobs incl. deploy-production success)
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
@@ -8569,7 +8569,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
 
 ### ISSUE-CI-28442227172: CI Pipeline Failure (Deploy to Firebase Hosting)
-- **Status:** ⏳ OPEN
+- **Status:** ✅ RESOLVED (2026-07-02, Fable) — superseded by subsequent fix commits; workflow fully green on run 28614340383 (2026-07-02 18:55 UTC, all jobs incl. deploy-production success)
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
@@ -8607,7 +8607,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Confirmed unrelated to workspace-sync changes** — pre-existing dependency state, verified via `git log` on package.json/package-lock.json before logging (see error_memory/ERROR_LEDGER.md "Never Dismiss CI Failure Without Blame Check").
 
 ### ISSUE-CI-28478558122-DEPLOY: Deploy Cloud Functions — transient GCP 503
-- **Status:** ⏳ OPEN (likely transient, re-verify on next deploy)
+- **Status:** ✅ RESOLVED (2026-07-02, Fable) — re-verified: deploy-production succeeded on run 28614340383; the GCP 503 was transient as suspected
 - **Severity:** 🟡 MEDIUM
 - **Module:** CI/CD / Deploy
 - **Summary:** `deploy-production > Deploy Cloud Functions` failed with `HTTP Error: 503, The service is currently unavailable` from `cloudfunctions.googleapis.com generateUploadUrl`. Firebase CLI suggested verifying App Engine instance setup, but this reads as GCP-side transient unavailability, not a config defect.
@@ -9881,7 +9881,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **DO NOT:** Offer type-invalid targets (e.g. "Send image as source-video"); lose lineage (`parentId`) across hops.
 
 ### ISSUE-CI-28563776696: CI Pipeline Failure (Deploy to Firebase Hosting)
-- **Status:** ⏳ OPEN
+- **Status:** ✅ RESOLVED (2026-07-02, Fable) — superseded by subsequent fix commits; workflow fully green on run 28614340383 (2026-07-02 18:55 UTC, all jobs incl. deploy-production success)
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
@@ -9889,7 +9889,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
 
 ### ISSUE-CI-28562069528: CI Pipeline Failure (Deploy to Firebase Hosting)
-- **Status:** ⏳ OPEN
+- **Status:** ✅ RESOLVED (2026-07-02, Fable) — superseded by subsequent fix commits; workflow fully green on run 28614340383 (2026-07-02 18:55 UTC, all jobs incl. deploy-production success)
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
@@ -9897,7 +9897,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
 
 ### ISSUE-CI-28558762727: CI Pipeline Failure (Deploy to Firebase Hosting)
-- **Status:** ⏳ OPEN
+- **Status:** ✅ RESOLVED (2026-07-02, Fable) — superseded by subsequent fix commits; workflow fully green on run 28614340383 (2026-07-02 18:55 UTC, all jobs incl. deploy-production success)
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
@@ -9926,7 +9926,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Fix Direction:** Update the `ImageGenerationInstrument` system prompt or default negative prompts to strongly discourage including unauthorized human subjects or defaulting to portraits unless explicitly requested by the user.
 
 ### ISSUE-CI-28614066462: CI Pipeline Failure (Deploy to Firebase Hosting)
-- **Status:** ⏳ OPEN
+- **Status:** ✅ RESOLVED (2026-07-02, Fable) — superseded by subsequent fix commits; workflow fully green on run 28614340383 (2026-07-02 18:55 UTC, all jobs incl. deploy-production success)
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
@@ -9934,7 +9934,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
 
 ### ISSUE-CI-28613815914: CI Pipeline Failure (Deploy to Firebase Hosting)
-- **Status:** ⏳ OPEN
+- **Status:** ✅ RESOLVED (2026-07-02, Fable) — superseded by subsequent fix commits; workflow fully green on run 28614340383 (2026-07-02 18:55 UTC, all jobs incl. deploy-production success)
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
@@ -9942,7 +9942,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
 
 ### ISSUE-CI-28613530177: CI Pipeline Failure (Deploy to Firebase Hosting)
-- **Status:** ⏳ OPEN
+- **Status:** ✅ RESOLVED (2026-07-02, Fable) — superseded by subsequent fix commits; workflow fully green on run 28614340383 (2026-07-02 18:55 UTC, all jobs incl. deploy-production success)
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
@@ -9950,7 +9950,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
 
 ### ISSUE-CI-28612706695: CI Pipeline Failure (Deploy to Firebase Hosting)
-- **Status:** ⏳ OPEN
+- **Status:** ✅ RESOLVED (2026-07-02, Fable) — superseded by subsequent fix commits; workflow fully green on run 28614340383 (2026-07-02 18:55 UTC, all jobs incl. deploy-production success)
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
