@@ -1,9 +1,12 @@
 # Handoff State
-**Updated:** 2026-07-01 20:35 EDT
+**Updated:** 2026-07-01 20:39 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+217d23d34 chore: mark ISSUE-600 COMPLETED — full cross-stage send actions
+94f82f687 feat(creative): ISSUE-600 — Veo output panel exposes 'Send to Omni' action
+f0f8eac66 chore: session checkpoint [20:35]
 5f371edd5 feat(creative): ISSUE-600 — Omni output panel exposes 'Send to Veo' action
 243d3cbb4 chore: session checkpoint [20:32]
 31a0bcfed chore: session checkpoint [20:31]
@@ -11,9 +14,6 @@ f537467b9 chore: update ISSUE-600 progress (Gallery + Showroom done, outputs pen
 341fc80bc feat(creative): ISSUE-600 — Showroom mockups expose send to Veo action
 ebeb11ac5 chore: mark ISSUE-598/599 COMPLETED, update ISSUE-600 progress
 eac17e033 feat(creative): ISSUE-600 — Gallery items expose cross-stage send actions
-4a8704504 feat(creative): ISSUE-599 — Image stage consumes cross-stage handoff
-2d7fd64d3 feat(creative): ISSUE-598 — Veo stage consumes cross-stage handoff
-1c95c9202 chore: session checkpoint [20:17]
 ```
 
 ## Working State
@@ -43,6 +43,11 @@ eac17e033 feat(creative): ISSUE-600 — Gallery items expose cross-stage send ac
  M packages/renderer/src/modules/observability/components/MetricsDashboard.tsx
  M packages/renderer/src/modules/publicist/PublicistDashboard.test.tsx
  M packages/renderer/src/modules/publicist/PublicistDashboard.tsx
+ M packages/renderer/src/modules/publishing/components/DistributorConnectionsPanel.tsx
+ M packages/renderer/src/modules/publishing/components/MultiDistributorProgress.tsx
+ M packages/renderer/src/modules/publishing/components/ReleaseDetailPage.tsx
+ M packages/renderer/src/modules/publishing/components/ReleaseListView.tsx
+ M packages/renderer/src/modules/publishing/components/ReleaseStatusCard.tsx
  M packages/renderer/src/modules/screenwriter/ScreenwriterDashboard.tsx
  M packages/renderer/src/modules/social/components/SocialFeed.interaction.test.tsx
  M packages/renderer/src/modules/social/components/SocialFeed.tsx
