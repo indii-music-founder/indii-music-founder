@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-07-01 23:41 EDT
+**Updated:** 2026-07-01 23:43 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+2e6d25ce2 fix(tests): update CampaignCard + StandardProductCard tests for removed dead affordances
+5676a0943 chore: session checkpoint [23:41]
 b4ad151ed chore: session checkpoint [23:39]
 c768e7602 chore: session checkpoint [23:36]
 1fefb6789 chore: session checkpoint [23:27]
@@ -12,14 +14,11 @@ c768e7602 chore: session checkpoint [23:36]
 c2c9858ee chore: session checkpoint [22:41]
 0b2c9993f feat: STAGE 4 — Lineage tracking via parentId for cross-stage handoffs
 cb9511ef9 chore: session checkpoint [22:34]
-e9be3ea41 chore: mark ISSUE-636,638,647 COMPLETED
-6927817cb fix: wire FileTree chevron toggle + strip AuditLog export + remove shot controls (ISSUE-636,638,647)
 ```
 
 ## Working State
 ```
- M packages/renderer/src/modules/marketing/components/CampaignCard.test.tsx
- M packages/renderer/src/modules/merchandise/components/StandardProductCard.responsive.test.tsx
+clean working tree
 ```
 
 ## Decisions
