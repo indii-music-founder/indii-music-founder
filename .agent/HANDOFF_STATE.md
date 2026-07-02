@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-07-02 14:01 EDT
+**Updated:** 2026-07-02 14:03 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+db5a9948d chore: session checkpoint [14:01]
 6f3dd6085 docs(ledger): record brand manager fixes in error ledger
 eb19b4cfb fix(brand): resolve color rendering issues and link brand assets to creative character library
 808290959 fix(hunter): resolve deep logic bugs in agent and sync loops
@@ -13,7 +14,6 @@ e518359c9 chore(ledger): ISSUE-655 FIXED with evidence (Agent B)
 e5447abfb chore(ledger): Agent B claims ISSUE-655
 4151363fd chore: session checkpoint [09:15]
 56e5563a5 chore(ledger): ISSUE-657 FIXED with evidence (Agent B)
-62db6aa65 fix(finance): make royalty report ingestion idempotent per (reportId, releaseId) (ISSUE-657)
 ```
 
 ## Working State
