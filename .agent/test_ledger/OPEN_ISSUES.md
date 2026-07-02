@@ -9566,7 +9566,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-657: Royalty report ingestion is not idempotent and can duplicate payouts
 
-- **Status:** ⏳ OPEN
+- **Status:** 🟡 IN PROGRESS (Agent B)
 - **Severity:** 🔴 HIGH
 - **Module:** Renderer / finance royalty ingestion
 - **GitHub:** https://github.com/indii-music-founder/indii-music-founder/issues/216
@@ -9652,6 +9652,18 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** Keep the current queued/manual state, but label it as manual-only until the worker exists and avoid implying automated processing will occur by itself.
 - **Fix Direction:** Implement/export `distributeVideoToDSP` and `sftpDeliverRelease`, or remove the callable attempts and route these paths explicitly to manual processing. Add callable-contract coverage so renderer tools cannot reference undeployed worker names.
 - **DO NOT:** Leave automation paths dependent on Firebase callable names that are not deployed.
+
+### ISSUE-664: Fan enrichment falls back to fabricated scores when provider credentials are missing
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Firebase / marketing fan enrichment
+- **Location:** `packages/firebase/src/index.ts:1659`, `packages/firebase/src/index.ts:1694`, `packages/firebase/src/index.ts:1698-1706`, `packages/renderer/src/services/marketing/FanEnrichmentService.ts:79-108`
+- **Summary:** The `enrichFanData` callable logs that Clearbit/Apollo credentials are missing, then falls through to a deterministic mock enrichment path that returns `enrichmentScore: email.length % 50 + 40` and reports `provider: normalizedProvider`. The renderer consumes those results as real enriched fan data.
+- **Expected (acceptance):** Missing enrichment credentials should return an honest unavailable/configuration error or provider status without fabricated demographic/enrichment scores.
+- **Honest fallback:** Keep CSV parsing and upload available, but mark enrichment as unavailable until a real Clearbit/Apollo provider call succeeds.
+- **Fix Direction:** Remove the credential-missing mock fallback, return a typed unavailable response or `HttpsError('failed-precondition', ...)`, and add tests for missing Clearbit/Apollo secrets plus successful provider pass-through.
+- **DO NOT:** Present deterministic placeholder enrichment scores as if a third-party enrichment provider processed the fan list.
 
 ---
 
