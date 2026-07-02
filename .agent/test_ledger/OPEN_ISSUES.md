@@ -9668,7 +9668,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-659: Distributor takedown adapters fabricate requested state without provider calls
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02, commit 9c03b1b47 — verified by Fable)
 - **Severity:** 🔴 HIGH
 - **Module:** Renderer / distribution takedowns
 - **GitHub:** https://github.com/indii-music-founder/indii-music-founder/issues/218
@@ -9678,6 +9678,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** If automated takedown is not wired, surface manual platform instructions and do not mark the takedown as requested.
 - **Fix Direction:** Implement provider-specific takedown integrations or change each adapter to honest unsupported/manual-required behavior. Make `DistributorService.getConnectionStatus()` derive `canTakedown` from real adapter capabilities instead of hardcoding `true`. Add tests proving no adapter reports `takedown_requested` without an external call or explicit accepted handoff.
 - **DO NOT:** Tell artists a DSP takedown was requested when no removal request was sent.
+- **Verification (Fable):** All takedown adapters now return honest non-delivery results — TuneCore `success:false`/`ready_for_manual_submission` + `TAKEDOWN_MANUAL_REQUIRED` (TuneCoreAdapter.ts:231-239), DistroKid/CDBaby `UNSUPPORTED`; `DistributorService.getConnectionStatus` derives `canTakedown` from `adapter.supportsAutomatedTakedown` (DistributorService.ts:184, base default `false`); `DistributionAdapters.test.ts:41` asserts no `takedown_requested` without a real call.
 
 ### ISSUE-660: Distribution takedown request marks releases requested before provider notification
 
