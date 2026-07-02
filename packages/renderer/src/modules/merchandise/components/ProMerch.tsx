@@ -68,7 +68,7 @@ export const ProMerch: React.FC = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-24">
                     {products.map((product, i) => (
-                        <div key={product.id} className={`group cursor-pointer ${i % 2 !== 0 ? 'md:mt-24' : ''}`}>
+                        <div key={product.id} className={`group ${i % 2 !== 0 ? 'md:mt-24' : ''}`}>
                             <div className="aspect-[3/4] bg-secondary/20 relative overflow-hidden mb-8 border border-border/10 group-hover:border-primary/30 transition-all duration-700">
                                 {/* ⚡ Bolt Optimization: Lazy load below-fold images to save bandwidth */}
                                 <img
@@ -85,11 +85,6 @@ export const ProMerch: React.FC = () => {
                                     </div>
                                 </div>
 
-                                <div className="absolute bottom-0 left-0 w-full p-8 translate-y-8 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500">
-                                    <button className="w-full bg-primary text-primary-foreground font-black py-5 text-xs tracking-[0.4em] uppercase hover:bg-white hover:text-black transition-colors">
-                                        SECURE ITEM
-                                    </button>
-                                </div>
                             </div>
 
                             <div className="space-y-6">
