@@ -4,6 +4,7 @@
 
 ## Recent Commits
 ```
+c2c9858ee chore: session checkpoint [22:41]
 0b2c9993f feat: STAGE 4 — Lineage tracking via parentId for cross-stage handoffs
 cb9511ef9 chore: session checkpoint [22:34]
 e9be3ea41 chore: mark ISSUE-636,638,647 COMPLETED
@@ -13,7 +14,6 @@ a245e9bc7 chore: session checkpoint [22:21]
 e6602cac3 chore: session checkpoint [22:20]
 ade326930 chore: session checkpoint [22:19]
 0e19e9639 chore: session checkpoint [21:43]
-3bf2ad966 fix: remove mock auth bypass from admin dashboard (ISSUE-649,651)
 ```
 
 ## Working State
