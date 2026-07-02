@@ -7233,7 +7233,8 @@ Blank Canvas (CORS)` — apply that documented fix.
   3. Separate "generate 15 variants" from "deploy as ads" — they should be two deliberate steps, not one button.
   4. Surface the Veo video generation cost up front (5 videos is expensive).
   5. Confirm with William the intended PLP behavior before building (this is also part of ISSUE-489 — "15 versions of what" — the UI must explain this).
-- **Files:** `packages/renderer/src/modules/creative/CreativeStudio.tsx:123-232` (esp. 142,158,206-208,218-224); `packages/renderer/src/services/marketing/AdAutomationService.ts:54-211`
+- **Fix (2026-07-02, criteria 1–3 complete):** New `CampaignConfigDialog` (react-call, mounted in `AppShell.tsx`) replaces the static ConfirmDialog gate. Generation and deploy are two deliberate steps: after variants save, the dialog opens with **user-editable** daily budget, duration, age range, interests, headline, and body (defaults shown, launch disabled until real copy is entered — no placeholder "Discover the Magic N" can reach a live campaign; those literals are deleted from `CreativeStudio.tsx`). Live total spend recomputes in the launch button. Cancel keeps variants, launches nothing. Evidence: `CampaignConfigDialog.test.tsx` (3 tests — edited-config round-trip, launch-disabled-until-copy + live total, cancel→null) + `CreativeStudio.test.tsx` (4 pass) + typecheck clean. Criterion 4 (Veo cost surfaced pre-generation) and 5 (ISSUE-489 UI explainer) remain tracked under ISSUE-489.
+- **Files:** `packages/renderer/src/modules/creative/CreativeStudio.tsx:123-232` (esp. 142,158,206-208,218-224); `packages/renderer/src/services/marketing/AdAutomationService.ts:54-211`; `packages/renderer/src/components/ui/CampaignConfigDialog.tsx`
 
 ### ISSUE-496: HISTORY is fragmented across three overlapping surfaces (DesignHistory + PromptHistory + Versions panel)
 
@@ -9517,7 +9518,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-653: E2E mock guard logs harness diagnostics in normal runtime paths
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02)
 - **Severity:** 🟢 LOW
 - **Module:** Renderer / E2E mode guard
 - **Location:** `packages/renderer/src/utils/e2eMode.ts:32-58`
@@ -9526,6 +9527,9 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** Keep warning/error output only for actual exceptional reads, such as unexpected localStorage/env access failures.
 - **Fix Direction:** Remove the branch `console.log` calls or guard them behind dev/test logging. Preserve the functional mock-mode checks.
 - **DO NOT:** Leave test harness diagnostics visible in normal user runtime.
+- **Fix:** Replaced the normal control-flow `console.log` calls with `logger.debug(...)` and routed exception paths through `logger.warn(...)`, so production runtime stays quiet while test/dev diagnostics remain available.
+- **Evidence:** `packages/renderer/src/utils/e2eMode.ts:1-75` now uses the shared safe logger; `packages/renderer/src/utils/e2eMode.test.ts` still passes (12 tests green in targeted Vitest).
+- **Files:** `packages/renderer/src/utils/e2eMode.ts`, `packages/renderer/src/utils/e2eMode.test.ts`
 
 ### ISSUE-654: Workspace snapshot rehydrate mutates Zustand state directly
 
@@ -9666,7 +9670,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-664: Fan enrichment falls back to fabricated scores when provider credentials are missing
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Firebase / marketing fan enrichment
 - **Location:** `packages/firebase/src/index.ts:1659`, `packages/firebase/src/index.ts:1694`, `packages/firebase/src/index.ts:1698-1706`, `packages/renderer/src/services/marketing/FanEnrichmentService.ts:79-108`
@@ -9675,6 +9679,9 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** Keep CSV parsing and upload available, but mark enrichment as unavailable until a real Clearbit/Apollo provider call succeeds.
 - **Fix Direction:** Remove the credential-missing mock fallback, return a typed unavailable response or `HttpsError('failed-precondition', ...)`, and add tests for missing Clearbit/Apollo secrets plus successful provider pass-through.
 - **DO NOT:** Present deterministic placeholder enrichment scores as if a third-party enrichment provider processed the fan list.
+- **Fix:** The callable now validates the requested provider up front, throws `HttpsError('failed-precondition', ...)` when the Clearbit/Apollo API key is absent, and only runs the real provider fetch path when credentials exist. The fabricated mock-score fallback was removed.
+- **Evidence:** `packages/firebase/src/index.ts:1594-1717` contains the honest precondition check and provider fetch paths; `packages/firebase/src/__tests__/image_gen.test.ts:308-378` covers missing Clearbit/Apollo secrets and a real Clearbit success path.
+- **Files:** `packages/firebase/src/index.ts`, `packages/firebase/src/__tests__/image_gen.test.ts`
 
 ### ISSUE-665: SMS and email marketing panels fabricate delivered confirmations
 
@@ -9741,7 +9748,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-670: Sync brief service generates and caches fabricated licensing opportunities
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (2026-07-02)
 - **Severity:** 🔴 HIGH
 - **Module:** Licensing / sync brief discovery
 - **GitHub:** https://github.com/indii-music-founder/indii-music-founder/issues/223
@@ -9751,6 +9758,9 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** If no real briefs exist, show an empty/unavailable state or clearly labeled sample briefs that cannot enter real submission flows.
 - **Fix Direction:** Remove AI-generated production brief seeding, add provenance/source fields for real briefs, and test that an empty collection does not fabricate opportunities.
 - **DO NOT:** Persist AI-invented networks, budgets, deadlines, or project names as if they are real licensing opportunities.
+- **Fix:** `getSyncBriefs()` now returns `[]` when the user's collection is empty instead of generating or caching synthetic briefs. The AI seeding helper was removed entirely, leaving the matcher to show its existing empty state.
+- **Evidence:** `packages/renderer/src/services/licensing/LicensingService.ts:250-270` now exits on empty snapshots without writes; `packages/renderer/src/services/licensing/LicensingService.test.ts:155-167` verifies the empty collection returns an empty list and performs no Firestore seeding writes.
+- **Files:** `packages/renderer/src/services/licensing/LicensingService.ts`, `packages/renderer/src/services/licensing/LicensingService.test.ts`
 
 ---
 
