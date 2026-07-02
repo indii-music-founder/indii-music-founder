@@ -59,12 +59,12 @@ interface ClearanceUploadModalProps {
     brief: SyncBrief;
     track: CatalogTrack;
     onClose: () => void;
-    onSubmitted: () => void;
+    onUploaded: () => void;
 }
 
 type UploadStatus = 'idle' | 'uploading' | 'done' | 'error';
 
-function ClearanceUploadModal({ brief, track, onClose, onSubmitted }: ClearanceUploadModalProps) {
+function ClearanceUploadModal({ brief, track, onClose, onUploaded }: ClearanceUploadModalProps) {
     const [files, setFiles] = useState<File[]>([]);
     const [status, setStatus] = useState<UploadStatus>('idle');
     const [error, setError] = useState('');
@@ -105,7 +105,7 @@ function ClearanceUploadModal({ brief, track, onClose, onSubmitted }: ClearanceU
                 userId: uid,
                 clearanceDocUrls: urls,
                 submittedAt: serverTimestamp(),
-                status: 'pending_review',
+                status: 'uploaded',
             });
             setUploadedUrls(urls);
             setStatus('done');
@@ -227,14 +227,14 @@ function ClearanceUploadModal({ brief, track, onClose, onSubmitted }: ClearanceU
                     <div className="flex flex-col items-center py-6 gap-3 text-center">
                         <CheckCircle2 size={32} className="text-green-400" aria-hidden="true" />
                         <div>
-                            <p className="text-sm font-semibold text-white">Submission received</p>
+                            <p className="text-sm font-semibold text-white">Clearance uploaded</p>
                             <p className="text-[10px] text-neutral-500 mt-1">
                                 {uploadedUrls.length} document{uploadedUrls.length !== 1 ? 's' : ''} uploaded.
-                                The licensor will review your clearance docs within 5 business days.
+                                This is an internal clearance record, not a sync pitch submission.
                             </p>
                         </div>
                         <button
-                            onClick={onSubmitted}
+                            onClick={onUploaded}
                             className="px-5 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-[11px] text-neutral-400 transition-colors"
                         >
                             Done
@@ -249,7 +249,7 @@ function ClearanceUploadModal({ brief, track, onClose, onSubmitted }: ClearanceU
 function BriefCard({ brief, catalog }: { brief: SyncBrief; catalog: CatalogTrack[]; key?: React.Key }) {
     const [open, setOpen] = useState(false);
     const [clearanceTrack, setClearanceTrack] = useState<CatalogTrack | null>(null);
-    const [submittedTracks, setSubmittedTracks] = useState<Set<string>>(new Set());
+    const [uploadedTracks, setUploadedTracks] = useState<Set<string>>(new Set());
     const matches = useMemo(() => catalog
         .map(t => ({ track: t, score: matchScore(brief, t) }))
         .sort((a, b) => b.score - a.score)
@@ -306,7 +306,7 @@ function BriefCard({ brief, catalog }: { brief: SyncBrief; catalog: CatalogTrack
                             <div className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Catalog Matches</div>
                             <div className="space-y-2">
                                 {matches.map(({ track, score }) => {
-                                    const submitted = submittedTracks.has(track.id);
+                                    const uploaded = uploadedTracks.has(track.id);
                                     return (
                                         <div key={track.id} className="flex items-center gap-3 p-2.5 bg-white/[0.02] border border-white/5 rounded-xl">
                                             <Music2 size={13} className="text-neutral-600 flex-shrink-0" aria-hidden="true" />
@@ -323,18 +323,18 @@ function BriefCard({ brief, catalog }: { brief: SyncBrief; catalog: CatalogTrack
                                             </div>
                                             <ScoreBadge score={score} />
                                             {/* Item 310: Submit with clearance docs */}
-                                            {submitted ? (
+                                            {uploaded ? (
                                                 <span className="flex items-center gap-1 text-[9px] text-green-400 font-bold">
-                                                    <CheckCircle2 size={10} aria-hidden="true" />Submitted
+                                                    <CheckCircle2 size={10} aria-hidden="true" />Uploaded
                                                 </span>
                                             ) : (
                                                 <button
                                                     onClick={() => setClearanceTrack(track)}
-                                                    aria-label={`Submit ${track.title} for ${brief.project} with clearance docs`}
+                                                    aria-label={`Upload clearance for ${track.title} and ${brief.project}`}
                                                     className="flex items-center gap-1 px-2 py-1 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 rounded-lg text-[9px] text-emerald-400 font-bold transition-colors whitespace-nowrap"
                                                 >
                                                     <Upload size={9} aria-hidden="true" />
-                                                    Submit
+                                                    Upload
                                                 </button>
                                             )}
                                         </div>
@@ -349,12 +349,12 @@ function BriefCard({ brief, catalog }: { brief: SyncBrief; catalog: CatalogTrack
             {/* Clearance Upload Modal — rendered in BriefCard to scope to this brief */}
             <AnimatePresence>
                 {clearanceTrack && (
-                    <ClearanceUploadModal
+                        <ClearanceUploadModal
                         brief={brief}
                         track={clearanceTrack}
                         onClose={() => setClearanceTrack(null)}
-                        onSubmitted={() => {
-                            setSubmittedTracks(prev => new Set([...prev, clearanceTrack.id]));
+                        onUploaded={() => {
+                            setUploadedTracks(prev => new Set([...prev, clearanceTrack.id]));
                             setClearanceTrack(null);
                         }}
                     />

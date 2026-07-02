@@ -15,6 +15,7 @@ interface UserProfileHeaderProps {
 
 export default function UserProfileHeader({ userId }: UserProfileHeaderProps) {
     const currentUser = useStore(useShallow((state: StoreState) => state.userProfile));
+    const setModule = useStore((state: StoreState) => state.setModule);
     const targetId = userId || currentUser?.id;
 
     const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -151,7 +152,10 @@ export default function UserProfileHeader({ userId }: UserProfileHeaderProps) {
                     {/* Actions */}
                     <div className="flex gap-3 mb-2">
                         {isOwnProfile ? (
-                            <button className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg font-medium text-sm flex items-center gap-2 border border-gray-700 transition-colors">
+                            <button
+                                onClick={() => { void setModule('settings'); }}
+                                className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg font-medium text-sm flex items-center gap-2 border border-gray-700 transition-colors"
+                            >
                                 <Edit size={16} />
                                 Edit Profile
                             </button>

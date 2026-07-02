@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Upload, Video, Wand2, ArrowRight, CheckCircle2, Download, RefreshCw, FileAudio } from 'lucide-react';
+import { featureFlags, FEATURE_FLAG_NAMES } from '@/config/featureFlags';
 
 export default function MarketingAssetGeneratorUI() {
     const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
@@ -16,6 +17,7 @@ export default function MarketingAssetGeneratorUI() {
     const [avatarImage, setAvatarImage] = useState<File | null>(null);
     const audioInputRef = useRef<HTMLInputElement | null>(null);
     const avatarInputRef = useRef<HTMLInputElement | null>(null);
+    const avatarGenerationEnabled = featureFlags.isEnabled(FEATURE_FLAG_NAMES.AVATAR_GENERATION);
 
     const readAsDataUri = (file: File): Promise<string> => new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -27,6 +29,10 @@ export default function MarketingAssetGeneratorUI() {
     const handleGenerate = async () => {
         if (generatorMode === 'reel' && !prompt.trim()) return;
         if (generatorMode === 'avatar' && (!audioFile || !avatarImage)) return;
+        if (generatorMode === 'avatar' && !avatarGenerationEnabled) {
+            setError('Avatar generation is unavailable until the backend worker is deployed.');
+            return;
+        }
 
         setStep(3);
         setIsGenerating(true);
@@ -140,11 +146,17 @@ export default function MarketingAssetGeneratorUI() {
                             </button>
                             <button
                                 onClick={() => setGeneratorMode('avatar')}
-                                className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded transition-colors ${generatorMode === 'avatar' ? 'bg-dept-marketing text-white' : 'bg-white/5 text-gray-500 hover:text-gray-300'}`}
+                                disabled={!avatarGenerationEnabled}
+                                className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded transition-colors ${generatorMode === 'avatar' ? 'bg-dept-marketing text-white' : 'bg-white/5 text-gray-500 hover:text-gray-300'} ${!avatarGenerationEnabled ? 'opacity-40 cursor-not-allowed hover:text-gray-500' : ''}`}
                             >
-                                Autonomous Avatar Lip-Sync
+                                Autonomous Avatar Lip-Sync{!avatarGenerationEnabled ? ' (Unavailable)' : ''}
                             </button>
                         </div>
+                        {!avatarGenerationEnabled && (
+                            <p className="mt-2 text-[10px] text-neutral-500">
+                                Avatar lip-sync is unavailable until the backend worker is deployed.
+                            </p>
+                        )}
                     </div>
                 </div>
 

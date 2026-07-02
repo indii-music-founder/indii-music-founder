@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, User, Mail, Globe, MessageCircle } from 'lucide-react';
+import { X, User, MessageCircle } from 'lucide-react';
 import { Contact } from '../types';
 import { PublicistService } from '@/services/publicist/PublicistService';
 import { useToast } from '@/core/context/ToastContext';
@@ -98,18 +98,6 @@ export const ContactDetailsModal: React.FC<ContactDetailsModalProps> = ({ isOpen
                                     <p className="text-sonic-purple font-medium">{contact.outlet}</p>
                                     <p className="text-slate-500 text-sm mt-1">{contact.role}</p>
                                 </div>
-                            </div>
-
-                            {/* Quick Actions */}
-                            <div className="grid grid-cols-2 gap-3">
-                                <button className="flex flex-col items-center justify-center gap-2 p-4 bg-white/5 hover:bg-white/10 border border-white/5 rounded-2xl transition-all">
-                                    <Mail size={20} className="text-white" />
-                                    <span className="text-xs font-bold text-slate-400">Email</span>
-                                </button>
-                                <button className="flex flex-col items-center justify-center gap-2 p-4 bg-white/5 hover:bg-white/10 border border-white/5 rounded-2xl transition-all">
-                                    <Globe size={20} className="text-white" />
-                                    <span className="text-xs font-bold text-slate-400">Website</span>
-                                </button>
                             </div>
 
                             {/* Relationship Status */}
