@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-07-01 22:19 EDT
+**Updated:** 2026-07-01 22:20 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+ade326930 chore: session checkpoint [22:19]
 0e19e9639 chore: session checkpoint [21:43]
 3bf2ad966 fix: remove mock auth bypass from admin dashboard (ISSUE-649,651)
 d04cc6071 fix: remove dead affordances in landing and admin (ISSUE-650,646,648)
@@ -13,7 +14,6 @@ bfcbd19bd chore: session checkpoint [21:26]
 f70753f6d chore: session checkpoint [21:26]
 eac234263 chore: session checkpoint [21:19]
 d2744ac97 fix: remove dead track controls (ISSUE-634)
-c0a3d6de4 fix: remove dead affordances in modules (ISSUE-623,625,626,627,629,632)
 ```
 
 ## Working State
