@@ -158,9 +158,11 @@ const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
                             <div className="flex justify-between items-center">
                                 <div className="flex items-center gap-1">
                                     <button
-                                        onClick={() => { }} 
-                                        className="p-2.5 text-gray-400 hover:text-dept-creative transition-colors rounded-xl hover:bg-dept-creative/5 group"
-                                        title="Add Media"
+                                        onClick={undefined}
+                                        disabled
+                                        aria-disabled="true"
+                                        className="p-2.5 text-gray-500 rounded-xl border border-dashed border-white/10 cursor-not-allowed opacity-60"
+                                        title="Add Media (coming soon)"
                                     >
                                         <ImageIcon size={20} className="group-hover:scale-110 transition-transform" />
                                     </button>
@@ -294,7 +296,7 @@ const FeedItem = React.memo(({ post }: FeedItemProps) => {
     return (
         <article className="p-4 hover:bg-[#161b22] transition-colors group">
             <div className="flex gap-4">
-                <div className="w-10 h-10 rounded-full bg-gray-700 flex-shrink-0 overflow-hidden cursor-pointer">
+                <div className="w-10 h-10 rounded-full bg-gray-700 flex-shrink-0 overflow-hidden">
                     {post.authorAvatar ? (
                         <img src={post.authorAvatar} alt={post.authorName} className="w-full h-full object-cover" />
                     ) : (
@@ -304,7 +306,7 @@ const FeedItem = React.memo(({ post }: FeedItemProps) => {
                 <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-start">
                         <div>
-                            <span className="font-bold text-white hover:underline cursor-pointer">
+                            <span className="font-bold text-white">
                                 {post.authorName}
                             </span>
                             <span className="text-gray-500 text-sm ml-2">
@@ -346,26 +348,15 @@ const FeedItem = React.memo(({ post }: FeedItemProps) => {
                     )}
 
                     <div className="flex items-center gap-6 mt-3 text-gray-500">
-                        <button
-                            className="flex items-center gap-2 hover:text-red-500 transition-colors group/like focus-visible:ring-2 focus-visible:ring-red-500 rounded px-1 focus-visible:outline-none"
-                            aria-label={`Like post, ${post.likes} likes`}
-                        >
-                            <Heart size={18} className="group-hover/like:scale-110 transition-transform" />
+                        <div className="flex items-center gap-2">
+                            <Heart size={18} />
                             <span className="text-sm">{post.likes}</span>
-                        </button>
-                        <button
-                            className="flex items-center gap-2 hover:text-dept-creative transition-colors focus-visible:ring-2 focus-visible:ring-dept-creative rounded px-1 focus-visible:outline-none"
-                            aria-label={`Comment on post, ${post.commentsCount} comments`}
-                        >
+                        </div>
+                        <div className="flex items-center gap-2">
                             <MessageCircle size={18} />
                             <span className="text-sm">{post.commentsCount}</span>
-                        </button>
-                        <button
-                            className="flex items-center gap-2 hover:text-dept-creative transition-colors focus-visible:ring-2 focus-visible:ring-dept-creative rounded px-1 focus-visible:outline-none"
-                            aria-label="Share post"
-                        >
-                            <Share2 size={18} />
-                        </button>
+                        </div>
+                        <Share2 size={18} />
                     </div>
                 </div>
             </div>
