@@ -190,39 +190,48 @@ export function getWorkspaceSnapshot(state: StoreState): WorkspaceSnapshot {
 
 /**
  * Apply a workspace snapshot to the root store + living plan slice.
- * Merges fields, guarding against missing keys (forward compatibility with older schemaVersion).
+ * Uses useStore.setState() to properly notify React subscribers and middleware.
+ * Merges only the fields present in the snapshot (forward compatibility with older schemaVersion).
+ *
+ * ISSUE-654: Previously mutated getState() directly, bypassing Zustand notifications.
  */
 export function applyWorkspaceSnapshot(snapshot: Partial<WorkspaceSnapshot>): void {
-    const state = useStore.getState() as any;
-    const planState = useLivingPlanSlice.getState();
+    // Build a patch object containing only the keys present in the snapshot
+    const patch: Record<string, unknown> = {};
 
-    // Merge into root store
     if (snapshot.boardroomMessages !== undefined) {
-        state.boardroomMessages = snapshot.boardroomMessages;
+        patch.boardroomMessages = snapshot.boardroomMessages;
     }
     if (snapshot.activeAgents !== undefined) {
-        state.activeAgents = snapshot.activeAgents;
+        patch.activeAgents = snapshot.activeAgents;
     }
     if (snapshot.referencedAssets !== undefined) {
-        state.referencedAssets = snapshot.referencedAssets;
+        patch.referencedAssets = snapshot.referencedAssets;
     }
     if (snapshot.currentModule !== undefined) {
-        state.currentModule = snapshot.currentModule;
+        patch.currentModule = snapshot.currentModule;
     }
     if (snapshot.conversationMode !== undefined) {
-        state.conversationMode = snapshot.conversationMode;
+        patch.conversationMode = snapshot.conversationMode;
     }
     if (snapshot.notes !== undefined) {
-        state.notes = snapshot.notes;
+        patch.notes = snapshot.notes;
     }
     if (snapshot.selectedNoteId !== undefined) {
-        state.selectedNoteId = snapshot.selectedNoteId;
+        patch.selectedNoteId = snapshot.selectedNoteId;
     }
     if (snapshot.creativePrompt !== undefined) {
-        state.creativePrompt = snapshot.creativePrompt;
+        patch.creativePrompt = snapshot.creativePrompt;
     }
 
-    // Restore plan from separate store
+    // Apply the patch via Zustand's setState so all React subscribers + persist
+    // middleware are notified (false = merge, not replace).
+    if (Object.keys(patch).length > 0) {
+        useStore.setState(patch as Partial<StoreState>, false);
+    }
+
+    // Restore plan from separate store via its own slice setters
+    const planState = useLivingPlanSlice.getState();
     if (snapshot.selectedPlan !== undefined) {
         planState.setSelectedPlan(snapshot.selectedPlan as any);
     } else if (snapshot.selectedPlanId !== undefined) {

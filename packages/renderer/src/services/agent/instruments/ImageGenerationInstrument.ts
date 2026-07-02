@@ -25,7 +25,7 @@ export class ImageGenerationInstrument implements Instrument {
   metadata: InstrumentMetadata = {
     id: 'generate_image',
     name: 'Generate Image',
-    description: 'Generate Intelligence images using text prompts. Do NOT hallucinate people/human subjects unless the user explicitly asks for them in their brief.',
+    description: 'Generate images using text prompts. CRITICAL RULE: Never add people, faces, or human subjects to a prompt unless the user EXPLICITLY asks for them in their brief. When in doubt, generate abstract, object-focused, or environmental visuals only.',
     category: 'generation',
     version: '1.0.0',
     author: 'indii Core Team',
@@ -70,7 +70,7 @@ export class ImageGenerationInstrument implements Instrument {
   inputs: InstrumentInput[] = [
     {
       name: 'prompt',
-      description: 'Text description of the desired image. CRITICAL: Do NOT add people or human subjects to the prompt unless explicitly requested.',
+      description: 'Text description of the desired image. CRITICAL: Do NOT add people, faces, or human subjects to the prompt unless the user explicitly requested them. If the concept is abstract or object-based, keep it abstract and object-based.',
       required: true,
       schema: {
         type: 'string',
@@ -112,13 +112,16 @@ export class ImageGenerationInstrument implements Instrument {
     },
     {
       name: 'personGeneration',
-      description: 'Person generation policy: ALLOW_ALL (any people), ALLOW_ADULT (adults only, default), ALLOW_NONE (no people)',
+      // ISSUE-603: Default to ALLOW_NONE to prevent unsolicited human subjects.
+      // The agent or user must explicitly request people (e.g. "portrait", "person holding", "artist photo")
+      // before personGeneration should be overridden to ALLOW_ADULT or ALLOW_ALL.
+      description: 'Person generation policy: ALLOW_ALL (any people), ALLOW_ADULT (adults only), ALLOW_NONE (no people — default). Only override if user explicitly requested human subjects.',
       required: false,
-      defaultValue: 'ALLOW_ADULT',
+      defaultValue: 'ALLOW_NONE',
       schema: {
         type: 'string',
         enum: ['ALLOW_ALL', 'ALLOW_ADULT', 'ALLOW_NONE'],
-        default: 'ALLOW_ADULT'
+        default: 'ALLOW_NONE'
       }
     }
   ];
