@@ -221,11 +221,16 @@ vi.mock('../analytics/platformTokenExchange', () => ({ analyticsExchangeToken: v
 vi.mock('../devops/storageMaintenance', () => ({ cleanupExpiredVideoTemps: vi.fn(), cleanupOrphanedVideos: vi.fn(), trackStorageQuotas: vi.fn(), flagVideosForArchival: vi.fn() }));
 
 // Import functions AFTER mocks
-import { triggerVideoJob, renderVideo } from '../index';
+import { triggerVideoJob, renderVideo, cancelVideoJob } from '../index';
 
 describe('Video Functions', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+    });
+
+    it('exports cancelVideoJob from the Firebase root entry', () => {
+        expect(cancelVideoJob).toBeDefined();
+        expect(typeof cancelVideoJob).toBe('function');
     });
 
     describe('triggerVideoJob', () => {
