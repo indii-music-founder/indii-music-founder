@@ -9550,7 +9550,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-656: PRO setlist submission fabricates success and writes `Submitted`
 
-- **Status:** ⏳ OPEN
+- **Status:** 🟡 IN PROGRESS (Agent B)
 - **Severity:** 🔴 HIGH
 - **Module:** Renderer / rights live setlist submission
 - **GitHub:** https://github.com/indii-music-founder/indii-music-founder/issues/215
@@ -9586,6 +9586,19 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Honest fallback:** If automatic API/SFTP delivery is unavailable, return an honest manual-required result without a synthetic provider submission id or pending-review claim.
 - **Fix Direction:** Make each adapter fail or return manual-required when API/SFTP delivery is unavailable or rejected. Require Symphonic to fail if ERN generation/staging/upload is not confirmed. Update tests so rejected `fetch` and missing API credentials do not produce `success: true` delivery results.
 - **DO NOT:** Tell artists a release is in DSP review unless a real provider endpoint or SFTP drop accepted the package.
+
+### ISSUE-659: Distributor takedown adapters fabricate requested state without provider calls
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** Renderer / distribution takedowns
+- **GitHub:** https://github.com/indii-music-founder/indii-music-founder/issues/218
+- **Location:** `packages/renderer/src/services/distribution/adapters/SymphonicAdapter.ts:153-163`, `packages/renderer/src/services/distribution/adapters/TuneCoreAdapter.ts:213-218`, `packages/renderer/src/services/distribution/adapters/BelieveAdapter.ts:223-225`, `packages/renderer/src/services/distribution/adapters/OnerpmAdapter.ts:214-216`, `packages/renderer/src/services/distribution/adapters/UnitedMastersAdapter.ts:207-209`, `packages/renderer/src/services/distribution/DistributorService.ts`
+- **Summary:** Multiple distributor adapters report successful takedown requests without calling any distributor API or SFTP endpoint. Symphonic only logs `Issuing Takedown`; TuneCore, Believe, OneRPM, and UnitedMasters directly return `success: true` / `status: 'takedown_requested'`. The service facade also advertises `canTakedown: true` for every registered adapter, even when the adapter cannot actually perform a takedown.
+- **Expected (acceptance):** Takedown should return success only after a secured provider endpoint or SFTP takedown message confirms acceptance. Unsupported or not-yet-wired adapters should return explicit `manual_required` or `unsupported` states.
+- **Honest fallback:** If automated takedown is not wired, surface manual platform instructions and do not mark the takedown as requested.
+- **Fix Direction:** Implement provider-specific takedown integrations or change each adapter to honest unsupported/manual-required behavior. Make `DistributorService.getConnectionStatus()` derive `canTakedown` from real adapter capabilities instead of hardcoding `true`. Add tests proving no adapter reports `takedown_requested` without an external call or explicit accepted handoff.
+- **DO NOT:** Tell artists a DSP takedown was requested when no removal request was sent.
 
 ---
 
