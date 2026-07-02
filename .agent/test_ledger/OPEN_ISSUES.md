@@ -9641,6 +9641,18 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Fix Direction:** Export `cancelVideoJob` from the Firebase root entry. Implement/export `dispatchAvatarJob` and `getAvatarJobStatus` or remove/disable the avatar service path. Add a callable-contract test that compares static renderer callable names against Firebase root exports.
 - **DO NOT:** Leave UI/service paths that call undeployed Firebase callable names.
 
+### ISSUE-663: Distribution automation workers are referenced but missing
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Distribution / agent tool callable contracts
+- **Location:** `packages/renderer/src/services/agent/tools/DistributionTools.ts:485-528`, `packages/renderer/src/services/agent/tools/DistributionTools.ts:621-708`
+- **Summary:** Distribution agent tools reference backend automation workers that do not exist in the Firebase root export or implementation tree. `distribute_premium_video` creates a `video_releases` record with `status: 'QUEUED'`, then calls missing callable `distributeVideoToDSP`. `sftp_direct_ingestion` creates an SFTP ingestion record, then calls missing callable `sftpDeliverRelease` for server-side SFTP delivery. Both paths can only degrade to queued/manual states today.
+- **Expected (acceptance):** Renderer distribution tools should only call deployed Firebase workers. If automated DSP video or server-side SFTP delivery is not implemented, the feature should be presented as manual-only without attempting missing callables.
+- **Honest fallback:** Keep the current queued/manual state, but label it as manual-only until the worker exists and avoid implying automated processing will occur by itself.
+- **Fix Direction:** Implement/export `distributeVideoToDSP` and `sftpDeliverRelease`, or remove the callable attempts and route these paths explicitly to manual processing. Add callable-contract coverage so renderer tools cannot reference undeployed worker names.
+- **DO NOT:** Leave automation paths dependent on Firebase callable names that are not deployed.
+
 ---
 
 ## Gemini Omni Flash — Omni page build + cross-stage handoff (planned 2026-07-01)
@@ -9727,3 +9739,27 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Summary:** Add type-gated **Send to Veo / Send to Omni / Use as Image reference** actions (video → Veo source/frame or Omni source; image → Veo frame, Omni reference, or Image reference) that call `sendToStage(...)` with the item. Add a "Send to next stage" button on each stage's output panel and set `parentId` on the downstream job for lineage.
 - **Expected (acceptance):** Round-trip works end-to-end: Image → (send) → Veo → (send output) → Omni remix, each hop pre-filled with no re-upload, and the `parentId` chain is recorded.
 - **DO NOT:** Offer type-invalid targets (e.g. "Send image as source-video"); lose lineage (`parentId`) across hops.
+
+### ISSUE-CI-28563776696: CI Pipeline Failure (Deploy to Firebase Hosting)
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** CI/CD
+- **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
+- **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/28563776696)
+- **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
+
+### ISSUE-CI-28562069528: CI Pipeline Failure (Deploy to Firebase Hosting)
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** CI/CD
+- **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
+- **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/28562069528)
+- **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
+
+### ISSUE-CI-28558762727: CI Pipeline Failure (Deploy to Firebase Hosting)
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** CI/CD
+- **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
+- **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/28558762727)
+- **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
