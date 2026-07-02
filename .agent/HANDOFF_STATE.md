@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-07-01 20:32 EDT
+**Updated:** 2026-07-01 20:35 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+5f371edd5 feat(creative): ISSUE-600 — Omni output panel exposes 'Send to Veo' action
+243d3cbb4 chore: session checkpoint [20:32]
 31a0bcfed chore: session checkpoint [20:31]
 f537467b9 chore: update ISSUE-600 progress (Gallery + Showroom done, outputs pending)
 341fc80bc feat(creative): ISSUE-600 — Showroom mockups expose send to Veo action
@@ -12,8 +14,6 @@ eac17e033 feat(creative): ISSUE-600 — Gallery items expose cross-stage send ac
 4a8704504 feat(creative): ISSUE-599 — Image stage consumes cross-stage handoff
 2d7fd64d3 feat(creative): ISSUE-598 — Veo stage consumes cross-stage handoff
 1c95c9202 chore: session checkpoint [20:17]
-ad45262dc chore: session checkpoint [20:10]
-bf86c6162 chore: session checkpoint [20:09]
 ```
 
 ## Working State
