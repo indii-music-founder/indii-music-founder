@@ -39,10 +39,10 @@ describe('FileDashboard', () => {
         };
     });
 
-    it('renders the title and upload button', () => {
+    it('renders the title without the removed Upload Asset dead affordance', () => {
         render(<FileDashboard />);
         expect(screen.getByText('ASSETS')).toBeInTheDocument();
-        expect(screen.getByText('Upload Asset')).toBeInTheDocument();
+        expect(screen.queryByText('Upload Asset')).not.toBeInTheDocument();
     });
 
     it('shows "Select a project" when no project', () => {
