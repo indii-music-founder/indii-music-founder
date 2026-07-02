@@ -44,6 +44,7 @@ vi.mock('@/core/store', () => ({
 const mockAdapter1: DistributorAdapter = {
   id: 'distrokid',
   name: 'DistroKid',
+  supportsAutomatedTakedown: true,
   requirements: {} as unknown as DistributorAdapter['requirements'],
   isConnected: vi.fn(),
   connect: vi.fn(),
@@ -61,6 +62,7 @@ const mockAdapter1: DistributorAdapter = {
 const mockAdapter2: DistributorAdapter = {
   id: 'tunecore',
   name: 'TuneCore',
+  supportsAutomatedTakedown: false,
   requirements: {} as unknown as DistributorAdapter['requirements'],
   isConnected: vi.fn(),
   connect: vi.fn(),
@@ -74,6 +76,23 @@ const mockAdapter2: DistributorAdapter = {
   validateMetadata: vi.fn(),
   validateAssets: vi.fn(),
 };
+
+describe('DistributorService.getConnectionStatus', () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+    DistributorService.registerAdapter(mockAdapter1);
+    DistributorService.registerAdapter(mockAdapter2);
+    vi.mocked(mockAdapter1.isConnected).mockResolvedValue(true);
+    vi.mocked(mockAdapter2.isConnected).mockResolvedValue(true);
+  });
+
+  it('derives takedown support from adapter capabilities', async () => {
+    const status = await DistributorService.getConnectionStatus();
+
+    expect(status.find(connection => connection.distributorId === 'distrokid')?.features.canTakedown).toBe(true);
+    expect(status.find(connection => connection.distributorId === 'tunecore')?.features.canTakedown).toBe(false);
+  });
+});
 
 describe('DistributorService.getAggregatedEarnings', () => {
   beforeEach(() => {

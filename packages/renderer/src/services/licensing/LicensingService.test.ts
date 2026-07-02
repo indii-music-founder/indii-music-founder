@@ -9,6 +9,7 @@ const {
     mockCollection,
     mockWhere,
     mockOrderBy,
+    mockLimit,
     mockDoc,
     mockUpdateDoc
 } = vi.hoisted(() => {
@@ -20,6 +21,7 @@ const {
         mockCollection: vi.fn(),
         mockWhere: vi.fn(),
         mockOrderBy: vi.fn(),
+        mockLimit: vi.fn(),
         mockDoc: vi.fn(),
         mockUpdateDoc: vi.fn()
     }
@@ -46,6 +48,14 @@ vi.mock('@/services/payment/PaymentService', () => ({
     createOneTimePayment: (...args: unknown[]) => mockCreateOneTimePayment(...args),
 }));
 
+vi.mock('@/core/store', () => ({
+    useStore: {
+        getState: vi.fn(() => ({
+            userProfile: { id: 'user-123' },
+        })),
+    },
+}));
+
 vi.mock('firebase/firestore', () => ({
   serverTimestamp: vi.fn(),
     collection: mockCollection,
@@ -57,6 +67,7 @@ vi.mock('firebase/firestore', () => ({
     query: mockQuery,
     where: mockWhere,
     orderBy: mockOrderBy,
+    limit: mockLimit,
     Timestamp: {
         now: () => ({
   serverTimestamp: vi.fn(), toDate: () => new Date() })
@@ -138,6 +149,21 @@ describe('LicensingService', () => {
                 })
             );
             expect(id).toBe('new-req-id');
+        });
+    });
+
+    describe('getSyncBriefs', () => {
+        it('returns an empty list when no briefs exist instead of seeding fake opportunities', async () => {
+            mockGetDocs.mockResolvedValueOnce({
+                docs: [],
+                empty: true,
+            });
+
+            const briefs = await service.getSyncBriefs();
+
+            expect(mockGetDocs).toHaveBeenCalled();
+            expect(mockAddDoc).not.toHaveBeenCalled();
+            expect(briefs).toEqual([]);
         });
     });
 

@@ -493,39 +493,14 @@ export const DistributionTools = {
             createdAt: serverTimestamp(),
         });
 
-        // 2. Call Cloud Function for DSP-specific ingestion pipeline
-        try {
-            const { httpsCallable } = await import('firebase/functions');
-            const { functions } = await import('@/services/firebase');
-            const distributeVideo = httpsCallable(functions, 'distributeVideoToDSP');
-            const result = await distributeVideo({
-                releaseDocId: videoReleaseRef.id,
-                videoTitle: args.videoTitle,
-                artistName: args.artistName,
-                videoUrl: args.videoUrl,
-                targetDSP: dsp,
-            });
-            const data = result.data as Record<string, unknown>;
-            return toolSuccess({
-                videoTitle: args.videoTitle,
-                artistName: args.artistName,
-                targetDSP: dsp,
-                releaseId: videoReleaseRef.id,
-                deliveryStatus: data.status || 'QUEUED',
-                pipelineId: data.pipelineId || null,
-            }, `Premium music video "${args.videoTitle}" submitted to ${dsp} ingestion pipeline via Cloud Function.`);
-        } catch (cfError: unknown) {
-            logger.warn(`[DistributionTools] ${dsp} Cloud Function unavailable, falling back to local record:`, cfError);
-            // Fallback: video is persisted in Firestore for manual pipeline pickup
-            return toolSuccess({
-                videoTitle: args.videoTitle,
-                artistName: args.artistName,
-                targetDSP: dsp,
-                releaseId: videoReleaseRef.id,
-                deliveryStatus: 'QUEUED_FOR_MANUAL_REVIEW',
-                note: `${dsp} ingestion API not yet configured. Video release saved — will be processed when partner API credentials are added.`,
-            }, `Premium music video "${args.videoTitle}" saved for ${dsp} distribution. Awaiting partner API configuration.`);
-        }
+        return toolSuccess({
+            videoTitle: args.videoTitle,
+            artistName: args.artistName,
+            targetDSP: dsp,
+            releaseId: videoReleaseRef.id,
+            deliveryStatus: 'QUEUED_FOR_MANUAL_REVIEW',
+            note: `${dsp} ingestion is not automated in this build. Video release saved for manual processing.`,
+        }, `Premium music video "${args.videoTitle}" saved for ${dsp} distribution. Manual processing is required because the DSP worker is not deployed.`);
     }),
 
     export_ddex_ern42: wrapTool('export_ddex_ern42', async (args: { releaseId: string; metadata: any }) => {
@@ -666,47 +641,19 @@ export const DistributionTools = {
             }
         }
 
-        // 3. Fallback: Cloud Function for server-side SFTP
-        try {
-            const { httpsCallable } = await import('firebase/functions');
-            const { functions } = await import('@/services/firebase');
-            const sftpDeliver = httpsCallable(functions, 'sftpDeliverRelease');
-            const result = await sftpDeliver({
-                ingestionId,
-                targetDSP: args.targetDSP,
-                releaseFolder: args.releaseFolder,
-            });
-            const data = result.data as Record<string, unknown>;
+        // Manual fallback: the server-side SFTP worker is not deployed in this build.
+        await updateSftpIngestion({
+            ingestionId,
+            status: 'PENDING_MANUAL',
+        });
 
-            await updateSftpIngestion({
-                ingestionId,
-                status: data.status || 'TRANSFERRED',
-            });
-
-            return toolSuccess({
-                dsp: args.targetDSP,
-                folderPath: args.releaseFolder,
-                sftpStatus: data.status || 'Transferred',
-                ingestionId,
-                timestamp: new Date().toISOString(),
-                engine: 'Cloud Function',
-            }, `SFTP delivery for "${args.releaseFolder}" to ${args.targetDSP} completed via Cloud Function.`);
-        } catch (cfError: unknown) {
-            logger.warn('[DistributionTools] SFTP Cloud Function unavailable:', cfError);
-            // Mark as pending for manual processing
-            await updateSftpIngestion({
-                ingestionId,
-                status: 'PENDING_MANUAL',
-            });
-
-            return toolSuccess({
-                dsp: args.targetDSP,
-                folderPath: args.releaseFolder,
-                sftpStatus: 'PENDING_MANUAL',
-                ingestionId,
-                note: 'SFTP engine unavailable. Ingestion saved — will be processed when SFTP credentials are configured.',
-            }, `SFTP delivery saved for manual processing. Configure ${args.targetDSP} SFTP credentials to enable automated delivery.`);
-        }
+        return toolSuccess({
+            dsp: args.targetDSP,
+            folderPath: args.releaseFolder,
+            sftpStatus: 'PENDING_MANUAL',
+            ingestionId,
+            note: 'Server-side SFTP delivery is unavailable in this build. Manual processing is required.',
+        }, `SFTP delivery saved for manual processing. Configure ${args.targetDSP} SFTP delivery in a deployed worker to automate this path.`);
     }),
 
     toggle_content_id: wrapTool('toggle_content_id', async (args: {
@@ -767,36 +714,14 @@ export const DistributionTools = {
             return toolError('Takedown request did not return a server id.', 'TAKEDOWN_ERROR');
         }
 
-        // 2. Notify distributors via Cloud Function
-        try {
-            const processTakedown = httpsCallable(functions, 'processReleaseTakedown');
-            const result = await processTakedown({
-                takedownId,
-                releaseId: args.releaseId,
-                reason: args.reason,
-            });
-            const data = result.data as Record<string, unknown>;
-
-            return toolSuccess({
-                releaseId: args.releaseId,
-                reason: args.reason,
-                takedownId,
-                status: data.status || 'PROCESSING',
-                distributorsNotified: data.distributorsNotified || 0,
-                estimatedRemovalTime: '24-48 hours',
-            }, `Automated takedown issued for release ${args.releaseId}. ${data.distributorsNotified || 'All'} distributor(s) notified. Estimated removal: 24-48 hours.`);
-        } catch (cfError: unknown) {
-            logger.warn('[DistributionTools] Takedown Cloud Function unavailable:', cfError);
-            // Takedown is already recorded in Firestore — manual follow-up possible
-            return toolSuccess({
-                releaseId: args.releaseId,
-                reason: args.reason,
-                takedownId,
-                status: 'RECORDED_PENDING_NOTIFICATION',
-                note: 'Takedown recorded in system. Distributor notifications will be sent when Cloud Function is deployed.',
-                estimatedRemovalTime: '24-48 hours after notification',
-            }, `Takedown for release ${args.releaseId} recorded. Distributor notification pending Cloud Function deployment.`);
-        }
+        return toolSuccess({
+            releaseId: args.releaseId,
+            reason: args.reason,
+            takedownId,
+            status: 'RECORDED_PENDING_NOTIFICATION',
+            note: 'Takedown recorded for manual follow-up. No distributor notification worker is deployed in this build.',
+            estimatedRemovalTime: 'Unavailable until distributor notification is confirmed',
+        }, `Takedown for release ${args.releaseId} recorded for manual follow-up. Distributor notification has not been sent.`);
     }),
 
     check_dsp_delivery_status: wrapTool('check_dsp_delivery_status', async (args: { releaseId: string; dspName?: string }) => {

@@ -17,6 +17,18 @@ export interface BountyLink {
     status: 'active' | 'paused' | 'completed';
 }
 
+export interface PersistedBountyLink {
+    id: string;
+    influencerHandle: string;
+    trackName: string;
+    rewardAmount: number;
+    action?: string;
+    referralCode: string;
+    targetUrl: string;
+    status: 'active' | 'paused' | 'completed';
+    createdAt?: unknown;
+}
+
 export interface BountyPayout {
     id: string;
     influencerId: string;
@@ -30,7 +42,7 @@ export class InfluencerBountyService {
     /**
      * Generates a unique tracked referral link for an influencer.
      */
-    async generateBountyLink(influencerHandle: string, trackName: string, rewardAmount: number): Promise<BountyLink> {
+    async generateBountyLink(influencerHandle: string, trackName: string, rewardAmount: number, action?: string): Promise<BountyLink> {
         const id = `bl_${Date.now()}`;
         logger.info(`[BountyService] Requesting link for ${influencerHandle} on ${trackName}`);
 
@@ -42,6 +54,7 @@ export class InfluencerBountyService {
                 influencerHandle: string;
                 trackName: string;
                 rewardAmount: number;
+                action?: string;
             }
 
             const createBountyFunction = httpsCallable<BountyPayload, { success: boolean; refCode: string; link: string }>(
@@ -52,7 +65,8 @@ export class InfluencerBountyService {
             const result = await createBountyFunction({
                 influencerHandle,
                 trackName,
-                rewardAmount
+                rewardAmount,
+                action
             });
 
             if (!result.data.success) throw new Error("Bounty creation failed");
@@ -76,77 +90,85 @@ export class InfluencerBountyService {
     }
 
     /**
+     * Loads saved referral links for the authenticated user.
+     */
+    async listBountyLinks(): Promise<PersistedBountyLink[]> {
+        try {
+            const { auth, db } = await import('@/services/firebase');
+            const uid = auth.currentUser?.uid;
+            if (!uid) {
+                return [];
+            }
+
+            const { collection, getDocs, query, where } = await import('firebase/firestore');
+            const snapshot = await getDocs(
+                query(
+                    collection(db, 'influencerBounties'),
+                    where('userId', '==', uid),
+                )
+            );
+
+            const toMillis = (value: unknown): number => {
+                if (typeof value === 'number') {
+                    return value;
+                }
+                if (typeof value === 'string') {
+                    const parsed = Date.parse(value);
+                    return Number.isNaN(parsed) ? 0 : parsed;
+                }
+                if (value && typeof value === 'object' && 'toMillis' in value && typeof (value as { toMillis: () => number }).toMillis === 'function') {
+                    return (value as { toMillis: () => number }).toMillis();
+                }
+                return 0;
+            };
+
+            return snapshot.docs
+                .map((doc) => {
+                    const data = doc.data() as Record<string, unknown>;
+                    return {
+                        id: doc.id,
+                        influencerHandle: typeof data.influencerHandle === 'string' ? data.influencerHandle : '',
+                        trackName: typeof data.trackName === 'string' ? data.trackName : '',
+                        rewardAmount: typeof data.rewardAmount === 'number' ? data.rewardAmount : 0,
+                        action: typeof data.action === 'string' ? data.action : undefined,
+                        referralCode: typeof data.refCode === 'string' ? data.refCode : doc.id,
+                        targetUrl: typeof data.link === 'string' ? data.link : '',
+                        status: data.status === 'paused' || data.status === 'completed' ? data.status : 'active',
+                        createdAt: data.createdAt,
+                        _createdAtMillis: toMillis(data.createdAt),
+                    } as PersistedBountyLink & { _createdAtMillis: number };
+                })
+                .filter((entry) => Boolean(entry.influencerHandle) && Boolean(entry.trackName) && Boolean(entry.targetUrl))
+                .sort((a, b) => b._createdAtMillis - a._createdAtMillis)
+                .map(({ _createdAtMillis: _createdAtMillis, ...entry }) => entry);
+        } catch (error: unknown) {
+            logger.error('[BountyService] Failed to load saved referral links:', error);
+            return [];
+        }
+    }
+
+    /**
      * Records a click or conversion event for a referral code.
      */
     async trackEvent(referralCode: string, type: 'click' | 'conversion'): Promise<void> {
-        logger.debug(`[BountyService] Tracking ${type} for code ${referralCode}`);
-
-        // In production: Atomically increment click/conversion counters in Firestore
-        // Increment commission if type === 'conversion' based on bounty rules
+        logger.warn(`[BountyService] Tracking unavailable for code ${referralCode}; event ${type} was not recorded.`);
+        throw new Error('Influencer bounty tracking is not available until the event pipeline is deployed.');
     }
 
     /**
      * Triggers a payout to an influencer's connected Stripe account.
      */
     async initiatePayout(influencerId: string, amount: number): Promise<string> {
-        logger.info(`[BountyService] Initiating payout of $${amount} to ${influencerId}...`);
-
-        const payoutId = `pyt_${Date.now()}`;
-
-        // Use FinanceAgent / Stripe Connect logic to move funds
-        // await stripeConnectService.createTransfer(influencerId, amount);
-
-        return payoutId;
+        logger.warn(`[BountyService] Payout unavailable for ${influencerId}; requested amount $${amount} was not transferred.`);
+        throw new Error('Influencer bounty payouts are not available until Stripe transfer automation is deployed.');
     }
 
     /**
      * Fetches top-performing influencers for an artist's organization.
      */
     async getTopInfluencers(orgId: string) {
-        logger.info(`[BountyService] Fetching leaderboard for org ${orgId}`);
-
-        try {
-            const { db } = await import('@/services/firebase');
-            const { collection, query, where, getDocs, orderBy, limit } = await import('firebase/firestore');
-
-            const q = query(
-                collection(db, 'bountyLinks'),
-                where('orgId', '==', orgId),
-                where('status', '==', 'active'),
-                orderBy('earnedCommission', 'desc'),
-                limit(20),
-            );
-
-            const snapshot = await getDocs(q);
-            const links = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data(),
-            })) as BountyLink[];
-
-            // Aggregate by influencerId
-            const leaderboard = new Map<string, { influencerId: string; totalClicks: number; totalConversions: number; totalCommission: number }>();
-            for (const link of links) {
-                const existing = leaderboard.get(link.influencerId);
-                if (existing) {
-                    existing.totalClicks += link.totalClicks;
-                    existing.totalConversions += link.totalConversions;
-                    existing.totalCommission += link.earnedCommission;
-                } else {
-                    leaderboard.set(link.influencerId, {
-                        influencerId: link.influencerId,
-                        totalClicks: link.totalClicks,
-                        totalConversions: link.totalConversions,
-                        totalCommission: link.earnedCommission,
-                    });
-                }
-            }
-
-            return Array.from(leaderboard.values())
-                .sort((a, b) => b.totalCommission - a.totalCommission);
-        } catch (error: unknown) {
-            logger.error('[BountyService] Failed to fetch leaderboard:', error);
-            return [];
-        }
+        logger.warn(`[BountyService] Leaderboard unavailable for org ${orgId}; tracking and payout workers are not deployed yet.`);
+        return [];
     }
 }
 
