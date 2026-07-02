@@ -294,7 +294,7 @@ export default function ManufacturingPanel({ theme, productType, productId, desi
                         <ShoppingBag className="w-3 h-3" />
                         Item Spec
                     </label>
-                    <div className={`p-4 rounded-xl border transition-colors cursor-pointer group ${theme.colors.surfaceHighlight} ${theme.colors.border} hover:border-yellow-400/50`}>
+                    <div className={`p-4 rounded-xl border transition-colors ${theme.colors.surfaceHighlight} ${theme.colors.border}`}>
                         <div className="flex justify-between items-start mb-2">
                             <h3 className={`font-medium ${theme.colors.text}`}>{productType} Premium</h3>
                             <span className="px-2 py-0.5 rounded text-[10px] bg-green-500/20 text-green-400 border border-green-500/20">
