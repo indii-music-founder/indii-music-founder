@@ -186,9 +186,6 @@ export const EarningsDashboard: React.FC = () => {
                             return d.toLocaleString('default', { month: 'long', year: 'numeric' });
                         })()}
                     </button>
-                    <button className="px-4 py-2 bg-dept-creative hover:bg-dept-creative/90 text-white text-sm font-medium rounded-lg transition-colors shadow-lg shadow-dept-creative/20">
-                        Download Report
-                    </button>
                 </div>
             </motion.div>
 
