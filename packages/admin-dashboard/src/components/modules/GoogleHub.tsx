@@ -9,7 +9,6 @@ import {
   Send, 
   AlertTriangle,
   ExternalLink,
-  Download,
   FileText,
   Clock,
   ArrowRight
