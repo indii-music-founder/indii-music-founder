@@ -12,6 +12,11 @@ import {
 import { getVertexAIClient } from "./vertexClient";
 import { enforceRateLimit, RATE_LIMITS } from "./rateLimit";
 
+// Image callables currently run without Electron App Check support on the desktop client.
+// Keep enforcement opt-in so the packaged app can reach the backend until a desktop-safe
+// App Check provider ships.
+const ENFORCE_APP_CHECK = process.env.ENFORCE_APP_CHECK === "true";
+
 // ============================================================================
 // TYPES
 // ============================================================================
@@ -814,7 +819,7 @@ const service = new GeminiImageService();
 export const generateImageV3Fn = () => functions
     .region("us-central1")
     .runWith({
-        enforceAppCheck: true,
+        enforceAppCheck: ENFORCE_APP_CHECK,
         timeoutSeconds: 120,
         // Bumped to 1GB: Pro 4K generation + long-context history needs parity with editImageFn
         memory: "1GB"
@@ -850,7 +855,7 @@ export const generateImageV3Fn = () => functions
 export const editImageFn = () => functions
     .region("us-central1")
     .runWith({
-        enforceAppCheck: true,
+        enforceAppCheck: ENFORCE_APP_CHECK,
         timeoutSeconds: 120,
         memory: "1GB" // Bumped from 512MB — editing with references + 4K can exceed 512MB
     })

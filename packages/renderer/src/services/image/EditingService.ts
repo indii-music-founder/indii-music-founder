@@ -29,11 +29,14 @@ function normalizeEditFailure(error: unknown): Error {
     if (raw.includes('rate') || raw.includes('quota') || raw.includes('resource-exhausted')) {
         return new Error('Creative edit is temporarily rate limited. Wait a moment and try again.');
     }
+    if (raw.includes('permission-denied') || raw.includes('forbidden')) {
+        return new Error('Creative edit was denied by the backend. Check access and try again once the service is reachable.');
+    }
     if (raw.includes('invalid-argument') || raw.includes('validation failed')) {
         return new Error(message && message !== 'internal' ? message : 'Creative edit rejected the mask or reference payload.');
     }
     if (!message || message === 'internal' || code.includes('internal')) {
-        return new Error('Creative edit failed inside the image service. Your annotations are still on the canvas; try again with a simpler mask or switch model tier.');
+        return new Error('Creative edit could not finish because the backend returned an internal error. Your annotations are still on the canvas; try again after the service recovers.');
     }
 
     return new Error(message);
