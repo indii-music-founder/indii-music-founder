@@ -9,6 +9,7 @@ describe('CanvasToolbar', () => {
         addRectangle: vi.fn(),
         addCircle: vi.fn(),
         addText: vi.fn(),
+        addSketchLayer: vi.fn(),
         setTool: vi.fn(),
         undo: vi.fn(),
         redo: vi.fn(),
@@ -25,6 +26,9 @@ describe('CanvasToolbar', () => {
     it('renders all tool buttons with accessible names', () => {
         render(<CanvasToolbar {...mockProps} />);
         expect(screen.getByRole('button', { name: /Add Text/i })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Add Sketch Layer/i })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Add Rectangle Layer/i })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Add Circle Layer/i })).toBeInTheDocument();
         expect(screen.getByRole('button', { name: /Magic Fill/i })).toBeInTheDocument();
         expect(screen.getByRole('button', { name: /ID Objects/i })).toBeInTheDocument();
         expect(screen.getByRole('button', { name: /^Layers Panel$/i })).toBeEnabled();
@@ -58,6 +62,17 @@ describe('CanvasToolbar', () => {
         render(<CanvasToolbar {...mockProps} />);
         fireEvent.click(screen.getByRole('button', { name: /Add Text/i }));
         expect(mockProps.setTool).toHaveBeenCalledWith('text');
+    });
+
+    it('calls layer creation handlers from layer buttons', () => {
+        render(<CanvasToolbar {...mockProps} />);
+        fireEvent.click(screen.getByRole('button', { name: /Add Sketch Layer/i }));
+        fireEvent.click(screen.getByRole('button', { name: /Add Rectangle Layer/i }));
+        fireEvent.click(screen.getByRole('button', { name: /Add Circle Layer/i }));
+
+        expect(mockProps.addSketchLayer).toHaveBeenCalledOnce();
+        expect(mockProps.addRectangle).toHaveBeenCalledOnce();
+        expect(mockProps.addCircle).toHaveBeenCalledOnce();
     });
 
     it('calls object detection when the ID button is clicked', () => {

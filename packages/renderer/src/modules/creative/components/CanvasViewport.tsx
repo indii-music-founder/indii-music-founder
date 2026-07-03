@@ -1,7 +1,7 @@
 import React from 'react';
 import { Wand2 } from 'lucide-react';
 import { HistoryItem } from '@/core/store';
-import { CandidatesCarousel, Candidate } from './CandidatesCarousel';
+import { CandidateReview, Candidate } from './CandidateReview';
 import { EndFrameSelector } from './EndFrameSelector';
 import { CreativeColor } from '../constants';
 import { useResolvedStorageUrl } from '@/hooks/useResolvedStorageUrl';
@@ -12,7 +12,7 @@ interface CanvasViewportProps {
     isMagicFillMode: boolean;
     activeColor: CreativeColor;
     generatedCandidates: Candidate[];
-    onCandidateSelect: (candidate: Candidate, index: number) => void;
+    onCandidateApply: (candidates: Candidate[]) => void;
     onCloseCandidates: () => void;
     isSelectingEndFrame: boolean;
     setIsSelectingEndFrame: (open: boolean) => void;
@@ -26,7 +26,7 @@ export function CanvasViewport({
     isMagicFillMode,
     activeColor,
     generatedCandidates,
-    onCandidateSelect,
+    onCandidateApply,
     onCloseCandidates,
     isSelectingEndFrame,
     setIsSelectingEndFrame,
@@ -76,9 +76,9 @@ export function CanvasViewport({
             )}
 
             {/* Candidates Overlay */}
-            <CandidatesCarousel
+            <CandidateReview
                 candidates={generatedCandidates}
-                onSelect={onCandidateSelect}
+                onApply={onCandidateApply}
                 onClose={onCloseCandidates}
             />
 

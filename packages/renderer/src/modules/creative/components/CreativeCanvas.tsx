@@ -66,7 +66,7 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
         handleDeleteLayer,
         handleReorderLayer,
         handleAnimate,
-        handleCandidateSelect,
+        handleCandidateApply,
         saveCanvas,
         handleCreateLastFrame,
         handleFlattenCanvas,
@@ -80,6 +80,7 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
         handleAddRectangle,
         handleAddCircle,
         handleAddText,
+        handleAddSketchLayer,
     } = useCreativeCanvas({ item, onClose, onRefine });
 
     if (!item) return null;
@@ -131,6 +132,7 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                                     hasDetections={hasDetections}
                                     toggleLayersPanel={toggleLayersPanel}
                                     isLayersPanelOpen={isLayersPanelOpen}
+                                    addSketchLayer={handleAddSketchLayer}
                                     orientation="vertical"
                                 />
                                 <div className="my-2 h-px w-8 bg-white/10" />
@@ -151,7 +153,7 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                             isMagicFillMode={isMagicFillMode}
                             activeColor={activeColor}
                             generatedCandidates={generatedCandidates}
-                            onCandidateSelect={handleCandidateSelect}
+                            onCandidateApply={handleCandidateApply}
                             onCloseCandidates={() => setGeneratedCandidates([])}
                             isSelectingEndFrame={isSelectingEndFrame}
                             setIsSelectingEndFrame={setIsSelectingEndFrame}
@@ -200,6 +202,7 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                             hasDetections={hasDetections}
                             toggleLayersPanel={toggleLayersPanel}
                             isLayersPanelOpen={isLayersPanelOpen}
+                            addSketchLayer={handleAddSketchLayer}
                         />
                     </div>
 
@@ -225,6 +228,10 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                     onToggleLock={handleToggleLayerLock}
                     onDeleteLayer={handleDeleteLayer}
                     onReorderLayer={handleReorderLayer}
+                    onAddSketchLayer={handleAddSketchLayer}
+                    onAddTextLayer={handleAddText}
+                    onAddRectangleLayer={handleAddRectangle}
+                    onAddCircleLayer={handleAddCircle}
                 />
                 </div>
             </motion.div>

@@ -13,6 +13,32 @@ export interface BatchEditResult {
     failures: { index: number; error: string }[];
 }
 
+function normalizeEditFailure(error: unknown): Error {
+    const maybe = error as { code?: string; message?: string; details?: unknown };
+    const code = maybe?.code || '';
+    const message = error instanceof Error ? error.message : maybe?.message || String(error);
+    const details = typeof maybe?.details === 'string' ? maybe.details : '';
+    const raw = `${code} ${message} ${details}`.toLowerCase();
+
+    if (raw.includes('unauthenticated')) {
+        return new Error('Sign in again to edit this image.');
+    }
+    if (raw.includes('app-check') || raw.includes('appcheck')) {
+        return new Error('Creative edit is blocked by App Check. Refresh the app and try again.');
+    }
+    if (raw.includes('rate') || raw.includes('quota') || raw.includes('resource-exhausted')) {
+        return new Error('Creative edit is temporarily rate limited. Wait a moment and try again.');
+    }
+    if (raw.includes('invalid-argument') || raw.includes('validation failed')) {
+        return new Error(message && message !== 'internal' ? message : 'Creative edit rejected the mask or reference payload.');
+    }
+    if (!message || message === 'internal' || code.includes('internal')) {
+        return new Error('Creative edit failed inside the image service. Your annotations are still on the canvas; try again with a simpler mask or switch model tier.');
+    }
+
+    return new Error(message);
+}
+
 export class EditingService {
 
     /**
@@ -118,8 +144,12 @@ export class EditingService {
                 routeReason: options.routeReason,
             };
 
-            const result = await editImageFn(payload);
-            return normalizeEditImageResult(result.data, options.prompt);
+            try {
+                const result = await editImageFn(payload);
+                return normalizeEditImageResult(result.data, options.prompt);
+            } catch (error: unknown) {
+                throw normalizeEditFailure(error);
+            }
         });
     }
 

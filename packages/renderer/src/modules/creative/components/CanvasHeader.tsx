@@ -50,8 +50,8 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
                 </h3>
             </div>
 
-            <div className="min-w-0 flex justify-center">
-                <div className="flex w-full items-center gap-2 bg-gray-900/50 border border-white/5 p-1 px-2 rounded-xl backdrop-blur-md shadow-inner ring-1 ring-white/10 group/magic focus-within:ring-dept-creative/50 transition-all duration-300">
+            <div className="min-w-0 flex flex-col items-center">
+                <div className="flex w-full max-w-[560px] items-center gap-2 bg-gray-900/50 border border-white/5 p-1 px-2 rounded-xl backdrop-blur-md shadow-inner ring-1 ring-white/10 group/magic focus-within:ring-dept-creative/50 transition-all duration-300">
                     <Sparkles size={14} className="text-dept-creative animate-pulse" />
                     <input
                         type="text"
@@ -111,7 +111,7 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
                     </div>
                 </div>
 
-                <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[10px] text-gray-400">
+                <div className="mt-2 flex w-full max-w-[560px] flex-wrap items-center justify-center gap-1.5 text-[10px] text-gray-400">
                     <span className="rounded-full border border-white/8 bg-white/4 px-2 py-1 text-gray-300">
                         {routeLabel || (isHighFidelity ? 'High Fidelity' : 'Rapid Edit')}
                     </span>
@@ -134,7 +134,7 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
                     )}
                 </div>
                 {routeReason && (
-                    <p className="mt-1 max-w-[70ch] text-[10px] leading-4 text-gray-500">
+                    <p className="mt-1 w-full max-w-[560px] text-center text-[10px] leading-4 text-gray-500">
                         {routeReason}
                     </p>
                 )}

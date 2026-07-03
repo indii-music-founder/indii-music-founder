@@ -1,11 +1,12 @@
 import React from 'react';
-import { Layers, ScanSearch, Type, Wand2, MousePointer2, Undo2, Redo2 } from 'lucide-react';
+import { Circle, Layers, PenLine, ScanSearch, Square, Type, Wand2, MousePointer2, Undo2, Redo2 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface CanvasToolbarProps {
     addRectangle: () => void;
     addCircle: () => void;
     addText: () => void;
+    addSketchLayer: () => void;
     setTool: (tool: 'select' | 'line' | 'polygon' | 'text' | 'brush') => void;
     undo: () => void;
     redo: () => void;
@@ -27,6 +28,7 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
     addCircle,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     addText,
+    addSketchLayer,
     setTool,
     undo,
     redo,
@@ -77,6 +79,33 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
                         </button>
                     </TooltipTrigger>
                     <TooltipContent side={tooltipSide}>Add Text</TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <button onClick={addSketchLayer} className={baseButtonClass} aria-label="Add Sketch Layer">
+                            <PenLine size={16} />
+                        </button>
+                    </TooltipTrigger>
+                    <TooltipContent side={tooltipSide}>Add Sketch Layer</TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <button onClick={addRectangle} className={baseButtonClass} aria-label="Add Rectangle Layer">
+                            <Square size={16} />
+                        </button>
+                    </TooltipTrigger>
+                    <TooltipContent side={tooltipSide}>Add Rectangle Layer</TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <button onClick={addCircle} className={baseButtonClass} aria-label="Add Circle Layer">
+                            <Circle size={16} />
+                        </button>
+                    </TooltipTrigger>
+                    <TooltipContent side={tooltipSide}>Add Circle Layer</TooltipContent>
                 </Tooltip>
 
                 <Tooltip>

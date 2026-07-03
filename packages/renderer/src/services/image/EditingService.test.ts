@@ -233,6 +233,37 @@ describe('EditingService', () => {
                 })
             );
         });
+
+        it('should pass reference images to the backend when provided', async () => {
+            mockEditImageFn.mockResolvedValue({
+                data: {
+                    id: 'test-uuid-5',
+                    url: 'data:image/png;base64,refdata==',
+                    prompt: 'Edit (Flash): Use this reference',
+                }
+            });
+
+            await EditingService.editImage({
+                image: { mimeType: 'image/png', data: 'inputbase64==' },
+                referenceImage: { mimeType: 'image/png', data: 'referencebase64==' },
+                prompt: 'Use this reference',
+            });
+
+            expect(mockEditImageFn).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    referenceImageUri: 'gs://mock-bucket.appspot.com/users/test-user/vault/objects/mock-reference.png',
+                })
+            );
+        });
+
+        it('maps raw internal callable failures to an actionable edit message', async () => {
+            mockEditImageFn.mockRejectedValue({ code: 'functions/internal', message: 'internal' });
+
+            await expect(EditingService.editImage({
+                image: { mimeType: 'image/png', data: 'inputbase64==' },
+                prompt: 'Add a small fly',
+            })).rejects.toThrow('Creative edit failed inside the image service');
+        });
     });
 
     describe('batchEdit', () => {
