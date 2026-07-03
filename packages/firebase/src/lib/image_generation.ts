@@ -873,7 +873,28 @@ export const editImageFn = () => functions
         }
 
         // 3. Delegate to Service
-        const result = await service.edit(validation.data);
+        let result: EditResponse;
+        try {
+            result = await service.edit(validation.data);
+        } catch (error: unknown) {
+            if (error instanceof functions.https.HttpsError) {
+                throw error;
+            }
+            const message = error instanceof Error ? error.message : String(error);
+            functions.logger.error("[editImage] Image edit service failed", {
+                message,
+                userId: context.auth.uid,
+                hasMask: Boolean(validation.data.maskUri),
+                hasReference: Boolean(validation.data.referenceImageUri),
+                model: validation.data.model,
+            });
+            throw new functions.https.HttpsError(
+                "internal",
+                message && message !== "internal"
+                    ? `Creative image edit failed: ${message}`
+                    : "Creative image edit failed inside the image service."
+            );
+        }
 
         // Map to candidates format for frontend compatibility
         const candidates = [

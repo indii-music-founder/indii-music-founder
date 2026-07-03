@@ -8,7 +8,6 @@ import { canvasOps } from '../services/CanvasOperationsService';
 import { VideoDirector } from '../services/VideoDirector';
 import { Editing } from '@/services/image/EditingService';
 import { saveAssetToStorage, saveCanvasStateToStorage, getCanvasStateFromStorage } from '@/services/storage/repository';
-import { Candidate } from '../components/CandidatesCarousel';
 import { imageAnalysisService } from '@/services/image/ImageAnalysisService';
 import { logger } from '@/utils/logger';
 import { compileCreativeEditManifest, getCreativeSessionId, normalizeCreativeImageSize, summarizeCreativeEditManifest, type CreativeVaultScope } from '../services/creativeManifest';
@@ -19,6 +18,7 @@ import { CostControlService } from '@/services/billing/CostControlService';
 import { estimateCostUsd } from '@/services/intelligence/billing/ModelPricing';
 import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
 import { CloudStorageService } from '@/services/CloudStorageService';
+import type { Candidate } from '../components/CandidateReview';
 
 // Basic debounce helper
 function debounce<T extends (...args: any[]) => any>(
@@ -55,6 +55,11 @@ async function resolveEditableImageUrl(item: HistoryItem): Promise<string> {
     }
 
     throw new Error('Selected asset does not include a displayable image URL.');
+}
+
+async function dataUrlToBlob(dataUrl: string): Promise<Blob> {
+    const response = await fetch(dataUrl);
+    return response.blob();
 }
 
 interface UseCreativeCanvasProps {
@@ -343,9 +348,23 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
         }
     };
 
-    const handleAddRectangle = () => canvasOps.addRectangle(activeColor.hex);
-    const handleAddCircle = () => canvasOps.addCircle(activeColor.hex);
-    const handleAddText = () => canvasOps.addText('New Text', activeColor.hex);
+    const handleAddRectangle = () => {
+        canvasOps.addRectangle(activeColor.hex);
+        setHistoryTrigger(prev => prev + 1);
+    };
+    const handleAddCircle = () => {
+        canvasOps.addCircle(activeColor.hex);
+        setHistoryTrigger(prev => prev + 1);
+    };
+    const handleAddText = () => {
+        canvasOps.addText('New Text', activeColor.hex);
+        setHistoryTrigger(prev => prev + 1);
+    };
+    const handleAddSketchLayer = () => {
+        handleSetTool('brush');
+        setIsLayersPanelOpen(true);
+        toast.info(`Sketching with ${activeColor.name}. Draw on the canvas to create a layer.`);
+    };
 
     const handleUndo = async () => {
         await canvasOps.undo();
@@ -388,6 +407,34 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
     const handleReorderLayer = (id: string, direction: 'up' | 'down') => {
         canvasOps.reorderLayer(id, direction);
         setHistoryTrigger(prev => prev + 1);
+    };
+
+    const persistDraftCandidates = async (candidates: Candidate[], sourcePrompt: string) => {
+        if (!item || candidates.length === 0) return;
+        const { addToHistory } = useStore.getState();
+
+        await Promise.all(candidates.map(async (candidate, index) => {
+            try {
+                const blob = await dataUrlToBlob(candidate.url);
+                const assetId = await saveAssetToStorage(blob);
+                addToHistory({
+                    id: assetId,
+                    url: candidate.url,
+                    prompt: candidate.prompt || sourcePrompt || `Magic Edit option ${index + 1}`,
+                    type: 'image',
+                    timestamp: Date.now(),
+                    projectId: currentProjectId || item.projectId || 'default',
+                    origin: 'editor',
+                    parentId: item.id,
+                    tags: ['magic-edit', 'draft-candidate'],
+                });
+            } catch (error: unknown) {
+                logger.warn('[CreativeStudio] Draft candidate persistence skipped', {
+                    candidateId: candidate.id,
+                    error: error instanceof Error ? error.message : String(error),
+                });
+            }
+        }));
     };
 
     const handleUpdateDefinition = (colorId: string, prompt: string) => {
@@ -546,9 +593,13 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                     }
 
                     if (maskData) {
+                        const activeReference = activeKeys
+                            .map(colorId => referenceImages[colorId])
+                            .find((reference): reference is { mimeType: string; data: string } => !!reference);
                         const result = await Editing.editImage({
                             image: prepared.baseImage,
                             mask: { mimeType: 'image/png', data: maskData },
+                            referenceImage: activeReference,
                             prompt: promptPayload,
                             forceHighFidelity: true,
                             model: 'pro',
@@ -560,12 +611,14 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                         });
 
                         if (result) {
-                            setGeneratedCandidates([{
+                            const candidates = [{
                                 id: crypto.randomUUID(),
                                 url: result.url,
                                 prompt: promptPayload,
                                 thoughtSignature: result.thoughtSignature
-                            }]);
+                            }];
+                            setGeneratedCandidates(candidates);
+                            await persistDraftCandidates(candidates, promptPayload);
                             await updateSession({
                                 lastAction: 'high_fidelity_edit',
                                 selectedCandidateUri: result.url,
@@ -579,6 +632,7 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                     const result = await Editing.editImage({
                         image: prepared.baseImage,
                         mask: prepared.masks[0],
+                        referenceImage: prepared.masks[0]?.referenceImage,
                         prompt: combinedPrompt,
                         forceHighFidelity: false,
                         model: 'flash',
@@ -589,11 +643,13 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                     });
 
                     if (result) {
-                        setGeneratedCandidates([{
+                        const candidates = [{
                             id: crypto.randomUUID(),
                             url: result.url,
                             prompt: combinedPrompt
-                        }]);
+                        }];
+                        setGeneratedCandidates(candidates);
+                        await persistDraftCandidates(candidates, combinedPrompt);
                         await updateSession({
                             lastAction: 'speed_edit',
                             selectedCandidateUri: result.url,
@@ -616,11 +672,13 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                     });
 
                     if (results.length > 0) {
-                        setGeneratedCandidates(results.map(r => ({
+                        const candidates = results.map(r => ({
                             id: r.id,
                             url: r.url,
                             prompt: r.prompt
-                        })));
+                        }));
+                        setGeneratedCandidates(candidates);
+                        await persistDraftCandidates(candidates, combinedPrompt);
                         await updateSession({
                             lastAction: 'multi_region_edit',
                             selectedCandidateUri: results[0]?.url ?? null,
@@ -648,11 +706,13 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                 });
 
                 if (result) {
-                    setGeneratedCandidates([{
+                    const candidates = [{
                         id: crypto.randomUUID(),
                         url: result.url,
                         prompt: magicFillPrompt
-                    }]);
+                    }];
+                    setGeneratedCandidates(candidates);
+                    await persistDraftCandidates(candidates, magicFillPrompt);
                     await updateSession({
                         lastAction: 'remix_edit',
                         selectedCandidateUri: result.url,
@@ -687,12 +747,20 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
     const handleCandidateSelect = async (candidate: Candidate, index: number) => {
         await canvasOps.applyCandidateImage(candidate.url, isMagicFillMode, activeColor);
         setGeneratedCandidates([]);
+        setHistoryTrigger(prev => prev + 1);
         await updateSession({
             lastAction: 'candidate_selected',
             selectedCandidateUri: candidate.url,
             outputUri: candidate.url,
         });
         toast.success(`Applied Option ${index + 1}`);
+    };
+
+    const handleCandidateApply = async (selected: Candidate[]) => {
+        const first = selected[0];
+        if (!first) return;
+        const index = generatedCandidates.findIndex(candidate => candidate.id === first.id);
+        await handleCandidateSelect(first, index >= 0 ? index : 0);
     };
 
     const handleFlattenCanvas = async () => {
@@ -935,6 +1003,7 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
         handleReorderLayer,
         handleAnimate,
         handleCandidateSelect,
+        handleCandidateApply,
         saveCanvas,
         handleFlattenCanvas,
         handleRefine: onRefine || handleRefineInternal,
@@ -949,6 +1018,7 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
         handleAddRectangle,
         handleAddCircle,
         handleAddText,
+        handleAddSketchLayer,
         sessionId,
         editManifest,
         editSummary,

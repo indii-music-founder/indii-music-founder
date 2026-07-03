@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { X, Layers, Eye, EyeOff, Lock, Unlock, Trash2, ChevronUp, ChevronDown, Type, Image as ImageIcon, Square, PenTool } from 'lucide-react';
+import { X, Layers, Eye, EyeOff, Lock, Unlock, Trash2, ChevronUp, ChevronDown, Type, Image as ImageIcon, Square, Circle, PenTool } from 'lucide-react';
 import type { LayerInfo } from '../services/CanvasOperationsService';
 
 interface LayersPanelProps {
@@ -13,6 +13,10 @@ interface LayersPanelProps {
     onToggleLock: (id: string) => void;
     onDeleteLayer: (id: string) => void;
     onReorderLayer: (id: string, direction: 'up' | 'down') => void;
+    onAddSketchLayer: () => void;
+    onAddTextLayer: () => void;
+    onAddRectangleLayer: () => void;
+    onAddCircleLayer: () => void;
 }
 
 const getLayerIcon = (type: string) => {
@@ -42,6 +46,10 @@ export default function LayersPanel({
     onToggleLock,
     onDeleteLayer,
     onReorderLayer,
+    onAddSketchLayer,
+    onAddTextLayer,
+    onAddRectangleLayer,
+    onAddCircleLayer,
 }: LayersPanelProps) {
     if (!isOpen) return null;
 
@@ -59,13 +67,47 @@ export default function LayersPanel({
                     Layers
                     <span className="text-xs text-gray-500 font-normal">{layers.length}</span>
                 </h3>
-                <button
-                    onClick={onClose}
-                    aria-label="Close layers panel"
-                    className="text-gray-400 hover:text-white transition-colors focus-visible:ring-2 focus-visible:ring-dept-creative rounded"
-                >
-                    <X size={18} />
-                </button>
+                <div className="flex items-center gap-1">
+                    <button
+                        onClick={onAddSketchLayer}
+                        aria-label="Add sketch layer"
+                        title="Add sketch layer"
+                        className="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded transition-colors focus-visible:ring-2 focus-visible:ring-dept-creative"
+                    >
+                        <PenTool size={14} />
+                    </button>
+                    <button
+                        onClick={onAddTextLayer}
+                        aria-label="Add text layer"
+                        title="Add text layer"
+                        className="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded transition-colors focus-visible:ring-2 focus-visible:ring-dept-creative"
+                    >
+                        <Type size={14} />
+                    </button>
+                    <button
+                        onClick={onAddRectangleLayer}
+                        aria-label="Add rectangle layer"
+                        title="Add rectangle layer"
+                        className="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded transition-colors focus-visible:ring-2 focus-visible:ring-dept-creative"
+                    >
+                        <Square size={14} />
+                    </button>
+                    <button
+                        onClick={onAddCircleLayer}
+                        aria-label="Add circle layer"
+                        title="Add circle layer"
+                        className="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded transition-colors focus-visible:ring-2 focus-visible:ring-dept-creative"
+                    >
+                        <Circle size={14} />
+                    </button>
+                    <button
+                        onClick={onClose}
+                        aria-label="Close layers panel"
+                        className="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded transition-colors focus-visible:ring-2 focus-visible:ring-dept-creative"
+                    >
+                        <X size={18} />
+                    </button>
+                </div>
             </div>
 
             <div className="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar">
