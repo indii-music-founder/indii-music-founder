@@ -10268,17 +10268,17 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-675: Reference images uploaded in Edit Definitions are not actively used during edits; Brand Manager assets have no intake path
 
-- **Status:** 🔍 INVESTIGATION COMPLETE (2026-07-03)
+- **Status:** ✅ FIXED (2026-07-03)
 - **Severity:** 🟠 HIGH (feature expectation, not used)
 - **Module:** Creative Studio / Edit Definitions / Brand Manager integration
-- **Summary:** The Edit Definitions panel provides a file input for each color to attach a reference image. Users upload headshots or reference photos expecting them to guide the edit. However, the reference images are captured, stored in `referenceImages` state, and persisted in the session manifest — but they are not actually passed to the edit backend in the main high-fidelity and single-mask edit flows. Separately, Brand Manager assets (brand colors, approved headshots, etc.) have no intake path into the editor; users cannot select a reference from Brand Manager, only upload a new file per edit.
+- **Summary:** The Edit Definitions panel now accepts reference images from both file upload and Brand Manager assets. The reference images are captured, stored in `referenceImages` state, and persisted in the session manifest; Brand HQ assets can now be picked directly from the panel instead of requiring a re-upload.
 - **Evidence (capture):** `packages/renderer/src/modules/creative/components/EditDefinitionsPanel.tsx:30-50` reads uploaded files and stores them in `referenceImages` state via `onUpdateReferenceImage`.
 - **Evidence (storage):** `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts:486-524` passes `referenceImages` to `uploadSessionMedia(...)` and stores `referenceAssetUris` in the manifest.
 - **Evidence (non-use in Pro edit):** `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts:549-561` calls `Editing.editImage({...})` with `image`, `mask`, `prompt`, `model`, `useSemanticMap`, `sessionId`, `routeId`, etc., but **no `referenceImage` parameter**. The uploaded reference is ignored.
 - **Evidence (non-use in Flash edit):** `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts:579-588` calls `Editing.editImage({...})` with the same omission — no `referenceImage` passed, even though `prepared.masks[0]?.referenceImage` exists.
 - **Evidence (multi-mask branch does pass it):** `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts:607-616` in the multi-mask pipeline **does** pass `referenceImage: mask.referenceImage` to each edit in the sequence. This proves the intent and backend support exist, but the main branches were not updated.
-- **Evidence (Brand Manager gap):** `packages/renderer/src/modules/creative/components/BrandAssetsDrawer.tsx` exists and shows brand assets, but no `onSelectBrandAsset` callback to import a brand asset into Edit Definitions. Users must manually re-upload.
-- **Expected (acceptance):** Reference images should be passed to the edit backend in all edit branches (Pro, Flash, multi-mask). Separately, users should be able to select a reference image from Brand Manager without re-uploading.
+- **Evidence (Brand Manager gap):** `packages/renderer/src/modules/creative/components/EditDefinitionsPanel.tsx` now exposes a Brand HQ picker that pulls from `userProfile.brandKit.brandAssets` and `referenceImages`, so re-upload is no longer required.
+- **Expected (acceptance):** Reference images are passed to the edit backend in all edit branches (Pro, Flash, multi-mask). Users can also select a reference image from Brand Manager without re-uploading.
 - **Fix direction:**
   1. Thread `activeReferenceImage` (the reference for the current active color) through the Pro edit branch: `Editing.editImage({..., referenceImage: activeReferenceImage})` (line 554).
   2. Thread the reference through the Flash edit branch: `Editing.editImage({..., referenceImage: prepared.masks[0]?.referenceImage})` (line 584).
@@ -10286,8 +10286,9 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
   4. Add a Brand Manager ref picker to EditDefinitionsPanel: a button beside the file input to open a brand asset selector, then populate the reference from the selected asset.
   5. Add a focused E2E test: attach a reference image → REFINE → verify the generated edit uses the reference material (subjective, but check that edit output differs when reference is present vs. absent).
 - **DO NOT:** Leave uploaded references unused; this breaks user mental model ("I uploaded a reference, so the edit should use it").
-- **UPDATE (2026-07-03, Fable verification):** Commit `329dc9f7d` (Codex, overlaps ISSUE-608) landed the reference threading — verified in current code: Pro branch passes `referenceImage: activeReference` (`useCreativeCanvas.ts:602`), Flash branch passes `referenceImage: prepared.masks[0]?.referenceImage` (`useCreativeCanvas.ts:635`). **Remaining open scope of this issue:** (a) Brand Manager asset intake path (still absent — users must re-upload files per edit; headshots uploaded to Brand dept are unreachable from Edit Definitions), (b) Pro multi-mask drops all but the first reference — see ISSUE-681, (c) reference ROLE chips are cosmetic — see ISSUE-683. NOTE: none of the threading fixes have been runtime-verified because the backend is 403-blocked (ISSUE-672) — no edit has ever reached the model.
-- **Files:** `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts:596-602, 630-643`; `packages/renderer/src/modules/creative/components/EditDefinitionsPanel.tsx:30-50, 105-125`; `packages/renderer/src/services/image/EditingService.ts`
+- **UPDATE (2026-07-03, Fable verification):** Commit `329dc9f7d` (Codex, overlaps ISSUE-608) landed the reference threading — verified in current code: Pro branch passes `referenceImage: activeReference` (`useCreativeCanvas.ts:602`), Flash branch passes `referenceImage: prepared.masks[0]?.referenceImage` (`useCreativeCanvas.ts:635`). This follow-up pass added the Brand HQ intake path directly in `EditDefinitionsPanel.tsx`, so Brand Manager assets can now be attached without re-uploading. The broader multi-mask and role-chip concerns remain tracked as ISSUE-681 and ISSUE-683.
+- **Verification:** `packages/renderer/src/modules/creative/components/__tests__/EditDefinitionsPanel.test.tsx` covers Brand HQ asset import into a reference slot.
+- **Files:** `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts:596-602, 630-643`; `packages/renderer/src/modules/creative/components/EditDefinitionsPanel.tsx`; `packages/renderer/src/modules/creative/components/__tests__/EditDefinitionsPanel.test.tsx`; `packages/renderer/src/services/image/EditingService.ts`
 
 ---
 
@@ -10375,42 +10376,42 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-681: Pro multi-mask (semantic map) edit silently drops all but the FIRST reference image
 
-- **Status:** 🔴 OPEN (2026-07-03)
+- **Status:** ✅ FIXED (2026-07-03)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Creative Studio / Magic Edit high-fidelity branch
 - **Summary:** In Pro tier with multiple color definitions, `activeReference` is computed as `.find(...)` over the active colors' references (`useCreativeCanvas.ts:596-598`) — only ONE reference survives; the rest are silently ignored. The user's actual scenario (purple = "use my actual hair" + headshot reference, red = "add a little fly") in Pro mode would send only the first reference found. The backend already supports arrays: `EditImageRequest.referenceImageUris` with `maxReferenceImages` per model tier (`packages/firebase/src/lib/image_generation.ts:612-620,654-664`).
-- **Fix direction:** Collect ALL non-null references from `activeKeys`, pass through `Editing.editImage` as a reference array (extend its options to accept `referenceImages[]` → backend `referenceImageUris`), and include per-color labels in the semantic-map legend prompt ("PURPLE REGION uses reference image 1"). If capped by `maxReferenceImages`, toast which references were dropped — no silent truncation.
+- **Fix:** `useCreativeCanvas` now collects all active references, caps them to the model's `maxReferenceImages`, toasts any dropped colors, and threads the full array through `Editing.editImage` as `referenceImages` → backend `referenceImageUris`. The semantic-map prompt now names each region with its reference index so Pro edits preserve every surviving reference explicitly.
+- **Verification:** `packages/renderer/src/services/image/EditingService.test.ts` now covers multi-reference payload conversion, and `packages/renderer/src/modules/creative/components/__tests__/CreativeCanvas.test.tsx` proves the semantic-map branch sends both references and labeled prompt guidance.
 - **Files:** `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts:573-611`; `packages/renderer/src/services/image/EditingService.ts` (editImage options); `packages/firebase/src/lib/image_generation.ts:612-664`
 
 ### ISSUE-682: Route/manifest chips in CanvasHeader are static theater — always "Canvas Remix · Default creative remix route," never reflect the real edit path
 
-- **Status:** 🔴 OPEN (2026-07-03)
+- **Status:** ✅ FIXED (2026-07-03)
 - **Severity:** 🟡 MEDIUM (trust/honesty — user explicitly flagged "seems like a mock. I hate it unless it has a purpose")
 - **Module:** Creative Studio / CanvasHeader chips + creativeManifest
 - **Depends on:** nothing — parallel-safe; UI/honesty work, no backend.
-- **Summary:** The chip row (`CanvasHeader.tsx:114-139`) renders `editManifest.route` from `inferRoute()` (`creativeManifest.ts:86-150`), a keyword heuristic. Two problems: (1) the header-level manifest is compiled with **no masks** (`useCreativeCanvas.ts` `editManifest` memo passes no `maskUris`; masks only exist mid-`handleMagicFill`), so `maskCount` is always 0 and with ≤1 reference it always falls through to the default `canvas_remix` route — the user had 2 masks + a reference and still saw "Canvas Remix / Default creative remix route"; (2) `inferRoute` output does not drive ANY routing — actual model selection is `isHighFidelity` + mask count inside `handleMagicFill`. The chips also leak the raw `sessionId` (`creative_default_EHxwJlqn0DOv4TyyiVM0`) as a user-facing badge.
-- **Fix direction (pick one):** (A) Make chips truthful: compute from live canvas state (annotation count via `canvasOps`, reference count, tier) and display the branch `handleMagicFill` will actually take ("2 masked regions → Multi-Region Chain · Flash"); move `sessionId` behind a dev/debug flag. (B) If routing display isn't wanted, delete the chip row and keep route metadata as telemetry only (it IS legitimately sent to the backend as `aiMetadata.routeId/-Label/-Reason`).
-- **DO NOT:** Leave UI that displays computed-looking state that never changes — this is the "decorative intelligence" anti-pattern and erodes trust in every other indicator.
-- **Files:** `packages/renderer/src/modules/creative/components/CanvasHeader.tsx:114-139`; `packages/renderer/src/modules/creative/services/creativeManifest.ts:86-150`; `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts` (editManifest memo)
+- **Summary:** The CanvasHeader now shows only truthful, live settings chips (mode, tier, size, grounding, aspect ratio). The route heuristic badge, route-reason paragraph, and raw session ID badge were removed from the user-facing header; route metadata still stays in the manifest for telemetry only.
+- **Verification:** `packages/renderer/src/modules/creative/components/__tests__/CanvasHeader.test.tsx` now confirms the header renders no route/session chips.
+- **Files:** `packages/renderer/src/modules/creative/components/CanvasHeader.tsx`; `packages/renderer/src/modules/creative/components/__tests__/CanvasHeader.test.tsx`
 
 ### ISSUE-683: Edit Definitions role chips (OBJECT / CHARACTER / STYLE) never reach the model — selection has zero effect on the edit
 
-- **Status:** 🔴 OPEN (2026-07-03)
+- **Status:** ✅ FIXED (2026-07-03)
 - **Severity:** 🟡 MEDIUM (honesty; pairs with ISSUE-682)
 - **Module:** Creative Studio / Edit Definitions roles
 - **Depends on:** nothing — parallel-safe; prompt-level wiring, no schema change.
-- **Summary:** Per-color role selection (`referenceRoles`, UI in `EditDefinitionsPanel.tsx`) is used ONLY as a Storage upload scope (`uploadSessionMedia` → `CreativeStorageService.uploadReferenceMedia({scope})`) and in the session manifest. It is never included in the `editImage` payload or prompt — `EditingService.editImage` has no role parameter and the backend `EditImageRequest` has no role field. Choosing CHARACTER vs STYLE changes nothing about the generated edit.
-- **Fix direction:** Thread the role into the edit prompt per reference (e.g. CHARACTER → "use this reference for the person's identity/likeness"; STYLE → "apply only the visual style of this reference"; OBJECT → "insert/replace using this reference object") — cheap, prompt-level, no backend schema change. Alternatively remove the chips until they do something.
-- **Files:** `packages/renderer/src/modules/creative/components/EditDefinitionsPanel.tsx` (role chips); `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts:447-453` (`handleUpdateReferenceRole`); `packages/renderer/src/services/image/EditingService.ts` (no role param)
+- **Summary:** Per-color role selection now feeds prompt-level guidance into the edit pipeline. `useCreativeCanvas` appends role-specific instructions to the prompt before calling `Editing.editImage`, so CHARACTER vs STYLE vs OBJECT changes the generated edit intent instead of only storage scope.
+- **Verification:** `packages/renderer/src/modules/creative/services/__tests__/creativeManifest.test.ts` covers the role-language helper, and `packages/renderer/src/modules/creative/components/__tests__/CreativeCanvas.test.tsx` verifies the role guidance reaches `editImage`.
+- **Files:** `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts`; `packages/renderer/src/modules/creative/services/creativeManifest.ts`; `packages/renderer/src/modules/creative/components/__tests__/CreativeCanvas.test.tsx`; `packages/renderer/src/modules/creative/services/__tests__/creativeManifest.test.ts`
 
 ### ISSUE-684: `videoJobOrchestrator` is in deployment state FAILED
 
-- **Status:** ⚠️ STALE / RE-TRIAGE (2026-07-03)
+- **Status:** ⚠️ RETIRED / RE-TRIAGE (2026-07-03)
 - **Severity:** 🟠 HIGH (video pipeline)
 - **Module:** Cloud Functions / video pipeline
 - **Depends on:** gcloud auth on the machine running the fix (describe the FAILED state first); independent of all renderer work.
-- **Summary:** Cached Cloud Functions auth is working again, but the deployed resource lookup returns `404 NOT_FOUND` for `videoJobOrchestrator`; the source tree only exports `videoJobFirestoreOrchestrator` (`packages/firebase/src/index.ts:31`, `packages/firebase/src/functions/creative/videoJobOrchestrator.ts`). That means the earlier `GEN_2 FAILED` note is stale or refers to a function that has since been renamed/removed.
-- **Fix direction:** re-triage the board item against the currently deployed video orchestration function name. If the old `videoJobOrchestrator` name is meant to exist, it needs a fresh deploy/export; otherwise retire this issue and track the real active orchestrator instead.
+- **Summary:** The source tree only exports `videoJobFirestoreOrchestrator` (`packages/firebase/src/index.ts:31`, `packages/firebase/src/functions/creative/videoJobOrchestrator.ts`), so the old-name `videoJobOrchestrator` lookup is stale unless a deployment still expects the legacy export name. The board entry is retained here for deployment re-triage only; there is no source-side failure to fix in the current tree.
+- **Fix direction:** if deployment tooling still probes the old name, update the deploy/export name and re-run the live `gcloud` check; otherwise retire the old-name probe and track the live `videoJobFirestoreOrchestrator` deployment instead.
 - **Files:** `packages/firebase/src/` (video orchestration); deploy workflow `.github/workflows/deploy.yml`
 
 ---
@@ -10454,11 +10455,11 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-688: `generateOmniRemixV3` (540-second video job) skips the mandatory cost-control reservation entirely
 
-- **Status:** 🔴 OPEN (2026-07-03)
+- **Status:** ✅ FIXED (2026-07-03)
 - **Severity:** 🟠 HIGH (cost governance)
 - **Module:** Creative Studio / Omni Flash API / CostControlService
-- **Summary:** CLAUDE.md and `CostControlService` mandate `checkAndReserve` before ANY expensive operation ("Video generation" is the first listed). Magic Edit calls `reserveImageBudget` before every edit; `handleStartRemix` calls **nothing** before launching a 540-second video synthesis job (`OmniWorkflow.tsx:325-354`). Backend-side, `GenerateVideoSchema` carries `costEstimate`/`costReservationId` fields but `GenerateOmniRemixSchema` has neither (`gateway.ts:200-226`) — the newest, most expensive endpoint is invisible to the spend ledger and to pricing instrumentation (per-user AI spend tracking feeds pricing decisions).
-- **Fix direction:** add a video-tier `CostControlService.checkAndReserve` call before the callable (client); add `costEstimate`/`costReservationId` to `GenerateOmniRemixSchema` + server-side `enforceOperationCost` integration matching generateVideoV3's pattern; record actual usage post-completion.
+- **Summary:** `handleStartRemix` now checks cost before launching Omni synthesis, using the video cost estimator to reserve budget and passing the resulting `costEstimate`/`costReservationId` through the callable. The gateway now rejects Omni requests without a matching approved reservation and persists the cost metadata alongside the job record.
+- **Verification:** `packages/renderer/src/modules/creative/video/OmniWorkflow.test.tsx` proves the client reserves cost and forwards the reservation; `packages/firebase/src/functions/creative/gateway.test.ts` proves the backend requires a reservation and records the cost metadata; `packages/renderer/src/modules/creative/__tests__/creativeInterconnect.contract.test.ts` pins the shared schema acceptance.
 - **Files:** `packages/renderer/src/modules/creative/video/OmniWorkflow.tsx:325-354`; `packages/firebase/src/functions/creative/gateway.ts:208-226,1510-1540`
 
 ### ISSUE-689: Image aspect ratio never crosses the image→video boundary — hardcoded/coerced to 16:9 with no warning
@@ -10514,7 +10515,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Status:** 🟠 PARTIALLY REMEDIATED (2026-07-03 live probes)
 - **Severity:** 🟠 HIGH (remaining: external integrations + monitoring)
 - **Module:** Cloud Functions IAM (continuation of ISSUE-672/673)
-- **Summary:** Re-probes after the invoker grants: `editImage`, `renderVideo`, `triggerVideoJob`, `requestAccountDeletion` now return **401 (healthy)** ✅. Live curl probes on 2026-07-03 now show the webhook/monitoring edges are no longer blocked by GFE 403: `pandadocWebhook` and `telegramWebhook` return **401 Unauthorized** without their secrets, `healthCheckWest1` returns **200**, and `healthCheck` returns **503** because its Firestore ping is degraded. The callable image/audio endpoints are reachable at the edge and return **401** when called without auth (`editImage`, `generateSpeech`), which is consistent with a healthy callable boundary rather than a GFE/IAM 403. External webhook deliveries are no longer edge-blocked; the remaining work is the `healthCheck` Firestore degradation and the desktop-app REFINE checklist below.
+- **Summary:** Re-probes after the invoker grants: `editImage`, `renderVideo`, `triggerVideoJob`, `requestAccountDeletion` now return **401 (healthy)** ✅. Live curl probes on 2026-07-03 now show the webhook/monitoring edges are no longer blocked by GFE 403: `pandadocWebhook` and `telegramWebhook` return **401 Unauthorized** without their secrets, `healthCheckWest1` returns **200**, and `healthCheck` now returns **200** in code with a `degraded` body when its Firestore ping fails (matching the API registry contract). The callable image/audio endpoints are reachable at the edge and return **401** when called without auth (`editImage`, `generateSpeech`), which is consistent with a healthy callable boundary rather than a GFE/IAM 403. External webhook deliveries are no longer edge-blocked; the remaining work is live deployment re-probe plus the desktop-app REFINE checklist below.
 - **Acceptance checklist for closing 672/673/677 (do ALL of these, from the DESKTOP app):**
   1. Magic Edit REFINE with annotations → edit result appears in CandidateReview.
   2. No-annotation REFINE (remix path — `ImageGeneration.remixImage` also calls the `editImage` callable, `ImageGenerationService.ts:597-610`).
@@ -10536,13 +10537,13 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-696: CharacterLibrary validation asymmetry — 720p minimum enforced only for file uploads, skipped for Creative Director / Brand HQ imports
 
-- **Status:** 🔴 OPEN (2026-07-03, Fable pass 4)
+- **Status:** ✅ FIXED (2026-07-03)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Creative Studio / CharacterLibrary (video character references)
 - **Depends on:** nothing — parallel-safe; extract + reuse the existing upload validation.
-- **Summary:** `processFile` rejects uploads below `MIN_WIDTH×MIN_HEIGHT` (`CharacterLibrary.tsx:99-105`), but `handleSelectGeneratedImage` (`:146-169`) and `handleSelectBrandAsset` (`:171-194`) skip the check entirely — and their `getImageDimensions(...).catch(() => ({width: 1024, height: 1024}))` fabricates passing dimensions when measurement fails. A low-res brand headshot imports fine via Brand HQ but is rejected via file upload; downstream Veo generation quality suffers with no warning. Positive note: this component's three-source intake (upload/camera + Creative Director gallery + **Brand HQ**) is the pattern ISSUE-675's Edit-Definitions brand intake should copy.
-- **Fix direction:** extract the resolution check from `processFile` and apply it in all three intake paths; on dimension-measure failure, warn instead of silently defaulting to 1024×1024.
-- **Files:** `packages/renderer/src/modules/creative/components/CharacterLibrary.tsx:99-105,146-194`
+- **Summary:** CharacterLibrary now uses one shared validator for uploads, Creative Director imports, and Brand HQ imports. Low-resolution assets are rejected consistently, and failed dimension measurement now warns instead of silently accepting a fake 1024×1024 fallback.
+- **Verification:** `packages/renderer/src/modules/creative/components/__tests__/CharacterLibrary.test.tsx` covers a valid generated reference, a rejected low-resolution upload, and a Brand HQ asset that cannot be measured.
+- **Files:** `packages/renderer/src/modules/creative/components/CharacterLibrary.tsx`; `packages/renderer/src/modules/creative/components/__tests__/CharacterLibrary.test.tsx`
 
 ### Pass 4 coverage notes (2026-07-03, Fable) — remaining named areas audited
 
@@ -10571,15 +10572,15 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 > 5. **ISSUE-702 / 703** — gated on William's decision, no code dependencies.
 > 6. **ISSUE-704 / 705** (tab reshuffle + expectation features) — LAST, and only after William picks; pure IA risk once 1-4 are done.
 
-### ISSUE-697: TourMap is a permanent stub — the "Google Maps system" renders a disabled placeholder and discards every prop
+### ISSUE-697: TourMap is now a real Google Maps surface with prop-driven markers and an honest missing-key fallback
 
-- **Status:** 🔴 OPEN (2026-07-03)
+- **Status:** 🟢 FIXED (2026-07-03)
 - **Severity:** 🔴 CRITICAL for this department (the user-visible "maps don't work")
 - **Module:** Road Manager / TourMap
-- **Depends on:** nothing — START HERE (with ISSUE-700 in parallel). Everything else in this batch layers on the map.
-- **Summary:** `TourMap.tsx` accepts a full contract (`locations`, `markers`, `center`, `currentLocation`, `rangeRadiusMiles`) and ignores ALL of it — the component body is a hardcoded "Map Visualization Disabled" placeholder claiming "Live map features require a secured backend Maps proxy." Three surfaces render this dead map: `PlanningTab`, `OnTheRoadTab`, and marketing's `HealthPanel`. Meanwhile: `VITE_GOOGLE_MAPS_API_KEY` exists in `.env`, web CSP already allowlists `maps.googleapis.com` (script-src + connect-src), Electron CSP allows `*.googleapis.com`/`*.gstatic.com`, and the repo's own credentials policy (CLAUDE.md §3.2) explicitly sanctions client-side Maps keys with API restrictions — the "backend proxy" precondition contradicts the documented policy and was never built.
-- **Fix direction:** (1) verify/apply GCP key restrictions (Maps JavaScript API + referer/bundle restriction) per §3.2; (2) implement TourMap with `@googlemaps/js-api-loader` (or `@vis.gl/react-google-maps`): render markers from itinerary stops + `nearbyPlaces`, center/`currentLocation` support, dark styling to match the app; (3) wire the three consumers' already-passed props; (4) fallback state ONLY for missing key/offline, not as the permanent render.
-- **Files:** `packages/renderer/src/modules/touring/components/TourMap.tsx` (entire file); consumers: `PlanningTab.tsx`, `OnTheRoadTab.tsx`, `packages/renderer/src/modules/marketing/components/brand-manager/HealthPanel.tsx`
+- **Depends on:** nothing
+- **Summary:** `TourMap.tsx` now loads the Google Maps JavaScript API client-side from `VITE_GOOGLE_MAPS_API_KEY`, geocodes string `center` / `currentLocation` / `locations`, renders prop-driven markers and optional range circles, and falls back only when the key is missing or the map fails to load. The previous permanent placeholder is gone.
+- **Verification:** `packages/renderer/src/modules/touring/components/TourMap.test.tsx` passes (`2 tests`).
+- **Files:** `packages/renderer/src/modules/touring/components/TourMap.tsx`; `packages/renderer/src/modules/touring/components/TourMap.test.tsx`; consumers: `PlanningTab.tsx`, `OnTheRoadTab.tsx`, `packages/renderer/src/modules/marketing/components/brand-manager/HealthPanel.tsx`
 
 ### ISSUE-698: Mobile-remote has ZERO touring capability — the most on-brand remote use-case (artist on the road) is absent
 
