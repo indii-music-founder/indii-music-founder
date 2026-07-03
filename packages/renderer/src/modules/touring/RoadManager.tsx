@@ -1,8 +1,9 @@
 import { useTranslation } from 'react-i18next';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import { motion, AnimatePresence } from 'motion/react';
 import { useToast } from '@/core/context/ToastContext';
+import { useStore } from '@/core/store';
 import { functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { PlanningTab } from './components/PlanningTab';
@@ -21,6 +22,7 @@ import { SetlistAnalytics } from './components/SetlistAnalytics';
 import { VisaChecklist } from './components/VisaChecklist';
 import { logger } from '@/utils/logger';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
+import { resolveTouringTab } from '@/modules/handoffViews';
 
 interface EmergencyContactsPanelProps {
     contacts: EmergencyContact[];
@@ -223,6 +225,7 @@ const RoadManager: React.FC = () => {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         loading: touringLoading
     } = useTouring();
+    const pendingTouringHandoff = useStore(state => state.pendingHandoffs.touring);
 
     // Core State
     const [locations, setLocations] = useState<string[]>([]);
@@ -233,6 +236,14 @@ const RoadManager: React.FC = () => {
 
     // Feature Tabs
     const [activeTab, setActiveTab] = useState<TouringTab>('planning');
+
+    useEffect(() => {
+        if (!pendingTouringHandoff) return;
+        const pendingTab = resolveTouringTab(pendingTouringHandoff.targetView);
+        if (pendingTab && activeTab !== pendingTab) {
+            setActiveTab(pendingTab);
+        }
+    }, [activeTab, pendingTouringHandoff]);
 
     // Logistics State
     const [isCheckingLogistics, setIsCheckingLogistics] = useState(false);

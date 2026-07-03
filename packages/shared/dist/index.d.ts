@@ -1,5 +1,6 @@
 export * from './services/AuthService.js';
 export * from './schemas/api.js';
+export * from './schemas/creative.js';
 export * from './schemas/env.schema.js';
 export * from './schemas/workflowState.js';
 export * from './schemas/agentLoopState.js';

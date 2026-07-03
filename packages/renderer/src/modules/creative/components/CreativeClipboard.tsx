@@ -28,11 +28,20 @@ export default function CreativeClipboard() {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handleSendTo = React.useCallback((target: SendToTarget, item: any) => {
+        const targetView = target === 'marketing'
+            ? 'visuals'
+            : target === 'touring'
+                ? 'rider'
+                : target === 'merch'
+                    ? 'design'
+                    : 'conversation';
+
         sendToModule(target, {
             assetId: item.id,
             assetUrl: item.url,
             assetType: item.type,
             prompt: item.prompt || 'Clipboard Asset',
+            targetView,
             originModule: 'creative',
             timestamp: getCurrentTime()
         });

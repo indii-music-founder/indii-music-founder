@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import {
@@ -12,6 +12,7 @@ import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 import { calculateProfileStatus } from '@/services/onboarding/onboardingService';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/services/firebase';
+import { resolveBrandManagerTab } from '@/modules/handoffViews';
 import {
     IdentityPanel,
     VisualsPanel,
@@ -31,8 +32,18 @@ const BrandManager: React.FC = () => {
         setUserProfile: state.setUserProfile
     })));
 
+    const pendingMarketingHandoff = useStore(state => state.pendingHandoffs.marketing);
+
     // Tab State
     const [activeTab, setActiveTab] = useState<TabId>('identity');
+
+    useEffect(() => {
+        if (!pendingMarketingHandoff) return;
+        const pendingTab = resolveBrandManagerTab(pendingMarketingHandoff.targetView);
+        if (pendingTab && activeTab !== pendingTab) {
+            setActiveTab(pendingTab);
+        }
+    }, [activeTab, pendingMarketingHandoff]);
 
     // Brand Kit with defaults
     const brandKit: BrandKitWithDefaults = {
