@@ -18,7 +18,7 @@
  *     characterization test FAILS on purpose — flip the assertion and close the issue.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { z } from 'zod';
+import { GenerateImageSchema, GenerateOmniRemixSchema, GenerateVideoSchema } from '@indii/shared';
 import { buildCreativeHandoffState } from '@/core/store/slices/creative/creativeHandoffSlice';
 import type { StageHandoffPayload } from '@/types/handoff';
 import type { HistoryItem } from '@/core/types/history';
@@ -114,23 +114,6 @@ describe('creativeHandoffSlice — cross-stage handoff semantics', () => {
     });
 });
 
-// ---------------------------------------------------------------------------
-// 2. Omni Flash API payload contract
-//    MIRROR of GenerateOmniRemixSchema — packages/firebase/src/functions/creative/gateway.ts:208
-//    (kept in sync by hand until the schema moves to packages/shared — ISSUE-691)
-// ---------------------------------------------------------------------------
-
-const GenerateOmniRemixSchemaMirror = z.object({
-    prompt: z.string().min(1),
-    referenceVideoUri: z.string().startsWith('gs://'),
-    audioUri: z.string().startsWith('gs://').optional(),
-    referenceUris: z.array(z.string().startsWith('gs://')).max(8).optional(),
-    pipelineMode: z.enum(['pure-omni', 'hybrid-veo']).default('pure-omni'),
-    aspectRatio: z.enum(['16:9', '9:16']).default('16:9'),
-    durationSeconds: z.number().min(4).max(12).default(8),
-    parentId: z.string().optional(),
-});
-
 /** Reproduces the exact derivation in OmniWorkflow's handoff consumer + handleStartRemix */
 function buildOmniPayloadFromHandoff(item: HistoryItem, remixPrompt: string) {
     const referenceVideoUri = item.storageUri || '';
@@ -145,7 +128,7 @@ function buildOmniPayloadFromHandoff(item: HistoryItem, remixPrompt: string) {
 
 describe('generateOmniRemixV3 payload contract (Omni Flash API)', () => {
     it('sanity: a well-formed gs:// payload parses', () => {
-        const result = GenerateOmniRemixSchemaMirror.safeParse({
+        const result = GenerateOmniRemixSchema.safeParse({
             prompt: 'remix',
             referenceVideoUri: 'gs://bucket/creative/u1/video/outputs/a.mp4',
         });
@@ -154,20 +137,20 @@ describe('generateOmniRemixV3 payload contract (Omni Flash API)', () => {
 
     it('contract: a VideoDirector-produced video handed to Omni yields a payload the backend accepts', () => {
         const payload = buildOmniPayloadFromHandoff(videoDirectorItem, 'remix it');
-        const result = GenerateOmniRemixSchemaMirror.safeParse(payload);
+        const result = GenerateOmniRemixSchema.safeParse(payload);
         expect(result.success).toBe(true);
     });
 
     it("contract: Omni's own output can round-trip into Omni when storageUri is preserved", () => {
         const payload = buildOmniPayloadFromHandoff(omniOutputItem, 'remix the remix');
-        expect(GenerateOmniRemixSchemaMirror.safeParse({
+        expect(GenerateOmniRemixSchema.safeParse({
             ...payload,
             referenceVideoUri: omniOutputItem.storageUri,
         }).success).toBe(true);
     });
 
     it('an https download URL is NOT an acceptable referenceVideoUri — resolveStorageUrl output cannot be sent back', () => {
-        const result = GenerateOmniRemixSchemaMirror.safeParse({
+        const result = GenerateOmniRemixSchema.safeParse({
             prompt: 'remix',
             referenceVideoUri: 'https://firebasestorage.googleapis.com/v0/b/x/o/a.mp4',
         });
@@ -180,7 +163,7 @@ describe('generateOmniRemixV3 payload contract (Omni Flash API)', () => {
             referenceUris: ['gs://bucket/reference-a.png'],
         };
         expect('referenceUris' in payload).toBe(true);
-        expect(GenerateOmniRemixSchemaMirror.safeParse({
+        expect(GenerateOmniRemixSchema.safeParse({
             ...payload,
             referenceVideoUri: videoDirectorItem.storageUri,
         }).success).toBe(true);
@@ -189,7 +172,7 @@ describe('generateOmniRemixV3 payload contract (Omni Flash API)', () => {
     it('duration clamp in the client matches the schema bounds (4..12)', () => {
         const clamp = (d: number) => Math.min(12, Math.max(4, d));
         for (const [input, expected] of [[1, 4], [8, 8], [99, 12]] as const) {
-            const parsed = GenerateOmniRemixSchemaMirror.safeParse({
+            const parsed = GenerateOmniRemixSchema.safeParse({
                 prompt: 'x',
                 referenceVideoUri: 'gs://b/a.mp4',
                 durationSeconds: clamp(input),
@@ -214,7 +197,40 @@ describe('generateOmniRemixV3 payload contract (Omni Flash API)', () => {
 });
 
 // ---------------------------------------------------------------------------
-// 3. Image → video handoff: VideoDirector.triggerAnimation payload
+// 3. Shared creative gateway schemas
+// ---------------------------------------------------------------------------
+
+describe('shared creative gateway schemas', () => {
+    it('accepts a minimal valid video payload with gs:// reference media', () => {
+        const parsed = GenerateVideoSchema.safeParse({
+            prompt: 'clip',
+            referenceUris: ['gs://bucket/reference-a.png'],
+            sourceVideoUri: 'gs://bucket/source.mp4',
+        });
+        expect(parsed.success).toBe(true);
+    });
+
+    it('rejects non-gs:// reference media for video payloads', () => {
+        const parsed = GenerateVideoSchema.safeParse({
+            prompt: 'clip',
+            referenceUris: ['https://example.com/reference-a.png'],
+        });
+        expect(parsed.success).toBe(false);
+    });
+
+    it('accepts a minimal valid image payload with gs:// references', () => {
+        const parsed = GenerateImageSchema.safeParse({
+            prompt: 'cover art',
+            referenceUri: 'gs://bucket/reference-a.png',
+            referenceUris: ['gs://bucket/reference-b.png'],
+            sessionId: 'creative-session-1',
+        });
+        expect(parsed.success).toBe(true);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// 4. Image → video handoff: VideoDirector.triggerAnimation payload
 // ---------------------------------------------------------------------------
 
 const capturedPayloads: unknown[] = [];

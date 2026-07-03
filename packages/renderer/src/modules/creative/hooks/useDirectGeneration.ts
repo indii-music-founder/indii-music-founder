@@ -8,6 +8,7 @@ import { Ingredient } from '../components/IngredientDropZone';
 import { SequenceBlock } from '../components/SequenceTimeline';
 import { VideoGenerationJob } from '../components/veo/VideoGenerationProgress';
 import { VideoAspectRatioSchema } from '../video/schemas';
+import { GenerateImageSchema } from '@indii/shared';
 import { functions, db, auth } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { getFirebaseFunction } from '@/services/firebase-guards';
@@ -327,7 +328,7 @@ export function useDirectGeneration() {
             }
 
             const generateImageV3 = httpsCallable(fbFunctions, 'generateImageV3');
-            const res = await generateImageV3(compactCallablePayload({
+            const payload = compactCallablePayload({
                 prompt: finalPrompt,
                 sessionId: currentProjectId ? `creative_${currentProjectId}` : undefined,
                 aspectRatio: studioControls.aspectRatio,
@@ -337,7 +338,14 @@ export function useDirectGeneration() {
                 useGoogleSearch: studioControls.useGrounding,
                 referenceUri,
                 referenceUris
-            }));
+            });
+            const payloadValidation = GenerateImageSchema.safeParse(payload);
+            if (!payloadValidation.success) {
+                const errorMsg = payloadValidation.error.issues.map(issue => issue.message).join(', ');
+                throw new Error(`Invalid image gateway payload: ${errorMsg}`);
+            }
+
+            const res = await generateImageV3(payloadValidation.data);
 
             const data = res.data as { jobId: string; resultUri?: string; resultUrl?: string; type?: 'image' | 'video' };
             const completedUri = data.resultUrl || data.resultUri;
