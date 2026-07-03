@@ -21,6 +21,7 @@ import { DailiesStrip } from './components/DailiesStrip';
 import { VideoStage } from './components/VideoStage';
 import { useGlobalShortcut } from '@/hooks/useGlobalShortcut';
 import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
+import { resolveStorageUri } from '@/services/storage/storageUri';
 // Lazy load SceneBuilder to prevent vendor-three → vendor-react circular dependency
 const SceneBuilder = lazy(() => import('./visualizer/SceneBuilder').then(m => ({ default: m.SceneBuilder })));
 import { useToast, ToastContextType } from '@/core/context/ToastContext';
@@ -128,7 +129,7 @@ export const processJobUpdate = async (
             useStore.getState().updateJobStatus(currentJobId, 'success');
             const rawVideoUrl = data.videoUrl || data.output?.url || '';
             const playableVideoUrl = await resolveStorageUrl(rawVideoUrl);
-            const storageUri = rawVideoUrl.startsWith('gs://') ? rawVideoUrl : undefined;
+            const storageUri = resolveStorageUri(rawVideoUrl);
             // ⚡ Automatic Local Save (Veo 3.1 Requirement)
             // The Autonomous community/app needs access to this file locally first.
             const filename = `veo_${currentJobId}.mp4`;
@@ -686,7 +687,7 @@ export default function VideoWorkflow() {
                 if (firstResult.url) {
                     for (const res of results) {
                         const filename = `veo_${res.id}.mp4`;
-                        const storageUri = res.url.startsWith('gs://') ? res.url : undefined;
+                        const storageUri = resolveStorageUri(res.url);
                         const playableUrl = await resolveStorageUrl(res.url);
 
                         if (window.electronAPI?.video?.saveAsset) {
@@ -701,7 +702,7 @@ export default function VideoWorkflow() {
                         const newAsset = {
                             id: res.id,
                             url: playableUrl,
-                            storageUri,
+                            storageUri: storageUri || undefined,
                             localPath: '', // Will be updated async
                             prompt: res.prompt,
                             type: 'video' as const,

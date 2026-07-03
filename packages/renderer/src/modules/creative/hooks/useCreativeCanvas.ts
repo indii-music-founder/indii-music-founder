@@ -17,7 +17,9 @@ import { auth } from '@/services/firebase';
 import { CostControlService } from '@/services/billing/CostControlService';
 import { estimateCostUsd } from '@/services/intelligence/billing/ModelPricing';
 import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
+import { buildAssetStorageUri, resolveStorageUri } from '@/services/storage/storageUri';
 import { CloudStorageService } from '@/services/CloudStorageService';
+import { normalizeVideoAspectRatio } from '@/services/video/videoAspectRatio';
 import type { Candidate } from '../components/CandidateReview';
 
 // Basic debounce helper
@@ -160,6 +162,10 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
         }));
 
         return Object.fromEntries(entries);
+    };
+    const currentUserStorageUri = (assetId: string) => {
+        const userId = auth.currentUser?.uid;
+        return userId ? buildAssetStorageUri(assetId, userId) : undefined;
     };
     const reserveImageBudget = async (modelId: 'gemini-3-pro-image' | 'gemini-3.1-flash-image') => {
         const userId = auth.currentUser?.uid;
@@ -420,6 +426,7 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                 addToHistory({
                     id: assetId,
                     url: candidate.url,
+                    storageUri: currentUserStorageUri(assetId),
                     prompt: candidate.prompt || sourcePrompt || `Magic Edit option ${index + 1}`,
                     type: 'image',
                     timestamp: Date.now(),
@@ -731,9 +738,15 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
 
     const handleAnimate = async () => {
         if (!item) return;
+        const { aspectRatio, coercedFrom } = normalizeVideoAspectRatio(studioControls.aspectRatio);
+        if (coercedFrom && coercedFrom !== aspectRatio) {
+            toast.info(`Animating ${coercedFrom} art as ${aspectRatio} video.`);
+        }
         toast.info('Starting video generation...');
         try {
-            const result = await VideoDirector.triggerAnimation(item);
+            const result = await VideoDirector.triggerAnimation(item, {
+                aspectRatio,
+            });
             if (result.success) {
                 toast.success('Video generation started in background!');
             } else {
@@ -811,6 +824,7 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
             const blob = await canvasOps.getBlob();
             if (blob) {
                 const assetId = await saveAssetToStorage(blob);
+                const storageUri = currentUserStorageUri(assetId);
 
                 // 3. Create or update HistoryItem so the export appears in the gallery
                 const { addToHistory, updateHistoryItem } = useStore.getState();
@@ -818,12 +832,14 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                 if (item.origin === 'canvas-export') {
                     updateHistoryItem(item.id, {
                         url: dataUrl || item.url,
+                        storageUri,
                         timestamp: Date.now()
                     });
                 } else {
                     const canvasAsset: HistoryItem = {
                         id: assetId,
                         url: dataUrl || item.url,
+                        storageUri,
                         prompt: `Canvas edit of: ${item.prompt || 'untitled'}`,
                         type: 'image',
                         timestamp: Date.now(),
@@ -890,9 +906,11 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
             });
 
             if (synthResults) {
+                const storageUri = resolveStorageUri(synthResults.url);
                 const targetAsset: HistoryItem = {
                     id: crypto.randomUUID(),
                     url: synthResults.url,
+                    storageUri,
                     prompt: `End Frame: ${refinedPrompt}`,
                     type: 'image',
                     timestamp: Date.now(),
@@ -925,10 +943,12 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                     // connect-src directive, which made every batch export fail.
                     const blob = await CloudStorageService.dataURItoBlob(url);
                     const assetId = await saveAssetToStorage(blob);
+                    const storageUri = currentUserStorageUri(assetId);
                     
                     const formatAsset: HistoryItem = {
                         id: assetId,
                         url: url, // Assuming URL is a blob URL or base64. Ideally we'd use the uploaded URL if saveAssetToStorage returned it, but we can stick to the local URL for instant display
+                        storageUri,
                         prompt: `${item.prompt || 'untitled'} (${suffix})`,
                         type: 'image',
                         timestamp: Date.now(),
