@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-07-03 14:30 EDT
+**Updated:** 2026-07-03 14:36 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+5a17e8952 docs(issues): re-triage video orchestrator
+2c4f14b4b chore: session checkpoint [14:30]
 8d50e5ac6 docs(issues): update 692 and 694 status
 fd58baebe docs(issues): update 694 probe status
 88356e746 docs(issues): record 694 live probes
@@ -12,8 +14,6 @@ d96ceabda chore: session checkpoint [13:18]
 7e2c9290c fix(creative): share gateway schemas and boardroom context
 16d873331 chore: session checkpoint [12:33]
 e2638dea9 fix(creative): tighten storage lineage coverage
-6782f874a fix(creative): preserve storage lineage and omni refs
-6c1265ff8 fix(creative): unblock image callables
 ```
 
 ## Working State
