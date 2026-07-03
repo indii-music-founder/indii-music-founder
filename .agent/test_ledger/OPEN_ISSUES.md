@@ -10253,7 +10253,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Evidence:** `packages/renderer/src/modules/creative/components/LayersPanel.tsx:54-160` renders a layer list and action buttons (`toggleVisibility`, `toggleLock`, `deleteLayer`, `reorderLayer`), but no "add layer" button or callback. The panel derives layers from `canvasOps.getLayers()` which only lists existing objects.
 - **Evidence:** `packages/renderer/src/modules/creative/components/CanvasToolbar.tsx:41-112` exposes selection/brush/text/object-detection/panel-toggle, but no "add layer" action.
 - **Evidence:** `packages/renderer/src/modules/creative/services/CanvasOperationsService.ts` provides `addRectangle()`, `addCircle()`, `addText()`, but no `addSketchLayer()` or equivalent public API to create a blank layer.
-- **Evidence (stale affordance):** `packages/renderer/src/modules/creative/components/InfiniteCanvas.tsx:804-811` hardcodes `toast.info("Coming soon: Advanced layer composition management.");` when user tries a layer action, implying future support but providing no current path.
+- **Evidence (stale affordance):** The legacy InfiniteCanvas toast cited in earlier passes has been removed; the remaining gap is still the absence of an explicit add-layer control in `LayersPanel.tsx` / `CanvasToolbar.tsx`.
 - **Expected (acceptance):** Users should be able to click an "Add Layer" button (in the layers panel or toolbar) to create a blank sketch layer, then draw on it, and later delete or reorder it alongside other layers.
 - **Fix direction:**
   1. Add a public method `CanvasOperationsService.addBlankSketchLayer(name?: string): void` that creates a new fabric.js path object or group.
@@ -10262,7 +10262,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
   4. Remove the stale "coming soon" toast from `InfiniteCanvas.tsx` or update it to reflect actual functionality.
   5. Add a focused E2E test: click "Add Layer" → verify a new layer appears in the list → draw on it → verify the sketch is persisted when saving.
 - **DO NOT:** Keep a "coming soon" affordance if blank layer creation is not planned in the next sprint; it breaks user expectation and trust.
-- **Files:** `packages/renderer/src/modules/creative/components/LayersPanel.tsx:54-160`; `packages/renderer/src/modules/creative/components/CanvasToolbar.tsx:41-112`; `packages/renderer/src/modules/creative/services/CanvasOperationsService.ts` (public API); `packages/renderer/src/modules/creative/components/InfiniteCanvas.tsx:804-811`
+- **Files:** `packages/renderer/src/modules/creative/components/LayersPanel.tsx:54-160`; `packages/renderer/src/modules/creative/components/CanvasToolbar.tsx:41-112`; `packages/renderer/src/modules/creative/services/CanvasOperationsService.ts` (public API)
 
 ---
 
@@ -10356,6 +10356,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Status:** 🔴 OPEN (2026-07-03)
 - **Severity:** 🟠 HIGH (makes ISSUE-607's fix ineffective at runtime)
 - **Module:** Creative Studio / candidate & session persistence
+- **Depends on:** nothing blocking — but VERIFY against current main first: commits 6782f874a/e2638dea9 added storageUri lineage which may partially overlap; fix what remains (data-URI in session docs / history / file nodes).
 - **Summary:** Edit results are data-URIs (`editResponse.ts:32-33` builds `data:<mime>;base64,...`; a 2K PNG is ~3-8MB base64). Three persistence paths then carry that URI into size-limited storage: (1) `updateSession({selectedCandidateUri: result.url, outputUri: result.url})` after every successful edit branch (`useCreativeCanvas.ts:622-626,653-657,682-686,716-720`) → Firestore session doc, **1MiB doc limit** → write throws → swallowed by `updateSession`'s catch-and-warn → session state silently lost every time; (2) `persistDraftCandidates` (`useCreativeCanvas.ts:412-438`) uploads the blob via `saveAssetToStorage(blob)` but then **discards the durable URL** and stores `url: candidate.url` (the data-URI) in the history item; (3) `addToHistory` fans that item out to `createFileNode(..., {url: enrichedItem.url})` and `StorageService.saveItem(enrichedItem)` (`creativeHistorySlice.ts:70-104`) — both Firestore-bound with the same >1MiB problem.
 - **Consequence:** ISSUE-607 was marked ✅ FIXED, but for realistically-sized outputs the persistence will fail at runtime; candidates remain effectively transient. (Unverifiable end-to-end today because ISSUE-672 blocks generation entirely — which is also why this shipped unnoticed.)
 - **Fix direction:** `saveAssetToStorage` (or a sibling) must return the durable download URL / `gs://` URI; store THAT in the history item, file node, and session fields. Keep the data-URI only in-memory for instant preview. Add a guard in `creativeSessionService.updateSession` that rejects/strips any `data:` URI over ~100KB with a loud log.
@@ -10367,6 +10368,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Status:** 🔴 OPEN (2026-07-03)
 - **Severity:** 🟡 MEDIUM (latent until ISSUE-672 lands, then immediate)
 - **Module:** Creative Studio / Magic Edit remix path
+- **Depends on:** nothing — parallel-safe; one-file fix (guard `data:` URIs in the remix branch like AutonomousLab already does).
 - **Summary:** The no-annotations REFINE path does `const res = await fetch(item.url)` (`useCreativeCanvas.ts:693`). History items created by `saveCanvas` and `persistDraftCandidates` carry `data:` URIs as `url` — and this app's CSP `connect-src` blocks `fetch()` on `data:` URIs. The codebase already fixed this exact class in `batchExportDimensions` (see its comment: "fetch() on a data: URI is blocked by this app's CSP connect-src directive") using `CloudStorageService.dataURItoBlob`, but the remix branch was never patched. Repro (once 672 is fixed): magic-edit an image → apply → REFINE again with no annotations → remix fails.
 - **Fix direction:** Branch on `item.url.startsWith('data:')` → `CloudStorageService.dataURItoBlob(item.url)`; otherwise fetch. Or reuse `fetchAsBase64` from `safeStorageFetch` if it handles `data:`.
 - **Files:** `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts:690-700`; pattern at `useCreativeCanvas.ts` `batchExportDimensions` (`CloudStorageService.dataURItoBlob`)
@@ -10385,6 +10387,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Status:** 🔴 OPEN (2026-07-03)
 - **Severity:** 🟡 MEDIUM (trust/honesty — user explicitly flagged "seems like a mock. I hate it unless it has a purpose")
 - **Module:** Creative Studio / CanvasHeader chips + creativeManifest
+- **Depends on:** nothing — parallel-safe; UI/honesty work, no backend.
 - **Summary:** The chip row (`CanvasHeader.tsx:114-139`) renders `editManifest.route` from `inferRoute()` (`creativeManifest.ts:86-150`), a keyword heuristic. Two problems: (1) the header-level manifest is compiled with **no masks** (`useCreativeCanvas.ts` `editManifest` memo passes no `maskUris`; masks only exist mid-`handleMagicFill`), so `maskCount` is always 0 and with ≤1 reference it always falls through to the default `canvas_remix` route — the user had 2 masks + a reference and still saw "Canvas Remix / Default creative remix route"; (2) `inferRoute` output does not drive ANY routing — actual model selection is `isHighFidelity` + mask count inside `handleMagicFill`. The chips also leak the raw `sessionId` (`creative_default_EHxwJlqn0DOv4TyyiVM0`) as a user-facing badge.
 - **Fix direction (pick one):** (A) Make chips truthful: compute from live canvas state (annotation count via `canvasOps`, reference count, tier) and display the branch `handleMagicFill` will actually take ("2 masked regions → Multi-Region Chain · Flash"); move `sessionId` behind a dev/debug flag. (B) If routing display isn't wanted, delete the chip row and keep route metadata as telemetry only (it IS legitimately sent to the backend as `aiMetadata.routeId/-Label/-Reason`).
 - **DO NOT:** Leave UI that displays computed-looking state that never changes — this is the "decorative intelligence" anti-pattern and erodes trust in every other indicator.
@@ -10395,6 +10398,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Status:** 🔴 OPEN (2026-07-03)
 - **Severity:** 🟡 MEDIUM (honesty; pairs with ISSUE-682)
 - **Module:** Creative Studio / Edit Definitions roles
+- **Depends on:** nothing — parallel-safe; prompt-level wiring, no schema change.
 - **Summary:** Per-color role selection (`referenceRoles`, UI in `EditDefinitionsPanel.tsx`) is used ONLY as a Storage upload scope (`uploadSessionMedia` → `CreativeStorageService.uploadReferenceMedia({scope})`) and in the session manifest. It is never included in the `editImage` payload or prompt — `EditingService.editImage` has no role parameter and the backend `EditImageRequest` has no role field. Choosing CHARACTER vs STYLE changes nothing about the generated edit.
 - **Fix direction:** Thread the role into the edit prompt per reference (e.g. CHARACTER → "use this reference for the person's identity/likeness"; STYLE → "apply only the visual style of this reference"; OBJECT → "insert/replace using this reference object") — cheap, prompt-level, no backend schema change. Alternatively remove the chips until they do something.
 - **Files:** `packages/renderer/src/modules/creative/components/EditDefinitionsPanel.tsx` (role chips); `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts:447-453` (`handleUpdateReferenceRole`); `packages/renderer/src/services/image/EditingService.ts` (no role param)
@@ -10404,6 +10408,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Status:** ⚠️ STALE / RE-TRIAGE (2026-07-03)
 - **Severity:** 🟠 HIGH (video pipeline)
 - **Module:** Cloud Functions / video pipeline
+- **Depends on:** gcloud auth on the machine running the fix (describe the FAILED state first); independent of all renderer work.
 - **Summary:** Cached Cloud Functions auth is working again, but the deployed resource lookup returns `404 NOT_FOUND` for `videoJobOrchestrator`; the source tree only exports `videoJobFirestoreOrchestrator` (`packages/firebase/src/index.ts:31`, `packages/firebase/src/functions/creative/videoJobOrchestrator.ts`). That means the earlier `GEN_2 FAILED` note is stale or refers to a function that has since been renamed/removed.
 - **Fix direction:** re-triage the board item against the currently deployed video orchestration function name. If the old `videoJobOrchestrator` name is meant to exist, it needs a fresh deploy/export; otherwise retire this issue and track the real active orchestrator instead.
 - **Files:** `packages/firebase/src/` (video orchestration); deploy workflow `.github/workflows/deploy.yml`
@@ -10489,6 +10494,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Status:** ✅ FIXED (2026-07-03)
 - **Severity:** 🔴 CRITICAL (CI unit tests will be red if the uncommitted manifests land as-is)
 - **Module:** Test infrastructure / dependencies
+- **Depends on:** coordination with the in-flight ISSUE-671 dependency agent (guardrail #9 — no concurrent npm installs). BLOCKS committing the pending package manifests; fix before any push that includes them.
 - **Summary:** Root `jsdom` is pinned back to **26.1.0** and the renderer's own jsdom remains 26.1.0. A representative default-environment renderer test now starts normally and passes: `creativeSlice.test.ts` (`4 tests`, `1 file`) completed in `642ms` with no jsdom worker-start error. The prior `ERR_REQUIRE_ESM` failure from `html-encoding-sniffer@6` / `@exodus/bytes` is gone.
 - **Workaround used this pass:** `// @vitest-environment node` on the new contract test file (no DOM needed) — 14/14 pass.
 - **Fix direction:** keep root jsdom pinned to the 26.x line CI last passed with and verify at least one default jsdom-environment test before any manifest commit.
@@ -10520,18 +10526,20 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-695: InfiniteCanvas still exposes two "Coming soon" dead affordances — including the layer one ISSUE-605 claimed fixed
 
-- **Status:** 🔴 OPEN (2026-07-03, Fable pass 4)
+- **Status:** ✅ FIXED (2026-07-03)
 - **Severity:** 🟡 MEDIUM (dead affordance + stale fix claim)
 - **Module:** Creative Studio / InfiniteCanvas
-- **Summary:** `InfiniteCanvas.tsx:806` toasts "Coming soon: Intelligent object and face detection in canvas." and `:810` toasts "Coming soon: Advanced layer composition management." Both are live entry points teasing features that exist ELSEWHERE (CanvasViewport has real `handleDetectObjects`; ISSUE-605 added real layer creation to CanvasToolbar/LayersPanel) — but the InfiniteCanvas surface was missed. ISSUE-605 is marked ✅ FIXED yet its own evidence cited `InfiniteCanvas.tsx:804-811` as the offending affordance, which is still present.
-- **Fix direction:** wire both buttons to the existing implementations (object detection via `imageAnalysisService.detectObjects`, layer creation via the ISSUE-605 handlers) or remove the affordances from InfiniteCanvas.
-- **Files:** `packages/renderer/src/modules/creative/components/InfiniteCanvas.tsx:804-811`
+- **Depends on:** nothing — parallel-safe; wire to the existing ISSUE-605 handlers or delete the affordances.
+- **Summary:** The legacy InfiniteCanvas surface no longer advertises dead actions. Object detection now runs the real `imageAnalysisService.detectObjects` path against the source image and draws the resulting boxes back onto that image, and the legacy layers toggle was removed from `InfiniteCanvasHUD` because this screen has no layer panel to open.
+- **Verification:** `packages/renderer/src/modules/creative/components/__tests__/InfiniteCanvas.test.tsx` now proves the detection button calls the analyzer and renders a box overlay; `packages/renderer/src/modules/creative/components/__tests__/InfiniteCanvasHUD.test.tsx` now confirms the legacy layers button is absent.
+- **Files:** `packages/renderer/src/modules/creative/components/InfiniteCanvas.tsx`; `packages/renderer/src/modules/creative/components/InfiniteCanvasHUD.tsx`
 
 ### ISSUE-696: CharacterLibrary validation asymmetry — 720p minimum enforced only for file uploads, skipped for Creative Director / Brand HQ imports
 
 - **Status:** 🔴 OPEN (2026-07-03, Fable pass 4)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Creative Studio / CharacterLibrary (video character references)
+- **Depends on:** nothing — parallel-safe; extract + reuse the existing upload validation.
 - **Summary:** `processFile` rejects uploads below `MIN_WIDTH×MIN_HEIGHT` (`CharacterLibrary.tsx:99-105`), but `handleSelectGeneratedImage` (`:146-169`) and `handleSelectBrandAsset` (`:171-194`) skip the check entirely — and their `getImageDimensions(...).catch(() => ({width: 1024, height: 1024}))` fabricates passing dimensions when measurement fails. A low-res brand headshot imports fine via Brand HQ but is rejected via file upload; downstream Veo generation quality suffers with no warning. Positive note: this component's three-source intake (upload/camera + Creative Director gallery + **Brand HQ**) is the pattern ISSUE-675's Edit-Definitions brand intake should copy.
 - **Fix direction:** extract the resolution check from `processFile` and apply it in all three intake paths; on dimension-measure failure, warn instead of silently defaulting to 1024×1024.
 - **Files:** `packages/renderer/src/modules/creative/components/CharacterLibrary.tsx:99-105,146-194`
@@ -10554,12 +10562,21 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 > Includes the mobile-remote interconnect (remote must be able to drive touring features) and
 > an IA reorganization proposal (ISSUE-704) — William explicitly invited a redesign of the
 > multi-tab system.
+>
+> **BUILD ORDER FOR FIX AGENTS (mandatory — do not pick these up out of sequence):**
+> 1. **ISSUE-700** (stable stop ids) and **ISSUE-697** (real TourMap) — parallel-safe, no dependencies; everything else layers on these two.
+> 2. **ISSUE-701** (error handling + TBD placeholder) — parallel-safe anytime, small.
+> 3. **ISSUE-699** (optimizer → itinerary merge) — requires 697 (map render) + 700 (stop ids).
+> 4. **ISSUE-698** (remote touring commands) — service-layer work can start anytime; UI requires 697 + 700.
+> 5. **ISSUE-702 / 703** — gated on William's decision, no code dependencies.
+> 6. **ISSUE-704 / 705** (tab reshuffle + expectation features) — LAST, and only after William picks; pure IA risk once 1-4 are done.
 
 ### ISSUE-697: TourMap is a permanent stub — the "Google Maps system" renders a disabled placeholder and discards every prop
 
 - **Status:** 🔴 OPEN (2026-07-03)
 - **Severity:** 🔴 CRITICAL for this department (the user-visible "maps don't work")
 - **Module:** Road Manager / TourMap
+- **Depends on:** nothing — START HERE (with ISSUE-700 in parallel). Everything else in this batch layers on the map.
 - **Summary:** `TourMap.tsx` accepts a full contract (`locations`, `markers`, `center`, `currentLocation`, `rangeRadiusMiles`) and ignores ALL of it — the component body is a hardcoded "Map Visualization Disabled" placeholder claiming "Live map features require a secured backend Maps proxy." Three surfaces render this dead map: `PlanningTab`, `OnTheRoadTab`, and marketing's `HealthPanel`. Meanwhile: `VITE_GOOGLE_MAPS_API_KEY` exists in `.env`, web CSP already allowlists `maps.googleapis.com` (script-src + connect-src), Electron CSP allows `*.googleapis.com`/`*.gstatic.com`, and the repo's own credentials policy (CLAUDE.md §3.2) explicitly sanctions client-side Maps keys with API restrictions — the "backend proxy" precondition contradicts the documented policy and was never built.
 - **Fix direction:** (1) verify/apply GCP key restrictions (Maps JavaScript API + referer/bundle restriction) per §3.2; (2) implement TourMap with `@googlemaps/js-api-loader` (or `@vis.gl/react-google-maps`): render markers from itinerary stops + `nearbyPlaces`, center/`currentLocation` support, dark styling to match the app; (3) wire the three consumers' already-passed props; (4) fallback state ONLY for missing key/offline, not as the permanent render.
 - **Files:** `packages/renderer/src/modules/touring/components/TourMap.tsx` (entire file); consumers: `PlanningTab.tsx`, `OnTheRoadTab.tsx`, `packages/renderer/src/modules/marketing/components/brand-manager/HealthPanel.tsx`
@@ -10569,6 +10586,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Status:** 🔴 OPEN (2026-07-03)
 - **Severity:** 🟠 HIGH (explicit product requirement from William: "the remote control system needs to be able to use this feature for several different things")
 - **Module:** mobile-remote ↔ Road Manager interconnect
+- **Depends on:** ISSUE-697 (map for remote views) + ISSUE-700 (stable stop ids for day-sheet references). Service-layer command plumbing can begin before either lands.
 - **Summary:** `CommandPad` commands cover creative (Gen Visual, Show Me, Live Moment), DAW, finance (Streams Today, Aggregated Revenue), and agent chat — nothing touring. A repo-wide grep of `packages/renderer/src/modules/mobile-remote` for touring/itinerary/day-sheet/setlist finds zero integration. Meanwhile the touring module already has `RoadMode` — a voice-driven, on-the-road surface (Fuel/Food/Bath/Hotel/Safety quick actions via `NearbyPlacesService`, GPS-centric) that is exactly what a phone remote should expose, but it's only reachable inside the desktop module.
 - **Fix direction (spec for the touring command group on the remote):** 1) "Today" — current day sheet (from itinerary stop for today) with venue, times, contacts; 2) "Next stop" — next itinerary stop + distance; 3) "Find near me" — fuel/food/hotel via the same `findPlaces`/`NearbyPlacesService` calls RoadMode uses; 4) "Emergency" — emergency contacts list; 5) day-sheet approval/edit via the existing ApprovalQueue pattern. Reuse RoadMode's service layer, not its desktop UI. Remote pairing already exists (`createHandoffCode`/`redeemHandoffCode` — both probe healthy).
 - **Files:** `packages/renderer/src/modules/mobile-remote/components/CommandPad.tsx`; `packages/renderer/src/modules/touring/components/RoadMode.tsx`; `packages/renderer/src/services/places/NearbyPlacesService.ts`
@@ -10578,6 +10596,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Status:** 🔴 OPEN (2026-07-03)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Road Manager / route-optimizer tab
+- **Depends on:** ISSUE-697 (route must render on the real map) + ISSUE-700 (itinerary stops need stable ids before the optimizer writes them).
 - **Summary:** The optimizer is fully client-side (`optimizeRoute(cities)` by listener density) and its output has NO downstream connection: no `saveItinerary`, no handoff to PlanningTab's `generateItinerary`, no map render (TourMap is a stub), not even a toast. You optimize a route… and look at it. It also conceptually duplicates PlanningTab's AI itinerary generation without sharing data either direction. Textbook "pieces that don't go together" (see ISSUE-704 proposal).
 - **Fix direction:** add "Build itinerary from this route" — feed the optimized city order + dates into the same `generateItinerary` → `saveItinerary` path PlanningTab uses; render the route on the (fixed) TourMap; pull listener-density data from the analytics module instead of static inputs where possible.
 - **Files:** `packages/renderer/src/modules/touring/components/TourRouteOptimizer.tsx:78-117,232-262`
@@ -10587,6 +10606,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Status:** 🔴 OPEN (2026-07-03)
 - **Severity:** 🟠 HIGH (data corruption in the core touring object)
 - **Module:** Road Manager / itinerary editing
+- **Depends on:** nothing — do FIRST (parallel with ISSUE-697). ISSUE-698/699/704/705 all assume stable stop ids exist.
 - **Summary:** `handleUpdateStop` matches `s.date === updatedStop.date` (`RoadManager.tsx:380`) for both the optimistic UI update and the index lookup for persistence (`:389`). Tours routinely have multiple stops per date (drive + soundcheck + show). Editing one same-day stop updates ALL of them optimistically and persists against the FIRST match — silent wrong-record writes.
 - **Fix direction:** give `ItineraryStop` a stable `id` (uuid at creation/mapping time — `RoadManager.tsx:310-317` builds stops, add `id: crypto.randomUUID()`), key updates and lookups by id, and migrate existing stored itineraries by backfilling ids on read.
 - **Files:** `packages/renderer/src/modules/touring/RoadManager.tsx:375-395,310-317`; `packages/renderer/src/modules/touring/types.ts` (ItineraryStop)
@@ -10596,6 +10616,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Status:** 🔴 OPEN (2026-07-03)
 - **Severity:** 🟡 MEDIUM (diagnosability)
 - **Module:** Road Manager / error handling + data honesty
+- **Depends on:** nothing — parallel-safe with everything; small, do whenever.
 - **Summary:** `handleGenerateItinerary` and `handleCheckLogistics` catch as `_error` with the `logger.error` line literally commented out (`RoadManager.tsx:327-329,345-347`) and toast generic "Failed to generate itinerary"/"Failed to check logistics". During the weeks-long IAM 403 outage (ISSUE-672/673) these swallowed the `internal` errors entirely — nobody could tell infra-dead from model-flaky. Also: `estimatedBudget: 'TBD'` is hardcoded into every saved itinerary (`:322`) — a placeholder persisted as data (no-mock-data rule adjacent).
 - **Fix direction:** restore `logger.error` in both catches; route messages through a shared callable-error normalizer (same pattern as `normalizeEditFailure` post-ISSUE-678 — honest permission-denied/unavailable branches); drop `estimatedBudget` or compute it, don't store 'TBD'.
 - **Files:** `packages/renderer/src/modules/touring/RoadManager.tsx:322,327-329,345-347`
@@ -10605,6 +10626,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Status:** 🔴 OPEN (2026-07-03) — needs William's intent call
 - **Severity:** 🟡 MEDIUM
 - **Module:** Cloud Functions / touring backend
+- **Depends on:** William's decision (wire vs retire). If wired: implement after ISSUE-698's spec exists (RoadMode fuel flow is the natural caller).
 - **Summary:** `calculateFuelLogistics` is deployed (defined in `packages/firebase/src/lib/touring.ts`, exported in `index.ts`) but no renderer code calls it, and it's one of the remaining 403s (never granted because it wasn't in the renderer-called grant list — correctly, since nothing calls it). Either an unfinished feature (natural caller: RoadMode's Fuel action / OnTheRoadTab) or dead surface.
 - **Fix direction:** ASK William (per asset-deletion fail-safe — do not retire unilaterally): if wanted, wire it to RoadMode's fuel flow + grant invoker; if not, remove the export to shrink the deployed attack surface.
 - **Files:** `packages/firebase/src/lib/touring.ts`; `packages/firebase/src/index.ts`
@@ -10614,6 +10636,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Status:** 🔴 OPEN (2026-07-03) — clarify before removal
 - **Severity:** ⚪ LOW
 - **Module:** Road Manager / visa
+- **Depends on:** William's confirmation only; no code dependencies.
 - **Summary:** `RoadManager.tsx:22,476` imports and renders `VisaChecklist` only. `VisaImmigrationChecklist.tsx` (85 lines) has no importers — likely the pre-rewrite stub. Per the asset-deletion fail-safe: confirm with William it holds nothing unique, then delete; do NOT prune without asking.
 - **Files:** `packages/renderer/src/modules/touring/components/VisaImmigrationChecklist.tsx`; `packages/renderer/src/modules/touring/components/VisaChecklist.tsx`
 
@@ -10629,3 +10652,99 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
   4. **Insights** — SetlistAnalytics + streams-by-city; its data feeds Plan's optimizer (closing the loop).
 - **Cross-cutting requirements:** one `TourGeoService` consolidating map/places/routing state; stable stop ids (ISSUE-700) as the shared key across tabs; contract tests mirroring the creative-interconnect suite (`creativeInterconnect.contract.test.ts` pattern) pinning Plan→TourBook→OnTheRoad→Remote data flow.
 - **Sequencing if approved:** 697 (map) → 700 (stop ids) → 699 (optimizer merge) → 698 (remote group) → tab reshuffle last (pure IA, least risk).
+- **Naming decision (2026-07-03, William, tentative — awaiting his pick, do NOT rename yet):** module tab label "Road Manager" may change; William floated **"Road/Tour"**. Candidates: "Road/Tour" (his suggestion, spans planning+execution), "Tour" (shortest, reads clean in nav), "On Tour", "Road/Booking" (William 2026-07-03 follow-up — ⚠️ CAVEAT: this name implies show discovery/booking lives in this module, which contradicts the ISSUE-705 boundary decision that booking belongs to the Booking Agent dept; picking this name means consciously reversing that boundary, not just relabeling). RESOLVED same day: William confirmed the name is purely a front-door label for user connection — the booking boundary STANDS regardless of which name wins; evaluate candidates on visual/emotional connection only. Scope: ONLY the module label at `core/components/Sidebar.tsx:167`, `MobileTabBar.tsx:50`, `MobileHeader.tsx:30` (+ ModuleTheme/moduleColors display strings if present). The "Road Manager" AGENT persona (`agents/road/prompt.md`, IndiiNucleus) keeps its name regardless — a road manager is a person; the tab is a place.
+
+### ISSUE-705: Road Manager expectation gap — the module's own README promises the road-life jobs; the pieces exist scattered across modules, zero are connected
+
+- **Status:** 🟣 PRODUCT GAP MAP (2026-07-03) — extends ISSUE-704; William framed the expectation: "when you're on the road you need a way to find a hotel, track your miles…"
+- **Severity:** 🟠 HIGH (promise vs delivery)
+- **Module:** Road Manager ↔ Finance ↔ Booking ↔ Marketing
+- **Depends on:** ISSUE-697 + ISSUE-700 first; then per the Pass 5 BUILD ORDER block; feature shapes gated on William approving ISSUE-704/705.
+- **Evidence of promise:** `packages/renderer/src/modules/touring/README.md` (RC1) commits to: Route Planning "with mileage and fuel estimations", Venue Discovery, Show Advance, "Tour Finance: real-time tracking of tour expenses (gas, lodging, food) and show settlement (guarantees, percentages)", Logistics Dashboard, "Google Maps Integration: Direct API", plus Finance/Marketing/Legal integrations. Most are undelivered or unwired.
+- **Jobs-to-be-done map (job → what exists → the gap):**
+  1. **Find hotel/fuel/food on the road** → `RoadMode` + `NearbyPlacesService` work (desktop-only) → gaps: remote access (ISSUE-698); `findPlaces` UI hardcodes `type: 'gas_station'` — hotel/food/rest types exist in RoadMode but not PlanningTab's finder.
+  2. **Track your miles** → finance ALREADY has `FinanceCompiler.MileageTripInput` + `HiddenCostHarnessPanel` (mileageRate 0.7, Car metric, tax framing) AND the itinerary backend returns `totalDistanceMiles` (`RoadManager.tsx:321`) → gap: nothing connects them. Fix: auto-log each itinerary leg (or GPS-confirmed leg in RoadMode) as a `MileageTripInput`; a "Miles this tour" card in On the Road; flows into the existing hidden-cost harness. This is a wiring job, not a build.
+  3. **Capture expenses on the road** → finance has `ExpenseTracker` + `ExpenseManualEntryModal` + receipt OCR → gap: no touring/remote surface. Fix: "snap receipt" action in RoadMode + mobile-remote (QuickCaptureView exists in mobile-remote!) tagged to the current tour stop, lands in ExpenseTracker.
+  4. **Show settlement (guarantee vs door split, per-night)** → deal types already modeled (`modules/agent/types.ts`: `dealType: 'guarantee' | 'door_split' | 'promoter_profit'`) → gap: no settlement UI anywhere despite README promise. Fix: per-stop settlement sheet in Tour Book (guarantee, door count, split, merch cut) → finance reconciliation.
+  5. **Show advance** → rider ✓ (TechnicalRiderGenerator), day sheet ✓ → gap: hospitality rider + load-in schedule fields thin; "send advance email to venue" absent (sendEmail function exists and is healthy).
+  6. **Discover & book shows** → BOUNDARY: belongs to the Booking Agent department, not Road Manager (William's instinct; README agrees — touring "bridges booking and execution"). Define the handoff contract: confirmed booking → itinerary stop (venue, date, deal terms pre-filled). Deal types above are the shared schema.
+  7. **Tour dates → marketing promo** → README-promised integration, absent entirely; `sendToModule('marketing')` handoff exists (post-ISSUE-693) as the transport.
+- **Fix direction:** fold into ISSUE-704's tab plan — Tour Book gains Settlement per stop; On the Road gains Miles + Snap Receipt; Plan consumes booking handoffs. Sequence AFTER 697/700 (map + stable stop ids). Respect YAGNI: every item above maps to an existing user job + existing code; do not add speculative modes beyond this list.
+- **Files:** `packages/renderer/src/modules/touring/README.md`; `packages/renderer/src/services/finance/FinanceCompiler.ts:17`; `packages/renderer/src/modules/finance/components/HiddenCostHarnessPanel.tsx`; `packages/renderer/src/modules/finance/components/ExpenseTracker.tsx`; `packages/renderer/src/modules/agent/types.ts` (dealType); `packages/renderer/src/modules/mobile-remote/components/QuickCaptureView.tsx`
+
+---
+
+## Bottom-Up Menu Audit — Pass 6 (2026-07-03, Fable)
+
+> William's routine: start at the bottom of the sidebar (Settings) and climb until tokens run out.
+> Covered this pass: Settings, Command Center (observability), Memory Agent, Notes, Knowledge Base
+> (pattern depth), Workflow Builder (pattern depth). Audio Analyzer NOT reached — next pass starts there.
+> **NUMBERING = BUILD ORDER** (new protocol): fix 706 first, then ascending.
+
+### ISSUE-706: Settings "Yes, Delete" does not delete — warns "permanent and cannot be undone," then toasts "contact support"; real deletion flow exists elsewhere
+
+- **Status:** 🔴 OPEN (2026-07-03)
+- **Severity:** 🔴 HIGH (user trust / GDPR-adjacent; fake destructive action)
+- **Module:** Settings / SecuritySection
+- **Depends on:** nothing — do FIRST in this batch. The real flows already exist; this is re-wiring, not building.
+- **Summary:** `SecuritySection.tsx:250-267`: the account-deletion confirm dialog warns "This action is permanent and cannot be undone. All your data... will be removed" — and the "Yes, Delete" button only shows `showToast('Account deletion is handled by support. Contact help@indii.music')`. Meanwhile `requestAccountDeletion` (healthy callable) is properly wired in `components/shared/PrivacySettingsPanel.tsx` — a DIFFERENT surface. Same pattern for export: `handleDataExport` (`SecuritySection.tsx:78-100`) builds a shallow client-side profile JSON under the heading "Data Ownership & Export," while the real `DataExportService.exportUserData()` lives in PrivacySettingsPanel.
+- **Fix direction:** wire SecuritySection's delete to the same `requestAccountDeletion` flow (or embed `PrivacySettingsPanel`); replace the shallow export with `DataExportService.exportUserData()`. If support-mediated deletion is intentional policy, the copy must say so BEFORE the scary warning, not after the confirm click.
+- **Files:** `packages/renderer/src/modules/settings/settings-panel/SecuritySection.tsx:78-100,250-267`; `packages/renderer/src/components/shared/PrivacySettingsPanel.tsx` (the real flows)
+
+### ISSUE-707: Two divergent settings surfaces — dashboard GlobalSettings (real privacy flows) vs sidebar Settings module (fake ones)
+
+- **Status:** 🔴 OPEN (2026-07-03)
+- **Severity:** 🟠 HIGH (root cause of 706-class drift)
+- **Module:** Settings architecture
+- **Depends on:** ISSUE-706 (fix the dangerous divergence first, then consolidate).
+- **Summary:** `modules/dashboard/components/GlobalSettings.tsx` mounts `PrivacySettingsPanel` (real export + real deletion), while the sidebar "Settings" tab renders `modules/settings/SettingsPanel.tsx` with its own parallel sections. Two settings surfaces evolved independently — the one the sidebar button opens is the weaker one. Users cannot know which is authoritative.
+- **Fix direction:** single source of truth: either the Settings module imports the shared panels (PrivacySettingsPanel pattern) section-by-section, or GlobalSettings becomes a thin link to the Settings module. Audit remaining sections (notifications, appearance, connections) for further divergence during consolidation.
+- **Files:** `packages/renderer/src/modules/settings/SettingsPanel.tsx`; `packages/renderer/src/modules/dashboard/components/GlobalSettings.tsx`
+
+### ISSUE-708: "Developer Firebase Push Bypass" — a raw Firestore write console ships inside user-facing Settings
+
+- **Status:** 🔴 OPEN (2026-07-03)
+- **Severity:** 🟠 HIGH (dev tool in prod surface)
+- **Module:** Settings / DesktopSection
+- **Depends on:** nothing — parallel-safe with 706/707.
+- **Summary:** `DesktopSection.tsx:~240-300` renders "Developer Firebase Push Bypass — manually queue or sync records to Firestore collection bypass" with free-text Target Collection (`placeholder="e.g. user_usage_stats"`) and Document ID inputs, visible to every user under "Desktop & Updates." Firestore rules are the real gate, but shipping a raw write console (a) invites rule-probing, (b) confuses users, (c) advertises internal collection names (`user_usage_stats` — the billing ledger).
+- **Fix direction:** move to the existing `modules/debug` module or gate behind a founder/dev flag (`VITE_` dev checks or the founders role). Not user-facing.
+- **Files:** `packages/renderer/src/modules/settings/settings-panel/DesktopSection.tsx:240-300`
+
+### ISSUE-709: Command Center admin lock is theater — PIN falls back to '1234', ships in the bundle, and has a one-line sessionStorage bypass
+
+- **Status:** 🔴 OPEN (2026-07-03)
+- **Severity:** 🟡 MEDIUM (honesty > exposure; panels behind it are read-mostly telemetry)
+- **Module:** Command Center (observability) / AdminLockScreen
+- **Depends on:** nothing — parallel-safe.
+- **Summary:** `AdminLockScreen.tsx:24`: `const correctPin = import.meta.env.VITE_ADMIN_PIN || '1234'`. Any `VITE_` var is baked plaintext into the client bundle, so even a configured PIN is readable; unset builds accept literally `1234`; and `sessionStorage.setItem('indii_admin_unlocked','true')` skips it entirely. The gate protects metrics/budget/scheduler panels (all backed by real services — those checked out clean). A client-side PIN can never be security; today it only *implies* protection.
+- **Fix direction:** either (a) drop the PIN and label the tab founder-tooling honestly, or (b) if real gating is wanted, gate on the authenticated user's role/claims (server-verifiable), not a client PIN. Remove the '1234' fallback regardless.
+- **Files:** `packages/renderer/src/modules/observability/AdminLockScreen.tsx:11-30`
+
+### ISSUE-710: Memory Agent dashboard handlers have no catch — failures kill the spinner silently and throw unhandled rejections
+
+- **Status:** 🔴 OPEN (2026-07-03)
+- **Severity:** 🟡 MEDIUM
+- **Module:** Memory Agent / MemoryDashboard
+- **Depends on:** nothing — parallel-safe; small.
+- **Summary:** All four action handlers — `handleIngest`, `handleQuery`, `handleConsolidate`, `handleDelete` (`MemoryDashboard.tsx:176-215`) — are `try { await ... } finally { ... }` with NO catch. A failing ingest/query (e.g., `manageSemanticMemory` backend error) stops the spinner with zero user feedback and surfaces as an unhandled promise rejection in console/Sentry. Underlying wiring is real (store actions → MemoryBankService → callable) — only the error path is missing.
+- **Fix direction:** add catch + `toast.error` with the normalized message in each handler (reuse the callable-error normalizer pattern from ISSUE-678's fix).
+- **Files:** `packages/renderer/src/modules/memory/MemoryDashboard.tsx:176-215`
+
+### ISSUE-711: Notes are device-local only — zustand/localStorage persistence, no cloud sync; cache clear or machine switch silently loses them
+
+- **Status:** 🟣 DECISION NEEDED (2026-07-03) — may be intentional MVP scope
+- **Severity:** 🟡 MEDIUM (data-loss expectation mismatch)
+- **Module:** Notes
+- **Depends on:** William's call on scope (local-first vs synced).
+- **Summary:** `NotesModule.tsx` CRUDs against the zustand store; persistence is the root store's `partialize` (`notes: state.notes`) → `SecureZustandStorage` (localStorage). No Firestore sync. Consequences: notes written on desktop don't exist on web and vice versa; clearing site data deletes all notes with no warning; nothing in the UI signals "device-only."
+- **Fix direction:** either add a "stored on this device only" indicator (honest MVP) or sync to Firestore under the user (small collection, existing patterns). Cross-machine continuity matters for this user's walk/desktop workflow.
+- **Files:** `packages/renderer/src/modules/notes/NotesModule.tsx`; `packages/renderer/src/core/store/index.ts` (partialize)
+
+### Pass 6 clean bills (verified, not assumed)
+
+- **Command Center panels:** MetricsDashboard → `MetricsService`, CircuitBreakerPanel → `MembershipService.checkBudget`, SchedulerStatusPanel → `SchedulerClientService`, HealthPanel → live `_health_check` Firestore ping. All real data sources, no mocks.
+- **Memory Agent:** ingest/query/consolidate/delete all call real store actions → `MemoryBankService` → `manageSemanticMemory` (healthy callable). Only the missing catch (710).
+- **Knowledge Base:** backed by the Gemini Files API via `KnowledgeBaseService` — real mapping, no dead flags at pattern depth.
+- **Workflow Builder:** zero coming-soon/TODO/not-implemented hits at pattern depth (deep functional audit not performed this pass).
+- **NOT reached this pass:** Audio Analyzer (and deep Workflow) — next pass resumes there, continuing up the menu.
