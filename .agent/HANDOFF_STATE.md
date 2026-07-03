@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-07-03 19:35 EDT
+**Updated:** 2026-07-03 19:42 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+4744504a6 docs(ledger): pass 7 departments audit checkpoint — agent/social dead affordances logged
+9135d906d fix(test): RoadManager test missing useStore mock
 35710192d fix(audio): three critical bugs blocking analyzer — auth failure, param error, opaque errors
 1ed4269ff chore: session checkpoint [15:29]
 a95360b32 chore: session checkpoint [15:29]
@@ -12,8 +14,6 @@ c8bfd1c9c chore: session checkpoint [15:28]
 bd2e47342 chore: session checkpoint [15:27]
 195f4c257 chore: session checkpoint [15:24]
 440103925 chore: session checkpoint [15:22]
-810aeb89d chore: session checkpoint [15:22]
-3b5fad1be chore: session checkpoint [15:20]
 ```
 
 ## Working State
@@ -44,6 +44,7 @@ M  .agent/HANDOFF_STATE.md
  M packages/renderer/src/modules/creative/services/__tests__/creativeManifest.test.ts
  M packages/renderer/src/modules/creative/services/creativeManifest.ts
  M packages/renderer/src/modules/creative/video/OmniWorkflow.tsx
+ M packages/renderer/src/modules/notes/NotesModule.tsx
  M packages/renderer/src/modules/touring/components/TourMap.tsx
  M packages/renderer/src/services/image/EditingService.test.ts
  M packages/renderer/src/services/image/EditingService.ts
@@ -56,6 +57,7 @@ M  .agent/HANDOFF_STATE.md
 ?? packages/renderer/src/modules/creative/components/__tests__/CharacterLibrary.test.tsx
 ?? packages/renderer/src/modules/creative/components/__tests__/EditDefinitionsPanel.test.tsx
 ?? packages/renderer/src/modules/creative/video/OmniWorkflow.test.tsx
+?? packages/renderer/src/modules/notes/__tests__/
 ?? packages/renderer/src/modules/touring/components/TourMap.test.tsx
 ```
 
