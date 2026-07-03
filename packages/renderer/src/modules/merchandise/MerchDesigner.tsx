@@ -21,6 +21,7 @@ import { useToast } from '@/core/context/ToastContext';
 import { cn } from '@/lib/utils';
 import { logger } from '@/utils/logger';
 import { secureRandomAlphanumeric } from '@/utils/crypto-random';
+import { resolveMerchViewMode } from '@/modules/handoffViews';
 
 type WorkMode = 'agent' | 'user';
 type ViewMode = 'design' | 'showroom';
@@ -110,6 +111,15 @@ export default function MerchDesigner() {
 
     // Staged Handoff Hook Interceptor
     const consumeHandoff = useStore(state => state.consumeHandoff);
+    const pendingMerchHandoff = useStore(state => state.pendingHandoffs.merch);
+
+    useEffect(() => {
+        if (!pendingMerchHandoff) return;
+        const targetView = resolveMerchViewMode(pendingMerchHandoff.targetView);
+        if (targetView !== viewMode) {
+            setViewMode(targetView);
+        }
+    }, [pendingMerchHandoff, viewMode]);
     
     useEffect(() => {
         if (!fabricCanvas) return;

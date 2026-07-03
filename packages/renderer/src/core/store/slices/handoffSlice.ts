@@ -1,12 +1,10 @@
 import { StateCreator } from 'zustand';
 import { SendToTarget, SendToPayload } from '@/types/handoff';
 import { logger } from '@/utils/logger';
+import { toast } from '@/core/context/ToastContext';
 
 export interface HandoffSlice {
-    pendingHandoff: {
-        target: SendToTarget;
-        payload: SendToPayload;
-    } | null;
+    pendingHandoffs: Partial<Record<SendToTarget, SendToPayload>>;
     
     /** Stages an asset for handoff, triggers routing, and coordinates transitions */
     sendToModule: (target: SendToTarget, payload: SendToPayload) => void;
@@ -16,13 +14,41 @@ export interface HandoffSlice {
 }
 
 export const createHandoffSlice: StateCreator<HandoffSlice> = (set, get) => ({
-    pendingHandoff: null,
+    pendingHandoffs: {},
     
     sendToModule: (target, payload) => {
-        logger.info(`[HandoffSlice] Initiating handoff to "${target}" for asset: ${payload.assetId}`);
+        const now = Date.now();
+        const targetViews: Record<SendToTarget, string | undefined> = {
+            merch: 'design',
+            marketing: 'visuals',
+            boardroom: 'conversation',
+            touring: 'rider',
+        };
+
+        const stagedPayload: SendToPayload = {
+            ...payload,
+            timestamp: payload.timestamp || now,
+            targetView: payload.targetView || targetViews[target],
+        };
+
+        logger.info(`[HandoffSlice] Initiating handoff to "${target}" for asset: ${stagedPayload.assetId}`);
         
-        // Stage the payload
-        set({ pendingHandoff: { target, payload } });
+        const current = get().pendingHandoffs[target];
+        if (current) {
+            const ageMs = now - (current.timestamp || 0);
+            if (ageMs < 10 * 60 * 1000) {
+                const message = `Replacing an unconsumed ${target} handoff (${current.assetId}) with ${stagedPayload.assetId}.`;
+                logger.warn(`[HandoffSlice] ${message}`);
+                toast.warning(message);
+            }
+        }
+
+        set((state) => ({
+            pendingHandoffs: {
+                ...state.pendingHandoffs,
+                [target]: stagedPayload,
+            }
+        }));
         
         // Switch modules dynamically on root store
         import('@/core/store').then(({ useStore }) => {
@@ -55,13 +81,29 @@ export const createHandoffSlice: StateCreator<HandoffSlice> = (set, get) => ({
     },
     
     consumeHandoff: (target) => {
-        const { pendingHandoff } = get();
-        if (!pendingHandoff || pendingHandoff.target !== target) {
+        const { pendingHandoffs } = get();
+        const payload = pendingHandoffs[target];
+        if (!payload) {
             return null;
         }
-        
-        const payload = pendingHandoff.payload;
-        set({ pendingHandoff: null }); // Clear instantly to make it atomic
+
+        const ageMs = Date.now() - (payload.timestamp || 0);
+        if (ageMs > 10 * 60 * 1000) {
+            logger.warn(`[HandoffSlice] Expired handoff for "${target}" (${payload.assetId}) after ${Math.round(ageMs / 1000)}s.`);
+            toast.warning(`Expired ${target} handoff "${payload.prompt || payload.assetId}" was discarded.`);
+            set((state) => {
+                const next = { ...state.pendingHandoffs };
+                delete next[target];
+                return { pendingHandoffs: next };
+            });
+            return null;
+        }
+
+        set((state) => {
+            const next = { ...state.pendingHandoffs };
+            delete next[target];
+            return { pendingHandoffs: next };
+        }); // Clear instantly to make it atomic
         logger.debug(`[HandoffSlice] Handoff consumed successfully by target: "${target}"`);
         return payload;
     }

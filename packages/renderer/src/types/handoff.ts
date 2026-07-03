@@ -14,6 +14,7 @@ export interface SendToPayload {
     assetUrl: string;
     assetType: 'image' | 'video';
     prompt?: string;
+    targetView?: string;
     originModule: 'creative' | 'files' | 'dashboard';
     timestamp: number;
     metadata?: {
