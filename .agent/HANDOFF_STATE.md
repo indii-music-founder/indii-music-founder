@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-07-03 12:33 EDT
+**Updated:** 2026-07-03 13:18 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+7e2c9290c fix(creative): share gateway schemas and boardroom context
+16d873331 chore: session checkpoint [12:33]
 e2638dea9 fix(creative): tighten storage lineage coverage
 6782f874a fix(creative): preserve storage lineage and omni refs
 6c1265ff8 fix(creative): unblock image callables
@@ -12,36 +14,34 @@ e2638dea9 fix(creative): tighten storage lineage coverage
 53322fd96 chore: session checkpoint [07:32]
 329dc9f7d fix(creative): repair magic edit workflow
 e3995fa52 test(ledger): log creative studio magic edit issues
-1cc4b8200 chore: session checkpoint [21:01]
-36c5a10fb chore: session checkpoint [20:52]
 ```
 
 ## Working State
 ```
-M  .agent/HANDOFF_STATE.md
  M .agent/skills/error_memory/ERROR_LEDGER.md
  M .agent/test_ledger/OPEN_ISSUES.md
  M package-lock.json
  M package.json
- M packages/firebase/src/functions/creative/gateway.ts
  M packages/renderer/package.json
- M packages/renderer/src/core/store/slices/boardroomSlice.ts
- M packages/renderer/src/hooks/useBoardroomContextHandshake.ts
- M packages/renderer/src/modules/creative/__tests__/creativeInterconnect.contract.test.ts
- M packages/renderer/src/modules/creative/hooks/useDirectGeneration.ts
- M packages/renderer/src/modules/creative/video/OmniWorkflow.tsx
- M packages/renderer/src/modules/creative/video/schemas.ts
- M packages/renderer/src/services/agent/AgentService.ts
- M packages/renderer/src/services/video/VideoGenerationService.ts
+ M packages/renderer/src/core/store/slices/handoffSlice.ts
+ M packages/renderer/src/modules/creative/components/CreativeClipboard.tsx
+ M packages/renderer/src/modules/creative/components/CreativeGallery.tsx
+ M packages/renderer/src/modules/marketing/components/BrandManager.test.tsx
+ M packages/renderer/src/modules/marketing/components/BrandManager.tsx
+ M packages/renderer/src/modules/merchandise/MerchDesigner.a11y.test.tsx
+ M packages/renderer/src/modules/merchandise/MerchDesigner.tsx
+ M packages/renderer/src/modules/touring/RoadManager.test.tsx
+ M packages/renderer/src/modules/touring/RoadManager.tsx
+ M packages/renderer/src/types/handoff.ts
  M packages/shared/dist/index.d.ts
  M packages/shared/dist/index.d.ts.map
  M packages/shared/dist/index.js
  M packages/shared/dist/schemas/agentLoopState.d.ts
  M packages/shared/dist/schemas/env.schema.d.ts
  M packages/shared/dist/schemas/workflowState.d.ts
- M packages/shared/src/index.ts
-?? packages/renderer/src/hooks/useBoardroomContextHandshake.test.ts
-?? packages/shared/src/schemas/creative.ts
+?? packages/renderer/src/core/store/slices/handoffSlice.test.ts
+?? packages/renderer/src/modules/handoffViews.test.ts
+?? packages/renderer/src/modules/handoffViews.ts
 ```
 
 ## Decisions
