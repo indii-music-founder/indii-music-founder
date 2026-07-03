@@ -16,6 +16,8 @@ import { getDownloadURL, ref } from 'firebase/storage';
 import { auth, functions, storage } from '@/services/firebase';
 import { CreativeStorageService } from '@/services/creative/CreativeStorageService';
 import { StageHandoffPayload } from '@/types/handoff';
+import { resolveStorageUri } from '@/services/storage/storageUri';
+import { normalizeVideoAspectRatio } from '@/services/video/videoAspectRatio';
 
 interface StoryboardFrame {
     id: string;
@@ -28,6 +30,11 @@ interface Joint {
     id: string;
     x: number;
     y: number;
+    label: string;
+}
+
+interface ReferenceMedia {
+    uri: string;
     label: string;
 }
 
@@ -251,8 +258,10 @@ export default function OmniWorkflow() {
     const [referenceVideoUri, setReferenceVideoUri] = useState<string | null>(null);
     const [audioDubFile, setAudioDubFile] = useState<File | null>(null);
     const [audioDubUri, setAudioDubUri] = useState<string | null>(null);
+    const [referenceMedia, setReferenceMedia] = useState<ReferenceMedia[]>([]);
     const [activeFrameIndex, setActiveFrameIndex] = useState(0);
     const [outputVideoUrl, setOutputVideoUrl] = useState<string | null>(null);
+    const [outputStorageUri, setOutputStorageUri] = useState<string | undefined>();
     const [sourceJobId, setSourceJobId] = useState<string | null>(null);
 
     // Storyboard frame modal/creator state
@@ -270,16 +279,28 @@ export default function OmniWorkflow() {
             if (handoff.role === 'source-video' && handoff.item.type === 'video') {
                 // Set both preview URL and gs:// URI for backend
                 setRefVideoFile(null);
-                setReferenceVideoUri(handoff.item.storageUri || '');
+                setReferenceMedia([]);
+                setReferenceVideoUri(handoff.item.storageUri || resolveStorageUri(handoff.item.url) || '');
                 setSourceJobId(handoff.item.id);
                 setStudioControls({ omniReferenceVideo: handoff.item.url });
                 toast.success(`Loaded performance from ${handoff.originStage} stage — ready to remix!`);
             } else if (handoff.role === 'reference-image' && handoff.item.type === 'image') {
-                // Image as reference for styling (optional enhancement)
-                toast.info(`Using image from ${handoff.originStage} as visual reference.`);
+                const referenceUri = handoff.item.storageUri || resolveStorageUri(handoff.item.url);
+                if (referenceUri) {
+                    setReferenceMedia(prev => {
+                        const next = prev.filter(entry => entry.uri !== referenceUri);
+                        return [...next, {
+                            uri: referenceUri,
+                            label: handoff.item.prompt || `${handoff.originStage} reference`,
+                        }].slice(-8);
+                    });
+                    toast.info(`Using image from ${handoff.originStage} as visual reference.`);
+                } else {
+                    toast.info('Reference images are unavailable for this asset.');
+                }
             } else if (handoff.role === 'reference-audio' && handoff.item.type === 'music') {
                 // Optional audio reference for sync
-                setAudioDubUri(handoff.item.storageUri || '');
+                setAudioDubUri(handoff.item.storageUri || resolveStorageUri(handoff.item.url) || '');
                 setAudioDubFile(null);
                 toast.info(`Using audio track for remix sync.`);
             }
@@ -295,6 +316,7 @@ export default function OmniWorkflow() {
                 const userId = auth.currentUser?.uid;
                 if (!userId) throw new Error('User must be authenticated to upload reference video.');
                 setRefVideoFile(file);
+                setReferenceMedia([]);
                 const previewUrl = URL.createObjectURL(file);
                 const uploadedUri = await CreativeStorageService.uploadReferenceMedia(userId, file, 'video');
                 setReferenceVideoUri(uploadedUri);
@@ -328,8 +350,14 @@ export default function OmniWorkflow() {
             return;
         }
 
+        const { aspectRatio, coercedFrom } = normalizeVideoAspectRatio(studioControls.aspectRatio);
+        if (coercedFrom && coercedFrom !== aspectRatio) {
+            toast.info(`Omni supports only 16:9 and 9:16, so ${coercedFrom} was mapped to ${aspectRatio}.`);
+        }
+
         setIsRemixing(true);
         setOutputVideoUrl(null);
+        setOutputStorageUri(undefined);
         toast.info(`Synthesizing Omni Remix (${studioControls.omniPipelineMode === 'hybrid-veo' ? 'Omni + Veo 3.1 hybrid' : 'pure Omni'})...`);
 
         try {
@@ -338,8 +366,9 @@ export default function OmniWorkflow() {
                 prompt: remixPrompt,
                 referenceVideoUri,
                 audioUri: audioDubUri || undefined,
+                referenceUris: referenceMedia.map(entry => entry.uri),
                 pipelineMode: studioControls.omniPipelineMode,
-                aspectRatio: studioControls.aspectRatio === '9:16' ? '9:16' : '16:9',
+                aspectRatio,
                 durationSeconds: Math.min(12, Math.max(4, studioControls.duration || 8)),
                 posePreservation: studioControls.posePreservation,
                 beatPulse: studioControls.beatPulse,
@@ -354,17 +383,39 @@ export default function OmniWorkflow() {
             });
             const data = response.data as { jobId: string; resultUri: string };
             const videoUrl = await resolveStorageUrl(data.resultUri);
+            const storageUri = resolveStorageUri(data.resultUri) || (data.resultUri.startsWith('gs://') ? data.resultUri : undefined);
             setOutputVideoUrl(videoUrl);
+            setOutputStorageUri(storageUri);
 
             const remixId = `omni_remix_${Date.now()}`;
             addToHistory({
                 id: remixId,
                 type: 'video',
                 url: videoUrl,
-                prompt: `Omni Remix: ${remixPrompt}. [Pipeline: ${studioControls.omniPipelineMode}, Pose Preset: ${studioControls.activePosePreset}, Dub Lang: ${studioControls.selectedLanguage}, Lyrics: "${studioControls.lyricsText || 'None'}" (${studioControls.typographyStyle}), X-Ray Lock: ${studioControls.characterXRay ? 'ON' : 'OFF'}, Beat Pulse: ${studioControls.beatPulse * 100}%, Pose preservation: ${studioControls.posePreservation * 100}%]`,
+                storageUri,
+                prompt: `Omni Remix: ${remixPrompt}`,
                 timestamp: Date.now(),
                 projectId: currentProjectId || '',
-                origin: 'generated'
+                origin: 'generated',
+                parentId: sourceJobId || undefined,
+                meta: JSON.stringify({
+                    jobId: data.jobId,
+                    pipelineMode: studioControls.omniPipelineMode,
+                    aspectRatio,
+                    durationSeconds: Math.min(12, Math.max(4, studioControls.duration || 8)),
+                    posePreservation: studioControls.posePreservation,
+                    beatPulse: studioControls.beatPulse,
+                    characterXRay: studioControls.characterXRay,
+                    synthIdEnabled: studioControls.synthIdEnabled,
+                    selectedLanguage: studioControls.selectedLanguage,
+                    activePosePreset: studioControls.activePosePreset,
+                    lyricsText: studioControls.lyricsText || undefined,
+                    typographyStyle: studioControls.typographyStyle,
+                    visualizerColor: studioControls.visualizerColor,
+                    referenceUris: referenceMedia.map(entry => entry.uri),
+                    audioUri: audioDubUri || undefined,
+                    parentId: sourceJobId || undefined,
+                })
             });
 
             toast.success("Omni performance remix completed! Video added to Showroom.");
@@ -521,12 +572,11 @@ export default function OmniWorkflow() {
                                 <button
                                     onClick={() => {
                                         if (outputVideoUrl) {
-                                            // Capture source job ID (from input video, not current output)
-                                            const sourceJobId = referenceVideoUri ? undefined : undefined; // Omni remixes from input; track via payload
                                             sendToStage('veo', {
                                                 item: {
                                                     id: crypto.randomUUID(),
                                                     url: outputVideoUrl,
+                                                    storageUri: outputStorageUri,
                                                     type: 'video',
                                                     prompt: remixPrompt,
                                                     timestamp: Date.now(),
@@ -535,7 +585,7 @@ export default function OmniWorkflow() {
                                                 role: 'source-video',
                                                 originStage: 'omni',
                                                 timestamp: Date.now(),
-                                                parentJobId: sourceJobId
+                                                parentJobId: sourceJobId || undefined
                                             });
                                             toast.success('Sent to Veo for further remixing!');
                                         }
@@ -832,6 +882,28 @@ export default function OmniWorkflow() {
                             />
                         </div>
                     </div>
+
+                    {referenceMedia.length > 0 && (
+                        <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/10 space-y-3">
+                            <span className="text-[10px] font-bold text-white uppercase tracking-widest font-mono flex items-center gap-1.5">
+                                <Upload size={12} className="text-green-400" />
+                                Visual References
+                            </span>
+                            <div className="flex flex-wrap gap-2">
+                                {referenceMedia.map((entry) => (
+                                    <button
+                                        key={entry.uri}
+                                        onClick={() => setReferenceMedia(prev => prev.filter(ref => ref.uri !== entry.uri))}
+                                        className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-mono bg-green-500/10 border border-green-500/20 text-green-200 hover:bg-green-500/20 transition-colors"
+                                        title={`Remove ${entry.label}`}
+                                    >
+                                        <span className="max-w-36 truncate">{entry.label}</span>
+                                        <X size={10} />
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
 
                     {/* Synth ID Watermarking */}
                     <div className="flex items-center justify-between p-3.5 rounded-xl bg-white/[0.03] border border-white/10 hover:border-emerald-500/20 transition-all group">

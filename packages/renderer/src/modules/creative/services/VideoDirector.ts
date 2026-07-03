@@ -5,6 +5,8 @@ import { useStore, HistoryItem } from '@/core/store';
 import { functionsWest1 as functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
+import { resolveStorageUri } from '@/services/storage/storageUri';
+import { normalizeVideoAspectRatio } from '@/services/video/videoAspectRatio';
 
 export class VideoDirector {
     static async processGeneratedVideo(uri: string, prompt: string, enableDirectorsCut = false, isRetry = false): Promise<string | null> {
@@ -75,10 +77,12 @@ export class VideoDirector {
     private static saveVideo(url: string, prompt: string, isRetry: boolean): string {
         const id = crypto.randomUUID();
         const metaLabel = isRetry ? 'DIRECTOR\'S CUT (V2)' : undefined;
+        const storageUri = resolveStorageUri(url);
 
         useStore.getState().addToHistory({
             id,
             url,
+            storageUri,
             prompt,
             timestamp: Date.now(),
             type: 'video',
@@ -113,9 +117,13 @@ export class VideoDirector {
     /**
      * Trigger video generation from an image using Veo
      */
-    static async triggerAnimation(item: HistoryItem): Promise<{ success: boolean; error?: string; video_url?: string }> {
+    static async triggerAnimation(
+        item: HistoryItem,
+        options?: { aspectRatio?: string }
+    ): Promise<{ success: boolean; error?: string; video_url?: string }> {
         const jobId = crypto.randomUUID();
         const prompt = item.prompt || 'Animate this scene';
+        const { aspectRatio } = normalizeVideoAspectRatio(options?.aspectRatio);
 
         // --- Electron Path: Delegate to local Python API (Intelligence sidecar) ---
         // --- Cloud Function (triggerVideoJob) ---
@@ -124,7 +132,7 @@ export class VideoDirector {
             jobId,
             prompt,
             model: INTELLIGENCE_MODELS.VIDEO.GENERATION,
-            options: { aspectRatio: '16:9' },
+            options: { aspectRatio },
         };
 
         if (item.url.startsWith('data:')) {
