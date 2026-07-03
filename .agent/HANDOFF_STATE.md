@@ -4,6 +4,7 @@
 
 ## Recent Commits
 ```
+bdaca86dc chore: session checkpoint [15:19]
 5d97a5f7b chore: session checkpoint [15:18]
 266ac7b81 chore: session checkpoint [15:18]
 f7914e2b3 chore: session checkpoint [15:16]
@@ -13,7 +14,6 @@ eb1fda281 docs(ledger): road manager audit + bottom-up menu audit (pass 5-6)
 756d89cf8 chore: session checkpoint [15:08]
 64f94753c chore: session checkpoint [15:07]
 026b3746f chore: session checkpoint [14:49]
-b85c12e0a chore: session checkpoint [14:48]
 ```
 
 ## Working State
