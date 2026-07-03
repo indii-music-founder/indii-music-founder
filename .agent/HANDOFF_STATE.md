@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-07-02 20:49 EDT
+**Updated:** 2026-07-02 20:52 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+d6fefb715 chore: session checkpoint [20:49]
 8bd7820ff docs(ledger): firebase-admin 14 migration blocked upstream by firebase-functions peer range (ISSUE-671)
 6356aa522 chore: session checkpoint [20:39]
 de9c203ee chore(deps): audit triage — clear arcjet/express+qs/postcss moderates (ISSUE-671)
@@ -13,7 +14,6 @@ f0d22e342 docs(error-ledger): record toast-mock drift + fabricated-provider-fall
 a969da141 chore: session checkpoint [20:04]
 bcc23be9a docs(ledger): close ISSUE-658 (verified landed); log ISSUE-671 npm-audit backlog
 ff94727f9 chore: session checkpoint [19:51]
-d70954003 chore(deps): remove unused @mastra/core + @mastra/mcp (ISSUE-CI-28478558122-AUDIT)
 ```
 
 ## Working State
