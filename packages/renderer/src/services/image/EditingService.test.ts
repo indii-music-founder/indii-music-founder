@@ -262,7 +262,16 @@ describe('EditingService', () => {
             await expect(EditingService.editImage({
                 image: { mimeType: 'image/png', data: 'inputbase64==' },
                 prompt: 'Add a small fly',
-            })).rejects.toThrow('Creative edit failed inside the image service');
+            })).rejects.toThrow('Creative edit could not finish because the backend returned an internal error. Your annotations are still on the canvas; try again after the service recovers.');
+        });
+
+        it('maps permission denied callable failures to a backend access message', async () => {
+            mockEditImageFn.mockRejectedValue({ code: 'permission-denied', message: 'Permission denied' });
+
+            await expect(EditingService.editImage({
+                image: { mimeType: 'image/png', data: 'inputbase64==' },
+                prompt: 'Add a small fly',
+            })).rejects.toThrow('Creative edit was denied by the backend. Check access and try again once the service is reachable.');
         });
     });
 
