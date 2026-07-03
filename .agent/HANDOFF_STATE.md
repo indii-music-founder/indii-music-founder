@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-07-03 15:20 EDT
+**Updated:** 2026-07-03 15:22 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+3b5fad1be chore: session checkpoint [15:20]
 c97b088c5 chore: session checkpoint [15:20]
 17c8a65f9 chore: session checkpoint [15:19]
 bdaca86dc chore: session checkpoint [15:19]
@@ -13,7 +14,6 @@ f7914e2b3 chore: session checkpoint [15:16]
 446c9fa2a chore: session checkpoint [15:15]
 eb1fda281 docs(ledger): road manager audit + bottom-up menu audit (pass 5-6)
 1c8748935 chore: session checkpoint [15:12]
-756d89cf8 chore: session checkpoint [15:08]
 ```
 
 ## Working State
@@ -21,6 +21,7 @@ eb1fda281 docs(ledger): road manager audit + bottom-up menu audit (pass 5-6)
  M .agent/test_ledger/OPEN_ISSUES.md
 M  package-lock.json
 M  package.json
+ M packages/firebase/package.json
 M  packages/renderer/package.json
  M packages/renderer/src/modules/creative/components/CharacterLibrary.tsx
  M packages/renderer/src/modules/creative/components/InfiniteCanvas.tsx
