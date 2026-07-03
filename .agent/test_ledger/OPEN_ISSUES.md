@@ -10075,10 +10075,14 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
 
 ### ISSUE-604: Creative Studio REFINE flow surfaces raw internal errors and leaves the edit intent unrecovered
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (Codex, 2026-07-03)
 - **Severity:** 🟠 HIGH
 - **Module:** Creative Studio / Magic Edit
 - **Summary:** In the Creative Editor, clicking `REFINE` with color annotations shows the "Starting High-Speed Flash Edit..." toast, then fails with a raw `internal` error toast instead of a user-actionable failure or a recovered edit result. The edit intent appears to stop at the error boundary rather than producing a candidate or a precise cause.
+- **Fix:** Added renderer-side callable error normalization and backend-side edit failure translation so raw `internal` failures become actionable Creative Edit messages while annotations remain available for retry.
+- **Evidence:** `packages/renderer/src/services/image/EditingService.ts:16` defines `normalizeEditFailure(...)`; `packages/renderer/src/services/image/EditingService.ts:151` applies it to failed edit callables.
+- **Evidence:** `packages/firebase/src/lib/image_generation.ts:884` logs real edit service failures; `packages/firebase/src/lib/image_generation.ts:894` throws an explicit `Creative image edit failed...` `HttpsError`.
+- **Evidence:** `packages/renderer/src/services/image/EditingService.test.ts:259` covers raw internal callable failures mapping to the actionable edit message.
 - **Evidence:** `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts:470-665` wraps the edit pipeline in a generic `catch` that toasts `error.message` directly; when the backend callable fails, the UI shows `internal` with no recovery path or user-facing diagnosis.
 - **Evidence:** `packages/renderer/src/services/image/EditingService.ts:50-121` forwards the edit request straight to the `editImage` callable and only normalizes the success payload; it does not translate backend failure modes into honest UI states.
 - **Evidence:** `packages/firebase/src/lib/image_generation.ts:850-890` returns the callable result only after delegating to the generation service, so any unhandled server-side failure bubbles back as a generic function error.
@@ -10088,10 +10092,14 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Files:** `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts:470-665`; `packages/renderer/src/services/image/EditingService.ts:50-121`; `packages/firebase/src/lib/image_generation.ts:850-890`
 
 ### ISSUE-605: Creative Studio lacks a real user-facing add-layer action for blank/sketch layers
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (Codex, 2026-07-03)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Creative Studio / Layers
 - **Summary:** The layer system exposes selection, visibility, lock, delete, and reorder, but there is no visible action to create a new blank layer for freehand sketching or composition. The UI currently shows a "Coming soon: Advanced layer composition management." toast instead of a real add-layer workflow.
+- **Fix:** Added explicit sketch/text/rectangle/circle layer creation controls to the toolbar and layers panel, wired sketch creation to brush mode and the existing user-owned layer/history flow.
+- **Evidence:** `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts:363` adds `handleAddSketchLayer(...)`; `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts:1021` returns it to the canvas UI.
+- **Evidence:** `packages/renderer/src/modules/creative/components/CanvasToolbar.tsx:86` exposes `Add Sketch Layer`; `packages/renderer/src/modules/creative/components/LayersPanel.tsx:72` exposes the same action inside the layer panel.
+- **Evidence:** `packages/renderer/src/modules/creative/components/CanvasToolbar.test.tsx:67` verifies the layer creation handlers fire from the toolbar controls.
 - **Evidence:** `packages/renderer/src/modules/creative/components/LayersPanel.tsx:54-160` only lists existing layers and actions for visibility, lock, reorder, and delete; there is no add-layer control.
 - **Evidence:** `packages/renderer/src/modules/creative/components/CanvasToolbar.tsx:41-112` exposes selection, brush, text, object detection, and layers-panel toggles, but no create-layer action.
 - **Evidence:** `packages/renderer/src/modules/creative/components/InfiniteCanvas.tsx:804-811` hardcodes `toast.info("Coming soon: Advanced layer composition management.");` for the layer-composition entry point.
@@ -10101,10 +10109,13 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Files:** `packages/renderer/src/modules/creative/components/LayersPanel.tsx:54-160`; `packages/renderer/src/modules/creative/components/CanvasToolbar.tsx:41-112`; `packages/renderer/src/modules/creative/components/InfiniteCanvas.tsx:804-811`
 
 ### ISSUE-606: Creative Studio edit candidates still use the old single-click carousel instead of the review/apply panel
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (Codex, 2026-07-03)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Creative Studio / Magic Edit candidate review
 - **Summary:** After a REFINE succeeds, generated edit candidates are routed to `CandidatesCarousel`, which exposes small thumbnails and a hover-only single-click `Select` overlay. A newer `CandidateReview` component exists with deliberate review, multi-select, zoom, regenerate, and apply controls, but the Creative Editor does not render it.
+- **Fix:** Replaced the Creative Editor candidate render path with `CandidateReview` and added an apply adapter so users review/select/apply candidates deliberately instead of single-clicking a thumbnail carousel.
+- **Evidence:** `packages/renderer/src/modules/creative/components/CanvasViewport.tsx:4` imports `CandidateReview`; `packages/renderer/src/modules/creative/components/CanvasViewport.tsx:79` renders it with `onApply`.
+- **Evidence:** `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts:759` adds `handleCandidateApply(...)`; `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts:1006` exposes it to the viewport.
 - **Evidence:** `packages/renderer/src/modules/creative/components/CanvasViewport.tsx:4,79-83` imports and renders `CandidatesCarousel`.
 - **Evidence:** `packages/renderer/src/modules/creative/components/CandidatesCarousel.tsx:16-49` applies candidates through a hover overlay and does not expose zoom, regenerate, or deliberate apply state.
 - **Evidence:** `packages/renderer/src/modules/creative/components/CandidateReview.tsx:23-26` explicitly says it replaces the old carousel behavior with a review -> select -> apply workflow, but no current Creative Editor import uses it.
@@ -10114,10 +10125,13 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Files:** `packages/renderer/src/modules/creative/components/CanvasViewport.tsx:4,79-83`; `packages/renderer/src/modules/creative/components/CandidatesCarousel.tsx:16-49`; `packages/renderer/src/modules/creative/components/CandidateReview.tsx:23-26`
 
 ### ISSUE-607: Magic Edit outputs are transient and do not immediately appear in Project Assets or history
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (Codex, 2026-07-03)
 - **Severity:** 🟠 HIGH
 - **Module:** Creative Studio / Magic Edit output persistence
 - **Summary:** When Magic Edit succeeds, the generated image is stored only as `generatedCandidates` and session metadata. It does not become a durable Project Asset / history item until the user finds the candidate overlay, selects a candidate, and later saves the canvas. This makes successful generation feel like it disappeared, especially when the right-side Project Assets grid does not update.
+- **Fix:** Magic Edit success now persists generated candidates as draft assets/history records immediately after generation, before the user applies a candidate to the canvas.
+- **Evidence:** `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts:412` defines `persistDraftCandidates(...)` to store generated candidate blobs and add `magic-edit` history entries.
+- **Evidence:** `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts:620`, `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts:652`, `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts:681`, and `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts:715` call `persistDraftCandidates(...)` after each Magic Edit success branch.
 - **Evidence:** `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts:563-627` calls `setGeneratedCandidates(...)` and `updateSession(...)` after edit success, but does not call `addToHistory(...)` or `saveAssetToStorage(...)` for the generated candidate.
 - **Evidence:** `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts:687-694` applies a selected candidate to the canvas and clears candidate state, but still does not persist a new asset at selection time.
 - **Evidence:** `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts:745-777` only creates or updates a gallery/history item during explicit `saveCanvas()`, after candidate application.
@@ -10127,10 +10141,14 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Files:** `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts:563-627,687-694,745-777`
 
 ### ISSUE-608: Magic Edit reference images are captured but ignored by direct edit branches
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (Codex, 2026-07-03)
 - **Severity:** 🟠 HIGH
 - **Module:** Creative Studio / Magic Edit references
 - **Summary:** The Edit Definitions panel lets the user attach a reference image per color, but the main direct edit branches do not pass those reference images into `Editing.editImage`. The references are uploaded and stored in the session manifest, yet the generated edit can ignore the user's actual reference material.
+- **Fix:** Threaded the active color reference image through both high-fidelity and single-mask edit branches so uploaded reference material reaches the edit backend.
+- **Evidence:** `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts:602` passes `referenceImage: activeReference` in the high-fidelity branch.
+- **Evidence:** `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts:635` passes `referenceImage: prepared.masks[0]?.referenceImage` in the single-mask Flash branch.
+- **Evidence:** `packages/renderer/src/services/image/EditingService.test.ts:237` verifies reference images are passed to the backend, including `referenceImageUri` at `packages/renderer/src/services/image/EditingService.test.ts:254`.
 - **Evidence:** `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts:486-524` uploads `referenceImages` into `referenceAssetUris` and persists them in `compileCreativeEditManifest(...)`.
 - **Evidence:** `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts:549-561` high-fidelity `Editing.editImage(...)` sends image, mask, prompt, model, semantic-map metadata, and session data, but no `referenceImage`.
 - **Evidence:** `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts:579-588` single-mask Flash `Editing.editImage(...)` passes `prepared.masks[0]` only as the mask object and does not pass `prepared.masks[0].referenceImage` through the `referenceImage` option.
@@ -10141,10 +10159,13 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Files:** `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts:486-524,549-561,579-588`; `packages/renderer/src/services/image/EditingService.ts:50-121`
 
 ### ISSUE-609: Creative Editor header route metadata crowds and clips the REFINE controls
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED (Codex, 2026-07-03)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Creative Studio / Magic Edit header layout
 - **Summary:** The route badges, session id, and route explanation are laid out horizontally beside the REFINE input cluster instead of stacking under it. On narrower editor widths this crowds the header, clips the controls, and makes the route explanation appear as cramped vertical text.
+- **Fix:** Changed the center header content into a vertical stack with constrained input width, wrapping metadata badges, and centered route explanation below the controls.
+- **Evidence:** `packages/renderer/src/modules/creative/components/CanvasHeader.tsx:53` uses `flex flex-col items-center`.
+- **Evidence:** `packages/renderer/src/modules/creative/components/CanvasHeader.tsx:114` wraps metadata in a constrained `max-w-[560px]` row; `packages/renderer/src/modules/creative/components/CanvasHeader.tsx:137` constrains and centers the route reason.
 - **Evidence:** `packages/renderer/src/modules/creative/components/CanvasHeader.tsx:53` wraps the editor controls, metadata badges, and route reason in a single `flex justify-center` row.
 - **Evidence:** `packages/renderer/src/modules/creative/components/CanvasHeader.tsx:114-139` renders the metadata badges and `routeReason` as siblings of the input cluster inside that row, not inside a vertical metadata container below the input.
 - **Expected (acceptance):** The REFINE input/button row should remain readable and stable at the editor widths shown in the screenshots, with route metadata wrapping below or moving to a secondary row without clipping controls.
