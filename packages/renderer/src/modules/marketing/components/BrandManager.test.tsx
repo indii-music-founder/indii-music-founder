@@ -29,6 +29,7 @@ vi.mock('@/core/store', () => {
         },
         updateBrandKit: vi.fn(),
         setUserProfile: vi.fn(),
+        pendingHandoffs: {},
         consumeHandoff: vi.fn(() => null),
         pinToClipboard: vi.fn(),
         sendToModule: vi.fn(),
