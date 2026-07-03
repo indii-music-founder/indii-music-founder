@@ -309,7 +309,7 @@ describe('VideoGenerationService', () => {
                     { image: { uri: 'data:image/png;base64,ref1' }, referenceType: 'asset' as const }
                 ],
                 aspectRatio: '16:9' as const,
-                model: 'veo-3.1-generate-preview',
+                model: 'pro' as const,
                 resolution: '1080p' as const,
                 duration: 6,
                 personGeneration: 'allow_adult' as const,
@@ -326,7 +326,7 @@ describe('VideoGenerationService', () => {
                 lastFrameUri: 'gs://mock-bucket/mock-uri',
                 referenceUris: ['gs://mock-bucket/mock-uri'],
                 aspectRatio: '16:9',
-                model: 'veo-3.1-generate-preview',
+                model: 'pro',
                 resolution: '1080p',
                 durationSeconds: 6,
                 personGeneration: 'allow_adult',
