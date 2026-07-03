@@ -5,6 +5,11 @@ export interface ReferencedAsset {
     name: string;
     type: 'url' | 'file' | 'database';
     value: string;
+    prompt?: string;
+    origin?: string;
+    parentId?: string;
+    storageUri?: string;
+    sourceType?: 'image' | 'video' | 'music' | 'text';
 }
 
 export interface A2AMessage {

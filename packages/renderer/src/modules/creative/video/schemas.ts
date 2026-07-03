@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { UserProfile } from "@/types/User";
+export { BaseMediaRequestSchema, GenerateAudioSchema, GenerateImageSchema, GenerateOmniRemixSchema, GenerateVideoSchema } from '@indii/shared';
 
 export const VideoJobStatusSchema = z.enum([
     'idle', 'queued', 'processing', 'completed', 'failed', 'stitching', 'cancelled'
