@@ -10401,11 +10401,11 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-684: `videoJobOrchestrator` is in deployment state FAILED
 
-- **Status:** 🔴 OPEN (2026-07-03) — needs `gcloud auth login` to pull failure detail
+- **Status:** ⚠️ STALE / RE-TRIAGE (2026-07-03)
 - **Severity:** 🟠 HIGH (video pipeline)
 - **Module:** Cloud Functions / video pipeline
-- **Summary:** `gcloud functions list` (2026-07-03 01:10Z) shows `videoJobOrchestrator GEN_2 FAILED` — the only function in a failed deploy state out of 130. Its sibling `videoJobFirestoreOrchestrator` is ACTIVE (but 403 — see ISSUE-673 scoping; it's an internal orchestrator, likely intentionally private). A FAILED state means the last deployment did not complete; the function may be serving a stale revision or nothing.
-- **Fix direction:** `gcloud functions describe videoJobOrchestrator --region=us-central1 --format="value(state,stateMessages)"` for the failure reason (build error, missing secret, quota), fix, redeploy, verify ACTIVE. Check whether the video generation flow depends on it or the Firestore-triggered sibling.
+- **Summary:** Cached Cloud Functions auth is working again, but the deployed resource lookup returns `404 NOT_FOUND` for `videoJobOrchestrator`; the source tree only exports `videoJobFirestoreOrchestrator` (`packages/firebase/src/index.ts:31`, `packages/firebase/src/functions/creative/videoJobOrchestrator.ts`). That means the earlier `GEN_2 FAILED` note is stale or refers to a function that has since been renamed/removed.
+- **Fix direction:** re-triage the board item against the currently deployed video orchestration function name. If the old `videoJobOrchestrator` name is meant to exist, it needs a fresh deploy/export; otherwise retire this issue and track the real active orchestrator instead.
 - **Files:** `packages/firebase/src/` (video orchestration); deploy workflow `.github/workflows/deploy.yml`
 
 ---
@@ -10545,3 +10545,87 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **`fetch(item.url)` class:** repo-wide sweep confirms `useCreativeCanvas.ts:700` (ISSUE-680, remix branch) is the ONLY remaining unguarded site in creative.
 - **Anti-Pattern #9 sweep:** only hit is `fine-tuned-endpoints.generated.ts` — compliant (marked generated, carries regen command header).
 - **Banned native dialogs (`window.confirm/alert/prompt`):** zero hits in `packages/renderer/src`.
+
+---
+
+## Road Manager Audit — Pass 5 (2026-07-03, Fable)
+
+> Full-department treatment per William: "all of the things in that department need to work."
+> Includes the mobile-remote interconnect (remote must be able to drive touring features) and
+> an IA reorganization proposal (ISSUE-704) — William explicitly invited a redesign of the
+> multi-tab system.
+
+### ISSUE-697: TourMap is a permanent stub — the "Google Maps system" renders a disabled placeholder and discards every prop
+
+- **Status:** 🔴 OPEN (2026-07-03)
+- **Severity:** 🔴 CRITICAL for this department (the user-visible "maps don't work")
+- **Module:** Road Manager / TourMap
+- **Summary:** `TourMap.tsx` accepts a full contract (`locations`, `markers`, `center`, `currentLocation`, `rangeRadiusMiles`) and ignores ALL of it — the component body is a hardcoded "Map Visualization Disabled" placeholder claiming "Live map features require a secured backend Maps proxy." Three surfaces render this dead map: `PlanningTab`, `OnTheRoadTab`, and marketing's `HealthPanel`. Meanwhile: `VITE_GOOGLE_MAPS_API_KEY` exists in `.env`, web CSP already allowlists `maps.googleapis.com` (script-src + connect-src), Electron CSP allows `*.googleapis.com`/`*.gstatic.com`, and the repo's own credentials policy (CLAUDE.md §3.2) explicitly sanctions client-side Maps keys with API restrictions — the "backend proxy" precondition contradicts the documented policy and was never built.
+- **Fix direction:** (1) verify/apply GCP key restrictions (Maps JavaScript API + referer/bundle restriction) per §3.2; (2) implement TourMap with `@googlemaps/js-api-loader` (or `@vis.gl/react-google-maps`): render markers from itinerary stops + `nearbyPlaces`, center/`currentLocation` support, dark styling to match the app; (3) wire the three consumers' already-passed props; (4) fallback state ONLY for missing key/offline, not as the permanent render.
+- **Files:** `packages/renderer/src/modules/touring/components/TourMap.tsx` (entire file); consumers: `PlanningTab.tsx`, `OnTheRoadTab.tsx`, `packages/renderer/src/modules/marketing/components/brand-manager/HealthPanel.tsx`
+
+### ISSUE-698: Mobile-remote has ZERO touring capability — the most on-brand remote use-case (artist on the road) is absent
+
+- **Status:** 🔴 OPEN (2026-07-03)
+- **Severity:** 🟠 HIGH (explicit product requirement from William: "the remote control system needs to be able to use this feature for several different things")
+- **Module:** mobile-remote ↔ Road Manager interconnect
+- **Summary:** `CommandPad` commands cover creative (Gen Visual, Show Me, Live Moment), DAW, finance (Streams Today, Aggregated Revenue), and agent chat — nothing touring. A repo-wide grep of `packages/renderer/src/modules/mobile-remote` for touring/itinerary/day-sheet/setlist finds zero integration. Meanwhile the touring module already has `RoadMode` — a voice-driven, on-the-road surface (Fuel/Food/Bath/Hotel/Safety quick actions via `NearbyPlacesService`, GPS-centric) that is exactly what a phone remote should expose, but it's only reachable inside the desktop module.
+- **Fix direction (spec for the touring command group on the remote):** 1) "Today" — current day sheet (from itinerary stop for today) with venue, times, contacts; 2) "Next stop" — next itinerary stop + distance; 3) "Find near me" — fuel/food/hotel via the same `findPlaces`/`NearbyPlacesService` calls RoadMode uses; 4) "Emergency" — emergency contacts list; 5) day-sheet approval/edit via the existing ApprovalQueue pattern. Reuse RoadMode's service layer, not its desktop UI. Remote pairing already exists (`createHandoffCode`/`redeemHandoffCode` — both probe healthy).
+- **Files:** `packages/renderer/src/modules/mobile-remote/components/CommandPad.tsx`; `packages/renderer/src/modules/touring/components/RoadMode.tsx`; `packages/renderer/src/services/places/NearbyPlacesService.ts`
+
+### ISSUE-699: TourRouteOptimizer is a dead-end — optimized route connects to nothing
+
+- **Status:** 🔴 OPEN (2026-07-03)
+- **Severity:** 🟡 MEDIUM
+- **Module:** Road Manager / route-optimizer tab
+- **Summary:** The optimizer is fully client-side (`optimizeRoute(cities)` by listener density) and its output has NO downstream connection: no `saveItinerary`, no handoff to PlanningTab's `generateItinerary`, no map render (TourMap is a stub), not even a toast. You optimize a route… and look at it. It also conceptually duplicates PlanningTab's AI itinerary generation without sharing data either direction. Textbook "pieces that don't go together" (see ISSUE-704 proposal).
+- **Fix direction:** add "Build itinerary from this route" — feed the optimized city order + dates into the same `generateItinerary` → `saveItinerary` path PlanningTab uses; render the route on the (fixed) TourMap; pull listener-density data from the analytics module instead of static inputs where possible.
+- **Files:** `packages/renderer/src/modules/touring/components/TourRouteOptimizer.tsx:78-117,232-262`
+
+### ISSUE-700: Itinerary stop updates are keyed by DATE — two stops on the same day (travel + show, the normal tour case) collide
+
+- **Status:** 🔴 OPEN (2026-07-03)
+- **Severity:** 🟠 HIGH (data corruption in the core touring object)
+- **Module:** Road Manager / itinerary editing
+- **Summary:** `handleUpdateStop` matches `s.date === updatedStop.date` (`RoadManager.tsx:380`) for both the optimistic UI update and the index lookup for persistence (`:389`). Tours routinely have multiple stops per date (drive + soundcheck + show). Editing one same-day stop updates ALL of them optimistically and persists against the FIRST match — silent wrong-record writes.
+- **Fix direction:** give `ItineraryStop` a stable `id` (uuid at creation/mapping time — `RoadManager.tsx:310-317` builds stops, add `id: crypto.randomUUID()`), key updates and lookups by id, and migrate existing stored itineraries by backfilling ids on read.
+- **Files:** `packages/renderer/src/modules/touring/RoadManager.tsx:375-395,310-317`; `packages/renderer/src/modules/touring/types.ts` (ItineraryStop)
+
+### ISSUE-701: Road Manager error handling hides real causes — commented-out loggers + generic toasts (this is why the 403 outage read as "maps don't work")
+
+- **Status:** 🔴 OPEN (2026-07-03)
+- **Severity:** 🟡 MEDIUM (diagnosability)
+- **Module:** Road Manager / error handling + data honesty
+- **Summary:** `handleGenerateItinerary` and `handleCheckLogistics` catch as `_error` with the `logger.error` line literally commented out (`RoadManager.tsx:327-329,345-347`) and toast generic "Failed to generate itinerary"/"Failed to check logistics". During the weeks-long IAM 403 outage (ISSUE-672/673) these swallowed the `internal` errors entirely — nobody could tell infra-dead from model-flaky. Also: `estimatedBudget: 'TBD'` is hardcoded into every saved itinerary (`:322`) — a placeholder persisted as data (no-mock-data rule adjacent).
+- **Fix direction:** restore `logger.error` in both catches; route messages through a shared callable-error normalizer (same pattern as `normalizeEditFailure` post-ISSUE-678 — honest permission-denied/unavailable branches); drop `estimatedBudget` or compute it, don't store 'TBD'.
+- **Files:** `packages/renderer/src/modules/touring/RoadManager.tsx:322,327-329,345-347`
+
+### ISSUE-702: `calculateFuelLogistics` — deployed backend function with zero renderer callers, still 403
+
+- **Status:** 🔴 OPEN (2026-07-03) — needs William's intent call
+- **Severity:** 🟡 MEDIUM
+- **Module:** Cloud Functions / touring backend
+- **Summary:** `calculateFuelLogistics` is deployed (defined in `packages/firebase/src/lib/touring.ts`, exported in `index.ts`) but no renderer code calls it, and it's one of the remaining 403s (never granted because it wasn't in the renderer-called grant list — correctly, since nothing calls it). Either an unfinished feature (natural caller: RoadMode's Fuel action / OnTheRoadTab) or dead surface.
+- **Fix direction:** ASK William (per asset-deletion fail-safe — do not retire unilaterally): if wanted, wire it to RoadMode's fuel flow + grant invoker; if not, remove the export to shrink the deployed attack surface.
+- **Files:** `packages/firebase/src/lib/touring.ts`; `packages/firebase/src/index.ts`
+
+### ISSUE-703: Two visa checklist components — `VisaImmigrationChecklist` (85 lines) is orphaned next to the used `VisaChecklist` (769 lines)
+
+- **Status:** 🔴 OPEN (2026-07-03) — clarify before removal
+- **Severity:** ⚪ LOW
+- **Module:** Road Manager / visa
+- **Summary:** `RoadManager.tsx:22,476` imports and renders `VisaChecklist` only. `VisaImmigrationChecklist.tsx` (85 lines) has no importers — likely the pre-rewrite stub. Per the asset-deletion fail-safe: confirm with William it holds nothing unique, then delete; do NOT prune without asking.
+- **Files:** `packages/renderer/src/modules/touring/components/VisaImmigrationChecklist.tsx`; `packages/renderer/src/modules/touring/components/VisaChecklist.tsx`
+
+### ISSUE-704: PROPOSAL — Road Manager IA reorganization ("pieces and parts that don't go together")
+
+- **Status:** 🟣 PROPOSAL (2026-07-03) — awaiting William's pick; invited by William during pass 5
+- **Module:** Road Manager information architecture
+- **Current state (audited):** tabs `planning` / `on-the-road` / `rider` / `route-optimizer` (+ visa rendered within), `RoadMode` overlay, `SetlistAnalytics`, `DaySheetModal`, two visa components, and **three disconnected geo systems** (TourMap stub ∥ backend generateItinerary/findPlaces ∥ client-side TourRouteOptimizer) plus a fourth outside the module (google-maps MCP for agents). Nothing feeds anything; the remote sees none of it.
+- **Proposed shape (4 tabs, one geo backbone, remote parity):**
+  1. **Plan** — merge PlanningTab + TourRouteOptimizer: optimizer output feeds `generateItinerary`; shared map canvas (fixed TourMap) shows the route; listener-density pulled from analytics.
+  2. **Tour Book** — the documents pane: day sheets (DaySheetModal promoted), technical rider (TechnicalRiderGenerator + RiderChecklist unified under `useRider`), visa/immigration (single component), emergency contacts.
+  3. **On the Road** — RoadMode promoted from overlay to THE tab: live map + GPS, nearby (fuel/food/hotel/safety), today's day sheet, voice-first. **This tab defines the remote contract** — every action here must be invocable from mobile-remote (ISSUE-698).
+  4. **Insights** — SetlistAnalytics + streams-by-city; its data feeds Plan's optimizer (closing the loop).
+- **Cross-cutting requirements:** one `TourGeoService` consolidating map/places/routing state; stable stop ids (ISSUE-700) as the shared key across tabs; contract tests mirroring the creative-interconnect suite (`creativeInterconnect.contract.test.ts` pattern) pinning Plan→TourBook→OnTheRoad→Remote data flow.
+- **Sequencing if approved:** 697 (map) → 700 (stop ids) → 699 (optimizer merge) → 698 (remote group) → tab reshuffle last (pure IA, least risk).
