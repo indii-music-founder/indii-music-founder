@@ -45,9 +45,6 @@ interface ImportMetaEnv {
 
     // Printful (Merchandise)
 
-    // Web3 / Blockchain
-    readonly VITE_WALLETCONNECT_PROJECT_ID?: string
-
     // Microsoft
     readonly VITE_MICROSOFT_CLIENT_ID?: string
 

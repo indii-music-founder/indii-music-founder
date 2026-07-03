@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { createCallable } from 'react-call';
 import { Modal } from './Modal';
-import { walletConnectService, WalletInfo } from '@/services/web3/WalletConnectService';
+import { WalletInfo } from '@/services/web3/WalletConnectService';
 import { Link2, AlertCircle } from 'lucide-react';
 import { logger } from '@/utils/logger';
 
@@ -9,7 +9,7 @@ export const WalletConnectDialog = createCallable<Record<string, never>, WalletI
     const [connecting, setConnecting] = useState<'metamask' | 'walletconnect' | null>(null);
     const [error, setError] = useState<string | null>(null);
 
-    const ethereum = typeof window !== 'undefined' ? (window as any).ethereum : undefined;
+    const ethereum = typeof window !== 'undefined' ? window.ethereum : undefined;
 
     const handleConnect = async (provider: 'metamask' | 'walletconnect') => {
         setConnecting(provider);
@@ -29,23 +29,11 @@ export const WalletConnectDialog = createCallable<Record<string, never>, WalletI
                     isConnected: true
                 });
             } else {
-                if (!walletConnectService.isConfigured()) {
-                    throw new Error('WalletConnect project ID not configured. Set VITE_WALLETCONNECT_PROJECT_ID in .env');
-                }
-                // Directly call the internal method if possible?
-                // Wait, WalletConnectService.connect() prefers injected provider if available.
-                // But WalletConnectPanel called it anyway to force WalletConnect! 
-                // Let's just call connect() and let it do its thing.
-                const info = await walletConnectService.connect();
-                if (info && info.address) {
-                    call.end(info);
-                } else {
-                    call.end(null);
-                }
+                throw new Error('WalletConnect is temporarily unavailable while its upstream web3 dependency chain is remediated. Use MetaMask or another injected browser wallet.');
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             logger.error('[WalletConnectDialog] Error:', err);
-            setError(err.message || 'Connection failed');
+            setError(err instanceof Error ? err.message : 'Connection failed');
         } finally {
             setConnecting(null);
         }
@@ -92,15 +80,15 @@ export const WalletConnectDialog = createCallable<Record<string, never>, WalletI
                     {/* WalletConnect */}
                     <button
                         onClick={() => handleConnect('walletconnect')}
-                        disabled={!!connecting}
-                        className="w-full flex items-center gap-3 p-4 bg-white/[0.02] border border-white/5 rounded-xl hover:border-blue-400/30 hover:bg-blue-400/5 transition-all group disabled:opacity-50"
+                        disabled={true}
+                        className="w-full flex items-center gap-3 p-4 bg-white/[0.02] border border-white/5 rounded-xl opacity-50 cursor-not-allowed"
                     >
                         <div className="w-10 h-10 rounded-xl bg-blue-400/10 border border-blue-400/20 flex items-center justify-center text-lg flex-shrink-0">
                             🔗
                         </div>
                         <div className="flex-1 text-left">
-                            <div className="text-sm font-bold text-white group-hover:text-blue-400 transition-colors">WalletConnect</div>
-                            <div className="text-[11px] text-neutral-500">Over 100+ supported wallets</div>
+                            <div className="text-sm font-bold text-white">WalletConnect</div>
+                            <div className="text-[11px] text-neutral-500">Temporarily unavailable</div>
                         </div>
                         {connecting === 'walletconnect' ? (
                             <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
