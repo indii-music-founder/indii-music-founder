@@ -10510,12 +10510,12 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Fix direction:** keep future cross-module handoffs per-target, time-bounded, and view-aware.
 - **Files:** `packages/renderer/src/core/store/slices/handoffSlice.ts`; `packages/renderer/src/modules/handoffViews.ts`; `packages/renderer/src/modules/marketing/components/BrandManager.tsx`; `packages/renderer/src/modules/touring/RoadManager.tsx`; `packages/renderer/src/modules/merchandise/MerchDesigner.tsx`
 
-### ISSUE-694: IAM invoker remediation is INCOMPLETE — webhooks + healthchecks still 403; full acceptance checklist for the editImage consumers
+### ISSUE-694: IAM invoker remediation is INCOMPLETE — webhooks/healthchecks now reach the edge, but desktop REFINE round-trip and healthCheck parity still need proof
 
 - **Status:** 🟠 PARTIALLY REMEDIATED (2026-07-03 live probes)
 - **Severity:** 🟠 HIGH (remaining: external integrations + monitoring)
 - **Module:** Cloud Functions IAM (continuation of ISSUE-672/673)
-- **Summary:** Re-probes after the invoker grants: `editImage`, `renderVideo`, `triggerVideoJob`, `requestAccountDeletion` now return **401 (healthy)** ✅. Live curl probes on 2026-07-03 now show the webhook/monitoring edges are no longer blocked by GFE 403: `pandadocWebhook` and `telegramWebhook` return **401 Unauthorized** without their secrets, `healthCheckWest1` returns **200**, and `healthCheck` now returns **200** in code with a `degraded` body when its Firestore ping fails (matching the API registry contract). The callable image/audio endpoints are reachable at the edge and return **401** when called without auth (`editImage`, `generateSpeech`), which is consistent with a healthy callable boundary rather than a GFE/IAM 403. External webhook deliveries are no longer edge-blocked; the remaining work is live deployment re-probe plus the desktop-app REFINE checklist below.
+- **Summary:** Re-probes after the invoker grants: `editImage`, `renderVideo`, `triggerVideoJob`, `requestAccountDeletion` now return **401 (healthy)** ✅. A direct `gcloud functions deploy healthCheck` for `packages/firebase` now succeeds (`buildId: 39234474-bbf9-464b-8dfe-dae776544036`, `status: ACTIVE`), and the live edge probes on 2026-07-03 show the webhook/monitoring surfaces are no longer GFE-403 blocked: `pandadocWebhook` and `telegramWebhook` return **401 Unauthorized** without their secrets, `healthCheckWest1` returns **200**, and `healthCheck` returns **200** with a `degraded` body because its Firestore ping still fails. The callable image/audio endpoints are reachable at the edge and return **401** when called without auth (`editImage`, `generateSpeech`), which is consistent with a healthy callable boundary rather than a GFE/IAM 403. An `editImage` execution log also appears in Cloud Logging. External webhook deliveries are no longer edge-blocked; the remaining work is the desktop-app REFINE checklist plus deciding whether the degraded `healthCheck` Firestore ping is acceptable or needs a separate fix.
 - **Acceptance checklist for closing 672/673/677 (do ALL of these, from the DESKTOP app):**
   1. Magic Edit REFINE with annotations → edit result appears in CandidateReview.
   2. No-annotation REFINE (remix path — `ImageGeneration.remixImage` also calls the `editImage` callable, `ImageGenerationService.ts:597-610`).
@@ -10749,3 +10749,4 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Knowledge Base:** backed by the Gemini Files API via `KnowledgeBaseService` — real mapping, no dead flags at pattern depth.
 - **Workflow Builder:** zero coming-soon/TODO/not-implemented hits at pattern depth (deep functional audit not performed this pass).
 - **NOT reached this pass:** Audio Analyzer (and deep Workflow) — next pass resumes there, continuing up the menu.
+PASS 7 (departments, continuing 2026-07-03): ISSUE-712..714
