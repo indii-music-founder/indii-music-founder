@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-07-03 15:12 EDT
+**Updated:** 2026-07-03 15:15 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+eb1fda281 docs(ledger): road manager audit + bottom-up menu audit (pass 5-6)
+1c8748935 chore: session checkpoint [15:12]
 756d89cf8 chore: session checkpoint [15:08]
 64f94753c chore: session checkpoint [15:07]
 026b3746f chore: session checkpoint [14:49]
@@ -12,14 +14,10 @@ ac7cba25b chore: session checkpoint [14:45]
 3a5566418 chore: session checkpoint [14:36]
 5a17e8952 docs(issues): re-triage video orchestrator
 2c4f14b4b chore: session checkpoint [14:30]
-8d50e5ac6 docs(issues): update 692 and 694 status
-fd58baebe docs(issues): update 694 probe status
 ```
 
 ## Working State
 ```
- M .agent/skills/error_memory/ERROR_LEDGER.md
- M .agent/test_ledger/OPEN_ISSUES.md
  M package-lock.json
  M package.json
  M packages/renderer/package.json
