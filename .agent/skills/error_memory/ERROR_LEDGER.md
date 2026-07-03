@@ -1293,3 +1293,24 @@ Before pushing any branch, run `/plat` (see `.claude/commands/plat.md`). It exec
 - FILE: packages/renderer/src/services/marketing/{SMSMarketingService,EmailMarketingService,SocialAutoPosterService}.ts, providerErrors.ts
 - BUG: Catch blocks for undeployed provider callables returned plausible fallback values — "queued locally", `'pending'` status, zero-filled analytics, `revokePost() → true` — so the UI reported deliveries/cancellations that never happened (ISSUE-665/666/667; same family as ISSUE-497).
 - FIX: Introduced typed `MarketingProviderUnavailableError`; every provider-callable catch now throws it and UI callers surface the message. PATTERN: a catch block must never return a value shaped like success. If the provider didn't confirm, throw a typed unavailable error and let the UI show an honest state. Regression suite: providerHonesty.test.ts.
+
+## 2026-07-03 Callable returns bare "internal" + ZERO server logs = missing IAM invoker (silent org-policy strip)
+
+**SEVERITY:** Critical (56 of 130 Cloud Functions unreachable by anyone; Magic Edit, video pipeline, PandaDoc, webhooks, healthchecks all dead)
+
+**ERROR:** Firebase `httpsCallable` rejects with `FirebaseError{code:'functions/internal', message:'internal'}` (UI shows a bare red "internal" toast). `gcloud logging read` shows **zero "Function execution started" entries** for the function — ever — while OTHER functions and Storage uploads from the same client session succeed.
+
+**CAUSE:** The function has **no `allUsers → roles/cloudfunctions.invoker` binding**, so Google Front End returns 403 before the container runs (nothing logs, Sentry sees nothing). Historical root cause: org policy `constraints/iam.allowedPolicyMemberDomains` blocked public members at CREATE time; firebase-tools warns-and-continues and **never retries the grant on subsequent deploys**, so functions stay broken forever even after the policy is relaxed (project override is now `allValues: ALLOW`).
+
+**DIAGNOSIS (5 minutes, no auth to the app needed):**
+1. `curl -s -o /dev/null -w "%{http_code}" -X POST https://us-central1-<project>.cloudfunctions.net/<fn> -H "Content-Type: application/json" -d '{"data":{}}'` → **403 = IAM-blocked** (broken); **401/400 = reachable** (healthy — framework rejected auth/payload, which is correct).
+2. Gen1: `gcloud functions get-iam-policy <fn> --region=us-central1` — empty policy confirms it. **Gen2 CAVEAT:** empty function-level policy is NORMAL for Gen2 (invoker lives on the Cloud Run service) — the curl probe is ground truth, NOT `get-iam-policy`. (This false-flagged `generateImageV3`/`enforceOperationCost` before re-probing showed 401.)
+
+**FIX:** `gcloud functions add-invoker-policy-binding <fn> --region=us-central1 --member="allUsers"` — scope to client-called callables + inbound webhooks + healthchecks ONLY (never blanket-grant crons/orchestrators; Scheduler invokes those via OIDC). Full inventory + grant list: `.agent/test_ledger/OPEN_ISSUES.md` ISSUE-672/673.
+
+**PREVENTION:**
+1. Post-deploy CI probe: curl every renderer-called callable, fail the deploy on 403 (grep list: `rg -oU "httpsCallable[^)]*?['\"]([a-zA-Z0-9_]+)['\"]" -r '$1' packages/renderer/src | sort -u`).
+2. NEVER diagnose a callable "internal" error client-side first — check server execution logs; zero logs means the request never arrived (IAM/network), and no client-side error-message fix can help.
+3. Related trap: `enforceAppCheck: true` + Electron (which skips App Check init by design) = second 401 blocker hiding behind the first — see OPEN_ISSUES ISSUE-677.
+
+**GREP:** `functions/internal`, `add-invoker-policy-binding`, `allowedPolicyMemberDomains`, `Function execution started`
