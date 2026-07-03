@@ -50,6 +50,7 @@ const setupTouringMock = (overrides: any = {}) => {
         emergencyContacts: [],
         saveEmergencyContact: vi.fn().mockResolvedValue(undefined),
         deleteEmergencyContact: vi.fn().mockResolvedValue(undefined),
+        pendingHandoffs: {},
         loading: false,
     };
     vi.mocked(useTouring).mockReturnValue({ ...defaultValues, ...overrides } as any);

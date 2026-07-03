@@ -10497,16 +10497,12 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-693: "Send to Module" payloads strand behind non-default tabs and get silently destroyed by the next send (single-slot, no TTL)
 
-- **Status:** 🔴 OPEN (2026-07-03, Fable pass 3)
+- **Status:** ✅ FIXED (2026-07-03)
 - **Severity:** 🟠 HIGH (art→departments delivery is unreliable by design)
 - **Module:** Cross-module handoff (`handoffSlice` / merch / marketing / touring / boardroom)
-- **Summary:** All four `sendToModule` targets DO have consumers (good), but delivery is fragile three ways:
-  1. **Tab stranding:** consumers live in deep components that only mount on specific tabs. Marketing: consumer is `VisualsPanel`, mounted only when `BrandManager.activeTab === 'visuals'` — default is `'identity'` (`BrandManager.tsx:35`). Touring: consumer is `TechnicalRiderGenerator`, mounted only on the `rider` tab (`RoadManager.tsx:235` defaults to `'planning'`). User sees "Sent to Marketing!" then… nothing, until they happen to click the right tab.
-  2. **Single-slot overwrite:** `pendingHandoff` is one global slot (`handoffSlice.ts:19,25`) — a second `sendToModule` to ANY target silently destroys an unconsumed payload. No log, no toast.
-  3. **No TTL:** `payload.timestamp` is never checked on consume — a stranded handoff from weeks ago (possibly another project) imports out of context when the tab finally mounts.
-  4. Merch consumer (`MerchDesigner.tsx:112-128`, gated on `fabricCanvas` readiness) default-view mounting NOT fully verified — include in fix verification. Boardroom is the healthiest target (producer sets module + conversation mode + agent).
-- **Fix direction:** (1) `sendToModule` should carry the destination tab/view and target modules should honor it on mount (deep-link); (2) make `pendingHandoff` a per-target map (like `pendingStageHandoff` already is for creative stages); (3) expire payloads older than ~10 minutes on consume, with a log; (4) toast on overwrite/expiry so delivery failures are visible.
-- **Files:** `packages/renderer/src/core/store/slices/handoffSlice.ts`; `packages/renderer/src/modules/marketing/components/BrandManager.tsx:35`; `packages/renderer/src/modules/touring/RoadManager.tsx:235,439`; `packages/renderer/src/modules/merchandise/MerchDesigner.tsx:112-128`
+- **Summary:** `sendToModule` now stores a per-target pending payload map instead of a single global slot, stamps each payload with a destination view, warns on overwrite, expires stale payloads after 10 minutes, and deep-links the destination modules to the right tab/view on mount. Marketing now jumps to `visuals`, Touring to `rider`, and Merch defaults to `design` unless explicitly sent to `showroom`.
+- **Fix direction:** keep future cross-module handoffs per-target, time-bounded, and view-aware.
+- **Files:** `packages/renderer/src/core/store/slices/handoffSlice.ts`; `packages/renderer/src/modules/handoffViews.ts`; `packages/renderer/src/modules/marketing/components/BrandManager.tsx`; `packages/renderer/src/modules/touring/RoadManager.tsx`; `packages/renderer/src/modules/merchandise/MerchDesigner.tsx`
 
 ### ISSUE-694: IAM invoker remediation is INCOMPLETE — webhooks + healthchecks still 403; full acceptance checklist for the editImage consumers
 

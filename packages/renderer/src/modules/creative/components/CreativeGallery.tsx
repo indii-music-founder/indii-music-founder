@@ -175,6 +175,7 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                                                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                         assetType: item.type as any,
                                                         prompt: item.prompt || 'Gallery Asset',
+                                                        targetView: 'design',
                                                         originModule: 'creative',
                                                         timestamp: Date.now()
                                                     });
@@ -194,6 +195,7 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                                                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                         assetType: item.type as any,
                                                         prompt: item.prompt || 'Gallery Asset',
+                                                        targetView: 'visuals',
                                                         originModule: 'creative',
                                                         timestamp: Date.now()
                                                     });
@@ -213,6 +215,7 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                                                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                         assetType: item.type as any,
                                                         prompt: item.prompt || 'Gallery Asset',
+                                                        targetView: 'conversation',
                                                         originModule: 'creative',
                                                         timestamp: Date.now()
                                                     });
@@ -232,6 +235,7 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                                                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                         assetType: item.type as any,
                                                         prompt: item.prompt || 'Gallery Asset',
+                                                        targetView: 'rider',
                                                         originModule: 'creative',
                                                         timestamp: Date.now()
                                                     });
