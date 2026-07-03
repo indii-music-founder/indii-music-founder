@@ -8612,7 +8612,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
   2. **fast-xml-parser** (XMLBuilder CDATA injection): fix is 5.9.3 MAJOR; only reachable via `@google-cloud/storage` under Remotion/cloud tooling, not the shipped renderer. Wait for @google-cloud/storage to move.
   3. **@opentelemetry/core** (W3C Baggage unbounded memory): only via firebase-tools/pubsub; fix = the rejected firebase-tools downgrade. Deploy-tooling only, not shipped code. Wait upstream.
   4. **ts-deepmerge** (prototype override DoS): only via `firebase-functions-test` (dev/test only, never shipped); npm's fix is a nonsensical downgrade to 0.3.3. Accepted for dev scope; clears when firebase-functions-test updates.
-- **Recommended next agent scope:** a dedicated `firebase-admin 13→14` migration (packages/firebase functions runtime; prove emulator + deploy + functions tests) — that single migration clears the majority of the remaining uuid-cascade findings. Do NOT bundle it with other work.
+- **Recommended next agent scope — BLOCKED UPSTREAM (verified 2026-07-02):** the `firebase-admin 13→14` migration cannot proceed yet: the LATEST `firebase-functions` (7.2.5) peer-depends on `firebase-admin ^11 || ^12 || ^13`, and `firebase-functions-test` caps at `^13`. Forcing v14 would violate the functions SDK's peer contract. Re-check when firebase-functions publishes ^14 peer support (`npm view firebase-functions peerDependencies`); until then the uuid-cascade moderates are accepted-risk, waiting on Google upstream.
 - **Protected issues untouched:** 495/498/499/478/493/500/479/480/482/483/486/658. WalletConnect remains fail-closed.
 
 ### ISSUE-CI-28478558122-AUDIT: npm audit — Uncontrolled Resource Consumption in @ai-sdk/provider-utils
