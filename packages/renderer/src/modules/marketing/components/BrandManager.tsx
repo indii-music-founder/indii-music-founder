@@ -43,7 +43,7 @@ const BrandManager: React.FC = () => {
         if (pendingTab && activeTab !== pendingTab) {
             setActiveTab(pendingTab);
         }
-    }, [activeTab, pendingMarketingHandoff]);
+    }, [pendingMarketingHandoff]);
 
     // Brand Kit with defaults
     const brandKit: BrandKitWithDefaults = {
