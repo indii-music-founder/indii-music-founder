@@ -1,32 +1,47 @@
 # Handoff State
-**Updated:** 2026-07-03 08:34 EDT
+**Updated:** 2026-07-03 12:33 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+e2638dea9 fix(creative): tighten storage lineage coverage
+6782f874a fix(creative): preserve storage lineage and omni refs
+6c1265ff8 fix(creative): unblock image callables
+477550c03 chore: session checkpoint [08:34]
 8bafdc2b8 chore: session checkpoint [08:00]
 53322fd96 chore: session checkpoint [07:32]
 329dc9f7d fix(creative): repair magic edit workflow
 e3995fa52 test(ledger): log creative studio magic edit issues
 1cc4b8200 chore: session checkpoint [21:01]
 36c5a10fb chore: session checkpoint [20:52]
-d6fefb715 chore: session checkpoint [20:49]
-8bd7820ff docs(ledger): firebase-admin 14 migration blocked upstream by firebase-functions peer range (ISSUE-671)
-6356aa522 chore: session checkpoint [20:39]
-de9c203ee chore(deps): audit triage — clear arcjet/express+qs/postcss moderates (ISSUE-671)
 ```
 
 ## Working State
 ```
+M  .agent/HANDOFF_STATE.md
  M .agent/skills/error_memory/ERROR_LEDGER.md
  M .agent/test_ledger/OPEN_ISSUES.md
  M package-lock.json
  M package.json
- M packages/firebase/src/lib/image_generation.ts
+ M packages/firebase/src/functions/creative/gateway.ts
  M packages/renderer/package.json
- M packages/renderer/src/services/image/EditingService.test.ts
- M packages/renderer/src/services/image/EditingService.ts
-?? packages/renderer/src/modules/creative/__tests__/
+ M packages/renderer/src/core/store/slices/boardroomSlice.ts
+ M packages/renderer/src/hooks/useBoardroomContextHandshake.ts
+ M packages/renderer/src/modules/creative/__tests__/creativeInterconnect.contract.test.ts
+ M packages/renderer/src/modules/creative/hooks/useDirectGeneration.ts
+ M packages/renderer/src/modules/creative/video/OmniWorkflow.tsx
+ M packages/renderer/src/modules/creative/video/schemas.ts
+ M packages/renderer/src/services/agent/AgentService.ts
+ M packages/renderer/src/services/video/VideoGenerationService.ts
+ M packages/shared/dist/index.d.ts
+ M packages/shared/dist/index.d.ts.map
+ M packages/shared/dist/index.js
+ M packages/shared/dist/schemas/agentLoopState.d.ts
+ M packages/shared/dist/schemas/env.schema.d.ts
+ M packages/shared/dist/schemas/workflowState.d.ts
+ M packages/shared/src/index.ts
+?? packages/renderer/src/hooks/useBoardroomContextHandshake.test.ts
+?? packages/shared/src/schemas/creative.ts
 ```
 
 ## Decisions
