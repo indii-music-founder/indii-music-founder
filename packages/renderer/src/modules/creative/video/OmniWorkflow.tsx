@@ -18,6 +18,7 @@ import { CreativeStorageService } from '@/services/creative/CreativeStorageServi
 import { StageHandoffPayload } from '@/types/handoff';
 import { resolveStorageUri } from '@/services/storage/storageUri';
 import { normalizeVideoAspectRatio } from '@/services/video/videoAspectRatio';
+import { GenerateOmniRemixSchema } from '@indii/shared';
 
 interface StoryboardFrame {
     id: string;
@@ -362,14 +363,15 @@ export default function OmniWorkflow() {
 
         try {
             const generateOmniRemixV3 = httpsCallable(functions, 'generateOmniRemixV3');
-            const response = await generateOmniRemixV3({
+            const durationSeconds = Math.min(12, Math.max(4, studioControls.duration || 8));
+            const payload = {
                 prompt: remixPrompt,
                 referenceVideoUri,
                 audioUri: audioDubUri || undefined,
                 referenceUris: referenceMedia.map(entry => entry.uri),
                 pipelineMode: studioControls.omniPipelineMode,
                 aspectRatio,
-                durationSeconds: Math.min(12, Math.max(4, studioControls.duration || 8)),
+                durationSeconds,
                 posePreservation: studioControls.posePreservation,
                 beatPulse: studioControls.beatPulse,
                 characterXRay: studioControls.characterXRay,
@@ -380,7 +382,13 @@ export default function OmniWorkflow() {
                 typographyStyle: studioControls.typographyStyle,
                 visualizerColor: studioControls.visualizerColor,
                 parentId: sourceJobId || undefined,
-            });
+            };
+            const payloadValidation = GenerateOmniRemixSchema.safeParse(payload);
+            if (!payloadValidation.success) {
+                const errorMsg = payloadValidation.error.issues.map(issue => issue.message).join(', ');
+                throw new Error(`Invalid Omni gateway payload: ${errorMsg}`);
+            }
+            const response = await generateOmniRemixV3(payloadValidation.data);
             const data = response.data as { jobId: string; resultUri: string };
             const videoUrl = await resolveStorageUrl(data.resultUri);
             const storageUri = resolveStorageUri(data.resultUri) || (data.resultUri.startsWith('gs://') ? data.resultUri : undefined);
@@ -402,7 +410,7 @@ export default function OmniWorkflow() {
                     jobId: data.jobId,
                     pipelineMode: studioControls.omniPipelineMode,
                     aspectRatio,
-                    durationSeconds: Math.min(12, Math.max(4, studioControls.duration || 8)),
+                    durationSeconds,
                     posePreservation: studioControls.posePreservation,
                     beatPulse: studioControls.beatPulse,
                     characterXRay: studioControls.characterXRay,

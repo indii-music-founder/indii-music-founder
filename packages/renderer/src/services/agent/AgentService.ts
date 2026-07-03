@@ -847,7 +847,16 @@ export class AgentService {
 
         let assetContext = '';
         if (referencedAssets.length > 0) {
-            assetContext = '\n\n[BOARDROOM REFERENCED ASSETS]\n' + referencedAssets.map(a => `- ${a.name} (${a.type}): ${a.value}`).join('\n');
+            assetContext = '\n\n[BOARDROOM REFERENCED ASSETS]\n' + referencedAssets.map(a => {
+                const details = [
+                    `- ${a.name} (${a.type}): ${a.value}`,
+                    a.sourceType ? `sourceType=${a.sourceType}` : null,
+                    a.prompt ? `prompt=${a.prompt}` : null,
+                    a.origin ? `origin=${a.origin}` : null,
+                    a.parentId ? `parentId=${a.parentId}` : null,
+                ].filter((part): part is string => !!part);
+                return details.join(' | ');
+            }).join('\n');
         }
 
         let accumulatedContext = '';
