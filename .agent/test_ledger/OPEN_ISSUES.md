@@ -10509,7 +10509,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Status:** 🟠 PARTIALLY REMEDIATED (2026-07-03 ~09:00 EDT probes)
 - **Severity:** 🟠 HIGH (remaining: external integrations + monitoring)
 - **Module:** Cloud Functions IAM (continuation of ISSUE-672/673)
-- **Summary:** Re-probes after the invoker grants: `editImage`, `renderVideo`, `triggerVideoJob`, `requestAccountDeletion` now return **401 (healthy)** ✅. Still **403**: `pandadocWebhook`, `healthCheck` (and presumably `telegramWebhook`/`healthCheckWest1` — same batch, re-probe). `generateSpeech` returned `000` (timeout — cold start; inconclusive, re-probe with `--max-time 30`). External webhook deliveries (PandaDoc signatures, Telegram) are still being dropped and monitoring is still blind.
+- **Summary:** Re-probes after the invoker grants: `editImage`, `renderVideo`, `triggerVideoJob`, `requestAccountDeletion` now return **401 (healthy)** ✅. Live curl probes on 2026-07-03 confirm the remaining edge-blocked endpoints are still **403**: `pandadocWebhook`, `telegramWebhook`, `healthCheck`, `healthCheckWest1`. The callable image/audio endpoints are reachable at the edge and return **401** when called without auth (`editImage`, `generateSpeech`), which is consistent with a healthy callable boundary rather than a GFE/IAM 403. External webhook deliveries are still being dropped and monitoring is still blind.
 - **Acceptance checklist for closing 672/673/677 (do ALL of these, from the DESKTOP app):**
   1. Magic Edit REFINE with annotations → edit result appears in CandidateReview.
   2. No-annotation REFINE (remix path — `ImageGeneration.remixImage` also calls the `editImage` callable, `ImageGenerationService.ts:597-610`).
