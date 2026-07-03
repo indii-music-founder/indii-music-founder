@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-07-02 20:04 EDT
+**Updated:** 2026-07-02 20:08 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+f0d22e342 docs(error-ledger): record toast-mock drift + fabricated-provider-fallback patterns
+a969da141 chore: session checkpoint [20:04]
 bcc23be9a docs(ledger): close ISSUE-658 (verified landed); log ISSUE-671 npm-audit backlog
 ff94727f9 chore: session checkpoint [19:51]
 d70954003 chore(deps): remove unused @mastra/core + @mastra/mcp (ISSUE-CI-28478558122-AUDIT)
@@ -12,12 +14,11 @@ b721dd012 chore: session checkpoint [19:29]
 8b5985617 docs(ledger): scope npm-audit finding to @mastra/core 1.x migration (ISSUE-CI-28478558122-AUDIT)
 ace0e71af docs(ledger): verify + close ISSUE-659 (takedown honesty landed in 9c03b1b47)
 15424030a fix(test): add missing sftp.isConnected and uploadDirectory mocks to global test setup
-5229999d3 docs(ledger): mark ISSUE-601/602/603 (hunter dup set) fixed with code evidence
-a0e5f5c49 fix(firebase): harden distribution records, image gen tests, video tests, marketing lib and workspace snapshot test
 ```
 
 ## Working State
 ```
+ M .agent/test_ledger/OPEN_ISSUES.md
  M package-lock.json
  M package.json
  M packages/admin-dashboard/package.json
