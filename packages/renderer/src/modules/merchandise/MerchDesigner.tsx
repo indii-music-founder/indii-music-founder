@@ -119,7 +119,7 @@ export default function MerchDesigner() {
         if (targetView !== viewMode) {
             setViewMode(targetView);
         }
-    }, [pendingMerchHandoff, viewMode]);
+    }, [pendingMerchHandoff]);
     
     useEffect(() => {
         if (!fabricCanvas) return;

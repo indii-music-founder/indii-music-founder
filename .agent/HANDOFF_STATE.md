@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-07-03 19:42 EDT
+**Updated:** 2026-07-03 19:45 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+ff210efd8 fix(test): VideoGenerationService test using invalid model enum
 4744504a6 docs(ledger): pass 7 departments audit checkpoint — agent/social dead affordances logged
 9135d906d fix(test): RoadManager test missing useStore mock
 35710192d fix(audio): three critical bugs blocking analyzer — auth failure, param error, opaque errors
@@ -13,12 +14,11 @@ c8bfd1c9c chore: session checkpoint [15:28]
 14346f6dd chore: session checkpoint [15:27]
 bd2e47342 chore: session checkpoint [15:27]
 195f4c257 chore: session checkpoint [15:24]
-440103925 chore: session checkpoint [15:22]
 ```
 
 ## Working State
 ```
-M  .agent/HANDOFF_STATE.md
+ M .agent/test_ledger/OPEN_ISSUES.md
  D .new_gemini_key.txt
  D .new_maps_key.txt
  M package-lock.json
