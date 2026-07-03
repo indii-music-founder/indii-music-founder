@@ -1,9 +1,12 @@
 # Handoff State
-**Updated:** 2026-07-02 20:08 EDT
+**Updated:** 2026-07-02 20:39 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+de9c203ee chore(deps): audit triage — clear arcjet/express+qs/postcss moderates (ISSUE-671)
+04f734f41 fix(deps): clear high audit findings; WalletConnect fail-closed; ws/vite bumps
+3a217036d chore: session checkpoint [20:08]
 f0d22e342 docs(error-ledger): record toast-mock drift + fabricated-provider-fallback patterns
 a969da141 chore: session checkpoint [20:04]
 bcc23be9a docs(ledger): close ISSUE-658 (verified landed); log ISSUE-671 npm-audit backlog
@@ -11,24 +14,11 @@ ff94727f9 chore: session checkpoint [19:51]
 d70954003 chore(deps): remove unused @mastra/core + @mastra/mcp (ISSUE-CI-28478558122-AUDIT)
 a86bb673b chore: session checkpoint [19:31]
 b721dd012 chore: session checkpoint [19:29]
-8b5985617 docs(ledger): scope npm-audit finding to @mastra/core 1.x migration (ISSUE-CI-28478558122-AUDIT)
-ace0e71af docs(ledger): verify + close ISSUE-659 (takedown honesty landed in 9c03b1b47)
-15424030a fix(test): add missing sftp.isConnected and uploadDirectory mocks to global test setup
 ```
 
 ## Working State
 ```
- M .agent/test_ledger/OPEN_ISSUES.md
- M package-lock.json
- M package.json
- M packages/admin-dashboard/package.json
- M packages/firebase/package.json
- M packages/renderer/package.json
- M packages/renderer/src/components/ui/WalletConnectDialog.tsx
- M packages/renderer/src/modules/merchandise/components/WalletConnectPanel.tsx
- M packages/renderer/src/services/web3/WalletConnectService.ts
- M packages/renderer/src/vite-env.d.ts
-?? packages/renderer/src/types/ethereum.d.ts
+clean working tree
 ```
 
 ## Decisions
