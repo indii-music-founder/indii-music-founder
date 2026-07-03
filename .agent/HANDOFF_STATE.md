@@ -1,19 +1,19 @@
 # Handoff State
-**Updated:** 2026-07-03 13:18 EDT
+**Updated:** 2026-07-03 14:30 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+8d50e5ac6 docs(issues): update 692 and 694 status
+fd58baebe docs(issues): update 694 probe status
+88356e746 docs(issues): record 694 live probes
+58b4169de fix(creative): preserve per-target handoffs
+d96ceabda chore: session checkpoint [13:18]
 7e2c9290c fix(creative): share gateway schemas and boardroom context
 16d873331 chore: session checkpoint [12:33]
 e2638dea9 fix(creative): tighten storage lineage coverage
 6782f874a fix(creative): preserve storage lineage and omni refs
 6c1265ff8 fix(creative): unblock image callables
-477550c03 chore: session checkpoint [08:34]
-8bafdc2b8 chore: session checkpoint [08:00]
-53322fd96 chore: session checkpoint [07:32]
-329dc9f7d fix(creative): repair magic edit workflow
-e3995fa52 test(ledger): log creative studio magic edit issues
 ```
 
 ## Working State
@@ -23,25 +23,10 @@ e3995fa52 test(ledger): log creative studio magic edit issues
  M package-lock.json
  M package.json
  M packages/renderer/package.json
- M packages/renderer/src/core/store/slices/handoffSlice.ts
- M packages/renderer/src/modules/creative/components/CreativeClipboard.tsx
- M packages/renderer/src/modules/creative/components/CreativeGallery.tsx
- M packages/renderer/src/modules/marketing/components/BrandManager.test.tsx
- M packages/renderer/src/modules/marketing/components/BrandManager.tsx
- M packages/renderer/src/modules/merchandise/MerchDesigner.a11y.test.tsx
- M packages/renderer/src/modules/merchandise/MerchDesigner.tsx
- M packages/renderer/src/modules/touring/RoadManager.test.tsx
- M packages/renderer/src/modules/touring/RoadManager.tsx
- M packages/renderer/src/types/handoff.ts
- M packages/shared/dist/index.d.ts
  M packages/shared/dist/index.d.ts.map
- M packages/shared/dist/index.js
  M packages/shared/dist/schemas/agentLoopState.d.ts
  M packages/shared/dist/schemas/env.schema.d.ts
  M packages/shared/dist/schemas/workflowState.d.ts
-?? packages/renderer/src/core/store/slices/handoffSlice.test.ts
-?? packages/renderer/src/modules/handoffViews.test.ts
-?? packages/renderer/src/modules/handoffViews.ts
 ```
 
 ## Decisions
