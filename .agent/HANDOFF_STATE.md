@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-07-02 19:51 EDT
+**Updated:** 2026-07-02 20:04 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+bcc23be9a docs(ledger): close ISSUE-658 (verified landed); log ISSUE-671 npm-audit backlog
+ff94727f9 chore: session checkpoint [19:51]
 d70954003 chore(deps): remove unused @mastra/core + @mastra/mcp (ISSUE-CI-28478558122-AUDIT)
 a86bb673b chore: session checkpoint [19:31]
 b721dd012 chore: session checkpoint [19:29]
@@ -12,8 +14,6 @@ ace0e71af docs(ledger): verify + close ISSUE-659 (takedown honesty landed in 9c0
 15424030a fix(test): add missing sftp.isConnected and uploadDirectory mocks to global test setup
 5229999d3 docs(ledger): mark ISSUE-601/602/603 (hunter dup set) fixed with code evidence
 a0e5f5c49 fix(firebase): harden distribution records, image gen tests, video tests, marketing lib and workspace snapshot test
-9c03b1b47 fix(services): harden distribution adapters, licensing, bounty, avatar gen and log hygiene
-d0dbab356 fix(ui): dead-affordance sweep — remove/wire ~40 inert controls across modules (ISSUE-574..639)
 ```
 
 ## Working State
@@ -22,6 +22,12 @@ d0dbab356 fix(ui): dead-affordance sweep — remove/wire ~40 inert controls acro
  M package.json
  M packages/admin-dashboard/package.json
  M packages/firebase/package.json
+ M packages/renderer/package.json
+ M packages/renderer/src/components/ui/WalletConnectDialog.tsx
+ M packages/renderer/src/modules/merchandise/components/WalletConnectPanel.tsx
+ M packages/renderer/src/services/web3/WalletConnectService.ts
+ M packages/renderer/src/vite-env.d.ts
+?? packages/renderer/src/types/ethereum.d.ts
 ```
 
 ## Decisions
