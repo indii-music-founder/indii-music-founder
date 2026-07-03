@@ -31,6 +31,15 @@ vi.mock('./hooks/useTouring', () => ({
     useTouring: vi.fn(),
 }));
 
+// Mock Zustand store
+vi.mock('@/core/store', () => ({
+    useStore: vi.fn((selector) => selector({
+        pendingHandoffs: { touring: null },
+        setModule: vi.fn(),
+        currentProjectId: 'test-project',
+    })),
+}));
+
 const setupTouringMock = (overrides: any = {}) => {
     const defaultValues = {
         itineraries: [],
