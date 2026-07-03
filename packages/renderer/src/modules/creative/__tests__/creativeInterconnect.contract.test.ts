@@ -218,6 +218,7 @@ describe('generateOmniRemixV3 payload contract (Omni Flash API)', () => {
 // ---------------------------------------------------------------------------
 
 const capturedPayloads: unknown[] = [];
+const mockAddToHistory = vi.hoisted(() => vi.fn());
 
 vi.mock('@/services/firebase', () => ({
     functionsWest1: {},
@@ -235,7 +236,7 @@ vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
 }));
 vi.mock('@/core/store', () => ({
     useStore: {
-        getState: vi.fn(() => ({ addToHistory: vi.fn(), currentProjectId: 'p1' })),
+        getState: vi.fn(() => ({ addToHistory: mockAddToHistory, currentProjectId: 'p1' })),
         subscribe: vi.fn(),
     },
 }));
@@ -243,6 +244,7 @@ vi.mock('@/core/store', () => ({
 describe('VideoDirector.triggerAnimation — image → video payload contract', () => {
     beforeEach(() => {
         capturedPayloads.length = 0;
+        mockAddToHistory.mockClear();
         // node test env does not expose the webcrypto global the renderer relies on
         if (typeof globalThis.crypto === 'undefined' || !globalThis.crypto.randomUUID) {
             vi.stubGlobal('crypto', { randomUUID: () => 'test-uuid' });
@@ -265,6 +267,14 @@ describe('VideoDirector.triggerAnimation — image → video payload contract', 
         await VideoDirector.triggerAnimation(videoDirectorItem);
         const payload = capturedPayloads[0] as any;
         expect(payload.referenceImageUri).toBe(videoDirectorItem.url);
+    });
+
+    it('persists storageUri when a generated video is saved to history', async () => {
+        const { VideoDirector } = await import('../services/VideoDirector');
+        await VideoDirector.processGeneratedVideo(videoDirectorItem.url, 'animated cover');
+        expect(mockAddToHistory).toHaveBeenCalledWith(expect.objectContaining({
+            storageUri: 'gs://x/video.mp4',
+        }));
     });
 
     it('contract: aspect ratio crosses the image→video boundary', async () => {
