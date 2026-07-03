@@ -203,7 +203,7 @@ export class AudioIntelligenceService {
 
             // 8. Save to Firestore/Music Library Cache
             // (Note: We pass profile.semantic here for backward compatibility, but ideally we'd pass the whole profile or update MusicLibraryService)
-            await musicLibraryService.saveAnalysis(id, filename, technical, id, semantic);
+            await musicLibraryService.saveAnalysis(id, filename, technical, undefined, semantic);
 
             // 8b. Sync AI-driven tags to release catalog (non-blocking, fail-safe)
             syncMetadataTaggingService.syncTagsByFingerprint(id, profile).catch((syncErr) => {

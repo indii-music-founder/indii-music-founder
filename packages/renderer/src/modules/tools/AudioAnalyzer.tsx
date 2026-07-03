@@ -184,9 +184,10 @@ const AudioAnalyzer: React.FC = () => {
             toast.dismiss(toastId);
             toast.success("Distribution standards and acoustic profile saved.");
         } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Unknown error';
             logger.error("Save failed", error);
             toast.dismiss(toastId);
-            toast.error("Failed to log audit.");
+            toast.error(`Failed to save analysis: ${message}`);
         } finally {
             setIsSaving(false);
         }
