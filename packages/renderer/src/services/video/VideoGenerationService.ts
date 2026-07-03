@@ -9,6 +9,7 @@ import { QuotaExceededError } from '@/shared/types/errors';
 import { CostControlService } from '@/services/billing/CostControlService';
 import { UserProfile } from '@/modules/workflow/types';
 import { getVideoConstraints } from '../onboarding/DistributorContext';
+import { GenerateVideoSchema } from '@indii/shared';
 import { VideoGenerationOptionsSchema, VideoGenerationOptions, VideoAspectRatioSchema, DirectorSettingsSchema } from '@/modules/creative/video/schemas';
 import { z } from 'zod';
 import { InputSanitizer } from '@/services/intelligence/utils/InputSanitizer';
@@ -472,7 +473,13 @@ export class VideoGenerationService {
                 Object.entries(payload).filter(([, v]) => v !== undefined && v !== null)
             );
 
-            const res = await generateVideoV3(compactedPayload);
+            const payloadValidation = GenerateVideoSchema.safeParse(compactedPayload);
+            if (!payloadValidation.success) {
+                const errorMsg = payloadValidation.error.issues.map(issue => issue.message).join(', ');
+                throw new Error(`Invalid video gateway payload: ${errorMsg}`);
+            }
+
+            const res = await generateVideoV3(payloadValidation.data);
             const data = res.data as { jobId: string };
 
             // Return a job token here; the actual video URL resolves via waitForJob or the UI listener

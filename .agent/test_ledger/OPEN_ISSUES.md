@@ -10468,21 +10468,21 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-690: Department↔art knowledge exchange is nearly empty — boardroom context gets 3 nameless images, no video/audio, no prompts, possible multi-MB data-URIs
 
-- **Status:** 🔴 OPEN (2026-07-03)
+- **Status:** ✅ FIXED (2026-07-03)
 - **Severity:** 🟠 HIGH (the "everything that should talk needs to talk" umbrella)
 - **Module:** Boardroom context handshake / departments
-- **Summary:** The only automatic art→departments channel is `publishBoardroomContextUpdate` (`packages/renderer/src/hooks/useBoardroomContextHandshake.ts`), and it shares: the **3 most recent images only** (videos, audio, canvas exports invisible to departments), named `"Generated Image <date>"` — the **prompt (creative intent) is discarded**, and `value: item.url` — which for Magic Edit outputs is a **multi-MB base64 data-URI** stuffed into agent context (token bomb, useless as a URL — pairs with ISSUE-679). Distribution shares only pending releases. Nothing else flows: no Omni remixes, no brand kit, no campaign links. Reverse direction (departments→art): Brand Manager assets have no intake into the editor (ISSUE-675). The `sendToModule` external routing (`types/handoff.ts` → merch/marketing/boardroom/touring) was NOT consumer-audited this pass — flagged for follow-up.
-- **Fix direction:** (1) include videos/audio in published assets; (2) carry `prompt` + `origin` + `parentId` so agents know what each asset IS and its lineage; (3) never publish `data:` URIs — use storage URLs (blocked on ISSUE-679); (4) audit every `sendToModule` consumer (merch/marketing/touring) for actual receipt vs. decorative toast — same pattern as ISSUE-686; (5) define per-department contribution contracts (cover art → distribution, visuals → marketing campaigns, mockup assets → merch, brand kit → creative).
-- **Files:** `packages/renderer/src/hooks/useBoardroomContextHandshake.ts`; `packages/renderer/src/types/handoff.ts` (SendToPayload); cross-ref ISSUE-675/679
+- **Summary:** `publishBoardroomContextUpdate` now publishes up to 3 most recent durable creative assets across image/video/music, skips `data:` URIs, preserves `prompt` + `origin` + `parentId` + `storageUri`, and publishes actionable distribution releases using the real release/deployment shape. Agent context now receives lineage-bearing assets instead of nameless image blobs.
+- **Fix direction:** keep future boardroom handshakes durable-first and lineage-rich; any new asset flow should use storage-backed URLs and a typed release summary.
+- **Files:** `packages/renderer/src/hooks/useBoardroomContextHandshake.ts`; `packages/renderer/src/services/agent/AgentService.ts`; `packages/renderer/src/core/store/slices/boardroomSlice.ts`
 
 ### ISSUE-691: Omni/creative gateway schemas are not in `packages/shared` — client and backend contracts drift with no compiler help
 
-- **Status:** 🔴 OPEN (2026-07-03)
+- **Status:** ✅ FIXED (2026-07-03)
 - **Severity:** 🟡 MEDIUM (root cause enabling the 685/686/688 class of bugs)
 - **Module:** Contracts / packages/shared
-- **Summary:** `GenerateOmniRemixSchema`, `GenerateVideoSchema`, etc. live only in `packages/firebase/src/functions/creative/gateway.ts`; the renderer hand-builds payloads with ad-hoc partial mirrors of the constraints (duration clamp copied, gs:// requirement not enforced, `referenceUris` forgotten). CLAUDE.md says `packages/shared` exists for "Shared types and schemas" — the new Omni Flash API bypassed it. The contract test file now carries a hand-maintained mirror as a stopgap (`creativeInterconnect.contract.test.ts:123-136`).
-- **Fix direction:** move the creative gateway zod schemas to `packages/shared/src/schemas/creative.ts`, import from both sides, delete the mirror from the test file, and have the client `safeParse` before calling so contract violations surface as honest local errors instead of opaque backend rejections.
-- **Files:** `packages/firebase/src/functions/creative/gateway.ts:180-230`; `packages/shared/src/schemas/`; `packages/renderer/src/modules/creative/video/OmniWorkflow.tsx`
+- **Summary:** The creative gateway contract now lives in `packages/shared/src/schemas/creative.ts` and is imported by both the Firebase gateway and the renderer call sites. The renderer now `safeParse`s outbound image/video/Omni payloads before calling Firebase, and the contract test file uses the shared schema directly instead of a hand-maintained mirror.
+- **Fix direction:** keep new creative callables defined in shared schema first, then reuse those schemas at both the client boundary and the gateway boundary.
+- **Files:** `packages/shared/src/schemas/creative.ts`; `packages/firebase/src/functions/creative/gateway.ts`; `packages/renderer/src/modules/creative/hooks/useDirectGeneration.ts`; `packages/renderer/src/modules/creative/video/OmniWorkflow.tsx`; `packages/renderer/src/services/video/VideoGenerationService.ts`; `packages/renderer/src/modules/creative/__tests__/creativeInterconnect.contract.test.ts`
 
 ### ISSUE-692: Vitest harness is broken on this machine — root jsdom 29 bump makes EVERY jsdom-environment test error at worker start
 
@@ -10494,3 +10494,59 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Fix direction:** pin root jsdom back to the 26.x line CI last passed with (or add a lockfile override for `html-encoding-sniffer`), run one jsdom-environment test to verify, THEN commit the dependency work. Coordinate with the in-flight ISSUE-671 agent — per CLAUDE.md guardrail #9 do not run concurrent npm installs.
 - **DO NOT:** commit the pending manifest changes without running at least one jsdom-environment test.
 - **Files:** `package.json` (root, uncommitted); `package-lock.json` (uncommitted); root `jsdom@29.1.1` → `html-encoding-sniffer@6.0.0` → `@exodus/bytes@1.15.1`
+
+### ISSUE-693: "Send to Module" payloads strand behind non-default tabs and get silently destroyed by the next send (single-slot, no TTL)
+
+- **Status:** 🔴 OPEN (2026-07-03, Fable pass 3)
+- **Severity:** 🟠 HIGH (art→departments delivery is unreliable by design)
+- **Module:** Cross-module handoff (`handoffSlice` / merch / marketing / touring / boardroom)
+- **Summary:** All four `sendToModule` targets DO have consumers (good), but delivery is fragile three ways:
+  1. **Tab stranding:** consumers live in deep components that only mount on specific tabs. Marketing: consumer is `VisualsPanel`, mounted only when `BrandManager.activeTab === 'visuals'` — default is `'identity'` (`BrandManager.tsx:35`). Touring: consumer is `TechnicalRiderGenerator`, mounted only on the `rider` tab (`RoadManager.tsx:235` defaults to `'planning'`). User sees "Sent to Marketing!" then… nothing, until they happen to click the right tab.
+  2. **Single-slot overwrite:** `pendingHandoff` is one global slot (`handoffSlice.ts:19,25`) — a second `sendToModule` to ANY target silently destroys an unconsumed payload. No log, no toast.
+  3. **No TTL:** `payload.timestamp` is never checked on consume — a stranded handoff from weeks ago (possibly another project) imports out of context when the tab finally mounts.
+  4. Merch consumer (`MerchDesigner.tsx:112-128`, gated on `fabricCanvas` readiness) default-view mounting NOT fully verified — include in fix verification. Boardroom is the healthiest target (producer sets module + conversation mode + agent).
+- **Fix direction:** (1) `sendToModule` should carry the destination tab/view and target modules should honor it on mount (deep-link); (2) make `pendingHandoff` a per-target map (like `pendingStageHandoff` already is for creative stages); (3) expire payloads older than ~10 minutes on consume, with a log; (4) toast on overwrite/expiry so delivery failures are visible.
+- **Files:** `packages/renderer/src/core/store/slices/handoffSlice.ts`; `packages/renderer/src/modules/marketing/components/BrandManager.tsx:35`; `packages/renderer/src/modules/touring/RoadManager.tsx:235,439`; `packages/renderer/src/modules/merchandise/MerchDesigner.tsx:112-128`
+
+### ISSUE-694: IAM invoker remediation is INCOMPLETE — webhooks + healthchecks still 403; full acceptance checklist for the editImage consumers
+
+- **Status:** 🟠 PARTIALLY REMEDIATED (2026-07-03 ~09:00 EDT probes)
+- **Severity:** 🟠 HIGH (remaining: external integrations + monitoring)
+- **Module:** Cloud Functions IAM (continuation of ISSUE-672/673)
+- **Summary:** Re-probes after the invoker grants: `editImage`, `renderVideo`, `triggerVideoJob`, `requestAccountDeletion` now return **401 (healthy)** ✅. Still **403**: `pandadocWebhook`, `healthCheck` (and presumably `telegramWebhook`/`healthCheckWest1` — same batch, re-probe). `generateSpeech` returned `000` (timeout — cold start; inconclusive, re-probe with `--max-time 30`). External webhook deliveries (PandaDoc signatures, Telegram) are still being dropped and monitoring is still blind.
+- **Acceptance checklist for closing 672/673/677 (do ALL of these, from the DESKTOP app):**
+  1. Magic Edit REFINE with annotations → edit result appears in CandidateReview.
+  2. No-annotation REFINE (remix path — `ImageGeneration.remixImage` also calls the `editImage` callable, `ImageGenerationService.ts:597-610`).
+  3. Agent-initiated edit: ask Creative Director chat to edit an image (`EditImageWithAnnotationsTool.ts:67` → same callable — EVERY department agent's image editing rode this 403).
+  4. Confirm `ENFORCE_APP_CHECK` runtime value permits desktop (Electron sends no App Check token — ISSUE-677): verify a desktop callable succeeds, not just web.
+  5. Probe the remaining 403s after granting: `pandadocWebhook`, `telegramWebhook`, `healthCheck`, `healthCheckWest1`, and re-probe `generateSpeech`.
+  6. Confirm an `editImage` execution log actually appears: `gcloud logging read 'resource.labels.function_name="editImage" textPayload:"Function execution started"' --freshness=1h`.
+- **Files:** cross-ref ISSUE-672/673/677; `packages/renderer/src/services/image/ImageGenerationService.ts:597-610`; `packages/renderer/src/services/agent/tools/EditImageWithAnnotationsTool.ts:67`
+
+### ISSUE-695: InfiniteCanvas still exposes two "Coming soon" dead affordances — including the layer one ISSUE-605 claimed fixed
+
+- **Status:** 🔴 OPEN (2026-07-03, Fable pass 4)
+- **Severity:** 🟡 MEDIUM (dead affordance + stale fix claim)
+- **Module:** Creative Studio / InfiniteCanvas
+- **Summary:** `InfiniteCanvas.tsx:806` toasts "Coming soon: Intelligent object and face detection in canvas." and `:810` toasts "Coming soon: Advanced layer composition management." Both are live entry points teasing features that exist ELSEWHERE (CanvasViewport has real `handleDetectObjects`; ISSUE-605 added real layer creation to CanvasToolbar/LayersPanel) — but the InfiniteCanvas surface was missed. ISSUE-605 is marked ✅ FIXED yet its own evidence cited `InfiniteCanvas.tsx:804-811` as the offending affordance, which is still present.
+- **Fix direction:** wire both buttons to the existing implementations (object detection via `imageAnalysisService.detectObjects`, layer creation via the ISSUE-605 handlers) or remove the affordances from InfiniteCanvas.
+- **Files:** `packages/renderer/src/modules/creative/components/InfiniteCanvas.tsx:804-811`
+
+### ISSUE-696: CharacterLibrary validation asymmetry — 720p minimum enforced only for file uploads, skipped for Creative Director / Brand HQ imports
+
+- **Status:** 🔴 OPEN (2026-07-03, Fable pass 4)
+- **Severity:** 🟡 MEDIUM
+- **Module:** Creative Studio / CharacterLibrary (video character references)
+- **Summary:** `processFile` rejects uploads below `MIN_WIDTH×MIN_HEIGHT` (`CharacterLibrary.tsx:99-105`), but `handleSelectGeneratedImage` (`:146-169`) and `handleSelectBrandAsset` (`:171-194`) skip the check entirely — and their `getImageDimensions(...).catch(() => ({width: 1024, height: 1024}))` fabricates passing dimensions when measurement fails. A low-res brand headshot imports fine via Brand HQ but is rejected via file upload; downstream Veo generation quality suffers with no warning. Positive note: this component's three-source intake (upload/camera + Creative Director gallery + **Brand HQ**) is the pattern ISSUE-675's Edit-Definitions brand intake should copy.
+- **Fix direction:** extract the resolution check from `processFile` and apply it in all three intake paths; on dimension-measure failure, warn instead of silently defaulting to 1024×1024.
+- **Files:** `packages/renderer/src/modules/creative/components/CharacterLibrary.tsx:99-105,146-194`
+
+### Pass 4 coverage notes (2026-07-03, Fable) — remaining named areas audited
+
+- **Audio pipeline:** `analyzeAudio`, `generateAudioV3`, `generateSpeech` all probe **401 (healthy)** — the ISSUE-694 re-probe items are resolved; audio callables were granted in the same remediation. `audioIntelligenceSlice` pattern-scan clean at static depth (local Essentia/YAMNet sidecar analysis not exercisable statically).
+- **SequenceTimeline.tsx:** clean — all controls have handlers, correct disabled/cursor states, no dead affordances.
+- **AutonomousLab.tsx:** clean on the ISSUE-680 fetch class — its `getBase64` correctly guards `data:` URIs (`:88-89`). Its remix synthesis rides the now-unblocked `editImage` callable. Error handling is honest (state + toast on failure).
+- **CharacterLibrary.tsx:** one finding (ISSUE-696 above); otherwise the healthiest intake component in the module.
+- **`fetch(item.url)` class:** repo-wide sweep confirms `useCreativeCanvas.ts:700` (ISSUE-680, remix branch) is the ONLY remaining unguarded site in creative.
+- **Anti-Pattern #9 sweep:** only hit is `fine-tuned-endpoints.generated.ts` — compliant (marked generated, carries regen command header).
+- **Banned native dialogs (`window.confirm/alert/prompt`):** zero hits in `packages/renderer/src`.
