@@ -8610,7 +8610,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Status:** ✅ FIXED (2026-07-02)
 - **Severity:** ⚪ LOW
 - **Module:** Dependencies / Build
-- **Summary:** The vulnerable `@ai-sdk/provider-utils` copy is still present transitively through `@mastra/core` 0.x, but the advisory currently resolves as **low severity**, so it is **not** the direct reason `npm audit --audit-level=high` exits nonzero. The deploy workflow audit step is already marked `continue-on-error: true`, so this is a tracked dependency-migration item, not an active deploy blocker.
+- **Summary:** The original vulnerable `@ai-sdk/provider-utils` copy from the unused Mastra 0.x dependency chain has been removed. Follow-up dependency hardening also removed the unfinished Reown/AppKit WalletConnect stack, which was the last verified high-severity audit path after Vite/Remotion cleanup. `npm audit --audit-level=high` now exits `0`; remaining audit findings are moderate transitive advisories tracked separately.
 - **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/28478558122)
 - **Fix Direction:** `npm audit fix --force` resolves it but installs `@mastra/core@1.47.0`, a **breaking change** — needs scoped testing of all Mastra/AI-SDK call sites before merging, not a blind force-fix. Per CLAUDE.md API Credentials/Dependency policy, this requires explicit user approval before the breaking upgrade.
 - **DO NOT:** Run `npm audit fix --force` unattended — it can silently break AI generation pipelines (Mastra agent orchestration).
@@ -8647,6 +8647,16 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
   - Focused MCP/agent tests pass: `npx vitest run packages/main/src/services/mcp/MCPClientService.test.ts packages/mcp-server-harness/src/toolResponses.test.ts packages/renderer/src/services/agent/BaseAgentValidation.test.ts packages/renderer/src/services/agent/utils/ZodUtils.test.ts --config vitest.config.ts`.
   - `npm run lint` exits `0` with pre-existing warnings only.
   - `npm ls vite @remotion/renderer @remotion/cloudrun @remotion/bundler remotion ws --depth=2` shows the intended versions but exits `ELSPROBLEMS` because `react-call@2.0.1` declares optional `vite >=8`; this peer mismatch existed at the package-policy level and should be scoped separately from this audit fix.
+- **WalletConnect Security Hardening (2026-07-02, Codex):** Removed unfinished `@reown/appkit` and `@reown/appkit-adapter-ethers` from `packages/renderer/package.json` instead of accepting the vulnerable `viem -> ws@8.20.1` transitive path. The app now fails closed for WalletConnect Cloud/mobile modal support: the WalletConnect button is disabled with honest unavailable copy, `WalletConnectService.isConfigured()` returns `false`, and the service throws a clear unavailable error for that path. Browser-injected wallets such as MetaMask remain supported through `window.ethereum`.
+- **WalletConnect Verification (2026-07-02, Codex):**
+  - `npm install` removed 214 packages from the Reown/AppKit dependency subtree.
+  - `npm audit --audit-level=high` exits `0`.
+  - `npm audit --json` reports `0 high / 0 critical / 28 moderate`; no audit entries remain for `@reown/appkit`, `@reown/appkit-adapter-ethers`, `viem`, `@ai-sdk/provider-utils`, `ai`, Vite, Remotion, or `ws`.
+  - `npm run typecheck` passes.
+  - Focused lint passes: `npx eslint packages/renderer/src/services/web3/WalletConnectService.ts packages/renderer/src/components/ui/WalletConnectDialog.tsx packages/renderer/src/modules/merchandise/components/WalletConnectPanel.tsx packages/renderer/src/types/ethereum.d.ts packages/renderer/src/vite-env.d.ts`.
+  - `npm run lint` exits `0` with 145 pre-existing warnings and no errors.
+  - Focused tests pass: `npx vitest run packages/renderer/src/services/agent/BaseAgentValidation.test.ts packages/renderer/src/services/agent/utils/ZodUtils.test.ts --config vitest.config.ts`.
+  - Remaining follow-up: moderate Firebase/Google/transitive advisories and the `react-call@2.0.1` optional peer warning for `vite >=8` are separate cleanup items, not high-severity audit blockers.
 
 ### ISSUE-CI-28478558122-DEPLOY: Deploy Cloud Functions — transient GCP 503
 - **Status:** ✅ RESOLVED (2026-07-02, Fable) — re-verified: deploy-production succeeded on run 28614340383; the GCP 503 was transient as suspected

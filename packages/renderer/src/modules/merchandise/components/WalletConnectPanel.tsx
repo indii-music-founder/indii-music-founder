@@ -1,7 +1,7 @@
 /**
  * WalletConnectPanel — Item 236
- * Real wallet connection via window.ethereum (MetaMask EIP-1193)
- * and WalletConnect v2 URI deep-link for mobile wallets.
+ * Real wallet connection via window.ethereum (MetaMask EIP-1193).
+ * WalletConnect mobile wallet support is disabled until its upstream dependency chain is remediated.
  */
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -12,8 +12,6 @@ import { WalletConnectDialog } from '@/components/ui/WalletConnectDialog';
 
 const STORAGE_KEY = 'indii_wallet_address';
 const CHAIN_KEY = 'indii_wallet_chain';
-
-type WalletProvider = 'metamask' | 'walletconnect';
 
 function truncateAddress(addr: string) {
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
@@ -35,12 +33,19 @@ interface EthereumProvider {
 }
 
 export function WalletConnectPanel() {
-    const ethereum = typeof window !== 'undefined' ? (window as any).ethereum as EthereumProvider | undefined : undefined;
+    const ethereum = typeof window !== 'undefined' ? window.ethereum as EthereumProvider | undefined : undefined;
     const [address, setAddress] = useState<string | null>(() => localStorage.getItem(STORAGE_KEY));
     const [chain, setChain] = useState<string>(() => localStorage.getItem(CHAIN_KEY) || '0x1');
-    const [connecting, setConnecting] = useState<WalletProvider | null>(null);
     const [copied, setCopied] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    function handleDisconnect() {
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(CHAIN_KEY);
+        setAddress(null);
+        setError(null);
+        walletConnectService.disconnect().catch((err) => { logger.error('[WalletConnect] disconnect error:', err); });
+    }
 
     // Listen for MetaMask account/chain changes
     useEffect(() => {
@@ -69,56 +74,6 @@ export function WalletConnectPanel() {
             ethereum?.removeListener?.('chainChanged', onChainChanged);
         };
     }, [ethereum]);
-
-    const handleConnect = async (provider: WalletProvider) => {
-        setConnecting(provider);
-        setError(null);
-
-        try {
-            if (provider === 'metamask') {
-                if (!ethereum) {
-                    throw new Error('MetaMask not installed. Please install the MetaMask browser extension.');
-                }
-                // Request account access via EIP-1193
-                const accounts = await ethereum.request({ method: 'eth_requestAccounts' }) as string[];
-                const chainId = await ethereum.request({ method: 'eth_chainId' }) as string;
-
-                localStorage.setItem(STORAGE_KEY, accounts[0]!);
-                localStorage.setItem(CHAIN_KEY, chainId as string);
-                setAddress(accounts[0] ?? null);
-                setChain(chainId as string);
-
-            } else {
-                // WalletConnect v2: uses WalletConnectService (backed by @reown/appkit when project ID is set)
-                if (!walletConnectService.isConfigured()) {
-                    throw new Error(
-                        'WalletConnect project ID not set. Add VITE_WALLETCONNECT_PROJECT_ID to .env ' +
-                        '(get a free key at cloud.reown.com)'
-                    );
-                }
-                const info = await walletConnectService.connect();
-                if (info.address) {
-                    localStorage.setItem(STORAGE_KEY, info.address);
-                    localStorage.setItem(CHAIN_KEY, `0x${info.chainId.toString(16)}`);
-                    setAddress(info.address);
-                    setChain(`0x${info.chainId.toString(16)}`);
-                }
-            }
-        } catch (err: unknown) {
-            const msg = err instanceof Error ? err.message : 'Connection failed';
-            setError(msg);
-        } finally {
-            setConnecting(null);
-        }
-    };
-
-    const handleDisconnect = () => {
-        localStorage.removeItem(STORAGE_KEY);
-        localStorage.removeItem(CHAIN_KEY);
-        setAddress(null);
-        setError(null);
-        walletConnectService.disconnect().catch((err) => { logger.error('[WalletConnect] disconnect error:', err); });
-    };
 
     const handleCopy = async () => {
         if (!address) return;
