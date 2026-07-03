@@ -1281,3 +1281,15 @@ Before pushing any branch, run `/plat` (see `.claude/commands/plat.md`). It exec
 - FILE: packages/renderer/src/modules/creative/components/CharacterLibrary.tsx
 - BUG: Images uploaded to Brand HQ (like headshots of the user's face) were stored in `userProfile.brandKit.brandAssets` but were completely inaccessible in the Creative Studio (Art Department) Character Library modal, forcing users to manually upload their photos twice.
 - FIX: Integrated `userProfile.brandKit` assets directly into `CharacterLibrary.tsx`. Added an "Import from Brand HQ" grid within the "Add Character Reference" modal to dynamically load and ingest user brand assets.
+
+## 2026-07-02 Fable Session - Global ToastContext Test Mock API Drift
+- SEVERITY: Medium
+- FILE: packages/renderer/src/test/setup.ts
+- BUG: The global `vi.mock('@/core/context/ToastContext')` exposed only `addToast`/`removeToast`, but the real `ToastContextType` API is `success/error/info/warning/loading/updateProgress/dismiss/promise`. Any component test exercising `toast.success(...)` crashed with "toast.success is not a function" — masking real component behavior and forcing per-test workarounds.
+- FIX: The global mock now mirrors the full `ToastContextType` surface. PATTERN: when globally mocking a context/service in test setup, mirror its complete public API — a partial mock silently breaks every future test that touches the unmocked half.
+
+## 2026-07-02 Fable Session - Fabricated Provider-Success Fallbacks (marketing service layer)
+- SEVERITY: High
+- FILE: packages/renderer/src/services/marketing/{SMSMarketingService,EmailMarketingService,SocialAutoPosterService}.ts, providerErrors.ts
+- BUG: Catch blocks for undeployed provider callables returned plausible fallback values — "queued locally", `'pending'` status, zero-filled analytics, `revokePost() → true` — so the UI reported deliveries/cancellations that never happened (ISSUE-665/666/667; same family as ISSUE-497).
+- FIX: Introduced typed `MarketingProviderUnavailableError`; every provider-callable catch now throws it and UI callers surface the message. PATTERN: a catch block must never return a value shaped like success. If the provider didn't confirm, throw a typed unavailable error and let the UI show an honest state. Regression suite: providerHonesty.test.ts.
