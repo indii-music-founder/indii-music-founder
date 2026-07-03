@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-07-03 15:29 EDT
+**Updated:** 2026-07-03 19:22 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+1ed4269ff chore: session checkpoint [15:29]
 a95360b32 chore: session checkpoint [15:29]
 c8bfd1c9c chore: session checkpoint [15:28]
 14346f6dd chore: session checkpoint [15:27]
@@ -13,28 +14,49 @@ bd2e47342 chore: session checkpoint [15:27]
 810aeb89d chore: session checkpoint [15:22]
 3b5fad1be chore: session checkpoint [15:20]
 c97b088c5 chore: session checkpoint [15:20]
-17c8a65f9 chore: session checkpoint [15:19]
 ```
 
 ## Working State
 ```
- M .agent/test_ledger/OPEN_ISSUES.md
+M  .agent/test_ledger/OPEN_ISSUES.md
  M package-lock.json
  M package.json
  M packages/firebase/package.json
+ M packages/firebase/src/__tests__/image_gen.test.ts
+ M packages/firebase/src/functions/creative/gateway.test.ts
+ M packages/firebase/src/functions/creative/gateway.ts
+ M packages/firebase/src/index.ts
  M packages/renderer/package.json
+ M packages/renderer/src/modules/creative/__tests__/creativeInterconnect.contract.test.ts
+ M packages/renderer/src/modules/creative/components/CanvasHeader.tsx
  M packages/renderer/src/modules/creative/components/CharacterLibrary.tsx
+ M packages/renderer/src/modules/creative/components/CreativeCanvas.tsx
  M packages/renderer/src/modules/creative/components/EditDefinitionsPanel.tsx
  M packages/renderer/src/modules/creative/components/InfiniteCanvas.tsx
  M packages/renderer/src/modules/creative/components/InfiniteCanvasHUD.tsx
+ M packages/renderer/src/modules/creative/components/__tests__/CanvasHeader.test.tsx
+ M packages/renderer/src/modules/creative/components/__tests__/CreativeCanvas.test.tsx
  M packages/renderer/src/modules/creative/components/__tests__/InfiniteCanvas.test.tsx
  M packages/renderer/src/modules/creative/components/__tests__/InfiniteCanvasHUD.test.tsx
+ M packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts
+ M packages/renderer/src/modules/creative/services/__tests__/creativeManifest.test.ts
+ M packages/renderer/src/modules/creative/services/creativeManifest.ts
+ M packages/renderer/src/modules/creative/video/OmniWorkflow.tsx
+M  packages/renderer/src/modules/tools/AudioAnalyzer.tsx
+ M packages/renderer/src/modules/touring/components/TourMap.tsx
+M  packages/renderer/src/services/audio/AudioIntelligenceService.ts
+ M packages/renderer/src/services/image/EditingService.test.ts
+ M packages/renderer/src/services/image/EditingService.ts
+M  packages/renderer/src/services/music/MusicLibraryService.ts
  M packages/shared/dist/index.d.ts.map
  M packages/shared/dist/schemas/agentLoopState.d.ts
  M packages/shared/dist/schemas/env.schema.d.ts
  M packages/shared/dist/schemas/workflowState.d.ts
+ M packages/shared/src/schemas/creative.ts
 ?? packages/renderer/src/modules/creative/components/__tests__/CharacterLibrary.test.tsx
 ?? packages/renderer/src/modules/creative/components/__tests__/EditDefinitionsPanel.test.tsx
+?? packages/renderer/src/modules/creative/video/OmniWorkflow.test.tsx
+?? packages/renderer/src/modules/touring/components/TourMap.test.tsx
 ```
 
 ## Decisions

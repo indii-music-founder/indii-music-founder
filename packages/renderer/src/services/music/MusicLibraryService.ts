@@ -29,7 +29,7 @@ export class MusicLibraryService {
         semantic?: AudioSemanticData
     ): Promise<void> {
         const userId = auth.currentUser?.uid;
-        if (!userId) return;
+        if (!userId) throw new Error('User not authenticated: cannot save audio analysis to library');
 
         const data: Partial<AnalyzedTrack> = {
             id: trackId,
