@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-07-03 19:22 EDT
+**Updated:** 2026-07-03 19:35 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+35710192d fix(audio): three critical bugs blocking analyzer — auth failure, param error, opaque errors
 1ed4269ff chore: session checkpoint [15:29]
 a95360b32 chore: session checkpoint [15:29]
 c8bfd1c9c chore: session checkpoint [15:28]
@@ -13,12 +14,13 @@ bd2e47342 chore: session checkpoint [15:27]
 440103925 chore: session checkpoint [15:22]
 810aeb89d chore: session checkpoint [15:22]
 3b5fad1be chore: session checkpoint [15:20]
-c97b088c5 chore: session checkpoint [15:20]
 ```
 
 ## Working State
 ```
-M  .agent/test_ledger/OPEN_ISSUES.md
+M  .agent/HANDOFF_STATE.md
+ D .new_gemini_key.txt
+ D .new_maps_key.txt
  M package-lock.json
  M package.json
  M packages/firebase/package.json
@@ -42,17 +44,15 @@ M  .agent/test_ledger/OPEN_ISSUES.md
  M packages/renderer/src/modules/creative/services/__tests__/creativeManifest.test.ts
  M packages/renderer/src/modules/creative/services/creativeManifest.ts
  M packages/renderer/src/modules/creative/video/OmniWorkflow.tsx
-M  packages/renderer/src/modules/tools/AudioAnalyzer.tsx
  M packages/renderer/src/modules/touring/components/TourMap.tsx
-M  packages/renderer/src/services/audio/AudioIntelligenceService.ts
  M packages/renderer/src/services/image/EditingService.test.ts
  M packages/renderer/src/services/image/EditingService.ts
-M  packages/renderer/src/services/music/MusicLibraryService.ts
  M packages/shared/dist/index.d.ts.map
  M packages/shared/dist/schemas/agentLoopState.d.ts
  M packages/shared/dist/schemas/env.schema.d.ts
  M packages/shared/dist/schemas/workflowState.d.ts
  M packages/shared/src/schemas/creative.ts
+?? packages/firebase/src/shared/creative.ts
 ?? packages/renderer/src/modules/creative/components/__tests__/CharacterLibrary.test.tsx
 ?? packages/renderer/src/modules/creative/components/__tests__/EditDefinitionsPanel.test.tsx
 ?? packages/renderer/src/modules/creative/video/OmniWorkflow.test.tsx
