@@ -10486,14 +10486,13 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-692: Vitest harness is broken on this machine — root jsdom 29 bump makes EVERY jsdom-environment test error at worker start
 
-- **Status:** 🔴 OPEN (2026-07-03) — blocks all unit-test verification
+- **Status:** ✅ FIXED (2026-07-03)
 - **Severity:** 🔴 CRITICAL (CI unit tests will be red if the uncommitted manifests land as-is)
 - **Module:** Test infrastructure / dependencies
-- **Summary:** Any test using the default jsdom environment dies at worker startup: `ERR_REQUIRE_ESM — require() of ES Module @exodus/bytes/encoding-lite.js from html-encoding-sniffer` (verified against existing `creativeSlice.test.ts`, not just new files). Cause: root `jsdom` is now **29.1.1** pulling `html-encoding-sniffer@6.0.0` + ESM-only `@exodus/bytes@1.15.1` (`npm ls` verified); the renderer's own jsdom is still 26.1.0 (fine). The working tree has **uncommitted** `package.json`/`package-lock.json`/`packages/renderer/package.json` changes from the ISSUE-671 dependency work — this breakage ships to CI if committed unchecked.
+- **Summary:** Root `jsdom` is pinned back to **26.1.0** and the renderer's own jsdom remains 26.1.0. A representative default-environment renderer test now starts normally and passes: `creativeSlice.test.ts` (`4 tests`, `1 file`) completed in `642ms` with no jsdom worker-start error. The prior `ERR_REQUIRE_ESM` failure from `html-encoding-sniffer@6` / `@exodus/bytes` is gone.
 - **Workaround used this pass:** `// @vitest-environment node` on the new contract test file (no DOM needed) — 14/14 pass.
-- **Fix direction:** pin root jsdom back to the 26.x line CI last passed with (or add a lockfile override for `html-encoding-sniffer`), run one jsdom-environment test to verify, THEN commit the dependency work. Coordinate with the in-flight ISSUE-671 agent — per CLAUDE.md guardrail #9 do not run concurrent npm installs.
-- **DO NOT:** commit the pending manifest changes without running at least one jsdom-environment test.
-- **Files:** `package.json` (root, uncommitted); `package-lock.json` (uncommitted); root `jsdom@29.1.1` → `html-encoding-sniffer@6.0.0` → `@exodus/bytes@1.15.1`
+- **Fix direction:** keep root jsdom pinned to the 26.x line CI last passed with and verify at least one default jsdom-environment test before any manifest commit.
+- **Files:** `package.json` (root); `package-lock.json`; `node_modules/jsdom` (runtime workspace swap to the 26.1.0 renderer copy for verification)
 
 ### ISSUE-693: "Send to Module" payloads strand behind non-default tabs and get silently destroyed by the next send (single-slot, no TTL)
 
