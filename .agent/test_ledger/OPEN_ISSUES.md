@@ -10506,16 +10506,16 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-694: IAM invoker remediation is INCOMPLETE — webhooks + healthchecks still 403; full acceptance checklist for the editImage consumers
 
-- **Status:** 🟠 PARTIALLY REMEDIATED (2026-07-03 ~09:00 EDT probes)
+- **Status:** 🟠 PARTIALLY REMEDIATED (2026-07-03 live probes)
 - **Severity:** 🟠 HIGH (remaining: external integrations + monitoring)
 - **Module:** Cloud Functions IAM (continuation of ISSUE-672/673)
-- **Summary:** Re-probes after the invoker grants: `editImage`, `renderVideo`, `triggerVideoJob`, `requestAccountDeletion` now return **401 (healthy)** ✅. Live curl probes on 2026-07-03 confirm the remaining edge-blocked endpoints are still **403**: `pandadocWebhook`, `telegramWebhook`, `healthCheck`, `healthCheckWest1`. The callable image/audio endpoints are reachable at the edge and return **401** when called without auth (`editImage`, `generateSpeech`), which is consistent with a healthy callable boundary rather than a GFE/IAM 403. External webhook deliveries are still being dropped and monitoring is still blind.
+- **Summary:** Re-probes after the invoker grants: `editImage`, `renderVideo`, `triggerVideoJob`, `requestAccountDeletion` now return **401 (healthy)** ✅. Live curl probes on 2026-07-03 now show the webhook/monitoring edges are no longer blocked by GFE 403: `pandadocWebhook` and `telegramWebhook` return **401 Unauthorized** without their secrets, `healthCheckWest1` returns **200**, and `healthCheck` returns **503** because its Firestore ping is degraded. The callable image/audio endpoints are reachable at the edge and return **401** when called without auth (`editImage`, `generateSpeech`), which is consistent with a healthy callable boundary rather than a GFE/IAM 403. External webhook deliveries are no longer edge-blocked; the remaining work is the `healthCheck` Firestore degradation and the desktop-app REFINE checklist below.
 - **Acceptance checklist for closing 672/673/677 (do ALL of these, from the DESKTOP app):**
   1. Magic Edit REFINE with annotations → edit result appears in CandidateReview.
   2. No-annotation REFINE (remix path — `ImageGeneration.remixImage` also calls the `editImage` callable, `ImageGenerationService.ts:597-610`).
   3. Agent-initiated edit: ask Creative Director chat to edit an image (`EditImageWithAnnotationsTool.ts:67` → same callable — EVERY department agent's image editing rode this 403).
   4. Confirm `ENFORCE_APP_CHECK` runtime value permits desktop (Electron sends no App Check token — ISSUE-677): verify a desktop callable succeeds, not just web.
-  5. Probe the remaining 403s after granting: `pandadocWebhook`, `telegramWebhook`, `healthCheck`, `healthCheckWest1`, and re-probe `generateSpeech`.
+  5. Probe the remaining edge states after granting: `pandadocWebhook`, `telegramWebhook`, `healthCheck`, `healthCheckWest1`, and re-probe `generateSpeech`.
   6. Confirm an `editImage` execution log actually appears: `gcloud logging read 'resource.labels.function_name="editImage" textPayload:"Function execution started"' --freshness=1h`.
 - **Files:** cross-ref ISSUE-672/673/677; `packages/renderer/src/services/image/ImageGenerationService.ts:597-610`; `packages/renderer/src/services/agent/tools/EditImageWithAnnotationsTool.ts:67`
 
