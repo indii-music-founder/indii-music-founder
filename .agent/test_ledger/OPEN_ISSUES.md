@@ -8598,13 +8598,22 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-671: npm audit backlog — ~50 transitive findings beyond the resolved provider-utils issue
 
-- **Status:** 🟡 IN PROGRESS (dep-remediation agent; Fable verifying on landing)
+- **Status:** 🟢 TRIAGED (2026-07-02, Fable) — 0 high/critical; 20 moderates dispositioned below, all gated on upstream majors
 - **Severity:** 🟠 MODERATE (mixed: mostly moderate/low; a few high in wallet SDKs)
 - **Module:** dependencies / package-lock
 - **Summary:** After ISSUE-CI-28478558122-AUDIT closed (@mastra removal), `npm audit` still reports ~50 findings in transitive deps: @arcjet/* (moderate), @coinbase/*+@base-org/account (high, wallet SDKs), @google-cloud/* (moderate), @ai-sdk/react|ui-utils (low), ws, vite, and others. None were tracked in the ledger before this entry.
 - **Current work:** A concurrent agent has in-flight manifest bumps (`ws` ^8.18.0→8.21.0, `vite` 6.4.2→6.4.3 across root/admin-dashboard/firebase) as of 2026-07-02 19:40 EDT. Per CLAUDE.md guardrail #9, no other agent may run npm install/audit-fix until that lands.
 - **Expected (acceptance):** `npm audit --audit-level=high` reports 0 high/critical; remaining moderate/low findings each have a documented disposition (fixed, accepted-risk with reason, or blocked-upstream). Typecheck/lint/tests green after every bump.
 - **DO NOT:** Run `npm audit fix --force` (major-version churn), or run npm installs concurrently with another agent's dependency work.
+- **Triage (2026-07-02, Fable):** Started at 28 moderate / 0 high after the Reown-removal + ws/vite commit. Commands run: `npm audit --json` (grouping), `npm audit fix --cache ./.npm-cache-isolated-$$` (NO --force), targeted `npm update postcss @google-cloud/storage @google-cloud/functions-framework cloudevents`, manifest patch-pin bumps (`express 4.22.1→4.22.2` root/landing/renderer; `postcss 8.5.6→8.5.16` landing+renderer), stale `packages/renderer/node_modules/postcss@8.5.6` lock entry removed + re-resolve. Result: **28 → 20 moderate, 0 high/critical** (`npm audit --audit-level=high` exit 0).
+- **Fixed this pass (8):** arcjet chain (`@arcjet/analyze|node|protocol`, `arcjet`, `typeid-js` — semver-safe bumps; runtime: functions security middleware, `arcjet.test.ts` 5/5 green), `express`+`qs` (qs.stringify DoS; 4.22.2 is a PATCH — npm only called it "breaking" because the manifests pinned 4.22.1 exactly; runtime: functions/admin/landing servers), `postcss` (XSS in stringify, <8.5.10 → 8.5.16 patch; build tooling only).
+- **Open — wait for upstream, with reasons (20 findings, 4 root advisories):**
+  1. **uuid** (buffer bounds in v3/v5/v6 `buf` param, GHSA — moderate): cascades through eventid/cloudevents/gaxios/google-gax/teeny-request/retry-request into `@google-cloud/*`, `firebase-admin@13.10.0`, `firebase-tools@15.x`, `@remotion/cloudrun`. npm's only "fixes" are **firebase-admin@14 (MAJOR — functions runtime, needs its own scoped migration + deploy proof)** or **firebase-tools@13.13.3 (a DOWNGRADE — rejected: CI pins 15.22.3 to avoid the 15.19.0 gtoken deploy bug)**. Exploit requires callers passing a pre-allocated `buf` to uuid v3/v5/v6 — not a pattern in our first-party code. Accepted temporarily.
+  2. **fast-xml-parser** (XMLBuilder CDATA injection): fix is 5.9.3 MAJOR; only reachable via `@google-cloud/storage` under Remotion/cloud tooling, not the shipped renderer. Wait for @google-cloud/storage to move.
+  3. **@opentelemetry/core** (W3C Baggage unbounded memory): only via firebase-tools/pubsub; fix = the rejected firebase-tools downgrade. Deploy-tooling only, not shipped code. Wait upstream.
+  4. **ts-deepmerge** (prototype override DoS): only via `firebase-functions-test` (dev/test only, never shipped); npm's fix is a nonsensical downgrade to 0.3.3. Accepted for dev scope; clears when firebase-functions-test updates.
+- **Recommended next agent scope:** a dedicated `firebase-admin 13→14` migration (packages/firebase functions runtime; prove emulator + deploy + functions tests) — that single migration clears the majority of the remaining uuid-cascade findings. Do NOT bundle it with other work.
+- **Protected issues untouched:** 495/498/499/478/493/500/479/480/482/483/486/658. WalletConnect remains fail-closed.
 
 ### ISSUE-CI-28478558122-AUDIT: npm audit — Uncontrolled Resource Consumption in @ai-sdk/provider-utils
 - **Status:** ✅ FIXED (2026-07-02)
