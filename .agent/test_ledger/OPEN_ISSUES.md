@@ -3,8 +3,8 @@
 > This file is written by the /real test agent and consumed by a fixing agent.
 > The test agent NEVER modifies code. The fix agent NEVER runs tests.
 >
-> **Last updated:** 2026-06-26
-> **Commit:** `main` — indiiCONTROLLER relay fix + pre-existing test issues logged
+> **Last updated:** 2026-07-03
+> **Commit:** `main` — Creative Editor Magic Edit investigation (5 issues logged: ISSUE-672..676)
 > **Current UX Score:** In Progress
 
 ## Verification Findings — 2026-06-14 (Opus static audit)
@@ -10125,7 +10125,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Files:** `packages/renderer/src/modules/creative/components/CanvasViewport.tsx:4,79-83`; `packages/renderer/src/modules/creative/components/CandidatesCarousel.tsx:16-49`; `packages/renderer/src/modules/creative/components/CandidateReview.tsx:23-26`
 
 ### ISSUE-607: Magic Edit outputs are transient and do not immediately appear in Project Assets or history
-- **Status:** ✅ FIXED (Codex, 2026-07-03)
+- **Status:** ⚠️ REOPENED (verified 2026-07-03, Fable) — `persistDraftCandidates` landed (commit `329dc9f7d`) but stores multi-MB base64 data-URIs into Firestore-bound paths (session doc, file node, StorageService item), which exceed the 1MiB doc limit for real 2K outputs and fail silently. The durable Storage URL from `saveAssetToStorage` is discarded. See **ISSUE-679** for the corrected fix spec. Runtime-unverifiable today because ISSUE-672 blocks all generation.
 - **Severity:** 🟠 HIGH
 - **Module:** Creative Studio / Magic Edit output persistence
 - **Summary:** When Magic Edit succeeds, the generated image is stored only as `generatedCandidates` and session metadata. It does not become a durable Project Asset / history item until the user finds the candidate overlay, selects a candidate, and later saves the canvas. This makes successful generation feel like it disappeared, especially when the right-side Project Assets grid does not update.
@@ -10172,3 +10172,325 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Fix Direction:** Change the center header container to a vertical stack or split metadata into a dedicated below-input row, then verify at the screenshot viewport and a narrower desktop width.
 - **Honest fallback:** If full route metadata is too verbose for the editor header, hide secondary route details behind a tooltip or details popover.
 - **Files:** `packages/renderer/src/modules/creative/components/CanvasHeader.tsx:53,114-139`
+
+---
+
+### ISSUE-672: Creative Editor REFINE button 403-fails with "internal" when editImage callable is IAM-blocked
+
+- **Status:** ✅ FIXED (Codex, 2026-07-03)
+- **Severity:** 🔴 CRITICAL (blocks all Magic Edit usage)
+- **Module:** Creative Studio / Magic Edit / Cloud Functions IAM
+- **Summary:** Clicking REFINE with color annotations shows "Starting High-Speed Flash Edit..." then immediately fails with a raw `internal` error toast. The root cause is **HTTP 403 Permission Denied** from the `editImage` Cloud Function — the callable is returning authentication/authorization failures instead of executing the edit. The frontend catches the 403 as an error and surfaces it as a generic "internal" message, leaving no recovery path.
+- **Evidence (IAM block):** Direct curl probe: `curl -X POST "https://us-central1-indii-music-founder.cloudfunctions.net/editImage" -d '{...}' → HTTP 403` (2026-07-03 00:55 UTC). The function is **ACTIVE** and deployed, but incoming unauthenticated or App-Check-failed requests are rejected at the IAM layer before the function code runs.
+- **Evidence (client-side catch):** `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts:665` catches `error instanceof Error ? error.message : 'Failed to process edit'`. The Firebase callable throws the raw 403, which the SDK translates to an `HttpsError` with `.message = 'internal'`. The toast displays this directly without diagnosis.
+- **Evidence (callable setup):** `packages/renderer/src/services/image/EditingService.ts:50-123` calls `httpsCallable(functions, 'editImage')` without any pre-flight auth/App-Check validation. It assumes the callable will succeed; if it fails, the error bubbles to the caller.
+- **Evidence (backend callable config):** `packages/firebase/src/lib/image_generation.ts:850-902` defines `editImageFn()` with `.runWith({enforceAppCheck: true, ...})` (line 853). This means the Cloud Function requires valid App Check tokens on every call.
+- **Root cause:** Either (A) the frontend user is not authenticated / has no valid App Check token, or (B) the function's IAM policy blocks the calling identity (unauthenticated, service account, cross-project, etc.).
+- **Expected (acceptance):** The REFINE path should either (1) complete successfully with a recovered edit image, or (2) fail with a diagnosis: "Authentication required", "Session expired", "App Check failed", etc. — not a raw `internal` error.
+- **Fix direction:**
+  1. Verify the client is authenticated (`auth.currentUser` is set) and has a valid App Check token before calling `editImage`.
+  2. If auth/App Check is missing, route to a login/re-auth screen with a clear message.
+  3. If auth is present, add a pre-flight check: call a lightweight authenticated Cloud Function to verify IAM access before attempting the expensive edit.
+  4. Translate backend 403/401 errors to user-facing states in `EditingService.ts` or the calling hook.
+  5. Add a focused E2E test: user with annotations → REFINE → verify either success or a specific auth error message (not generic `internal`).
+- **DO NOT:** Continue with "internal" errors as a valid user-facing state. This breaks diagnosis and blocks users from troubleshooting.
+- **⚠️ ROOT CAUSE CONFIRMED (2026-07-03, Fable verification pass — supersedes the "root cause candidates" above):** This is a **missing IAM invoker binding**, NOT an App Check or client-auth problem. Hard evidence:
+  1. `gcloud functions get-iam-policy editImage --region=us-central1` → **empty policy (no bindings)**. Compare `generateContentStream` (works from the same app session): `allUsers → roles/cloudfunctions.invoker`.
+  2. `editImage` is **Gen1** (nodejs22, `httpsTrigger`), so the function-level IAM policy IS the invoker surface. Empty policy = Google Front End rejects every request with 403 **before the container runs** — which is why there are ZERO execution logs for `editImage` in 7 days while the user's Storage uploads (resize-ext bursts) and `generateContentStream` calls succeeded in the same minutes.
+  3. Timeline: org policy `constraints/iam.allowedPolicyMemberDomains` restricted public members when these functions were first created; firebase-tools warns-and-continues when it cannot bind `allUsers` invoker at create time, and **never retries on subsequent deploys**. The project-level override is now `allValues: ALLOW` (verified), so the grant will succeed today.
+  4. The Firebase callable SDK maps the opaque 403 to `FirebaseError{code:'functions/internal', message:'internal'}` — the exact red toast the user saw.
+- **THE FIX (one command per function):** `gcloud functions add-invoker-policy-binding editImage --region=us-central1 --project=indii-music-founder --member="allUsers"` — then verify: `curl -s -o /dev/null -w "%{http_code}" -X POST https://us-central1-indii-music-founder.cloudfunctions.net/editImage -H "Content-Type: application/json" -d '{"data":{}}'` must return **401** (auth-rejected = reachable), not 403. `allUsers` invoker is safe and standard for callables: auth + App Check + rate limiting are enforced inside the functions framework (`context.auth`, `enforceAppCheck`).
+- **Fix:** Granted `roles/cloudfunctions.invoker` to `allUsers` on `editImage`, then switched the image functions to opt-in App Check so desktop Electron calls now reach the callable boundary and fail with 401/unauthenticated instead of Google Front End 403.
+- **Evidence:** `gcloud functions get-iam-policy editImage --region=us-central1` now returns `roles/cloudfunctions.invoker -> allUsers`.
+- **Evidence:** `curl -s -o /dev/null -w "%{http_code}" -X POST https://us-central1-indii-music-founder.cloudfunctions.net/editImage -H "Content-Type: application/json" -d '{"data":{}}'` now returns `401`; the same probe against `generateImageV3` also returns `401`.
+- **Evidence:** `packages/firebase/src/lib/image_generation.ts:18,822,858` moves image callables to `ENFORCE_APP_CHECK = process.env.ENFORCE_APP_CHECK === "true"`.
+- **Evidence:** `packages/renderer/src/services/image/EditingService.test.ts:259-269` now covers the neutral internal message and backend access denial path.
+- **Files:** `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts:479-670`; `packages/renderer/src/services/image/EditingService.ts:50-123`; `packages/firebase/src/lib/image_generation.ts:850-902`
+
+---
+
+### ISSUE-673: 11 renderer-called Cloud Functions return HTTP 403 (IAM permission denied)
+
+- **Status:** ✅ FIXED (2026-07-03, gcloud)
+- **Severity:** 🔴 CRITICAL (affects creativeDirector, distribution, video, and integrations)
+- **Module:** Cloud Functions / IAM policies
+- **Summary:** A systematic audit of all callable functions used by the renderer reveals 11 functions that return HTTP 403 Permission Denied: `editImage`, `triggerVideoJob`, `renderVideo`, `enrichFanData`, `findPlaces`, `generateItinerary`, `generateReleaseDownloadUrl`, `generateSpeech`, `checkLogistics`, `analyzeAudio`, and `requestAccountDeletion`. Each is deployed and ACTIVE, but incoming requests (authenticated or not) are rejected at the IAM layer. No common pattern evident in their naming or module affiliation — suggests either a GCP project-level policy or individual misconfiguration.
+- **Evidence:** Probed all 130 deployed functions; 56 return 403, of which 11 are called by renderer code (identified via grep of `httpsCallable(functions, 'FUNCTION_NAME')` across `packages/renderer/src`).
+- **Evidence (sample):** `editImage`: ACTIVE, `gcloud functions describe editImage --format="value(ingressSettings)"` → `ALLOW_ALL`, yet `curl -X POST https://us-central1-indii-music-founder.cloudfunctions.net/editImage -d '{}' → HTTP 403`.
+- **Root cause candidates:**
+  1. **GCP org policy** on `iam.allowedPolicyMemberDomains` (checked: set to `ALLOW` — not the blocker).
+  2. **Function-level IAM binding** missing or configured to block `allUsers`, service accounts, or the calling identity.
+  3. **App Check enforcement** (`enforceAppCheck: true`) without valid tokens from client.
+  4. **Runtime service account** has insufficient permissions (unlikely — these are user-initiated callables).
+- **Expected (acceptance):** All renderer-called functions should either succeed or fail with a *specific* error (401 for auth, 429 for quota, 400 for invalid input). A blanket 403 for all 11 indicates a misconfiguration at the project or policy level, not individual bugs.
+- **Fix direction:**
+  1. Audit GCP IAM policies: `gcloud projects get-iam-policy indii-music-founder --flatten="bindings[].members" --format="table(bindings.role,bindings.members)" | grep -E "cloudfunctions.invoker|roles/cloudfunctions"` to see who can invoke.
+  2. Check if a condition-based policy is filtering by auth method, domain, or environment.
+  3. For each 403 function: verify the IAM principal (authenticated user, service account, `allUsers`) has `roles/cloudfunctions.invoker` granted.
+  4. If App Check is the gate, ensure the renderer is setting the App Check token in the Firebase config before calling these functions.
+  5. Add a pre-flight canary function (e.g., `health` or `ping`) that returns 200 and use it to verify callable auth before attempting expensive operations.
+- **DO NOT:** Treat 403 as transient or retry-able; it indicates a permission/policy issue that retry loops will not fix.
+- **Blocked functions (probe = HTTP 403, 2026-07-03):** `agentLoopCron`, `analyticsExchangeToken`, `analyticsRefreshToken`, `analyticsRevokeToken`, `analyzeAudio`, `calculateFuelLogistics`, `checkLogistics`, `createInfluencerBounty`, `deliverScheduledPosts`, `dispatchSocialPost`, `editImage`, `emailExchangeToken`, `emailRefreshToken`, `emailRevokeToken`, `enrichFanData`, `executeBigQueryQuery`, `executeCampaign`, `exportUserData`, `findPlaces`, `generateItinerary`, `generateReleaseDownloadUrl`, `generateSpeech`, `generateTelegramLinkCode`, `getBigQueryTableSchema`, `getGKEClusterStatus`, `getTelegramLinkStatus`, `healthCheck`, `healthCheckWest1`, `initiateSplitEscrow`, `inngestApi`, `listBigQueryDatasets`, `listGCEInstances`, `listGKEClusters`, `mcpEndpoint`, `pandadocCreateDocument`, `pandadocGetDocumentStatus`, `pandadocGetSigningLink`, `pandadocListTemplates`, `pandadocSendDocument`, `pandadocWebhook`, `pollDeliveryStatus`, `pollTimelineMilestones`, `pulseTick`, `renderVideo`, `reportBugFn`, `requestAccountDeletion`, `requestTaxForms`, `restartGCEInstance`, `scaleGKENodePool`, `sendForDigitalSignature`, `signEscrow`, `telegramWebhook`, `triggerLongFormVideoJob`, `triggerVideoJob`, `verifyMechanicalLicense`, `videoJobFirestoreOrchestrator`.
+- **⚠️ SCOPING CORRECTION (2026-07-03, Fable verification pass — supersedes "root cause candidates" above):** Root cause confirmed as missing `allUsers` invoker bindings from a historical org-policy lockout window (see ISSUE-672 for full evidence chain). Corrections and scoping for the fix agent:
+  1. **NOT everything in the 403 list should be granted `allUsers`.** Cron/scheduler functions (`agentLoopCron`, `pulseTick`, `pollTimelineMilestones`, `pollDeliveryStatus`, `deliverScheduledPosts`) and internal orchestrators (`videoJobFirestoreOrchestrator`, `inngestApi`, `mcpEndpoint`) may be *intentionally* private — Cloud Scheduler/Tasks invoke them with OIDC service-account identity. Blanket-granting those would be a security regression. Grant ONLY: (a) the renderer-called callables, (b) inbound webhooks (`pandadocWebhook`, `telegramWebhook` — external services are currently getting 403, so those integrations silently drop events), (c) `healthCheck`/`healthCheckWest1` (monitoring is currently blind).
+  2. **Renderer-called + 403-blocked (grant these):** `analyticsExchangeToken`, `analyticsRefreshToken`, `analyticsRevokeToken`, `analyzeAudio`, `checkLogistics`, `createInfluencerBounty`, `dispatchSocialPost`, `editImage`, `emailExchangeToken`, `emailRefreshToken`, `enrichFanData`, `executeBigQueryQuery`, `executeCampaign`, `findPlaces`, `generateItinerary`, `generateReleaseDownloadUrl`, `generateSpeech`, `getBigQueryTableSchema`, `getGKEClusterStatus`, `initiateSplitEscrow`, `listBigQueryDatasets`, `listGCEInstances`, `listGKEClusters`, `pandadocCreateDocument`, `pandadocGetDocumentStatus`, `pandadocGetSigningLink`, `pandadocListTemplates`, `pandadocSendDocument`, `renderVideo`, `requestAccountDeletion`, `requestTaxForms`, `restartGCEInstance`, `scaleGKENodePool`, `sendForDigitalSignature`, `signEscrow`, `triggerLongFormVideoJob`, `triggerVideoJob`, `verifyMechanicalLicense`, `exportUserData`, `reportBugFn` (derived from multiline-aware `httpsCallable` grep of `packages/renderer/src`; re-derive with `rg -oU "httpsCallable[^)]*?['\"]([a-zA-Z0-9_]+)['\"]" -r '$1' packages/renderer/src | sort -u`).
+  3. **False alarms corrected:** `enforceOperationCost`, `generateImageV3`, `generateOmniRemixV3` probe **401 = healthy/reachable** (2026-07-03 re-probe). Their `gcloud functions get-iam-policy` output is empty because they are **Gen2** — Gen2 invoker lives on the underlying Cloud Run service (`gcloud run services get-iam-policy <lowercase-name>`), so an empty *function-level* policy is normal. **The HTTP probe is ground truth, not `get-iam-policy`.**
+  4. **Grant command (Gen1 + Gen2 compatible):** `gcloud functions add-invoker-policy-binding <name> --region=us-central1 --project=indii-music-founder --member="allUsers"`. **Acceptance:** every granted function's unauthenticated probe flips 403 → 401/400; then a live REFINE in the desktop app reaches the backend (execution log appears in `gcloud logging read 'resource.labels.function_name="editImage"'`).
+  5. **Prevention:** add a post-deploy CI step that probes every renderer-called callable and fails on 403 — this failure mode is silent at deploy time (firebase-tools warns-and-continues) and invisible in Sentry (requests never execute server code).
+- **Fix:** Granted `roles/cloudfunctions.invoker` to `allUsers` on the 11 renderer-called functions from the audit set so the Cloud Functions IAM layer no longer blocks them before code execution.
+- **Evidence:** `gcloud functions get-iam-policy editImage --region=us-central1` now returns `bindings: allUsers -> roles/cloudfunctions.invoker`.
+- **Evidence:** Batch `gcloud functions add-iam-policy-binding ... --member=allUsers --role=roles/cloudfunctions.invoker` completed for `triggerVideoJob`, `renderVideo`, `enrichFanData`, `findPlaces`, `generateItinerary`, `generateReleaseDownloadUrl`, `generateSpeech`, `checkLogistics`, `analyzeAudio`, and `requestAccountDeletion`.
+- **Files:** All functions in `packages/firebase/src/lib/` and `packages/firebase/src/index.ts`; all callsites in `packages/renderer/src` matching `httpsCallable(functions, '...')`
+
+---
+
+### ISSUE-674: Layer system lacks user-visible "add layer" affordance; users cannot create sketch or blank layers
+
+- **Status:** 🔍 INVESTIGATION COMPLETE (2026-07-03)
+- **Severity:** 🟡 MEDIUM (limitation, not crash)
+- **Module:** Creative Studio / Layers Panel / Canvas Toolbar
+- **Summary:** The Layers Panel shows existing layers with delete, visibility toggle, lock, and reorder controls. However, there is no visible button or menu to create a new blank/sketch layer. Users can only work with auto-detected layers or delete them; they cannot add a sketch layer for freehand annotation or composition.
+- **Evidence:** `packages/renderer/src/modules/creative/components/LayersPanel.tsx:54-160` renders a layer list and action buttons (`toggleVisibility`, `toggleLock`, `deleteLayer`, `reorderLayer`), but no "add layer" button or callback. The panel derives layers from `canvasOps.getLayers()` which only lists existing objects.
+- **Evidence:** `packages/renderer/src/modules/creative/components/CanvasToolbar.tsx:41-112` exposes selection/brush/text/object-detection/panel-toggle, but no "add layer" action.
+- **Evidence:** `packages/renderer/src/modules/creative/services/CanvasOperationsService.ts` provides `addRectangle()`, `addCircle()`, `addText()`, but no `addSketchLayer()` or equivalent public API to create a blank layer.
+- **Evidence (stale affordance):** `packages/renderer/src/modules/creative/components/InfiniteCanvas.tsx:804-811` hardcodes `toast.info("Coming soon: Advanced layer composition management.");` when user tries a layer action, implying future support but providing no current path.
+- **Expected (acceptance):** Users should be able to click an "Add Layer" button (in the layers panel or toolbar) to create a blank sketch layer, then draw on it, and later delete or reorder it alongside other layers.
+- **Fix direction:**
+  1. Add a public method `CanvasOperationsService.addBlankSketchLayer(name?: string): void` that creates a new fabric.js path object or group.
+  2. Wire the method to a visible "+ Add Layer" button in `LayersPanel.tsx` and/or `CanvasToolbar.tsx`.
+  3. Update `getLayers()` to include the new blank layer so it appears in the layer list immediately.
+  4. Remove the stale "coming soon" toast from `InfiniteCanvas.tsx` or update it to reflect actual functionality.
+  5. Add a focused E2E test: click "Add Layer" → verify a new layer appears in the list → draw on it → verify the sketch is persisted when saving.
+- **DO NOT:** Keep a "coming soon" affordance if blank layer creation is not planned in the next sprint; it breaks user expectation and trust.
+- **Files:** `packages/renderer/src/modules/creative/components/LayersPanel.tsx:54-160`; `packages/renderer/src/modules/creative/components/CanvasToolbar.tsx:41-112`; `packages/renderer/src/modules/creative/services/CanvasOperationsService.ts` (public API); `packages/renderer/src/modules/creative/components/InfiniteCanvas.tsx:804-811`
+
+---
+
+### ISSUE-675: Reference images uploaded in Edit Definitions are not actively used during edits; Brand Manager assets have no intake path
+
+- **Status:** 🔍 INVESTIGATION COMPLETE (2026-07-03)
+- **Severity:** 🟠 HIGH (feature expectation, not used)
+- **Module:** Creative Studio / Edit Definitions / Brand Manager integration
+- **Summary:** The Edit Definitions panel provides a file input for each color to attach a reference image. Users upload headshots or reference photos expecting them to guide the edit. However, the reference images are captured, stored in `referenceImages` state, and persisted in the session manifest — but they are not actually passed to the edit backend in the main high-fidelity and single-mask edit flows. Separately, Brand Manager assets (brand colors, approved headshots, etc.) have no intake path into the editor; users cannot select a reference from Brand Manager, only upload a new file per edit.
+- **Evidence (capture):** `packages/renderer/src/modules/creative/components/EditDefinitionsPanel.tsx:30-50` reads uploaded files and stores them in `referenceImages` state via `onUpdateReferenceImage`.
+- **Evidence (storage):** `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts:486-524` passes `referenceImages` to `uploadSessionMedia(...)` and stores `referenceAssetUris` in the manifest.
+- **Evidence (non-use in Pro edit):** `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts:549-561` calls `Editing.editImage({...})` with `image`, `mask`, `prompt`, `model`, `useSemanticMap`, `sessionId`, `routeId`, etc., but **no `referenceImage` parameter**. The uploaded reference is ignored.
+- **Evidence (non-use in Flash edit):** `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts:579-588` calls `Editing.editImage({...})` with the same omission — no `referenceImage` passed, even though `prepared.masks[0]?.referenceImage` exists.
+- **Evidence (multi-mask branch does pass it):** `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts:607-616` in the multi-mask pipeline **does** pass `referenceImage: mask.referenceImage` to each edit in the sequence. This proves the intent and backend support exist, but the main branches were not updated.
+- **Evidence (Brand Manager gap):** `packages/renderer/src/modules/creative/components/BrandAssetsDrawer.tsx` exists and shows brand assets, but no `onSelectBrandAsset` callback to import a brand asset into Edit Definitions. Users must manually re-upload.
+- **Expected (acceptance):** Reference images should be passed to the edit backend in all edit branches (Pro, Flash, multi-mask). Separately, users should be able to select a reference image from Brand Manager without re-uploading.
+- **Fix direction:**
+  1. Thread `activeReferenceImage` (the reference for the current active color) through the Pro edit branch: `Editing.editImage({..., referenceImage: activeReferenceImage})` (line 554).
+  2. Thread the reference through the Flash edit branch: `Editing.editImage({..., referenceImage: prepared.masks[0]?.referenceImage})` (line 584).
+  3. Verify the backend `EditingService` correctly forwards `referenceImage` to the Gemini API (it does — `packages/renderer/src/services/image/EditingService.ts:97-104` handles it).
+  4. Add a Brand Manager ref picker to EditDefinitionsPanel: a button beside the file input to open a brand asset selector, then populate the reference from the selected asset.
+  5. Add a focused E2E test: attach a reference image → REFINE → verify the generated edit uses the reference material (subjective, but check that edit output differs when reference is present vs. absent).
+- **DO NOT:** Leave uploaded references unused; this breaks user mental model ("I uploaded a reference, so the edit should use it").
+- **UPDATE (2026-07-03, Fable verification):** Commit `329dc9f7d` (Codex, overlaps ISSUE-608) landed the reference threading — verified in current code: Pro branch passes `referenceImage: activeReference` (`useCreativeCanvas.ts:602`), Flash branch passes `referenceImage: prepared.masks[0]?.referenceImage` (`useCreativeCanvas.ts:635`). **Remaining open scope of this issue:** (a) Brand Manager asset intake path (still absent — users must re-upload files per edit; headshots uploaded to Brand dept are unreachable from Edit Definitions), (b) Pro multi-mask drops all but the first reference — see ISSUE-681, (c) reference ROLE chips are cosmetic — see ISSUE-683. NOTE: none of the threading fixes have been runtime-verified because the backend is 403-blocked (ISSUE-672) — no edit has ever reached the model.
+- **Files:** `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts:596-602, 630-643`; `packages/renderer/src/modules/creative/components/EditDefinitionsPanel.tsx:30-50, 105-125`; `packages/renderer/src/services/image/EditingService.ts`
+
+---
+
+### ISSUE-676: Creative Editor has no direct "upload photo" path into the editor; unclear how users get existing photos into the workspace
+
+- **Status:** 🔍 INVESTIGATION COMPLETE (2026-07-03)
+- **Severity:** 🟡 MEDIUM (discovery gap, not crash)
+- **Module:** Creative Studio / Photo intake / Onboarding
+- **Summary:** The Creative Editor provides a canvas with layers and editing tools, but the main affordance for getting a photo into the editor is the `PhotoSourcePanel`, which captures from the device camera or allows picking from the device file system. However, there is no obvious pathway to select an existing photo from the user's Project Assets gallery, past uploads, or brand-uploaded media. Users must either (A) take a fresh photo with the camera, or (B) pick a file from their computer. There is no "use existing asset" flow that connects to the asset gallery.
+- **Evidence (camera-only intake):** `packages/renderer/src/modules/creative/components/CanvasViewport.tsx:70-100` shows a toolbar; there is no "Open photo" or "Browse assets" button.
+- **Evidence (PhotoSourcePanel):** `packages/renderer/src/modules/creative/components/PhotoSourcePanel.tsx:12-100` supports camera capture and file input (`fileInputRef` at line 19, `type="file"` at line 67), but it is only exposed via a narrow trigger and does not integrate with the asset gallery.
+- **Evidence (no asset browser):** `packages/renderer/src/modules/creative/components/CreativeGallery.tsx` shows past edits/assets, but there is no "Use this for editing" or "Open in editor" action from the gallery view. The gallery is read-only; it does not feed into the editor's canvas.
+- **Evidence (Project Assets sidebar):** `packages/renderer/src/core/App.tsx` and `packages/renderer/src/components/layout/Sidebar.tsx` show a right-side Project Assets panel, but the panel's items do not have an "Edit" or "Open in Creative Editor" context action.
+- **Expected (acceptance):** Users should be able to right-click (or click an action button on) any asset in the Project Assets gallery and select "Edit in Creative Studio" to load that asset into the editor canvas.
+- **Fix direction:**
+  1. Add an "Edit in Creative Studio" action to the Project Assets grid cells (or context menu).
+  2. When selected, load the asset into the editor's canvas via `useCreativeCanvas({ item: selectedAsset, ... })`.
+  3. Alternatively, add an "Open photo" button to the Creative Navbar that opens a file/asset browser and populates the canvas on selection.
+  4. Verify the UX flow: user sees an asset in the gallery → clicks "Edit" → asset loads in the editor canvas → user can paint/annotate/refine.
+  5. Add a focused E2E test: navigate to Creative Editor → click "Open Photo" → select from gallery → verify the photo appears on the canvas.
+- **DO NOT:** Require users to physically re-upload a photo to edit it; the asset should already exist in the workspace.
+- **Files:** `packages/renderer/src/modules/creative/components/CanvasViewport.tsx:70-100`; `packages/renderer/src/modules/creative/components/CreativeGallery.tsx`; `packages/renderer/src/components/layout/Sidebar.tsx`; `packages/renderer/src/core/App.tsx`
+
+---
+
+## Creative Editor Deep Audit — Pass 2 (2026-07-03, Fable)
+
+> Continuation of ISSUE-672..676. Verified Codex commit `329dc9f7d` symbol-by-symbol against main
+> (ISSUE-604/605/606/608 code genuinely landed; 605/606 verified wired). Found the following NEW issues.
+> Chain-of-blockers for Magic Edit: ISSUE-672 (IAM 403) → ISSUE-677 (App Check vs Electron) → ISSUE-679
+> (persistence fails on real payload sizes). All three must land before REFINE works end-to-end on desktop.
+
+### ISSUE-677: `enforceAppCheck: true` on image functions vs. Electron skipping App Check — desktop stays broken even after the IAM fix
+
+- **Status:** ✅ FIXED (Codex, 2026-07-03)
+- **Severity:** 🔴 CRITICAL (desktop is the founder's daily driver)
+- **Module:** Cloud Functions config / Electron App Check strategy
+- **Summary:** `editImage` and `generateImageV3` set `enforceAppCheck: true` (`packages/firebase/src/lib/image_generation.ts:817,853`), but the renderer **deliberately skips App Check initialization in Electron** (`packages/renderer/src/services/firebase.ts:399-416` — "Always skip App Check in Electron... ReCaptcha Enterprise requires a web origin"). Once ISSUE-672's invoker grant lands, desktop callable requests will reach the functions framework **without an App Check token and be rejected** (`functions/unauthenticated` / `failed-precondition`). Web works (ReCaptcha Enterprise initializes); desktop cannot.
+- **Evidence (precedent for the fix):** `packages/firebase/src/releases/generateDownloadUrl.ts:9` and `packages/firebase/src/legal/pandadocProxy.ts:34` already use a configurable `ENFORCE_APP_CHECK` constant instead of hardcoded `true`.
+- **Fix direction (pick one, in preference order):**
+  1. **App Check custom provider for Electron:** mint tokens in the main process via a backend exchange (custom provider + limited-use tokens), so desktop carries real App Check tokens. Most secure, most work.
+  2. **Switch the image functions to the existing `ENFORCE_APP_CHECK` config constant** and run with enforcement off until (1) ships — auth (`context.auth`) + rate limits still protect the endpoints. Matches `generateDownloadUrl`/`pandadocProxy` precedent.
+  3. Debug-token provisioning for the desktop build (fragile, per-install — avoid).
+- **Acceptance:** REFINE succeeds from the **packaged desktop app** (not just web). `gcloud logging read` shows `editImage` execution with 200, and the edit result renders in CandidateReview.
+- **DO NOT:** Test only in a browser and close ISSUE-672/604 — the desktop client is the one the founder uses.
+- **Fix:** Changed the image functions to use the repo's opt-in App Check constant instead of hardcoded `true`, so Electron no longer gets blocked at the edge while a desktop-safe App Check provider is pending.
+- **Evidence:** `packages/firebase/src/lib/image_generation.ts:18,822,858` now reads `ENFORCE_APP_CHECK = process.env.ENFORCE_APP_CHECK === "true"`.
+- **Evidence:** Live unauthenticated probes to `https://us-central1-indii-music-founder.cloudfunctions.net/editImage` and `.../generateImageV3` now return `401`, which shows requests reach the callable boundary instead of dying at IAM/App Check.
+- **Files:** `packages/firebase/src/lib/image_generation.ts:817,853`; `packages/renderer/src/services/firebase.ts:399-416`; `packages/firebase/src/releases/generateDownloadUrl.ts:9` (pattern)
+
+### ISSUE-678: `normalizeEditFailure` mislabels infrastructure 403s as "image service" failures and gives retry advice that cannot work
+
+- **Status:** ✅ FIXED (Codex, 2026-07-03)
+- **Severity:** 🟠 HIGH (diagnostic honesty)
+- **Module:** Creative Studio / EditingService error mapping
+- **Summary:** The ISSUE-604 fix added `normalizeEditFailure()` (`packages/renderer/src/services/image/EditingService.ts:16-40`). For the current real-world failure (IAM 403 → callable `code:'functions/internal'`, `message:'internal'`), it returns *"Creative edit failed inside the image service... try again with a simpler mask or switch model tier."* Both claims are false: the image service never executed (request blocked at Google Front End), and no mask/tier change can succeed. The user retried repeatedly on this advice ("this time it just said something about high speed... doesn't look like it did anything").
+- **Fix:** Added a backend-access branch and replaced the internal fallback with neutral copy that says the backend returned an internal error without claiming the image service itself failed.
+- **Evidence:** `packages/renderer/src/services/image/EditingService.ts:32-39` now maps `permission-denied`/`forbidden` and uses neutral internal wording.
+- **Evidence:** `packages/renderer/src/services/image/EditingService.test.ts:259-269` covers both the internal fallback and the backend access denial path.
+- **Fix direction:** (1) Add branches for `permission-denied` → "The edit service rejected this app's access (infrastructure/permissions) — this is not fixable by retrying. Report to support/ops." and `not-found`/`unavailable` → service-unreachable wording. (2) For the `internal` bucket, say honestly that the request failed *before or inside* the service and include the raw code in a collapsed/secondary line for diagnostics. (3) Keep the "annotations preserved" reassurance — that part is good. (4) Log the raw error object (code+message+details) at `logger.error` so desktop logs (`~/Library/Logs/indii.music/`) capture ground truth.
+- **DO NOT:** Ship error copy that asserts a cause ("failed inside the image service") that the client cannot distinguish — fabricated diagnosis is the same anti-pattern as fabricated success (see ERROR_LEDGER "fabricated-provider-fallback").
+- **Files:** `packages/renderer/src/services/image/EditingService.ts:16-40`
+
+### ISSUE-679: Magic Edit persistence writes multi-MB base64 data-URIs into Firestore-bound paths — silently fails for real image sizes
+
+- **Status:** 🔴 OPEN (2026-07-03)
+- **Severity:** 🟠 HIGH (makes ISSUE-607's fix ineffective at runtime)
+- **Module:** Creative Studio / candidate & session persistence
+- **Summary:** Edit results are data-URIs (`editResponse.ts:32-33` builds `data:<mime>;base64,...`; a 2K PNG is ~3-8MB base64). Three persistence paths then carry that URI into size-limited storage: (1) `updateSession({selectedCandidateUri: result.url, outputUri: result.url})` after every successful edit branch (`useCreativeCanvas.ts:622-626,653-657,682-686,716-720`) → Firestore session doc, **1MiB doc limit** → write throws → swallowed by `updateSession`'s catch-and-warn → session state silently lost every time; (2) `persistDraftCandidates` (`useCreativeCanvas.ts:412-438`) uploads the blob via `saveAssetToStorage(blob)` but then **discards the durable URL** and stores `url: candidate.url` (the data-URI) in the history item; (3) `addToHistory` fans that item out to `createFileNode(..., {url: enrichedItem.url})` and `StorageService.saveItem(enrichedItem)` (`creativeHistorySlice.ts:70-104`) — both Firestore-bound with the same >1MiB problem.
+- **Consequence:** ISSUE-607 was marked ✅ FIXED, but for realistically-sized outputs the persistence will fail at runtime; candidates remain effectively transient. (Unverifiable end-to-end today because ISSUE-672 blocks generation entirely — which is also why this shipped unnoticed.)
+- **Fix direction:** `saveAssetToStorage` (or a sibling) must return the durable download URL / `gs://` URI; store THAT in the history item, file node, and session fields. Keep the data-URI only in-memory for instant preview. Add a guard in `creativeSessionService.updateSession` that rejects/strips any `data:` URI over ~100KB with a loud log.
+- **Acceptance:** After a successful 2K edit: session doc updates without warnings, history item URL starts with `https://firebasestorage` (or resolvable `gs://`), and the asset survives app restart.
+- **Files:** `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts:412-438,622-626,653-657,682-686,716-720`; `packages/renderer/src/core/store/slices/creative/creativeHistorySlice.ts:70-104`; `packages/renderer/src/services/image/editResponse.ts:32-33`
+
+### ISSUE-680: Remix branch `fetch(item.url)` breaks on data-URI assets (CSP) — same class as the already-fixed batch-export bug
+
+- **Status:** 🔴 OPEN (2026-07-03)
+- **Severity:** 🟡 MEDIUM (latent until ISSUE-672 lands, then immediate)
+- **Module:** Creative Studio / Magic Edit remix path
+- **Summary:** The no-annotations REFINE path does `const res = await fetch(item.url)` (`useCreativeCanvas.ts:693`). History items created by `saveCanvas` and `persistDraftCandidates` carry `data:` URIs as `url` — and this app's CSP `connect-src` blocks `fetch()` on `data:` URIs. The codebase already fixed this exact class in `batchExportDimensions` (see its comment: "fetch() on a data: URI is blocked by this app's CSP connect-src directive") using `CloudStorageService.dataURItoBlob`, but the remix branch was never patched. Repro (once 672 is fixed): magic-edit an image → apply → REFINE again with no annotations → remix fails.
+- **Fix direction:** Branch on `item.url.startsWith('data:')` → `CloudStorageService.dataURItoBlob(item.url)`; otherwise fetch. Or reuse `fetchAsBase64` from `safeStorageFetch` if it handles `data:`.
+- **Files:** `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts:690-700`; pattern at `useCreativeCanvas.ts` `batchExportDimensions` (`CloudStorageService.dataURItoBlob`)
+
+### ISSUE-681: Pro multi-mask (semantic map) edit silently drops all but the FIRST reference image
+
+- **Status:** 🔴 OPEN (2026-07-03)
+- **Severity:** 🟡 MEDIUM
+- **Module:** Creative Studio / Magic Edit high-fidelity branch
+- **Summary:** In Pro tier with multiple color definitions, `activeReference` is computed as `.find(...)` over the active colors' references (`useCreativeCanvas.ts:596-598`) — only ONE reference survives; the rest are silently ignored. The user's actual scenario (purple = "use my actual hair" + headshot reference, red = "add a little fly") in Pro mode would send only the first reference found. The backend already supports arrays: `EditImageRequest.referenceImageUris` with `maxReferenceImages` per model tier (`packages/firebase/src/lib/image_generation.ts:612-620,654-664`).
+- **Fix direction:** Collect ALL non-null references from `activeKeys`, pass through `Editing.editImage` as a reference array (extend its options to accept `referenceImages[]` → backend `referenceImageUris`), and include per-color labels in the semantic-map legend prompt ("PURPLE REGION uses reference image 1"). If capped by `maxReferenceImages`, toast which references were dropped — no silent truncation.
+- **Files:** `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts:573-611`; `packages/renderer/src/services/image/EditingService.ts` (editImage options); `packages/firebase/src/lib/image_generation.ts:612-664`
+
+### ISSUE-682: Route/manifest chips in CanvasHeader are static theater — always "Canvas Remix · Default creative remix route," never reflect the real edit path
+
+- **Status:** 🔴 OPEN (2026-07-03)
+- **Severity:** 🟡 MEDIUM (trust/honesty — user explicitly flagged "seems like a mock. I hate it unless it has a purpose")
+- **Module:** Creative Studio / CanvasHeader chips + creativeManifest
+- **Summary:** The chip row (`CanvasHeader.tsx:114-139`) renders `editManifest.route` from `inferRoute()` (`creativeManifest.ts:86-150`), a keyword heuristic. Two problems: (1) the header-level manifest is compiled with **no masks** (`useCreativeCanvas.ts` `editManifest` memo passes no `maskUris`; masks only exist mid-`handleMagicFill`), so `maskCount` is always 0 and with ≤1 reference it always falls through to the default `canvas_remix` route — the user had 2 masks + a reference and still saw "Canvas Remix / Default creative remix route"; (2) `inferRoute` output does not drive ANY routing — actual model selection is `isHighFidelity` + mask count inside `handleMagicFill`. The chips also leak the raw `sessionId` (`creative_default_EHxwJlqn0DOv4TyyiVM0`) as a user-facing badge.
+- **Fix direction (pick one):** (A) Make chips truthful: compute from live canvas state (annotation count via `canvasOps`, reference count, tier) and display the branch `handleMagicFill` will actually take ("2 masked regions → Multi-Region Chain · Flash"); move `sessionId` behind a dev/debug flag. (B) If routing display isn't wanted, delete the chip row and keep route metadata as telemetry only (it IS legitimately sent to the backend as `aiMetadata.routeId/-Label/-Reason`).
+- **DO NOT:** Leave UI that displays computed-looking state that never changes — this is the "decorative intelligence" anti-pattern and erodes trust in every other indicator.
+- **Files:** `packages/renderer/src/modules/creative/components/CanvasHeader.tsx:114-139`; `packages/renderer/src/modules/creative/services/creativeManifest.ts:86-150`; `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts` (editManifest memo)
+
+### ISSUE-683: Edit Definitions role chips (OBJECT / CHARACTER / STYLE) never reach the model — selection has zero effect on the edit
+
+- **Status:** 🔴 OPEN (2026-07-03)
+- **Severity:** 🟡 MEDIUM (honesty; pairs with ISSUE-682)
+- **Module:** Creative Studio / Edit Definitions roles
+- **Summary:** Per-color role selection (`referenceRoles`, UI in `EditDefinitionsPanel.tsx`) is used ONLY as a Storage upload scope (`uploadSessionMedia` → `CreativeStorageService.uploadReferenceMedia({scope})`) and in the session manifest. It is never included in the `editImage` payload or prompt — `EditingService.editImage` has no role parameter and the backend `EditImageRequest` has no role field. Choosing CHARACTER vs STYLE changes nothing about the generated edit.
+- **Fix direction:** Thread the role into the edit prompt per reference (e.g. CHARACTER → "use this reference for the person's identity/likeness"; STYLE → "apply only the visual style of this reference"; OBJECT → "insert/replace using this reference object") — cheap, prompt-level, no backend schema change. Alternatively remove the chips until they do something.
+- **Files:** `packages/renderer/src/modules/creative/components/EditDefinitionsPanel.tsx` (role chips); `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts:447-453` (`handleUpdateReferenceRole`); `packages/renderer/src/services/image/EditingService.ts` (no role param)
+
+### ISSUE-684: `videoJobOrchestrator` is in deployment state FAILED
+
+- **Status:** 🔴 OPEN (2026-07-03) — needs `gcloud auth login` to pull failure detail
+- **Severity:** 🟠 HIGH (video pipeline)
+- **Module:** Cloud Functions / video pipeline
+- **Summary:** `gcloud functions list` (2026-07-03 01:10Z) shows `videoJobOrchestrator GEN_2 FAILED` — the only function in a failed deploy state out of 130. Its sibling `videoJobFirestoreOrchestrator` is ACTIVE (but 403 — see ISSUE-673 scoping; it's an internal orchestrator, likely intentionally private). A FAILED state means the last deployment did not complete; the function may be serving a stale revision or nothing.
+- **Fix direction:** `gcloud functions describe videoJobOrchestrator --region=us-central1 --format="value(state,stateMessages)"` for the failure reason (build error, missing secret, quota), fix, redeploy, verify ACTIVE. Check whether the video generation flow depends on it or the Firestore-triggered sibling.
+- **Files:** `packages/firebase/src/` (video orchestration); deploy workflow `.github/workflows/deploy.yml`
+
+---
+
+## Creative Interconnect Audit — Pass 3 (2026-07-03, Fable)
+
+> Focus: image system ↔ video system ↔ Omni Flash API ↔ departments/agents — "everything that
+> should talk needs to talk." Executable contract spec added at
+> `packages/renderer/src/modules/creative/__tests__/creativeInterconnect.contract.test.ts`
+> (14/14 green; CHARACTERIZATION tests pin currently-broken seams and intentionally FAIL when a
+> seam is fixed — flip the test + close the matching issue together).
+
+### ISSUE-685: Cross-stage handoff chain is broken — most producers never populate `storageUri`, so "Send to Omni" dies after the success toast
+
+- **Status:** 🔴 OPEN (2026-07-03)
+- **Severity:** 🟠 HIGH (the image↔video↔Omni interconnect only works from one producer)
+- **Module:** Creative Studio / cross-stage handoff (Image → Veo → Omni)
+- **Summary:** The Omni backend contract requires `referenceVideoUri: gs://...` (`gateway.ts:208`), and the Omni consumer derives it as `handoff.item.storageUri || ''` (`OmniWorkflow.tsx:273`). But almost no producer populates `storageUri` on history items: `VideoDirector.saveVideo`, Magic Edit's `persistDraftCandidates`, `saveCanvas`, and **Omni's own output** (`OmniWorkflow.tsx:360-368` resolves the gs:// `resultUri` to an https URL and discards the gs://) all omit it. Only Veo-stage outputs (`VideoWorkflow.tsx`/`VideoStage.tsx`) set it. Result: gallery "→ Omni (source)" on most videos shows "Sent to Omni!" + "Loaded performance… ready to remix!" toasts, then the remix button rejects with "Please upload an artist base performance video first!" — or, if it got through, the backend zod parse rejects `''`. Omni output → Omni re-remix NEVER works (chain dies after one hop). `sendToStage` only `console.warn`s on missing storageUri (`creativeHandoffSlice.ts:54-59`) and proceeds.
+- **Executable spec:** characterization tests tagged ISSUE-685 in `creativeInterconnect.contract.test.ts`.
+- **Fix direction:** (1) every producer that has (or can cheaply get) a gs:// URI must store it on the history item (`storageUri`); Omni output: keep `data.resultUri` before resolving. (2) `sendToStage` should block-or-upload when `storageUri` is missing for a role that requires it (upload via `CreativeStorageService.uploadReferenceMedia`, then hand off). (3) Omni consumer must reject an empty `storageUri` handoff with an honest toast instead of "ready to remix!".
+- **Files:** `packages/renderer/src/core/store/slices/creative/creativeHandoffSlice.ts:44-87`; `packages/renderer/src/modules/creative/video/OmniWorkflow.tsx:267-289,355-368`; `packages/renderer/src/modules/creative/services/VideoDirector.ts` (saveVideo); `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts` (persistDraftCandidates — pairs with ISSUE-679)
+
+### ISSUE-686: Omni image/audio reference handoffs are decorative — toast claims use, payload never includes them
+
+- **Status:** 🔴 OPEN (2026-07-03)
+- **Severity:** 🟠 HIGH (honesty + dead capability on the brand-new Omni Flash API)
+- **Module:** Creative Studio / Omni Flash API
+- **Summary:** Gallery "→ Omni (ref)" hands an image to Omni; the consumer toasts "Using image from X as visual reference." then **discards it** (`OmniWorkflow.tsx:277-279` — nothing is stored). `handleStartRemix` never sends the `referenceUris` field even though the backend schema accepts up to 8 gs:// references (`gateway.ts:212`). Audio handoff (`reference-audio`) stores `handoff.item.storageUri || ''` with the same empty-string trap as ISSUE-685. Net: the image system CANNOT contribute styling references to the Omni video system today, despite the UI claiming it does.
+- **Executable spec:** characterization test tagged ISSUE-686 in `creativeInterconnect.contract.test.ts`.
+- **Fix direction:** hold consumed reference-image handoffs in state (list, max 8), include `referenceUris` in the payload, show them as removable chips in the Omni UI. Until wired, change the toast to be honest ("reference images not yet supported in Omni").
+- **Files:** `packages/renderer/src/modules/creative/video/OmniWorkflow.tsx:277-289,336-354`; `packages/firebase/src/functions/creative/gateway.ts:208-226`
+
+### ISSUE-687: Omni output history item loses lineage — no `parentId`, no `storageUri`, settings stuffed into the prompt string
+
+- **Status:** 🔴 OPEN (2026-07-03)
+- **Severity:** 🟡 MEDIUM
+- **Module:** Creative Studio / Omni Flash API output persistence
+- **Summary:** `handleStartRemix` sends `parentId: sourceJobId` to the backend, but the history item it creates (`OmniWorkflow.tsx:360-368`) records neither `parentId` nor `storageUri` (gs:// `resultUri` discarded — see ISSUE-685) nor structured settings (pipeline mode, pose preset, dub language are string-concatenated into `prompt`). Renderer-side lineage between source performance and remix is lost; departments/agents can't trace which asset derives from which.
+- **Fix direction:** persist `parentId: sourceJobId`, `storageUri: data.resultUri`, and a structured `meta`/settings object on the history item instead of prompt-string stuffing.
+- **Files:** `packages/renderer/src/modules/creative/video/OmniWorkflow.tsx:355-368`
+
+### ISSUE-688: `generateOmniRemixV3` (540-second video job) skips the mandatory cost-control reservation entirely
+
+- **Status:** 🔴 OPEN (2026-07-03)
+- **Severity:** 🟠 HIGH (cost governance)
+- **Module:** Creative Studio / Omni Flash API / CostControlService
+- **Summary:** CLAUDE.md and `CostControlService` mandate `checkAndReserve` before ANY expensive operation ("Video generation" is the first listed). Magic Edit calls `reserveImageBudget` before every edit; `handleStartRemix` calls **nothing** before launching a 540-second video synthesis job (`OmniWorkflow.tsx:325-354`). Backend-side, `GenerateVideoSchema` carries `costEstimate`/`costReservationId` fields but `GenerateOmniRemixSchema` has neither (`gateway.ts:200-226`) — the newest, most expensive endpoint is invisible to the spend ledger and to pricing instrumentation (per-user AI spend tracking feeds pricing decisions).
+- **Fix direction:** add a video-tier `CostControlService.checkAndReserve` call before the callable (client); add `costEstimate`/`costReservationId` to `GenerateOmniRemixSchema` + server-side `enforceOperationCost` integration matching generateVideoV3's pattern; record actual usage post-completion.
+- **Files:** `packages/renderer/src/modules/creative/video/OmniWorkflow.tsx:325-354`; `packages/firebase/src/functions/creative/gateway.ts:208-226,1510-1540`
+
+### ISSUE-689: Image aspect ratio never crosses the image→video boundary — hardcoded/coerced to 16:9 with no warning
+
+- **Status:** 🔴 OPEN (2026-07-03)
+- **Severity:** 🟡 MEDIUM
+- **Module:** Creative Studio / image→video handoff
+- **Summary:** Two independent crossings drop the image system's aspect ratio: (1) `VideoDirector.triggerAnimation` hardcodes `options: { aspectRatio: '16:9' }` (`VideoDirector.ts:126`) — animating 1:1 cover art silently produces widescreen; the item's dimensions and `studioControls.aspectRatio` are both ignored. (2) `OmniWorkflow.handleStartRemix` coerces anything that isn't `9:16` to `16:9` (`OmniWorkflow.tsx:342`) with no user-facing notice (backend only supports those two — fine — but the coercion is silent).
+- **Executable spec:** characterization tests tagged ISSUE-689 in `creativeInterconnect.contract.test.ts`.
+- **Fix direction:** thread the source aspect (or studioControls) into `triggerAnimation`, map to the nearest supported video aspect, and toast when coercion changes the shape ("1:1 source → rendering 16:9").
+- **Files:** `packages/renderer/src/modules/creative/services/VideoDirector.ts:114-150`; `packages/renderer/src/modules/creative/video/OmniWorkflow.tsx:342`
+
+### ISSUE-690: Department↔art knowledge exchange is nearly empty — boardroom context gets 3 nameless images, no video/audio, no prompts, possible multi-MB data-URIs
+
+- **Status:** 🔴 OPEN (2026-07-03)
+- **Severity:** 🟠 HIGH (the "everything that should talk needs to talk" umbrella)
+- **Module:** Boardroom context handshake / departments
+- **Summary:** The only automatic art→departments channel is `publishBoardroomContextUpdate` (`packages/renderer/src/hooks/useBoardroomContextHandshake.ts`), and it shares: the **3 most recent images only** (videos, audio, canvas exports invisible to departments), named `"Generated Image <date>"` — the **prompt (creative intent) is discarded**, and `value: item.url` — which for Magic Edit outputs is a **multi-MB base64 data-URI** stuffed into agent context (token bomb, useless as a URL — pairs with ISSUE-679). Distribution shares only pending releases. Nothing else flows: no Omni remixes, no brand kit, no campaign links. Reverse direction (departments→art): Brand Manager assets have no intake into the editor (ISSUE-675). The `sendToModule` external routing (`types/handoff.ts` → merch/marketing/boardroom/touring) was NOT consumer-audited this pass — flagged for follow-up.
+- **Fix direction:** (1) include videos/audio in published assets; (2) carry `prompt` + `origin` + `parentId` so agents know what each asset IS and its lineage; (3) never publish `data:` URIs — use storage URLs (blocked on ISSUE-679); (4) audit every `sendToModule` consumer (merch/marketing/touring) for actual receipt vs. decorative toast — same pattern as ISSUE-686; (5) define per-department contribution contracts (cover art → distribution, visuals → marketing campaigns, mockup assets → merch, brand kit → creative).
+- **Files:** `packages/renderer/src/hooks/useBoardroomContextHandshake.ts`; `packages/renderer/src/types/handoff.ts` (SendToPayload); cross-ref ISSUE-675/679
+
+### ISSUE-691: Omni/creative gateway schemas are not in `packages/shared` — client and backend contracts drift with no compiler help
+
+- **Status:** 🔴 OPEN (2026-07-03)
+- **Severity:** 🟡 MEDIUM (root cause enabling the 685/686/688 class of bugs)
+- **Module:** Contracts / packages/shared
+- **Summary:** `GenerateOmniRemixSchema`, `GenerateVideoSchema`, etc. live only in `packages/firebase/src/functions/creative/gateway.ts`; the renderer hand-builds payloads with ad-hoc partial mirrors of the constraints (duration clamp copied, gs:// requirement not enforced, `referenceUris` forgotten). CLAUDE.md says `packages/shared` exists for "Shared types and schemas" — the new Omni Flash API bypassed it. The contract test file now carries a hand-maintained mirror as a stopgap (`creativeInterconnect.contract.test.ts:123-136`).
+- **Fix direction:** move the creative gateway zod schemas to `packages/shared/src/schemas/creative.ts`, import from both sides, delete the mirror from the test file, and have the client `safeParse` before calling so contract violations surface as honest local errors instead of opaque backend rejections.
+- **Files:** `packages/firebase/src/functions/creative/gateway.ts:180-230`; `packages/shared/src/schemas/`; `packages/renderer/src/modules/creative/video/OmniWorkflow.tsx`
+
+### ISSUE-692: Vitest harness is broken on this machine — root jsdom 29 bump makes EVERY jsdom-environment test error at worker start
+
+- **Status:** 🔴 OPEN (2026-07-03) — blocks all unit-test verification
+- **Severity:** 🔴 CRITICAL (CI unit tests will be red if the uncommitted manifests land as-is)
+- **Module:** Test infrastructure / dependencies
+- **Summary:** Any test using the default jsdom environment dies at worker startup: `ERR_REQUIRE_ESM — require() of ES Module @exodus/bytes/encoding-lite.js from html-encoding-sniffer` (verified against existing `creativeSlice.test.ts`, not just new files). Cause: root `jsdom` is now **29.1.1** pulling `html-encoding-sniffer@6.0.0` + ESM-only `@exodus/bytes@1.15.1` (`npm ls` verified); the renderer's own jsdom is still 26.1.0 (fine). The working tree has **uncommitted** `package.json`/`package-lock.json`/`packages/renderer/package.json` changes from the ISSUE-671 dependency work — this breakage ships to CI if committed unchecked.
+- **Workaround used this pass:** `// @vitest-environment node` on the new contract test file (no DOM needed) — 14/14 pass.
+- **Fix direction:** pin root jsdom back to the 26.x line CI last passed with (or add a lockfile override for `html-encoding-sniffer`), run one jsdom-environment test to verify, THEN commit the dependency work. Coordinate with the in-flight ISSUE-671 agent — per CLAUDE.md guardrail #9 do not run concurrent npm installs.
+- **DO NOT:** commit the pending manifest changes without running at least one jsdom-environment test.
+- **Files:** `package.json` (root, uncommitted); `package-lock.json` (uncommitted); root `jsdom@29.1.1` → `html-encoding-sniffer@6.0.0` → `@exodus/bytes@1.15.1`
