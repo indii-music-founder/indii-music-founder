@@ -4,6 +4,7 @@
 
 ## Recent Commits
 ```
+266ac7b81 chore: session checkpoint [15:18]
 f7914e2b3 chore: session checkpoint [15:16]
 446c9fa2a chore: session checkpoint [15:15]
 eb1fda281 docs(ledger): road manager audit + bottom-up menu audit (pass 5-6)
@@ -13,12 +14,10 @@ eb1fda281 docs(ledger): road manager audit + bottom-up menu audit (pass 5-6)
 026b3746f chore: session checkpoint [14:49]
 b85c12e0a chore: session checkpoint [14:48]
 ac7cba25b chore: session checkpoint [14:45]
-3a5566418 chore: session checkpoint [14:36]
 ```
 
 ## Working State
 ```
- M .agent/HANDOFF_STATE.md
  M .agent/test_ledger/OPEN_ISSUES.md
 M  package-lock.json
 M  package.json
