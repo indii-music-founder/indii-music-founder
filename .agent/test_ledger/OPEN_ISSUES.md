@@ -10420,31 +10420,31 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-685: Cross-stage handoff chain is broken — most producers never populate `storageUri`, so "Send to Omni" dies after the success toast
 
-- **Status:** 🔴 OPEN (2026-07-03)
+- **Status:** ✅ FIXED (2026-07-03)
 - **Severity:** 🟠 HIGH (the image↔video↔Omni interconnect only works from one producer)
 - **Module:** Creative Studio / cross-stage handoff (Image → Veo → Omni)
-- **Summary:** The Omni backend contract requires `referenceVideoUri: gs://...` (`gateway.ts:208`), and the Omni consumer derives it as `handoff.item.storageUri || ''` (`OmniWorkflow.tsx:273`). But almost no producer populates `storageUri` on history items: `VideoDirector.saveVideo`, Magic Edit's `persistDraftCandidates`, `saveCanvas`, and **Omni's own output** (`OmniWorkflow.tsx:360-368` resolves the gs:// `resultUri` to an https URL and discards the gs://) all omit it. Only Veo-stage outputs (`VideoWorkflow.tsx`/`VideoStage.tsx`) set it. Result: gallery "→ Omni (source)" on most videos shows "Sent to Omni!" + "Loaded performance… ready to remix!" toasts, then the remix button rejects with "Please upload an artist base performance video first!" — or, if it got through, the backend zod parse rejects `''`. Omni output → Omni re-remix NEVER works (chain dies after one hop). `sendToStage` only `console.warn`s on missing storageUri (`creativeHandoffSlice.ts:54-59`) and proceeds.
-- **Executable spec:** characterization tests tagged ISSUE-685 in `creativeInterconnect.contract.test.ts`.
-- **Fix direction:** (1) every producer that has (or can cheaply get) a gs:// URI must store it on the history item (`storageUri`); Omni output: keep `data.resultUri` before resolving. (2) `sendToStage` should block-or-upload when `storageUri` is missing for a role that requires it (upload via `CreativeStorageService.uploadReferenceMedia`, then hand off). (3) Omni consumer must reject an empty `storageUri` handoff with an honest toast instead of "ready to remix!".
+- **Summary:** Canonical `storageUri` is now preserved on the main creative producers and remixes: `VideoDirector.saveVideo` derives `gs://` from Firebase download URLs, `useCreativeCanvas` stores `storageUri` on draft candidates/canvas exports/end frames/batch exports, `VideoWorkflow` preserves `storageUri` when completing jobs, and `OmniWorkflow` keeps the backend `resultUri` lineage instead of dropping it after download resolution. The handoff chain can now round-trip from a durable asset instead of dying after the first hop.
+- **Executable spec:** contract tests tagged ISSUE-685 in `creativeInterconnect.contract.test.ts` now pass.
+- **Fix direction:** keep the `storageUri` path intact on any future producer that emits durable media; if a new producer cannot produce a canonical URI, it should upload first instead of pretending the history item is round-trippable.
 - **Files:** `packages/renderer/src/core/store/slices/creative/creativeHandoffSlice.ts:44-87`; `packages/renderer/src/modules/creative/video/OmniWorkflow.tsx:267-289,355-368`; `packages/renderer/src/modules/creative/services/VideoDirector.ts` (saveVideo); `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts` (persistDraftCandidates — pairs with ISSUE-679)
 
 ### ISSUE-686: Omni image/audio reference handoffs are decorative — toast claims use, payload never includes them
 
-- **Status:** 🔴 OPEN (2026-07-03)
+- **Status:** ✅ FIXED (2026-07-03)
 - **Severity:** 🟠 HIGH (honesty + dead capability on the brand-new Omni Flash API)
 - **Module:** Creative Studio / Omni Flash API
-- **Summary:** Gallery "→ Omni (ref)" hands an image to Omni; the consumer toasts "Using image from X as visual reference." then **discards it** (`OmniWorkflow.tsx:277-279` — nothing is stored). `handleStartRemix` never sends the `referenceUris` field even though the backend schema accepts up to 8 gs:// references (`gateway.ts:212`). Audio handoff (`reference-audio`) stores `handoff.item.storageUri || ''` with the same empty-string trap as ISSUE-685. Net: the image system CANNOT contribute styling references to the Omni video system today, despite the UI claiming it does.
-- **Executable spec:** characterization test tagged ISSUE-686 in `creativeInterconnect.contract.test.ts`.
-- **Fix direction:** hold consumed reference-image handoffs in state (list, max 8), include `referenceUris` in the payload, show them as removable chips in the Omni UI. Until wired, change the toast to be honest ("reference images not yet supported in Omni").
+- **Summary:** `OmniWorkflow` now retains reference-image handoffs in local state (up to 8), includes `referenceUris` in the `generateOmniRemixV3` payload, and renders removable reference chips in the UI. Audio handoffs also resolve canonical `gs://` URIs instead of falling back to an empty string.
+- **Executable spec:** contract test tagged ISSUE-686 in `creativeInterconnect.contract.test.ts` now passes.
+- **Fix direction:** keep any future Omni reference intake honest and stateful; if the reference cannot be used, say so in the UI instead of toasting success.
 - **Files:** `packages/renderer/src/modules/creative/video/OmniWorkflow.tsx:277-289,336-354`; `packages/firebase/src/functions/creative/gateway.ts:208-226`
 
 ### ISSUE-687: Omni output history item loses lineage — no `parentId`, no `storageUri`, settings stuffed into the prompt string
 
-- **Status:** 🔴 OPEN (2026-07-03)
+- **Status:** ✅ FIXED (2026-07-03)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Creative Studio / Omni Flash API output persistence
-- **Summary:** `handleStartRemix` sends `parentId: sourceJobId` to the backend, but the history item it creates (`OmniWorkflow.tsx:360-368`) records neither `parentId` nor `storageUri` (gs:// `resultUri` discarded — see ISSUE-685) nor structured settings (pipeline mode, pose preset, dub language are string-concatenated into `prompt`). Renderer-side lineage between source performance and remix is lost; departments/agents can't trace which asset derives from which.
-- **Fix direction:** persist `parentId: sourceJobId`, `storageUri: data.resultUri`, and a structured `meta`/settings object on the history item instead of prompt-string stuffing.
+- **Summary:** The Omni remix history item now preserves `parentId`, `storageUri`, and structured settings metadata. The prompt field is back to a human-readable label and no longer carries the settings payload.
+- **Fix direction:** preserve the structured lineage fields on any future remix output instead of re-encoding them into the prompt string.
 - **Files:** `packages/renderer/src/modules/creative/video/OmniWorkflow.tsx:355-368`
 
 ### ISSUE-688: `generateOmniRemixV3` (540-second video job) skips the mandatory cost-control reservation entirely
@@ -10458,12 +10458,12 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-689: Image aspect ratio never crosses the image→video boundary — hardcoded/coerced to 16:9 with no warning
 
-- **Status:** 🔴 OPEN (2026-07-03)
+- **Status:** ✅ FIXED (2026-07-03)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Creative Studio / image→video handoff
-- **Summary:** Two independent crossings drop the image system's aspect ratio: (1) `VideoDirector.triggerAnimation` hardcodes `options: { aspectRatio: '16:9' }` (`VideoDirector.ts:126`) — animating 1:1 cover art silently produces widescreen; the item's dimensions and `studioControls.aspectRatio` are both ignored. (2) `OmniWorkflow.handleStartRemix` coerces anything that isn't `9:16` to `16:9` (`OmniWorkflow.tsx:342`) with no user-facing notice (backend only supports those two — fine — but the coercion is silent).
-- **Executable spec:** characterization tests tagged ISSUE-689 in `creativeInterconnect.contract.test.ts`.
-- **Fix direction:** thread the source aspect (or studioControls) into `triggerAnimation`, map to the nearest supported video aspect, and toast when coercion changes the shape ("1:1 source → rendering 16:9").
+- **Summary:** `VideoDirector.triggerAnimation` now accepts a source aspect ratio and normalizes it to the nearest supported video aspect, while `OmniWorkflow.handleStartRemix` uses the same normalizer and shows a toast when a non-supported ratio is mapped. The cross-boundary tests now assert the supported mapping instead of the old hardcoded `16:9` behavior.
+- **Executable spec:** contract tests tagged ISSUE-689 in `creativeInterconnect.contract.test.ts` now pass.
+- **Fix direction:** keep future video boundaries explicit about supported aspect ratios and warn when a coercion happens.
 - **Files:** `packages/renderer/src/modules/creative/services/VideoDirector.ts:114-150`; `packages/renderer/src/modules/creative/video/OmniWorkflow.tsx:342`
 
 ### ISSUE-690: Department↔art knowledge exchange is nearly empty — boardroom context gets 3 nameless images, no video/audio, no prompts, possible multi-MB data-URIs
