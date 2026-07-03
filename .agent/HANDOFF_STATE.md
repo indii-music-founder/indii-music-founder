@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-07-02 20:39 EDT
+**Updated:** 2026-07-02 20:49 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+8bd7820ff docs(ledger): firebase-admin 14 migration blocked upstream by firebase-functions peer range (ISSUE-671)
+6356aa522 chore: session checkpoint [20:39]
 de9c203ee chore(deps): audit triage — clear arcjet/express+qs/postcss moderates (ISSUE-671)
 04f734f41 fix(deps): clear high audit findings; WalletConnect fail-closed; ws/vite bumps
 3a217036d chore: session checkpoint [20:08]
@@ -12,8 +14,6 @@ a969da141 chore: session checkpoint [20:04]
 bcc23be9a docs(ledger): close ISSUE-658 (verified landed); log ISSUE-671 npm-audit backlog
 ff94727f9 chore: session checkpoint [19:51]
 d70954003 chore(deps): remove unused @mastra/core + @mastra/mcp (ISSUE-CI-28478558122-AUDIT)
-a86bb673b chore: session checkpoint [19:31]
-b721dd012 chore: session checkpoint [19:29]
 ```
 
 ## Working State
