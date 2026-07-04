@@ -11089,3 +11089,17 @@ A second, completely separate app with its own navigation menu, previously untou
 ### Pass 20 clean bill (partial)
 
 - **`/api/nexus/logs`:** real, genuine Firestore query against `system_events` collection with proper error handling (returns empty array + logs the failure server-side, doesn't crash or fabricate log entries on error).
+
+## PASS 21-24 — remaining Admin Dashboard menu, bottom-up continued (2026-07-03)
+
+**BUILD ORDER FOR FIX AGENTS:** none this stretch — all clean, real, and properly wired.
+
+- **DDEX Deliveries (`DDEXTracker` → `/api/deliveries/list`):** real Firestore query against `deliveries` collection, proper error handling.
+- **Google Workspace Hub (`GoogleHub` → `/api/google/status`, `/gmail/list`, `/calendar/events`, `/drive/files`, etc.):** real `getGoogleAuthClient()` check, real Gmail/Calendar/Drive API calls via `googleapis` — not fabricated. Honest `authorized: false` fallback (empty results) when auth isn't configured, matching the correct pattern seen elsewhere.
+- **Inbox & Messaging (`EmailManager` → `/api/messaging/inbox`, `/approve-draft`):** already confirmed real (genuine Firestore `messages` collection, real draft-approval write).
+- **Founders Portal (`FoundersPortal` → `/api/founders`):** real Firestore query against `founders` collection with proper field-default handling.
+- **Token Usage (`TokenUsage` → `/api/usage/summary`):** real Firestore query against `user_usage_stats`, matches the AI-cost-instrumentation system already confirmed in prior session work (`getCostSummary()`/`projectedMonthlyCostUsd`).
+
+### Admin Dashboard menu — full sweep verdict
+
+Second bottom-up menu audit complete (6 of 6 modules checked). One real finding: **ISSUE-726** (fake DNS status, HIGH). Every other module — DDEX deliveries, Google Workspace integration, messaging inbox, founders roster, token/cost usage — is genuinely wired to real Firestore data or real third-party APIs (Google Workspace), with honest fallback states when auth/config is missing. The admin app is a small, single defect (726) away from being fully clean.
