@@ -11127,3 +11127,39 @@ All three distinct navigation systems in this codebase have now had a full botto
 3. **Mobile Remote tab bar** (Pass 25): 1 pass, 0 new findings (confirms existing ISSUE-698).
 
 **Grand total this session: 25 passes, 9 real findings (718-726), 1 critical + 4 high + 4 low**, across three separate applications/navigation systems, plus dozens of confirmed-clean modules with their real backend wiring traced and verified end to end.
+
+## FOURTH MENU — RightPanel (2026-07-03)
+
+A fourth distinct menu: `packages/renderer/src/core/components/RightPanel.tsx`, a right-side context panel with 4 tabs (Context Controls → Project Assets → Artifacts → Omni Agent). "Context Controls" itself switches sub-panels per active module (StudioControlsPanel/WorkflowPanel/KnowledgePanel/MarketingPanel). Same bottom-up ethos.
+
+## PASS 26 — RightPanel full sweep (2026-07-03)
+
+**BUILD ORDER FOR FIX AGENTS:** 727 and 728 — isolated to their respective panel files, no dependency chain between them, but both should be fixed together since they're in the same directory and share the same root cause (unfinished panel, real sibling pattern exists to copy).
+
+### ISSUE-727: WorkflowPanel's "Run Workflow" button fakes execution with a toast — zero connection to the real, working WorkflowEngine
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH (misleads a user about a real system's execution state — the actual `WorkflowEngine` confirmed solid and functional in Pass 15/ISSUE-722 calls real, paid AI/image/video generation services; a user clicking this fake button believes their real workflow ran when nothing happened)
+- **Module:** Core / RightPanel — WorkflowPanel (Context Controls tab, shown when `currentModule === 'workflow'`)
+- **Depends on:** nothing structurally, but fix should reference the real `WorkflowEngine` API surface from Pass 15/ISSUE-722
+- **Summary:** `WorkflowPanel.tsx`'s "Run Workflow" button does `onClick={() => toast.success("Workflow execution started")}` — a bare toast with no call into `WorkflowEngine` or any workflow-related store state. The "Active Environment" section directly below it shows hardcoded fake status — literal JSX strings `"Connected"` (green, Database) and `"Idle"` (Execution Queue) — not derived from any real state, so these never change regardless of actual system status. "Global Parameters" and "Save as Template" buttons below that have **no `onClick` handler at all** — completely dead, not even a toast. Contrast with the sibling `MarketingPanel.tsx` in the same directory, which correctly imports `OrchestrationService`, does a real auth check, and calls `orchestrationService.executeWorkflow` with proper try/catch/finally — proving the correct pattern was known and available, just not applied here.
+- **Fix Direction:** Wire "Run Workflow" to the real `WorkflowEngine` execution entry point (the same one used by the main Workflow Builder canvas — see Pass 15 audit of `packages/renderer/src/modules/workflow/services/WorkflowEngine.ts`). Replace the hardcoded "Connected"/"Idle" strings with real derived state from the workflow store. Wire "Global Parameters" and "Save as Template" to their real actions, or remove them if genuinely out of scope for this quick-access panel.
+- **Files:** `packages/renderer/src/core/components/right-panel/WorkflowPanel.tsx`
+
+### ISSUE-728: KnowledgePanel shows fabricated hardcoded index statistics and fakes document ingestion with a toast
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH (fabricated statistics presented as real system state — the actual Knowledge Base module has a real, working Gemini Files API backing confirmed in Pass 6; this quick-access panel invents numbers instead of reading real ones)
+- **Module:** Core / RightPanel — KnowledgePanel (Context Controls tab, shown when `currentModule === 'knowledge'`)
+- **Depends on:** nothing structurally, same root-cause class as ISSUE-727 — batch together
+- **Summary:** "Ingest Document" button does `onClick={() => toast.info("Opening upload dialog")}` — no file picker actually opens, no connection to the real Knowledge Base ingestion flow confirmed working elsewhere (Pass 6). "Index Stats" shows three literally hardcoded fake values in the JSX — `"Indexed Files": 1,240`, `"Vectors": 82.4k`, `"Last Sync": 2 mins ago` — permanent strings, not derived from any real data source, that will show identically to every user regardless of their actual document count or sync state. "Manage Tags" button has no `onClick` at all.
+- **Fix Direction:** Wire "Ingest Document" to the real Knowledge Base upload flow (reuse whatever `KnowledgeBase.tsx`/`KnowledgeBaseService` calls). Replace the hardcoded stats with real derived values (real indexed-file count, real vector count, real last-sync timestamp) from the actual Knowledge Base state/service. Wire "Manage Tags" to a real action or remove it.
+- **Files:** `packages/renderer/src/core/components/right-panel/KnowledgePanel.tsx`
+
+### Pass 26 clean bills (verified deep, not pattern-only)
+
+- **RightPanel main "Omni Agent" tab:** real, honest — real `agentHistory` from store, honest "No messages yet" empty state, real `ConversationHistoryList`/`BatchingStatus`, delegates real sending to the already-verified `PromptArea`.
+- **ArtifactsPanel:** fully real end-to-end — `window.electronAPI.agent.listArtifacts`/`readArtifact` → real `ipcRenderer.invoke` → real handler in `packages/main/src/handlers/agent.ts`. Traced the complete IPC chain.
+- **AssetsPanel:** real Zustand store delegation, real `HistoryItem` data.
+- **MarketingPanel:** real — proper auth check, real `OrchestrationService.executeWorkflow` call, proper try/catch/finally, honest error surfacing. This is the reference pattern the two broken sibling panels should have followed.
+- **StudioControlsPanel (1058 lines):** spot-checked for the same fake-toast/hardcoded-stat pattern found in Workflow/Knowledge panels — zero hits; largely already covered by the Pass 1-4 Creative interconnect deep audit.
