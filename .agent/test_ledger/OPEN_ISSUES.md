@@ -10998,3 +10998,14 @@ Modules covered at genuine functional depth (not pattern-grep): Legal, Booking A
 ### Pass 16 clean bills (verified deep, not pattern-only)
 
 - **Data integrity:** `AdBuyingPanel` explicitly comments "No hardcoded campaigns — data comes from user interaction or ad platform API" — the intent was honest, but the actual `handleDeploy` implementation doesn't live up to it (see ISSUE-723). Noting this because it shows the author's stated intent was correct; the gap is in execution, not design philosophy.
+- **InfluencerBountyBoard / InfluencerBountyService:** real Firestore-backed bounty link generation and tracking via `httpsCallable`. `initiatePayout` correctly throws an honest error — "Influencer bounty payouts are not available until Stripe transfer automation is deployed" — instead of faking a payout. Exactly the right pattern, contrast with ISSUE-723's AdBuyingPanel in the same module.
+
+## PASS 17 — Social deep audit (2026-07-03)
+
+**BUILD ORDER FOR FIX AGENTS:** none — all clean bills this pass, nothing to fix.
+
+### Pass 17 clean bills (verified deep, not pattern-only)
+
+- **Social `tools.ts`:** actively used (real callers in `CreatePostModal`/`AccountCreationWizard` + a real test file) — NOT the same orphaned-scaffolding pattern as Legal's `tools.ts` (ISSUE-718) despite the identical filename.
+- **Post creation → scheduling → delivery, traced end to end:** `CreatePostModal` (AI copy-write via `SOCIAL_TOOLS`) → `onSave` callback → `SocialDashboard.handleCreatePost` → `useSocial.schedulePost` → `SocialService.schedulePost` (real auth check, real Zod validation, real `addDoc` to Firestore `scheduledPosts` with `status: "pending"`, `retryCount: 0`) → real backend Cloud Function consumer `packages/firebase/src/social/deliverScheduledPosts.ts`. Fully real, no fabrication or dead links found at any layer of this chain.
+- **Verdict:** Social's core posting pipeline is one of the most solidly end-to-end-verified features in this entire deep-audit cycle.
