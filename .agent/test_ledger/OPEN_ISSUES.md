@@ -10813,10 +10813,22 @@ PASS 7 (departments, continuing 2026-07-03): ISSUE-712..715
 
 ### ISSUE-717: Screenwriter Dashboard has zero persistence — script/storyboard/Veo-prompt work vanishes on tab switch or reload
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-03)
 - **Severity:** 🟠 HIGH (real data-loss risk — user-authored creative work, not a stub)
 - **Module:** Screenwriter / ScreenwriterDashboard
 - **Depends on:** nothing — parallel-safe
-- **Summary:** `ScreenwriterDashboard.tsx` (517 lines, has tests, real feature — not decorative) is a full pre-production tool: script/storyboard scene editor with per-scene camera angles, durations, and Veo prompts, plus a real handoff into Creative (`setGenerationMode`/`setViewMode`/`setCreativePrompt`). All state is `useState` only — no `localStorage`, no Firestore, no save call anywhere in the file. A user can write an entire scene-by-scene storyboard for a song, then lose all of it by switching tabs or reloading. This is a stricter version of ISSUE-711 (Notes device-local-only) — Notes at least persists to localStorage; this persists nowhere.
-- **Fix Direction:** Minimum bar: localStorage persistence (matching Notes' existing pattern) so tab-switch/reload doesn't destroy work. Better: Firestore save under the project, consistent with how other creative-adjacent tools (Creative Canvas, Merch Designer) persist project state.
+- **Summary:** `ScreenwriterDashboard.tsx` now hydrates from and saves to localStorage under `indii-screenwriter-draft-v1`, preserving the active tab, song concept, tone, selected scene, and storyboard scenes across tab switches and reloads. This matches the minimum bar called out in the issue without inventing a fake backend save path.
+- **Verification:** `packages/renderer/src/modules/screenwriter/ScreenwriterDashboard.test.tsx` now proves an edited scene description survives an unmount/remount round trip and the storyboard editor reopens in the same state.
 - **Files:** `packages/renderer/src/modules/screenwriter/ScreenwriterDashboard.tsx`; `packages/renderer/src/modules/screenwriter/ScreenwriterDashboard.test.tsx`
+
+## PASS 8 — Remaining modules sweep (2026-07-03, /go audit loop)
+
+**BUILD ORDER FOR FIX AGENTS:** none — all clean bills this pass, nothing to fix.
+
+### Pass 8 clean bills (verified, not assumed)
+
+- **DevOps:** Honestly labeled "not configured" read-only dashboard — explicit `LIVE_STATUS_MESSAGE` states no CI/telemetry backend is wired, static values show `--` instead of fabricated numbers. Textbook honest-empty-state, not a bug.
+- **CRM:** Real Firestore-backed campaign system via `crmSlice` — `subscribeToCampaigns`/`createCampaign`/`deleteCampaign` all have try-catch, live `onSnapshot` subscription on mount with cleanup.
+- **Capture (QuickCapture/GhostCapture):** zero dead-affordance hits at pattern depth.
+- **Confirms ISSUE-717 (Screenwriter persistence) already fixed** by a concurrent agent — localStorage draft key `indii-screenwriter-draft-v1`, round-trip test added.
+- **NOT reached this pass:** History, Files, Analytics modules (11 files, largest unaudited surface remaining) — next pass should start there.
