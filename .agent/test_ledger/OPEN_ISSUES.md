@@ -10796,13 +10796,13 @@ PASS 7 (departments, continuing 2026-07-03): ISSUE-712..715
 
 ### ISSUE-716: KeysPanel "Connect MLC Account" / "Connect SoundExchange" are permanently disabled with no wiring to the real NeighboringRightsService
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-03)
 - **Severity:** 🟡 MEDIUM (dead affordance sitting next to a real, working feature — money-adjacent domain)
 - **Module:** Distribution / KeysPanel
 - **Depends on:** nothing — parallel-safe
-- **Summary:** `KeysPanel.tsx` (distribution module, "External Connections" section) renders two permanently `disabled` buttons — "Connect MLC Account" and "Connect SoundExchange" — with no `onClick`, no conditional logic, and no tooltip explaining why. They sit directly under a fully functional "Generate BWARM CSV" button in the same panel. Meanwhile `packages/renderer/src/services/rights/NeighboringRightsService.ts` already implements real registration/declaration compilation for SoundExchange, PPL, GVL, and ADAMI (per ISSUE at line 5309) — but KeysPanel never imports or calls it. The backend capability exists; the front-door button to reach it does not.
-- **Fix Direction:** Wire the two buttons to `NeighboringRightsService` (or its existing UI entry point, if one exists elsewhere in Legal/Publishing) — or, if MLC/SoundExchange OAuth connection genuinely isn't built yet, replace the fake-interactive disabled buttons with an honest "Coming soon" label + tooltip, per the no-mock-data / honest-empty-state covenant. Do not leave a clickable-looking button that does nothing.
-- **Files:** `packages/renderer/src/modules/distribution/components/KeysPanel.tsx:248-254`; `packages/renderer/src/services/rights/NeighboringRightsService.ts`
+- **Summary:** `KeysPanel.tsx` now replaces the fake disabled buttons with real handoffs into the existing `RegistrationCenter` flow. The actions focus the selected track and jump the user to the registration module for either `mlc` or `soundexchange`, which is the repo's actual implementation path for those registrations.
+- **Verification:** `packages/renderer/src/modules/distribution/components/__tests__/KeysPanel.test.tsx` now proves both buttons invoke the registration handoff.
+- **Files:** `packages/renderer/src/modules/distribution/components/KeysPanel.tsx`; `packages/renderer/src/modules/distribution/components/__tests__/KeysPanel.test.tsx`; registration path: `packages/renderer/src/modules/registration/RegistrationCenter.tsx`, `packages/renderer/src/modules/registration/adapters/MlcAdapter.ts`, `packages/renderer/src/modules/registration/adapters/SoundExchangeAdapter.ts`
 
 ### Pass 7 clean bills (verified, not assumed)
 
@@ -10810,3 +10810,13 @@ PASS 7 (departments, continuing 2026-07-03): ISSUE-712..715
 - **Publishing, Licensing, Finance, Merch, Registration, Security, DevOps, CRM, Marketplace, Investor:** zero hardcoded-disabled buttons or TODO/coming-soon markers at pattern depth.
 - **Social:** "Add Media" dead affordance already fixed under ISSUE-712.
 - **NOT reached this pass:** deep functional audit of Publishing/Licensing/Finance (pattern-depth only, same caveat as Workflow Builder in Pass 6).
+
+### ISSUE-717: Screenwriter Dashboard has zero persistence — script/storyboard/Veo-prompt work vanishes on tab switch or reload
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH (real data-loss risk — user-authored creative work, not a stub)
+- **Module:** Screenwriter / ScreenwriterDashboard
+- **Depends on:** nothing — parallel-safe
+- **Summary:** `ScreenwriterDashboard.tsx` (517 lines, has tests, real feature — not decorative) is a full pre-production tool: script/storyboard scene editor with per-scene camera angles, durations, and Veo prompts, plus a real handoff into Creative (`setGenerationMode`/`setViewMode`/`setCreativePrompt`). All state is `useState` only — no `localStorage`, no Firestore, no save call anywhere in the file. A user can write an entire scene-by-scene storyboard for a song, then lose all of it by switching tabs or reloading. This is a stricter version of ISSUE-711 (Notes device-local-only) — Notes at least persists to localStorage; this persists nowhere.
+- **Fix Direction:** Minimum bar: localStorage persistence (matching Notes' existing pattern) so tab-switch/reload doesn't destroy work. Better: Firestore save under the project, consistent with how other creative-adjacent tools (Creative Canvas, Merch Designer) persist project state.
+- **Files:** `packages/renderer/src/modules/screenwriter/ScreenwriterDashboard.tsx`; `packages/renderer/src/modules/screenwriter/ScreenwriterDashboard.test.tsx`
