@@ -10848,3 +10848,24 @@ PASS 7 (departments, continuing 2026-07-03): ISSUE-712..715
 - **Files:** the one `disabled:cursor-not-allowed` hit (FileDashboard.tsx:280, "Download File" button) is a real conditional — `disabled={!node?.data?.url}` — not a hardcoded dead affordance. False positive.
 - **Analytics (11 files):** `RegionalMap.tsx` is NOT a repeat of the TourMap stub pattern despite the "Map" name — it's an honest ranked country-list visualization taking real `regions`/`totalStreams` props, no placeholder/discarded-props pattern. `GrowthIntelligenceDashboard` delegates to real services (`PlatformDataService`, `AnalyticsEngine`) which in turn call real per-platform integrations (`SpotifyService` uses genuine OAuth 2.0 + PKCE with backend token exchange via `httpsCallable` — `analyticsRevokeToken`, token refresh, CSRF state checking). `PlatformConnector` (the OAuth trigger UI) has zero dead-affordance hits. This is a fully wired, real analytics pipeline, not fabricated numbers.
 - **Menu audit coverage status:** bottom-to-top sweep has now covered every sidebar item at pattern depth at least once (Audio Analyzer, Knowledge, Workflow, Notes, Memory, Command Center, Settings, Road/Touring, all department modules, DevOps, CRM, Capture, History, Files, Analytics). Deep functional audits (beyond pattern-grep) remain outstanding for: Publishing, Licensing, Finance, Workflow Builder, Creative Director, Booking Agent, Legal (see Pass 6/7/8 caveats).
+
+## PASS 10 — Legal deep audit (2026-07-03, per William's "deeper" request)
+
+**BUILD ORDER FOR FIX AGENTS:** 718 only — isolated dead-code removal, no dependency chain.
+
+### ISSUE-718: `packages/renderer/src/modules/legal/tools.ts` is entirely orphaned legacy scaffolding — superseded by the real, wired agent tool system
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟢 LOW (dead code, not a functional bug — the real feature works fine elsewhere)
+- **Module:** Legal
+- **Depends on:** nothing — parallel-safe
+- **Summary:** `LEGAL_TOOLS` (`analyze_contract`, `check_compliance`) plus `LEGAL_MANAGER_PROMPT`/`LEGAL_EXECUTOR_PROMPT` in `modules/legal/tools.ts` are never imported anywhere in the codebase — not by `LegalDashboard.tsx`, not by any agent registry, not by any test. Also notably: neither generated prompt in this dead file carries any "not legal advice / consult an attorney" disclaimer language, unlike every other real legal-adjacent surface in the codebase. The REAL, wired implementation lives in `services/agent/tools/LegalTools.ts` (`generate_split_sheet`, `summarize_contract_terms`) consumed by `services/agent/definitions/LegalAgent.ts` and registered in `services/agent/tools/index.ts`. This old file was superseded and never deleted.
+- **Fix Direction:** Delete `modules/legal/tools.ts` entirely (confirm zero imports first — already verified via repo-wide grep this pass). If any lingering reference surfaces on a fuller search, redirect it to the real `LegalTools`/`LegalAgent` path instead.
+- **Files:** `packages/renderer/src/modules/legal/tools.ts` (delete candidate)
+
+### Pass 10 clean bills (verified deep, not pattern-only)
+
+- **LegalDashboard.tsx contract analyzer (the actual user-facing feature):** real, separate implementation — reads uploaded file, sends structured-JSON prompt to Gemini (`INTELLIGENCE_MODELS.TEXT.FAST`), cross-references `creatorProtectionHarnessService.reviewAIVoiceLikenessClause` for AI-voice-likeness clause flags, merges into the risk list. `DisclaimerPanel` ("Autonomous analysis is for informational purposes only. All drafts MUST be reviewed by qualified legal counsel.") renders in the same dashboard, always visible next to the output — not buried behind a toggle.
+- **DMCANoticeGenerator:** carries its own explicit liability disclaimer (17 U.S.C. § 512(f) false-notice warning) directly in the UI copy.
+- **MyContracts.tsx (446 lines):** real layered service architecture — `LegalService`, `ContractPDFService`, `ResendEmailService` — not raw fetch calls, but genuine backend delegation. Initial pattern grep found zero `httpsCallable`/`firestore` hits because the abstraction lives one layer down; confirmed real on inspection, not dead.
+- **Verdict:** the actual Legal feature surface (contract analysis, DMCA, contract management) is solid, honest, and disclaimer-covered. The only defect found is dead scaffolding that was never reachable by a real user — zero live liability exposure from ISSUE-718.
