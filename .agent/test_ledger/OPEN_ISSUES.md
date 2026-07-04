@@ -10869,3 +10869,23 @@ PASS 7 (departments, continuing 2026-07-03): ISSUE-712..715
 - **DMCANoticeGenerator:** carries its own explicit liability disclaimer (17 U.S.C. § 512(f) false-notice warning) directly in the UI copy.
 - **MyContracts.tsx (446 lines):** real layered service architecture — `LegalService`, `ContractPDFService`, `ResendEmailService` — not raw fetch calls, but genuine backend delegation. Initial pattern grep found zero `httpsCallable`/`firestore` hits because the abstraction lives one layer down; confirmed real on inspection, not dead.
 - **Verdict:** the actual Legal feature surface (contract analysis, DMCA, contract management) is solid, honest, and disclaimer-covered. The only defect found is dead scaffolding that was never reachable by a real user — zero live liability exposure from ISSUE-718.
+
+## PASS 11 — Booking Agent deep audit (2026-07-03)
+
+**BUILD ORDER FOR FIX AGENTS:** 719 only — isolated dead-code cleanup, no dependency chain. Low priority, can batch with 718.
+
+### ISSUE-719: `AgentActionType` enum (SEARCH_VENUES, EMAIL_OUTREACH, UPDATE_STATUS, RESEARCH_CONTACT) is dead — the real scout feature never uses it
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟢 LOW (dead code, not a functional bug — real scouting works via a different path)
+- **Module:** Agent (Booking/Scout)
+- **Depends on:** nothing — parallel-safe. Same class of finding as ISSUE-718; could be fixed in the same pass.
+- **Summary:** `modules/agent/types.ts` defines `AgentActionType` (`SEARCH_VENUES`, `EMAIL_OUTREACH`, `UPDATE_STATUS`, `RESEARCH_CONTACT`, `BROWSER_DRIVE`) and an `AgentAction` interface built around it. Repo-wide grep confirms 4 of the 5 enum values are referenced nowhere outside their own definition file (`BROWSER_DRIVE` has 2 external references, worth checking separately). The REAL, working scout feature (`AgentDashboard`'s "scout" tab → `handleScan` → `VenueScoutService.searchVenues`) doesn't touch this enum at all — it uses `browserAgentDriver` directly plus real Firestore persistence (`collection`/`getDocs`/`addDoc` on venues). `GigOpportunity`/`GigStatus`/`Venue` types (same file) ARE actively used by the real venue/deal data model — only the `AgentActionType`/`AgentAction` pairing is dead.
+- **Fix Direction:** Delete the unused `AgentActionType` enum and `AgentAction` interface from `types.ts` (confirm `BROWSER_DRIVE`'s 2 references aren't load-bearing before removing that value specifically — check separately). Keep `Venue`, `GigOpportunity`, `GigStatus` — those are real and load-bearing.
+- **Files:** `packages/renderer/src/modules/agent/types.ts`
+
+### Pass 11 clean bills (verified deep, not pattern-only)
+
+- **Booking/Scout core feature (`VenueScoutService.searchVenues`):** genuinely real — drives an autonomous browser agent (`browserAgentDriver`) to find venues, persists real results to Firestore with dedup logic in the UI layer, has proper try/catch/finally error handling with user-facing status messages at every stage (initializing → scanning → complete/failed). Not a mock, not fabricated data.
+- **Data model (`Venue`, `GigOpportunity`, `GigStatus`, `dealType`):** actively used, load-bearing schema for the real venue/gig pipeline.
+- **Verdict:** Booking Agent's actual scouting capability is solid and functional. The only defect is a dead parallel enum/interface pair that was apparently an earlier design iteration, superseded by the browser-driven approach, never cleaned up.
