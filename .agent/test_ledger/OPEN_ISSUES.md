@@ -11224,3 +11224,25 @@ Broadened per William's explicit ask ("more broad or broader use of the term men
 
 - **EarningsTable's context menu:** real clipboard actions (Copy ISRC, Copy Release Name) — no destructive actions, no confirmation needed. Minor cosmetic nit: a trailing `ContextMenu.Separator` with nothing after it (dead divider line, zero functional impact, not worth its own issue).
 - **DesignCanvas's `stopContextMenu`:** a Fabric.js library config flag suppressing the browser's native right-click menu on the design canvas — not a custom app menu, false positive for this audit.
+
+## EIGHTH MENU — CommandBar's internal menus (2026-07-03)
+
+`packages/renderer/src/core/components/command-bar/` has two literal menu components: `TypeaheadMenu.tsx` (@mention/#tag autocomplete) and `DelegateMenu.tsx` (agent/department delegation picker).
+
+## PASS 30 — CommandBar menus sweep (2026-07-03)
+
+**BUILD ORDER FOR FIX AGENTS:** 731 only — isolated dead-code cleanup, same class as ISSUE-718/719/724, batch together.
+
+### ISSUE-731: DelegateMenu.tsx is completely orphaned — never imported/rendered anywhere in the codebase
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟢 LOW (dead code, zero live user-facing impact)
+- **Module:** Core / CommandBar
+- **Depends on:** nothing — parallel-safe; same recurring pattern as ISSUE-718 (Legal), 719 (Booking Agent), 724 (Marketing MapsComponent) — an earlier design iteration superseded and never deleted.
+- **Summary:** `DelegateMenu.tsx` implements a real-looking agent/department delegation picker (props-based `onSelect`/`onSelectIndii` callbacks, real department list rendering) — but confirmed via repo-wide grep that it's never imported by `PromptArea.tsx` or anywhere else. `TypeaheadMenu.tsx` in the same directory IS wired (consumed by `PromptArea` via `handleTypeaheadSelect`, confirmed real functional text-substitution logic) — so this is an isolated dead sibling, not a systemic issue in this directory.
+- **Fix Direction:** Delete if genuinely superseded (likely by the typed slash-command system referenced in this session's earlier stale-ledger read — the "Universal Command Workflow Layer"). If department delegation via a dedicated picker UI is still wanted, wire it in; otherwise remove.
+- **Files:** `packages/renderer/src/core/components/command-bar/DelegateMenu.tsx` (delete candidate)
+
+### Pass 30 clean bill
+
+- **TypeaheadMenu.tsx:** real, wired, functional — confirmed real text-substitution logic in `PromptArea.handleTypeaheadSelect`.
