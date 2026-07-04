@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-07-03 20:55 EDT
+**Updated:** 2026-07-03 21:09 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+958b62b2a docs(ledger): pass 8 audit — DevOps/CRM/Capture clean, confirms ISSUE-717 fixed
 5476d10bd docs(ledger): ISSUE-717 Screenwriter Dashboard has zero persistence
 d90496941 docs(ledger): pass 7 departments audit — ISSUE-716 KeysPanel dead rights-collection buttons
 895d7f7d6 fix(ci): clean rebuild + fail-fast diagnostics for firebase functions deploy
@@ -13,11 +14,11 @@ ff210efd8 fix(test): VideoGenerationService test using invalid model enum
 4744504a6 docs(ledger): pass 7 departments audit checkpoint — agent/social dead affordances logged
 9135d906d fix(test): RoadManager test missing useStore mock
 35710192d fix(audio): three critical bugs blocking analyzer — auth failure, param error, opaque errors
-1ed4269ff chore: session checkpoint [15:29]
 ```
 
 ## Working State
 ```
+M  .agent/HANDOFF_STATE.md
  D .new_gemini_key.txt
  D .new_maps_key.txt
  M package-lock.json
@@ -56,6 +57,8 @@ ff210efd8 fix(test): VideoGenerationService test using invalid model enum
  M packages/renderer/src/modules/mobile-remote/MobileRemote.tsx
  M packages/renderer/src/modules/notes/NotesModule.tsx
  M packages/renderer/src/modules/observability/AdminLockScreen.tsx
+ M packages/renderer/src/modules/screenwriter/ScreenwriterDashboard.test.tsx
+ M packages/renderer/src/modules/screenwriter/ScreenwriterDashboard.tsx
  M packages/renderer/src/modules/settings/SettingsPanel.test.tsx
  M packages/renderer/src/modules/settings/settings-panel/DesktopSection.tsx
  M packages/renderer/src/modules/settings/settings-panel/SecuritySection.tsx
