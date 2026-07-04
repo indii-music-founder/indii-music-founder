@@ -10970,3 +10970,31 @@ Modules covered at genuine functional depth (not pattern-grep): Legal, Booking A
 
 - **WorkflowEngine per-node execution:** solid failure isolation — try/catch around every node type, correct status lifecycle, no crash-the-whole-engine risk from a single node's failure, no silent swallow (error message surfaced via `updateNodeStatus`).
 - **Department node execution:** delegates to real services (`AutonomousIntelligence`, `ImageGenerationService`, `VideoGenerationService`, `SocialService`, `PerformanceVideoService`) — not fabricated.
+
+## PASS 16 — Marketing deep audit (2026-07-03)
+
+**BUILD ORDER FOR FIX AGENTS:** 723 primary; 724 secondary (dead code, batch with 718/719/MapsComponent cleanup).
+
+### ISSUE-723: AdBuyingPanel fakes a successful Meta/TikTok ad campaign launch — zero real ad-platform API call, fabricated reach number
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH (honest-state violation with real user harm — a musician believes they bought real ad promotion during a real release window and did not; not a money-movement bug like ISSUE-720 since no real spend actually occurs, hence HIGH not CRITICAL)
+- **Module:** Marketing / AdBuyingPanel
+- **Depends on:** nothing — parallel-safe. Confirms and gives file-level detail to the "build Meta ad backend funcs" gap already known from prior session context.
+- **Summary:** `handleDeploy` in `AdBuyingPanel.tsx` never calls a Meta or TikTok Ads API. It runs a bare `setTimeout(..., 2000)` fake loading delay, then constructs a `Campaign` object with a fabricated `id` (`camp-00N`), hardcoded `status: 'running'`, and a fabricated `estimatedReach = Math.floor(budget * 1200 + 2000)` — a made-up linear formula with zero grounding in any real ad-platform estimate. The UI then shows the user a "Campaign is now running, reach: X" success state. A user setting a real daily budget and clicking Deploy would reasonably believe they've launched a real paid campaign on Meta/TikTok during (likely) a real release window — they have not, and no real ad spend occurs. Unlike `StripeConnectOnboarding` (Finance module, Pass 12) which honestly errors "requires the ... backend ... No onboarding link was created," this component fakes a complete success flow with fabricated output data.
+- **Fix Direction:** Either (a) wire `handleDeploy` to the real Meta/TikTok Ads API integration once built (per prior "build Meta ad backend funcs" note), or (b) until that backend exists, replace the fake success flow with `StripeConnectOnboarding`'s honest-error pattern — surface a clear "ad platform integration not yet connected" message instead of animating a fake campaign launch with invented reach numbers. Option (b) is the immediate, cheap fix; option (a) is the real feature.
+- **Files:** `packages/renderer/src/modules/marketing/components/AdBuyingPanel.tsx`
+
+### ISSUE-724: `MapsComponent.tsx` is dead code carrying the same debunked "needs a backend Maps proxy" excuse already found false for TourMap (ISSUE-697)
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟢 LOW (dead code — never imported anywhere, so zero live user-facing impact; the concerning part is the excuse text, not runtime risk)
+- **Module:** Marketing
+- **Depends on:** nothing — parallel-safe; note the excuse-text parallel to ISSUE-697 (TourMap) — if 697 is fixed by wiring a restricted client Maps key per policy §3.2, this dead file's copy-paste excuse becomes doubly stale and should either be deleted or fixed identically, not left as a second copy of a debunked claim.
+- **Summary:** `MapsComponent.tsx` (10 lines) claims "Live campaign maps require a secured backend Maps proxy before browser rendering can be enabled" — the same precondition ISSUE-697 already found contradicts the repo's own security policy §3.2 (which permits a restricted client-side Maps key). Confirmed via repo-wide grep: this component is never imported anywhere — fully orphaned.
+- **Fix Direction:** Delete (dead, unreferenced) or, if a marketing campaign map is actually wanted, build it using the same real-key approach that should fix ISSUE-697, rather than leaving a second stale placeholder with the same debunked justification.
+- **Files:** `packages/renderer/src/modules/marketing/components/MapsComponent.tsx` (delete candidate)
+
+### Pass 16 clean bills (verified deep, not pattern-only)
+
+- **Data integrity:** `AdBuyingPanel` explicitly comments "No hardcoded campaigns — data comes from user interaction or ad platform API" — the intent was honest, but the actual `handleDeploy` implementation doesn't live up to it (see ISSUE-723). Noting this because it shows the author's stated intent was correct; the gap is in execution, not design philosophy.
