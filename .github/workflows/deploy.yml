@@ -573,7 +573,13 @@ jobs:
           npx --no-install firebase functions:delete createStripeAccount --region us-central1 --project indii-music-founder --force --non-interactive || true
           npx --no-install firebase functions:delete createTransfer --region us-central1 --project indii-music-founder --force --non-interactive || true
           printf 'INFLUENCER_BOUNTY_BASE_URL=%s\n' "$INFLUENCER_BOUNTY_BASE_URL" > packages/firebase/.env.indii-music-founder
+          rm -rf packages/firebase/lib
           npm run build -w packages/firebase
+          if [ ! -f packages/firebase/lib/index.js ]; then
+            echo "::error::tsc reported success but packages/firebase/lib/index.js was not produced. Re-running with full diagnostics:"
+            (cd packages/firebase && npx --no-install tsc --listEmittedFiles --diagnostics)
+            exit 1
+          fi
           npx --no-install firebase deploy --only functions --project indii-music-founder --non-interactive --force
 
       - name: Pipeline health summary
