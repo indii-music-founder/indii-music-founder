@@ -11179,3 +11179,25 @@ Identified from user description ("top bar, multi-menu, used in the Creative dep
 - **Right-rail panels:** `AgentCapabilityRegistry` (Roster) delegates to real `agentCapabilityService`. `BrandAssetsDrawer` delegates to real Firebase functions/Storage. `HistoryDrawer` delegates to real `DesignHistoryDrawer`/`PromptHistoryDrawer` sub-components.
 - **Prompt Builder (`IntelligencePromptBuilder.tsx`):** delegates to real `IntelligencePromptService`.
 - **Verdict:** the Creative department's top "hero bar" — every mode, every sub-view, every rail panel — is fully wired to real backends. Zero fabrication found across the entire menu. This closes out the last unaudited corner of the Creative module (`AutonomousLab` specifically, previously an explicit gap noted in session memory).
+
+## SIXTH MENU — Electron native OS menu bar (2026-07-03)
+
+A completely different class of menu — not React, not a UI component tree, but the actual OS-level application menu (File/Edit/View/Window/Help), defined in `packages/main/src/menu.ts`. Never touched by any prior pass this session since it lives in `packages/main`, not `packages/renderer`.
+
+## PASS 28 — Electron native menu bar (2026-07-03)
+
+**BUILD ORDER FOR FIX AGENTS:** 729 only — isolated, no dependency chain.
+
+### ISSUE-729: Cmd+S / File > Save fires an IPC event with zero listeners anywhere — completely dead, silent no-op on one of the most trusted keyboard shortcuts in any desktop app
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH (real data-loss/trust risk — Cmd+S is a deeply ingrained user habit; silent failure with no error, no toast, nothing, means a user could believe their work saved when it didn't)
+- **Module:** Electron main process / native menu bar
+- **Depends on:** nothing — parallel-safe
+- **Summary:** `packages/main/src/menu.ts`'s File menu defines a "Save" item bound to `CmdOrCtrl+S` whose `click` handler sends `mainWindow.webContents.send('menu:save-triggered')` — properly guarded against a destroyed window, with its own try/catch. But confirmed via repo-wide grep: **zero listeners** for `'menu:save-triggered'` exist anywhere — not in any renderer module, not in `preload.ts`, nowhere. The IPC message is sent into the void every time a user presses Cmd+S or clicks File > Save. No error surfaces to the user; the keystroke simply does nothing.
+- **Fix Direction:** Decide what "Save" should mean in context (likely: save the current active module's state — Creative canvas, Workflow graph, current form, etc.) and wire a real listener. Given the app is heavily module-based with different active surfaces, this probably needs a renderer-side listener that dispatches to whatever save action is contextually appropriate for `currentModule` (e.g. trigger the same save path as each module's own explicit Save button, if one exists), or at minimum wire it to the most universally-expected action (save current project/canvas state) with an honest toast confirming what was saved.
+- **Files:** `packages/main/src/menu.ts` (sender, already correct); needs a new listener in `packages/renderer/src` (e.g. a root-level `useEffect` subscribing via `window.electronAPI` or a dedicated preload-exposed `onMenuSaveTriggered` callback) — currently nothing consumes this event.
+
+### Pass 28 clean bill (partial)
+
+- **All other native menu items** (File > Close/Quit, Edit's undo/redo/cut/copy/paste/speech, View's reload/zoom/fullscreen, Window's minimize/zoom/front, Help > Learn More) are either Electron's built-in `role`-based items (always real, OS-provided behavior) or a genuine `shell.openExternal` call (Learn More → indii.music). Only the custom "Save" action is broken.
