@@ -11042,3 +11042,28 @@ Modules audited at genuine functional depth: Legal, Booking Agent, Finance, Publ
 **Modules confirmed fully clean and real:** Booking Agent's scouting, Publishing's earnings/royalty chain, Licensing's Stripe-Checkout-based sales, Social's complete posting pipeline, Distribution's entire submission pipeline (the strongest result of the cycle), Workflow's per-node execution engine.
 
 **Cross-cutting pattern:** the codebase's quality is NOT uniform, but it is legible — every real defect found traces to either (a) an orphaned code path superseded by a better real implementation elsewhere and never deleted, or (b) a feature that fakes success instead of honestly erroring when a backend integration isn't finished yet. The features built with real backend rigor (Distribution, Publishing, Social, Licensing's Checkout flow) are excellent. Recommend: before building any new feature, check for an existing honest-failure pattern to copy (`StripeConnectOnboarding`, `InfluencerBountyBoard.initiatePayout`) rather than defaulting to a fake-success `setTimeout` stub.
+
+## PASS 19 — Merchandise deep audit (2026-07-03)
+
+**BUILD ORDER FOR FIX AGENTS:** none — clean bill, nothing to fix.
+
+### Pass 19 clean bill
+
+- **Merch design tool (MerchDesigner/MerchStudio, 44 files):** real, functional Fabric.js-based design canvas — already confirmed extensively wired in prior session work (auto-save hooks, version history, template system).
+- **Merch sales/POD tracking (Finance module's `MerchandiseDashboard.tsx`):** NOT wired to a real POD provider or store — but honestly discloses this. Every metric shows `--`/`No data` with explicit labels ("Connect store to track", "Connect POD provider", "No orders tracked") rather than fabricating numbers. Same correct honest-empty-state pattern as DevOps (Pass 8) and `StripeConnectOnboarding` (Pass 12).
+- **Verdict:** the design half of Merchandise is real; the sales/commerce half is honestly un-wired, not faked. No defect — this is the covenant working as intended.
+
+## SESSION FINAL TALLY (2026-07-03, extended deep-audit session)
+
+**19 total passes this session** (Passes 1-9 bottom-up menu sweep at pattern depth + Passes 10-19 deep functional audits on Legal, Booking Agent, Finance, Publishing, Licensing, Workflow, Marketing, Social, Distribution, Merchandise).
+
+**Issues logged:** 725 total in the ledger (ISSUE-672 through ISSUE-725 across this multi-session effort).
+
+**This session's real, actionable findings (718-725):**
+- 1 CRITICAL: ISSUE-720 (SplitSheetEscrow double-payment risk)
+- 3 HIGH: ISSUE-721 (TaxForm false compliance signal), ISSUE-722 (Workflow infinite-loop cost risk), ISSUE-723 (fake ad campaign launch)
+- 4 LOW: ISSUE-718/719/724 (dead code), ISSUE-725 (weak release ID generation)
+
+**Best-architected surfaces found:** Distribution's release submission (hard DDEX gate + real clearance checks + real audit trail), Licensing's Stripe-Checkout-based sales, Social's complete posting pipeline, Publishing's earnings chain.
+
+**Standing recommendation for all future fix agents:** before shipping any new payment, compliance, or ad-spend feature, use `StripeConnectOnboarding`/`InfluencerBountyBoard.initiatePayout`'s honest-error pattern as the template, and `DistributionService.submitRelease`'s hard-gate-before-action pattern as the architecture reference. Do not ship a `setTimeout` + fabricated-success stub for anything touching real money, real compliance data, or real user trust.
