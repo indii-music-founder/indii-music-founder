@@ -11103,3 +11103,27 @@ A second, completely separate app with its own navigation menu, previously untou
 ### Admin Dashboard menu — full sweep verdict
 
 Second bottom-up menu audit complete (6 of 6 modules checked). One real finding: **ISSUE-726** (fake DNS status, HIGH). Every other module — DDEX deliveries, Google Workspace integration, messaging inbox, founders roster, token/cost usage — is genuinely wired to real Firestore data or real third-party APIs (Google Workspace), with honest fallback states when auth/config is missing. The admin app is a small, single defect (726) away from being fully clean.
+
+## THIRD MENU — Mobile Remote's own tab bar (2026-07-03)
+
+A third distinct navigation menu on the same bottom-up ethos: `packages/renderer/src/modules/mobile-remote`'s own tab bar (Home → Capture → Boardroom → Stream → Settings), separate from both the main studio sidebar and the admin-dashboard app.
+
+## PASS 25 — Mobile Remote full sweep (2026-07-03)
+
+**BUILD ORDER FOR FIX AGENTS:** none this pass — all clean, nothing to fix.
+
+- **Settings (bottom):** real Firestore live-sync (`onSnapshot`/`setDoc` on a settings doc).
+- **Stream:** delegates to real `StorageService.loadHistory(100)` — genuine history items, not fabricated.
+- **Boardroom (AgentChat → sendCommand → remoteRelayService):** real relay mechanism with proper `isPaired` guard and error handling. Command types supported: `navigate`, `agent_action`, `daw_control`, `media_playback`, `RAW` fallback. Confirms (does not newly discover) the known gap already tracked as ISSUE-698 — no `touring` command type exists yet.
+- **Capture:** real `StorageService.uploadFile` calls for audio/video/file capture — genuine Storage uploads, not fabricated.
+- **Home (StatusDashboard) + ApprovalQueue:** both real, presentational/Zustand-store-delegating patterns consistent with the rest of the confirmed-real app state architecture.
+- **Verdict:** Mobile Remote's own menu is fully clean — every tab genuinely wired, zero fabrication, zero dead affordances. The only gap here is the already-tracked touring-command absence (ISSUE-698), not a new finding.
+
+## THREE-MENU AUDIT COMPLETE (2026-07-03)
+
+All three distinct navigation systems in this codebase have now had a full bottom-up sweep this session:
+1. **Main studio app sidebar** (Passes 1-19): 19 passes, 8 real findings (718-725), 1 critical.
+2. **Admin Dashboard app** (Passes 20-24): 5 passes, 1 real finding (726).
+3. **Mobile Remote tab bar** (Pass 25): 1 pass, 0 new findings (confirms existing ISSUE-698).
+
+**Grand total this session: 25 passes, 9 real findings (718-726), 1 critical + 4 high + 4 low**, across three separate applications/navigation systems, plus dozens of confirmed-clean modules with their real backend wiring traced and verified end to end.
