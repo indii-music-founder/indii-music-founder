@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-07-03 23:18 EDT
+**Updated:** 2026-07-03 23:24 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+501e3d4c5 docs(ledger): sixth menu — Electron native menu bar, ISSUE-729 dead Cmd+S
 e71178545 docs(ledger): fifth menu — CreativeNavbar 'hero bar' fully swept, all clean
 677c2a972 docs(ledger): fourth menu — RightPanel, pass 26 finds ISSUE-727/728 fake workflow+knowledge panels
 ef82c8c59 docs(ledger): third menu — Mobile Remote tab bar fully swept, clean. Three-menu audit complete.
@@ -13,7 +14,6 @@ b39bb096d docs(ledger): pass 19 Merchandise clean bill + full 19-pass session fi
 280480e09 docs(ledger): pass 18 deep Distribution audit (the platform's core purpose) + full 9-module cycle summary
 4661dcc37 docs(ledger): pass 17 deep Social audit — fully clean, verified end-to-end
 b449340d9 docs(ledger): pass 16 deep Marketing audit — ISSUE-723 fake ad campaign launch, ISSUE-724 dead MapsComponent
-94f2d584b docs(ledger): pass 15 deep Workflow Builder audit — ISSUE-722 no cycle detection
 ```
 
 ## Working State
