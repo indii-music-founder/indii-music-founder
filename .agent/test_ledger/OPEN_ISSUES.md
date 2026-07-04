@@ -11067,3 +11067,25 @@ Modules audited at genuine functional depth: Legal, Booking Agent, Finance, Publ
 **Best-architected surfaces found:** Distribution's release submission (hard DDEX gate + real clearance checks + real audit trail), Licensing's Stripe-Checkout-based sales, Social's complete posting pipeline, Publishing's earnings chain.
 
 **Standing recommendation for all future fix agents:** before shipping any new payment, compliance, or ad-spend feature, use `StripeConnectOnboarding`/`InfluencerBountyBoard.initiatePayout`'s honest-error pattern as the template, and `DistributionService.submitRelease`'s hard-gate-before-action pattern as the architecture reference. Do not ship a `setTimeout` + fabricated-success stub for anything touching real money, real compliance data, or real user trust.
+
+## NEW MENU — Admin Dashboard app (`packages/admin-dashboard`), same bottom-up ethos (2026-07-03)
+
+A second, completely separate app with its own navigation menu, previously untouched this session. Menu order top-to-bottom: Token Usage → Founders Portal → Inbox & Messaging → Google Workspace Hub → DDEX Deliveries → Nexus System Monitor. Starting at the bottom per the same protocol.
+
+## PASS 20 — Nexus System Monitor (2026-07-03)
+
+**BUILD ORDER FOR FIX AGENTS:** 726 only — isolated backend fix, no dependency chain. Recommend HIGH priority despite LOW-ish blast radius, because it's monitoring infrastructure giving false-positive health signals.
+
+### ISSUE-726: `/api/dns/status` hardcodes SPF/DKIM/DMARC as always "verified" — zero real DNS lookup, false-positive email-security monitoring
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH (false monitoring signal on real email-deliverability/anti-spoofing infrastructure — worse than no monitoring, because it actively reassures an admin that DNS security records are correct when nothing was actually checked)
+- **Module:** Admin Dashboard / Nexus System Monitor
+- **Depends on:** nothing — parallel-safe
+- **Summary:** `packages/admin-dashboard/server.ts`'s `/api/dns/status` handler (line 513) unconditionally returns `{ domain: 'indii.music', spf: 'verified', dkim: 'verified', dmarc: 'verified' }` with no DNS resolution logic anywhere in the handler or nearby code. The admin-facing Nexus Monitor UI fetches this endpoint and would display "verified" for all three records regardless of whether they're actually correctly configured, degraded, or entirely missing — e.g. if the domain's actual SPF record were ever accidentally removed or misconfigured (breaking email deliverability and opening spoofing risk), this dashboard would still show green across the board.
+- **Fix Direction:** Replace the hardcoded response with a real DNS TXT record lookup (Node's built-in `dns.resolveTxt` or a library) against the actual `indii.music` domain, parsing for valid SPF (`v=spf1`), DKIM (selector-specific TXT record), and DMARC (`_dmarc` TXT record) entries, and returning the real verification state. If a live lookup is too heavy for this endpoint's cadence, cache with a clearly-labeled last-checked timestamp rather than a silent hardcode.
+- **Files:** `packages/admin-dashboard/server.ts:513-520`
+
+### Pass 20 clean bill (partial)
+
+- **`/api/nexus/logs`:** real, genuine Firestore query against `system_events` collection with proper error handling (returns empty array + logs the failure server-side, doesn't crash or fabricate log entries on error).
