@@ -25,6 +25,16 @@ Before finalizing, verify patterns didn't get worse:
 - **Update ledger:** If you discovered new patterns, add to `.agent/test_ledger/GENERATION_FAILURES.md`
 - **Report delta:** "Baseline 100 → Final 95 (-5 improvement)"
 
+## 2.1 Dependency Version Drift Check (MANDATORY)
+Catch package.json/package-lock.json/node_modules disagreements before they cause a silent CI or runtime failure (discovered 2026-07-03 via a `firebase-admin@14.1.0` nested copy shadowing the declared `13.10.0`, which broke `tsc` with cryptic namespace-export errors two steps downstream in the Cloud Functions deploy):
+- Run: `npm run check:dep-drift` (wraps `scripts/check-dep-version-drift.cjs`)
+- This checks every workspace member's declared dependency ranges against what's actually resolved in `node_modules` (nested copy if present, else root-hoisted) — flagging real manifest violations, not ordinary npm dedup (a package legitimately getting its own nested copy because a transitive constraint differs is NOT a violation).
+- **If violations are found:**
+  - Decide per-violation which side is stale: if the installed/locked version is intentional (e.g. a root `overrides` entry, or newer tooling already verified working), update the declared `package.json` range to match reality.
+  - If the declared range is intentional and the install is stale, run a scoped `npm install <dep>@<range>` for that workspace and regenerate the lockfile with `npm install --package-lock-only`.
+  - Never silently downgrade or upgrade a runtime dependency without checking its usage pattern first (e.g. grep for the imported API surface) — a dev-tooling version gap (eslint, typescript) is lower risk than a runtime dependency gap (uuid, firebase-admin) that 30+ files call directly.
+- Re-run `npm run check:dep-drift` after any fix — it must report clean before proceeding to the gauntlet.
+
 ## 2.5 Commit & Push All Work (MANDATORY)
 Ensure agent work is saved to GitHub **before** closing:
 - **Check status:** `git status --short`
