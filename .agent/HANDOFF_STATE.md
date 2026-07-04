@@ -1,19 +1,19 @@
 # Handoff State
-**Updated:** 2026-07-03 22:27 EDT
+**Updated:** 2026-07-03 22:54 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
-915a84077 docs(ledger): pass 10 deep Legal audit — ISSUE-718 orphaned legacy tools.ts
-f286adfa5 docs(ledger): pass 9 audit — History/Files/Analytics all clean bills
-e69422bbe feat(tooling): add dependency version drift check, wire into /end protocol
-4488abb7b fix(deps): reconcile package.json declared versions with locked/installed reality
-958b62b2a docs(ledger): pass 8 audit — DevOps/CRM/Capture clean, confirms ISSUE-717 fixed
-5476d10bd docs(ledger): ISSUE-717 Screenwriter Dashboard has zero persistence
-d90496941 docs(ledger): pass 7 departments audit — ISSUE-716 KeysPanel dead rights-collection buttons
-895d7f7d6 fix(ci): clean rebuild + fail-fast diagnostics for firebase functions deploy
-27ac1a928 fix(lint): use render-time state adjustment instead of effect+setState
-ba87a6eea fix(lint): remove cascading dependency from effect hooks
+b39bb096d docs(ledger): pass 19 Merchandise clean bill + full 19-pass session final tally
+280480e09 docs(ledger): pass 18 deep Distribution audit (the platform's core purpose) + full 9-module cycle summary
+4661dcc37 docs(ledger): pass 17 deep Social audit — fully clean, verified end-to-end
+b449340d9 docs(ledger): pass 16 deep Marketing audit — ISSUE-723 fake ad campaign launch, ISSUE-724 dead MapsComponent
+94f2d584b docs(ledger): pass 15 deep Workflow Builder audit — ISSUE-722 no cycle detection
+c6660fa9d docs(ledger): pass 14 deep Licensing audit + deep-audit cycle summary (passes 10-14)
+1719189d8 docs(ledger): pass 13 deep Publishing audit — all clean bills
+24375689b docs(ledger): ISSUE-721 TaxFormCollection fakes success on W-9/W-8BEN upload + notify
+98affd245 docs(ledger): CRITICAL ISSUE-720 — SplitSheetEscrow money release is architecturally broken
+ddfe9d395 docs(ledger): pass 11 deep Booking Agent audit — ISSUE-719 dead AgentActionType enum
 ```
 
 ## Working State
