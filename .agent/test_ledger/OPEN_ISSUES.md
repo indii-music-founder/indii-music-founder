@@ -11246,3 +11246,41 @@ Broadened per William's explicit ask ("more broad or broader use of the term men
 ### Pass 30 clean bill
 
 - **TypeaheadMenu.tsx:** real, wired, functional — confirmed real text-substitution logic in `PromptArea.handleTypeaheadSelect`.
+
+## PASS 31 — Settings sub-tab menu, remaining sections (2026-07-03)
+
+Settings' Desktop/Security sections were deeply covered in Pass 6 (ISSUE-706/707/708). This pass covers the remaining three: Profile, Connections, Notifications, Appearance.
+
+**BUILD ORDER FOR FIX AGENTS:** 732 only — isolated, no dependency chain.
+
+### ISSUE-732: No avatar-upload feature exists anywhere in the app — Profile settings shows photoURL/initials only, with abandoned scaffolding for an upload button that was never built
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM (missing basic personalization feature, not a data-loss/money risk, but a real functionality gap in the most fundamental "make this account yours" surface)
+- **Module:** Settings / ProfileSection
+- **Depends on:** nothing — parallel-safe
+- **Summary:** `ProfileSection.tsx` imports `Camera` from `lucide-react` (flagged by lint earlier this session as an unused import) and wraps the avatar display in a `group` class — both signals that a hover-to-reveal upload button was planned. But the actual avatar markup only ever renders `user.photoURL` (an `<img>`) or an initials fallback — no upload trigger, no file input, no `Camera` icon rendered anywhere. Confirmed via repo-wide grep: zero avatar/photoURL-upload capability exists anywhere in the renderer codebase — this isn't just missing from Settings, it doesn't exist at all. A user has no way to change their profile picture.
+- **Fix Direction:** Build the avatar upload: a hover-revealed camera-icon button over the avatar (matching the `group` class already in place), wired to a file picker → `StorageService.uploadFile` (the same real upload service already used elsewhere, e.g. mobile-remote's QuickCaptureView) → update `photoURL` via the real profile-update path (`updatePreferences`'s sibling or a dedicated `updateProfile` action) → persist via the existing `saveProfileToStorage`.
+- **Files:** `packages/renderer/src/modules/settings/settings-panel/ProfileSection.tsx`
+
+### Pass 31 clean bills (verified deep, not pattern-only)
+
+- **Appearance:** real Zustand store delegation (`setTheme`, `updatePreferences`).
+- **Notifications:** real `updatePreferences` calls, traced to `profileSlice.ts` — genuine `saveProfileToStorage` persistence with proper error logging, not in-memory-only.
+- **Connections:** real OAuth 2.0 flow via `EmailService` for Gmail/Outlook account linking, not fabricated.
+- **Verdict:** Settings' remaining three sections are solid; only the Profile avatar gap is real.
+
+## MENU AUDIT — FULL SESSION SUMMARY (2026-07-03)
+
+Nine distinct menu-shaped surfaces fully swept this session under the "test all menus" goal:
+1. Main studio app sidebar (19 passes)
+2. Admin Dashboard app (5 passes)
+3. Mobile Remote tab bar (1 pass)
+4. RightPanel (1 pass)
+5. Creative "hero bar" / CreativeNavbar (1 pass)
+6. Electron native OS menu bar (1 pass)
+7. Right-click context menus (1 pass)
+8. CommandBar's internal menus (1 pass)
+9. Settings sub-tab menu (1 pass, remaining sections)
+
+**Total: 32 passes, 15 real findings (ISSUE-718 through 732)** — 1 critical, 4 high-tier from the deep functional cycle, plus 4 more high/medium findings from the menu-broadening passes (726 fake DNS, 727/728 fake workflow+knowledge panels, 729 dead Cmd+S, 730 unconfirmed delete, 732 missing avatar upload), and 6 low-severity dead-code cleanups (718/719/724/725/731).
