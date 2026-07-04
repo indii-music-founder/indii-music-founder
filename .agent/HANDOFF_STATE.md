@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-07-03 19:45 EDT
+**Updated:** 2026-07-03 20:04 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+ba87a6eea fix(lint): remove cascading dependency from effect hooks
 ff210efd8 fix(test): VideoGenerationService test using invalid model enum
 4744504a6 docs(ledger): pass 7 departments audit checkpoint — agent/social dead affordances logged
 9135d906d fix(test): RoadManager test missing useStore mock
@@ -13,11 +14,11 @@ a95360b32 chore: session checkpoint [15:29]
 c8bfd1c9c chore: session checkpoint [15:28]
 14346f6dd chore: session checkpoint [15:27]
 bd2e47342 chore: session checkpoint [15:27]
-195f4c257 chore: session checkpoint [15:24]
 ```
 
 ## Working State
 ```
+M  .agent/HANDOFF_STATE.md
  M .agent/test_ledger/OPEN_ISSUES.md
  D .new_gemini_key.txt
  D .new_maps_key.txt
@@ -44,10 +45,23 @@ bd2e47342 chore: session checkpoint [15:27]
  M packages/renderer/src/modules/creative/services/__tests__/creativeManifest.test.ts
  M packages/renderer/src/modules/creative/services/creativeManifest.ts
  M packages/renderer/src/modules/creative/video/OmniWorkflow.tsx
+ M packages/renderer/src/modules/memory/MemoryDashboard.test.tsx
+ M packages/renderer/src/modules/memory/MemoryDashboard.tsx
  M packages/renderer/src/modules/notes/NotesModule.tsx
+ M packages/renderer/src/modules/social/components/SocialFeed.interaction.test.tsx
+ M packages/renderer/src/modules/social/components/SocialFeed.tsx
+ M packages/renderer/src/modules/touring/RoadManager.test.tsx
+ M packages/renderer/src/modules/touring/RoadManager.tsx
+ M packages/renderer/src/modules/touring/components/PlanningTab.tsx
  M packages/renderer/src/modules/touring/components/TourMap.tsx
+ M packages/renderer/src/modules/touring/hooks/useTouring.ts
+ M packages/renderer/src/modules/touring/types.ts
  M packages/renderer/src/services/image/EditingService.test.ts
  M packages/renderer/src/services/image/EditingService.ts
+ M packages/renderer/src/services/touring/TouringService.test.ts
+ M packages/renderer/src/services/touring/TouringService.ts
+ M packages/renderer/src/services/touring/touringSchemas.test.ts
+ M packages/renderer/src/types/firestore.ts
  M packages/shared/dist/index.d.ts.map
  M packages/shared/dist/schemas/agentLoopState.d.ts
  M packages/shared/dist/schemas/env.schema.d.ts
@@ -59,6 +73,7 @@ bd2e47342 chore: session checkpoint [15:27]
 ?? packages/renderer/src/modules/creative/video/OmniWorkflow.test.tsx
 ?? packages/renderer/src/modules/notes/__tests__/
 ?? packages/renderer/src/modules/touring/components/TourMap.test.tsx
+?? packages/renderer/src/modules/touring/itinerary.ts
 ```
 
 ## Decisions
