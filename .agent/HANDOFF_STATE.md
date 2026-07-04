@@ -1,9 +1,12 @@
 # Handoff State
-**Updated:** 2026-07-03 22:54 EDT
+**Updated:** 2026-07-03 23:05 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+ef82c8c59 docs(ledger): third menu — Mobile Remote tab bar fully swept, clean. Three-menu audit complete.
+905379ca9 docs(ledger): complete admin-dashboard menu sweep — 5 clean, 1 finding (726)
+f1740e28e docs(ledger): new menu — admin-dashboard app, pass 20 ISSUE-726 fake DNS status
 b39bb096d docs(ledger): pass 19 Merchandise clean bill + full 19-pass session final tally
 280480e09 docs(ledger): pass 18 deep Distribution audit (the platform's core purpose) + full 9-module cycle summary
 4661dcc37 docs(ledger): pass 17 deep Social audit — fully clean, verified end-to-end
@@ -11,13 +14,11 @@ b449340d9 docs(ledger): pass 16 deep Marketing audit — ISSUE-723 fake ad campa
 94f2d584b docs(ledger): pass 15 deep Workflow Builder audit — ISSUE-722 no cycle detection
 c6660fa9d docs(ledger): pass 14 deep Licensing audit + deep-audit cycle summary (passes 10-14)
 1719189d8 docs(ledger): pass 13 deep Publishing audit — all clean bills
-24375689b docs(ledger): ISSUE-721 TaxFormCollection fakes success on W-9/W-8BEN upload + notify
-98affd245 docs(ledger): CRITICAL ISSUE-720 — SplitSheetEscrow money release is architecturally broken
-ddfe9d395 docs(ledger): pass 11 deep Booking Agent audit — ISSUE-719 dead AgentActionType enum
 ```
 
 ## Working State
 ```
+M  .agent/HANDOFF_STATE.md
  D .new_gemini_key.txt
  D .new_maps_key.txt
  M packages/firebase/package.json
