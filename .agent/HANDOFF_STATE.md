@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-07-03 22:17 EDT
+**Updated:** 2026-07-03 22:27 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+915a84077 docs(ledger): pass 10 deep Legal audit — ISSUE-718 orphaned legacy tools.ts
 f286adfa5 docs(ledger): pass 9 audit — History/Files/Analytics all clean bills
 e69422bbe feat(tooling): add dependency version drift check, wire into /end protocol
 4488abb7b fix(deps): reconcile package.json declared versions with locked/installed reality
@@ -13,7 +14,6 @@ d90496941 docs(ledger): pass 7 departments audit — ISSUE-716 KeysPanel dead ri
 895d7f7d6 fix(ci): clean rebuild + fail-fast diagnostics for firebase functions deploy
 27ac1a928 fix(lint): use render-time state adjustment instead of effect+setState
 ba87a6eea fix(lint): remove cascading dependency from effect hooks
-ff210efd8 fix(test): VideoGenerationService test using invalid model enum
 ```
 
 ## Working State
