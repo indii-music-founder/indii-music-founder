@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-07-03 20:51 EDT
+**Updated:** 2026-07-03 20:55 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+5476d10bd docs(ledger): ISSUE-717 Screenwriter Dashboard has zero persistence
 d90496941 docs(ledger): pass 7 departments audit — ISSUE-716 KeysPanel dead rights-collection buttons
 895d7f7d6 fix(ci): clean rebuild + fail-fast diagnostics for firebase functions deploy
 27ac1a928 fix(lint): use render-time state adjustment instead of effect+setState
@@ -13,7 +14,6 @@ ff210efd8 fix(test): VideoGenerationService test using invalid model enum
 9135d906d fix(test): RoadManager test missing useStore mock
 35710192d fix(audio): three critical bugs blocking analyzer — auth failure, param error, opaque errors
 1ed4269ff chore: session checkpoint [15:29]
-a95360b32 chore: session checkpoint [15:29]
 ```
 
 ## Working State
@@ -49,6 +49,8 @@ a95360b32 chore: session checkpoint [15:29]
  M packages/renderer/src/modules/creative/services/creativeManifest.ts
  M packages/renderer/src/modules/creative/video/OmniWorkflow.tsx
  M packages/renderer/src/modules/dashboard/components/GlobalSettings.tsx
+ M packages/renderer/src/modules/distribution/components/KeysPanel.tsx
+ M packages/renderer/src/modules/distribution/components/__tests__/KeysPanel.test.tsx
  M packages/renderer/src/modules/memory/MemoryDashboard.test.tsx
  M packages/renderer/src/modules/memory/MemoryDashboard.tsx
  M packages/renderer/src/modules/mobile-remote/MobileRemote.tsx
