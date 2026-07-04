@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-07-03 21:09 EDT
+**Updated:** 2026-07-03 21:17 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+e69422bbe feat(tooling): add dependency version drift check, wire into /end protocol
+4488abb7b fix(deps): reconcile package.json declared versions with locked/installed reality
 958b62b2a docs(ledger): pass 8 audit — DevOps/CRM/Capture clean, confirms ISSUE-717 fixed
 5476d10bd docs(ledger): ISSUE-717 Screenwriter Dashboard has zero persistence
 d90496941 docs(ledger): pass 7 departments audit — ISSUE-716 KeysPanel dead rights-collection buttons
@@ -12,40 +14,38 @@ d90496941 docs(ledger): pass 7 departments audit — ISSUE-716 KeysPanel dead ri
 ba87a6eea fix(lint): remove cascading dependency from effect hooks
 ff210efd8 fix(test): VideoGenerationService test using invalid model enum
 4744504a6 docs(ledger): pass 7 departments audit checkpoint — agent/social dead affordances logged
-9135d906d fix(test): RoadManager test missing useStore mock
-35710192d fix(audio): three critical bugs blocking analyzer — auth failure, param error, opaque errors
 ```
 
 ## Working State
 ```
-M  .agent/HANDOFF_STATE.md
  D .new_gemini_key.txt
  D .new_maps_key.txt
- M package-lock.json
- M package.json
  M packages/firebase/package.json
  M packages/firebase/src/__tests__/image_gen.test.ts
  M packages/firebase/src/functions/creative/gateway.test.ts
  M packages/firebase/src/functions/creative/gateway.ts
  M packages/firebase/src/index.ts
  M packages/firebase/src/lib/touring.ts
- M packages/renderer/package.json
  M packages/renderer/src/core/App.tsx
  M packages/renderer/src/core/store/slices/creative/__tests__/creativeHistorySlice.test.ts
  M packages/renderer/src/core/store/slices/creative/creativeHistorySlice.ts
  M packages/renderer/src/modules/creative/__tests__/creativeInterconnect.contract.test.ts
  M packages/renderer/src/modules/creative/components/CandidateReview.tsx
  M packages/renderer/src/modules/creative/components/CanvasHeader.tsx
+ M packages/renderer/src/modules/creative/components/CanvasToolbar.test.tsx
+ M packages/renderer/src/modules/creative/components/CanvasToolbar.tsx
  M packages/renderer/src/modules/creative/components/CharacterLibrary.tsx
  M packages/renderer/src/modules/creative/components/CreativeCanvas.tsx
  M packages/renderer/src/modules/creative/components/EditDefinitionsPanel.tsx
  M packages/renderer/src/modules/creative/components/InfiniteCanvas.tsx
  M packages/renderer/src/modules/creative/components/InfiniteCanvasHUD.tsx
+ M packages/renderer/src/modules/creative/components/LayersPanel.tsx
  M packages/renderer/src/modules/creative/components/__tests__/CanvasHeader.test.tsx
  M packages/renderer/src/modules/creative/components/__tests__/CreativeCanvas.test.tsx
  M packages/renderer/src/modules/creative/components/__tests__/InfiniteCanvas.test.tsx
  M packages/renderer/src/modules/creative/components/__tests__/InfiniteCanvasHUD.test.tsx
  M packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts
+ M packages/renderer/src/modules/creative/services/CanvasOperationsService.ts
  M packages/renderer/src/modules/creative/services/__tests__/creativeManifest.test.ts
  M packages/renderer/src/modules/creative/services/creativeManifest.ts
  M packages/renderer/src/modules/creative/video/OmniWorkflow.tsx
@@ -87,6 +87,7 @@ M  .agent/HANDOFF_STATE.md
 ?? packages/renderer/src/core/App.remoteSurface.test.ts
 ?? packages/renderer/src/modules/creative/components/__tests__/CharacterLibrary.test.tsx
 ?? packages/renderer/src/modules/creative/components/__tests__/EditDefinitionsPanel.test.tsx
+?? packages/renderer/src/modules/creative/services/CanvasOperationsService.test.ts
 ?? packages/renderer/src/modules/creative/video/OmniWorkflow.test.tsx
 ?? packages/renderer/src/modules/dashboard/components/GlobalSettings.test.tsx
 ?? packages/renderer/src/modules/notes/__tests__/
