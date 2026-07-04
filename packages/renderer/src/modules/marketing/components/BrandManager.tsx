@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import {
@@ -37,13 +37,18 @@ const BrandManager: React.FC = () => {
     // Tab State
     const [activeTab, setActiveTab] = useState<TabId>('identity');
 
-    useEffect(() => {
-        if (!pendingMarketingHandoff) return;
-        const pendingTab = resolveBrandManagerTab(pendingMarketingHandoff.targetView);
-        if (pendingTab && activeTab !== pendingTab) {
-            setActiveTab(pendingTab);
+    // Adjust state during render (not in an effect) when a new handoff arrives —
+    // avoids the cascading-render pattern flagged by react-hooks/set-state-in-effect.
+    const [prevHandoff, setPrevHandoff] = useState(pendingMarketingHandoff);
+    if (pendingMarketingHandoff !== prevHandoff) {
+        setPrevHandoff(pendingMarketingHandoff);
+        if (pendingMarketingHandoff) {
+            const pendingTab = resolveBrandManagerTab(pendingMarketingHandoff.targetView);
+            if (pendingTab && activeTab !== pendingTab) {
+                setActiveTab(pendingTab);
+            }
         }
-    }, [pendingMarketingHandoff]);
+    }
 
     // Brand Kit with defaults
     const brandKit: BrandKitWithDefaults = {
