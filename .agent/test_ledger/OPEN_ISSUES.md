@@ -11201,3 +11201,26 @@ A completely different class of menu — not React, not a UI component tree, but
 ### Pass 28 clean bill (partial)
 
 - **All other native menu items** (File > Close/Quit, Edit's undo/redo/cut/copy/paste/speech, View's reload/zoom/fullscreen, Window's minimize/zoom/front, Help > Learn More) are either Electron's built-in `role`-based items (always real, OS-provided behavior) or a genuine `shell.openExternal` call (Learn More → indii.music). Only the custom "Save" action is broken.
+
+## SEVENTH MENU — right-click context menus (2026-07-03)
+
+Broadened per William's explicit ask ("more broad or broader use of the term menus") to right-click context menus — a UI pattern distinct from every menu type audited so far. Found 4 files using `ContextMenu`/`onContextMenu`: `merchandise/DesignCanvas.tsx` (false positive — a Fabric.js config flag, not a real menu), `finance/EarningsTable.tsx`, `finance/MerchTable.tsx`, `creative/video/editor/TimelineClip.tsx`.
+
+## PASS 29 — Context menus sweep (2026-07-03)
+
+**BUILD ORDER FOR FIX AGENTS:** 730 only — isolated fix, no dependency chain.
+
+### ISSUE-730: MerchTable's context-menu "Delete Product" has zero confirmation dialog — violates the project's own ConfirmDialog standard, one accidental click permanently destroys a real product listing
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH (real data-loss risk on a destructive action reachable by a single accidental right-click; also a direct violation of this repo's own standing architecture rule)
+- **Module:** Finance / MerchTable
+- **Depends on:** nothing — parallel-safe
+- **Summary:** `MerchTable.tsx`'s right-click context menu includes a real, functional "Delete Product" item that calls `MarketplaceService.deleteProduct(product.id)` directly on `onSelect` — no confirmation step of any kind. Confirmed via grep: zero `ConfirmDialog` import or usage anywhere in this file. This directly violates the project's own standing rule (CLAUDE.md: "Native `window.confirm`... are banned... use `ConfirmDialog`... never fake a modal") — this isn't even using a native confirm as a fallback, it's skipping confirmation entirely. Right-click menus are especially prone to accidental triggers (mis-click, wrong item selected in a crowded menu), making this a real, plausible data-loss path for a real merch product listing with no undo.
+- **Fix Direction:** Wrap the delete action in `const ok = await ConfirmDialog.call({ message: 'Delete this product? This cannot be undone.' }); if (!ok) return;` before calling `MarketplaceService.deleteProduct`, matching the pattern already used elsewhere in the codebase (per CLAUDE.md's dialog standard).
+- **Files:** `packages/renderer/src/modules/finance/components/MerchTable.tsx:319-333`
+
+### Pass 29 clean bills (partial)
+
+- **EarningsTable's context menu:** real clipboard actions (Copy ISRC, Copy Release Name) — no destructive actions, no confirmation needed. Minor cosmetic nit: a trailing `ContextMenu.Separator` with nothing after it (dead divider line, zero functional impact, not worth its own issue).
+- **DesignCanvas's `stopContextMenu`:** a Fabric.js library config flag suppressing the browser's native right-click menu on the design canvas — not a custom app menu, false positive for this audit.
