@@ -1,7 +1,7 @@
 {
   "name": "indii.music",
   "version": "1.64.5",
-  "description": "The Operating System for Independent Music — npm Workspace Monorepo",
+  "description": "The Operating System for Independent Music \u2014 npm Workspace Monorepo",
   "author": "New Detroit Music LLC <info@indii.music>",
   "type": "module",
   "private": true,
@@ -56,6 +56,7 @@
     "test:api": "npm run test:contracts && npm run test:generation && npm run test:initialization && npm run test:payloads && npm run test:async",
     "test:api:ci": "CI=true npm run test:api -- --run",
     "detect:bugs": "bash scripts/detect-hidden-bugs.sh",
+    "check:dep-drift": "node scripts/check-dep-version-drift.cjs",
     "test:rules": "FIRESTORE_EMULATOR_HOST=localhost:8080 vitest run --config vitest.rules.config.ts",
     "emulator:functions": "firebase emulators:start --only functions",
     "health:check": "vitest --run --grep '\\.integration\\.test\\.ts' -- packages/renderer/src/services",
@@ -99,7 +100,7 @@
     "firebase-tools": "15.22.3",
     "globals": "16.5.0",
     "husky": "^9.1.7",
-    "jsdom": "^29.0.2",
+        "jsdom": "26.1.0",
     "lightningcss": "1.30.2",
     "lint-staged": "^16.4.0",
     "tsx": "^4.21.0",
@@ -184,11 +185,14 @@
     "zod": "3.25.76",
     "@genkit-ai/firebase": "1.26.0",
     "@genkit-ai/google-cloud": "1.26.0",
-    "fast-xml-parser": "5.5.10",
+    "fast-xml-parser": "^5.9.3",
     "@types/react": "18.3.3",
     "@types/react-dom": "18.3.0",
     "react": "18.3.1",
-    "react-dom": "18.3.1"
+    "react-dom": "18.3.1",
+    "uuid": "11.1.1",
+    "ts-deepmerge": "8.0.0",
+    "@opentelemetry/core": "^2.9.0"
   },
   "lint-staged": {
     "package.json": [
