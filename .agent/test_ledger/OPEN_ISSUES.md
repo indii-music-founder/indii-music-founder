@@ -11009,3 +11009,36 @@ Modules covered at genuine functional depth (not pattern-grep): Legal, Booking A
 - **Social `tools.ts`:** actively used (real callers in `CreatePostModal`/`AccountCreationWizard` + a real test file) — NOT the same orphaned-scaffolding pattern as Legal's `tools.ts` (ISSUE-718) despite the identical filename.
 - **Post creation → scheduling → delivery, traced end to end:** `CreatePostModal` (AI copy-write via `SOCIAL_TOOLS`) → `onSave` callback → `SocialDashboard.handleCreatePost` → `useSocial.schedulePost` → `SocialService.schedulePost` (real auth check, real Zod validation, real `addDoc` to Firestore `scheduledPosts` with `status: "pending"`, `retryCount: 0`) → real backend Cloud Function consumer `packages/firebase/src/social/deliverScheduledPosts.ts`. Fully real, no fabrication or dead links found at any layer of this chain.
 - **Verdict:** Social's core posting pipeline is one of the most solidly end-to-end-verified features in this entire deep-audit cycle.
+
+## PASS 18 — Distribution deep audit (2026-07-03) — the core purpose of the platform
+
+**BUILD ORDER FOR FIX AGENTS:** 725 only — minor hardening, no dependency chain, not urgent.
+
+### ISSUE-725 (minor): Release ID generated from `Date.now()` instead of a collision-resistant ID
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟢 LOW (theoretical collision risk only — two release submissions from the same user in the same millisecond is extremely unlikely via UI interaction, but a UUID/nanoid costs nothing and removes the risk class entirely)
+- **Module:** Distribution / SubmitReleaseModal
+- **Depends on:** nothing — parallel-safe
+- **Summary:** `SubmitReleaseModal.handleSubmit` builds `releaseId: \`release-${Date.now()}\`` client-side. `DistributionService.submitRelease` falls back to `releaseData.releaseId ?? releaseData.upc ?? taskId` — so a real `taskId` fallback exists if `releaseId` is missing, but when present, the `Date.now()`-derived id is used as-is with no collision guard.
+- **Fix Direction:** Use `crypto.randomUUID()` (already used elsewhere in the codebase, e.g. `generateDesignId` in MerchDesigner) instead of `Date.now()` for the client-generated `releaseId`.
+- **Files:** `packages/renderer/src/modules/distribution/components/SubmitReleaseModal.tsx`
+
+### Pass 18 clean bills (verified deep, not pattern-only) — the strongest results of the entire deep-audit cycle
+
+- **`DistributionService.submitRelease` (the actual "send to real distributors" action):** rigorously real and well-gated. Real DDEX schema validation (`DDEXReleaseSchema.parse`) runs as a HARD GATE before submission — throws `QC Validation Failed` on any schema violation, not bypassable by the UI. Real mechanical royalty clearance pre-flight check (`MechanicalRoyaltyService.isReleaseClearedForDistribution`) blocks distribution if the release isn't cleared — connects correctly to the same honesty-contract system verified in Pass 13/10 (Publishing/Legal). Real metadata snapshot written for post-distribution history. Real immutable audit event (`writeDistributionAuditEvent`) on both success and failure paths. Real task/status lifecycle tracking throughout.
+- **`QCVisualizer` (audio-quality forensics):** delegates to real `distributionService` forensics reporting (`ForensicsReport`/`ForensicsDetails` types) — not a decorative UI panel a user could ignore; ties into the same real audio-QC backend confirmed via `AudioQCService.ts` and `DSPCompliance.test.ts` in earlier CI verification this session.
+- **Verdict:** Distribution's actual release-submission pipeline — the literal core purpose of this platform, per its "first software of its kind" positioning — is the single best-architected, most rigorously honest feature surface found across this entire 18-pass audit. Hard QC gates, real clearance checks, real audit trails, no shortcuts. This is what "platinum" looks like when it's done right; use this file as the reference implementation for any future release-adjacent or compliance-adjacent feature.
+
+## FULL DEEP-AUDIT CYCLE SUMMARY (Passes 10-18, 2026-07-03)
+
+Modules audited at genuine functional depth: Legal, Booking Agent, Finance, Publishing, Licensing, Workflow Builder, Marketing, Social, Distribution.
+
+**Total findings:** 11 issues (718-725, plus companion findings folded into 720/721/723).
+- 🔴 **CRITICAL:** 1 (ISSUE-720, SplitSheetEscrow double-payment risk)
+- 🟠 **HIGH:** 3 (ISSUE-721 TaxForm false compliance signal, ISSUE-722 Workflow infinite-loop cost risk, ISSUE-723 fake ad campaign launch)
+- 🟢 **LOW:** 4 (ISSUE-718/719/724 dead code, ISSUE-725 weak ID generation)
+
+**Modules confirmed fully clean and real:** Booking Agent's scouting, Publishing's earnings/royalty chain, Licensing's Stripe-Checkout-based sales, Social's complete posting pipeline, Distribution's entire submission pipeline (the strongest result of the cycle), Workflow's per-node execution engine.
+
+**Cross-cutting pattern:** the codebase's quality is NOT uniform, but it is legible — every real defect found traces to either (a) an orphaned code path superseded by a better real implementation elsewhere and never deleted, or (b) a feature that fakes success instead of honestly erroring when a backend integration isn't finished yet. The features built with real backend rigor (Distribution, Publishing, Social, Licensing's Checkout flow) are excellent. Recommend: before building any new feature, check for an existing honest-failure pattern to copy (`StripeConnectOnboarding`, `InfluencerBountyBoard.initiatePayout`) rather than defaulting to a fake-success `setTimeout` stub.
