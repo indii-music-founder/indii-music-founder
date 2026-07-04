@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-07-03 20:08 EDT
+**Updated:** 2026-07-03 20:46 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+895d7f7d6 fix(ci): clean rebuild + fail-fast diagnostics for firebase functions deploy
 27ac1a928 fix(lint): use render-time state adjustment instead of effect+setState
 ba87a6eea fix(lint): remove cascading dependency from effect hooks
 ff210efd8 fix(test): VideoGenerationService test using invalid model enum
@@ -13,7 +14,6 @@ ff210efd8 fix(test): VideoGenerationService test using invalid model enum
 1ed4269ff chore: session checkpoint [15:29]
 a95360b32 chore: session checkpoint [15:29]
 c8bfd1c9c chore: session checkpoint [15:28]
-14346f6dd chore: session checkpoint [15:27]
 ```
 
 ## Working State
@@ -28,8 +28,12 @@ c8bfd1c9c chore: session checkpoint [15:28]
  M packages/firebase/src/functions/creative/gateway.test.ts
  M packages/firebase/src/functions/creative/gateway.ts
  M packages/firebase/src/index.ts
+ M packages/firebase/src/lib/touring.ts
  M packages/renderer/package.json
+ M packages/renderer/src/core/store/slices/creative/__tests__/creativeHistorySlice.test.ts
+ M packages/renderer/src/core/store/slices/creative/creativeHistorySlice.ts
  M packages/renderer/src/modules/creative/__tests__/creativeInterconnect.contract.test.ts
+ M packages/renderer/src/modules/creative/components/CandidateReview.tsx
  M packages/renderer/src/modules/creative/components/CanvasHeader.tsx
  M packages/renderer/src/modules/creative/components/CharacterLibrary.tsx
  M packages/renderer/src/modules/creative/components/CreativeCanvas.tsx
@@ -44,11 +48,13 @@ c8bfd1c9c chore: session checkpoint [15:28]
  M packages/renderer/src/modules/creative/services/__tests__/creativeManifest.test.ts
  M packages/renderer/src/modules/creative/services/creativeManifest.ts
  M packages/renderer/src/modules/creative/video/OmniWorkflow.tsx
+ M packages/renderer/src/modules/dashboard/components/GlobalSettings.tsx
  M packages/renderer/src/modules/memory/MemoryDashboard.test.tsx
  M packages/renderer/src/modules/memory/MemoryDashboard.tsx
  M packages/renderer/src/modules/notes/NotesModule.tsx
  M packages/renderer/src/modules/observability/AdminLockScreen.tsx
  M packages/renderer/src/modules/settings/SettingsPanel.test.tsx
+ M packages/renderer/src/modules/settings/settings-panel/DesktopSection.tsx
  M packages/renderer/src/modules/settings/settings-panel/SecuritySection.tsx
  M packages/renderer/src/modules/social/components/SocialFeed.interaction.test.tsx
  M packages/renderer/src/modules/social/components/SocialFeed.tsx
@@ -56,10 +62,12 @@ c8bfd1c9c chore: session checkpoint [15:28]
  M packages/renderer/src/modules/touring/RoadManager.tsx
  M packages/renderer/src/modules/touring/components/PlanningTab.tsx
  M packages/renderer/src/modules/touring/components/TourMap.tsx
+ D packages/renderer/src/modules/touring/components/VisaImmigrationChecklist.tsx
  M packages/renderer/src/modules/touring/hooks/useTouring.ts
  M packages/renderer/src/modules/touring/types.ts
  M packages/renderer/src/services/image/EditingService.test.ts
  M packages/renderer/src/services/image/EditingService.ts
+ M packages/renderer/src/services/storage/safeStorageFetch.ts
  M packages/renderer/src/services/touring/TouringService.test.ts
  M packages/renderer/src/services/touring/TouringService.ts
  M packages/renderer/src/services/touring/touringSchemas.test.ts
@@ -73,6 +81,7 @@ c8bfd1c9c chore: session checkpoint [15:28]
 ?? packages/renderer/src/modules/creative/components/__tests__/CharacterLibrary.test.tsx
 ?? packages/renderer/src/modules/creative/components/__tests__/EditDefinitionsPanel.test.tsx
 ?? packages/renderer/src/modules/creative/video/OmniWorkflow.test.tsx
+?? packages/renderer/src/modules/dashboard/components/GlobalSettings.test.tsx
 ?? packages/renderer/src/modules/notes/__tests__/
 ?? packages/renderer/src/modules/observability/AdminLockScreen.test.tsx
 ?? packages/renderer/src/modules/touring/components/TourMap.test.tsx

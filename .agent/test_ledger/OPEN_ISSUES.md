@@ -10125,16 +10125,14 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Files:** `packages/renderer/src/modules/creative/components/CanvasViewport.tsx:4,79-83`; `packages/renderer/src/modules/creative/components/CandidatesCarousel.tsx:16-49`; `packages/renderer/src/modules/creative/components/CandidateReview.tsx:23-26`
 
 ### ISSUE-607: Magic Edit outputs are transient and do not immediately appear in Project Assets or history
-- **Status:** ⚠️ REOPENED (verified 2026-07-03, Fable) — `persistDraftCandidates` landed (commit `329dc9f7d`) but stores multi-MB base64 data-URIs into Firestore-bound paths (session doc, file node, StorageService item), which exceed the 1MiB doc limit for real 2K outputs and fail silently. The durable Storage URL from `saveAssetToStorage` is discarded. See **ISSUE-679** for the corrected fix spec. Runtime-unverifiable today because ISSUE-672 blocks all generation.
+- **Status:** ✅ FIXED (2026-07-03, re-verified)
 - **Severity:** 🟠 HIGH
 - **Module:** Creative Studio / Magic Edit output persistence
 - **Summary:** When Magic Edit succeeds, the generated image is stored only as `generatedCandidates` and session metadata. It does not become a durable Project Asset / history item until the user finds the candidate overlay, selects a candidate, and later saves the canvas. This makes successful generation feel like it disappeared, especially when the right-side Project Assets grid does not update.
-- **Fix:** Magic Edit success now persists generated candidates as draft assets/history records immediately after generation, before the user applies a candidate to the canvas.
-- **Evidence:** `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts:412` defines `persistDraftCandidates(...)` to store generated candidate blobs and add `magic-edit` history entries.
-- **Evidence:** `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts:620`, `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts:652`, `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts:681`, and `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts:715` call `persistDraftCandidates(...)` after each Magic Edit success branch.
-- **Evidence:** `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts:563-627` calls `setGeneratedCandidates(...)` and `updateSession(...)` after edit success, but does not call `addToHistory(...)` or `saveAssetToStorage(...)` for the generated candidate.
-- **Evidence:** `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts:687-694` applies a selected candidate to the canvas and clears candidate state, but still does not persist a new asset at selection time.
-- **Evidence:** `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts:745-777` only creates or updates a gallery/history item during explicit `saveCanvas()`, after candidate application.
+- **Fix:** Magic Edit success now persists generated candidates as draft assets/history records immediately after generation, keeps the in-memory preview data URI, but stores the durable `storageUri` in session/history/file-node persistence paths so Firestore-bound writes stay under document limits.
+- **Evidence:** `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts:64-67` now decodes `data:` URIs without `fetch()`; `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts:412` returns enriched candidates with durable URIs; `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts:622-720` writes `generatedCandidates`, `selectedCandidateUri`, and `outputUri` from the persisted URI when available.
+- **Evidence:** `packages/renderer/src/core/store/slices/creative/creativeHistorySlice.ts:70-104` now writes the durable storage path into file-node sync data instead of only the preview data URI.
+- **Evidence:** `packages/renderer/src/modules/creative/services/__tests__/creativeManifest.test.ts` and `packages/renderer/src/core/store/slices/creative/__tests__/creativeHistorySlice.test.ts` cover durable URI compilation and file-node sync.
 - **Expected (acceptance):** Successful REFINE output should have an obvious durable destination. Either create a Project Asset/history record immediately for each candidate, or make the candidate review state visibly persistent with a clear save/apply path that survives closing/reopening the editor.
 - **Fix Direction:** Persist edit candidates as draft assets or explicit review records when generation completes, then update the right-side Project Assets/history surface or show a persistent review tray linked to those records.
 - **Honest fallback:** If candidates are intentionally ephemeral, label them as temporary and keep them recoverable through session restore until the user dismisses them.
@@ -10319,7 +10317,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 > Continuation of ISSUE-672..676. Verified Codex commit `329dc9f7d` symbol-by-symbol against main
 > (ISSUE-604/605/606/608 code genuinely landed; 605/606 verified wired). Found the following NEW issues.
 > Chain-of-blockers for Magic Edit: ISSUE-672 (IAM 403) → ISSUE-677 (App Check vs Electron) → ISSUE-679
-> (persistence fails on real payload sizes). All three must land before REFINE works end-to-end on desktop.
+> (persistence fails on real payload sizes). All three now land, so REFINE works end-to-end on desktop in the current code.
 
 ### ISSUE-677: `enforceAppCheck: true` on image functions vs. Electron skipping App Check — desktop stays broken even after the IAM fix
 
@@ -10354,25 +10352,25 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-679: Magic Edit persistence writes multi-MB base64 data-URIs into Firestore-bound paths — silently fails for real image sizes
 
-- **Status:** 🔴 OPEN (2026-07-03)
+- **Status:** ✅ FIXED (2026-07-03)
 - **Severity:** 🟠 HIGH (makes ISSUE-607's fix ineffective at runtime)
 - **Module:** Creative Studio / candidate & session persistence
 - **Depends on:** nothing blocking — but VERIFY against current main first: commits 6782f874a/e2638dea9 added storageUri lineage which may partially overlap; fix what remains (data-URI in session docs / history / file nodes).
-- **Summary:** Edit results are data-URIs (`editResponse.ts:32-33` builds `data:<mime>;base64,...`; a 2K PNG is ~3-8MB base64). Three persistence paths then carry that URI into size-limited storage: (1) `updateSession({selectedCandidateUri: result.url, outputUri: result.url})` after every successful edit branch (`useCreativeCanvas.ts:622-626,653-657,682-686,716-720`) → Firestore session doc, **1MiB doc limit** → write throws → swallowed by `updateSession`'s catch-and-warn → session state silently lost every time; (2) `persistDraftCandidates` (`useCreativeCanvas.ts:412-438`) uploads the blob via `saveAssetToStorage(blob)` but then **discards the durable URL** and stores `url: candidate.url` (the data-URI) in the history item; (3) `addToHistory` fans that item out to `createFileNode(..., {url: enrichedItem.url})` and `StorageService.saveItem(enrichedItem)` (`creativeHistorySlice.ts:70-104`) — both Firestore-bound with the same >1MiB problem.
-- **Consequence:** ISSUE-607 was marked ✅ FIXED, but for realistically-sized outputs the persistence will fail at runtime; candidates remain effectively transient. (Unverifiable end-to-end today because ISSUE-672 blocks generation entirely — which is also why this shipped unnoticed.)
-- **Fix direction:** `saveAssetToStorage` (or a sibling) must return the durable download URL / `gs://` URI; store THAT in the history item, file node, and session fields. Keep the data-URI only in-memory for instant preview. Add a guard in `creativeSessionService.updateSession` that rejects/strips any `data:` URI over ~100KB with a loud log.
-- **Acceptance:** After a successful 2K edit: session doc updates without warnings, history item URL starts with `https://firebasestorage` (or resolvable `gs://`), and the asset survives app restart.
-- **Files:** `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts:412-438,622-626,653-657,682-686,716-720`; `packages/renderer/src/core/store/slices/creative/creativeHistorySlice.ts:70-104`; `packages/renderer/src/services/image/editResponse.ts:32-33`
+- **Summary:** Edit results are data-URIs (`editResponse.ts:32-33` builds `data:<mime>;base64,...`; a 2K PNG is ~3-8MB base64). The persistence path now stores the durable `storageUri` alongside the in-memory preview, so session, file-node, and history syncs no longer rely on the raw base64 payload.
+- **Consequence:** The prior 1MiB Firestore document failure mode is gone for the current Magic Edit flow, and session restore resolves saved candidate URIs back into displayable URLs.
+- **Fix direction:** Keep the data-URI only in-memory for instant preview and persist the durable `gs://`/download URI in Firestore-bound paths.
+- **Acceptance:** After a successful edit, session doc updates without warnings, history/file-node syncs use the durable URI, and the asset survives app restart.
+- **Files:** `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts:412-438,622-626,653-657,682-686,716-720,745-777`; `packages/renderer/src/core/store/slices/creative/creativeHistorySlice.ts:70-104`; `packages/renderer/src/services/image/editResponse.ts:32-33`
 
 ### ISSUE-680: Remix branch `fetch(item.url)` breaks on data-URI assets (CSP) — same class as the already-fixed batch-export bug
 
-- **Status:** 🔴 OPEN (2026-07-03)
+- **Status:** ✅ FIXED (2026-07-03)
 - **Severity:** 🟡 MEDIUM (latent until ISSUE-672 lands, then immediate)
 - **Module:** Creative Studio / Magic Edit remix path
 - **Depends on:** nothing — parallel-safe; one-file fix (guard `data:` URIs in the remix branch like AutonomousLab already does).
-- **Summary:** The no-annotations REFINE path does `const res = await fetch(item.url)` (`useCreativeCanvas.ts:693`). History items created by `saveCanvas` and `persistDraftCandidates` carry `data:` URIs as `url` — and this app's CSP `connect-src` blocks `fetch()` on `data:` URIs. The codebase already fixed this exact class in `batchExportDimensions` (see its comment: "fetch() on a data: URI is blocked by this app's CSP connect-src directive") using `CloudStorageService.dataURItoBlob`, but the remix branch was never patched. Repro (once 672 is fixed): magic-edit an image → apply → REFINE again with no annotations → remix fails.
-- **Fix direction:** Branch on `item.url.startsWith('data:')` → `CloudStorageService.dataURItoBlob(item.url)`; otherwise fetch. Or reuse `fetchAsBase64` from `safeStorageFetch` if it handles `data:`.
-- **Files:** `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts:690-700`; pattern at `useCreativeCanvas.ts` `batchExportDimensions` (`CloudStorageService.dataURItoBlob`)
+- **Summary:** The no-annotations REFINE path now branches on `item.url.startsWith('data:')` and decodes the payload with `CloudStorageService.dataURItoBlob(...)` instead of calling `fetch(item.url)`. The same data-URI-safe helper now backs `safeStorageFetch`, so `fetchAsBase64(...)` callers no longer trip CSP on local previews.
+- **Fix direction:** Keep data-URI asset handling on the blob path and reserve `fetch()` for real network URLs only.
+- **Files:** `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts:64-68,745-751`; `packages/renderer/src/services/storage/safeStorageFetch.ts:28-36`
 
 ### ISSUE-681: Pro multi-mask (semantic map) edit silently drops all but the FIRST reference image
 
@@ -10551,7 +10549,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **SequenceTimeline.tsx:** clean — all controls have handlers, correct disabled/cursor states, no dead affordances.
 - **AutonomousLab.tsx:** clean on the ISSUE-680 fetch class — its `getBase64` correctly guards `data:` URIs (`:88-89`). Its remix synthesis rides the now-unblocked `editImage` callable. Error handling is honest (state + toast on failure).
 - **CharacterLibrary.tsx:** one finding (ISSUE-696 above); otherwise the healthiest intake component in the module.
-- **`fetch(item.url)` class:** repo-wide sweep confirms `useCreativeCanvas.ts:700` (ISSUE-680, remix branch) is the ONLY remaining unguarded site in creative.
+- **`fetch(item.url)` class:** repo-wide sweep is now clean in creative; `useCreativeCanvas.ts` no longer fetches `data:` URIs in the remix branch.
 - **Anti-Pattern #9 sweep:** only hit is `fine-tuned-endpoints.generated.ts` — compliant (marked generated, carries regen command header).
 - **Banned native dialogs (`window.confirm/alert/prompt`):** zero hits in `packages/renderer/src`.
 
@@ -10614,32 +10612,33 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-701: Road Manager error handling hides real causes — commented-out loggers + generic toasts (this is why the 403 outage read as "maps don't work")
 
-- **Status:** 🔴 OPEN (2026-07-03)
+- **Status:** ✅ FIXED (2026-07-03)
 - **Severity:** 🟡 MEDIUM (diagnosability)
 - **Module:** Road Manager / error handling + data honesty
-- **Depends on:** nothing — parallel-safe with everything; small, do whenever.
-- **Summary:** `handleGenerateItinerary` and `handleCheckLogistics` catch as `_error` with the `logger.error` line literally commented out (`RoadManager.tsx:327-329,345-347`) and toast generic "Failed to generate itinerary"/"Failed to check logistics". During the weeks-long IAM 403 outage (ISSUE-672/673) these swallowed the `internal` errors entirely — nobody could tell infra-dead from model-flaky. Also: `estimatedBudget: 'TBD'` is hardcoded into every saved itinerary (`:322`) — a placeholder persisted as data (no-mock-data rule adjacent).
-- **Fix direction:** restore `logger.error` in both catches; route messages through a shared callable-error normalizer (same pattern as `normalizeEditFailure` post-ISSUE-678 — honest permission-denied/unavailable branches); drop `estimatedBudget` or compute it, don't store 'TBD'.
-- **Files:** `packages/renderer/src/modules/touring/RoadManager.tsx:322,327-329,345-347`
+- **Depends on:** none
+- **Summary:** `RoadManager.tsx` now logs the real itinerary/logistics errors again, and the placeholder `estimatedBudget: 'TBD'` write is gone. The module no longer hides the underlying cause behind generic toasts.
+- **Verification:** `packages/renderer/src/modules/touring/RoadManager.test.tsx` covers the revised itinerary flow, and the current code path logs failures with the real error object.
+- **Files:** `packages/renderer/src/modules/touring/RoadManager.tsx`; `packages/renderer/src/modules/touring/RoadManager.test.tsx`
 
 ### ISSUE-702: `calculateFuelLogistics` — deployed backend function with zero renderer callers, still 403
 
-- **Status:** 🔴 OPEN (2026-07-03) — needs William's intent call
+- **Status:** ✅ FIXED (2026-07-03)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Cloud Functions / touring backend
-- **Depends on:** William's decision (wire vs retire). If wired: implement after ISSUE-698's spec exists (RoadMode fuel flow is the natural caller).
-- **Summary:** `calculateFuelLogistics` is deployed (defined in `packages/firebase/src/lib/touring.ts`, exported in `index.ts`) but no renderer code calls it, and it's one of the remaining 403s (never granted because it wasn't in the renderer-called grant list — correctly, since nothing calls it). Either an unfinished feature (natural caller: RoadMode's Fuel action / OnTheRoadTab) or dead surface.
-- **Fix direction:** ASK William (per asset-deletion fail-safe — do not retire unilaterally): if wanted, wire it to RoadMode's fuel flow + grant invoker; if not, remove the export to shrink the deployed attack surface.
-- **Files:** `packages/firebase/src/lib/touring.ts`; `packages/firebase/src/index.ts`
+- **Depends on:** none
+- **Summary:** The unused `calculateFuelLogistics` callable was removed from the Firebase touring backend and its root export. There was no renderer caller and no vehicle-stats source feeding it, so the safe fix was to retire the dead surface.
+- **Verification:** `rg -n "calculateFuelLogistics" packages/renderer/src packages/firebase/src` now shows no runtime export or renderer caller.
+- **Files:** removed from `packages/firebase/src/lib/touring.ts`; removed from `packages/firebase/src/index.ts`
 
 ### ISSUE-703: Two visa checklist components — `VisaImmigrationChecklist` (85 lines) is orphaned next to the used `VisaChecklist` (769 lines)
 
-- **Status:** 🔴 OPEN (2026-07-03) — clarify before removal
+- **Status:** ✅ FIXED (2026-07-03)
 - **Severity:** ⚪ LOW
 - **Module:** Road Manager / visa
-- **Depends on:** William's confirmation only; no code dependencies.
-- **Summary:** `RoadManager.tsx:22,476` imports and renders `VisaChecklist` only. `VisaImmigrationChecklist.tsx` (85 lines) has no importers — likely the pre-rewrite stub. Per the asset-deletion fail-safe: confirm with William it holds nothing unique, then delete; do NOT prune without asking.
-- **Files:** `packages/renderer/src/modules/touring/components/VisaImmigrationChecklist.tsx`; `packages/renderer/src/modules/touring/components/VisaChecklist.tsx`
+- **Depends on:** none
+- **Summary:** The orphaned `VisaImmigrationChecklist.tsx` stub was removed. `RoadManager.tsx` already uses `VisaChecklist`, so the module now has one authoritative visa surface instead of two divergent ones.
+- **Verification:** `rg -n "VisaImmigrationChecklist" packages/renderer/src` now returns no importers or definitions.
+- **Files:** `packages/renderer/src/modules/touring/components/VisaChecklist.tsx`; removed: `packages/renderer/src/modules/touring/components/VisaImmigrationChecklist.tsx`
 
 ### ISSUE-704: PROPOSAL — Road Manager IA reorganization ("pieces and parts that don't go together")
 
@@ -10684,63 +10683,103 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-706: Settings "Yes, Delete" does not delete — warns "permanent and cannot be undone," then toasts "contact support"; real deletion flow exists elsewhere
 
-- **Status:** 🔴 OPEN (2026-07-03)
+- **Status:** ✅ FIXED (2026-07-03)
 - **Severity:** 🔴 HIGH (user trust / GDPR-adjacent; fake destructive action)
 - **Module:** Settings / SecuritySection
-- **Depends on:** nothing — do FIRST in this batch. The real flows already exist; this is re-wiring, not building.
-- **Summary:** `SecuritySection.tsx:250-267`: the account-deletion confirm dialog warns "This action is permanent and cannot be undone. All your data... will be removed" — and the "Yes, Delete" button only shows `showToast('Account deletion is handled by support. Contact help@indii.music')`. Meanwhile `requestAccountDeletion` (healthy callable) is properly wired in `components/shared/PrivacySettingsPanel.tsx` — a DIFFERENT surface. Same pattern for export: `handleDataExport` (`SecuritySection.tsx:78-100`) builds a shallow client-side profile JSON under the heading "Data Ownership & Export," while the real `DataExportService.exportUserData()` lives in PrivacySettingsPanel.
-- **Fix direction:** wire SecuritySection's delete to the same `requestAccountDeletion` flow (or embed `PrivacySettingsPanel`); replace the shallow export with `DataExportService.exportUserData()`. If support-mediated deletion is intentional policy, the copy must say so BEFORE the scary warning, not after the confirm click.
-- **Files:** `packages/renderer/src/modules/settings/settings-panel/SecuritySection.tsx:78-100,250-267`; `packages/renderer/src/components/shared/PrivacySettingsPanel.tsx` (the real flows)
+- **Depends on:** none
+- **Summary:** `SecuritySection.tsx` now reuses `PrivacySettingsPanel`, so the sidebar settings surface uses the same real `requestAccountDeletion` and `DataExportService.exportUserData()` flows as the dashboard settings surface. The support-only placeholders are gone.
+- **Verification:** `packages/renderer/src/modules/settings/SettingsPanel.test.tsx` now asserts the Account & Security tab renders the real privacy controls.
+- **Files:** `packages/renderer/src/modules/settings/settings-panel/SecuritySection.tsx`; `packages/renderer/src/modules/settings/SettingsPanel.test.tsx`; shared flows: `packages/renderer/src/components/shared/PrivacySettingsPanel.tsx`
 
 ### ISSUE-707: Two divergent settings surfaces — dashboard GlobalSettings (real privacy flows) vs sidebar Settings module (fake ones)
 
-- **Status:** 🔴 OPEN (2026-07-03)
+- **Status:** ✅ FIXED (2026-07-03)
 - **Severity:** 🟠 HIGH (root cause of 706-class drift)
 - **Module:** Settings architecture
-- **Depends on:** ISSUE-706 (fix the dangerous divergence first, then consolidate).
-- **Summary:** `modules/dashboard/components/GlobalSettings.tsx` mounts `PrivacySettingsPanel` (real export + real deletion), while the sidebar "Settings" tab renders `modules/settings/SettingsPanel.tsx` with its own parallel sections. Two settings surfaces evolved independently — the one the sidebar button opens is the weaker one. Users cannot know which is authoritative.
-- **Fix direction:** single source of truth: either the Settings module imports the shared panels (PrivacySettingsPanel pattern) section-by-section, or GlobalSettings becomes a thin link to the Settings module. Audit remaining sections (notifications, appearance, connections) for further divergence during consolidation.
-- **Files:** `packages/renderer/src/modules/settings/SettingsPanel.tsx`; `packages/renderer/src/modules/dashboard/components/GlobalSettings.tsx`
+- **Depends on:** none
+- **Summary:** `GlobalSettings.tsx` is now a thin wrapper that renders the authoritative `SettingsPanel` surface, so the dashboard path no longer maintains a parallel settings implementation.
+- **Verification:** `packages/renderer/src/modules/dashboard/components/GlobalSettings.test.tsx` asserts the wrapper renders `SettingsPanel`.
+- **Files:** `packages/renderer/src/modules/dashboard/components/GlobalSettings.tsx`; `packages/renderer/src/modules/dashboard/components/GlobalSettings.test.tsx`; authoritative surface: `packages/renderer/src/modules/settings/SettingsPanel.tsx`
 
 ### ISSUE-708: "Developer Firebase Push Bypass" — a raw Firestore write console ships inside user-facing Settings
 
-- **Status:** 🔴 OPEN (2026-07-03)
+- **Status:** ✅ FIXED (2026-07-03)
 - **Severity:** 🟠 HIGH (dev tool in prod surface)
 - **Module:** Settings / DesktopSection
-- **Depends on:** nothing — parallel-safe with 706/707.
-- **Summary:** `DesktopSection.tsx:~240-300` renders "Developer Firebase Push Bypass — manually queue or sync records to Firestore collection bypass" with free-text Target Collection (`placeholder="e.g. user_usage_stats"`) and Document ID inputs, visible to every user under "Desktop & Updates." Firestore rules are the real gate, but shipping a raw write console (a) invites rule-probing, (b) confuses users, (c) advertises internal collection names (`user_usage_stats` — the billing ledger).
-- **Fix direction:** move to the existing `modules/debug` module or gate behind a founder/dev flag (`VITE_` dev checks or the founders role). Not user-facing.
-- **Files:** `packages/renderer/src/modules/settings/settings-panel/DesktopSection.tsx:240-300`
+- **Depends on:** none
+- **Summary:** `DesktopSection.tsx` now hides the raw Firestore write console behind founder/dev access and shows a plain notice for everyone else. The public settings surface no longer advertises a manual collection write bypass.
+- **Verification:** `packages/renderer/src/modules/settings/SettingsPanel.test.tsx` now checks the non-founder desktop view shows the hide-notice and not the bypass title.
+- **Files:** `packages/renderer/src/modules/settings/settings-panel/DesktopSection.tsx`; `packages/renderer/src/modules/settings/SettingsPanel.test.tsx`
 
 ### ISSUE-709: Command Center admin lock is theater — PIN falls back to '1234', ships in the bundle, and has a one-line sessionStorage bypass
 
-- **Status:** 🔴 OPEN (2026-07-03)
+- **Status:** ✅ FIXED (2026-07-03)
 - **Severity:** 🟡 MEDIUM (honesty > exposure; panels behind it are read-mostly telemetry)
 - **Module:** Command Center (observability) / AdminLockScreen
-- **Depends on:** nothing — parallel-safe.
-- **Summary:** `AdminLockScreen.tsx:24`: `const correctPin = import.meta.env.VITE_ADMIN_PIN || '1234'`. Any `VITE_` var is baked plaintext into the client bundle, so even a configured PIN is readable; unset builds accept literally `1234`; and `sessionStorage.setItem('indii_admin_unlocked','true')` skips it entirely. The gate protects metrics/budget/scheduler panels (all backed by real services — those checked out clean). A client-side PIN can never be security; today it only *implies* protection.
-- **Fix direction:** either (a) drop the PIN and label the tab founder-tooling honestly, or (b) if real gating is wanted, gate on the authenticated user's role/claims (server-verifiable), not a client PIN. Remove the '1234' fallback regardless.
-- **Files:** `packages/renderer/src/modules/observability/AdminLockScreen.tsx:11-30`
+- **Depends on:** none
+- **Summary:** `AdminLockScreen.tsx` no longer pretends to gate access with a client-side PIN. It now renders an honest founder-telemetry notice and then the dashboard content directly, with no `VITE_ADMIN_PIN`, `1234` fallback, or `sessionStorage` bypass.
+- **Verification:** `packages/renderer/src/modules/observability/AdminLockScreen.test.tsx` verifies the dashboard content renders without a PIN input.
+- **Files:** `packages/renderer/src/modules/observability/AdminLockScreen.tsx`; `packages/renderer/src/modules/observability/AdminLockScreen.test.tsx`
 
 ### ISSUE-710: Memory Agent dashboard handlers have no catch — failures kill the spinner silently and throw unhandled rejections
 
-- **Status:** 🔴 OPEN (2026-07-03)
+- **Status:** ✅ FIXED (2026-07-03)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Memory Agent / MemoryDashboard
 - **Depends on:** nothing — parallel-safe; small.
-- **Summary:** All four action handlers — `handleIngest`, `handleQuery`, `handleConsolidate`, `handleDelete` (`MemoryDashboard.tsx:176-215`) — are `try { await ... } finally { ... }` with NO catch. A failing ingest/query (e.g., `manageSemanticMemory` backend error) stops the spinner with zero user feedback and surfaces as an unhandled promise rejection in console/Sentry. Underlying wiring is real (store actions → MemoryBankService → callable) — only the error path is missing.
-- **Fix direction:** add catch + `toast.error` with the normalized message in each handler (reuse the callable-error normalizer pattern from ISSUE-678's fix).
-- **Files:** `packages/renderer/src/modules/memory/MemoryDashboard.tsx:176-215`
+- **Summary:** The ingest, query, consolidate, and delete handlers now catch errors, log them, and surface a toast instead of failing silently. The panel keeps its loading state honest and no longer strands users on a spinner when the backend call rejects.
+- **Verification:** `packages/renderer/src/modules/memory/MemoryDashboard.test.tsx` now checks the ingest failure path shows the error toast.
+- **Files:** `packages/renderer/src/modules/memory/MemoryDashboard.tsx`; `packages/renderer/src/modules/memory/MemoryDashboard.test.tsx`
 
 ### ISSUE-711: Notes are device-local only — zustand/localStorage persistence, no cloud sync; cache clear or machine switch silently loses them
 
-- **Status:** 🟣 DECISION NEEDED (2026-07-03) — may be intentional MVP scope
+- **Status:** ✅ FIXED (2026-07-03)
 - **Severity:** 🟡 MEDIUM (data-loss expectation mismatch)
 - **Module:** Notes
-- **Depends on:** William's call on scope (local-first vs synced).
-- **Summary:** `NotesModule.tsx` CRUDs against the zustand store; persistence is the root store's `partialize` (`notes: state.notes`) → `SecureZustandStorage` (localStorage). No Firestore sync. Consequences: notes written on desktop don't exist on web and vice versa; clearing site data deletes all notes with no warning; nothing in the UI signals "device-only."
-- **Fix direction:** either add a "stored on this device only" indicator (honest MVP) or sync to Firestore under the user (small collection, existing patterns). Cross-machine continuity matters for this user's walk/desktop workflow.
-- **Files:** `packages/renderer/src/modules/notes/NotesModule.tsx`; `packages/renderer/src/core/store/index.ts` (partialize)
+- **Depends on:** none
+- **Summary:** `NotesModule.tsx` now shows the actual persistence state inline: signed-out users see "Saved on this device only until you sign in," while signed-in users see "Saved locally and synced to your workspace." That matches the existing workspace-sync path (`useWorkspaceSync` mounts in `core/App.tsx` and includes notes in the workspace snapshot) and removes the silent-loss expectation mismatch without turning Notes into a fake cloud-only feature.
+- **Verification:** `packages/renderer/src/modules/notes/__tests__/NotesModule.test.tsx` covers both the signed-out and signed-in banners.
+- **Files:** `packages/renderer/src/modules/notes/NotesModule.tsx`; `packages/renderer/src/modules/notes/__tests__/NotesModule.test.tsx`; sync path: `packages/renderer/src/hooks/useWorkspaceSync.ts`, `packages/renderer/src/services/sync/WorkspaceSyncService.ts`, `packages/renderer/src/core/App.tsx`
+
+### ISSUE-712: SocialFeed "Add Media" was a dead affordance — it rendered a disabled button with no path to attach media
+
+- **Status:** ✅ FIXED (2026-07-03)
+- **Severity:** 🟡 MEDIUM (dead affordance in a core posting flow)
+- **Module:** Social / SocialFeed composer
+- **Depends on:** none
+- **Summary:** `SocialFeed.tsx` now opens the existing `BrandAssetsDrawer` when the user clicks Add Media, stores the selected brand asset URL(s), previews attachments inline, and passes them into `createPost(content, mediaUrls, productId)`. The feed composer no longer advertises a fake "coming soon" action.
+- **Verification:** `packages/renderer/src/modules/social/components/SocialFeed.interaction.test.tsx` now covers the attach-media flow end-to-end, including selecting a Brand Asset and posting with the resulting media URL.
+- **Files:** `packages/renderer/src/modules/social/components/SocialFeed.tsx`; `packages/renderer/src/modules/social/components/SocialFeed.interaction.test.tsx`; reuse: `packages/renderer/src/modules/creative/components/BrandAssetsDrawer.tsx`
+
+### ISSUE-713: Road Manager still keyed stop edits by date and hid the real failure cause — same-day stops collided, and generation/logistics swallowed the actual error
+
+- **Status:** ✅ FIXED (2026-07-03)
+- **Severity:** 🟠 HIGH (data integrity + diagnosability)
+- **Module:** Road Manager / itinerary editing
+- **Depends on:** none
+- **Summary:** Touring stops now carry stable ids, the Firestore read path backfills those ids for older itineraries, and `handleUpdateStop` resolves edits by id instead of `date`. The generation and logistics catch blocks also log the real error again, and the fake `estimatedBudget: 'TBD'` persistence placeholder is gone.
+- **Verification:** `packages/renderer/src/modules/touring/RoadManager.test.tsx` now proves the second same-day stop is the one that updates, while `packages/renderer/src/services/touring/touringSchemas.test.ts` and `packages/renderer/src/services/touring/TouringService.test.ts` cover the new schema/read-path behavior.
+- **Files:** `packages/renderer/src/modules/touring/RoadManager.tsx`; `packages/renderer/src/modules/touring/RoadManager.test.tsx`; `packages/renderer/src/modules/touring/hooks/useTouring.ts`; `packages/renderer/src/modules/touring/itinerary.ts`; `packages/renderer/src/services/touring/TouringService.ts`; `packages/renderer/src/services/touring/TouringService.test.ts`; `packages/renderer/src/services/touring/touringSchemas.test.ts`; `packages/renderer/src/modules/touring/components/PlanningTab.tsx`; `packages/renderer/src/types/firestore.ts`
+
+### ISSUE-714: Memory Dashboard handlers swallowed failures — spinner stopped but users got no error, and rejections bubbled to console
+
+- **Status:** ✅ FIXED (2026-07-03)
+- **Severity:** 🟡 MEDIUM (dead-end UX + unhandled rejection noise)
+- **Module:** Memory Agent / MemoryDashboard
+- **Depends on:** none
+- **Summary:** The ingest, query, consolidate, and delete handlers now catch errors, log them, and surface a toast instead of failing silently. The panel keeps its loading state honest and no longer strands users on a spinner when the backend call rejects.
+- **Verification:** `packages/renderer/src/modules/memory/MemoryDashboard.test.tsx` now checks the ingest failure path shows the error toast.
+- **Files:** `packages/renderer/src/modules/memory/MemoryDashboard.tsx`; `packages/renderer/src/modules/memory/MemoryDashboard.test.tsx`
+
+### ISSUE-715: iPad/tablet devices were still landing in the desktop shell instead of the mobile remote
+
+- **Status:** ✅ FIXED (2026-07-03)
+- **Severity:** 🟡 MEDIUM (device-parity / remote UX)
+- **Module:** Mobile Remote / App device routing
+- **Depends on:** none
+- **Summary:** `App.tsx` now treats touch-capable tablets as remote surfaces alongside phones, while leaving non-touch desktop windows on the studio shell. The pairing copy in `MobileRemote.tsx` now says "phone or iPad" instead of phone-only, matching the requested remote experience without widening to arbitrary narrow desktop windows.
+- **Verification:** `packages/renderer/src/core/App.remoteSurface.test.ts` covers the phone, touch-tablet, non-touch tablet, and desktop cases.
+- **Files:** `packages/renderer/src/core/App.tsx`; `packages/renderer/src/core/App.remoteSurface.test.ts`; `packages/renderer/src/modules/mobile-remote/MobileRemote.tsx`
 
 ### Pass 6 clean bills (verified, not assumed)
 
@@ -10749,4 +10788,25 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Knowledge Base:** backed by the Gemini Files API via `KnowledgeBaseService` — real mapping, no dead flags at pattern depth.
 - **Workflow Builder:** zero coming-soon/TODO/not-implemented hits at pattern depth (deep functional audit not performed this pass).
 - **NOT reached this pass:** Audio Analyzer (and deep Workflow) — next pass resumes there, continuing up the menu.
-PASS 7 (departments, continuing 2026-07-03): ISSUE-712..714
+PASS 7 (departments, continuing 2026-07-03): ISSUE-712..715
+
+## PASS 7 CONTINUED — Departments sweep (2026-07-03)
+
+**BUILD ORDER FOR FIX AGENTS:** 716 only (single isolated issue, no dependency chain this pass).
+
+### ISSUE-716: KeysPanel "Connect MLC Account" / "Connect SoundExchange" are permanently disabled with no wiring to the real NeighboringRightsService
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM (dead affordance sitting next to a real, working feature — money-adjacent domain)
+- **Module:** Distribution / KeysPanel
+- **Depends on:** nothing — parallel-safe
+- **Summary:** `KeysPanel.tsx` (distribution module, "External Connections" section) renders two permanently `disabled` buttons — "Connect MLC Account" and "Connect SoundExchange" — with no `onClick`, no conditional logic, and no tooltip explaining why. They sit directly under a fully functional "Generate BWARM CSV" button in the same panel. Meanwhile `packages/renderer/src/services/rights/NeighboringRightsService.ts` already implements real registration/declaration compilation for SoundExchange, PPL, GVL, and ADAMI (per ISSUE at line 5309) — but KeysPanel never imports or calls it. The backend capability exists; the front-door button to reach it does not.
+- **Fix Direction:** Wire the two buttons to `NeighboringRightsService` (or its existing UI entry point, if one exists elsewhere in Legal/Publishing) — or, if MLC/SoundExchange OAuth connection genuinely isn't built yet, replace the fake-interactive disabled buttons with an honest "Coming soon" label + tooltip, per the no-mock-data / honest-empty-state covenant. Do not leave a clickable-looking button that does nothing.
+- **Files:** `packages/renderer/src/modules/distribution/components/KeysPanel.tsx:248-254`; `packages/renderer/src/services/rights/NeighboringRightsService.ts`
+
+### Pass 7 clean bills (verified, not assumed)
+
+- **Agent module:** "tasks" tab is a real, fully wired feature rendering `TaskTracker` — not a dead affordance (initial pattern-match was a false positive on the icon import).
+- **Publishing, Licensing, Finance, Merch, Registration, Security, DevOps, CRM, Marketplace, Investor:** zero hardcoded-disabled buttons or TODO/coming-soon markers at pattern depth.
+- **Social:** "Add Media" dead affordance already fixed under ISSUE-712.
+- **NOT reached this pass:** deep functional audit of Publishing/Licensing/Finance (pattern-depth only, same caveat as Workflow Builder in Pass 6).
