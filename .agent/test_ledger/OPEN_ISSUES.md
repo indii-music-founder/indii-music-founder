@@ -10951,3 +10951,22 @@ Modules covered at genuine functional depth (not pattern-grep): Legal, Booking A
 **Findings:** ISSUE-718 (dead Legal tools, low), ISSUE-719 (dead Booking enum, low), ISSUE-720 (SplitSheetEscrow double-payment risk, **CRITICAL**), ISSUE-721 (TaxFormCollection false compliance signal, **HIGH**).
 
 **Pattern observed across the cycle:** money-touching features that go through Stripe's hosted Checkout flow (MicroLicensingPortal) or a live Firestore subscription (LabelDealRecoupment, useEarnings chain) are consistently solid. The one real-money feature that bypasses both — SplitSheetEscrow's direct client-side `createTransfer` call with zero persistence — is the one with critical exposure. Recommend this as a standing architecture rule: any new money-movement feature must either go through Stripe Checkout (client never touches the transfer directly) or have server-verified, Firestore-persisted state with idempotency before any fix agent builds a new payment surface.
+
+## PASS 15 — Workflow Builder deep audit (2026-07-03)
+
+**BUILD ORDER FOR FIX AGENTS:** 722 only — isolated engine hardening, no dependency chain, but should be prioritized given real cost exposure.
+
+### ISSUE-722: WorkflowEngine has zero cycle detection — a user-wired loop spins the execution queue forever, calling real paid AI/image/video generation APIs on every iteration
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH (real cost/billing risk from runaway paid API calls, plus a resource-exhaustion/hang risk — not data loss or direct financial theft like ISSUE-720, hence HIGH not CRITICAL)
+- **Module:** Workflow Builder
+- **Depends on:** nothing — parallel-safe
+- **Summary:** `WorkflowEngine.executeNode`'s main loop (`while (this.executionQueue.length > 0)`) has no visited-node tracking, no max-iteration cap, and no cycle detection of any kind. Per-node execution itself is well-built — proper try/catch isolation, correct status transitions (WORKING → DONE/ERROR), and a failed node correctly halts its own branch without crashing the engine or enqueuing downstream work. But nothing stops a graph where a Router/Logic node's edge loops back to an earlier node (directly or transitively) from re-enqueuing the same nodes indefinitely. Traced the defense one layer up: `WorkflowEditor.tsx`'s `isValidConnection` → `validationUtils.ts`'s `validateConnection` only checks node-type/handle compatibility, not graph topology — confirmed via grep, zero cycle/visited/ancestor checks anywhere in that file either. So a user CAN wire a structurally-valid-looking cyclic workflow in the editor UI, and running it will call real, paid `AI.generateContent`/`ImageGeneration`/`VideoGeneration`/`SocialService` calls on every iteration of the infinite loop, accruing real cost with no natural stopping point.
+- **Fix Direction:** Add both layers of defense: (1) UI-level cycle detection in `validateConnection` (or a separate topological check run on `onConnect`) that rejects an edge which would create a cycle — this is the cheap, ideal prevention point. (2) Defense-in-depth in `WorkflowEngine` itself: track visited `(nodeId, invocation count)` pairs and cap re-visits (e.g. abort with an `ERROR` status + user-facing toast after N re-visits of the same node in one run), so even a cycle that somehow reaches execution (imported workflow, template, future UI bypass) fails safely instead of running away.
+- **Files:** `packages/renderer/src/modules/workflow/services/WorkflowEngine.ts`; `packages/renderer/src/modules/workflow/components/WorkflowEditor.tsx`; `packages/renderer/src/modules/workflow/utils/validationUtils.ts`
+
+### Pass 15 clean bills (verified deep, not pattern-only)
+
+- **WorkflowEngine per-node execution:** solid failure isolation — try/catch around every node type, correct status lifecycle, no crash-the-whole-engine risk from a single node's failure, no silent swallow (error message surfaced via `updateNodeStatus`).
+- **Department node execution:** delegates to real services (`AutonomousIntelligence`, `ImageGenerationService`, `VideoGenerationService`, `SocialService`, `PerformanceVideoService`) — not fabricated.
