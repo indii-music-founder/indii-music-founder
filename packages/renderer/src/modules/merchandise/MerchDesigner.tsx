@@ -113,13 +113,18 @@ export default function MerchDesigner() {
     const consumeHandoff = useStore(state => state.consumeHandoff);
     const pendingMerchHandoff = useStore(state => state.pendingHandoffs.merch);
 
-    useEffect(() => {
-        if (!pendingMerchHandoff) return;
-        const targetView = resolveMerchViewMode(pendingMerchHandoff.targetView);
-        if (targetView !== viewMode) {
-            setViewMode(targetView);
+    // Adjust state during render (not in an effect) when a new handoff arrives —
+    // avoids the cascading-render pattern flagged by react-hooks/set-state-in-effect.
+    const [prevMerchHandoff, setPrevMerchHandoff] = useState(pendingMerchHandoff);
+    if (pendingMerchHandoff !== prevMerchHandoff) {
+        setPrevMerchHandoff(pendingMerchHandoff);
+        if (pendingMerchHandoff) {
+            const targetView = resolveMerchViewMode(pendingMerchHandoff.targetView);
+            if (targetView !== viewMode) {
+                setViewMode(targetView);
+            }
         }
-    }, [pendingMerchHandoff]);
+    }
     
     useEffect(() => {
         if (!fabricCanvas) return;
