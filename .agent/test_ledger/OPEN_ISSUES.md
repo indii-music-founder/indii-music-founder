@@ -11163,3 +11163,19 @@ A fourth distinct menu: `packages/renderer/src/core/components/RightPanel.tsx`, 
 - **AssetsPanel:** real Zustand store delegation, real `HistoryItem` data.
 - **MarketingPanel:** real — proper auth check, real `OrchestrationService.executeWorkflow` call, proper try/catch/finally, honest error surfacing. This is the reference pattern the two broken sibling panels should have followed.
 - **StudioControlsPanel (1058 lines):** spot-checked for the same fake-toast/hardcoded-stat pattern found in Workflow/Knowledge panels — zero hits; largely already covered by the Pass 1-4 Creative interconnect deep audit.
+
+## FIFTH MENU — CreativeNavbar, the top "hero bar" (2026-07-03)
+
+Identified from user description ("top bar, multi-menu, used in the Creative department") as `packages/renderer/src/modules/creative/components/CreativeNavbar.tsx`. Structure: 4 primary MODES (Image → Video → Mockup → Sequence) each with sub-views, plus 3 mutually-exclusive right-rail panels (Brand/History/Roster), plus a Prompt Builder toggle. Same bottom-up ethos.
+
+## PASS 27 — CreativeNavbar full sweep (2026-07-03)
+
+**BUILD ORDER FOR FIX AGENTS:** none — all clean, nothing to fix.
+
+- **Sequence (`AutonomousLab.tsx`, 687 lines — explicitly flagged as never-yet-audited in earlier session notes):** genuinely real. Real `ImageGeneration.captionImage`/`remixImage` calls, proper try/catch with honest error surfacing (`setError`/`toast.error`), correct `crypto.randomUUID()` usage for asset IDs (contrast with ISSUE-725's `Date.now()` in Distribution). Not fabricated.
+- **Mockup (`ShowroomUI.tsx`):** real `showroomService.runShowroomMockup`/`runShowroomVideo` calls — genuine backend delegation.
+- **Video (Produce → `VideoWorkflow.tsx`, Omni Remix → `OmniWorkflow.tsx`):** already extensively covered by the Pass 1-4 Creative interconnect audit and confirmed with real test coverage (`OmniWorkflow.test.tsx`).
+- **Image (Generate → `DirectGenerationTab`, Canvas → `InfiniteCanvas`):** the most heavily audited surface in the codebase from prior passes; confirmed real test coverage still present (`__tests__/DirectGenerationTab.test.tsx`, `__tests__/InfiniteCanvas.test.tsx`).
+- **Right-rail panels:** `AgentCapabilityRegistry` (Roster) delegates to real `agentCapabilityService`. `BrandAssetsDrawer` delegates to real Firebase functions/Storage. `HistoryDrawer` delegates to real `DesignHistoryDrawer`/`PromptHistoryDrawer` sub-components.
+- **Prompt Builder (`IntelligencePromptBuilder.tsx`):** delegates to real `IntelligencePromptService`.
+- **Verdict:** the Creative department's top "hero bar" — every mode, every sub-view, every rail panel — is fully wired to real backends. Zero fabrication found across the entire menu. This closes out the last unaudited corner of the Creative module (`AutonomousLab` specifically, previously an explicit gap noted in session memory).
