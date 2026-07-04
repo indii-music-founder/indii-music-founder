@@ -10244,10 +10244,10 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-674: Layer system lacks user-visible "add layer" affordance; users cannot create sketch or blank layers
 
-- **Status:** 🔍 INVESTIGATION COMPLETE (2026-07-03)
+- **Status:** ✅ FIXED (2026-07-03)
 - **Severity:** 🟡 MEDIUM (limitation, not crash)
 - **Module:** Creative Studio / Layers Panel / Canvas Toolbar
-- **Summary:** The Layers Panel shows existing layers with delete, visibility toggle, lock, and reorder controls. However, there is no visible button or menu to create a new blank/sketch layer. Users can only work with auto-detected layers or delete them; they cannot add a sketch layer for freehand annotation or composition.
+- **Summary:** The layer controls now expose an explicit `Add Layer` action in both the toolbar and the layers panel, and that action creates a real blank sketch placeholder object before switching the editor into brush mode.
 - **Evidence:** `packages/renderer/src/modules/creative/components/LayersPanel.tsx:54-160` renders a layer list and action buttons (`toggleVisibility`, `toggleLock`, `deleteLayer`, `reorderLayer`), but no "add layer" button or callback. The panel derives layers from `canvasOps.getLayers()` which only lists existing objects.
 - **Evidence:** `packages/renderer/src/modules/creative/components/CanvasToolbar.tsx:41-112` exposes selection/brush/text/object-detection/panel-toggle, but no "add layer" action.
 - **Evidence:** `packages/renderer/src/modules/creative/services/CanvasOperationsService.ts` provides `addRectangle()`, `addCircle()`, `addText()`, but no `addSketchLayer()` or equivalent public API to create a blank layer.
@@ -10260,7 +10260,12 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
   4. Remove the stale "coming soon" toast from `InfiniteCanvas.tsx` or update it to reflect actual functionality.
   5. Add a focused E2E test: click "Add Layer" → verify a new layer appears in the list → draw on it → verify the sketch is persisted when saving.
 - **DO NOT:** Keep a "coming soon" affordance if blank layer creation is not planned in the next sprint; it breaks user expectation and trust.
-- **Files:** `packages/renderer/src/modules/creative/components/LayersPanel.tsx:54-160`; `packages/renderer/src/modules/creative/components/CanvasToolbar.tsx:41-112`; `packages/renderer/src/modules/creative/services/CanvasOperationsService.ts` (public API)
+- **Fix:** Added `CanvasOperationsService.addBlankSketchLayer()` to create a labeled sketch placeholder object, wired `handleAddSketchLayer()` to create/select that layer before entering brush mode, and renamed the visible controls to `Add Layer` so the affordance is explicit in both the toolbar and the layers panel.
+- **Evidence:** `packages/renderer/src/modules/creative/services/CanvasOperationsService.ts:889-914` adds the blank sketch layer object and saves it to history.
+- **Evidence:** `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts:379-386` now creates/selects the layer and switches into brush mode.
+- **Evidence:** `packages/renderer/src/modules/creative/components/CanvasToolbar.tsx:84-90` and `packages/renderer/src/modules/creative/components/LayersPanel.tsx:71-75` now expose the `Add Layer` affordance.
+- **Evidence:** `packages/renderer/src/modules/creative/services/CanvasOperationsService.test.ts:61-91` proves the placeholder layer appears in `getLayers()`, and `packages/renderer/src/modules/creative/components/CanvasToolbar.test.tsx:24-73` covers the renamed control.
+- **Files:** `packages/renderer/src/modules/creative/components/LayersPanel.tsx`; `packages/renderer/src/modules/creative/components/CanvasToolbar.tsx`; `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts`; `packages/renderer/src/modules/creative/services/CanvasOperationsService.ts`; `packages/renderer/src/modules/creative/components/CanvasToolbar.test.tsx`; `packages/renderer/src/modules/creative/services/CanvasOperationsService.test.ts`
 
 ---
 
@@ -10832,3 +10837,14 @@ PASS 7 (departments, continuing 2026-07-03): ISSUE-712..715
 - **Capture (QuickCapture/GhostCapture):** zero dead-affordance hits at pattern depth.
 - **Confirms ISSUE-717 (Screenwriter persistence) already fixed** by a concurrent agent — localStorage draft key `indii-screenwriter-draft-v1`, round-trip test added.
 - **NOT reached this pass:** History, Files, Analytics modules (11 files, largest unaudited surface remaining) — next pass should start there.
+
+## PASS 9 — History / Files / Analytics sweep (2026-07-03)
+
+**BUILD ORDER FOR FIX AGENTS:** none — all clean bills this pass, nothing to fix.
+
+### Pass 9 clean bills (verified, not assumed)
+
+- **History:** zero dead-affordance hits at pattern depth (4 files, small surface).
+- **Files:** the one `disabled:cursor-not-allowed` hit (FileDashboard.tsx:280, "Download File" button) is a real conditional — `disabled={!node?.data?.url}` — not a hardcoded dead affordance. False positive.
+- **Analytics (11 files):** `RegionalMap.tsx` is NOT a repeat of the TourMap stub pattern despite the "Map" name — it's an honest ranked country-list visualization taking real `regions`/`totalStreams` props, no placeholder/discarded-props pattern. `GrowthIntelligenceDashboard` delegates to real services (`PlatformDataService`, `AnalyticsEngine`) which in turn call real per-platform integrations (`SpotifyService` uses genuine OAuth 2.0 + PKCE with backend token exchange via `httpsCallable` — `analyticsRevokeToken`, token refresh, CSRF state checking). `PlatformConnector` (the OAuth trigger UI) has zero dead-affordance hits. This is a fully wired, real analytics pipeline, not fabricated numbers.
+- **Menu audit coverage status:** bottom-to-top sweep has now covered every sidebar item at pattern depth at least once (Audio Analyzer, Knowledge, Workflow, Notes, Memory, Command Center, Settings, Road/Touring, all department modules, DevOps, CRM, Capture, History, Files, Analytics). Deep functional audits (beyond pattern-grep) remain outstanding for: Publishing, Licensing, Finance, Workflow Builder, Creative Director, Booking Agent, Legal (see Pass 6/7/8 caveats).
