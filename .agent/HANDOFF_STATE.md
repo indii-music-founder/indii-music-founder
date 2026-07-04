@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-07-03 20:46 EDT
+**Updated:** 2026-07-03 20:51 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+d90496941 docs(ledger): pass 7 departments audit — ISSUE-716 KeysPanel dead rights-collection buttons
 895d7f7d6 fix(ci): clean rebuild + fail-fast diagnostics for firebase functions deploy
 27ac1a928 fix(lint): use render-time state adjustment instead of effect+setState
 ba87a6eea fix(lint): remove cascading dependency from effect hooks
@@ -13,12 +14,10 @@ ff210efd8 fix(test): VideoGenerationService test using invalid model enum
 35710192d fix(audio): three critical bugs blocking analyzer — auth failure, param error, opaque errors
 1ed4269ff chore: session checkpoint [15:29]
 a95360b32 chore: session checkpoint [15:29]
-c8bfd1c9c chore: session checkpoint [15:28]
 ```
 
 ## Working State
 ```
- M .agent/test_ledger/OPEN_ISSUES.md
  D .new_gemini_key.txt
  D .new_maps_key.txt
  M package-lock.json
@@ -30,6 +29,7 @@ c8bfd1c9c chore: session checkpoint [15:28]
  M packages/firebase/src/index.ts
  M packages/firebase/src/lib/touring.ts
  M packages/renderer/package.json
+ M packages/renderer/src/core/App.tsx
  M packages/renderer/src/core/store/slices/creative/__tests__/creativeHistorySlice.test.ts
  M packages/renderer/src/core/store/slices/creative/creativeHistorySlice.ts
  M packages/renderer/src/modules/creative/__tests__/creativeInterconnect.contract.test.ts
@@ -51,6 +51,7 @@ c8bfd1c9c chore: session checkpoint [15:28]
  M packages/renderer/src/modules/dashboard/components/GlobalSettings.tsx
  M packages/renderer/src/modules/memory/MemoryDashboard.test.tsx
  M packages/renderer/src/modules/memory/MemoryDashboard.tsx
+ M packages/renderer/src/modules/mobile-remote/MobileRemote.tsx
  M packages/renderer/src/modules/notes/NotesModule.tsx
  M packages/renderer/src/modules/observability/AdminLockScreen.tsx
  M packages/renderer/src/modules/settings/SettingsPanel.test.tsx
@@ -78,6 +79,7 @@ c8bfd1c9c chore: session checkpoint [15:28]
  M packages/shared/dist/schemas/workflowState.d.ts
  M packages/shared/src/schemas/creative.ts
 ?? packages/firebase/src/shared/creative.ts
+?? packages/renderer/src/core/App.remoteSurface.test.ts
 ?? packages/renderer/src/modules/creative/components/__tests__/CharacterLibrary.test.tsx
 ?? packages/renderer/src/modules/creative/components/__tests__/EditDefinitionsPanel.test.tsx
 ?? packages/renderer/src/modules/creative/video/OmniWorkflow.test.tsx
