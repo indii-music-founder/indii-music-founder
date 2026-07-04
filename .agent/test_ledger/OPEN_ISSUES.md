@@ -10922,3 +10922,14 @@ PASS 7 (departments, continuing 2026-07-03): ISSUE-712..715
 
 - **LabelDealRecoupment:** real, live `onSnapshot` Firestore subscription on the `label_deals` collection, with genuine `addDoc`/`updateDoc` writes for deal creation and recouped-amount updates. Solid.
 - **StripeConnectOnboarding:** honestly incomplete — `handleInvite` explicitly surfaces "Stripe Connect onboarding requires the createStripeConnectAccount backend. No onboarding link was created." rather than faking success. This is the correct pattern; contrast with ISSUE-721's TaxFormCollection in the same module, which fakes success instead of erroring honestly.
+
+## PASS 13 — Publishing deep audit (2026-07-03)
+
+**BUILD ORDER FOR FIX AGENTS:** none — all clean bills this pass, nothing to fix.
+
+### Pass 13 clean bills (verified deep, not pattern-only)
+
+- **PayoutHistory:** pure presentational component, real props in (`PayoutHistoryProps`), no fabrication — same honest pattern as Analytics' `RegionalMap`.
+- **useEarnings hook → financeSlice.fetchEarnings → financeService.subscribeToEarnings:** full chain traced end to end. Real live Firestore subscription, proper `financeUnsubscribe` cleanup before creating a new subscription (prevents leak on repeated calls), honest early-return + warn-log when no `userId` is present (does not silently show fabricated zero-state).
+- **MechanicalRoyaltyPanel:** delegates to the real `MechanicalRoyaltyService` — the same honesty-contract system referenced in prior session work (VERIFIED status only ever comes from a real licensing API response; UNVERIFIED + requiresClearance fallback otherwise, no fabricated publisher/songCode). Confirmed still wired correctly.
+- **Verdict:** Publishing's real-money and compliance-adjacent surfaces (earnings, payouts, mechanical royalties) are honest and properly wired. No Finance-module-style disconnects found here.
