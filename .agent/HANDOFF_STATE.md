@@ -1,9 +1,12 @@
 # Handoff State
-**Updated:** 2026-07-03 23:24 EDT
+**Updated:** 2026-07-03 23:34 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+3f630350c docs(ledger): pass 31 Settings remaining sections + full session menu-audit summary
+c9cc96ef6 docs(ledger): eighth menu — CommandBar internal menus, ISSUE-731 dead DelegateMenu
+78ec257cc docs(ledger): seventh menu — context menus, ISSUE-730 unconfirmed delete in MerchTable
 501e3d4c5 docs(ledger): sixth menu — Electron native menu bar, ISSUE-729 dead Cmd+S
 e71178545 docs(ledger): fifth menu — CreativeNavbar 'hero bar' fully swept, all clean
 677c2a972 docs(ledger): fourth menu — RightPanel, pass 26 finds ISSUE-727/728 fake workflow+knowledge panels
@@ -11,9 +14,6 @@ ef82c8c59 docs(ledger): third menu — Mobile Remote tab bar fully swept, clean.
 905379ca9 docs(ledger): complete admin-dashboard menu sweep — 5 clean, 1 finding (726)
 f1740e28e docs(ledger): new menu — admin-dashboard app, pass 20 ISSUE-726 fake DNS status
 b39bb096d docs(ledger): pass 19 Merchandise clean bill + full 19-pass session final tally
-280480e09 docs(ledger): pass 18 deep Distribution audit (the platform's core purpose) + full 9-module cycle summary
-4661dcc37 docs(ledger): pass 17 deep Social audit — fully clean, verified end-to-end
-b449340d9 docs(ledger): pass 16 deep Marketing audit — ISSUE-723 fake ad campaign launch, ISSUE-724 dead MapsComponent
 ```
 
 ## Working State
