@@ -10933,3 +10933,21 @@ PASS 7 (departments, continuing 2026-07-03): ISSUE-712..715
 - **useEarnings hook → financeSlice.fetchEarnings → financeService.subscribeToEarnings:** full chain traced end to end. Real live Firestore subscription, proper `financeUnsubscribe` cleanup before creating a new subscription (prevents leak on repeated calls), honest early-return + warn-log when no `userId` is present (does not silently show fabricated zero-state).
 - **MechanicalRoyaltyPanel:** delegates to the real `MechanicalRoyaltyService` — the same honesty-contract system referenced in prior session work (VERIFIED status only ever comes from a real licensing API response; UNVERIFIED + requiresClearance fallback otherwise, no fabricated publisher/songCode). Confirmed still wired correctly.
 - **Verdict:** Publishing's real-money and compliance-adjacent surfaces (earnings, payouts, mechanical royalties) are honest and properly wired. No Finance-module-style disconnects found here.
+
+## PASS 14 — Licensing deep audit (2026-07-03)
+
+**BUILD ORDER FOR FIX AGENTS:** none — all clean bills this pass, nothing to fix.
+
+### Pass 14 clean bills (verified deep, not pattern-only)
+
+- **MicroLicensingPortal (real-money sync license sales):** correctly architected around Stripe's hosted Checkout redirect (`licensingService.initiateLicensePurchase` → `createOneTimePayment` → real `checkoutUrl` → `window.location.href` redirect), NOT a raw client-triggered transfer. This sidesteps the entire class of bug found in ISSUE-720 (SplitSheetEscrow) — Stripe's own hosted checkout owns payment-state and idempotency, rather than the client directly calling a transfer function with local-only state.
+- **SyncBriefMatcher, CatalogSearchTab:** zero dead-affordance or fabrication hits at pattern depth.
+- **Verdict:** Licensing's real-money surface (micro-licensing sales) is the best-architected money-handling pattern found in this entire deep-audit cycle — worth using as the reference pattern when fixing ISSUE-720.
+
+## Deep Audit Cycle Summary (Passes 10-14, 2026-07-03)
+
+Modules covered at genuine functional depth (not pattern-grep): Legal, Booking Agent, Finance, Publishing, Licensing.
+
+**Findings:** ISSUE-718 (dead Legal tools, low), ISSUE-719 (dead Booking enum, low), ISSUE-720 (SplitSheetEscrow double-payment risk, **CRITICAL**), ISSUE-721 (TaxFormCollection false compliance signal, **HIGH**).
+
+**Pattern observed across the cycle:** money-touching features that go through Stripe's hosted Checkout flow (MicroLicensingPortal) or a live Firestore subscription (LabelDealRecoupment, useEarnings chain) are consistently solid. The one real-money feature that bypasses both — SplitSheetEscrow's direct client-side `createTransfer` call with zero persistence — is the one with critical exposure. Recommend this as a standing architecture rule: any new money-movement feature must either go through Stripe Checkout (client never touches the transfer directly) or have server-verified, Firestore-persisted state with idempotency before any fix agent builds a new payment surface.
