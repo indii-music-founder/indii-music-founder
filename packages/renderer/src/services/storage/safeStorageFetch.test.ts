@@ -41,6 +41,13 @@ describe('safeStorageFetch', () => {
             uri: 'https://firebasestorage.googleapis.com/v0/b/indii-music-founder.firebasestorage.app/o/creative%2Fuser-1%2Fimage.png?alt=media',
         });
         expect(result.mimeType).toBe('image/png');
-        expect(await result.blob.text()).toBe('image-bytes');
+        
+        const blobText = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsText(result.blob);
+        });
+        expect(blobText).toBe('image-bytes');
     });
 });
