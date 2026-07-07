@@ -48,26 +48,12 @@ export const verifyMechanicalLicense = functions
             );
         }
 
-        console.log(`[verifyMechanicalLicense] Mechanical license check requested for "${trackTitle}" by ${originalArtist} — no licensing API integrated, returning UNVERIFIED.`);
+        console.log(`[verifyMechanicalLicense] Mechanical license check requested for "${trackTitle}" by ${originalArtist} — no licensing API integrated.`);
 
-        // US statutory mechanical rate for physical/permanent downloads (tracks <= 5 min),
-        // CRB Phonorecords IV. Informational only — streaming mechanicals are calculated
-        // as a percentage-of-revenue formula administered by The MLC, not a flat rate.
-        const statutoryPhysicalRate = 0.124;
-
-        const response: MechanicalLicenseResponse = {
-            status: 'UNVERIFIED',
-            requiresClearance: true,
-            songCode: null,
-            publisher: null,
-            rate: statutoryPhysicalRate,
-            rateContext: 'US statutory rate for physical/permanent downloads <= 5 min (CRB Phonorecords IV). Streaming mechanicals use The MLC revenue-share formula.',
-            guidance: 'Automated publisher verification is not available. Obtain a mechanical license before distributing this cover: use HFA SongFile for downloads/physical, and confirm streaming mechanical coverage via The MLC.',
-            clearanceLinks: {
-                songfile: 'https://www.songfile.com/',
-                mlc: 'https://www.themlc.com/',
-            },
-        };
+        throw new functions.https.HttpsError(
+            'unimplemented',
+            'Mechanical licensing API not integrated. Please use HFA SongFile or The MLC to obtain mechanical licenses.'
+        );
 
         // Persist the honest audit trail — records that a check was REQUESTED
         // and clearance is outstanding, not that anything was verified.
