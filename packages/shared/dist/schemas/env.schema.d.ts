@@ -8,8 +8,8 @@ export declare const CommonEnvSchema: z.ZodObject<{
     googleMapsApiKey: z.ZodOptional<z.ZodString>;
     firebaseApiKey: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
-    apiKey: string;
     projectId: string;
+    apiKey: string;
     location: string;
     functionsRegion: string;
     useVertex: boolean;

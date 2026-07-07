@@ -12,7 +12,7 @@ import { STANDALONE_MODULES, type ModuleId } from './constants';
 import { useURLSync } from '@/hooks/useURLSync';
 import { useLocation } from 'react-router-dom';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
-import { useMobile } from '@/hooks/useMobile';
+import { useMobile, type MobileState } from '@/hooks/useMobile';
 import { useGlobalShortcutsModal } from '@/components/shared/GlobalKeyboardShortcuts';
 import { useRemoteCommandListener } from '@/hooks/useRemoteCommandListener';
 import { useConnectivityMonitor } from '@/hooks/useConnectivityMonitor';
@@ -25,6 +25,12 @@ import '@/core/i18n'; // Initialize i18next — must run before any component re
 import { AppInitializationProvider } from '@/providers/AppInitializationProvider';
 
 const AppShell = lazy(() => import('./AppShell'));
+
+export function isRemoteSurfaceDevice(
+    mobile: Pick<MobileState, 'isAnyPhone' | 'isTablet' | 'isTouchDevice'>
+): boolean {
+    return mobile.isAnyPhone || (mobile.isTablet && mobile.isTouchDevice);
+}
 
 function DevPortWarning() {
     const port = window.location.port;
@@ -105,6 +111,10 @@ export default function App() {
     // Cross-device workspace sync (push/pull, debounced)
     useWorkspaceSync();
 
+    const mobile = useMobile();
+    const shouldUseRemoteSurface = isRemoteSurfaceDevice(mobile);
+    const { isAnyPhone } = mobile;
+
     const publicLegalPage = useMemo(() => {
         const path = location.pathname.replace(/\/+$/, '') || '/';
         if (path === '/privacy' || path === '/legal/privacy') return 'privacy';
@@ -123,17 +133,16 @@ export default function App() {
 
     // SSR-safe media query for desktop detection
     const isDesktop = useMediaQuery('(min-width: 768px)');
-    const { isAnyPhone } = useMobile();
 
-    // Phone auto-route: on phones, the app IS indiiREMOTE — skip the studio entirely
+    // Remote auto-route: phones and touch-capable tablets use the remote shell instead of studio chrome.
     useEffect(() => {
-        if (isAnyPhone && currentModule !== 'mobile-remote') {
+        if (shouldUseRemoteSurface && currentModule !== 'mobile-remote') {
             useStore.getState().setModule('mobile-remote');
         }
-    }, [isAnyPhone, currentModule]);
+    }, [shouldUseRemoteSurface, currentModule]);
 
-    const activeModule = isAnyPhone ? 'mobile-remote' : currentModule;
-    const activeShowChrome = isAnyPhone ? false : showChrome;
+    const activeModule = shouldUseRemoteSurface ? 'mobile-remote' : currentModule;
+    const activeShowChrome = shouldUseRemoteSurface ? false : showChrome;
 
     return (
         <AppInitializationProvider>

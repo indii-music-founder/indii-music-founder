@@ -41,7 +41,6 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
         canvasEl,
         generatedHistory,
         editManifest,
-        sessionId,
 
         setIsSelectingEndFrame,
         setEndFrameItem,
@@ -103,14 +102,11 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                     processingStatus={processingStatus}
                     isHighFidelity={isHighFidelity}
                     setIsHighFidelity={setIsHighFidelity}
-                    routeLabel={editManifest.route.label}
-                    routeReason={editManifest.route.reason}
                     modelTier={editManifest.settings.modelTier}
                     resolution={editManifest.settings.resolution}
                     aspectRatio={editManifest.settings.aspectRatio}
                     grounding={editManifest.settings.grounding}
                     imageSize={editManifest.settings.imageSize}
-                    sessionId={sessionId}
                 />
 
                 <div className="flex-1 relative overflow-hidden bg-[#060608]">

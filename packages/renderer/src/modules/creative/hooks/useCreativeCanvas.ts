@@ -10,7 +10,8 @@ import { Editing } from '@/services/image/EditingService';
 import { saveAssetToStorage, saveCanvasStateToStorage, getCanvasStateFromStorage } from '@/services/storage/repository';
 import { imageAnalysisService } from '@/services/image/ImageAnalysisService';
 import { logger } from '@/utils/logger';
-import { compileCreativeEditManifest, getCreativeSessionId, normalizeCreativeImageSize, summarizeCreativeEditManifest, type CreativeVaultScope } from '../services/creativeManifest';
+import { buildReferenceRolePrompt, compileCreativeEditManifest, getCreativeSessionId, normalizeCreativeImageSize, summarizeCreativeEditManifest, type CreativeVaultScope } from '../services/creativeManifest';
+import { INTELLIGENCE_CONFIG } from '@/core/config/intelligence-models';
 import { creativeSessionService } from '@/services/creative/CreativeSessionService';
 import { CreativeStorageService } from '@/services/creative/CreativeStorageService';
 import { auth } from '@/services/firebase';
@@ -60,6 +61,10 @@ async function resolveEditableImageUrl(item: HistoryItem): Promise<string> {
 }
 
 async function dataUrlToBlob(dataUrl: string): Promise<Blob> {
+    if (dataUrl.startsWith('data:')) {
+        return CloudStorageService.dataURItoBlob(dataUrl);
+    }
+
     const response = await fetch(dataUrl);
     return response.blob();
 }
@@ -167,6 +172,7 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
         const userId = auth.currentUser?.uid;
         return userId ? buildAssetStorageUri(assetId, userId) : undefined;
     };
+    const candidatePersistenceUri = (candidate?: Candidate | null) => candidate?.storageUri || candidate?.url || null;
     const reserveImageBudget = async (modelId: 'gemini-3-pro-image' | 'gemini-3.1-flash-image') => {
         const userId = auth.currentUser?.uid;
         if (!userId) {
@@ -287,11 +293,15 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                         ));
 
                         if ((savedSession.generatedCandidates || []).length > 0) {
-                            setGeneratedCandidates(savedSession.generatedCandidates.map((url) => ({
-                                id: crypto.randomUUID(),
-                                url,
-                                prompt: savedSession.prompt
-                            })));
+                            const restoredCandidates = await Promise.all(
+                                (savedSession.generatedCandidates || []).map(async (candidateUri) => ({
+                                    id: crypto.randomUUID(),
+                                    url: await resolveStorageUrl(candidateUri),
+                                    storageUri: candidateUri.startsWith('data:') ? undefined : candidateUri,
+                                    prompt: savedSession.prompt
+                                }))
+                            );
+                            setGeneratedCandidates(restoredCandidates);
                         }
                     }
                 } catch (sessionErr) {
@@ -367,9 +377,13 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
         setHistoryTrigger(prev => prev + 1);
     };
     const handleAddSketchLayer = () => {
+        const layerId = canvasOps.addBlankSketchLayer(activeColor.name || 'Sketch Layer');
+        if (layerId) {
+            handleSelectLayer(layerId);
+        }
         handleSetTool('brush');
         setIsLayersPanelOpen(true);
-        toast.info(`Sketching with ${activeColor.name}. Draw on the canvas to create a layer.`);
+        toast.info(`Blank sketch layer added. Draw on the canvas to create a sketch.`);
     };
 
     const handleUndo = async () => {
@@ -415,18 +429,25 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
         setHistoryTrigger(prev => prev + 1);
     };
 
-    const persistDraftCandidates = async (candidates: Candidate[], sourcePrompt: string) => {
-        if (!item || candidates.length === 0) return;
+    const persistDraftCandidates = async (candidates: Candidate[], sourcePrompt: string): Promise<Candidate[]> => {
+        if (!item || candidates.length === 0) return candidates;
         const { addToHistory } = useStore.getState();
+        const persistedCandidates: Candidate[] = [];
 
         await Promise.all(candidates.map(async (candidate, index) => {
             try {
                 const blob = await dataUrlToBlob(candidate.url);
                 const assetId = await saveAssetToStorage(blob);
+                const storageUri = currentUserStorageUri(assetId);
+                const persistedCandidate = {
+                    ...candidate,
+                    storageUri,
+                };
+                persistedCandidates[index] = persistedCandidate;
                 addToHistory({
                     id: assetId,
                     url: candidate.url,
-                    storageUri: currentUserStorageUri(assetId),
+                    storageUri,
                     prompt: candidate.prompt || sourcePrompt || `Magic Edit option ${index + 1}`,
                     type: 'image',
                     timestamp: Date.now(),
@@ -442,6 +463,8 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                 });
             }
         }));
+
+        return candidates.map((candidate, index) => persistedCandidates[index] ?? candidate);
     };
 
     const handleUpdateDefinition = (colorId: string, prompt: string) => {
@@ -529,6 +552,16 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
         if (magicFillPrompt && !finalDefinitions[activeColor.id]) {
             finalDefinitions[activeColor.id] = magicFillPrompt;
         }
+        const activeKeys = Object.keys(finalDefinitions);
+        const roleInstructions = buildReferenceRolePrompt(finalDefinitions, referenceRoles, activeKeys);
+        const activeReferenceEntries = activeKeys
+            .map(colorId => {
+                const reference = referenceImages[colorId];
+                if (!reference) return null;
+                const colorName = STUDIO_COLORS.find(c => c.id === colorId)?.name.toUpperCase() ?? colorId.toUpperCase();
+                return { colorId, colorName, reference };
+            })
+            .filter((entry): entry is { colorId: string; colorName: string; reference: { mimeType: string; data: string } } => !!entry);
 
         setIsProcessing(true);
         setProcessingStatus(isHighFidelity ? "Capturing Visual Context..." : "Architecting Masks...");
@@ -540,6 +573,10 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
 
             if (prepared && prepared.masks.length > 0) {
                 const combinedPrompt = Object.values(finalDefinitions).join(". ") || magicFillPrompt;
+                const roleAwarePrompt = [
+                    combinedPrompt,
+                    roleInstructions.length > 0 ? `Reference role guidance:\n${roleInstructions.join('\n')}` : '',
+                ].filter(Boolean).join('\n\n');
                 const referenceAssetUris = await uploadSessionMedia(referenceImages, referenceRoles, 'objects');
                 const maskAssetUris = await Promise.all(prepared.masks.map(async (mask) => {
                     const userId = auth.currentUser?.uid;
@@ -578,35 +615,47 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                 });
 
                 if (isHighFidelity) {
-                    const activeKeys = Object.keys(finalDefinitions);
                     const isMultiMask = activeKeys.length > 1;
 
                     let maskData: string | null = null;
-                    let promptPayload = combinedPrompt;
+                    let promptPayload = roleAwarePrompt;
                     let useSemanticMap = false;
+                    let referenceImagesForEdit: { mimeType: string; data: string }[] = [];
 
                     if (isMultiMask) {
                         await reserveImageBudget('gemini-3-pro-image');
                         maskData = canvasOps.extractSemanticMask();
                         useSemanticMap = true;
+                        const maxReferenceImages = INTELLIGENCE_CONFIG.IMAGE.DEFAULT.maxReferenceImages;
+                        const visibleReferences = activeReferenceEntries.slice(0, maxReferenceImages);
+                        const droppedReferences = activeReferenceEntries.slice(maxReferenceImages);
+
+                        if (droppedReferences.length > 0) {
+                            toast.warning(`Dropped ${droppedReferences.map(ref => ref.colorName).join(', ')} because Nano Banana Pro only accepts up to ${maxReferenceImages} reference images.`);
+                        }
+
+                        const referenceIndexByColor = new Map(visibleReferences.map((entry, index) => [entry.colorId, index + 1] as const));
                         const legend = activeKeys.map(colorId => {
                             const colorDef = STUDIO_COLORS.find(c => c.id === colorId);
                             const label = colorDef ? colorDef.name.toUpperCase() : 'MARKED';
-                            return `- ${label} REGION: ${finalDefinitions[colorId]}`;
+                            const referenceIndex = referenceIndexByColor.get(colorId);
+                            const referenceText = referenceIndex
+                                ? `uses reference image ${referenceIndex}`
+                                : 'has no reference image';
+                            return `- ${label} REGION ${referenceText}: ${finalDefinitions[colorId]}`;
                         }).join('\n');
-                        promptPayload = `Applying multiple edits defined by color mask:\n${legend}`;
+                        promptPayload = `Applying multiple edits defined by color mask:\n${legend}\n\n${roleInstructions.length > 0 ? `Reference role guidance:\n${roleInstructions.join('\n')}` : ''}`.trim();
+
+                        referenceImagesForEdit = visibleReferences.map(entry => entry.reference);
                     } else {
                         maskData = canvasOps.extractGeminiMask();
                     }
 
                     if (maskData) {
-                        const activeReference = activeKeys
-                            .map(colorId => referenceImages[colorId])
-                            .find((reference): reference is { mimeType: string; data: string } => !!reference);
                         const result = await Editing.editImage({
                             image: prepared.baseImage,
                             mask: { mimeType: 'image/png', data: maskData },
-                            referenceImage: activeReference,
+                            referenceImages: referenceImagesForEdit,
                             prompt: promptPayload,
                             forceHighFidelity: true,
                             model: 'pro',
@@ -624,26 +673,27 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                                 prompt: promptPayload,
                                 thoughtSignature: result.thoughtSignature
                             }];
-                            setGeneratedCandidates(candidates);
-                            await persistDraftCandidates(candidates, promptPayload);
+                            const persistedCandidates = await persistDraftCandidates(candidates, promptPayload);
+                            setGeneratedCandidates(persistedCandidates);
                             await updateSession({
                                 lastAction: 'high_fidelity_edit',
-                                selectedCandidateUri: result.url,
-                                outputUri: result.url,
+                                generatedCandidates: persistedCandidates.map(candidate => candidate.storageUri || candidate.url),
+                                selectedCandidateUri: persistedCandidates[0]?.storageUri || result.url,
+                                outputUri: persistedCandidates[0]?.storageUri || result.url,
                             });
                             toast.success(`High-Fidelity Edit Complete!`);
                         }
                     }
                 } else if (prepared.masks.length === 1) {
                     await reserveImageBudget('gemini-3.1-flash-image');
-                    const result = await Editing.editImage({
-                        image: prepared.baseImage,
-                        mask: prepared.masks[0],
-                        referenceImage: prepared.masks[0]?.referenceImage,
-                        prompt: combinedPrompt,
-                        forceHighFidelity: false,
-                        model: 'flash',
-                        sessionId,
+                        const result = await Editing.editImage({
+                            image: prepared.baseImage,
+                            mask: prepared.masks[0],
+                            referenceImage: prepared.masks[0]?.referenceImage,
+                            prompt: roleAwarePrompt,
+                            forceHighFidelity: false,
+                            model: 'flash',
+                            sessionId,
                         routeId: editManifest.route.id,
                         routeLabel: editManifest.route.label,
                         routeReason: editManifest.route.reason,
@@ -655,12 +705,13 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                             url: result.url,
                             prompt: combinedPrompt
                         }];
-                        setGeneratedCandidates(candidates);
-                        await persistDraftCandidates(candidates, combinedPrompt);
+                        const persistedCandidates = await persistDraftCandidates(candidates, combinedPrompt);
+                        setGeneratedCandidates(persistedCandidates);
                         await updateSession({
                             lastAction: 'speed_edit',
-                            selectedCandidateUri: result.url,
-                            outputUri: result.url,
+                            generatedCandidates: persistedCandidates.map(candidate => candidate.storageUri || candidate.url),
+                            selectedCandidateUri: persistedCandidates[0]?.storageUri || result.url,
+                            outputUri: persistedCandidates[0]?.storageUri || result.url,
                         });
                         toast.success(`Speedy Edit Complete!`);
                     }
@@ -684,21 +735,24 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                             url: r.url,
                             prompt: r.prompt
                         }));
-                        setGeneratedCandidates(candidates);
-                        await persistDraftCandidates(candidates, combinedPrompt);
+                        const persistedCandidates = await persistDraftCandidates(candidates, combinedPrompt);
+                        setGeneratedCandidates(persistedCandidates);
+                        const firstCandidateUri = candidatePersistenceUri(persistedCandidates[0]) ?? candidatePersistenceUri(candidates[0]);
                         await updateSession({
                             lastAction: 'multi_region_edit',
-                            selectedCandidateUri: results[0]?.url ?? null,
-                            outputUri: results[0]?.url ?? null,
+                            generatedCandidates: persistedCandidates.map(candidate => candidate.storageUri || candidate.url),
+                            selectedCandidateUri: firstCandidateUri,
+                            outputUri: firstCandidateUri,
                         });
                         toast.success("Multi-Region Chain Complete!");
                     }
                 }
-            } else {
-                setProcessingStatus("Remixing Visuals...");
-                const { ImageGeneration } = await import('@/services/image/ImageGenerationService');
-                const res = await fetch(item.url);
-                const blob = await res.blob();
+                } else {
+                    setProcessingStatus("Remixing Visuals...");
+                    const { ImageGeneration } = await import('@/services/image/ImageGenerationService');
+                    const blob = item.url.startsWith('data:')
+                        ? await CloudStorageService.dataURItoBlob(item.url)
+                        : await (await fetch(item.url)).blob();
                 const mimeType = blob.type || 'image/png';
                 const base64data = await new Promise<string>((resolve) => {
                     const reader = new FileReader();
@@ -718,12 +772,13 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                         url: result.url,
                         prompt: magicFillPrompt
                     }];
-                    setGeneratedCandidates(candidates);
-                    await persistDraftCandidates(candidates, magicFillPrompt);
+                    const persistedCandidates = await persistDraftCandidates(candidates, magicFillPrompt);
+                    setGeneratedCandidates(persistedCandidates);
                     await updateSession({
                         lastAction: 'remix_edit',
-                        selectedCandidateUri: result.url,
-                        outputUri: result.url,
+                        generatedCandidates: persistedCandidates.map(candidate => candidate.storageUri || candidate.url),
+                        selectedCandidateUri: persistedCandidates[0]?.storageUri || result.url,
+                        outputUri: persistedCandidates[0]?.storageUri || result.url,
                     });
                     toast.success("Remix Generated! Hint: Draw on the image for targeted edits.");
                 }
@@ -763,8 +818,8 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
         setHistoryTrigger(prev => prev + 1);
         await updateSession({
             lastAction: 'candidate_selected',
-            selectedCandidateUri: candidate.url,
-            outputUri: candidate.url,
+            selectedCandidateUri: candidate.storageUri || candidate.url,
+            outputUri: candidate.storageUri || candidate.url,
         });
         toast.success(`Applied Option ${index + 1}`);
     };
@@ -822,9 +877,10 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
 
             // 2. Upload blob to Firebase Storage as a persistent asset
             const blob = await canvasOps.getBlob();
+            let storageUri: string | undefined;
             if (blob) {
                 const assetId = await saveAssetToStorage(blob);
-                const storageUri = currentUserStorageUri(assetId);
+                storageUri = currentUserStorageUri(assetId);
 
                 // 3. Create or update HistoryItem so the export appears in the gallery
                 const { addToHistory, updateHistoryItem } = useStore.getState();
@@ -857,8 +913,8 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
             await persistSession(editManifest, {
                 lastAction: 'save_canvas',
                 status: 'completed',
-                selectedCandidateUri: generatedCandidates[0]?.url ?? null,
-                outputUri: item.url,
+                selectedCandidateUri: candidatePersistenceUri(generatedCandidates[0]),
+                outputUri: storageUri ?? item.url,
             });
             toast.success('Saved to gallery & cloud!');
         } catch {

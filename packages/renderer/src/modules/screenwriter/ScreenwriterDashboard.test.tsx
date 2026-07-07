@@ -44,6 +44,7 @@ vi.mock('motion/react', () => ({
 describe('ScreenwriterDashboard', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        window.localStorage.removeItem('indii-screenwriter-draft-v1');
         Object.assign(useStore.getState() as any, {
             setModule: mockSetModule,
             setGenerationMode: mockSetGenerationMode,
@@ -87,5 +88,29 @@ describe('ScreenwriterDashboard', () => {
         expect(mockSetViewMode).toHaveBeenCalledWith('video_production');
         expect(mockSetModule).toHaveBeenCalledWith('creative');
         expect(mockSuccess).toHaveBeenCalledWith('Storyboard loaded into Creative Studio.');
+    });
+
+    it('persists the draft locally across remounts', async () => {
+        const { unmount } = render(<ScreenwriterDashboard />);
+
+        fireEvent.click(screen.getByRole('button', { name: /visual storyboarder/i }));
+
+        const sceneDescription = screen.getByDisplayValue(
+            'Neon glowing signs flicker. Slick puddles on concrete reflect vibrant magenta and cyan lights. Rain droplets splash slowly on the pavement.'
+        );
+        fireEvent.change(sceneDescription, { target: { value: 'Reloaded scene description' } });
+
+        await waitFor(() => {
+            expect(window.localStorage.getItem('indii-screenwriter-draft-v1')).toContain('Reloaded scene description');
+        });
+
+        unmount();
+        render(<ScreenwriterDashboard />);
+
+        await waitFor(() => {
+            expect(screen.getByText('Edit Scene Board')).toBeInTheDocument();
+        });
+
+        expect(screen.getByDisplayValue('Reloaded scene description')).toBeInTheDocument();
     });
 });

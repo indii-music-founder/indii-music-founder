@@ -7,6 +7,7 @@ export interface Candidate {
     url: string;
     prompt: string;
     thoughtSignature?: string;
+    storageUri?: string;
 }
 
 interface CandidateReviewProps {

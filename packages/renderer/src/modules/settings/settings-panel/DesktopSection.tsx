@@ -33,6 +33,8 @@ import { SectionHeader, SettingRow, SelectDropdown } from './SettingsShared';
 import { logger } from '@/utils/logger';
 import { db } from '@/services/firebase';
 import { doc, setDoc, addDoc, collection } from 'firebase/firestore';
+import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -61,6 +63,9 @@ interface UpdateConfig {
 // ---------------------------------------------------------------------------
 
 const DesktopSection: React.FC = () => {
+    const { userProfile } = useStore(useShallow(state => ({
+        userProfile: state.userProfile,
+    })));
     const [appVersion, setAppVersion] = useState<string>('');
     const [status, setStatus] = useState<UpdateStatus>('idle');
     const [availableVersion, setAvailableVersion] = useState<string>('');
@@ -81,6 +86,11 @@ const DesktopSection: React.FC = () => {
     const [jsonData, setJsonData] = useState('');
     const [pushStatus, setPushStatus] = useState<'idle' | 'pushing' | 'success' | 'error'>('idle');
     const [pushError, setPushError] = useState('');
+    const isFounderAccess =
+        import.meta.env.DEV ||
+        userProfile?.isFounder === true ||
+        userProfile?.subscriptionTier === 'founder' ||
+        userProfile?.tier === 'founder';
 
     const handlePushToFirebase = async () => {
         if (!jsonData.trim()) return;
@@ -255,93 +265,99 @@ const DesktopSection: React.FC = () => {
                     </div>
                 </div>
 
-                <div className="border border-slate-800 bg-slate-900/40 rounded-2xl p-6 relative overflow-hidden backdrop-blur-md">
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/5 rounded-full blur-3xl pointer-events-none" />
-                    
-                    <div className="flex items-center gap-3 mb-4">
-                        <div className="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center border border-cyan-500/20">
-                            <Terminal size={18} className="text-cyan-400" />
-                        </div>
-                        <div>
-                            <h3 className="text-sm font-semibold text-white">Developer Firebase Push Bypass</h3>
-                            <p className="text-xs text-slate-400">Manually queue or sync records to Firestore collection bypass.</p>
-                        </div>
-                    </div>
+                {isFounderAccess ? (
+                    <div className="border border-slate-800 bg-slate-900/40 rounded-2xl p-6 relative overflow-hidden backdrop-blur-md">
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/5 rounded-full blur-3xl pointer-events-none" />
 
-                    <div className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wider">
-                                    Target Firestore Collection
-                                </label>
-                                <input
-                                    type="text"
-                                    value={collectionName}
-                                    onChange={(e) => setCollectionName(e.target.value)}
-                                    placeholder="e.g. user_usage_stats"
-                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-slate-350 placeholder-slate-600 focus:outline-none focus:border-cyan-500/50 transition-all font-mono"
-                                />
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center border border-cyan-500/20">
+                                <Terminal size={18} className="text-cyan-400" />
                             </div>
                             <div>
+                                <h3 className="text-sm font-semibold text-white">Developer Firebase Push Bypass</h3>
+                                <p className="text-xs text-slate-400">Founder/dev utility for manual Firestore sync and debugging.</p>
+                            </div>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wider">
+                                        Target Firestore Collection
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={collectionName}
+                                        onChange={(e) => setCollectionName(e.target.value)}
+                                        placeholder="e.g. user_usage_stats"
+                                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-slate-350 placeholder-slate-600 focus:outline-none focus:border-cyan-500/50 transition-all font-mono"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wider">
+                                        Document ID (Optional)
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={docId}
+                                        onChange={(e) => setDocId(e.target.value)}
+                                        placeholder="Auto-generated if empty"
+                                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-slate-350 placeholder-slate-600 focus:outline-none focus:border-cyan-500/50 transition-all font-mono"
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
                                 <label className="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wider">
-                                    Document ID (Optional)
+                                    JSON Payload
                                 </label>
-                                <input
-                                    type="text"
-                                    value={docId}
-                                    onChange={(e) => setDocId(e.target.value)}
-                                    placeholder="Auto-generated if empty"
-                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-slate-350 placeholder-slate-600 focus:outline-none focus:border-cyan-500/50 transition-all font-mono"
+                                <textarea
+                                    value={jsonData}
+                                    onChange={(e) => setJsonData(e.target.value)}
+                                    placeholder={`{\n  "tokensUsed": 1000,\n  "requestCount": 1,\n  "userId": "user_id_here"\n}`}
+                                    rows={6}
+                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-xs text-slate-350 placeholder-slate-600 focus:outline-none focus:border-cyan-500/50 transition-all font-mono resize-y min-h-[120px]"
                                 />
                             </div>
-                        </div>
 
-                        <div>
-                            <label className="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wider">
-                                JSON Payload
-                            </label>
-                            <textarea
-                                value={jsonData}
-                                onChange={(e) => setJsonData(e.target.value)}
-                                placeholder={`{\n  "tokensUsed": 1000,\n  "requestCount": 1,\n  "userId": "user_id_here"\n}`}
-                                rows={6}
-                                className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-xs text-slate-350 placeholder-slate-600 focus:outline-none focus:border-cyan-500/50 transition-all font-mono resize-y min-h-[120px]"
-                            />
-                        </div>
-
-                        {pushStatus === 'success' && (
-                            <div className="flex items-center gap-2 text-emerald-400 bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-3 text-xs">
-                                <CheckCircle2 size={14} className="shrink-0" />
-                                <span>Record pushed successfully!</span>
-                            </div>
-                        )}
-
-                        {pushStatus === 'error' && (
-                            <div className="flex items-center gap-2 text-red-400 bg-red-500/5 border border-red-500/20 rounded-xl p-3 text-xs">
-                                <XCircle size={14} className="shrink-0" />
-                                <span>Error: {pushError}</span>
-                            </div>
-                        )}
-
-                        <button
-                            onClick={handlePushToFirebase}
-                            disabled={pushStatus === 'pushing' || !jsonData.trim()}
-                            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-linear-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-slate-950 font-bold rounded-xl text-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed select-none active:scale-[0.99] cursor-pointer"
-                        >
-                            {pushStatus === 'pushing' ? (
-                                <>
-                                    <Loader2 size={16} className="animate-spin text-slate-950" />
-                                    <span>Pushing Data...</span>
-                                </>
-                            ) : (
-                                <>
-                                    <Send size={14} className="text-slate-950" />
-                                    <span>Push to Firebase</span>
-                                </>
+                            {pushStatus === 'success' && (
+                                <div className="flex items-center gap-2 text-emerald-400 bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-3 text-xs">
+                                    <CheckCircle2 size={14} className="shrink-0" />
+                                    <span>Record pushed successfully!</span>
+                                </div>
                             )}
-                        </button>
+
+                            {pushStatus === 'error' && (
+                                <div className="flex items-center gap-2 text-red-400 bg-red-500/5 border border-red-500/20 rounded-xl p-3 text-xs">
+                                    <XCircle size={14} className="shrink-0" />
+                                    <span>Error: {pushError}</span>
+                                </div>
+                            )}
+
+                            <button
+                                onClick={handlePushToFirebase}
+                                disabled={pushStatus === 'pushing' || !jsonData.trim()}
+                                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-linear-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-slate-950 font-bold rounded-xl text-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed select-none active:scale-[0.99] cursor-pointer"
+                            >
+                                {pushStatus === 'pushing' ? (
+                                    <>
+                                        <Loader2 size={16} className="animate-spin text-slate-950" />
+                                        <span>Pushing Data...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Send size={14} className="text-slate-950" />
+                                        <span>Push to Firebase</span>
+                                    </>
+                                )}
+                            </button>
+                        </div>
                     </div>
-                </div>
+                ) : (
+                    <div className="border border-slate-800 bg-slate-900/30 rounded-2xl p-6 text-sm text-slate-400">
+                        Developer push tools are hidden outside founder/dev builds.
+                    </div>
+                )}
             </div>
         );
     }

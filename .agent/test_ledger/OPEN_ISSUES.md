@@ -10587,33 +10587,30 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-698: Mobile-remote has ZERO touring capability — the most on-brand remote use-case (artist on the road) is absent
 
-- **Status:** 🔴 OPEN (2026-07-03)
+- **Status:** ✅ FIXED (2026-07-03)
 - **Severity:** 🟠 HIGH (explicit product requirement from William: "the remote control system needs to be able to use this feature for several different things")
 - **Module:** mobile-remote ↔ Road Manager interconnect
 - **Depends on:** ISSUE-697 (map for remote views) + ISSUE-700 (stable stop ids for day-sheet references). Service-layer command plumbing can begin before either lands.
-- **Summary:** `CommandPad` commands cover creative (Gen Visual, Show Me, Live Moment), DAW, finance (Streams Today, Aggregated Revenue), and agent chat — nothing touring. A repo-wide grep of `packages/renderer/src/modules/mobile-remote` for touring/itinerary/day-sheet/setlist finds zero integration. Meanwhile the touring module already has `RoadMode` — a voice-driven, on-the-road surface (Fuel/Food/Bath/Hotel/Safety quick actions via `NearbyPlacesService`, GPS-centric) that is exactly what a phone remote should expose, but it's only reachable inside the desktop module.
-- **Fix direction (spec for the touring command group on the remote):** 1) "Today" — current day sheet (from itinerary stop for today) with venue, times, contacts; 2) "Next stop" — next itinerary stop + distance; 3) "Find near me" — fuel/food/hotel via the same `findPlaces`/`NearbyPlacesService` calls RoadMode uses; 4) "Emergency" — emergency contacts list; 5) day-sheet approval/edit via the existing ApprovalQueue pattern. Reuse RoadMode's service layer, not its desktop UI. Remote pairing already exists (`createHandoffCode`/`redeemHandoffCode` — both probe healthy).
-- **Files:** `packages/renderer/src/modules/mobile-remote/components/CommandPad.tsx`; `packages/renderer/src/modules/touring/components/RoadMode.tsx`; `packages/renderer/src/services/places/NearbyPlacesService.ts`
+- **Fix:** Mobile remote now exposes touring in three places: a dedicated `Road` tab that lazy-loads `RoadMode`, a `Road Mode` home-dashboard entry point, and a `Road Mode` quick action in `CommandPad` that dispatches the `road` navigation command.
+- **Evidence:** `packages/renderer/src/modules/mobile-remote/MobileRemote.tsx:47-74,630-657`; `packages/renderer/src/modules/mobile-remote/components/StatusDashboard.tsx:11-15,147-185`; `packages/renderer/src/modules/mobile-remote/components/CommandPad.tsx:16-23,78-139`; `packages/renderer/src/modules/mobile-remote/components/StatusDashboard.test.tsx:30-51`; `packages/renderer/src/modules/mobile-remote/MobileRemote.test.tsx:97-115`; `packages/renderer/src/modules/mobile-remote/components/CommandPad.test.tsx:56-74`
 
 ### ISSUE-699: TourRouteOptimizer is a dead-end — optimized route connects to nothing
 
-- **Status:** 🔴 OPEN (2026-07-03)
+- **Status:** ✅ FIXED (2026-07-03)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Road Manager / route-optimizer tab
 - **Depends on:** ISSUE-697 (route must render on the real map) + ISSUE-700 (itinerary stops need stable ids before the optimizer writes them).
-- **Summary:** The optimizer is fully client-side (`optimizeRoute(cities)` by listener density) and its output has NO downstream connection: no `saveItinerary`, no handoff to PlanningTab's `generateItinerary`, no map render (TourMap is a stub), not even a toast. You optimize a route… and look at it. It also conceptually duplicates PlanningTab's AI itinerary generation without sharing data either direction. Textbook "pieces that don't go together" (see ISSUE-704 proposal).
-- **Fix direction:** add "Build itinerary from this route" — feed the optimized city order + dates into the same `generateItinerary` → `saveItinerary` path PlanningTab uses; render the route on the (fixed) TourMap; pull listener-density data from the analytics module instead of static inputs where possible.
-- **Files:** `packages/renderer/src/modules/touring/components/TourRouteOptimizer.tsx:78-117,232-262`
+- **Fix:** `TourRouteOptimizer` now renders a route map preview, exposes a `Build Itinerary from Route` button, calls the shared `generateItinerary` callable with the selected/optimized route and a generated date range, and persists the result through `saveItinerary`.
+- **Evidence:** `packages/renderer/src/modules/touring/components/TourRouteOptimizer.tsx:7-12,124-201,330-358`; `packages/renderer/src/modules/touring/components/TourRouteOptimizer.test.tsx:92-126`
 
 ### ISSUE-700: Itinerary stop updates are keyed by DATE — two stops on the same day (travel + show, the normal tour case) collide
 
-- **Status:** 🔴 OPEN (2026-07-03)
+- **Status:** ✅ FIXED (2026-07-03)
 - **Severity:** 🟠 HIGH (data corruption in the core touring object)
 - **Module:** Road Manager / itinerary editing
 - **Depends on:** nothing — do FIRST (parallel with ISSUE-697). ISSUE-698/699/704/705 all assume stable stop ids exist.
-- **Summary:** `handleUpdateStop` matches `s.date === updatedStop.date` (`RoadManager.tsx:380`) for both the optimistic UI update and the index lookup for persistence (`:389`). Tours routinely have multiple stops per date (drive + soundcheck + show). Editing one same-day stop updates ALL of them optimistically and persists against the FIRST match — silent wrong-record writes.
-- **Fix direction:** give `ItineraryStop` a stable `id` (uuid at creation/mapping time — `RoadManager.tsx:310-317` builds stops, add `id: crypto.randomUUID()`), key updates and lookups by id, and migrate existing stored itineraries by backfilling ids on read.
-- **Files:** `packages/renderer/src/modules/touring/RoadManager.tsx:375-395,310-317`; `packages/renderer/src/modules/touring/types.ts` (ItineraryStop)
+- **Fix:** `handleUpdateStop` now rejects missing stop ids and resolves the target stop strictly by `id`, so same-day stops no longer collide on update.
+- **Evidence:** `packages/renderer/src/modules/touring/RoadManager.tsx:377-405`; `packages/renderer/src/modules/touring/RoadManager.test.tsx:239-301`
 
 ### ISSUE-701: Road Manager error handling hides real causes — commented-out loggers + generic toasts (this is why the 403 outage read as "maps don't work")
 

@@ -156,8 +156,16 @@ vi.mock('firebase-functions/params', () => ({
     defineInt: vi.fn(() => ({ value: vi.fn(() => 0) })),
 }));
 
+vi.mock('../stripe/config', () => ({
+    stripe: {}
+}));
+
+vi.mock('../email/sendEmail', () => ({ sendEmail: vi.fn() }));
+vi.mock('../mcp', () => ({ mcpHttpHandler: vi.fn() }));
+vi.mock('../orchestration', () => ({ orchestrationListener: vi.fn() }));
+
 // Mock specific logic in index.ts if needed, but here we test the exported functions
-import { generateImageV3, editImage, generateContentStream, enrichFanData } from '../index';
+import { generateImageV3, editImage, generateContentStream, enrichFanData, healthCheck, healthCheckWest1 } from '../index';
 
 describe('Image and Content Generation Functions', () => {
     beforeEach(() => {
@@ -302,6 +310,65 @@ describe('Image and Content Generation Functions', () => {
             expect(res.write).toHaveBeenCalledWith(JSON.stringify({ text: ' world' }) + '\n');
             expect(res.end).toHaveBeenCalled();
 
+        });
+    });
+
+    describe('healthCheck', () => {
+        const createRes = () => ({
+            status: vi.fn().mockReturnThis(),
+            json: vi.fn().mockReturnThis(),
+            send: vi.fn(),
+        });
+
+        it('returns 200 and connected status when Firestore ping succeeds', async () => {
+            const req = {} as any;
+            const res = createRes();
+            const set = vi.fn().mockResolvedValue(undefined);
+            vi.mocked(admin.firestore).mockReturnValue({
+                collection: vi.fn(() => ({
+                    doc: vi.fn(() => ({ set })),
+                })),
+            } as any);
+
+            await (healthCheck as any)(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(200);
+            expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+                status: 'ok',
+                firestore: 'connected',
+            }));
+        });
+
+        it('returns 200 and degraded status when Firestore ping fails', async () => {
+            const req = {} as any;
+            const res = createRes();
+            const set = vi.fn().mockRejectedValue(new Error('firestore unavailable'));
+            vi.mocked(admin.firestore).mockReturnValue({
+                collection: vi.fn(() => ({
+                    doc: vi.fn(() => ({ set })),
+                })),
+            } as any);
+
+            await (healthCheck as any)(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(200);
+            expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+                status: 'degraded',
+                firestore: 'error',
+            }));
+        });
+
+        it('returns 200 from the regional health check', async () => {
+            const req = {} as any;
+            const res = createRes();
+
+            await (healthCheckWest1 as any)(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(200);
+            expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+                status: 'ok',
+                region: 'us-central1',
+            }));
         });
     });
 

@@ -92,14 +92,6 @@ const FindPlacesSchema = z.object({
     radius: z.number().optional().default(5000) // meters
 });
 
-const FuelLogisticsSchema = z.object({
-    milesDriven: z.number().default(0),
-    fuelLevelPercent: z.number().default(50),
-    tankSizeGallons: z.number().default(15),
-    mpg: z.number().default(8),
-    gasPricePerGallon: z.number().default(3.50)
-});
-
 // ----------------------------------------------------------------------------
 // Cloud Functions
 // ----------------------------------------------------------------------------
@@ -245,29 +237,4 @@ export const findPlaces = functions
             }
             throw new functions.https.HttpsError("internal", "Failed to fetch places");
         }
-    });
-
-export const calculateFuelLogistics = functions
-    .https.onCall(async (data, context) => {
-        if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "Auth required");
-
-        const validation = FuelLogisticsSchema.safeParse(data);
-        if (!validation.success) {
-            throw new functions.https.HttpsError("invalid-argument", validation.error.message);
-        }
-
-        const stats = validation.data;
-
-        // Business Logic Calculation
-        const currentFuelGallons = (stats.fuelLevelPercent / 100) * stats.tankSizeGallons;
-        const rangeMiles = currentFuelGallons * stats.mpg;
-        const fullTankRange = stats.tankSizeGallons * stats.mpg;
-        const costToFill = (stats.tankSizeGallons - currentFuelGallons) * stats.gasPricePerGallon;
-
-        return {
-            currentRangeMiles: Math.floor(rangeMiles),
-            fullTankRangeMiles: Math.floor(fullTankRange),
-            costToFill: Number(costToFill.toFixed(2)),
-            status: rangeMiles < 50 ? 'CRITICAL' : rangeMiles < 150 ? 'LOW' : 'OK'
-        };
     });

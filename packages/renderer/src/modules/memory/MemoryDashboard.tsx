@@ -39,6 +39,8 @@ import type { AlwaysOnMemory, AlwaysOnMemoryCategory, MemoryTier } from '@/types
 import type { Directive } from '@/services/directive/DirectiveTypes';
 import type { MemoryInboxItem } from '@/core/store/slices/memoryAgentSlice';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
+import { useToast } from '@/core/context/ToastContext';
+import { logger } from '@/utils/logger';
 
 // ─── Constants ──────────────────────────────────────────────────
 
@@ -72,9 +74,17 @@ const CATEGORY_LABELS: Partial<Record<AlwaysOnMemoryCategory | 'all', string>> =
     feedback: '📝 Feedback',
 };
 
+const getMemoryErrorMessage = (fallback: string, error: unknown) => {
+    if (error instanceof Error && error.message.trim()) {
+        return error.message;
+    }
+    return fallback;
+};
+
 // ─── Component ──────────────────────────────────────────────────
 
 export default function MemoryDashboard() {
+    const toast = useToast();
     const {
         user,
         memories,
@@ -179,10 +189,13 @@ export default function MemoryDashboard() {
         try {
             await ingestMemoryText(ingestText.trim());
             setIngestText('');
+        } catch (error: unknown) {
+            logger.error('[MemoryDashboard] Failed to ingest memory:', error);
+            toast.error(getMemoryErrorMessage('Failed to ingest memory', error));
         } finally {
             setIsIngesting(false);
         }
-    }, [ingestText, userId, ingestMemoryText]);
+    }, [ingestText, userId, ingestMemoryText, toast]);
 
     const handleQuery = useCallback(async () => {
         if (!queryText.trim() || !userId) return;
@@ -191,27 +204,38 @@ export default function MemoryDashboard() {
         try {
             const answer = await queryAlwaysOnMemory(queryText.trim());
             setQueryAnswer(answer);
+        } catch (error: unknown) {
+            logger.error('[MemoryDashboard] Failed to query memory:', error);
+            toast.error(getMemoryErrorMessage('Failed to query memory', error));
         } finally {
             setIsQuerying(false);
         }
-    }, [queryText, userId, queryAlwaysOnMemory]);
+    }, [queryText, userId, queryAlwaysOnMemory, toast]);
 
     const handleConsolidate = useCallback(async () => {
         if (!userId) return;
         setIsConsolidating(true);
         try {
             await triggerMemoryConsolidation();
+        } catch (error: unknown) {
+            logger.error('[MemoryDashboard] Failed to consolidate memory:', error);
+            toast.error(getMemoryErrorMessage('Failed to consolidate memory', error));
         } finally {
             setIsConsolidating(false);
         }
-    }, [userId, triggerMemoryConsolidation]);
+    }, [userId, triggerMemoryConsolidation, toast]);
 
     const handleDelete = useCallback(
         async (memoryId: string) => {
             if (!userId) return;
-            await deleteAlwaysOnMemory(memoryId);
+            try {
+                await deleteAlwaysOnMemory(memoryId);
+            } catch (error: unknown) {
+                logger.error('[MemoryDashboard] Failed to delete memory:', error);
+                toast.error(getMemoryErrorMessage('Failed to delete memory', error));
+            }
         },
-        [userId, deleteAlwaysOnMemory]
+        [userId, deleteAlwaysOnMemory, toast]
     );
 
     const handleRefresh = useCallback(() => {

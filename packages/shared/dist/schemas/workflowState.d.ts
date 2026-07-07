@@ -17,21 +17,21 @@ export declare const WorkflowStepExecutionSchema: z.ZodObject<{
     stepId: z.ZodString;
     agentId: z.ZodString;
     prompt: z.ZodOptional<z.ZodString>;
-    status: z.ZodEffects<z.ZodEnum<["PLANNED", "EXECUTING_GENERATION", "AWAITING_HUMAN", "AWAITING_EVALUATION", "STEP_COMPLETE", "SKIPPED", "FAILED", "CANCELLED"]>, "PLANNED" | "AWAITING_HUMAN" | "AWAITING_EVALUATION" | "FAILED" | "CANCELLED" | "STEP_COMPLETE" | "SKIPPED" | "EXECUTING_GENERATION", unknown>;
+    status: z.ZodEffects<z.ZodEnum<["PLANNED", "EXECUTING_GENERATION", "AWAITING_HUMAN", "AWAITING_EVALUATION", "STEP_COMPLETE", "SKIPPED", "FAILED", "CANCELLED"]>, "FAILED" | "CANCELLED" | "PLANNED" | "AWAITING_HUMAN" | "AWAITING_EVALUATION" | "STEP_COMPLETE" | "SKIPPED" | "EXECUTING_GENERATION", unknown>;
     idempotencyKey: z.ZodString;
     startedAt: z.ZodOptional<z.ZodEffects<z.ZodOptional<z.ZodNumber>, number | undefined, unknown>>;
     completedAt: z.ZodOptional<z.ZodEffects<z.ZodOptional<z.ZodNumber>, number | undefined, unknown>>;
     result: z.ZodOptional<z.ZodString>;
     error: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
-    status: "PLANNED" | "AWAITING_HUMAN" | "AWAITING_EVALUATION" | "FAILED" | "CANCELLED" | "STEP_COMPLETE" | "SKIPPED" | "EXECUTING_GENERATION";
+    status: "FAILED" | "CANCELLED" | "PLANNED" | "AWAITING_HUMAN" | "AWAITING_EVALUATION" | "STEP_COMPLETE" | "SKIPPED" | "EXECUTING_GENERATION";
     stepId: string;
     agentId: string;
     idempotencyKey: string;
     error?: string | undefined;
     prompt?: string | undefined;
-    startedAt?: number | undefined;
     completedAt?: number | undefined;
+    startedAt?: number | undefined;
     result?: string | undefined;
 }, {
     stepId: string;
@@ -40,8 +40,8 @@ export declare const WorkflowStepExecutionSchema: z.ZodObject<{
     status?: unknown;
     error?: string | undefined;
     prompt?: string | undefined;
-    startedAt?: unknown;
     completedAt?: unknown;
+    startedAt?: unknown;
     result?: string | undefined;
 }>;
 export type WorkflowStepExecution = z.infer<typeof WorkflowStepExecutionSchema>;
@@ -53,13 +53,13 @@ export declare const WorkflowEdgeSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     from: string;
     to: string;
-    label?: string | undefined;
     metadata?: Record<string, unknown> | undefined;
+    label?: string | undefined;
 }, {
     from: string;
     to: string;
-    label?: string | undefined;
     metadata?: Record<string, unknown> | undefined;
+    label?: string | undefined;
 }>;
 export interface WorkflowEdge {
     from: string;
@@ -81,26 +81,26 @@ export declare const WorkflowExecutionSchema: z.ZodObject<{
     workflowId: z.ZodString;
     sessionId: z.ZodOptional<z.ZodString>;
     userId: z.ZodString;
-    status: z.ZodEffects<z.ZodEnum<["PLANNED", "EXECUTING", "AWAITING_HUMAN", "AWAITING_EVALUATION", "COMPLETED", "FAILED", "CANCELLED"]>, "PLANNED" | "EXECUTING" | "AWAITING_HUMAN" | "AWAITING_EVALUATION" | "COMPLETED" | "FAILED" | "CANCELLED", unknown>;
+    status: z.ZodEffects<z.ZodEnum<["PLANNED", "EXECUTING", "AWAITING_HUMAN", "AWAITING_EVALUATION", "COMPLETED", "FAILED", "CANCELLED"]>, "COMPLETED" | "FAILED" | "CANCELLED" | "PLANNED" | "EXECUTING" | "AWAITING_HUMAN" | "AWAITING_EVALUATION", unknown>;
     steps: z.ZodRecord<z.ZodString, z.ZodObject<{
         stepId: z.ZodString;
         agentId: z.ZodString;
         prompt: z.ZodOptional<z.ZodString>;
-        status: z.ZodEffects<z.ZodEnum<["PLANNED", "EXECUTING_GENERATION", "AWAITING_HUMAN", "AWAITING_EVALUATION", "STEP_COMPLETE", "SKIPPED", "FAILED", "CANCELLED"]>, "PLANNED" | "AWAITING_HUMAN" | "AWAITING_EVALUATION" | "FAILED" | "CANCELLED" | "STEP_COMPLETE" | "SKIPPED" | "EXECUTING_GENERATION", unknown>;
+        status: z.ZodEffects<z.ZodEnum<["PLANNED", "EXECUTING_GENERATION", "AWAITING_HUMAN", "AWAITING_EVALUATION", "STEP_COMPLETE", "SKIPPED", "FAILED", "CANCELLED"]>, "FAILED" | "CANCELLED" | "PLANNED" | "AWAITING_HUMAN" | "AWAITING_EVALUATION" | "STEP_COMPLETE" | "SKIPPED" | "EXECUTING_GENERATION", unknown>;
         idempotencyKey: z.ZodString;
         startedAt: z.ZodOptional<z.ZodEffects<z.ZodOptional<z.ZodNumber>, number | undefined, unknown>>;
         completedAt: z.ZodOptional<z.ZodEffects<z.ZodOptional<z.ZodNumber>, number | undefined, unknown>>;
         result: z.ZodOptional<z.ZodString>;
         error: z.ZodOptional<z.ZodString>;
     }, "strip", z.ZodTypeAny, {
-        status: "PLANNED" | "AWAITING_HUMAN" | "AWAITING_EVALUATION" | "FAILED" | "CANCELLED" | "STEP_COMPLETE" | "SKIPPED" | "EXECUTING_GENERATION";
+        status: "FAILED" | "CANCELLED" | "PLANNED" | "AWAITING_HUMAN" | "AWAITING_EVALUATION" | "STEP_COMPLETE" | "SKIPPED" | "EXECUTING_GENERATION";
         stepId: string;
         agentId: string;
         idempotencyKey: string;
         error?: string | undefined;
         prompt?: string | undefined;
-        startedAt?: number | undefined;
         completedAt?: number | undefined;
+        startedAt?: number | undefined;
         result?: string | undefined;
     }, {
         stepId: string;
@@ -109,8 +109,8 @@ export declare const WorkflowExecutionSchema: z.ZodObject<{
         status?: unknown;
         error?: string | undefined;
         prompt?: string | undefined;
-        startedAt?: unknown;
         completedAt?: unknown;
+        startedAt?: unknown;
         result?: string | undefined;
     }>>;
     edges: z.ZodDefault<z.ZodArray<z.ZodObject<{
@@ -121,13 +121,13 @@ export declare const WorkflowExecutionSchema: z.ZodObject<{
     }, "strip", z.ZodTypeAny, {
         from: string;
         to: string;
-        label?: string | undefined;
         metadata?: Record<string, unknown> | undefined;
+        label?: string | undefined;
     }, {
         from: string;
         to: string;
-        label?: string | undefined;
         metadata?: Record<string, unknown> | undefined;
+        label?: string | undefined;
     }>, "many">>;
     createdAt: z.ZodEffects<z.ZodNumber, number, unknown>;
     updatedAt: z.ZodEffects<z.ZodNumber, number, unknown>;
@@ -136,25 +136,25 @@ export declare const WorkflowExecutionSchema: z.ZodObject<{
     id: string;
     createdAt: number;
     updatedAt: number;
-    status: "PLANNED" | "EXECUTING" | "AWAITING_HUMAN" | "AWAITING_EVALUATION" | "COMPLETED" | "FAILED" | "CANCELLED";
+    status: "COMPLETED" | "FAILED" | "CANCELLED" | "PLANNED" | "EXECUTING" | "AWAITING_HUMAN" | "AWAITING_EVALUATION";
     userId: string;
     workflowId: string;
     steps: Record<string, {
-        status: "PLANNED" | "AWAITING_HUMAN" | "AWAITING_EVALUATION" | "FAILED" | "CANCELLED" | "STEP_COMPLETE" | "SKIPPED" | "EXECUTING_GENERATION";
+        status: "FAILED" | "CANCELLED" | "PLANNED" | "AWAITING_HUMAN" | "AWAITING_EVALUATION" | "STEP_COMPLETE" | "SKIPPED" | "EXECUTING_GENERATION";
         stepId: string;
         agentId: string;
         idempotencyKey: string;
         error?: string | undefined;
         prompt?: string | undefined;
-        startedAt?: number | undefined;
         completedAt?: number | undefined;
+        startedAt?: number | undefined;
         result?: string | undefined;
     }>;
     edges: {
         from: string;
         to: string;
-        label?: string | undefined;
         metadata?: Record<string, unknown> | undefined;
+        label?: string | undefined;
     }[];
     error?: string | undefined;
     sessionId?: string | undefined;
@@ -169,8 +169,8 @@ export declare const WorkflowExecutionSchema: z.ZodObject<{
         status?: unknown;
         error?: string | undefined;
         prompt?: string | undefined;
-        startedAt?: unknown;
         completedAt?: unknown;
+        startedAt?: unknown;
         result?: string | undefined;
     }>;
     createdAt?: unknown;
@@ -181,8 +181,8 @@ export declare const WorkflowExecutionSchema: z.ZodObject<{
     edges?: {
         from: string;
         to: string;
-        label?: string | undefined;
         metadata?: Record<string, unknown> | undefined;
+        label?: string | undefined;
     }[] | undefined;
 }>;
 export interface WorkflowExecution extends z.infer<typeof WorkflowExecutionSchema> {

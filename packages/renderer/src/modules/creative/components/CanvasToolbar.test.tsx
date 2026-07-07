@@ -26,7 +26,7 @@ describe('CanvasToolbar', () => {
     it('renders all tool buttons with accessible names', () => {
         render(<CanvasToolbar {...mockProps} />);
         expect(screen.getByRole('button', { name: /Add Text/i })).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: /Add Sketch Layer/i })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Add Layer/i })).toBeInTheDocument();
         expect(screen.getByRole('button', { name: /Add Rectangle Layer/i })).toBeInTheDocument();
         expect(screen.getByRole('button', { name: /Add Circle Layer/i })).toBeInTheDocument();
         expect(screen.getByRole('button', { name: /Magic Fill/i })).toBeInTheDocument();
@@ -66,7 +66,7 @@ describe('CanvasToolbar', () => {
 
     it('calls layer creation handlers from layer buttons', () => {
         render(<CanvasToolbar {...mockProps} />);
-        fireEvent.click(screen.getByRole('button', { name: /Add Sketch Layer/i }));
+        fireEvent.click(screen.getByRole('button', { name: /Add Layer/i }));
         fireEvent.click(screen.getByRole('button', { name: /Add Rectangle Layer/i }));
         fireEvent.click(screen.getByRole('button', { name: /Add Circle Layer/i }));
 
