@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-07-07 16:26 EDT
+**Updated:** 2026-07-07 16:57 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+84e4a0c40 chore: session checkpoint [16:26]
 b46212840 chore: session checkpoint [15:06]
 fb6f1c1e1 chore: session checkpoint [14:43]
 dfef68e2a docs(flowcharts): create device sync and brand asset micro diagram
@@ -13,22 +14,22 @@ ea02a2ad9 chore: session checkpoint [08:13]
 3ccb285a5 chore: resolve all 15 npm-audit moderate findings
 5b1a0602c chore: session checkpoint [08:04]
 14c67a99a fix(chat): remove break-all so words wrap at spaces not mid-word
-3f7922a17 fix(agent): remove mock data implementations to resolve HIGH severity issues
 ```
 
 ## Working State
 ```
- M .agent/HANDOFF_STATE.md
  M .agent/test_ledger/OPEN_ISSUES.md
  M e2e/chat-interaction.spec.ts
  M packages/admin-dashboard/server.ts
  M packages/firebase/src/legal/mechanicalLicense.ts
  M packages/firebase/src/relay/telegramWebhook.ts
  M packages/main/src/preload.ts
+ M packages/renderer/python/tests/fixtures/e2e_interop/ts_to_py/envelope.json
  M packages/renderer/src/core/AppShell.tsx
  M packages/renderer/src/core/components/ChatOverlay.tsx
  M packages/renderer/src/core/components/CommandBar.interaction.test.tsx
  M packages/renderer/src/core/components/ConversationHistoryList.tsx
+ M packages/renderer/src/core/components/RightPanel.test.tsx
  M packages/renderer/src/core/components/RightPanel.tsx
  M packages/renderer/src/core/components/chat/ChatMessage.tsx
  M packages/renderer/src/core/components/chat/annotator/__tests__/ImageAnnotator.test.tsx
@@ -43,6 +44,7 @@ ea02a2ad9 chore: session checkpoint [08:13]
  M packages/renderer/src/core/store/slices/agent/agentSessionSlice.ts
  M packages/renderer/src/core/store/slices/agent/index.ts
  M packages/renderer/src/core/store/slices/appSlice.ts
+ M packages/renderer/src/core/store/slices/creative/creativeHandoffSlice.ts
  D packages/renderer/src/core/store/slices/projectSlice.ts
  M packages/renderer/src/hooks/useRemoteCommandListener.ts
  M packages/renderer/src/hooks/useWorkspaceSync.ts
@@ -52,7 +54,9 @@ ea02a2ad9 chore: session checkpoint [08:13]
  M packages/renderer/src/modules/creative/components/DirectGenerationTab.tsx
  M packages/renderer/src/modules/dashboard/components/AssetSpotlight.tsx
  M packages/renderer/src/modules/finance/components/MerchTable.tsx
+ M packages/renderer/src/modules/knowledge/components/KnowledgeChat.test.tsx
  M packages/renderer/src/modules/knowledge/components/KnowledgeChat.tsx
+ M packages/renderer/src/modules/merchandise/hooks/useAutoSave.ts
  M packages/renderer/src/modules/registration/components/RegistrationAutonomousRail.tsx
  M packages/renderer/src/modules/settings/settings-panel/ProfileSection.tsx
  M packages/renderer/src/modules/touring/components/VisaChecklist.tsx
@@ -62,7 +66,7 @@ ea02a2ad9 chore: session checkpoint [08:13]
  M packages/renderer/src/services/agent/components/ContextResolver.ts
  M packages/renderer/src/services/agent/components/HistoryManager.ts
  M packages/renderer/src/services/agent/memory/AlwaysOnMemoryEngine.ts
- M packages/renderer/src/services/commands/EntryCommandService.ts
+ M packages/renderer/src/services/dashboard/DashboardService.sales.test.ts
  M packages/renderer/src/services/dashboard/DashboardService.ts
  M packages/renderer/src/services/dashboard/projectTypeUtils.ts
  D packages/renderer/src/services/project/ProjectService.test.ts
@@ -72,6 +76,7 @@ ea02a2ad9 chore: session checkpoint [08:13]
  M packages/renderer/src/test/setup.ts
  M packages/renderer/src/tests/RouterContext.test.tsx
  M packages/renderer/src/types/electron.d.ts
+ M packages/renderer/src/utils/logger.ts
  M packages/shared/dist/ipc/electron-api.types.d.ts
  M packages/shared/dist/ipc/electron-api.types.d.ts.map
  M packages/shared/dist/schemas/env.schema.d.ts
