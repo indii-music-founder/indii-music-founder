@@ -4,6 +4,13 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import CRMDashboard from './CRMDashboard';
 import { useStore } from '@/core/store';
 
+const mockConfirmDialogCall = vi.fn().mockResolvedValue(true);
+vi.mock('@/components/ui/ConfirmDialog', () => ({
+    ConfirmDialog: {
+        call: (...args: any[]) => mockConfirmDialogCall(...args)
+    }
+}));
+
 // Mock store
 vi.mock('@/core/store', () => {
     const mockUseStore = vi.fn();
@@ -210,7 +217,7 @@ describe('CRMDashboard', () => {
         expect(mockCreateCampaign).not.toHaveBeenCalled();
     });
 
-    it('calls deleteCampaign handler when trash button is clicked', () => {
+    it('calls deleteCampaign handler when trash button is clicked', async () => {
         render(<CRMDashboard />);
 
         const deleteButtons = screen.getAllByTitle('Delete Campaign');
@@ -218,6 +225,10 @@ describe('CRMDashboard', () => {
 
         // Click delete on the second campaign
         fireEvent.click(deleteButtons[1]);
-        expect(mockDeleteCampaign).toHaveBeenCalledWith('camp-2');
+        
+        await waitFor(() => {
+            expect(mockConfirmDialogCall).toHaveBeenCalled();
+            expect(mockDeleteCampaign).toHaveBeenCalledWith('camp-2');
+        });
     });
 });
