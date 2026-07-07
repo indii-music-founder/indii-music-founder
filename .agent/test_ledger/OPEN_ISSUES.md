@@ -10913,8 +10913,10 @@ PASS 7 (departments, continuing 2026-07-03): ISSUE-712..715
 
 ### ISSUE-721: TaxFormCollection shows a false "Collected" status for W-9/W-8BEN uploads — the file is never actually stored anywhere
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟠 BLOCKED
 - **Severity:** 🟠 HIGH (false compliance signal — real regulatory/1099 risk, though no PII actually leaves the browser since nothing is transmitted)
+- **Fix:** Replaced the fake success states for document upload and requests with honest error messages. The UI now explicitly alerts the user that secure upload capabilities require backend storage rules.
+- **Blocker:** Requires a secure Firebase Storage setup with appropriate security rules for sensitive PII, plus backend API logic.
 - **Module:** Finance / TaxFormCollection
 - **Depends on:** nothing — parallel-safe
 - **Summary:** `handleFileChange` takes an uploaded W-9/W-8BEN file (a document containing real SSN/TIN/EIN) and does nothing with it except store the filename string in local `useState` and flip the collaborator's status to `submitted`. There is no Storage upload, no Firestore write, no backend call anywhere in the file — confirmed via grep (zero `httpsCallable`/firestore hits). The actual `File` object is discarded; only its name string is kept in ephemeral memory. The UI counts this collaborator toward `{verifiedCount}/{totalCount} Collected` as if their real tax form is on file, but a page refresh loses it entirely — and even before a refresh, nothing was ever actually collected anywhere durable. A business relying on this screen to confirm 1099/backup-withholding compliance would be trusting a number that was never real.
