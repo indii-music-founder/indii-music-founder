@@ -1,19 +1,19 @@
 # Handoff State
-**Updated:** 2026-07-06 23:47 EDT
+**Updated:** 2026-07-07 00:03 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+90c9ab781 docs(ledger): diagnose user-reported ISSUE-739 — 'No agent found for brand' is a stale-chunk load failure with no async recovery
+cba751883 test: fix CRMDashboard test after adding ConfirmDialog
+6bd2baca3 chore: fix issues 737 and 738 (accessibility and delete confirm)
+cfbca636b chore: session checkpoint [23:47]
 fd57b6a0d docs(ledger): menu-walk four-lens rotation summary — ReceiptOCR clean, 2 findings total
 aff2fa721 chore: fix issues 722-725 and mark as fixed in ledger
 edfae2859 docs(ledger): menu-walk delete sweep — ISSUE-738 unconfirmed CRM/History deletes
 e4f35e88c fix: block ISSUE-721 fake success in tax form collection
 e60cd41c3 docs(ledger): menu-walk four-lens — ISSUE-737 TransportBar a11y + Creative clean bills
 bd5c53484 fix: resolve ISSUE-719 by deleting unused AgentActionType
-8dc5b2c55 fix: resolve ISSUE-718 by deleting orphaned legal tools
-99e85b33c chore: B-Engine claims ISSUE-718
-4e5b6d35c fix(deploy): delete stale cloud functions before deployment to prevent conflicts
-5dfa3f955 chore: session checkpoint [23:10]
 ```
 
 ## Working State
