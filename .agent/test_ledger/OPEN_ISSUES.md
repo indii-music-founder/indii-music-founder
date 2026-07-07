@@ -10852,7 +10852,7 @@ PASS 7 (departments, continuing 2026-07-03): ISSUE-712..715
 
 ### ISSUE-718: `packages/renderer/src/modules/legal/tools.ts` is entirely orphaned legacy scaffolding — superseded by the real, wired agent tool system
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 IN PROGRESS (Agent B)
 - **Severity:** 🟢 LOW (dead code, not a functional bug — the real feature works fine elsewhere)
 - **Module:** Legal
 - **Depends on:** nothing — parallel-safe
