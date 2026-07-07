@@ -169,6 +169,7 @@ export default function TransportBar({ track, onNext }: TransportBarProps) {
                             <motion.button
                                 whileTap={{ scale: 0.9 }}
                                 onClick={toggleMute}
+                                aria-label={isMuted ? 'Unmute' : 'Mute'}
                                 className="w-12 h-12 rounded-2xl flex items-center justify-center bg-white/[0.03] border border-white/5 text-[#8e8e93] hover:text-white transition-all"
                             >
                                 {isMuted ? <VolumeX className="w-5 h-5 text-red-400" /> : <Volume2 className="w-5 h-5" />}
@@ -178,6 +179,7 @@ export default function TransportBar({ track, onNext }: TransportBarProps) {
                                 <motion.button
                                     whileTap={{ scale: 0.9 }}
                                     onClick={handleStop}
+                                    aria-label="Stop"
                                     className="w-12 h-12 rounded-2xl flex items-center justify-center bg-white/[0.03] border border-white/5 text-white/60 hover:text-white transition-all"
                                 >
                                     <Square className="w-5 h-5" />
@@ -186,6 +188,7 @@ export default function TransportBar({ track, onNext }: TransportBarProps) {
                                 <motion.button
                                     whileTap={{ scale: 0.92 }}
                                     onClick={togglePlay}
+                                    aria-label={isPlaying ? 'Pause' : 'Play'}
                                     className="w-20 h-20 rounded-[28px] bg-white flex items-center justify-center text-black shadow-[0_20px_40px_-8px_rgba(255,255,255,0.2)]"
                                 >
                                     {isPlaying ? <Pause className="w-8 h-8" /> : <Play className="w-8 h-8 ml-1" />}
@@ -195,6 +198,7 @@ export default function TransportBar({ track, onNext }: TransportBarProps) {
                                     whileTap={{ scale: 0.9 }}
                                     onClick={onNext}
                                     disabled={!onNext}
+                                    aria-label="Next Track"
                                     className={cn(
                                         "w-12 h-12 rounded-2xl flex items-center justify-center bg-white/[0.03] border border-white/5 transition-all",
                                         onNext ? "text-white/60 hover:text-white cursor-pointer" : "text-white/20 cursor-not-allowed"

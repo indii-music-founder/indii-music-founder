@@ -11406,7 +11406,7 @@ Rotating back to walking individual menus with the four lenses (double-click rac
 
 ### ISSUE-737: Mobile-remote TransportBar media controls are icon-only with no accessible names — screen-reader users can't identify mute/stop/play/next
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟡 MEDIUM (WCAG 2.1 SC 4.1.2 Name/Role/Value failure — fully blocks screen-reader users from operating remote playback controls; not data-loss/security, but a real exclusion bug on a core control surface)
 - **Module:** Mobile Remote / TransportBar
 - **Depends on:** nothing — parallel-safe
@@ -11427,7 +11427,7 @@ Rotating back to walking individual menus with the four lenses (double-click rac
 
 ### ISSUE-738: Unconfirmed destructive deletes of persisted data in CRM and History — single click permanently deletes, violating the project's ConfirmDialog standard (same class as ISSUE-730)
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟡 MEDIUM (data-loss on a single accidental click, no undo; CRM campaign deletion is the higher-stakes instance, History session deletion lower)
 - **Module:** CRM / History
 - **Depends on:** nothing — parallel-safe; batch with ISSUE-730 (MerchTable) as one "add ConfirmDialog to unconfirmed deletes" fix

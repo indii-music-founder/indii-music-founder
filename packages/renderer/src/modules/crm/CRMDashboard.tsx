@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useStore } from '@/core/store';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { 
     Plus, 
     Trash2, 
@@ -212,7 +213,16 @@ export default function CRMDashboard() {
                                     </div>
 
                                     <button
-                                        onClick={() => deleteCampaign(camp.id)}
+                                        onClick={async (e) => {
+                                            e.stopPropagation();
+                                            const ok = await ConfirmDialog.call({
+                                                title: 'Delete Campaign',
+                                                message: `Are you sure you want to delete campaign "${camp.name}"? This cannot be undone.`,
+                                                confirmText: 'Delete',
+                                                variant: 'destructive'
+                                            });
+                                            if (ok) deleteCampaign(camp.id);
+                                        }}
                                         className="p-1.5 hover:bg-red-500/10 hover:text-red-400 text-text-secondary/60 rounded-lg transition-colors"
                                         title="Delete Campaign"
                                     >
