@@ -1,20 +1,28 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { waitFor } from '@testing-library/react';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { buildCreativeHistoryState, CanvasImage, CreativeHistorySlice } from '../creativeHistorySlice';
 import type { StoreState } from '@/core/store';
 
+const { createFileNodeMock, storeStateMock } = vi.hoisted(() => {
+    const createFileNodeMock = vi.fn().mockResolvedValue(undefined);
+    const storeStateMock = {
+        setViewMode: vi.fn(),
+        setModule: vi.fn(),
+        currentOrganizationId: 'test-org',
+        currentProjectId: 'test-project',
+        user: { uid: 'test-user' },
+        createFileNode: createFileNodeMock,
+        registerSubscription: vi.fn()
+    };
+
+    return { createFileNodeMock, storeStateMock };
+});
+
 vi.mock('@/core/store', () => ({
     useStore: {
-        getState: () => ({
-            setViewMode: vi.fn(),
-            setModule: vi.fn(),
-            currentOrganizationId: 'test-org',
-            currentProjectId: 'test-project',
-            user: { uid: 'test-user' },
-            createFileNode: vi.fn().mockResolvedValue(undefined),
-            registerSubscription: vi.fn()
-        })
+        getState: () => storeStateMock
     }
 }));
 
@@ -180,5 +188,32 @@ describe('creativeHistorySlice — openImageInStudio', () => {
         expect(slice.canvasImages.length).toBe(2);
         expect(slice.canvasImages[0]).toEqual(firstImage);
         expect(slice.canvasImages[1]?.id).toMatch(/^layer_image-2_\d+$/);
+    });
+
+    it('syncs file nodes with storage URIs when generated history items already have them', async () => {
+        slice.addToHistory({
+            id: 'history-1',
+            url: 'data:image/png;base64,preview-only',
+            storageUri: 'gs://bucket/users/test-user/assets/history-1',
+            prompt: 'generated asset',
+            type: 'image',
+            timestamp: Date.now(),
+            projectId: 'test-project',
+            origin: 'editor',
+        });
+
+        await waitFor(() => {
+            expect(createFileNodeMock).toHaveBeenCalledWith(
+                'editor-history-.png',
+                null,
+                'test-project',
+                'test-user',
+                'image',
+                expect.objectContaining({
+                    url: 'gs://bucket/users/test-user/assets/history-1',
+                    storagePath: 'gs://bucket/users/test-user/assets/history-1',
+                })
+            );
+        }, { timeout: 3000 });
     });
 });

@@ -57,6 +57,13 @@ describe('CanvasHeader — edit prompt and model mode', () => {
         expect(screen.queryByText('Flash')).not.toBeInTheDocument();
     });
 
+    it('does not render route manifest or session id chips', () => {
+        renderHeader();
+        expect(screen.getByText('Rapid Edit')).toBeInTheDocument();
+        expect(screen.queryByText(/creative_/)).not.toBeInTheDocument();
+        expect(screen.queryByText(/Default creative remix route/i)).not.toBeInTheDocument();
+    });
+
     it('calls setMagicFillPrompt on input change', () => {
         const setMagicFillPrompt = vi.fn();
         renderHeader({ setMagicFillPrompt, magicFillPrompt: '' });

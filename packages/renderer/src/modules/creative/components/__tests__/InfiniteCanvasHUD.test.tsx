@@ -57,6 +57,11 @@ describe('InfiniteCanvasHUD — Canvas Toolbar', () => {
         expect(screen.getByRole('button', { name: /Delete Selected/i })).toBeInTheDocument();
     });
 
+    it('does not render a legacy layers toggle on the InfiniteCanvas HUD', () => {
+        renderHUD();
+        expect(screen.queryByRole('button', { name: /Layers Panel/i })).not.toBeInTheDocument();
+    });
+
     // --- Active Tool State ---
 
     it('marks Pan button as pressed when tool is pan', () => {

@@ -6,12 +6,20 @@ import { distributionService } from '@/services/distribution/DistributionService
 import { isrcService } from '@/services/distribution/ISRCService'; // Import ISRCService
 import { MerlinReport, MerlinCheckData, MerlinTrack, BWarmWork } from '@/types/distribution';
 import { ISRCRecordDocument } from '@/types/firestore';
+import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 
 import { auth } from '@/services/firebase';
 import { logger } from '@/utils/logger';
 
 export const KeysPanel: React.FC = () => {
     const { success, error } = useToast();
+    const { setModule, setRegistrationFocus } = useStore(
+        useShallow(state => ({
+            setModule: state.setModule,
+            setRegistrationFocus: state.setRegistrationFocus,
+        }))
+    );
     const [loading, setLoading] = useState(false);
     const [statusReport, setStatusReport] = useState<MerlinReport | null>(null);
     const [bwarmCsv, setBwarmCsv] = useState<string | null>(null);
@@ -111,6 +119,14 @@ export const KeysPanel: React.FC = () => {
         a.click();
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
+    };
+
+    const openRegistrationCenter = (orgId: 'mlc' | 'soundexchange') => {
+        setRegistrationFocus({
+            trackId: catalog[0]?.id ?? null,
+            orgId,
+        });
+        setModule('registration');
     };
 
     return (
@@ -246,11 +262,21 @@ export const KeysPanel: React.FC = () => {
                         <div className="pt-4 border-t border-gray-800">
                             <h4 className="text-sm font-medium text-white mb-2">External Connections</h4>
                             <div className="flex gap-2">
-                                <button disabled className="flex-1 py-2 bg-white/5 text-gray-500 rounded border border-white/10 text-xs cursor-not-allowed">
-                                    Connect MLC Account
+                                <button
+                                    data-testid="keys-open-mlc-registration"
+                                    onClick={() => openRegistrationCenter('mlc')}
+                                    disabled={catalog.length === 0}
+                                    className="flex-1 py-2 bg-white/5 hover:bg-white/10 text-white rounded border border-white/10 text-xs transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    Open MLC Registration
                                 </button>
-                                <button disabled className="flex-1 py-2 bg-white/5 text-gray-500 rounded border border-white/10 text-xs cursor-not-allowed">
-                                    Connect SoundExchange
+                                <button
+                                    data-testid="keys-open-soundexchange-registration"
+                                    onClick={() => openRegistrationCenter('soundexchange')}
+                                    disabled={catalog.length === 0}
+                                    className="flex-1 py-2 bg-white/5 hover:bg-white/10 text-white rounded border border-white/10 text-xs transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    Open SoundExchange
                                 </button>
                             </div>
                         </div>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import StatusDashboard from './StatusDashboard';
 
@@ -35,5 +35,18 @@ describe('StatusDashboard', () => {
         expect(screen.getByText('Remote legal approvals are not wired up in mobile yet.')).toBeInTheDocument();
         expect(screen.getByText('Unavailable')).toBeInTheDocument();
         expect(screen.getByText('Unavailable').closest('button')).toBeDisabled();
+    });
+
+    it('surfaces a Road Mode entry point on the home dashboard', () => {
+        const onTabChange = vi.fn();
+
+        render(<StatusDashboard connectionStatus="connected" isPaired={true} onTabChange={onTabChange} />);
+
+        const roadButton = screen.getByRole('button', { name: /road mode/i });
+        expect(roadButton).toBeEnabled();
+
+        fireEvent.click(roadButton);
+
+        expect(onTabChange).toHaveBeenCalledWith('road');
     });
 });

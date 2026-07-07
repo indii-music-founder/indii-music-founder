@@ -90,7 +90,7 @@ export declare const AgentLoopExecutionSchema: z.ZodObject<{
     id: string;
     createdAt: number;
     updatedAt: number;
-    status: "EXECUTING" | "COMPLETED" | "FAILED" | "IDLE" | "EVALUATING";
+    status: "COMPLETED" | "FAILED" | "EXECUTING" | "IDLE" | "EVALUATING";
     loopId: string;
     currentIteration: number;
     history: {
@@ -106,7 +106,7 @@ export declare const AgentLoopExecutionSchema: z.ZodObject<{
     createdAt: number;
     updatedAt: number;
     loopId: string;
-    status?: "EXECUTING" | "COMPLETED" | "FAILED" | "IDLE" | "EVALUATING" | undefined;
+    status?: "COMPLETED" | "FAILED" | "EXECUTING" | "IDLE" | "EVALUATING" | undefined;
     currentIteration?: number | undefined;
     history?: {
         timestamp: number;

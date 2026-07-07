@@ -1,6 +1,18 @@
 import { expect } from '@playwright/test';
 import { test } from './fixtures/auth';
 
+declare global {
+    interface Window {
+        useStore?: {
+            getState: () => {
+                setConversationMode: (mode: string) => void;
+                activeAgents: string[];
+                boardroomMessages: Array<{ text?: string }>;
+            };
+        };
+    }
+}
+
 test.describe('Boardroom Strategic Workflow Scenario', () => {
     test('should execute the complete flowchart dependency chain with dynamic seating and pulse unlock', async ({ authedPage: page }) => {
         let seatedCreative = false;
@@ -72,7 +84,7 @@ test.describe('Boardroom Strategic Workflow Scenario', () => {
                 }
                 console.log(`[E2E:MockAI] Extracted Actual Request: "${actualRequest}"`);
 
-                const isJSON = postData.includes("responseMimeType") && postData.includes("application/json");
+                const _isJSON = postData.includes("responseMimeType") && postData.includes("application/json");
                 let parts: any[] = [];
 
                 // 1. Check if this is an Autorater request (which expects structured JSON matching scorecard)
@@ -111,14 +123,14 @@ test.describe('Boardroom Strategic Workflow Scenario', () => {
                     return;
                 }
 
-                const requestLower = actualRequest.toLowerCase();
+                const _requestLower = actualRequest.toLowerCase();
                 const postDataLower = postData.toLowerCase();
                 let systemInstruction = "";
                 try {
                     const parsed = JSON.parse(postData);
                     const contents = parsed.contents || [];
                     systemInstruction = contents[0]?.parts?.map((p: any) => p.text || '').join(' ') || "";
-                } catch (e) {}
+                } catch (_e) { /* ignore parse errors for system instruction extraction */ }
                 const sysLower = systemInstruction.toLowerCase();
 
                 // 2. Identify the calling agent to isolate specialist responses from generalist seating
@@ -314,7 +326,7 @@ test.describe('Boardroom Strategic Workflow Scenario', () => {
             const store = window.useStore;
             if (typeof store?.getState !== 'function') return false;
             const msgs = store.getState().boardroomMessages || [];
-            return msgs.some(m => m.text?.includes('album imagery'));
+            return msgs.some((m: { text?: string }) => m.text?.includes('album imagery'));
         }, { timeout: 15000 });
         console.log('[E2E:Strategic] Creative and Road tasks registered.');
 
@@ -345,7 +357,7 @@ test.describe('Boardroom Strategic Workflow Scenario', () => {
             const store = window.useStore;
             if (typeof store?.getState !== 'function') return false;
             const msgs = store.getState().boardroomMessages || [];
-            return msgs.some(m => m.text?.includes('announcement flyer'));
+            return msgs.some((m: { text?: string }) => m.text?.includes('announcement flyer'));
         }, { timeout: 15000 });
         console.log('[E2E:Strategic] Rollout executed successfully.');
 
