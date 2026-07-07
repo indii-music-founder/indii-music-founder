@@ -572,6 +572,8 @@ jobs:
           # remote metadata, so delete/recreate them before deploying all functions.
           npx --no-install firebase functions:delete createStripeAccount --region us-central1 --project indii-music-founder --force --non-interactive || true
           npx --no-install firebase functions:delete createTransfer --region us-central1 --project indii-music-founder --force --non-interactive || true
+          npx --no-install firebase functions:delete calculateFuelLogistics --region us-central1 --project indii-music-founder --force --non-interactive || true
+          npx --no-install firebase functions:delete agentLoopCron --region us-central1 --project indii-music-founder --force --non-interactive || true
           printf 'INFLUENCER_BOUNTY_BASE_URL=%s\n' "$INFLUENCER_BOUNTY_BASE_URL" > packages/firebase/.env.indii-music-founder
           rm -rf packages/firebase/lib
           npm run build -w packages/firebase
