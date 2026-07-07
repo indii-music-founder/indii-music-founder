@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-07-07 00:03 EDT
+**Updated:** 2026-07-07 00:09 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+43c54cc5b docs(ledger): ISSUE-740 — stale-chunk defect is systemic across 3 divergent import-retry impls
+bee6f1f49 chore: session checkpoint [00:03]
 90c9ab781 docs(ledger): diagnose user-reported ISSUE-739 — 'No agent found for brand' is a stale-chunk load failure with no async recovery
 cba751883 test: fix CRMDashboard test after adding ConfirmDialog
 6bd2baca3 chore: fix issues 737 and 738 (accessibility and delete confirm)
@@ -12,8 +14,6 @@ fd57b6a0d docs(ledger): menu-walk four-lens rotation summary — ReceiptOCR clea
 aff2fa721 chore: fix issues 722-725 and mark as fixed in ledger
 edfae2859 docs(ledger): menu-walk delete sweep — ISSUE-738 unconfirmed CRM/History deletes
 e4f35e88c fix: block ISSUE-721 fake success in tax form collection
-e60cd41c3 docs(ledger): menu-walk four-lens — ISSUE-737 TransportBar a11y + Creative clean bills
-bd5c53484 fix: resolve ISSUE-719 by deleting unused AgentActionType
 ```
 
 ## Working State
