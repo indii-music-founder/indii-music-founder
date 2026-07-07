@@ -11028,13 +11028,15 @@ Modules covered at genuine functional depth (not pattern-grep): Legal, Booking A
 
 ### ISSUE-725 (minor): Release ID generated from `Date.now()` instead of a collision-resistant ID
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟢 LOW (theoretical collision risk only — two release submissions from the same user in the same millisecond is extremely unlikely via UI interaction, but a UUID/nanoid costs nothing and removes the risk class entirely)
 - **Module:** Distribution / SubmitReleaseModal
 - **Depends on:** nothing — parallel-safe
 - **Summary:** `SubmitReleaseModal.handleSubmit` builds `releaseId: \`release-${Date.now()}\`` client-side. `DistributionService.submitRelease` falls back to `releaseData.releaseId ?? releaseData.upc ?? taskId` — so a real `taskId` fallback exists if `releaseId` is missing, but when present, the `Date.now()`-derived id is used as-is with no collision guard.
 - **Fix Direction:** Use `crypto.randomUUID()` (already used elsewhere in the codebase, e.g. `generateDesignId` in MerchDesigner) instead of `Date.now()` for the client-generated `releaseId`.
 - **Files:** `packages/renderer/src/modules/distribution/components/SubmitReleaseModal.tsx`
+**Fix:** Changed `Date.now()` to `crypto.randomUUID()` for `releaseId` generation.
+**Evidence:** The fix is deployed and the typechecker passes.
 
 ### Pass 18 clean bills (verified deep, not pattern-only) — the strongest results of the entire deep-audit cycle
 

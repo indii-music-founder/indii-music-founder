@@ -25,6 +25,8 @@ export class WorkflowEngine {
     private blackboard: Map<string, unknown> = new Map();
     /** Gatekeeper pause callbacks: nodeId → resolve function */
     private approvalCallbacks: Map<string, (approved: boolean) => void> = new Map();
+    /** Defense-in-depth: track execution counts to prevent infinite loops */
+    private visitCounts: Map<string, number> = new Map();
 
     constructor(
         nodes: CustomNode[],
@@ -45,6 +47,7 @@ export class WorkflowEngine {
         this.isRunning = true;
         this.results.clear();
         this.blackboard.clear();
+        this.visitCounts.clear();
         this.executionQueue = [];
 
         try {
@@ -115,6 +118,14 @@ export class WorkflowEngine {
     private async executeNode(task: ExecutionTask) {
         const node = this.nodes.find(n => n.id === task.nodeId);
         if (!node) return;
+
+        const count = (this.visitCounts.get(node.id) || 0) + 1;
+        this.visitCounts.set(node.id, count);
+
+        if (count > 25) {
+            this.updateNodeStatus(node.id, Status.ERROR, 'Cycle detected: Node executed too many times.');
+            return;
+        }
 
         this.updateNodeStatus(node.id, Status.WORKING);
 

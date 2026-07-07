@@ -90,7 +90,7 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const releaseData: any = {
-            releaseId: `release-${Date.now()}`,
+            releaseId: `release-${crypto.randomUUID()}`,
             title: title.trim(),
             artist: artist.trim(),
             artists: [artist.trim()],
