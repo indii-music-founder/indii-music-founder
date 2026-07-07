@@ -1,12 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
-export enum AgentActionType {
-    SEARCH_VENUES = 'SEARCH_VENUES',
-    EMAIL_OUTREACH = 'EMAIL_OUTREACH',
-    UPDATE_STATUS = 'UPDATE_STATUS',
-    RESEARCH_CONTACT = 'RESEARCH_CONTACT',
-    BROWSER_DRIVE = 'BROWSER_DRIVE',
-}
-
 export enum GigStatus {
     IDENTIFIED = 'IDENTIFIED',
     CONTACTED = 'CONTACTED',
@@ -49,15 +40,7 @@ export interface GigOpportunity {
     updatedAt: number;
 }
 
-export interface AgentAction {
-    id: string;
-    type: AgentActionType;
-    description: string;
-    timestamp: number;
-    metadata?: Record<string, any>;
-    status: 'pending' | 'completed' | 'failed';
-    gigId?: string;
-}
+
 
 export interface OutreachCampaign {
     id: string;

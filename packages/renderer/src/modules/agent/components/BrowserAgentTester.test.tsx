@@ -3,9 +3,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import BrowserAgentTester from './BrowserAgentTester';
 import { browserAgentDriver } from '../../../services/agent/BrowserAgentDriver';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { useAgentStore } from '../store/AgentStore';
-import { AgentActionType } from '../types';
+
 
 // Mock dependencies
 vi.mock('../../../services/agent/BrowserAgentDriver', () => ({
@@ -14,12 +12,7 @@ vi.mock('../../../services/agent/BrowserAgentDriver', () => ({
     }
 }));
 
-const mockLogAction = vi.fn();
-vi.mock('../store/AgentStore', () => ({
-    useAgentStore: vi.fn(() => ({
-        logAction: mockLogAction,
-    }))
-}));
+
 
 describe('BrowserAgentTester', () => {
     beforeEach(() => {
@@ -67,11 +60,7 @@ describe('BrowserAgentTester', () => {
         expect(screen.getByText('[Driver] Starting')).toBeInTheDocument();
         expect(screen.getByText('[Driver] Goal Achieved!')).toBeInTheDocument();
 
-        // Verify Store Update
-        expect(mockLogAction).toHaveBeenCalledWith(expect.objectContaining({
-            type: AgentActionType.BROWSER_DRIVE,
-            status: 'completed'
-        }));
+
     });
 
     it('handles failed agent execution', async () => {
@@ -96,10 +85,7 @@ describe('BrowserAgentTester', () => {
         // The component logic: if (!result.success) setError('Agent failed to complete the goal.');
         expect(screen.getByText('Agent failed to complete the goal.')).toBeInTheDocument();
 
-        // Verify Store Update
-        expect(mockLogAction).toHaveBeenCalledWith(expect.objectContaining({
-            status: 'failed'
-        }));
+
     });
 
     it('handles unexpected exceptions', async () => {
