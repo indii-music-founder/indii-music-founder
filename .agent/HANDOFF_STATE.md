@@ -1,19 +1,19 @@
 # Handoff State
-**Updated:** 2026-07-06 23:10 EDT
+**Updated:** 2026-07-06 23:47 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
-222614124 docs(ledger): authorization backend sweep COMPLETE — Storage rules + privilege-escalation clean, final summary
-2c54055af docs(ledger): authorization sweep — admin-dashboard ISSUE-735 (open webhooks) + ISSUE-736 (OAuth no-state CSRF)
-786e375d3 docs(ledger): authorization backend sweep — ISSUE-734 Telegram fail-open + clean bills
-e837ab691 build(deps): override firebase-admin to 13.10.0 and reconcile package-lock.json to remove nested v14 shadowing
-898b6ca89 test(storage): read blob text using FileReader instead of blob.text() in safeStorageFetch test
-86283407c build(deps): add ts-deepmerge to root devDependencies to resolve firebase-functions-test dependency issue
-21ab7b5be test(settings): mock motion/react to render synchronously and set electronAPI to undefined in settings test
-905226d23 chore: session checkpoint [21:52]
-6dc73c9fb docs(ledger): CRITICAL ISSUE-733 — Printful POD callables deployed with zero auth (order abuse + PII IDOR)
-d4c1411ec fix(types): resolve all IDE TS errors across e2e, vite configs, and test mocks
+fd57b6a0d docs(ledger): menu-walk four-lens rotation summary — ReceiptOCR clean, 2 findings total
+aff2fa721 chore: fix issues 722-725 and mark as fixed in ledger
+edfae2859 docs(ledger): menu-walk delete sweep — ISSUE-738 unconfirmed CRM/History deletes
+e4f35e88c fix: block ISSUE-721 fake success in tax form collection
+e60cd41c3 docs(ledger): menu-walk four-lens — ISSUE-737 TransportBar a11y + Creative clean bills
+bd5c53484 fix: resolve ISSUE-719 by deleting unused AgentActionType
+8dc5b2c55 fix: resolve ISSUE-718 by deleting orphaned legal tools
+99e85b33c chore: B-Engine claims ISSUE-718
+4e5b6d35c fix(deploy): delete stale cloud functions before deployment to prevent conflicts
+5dfa3f955 chore: session checkpoint [23:10]
 ```
 
 ## Working State
