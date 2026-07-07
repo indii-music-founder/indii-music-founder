@@ -1,19 +1,19 @@
 # Handoff State
-**Updated:** 2026-07-06 21:52 EDT
+**Updated:** 2026-07-06 23:10 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+222614124 docs(ledger): authorization backend sweep COMPLETE — Storage rules + privilege-escalation clean, final summary
+2c54055af docs(ledger): authorization sweep — admin-dashboard ISSUE-735 (open webhooks) + ISSUE-736 (OAuth no-state CSRF)
+786e375d3 docs(ledger): authorization backend sweep — ISSUE-734 Telegram fail-open + clean bills
+e837ab691 build(deps): override firebase-admin to 13.10.0 and reconcile package-lock.json to remove nested v14 shadowing
+898b6ca89 test(storage): read blob text using FileReader instead of blob.text() in safeStorageFetch test
+86283407c build(deps): add ts-deepmerge to root devDependencies to resolve firebase-functions-test dependency issue
+21ab7b5be test(settings): mock motion/react to render synchronously and set electronAPI to undefined in settings test
+905226d23 chore: session checkpoint [21:52]
 6dc73c9fb docs(ledger): CRITICAL ISSUE-733 — Printful POD callables deployed with zero auth (order abuse + PII IDOR)
 d4c1411ec fix(types): resolve all IDE TS errors across e2e, vite configs, and test mocks
-e1526c60b docs(ledger): CRITICAL update to ISSUE-720 — createTransfer requires admin claim, feature is non-functional for real users
-3f630350c docs(ledger): pass 31 Settings remaining sections + full session menu-audit summary
-c9cc96ef6 docs(ledger): eighth menu — CommandBar internal menus, ISSUE-731 dead DelegateMenu
-78ec257cc docs(ledger): seventh menu — context menus, ISSUE-730 unconfirmed delete in MerchTable
-501e3d4c5 docs(ledger): sixth menu — Electron native menu bar, ISSUE-729 dead Cmd+S
-e71178545 docs(ledger): fifth menu — CreativeNavbar 'hero bar' fully swept, all clean
-677c2a972 docs(ledger): fourth menu — RightPanel, pass 26 finds ISSUE-727/728 fake workflow+knowledge panels
-ef82c8c59 docs(ledger): third menu — Mobile Remote tab bar fully swept, clean. Three-menu audit complete.
 ```
 
 ## Working State
