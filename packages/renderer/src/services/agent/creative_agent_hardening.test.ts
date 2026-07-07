@@ -17,6 +17,7 @@
 import { describe, it, expect } from 'vitest';
 import { VALID_AGENT_IDS } from '@/services/agent/types';
 import type { ImageGenerationOptions } from '@/services/image/ImageGenerationService';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 // ---------------------------------------------------------------------------
 // 1. AGENT ID CANONICAL IDENTITY GUARDS
@@ -105,14 +106,14 @@ describe('CreativeAgent — System Prompt Template Literal Integrity', () => {
     });
 
     it('should export a systemPrompt that is a non-empty string', async () => {
-        const mod = await import('@/services/agent/definitions/CreativeAgent');
+        const mod = await importWithRetry(() => import('@/services/agent/definitions/CreativeAgent'));
         const agent = mod.CreativeAgent ?? (mod as any).default;
         expect(typeof agent?.systemPrompt).toBe('string');
         expect((agent?.systemPrompt as string).length).toBeGreaterThan(100);
     });
 
     it('system prompt should contain canonical tool names', async () => {
-        const mod = await import('@/services/agent/definitions/CreativeAgent');
+        const mod = await importWithRetry(() => import('@/services/agent/definitions/CreativeAgent'));
         const agent = mod.CreativeAgent ?? (mod as any).default;
         const prompt = agent?.systemPrompt as string;
 
@@ -137,7 +138,7 @@ describe('DirectorTools — WhiskService Import Path', () => {
     });
 
     it('WhiskService should expose a synthesizeWhiskPrompt method', async () => {
-        const mod = await import('@/services/WhiskService');
+        const mod = await importWithRetry(() => import('@/services/WhiskService'));
         const { WhiskService } = mod;
         expect(typeof WhiskService?.synthesizeWhiskPrompt).toBe('function');
     });

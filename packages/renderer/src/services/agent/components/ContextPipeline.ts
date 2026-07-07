@@ -8,6 +8,7 @@ import { bigBrainEngine } from '../memory/BigBrainEngine';
 import { livingPlanService } from '../LivingPlanService';
 import { logger } from '@/utils/logger';
 import { auth } from '@/services/firebase';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 export interface PipelineContext extends AgentContext {
     chatHistoryString: string;
@@ -40,7 +41,7 @@ export class ContextPipeline {
         const chatHistoryString = await this.historyManager.getCompiledView();
 
         // 3. Big Brain Auto-Recall (Unified across all 4 layers)
-        const { useStore } = await import('@/core/store');
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
         const { isKnowledgeBaseEnabled, userProfile } = useStore.getState();
         const userId = userProfile?.uid || auth.currentUser?.uid;
 

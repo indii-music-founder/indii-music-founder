@@ -5,6 +5,7 @@ import { VALID_AGENT_IDS, validateHubAndSpoke } from '../types';
 import { RouterCallContext } from './transport/A2ATransport';
 import { logger } from '@/utils/logger';
 import { MY_AGENT_ID } from './A2AConfig';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 /**
  * Thrown when the router cannot produce an encrypted response (e.g. the sender's
@@ -200,7 +201,7 @@ class A2ARouter {
     // Swarm Feed Integration (ISSUE-063)
     let approved = true;
     try {
-      const { useStore } = await import('@/core/store');
+      const { useStore } = await importWithRetry(() => import('@/core/store'));
       const addA2AMessage = useStore.getState().addA2AMessage;
       const requiresApproval = task.toLowerCase().includes('contract') || 
                                task.toLowerCase().includes('marketing copy') || 

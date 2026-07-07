@@ -10,6 +10,7 @@ import { captainsLogService, type LogEntryType } from '../memory/CaptainsLogServ
 import { wrapTool, toolError } from '../utils/ToolUtils';
 import type { AnyToolFunction, AgentContext } from '../types';
 import type { ToolExecutionContext } from '../ToolExecutionContext';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 export const CaptainsLogTools = {
     /**
@@ -23,7 +24,7 @@ export const CaptainsLogTools = {
             _context?: AgentContext,
             toolContext?: ToolExecutionContext
         ) => {
-            const { useStore } = await import('@/core/store');
+            const { useStore } = await importWithRetry(() => import('@/core/store'));
             const userId = toolContext
                 ? toolContext.get('user')?.uid
                 : useStore.getState().user?.uid;
@@ -67,7 +68,7 @@ export const CaptainsLogTools = {
             _context?: AgentContext,
             toolContext?: ToolExecutionContext
         ) => {
-            const { useStore } = await import('@/core/store');
+            const { useStore } = await importWithRetry(() => import('@/core/store'));
             const userId = toolContext
                 ? toolContext.get('user')?.uid
                 : useStore.getState().user?.uid;
@@ -103,7 +104,7 @@ export const CaptainsLogTools = {
             _context?: AgentContext,
             toolContext?: ToolExecutionContext
         ) => {
-            const { useStore } = await import('@/core/store');
+            const { useStore } = await importWithRetry(() => import('@/core/store'));
             const userId = toolContext
                 ? toolContext.get('user')?.uid
                 : useStore.getState().user?.uid;

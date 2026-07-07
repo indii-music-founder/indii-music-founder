@@ -12,6 +12,7 @@
  */
 
 import { logger } from '@/utils/logger';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 interface StreamToken {
   token: string;
@@ -227,7 +228,7 @@ export class AgentStreamingService {
 
   private async getIdToken(): Promise<string> {
     try {
-      const { auth } = await import('@/services/firebase');
+      const { auth } = await importWithRetry(() => import('@/services/firebase'));
       if (!auth.currentUser) {
         throw new Error('User not authenticated');
       }

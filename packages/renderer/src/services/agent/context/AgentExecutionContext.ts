@@ -12,6 +12,7 @@ import { logger } from '@/utils/logger';
  */
 
 import type { StoreState } from '@/core/store';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 export interface ExecutionContextOptions {
     userId?: string;
@@ -183,7 +184,7 @@ export class AgentExecutionContext {
             throw new Error('Cannot commit rolled-back execution context');
         }
 
-        const { useStore } = await import('@/core/store');
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
         const globalState = useStore.getState();
 
         // Check for conflicts (state changed since snapshot)
@@ -206,7 +207,7 @@ export class AgentExecutionContext {
         });
 
         if (Object.keys(updates).length > 0) {
-            const { useStore } = await import('@/core/store');
+            const { useStore } = await importWithRetry(() => import('@/core/store'));
             useStore.setState(updates);
             logger.debug(`[ExecutionContext] Committed ${Object.keys(updates).length} modifications (resolved conflicts: ${conflicts.length}) for agent ${this.options.agentId}`);
         }
@@ -355,7 +356,7 @@ export class AgentExecutionContext {
  */
 export class ExecutionContextFactory {
     static async create(options: ExecutionContextOptions): Promise<AgentExecutionContext> {
-        const { useStore } = await import('@/core/store');
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
         return AgentExecutionContext._create(options, useStore.getState());
     }
 
@@ -368,7 +369,7 @@ export class ExecutionContextFactory {
         traceId?: string;
         conversationMode?: 'direct' | 'department' | 'boardroom';
     }, agentId: string): Promise<AgentExecutionContext> {
-        const { useStore } = await import('@/core/store');
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
         return AgentExecutionContext._create({
             userId: agentContext.userId,
             projectId: agentContext.projectId,

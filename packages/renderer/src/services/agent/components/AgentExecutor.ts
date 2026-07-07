@@ -66,7 +66,14 @@ export class AgentExecutor {
                 registeredAgents: this.registry.getAll().map(a => a.id)
             });
 
-            throw new Error(`[AgentExecutor] Fatal: No agent found for ID '${agentId}'. ${errorDetail}`);
+            const isChunkError = loadError?.error?.message?.includes('Chunk load failed') || 
+                                 loadError?.error?.message?.includes('Failed to fetch dynamically imported module');
+            
+            if (isChunkError) {
+                throw new Error(`[AgentExecutor] Module load failed for agent '${agentId}'. A new deployment may be available. Please refresh the page. Details: ${errorDetail}`);
+            } else {
+                throw new Error(`[AgentExecutor] Fatal: No agent found for ID '${agentId}'. ${errorDetail}`);
+            }
         }
 
         const isE2EMode = isFirebaseE2EMockEnabled();

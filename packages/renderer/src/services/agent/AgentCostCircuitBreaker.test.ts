@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { BaseAgent } from './BaseAgent';
 import { AgentConfig } from './types';
 import { MembershipService } from '@/services/MembershipService';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 // Mock dependencies
 vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
@@ -76,7 +77,7 @@ describe('BaseAgent Cost Circuit Breaker', () => {
     });
 
     it('🛑 should stop execution when budget is exceeded (Cost Circuit Breaker)', async () => {
-        const { AutonomousIntelligence: AI } = await import('@/services/intelligence/AutonomousIntelligence');
+        const { AutonomousIntelligence: AI } = await importWithRetry(() => import('@/services/intelligence/AutonomousIntelligence'));
 
         // Setup: Agent wants to run 5 iterations
         // 1. First iteration: Uses 0.10. Budget OK. -> Calls Tool "dummy_tool"

@@ -42,6 +42,7 @@ import { getDepartmentOf, isHead, sameDepartment } from './departments';
 import { AgentPromptBuilder } from './builders/AgentPromptBuilder';
 import { getAgentStreamingService } from './AgentStreamingService';
 import { getReflectionLoop } from './ReflectionLoop';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 export class BaseAgent implements SpecializedAgent {
     public id: string;
@@ -131,7 +132,7 @@ export class BaseAgent implements SpecializedAgent {
             // Phase 3.5: Migrated to use execution context for isolated state access
             get_project_details: async ({ projectId }, _context, toolContext?: ToolExecutionContext) => {
                 // Use execution context if available, fallback to direct store access for backwards compatibility
-                const projects = toolContext ? toolContext.get('projects') : (await import('@/core/store')).useStore.getState().projects;
+                const projects = toolContext ? toolContext.get('projects') : (await importWithRetry(() => import('@/core/store'))).useStore.getState().projects;
                 const project = (projects as Array<{ id: string }>)?.find(p => p.id === projectId);
                 if (!project) return { success: false, error: 'Project not found' };
                 return { success: true, data: project };
@@ -160,7 +161,7 @@ export class BaseAgent implements SpecializedAgent {
                     logger.warn(`[BaseAgent] Direct-mode delegation blocked: ${this.id} -> ${targetAgentId}`);
                     const errorMsg = `Delegation is disabled in Direct mode. The user is having a private 1:1 conversation with you. Answer from your own expertise or tell them to switch to Department or Boardroom mode if cross-agent work is needed.`;
 
-                    const { events } = await import('@/core/events');
+                    const { events } = await importWithRetry(() => import('@/core/events'));
                     events.emit('SYSTEM_ALERT', { level: 'error', message: `Scope Violation: Cannot delegate to ${targetAgentId} in Direct Mode.` });
 
                     return toolError(
@@ -175,7 +176,7 @@ export class BaseAgent implements SpecializedAgent {
                         logger.warn(`[BaseAgent] Department-scope violation: ${this.id} (${myDept?.id}) -> ${targetAgentId}`);
                         const errorMsg = `Cross-department delegation is blocked in Department mode. You may only delegate within '${myDept?.id ?? 'unknown'}'. Cross-department work belongs in Boardroom mode where heads can convene.`;
 
-                        const { events } = await import('@/core/events');
+                        const { events } = await importWithRetry(() => import('@/core/events'));
                         events.emit('SYSTEM_ALERT', { level: 'error', message: `Scope Violation: Cannot delegate to ${targetAgentId} across departments.` });
 
                         return toolError(
@@ -257,7 +258,7 @@ export class BaseAgent implements SpecializedAgent {
                     logger.warn(`[BaseAgent] Direct-mode consult blocked from ${this.id}`);
                     const errorMsg = `Consulting other agents is disabled in Direct mode. Tell the user to switch to Department or Boardroom mode for multi-agent work.`;
 
-                    const { events } = await import('@/core/events');
+                    const { events } = await importWithRetry(() => import('@/core/events'));
                     events.emit('SYSTEM_ALERT', { level: 'error', message: `Scope Violation: Cannot consult experts in Direct Mode.` });
 
                     return toolError(
@@ -274,7 +275,7 @@ export class BaseAgent implements SpecializedAgent {
                         logger.warn(`[BaseAgent] Department-scope violation in consult_experts: ${this.id} -> [${offIds}]`);
                         const errorMsg = `Cannot consult [${offIds}] in Department mode. They are outside '${myDept?.id ?? 'unknown'}'. Cross-department consultation belongs in Boardroom mode.`;
 
-                        const { events } = await import('@/core/events');
+                        const { events } = await importWithRetry(() => import('@/core/events'));
                         events.emit('SYSTEM_ALERT', { level: 'error', message: `Scope Violation: Cannot consult ${offIds} across departments.` });
 
                         return toolError(
@@ -343,14 +344,14 @@ export class BaseAgent implements SpecializedAgent {
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             consult_specialist: async (args: Record<string, unknown>, context, toolContext?: ToolExecutionContext) => {
                 // Delegate to the shared SwarmTools implementation
-                const { consult_specialist: swarmToolImpl } = await import('./tools/SwarmTools');
+                const { consult_specialist: swarmToolImpl } = await importWithRetry(() => import('./tools/SwarmTools'));
                 const task = typeof args.task === 'string' ? args.task : '';
                 return swarmToolImpl({ ...args, task }, { ...context, agentIdentity: this.identityCard || undefined });
             },
             // Phase 3.5: Updated signature to accept toolContext (not used, but consistent)
             schedule_task: async (args: Record<string, unknown>, _context?: AgentContext, _toolContext?: ToolExecutionContext) => {
                 const { targetAgentId, task, delayMinutes } = args as { targetAgentId: string; task: string; delayMinutes: number };
-                const { proactiveService } = await import('./ProactiveService');
+                const { proactiveService } = await importWithRetry(() => import('./ProactiveService'));
                 const executeAt = Date.now() + (delayMinutes * 60000);
                 const taskId = await proactiveService.scheduleTask(targetAgentId, task, executeAt);
                 return {
@@ -362,7 +363,7 @@ export class BaseAgent implements SpecializedAgent {
             // Phase 3.5: Updated signature to accept toolContext (not used, but consistent)
             subscribe_to_event: async (args: Record<string, unknown>, _context?: AgentContext, _toolContext?: ToolExecutionContext) => {
                 const { eventType, task } = args as { eventType: string; task: string };
-                const { proactiveService } = await import('./ProactiveService');
+                const { proactiveService } = await importWithRetry(() => import('./ProactiveService'));
                 // Cast to EventType — runtime validation happens inside proactiveService.subscribeToEvent
                 const taskId = await proactiveService.subscribeToEvent(this.id, eventType as import('@/core/events').EventType, task);
                 return {
@@ -374,7 +375,7 @@ export class BaseAgent implements SpecializedAgent {
             // Phase 3.5: Updated signature to accept toolContext (not used, but consistent)
             send_notification: async (args: Record<string, unknown>, _context?: AgentContext, _toolContext?: ToolExecutionContext) => {
                 const { type, message } = args as { type: 'info' | 'success' | 'warning' | 'error'; message: string };
-                const { events } = await import('@/core/events');
+                const { events } = await importWithRetry(() => import('@/core/events'));
                 events.emit('SYSTEM_ALERT', { level: type, message });
                 return {
                     success: true,
@@ -383,8 +384,8 @@ export class BaseAgent implements SpecializedAgent {
             },
             speak: async (args: Record<string, unknown>, _context?: AgentContext, _toolContext?: ToolExecutionContext) => {
                 const { text, voice } = args as { text: string; voice?: string };
-                const { AutonomousIntelligence } = await import('@/services/intelligence/AutonomousIntelligence');
-                const { audioService } = await import('@/services/audio/AudioService');
+                const { AutonomousIntelligence } = await importWithRetry(() => import('@/services/intelligence/AutonomousIntelligence'));
+                const { audioService } = await importWithRetry(() => import('@/services/audio/AudioService'));
 
                 const VOICE_MAP: Record<string, string> = {
                     'kyra': 'Kore',
@@ -499,7 +500,7 @@ export class BaseAgent implements SpecializedAgent {
 
                         // Store in memory (Phase 2 integration)
                         try {
-                            const { alwaysOnMemoryEngine } = await import('./memory/AlwaysOnMemoryEngine');
+                            const { alwaysOnMemoryEngine } = await importWithRetry(() => import('./memory/AlwaysOnMemoryEngine'));
                             await alwaysOnMemoryEngine.ingest(
                                 `Agent Response (${this.name}): ${fullText.substring(0, 500)}`,
                                 'agent_output',
@@ -541,7 +542,7 @@ export class BaseAgent implements SpecializedAgent {
      */
     protected async _executeInternal(task: string, context?: AgentContext, onProgress?: AgentProgressCallback, signal?: AbortSignal, attachments?: { mimeType: string; base64: string }[]): Promise<AgentResponse> {
         // Lazy import Intelligence Service to prevent circular deps during registry loading
-        const { AutonomousIntelligence } = await import('@/services/intelligence/AutonomousIntelligence');
+        const { AutonomousIntelligence } = await importWithRetry(() => import('@/services/intelligence/AutonomousIntelligence'));
 
         // GEAP Agent Identity: Mint cryptographic identity on first execution.
         // Uses static WeakMap for deduplication — survives Object.freeze (FreezeDiagnostic).
@@ -612,14 +613,14 @@ export class BaseAgent implements SpecializedAgent {
         const ctxRecord = context as Record<string, any>;
 
         if (ctxRecord?.conversationMode === 'boardroom') {
-            const { agentRegistry } = await import('./registry');
+            const { agentRegistry } = await importWithRetry(() => import('./registry'));
             const seated = ctxRecord.seatedAgents || [];
             const seatedNames = seated.map((id: string) => `${agentRegistry.get(id)?.name || id} (ID: '${id}')`).join(', ');
             boardroomSection = `\n## BOARDROOM SWARM PROTOCOL\nSwarm Protocol active. You are participating in a Boardroom meeting. Respond from your specific department's perspective.\n\n[SEATED_AGENTS]: The following agents are currently seated: ${seatedNames}. ONLY address or delegate to agents in this list. If a needed specialist is absent, use the seat_agent tool to invite them, or tell the user to seat them if you do not have that tool.\n`;
         } else if (ctxRecord?.conversationMode === 'direct') {
             delegationScopeSection = `\n## DELEGATION SCOPE [STRICT]\nYou are in DIRECT mode. You operate solo. You CANNOT delegate tasks or contact other agents. If the user asks you to do something outside your domain, explicitly refuse and instruct them to switch to Boardroom or Department mode.\n`;
         } else if (ctxRecord?.conversationMode === 'department') {
-            const { getDepartmentOf } = await import('./departments');
+            const { getDepartmentOf } = await importWithRetry(() => import('./departments'));
             const dept = getDepartmentOf(this.id);
             delegationScopeSection = `\n## DELEGATION SCOPE [STRICT]\nYou are in DEPARTMENT mode. You can ONLY coordinate with agents in the [${dept?.displayName || 'Unknown'}] department. Do NOT promise to contact other departments. Explicitly refuse external department requests.\n`;
         }
@@ -629,7 +630,7 @@ export class BaseAgent implements SpecializedAgent {
         // KEEPER: Intelligent Context Truncation
         // Prefer structured history with token-aware truncation over raw character slicing.
         if (context?.chatHistory && Array.isArray(context.chatHistory) && context.chatHistory.length > 0) {
-            const { ContextManager } = await import('@/services/intelligence/context/ContextManager');
+            const { ContextManager } = await importWithRetry(() => import('@/services/intelligence/context/ContextManager'));
             // Convert AgentMessage[] to Content[] for ContextManager
             const contentHistory = context.chatHistory.map(msg => ({
                 role: (msg.role === 'model' || msg.role === 'system' ? 'model' : 'user') as 'model' | 'user',
@@ -737,7 +738,7 @@ export class BaseAgent implements SpecializedAgent {
         const toolContext = new ToolExecutionContext(executionContext);
 
         // Lazy import MembershipService for budget checks
-        const { MembershipService } = await import('@/services/MembershipService');
+        const { MembershipService } = await importWithRetry(() => import('@/services/MembershipService'));
 
         try {
             while (iterations < MAX_ITERATIONS) {
@@ -788,7 +789,7 @@ export class BaseAgent implements SpecializedAgent {
                 onProgress?.({ type: 'thought', content: iterations === 1 ? 'Generating response...' : 'Processing tool result...' });
 
                 // Prepare request contents
-                const { ModelArmor, getDefaultPolicy } = await import('./governance/ModelArmor');
+                const { ModelArmor, getDefaultPolicy } = await importWithRetry(() => import('./governance/ModelArmor'));
                 // Only scan the new task/input to prevent false positives from the agent's own history
                 // (e.g., identity locks repeating "ignore previous instructions")
                 const armorResult = await ModelArmor.scanInput(task, getDefaultPolicy());
@@ -801,7 +802,7 @@ export class BaseAgent implements SpecializedAgent {
 
                 // Auto-inject the latest generated artifact if it's the creative agent and the user asks to look at something
                 if (finalAttachments.length === 0 && ['creative', 'brand'].includes(this.id) && context?.chatHistory) {
-                    const { useStore } = await import('@/core/store');
+                    const { useStore } = await importWithRetry(() => import('@/core/store'));
                     const generatedHistory = useStore.getState().generatedHistory || [];
                     if (generatedHistory.length > 0) {
                         const lastItem = generatedHistory[generatedHistory.length - 1];
@@ -825,7 +826,7 @@ export class BaseAgent implements SpecializedAgent {
                 }];
 
                 // Pre-flight Token Estimation (Primitive #5)
-                const { TokenEstimator } = await import('./governance/TokenEstimator');
+                const { TokenEstimator } = await importWithRetry(() => import('./governance/TokenEstimator'));
                 const tokenEstimate = TokenEstimator.estimate(
                     requestContents,
                     undefined,
@@ -1010,7 +1011,7 @@ export class BaseAgent implements SpecializedAgent {
 
                         if ((name === 'seat_agent' || name === 'unseat_agent') && args && typeof args === 'object' && 'targetAgentId' in args) {
                             const targetAgentId = String((args as { targetAgentId: unknown }).targetAgentId);
-                            const { useStore } = await import('@/core/store');
+                            const { useStore } = await importWithRetry(() => import('@/core/store'));
                             const isActive = useStore.getState().activeAgents.includes(targetAgentId);
                             if ((name === 'seat_agent' && isActive) || (name === 'unseat_agent' && !isActive)) {
                                 const message = name === 'seat_agent'
@@ -1111,7 +1112,7 @@ export class BaseAgent implements SpecializedAgent {
                                 });
                             }
                         } else {
-                            const { TOOL_REGISTRY } = await import('@/services/agent/tools');
+                            const { TOOL_REGISTRY } = await importWithRetry(() => import('@/services/agent/tools'));
                             if (TOOL_REGISTRY[name]) {
                                 try {
                                     // Phase 3.5: Pass execution context to TOOL_REGISTRY tools
@@ -1212,7 +1213,7 @@ export class BaseAgent implements SpecializedAgent {
                     let finalResponse = response.text?.() || '';
                     const usage = response.usage?.();
 
-                    const { ModelArmor, getDefaultPolicy } = await import('./governance/ModelArmor');
+                    const { ModelArmor, getDefaultPolicy } = await importWithRetry(() => import('./governance/ModelArmor'));
                     const outputCheck = await ModelArmor.scanOutput(finalResponse, getDefaultPolicy());
                     if (outputCheck.redactedResponse) {
                         finalResponse = outputCheck.redactedResponse;

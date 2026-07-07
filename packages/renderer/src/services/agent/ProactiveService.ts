@@ -11,6 +11,7 @@ import {
 } from 'firebase/firestore';
 import { events, EventType } from '@/core/events';
 import { AgentContext, ProactiveTask } from './types';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 export class ProactiveService {
     private unsubscribers: (() => void)[] = [];
@@ -135,7 +136,7 @@ export class ProactiveService {
             const fullTask = `[PROACTIVE TRIGGER] ${task.task}${contextMsg}`;
 
             // Run agent
-            const { agentService } = await import('./AgentService');
+            const { agentService } = await importWithRetry(() => import('./AgentService'));
             const context: AgentContext = {
                 traceId: `proactive-${task.id}`,
                 proactiveTask: task,

@@ -5,6 +5,7 @@ import { MembershipService } from '@/services/MembershipService';
 import { AgentTestHarness } from './test/AgentTestHarness';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 // Mock global dependencies
 vi.mock('@/services/firebase', () => ({
@@ -107,7 +108,7 @@ describe('Agent SDK Integration', () => {
         const harness = new AgentTestHarness(agentConfig);
 
         // Mock sequence for generateContent (Tool Call -> Final Result)
-        const { AutonomousIntelligence } = await import('@/services/intelligence/AutonomousIntelligence');
+        const { AutonomousIntelligence } = await importWithRetry(() => import('@/services/intelligence/AutonomousIntelligence'));
         const aiSpy = vi.mocked(AutonomousIntelligence.generateContent);
         
         vi.mocked(AutonomousIntelligence.generateContentStream).mockImplementation(async (...args: any[]) => {

@@ -84,7 +84,7 @@ export const BrandAgent: AgentConfig = {
             };
         },
         analyze_audio: async (args: { uploadedAudioIndex: number }) => {
-            const { useStore } = await import('@/core/store');
+            const { useStore } = await importWithRetry(() => import('@/core/store'));
             const { uploadedAudio } = useStore.getState();
             const audioItem = uploadedAudio[args.uploadedAudioIndex || 0];
 
@@ -222,6 +222,7 @@ export const BrandAgent: AgentConfig = {
 };
 
 import { freezeAgentConfig } from '../FreezeDiagnostic';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 // Freeze the schema to prevent cross-test contamination
 freezeAgentConfig(BrandAgent);

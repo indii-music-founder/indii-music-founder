@@ -1,4 +1,5 @@
 import { logger } from '@/utils/logger';
+import { importWithRetry } from '@/utils/dynamicImport';
 import { AGENT_CONFIGS } from './agentConfig';
 import { SpecializedAgent, AgentRegistryProvider } from './types';
 import { DEPARTMENTS } from './departments';
@@ -51,11 +52,11 @@ export class AgentRegistry implements AgentRegistryProvider {
             } as SpecializedAgent;
 
             this.registerLazy(meta, async () => {
-                const module = await import('./specialists/GeneralistAgent');
+                const module = await importWithRetry(() => import('./specialists/GeneralistAgent'));
                 if (!module.GeneralistAgent) {
                     throw new Error("Module imported but GeneralistAgent export is missing!");
                 }
-                const { SpecialistAgentFactory } = await import('./builders/SpecialistAgentFactory');
+                const { SpecialistAgentFactory } = await importWithRetry(() => import('./builders/SpecialistAgentFactory'));
                 return SpecialistAgentFactory.createSpecialistAgent(
                     generalistKey,
                     module.GeneralistAgent
@@ -77,8 +78,8 @@ export class AgentRegistry implements AgentRegistryProvider {
             } as SpecializedAgent;
 
             this.registerLazy(merchMeta, async () => {
-                const { MerchandiseAgent } = await import('./MerchandiseAgent');
-                const { SpecialistAgentFactory } = await import('./builders/SpecialistAgentFactory');
+                const { MerchandiseAgent } = await importWithRetry(() => import('./MerchandiseAgent'));
+                const { SpecialistAgentFactory } = await importWithRetry(() => import('./builders/SpecialistAgentFactory'));
                 return SpecialistAgentFactory.createSpecialistAgent('merchandise', MerchandiseAgent);
             });
         } catch (e: unknown) {
@@ -99,7 +100,7 @@ export class AgentRegistry implements AgentRegistryProvider {
                     } as SpecializedAgent;
 
                     this.registerLazy(meta, async () => {
-                        const { SpecialistAgentFactory } = await import('./builders/SpecialistAgentFactory');
+                        const { SpecialistAgentFactory } = await importWithRetry(() => import('./builders/SpecialistAgentFactory'));
                         return SpecialistAgentFactory.createConfigAgent(config);
                     });
                 } catch (e: unknown) {
@@ -120,7 +121,7 @@ export class AgentRegistry implements AgentRegistryProvider {
             } as SpecializedAgent;
 
             this.registerLazy(keeperMeta, async () => {
-                const { SpecialistAgentFactory } = await import('./builders/SpecialistAgentFactory');
+                const { SpecialistAgentFactory } = await importWithRetry(() => import('./builders/SpecialistAgentFactory'));
                 return SpecialistAgentFactory.createBaseAgent({
                     id: 'keeper',
                     name: 'Keeper',
@@ -147,8 +148,8 @@ export class AgentRegistry implements AgentRegistryProvider {
             } as SpecializedAgent;
 
             this.registerLazy(curriculumMeta, async () => {
-                const { CurriculumAgent } = await import('./specialists/CurriculumAgent');
-                const { SpecialistAgentFactory } = await import('./builders/SpecialistAgentFactory');
+                const { CurriculumAgent } = await importWithRetry(() => import('./specialists/CurriculumAgent'));
+                const { SpecialistAgentFactory } = await importWithRetry(() => import('./builders/SpecialistAgentFactory'));
                 return SpecialistAgentFactory.createSpecialistAgent('curriculum', CurriculumAgent);
             });
         } catch (e: unknown) {
@@ -176,7 +177,7 @@ export class AgentRegistry implements AgentRegistryProvider {
                         } as SpecializedAgent;
 
                         this.registerLazy(workerMeta, async () => {
-                            const { SpecialistAgentFactory } = await import('./builders/SpecialistAgentFactory');
+                            const { SpecialistAgentFactory } = await importWithRetry(() => import('./builders/SpecialistAgentFactory'));
                             return SpecialistAgentFactory.createBaseAgent({
                                 id: workerId,
                                 name: workerMeta.name,
@@ -212,75 +213,50 @@ export class AgentRegistry implements AgentRegistryProvider {
         return this.agents.get(id) || this.metadata.get(id);
     }
 
-    async getAsync(id: string, retryCount = 0): Promise<SpecializedAgent | undefined> {
-        const MAX_RETRIES = 3;
-        const RETRY_DELAY_MS = 500;
-
+    async getAsync(id: string): Promise<SpecializedAgent | undefined> {
         // Return cached agent if already loaded
         if (this.agents.has(id)) {
             return this.agents.get(id);
         }
 
-        // Deduplicate concurrent loads - if already loading, wait for that promise
-        // BUT only if we are not in a retry loop (to avoid potential recursive locking logic issues)
-        if (retryCount === 0 && this.loadingPromises.has(id)) {
+        // Deduplicate concurrent loads
+        if (this.loadingPromises.has(id)) {
             return this.loadingPromises.get(id);
         }
 
         const loader = this.loaders.get(id);
         if (!loader) {
-            if (retryCount === 0) {
-                logger.warn(`[AgentRegistry] No loader registered for agent '${id}'`);
-            }
+            logger.warn(`[AgentRegistry] No loader registered for agent '${id}'`);
             return undefined;
         }
 
         const loadPromise = (async (): Promise<SpecializedAgent | undefined> => {
-            const attempts = retryCount + 1;
             try {
-                logger.debug(`[AgentRegistry] Loading agent '${id}' (attempt ${attempts})...`);
-                const agent = await loader();
+                logger.debug(`[AgentRegistry] Loading agent '${id}'...`);
+                // Use the unified dynamic import retry helper for lazy-loaded agents
+                const agent = await importWithRetry(loader);
                 this.agents.set(id, agent);
                 this.loadErrors.delete(id);
                 logger.debug(`[AgentRegistry] Agent '${id}' loaded successfully`);
                 return agent;
             } catch (e: unknown) {
                 const error = e instanceof Error ? e : new Error(String(e));
-                logger.error(`[AgentRegistry] Failed to load agent '${id}' (attempt ${attempts}):`, error.message);
+                logger.error(`[AgentRegistry] Agent '${id}' PERMANENTLY failed after retries. Error: ${error.message}`);
                 
-                // Track error state
-                this.loadErrors.set(id, { error, timestamp: Date.now(), attempts });
-
-                // Retry with exponential backoff
-                if (retryCount < MAX_RETRIES) {
-                    const delay = RETRY_DELAY_MS * Math.pow(2, retryCount);
-                    logger.warn(`[AgentRegistry] Retrying '${id}' in ${delay}ms... (Remaining retries: ${MAX_RETRIES - retryCount})`);
-                    await new Promise(resolve => setTimeout(resolve, delay));
-                    
-                    // Recursive call for retry
-                    return this.getAsync(id, retryCount + 1);
-                }
-
-                logger.error(`[AgentRegistry] Agent '${id}' PERMANENTLY failed after ${attempts} attempts. Error: ${error.message}`);
+                // Track error state - note: importWithRetry already attempted 3-4 times internally
+                this.loadErrors.set(id, { error, timestamp: Date.now(), attempts: 4 });
                 return undefined;
-            } finally {
-                // Clear the loading promise from our map only at the very top level
-                if (retryCount === 0) {
-                    // This is handled by the .finally block on the returned promise below
-                }
             }
         })();
 
-        if (retryCount === 0) {
-            this.loadingPromises.set(id, loadPromise);
-            
-            // Cleanup promise from map once settled to allow future re-loads if it failed
-            loadPromise.finally(() => {
-                if (!this.agents.has(id)) {
-                    this.loadingPromises.delete(id);
-                }
-            });
-        }
+        this.loadingPromises.set(id, loadPromise);
+        
+        // Cleanup promise from map once settled to allow future re-loads if it failed
+        loadPromise.finally(() => {
+            if (!this.agents.has(id)) {
+                this.loadingPromises.delete(id);
+            }
+        });
 
         return loadPromise;
     }

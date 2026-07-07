@@ -22,6 +22,7 @@ import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 
 import { logger } from '@/utils/logger';
 import { secureRandomHex } from '@/utils/crypto-random';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 // ─── Types ──────────────────────────────────────────────────────
 
@@ -338,7 +339,7 @@ Respond with a JSON object describing your next action. Use one of these types:
         }
 
         try {
-            const { firebaseAI } = await import('@/services/intelligence/FirebaseIntelligenceService');
+            const { firebaseAI } = await importWithRetry(() => import('@/services/intelligence/FirebaseIntelligenceService'));
             // Build the contents array with conversation history and current screenshot
             const contents = [
                 ...conversationHistory,

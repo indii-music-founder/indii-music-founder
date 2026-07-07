@@ -3,10 +3,11 @@ import type { AppSlice } from '@/core/store';
 import { wrapTool, toolError, toolSuccess } from '../utils/ToolUtils';
 import type { AnyToolFunction, AgentContext } from '../types';
 import type { ToolExecutionContext } from '../ToolExecutionContext';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 export const ProjectTools = {
     create_project: wrapTool('create_project', async (args: { name: string, type: AppSlice['currentModule'], orgId?: string }, _context?: AgentContext, toolContext?: ToolExecutionContext) => {
-        const { useStore } = await import('@/core/store');
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
         const store = useStore.getState();
 
         // Phase 3.6: Read state through execution context when available
@@ -31,7 +32,7 @@ export const ProjectTools = {
     }),
 
     list_projects: wrapTool('list_projects', async (_args, _context?: AgentContext, toolContext?: ToolExecutionContext) => {
-        const { useStore } = await import('@/core/store');
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
         const store = useStore.getState();
 
         // Phase 3.6: Read state through execution context when available
@@ -58,7 +59,7 @@ export const ProjectTools = {
     }),
 
     open_project: wrapTool('open_project', async (args: { projectId: string }, _context?: AgentContext, toolContext?: ToolExecutionContext) => {
-        const { useStore } = await import('@/core/store');
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
         const store = useStore.getState();
 
         // Phase 3.6: Read state through execution context when available
@@ -84,8 +85,8 @@ export const ProjectTools = {
 
     create_task: wrapTool('create_task', async (args: { title: string; projectId: string; dueDate?: string; priority?: 'low' | 'medium' | 'high' }) => {
         try {
-            const { db, auth } = await import('@/services/firebase');
-            const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
+            const { db, auth } = await importWithRetry(() => import('@/services/firebase'));
+            const { collection, addDoc, serverTimestamp } = await importWithRetry(() => import('firebase/firestore'));
 
             const uid = auth.currentUser?.uid;
             if (!uid) {
@@ -112,8 +113,8 @@ export const ProjectTools = {
 
     list_tasks: wrapTool('list_tasks', async (args: { projectId?: string; status?: string }) => {
         try {
-            const { db, auth } = await import('@/services/firebase');
-            const { collection, query, where, getDocs, orderBy } = await import('firebase/firestore');
+            const { db, auth } = await importWithRetry(() => import('@/services/firebase'));
+            const { collection, query, where, getDocs, orderBy } = await importWithRetry(() => import('firebase/firestore'));
 
             const uid = auth.currentUser?.uid;
             if (!uid) {
@@ -140,8 +141,8 @@ export const ProjectTools = {
 
     update_task_status: wrapTool('update_task_status', async (args: { taskId: string; status: 'todo' | 'in_progress' | 'done' }) => {
         try {
-            const { db, auth } = await import('@/services/firebase');
-            const { doc, updateDoc, serverTimestamp } = await import('firebase/firestore');
+            const { db, auth } = await importWithRetry(() => import('@/services/firebase'));
+            const { doc, updateDoc, serverTimestamp } = await importWithRetry(() => import('firebase/firestore'));
 
             const uid = auth.currentUser?.uid;
             if (!uid) {
@@ -164,7 +165,7 @@ export const ProjectTools = {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     update_project_metadata: wrapTool('update_project_metadata', async (args: { projectId: string; metadata: Record<string, any> }) => {
         try {
-            const { useStore } = await import('@/core/store');
+            const { useStore } = await importWithRetry(() => import('@/core/store'));
             const store = useStore.getState();
 
             await store.updateProjectMetadata(args.projectId, args.metadata);
