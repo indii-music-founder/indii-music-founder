@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-07-07 08:08 EDT
+**Updated:** 2026-07-07 08:13 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+3ccb285a5 chore: resolve all 15 npm-audit moderate findings
 5b1a0602c chore: session checkpoint [08:04]
 14c67a99a fix(chat): remove break-all so words wrap at spaces not mid-word
 3f7922a17 fix(agent): remove mock data implementations to resolve HIGH severity issues
@@ -13,27 +14,65 @@ bee6f1f49 chore: session checkpoint [00:03]
 90c9ab781 docs(ledger): diagnose user-reported ISSUE-739 — 'No agent found for brand' is a stale-chunk load failure with no async recovery
 cba751883 test: fix CRMDashboard test after adding ConfirmDialog
 6bd2baca3 chore: fix issues 737 and 738 (accessibility and delete confirm)
-cfbca636b chore: session checkpoint [23:47]
 ```
 
 ## Working State
 ```
+ M .agent/HANDOFF_STATE.md
  M .agent/test_ledger/OPEN_ISSUES.md
  M .agent/test_ledger/UNFINISHED_WORK.md
  M packages/main/src/services/BrowserAgentService.ts
- M packages/renderer/src/core/store/index.ts
+ M packages/renderer/src/core/components/ConversationHistoryList.tsx
  M packages/renderer/src/core/store/slices/agent/agentSessionSlice.ts
  M packages/renderer/src/core/store/slices/creative/creativeHistorySlice.ts
  M packages/renderer/src/modules/analytics/components/PlatformConnector.tsx
  M packages/renderer/src/modules/mobile-remote/components/TransportBar.tsx
  M packages/renderer/src/providers/AppInitializationProvider.tsx
+ M packages/renderer/src/services/agent/AgentArchitecture.test.ts
+ M packages/renderer/src/services/agent/AgentCostCircuitBreaker.test.ts
  M packages/renderer/src/services/agent/AgentFirebaseConnector.ts
+ M packages/renderer/src/services/agent/AgentService.torture.test.ts
  M packages/renderer/src/services/agent/AgentService.ts
+ M packages/renderer/src/services/agent/AgentStreamingService.ts
+ M packages/renderer/src/services/agent/BaseAgent.ts
+ M packages/renderer/src/services/agent/BaseAgentUsage.test.ts
+ M packages/renderer/src/services/agent/BaseAgentValidation.test.ts
+ M packages/renderer/src/services/agent/BrowserAgentService.ts
+ M packages/renderer/src/services/agent/LivingPlanService.ts
+ M packages/renderer/src/services/agent/MerchandiseAgent.ts
  M packages/renderer/src/services/agent/ModuleImportCache.ts
+ M packages/renderer/src/services/agent/ProactiveService.ts
+ M packages/renderer/src/services/agent/__tests__/AgentService.security.test.ts
+ M packages/renderer/src/services/agent/__tests__/fine-tuned-models.test.ts
+ M packages/renderer/src/services/agent/a2a/A2A.integration.test.ts
+ M packages/renderer/src/services/agent/a2a/A2ARouter.ts
+ M packages/renderer/src/services/agent/a2a/A2AStreaming.test.ts
+ M packages/renderer/src/services/agent/a2a/transport/LoopbackA2ATransport.ts
+ M packages/renderer/src/services/agent/builders/SpecialistAgentFactory.ts
  M packages/renderer/src/services/agent/components/AgentExecutor.ts
+ M packages/renderer/src/services/agent/components/ContextPipeline.ts
+ M packages/renderer/src/services/agent/components/ContextResolver.ts
+ M packages/renderer/src/services/agent/components/HistoryManager.ts
+ M packages/renderer/src/services/agent/context/AgentExecutionContext.ts
+ M packages/renderer/src/services/agent/context/StateManager.ts
+ M packages/renderer/src/services/agent/creative_agent_hardening.test.ts
+ M packages/renderer/src/services/agent/definitions/BrandAgent.ts
+ M packages/renderer/src/services/agent/definitions/LicensingAgent.test.ts
+ M packages/renderer/src/services/agent/definitions/PublicistAgent.ts
  M packages/renderer/src/services/agent/governance/AgentIdentity.ts
+ M packages/renderer/src/services/agent/governance/DigitalHandshake.ts
  M packages/renderer/src/services/agent/instruments/ImageGenerationInstrument.ts
+ M packages/renderer/src/services/agent/instruments/VideoGenerationInstrument.ts
+ M packages/renderer/src/services/agent/memory/MemoryConsolidator.ts
+ M packages/renderer/src/services/agent/memory/MemoryIngestionPipeline.ts
  M packages/renderer/src/services/agent/registry.ts
+ M packages/renderer/src/services/agent/sdk/AgentSDK.test.ts
+ M packages/renderer/src/services/agent/specialists/CurriculumAgent.ts
+ M packages/renderer/src/services/agent/specialists/GeneralistAgent.test.ts
+ M packages/renderer/src/services/agent/specialists/GeneralistAgent.ts
+ M packages/renderer/src/services/agent/specialists/GeneralistAgentRouting.test.ts
+ M packages/renderer/src/services/agent/specialists/debug-tools.test.ts
+ M packages/renderer/src/services/agent/specialists/specialists.test.ts
  M packages/renderer/src/services/agent/tools/AgentTools.integration.test.ts
  M packages/renderer/src/services/agent/tools/AnalysisTools.ts
  M packages/renderer/src/services/agent/tools/AnalyticsTools.ts
