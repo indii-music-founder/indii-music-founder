@@ -4,6 +4,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { KeysPanel } from '../KeysPanel';
 import { distributionService } from '@/services/distribution/DistributionService';
 import { isrcService } from '@/services/distribution/ISRCService';
+import { useStore } from '@/core/store';
 
 // Mock dependencies
 vi.mock('@/core/context/ToastContext', () => ({
@@ -41,7 +42,13 @@ vi.mock('@/services/firebase', () => ({
     messaging: { getToken: vi.fn() }
 }));
 
+vi.mock('@/core/store', () => ({
+    useStore: vi.fn(),
+}));
+
 describe('KeysPanel', () => {
+    const mockSetModule = vi.fn();
+    const mockSetRegistrationFocus = vi.fn();
     const mockCatalog = [
         {
             id: '1',
@@ -58,6 +65,16 @@ describe('KeysPanel', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         (isrcService.getUserCatalog as import("vitest").Mock).mockResolvedValue(mockCatalog);
+        (useStore as unknown as import('vitest').Mock).mockImplementation((selector?: (state: {
+            setModule: typeof mockSetModule;
+            setRegistrationFocus: typeof mockSetRegistrationFocus;
+        }) => unknown) => {
+            const state = {
+                setModule: mockSetModule,
+                setRegistrationFocus: mockSetRegistrationFocus,
+            };
+            return typeof selector === 'function' ? selector(state) : state;
+        });
     });
 
     it('should load catalog on mount', async () => {
@@ -114,5 +131,25 @@ describe('KeysPanel', () => {
         await waitFor(() => {
             expect(screen.getByText(/CSV Generated/i)).toBeDefined();
         });
+    });
+
+    it('should open MLC registration from External Connections', async () => {
+        render(<KeysPanel />);
+        await waitFor(() => expect(screen.getByText(/Check compliance for 1 track/i)).toBeDefined());
+
+        fireEvent.click(screen.getByTestId('keys-open-mlc-registration'));
+
+        expect(mockSetRegistrationFocus).toHaveBeenCalledWith({ trackId: '1', orgId: 'mlc' });
+        expect(mockSetModule).toHaveBeenCalledWith('registration');
+    });
+
+    it('should open SoundExchange registration from External Connections', async () => {
+        render(<KeysPanel />);
+        await waitFor(() => expect(screen.getByText(/Check compliance for 1 track/i)).toBeDefined());
+
+        fireEvent.click(screen.getByTestId('keys-open-soundexchange-registration'));
+
+        expect(mockSetRegistrationFocus).toHaveBeenCalledWith({ trackId: '1', orgId: 'soundexchange' });
+        expect(mockSetModule).toHaveBeenCalledWith('registration');
     });
 });

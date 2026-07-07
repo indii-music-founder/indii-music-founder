@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { Move, MousePointer2, ImagePlus, Eraser, Layers, Crop, ZoomIn, ZoomOut, ScanSearch, Layers3 } from 'lucide-react';
+import { Move, MousePointer2, ImagePlus, Eraser, Layers, Crop, ZoomIn, ZoomOut, ScanSearch } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface InfiniteCanvasHUDProps {
@@ -11,7 +11,6 @@ interface InfiniteCanvasHUDProps {
     onGenerateVariations?: () => void;
     onZoomIn?: () => void;
     onZoomOut?: () => void;
-    onToggleLayers?: () => void;
     onDetectObjects?: () => void;
 }
 
@@ -26,7 +25,6 @@ export const InfiniteCanvasHUD: React.FC<InfiniteCanvasHUDProps> = memo(({
     onGenerateVariations,
     onZoomIn,
     onZoomOut,
-    onToggleLayers,
     onDetectObjects
 }) => {
     return (
@@ -107,22 +105,6 @@ export const InfiniteCanvasHUD: React.FC<InfiniteCanvasHUDProps> = memo(({
                             </button>
                         </TooltipTrigger>
                         <TooltipContent side="bottom" className="bg-[#1a1a1a] text-white border-white/10 z-50">Detect Objects (ID)</TooltipContent>
-                    </Tooltip>
-                )}
-
-                {onToggleLayers && (
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <button
-                                title="Toggle Layers Panel"
-                                onClick={onToggleLayers}
-                                className="p-2 rounded-full text-gray-400 hover:text-white hover:bg-white/10 transition-colors focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:outline-none"
-                                aria-label="Toggle Layers Panel"
-                            >
-                                <Layers3 size={18} />
-                            </button>
-                        </TooltipTrigger>
-                        <TooltipContent side="bottom" className="bg-[#1a1a1a] text-white border-white/10 z-50">Toggle Layers Panel</TooltipContent>
                     </Tooltip>
                 )}
 

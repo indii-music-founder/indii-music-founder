@@ -455,6 +455,8 @@ describe('creative gateway generateOmniRemixV3', () => {
         referenceVideoUri: 'gs://test-bucket/base/performance.mp4',
         aspectRatio: '16:9',
         durationSeconds: 8,
+        costEstimate: 0.8,
+        costReservationId: 'cost-op-1',
       },
     });
 
@@ -472,6 +474,55 @@ describe('creative gateway generateOmniRemixV3', () => {
       response_format: { delivery: 'uri' },
     }));
     expect(mockGenerateVideos).not.toHaveBeenCalled();
+    expect(result).toEqual(expect.objectContaining({
+      jobId: 'job-123',
+      resultUri: expect.stringContaining('gs://test-bucket/creative/user-123/'),
+    }));
+  });
+
+  it('requires a cost reservation and persists Omni cost metadata', async () => {
+    mockInteractionsCreate.mockResolvedValueOnce({
+      id: 'interaction-123',
+      status: 'ACTIVE',
+      output_video: {
+        data: Buffer.from('omni-video-bytes').toString('base64'),
+        mime_type: 'video/mp4',
+      },
+    });
+
+    await expect(callGenerateOmniRemix({
+      auth: { uid: 'user-123' },
+      data: {
+        prompt: 'Add neon glow effects to the performance',
+        referenceVideoUri: 'gs://test-bucket/base/performance.mp4',
+        aspectRatio: '16:9',
+        durationSeconds: 8,
+      },
+    })).rejects.toMatchObject({
+      code: 'failed-precondition',
+      message: expect.stringContaining('Missing cost reservation'),
+    });
+
+    const result = await callGenerateOmniRemix({
+      auth: { uid: 'user-123' },
+      data: {
+        prompt: 'Add neon glow effects to the performance',
+        referenceVideoUri: 'gs://test-bucket/base/performance.mp4',
+        aspectRatio: '16:9',
+        durationSeconds: 8,
+        costEstimate: 0.8,
+        costReservationId: 'cost-op-1',
+      },
+    });
+
+    expect(mockSet).toHaveBeenCalledWith(expect.objectContaining({
+      costEstimate: 0.8,
+      costReservationId: 'cost-op-1',
+    }));
+    expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining({
+      costEstimate: 0.8,
+      costReservationId: 'cost-op-1',
+    }));
     expect(result).toEqual(expect.objectContaining({
       jobId: 'job-123',
       resultUri: expect.stringContaining('gs://test-bucket/creative/user-123/'),

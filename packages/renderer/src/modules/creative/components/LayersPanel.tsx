@@ -70,8 +70,8 @@ export default function LayersPanel({
                 <div className="flex items-center gap-1">
                     <button
                         onClick={onAddSketchLayer}
-                        aria-label="Add sketch layer"
-                        title="Add sketch layer"
+                        aria-label="Add Layer"
+                        title="Add Layer"
                         className="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded transition-colors focus-visible:ring-2 focus-visible:ring-dept-creative"
                     >
                         <PenTool size={14} />
@@ -115,7 +115,7 @@ export default function LayersPanel({
                     <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
                         <Layers size={32} className="text-gray-700 mb-2" />
                         <p className="text-xs text-gray-500">No layers yet</p>
-                        <p className="text-[10px] text-gray-600 mt-1">Add text or shapes to the canvas</p>
+                        <p className="text-[10px] text-gray-600 mt-1">Add a layer, text, or shapes to the canvas</p>
                     </div>
                 ) : (
                     layers.map((layer, index) => {

@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { getGeminiApiKey, geminiApiKey } from '../../config/secrets';
 import { FUNCTION_INTELLIGENCE_MODELS } from '../../config/models';
 import { getVertexAIClient } from '../../lib/vertexClient';
-import { GenerateAudioSchema, GenerateImageSchema, GenerateVideoSchema, GenerateOmniRemixSchema } from '../../../../shared/src/schemas/creative';
+import { GenerateAudioSchema, GenerateImageSchema, GenerateVideoSchema, GenerateOmniRemixSchema } from '../../shared/creative';
 import { VideoJobDocumentSchema, type VideoJobDocument } from '../../shared/videoJob';
 import { readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -1456,6 +1456,21 @@ export const generateOmniRemixV3 = onCall({ timeoutSeconds: 540, secrets: [gemin
   const jobId = getDb().collection('creative_jobs').doc().id;
 
   const modelId = resolveOmniFlashModel();
+  const durationSeconds = Math.min(12, Math.max(4, data.durationSeconds));
+  const serverEstimatedCost = estimateVideoCost(
+    durationSeconds,
+    data.pipelineMode === 'hybrid-veo' ? VIDEO_MODEL_IDS.pro : VIDEO_MODEL_IDS.fast,
+    data.pipelineMode,
+  );
+  const reservation = data.costReservationId
+    ? await loadCostReservation(userId, data.costReservationId)
+    : null;
+  if (!data.costReservationId) {
+    throw new HttpsError('failed-precondition', 'Missing cost reservation. Reserve cost before submitting the job.');
+  }
+  if (Math.abs((reservation?.estimatedCost ?? serverEstimatedCost) - serverEstimatedCost) > 0.01) {
+    throw new HttpsError('failed-precondition', 'Cost reservation estimate does not match the current Omni job estimate.');
+  }
 
   await safeDbSet(jobId, {
     id: jobId,
@@ -1466,6 +1481,8 @@ export const generateOmniRemixV3 = onCall({ timeoutSeconds: 540, secrets: [gemin
     model: modelId,
     progress: 0,
     parentId: data.parentId,
+    costEstimate: reservation?.estimatedCost ?? serverEstimatedCost,
+    costReservationId: data.costReservationId,
     metadata: {
       pipelineMode: data.pipelineMode,
       hasAudioReference: !!data.audioUri,
@@ -1528,6 +1545,8 @@ export const generateOmniRemixV3 = onCall({ timeoutSeconds: 540, secrets: [gemin
       status: 'completed',
       resultUri: outputUri,
       progress: 100,
+      costEstimate: reservation?.estimatedCost ?? serverEstimatedCost,
+      costReservationId: data.costReservationId,
       metadata: {
         model: modelId,
         pipelineMode: data.pipelineMode,

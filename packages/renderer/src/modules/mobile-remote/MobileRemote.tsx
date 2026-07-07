@@ -1,7 +1,7 @@
 /**
- * Mobile Remote — Phone Control Interface for indii
+ * Mobile Remote — Mobile Control Interface for indii
  *
- * A glassmorphism-styled, phone-optimized remote control for the indii studio.
+ * A glassmorphism-styled, touch-optimized remote control for the indii studio.
  * Functions as a companion device — not a full app rebuild.
  *
  * Features:
@@ -30,7 +30,7 @@ import { auth } from '@/services/firebase';
 import { onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
 import { logger } from '@/utils/logger';
 import {
-  LayoutDashboard, LayoutGrid, Grip, MessageSquare,
+  LayoutDashboard, LayoutGrid, Grip, MessageSquare, Navigation,
   CheckSquare, QrCode, Smartphone, LucideIcon, WifiOff, AlertCircle, RefreshCw
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -44,16 +44,19 @@ export const triggerHaptic = (pattern: number | number[] = 50) => {
   }
 };
 
-// Lazy load sub-components for performance on phone
+// Lazy load sub-components for performance on remote devices
 const StatusDashboard = lazy(() => import('./components/StatusDashboard'));
 const QuickCaptureView = lazy(() => import('./components/QuickCaptureView'));
 const StreamView = lazy(() => import('./components/StreamView'));
 const SettingsView = lazy(() => import('./components/SettingsView'));
 const AgentChat = lazy(() => import('./components/AgentChat'));
+const RoadMode = lazy(() =>
+  import('@/modules/touring/components/RoadMode').then(module => ({ default: module.RoadMode }))
+);
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-type TabId = 'home' | 'capture' | 'boardroom' | 'stream' | 'settings';
+type TabId = 'home' | 'capture' | 'boardroom' | 'road' | 'stream' | 'settings';
 
 interface Tab {
   id: TabId;
@@ -65,6 +68,7 @@ const TABS: Tab[] = [
   { id: 'home', icon: LayoutDashboard, label: 'Home' },
   { id: 'capture', icon: MessageSquare, label: 'Capture' },
   { id: 'boardroom', icon: LayoutGrid, label: 'Boardroom' },
+  { id: 'road', icon: Navigation, label: 'Road' },
   { id: 'stream', icon: CheckSquare, label: 'Stream' },
   { id: 'settings', icon: Grip, label: 'Settings' },
 ];
@@ -201,7 +205,7 @@ function PairingModal({ onClose }: { onClose: () => void }) {
         <p className="text-[#a1a1a6] text-center text-sm mb-8 leading-relaxed">
           {isPhoneMode
             ? 'Enter the 64-character pairing code from your desktop studio Settings panel to sync workspace and control remotely.'
-            : 'Scan this code to link your phone. Sync your workspace and control your studio from anywhere in the world.'}
+            : 'Scan this code to link your phone or iPad. Sync your workspace and control your studio from anywhere in the world.'}
         </p>
 
         <div className="bg-white p-5 rounded-3xl mb-8 shadow-[0_0_40px_rgba(255,255,255,0.1)] flex items-center justify-center w-[220px] h-[220px]">
@@ -436,7 +440,7 @@ export default function MobileRemote() {
       }
     });
 
-    // Visibility change listener to handle phone sleep/wake
+    // Visibility change listener to handle remote sleep/wake
     const onVisibilityChange = () => {
       if (typeof document === 'undefined') return;
       
@@ -643,6 +647,12 @@ export default function MobileRemote() {
         return (
           <Suspense fallback={<TabFallback />}>
             <AgentChat onSendCommand={sendCommand} isPaired={isPaired} />
+          </Suspense>
+        );
+      case 'road':
+        return (
+          <Suspense fallback={<TabFallback />}>
+            <RoadMode />
           </Suspense>
         );
       case 'stream':

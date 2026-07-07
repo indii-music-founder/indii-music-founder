@@ -169,6 +169,20 @@ describe('generateOmniRemixV3 payload contract (Omni Flash API)', () => {
         }).success).toBe(true);
     });
 
+    it('contract: Omni remix payload accepts cost reservation fields', () => {
+        const result = GenerateOmniRemixSchema.safeParse({
+            prompt: 'remix',
+            referenceVideoUri: 'gs://bucket/creative/u1/video/outputs/a.mp4',
+            costEstimate: 0.8,
+            costReservationId: 'op-123',
+        });
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.costEstimate).toBe(0.8);
+            expect(result.data.costReservationId).toBe('op-123');
+        }
+    });
+
     it('duration clamp in the client matches the schema bounds (4..12)', () => {
         const clamp = (d: number) => Math.min(12, Math.max(4, d));
         for (const [input, expected] of [[1, 4], [8, 8], [99, 12]] as const) {

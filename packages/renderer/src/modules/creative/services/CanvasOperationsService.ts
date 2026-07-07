@@ -880,6 +880,41 @@ export class CanvasOperationsService {
     }
 
     /**
+     * Add an explicit blank sketch layer placeholder.
+     *
+     * The free-draw brush still creates the actual stroke objects, but this
+     * gives users a visible layer entry they can name, select, reorder, and
+     * delete before they start sketching.
+     */
+    addBlankSketchLayer(name: string = 'Sketch Layer'): string | null {
+        if (!this.canvas) return null;
+
+        const sketchLayer = new fabric.Path('M 0 0', {
+            id: crypto.randomUUID(),
+            left: 48,
+            top: 48,
+            stroke: '#ffffff',
+            strokeWidth: 1,
+            fill: 'transparent',
+            opacity: 0.01,
+            selectable: true,
+            evented: true,
+            data: {
+                isAnnotation: true,
+                isSketchLayer: true,
+                label: name,
+            },
+        });
+
+        this.canvas.add(sketchLayer);
+        this.canvas.setActiveObject(sketchLayer);
+        this.canvas.renderAll();
+        this.saveHistoryState();
+
+        return (sketchLayer as unknown as { id?: string }).id ?? null;
+    }
+
+    /**
      * Returns a high-res data URL of the canvas with all annotation overlays
      * (drawing paths, bounding boxes, segmentation masks) temporarily hidden.
      * This ensures saved/exported images contain only the actual artwork.

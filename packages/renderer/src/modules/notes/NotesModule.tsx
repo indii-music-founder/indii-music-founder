@@ -1,16 +1,17 @@
 import React, { useState } from 'react';
 import { useStore } from '@/core/store';
-import { Plus, Search, Trash2, FileText, ImageIcon, Image as ImageIconRegular } from 'lucide-react';
+import { Plus, Search, Trash2, FileText, ImageIcon, Image as ImageIconRegular, Cloud, HardDrive } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function NotesModule() {
-    const { notes, selectedNoteId, addNote, updateNote, deleteNote, setSelectedNote } = useStore(state => ({
+    const { notes, selectedNoteId, addNote, updateNote, deleteNote, setSelectedNote, user } = useStore(state => ({
         notes: state.notes,
         selectedNoteId: state.selectedNoteId,
         addNote: state.addNote,
         updateNote: state.updateNote,
         deleteNote: state.deleteNote,
-        setSelectedNote: state.setSelectedNote
+        setSelectedNote: state.setSelectedNote,
+        user: state.user,
     }));
 
     const [searchQuery, setSearchQuery] = useState('');
@@ -21,6 +22,17 @@ export default function NotesModule() {
     );
 
     const activeNote = notes.find(n => n.id === selectedNoteId);
+    const syncStatus = user
+        ? {
+            icon: Cloud,
+            label: 'Saved locally and synced to your workspace',
+            tone: 'border-emerald-500/20 bg-emerald-500/10 text-emerald-300',
+        }
+        : {
+            icon: HardDrive,
+            label: 'Saved on this device only until you sign in',
+            tone: 'border-amber-500/20 bg-amber-500/10 text-amber-300',
+        };
 
     const handleCreateNote = () => {
         const newId = addNote({
@@ -59,6 +71,10 @@ export default function NotesModule() {
                             onChange={(e) => setSearchQuery(e.target.value)}
                             className="w-full bg-white/5 border border-white/10 rounded-lg py-2 pl-9 pr-4 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#2E2EFE]"
                         />
+                    </div>
+                    <div className={cn("mt-3 flex items-start gap-2 rounded-lg border px-3 py-2 text-xs", syncStatus.tone)}>
+                        <syncStatus.icon size={14} className="mt-0.5 shrink-0" />
+                        <span>{syncStatus.label}</span>
                     </div>
                 </div>
 

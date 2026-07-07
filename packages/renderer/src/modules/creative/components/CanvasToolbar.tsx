@@ -83,11 +83,11 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
 
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <button onClick={addSketchLayer} className={baseButtonClass} aria-label="Add Sketch Layer">
+                        <button onClick={addSketchLayer} className={baseButtonClass} aria-label="Add Layer">
                             <PenLine size={16} />
                         </button>
                     </TooltipTrigger>
-                    <TooltipContent side={tooltipSide}>Add Sketch Layer</TooltipContent>
+                    <TooltipContent side={tooltipSide}>Add Layer</TooltipContent>
                 </Tooltip>
 
                 <Tooltip>

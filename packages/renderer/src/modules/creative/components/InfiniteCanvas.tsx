@@ -3,6 +3,7 @@ import { useStore, HistoryItem } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { Editing } from '@/services/image/EditingService';
+import { imageAnalysisService, type DetectedObject } from '@/services/image/ImageAnalysisService';
 import { Loader2, Sparkles, Send, Crop } from 'lucide-react';
 import { InfiniteCanvasHUD } from './InfiniteCanvasHUD';
 import { useToast } from '@/core/context/ToastContext';
@@ -38,9 +39,11 @@ export default function InfiniteCanvas() {
 
     const [tool, setTool] = useState<'pan' | 'select' | 'generate' | 'crop'>('pan');
     const [isGenerating, setIsGenerating] = useState(false);
+    const [isDetectingObjects, setIsDetectingObjects] = useState(false);
     const [promptOverlay, setPromptOverlay] = useState<{ sx: number, sy: number, w: number, h: number } | null>(null);
     const [cropOverlay, setCropOverlay] = useState<{ sx: number, sy: number, w: number, h: number } | null>(null);
     const [promptText, setPromptText] = useState("");
+    const [detectedObjects, setDetectedObjects] = useState<{ sourceImageId: string; objects: DetectedObject[] } | null>(null);
 
     // Interaction State
     const isDragging = useRef(false);
@@ -72,7 +75,7 @@ export default function InfiniteCanvas() {
     useEffect(() => {
         requestDraw();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [canvasImages, selectedCanvasImageId, tool]);
+    }, [canvasImages, detectedObjects, selectedCanvasImageId, tool]);
 
     const requestDraw = () => {
         if (rafId.current) cancelAnimationFrame(rafId.current);
@@ -190,6 +193,46 @@ export default function InfiniteCanvas() {
         });
 
         ctx.restore();
+
+        if (detectedObjects) {
+            const sourceImage = canvasImages.find(img => img.id === detectedObjects.sourceImageId);
+            if (sourceImage) {
+                const labelPadX = 8 / scale;
+                const labelPadY = 4 / scale;
+                const labelHeight = 18 / scale;
+
+                ctx.save();
+                ctx.strokeStyle = 'rgba(168, 85, 247, 0.95)';
+                ctx.fillStyle = 'rgba(168, 85, 247, 0.16)';
+                ctx.lineWidth = 2 / scale;
+                ctx.font = `${12 / scale}px ui-sans-serif, system-ui, sans-serif`;
+
+                detectedObjects.objects.forEach((detected) => {
+                    const x = sourceImage.x + ((detected.box.xmin / 1000) * sourceImage.width);
+                    const y = sourceImage.y + ((detected.box.ymin / 1000) * sourceImage.height);
+                    const w = ((detected.box.xmax - detected.box.xmin) / 1000) * sourceImage.width;
+                    const h = ((detected.box.ymax - detected.box.ymin) / 1000) * sourceImage.height;
+
+                    if (w <= 0 || h <= 0) return;
+
+                    ctx.fillRect(x, y, w, h);
+                    ctx.strokeRect(x, y, w, h);
+
+                    const labelWidth = ctx.measureText(detected.label).width + labelPadX * 2;
+                    const labelY = Math.max(sourceImage.y, y - labelHeight - (2 / scale));
+
+                    ctx.fillStyle = 'rgba(17, 24, 39, 0.92)';
+                    ctx.fillRect(x, labelY, labelWidth, labelHeight);
+                    ctx.strokeRect(x, labelY, labelWidth, labelHeight);
+
+                    ctx.fillStyle = '#f5f3ff';
+                    ctx.fillText(detected.label, x + labelPadX, labelY + labelPadY + (8 / scale));
+                    ctx.fillStyle = 'rgba(168, 85, 247, 0.16)';
+                });
+
+                ctx.restore();
+            }
+        }
 
         // Selection Box (Screen Space)
         if (selectionStart.current && (tool === 'generate' || tool === 'crop')) {
@@ -802,12 +845,40 @@ export default function InfiniteCanvas() {
         requestDraw();
     };
 
-    const handleDetectObjects = () => {
-        toast.info("Coming soon: Intelligent object and face detection in canvas.");
-    };
+    const handleDetectObjects = async () => {
+        if (!canvasRef.current || isDetectingObjects) return;
 
-    const handleToggleLayers = () => {
-        toast.info("Coming soon: Advanced layer composition management.");
+        const targetImage = (selectedCanvasImageId
+            ? canvasImages.find(image => image.id === selectedCanvasImageId)
+            : null) ?? canvasImages[canvasImages.length - 1];
+
+        if (!targetImage) {
+            toast.info("Add an image before running object detection.");
+            return;
+        }
+
+        setIsDetectingObjects(true);
+        try {
+            const sourceUrl = targetImage.base64;
+            const dataUrl = sourceUrl.startsWith('http')
+                ? await fetchAsBase64(sourceUrl).then(({ base64, mimeType }) => `data:${mimeType};base64,${base64}`)
+                : sourceUrl;
+            const objects = await imageAnalysisService.detectObjects(dataUrl);
+            setDetectedObjects({ sourceImageId: targetImage.id, objects });
+
+            if (objects.length > 0) {
+                toast.success(`Detected ${objects.length} object${objects.length === 1 ? '' : 's'}.`);
+            } else {
+                toast.info('No prominent objects detected.');
+            }
+        } catch (error) {
+            logger.error('[InfiniteCanvas] Object detection failed', error);
+            setDetectedObjects(null);
+            toast.error('Object detection failed.');
+        } finally {
+            setIsDetectingObjects(false);
+            requestDraw();
+        }
     };
 
     const handleDrop = async (e: React.DragEvent) => {
@@ -1094,7 +1165,6 @@ export default function InfiniteCanvas() {
                 onZoomIn={handleZoomIn}
                 onZoomOut={handleZoomOut}
                 onDetectObjects={handleDetectObjects}
-                onToggleLayers={handleToggleLayers}
             />
 
             {promptOverlay && (

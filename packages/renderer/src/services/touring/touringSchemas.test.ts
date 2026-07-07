@@ -12,6 +12,7 @@ describe('Touring Schemas', () => {
                 tourName: 'World Tour',
                 stops: [
                     {
+                        id: 'stop-1',
                         date: '2023-01-01',
                         city: 'New York',
                         venue: 'MSG',
@@ -26,6 +27,28 @@ describe('Touring Schemas', () => {
             };
             const result = ItinerarySchema.parse(data);
             expect(result.stops).toHaveLength(1);
+        });
+
+        it('should allow an itinerary without an estimated budget yet', () => {
+            const data = {
+                userId: 'user1',
+                tourName: 'World Tour',
+                stops: [
+                    {
+                        id: 'stop-1',
+                        date: '2023-01-01',
+                        city: 'New York',
+                        venue: 'MSG',
+                        activity: 'Concert',
+                        notes: 'Sold out',
+                    }
+                ],
+                totalDistance: '1000 miles'
+            };
+
+            const result = ItinerarySchema.parse(data);
+            expect(result.estimatedBudget).toBeUndefined();
+            expect(result.stops[0]?.id).toBe('stop-1');
         });
 
         it('should fail if stops are missing required fields', () => {

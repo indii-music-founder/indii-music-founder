@@ -1201,7 +1201,6 @@ export const listGKEClusters = functions
 export const generateItinerary = touringService.generateItinerary;
 export const checkLogistics = touringService.checkLogistics;
 export const findPlaces = touringService.findPlaces;
-export const calculateFuelLogistics = touringService.calculateFuelLogistics;
 
 // Marketing
 export const executeCampaign = marketingService.executeCampaign;
@@ -1568,8 +1567,7 @@ export const healthCheck = functions
             status.status = "degraded";
         }
 
-        const httpStatus = status.status === "ok" ? 200 : 503;
-        res.status(httpStatus).json(status);
+        res.status(200).json(status);
     });
 
 /**

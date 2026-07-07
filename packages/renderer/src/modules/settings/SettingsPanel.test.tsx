@@ -132,6 +132,25 @@ describe('SettingsPanel', () => {
         expect(buttons[0]!.closest('button')).toHaveClass('bg-cyan-500/10');
     });
 
+    it('renders the real privacy controls inside Account & Security', () => {
+        render(<SettingsPanel />);
+        const buttons = screen.getAllByText('settings.sections.security.label');
+        fireEvent.click(buttons[0]!);
+
+        expect(screen.getByText('Privacy & Data')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Request account deletion' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Export my data' })).toBeInTheDocument();
+    });
+
+    it('hides the developer Firebase bypass from non-founder users', () => {
+        render(<SettingsPanel />);
+        const buttons = screen.getAllByText('settings.sections.desktop.label');
+        fireEvent.click(buttons[0]!);
+
+        expect(screen.getByText('Developer push tools are hidden outside founder/dev builds.')).toBeInTheDocument();
+        expect(screen.queryByText('Developer Firebase Push Bypass')).not.toBeInTheDocument();
+    });
+
     it('Profile section renders display name and bio fields', () => {
         render(<SettingsPanel />);
         expect(screen.getByPlaceholderText('settings.hints.display_name')).toBeInTheDocument();

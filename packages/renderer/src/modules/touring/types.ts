@@ -2,6 +2,7 @@ import { Timestamp } from 'firebase/firestore';
 
 
 export interface ItineraryStop {
+    id?: string;
     date: string;
     city: string;
     venue: string;
@@ -25,7 +26,7 @@ export interface Itinerary {
     tourName: string;
     stops: ItineraryStop[];
     totalDistance: string;
-    estimatedBudget: string;
+    estimatedBudget?: string;
     createdAt?: Timestamp;
 }
 
@@ -97,4 +98,3 @@ export interface EmergencyContact {
     createdAt?: Timestamp;
     updatedAt?: Timestamp;
 }
-

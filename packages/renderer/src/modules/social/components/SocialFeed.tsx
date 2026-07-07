@@ -28,6 +28,7 @@ import { areFeedItemPropsEqual, FeedItemProps } from './SocialFeed.utils';
 import { formatDate } from '@/lib/utils';
 import { logger } from '@/utils/logger';
 import ProductPickerModal from './ProductPickerModal';
+import BrandAssetsDrawer from '../../creative/components/BrandAssetsDrawer';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface SocialFeedProps {
@@ -52,11 +53,13 @@ const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
 
     const [newPostContent, setNewPostContent] = useState('');
     const [isPosting, setIsPosting] = useState(false);
+    const [attachedMediaUrls, setAttachedMediaUrls] = useState<string[]>([]);
 
     // Drop State
     const [artistProducts, setArtistProducts] = useState<Product[]>([]);
     const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
     const [showProductPicker, setShowProductPicker] = useState(false);
+    const [showMediaPicker, setShowMediaPicker] = useState(false);
 
     const userProfile = useStore(useShallow((state: StoreState) => state.userProfile));
 
@@ -86,14 +89,16 @@ const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
         setIsPosting(true);
         const success = await createPost(
             newPostContent,
-            [],
+            attachedMediaUrls,
             selectedProductId || undefined
         );
 
         if (success) {
             setNewPostContent('');
+            setAttachedMediaUrls([]);
             setSelectedProductId(null);
             setShowProductPicker(false);
+            setShowMediaPicker(false);
         }
         setIsPosting(false);
     };
@@ -152,18 +157,46 @@ const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
                                         </motion.div>
                                     )}
                                 </AnimatePresence>
+
+                                <AnimatePresence>
+                                    {attachedMediaUrls.length > 0 && (
+                                        <motion.div
+                                            initial={{ opacity: 0, y: 8 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: 8 }}
+                                            className="mt-3 flex flex-wrap gap-2"
+                                        >
+                                            {attachedMediaUrls.map((url) => (
+                                                <div
+                                                    key={url}
+                                                    className="flex items-center gap-2 rounded-full border border-dept-creative/20 bg-dept-creative/10 px-3 py-1 text-xs text-dept-creative"
+                                                >
+                                                    <ImageIcon size={12} />
+                                                    <span className="max-w-[160px] truncate">Media attached</span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setAttachedMediaUrls((current) => current.filter((item) => item !== url))}
+                                                        className="text-dept-creative/70 hover:text-dept-creative"
+                                                        aria-label="Remove attached media"
+                                                    >
+                                                        <X size={12} />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
                             </div>
 
                             <div className="flex justify-between items-center">
                                 <div className="flex items-center gap-1">
                                     <button
-                                        onClick={undefined}
-                                        disabled
-                                        aria-disabled="true"
-                                        className="p-2.5 text-gray-500 rounded-xl border border-dashed border-white/10 cursor-not-allowed opacity-60"
-                                        title="Add Media (coming soon)"
+                                        onClick={() => setShowMediaPicker(true)}
+                                        className="p-2.5 text-gray-400 rounded-xl border border-white/10 hover:border-gray-500 hover:text-white hover:bg-white/5 transition-colors"
+                                        title="Add Media"
+                                        aria-label="Add media from brand assets"
                                     >
-                                        <ImageIcon size={20} className="group-hover:scale-110 transition-transform" />
+                                        <ImageIcon size={20} />
                                     </button>
                                     
                                     {(({...userProfile, accountType: userProfile?.accountType} as { accountType?: string })?.accountType === 'artist' || ({...userProfile, accountType: userProfile?.accountType} as { accountType?: string })?.accountType === 'label') && (
@@ -222,6 +255,20 @@ const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
                             setShowProductPicker(false);
                         }}
                         selectedId={selectedProductId}
+                    />
+                )}
+            </AnimatePresence>
+
+            <AnimatePresence>
+                {showMediaPicker && (
+                    <BrandAssetsDrawer
+                        onClose={() => setShowMediaPicker(false)}
+                        onSelect={(asset) => {
+                            setAttachedMediaUrls((current) =>
+                                current.includes(asset.url) ? current : [...current, asset.url]
+                            );
+                            setShowMediaPicker(false);
+                        }}
                     />
                 )}
             </AnimatePresence>

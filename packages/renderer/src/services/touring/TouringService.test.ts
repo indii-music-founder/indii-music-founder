@@ -80,5 +80,49 @@ describe('TouringService', () => {
             // Should contain only the valid one
             expect(callback.mock.calls[0]![0]).toHaveLength(1);
         });
+
+        it('backfills stop ids when reading old itineraries', () => {
+            const validItinerary = {
+                userId: 'user1',
+                tourName: 'Tour 1',
+                stops: [
+                    {
+                        date: '2023-10-01',
+                        city: 'Austin',
+                        venue: 'The Venue',
+                        activity: 'Show',
+                        notes: 'Test stop',
+                    }
+                ],
+                totalDistance: '100km',
+                estimatedBudget: '$1000'
+            };
+
+            vi.mocked(onSnapshot).mockImplementation((query: any, callback: any) => {
+                callback({
+                    docs: [
+                        { id: '1', data: () => validItinerary },
+                    ]
+                } as unknown as import('firebase/firestore').QuerySnapshot);
+                return () => { };
+            });
+
+            const callback = vi.fn();
+            TouringService.subscribeToItineraries('user1', callback);
+
+            expect(callback).toHaveBeenCalled();
+            expect(callback.mock.calls[0]![0][0]).toEqual(
+                expect.objectContaining({
+                    id: '1',
+                    stops: [
+                        expect.objectContaining({
+                            id: expect.any(String),
+                            city: 'Austin',
+                            venue: 'The Venue',
+                        })
+                    ]
+                })
+            );
+        });
     });
 });

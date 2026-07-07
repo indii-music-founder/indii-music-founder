@@ -51,6 +51,7 @@ vi.mock('../services/CanvasOperationsService', () => ({
         addRectangle: vi.fn(),
         addCircle: vi.fn(),
         addText: vi.fn(),
+        addBlankSketchLayer: vi.fn(),
         initialize: vi.fn(),
         dispose: vi.fn(),
         updateBrushColor: vi.fn(),

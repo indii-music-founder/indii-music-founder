@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-07-03 23:34 EDT
+**Updated:** 2026-07-06 21:41 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+e1526c60b docs(ledger): CRITICAL update to ISSUE-720 — createTransfer requires admin claim, feature is non-functional for real users
 3f630350c docs(ledger): pass 31 Settings remaining sections + full session menu-audit summary
 c9cc96ef6 docs(ledger): eighth menu — CommandBar internal menus, ISSUE-731 dead DelegateMenu
 78ec257cc docs(ledger): seventh menu — context menus, ISSUE-730 unconfirmed delete in MerchTable
@@ -13,11 +14,14 @@ e71178545 docs(ledger): fifth menu — CreativeNavbar 'hero bar' fully swept, al
 ef82c8c59 docs(ledger): third menu — Mobile Remote tab bar fully swept, clean. Three-menu audit complete.
 905379ca9 docs(ledger): complete admin-dashboard menu sweep — 5 clean, 1 finding (726)
 f1740e28e docs(ledger): new menu — admin-dashboard app, pass 20 ISSUE-726 fake DNS status
-b39bb096d docs(ledger): pass 19 Merchandise clean bill + full 19-pass session final tally
 ```
 
 ## Working State
 ```
+M  .agent/HANDOFF_STATE.md
+ M .agent/test_ledger/OPEN_ISSUES.md
+ M .claude/settings.json
+ M .mcp.json
  D .new_gemini_key.txt
  D .new_maps_key.txt
  M packages/firebase/package.json
@@ -58,6 +62,9 @@ b39bb096d docs(ledger): pass 19 Merchandise clean bill + full 19-pass session fi
  M packages/renderer/src/modules/memory/MemoryDashboard.test.tsx
  M packages/renderer/src/modules/memory/MemoryDashboard.tsx
  M packages/renderer/src/modules/mobile-remote/MobileRemote.tsx
+ M packages/renderer/src/modules/mobile-remote/components/CommandPad.tsx
+ M packages/renderer/src/modules/mobile-remote/components/StatusDashboard.test.tsx
+ M packages/renderer/src/modules/mobile-remote/components/StatusDashboard.tsx
  M packages/renderer/src/modules/notes/NotesModule.tsx
  M packages/renderer/src/modules/observability/AdminLockScreen.tsx
  M packages/renderer/src/modules/screenwriter/ScreenwriterDashboard.test.tsx
@@ -71,6 +78,7 @@ b39bb096d docs(ledger): pass 19 Merchandise clean bill + full 19-pass session fi
  M packages/renderer/src/modules/touring/RoadManager.tsx
  M packages/renderer/src/modules/touring/components/PlanningTab.tsx
  M packages/renderer/src/modules/touring/components/TourMap.tsx
+ M packages/renderer/src/modules/touring/components/TourRouteOptimizer.tsx
  D packages/renderer/src/modules/touring/components/VisaImmigrationChecklist.tsx
  M packages/renderer/src/modules/touring/hooks/useTouring.ts
  M packages/renderer/src/modules/touring/types.ts
@@ -93,9 +101,12 @@ b39bb096d docs(ledger): pass 19 Merchandise clean bill + full 19-pass session fi
 ?? packages/renderer/src/modules/creative/services/CanvasOperationsService.test.ts
 ?? packages/renderer/src/modules/creative/video/OmniWorkflow.test.tsx
 ?? packages/renderer/src/modules/dashboard/components/GlobalSettings.test.tsx
+?? packages/renderer/src/modules/mobile-remote/MobileRemote.test.tsx
+?? packages/renderer/src/modules/mobile-remote/components/CommandPad.test.tsx
 ?? packages/renderer/src/modules/notes/__tests__/
 ?? packages/renderer/src/modules/observability/AdminLockScreen.test.tsx
 ?? packages/renderer/src/modules/touring/components/TourMap.test.tsx
+?? packages/renderer/src/modules/touring/components/TourRouteOptimizer.test.tsx
 ?? packages/renderer/src/modules/touring/itinerary.ts
 ```
 

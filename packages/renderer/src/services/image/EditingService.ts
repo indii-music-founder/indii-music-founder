@@ -81,6 +81,7 @@ export class EditingService {
         mask?: { mimeType: string; data: string };
         decoratedImage?: { mimeType: string; data: string }; // Legacy/Flattened
         referenceImage?: { mimeType: string; data: string };
+        referenceImages?: { mimeType: string; data: string }[];
         prompt: string;
         forceHighFidelity?: boolean;
         model?: 'pro' | 'flash' | string;
@@ -93,7 +94,7 @@ export class EditingService {
     }): Promise<{ id: string; url: string; prompt: string; thoughtSignature?: string } | null> {
         logger.info('[EditingService] editImage called — using secured backend path', {
             hasMask: !!options.mask,
-            hasReference: !!options.referenceImage,
+            hasReference: !!options.referenceImage || !!options.referenceImages?.length,
             model: options.model,
             useSemanticMap: !!options.useSemanticMap,
         });
@@ -131,11 +132,20 @@ export class EditingService {
                     { scope: 'objects' }
                 )
                 : undefined;
+            const referenceImageUris = options.referenceImages?.length
+                ? await Promise.all(options.referenceImages.map((referenceImage) => CreativeStorageService.uploadReferenceMedia(
+                    userId,
+                    `data:${referenceImage.mimeType};base64,${referenceImage.data}`,
+                    'image',
+                    { scope: 'objects' }
+                )))
+                : undefined;
 
             const payload = {
                 imageUri,
                 maskUri,
                 referenceImageUri,
+                referenceImageUris,
                 prompt: options.prompt,
                 forceHighFidelity: options.forceHighFidelity || !!options.decoratedImage,
                 model: options.model,

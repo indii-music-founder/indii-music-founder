@@ -200,6 +200,7 @@ export interface TourVehicleDocument {
  * Tour Itinerary Data
  */
 export interface TourItineraryStop {
+    id?: string;
     date: string;
     city: string;
     venue: string;
@@ -214,7 +215,7 @@ export interface TourItineraryDocument {
     tourName: string;
     stops: TourItineraryStop[];
     totalDistance: string;
-    estimatedBudget: string;
+    estimatedBudget?: string;
     createdAt: Timestamp;
     updatedAt: Timestamp;
 }

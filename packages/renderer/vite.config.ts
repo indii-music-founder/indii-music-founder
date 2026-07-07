@@ -13,16 +13,17 @@ import { visualizer } from 'rollup-plugin-visualizer';
  * That returned HTML where the browser expected a script module, producing a
  * spinner that never resolves because the entry never executed.
  */
-import { defineConfig } from 'vite';
+import { defineConfig, type ResolvedConfig, type Plugin } from 'vite';
+import type { Connect } from 'vite';
 import { resolve } from 'path';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 
 const repoRoot = resolve(__dirname, '..', '..');
 
-const envSanitizerPlugin = () => ({
+const envSanitizerPlugin = (): Plugin => ({
     name: 'env-sanitizer',
-    configResolved(config) {
+    configResolved(config: ResolvedConfig) {
         const secrets = [
             'VITE_PINATA_SECRET',
             'VITE_PINATA_JWT',
@@ -51,10 +52,10 @@ const envSanitizerPlugin = () => ({
     }
 });
 
-const apiFallbackPlugin = () => ({
+const apiFallbackPlugin = (): Plugin => ({
     name: 'api-fallback',
-    configureServer(server) {
-        server.middlewares.use((req, res, next) => {
+    configureServer(server: { middlewares: Connect.Server }) {
+        server.middlewares.use((req: Connect.IncomingMessage, res: import('node:http').ServerResponse, next: Connect.NextFunction) => {
             const url = req.url;
             if (url && (url === '/api' || url.startsWith('/api/') || url.startsWith('/api?'))) {
                 res.statusCode = 404;
@@ -71,8 +72,8 @@ const apiFallbackPlugin = () => ({
             next();
         });
     },
-    configurePreviewServer(server) {
-        server.middlewares.use((req, res, next) => {
+    configurePreviewServer(server: { middlewares: Connect.Server }) {
+        server.middlewares.use((req: Connect.IncomingMessage, res: import('node:http').ServerResponse, next: Connect.NextFunction) => {
             const url = req.url;
             if (url && (url === '/api' || url.startsWith('/api/') || url.startsWith('/api?'))) {
                 res.statusCode = 404;
@@ -178,9 +179,9 @@ export default defineConfig({
         // Agent system prompt strings ("You are a ...") are functional feature code,
         // not accidental leakage — they are intentionally client-side for offline use.
         // Stripping console output removes runtime state exposure without breaking features.
-        esbuild: {
-            drop: ['console', 'debugger'],
-        },
+        minify: 'esbuild',
+        // esbuild drop options are passed via the vite esbuild config at top level
+        // (kept here for documentation; actual drop config lives below)
         rollupOptions: {
             external: [
                 '@remotion/renderer',
@@ -272,6 +273,10 @@ export default defineConfig({
                 }
             }
         },
+    },
+    // ISSUE-548: Strip console/debugger statements in production (top-level esbuild option).
+    esbuild: {
+        drop: ['console', 'debugger'],
     },
     test: {
         environment: 'jsdom',
