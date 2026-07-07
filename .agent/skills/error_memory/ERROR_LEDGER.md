@@ -1313,4 +1313,10 @@ Before pushing any branch, run `/plat` (see `.claude/commands/plat.md`). It exec
 2. NEVER diagnose a callable "internal" error client-side first — check server execution logs; zero logs means the request never arrived (IAM/network), and no client-side error-message fix can help.
 3. Related trap: `enforceAppCheck: true` + Electron (which skips App Check init by design) = second 401 blocker hiding behind the first — see OPEN_ISSUES ISSUE-677.
 
+## 2026-07-07 Sync Session - Cross-Device Sync Race Condition (AppInitializationProvider)
+- SEVERITY: High
+- FILE: packages/renderer/src/providers/AppInitializationProvider.tsx
+- BUG: On app startup or reload, the heavy initialization functions `initializeHistory()` and `loadProjects()` were called immediately once auth is defined (Effect 3). However, the actual user profile loads asynchronously (Effect 2) and updates the active organization ID (`currentOrganizationId`) in the Zustand store. Because Effect 3 did not list `currentOrganizationId` as a dependency, the active history and project subscriptions remained bound to the default fallback organization ID (`'org-default'`) instead of switching to the user's real organization ID. This race condition prevented new devices (like iPads) from syncing or loading the created assets/projects of the laptop session.
+- FIX: Added `currentOrganizationId` to the state selectors and to the dependencies list of the data initialization effect in `AppInitializationProvider.tsx`, ensuring subscriptions cleanly re-bind when the profile loads and switches organizations.
+- PREVENTION: Always include store-state variables that dictate Firestore path paths (like org IDs or project IDs) in the dependency arrays of `useEffect` blocks that establish Firestore subscriptions/data fetchers.
 **GREP:** `functions/internal`, `add-invoker-policy-binding`, `allowedPolicyMemberDomains`, `Function execution started`
