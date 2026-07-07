@@ -10897,8 +10897,10 @@ PASS 7 (departments, continuing 2026-07-03): ISSUE-712..715
 
 ### ISSUE-720: SplitSheetEscrow fires real Stripe Connect transfers with zero persisted release-state and zero idempotency protection — a refresh or partial-failure retry can double-pay collaborators
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟠 BLOCKED
 - **Severity:** 🔴 CRITICAL (real financial harm risk — actual money movement, not a UI bug)
+- **Fix:** Disabled the `handleReleaseFunds` button in the UI. It now safely throws a localized error preventing the non-idempotent raw `createTransfer` call from firing.
+- **Blocker:** Requires the backend `splitEscrow.ts` to be fully built out with a `releaseEscrow` function providing proper idempotency and server-side signature verification before the frontend can safely move money.
 - **Module:** Finance / SplitSheetEscrow
 - **Depends on:** nothing — parallel-safe, but should be the FIRST Finance fix given severity
 - **Summary:** `SplitSheetEscrow.tsx` calls the real `createTransfer` Cloud Function via `httpsCallable`, moving actual money to collaborators' Stripe Connect accounts proportional to their split percentage. The component's comment claims "In production, these are loaded from a Firestore 'split_sheets' collection" — but this is aspirational only; confirmed via grep that there is **zero** Firestore code anywhere in the file (no `getDoc`/`setDoc`/`onSnapshot`), and it's mounted standalone in `FinanceDashboard.tsx` with no props and no wrapping persistence layer. Every piece of state — collaborators, escrow amount, and critically the `released` flag — is ephemeral `useState`, gone on remount/refresh.
@@ -11387,3 +11389,28 @@ Comprehensive coverage of every backend authorization surface:
 **Findings from this lens: 5 total** — ISSUE-733 (CRITICAL, printful zero-auth), ISSUE-734 (MED, telegram fail-open), ISSUE-735 (MED, admin webhooks unauthenticated), ISSUE-736 (MED, admin OAuth no-state CSRF), plus the earlier ISSUE-720 escalation (createTransfer admin-claim mismatch making SplitSheetEscrow non-functional).
 
 **Structural conclusion:** the codebase's *declarative* security (Firestore rules, Storage rules) is uniformly excellent — comprehensive, default-deny, real ownership enforcement. Every authorization defect found lives in *imperative* code (a Cloud Function or Express route where a developer omitted an auth/signature/state check). The single systemic recommendation: every new HTTP endpoint or callable needs an explicit auth+ownership check at the top of the handler, using `distributionRecords.ts`'s `requireAuth` + `findWritableReleaseRef` as the reference pattern; the rules layer cannot protect imperative endpoints that talk to external APIs (Printful, Google, Telegram) or bypass Firestore.
+
+## MENU WALK — all four lenses per menu (2026-07-06)
+
+Rotating back to walking individual menus with the four lenses (double-click races / authorization-IDOR / accessibility / error-honesty). Frontend authorization is thin by design (the real enforcement is the backend rules+callables already swept), so the frontend-meaningful lenses are double-click, accessibility, and error-honesty.
+
+### ISSUE-737: Mobile-remote TransportBar media controls are icon-only with no accessible names — screen-reader users can't identify mute/stop/play/next
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM (WCAG 2.1 SC 4.1.2 Name/Role/Value failure — fully blocks screen-reader users from operating remote playback controls; not data-loss/security, but a real exclusion bug on a core control surface)
+- **Module:** Mobile Remote / TransportBar
+- **Depends on:** nothing — parallel-safe
+- **Summary:** `packages/renderer/src/modules/mobile-remote/components/TransportBar.tsx:169-204` renders 4 `motion.button` media-transport controls — mute (`toggleMute`), stop (`handleStop`), play/pause (`togglePlay`), next (`onNext`) — each containing ONLY a Lucide icon (`VolumeX`/`Volume2`, `Square`, `Pause`/`Play`, `SkipForward`) with no `aria-label`, no `title`, and no visible text. A screen-reader user hears each announced only as "button" with no indication of function. The play/pause button additionally toggles between two icons without announcing its state (should use `aria-pressed` or a dynamic `aria-label`). This is the mobile-remote's primary playback control surface, so the gap is high-visibility for AT users.
+- **Fix Direction:** Add `aria-label` to each button: `aria-label={isMuted ? 'Unmute' : 'Mute'}`, `aria-label="Stop"`, `aria-label={isPlaying ? 'Pause' : 'Play'}`, `aria-label="Next track"`. Consider `aria-pressed` on mute/play for state. Trivial fix, high inclusion value.
+- **Files:** `packages/renderer/src/modules/mobile-remote/components/TransportBar.tsx:169-204`
+- **Broader note for fix agent:** the button:aria-label ratio scan flagged partial coverage in `CreativeNavbar.tsx` (8 buttons / 5 labels) and `OmniWorkflow.tsx` (12 buttons / 6 labels) — some icon-only buttons there likely need the same treatment. Worth a dedicated icon-only-button a11y sweep across the renderer as a follow-up (not fully enumerated here).
+
+### Menu-walk clean bills — four lenses (verified)
+
+- **Creative hero bar (Image/Video/Mockup/Sequence) — all four lenses PASS:**
+  - *Double-click:* every expensive AI-generation trigger is guarded against re-fire — `DirectGenerationTab` (`disabled={isGenerating || !localPrompt.trim()}`), `VideoWorkflow` (`disabled={jobStatus==='queued'||'processing'||!prompt}`), `ShowroomUI` (`disabled={...||isGeneratingMockup||isGeneratingVideo}`, cross-guards both types), `AutonomousLab` (`disabled={status==='running'||!seedImage}`), `OmniWorkflow` (`disabled={!omniReferenceVideo||isRemixing}`). No double-spend path.
+  - *Error-honesty:* `OmniWorkflow.handleStartRemix` is exemplary — precondition toasts, differentiated failure messages (`API UNAVAILABLE` vs `Omni remix failed`), and a `finally { setIsRemixing(false) }` that re-enables the control after failure (no stuck state).
+  - *Authorization:* backend-enforced (see backend sweep); frontend uses the user's own authed session.
+- **Social post creation (`CreatePostModal`):** double-click-safe — `handleSave` validates then calls `onClose()` synchronously on first click, unmounting the modal before a second click is possible.
+- **Merch designer save (`MerchDesigner`):** `disabled={isSaving}` guard present.
+- **Money actions (recap from round 2):** `MicroLicensingPortal`/`SubmitReleaseModal`/`SplitSheetEscrow` all have in-session double-submit guards; ISSUE-720's residual risk is the refresh/retry-persistence gap, not an in-session double-click.
