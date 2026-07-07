@@ -30,34 +30,28 @@ export function TaxFormCollection() {
     const [collaborators, setCollaborators] = useState<TaxCollaborator[]>(INITIAL_COLLABORATORS);
     const [sentNotifs, setSentNotifs] = useState<Set<number>>(new Set());
     const [uploadedFiles, setUploadedFiles] = useState<Record<number, string>>({});
+    const [error, setError] = useState<string | null>(null);
     const fileRefs = useRef<Record<number, HTMLInputElement | null>>({});
 
     const verifiedCount = collaborators.filter((c) => c.status === 'verified').length;
     const totalCount = collaborators.length;
 
     function handleRequestForm(id: number) {
-        setSentNotifs((prev) => new Set([...prev, id]));
-        // Clear after 3 seconds
-        setTimeout(() => {
-            setSentNotifs((prev) => {
-                const next = new Set(prev);
-                next.delete(id);
-                return next;
-            });
-        }, 3000);
+        setError("Tax form collection requires the backend secure upload service. No request was sent.");
     }
 
     function handleFileChange(id: number, e: React.ChangeEvent<HTMLInputElement>) {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        setUploadedFiles((prev) => ({ ...prev, [id]: file.name }));
-        setCollaborators((prev) =>
-            prev.map((c) => (c.id === id && c.status === 'needed' ? { ...c, status: 'submitted' as const } : c))
-        );
+        setError("Secure upload requires configured Firebase Storage rules and backend processing. No file was uploaded.");
     }
 
     return (
         <div className="space-y-4">
+            {error && (
+                <div className="flex items-start gap-2 p-3 rounded-lg bg-red-500/5 border border-red-500/20">
+                    <AlertCircle size={12} className="text-red-400 flex-shrink-0 mt-0.5" />
+                    <p className="text-[10px] text-red-300/80 leading-relaxed">{error}</p>
+                </div>
+            )}
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
