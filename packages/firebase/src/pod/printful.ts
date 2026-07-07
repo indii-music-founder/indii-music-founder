@@ -1,6 +1,7 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import fetch from 'node-fetch';
 import { printfulApiKey, getPrintfulApiKey } from '../config/secrets';
+import { getFirestore } from 'firebase-admin/firestore';
 
 const BASE_URL = 'https://api.printful.com';
 
@@ -41,15 +42,25 @@ async function request<T>(endpoint: string, options: { method?: string; body?: s
     return data.result;
 }
 
-export const pod_printfulGetProducts = onCall({ secrets: [printfulApiKey] }, async () => {
+function requireAuth(req: any) {
+    if (!req.auth) {
+        throw new HttpsError('unauthenticated', 'User must be authenticated');
+    }
+    return req.auth.uid;
+}
+
+export const pod_printfulGetProducts = onCall({ secrets: [printfulApiKey], enforceAppCheck: true }, async (req) => {
+    requireAuth(req);
     return await request<unknown[]>('/store/products');
 });
 
-export const pod_printfulGetProduct = onCall({ secrets: [printfulApiKey] }, async (req) => {
+export const pod_printfulGetProduct = onCall({ secrets: [printfulApiKey], enforceAppCheck: true }, async (req) => {
+    requireAuth(req);
     return await request<unknown>(`/store/products/${req.data.productId}`);
 });
 
-export const pod_printfulCalculatePrice = onCall({ secrets: [printfulApiKey] }, async (req) => {
+export const pod_printfulCalculatePrice = onCall({ secrets: [printfulApiKey], enforceAppCheck: true }, async (req) => {
+    requireAuth(req);
     return await request<unknown>('/orders/estimate-costs', {
         method: 'POST',
         body: JSON.stringify({
@@ -62,7 +73,8 @@ export const pod_printfulCalculatePrice = onCall({ secrets: [printfulApiKey] }, 
     });
 });
 
-export const pod_printfulGetShippingRates = onCall({ secrets: [printfulApiKey] }, async (req) => {
+export const pod_printfulGetShippingRates = onCall({ secrets: [printfulApiKey], enforceAppCheck: true }, async (req) => {
+    requireAuth(req);
     return await request<unknown[]>('/shipping/rates', {
         method: 'POST',
         body: JSON.stringify({
@@ -81,8 +93,11 @@ export const pod_printfulGetShippingRates = onCall({ secrets: [printfulApiKey] }
     });
 });
 
-export const pod_printfulCreateOrder = onCall({ secrets: [printfulApiKey] }, async (req) => {
-    return await request<unknown>('/orders', {
+export const pod_printfulCreateOrder = onCall({ secrets: [printfulApiKey], enforceAppCheck: true }, async (req) => {
+    const uid = requireAuth(req);
+    
+    // Call printful to create the order
+    const result = await request<unknown>('/orders', {
         method: 'POST',
         body: JSON.stringify({
             recipient: {
@@ -108,17 +123,48 @@ export const pod_printfulCreateOrder = onCall({ secrets: [printfulApiKey] }, asy
             shipping: req.data.shippingMethod
         })
     });
+
+    const orderId = (result as any).id;
+    if (!orderId) {
+        throw new HttpsError('internal', 'Failed to retrieve order ID from Printful');
+    }
+
+    // Save the ownership record in Firestore so Get/Cancel can verify ownership
+    await getFirestore().collection('users').doc(uid).collection('pod_orders').doc(String(orderId)).set({
+        createdAt: new Date().toISOString(),
+        orderId: String(orderId),
+        status: 'created'
+    });
+
+    return result;
 });
 
-export const pod_printfulGetOrder = onCall({ secrets: [printfulApiKey] }, async (req) => {
+async function verifyOrderOwnership(uid: string, orderId: string) {
+    const doc = await getFirestore().collection('users').doc(uid).collection('pod_orders').doc(String(orderId)).get();
+    if (!doc.exists) {
+        throw new HttpsError('permission-denied', 'You do not have permission to access this order');
+    }
+}
+
+export const pod_printfulGetOrder = onCall({ secrets: [printfulApiKey], enforceAppCheck: true }, async (req) => {
+    const uid = requireAuth(req);
+    await verifyOrderOwnership(uid, req.data.orderId);
     return await request<unknown>(`/orders/${req.data.orderId}`);
 });
 
-export const pod_printfulCancelOrder = onCall({ secrets: [printfulApiKey] }, async (req) => {
-    return await request<unknown>(`/orders/${req.data.orderId}`, { method: 'DELETE' });
+export const pod_printfulCancelOrder = onCall({ secrets: [printfulApiKey], enforceAppCheck: true }, async (req) => {
+    const uid = requireAuth(req);
+    await verifyOrderOwnership(uid, req.data.orderId);
+    const result = await request<unknown>(`/orders/${req.data.orderId}`, { method: 'DELETE' });
+    await getFirestore().collection('users').doc(uid).collection('pod_orders').doc(String(req.data.orderId)).update({
+        status: 'cancelled',
+        cancelledAt: new Date().toISOString()
+    });
+    return result;
 });
 
-export const pod_printfulGenerateMockup = onCall({ secrets: [printfulApiKey] }, async (req) => {
+export const pod_printfulGenerateMockup = onCall({ secrets: [printfulApiKey], enforceAppCheck: true }, async (req) => {
+    requireAuth(req);
     const result = await request<unknown>('/mockup-generator/create-task', {
         method: 'POST',
         body: JSON.stringify({
