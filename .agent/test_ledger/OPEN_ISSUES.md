@@ -11356,3 +11356,30 @@ Focused follow-up to ISSUE-733: press the authorization lens across every backen
 ### Admin-dashboard server — auth coverage verdict
 
 Of 19 routes: 13 correctly gated by `requireAdminAuth` (all `/api/usage`, `/api/founders`, `/api/google/*` data routes, `/api/messaging/*`, `/api/deliveries/list`, `/api/nexus/logs`, `/api/dns/status`). The 6 without it: `/api/health` (fine — health check), the OAuth callback (can't be admin-gated; needs `state` instead — ISSUE-736), and the 2 webhooks (need signature verification — ISSUE-735). `/api/google/oauth/url` IS admin-gated. So the coverage gap is narrow and specific, not systemic — the two webhooks and the OAuth-state omission are the only real authorization holes in this server.
+
+### Storage rules — clean bill (verified)
+
+`packages/firebase/storage.rules`: every user path (`/users`, `/creative`, `/projects`, `/videos`, `/video-thumbnails`, `/generated`, `/stems`) enforces `request.auth.uid == userId` ownership; org paths (`/orgs`) enforce `isOrgMember`; `/founders/releases` read is founder-gated via `firestore.get(...).data.subscriptionTier/tier/isFounder`; server-only paths (`/generated`, `/public`, `/founders/releases` write) are `allow write: if false`. Writes additionally enforce size limits + media-type validation. No `allow: if true`; unmatched paths denied by default. As solid as the Firestore rules.
+
+### Privilege-escalation operations — clean bill (verified)
+
+The two most sensitive functions in the backend are both correctly gated against self-escalation:
+- **`setGodMode` (`functions/admin/setGodMode.ts`):** `enforceAppCheck: true` + requires authentication + requires the caller's OWN `request.auth.token.admin === true` before granting `god_mode` to anyone (throws `permission-denied` otherwise) + audit-logs the grant. No path to self-escalate.
+- **`activateFounderPass` (`subscription/activateFounderPass.ts:211`):** requires `request.auth.token.admin === true` — this is the manual "admin activates after alternative (Cash App/Wire) payment" path, correctly admin-only. A regular user cannot self-grant founder status through it.
+
+### AUTHORIZATION-LENS BACKEND SWEEP — FINAL SUMMARY (2026-07-06)
+
+Comprehensive coverage of every backend authorization surface:
+| Surface | Result |
+| --- | --- |
+| HTTP `onRequest` endpoints (13) | Clean except telegram fail-open (ISSUE-734) |
+| Callable `onCall` functions | 1 CRITICAL (printful, ISSUE-733); `distributionRecords` is the model |
+| IDOR (`data.userId` reads) | Clean — guards present or rules-enforced |
+| Firestore rules (473) | Clean — default-deny, ownership checks throughout |
+| Storage rules | Clean — owner-scoped, server-only writes, default-deny |
+| Admin-dashboard Express server (19 routes) | 2 findings (ISSUE-735 open webhooks, ISSUE-736 OAuth no-state) |
+| Privilege escalation (setGodMode, activateFounderPass) | Clean — admin-gated, no self-escalation |
+
+**Findings from this lens: 5 total** — ISSUE-733 (CRITICAL, printful zero-auth), ISSUE-734 (MED, telegram fail-open), ISSUE-735 (MED, admin webhooks unauthenticated), ISSUE-736 (MED, admin OAuth no-state CSRF), plus the earlier ISSUE-720 escalation (createTransfer admin-claim mismatch making SplitSheetEscrow non-functional).
+
+**Structural conclusion:** the codebase's *declarative* security (Firestore rules, Storage rules) is uniformly excellent — comprehensive, default-deny, real ownership enforcement. Every authorization defect found lives in *imperative* code (a Cloud Function or Express route where a developer omitted an auth/signature/state check). The single systemic recommendation: every new HTTP endpoint or callable needs an explicit auth+ownership check at the top of the handler, using `distributionRecords.ts`'s `requireAuth` + `findWritableReleaseRef` as the reference pattern; the rules layer cannot protect imperative endpoints that talk to external APIs (Printful, Google, Telegram) or bypass Firestore.
