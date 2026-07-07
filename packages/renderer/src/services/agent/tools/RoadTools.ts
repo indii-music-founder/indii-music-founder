@@ -8,6 +8,7 @@ import type { AnyToolFunction } from '../types';
 import { db, auth } from '@/services/firebase';
 import { collection, doc, setDoc } from 'firebase/firestore';
 import { logger } from '@/utils/logger';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 /**
  * Road Manager Tools
@@ -130,7 +131,7 @@ export const RoadTools = {
         const userId = auth.currentUser?.uid;
         if (userId) {
             try {
-                const { serverTimestamp } = await import('firebase/firestore');
+                const { serverTimestamp } = await importWithRetry(() => import('firebase/firestore'));
                 await setDoc(doc(collection(db, `users/${userId}/tour_budgets`)), {
                     ...result,
                     days: d,
@@ -164,7 +165,7 @@ export const RoadTools = {
         const userId = auth.currentUser?.uid;
         if (userId) {
             try {
-                const { serverTimestamp } = await import('firebase/firestore');
+                const { serverTimestamp } = await importWithRetry(() => import('firebase/firestore'));
                 await setDoc(doc(collection(db, `users/${userId}/itineraries`)), {
                     ...validated,
                     createdAt: serverTimestamp()

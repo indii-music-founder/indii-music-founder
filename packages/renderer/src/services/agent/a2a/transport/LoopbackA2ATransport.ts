@@ -1,6 +1,7 @@
 import { A2ATransport, RouterCallContext } from './A2ATransport';
 import { MessageEnvelope } from '@/services/security/E2EEncryptionService';
 import { logger } from '@/utils/logger';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 /**
  * In-process loopback transport for A2A.
@@ -17,7 +18,7 @@ export class LoopbackA2ATransport implements A2ATransport {
    */
   private async getRouter() {
     if (!this.router) {
-      const { a2aRouter } = await import('../A2ARouter');
+      const { a2aRouter } = await importWithRetry(() => import('../A2ARouter'));
       this.router = a2aRouter;
     }
     return this.router;

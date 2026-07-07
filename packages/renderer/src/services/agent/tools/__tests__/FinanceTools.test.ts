@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { FinanceTools } from '../FinanceTools';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { getFineTunedModel } from '../../fine-tuned-models';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 // Mock Dependencies
 vi.mock('@/services/intelligence/FirebaseIntelligenceService', () => {
@@ -38,7 +39,7 @@ describe('FinanceTools', () => {
 
     beforeEach(async () => {
         vi.clearAllMocks();
-        const module = await import('@/services/intelligence/AutonomousIntelligence');
+        const module = await importWithRetry(() => import('@/services/intelligence/AutonomousIntelligence'));
         AutonomousIntelligence = module.AutonomousIntelligence;
     });
 

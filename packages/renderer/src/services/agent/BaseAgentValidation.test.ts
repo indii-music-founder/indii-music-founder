@@ -3,6 +3,7 @@ import { BaseAgent } from './BaseAgent';
 import { createTool } from './utils/ZodUtils';
 import { z } from 'zod';
 import { AgentConfig } from './types';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 // Mock dependencies
 vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
@@ -82,7 +83,7 @@ describe('BaseAgent Tool Validation', () => {
     });
 
     it('should execute tool when args are valid', async () => {
-        const { AutonomousIntelligence } = await import('@/services/intelligence/AutonomousIntelligence');
+        const { AutonomousIntelligence } = await importWithRetry(() => import('@/services/intelligence/AutonomousIntelligence'));
 
         // Setup Autonomous mock to call the tool
         vi.mocked(AutonomousIntelligence.generateContent).mockResolvedValueOnce({
@@ -111,7 +112,7 @@ describe('BaseAgent Tool Validation', () => {
     });
 
     it('should block tool execution when args are invalid', async () => {
-        const { AutonomousIntelligence } = await import('@/services/intelligence/AutonomousIntelligence');
+        const { AutonomousIntelligence } = await importWithRetry(() => import('@/services/intelligence/AutonomousIntelligence'));
 
         vi.mocked(AutonomousIntelligence.generateContent).mockResolvedValueOnce({
             response: {

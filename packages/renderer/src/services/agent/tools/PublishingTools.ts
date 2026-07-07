@@ -1,6 +1,7 @@
 import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 import { logger } from '@/utils/logger';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 const queryProDatabase = wrapTool('query_pro_database', async (args: {
     trackTitle: string;
@@ -13,8 +14,8 @@ const queryProDatabase = wrapTool('query_pro_database', async (args: {
     // 1. Search the user's own DDEX release catalog in Firestore for an existing registration
     const existingRecords: Array<{ workId: string; registeredWriters: string[]; status: string; isrc?: string }> = [];
     try {
-        const { db, auth } = await import('@/services/firebase');
-        const { collection, query, where, getDocs } = await import('firebase/firestore');
+        const { db, auth } = await importWithRetry(() => import('@/services/firebase'));
+        const { collection, query, where, getDocs } = await importWithRetry(() => import('firebase/firestore'));
 
         const uid = auth.currentUser?.uid;
         if (uid) {
@@ -92,8 +93,8 @@ export const PublishingTools = {
         publisher?: string;
     }) => {
         try {
-            const { db, auth } = await import('@/services/firebase');
-            const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
+            const { db, auth } = await importWithRetry(() => import('@/services/firebase'));
+            const { collection, addDoc, serverTimestamp } = await importWithRetry(() => import('firebase/firestore'));
 
             const uid = auth.currentUser?.uid;
             if (!uid) {
@@ -125,8 +126,8 @@ export const PublishingTools = {
         isrc?: string;
     }) => {
         try {
-            const { db, auth } = await import('@/services/firebase');
-            const { doc, updateDoc, serverTimestamp } = await import('firebase/firestore');
+            const { db, auth } = await importWithRetry(() => import('@/services/firebase'));
+            const { doc, updateDoc, serverTimestamp } = await importWithRetry(() => import('firebase/firestore'));
 
             const uid = auth.currentUser?.uid;
             if (!uid) {

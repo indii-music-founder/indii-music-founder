@@ -4,10 +4,11 @@ import { OrganizationService } from '@/services/OrganizationService';
 import { wrapTool, toolError } from '../utils/ToolUtils';
 import type { AnyToolFunction, AgentContext } from '../types';
 import type { ToolExecutionContext } from '../ToolExecutionContext';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 export const OrganizationTools = {
     list_organizations: wrapTool('list_organizations', async (_args, _context?: AgentContext, toolContext?: ToolExecutionContext) => {
-        const { useStore } = await import('@/core/store');
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
         // Phase 3.6: Read state through execution context when available
         const orgs = toolContext
             ? toolContext.get('organizations') || []
@@ -27,7 +28,7 @@ export const OrganizationTools = {
     }),
 
     switch_organization: wrapTool('switch_organization', async (args: { orgId: string }, _context?: AgentContext, toolContext?: ToolExecutionContext) => {
-        const { useStore } = await import('@/core/store');
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
         const store = useStore.getState();
 
         // Phase 3.6: Read state through execution context when available
@@ -65,7 +66,7 @@ export const OrganizationTools = {
     }),
 
     create_organization: wrapTool('create_organization', async (args: { name: string }, _context?: AgentContext, toolContext?: ToolExecutionContext) => {
-        const { useStore } = await import('@/core/store');
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
         const store = useStore.getState();
 
         // Phase 3.6: Read state through execution context when available
@@ -98,7 +99,7 @@ export const OrganizationTools = {
     }),
 
     get_organization_details: wrapTool('get_organization_details', async (_args, _context?: AgentContext, toolContext?: ToolExecutionContext) => {
-        const { useStore } = await import('@/core/store');
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
         const organizations = (toolContext
             ? toolContext.get('organizations')
             : useStore.getState().organizations) || [];
@@ -120,8 +121,8 @@ export const OrganizationTools = {
 
     add_contact: wrapTool('add_contact', async (args: { name: string; email: string; phone?: string; role?: string; company?: string }) => {
         try {
-            const { db, auth } = await import('@/services/firebase');
-            const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
+            const { db, auth } = await importWithRetry(() => import('@/services/firebase'));
+            const { collection, addDoc, serverTimestamp } = await importWithRetry(() => import('firebase/firestore'));
 
             const uid = auth.currentUser?.uid;
             if (!uid) {
@@ -147,8 +148,8 @@ export const OrganizationTools = {
 
     list_contacts: wrapTool('list_contacts', async (args: { role?: string; company?: string }) => {
         try {
-            const { db, auth } = await import('@/services/firebase');
-            const { collection, query, where, getDocs, orderBy } = await import('firebase/firestore');
+            const { db, auth } = await importWithRetry(() => import('@/services/firebase'));
+            const { collection, query, where, getDocs, orderBy } = await importWithRetry(() => import('firebase/firestore'));
 
             const uid = auth.currentUser?.uid;
             if (!uid) {
@@ -178,8 +179,8 @@ export const OrganizationTools = {
 
     schedule_event: wrapTool('schedule_event', async (args: { title: string; date: string; attendees?: string[]; description?: string }) => {
         try {
-            const { db, auth } = await import('@/services/firebase');
-            const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
+            const { db, auth } = await importWithRetry(() => import('@/services/firebase'));
+            const { collection, addDoc, serverTimestamp } = await importWithRetry(() => import('firebase/firestore'));
 
             const uid = auth.currentUser?.uid;
             if (!uid) {
@@ -205,7 +206,7 @@ export const OrganizationTools = {
 
     invite_team_member: wrapTool('invite_team_member', async (args: { email: string; role: 'manager' | 'producer' | 'member' }, _context?: AgentContext, toolContext?: ToolExecutionContext) => {
         try {
-            const { useStore } = await import('@/core/store');
+            const { useStore } = await importWithRetry(() => import('@/core/store'));
             const currentOrganizationId = toolContext
                 ? toolContext.get('currentOrganizationId')
                 : useStore.getState().currentOrganizationId;
@@ -229,7 +230,7 @@ export const OrganizationTools = {
 
     update_member_role: wrapTool('update_member_role', async (args: { userId: string; role: 'manager' | 'producer' | 'member' }, _context?: AgentContext, toolContext?: ToolExecutionContext) => {
         try {
-            const { useStore } = await import('@/core/store');
+            const { useStore } = await importWithRetry(() => import('@/core/store'));
             const currentOrganizationId = toolContext
                 ? toolContext.get('currentOrganizationId')
                 : useStore.getState().currentOrganizationId;
@@ -252,7 +253,7 @@ export const OrganizationTools = {
 
     remove_team_member: wrapTool('remove_team_member', async (args: { userId: string }, _context?: AgentContext, toolContext?: ToolExecutionContext) => {
         try {
-            const { useStore } = await import('@/core/store');
+            const { useStore } = await importWithRetry(() => import('@/core/store'));
             const currentOrganizationId = toolContext
                 ? toolContext.get('currentOrganizationId')
                 : useStore.getState().currentOrganizationId;
@@ -274,7 +275,7 @@ export const OrganizationTools = {
 
     list_team_members: wrapTool('list_team_members', async (_args, _context?: AgentContext, toolContext?: ToolExecutionContext) => {
         try {
-            const { useStore } = await import('@/core/store');
+            const { useStore } = await importWithRetry(() => import('@/core/store'));
             const store = useStore.getState();
             const currentOrganizationId = toolContext
                 ? toolContext.get('currentOrganizationId')

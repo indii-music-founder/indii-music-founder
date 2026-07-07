@@ -5,6 +5,7 @@ import type { ToolExecutionContext } from '../ToolExecutionContext';
 import { logger } from '@/utils/logger';
 import { alwaysOnMemoryEngine } from '../memory/AlwaysOnMemoryEngine';
 import type { AlwaysOnMemoryCategory } from '@/types/AlwaysOnMemory';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 /**
  * MemoryTools - Unified tools for interacting with the Always-On Memory system.
@@ -18,7 +19,7 @@ export const MemoryTools = {
     // ========================================================================
 
     save_memory: wrapTool('save_memory', async (args: { content: string; type?: 'fact' | 'summary' | 'rule' | 'preference' }, _context?: AgentContext, toolContext?: ToolExecutionContext) => {
-        const { useStore } = await import('@/core/store');
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
         const projectId = toolContext?.get('currentProjectId') || useStore.getState().currentProjectId;
 
         try {
@@ -49,7 +50,7 @@ export const MemoryTools = {
     }),
 
     recall_memories: wrapTool('recall_memories', async (args: { query: string }, _context?: AgentContext, toolContext?: ToolExecutionContext) => {
-        const { useStore } = await import('@/core/store');
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
         const projectId = toolContext?.get('currentProjectId') || useStore.getState().currentProjectId;
 
         try {
@@ -66,7 +67,7 @@ export const MemoryTools = {
     }),
 
     index_memory: wrapTool('index_memory', async (args: { content: string }, _context?: AgentContext, _toolContext?: ToolExecutionContext) => {
-        const { useStore } = await import('@/core/store');
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
         const userId = useStore.getState().user?.uid;
         
         if (!userId) {
@@ -74,7 +75,7 @@ export const MemoryTools = {
         }
 
         try {
-            const { memoryBankService } = await import('../memory/MemoryBankService');
+            const { memoryBankService } = await importWithRetry(() => import('../memory/MemoryBankService'));
             const result = await memoryBankService.addMemory(userId, args.content);
             return toolSuccess({ results: result }, "Successfully indexed memory to semantic memory bank.");
         } catch (e: unknown) {

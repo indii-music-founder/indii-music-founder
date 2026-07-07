@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GeneralistAgent } from './GeneralistAgent';
 import { useStore } from '@/core/store';
 import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 // Mock dependencies
 vi.mock('@/core/store', () => ({
@@ -148,7 +149,7 @@ describe('GeneralistAgent Routing Logic', () => {
     it('routes Music-specific tasks (ISRC) to the Music Agent', async () => {
         mockDelegationResponse('music', 'Assign ISRC code to Neon Nights');
         
-        const { TOOL_REGISTRY } = await import('@/services/agent/tools/index');
+        const { TOOL_REGISTRY } = await importWithRetry(() => import('@/services/agent/tools/index'));
         const delegateSpy = vi.mocked(TOOL_REGISTRY.delegate_task);
 
         await agent.execute('Assign an ISRC code to my track Neon Nights');
@@ -161,7 +162,7 @@ describe('GeneralistAgent Routing Logic', () => {
     it('routes Legal-specific tasks (Contract Review) to the Legal Agent', async () => {
         mockDelegationResponse('legal', 'Review my contract for this collaboration');
         
-        const { TOOL_REGISTRY } = await import('@/services/agent/tools/index');
+        const { TOOL_REGISTRY } = await importWithRetry(() => import('@/services/agent/tools/index'));
         const delegateSpy = vi.mocked(TOOL_REGISTRY.delegate_task);
 
         await agent.execute('Review my contract for this collaboration');
@@ -176,7 +177,7 @@ describe('GeneralistAgent Routing Logic', () => {
         // Tie-breaker: "How should I promote my upcoming tour dates?" -> Marketing
         mockDelegationResponse('marketing', 'Plan promotion for my upcoming tour dates');
         
-        const { TOOL_REGISTRY } = await import('@/services/agent/tools/index');
+        const { TOOL_REGISTRY } = await importWithRetry(() => import('@/services/agent/tools/index'));
         const delegateSpy = vi.mocked(TOOL_REGISTRY.delegate_task);
 
         await agent.execute('How should I promote my upcoming tour dates?');
@@ -189,7 +190,7 @@ describe('GeneralistAgent Routing Logic', () => {
     it('routes Analytics queries to the Analytics Agent', async () => {
         mockDelegationResponse('analytics', 'Show my streaming metrics for the last 30 days');
         
-        const { TOOL_REGISTRY } = await import('@/services/agent/tools/index');
+        const { TOOL_REGISTRY } = await importWithRetry(() => import('@/services/agent/tools/index'));
         const delegateSpy = vi.mocked(TOOL_REGISTRY.delegate_task);
 
         await agent.execute('Show my streaming metrics for the last 30 days');
@@ -202,7 +203,7 @@ describe('GeneralistAgent Routing Logic', () => {
     it('routes Licensing queries (Sample Clearance) to the Licensing Agent', async () => {
         mockDelegationResponse('licensing', 'Is this sample legally cleared to use?');
         
-        const { TOOL_REGISTRY } = await import('@/services/agent/tools/index');
+        const { TOOL_REGISTRY } = await importWithRetry(() => import('@/services/agent/tools/index'));
         const delegateSpy = vi.mocked(TOOL_REGISTRY.delegate_task);
 
         await agent.execute('Is this sample legally cleared to use?');
@@ -264,7 +265,7 @@ describe('GeneralistAgent Routing Logic', () => {
             }
         });
 
-        const { TOOL_REGISTRY } = await import('@/services/agent/tools/index');
+        const { TOOL_REGISTRY } = await importWithRetry(() => import('@/services/agent/tools/index'));
         const delegateSpy = vi.mocked(TOOL_REGISTRY.delegate_task);
 
         await agent.execute('Create content for my new release');
@@ -339,7 +340,7 @@ describe('GeneralistAgent Routing Logic', () => {
             }
         });
 
-        const { TOOL_REGISTRY } = await import('@/services/agent/tools/index');
+        const { TOOL_REGISTRY } = await importWithRetry(() => import('@/services/agent/tools/index'));
         const delegateSpy = vi.mocked(TOOL_REGISTRY.delegate_task);
 
         await agent.execute('I need a full brand identity and social rollout for my new tour');
@@ -363,7 +364,7 @@ describe('GeneralistAgent Routing Logic', () => {
             { text: 'All set.' }
         ]);
 
-        const { TOOL_REGISTRY } = await import('@/services/agent/tools/index');
+        const { TOOL_REGISTRY } = await importWithRetry(() => import('@/services/agent/tools/index'));
         const delegateSpy = vi.mocked(TOOL_REGISTRY.delegate_task);
 
         await agent.execute('Review this agreement and then plan a rollout');
@@ -401,7 +402,7 @@ describe('GeneralistAgent Routing Logic', () => {
             }
         });
 
-        const { TOOL_REGISTRY } = await import('@/services/agent/tools/index');
+        const { TOOL_REGISTRY } = await importWithRetry(() => import('@/services/agent/tools/index'));
         const delegateSpy = vi.mocked(TOOL_REGISTRY.delegate_task);
 
         await agent.execute('Design a logo. The artist style is Cyberpunk with Neon colors.');
@@ -415,7 +416,7 @@ describe('GeneralistAgent Routing Logic', () => {
     it('prioritizes Finance over Video for budget-related creative questions (Ambiguity Protocol)', async () => {
         mockDelegationResponse('finance', 'Calculate budget allocation for music video');
         
-        const { TOOL_REGISTRY } = await import('@/services/agent/tools/index');
+        const { TOOL_REGISTRY } = await importWithRetry(() => import('@/services/agent/tools/index'));
         const delegateSpy = vi.mocked(TOOL_REGISTRY.delegate_task);
 
         await agent.execute('How much should I spend on my music video?');
@@ -437,7 +438,7 @@ describe('GeneralistAgent Routing Logic', () => {
             { text: 'Done.' }
         ]);
 
-        const { TOOL_REGISTRY } = await import('@/services/agent/tools/index');
+        const { TOOL_REGISTRY } = await importWithRetry(() => import('@/services/agent/tools/index'));
         const delegateSpy = vi.mocked(TOOL_REGISTRY.delegate_task);
         const recallSpy = vi.mocked(TOOL_REGISTRY.recall_memories);
 
@@ -464,7 +465,7 @@ describe('GeneralistAgent Routing Logic', () => {
             { text: 'The social media launch plan is ready.' }
         ]);
 
-        const { TOOL_REGISTRY } = await import('@/services/agent/tools/index');
+        const { TOOL_REGISTRY } = await importWithRetry(() => import('@/services/agent/tools/index'));
         const delegateSpy = vi.mocked(TOOL_REGISTRY.delegate_task);
 
         await agent.execute('I want to launch my social media site');
@@ -479,7 +480,7 @@ describe('GeneralistAgent Routing Logic', () => {
         it('routes Catalog Migration to Distribution Agent', async () => {
             mockDelegationResponse('distribution', 'Move catalog from DistroKid and start takeover');
             
-            const { TOOL_REGISTRY } = await import('@/services/agent/tools/index');
+            const { TOOL_REGISTRY } = await importWithRetry(() => import('@/services/agent/tools/index'));
             const delegateSpy = vi.mocked(TOOL_REGISTRY.delegate_task);
 
             await agent.execute('I want to move my catalog from DistroKid to indii. How do I start the takeover?');
@@ -490,7 +491,7 @@ describe('GeneralistAgent Routing Logic', () => {
         it('routes Historical Royalties to Finance Agent', async () => {
             mockDelegationResponse('finance', 'Import royalty statements and accounting migration');
             
-            const { TOOL_REGISTRY } = await import('@/services/agent/tools/index');
+            const { TOOL_REGISTRY } = await importWithRetry(() => import('@/services/agent/tools/index'));
             const delegateSpy = vi.mocked(TOOL_REGISTRY.delegate_task);
 
             await agent.execute('Import my royalty statements from 2023 for accounting migration.');
@@ -501,7 +502,7 @@ describe('GeneralistAgent Routing Logic', () => {
         it('routes Sonic DNA Training to Music Agent', async () => {
             mockDelegationResponse('music', 'Analyze stems for sonic DNA training and style analysis');
             
-            const { TOOL_REGISTRY } = await import('@/services/agent/tools/index');
+            const { TOOL_REGISTRY } = await importWithRetry(() => import('@/services/agent/tools/index'));
             const delegateSpy = vi.mocked(TOOL_REGISTRY.delegate_task);
 
             await agent.execute('Analyze these stems for sonic DNA training and style analysis.');
@@ -512,7 +513,7 @@ describe('GeneralistAgent Routing Logic', () => {
         it('routes Brand Voice Training to Brand Agent', async () => {
             mockDelegationResponse('brand', 'Train brand voice agent and persona calibration');
             
-            const { TOOL_REGISTRY } = await import('@/services/agent/tools/index');
+            const { TOOL_REGISTRY } = await importWithRetry(() => import('@/services/agent/tools/index'));
             const delegateSpy = vi.mocked(TOOL_REGISTRY.delegate_task);
 
             await agent.execute('Train my brand voice agent based on my persona calibration.');
@@ -523,7 +524,7 @@ describe('GeneralistAgent Routing Logic', () => {
         it('routes Visual Style Reference to Director Agent', async () => {
             mockDelegationResponse('director', 'Process visual training and style reference');
             
-            const { TOOL_REGISTRY } = await import('@/services/agent/tools/index');
+            const { TOOL_REGISTRY } = await importWithRetry(() => import('@/services/agent/tools/index'));
             const delegateSpy = vi.mocked(TOOL_REGISTRY.delegate_task);
 
             await agent.execute('Use these previous covers as a style reference for visual training.');
@@ -535,7 +536,7 @@ describe('GeneralistAgent Routing Logic', () => {
             // "Add my manager Sarah" -> Should NOT delegate to a specialist
             mockMultiTurnResponse([{ text: 'I will add Sarah to your workspace with editor permissions.' }]);
             
-            const { TOOL_REGISTRY } = await import('@/services/agent/tools/index');
+            const { TOOL_REGISTRY } = await importWithRetry(() => import('@/services/agent/tools/index'));
             const delegateSpy = vi.mocked(TOOL_REGISTRY.delegate_task);
 
             await agent.execute('Add my manager, Sarah, to this project with editor permissions.');
@@ -546,7 +547,7 @@ describe('GeneralistAgent Routing Logic', () => {
         it('routes Native Platform actions to Social Agent', async () => {
             mockDelegationResponse('social', 'Post exclusive update to indii feed');
             
-            const { TOOL_REGISTRY } = await import('@/services/agent/tools/index');
+            const { TOOL_REGISTRY } = await importWithRetry(() => import('@/services/agent/tools/index'));
             const delegateSpy = vi.mocked(TOOL_REGISTRY.delegate_task);
 
             await agent.execute('Post an exclusive update to my indii feed.');

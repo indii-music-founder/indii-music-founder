@@ -5,6 +5,7 @@ import type { StoreState } from '@/core/store';
 
 import type { AgentMode } from '@/core/store/slices/agent';
 import { wrapTool, toolError } from '../utils/ToolUtils';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 // ============================================================================
 // Types for CoreTools
@@ -23,10 +24,10 @@ export const CoreTools = {
         sharedContext?: string;
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     }, context, toolContext) => {
-        const { agentService } = await import('../AgentService');
-        const { toolError } = await import('../utils/ToolUtils');
-        const { VALID_AGENT_IDS, VALID_AGENT_IDS_LIST } = await import('../types');
-        const { DelegationLoopDetector } = await import('../LoopDetector');
+        const { agentService } = await importWithRetry(() => import('../AgentService'));
+        const { toolError } = await importWithRetry(() => import('../utils/ToolUtils'));
+        const { VALID_AGENT_IDS, VALID_AGENT_IDS_LIST } = await importWithRetry(() => import('../types'));
+        const { DelegationLoopDetector } = await importWithRetry(() => import('../LoopDetector'));
 
         if (typeof args.targetAgentId !== 'string' || typeof args.task !== 'string') {
             return toolError('Invalid delegation parameters', 'INVALID_ARGS');
@@ -67,7 +68,7 @@ export const CoreTools = {
         content: string;
         type?: string;
     }, context, toolContext) => {
-        const { useStore } = await import('@/core/store');
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
         // Use toolContext to get the state action if possible, 
         // fall back to global store for actions that mutate outside transaction scope
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -93,7 +94,7 @@ export const CoreTools = {
     }),
 
     set_mode: wrapTool('set_mode', async (args: { mode: string }, context, toolContext) => {
-        const { useStore } = await import('@/core/store');
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
         const state = toolContext?.getState() || useStore.getState();
         const { setAgentMode } = useStore.getState(); // Actions still via global store for now
         const currentMode = (state as Partial<StoreState>).agentMode;
@@ -126,8 +127,8 @@ export const CoreTools = {
     }) => {
         // Intelligence-driven negotiation simulation using Gemini
         try {
-            const { AutonomousIntelligence } = await import('@/services/intelligence/AutonomousIntelligence');
-            const { INTELLIGENCE_MODELS } = await import('@/core/config/intelligence-models');
+            const { AutonomousIntelligence } = await importWithRetry(() => import('@/services/intelligence/AutonomousIntelligence'));
+            const { INTELLIGENCE_MODELS } = await importWithRetry(() => import('@/core/config/intelligence-models'));
 
             const prompt = `Simulate a 3-turn multi-agent negotiation in the music industry.
 Agent A (${args.initiatingAgentId}) initiates. Agent B (${args.targetAgentId}) responds.
@@ -193,8 +194,8 @@ Each log entry: "[AgentId] concise 1-sentence message". No markdown.`;
         }> = [];
 
         try {
-            const { db, auth } = await import('@/services/firebase');
-            const { collection, query, where, getDocs, Timestamp } = await import('firebase/firestore');
+            const { db, auth } = await importWithRetry(() => import('@/services/firebase'));
+            const { collection, query, where, getDocs, Timestamp } = await importWithRetry(() => import('firebase/firestore'));
 
             const uid = auth.currentUser?.uid;
             if (uid) {
@@ -272,8 +273,8 @@ Each log entry: "[AgentId] concise 1-sentence message". No markdown.`;
     }),
 
     verify_output: wrapTool('verify_output', async (args: { goal: string, content: string }) => {
-        const { AutonomousIntelligence } = await import('@/services/intelligence/AutonomousIntelligence');
-        const { INTELLIGENCE_MODELS } = await import('@/core/config/intelligence-models');
+        const { AutonomousIntelligence } = await importWithRetry(() => import('@/services/intelligence/AutonomousIntelligence'));
+        const { INTELLIGENCE_MODELS } = await importWithRetry(() => import('@/core/config/intelligence-models'));
         const prompt = `Verify if the following content meets the goal.
         Goal: ${args.goal}
         Content: ${args.content}`;
@@ -309,7 +310,7 @@ Each log entry: "[AgentId] concise 1-sentence message". No markdown.`;
     }),
 
     read_history: wrapTool('read_history', async (_args, _context?: AgentContext, toolContext?: ToolExecutionContext) => {
-        const { useStore } = await import('@/core/store');
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
         const history = (toolContext
             ? toolContext.get('agentHistory')
             : useStore.getState().agentHistory) || [];

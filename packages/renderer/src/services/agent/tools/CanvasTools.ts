@@ -3,6 +3,7 @@ import type { AnyToolFunction } from '../types';
 import { logger } from '@/utils/logger';
 import type { CanvasContentType, CanvasData, CanvasPushPayload } from '@/types/AgentCanvas';
 import { secureRandomHex } from '@/utils/crypto-random';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 /**
  * ISSUE-035 Fix: Z-Index Ceiling for Canvas Shapes
@@ -63,7 +64,7 @@ export const CanvasTools = {
             };
 
             // Push to the store — dynamically import to avoid circular deps
-            const { useStore } = await import('@/core/store');
+            const { useStore } = await importWithRetry(() => import('@/core/store'));
             useStore.getState().pushCanvas(payload);
 
             logger.info(`[CanvasTools] Pushed "${title}" (${type}) to canvas`);
@@ -82,7 +83,7 @@ export const CanvasTools = {
      */
     canvas_clear: wrapTool('canvas_clear', async () => {
         try {
-            const { useStore } = await import('@/core/store');
+            const { useStore } = await importWithRetry(() => import('@/core/store'));
             useStore.getState().clearCanvas();
             logger.info('[CanvasTools] Canvas cleared');
             return toolSuccess(null, 'Canvas cleared successfully.');
@@ -157,8 +158,8 @@ export const CanvasTools = {
             }
 
             // Fix ISSUE-053: Directly render to fabric.js canvas via canvasOps
-            const { canvasOps } = await import('@/modules/creative/services/CanvasOperationsService');
-            const fabric = await import('fabric');
+            const { canvasOps } = await importWithRetry(() => import('@/modules/creative/services/CanvasOperationsService'));
+            const fabric = await importWithRetry(() => import('fabric'));
             const canvas = canvasOps.getCanvas();
 
             if (!canvas) {

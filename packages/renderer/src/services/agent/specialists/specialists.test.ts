@@ -2,6 +2,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { agentRegistry } from '../registry';
 import { MembershipService } from '@/services/MembershipService';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 // Mock TOOL_REGISTRY to avoid circular dependency issues in test environment
 vi.mock('../tools/index', () => ({
@@ -128,7 +129,7 @@ describe('Specialist Agents Connection', () => {
         // We can't easily inspect the private/protected execution logic without spying on AutonomousIntelligence.generateContent
         // But we can check if the tools are being passed correctly
 
-        const { AutonomousIntelligence } = await import('@/services/intelligence/AutonomousIntelligence');
+        const { AutonomousIntelligence } = await importWithRetry(() => import('@/services/intelligence/AutonomousIntelligence'));
         await brandAgent.execute('Test Task', {});
 
         const tools = vi.mocked(AutonomousIntelligence.generateContentStream).mock.calls[0]?.[4] as unknown[] || []; // safe access

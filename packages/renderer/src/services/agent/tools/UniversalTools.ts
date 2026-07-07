@@ -1,5 +1,6 @@
 import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 /**
  * Universal Tools
@@ -38,7 +39,7 @@ export const UniversalTools = {
      * Alias for generate_image.
      */
     indii_image_gen: wrapTool('indii_image_gen', async (args: { prompt: string; aspect_ratio?: string }) => {
-        const { DirectorTools } = await import('@/services/agent/tools/DirectorTools');
+        const { DirectorTools } = await importWithRetry(() => import('@/services/agent/tools/DirectorTools'));
         if (DirectorTools.generate_image) {
             return DirectorTools.generate_image(args, undefined, undefined);
         }
@@ -103,7 +104,7 @@ export const UniversalTools = {
      * Can be linked to request_approval.
      */
     payment_gate: wrapTool('payment_gate', async (args: { amount: number; vendor: string; reason: string }) => {
-        const { CoreTools } = await import('./CoreTools');
+        const { CoreTools } = await importWithRetry(() => import('./CoreTools'));
         const content = `Authorize payment of $${args.amount} to ${args.vendor} for: ${args.reason}`;
         return CoreTools.request_approval!({ content, type: 'payment' }, undefined, undefined);
     }),
@@ -130,8 +131,8 @@ export const UniversalTools = {
             }
 
             // 2. Query AutonomousIntelligence
-            const { AutonomousIntelligence, getResponseText } = await import('@/services/intelligence/AutonomousIntelligence');
-            const { getFineTunedModel } = await import('../fine-tuned-models');
+            const { AutonomousIntelligence, getResponseText } = await importWithRetry(() => import('@/services/intelligence/AutonomousIntelligence'));
+            const { getFineTunedModel } = await importWithRetry(() => import('../fine-tuned-models'));
 
             const systemPrompt = `You are the Publishing Manager for indii. Analyze performing rights organizations (ASCAP, BMI, SESAC, PRS, GEMA, etc.) registry records. Return a structured breakdown containing work title, ISWC, writer names, publisher names, split percentages, and society affiliations. If exact details are not in the provided search context, use your comprehensive internal knowledge base of registered musical works.`;
             const prompt = `Society Requested: ${society}\nSearch Query: ${args.query}\n\nSearch Context:\n${searchContext || 'No live web search context available'}`;
@@ -175,7 +176,7 @@ export const UniversalTools = {
 
             // 2. Fallback to searching user contracts if no content yet
             if (!docContent) {
-                const { LegalService } = await import('@/services/legal/LegalService');
+                const { LegalService } = await importWithRetry(() => import('@/services/legal/LegalService'));
                 const contracts = await LegalService.getContracts();
                 
                 const match = contracts.find(c => 
@@ -198,8 +199,8 @@ export const UniversalTools = {
             }
 
             // 3. Query the content using the legal/licensing agent intelligence
-            const { AutonomousIntelligence, getResponseText } = await import('@/services/intelligence/AutonomousIntelligence');
-            const { getFineTunedModel } = await import('../fine-tuned-models');
+            const { AutonomousIntelligence, getResponseText } = await importWithRetry(() => import('@/services/intelligence/AutonomousIntelligence'));
+            const { getFineTunedModel } = await importWithRetry(() => import('../fine-tuned-models'));
 
             const systemPrompt = `You are the Legal Counsel for indii. Analyze the provided contract/document content. Support your answers with exact quotes and clause citations where applicable. Always include the disclaimer: "I am an AI, not a lawyer. This is for informational purposes only."`;
             const prompt = `Document Title/Source: ${fileName}\n\nDocument Content:\n${docContent}\n\nUser Query: ${args.query}`;

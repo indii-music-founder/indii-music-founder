@@ -19,6 +19,7 @@ import { BaseAgent } from '../BaseAgent';
 import type { AgentConfig, ValidAgentId } from '../types';
 import { MembershipService } from '@/services/MembershipService';
 import { SPOKE_AGENT_IDS, HUB_ONLY_TOOLS } from './AgentStressTest.harness';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 // ============================================================================
 // Module mocks (must be at top-level for vi.mock hoisting)
@@ -375,9 +376,9 @@ describe('BaseAgent Runtime Tool Authorization', () => {
     it('definition-based agents export authorizedTools as non-empty arrays', async () => {
         // Sample 3 representative production agents to confirm Task 1 was applied correctly.
         // Full coverage is verified by grep in CI.
-        const { FinanceAgent } = await import('../definitions/FinanceAgent');
-        const { MarketingAgent } = await import('../definitions/MarketingAgent');
-        const { DevOpsAgent } = await import('../definitions/DevOpsAgent');
+        const { FinanceAgent } = await importWithRetry(() => import('../definitions/FinanceAgent'));
+        const { MarketingAgent } = await importWithRetry(() => import('../definitions/MarketingAgent'));
+        const { DevOpsAgent } = await importWithRetry(() => import('../definitions/DevOpsAgent'));
 
         expect(Array.isArray(FinanceAgent.authorizedTools)).toBe(true);
         expect((FinanceAgent.authorizedTools?.length ?? 0)).toBeGreaterThan(0);

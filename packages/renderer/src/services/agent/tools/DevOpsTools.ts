@@ -4,6 +4,7 @@ import { httpsCallable } from 'firebase/functions';
 import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 import { logger } from '@/utils/logger';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 // Tool: DevOps Infrastructure (Real GKE/GCE via Cloud Functions)
 // This tool interacts with Google Cloud Platform services through Firebase Cloud Functions.
@@ -56,7 +57,7 @@ interface RestartResult {
  * Prevents Agent hallucination or injection from triggering destructive infra changes.
  */
 async function requireApproval(action: string, details: string): Promise<boolean> {
-    const { useStore } = await import('@/core/store');
+    const { useStore } = await importWithRetry(() => import('@/core/store'));
     const { requestApproval } = useStore.getState();
     const approved = await requestApproval(
         `[DevOps Security] Agent is requesting to execute: **${action}**\n\nDetails: ${details}`,

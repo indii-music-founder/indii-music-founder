@@ -5,6 +5,7 @@ import type { AnyToolFunction } from '../types';
 import { db, auth } from '@/services/firebase';
 import { collection, doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
 import { logger } from '@/utils/logger';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 export const MusicTools = {
     /**
@@ -17,7 +18,7 @@ export const MusicTools = {
         trackTitle?: string,
         releaseType?: 'Single' | 'EP' | 'Album'
     }) => {
-        const { useStore } = await import('@/core/store');
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
         const { uploadedAudio } = useStore.getState();
 
         const audioItem = uploadedAudio[args.uploadedAudioIndex];
@@ -52,7 +53,7 @@ export const MusicTools = {
      * Verifies if a metadata object meets the industrial "Golden Standard".
      */
     verify_metadata_golden: wrapTool('verify_metadata_golden', async (args: { metadata: any }) => {
-        const { ExtendedGoldenMetadataSchema } = await import('@/services/distribution/proprietary-ingestion/validation');
+        const { ExtendedGoldenMetadataSchema } = await importWithRetry(() => import('@/services/distribution/proprietary-ingestion/validation'));
 
         const result = ExtendedGoldenMetadataSchema.safeParse(args.metadata);
 
@@ -86,7 +87,7 @@ export const MusicTools = {
         trackId: string,
         updates: Partial<any>
     }) => {
-        const { trackLibrary } = await import('@/services/metadata/TrackLibraryService');
+        const { trackLibrary } = await importWithRetry(() => import('@/services/metadata/TrackLibraryService'));
 
         const existing = await trackLibrary.getByFingerprint(args.trackId);
         if (!existing) return toolError("Track not found in library.", "NOT_FOUND");
@@ -102,7 +103,7 @@ export const MusicTools = {
      * Extracts BPM, key, energy, genre, mood, and visual prompts.
      */
     analyze_audio: wrapTool('analyze_audio', async (args: { uploadedAudioIndex: number }) => {
-        const { useStore } = await import('@/core/store');
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
         const { uploadedAudio } = useStore.getState();
 
         const audioItem = uploadedAudio[args.uploadedAudioIndex];
@@ -111,7 +112,7 @@ export const MusicTools = {
         }
 
         try {
-            const { audioIntelligence } = await import('@/services/audio/AudioIntelligenceService');
+            const { audioIntelligence } = await importWithRetry(() => import('@/services/audio/AudioIntelligenceService'));
             
             // Fetch audio blob
             const fetchRes = await fetch(audioItem.url);
@@ -136,7 +137,7 @@ export const MusicTools = {
      * Extracts characteristics specifically tuned for isolated stems like vocals or drums.
      */
     analyze_audio_stem: wrapTool('analyze_audio_stem', async (args: { uploadedAudioIndex: number, stemType: string }) => {
-        const { useStore } = await import('@/core/store');
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
         const { uploadedAudio } = useStore.getState();
 
         const audioItem = uploadedAudio[args.uploadedAudioIndex];
@@ -145,7 +146,7 @@ export const MusicTools = {
         }
 
         try {
-            const { audioIntelligence } = await import('@/services/audio/AudioIntelligenceService');
+            const { audioIntelligence } = await importWithRetry(() => import('@/services/audio/AudioIntelligenceService'));
             
             // Fetch audio blob
             const fetchRes = await fetch(audioItem.url);
@@ -170,7 +171,7 @@ export const MusicTools = {
      * Useful for quick synchronization checks without full semantic overhead.
      */
     detect_bpm_and_key: wrapTool('detect_bpm_and_key', async (args: { uploadedAudioIndex: number }) => {
-        const { useStore } = await import('@/core/store');
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
         const { uploadedAudio } = useStore.getState();
 
         const audioItem = uploadedAudio[args.uploadedAudioIndex];
@@ -179,7 +180,7 @@ export const MusicTools = {
         }
 
         try {
-            const { audioAnalysisService } = await import('@/services/audio/AudioAnalysisService');
+            const { audioAnalysisService } = await importWithRetry(() => import('@/services/audio/AudioAnalysisService'));
             
             // Fetch audio blob
             const fetchRes = await fetch(audioItem.url);

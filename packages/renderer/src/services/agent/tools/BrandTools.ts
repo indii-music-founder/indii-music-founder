@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 /** Typed Electron IPC bridge for brand tools */
 interface ElectronBrandBridge {
@@ -205,8 +206,8 @@ export const BrandTools = {
 
     save_brand_kit: wrapTool('save_brand_kit', async (args: { name: string; values: string[]; colors?: string[]; typography?: string[] }) => {
         try {
-            const { db, auth } = await import('@/services/firebase');
-            const { doc, setDoc, serverTimestamp } = await import('firebase/firestore');
+            const { db, auth } = await importWithRetry(() => import('@/services/firebase'));
+            const { doc, setDoc, serverTimestamp } = await importWithRetry(() => import('firebase/firestore'));
 
             const uid = auth.currentUser?.uid;
             if (!uid) {
@@ -232,8 +233,8 @@ export const BrandTools = {
 
     load_brand_kit: wrapTool('load_brand_kit', async () => {
         try {
-            const { db, auth } = await import('@/services/firebase');
-            const { doc, getDoc } = await import('firebase/firestore');
+            const { db, auth } = await importWithRetry(() => import('@/services/firebase'));
+            const { doc, getDoc } = await importWithRetry(() => import('firebase/firestore'));
 
             const uid = auth.currentUser?.uid;
             if (!uid) {

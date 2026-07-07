@@ -10,6 +10,7 @@ import { wrapTool, toolError } from '../utils/ToolUtils';
 import type { AnyToolFunction, AgentContext } from '../types';
 import type { ToolExecutionContext } from '../ToolExecutionContext';
 import { logger } from '@/utils/logger';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 export const CoreVaultTools = {
     /**
@@ -23,7 +24,7 @@ export const CoreVaultTools = {
             _context?: AgentContext,
             toolContext?: ToolExecutionContext
         ) => {
-            const { useStore } = await import('@/core/store');
+            const { useStore } = await importWithRetry(() => import('@/core/store'));
             const userId = toolContext
                 ? toolContext.get('user')?.uid
                 : useStore.getState().user?.uid;
@@ -77,7 +78,7 @@ export const CoreVaultTools = {
             _context?: AgentContext,
             toolContext?: ToolExecutionContext
         ) => {
-            const { useStore } = await import('@/core/store');
+            const { useStore } = await importWithRetry(() => import('@/core/store'));
             const userId = toolContext
                 ? toolContext.get('user')?.uid
                 : useStore.getState().user?.uid;
@@ -134,7 +135,7 @@ export const CoreVaultTools = {
             _context?: AgentContext,
             toolContext?: ToolExecutionContext
         ) => {
-            const { useStore } = await import('@/core/store');
+            const { useStore } = await importWithRetry(() => import('@/core/store'));
             const userId = toolContext
                 ? toolContext.get('user')?.uid
                 : useStore.getState().user?.uid;
@@ -180,7 +181,7 @@ export const CoreVaultTools = {
             _context?: AgentContext,
             toolContext?: ToolExecutionContext
         ) => {
-            const { useStore } = await import('@/core/store');
+            const { useStore } = await importWithRetry(() => import('@/core/store'));
             const userId = toolContext
                 ? toolContext.get('user')?.uid
                 : useStore.getState().user?.uid;

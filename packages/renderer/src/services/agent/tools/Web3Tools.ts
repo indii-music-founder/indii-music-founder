@@ -3,6 +3,7 @@ import { AutonomousIntelligence, getResponseText } from '@/services/intelligence
 import { logger } from '@/utils/logger';
 import type { AnyToolFunction } from '../types';
 import { getFineTunedModel } from '../fine-tuned-models';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 export const Web3Tools = {
     /**
@@ -56,8 +57,8 @@ Return ONLY the complete Solidity source code, no markdown fences.`;
 
             // Persist the generated contract metadata/source for the user
             try {
-                const { db, auth } = await import('@/services/firebase');
-                const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
+                const { db, auth } = await importWithRetry(() => import('@/services/firebase'));
+                const { collection, addDoc, serverTimestamp } = await importWithRetry(() => import('firebase/firestore'));
                 const uid = auth.currentUser?.uid;
                 if (uid) {
                     await addDoc(collection(db, 'users', uid, 'web3Contracts'), {
@@ -93,8 +94,8 @@ Return ONLY the complete Solidity source code, no markdown fences.`;
      */
     trace_blockchain_royalty: wrapTool('trace_blockchain_royalty', async (args: { isrc: string; totalRevenue: number }) => {
         try {
-            const { db, auth } = await import('@/services/firebase');
-            const { collection, query, where, getDocs } = await import('firebase/firestore');
+            const { db, auth } = await importWithRetry(() => import('@/services/firebase'));
+            const { collection, query, where, getDocs } = await importWithRetry(() => import('firebase/firestore'));
 
             const uid = auth.currentUser?.uid;
             if (uid) {
@@ -140,8 +141,8 @@ Return ONLY the complete Solidity source code, no markdown fences.`;
         const previewUrl = `https://app.indii.music/preview/${slug}?gate=${args.tokenContractAddress}`;
 
         try {
-            const { db, auth } = await import('@/services/firebase');
-            const { doc, setDoc, serverTimestamp } = await import('firebase/firestore');
+            const { db, auth } = await importWithRetry(() => import('@/services/firebase'));
+            const { doc, setDoc, serverTimestamp } = await importWithRetry(() => import('firebase/firestore'));
             const uid = auth.currentUser?.uid;
             if (uid) {
                 await setDoc(doc(db, 'users', uid, 'tokenGates', args.tokenContractAddress), {

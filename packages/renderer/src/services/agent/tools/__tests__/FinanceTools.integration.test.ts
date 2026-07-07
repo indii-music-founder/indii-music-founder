@@ -45,6 +45,7 @@ vi.mock('@/core/config/intelligence-models', () => ({
 
 // ── Import under test ─────────────────────────────────────────────────────────
 import { FinanceTools } from '../FinanceTools';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function isToolSuccess(result: unknown): boolean {
@@ -73,7 +74,7 @@ describe.skip('FinanceTools', () => {
 
     describe.skip('initiate_split_escrow', () => {
         it('fails closed when Cloud Function is unavailable', async () => {
-            const { httpsCallable } = await import('firebase/functions');
+            const { httpsCallable } = await importWithRetry(() => import('firebase/functions'));
             vi.mocked(httpsCallable).mockReturnValue((() => {
                 throw new Error('Function not deployed');
             }) as unknown as import('firebase/functions').HttpsCallable<unknown, unknown, unknown>);
@@ -91,7 +92,7 @@ describe.skip('FinanceTools', () => {
         });
 
         it('returns escrow data when Cloud Function succeeds', async () => {
-            const { httpsCallable } = await import('firebase/functions');
+            const { httpsCallable } = await importWithRetry(() => import('firebase/functions'));
             vi.mocked(httpsCallable).mockReturnValue(
                 vi.fn().mockResolvedValue({
                     data: { escrowAccount: 'acct_test123', status: 'PENDING_SIGNATURES' },

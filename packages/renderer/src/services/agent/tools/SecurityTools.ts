@@ -5,6 +5,7 @@ import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 import { logger } from '@/utils/logger';
 import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 /**
  * Security Tools
@@ -174,7 +175,7 @@ export const SecurityTools = {
             if (isFirebaseE2EMockEnabled()) {
                 return toolSuccess({ status: 'MOCK_E2E', log_count: 0, logs: [], project_id });
             }
-            const { collection, getDocs, query, orderBy, limit } = await import('firebase/firestore');
+            const { collection, getDocs, query, orderBy, limit } = await importWithRetry(() => import('firebase/firestore'));
             const q = query(collection(db, 'audit_logs'), orderBy('timestamp', 'desc'), limit(50));
             const snap = await getDocs(q);
             const logs = snap.docs.map(d => ({ id: d.id, ...(d.data() as Record<string, unknown> & { severity?: string }) }));

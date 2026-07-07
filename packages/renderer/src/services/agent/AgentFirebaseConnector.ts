@@ -2,7 +2,7 @@ import { FirestoreService } from '@/services/FirestoreService';
 import { AgentMessage } from '@/core/store/slices/agent/agentSessionSlice';
 import { auth } from '@/services/firebase';
 import { logger } from '@/utils/logger';
-import { Timestamp, where, orderBy, query, onSnapshot, type Unsubscribe } from 'firebase/firestore';
+import { Timestamp } from 'firebase/firestore';
 import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 
 /**
@@ -86,52 +86,6 @@ class AgentFirebaseConnectorImpl extends FirestoreService<BoardroomMessageDocume
             logger.error(`[AgentFirebaseConnector] Failed to sync message ${msg.id} to Firestore:`, error);
             throw error;
         }
-    }
-
-    /**
-     * Subscribe to all boardroom messages for the given user, ordered by timestamp ascending.
-     * Returns an unsubscribe function. Calls onUpdate with the mapped AgentMessage array on each change.
-     * ISSUE-602: Enables real-time cross-device sync of boardroom history via the boardroom_messages collection.
-     */
-    subscribeToUserMessages(
-        userId: string,
-        onUpdate: (messages: AgentMessage[]) => void,
-        onError?: (error: Error) => void
-    ): Unsubscribe {
-        if (isFirebaseE2EMockEnabled()) {
-            // E2E mode: emit empty list and return no-op unsubscribe
-            onUpdate([]);
-            return () => {};
-        }
-
-        const q = query(
-            this.collection,
-            where('userId', '==', userId),
-            orderBy('timestamp', 'asc')
-        );
-
-        return onSnapshot(
-            q,
-            (snapshot) => {
-                const messages: AgentMessage[] = snapshot.docs.map(docSnap => {
-                    const data = docSnap.data() as BoardroomMessageDocument;
-                    return {
-                        ...data,
-                        id: docSnap.id,
-                        timestamp: data.timestamp?.toMillis?.() ?? Date.now(),
-                        thoughts: data.thoughts?.map(t => ({
-                            ...t,
-                            timestamp: t.timestamp?.toMillis?.() ?? Date.now(),
-                        })) ?? [],
-                    } as AgentMessage;
-                });
-                onUpdate(messages);
-            },
-            (error) => {
-                logger.error('[AgentFirebaseConnector] boardroom_messages subscription error:', error);
-                if (onError) onError(error);
-            }
-        );
     }
 }
 

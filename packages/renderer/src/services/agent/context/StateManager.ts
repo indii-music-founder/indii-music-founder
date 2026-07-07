@@ -1,5 +1,6 @@
 import type { StoreState } from '@/core/store';
 import { logger } from '@/utils/logger';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 /**
  * Manages state snapshots for rollback capabilities.
@@ -14,7 +15,7 @@ export class StateManager {
      * @param slices Optional list of specific slices to capture (defaults to all safe slices)
      */
     async captureSnapshot(transactionId: string, slices: (keyof StoreState)[] = []) {
-        const { useStore } = await import('@/core/store');
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
         const state = useStore.getState();
         const snapshot: Partial<StoreState> = {};
 
@@ -64,7 +65,7 @@ export class StateManager {
         const snapshot = this.snapshots.get(transactionId);
         if (snapshot) {
             logger.warn(`[StateManager] Restoring snapshot for ${transactionId}`);
-            const { useStore } = await import('@/core/store');
+            const { useStore } = await importWithRetry(() => import('@/core/store'));
             useStore.setState(snapshot);
             this.snapshots.delete(transactionId);
         } else {

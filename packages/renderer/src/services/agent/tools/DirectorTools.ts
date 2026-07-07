@@ -9,6 +9,7 @@ import type { ToolFunctionArgs, AnyToolFunction } from '../types';
 import type { ToolExecutionContext } from '../ToolExecutionContext';
 import { MusicTools } from './MusicTools';
 import { CanvasTools } from './CanvasTools';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 /**
  * Extracts a specific frame from a 2x2 grid image using Canvas API.
@@ -101,7 +102,7 @@ interface SetEntityAnchorArgs extends ToolFunctionArgs {
 
 export const DirectorTools: Record<string, AnyToolFunction> = {
     generate_image: wrapTool('generate_image', async (args: GenerateImageArgs) => {
-        const { useStore } = await import('@/core/store');
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
         const { studioControls, addToHistory, currentProjectId, userProfile, whiskState } = useStore.getState();
 
         let sourceImages: { mimeType: string; data: string }[] | undefined;
@@ -147,7 +148,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
         );
 
         if (hasWhiskRefs) {
-            const { WhiskService } = await import('@/services/WhiskService');
+            const { WhiskService } = await importWithRetry(() => import('@/services/WhiskService'));
             finalPrompt = WhiskService.synthesizeWhiskPrompt(args.prompt, whiskState);
 
             // If no source images yet and precise mode is on, get them from Whisk
@@ -162,7 +163,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
         // Get aspect ratio from locked style preset (if any)
         let effectiveAspectRatio = args.aspectRatio || studioControls.aspectRatio || '1:1';
         if (hasWhiskRefs) {
-            const { WhiskService } = await import('@/services/WhiskService');
+            const { WhiskService } = await importWithRetry(() => import('@/services/WhiskService'));
             const lockedAspectRatio = await WhiskService.getLockedAspectRatio(whiskState);
             if (lockedAspectRatio) {
                 effectiveAspectRatio = lockedAspectRatio;
@@ -212,7 +213,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
     }),
 
     batch_edit_images: wrapTool('batch_edit_images', async (args: { prompt: string, imageIndices?: number[] }) => {
-        const { useStore } = await import('@/core/store');
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
         const { uploadedImages, addToHistory, currentProjectId, addAgentMessage } = useStore.getState();
 
         if (uploadedImages.length === 0) {
@@ -294,7 +295,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
      * Unified High-Res Asset Tool for production-grade creative (4K)
      */
     generate_high_res_asset: wrapTool('generate_high_res_asset', async (args: GenerateHighResAssetArgs) => {
-        const { useStore } = await import('@/core/store');
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
         const { userProfile, currentProjectId, addToHistory } = useStore.getState();
 
         const isCover = ['cd_front', 'cd_back', 'vinyl_jacket', 'jacket', 'vinyl', 'booklet', 'cover'].includes(args.templateType);
@@ -340,7 +341,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
      * Renders a 2x2 grid of storyboards for visual planning.
      */
     render_cinematic_grid: wrapTool('render_cinematic_grid', async (args: { prompt: string }, context, toolContext) => {
-        const { useStore } = await import('@/core/store');
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
         const { userProfile, characterReferences, currentProjectId, addToHistory } = useStore.getState();
 
         // Include the first subject reference if available as a character anchor
@@ -392,7 +393,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
     }),
 
     extract_grid_frame: wrapTool('extract_grid_frame', async (args: ExtractGridFrameArgs, context, toolContext) => {
-        const { useStore } = await import('@/core/store');
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
         const { generatedHistory, addToHistory, currentProjectId } = useStore.getState();
 
         let sourceImage;
@@ -443,7 +444,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
     }),
 
     set_entity_anchor: wrapTool('set_entity_anchor', async (args: SetEntityAnchorArgs) => {
-        const { useStore } = await import('@/core/store');
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
         const { addToHistory, addCharacterReference, currentProjectId, whiskState } = useStore.getState();
 
         if (!args.image || !args.image.startsWith('data:image')) {
@@ -485,7 +486,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
     }),
 
     canvas_push: wrapTool('canvas_push', async (args: { assetId: string; label?: string }) => {
-        const { useStore } = await import('@/core/store');
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
         const { generatedHistory } = useStore.getState();
         
         const asset = generatedHistory.find(h => h.id === args.assetId);
@@ -504,7 +505,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
     }),
 
     generate_moodboard: wrapTool('generate_moodboard', async (args: { theme: string, style?: string }) => {
-        const { useStore } = await import('@/core/store');
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
         const { userProfile, currentProjectId, addToHistory } = useStore.getState();
         try {
             const effectivePrompt = `A professional design moodboard for the theme "${args.theme}". ${args.style ? `Style: ${args.style}. ` : ''}Including color palettes, textures, and typography inspiration, cohesive visual aesthetic, high resolution, laid out as a moodboard collage`;

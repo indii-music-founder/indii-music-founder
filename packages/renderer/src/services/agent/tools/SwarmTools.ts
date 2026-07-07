@@ -4,6 +4,7 @@ import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
 import { logger } from '@/utils/logger';
 import { validateHubAndSpoke } from '../types';
 import { agentIdentityService } from '../governance/AgentIdentity';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 /**
  * consult_specialist - A2A Swarm communication tool (canonical, single source of truth).
@@ -157,8 +158,8 @@ export const seat_agent = wrapTool(
     'seat_agent',
     async (args: { targetAgentId: string }): Promise<ToolFunctionResult> => {
         const { targetAgentId } = args;
-        const { useStore } = await import('@/core/store');
-        const { VALID_AGENT_IDS } = await import('../types');
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
+        const { VALID_AGENT_IDS } = await importWithRetry(() => import('../types'));
 
         if (!(VALID_AGENT_IDS as readonly string[]).includes(targetAgentId)) {
             return toolError(`Invalid agent ID "${targetAgentId}". Valid agent IDs are: ${VALID_AGENT_IDS.join(', ')}`);
@@ -184,8 +185,8 @@ export const unseat_agent = wrapTool(
     'unseat_agent',
     async (args: { targetAgentId: string }): Promise<ToolFunctionResult> => {
         const { targetAgentId } = args;
-        const { useStore } = await import('@/core/store');
-        const { VALID_AGENT_IDS } = await import('../types');
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
+        const { VALID_AGENT_IDS } = await importWithRetry(() => import('../types'));
 
         if (!(VALID_AGENT_IDS as readonly string[]).includes(targetAgentId)) {
             return toolError(`Invalid agent ID "${targetAgentId}". Valid IDs: ${VALID_AGENT_IDS.join(', ')}`);

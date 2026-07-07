@@ -6,10 +6,11 @@ import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { wrapTool, toolError } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 import { devKnowledgeService } from '@/services/knowledge/DevKnowledgeService';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 export const KnowledgeTools = {
     search_knowledge: wrapTool('search_knowledge', async (args: { query: string }) => {
-        const { useStore } = await import('@/core/store');
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
         const store = useStore.getState();
         const userProfile = store.userProfile;
 
