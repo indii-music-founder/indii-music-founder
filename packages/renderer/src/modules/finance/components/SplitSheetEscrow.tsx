@@ -45,37 +45,12 @@ export function SplitSheetEscrow() {
      */
     const handleReleaseFunds = async () => {
         if (!allSigned || releasing) return;
-        setReleasing(true);
-        setReleaseError(null);
-
-        const functions = getFunctions();
-        const createTransfer = httpsCallable<
-            { amount: number; destinationId: string; currency?: string },
-            { transferId: string }
-        >(functions, 'createTransfer');
-
-        try {
-            // Only attempt real transfers for collaborators with a connected account.
-            // Others are acknowledged but not transferred (they need to complete onboarding first).
-            const connectedCollaborators = collaborators.filter(c => c.accountId);
-            const totalCents = Math.round(escrowAmount * 100);
-            let remainingCents = totalCents;
-
-            const transferPromises = connectedCollaborators.map((c, index) => {
-                const isLast = index === connectedCollaborators.length - 1;
-                const splitAmount = isLast ? remainingCents : Math.round((totalCents * c.splitPct) / 100);
-                remainingCents -= splitAmount;
-                return createTransfer({ amount: splitAmount, destinationId: c.accountId! });
-            });
-
-            await Promise.all(transferPromises);
-            setReleased(true);
-        } catch (err: unknown) {
-            logger.error('[SplitSheetEscrow] Transfer failed:', err);
-            setReleaseError(err instanceof Error ? err.message : 'Transfer failed. Please try again.');
-        } finally {
-            setReleasing(false);
-        }
+        
+        // ISSUE-720: Real money transfers via raw createTransfer without idempotency 
+        // or persistent backend state risk double-payouts on retry/refresh.
+        // Also currently fails for non-admins due to token claim requirements.
+        // Disabled until the backend releaseEscrow flow is rebuilt.
+        setReleaseError('Feature temporarily disabled: Escrow release requires idempotency protection and backend signature verification before payout. Please contact support to release these funds.');
     };
 
     /**
