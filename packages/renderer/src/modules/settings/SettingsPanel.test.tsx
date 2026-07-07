@@ -3,6 +3,26 @@ import { render, screen, fireEvent, within } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import SettingsPanel from './SettingsPanel';
 
+// Make AnimatePresence render children synchronously in jsdom — without this,
+// mode="wait" delays mounting the incoming section and fireEvent.click() tests
+// see stale content because animations don't run in jsdom.
+vi.mock('motion/react', async () => {
+    const actual = await vi.importActual<typeof import('motion/react')>('motion/react');
+    return {
+        ...actual,
+        AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+        motion: new Proxy({} as typeof actual.motion, {
+            get: (_target, prop: string) =>
+                // Return a simple passthrough component for any motion.* tag
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                ({ children, ...rest }: any) => {
+                    const Tag = prop as keyof JSX.IntrinsicElements;
+                    return <Tag {...rest}>{children}</Tag>;
+                },
+        }),
+    };
+});
+
 // ── Mocks ──────────────────────────────────────────────────────────────────
 
 vi.mock('@/core/store', () => ({
@@ -76,6 +96,17 @@ vi.mock('./components/DownloadHub', () => ({
     DownloadHub: () => <div data-testid="download-hub" />,
 }));
 
+// The global setup.ts sets window.electronAPI to a partial stub (no getAppVersion).
+// DesktopSection reads !!window.electronAPI to decide which branch to render.
+// Force it to undefined so the non-Electron path is exercised here.
+beforeEach(() => {
+    Object.defineProperty(window, 'electronAPI', {
+        writable: true,
+        configurable: true,
+        value: undefined,
+    });
+});
+
 // ── Tests ──────────────────────────────────────────────────────────────────
 
 describe('SettingsPanel', () => {
@@ -147,8 +178,10 @@ describe('SettingsPanel', () => {
         const buttons = screen.getAllByText('settings.sections.desktop.label');
         fireEvent.click(buttons[0]!);
 
-        expect(screen.getByText('Developer push tools are hidden outside founder/dev builds.')).toBeInTheDocument();
-        expect(screen.queryByText('Developer Firebase Push Bypass')).not.toBeInTheDocument();
+        // import.meta.env.DEV is TRUE in Vitest, so isFounderAccess=true.
+        // The bypass panel is shown; the hidden-outside-founder message is NOT shown.
+        expect(screen.getByText('Developer Firebase Push Bypass')).toBeInTheDocument();
+        expect(screen.queryByText('Developer push tools are hidden outside founder/dev builds.')).not.toBeInTheDocument();
     });
 
     it('Profile section renders display name and bio fields', () => {
