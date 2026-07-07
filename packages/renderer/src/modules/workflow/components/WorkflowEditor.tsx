@@ -80,8 +80,28 @@ const WorkflowEditorContent: React.FC<WorkflowEditorProps> = ({ readOnly = false
 
         if (!sourceNode || !targetNode) return false;
 
+        // 1. Cycle detection (DFS)
+        const isCycle = (startNodeId: string, targetNodeId: string, visited = new Set<string>()): boolean => {
+            if (startNodeId === targetNodeId) return true;
+            if (visited.has(startNodeId)) return false;
+            visited.add(startNodeId);
+            
+            const outgoingEdges = edges.filter(e => e.source === startNodeId);
+            for (const edge of outgoingEdges) {
+                if (isCycle(edge.target, targetNodeId, visited)) {
+                    return true;
+                }
+            }
+            return false;
+        };
+
+        // If tracing from the new target leads back to the new source, adding this connection would create a cycle.
+        if (isCycle(connection.target, connection.source)) {
+            return false;
+        }
+
         return validateConnection(sourceNode, targetNode, connection.sourceHandle, connection.targetHandle);
-    }, [nodes]);
+    }, [nodes, edges]);
 
     const onConnect = useCallback((params: Connection | Edge) => {
         if (readOnly) return;
