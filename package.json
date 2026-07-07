@@ -107,6 +107,7 @@
     "typescript": "^5.8.2",
     "typescript-eslint": "8.48.0",
     "utf-8-validate": "^5.0.2",
+    "ts-deepmerge": "8.0.0",
     "vitest": "^4.1.8"
   },
   "optionalDependencies": {
