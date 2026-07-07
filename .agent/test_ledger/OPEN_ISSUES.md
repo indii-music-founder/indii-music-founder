@@ -11443,3 +11443,13 @@ Rotating back to walking individual menus with the four lenses (double-click rac
 - **`knowledge/DocumentCard.tsx`:** FALSE POSITIVE — delegates to `KnowledgeBase.tsx:69` `handleDelete` which DOES `ConfirmDialog.call()`. Correct.
 - **Creative local-item deletes** (LayersPanel, CandidateReview, OmniWorkflow frame delete, DesignHistoryDrawer, CreativeGallery): in-session/unsaved working state where immediate deletion is expected UX — not flagged.
 - **`distribution/TerritoryRightsPanel` removeSplit/Set.delete:** unsaved form-state editing, not a persisted-record delete — not flagged.
+
+### Menu-walk four-lens rotation — summary (2026-07-06)
+
+Walked individual menus applying all four lenses (double-click races / authorization-IDOR / accessibility / error-honesty). Menus/surfaces covered: Creative hero bar (Image/Video/Mockup/Sequence), Mobile Remote (TransportBar), Social (CreatePostModal), Merch (MerchDesigner), Finance (ReceiptOCR + money-actions recap), plus two cross-menu sweeps (double-click guards on all AI-generation triggers; delete-confirmation across all modules).
+
+**New findings this rotation: 2** — ISSUE-737 (MED, TransportBar icon-only buttons no aria-label), ISSUE-738 (MED, CRM/History unconfirmed persisted deletes).
+
+**Additional clean bill:** `finance/ReceiptOCR.tsx` — exemplary on error-honesty (honest file-size + "analysis not available" failure messages, no fake success, finally block) AND double-click (`disabled={isAnalyzing}` on analyze, `disabled={addedToExpenses}` preventing duplicate expense entry).
+
+**Rotation conclusion:** the frontend is broadly well-built across all four lenses. Double-click guards are consistently present on expensive/writing actions; error handling is honest (multiple model examples: OmniWorkflow, InboxTab, EmailMarketingPanel, ReceiptOCR); accessibility is mostly good (main sidebar exemplary) with icon-only-button labeling as the one recurring gap (737 + noted CreativeNavbar/OmniWorkflow follow-up). The findings are isolated omissions against otherwise-solid conventions the codebase already uses correctly elsewhere — same shape as the backend authorization conclusion (good architecture, occasional missed check).
