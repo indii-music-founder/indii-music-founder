@@ -1,124 +1,82 @@
 # Handoff State
-**Updated:** 2026-07-07 08:13 EDT
+**Updated:** 2026-07-07 14:43 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+dfef68e2a docs(flowcharts): create device sync and brand asset micro diagram
+20495581d docs(ledger): document cross-device sync race condition in error ledger
+a8083fda6 fix(sync): resolve cross-device sync race condition
+ea02a2ad9 chore: session checkpoint [08:13]
 3ccb285a5 chore: resolve all 15 npm-audit moderate findings
 5b1a0602c chore: session checkpoint [08:04]
 14c67a99a fix(chat): remove break-all so words wrap at spaces not mid-word
 3f7922a17 fix(agent): remove mock data implementations to resolve HIGH severity issues
 876bba46c chore: session checkpoint [00:09]
 43c54cc5b docs(ledger): ISSUE-740 — stale-chunk defect is systemic across 3 divergent import-retry impls
-bee6f1f49 chore: session checkpoint [00:03]
-90c9ab781 docs(ledger): diagnose user-reported ISSUE-739 — 'No agent found for brand' is a stale-chunk load failure with no async recovery
-cba751883 test: fix CRMDashboard test after adding ConfirmDialog
-6bd2baca3 chore: fix issues 737 and 738 (accessibility and delete confirm)
 ```
 
 ## Working State
 ```
- M .agent/HANDOFF_STATE.md
+M  .agent/HANDOFF_STATE.md
  M .agent/test_ledger/OPEN_ISSUES.md
- M .agent/test_ledger/UNFINISHED_WORK.md
- M packages/main/src/services/BrowserAgentService.ts
+ M e2e/chat-interaction.spec.ts
+ M packages/admin-dashboard/server.ts
+ M packages/firebase/src/legal/mechanicalLicense.ts
+ M packages/firebase/src/relay/telegramWebhook.ts
+ M packages/main/src/preload.ts
+ M packages/renderer/src/core/AppShell.tsx
+ M packages/renderer/src/core/components/ChatOverlay.tsx
+ M packages/renderer/src/core/components/CommandBar.interaction.test.tsx
  M packages/renderer/src/core/components/ConversationHistoryList.tsx
+ M packages/renderer/src/core/components/RightPanel.tsx
+ M packages/renderer/src/core/components/chat/ChatMessage.tsx
+ M packages/renderer/src/core/components/chat/annotator/__tests__/ImageAnnotator.test.tsx
+ D packages/renderer/src/core/components/command-bar/DelegateMenu.test.tsx
+ D packages/renderer/src/core/components/command-bar/DelegateMenu.tsx
+ M packages/renderer/src/core/components/right-panel/AssetsPanel.tsx
+ M packages/renderer/src/core/components/right-panel/KnowledgePanel.tsx
+ M packages/renderer/src/core/components/right-panel/WorkflowPanel.tsx
+ M packages/renderer/src/core/components/sidebar/ProjectList.tsx
+ M packages/renderer/src/core/store/applyWorkspaceSnapshot.test.ts
+ M packages/renderer/src/core/store/index.ts
  M packages/renderer/src/core/store/slices/agent/agentSessionSlice.ts
- M packages/renderer/src/core/store/slices/creative/creativeHistorySlice.ts
- M packages/renderer/src/modules/analytics/components/PlatformConnector.tsx
- M packages/renderer/src/modules/mobile-remote/components/TransportBar.tsx
- M packages/renderer/src/providers/AppInitializationProvider.tsx
- M packages/renderer/src/services/agent/AgentArchitecture.test.ts
- M packages/renderer/src/services/agent/AgentCostCircuitBreaker.test.ts
- M packages/renderer/src/services/agent/AgentFirebaseConnector.ts
- M packages/renderer/src/services/agent/AgentService.torture.test.ts
+ M packages/renderer/src/core/store/slices/agent/index.ts
+ M packages/renderer/src/core/store/slices/appSlice.ts
+ D packages/renderer/src/core/store/slices/projectSlice.ts
+ M packages/renderer/src/hooks/useRemoteCommandListener.ts
+ M packages/renderer/src/hooks/useWorkspaceSync.ts
+ M packages/renderer/src/modules/boardroom/BoardroomModule.tsx
+ M packages/renderer/src/modules/boardroom/components/BoardroomConversationPanel.tsx
+ M packages/renderer/src/modules/creative/components/DirectGenerationTab.tsx
+ M packages/renderer/src/modules/dashboard/components/AssetSpotlight.tsx
+ M packages/renderer/src/modules/finance/components/MerchTable.tsx
+ M packages/renderer/src/modules/knowledge/components/KnowledgeChat.tsx
+ M packages/renderer/src/modules/registration/components/RegistrationAutonomousRail.tsx
+ M packages/renderer/src/modules/settings/settings-panel/ProfileSection.tsx
+ M packages/renderer/src/modules/touring/components/VisaChecklist.tsx
+ M packages/renderer/src/services/ProjectService.ts
  M packages/renderer/src/services/agent/AgentService.ts
- M packages/renderer/src/services/agent/AgentStreamingService.ts
- M packages/renderer/src/services/agent/BaseAgent.ts
- M packages/renderer/src/services/agent/BaseAgentUsage.test.ts
- M packages/renderer/src/services/agent/BaseAgentValidation.test.ts
- M packages/renderer/src/services/agent/BrowserAgentService.ts
- M packages/renderer/src/services/agent/LivingPlanService.ts
- M packages/renderer/src/services/agent/MerchandiseAgent.ts
- M packages/renderer/src/services/agent/ModuleImportCache.ts
- M packages/renderer/src/services/agent/ProactiveService.ts
- M packages/renderer/src/services/agent/__tests__/AgentService.security.test.ts
- M packages/renderer/src/services/agent/__tests__/fine-tuned-models.test.ts
- M packages/renderer/src/services/agent/a2a/A2A.integration.test.ts
- M packages/renderer/src/services/agent/a2a/A2ARouter.ts
- M packages/renderer/src/services/agent/a2a/A2AStreaming.test.ts
- M packages/renderer/src/services/agent/a2a/transport/LoopbackA2ATransport.ts
- M packages/renderer/src/services/agent/builders/SpecialistAgentFactory.ts
- M packages/renderer/src/services/agent/components/AgentExecutor.ts
- M packages/renderer/src/services/agent/components/ContextPipeline.ts
+ M packages/renderer/src/services/agent/SessionService.ts
  M packages/renderer/src/services/agent/components/ContextResolver.ts
  M packages/renderer/src/services/agent/components/HistoryManager.ts
- M packages/renderer/src/services/agent/context/AgentExecutionContext.ts
- M packages/renderer/src/services/agent/context/StateManager.ts
- M packages/renderer/src/services/agent/creative_agent_hardening.test.ts
- M packages/renderer/src/services/agent/definitions/BrandAgent.ts
- M packages/renderer/src/services/agent/definitions/LicensingAgent.test.ts
- M packages/renderer/src/services/agent/definitions/PublicistAgent.ts
- M packages/renderer/src/services/agent/governance/AgentIdentity.ts
- M packages/renderer/src/services/agent/governance/DigitalHandshake.ts
- M packages/renderer/src/services/agent/instruments/ImageGenerationInstrument.ts
- M packages/renderer/src/services/agent/instruments/VideoGenerationInstrument.ts
- M packages/renderer/src/services/agent/memory/MemoryConsolidator.ts
- M packages/renderer/src/services/agent/memory/MemoryIngestionPipeline.ts
- M packages/renderer/src/services/agent/registry.ts
- M packages/renderer/src/services/agent/sdk/AgentSDK.test.ts
- M packages/renderer/src/services/agent/specialists/CurriculumAgent.ts
- M packages/renderer/src/services/agent/specialists/GeneralistAgent.test.ts
- M packages/renderer/src/services/agent/specialists/GeneralistAgent.ts
- M packages/renderer/src/services/agent/specialists/GeneralistAgentRouting.test.ts
- M packages/renderer/src/services/agent/specialists/debug-tools.test.ts
- M packages/renderer/src/services/agent/specialists/specialists.test.ts
- M packages/renderer/src/services/agent/tools/AgentTools.integration.test.ts
- M packages/renderer/src/services/agent/tools/AnalysisTools.ts
- M packages/renderer/src/services/agent/tools/AnalyticsTools.ts
- M packages/renderer/src/services/agent/tools/AutonomousTools.ts
- M packages/renderer/src/services/agent/tools/BrandTools.ts
- M packages/renderer/src/services/agent/tools/BrowserTools.ts
- M packages/renderer/src/services/agent/tools/BugReportTools.ts
- M packages/renderer/src/services/agent/tools/CanvasTools.ts
- M packages/renderer/src/services/agent/tools/CaptainsLogTools.ts
- M packages/renderer/src/services/agent/tools/CommerceTools.ts
- M packages/renderer/src/services/agent/tools/CoreTools.ts
- M packages/renderer/src/services/agent/tools/CoreVaultTools.ts
- M packages/renderer/src/services/agent/tools/DevOpsTools.ts
- M packages/renderer/src/services/agent/tools/DirectorTools.ts
- M packages/renderer/src/services/agent/tools/DistributionTools.test.ts
- M packages/renderer/src/services/agent/tools/FinanceTools.ts
- M packages/renderer/src/services/agent/tools/KnowledgeTools.ts
- M packages/renderer/src/services/agent/tools/LegalTools.ts
- M packages/renderer/src/services/agent/tools/LicensingTools.ts
- M packages/renderer/src/services/agent/tools/LivingPlanTools.ts
- M packages/renderer/src/services/agent/tools/MarketingTools.ts
- M packages/renderer/src/services/agent/tools/MediaTools.ts
- M packages/renderer/src/services/agent/tools/MemoryTools.ts
- M packages/renderer/src/services/agent/tools/MusicTools.ts
- M packages/renderer/src/services/agent/tools/NavigationTools.ts
- M packages/renderer/src/services/agent/tools/NotificationTools.ts
- M packages/renderer/src/services/agent/tools/OrganizationTools.ts
- M packages/renderer/src/services/agent/tools/ProjectTools.ts
- M packages/renderer/src/services/agent/tools/PublicistTools.ts
- M packages/renderer/src/services/agent/tools/PublishingTools.ts
- M packages/renderer/src/services/agent/tools/RoadTools.ts
- M packages/renderer/src/services/agent/tools/SecurityTools.ts
- M packages/renderer/src/services/agent/tools/SocialTools.ts
- M packages/renderer/src/services/agent/tools/SqueezerTools.ts
- M packages/renderer/src/services/agent/tools/StorageTools.ts
- M packages/renderer/src/services/agent/tools/SwarmTools.ts
- M packages/renderer/src/services/agent/tools/SwarmToolsStreaming.test.ts
- M packages/renderer/src/services/agent/tools/UniversalTools.ts
- M packages/renderer/src/services/agent/tools/VideoTools.ts
- M packages/renderer/src/services/agent/tools/Web3Tools.ts
- M packages/renderer/src/services/agent/tools/__tests__/CanvasTools.test.ts
- M packages/renderer/src/services/agent/tools/__tests__/CodeExecutionTools.test.ts
- M packages/renderer/src/services/agent/tools/__tests__/FinanceTools.integration.test.ts
- M packages/renderer/src/services/agent/tools/__tests__/FinanceTools.test.ts
- M packages/renderer/src/utils/dynamicImport.ts
-?? docs/flowcharts/dynamic-import-recovery-macro.md
+ M packages/renderer/src/services/agent/memory/AlwaysOnMemoryEngine.ts
+ M packages/renderer/src/services/commands/EntryCommandService.ts
+ M packages/renderer/src/services/dashboard/DashboardService.ts
+ M packages/renderer/src/services/dashboard/projectTypeUtils.ts
+ D packages/renderer/src/services/project/ProjectService.test.ts
+ D packages/renderer/src/services/project/ProjectService.ts
+ M packages/renderer/src/services/sync/WorkspaceSyncService.test.ts
+ M packages/renderer/src/services/sync/WorkspaceSyncService.ts
+ M packages/renderer/src/test/setup.ts
+ M packages/renderer/src/tests/RouterContext.test.tsx
+ M packages/renderer/src/types/electron.d.ts
+ M packages/shared/dist/ipc/electron-api.types.d.ts
+ M packages/shared/dist/ipc/electron-api.types.d.ts.map
+ M packages/shared/dist/schemas/env.schema.d.ts
+ M packages/shared/dist/schemas/workflowState.d.ts
+ M packages/shared/src/ipc/electron-api.types.ts
+?? packages/renderer/src/core/components/AgentSwitcherStrip.tsx
 ```
 
 ## Decisions
