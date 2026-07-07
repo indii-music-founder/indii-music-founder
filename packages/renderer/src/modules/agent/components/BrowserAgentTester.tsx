@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Play, Terminal, ExternalLink, AlertCircle, CheckCircle2, Loader2, Image as ImageIcon } from 'lucide-react';
 import { browserAgentDriver } from '../../../services/agent/BrowserAgentDriver';
-import { useAgentStore } from '../store/AgentStore';
-import { AgentActionType } from '../types';
+
 
 const BrowserAgentTester: React.FC = () => {
     const [url, setUrl] = useState('https://www.google.com');
@@ -12,7 +11,7 @@ const BrowserAgentTester: React.FC = () => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [screenshot, setScreenshot] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
-    const { logAction } = useAgentStore();
+
     const logEndRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -33,21 +32,8 @@ const BrowserAgentTester: React.FC = () => {
 
             setLogs(result.logs);
 
-            if (result.success) {
-                logAction({
-                    type: AgentActionType.BROWSER_DRIVE,
-                    description: `Successfully achieved goal: ${goal}`,
-                    status: 'completed',
-                    metadata: { url, goal, steps: result.logs.length }
-                });
-            } else {
+            if (!result.success) {
                 setError('Agent failed to complete the goal.');
-                logAction({
-                    type: AgentActionType.BROWSER_DRIVE,
-                    description: `Failed goal: ${goal}`,
-                    status: 'failed',
-                    metadata: { url, goal, error: 'Incomplete' }
-                });
             }
         } catch (err: unknown) {
             const errMessage = err instanceof Error ? err.message : 'An unexpected error occurred';

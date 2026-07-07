@@ -1,10 +1,10 @@
 import { create } from 'zustand';
-import { Venue, GigOpportunity, AgentAction, OutreachCampaign, GigStatus } from '../types';
+import { Venue, GigOpportunity, OutreachCampaign, GigStatus } from '../types';
 
 interface AgentState {
     venues: Venue[];
     gigs: GigOpportunity[];
-    actions: AgentAction[];
+
     campaigns: OutreachCampaign[];
     isScanning: boolean;
 
@@ -13,7 +13,7 @@ interface AgentState {
     updateVenue: (id: string, updates: Partial<Venue>) => void;
     addGig: (gig: GigOpportunity) => void;
     updateGigStatus: (id: string, status: GigStatus) => void;
-    logAction: (action: Omit<AgentAction, 'id' | 'timestamp'>) => void;
+
     setScanning: (isScanning: boolean) => void;
 
     // Selectors
@@ -24,7 +24,7 @@ interface AgentState {
 export const useAgentStore = create<AgentState>((set, get) => ({
     venues: [],
     gigs: [],
-    actions: [],
+
     campaigns: [],
     isScanning: false,
 
@@ -44,14 +44,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
         gigs: state.gigs.map((g) => (g.id === id ? { ...g, status, updatedAt: Date.now() } : g))
     })),
 
-    logAction: (actionData) => set((state) => {
-        const newAction: AgentAction = {
-            id: crypto.randomUUID(),
-            timestamp: Date.now(),
-            ...actionData
-        };
-        return { actions: [newAction, ...state.actions] };
-    }),
+
 
     setScanning: (isScanning) => set({ isScanning }),
 

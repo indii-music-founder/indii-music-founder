@@ -10875,13 +10875,15 @@ PASS 7 (departments, continuing 2026-07-03): ISSUE-712..715
 
 ### ISSUE-719: `AgentActionType` enum (SEARCH_VENUES, EMAIL_OUTREACH, UPDATE_STATUS, RESEARCH_CONTACT) is dead — the real scout feature never uses it
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟢 LOW (dead code, not a functional bug — real scouting works via a different path)
 - **Module:** Agent (Booking/Scout)
 - **Depends on:** nothing — parallel-safe. Same class of finding as ISSUE-718; could be fixed in the same pass.
 - **Summary:** `modules/agent/types.ts` defines `AgentActionType` (`SEARCH_VENUES`, `EMAIL_OUTREACH`, `UPDATE_STATUS`, `RESEARCH_CONTACT`, `BROWSER_DRIVE`) and an `AgentAction` interface built around it. Repo-wide grep confirms 4 of the 5 enum values are referenced nowhere outside their own definition file (`BROWSER_DRIVE` has 2 external references, worth checking separately). The REAL, working scout feature (`AgentDashboard`'s "scout" tab → `handleScan` → `VenueScoutService.searchVenues`) doesn't touch this enum at all — it uses `browserAgentDriver` directly plus real Firestore persistence (`collection`/`getDocs`/`addDoc` on venues). `GigOpportunity`/`GigStatus`/`Venue` types (same file) ARE actively used by the real venue/deal data model — only the `AgentActionType`/`AgentAction` pairing is dead.
 - **Fix Direction:** Delete the unused `AgentActionType` enum and `AgentAction` interface from `types.ts` (confirm `BROWSER_DRIVE`'s 2 references aren't load-bearing before removing that value specifically — check separately). Keep `Venue`, `GigOpportunity`, `GigStatus` — those are real and load-bearing.
 - **Files:** `packages/renderer/src/modules/agent/types.ts`
+**Fix:** Removed the `AgentActionType` enum and `AgentAction` interface from `types.ts`, and removed the `logAction` references in `BrowserAgentTester.tsx` and `AgentStore.ts` that were exclusively using them.
+**Evidence:** The dead types are gone. `npm run typecheck` passes cleanly.
 
 ### Pass 11 clean bills (verified deep, not pattern-only)
 
