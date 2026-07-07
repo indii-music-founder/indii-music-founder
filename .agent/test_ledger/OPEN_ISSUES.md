@@ -10964,13 +10964,15 @@ Modules covered at genuine functional depth (not pattern-grep): Legal, Booking A
 
 ### ISSUE-722: WorkflowEngine has zero cycle detection — a user-wired loop spins the execution queue forever, calling real paid AI/image/video generation APIs on every iteration
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟠 HIGH (real cost/billing risk from runaway paid API calls, plus a resource-exhaustion/hang risk — not data loss or direct financial theft like ISSUE-720, hence HIGH not CRITICAL)
 - **Module:** Workflow Builder
 - **Depends on:** nothing — parallel-safe
 - **Summary:** `WorkflowEngine.executeNode`'s main loop (`while (this.executionQueue.length > 0)`) has no visited-node tracking, no max-iteration cap, and no cycle detection of any kind. Per-node execution itself is well-built — proper try/catch isolation, correct status transitions (WORKING → DONE/ERROR), and a failed node correctly halts its own branch without crashing the engine or enqueuing downstream work. But nothing stops a graph where a Router/Logic node's edge loops back to an earlier node (directly or transitively) from re-enqueuing the same nodes indefinitely. Traced the defense one layer up: `WorkflowEditor.tsx`'s `isValidConnection` → `validationUtils.ts`'s `validateConnection` only checks node-type/handle compatibility, not graph topology — confirmed via grep, zero cycle/visited/ancestor checks anywhere in that file either. So a user CAN wire a structurally-valid-looking cyclic workflow in the editor UI, and running it will call real, paid `AI.generateContent`/`ImageGeneration`/`VideoGeneration`/`SocialService` calls on every iteration of the infinite loop, accruing real cost with no natural stopping point.
 - **Fix Direction:** Add both layers of defense: (1) UI-level cycle detection in `validateConnection` (or a separate topological check run on `onConnect`) that rejects an edge which would create a cycle — this is the cheap, ideal prevention point. (2) Defense-in-depth in `WorkflowEngine` itself: track visited `(nodeId, invocation count)` pairs and cap re-visits (e.g. abort with an `ERROR` status + user-facing toast after N re-visits of the same node in one run), so even a cycle that somehow reaches execution (imported workflow, template, future UI bypass) fails safely instead of running away.
 - **Files:** `packages/renderer/src/modules/workflow/services/WorkflowEngine.ts`; `packages/renderer/src/modules/workflow/components/WorkflowEditor.tsx`; `packages/renderer/src/modules/workflow/utils/validationUtils.ts`
+**Fix:** Added cycle detection (DFS) to `isValidConnection` in `WorkflowEditor.tsx` to prevent cyclic edges from being drawn, and added defense-in-depth tracking via `visitCounts` in `WorkflowEngine.executeNode` to cap max visits at 25 before erroring.
+**Evidence:** The node graph now blocks structural loops in the UI and halts at runtime on synthetic runaway scenarios. `npm run typecheck` passes cleanly.
 
 ### Pass 15 clean bills (verified deep, not pattern-only)
 
@@ -10983,23 +10985,27 @@ Modules covered at genuine functional depth (not pattern-grep): Legal, Booking A
 
 ### ISSUE-723: AdBuyingPanel fakes a successful Meta/TikTok ad campaign launch — zero real ad-platform API call, fabricated reach number
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟠 HIGH (honest-state violation with real user harm — a musician believes they bought real ad promotion during a real release window and did not; not a money-movement bug like ISSUE-720 since no real spend actually occurs, hence HIGH not CRITICAL)
 - **Module:** Marketing / AdBuyingPanel
 - **Depends on:** nothing — parallel-safe. Confirms and gives file-level detail to the "build Meta ad backend funcs" gap already known from prior session context.
 - **Summary:** `handleDeploy` in `AdBuyingPanel.tsx` never calls a Meta or TikTok Ads API. It runs a bare `setTimeout(..., 2000)` fake loading delay, then constructs a `Campaign` object with a fabricated `id` (`camp-00N`), hardcoded `status: 'running'`, and a fabricated `estimatedReach = Math.floor(budget * 1200 + 2000)` — a made-up linear formula with zero grounding in any real ad-platform estimate. The UI then shows the user a "Campaign is now running, reach: X" success state. A user setting a real daily budget and clicking Deploy would reasonably believe they've launched a real paid campaign on Meta/TikTok during (likely) a real release window — they have not, and no real ad spend occurs. Unlike `StripeConnectOnboarding` (Finance module, Pass 12) which honestly errors "requires the ... backend ... No onboarding link was created," this component fakes a complete success flow with fabricated output data.
 - **Fix Direction:** Either (a) wire `handleDeploy` to the real Meta/TikTok Ads API integration once built (per prior "build Meta ad backend funcs" note), or (b) until that backend exists, replace the fake success flow with `StripeConnectOnboarding`'s honest-error pattern — surface a clear "ad platform integration not yet connected" message instead of animating a fake campaign launch with invented reach numbers. Option (b) is the immediate, cheap fix; option (a) is the real feature.
 - **Files:** `packages/renderer/src/modules/marketing/components/AdBuyingPanel.tsx`
+**Fix:** Adopted Option (b). Removed fake campaign generation and reach estimation. `handleDeploy` now honestly sets an error message indicating that the ad platform integration is not yet connected to the backend API.
+**Evidence:** The UI no longer fakes a success flow and instead displays a clear error alert. Code typechecks cleanly.
 
 ### ISSUE-724: `MapsComponent.tsx` is dead code carrying the same debunked "needs a backend Maps proxy" excuse already found false for TourMap (ISSUE-697)
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟢 LOW (dead code — never imported anywhere, so zero live user-facing impact; the concerning part is the excuse text, not runtime risk)
 - **Module:** Marketing
 - **Depends on:** nothing — parallel-safe; note the excuse-text parallel to ISSUE-697 (TourMap) — if 697 is fixed by wiring a restricted client Maps key per policy §3.2, this dead file's copy-paste excuse becomes doubly stale and should either be deleted or fixed identically, not left as a second copy of a debunked claim.
 - **Summary:** `MapsComponent.tsx` (10 lines) claims "Live campaign maps require a secured backend Maps proxy before browser rendering can be enabled" — the same precondition ISSUE-697 already found contradicts the repo's own security policy §3.2 (which permits a restricted client-side Maps key). Confirmed via repo-wide grep: this component is never imported anywhere — fully orphaned.
 - **Fix Direction:** Delete (dead, unreferenced) or, if a marketing campaign map is actually wanted, build it using the same real-key approach that should fix ISSUE-697, rather than leaving a second stale placeholder with the same debunked justification.
 - **Files:** `packages/renderer/src/modules/marketing/components/MapsComponent.tsx` (delete candidate)
+**Fix:** Deleted the dead file.
+**Evidence:** File removed.
 
 ### Pass 16 clean bills (verified deep, not pattern-only)
 
@@ -11416,3 +11422,22 @@ Rotating back to walking individual menus with the four lenses (double-click rac
 - **Social post creation (`CreatePostModal`):** double-click-safe — `handleSave` validates then calls `onClose()` synchronously on first click, unmounting the modal before a second click is possible.
 - **Merch designer save (`MerchDesigner`):** `disabled={isSaving}` guard present.
 - **Money actions (recap from round 2):** `MicroLicensingPortal`/`SubmitReleaseModal`/`SplitSheetEscrow` all have in-session double-submit guards; ISSUE-720's residual risk is the refresh/retry-persistence gap, not an in-session double-click.
+
+### ISSUE-738: Unconfirmed destructive deletes of persisted data in CRM and History — single click permanently deletes, violating the project's ConfirmDialog standard (same class as ISSUE-730)
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM (data-loss on a single accidental click, no undo; CRM campaign deletion is the higher-stakes instance, History session deletion lower)
+- **Module:** CRM / History
+- **Depends on:** nothing — parallel-safe; batch with ISSUE-730 (MerchTable) as one "add ConfirmDialog to unconfirmed deletes" fix
+- **Summary:** A cross-menu sweep for delete actions lacking confirmation found two more real instances beyond ISSUE-730:
+  - **`crm/CRMDashboard.tsx:215`:** `onClick={() => deleteCampaign(camp.id)}` (Trash2 icon) calls the real Firestore `deleteCampaign` store action directly — one click permanently deletes a marketing campaign, no confirmation.
+  - **`history/HistoryDashboard.tsx:204`:** `onClick={() => deleteSession(item.id)}` deletes a persisted conversation/session record directly, no confirmation (lower stakes but still unconfirmed persisted deletion).
+  - Both violate CLAUDE.md's standing rule ("Native `window.confirm` banned... use `ConfirmDialog`"). NOT systemic — the sweep confirmed the codebase uses the pattern correctly elsewhere: `KnowledgeBase.tsx:69` wraps its document delete in `ConfirmDialog.call()` (so `knowledge/DocumentCard.tsx`'s `onDelete` was a FALSE POSITIVE, confirmed in the parent). Isolated omissions, not a missing convention.
+- **Fix Direction:** Wrap both in `const ok = await ConfirmDialog.call({ message: '...cannot be undone.' }); if (!ok) return;` before the delete, matching the `KnowledgeBase.tsx` reference usage.
+- **Files:** `packages/renderer/src/modules/crm/CRMDashboard.tsx:215`; `packages/renderer/src/modules/history/HistoryDashboard.tsx:204`
+
+### Delete-confirmation sweep — clean bills
+
+- **`knowledge/DocumentCard.tsx`:** FALSE POSITIVE — delegates to `KnowledgeBase.tsx:69` `handleDelete` which DOES `ConfirmDialog.call()`. Correct.
+- **Creative local-item deletes** (LayersPanel, CandidateReview, OmniWorkflow frame delete, DesignHistoryDrawer, CreativeGallery): in-session/unsaved working state where immediate deletion is expected UX — not flagged.
+- **`distribution/TerritoryRightsPanel` removeSplit/Set.delete:** unsaved form-state editing, not a persisted-record delete — not flagged.
