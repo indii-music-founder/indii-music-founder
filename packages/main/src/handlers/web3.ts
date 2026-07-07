@@ -143,38 +143,11 @@ class EthereumNetworkWrapper {
     }
 
     /**
-     * Realistic transaction simulation stub
+     * Simulation stub for when no RPC provider is available.
+     * We cannot fabricate transaction data or gas estimates.
      */
     private simulateTransactionExecution(tx: TransactionPayload) {
-        const txHash = '0x' + crypto.randomBytes(32).toString('hex');
-        
-        // Base gas of 21000, plus extra gas if transaction contains data
-        let gasUsed = 21000;
-        if (tx.data && tx.data.length > 2) {
-            // roughly calculate data gas (16 gas per non-zero byte)
-            const byteCount = (tx.data.length - 2) / 2;
-            gasUsed += Math.floor(byteCount * 16) + 40000; // base contract invocation estimate
-        }
-
-        log.info(`[Web3] [SIMULATOR] Simulated transaction execution to ${tx.to}. TxHash: ${txHash}, gasUsed: ${gasUsed}`);
-
-        return {
-            success: true,
-            txHash,
-            status: 'mined',
-            isSimulated: true,
-            blockNumber: this.simulatedBlockNumber,
-            gasUsed,
-            cumulativeGasUsed: gasUsed + 150000,
-            effectiveGasPrice: tx.gasPrice || '0x4a817c800', // ~20 Gwei fallback
-            logs: tx.data ? [
-                {
-                    address: tx.to,
-                    topics: ['0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'], // Transfer event topic
-                    data: '0x0000000000000000000000000000000000000000000000000de0b6b3a7640000' // 1 ETH
-                }
-            ] : []
-        };
+        throw new Error('Simulation unavailable: No active RPC provider configured.');
     }
 
     /**
