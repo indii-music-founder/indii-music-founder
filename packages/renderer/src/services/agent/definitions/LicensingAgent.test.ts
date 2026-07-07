@@ -38,6 +38,7 @@ vi.mock('@/services/intelligence/FirebaseIntelligenceService', () => {
 });
 
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 vi.mock('../tools/LegalTools', () => ({
     LegalTools: {
@@ -166,7 +167,7 @@ describe('LicensingAgent', () => {
 
     describe('draft_license', () => {
         it('should use LegalTools to draft a contract', async () => {
-            const { LegalTools } = await import('../tools/LegalTools');
+            const { LegalTools } = await importWithRetry(() => import('../tools/LegalTools'));
             vi!.mocked(LegalTools.draft_contract!).mockResolvedValue({ success: true, data: { content: "Mocked Contract Content" } });
 
             const args = {

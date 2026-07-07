@@ -18,6 +18,7 @@ import { agentGraphService } from './orchestration/AgentGraphService';
 import { agentGraphStateService } from './orchestration/AgentGraphStateService';
 import { AgentGraph } from './types';
 import { moduleImportCache } from './ModuleImportCache';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 /**
  * AgentService is the primary entry point for agent-related operations.
@@ -86,7 +87,11 @@ export class AgentService {
         }
 
         // Pre-warm agents in the background (non-blocking)
-        this.warmup();
+        if (typeof process !== 'undefined' && process.env && (process.env.VITEST || process.env.NODE_ENV === 'test')) {
+            logger.debug('[AgentService] Skipping warmup in test environment');
+        } else {
+            this.warmup();
+        }
     }
 
     /**
@@ -181,7 +186,7 @@ export class AgentService {
 
             // Tier 2: Index user message for semantic recall (Episodic Indexing)
             if (state.currentProjectId && state.activeSessionId && redactedText.length > 10) {
-                const { alwaysOnMemoryEngine } = await import('./memory/AlwaysOnMemoryEngine');
+                const { alwaysOnMemoryEngine } = await importWithRetry(() => import('./memory/AlwaysOnMemoryEngine'));
                 alwaysOnMemoryEngine.ingest(
                     redactedText,
                     'user_input',
@@ -570,7 +575,7 @@ export class AgentService {
 
             // Tier 2: Index model response
             if (state.currentProjectId && state.activeSessionId && result.text.length > 20) {
-                const { alwaysOnMemoryEngine } = await import('./memory/AlwaysOnMemoryEngine');
+                const { alwaysOnMemoryEngine } = await importWithRetry(() => import('./memory/AlwaysOnMemoryEngine'));
                 alwaysOnMemoryEngine.ingest(
                     result.text,
                     'agent_output',
@@ -604,7 +609,7 @@ export class AgentService {
             return;
         }
 
-        const { DEPARTMENTS } = await import('./departments');
+        const { DEPARTMENTS } = await importWithRetry(() => import('./departments'));
         const dept = DEPARTMENTS[activeDepartmentId];
         
         if (!dept) {
@@ -1062,7 +1067,7 @@ export class AgentService {
         // If the stored displayName is the generic default, try Firebase Auth's displayName
         if (isDefaultName) {
             try {
-                const { auth } = await import('@/services/firebase');
+                const { auth } = await importWithRetry(() => import('@/services/firebase'));
                 const authUser = auth.currentUser;
                 if (authUser?.displayName && authUser.displayName !== 'New Artist') {
                     artistName = authUser.displayName;
@@ -1202,7 +1207,7 @@ The user will see this plan and can approve it to start execution.`;
                         const planDraft = parsed.livingPlan;
 
                         if (planDraft && context.projectId) {
-                            const { auth } = await import('@/services/firebase');
+                            const { auth } = await importWithRetry(() => import('@/services/firebase'));
                             const userId = auth.currentUser?.uid || null;
                             if (!userId) {
                                 throw new Error('User must be authenticated to create living plans.');
@@ -1273,7 +1278,7 @@ The user will see this plan and can approve it to start execution.`;
 
             // Ensure Living Context is present
             if (!context.livingContext) {
-                const { auth } = await import('@/services/firebase');
+                const { auth } = await importWithRetry(() => import('@/services/firebase'));
                 if (auth.currentUser) {
                     const { livingFileService } = await moduleImportCache.import('./living/LivingFileService', () => import('./living/LivingFileService'));
                     context.livingContext = await livingFileService.injectContext(auth.currentUser.uid);
@@ -1285,7 +1290,7 @@ The user will see this plan and can approve it to start execution.`;
             if (projectId && !context.memoryContext) {
                 try {
                     logger.debug(`[AgentService] Searching for relevant memories for task: "${task.substring(0, 50)}..."`);
-                    const { alwaysOnMemoryEngine } = await import('./memory/AlwaysOnMemoryEngine');
+                    const { alwaysOnMemoryEngine } = await importWithRetry(() => import('./memory/AlwaysOnMemoryEngine'));
                     const results = await alwaysOnMemoryEngine.retrieve({ query: task, limit: 5 });
                     if (results && results.length > 0) {
                         context.relevantMemories = results.map(m => m.summary || m.content);
@@ -1444,7 +1449,7 @@ The user will see this plan and can approve it to start execution.`;
         try {
             logger.info(`[AgentService] Dispatching direct tool call ${toolName} to agent ${agentId}`);
             
-            const { TOOL_REGISTRY } = await import('./tools');
+            const { TOOL_REGISTRY } = await importWithRetry(() => import('./tools'));
             if (TOOL_REGISTRY[toolName]) {
                 // Execute the tool
                 const result = await TOOL_REGISTRY[toolName](args);
@@ -1507,7 +1512,7 @@ The user will see this plan and can approve it to start execution.`;
                     content: m.text || ''
                 }));
 
-            const { MultiTurnAutorater } = await import('./governance/MultiTurnAutorater');
+            const { MultiTurnAutorater } = await importWithRetry(() => import('./governance/MultiTurnAutorater'));
             
             // Fire-and-forget evaluation to not block the user interface
             await MultiTurnAutorater.evaluateAndRegister(
@@ -1607,7 +1612,7 @@ The user will see this plan and can approve it to start execution.`;
         isBoardroomMode: boolean
     ): Promise<void> {
         try {
-            const { VisualOutputAutorater } = await import('./governance/VisualOutputAutorater');
+            const { VisualOutputAutorater } = await importWithRetry(() => import('./governance/VisualOutputAutorater'));
             const useStore = await this.getStore();
 
             // Find the message in history to access thoughts/tool results

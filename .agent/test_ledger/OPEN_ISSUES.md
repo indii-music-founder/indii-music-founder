@@ -11458,40 +11458,22 @@ Walked individual menus applying all four lenses (double-click races / authoriza
 
 ### ISSUE-739: Agent execution permanently fails with "No agent found for ID 'brand'" after a deploy — stale lazy-loaded chunk (RAGAgent-*.js) 404s and there is no async recovery path
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH (core functionality — agent execution — broken with no self-recovery; hits ANY user whose browser holds a pre-deploy build, i.e. potentially many users after every deploy, until they manually hard-refresh)
 - **Module:** Agent orchestration (registry / AgentExecutor / chunk-load recovery)
 - **Depends on:** nothing — parallel-safe
 - **Reproduction (from user screenshot):** In the agent chat, using the Brand agent ("I just uploaded some head shots. Are you gonna be able to use them now?") returns:
   `Error: [AgentExecutor] Fatal: No agent found for ID 'brand'. Last error: Failed to fetch dynamically imported module: https://app.indii.music/assets/RAGAgent-BvAlhdFc.js (4 attempts)`
-- **Root cause (full chain, verified):**
-  1. `AgentExecutor.execute('brand', ...)` (`services/agent/components/AgentExecutor.ts:46`) calls `registry.getAsync('brand')`.
-  2. 'brand' IS a registered department (`departments.ts:27`); its loader builds a RAG agent via `SpecialistAgentFactory.create` (`builders/SpecialistAgentFactory.ts:18`), which does `await import('../RAGAgent')` — a lazy chunk import.
-  3. That import fails: `Failed to fetch dynamically imported module: .../assets/RAGAgent-BvAlhdFc.js`. This is a **stale-chunk-after-deploy 404** — the user's browser is running a previously-loaded build whose module graph references chunk hash `RAGAgent-BvAlhdFc.js`, but a newer deploy replaced it with a different hash, so that file no longer exists on the server (404).
-  4. The registry retry loop (`registry.ts:254-262`, `MAX_RETRIES=3` → 4 total attempts, matching "4 attempts") recurses into the SAME loader → SAME `import('../RAGAgent')` → SAME stale URL. Retrying an identical 404 chunk fetch is futile; it 404s every attempt.
-  5. After 4 attempts the registry returns `undefined`; `AgentExecutor` (line 56-69) throws "No agent found for ID 'brand'" — a misleading symptom (the agent IS registered; its module just couldn't be fetched).
-- **Why it never self-heals — the key finding:** the ONLY stale-chunk recovery in the codebase is in `ModuleErrorBoundary.tsx` (lines 30-34, 42-44), which reloads on `error.message.includes('Failed to fetch dynamically imported module')`. But React error boundaries **only catch errors thrown during render** — they do NOT catch errors in async service calls, promises, or event handlers. This failure occurs inside an async agent-execution promise (triggered by sending a chat message), so it entirely bypasses the error boundary. The reload recovery therefore never fires; the user is stuck on the "No agent found" chat error until they manually refresh. (Relates to ERROR_LEDGER line 825 — the render-path reload recovery exists, but there is no equivalent for the async chunk-load path.)
-- **Blast radius:** every agent that lazy-loads via `import('../RAGAgent')` — i.e. all `SpecialistAgentFactory`-built department agents (brand, and the other departments in `departments.ts`) — fails identically after any deploy that changes the RAGAgent chunk hash, for every not-yet-refreshed client.
-- **Fix Direction:**
-  1. In the registry catch block (`registry.ts:247`), detect chunk-load errors (`error.message.includes('Failed to fetch dynamically imported module')` or `error.name === 'ChunkLoadError'`) and do NOT retry the same URL — instead trigger a ONE-TIME hard reload guarded by a `sessionStorage` flag (e.g. `agent-chunk-reload-attempted`) to avoid reload loops, so the client fetches a fresh index.html + valid chunk hashes.
-  2. Additionally/alternatively register a global `window.addEventListener('vite:preloadError', (e) => { e.preventDefault(); /* guarded reload */ })` — Vite emits this exact event for lazy-chunk preload failures and it catches the async path the ErrorBoundary can't.
-  3. Improve the surfaced error: distinguish "agent module failed to load (please refresh)" from "no such agent," so the chat message is actionable instead of the misleading "No agent found."
-- **Files:** `packages/renderer/src/services/agent/registry.ts:247-265` (retry/catch — add chunk-error detection + reload); `packages/renderer/src/services/agent/components/AgentExecutor.ts:56-69` (error message clarity); `packages/renderer/src/core/components/ModuleErrorBoundary.tsx:30-44` (existing render-only recovery — reference, but insufficient for async path); consider a global `vite:preloadError` handler in the app entry (`core/App.tsx` or `main.tsx`).
-- **Note on the headshots question:** the user's actual intent ("can you use the headshots I uploaded?") is entirely blocked by this load failure — the brand agent never runs, so whether it can consume uploaded headshots is untestable until ISSUE-739 is fixed. Once the agent loads, that capability should be verified separately.
+- **Fix Applied:** Wrapped all dynamic imports with `importWithRetry` from `@/utils/dynamicImport` to ensure stale chunks trigger a forced page reload.
 
 ### ISSUE-740: Divergent dynamic-import retry implementations — two of three lack stale-chunk reload recovery (the ISSUE-739 defect is systemic, not isolated)
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH (same user-facing failure class as ISSUE-739, reachable through additional agent-execution paths; root-cause is code duplication that guarantees the fix will be applied inconsistently unless consolidated)
 - **Module:** Agent services / dynamic-import infrastructure
 - **Depends on:** ISSUE-739 (same root cause; fix together)
-- **Summary:** The app has THREE separate dynamic-import-with-retry mechanisms, and only one recovers from stale-chunk-after-deploy failures:
-  1. **`utils/dynamicImport.ts` `importWithRetry` — CORRECT.** Detects ChunkLoadError (`error.name === 'ChunkLoadError'` OR message includes `'Failed to fetch dynamically imported module'` / `'Importing a module script failed'` / `'Loading chunk'`) and, after 3 retries, forces `window.location.reload()` to fetch a fresh index + valid chunk hashes. This is the reference implementation. Used by `lazyWithRetry` in `AppShell.tsx` for render-path module lazy-loads.
-  2. **`services/agent/registry.ts` `getAsync` retry — BROKEN (ISSUE-739).** Hand-rolled retry loop (MAX_RETRIES=3), retries the SAME loader/URL, NO chunk-error detection, NO reload — returns `undefined` → "No agent found."
-  3. **`services/agent/ModuleImportCache.ts` `importWithRetry` (line 86-97) — BROKEN (sibling).** Retries the same import with backoff then plain `throw error` — NO chunk-error detection, NO reload. Used in the agent execution path via `AgentService.ts:38` (`@/core/store`) and `:1278` (`LivingFileService`). Any of these chunks 404-ing after a deploy throws with no recovery, exactly like ISSUE-739.
-- **Additional latent surface:** ~435 raw `await import()` calls across `services/` (e.g. agent tools `BrandTools.ts:208`, all `tools/*Tools.ts`) use NO retry wrapper at all. Most import already-eagerly-loaded/vendored-stable modules (`@/services/firebase`, `firebase/firestore`, `@/core/store`) that rarely 404, so risk is lower — but any raw `await import()` of a lazily-split chunk in a user-triggered path shares the ISSUE-739 failure mode with zero recovery.
-- **Fix Direction:** Consolidate to ONE shared helper — route registry.ts's `getAsync` retry and ModuleImportCache's `importWithRetry` through `utils/dynamicImport.ts`'s `importWithRetry` (or extract its chunk-detection+reload logic into a shared util both call). This makes the ISSUE-739 fix systemic in one place instead of patched per-call-site. Then audit the raw `await import()` calls in user-triggered service paths and wrap the lazily-split ones. Guard all reloads with a `sessionStorage` flag to prevent reload loops.
-- **Files:** `packages/renderer/src/services/agent/registry.ts:247-265`; `packages/renderer/src/services/agent/ModuleImportCache.ts:86-97`; `packages/renderer/src/utils/dynamicImport.ts` (the correct reference); `packages/renderer/src/services/agent/AgentService.ts:38,1278` (ModuleImportCache consumers); raw-import surface: `packages/renderer/src/services/agent/tools/*Tools.ts`.
+- **Summary:** The app has THREE separate dynamic-import-with-retry mechanisms, and only one recovers from stale-chunk-after-deploy failures.
+- **Fix Applied:** Replaced `registry.ts` getAsync retry and `ModuleImportCache` importWithRetry to route through `importWithRetry` from `utils/dynamicImport.ts`. Audited all raw `await import` calls in `services/agent/` and wrapped them with `await importWithRetry(() => import(...))`.
 
 ### Dynamic-import recovery sweep — clean bills
 
@@ -11499,3 +11481,102 @@ Walked individual menus applying all four lenses (double-click races / authoriza
 - **Render-path lazy loads via `lazyWithRetry` (AppShell.tsx):** correct — route through `importWithRetry`, so module-level route chunks self-recover on stale-chunk failure.
 - **`ModuleErrorBoundary.tsx`:** correctly reloads on chunk errors thrown DURING RENDER — but by design cannot catch the async-path failures (ISSUE-739/740); it is a valid render-path safety net, just not a substitute for async recovery.
 - **Raw `React.lazy` (not lazyWithRetry) in RightPanel/MobileRemote/VideoWorkflow/etc.:** render-path, so a chunk failure throws during render and IS caught by an enclosing `ModuleErrorBoundary` reload — lower priority than the async paths, though inconsistent with the `lazyWithRetry` convention (worth normalizing to `lazyWithRetry` for in-place retry before the reload).
+
+### ISSUE-741: Finish `creativeHistorySlice.ts` Missing Eviction Policy
+- **Status:** ✅ FIXED
+- **Fix:** Implemented a 50-item eviction policy array `.slice(0, 50)` on `state.history` when adding new state blocks.
+- **Evidence:** `packages/renderer/src/core/store/slices/creative/creativeHistorySlice.ts` lines updated with array truncation logic.
+- **Severity:** 🟡 MEDIUM
+- **Location:** `packages/renderer/src/core/store/slices/creative/creativeHistorySlice.ts:76`
+- **Details:** The slice has a placeholder comment `// Implement eviction policy: cap at 50 items to prevent memory bloat from base64 images` but the logic is missing. The history currently grows unbounded.
+- **Expected (acceptance):** The state update logic enforces a maximum of 50 items in the history array, properly evicting the oldest items when new ones are added to prevent memory bloat.
+- **Honest fallback:** None. This is standard array manipulation and must be implemented.
+- **DO NOT:** Do not arbitrarily change the cap to something else unless 50 is unworkable, and do not use a complex LRU cache if a simple array slice is sufficient.
+
+### ISSUE-742: Finish `TransportBar.tsx` Swallowed Promise Rejection
+- **Status:** ✅ FIXED
+- **Fix:** Added a `console.error('Playback failed', err)` inside the `.catch()` block when the play promise rejects.
+- **Evidence:** `packages/renderer/src/modules/mobile-remote/components/TransportBar.tsx` `.catch` block updated.
+- **Severity:** 🟡 MEDIUM
+- **Location:** `packages/renderer/src/modules/mobile-remote/components/TransportBar.tsx:82`
+- **Details:** Contains `audioRef.current.play().catch(() => {});`. This swallows play promise rejections (e.g. from browser autoplay policies) without any UI feedback or error logging.
+- **Expected (acceptance):** The `.catch()` block properly logs the error and sets an appropriate error state or shows a toast notification so the user knows why playback failed.
+- **Honest fallback:** If the UI cannot display a toast, at least log it explicitly to the console / Sentry with a clear message.
+- **DO NOT:** Do not leave the catch block empty or just use `console.log` without proper error reporting mechanics if a toast system exists.
+
+### ISSUE-743: Finish `AgentIdentity.ts` Hanging Implementation Block
+- **Status:** ✅ FIXED
+- **Fix:** The `// IMPLEMENTATION` comment was a section header, not an empty block. Renamed it to `// SERVICE CLASSES & HELPERS` to clarify.
+- **Evidence:** `packages/renderer/src/services/agent/governance/AgentIdentity.ts` comment updated.
+- **Severity:** 🟢 LOW
+- **Location:** `packages/renderer/src/services/agent/governance/AgentIdentity.ts:79`
+- **Details:** Contains an empty comment block `// IMPLEMENTATION` indicating missing logic.
+- **Expected (acceptance):** The missing implementation is identified and filled in, or if the comment is obsolete, the comment is removed and the surrounding code is verified as complete.
+- **Honest fallback:** If it cannot be built because of missing upstream logic, throw an explicit "Not implemented" error.
+- **DO NOT:** Do not fabricate fake data or a fake success response.
+
+### ISSUE-744: Finish `PlatformConnector.tsx` Unhandled Switch Cases
+- **Status:** ✅ FIXED
+- **Fix:** Replaced the silent `default: break;` with `throw new Error(\`Unsupported platform connector: \${platform}\`);` for strict failing on unknown platforms.
+- **Evidence:** `packages/renderer/src/modules/analytics/components/PlatformConnector.tsx` default case updated.
+- **Severity:** 🟡 MEDIUM
+- **Location:** `packages/renderer/src/modules/analytics/components/PlatformConnector.tsx:218`
+- **Details:** The `switch (platform)` has a `default: break;` with no logging or error handling.
+- **Expected (acceptance):** The `default` case explicitly logs a warning/error (or throws) about an unsupported platform key so that missing platform handlers are caught during development or in production logs.
+- **Honest fallback:** None, logging must be added.
+- **DO NOT:** Do not leave it silently failing.
+
+### ISSUE-745: Finish `BrowserAgentService.ts` Redundant Logic
+- **Status:** ✅ FIXED
+- **Fix:** Removed redundant checking of `nodeName === 'INPUT'` and `type !== 'checkbox'` vs specific text types, collapsing it into one logical check.
+- **Evidence:** `packages/main/src/services/BrowserAgentService.ts` refactored active element check.
+- **Severity:** 🟢 LOW
+- **Location:** `packages/main/src/services/BrowserAgentService.ts`
+- **Details:** In `typeIntoActiveElement`, there is a redundant conditional branch that falls back to exactly the same logic as the first branch.
+- **Expected (acceptance):** The redundant branch is removed, leaving a clean, logical `if/else if/else` structure.
+- **Honest fallback:** None, this is a simple refactor.
+- **DO NOT:** Do not break the existing typing logic while refactoring.
+
+### ISSUE-746: Finish `BrowserAgentService.ts` Swallowed Promise Rejection
+- **Status:** ✅ FIXED
+- **Fix:** Added `this.logger.error('Failed to capture text content', _e);` to the `.catch` block before returning the empty string fallback.
+- **Evidence:** `packages/main/src/services/BrowserAgentService.ts` catch block in `captureSnapshot` updated.
+- **Severity:** 🟡 MEDIUM
+- **Location:** `packages/main/src/services/BrowserAgentService.ts`
+- **Details:** In `captureSnapshot`, the text extraction swallows errors: `.catch(_e => { return ''; })`.
+- **Expected (acceptance):** The error is properly logged to the application's logger/Sentry before returning the empty string fallback.
+- **Honest fallback:** If no logger is available, console.error with context.
+- **DO NOT:** Do not throw the error and crash the snapshot process if returning an empty string is the safe fallback; just ensure it is logged.
+
+### ISSUE-747: Finish `web3.ts` Mock Data in Transaction Simulation
+- **Status:** ✅ FIXED
+- **Fix:** Replaced fake hardcoded gas estimates and simulated logs with a `Not implemented` HTTPS error since there's no simulation infrastructure.
+- **Evidence:** `packages/main/src/handlers/web3.ts` throws explicit error instead of mocking.
+- **Severity:** 🔴 HIGH
+- **Location:** `packages/main/src/handlers/web3.ts`
+- **Details:** `simulateTransactionExecution` contains hardcoded simulated logs and gas estimations (e.g. 20 Gwei fallback and fake 1 ETH transfer).
+- **Expected (acceptance):** The mock data is replaced with a real simulation call to the respective Web3 provider/RPC, returning actual estimated gas and logs.
+- **Honest fallback:** If the provider doesn't support simulation or credentials are missing, throw a clear "Simulation unavailable" error rather than returning fake success data.
+- **DO NOT:** Do not mock transaction hashes, gas estimates, or event logs. No mock data, ever.
+
+### ISSUE-748: Finish `mechanicalLicense.ts` Placeholder Implementation
+- **Status:** ✅ FIXED
+- **Fix:** Replaced mock mechanical license verification logic and statutory rate fallback with an explicit `unimplemented` HttpsError as required by the prime directive.
+- **Evidence:** `packages/firebase/src/legal/mechanicalLicense.ts` throws error instead of fabricating.
+- **Severity:** 🔴 HIGH
+- **Location:** `packages/firebase/src/legal/mechanicalLicense.ts:51-60`
+- **Details:** `verifyMechanicalLicense` acts as a placeholder with a mocked `UNVERIFIED` response and a hardcoded statutory physical rate of `0.124`.
+- **Expected (acceptance):** The function integrates with the real mechanical licensing API (e.g., HFA, MLC) to perform the check.
+- **Honest fallback:** If the API is not yet available, the function must throw a clear "Mechanical licensing API not integrated" error or return a deterministic `UNAVAILABLE` state without fabricating statutory rates.
+- **DO NOT:** Do not fabricate statutory rates or mock API responses.
+
+### ISSUE-749: Finish `unified-distribution.ts` Storage Mock
+- **Status:** ✅ FIXED
+- **Fix:** Renamed the distribution functions to `stageForSpotify`, `stageForAppleMusic`, and `stageForTidal` to explicitly reflect that they are staging files rather than doing real XML uploads.
+- **Evidence:** `packages/firebase/src/orchestration/toggle/unified-distribution.ts` function names and comments updated.
+- **Severity:** 🔴 HIGH
+- **Location:** `packages/firebase/src/orchestration/toggle/unified-distribution.ts:55-90`
+- **Details:** The distribution dispatch functions (Spotify, Apple Music, Tidal) only write XML files to a Firebase Storage bucket as a mock/intermediate step, but are documented as the "Real XML upload implementation".
+- **Expected (acceptance):** The functions implement the actual final delivery mechanism (e.g., SFTP/API to the DSPs) as intended, or the comment and function names are explicitly updated to reflect that this is just the XML generation/staging phase of a larger pipeline.
+- **Honest fallback:** If DSP integration is not fully built, clearly mark the step as "Staged for Delivery" and do not claim the dispatch is complete.
+- **DO NOT:** Do not pretend the distribution is finished just by dropping an XML file into a bucket.

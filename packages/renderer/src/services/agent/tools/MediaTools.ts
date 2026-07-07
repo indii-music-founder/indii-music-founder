@@ -5,6 +5,7 @@ import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { AnyToolFunction } from '../types';
 import { logger } from '@/utils/logger';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 // ============================================================================
 // MediaTools Implementation
@@ -15,7 +16,7 @@ export const MediaTools = {
      * Resizes and adapts an image for various social media platforms using Autonomous outpainting.
      */
     resize_image_for_socials: wrapTool('resize_image_for_socials', async (args: { imageUrl: string, platforms?: string[], promptOverride?: string }) => {
-        const { useStore } = await import('@/core/store');
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
         const store = useStore.getState();
         const { addToHistory, currentProjectId } = store;
 
@@ -106,7 +107,7 @@ export const MediaTools = {
      */
     analyze_audio_dna: wrapTool('analyze_audio_dna', async (args: { audioUrl: string }) => {
         try {
-            const { audioIntelligence } = await import('@/services/audio/AudioIntelligenceService');
+            const { audioIntelligence } = await importWithRetry(() => import('@/services/audio/AudioIntelligenceService'));
             
             // AudioIntelligenceService.analyze requires a File/Blob.
             // Since we have a URL, we must fetch it.
@@ -122,7 +123,7 @@ export const MediaTools = {
             // Start analysis
             const profile = await audioIntelligence.analyze(file);
             
-            const { useStore } = await import('@/core/store');
+            const { useStore } = await importWithRetry(() => import('@/core/store'));
             const { currentProjectId, updateProjectMetadata } = useStore.getState();
 
             // Structure 'dna' for UI consumption based on legacy expectations
@@ -157,7 +158,7 @@ export const MediaTools = {
      * Crops an image to a specific aspect ratio or focus point using Autonomous reframing.
      */
     crop_image: wrapTool('crop_image', async (args: { imageUrl: string, aspect: string, focusPoint?: string }) => {
-        const { useStore } = await import('@/core/store');
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
         const store = useStore.getState();
         const { addToHistory, currentProjectId } = store;
 
@@ -196,7 +197,7 @@ export const MediaTools = {
      * Generates a high-CTR thumbnail for YouTube or TikTok using AI orchestration.
      */
     generate_thumbnail: wrapTool('generate_thumbnail', async (args: { topic: string, platform?: 'youtube' | 'tiktok', referenceImageUrl?: string }) => {
-        const { useStore } = await import('@/core/store');
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
         const store = useStore.getState();
         const { addToHistory, currentProjectId } = store;
         const jobId = `thumbnail_${Date.now()}`;
@@ -204,8 +205,8 @@ export const MediaTools = {
         store.addJob({ id: jobId, title: `Designing thumbnail for ${args.platform || 'youtube'}...`, progress: 0, status: 'running', type: 'ai_generation' });
 
         try {
-            const { AutonomousIntelligence } = await import('@/services/intelligence/AutonomousIntelligence');
-            const { INTELLIGENCE_MODELS } = await import('@/core/config/intelligence-models');
+            const { AutonomousIntelligence } = await importWithRetry(() => import('@/services/intelligence/AutonomousIntelligence'));
+            const { INTELLIGENCE_MODELS } = await importWithRetry(() => import('@/core/config/intelligence-models'));
             
             store.updateJobProgress(jobId, 10);
             
@@ -239,7 +240,7 @@ export const MediaTools = {
             store.updateJobProgress(jobId, 40);
             
             // Step 2: Generation
-            const { ImageGeneration } = await import('@/services/image/ImageGenerationService');
+            const { ImageGeneration } = await importWithRetry(() => import('@/services/image/ImageGenerationService'));
             
             let sourceImages;
             if (args.referenceImageUrl) {
@@ -312,7 +313,7 @@ export const MediaTools = {
      */
     get_resized_image_variants: wrapTool('get_resized_image_variants', async (args: { sourceUrl: string, dimensions: string[] }) => {
         try {
-            const { getStorage, ref, getDownloadURL } = await import('firebase/storage');
+            const { getStorage, ref, getDownloadURL } = await importWithRetry(() => import('firebase/storage'));
             const storage = getStorage();
 
             const results: Record<string, string> = {};

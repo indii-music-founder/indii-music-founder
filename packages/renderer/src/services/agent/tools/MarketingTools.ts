@@ -10,6 +10,7 @@ import { zodToJsonSchema } from 'zod-to-json-schema';
 import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 import { logger } from '@/utils/logger';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 /** Typed Electron IPC bridge for marketing tools */
 interface ElectronMarketingBridge {
@@ -178,8 +179,8 @@ export const MarketingTools = {
 
     track_performance: wrapTool('track_performance', async ({ campaignId }: { campaignId: string }) => {
         try {
-            const { auth, db } = await import('@/services/firebase');
-            const { doc, getDoc } = await import('firebase/firestore');
+            const { auth, db } = await importWithRetry(() => import('@/services/firebase'));
+            const { doc, getDoc } = await importWithRetry(() => import('firebase/firestore'));
             const uid = auth.currentUser?.uid;
 
             const refs = [
@@ -208,7 +209,7 @@ export const MarketingTools = {
     }),
 
     generate_campaign_from_audio: wrapTool('generate_campaign_from_audio', async ({ uploadedAudioIndex }: { uploadedAudioIndex: number }) => {
-        const { useStore } = await import('@/core/store');
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
         const { uploadedAudio } = useStore.getState();
         const audioItem = uploadedAudio[uploadedAudioIndex];
 
@@ -430,8 +431,8 @@ export const MarketingTools = {
         const results = { Standard: 0, VIP: 0, Superfan: 0 };
 
         try {
-            const { db, auth } = await import('@/services/firebase');
-            const { collection, getDocs } = await import('firebase/firestore');
+            const { db, auth } = await importWithRetry(() => import('@/services/firebase'));
+            const { collection, getDocs } = await importWithRetry(() => import('firebase/firestore'));
 
             const uid = auth.currentUser?.uid;
             if (uid) {

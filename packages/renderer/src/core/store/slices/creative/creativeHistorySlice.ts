@@ -73,7 +73,7 @@ export function buildCreativeHistoryState(
                 logger.debug("CreativeSlice: addToHistory called", item.id);
                 const { currentOrganizationId, currentProjectId, createFileNode, user } = useStore.getState();
                 const enrichedItem = { ...item, orgId: item.orgId || currentOrganizationId };
-                // Implement eviction policy: cap at 50 items to prevent memory bloat from base64 images
+                // Eviction policy: cap at 50 items to prevent memory bloat from base64 images
                 set((state) => ({ generatedHistory: [enrichedItem, ...state.generatedHistory].slice(0, 50) }));
                 logger.debug("CreativeSlice: generatedHistory updated", enrichedItem.id);
 
@@ -271,7 +271,8 @@ export function buildCreativeHistoryState(
 
         uploadedImages: [],
         addUploadedImage: (img: HistoryItem) => {
-            set((state) => ({ uploadedImages: [img, ...state.uploadedImages] }));
+            // Eviction policy: cap at 50 items to prevent memory bloat
+            set((state) => ({ uploadedImages: [img, ...state.uploadedImages].slice(0, 50) }));
             import('@/services/StorageService').then(({ StorageService }) => {
                 StorageService.saveItem(img).catch((e) => { logger.error('[Store] Failed to save item:', e); });
             });
@@ -288,7 +289,8 @@ export function buildCreativeHistoryState(
 
         uploadedAudio: [],
         addUploadedAudio: (audio: HistoryItem) => {
-            set((state) => ({ uploadedAudio: [audio, ...state.uploadedAudio] }));
+            // Eviction policy: cap at 50 items to prevent memory bloat
+            set((state) => ({ uploadedAudio: [audio, ...state.uploadedAudio].slice(0, 50) }));
             import('@/services/StorageService').then(({ StorageService }) => {
                 StorageService.saveItem(audio).catch((e) => { logger.error('[Store] Failed to save item:', e); });
             });

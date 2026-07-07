@@ -216,7 +216,7 @@ export function PlatformConnector({ onConnectionChange }: PlatformConnectorProps
                     onConnectionChange?.();
                     break;
                 default:
-                    break;
+                    throw new Error(`Connection not implemented for platform: ${platform}`);
             }
         } catch (err: unknown) {
             setErrorFor(platform, err instanceof Error ? err.message : 'Connection failed.');
@@ -235,7 +235,8 @@ export function PlatformConnector({ onConnectionChange }: PlatformConnectorProps
                 case 'tiktok':       await tikTokAnalyticsService.disconnect();    break;
                 case 'instagram':    await instagramAnalyticsService.disconnect(); break;
                 case 'apple_music':  await appleMusicService.disconnect();         break;
-                default: break;
+                default: 
+                    throw new Error(`Disconnect not implemented for platform: ${platform}`);
             }
             await checkStatus();
             onConnectionChange?.();

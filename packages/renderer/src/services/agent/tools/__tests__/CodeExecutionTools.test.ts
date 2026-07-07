@@ -3,6 +3,7 @@
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { AgentContext } from '@/services/agent/types';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 // Mock fetch for sidecar communication
 const mockFetch = vi.fn();
@@ -20,7 +21,7 @@ vi.mock('@/core/store', () => ({
 }));
 
 // Must import AFTER mock is declared
-const { CodeExecutionTools } = await import('@/services/agent/tools/CodeExecutionTools');
+const { CodeExecutionTools } = await importWithRetry(() => import('@/services/agent/tools/CodeExecutionTools'));
 
 const mockContext: AgentContext = {
     userId: 'test-uid',

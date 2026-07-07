@@ -1,5 +1,4 @@
 import { StateCreator } from 'zustand';
-import { type Unsubscribe } from 'firebase/firestore';
 import { logger } from '@/utils/logger';
 
 let agentSessionsUnsubscribe: (() => void) | null = null;
@@ -58,8 +57,6 @@ export interface AgentSessionSlice {
     addBoardroomMessage: (msg: AgentMessage) => void;
     updateBoardroomMessage: (id: string, updates: Partial<AgentMessage>) => void;
     removeBoardroomMessage: (id: string) => void;
-    /** Subscribe to boardroom messages from Firestore — call once after auth. */
-    loadBoardroomMessages: () => Promise<Unsubscribe>;
 
     // Session State
     sessions: Record<string, ConversationSession>;
@@ -96,66 +93,19 @@ export function buildAgentSessionState(
         sessions: {},
         activeSessionId: null,
 
-        addBoardroomMessage: (msg) => {
-            set(state => ({ boardroomMessages: [...state.boardroomMessages, msg] }));
-            // Persist to Firestore so messages survive reload and sync cross-device (ISSUE-602)
-            import('@/services/agent/AgentFirebaseConnector').then(({ agentFirebaseConnector }) => {
-                agentFirebaseConnector.syncMessage(msg).catch((e) =>
-                    logger.error('[AgentSlice] Boardroom message sync failed:', e)
-                );
-            });
-        },
+        addBoardroomMessage: (msg) => set(state => ({
+            boardroomMessages: [...state.boardroomMessages, msg]
+        })),
 
-        updateBoardroomMessage: (id, updates) => {
-            let merged: AgentMessage | undefined;
-            set(state => {
-                const updatedMessages = state.boardroomMessages.map(msg => {
-                    if (msg.id === id) {
-                        merged = { ...msg, ...updates };
-                        return merged;
-                    }
-                    return msg;
-                });
-                return { boardroomMessages: updatedMessages };
-            });
-            // Persist the updated message to Firestore
-            if (merged) {
-                const msgToSync = merged;
-                import('@/services/agent/AgentFirebaseConnector').then(({ agentFirebaseConnector }) => {
-                    agentFirebaseConnector.syncMessage(msgToSync).catch((e) =>
-                        logger.error('[AgentSlice] Boardroom message update sync failed:', e)
-                    );
-                });
-            }
-        },
+        updateBoardroomMessage: (id, updates) => set(state => ({
+            boardroomMessages: state.boardroomMessages.map(msg =>
+                msg.id === id ? { ...msg, ...updates } : msg
+            )
+        })),
 
-        removeBoardroomMessage: (id) => {
-            set(state => ({ boardroomMessages: state.boardroomMessages.filter(msg => msg.id !== id) }));
-            // Delete from Firestore (ISSUE-602)
-            import('@/services/agent/AgentFirebaseConnector').then(({ agentFirebaseConnector }) => {
-                agentFirebaseConnector.delete(id).catch((e) =>
-                    logger.error('[AgentSlice] Boardroom message delete sync failed:', e)
-                );
-            });
-        },
-
-        loadBoardroomMessages: async () => {
-            const { agentFirebaseConnector } = await import('@/services/agent/AgentFirebaseConnector');
-            const { auth } = await import('@/services/firebase');
-            const userId = auth.currentUser?.uid;
-
-            if (!userId) {
-                logger.warn('[AgentSlice] loadBoardroomMessages: no authenticated user');
-                return () => {};
-            }
-
-            return agentFirebaseConnector.subscribeToUserMessages(
-                userId,
-                (messages) => set({ boardroomMessages: messages }),
-                (error) => logger.error('[AgentSlice] Boardroom messages subscription error:', error)
-            );
-        },
-
+        removeBoardroomMessage: (id) => set(state => ({
+            boardroomMessages: state.boardroomMessages.filter(msg => msg.id !== id)
+        })),
 
         createSession: (title = 'New Conversation', initialAgents = ['indii'], namespace?: string) => {
             const id = crypto.randomUUID();

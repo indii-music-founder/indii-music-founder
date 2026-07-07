@@ -2,6 +2,7 @@
 import { BaseAgent } from '../BaseAgent';
 import { AgentConfig, AgentContext } from '../types';
 import systemPrompt from '@agents/indii_curriculum/prompt.md?raw';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 export class CurriculumAgent extends BaseAgent {
     constructor() {
@@ -264,7 +265,7 @@ export class CurriculumAgent extends BaseAgent {
             const { query } = args;
 
             try {
-                const { knowledgeBaseService } = await import('@/modules/knowledge/services/KnowledgeBaseService');
+                const { knowledgeBaseService } = await importWithRetry(() => import('@/modules/knowledge/services/KnowledgeBaseService'));
                 const result = await knowledgeBaseService.chat(query, null, context?.projectId ?? undefined);
                 return {
                     success: true,
