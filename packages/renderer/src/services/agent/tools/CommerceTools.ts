@@ -2,6 +2,7 @@ import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { logger } from '@/utils/logger';
 import type { AnyToolFunction } from '../types';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 export const CommerceTools = {
     mockup_merchandise: wrapTool('mockup_merchandise', async (args: { productType: string; designIdea: string }) => {
@@ -24,8 +25,8 @@ export const CommerceTools = {
             const mockupImageUrl = await AutonomousIntelligence.generateImage(imagePrompt);
 
             // Persist the generated mockup to Firestore for the merch module
-            const { db, auth } = await import('@/services/firebase');
-            const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
+            const { db, auth } = await importWithRetry(() => import('@/services/firebase'));
+            const { collection, addDoc, serverTimestamp } = await importWithRetry(() => import('firebase/firestore'));
             const uid = auth.currentUser?.uid;
             if (uid) {
                 await addDoc(collection(db, 'users', uid, 'merchandiseMockups'), {
@@ -52,8 +53,8 @@ export const CommerceTools = {
     deploy_storefront_preview: wrapTool('deploy_storefront_preview', async (args: { campaignName: string; items: string[] }) => {
         // Attempt to create real Stripe Payment Links via Cloud Function
         try {
-            const { functions } = await import('@/services/firebase');
-            const { httpsCallable } = await import('firebase/functions');
+            const { functions } = await importWithRetry(() => import('@/services/firebase'));
+            const { httpsCallable } = await importWithRetry(() => import('firebase/functions'));
             const createPaymentLinksFn = httpsCallable(functions, 'createStripePaymentLinks');
 
             const result = await createPaymentLinksFn({ campaignName: args.campaignName, items: args.items }) as { data: { storefrontUrl: string; paymentLinks: string[] } };
@@ -83,8 +84,8 @@ export const CommerceTools = {
 
     create_limited_drop_campaign: wrapTool('create_limited_drop_campaign', async (args: { dropName: string; totalItems: number; releaseDate: string }) => {
         try {
-            const { db, auth } = await import('@/services/firebase');
-            const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
+            const { db, auth } = await importWithRetry(() => import('@/services/firebase'));
+            const { collection, addDoc, serverTimestamp } = await importWithRetry(() => import('firebase/firestore'));
             const uid = auth.currentUser?.uid;
             if (!uid) {
                 return toolError('User must be authenticated to create a limited drop.', 'AUTH_REQUIRED');

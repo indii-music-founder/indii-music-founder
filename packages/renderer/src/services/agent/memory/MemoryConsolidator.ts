@@ -22,6 +22,7 @@ import type {
     MemoryTier,
     MemoryTierConfig,
 } from '@/types/AlwaysOnMemory';
+import { importWithRetry } from '@/utils/dynamicImport';
 import {
     DEFAULT_CONSOLIDATION_CONFIG,
     DEFAULT_TIER_CONFIG,
@@ -554,7 +555,7 @@ export class MemoryConsolidator {
     ): Promise<void> {
         try {
             const ref = firestoreDoc(db, 'users', userId, 'alwaysOnMemories', memoryId);
-            const { getDoc } = await import('firebase/firestore');
+            const { getDoc } = await importWithRetry(() => import('firebase/firestore'));
             const docSnap = await getDoc(ref);
 
             if (!docSnap.exists()) return;

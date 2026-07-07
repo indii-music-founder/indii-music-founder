@@ -60,7 +60,8 @@ export default function TransportBar({ track, onNext }: TransportBarProps) {
             audioRef.current.load();
             audioRef.current.play().then(() => {
                 setIsPlaying(true);
-            }).catch(() => {
+            }).catch((err) => {
+                console.error('[TransportBar] Playback failed:', err);
                 setIsPlaying(false);
             });
         } else if (audioRef.current && !track) {
@@ -79,7 +80,9 @@ export default function TransportBar({ track, onNext }: TransportBarProps) {
             audioRef.current.pause();
             setIsPlaying(false);
         } else {
-            audioRef.current.play().catch(() => {});
+            audioRef.current.play().catch((err) => {
+                console.error('[TransportBar] Toggle play failed:', err);
+            });
             setIsPlaying(true);
         }
     };

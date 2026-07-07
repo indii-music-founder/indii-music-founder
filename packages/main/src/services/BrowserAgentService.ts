@@ -103,7 +103,10 @@ export class BrowserAgentService {
         const screenshotBase64 = image.toDataURL(); // Returns props 'data:image/png;base64,...'
 
         // Extract Main Text via JS
-        const text = await this.window.webContents.executeJavaScript('document.body.innerText').catch(_e => {  return ''; });
+        const text = await this.window.webContents.executeJavaScript('document.body.innerText').catch(e => {
+            console.error('[BrowserAgentService] Text extraction failed:', e);
+            return '';
+        });
 
         return {
             title,
@@ -151,9 +154,7 @@ export class BrowserAgentService {
                 const text = ${JSON.stringify(text)};
                 const el = document.activeElement;
                 if (!el) throw new Error('No active element focused');
-                if (el && ('value' in el)) {
-                    (el as any).value = text;
-                } else if (el && el.getAttribute('contenteditable') === 'true') {
+                if (el && el.getAttribute('contenteditable') === 'true') {
                     el.textContent = text;
                 } else if (el) {
                     (el as any).value = text;

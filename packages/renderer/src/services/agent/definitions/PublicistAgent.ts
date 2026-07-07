@@ -6,6 +6,7 @@ import { StorageService } from '@/services/StorageService';
 import { logger } from '@/utils/logger';
 import systemPrompt from '@agents/publicist/prompt.md?raw';
 import { UniversalTools } from '../tools/UniversalTools';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 export const PublicistAgent = createAgent('publicist')
     .withName('Publicist Director')
@@ -347,8 +348,8 @@ export const PublicistAgent = createAgent('publicist')
         }]
     }, async (args: { artistName: string, shortBio: string, pressShotUrls: string[], featuredTracks?: string[], contactEmail: string }) => {
         try {
-            const { useStore } = await import('@/core/store');
-            const { epkGeneratorService } = await import('../../marketing/EPKGeneratorService');
+            const { useStore } = await importWithRetry(() => import('@/core/store'));
+            const { epkGeneratorService } = await importWithRetry(() => import('../../marketing/EPKGeneratorService'));
             
             // Perform real store update
             const store = useStore.getState();
@@ -444,8 +445,8 @@ Format as JSON array with keys: outlet, subject, body, angle
 Return only valid JSON, no markdown fences.`;
 
         try {
-            const { AutonomousIntelligence } = await import('@/services/intelligence/AutonomousIntelligence');
-            const { INTELLIGENCE_MODELS } = await import('@/core/config/intelligence-models');
+            const { AutonomousIntelligence } = await importWithRetry(() => import('@/services/intelligence/AutonomousIntelligence'));
+            const { INTELLIGENCE_MODELS } = await importWithRetry(() => import('@/core/config/intelligence-models'));
             const raw = await AutonomousIntelligence.generateText(prompt, INTELLIGENCE_MODELS.TEXT.FAST);
             // Strip any markdown wrapping
             const cleaned = raw.replace(/```(?:json)?\n?/g, '').replace(/```$/g, '').trim();
@@ -496,8 +497,8 @@ ${args.quotes ? `Quotes to include:\n${args.quotes.map(q => `- "${q}"`).join('\n
 Format as a standard, ready-to-publish press release with a catchy headline, dateline, introduction, body paragraphs, and a boilerplate "About the Artist" section at the end.`;
 
         try {
-            const { AutonomousIntelligence } = await import('@/services/intelligence/AutonomousIntelligence');
-            const { INTELLIGENCE_MODELS } = await import('@/core/config/intelligence-models');
+            const { AutonomousIntelligence } = await importWithRetry(() => import('@/services/intelligence/AutonomousIntelligence'));
+            const { INTELLIGENCE_MODELS } = await importWithRetry(() => import('@/core/config/intelligence-models'));
             const content = await AutonomousIntelligence.generateText(prompt, INTELLIGENCE_MODELS.TEXT.FAST);
             return {
                 success: true,
@@ -544,8 +545,8 @@ Each object should have:
 Return ONLY valid JSON. No markdown fences.`;
 
         try {
-            const { AutonomousIntelligence } = await import('@/services/intelligence/AutonomousIntelligence');
-            const { INTELLIGENCE_MODELS } = await import('@/core/config/intelligence-models');
+            const { AutonomousIntelligence } = await importWithRetry(() => import('@/services/intelligence/AutonomousIntelligence'));
+            const { INTELLIGENCE_MODELS } = await importWithRetry(() => import('@/core/config/intelligence-models'));
             const raw = await AutonomousIntelligence.generateText(prompt, INTELLIGENCE_MODELS.TEXT.FAST);
             const cleaned = raw.replace(/```(?:json)?\n?/g, '').replace(/```$/g, '').trim();
             const contacts = JSON.parse(cleaned);

@@ -3,6 +3,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { AgentContext } from '@/services/agent/types';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 // Mock the store to capture pushCanvas/clearCanvas calls
 const mockPushCanvas = vi.fn();
@@ -23,7 +24,7 @@ vi.mock('@/core/store', () => ({
 }));
 
 // Must import AFTER mock is declared
-const { CanvasTools } = await import('@/services/agent/tools/CanvasTools');
+const { CanvasTools } = await importWithRetry(() => import('@/services/agent/tools/CanvasTools'));
 
 const mockContext: AgentContext = {
     userId: 'test-uid',

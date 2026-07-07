@@ -1,6 +1,7 @@
 import { StorageService } from '@/services/StorageService';
 import { wrapTool, toolSuccess } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 export const StorageTools = {
     list_files: wrapTool('list_files', async (args: { limit?: number, type?: string }) => {
@@ -40,8 +41,8 @@ export const StorageTools = {
     scrub_orphaned_media: wrapTool('scrub_orphaned_media', async (args: { olderThanDays: number; bucketId: string }) => {
         // Item 187: Scrub orphaned media via Cloud Function
         try {
-            const { functions } = await import('@/services/firebase');
-            const { httpsCallable } = await import('firebase/functions');
+            const { functions } = await importWithRetry(() => import('@/services/firebase'));
+            const { httpsCallable } = await importWithRetry(() => import('firebase/functions'));
 
             const scrubFn = httpsCallable<
                 { olderThanDays: number; bucketId: string },

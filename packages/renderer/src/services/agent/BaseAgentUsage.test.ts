@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BaseAgent } from './BaseAgent';
 import { AgentConfig } from './types';
 import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 // Mock dependencies
 vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
@@ -64,7 +65,7 @@ describe('BaseAgent Usage Defenses', () => {
     });
 
     it('should handle response WITHOUT usage method gracefully', async () => {
-        const aiMock = await import('@/services/intelligence/AutonomousIntelligence');
+        const aiMock = await importWithRetry(() => import('@/services/intelligence/AutonomousIntelligence'));
         vi.mocked(aiMock.AutonomousIntelligence.generateContent)
             .mockResolvedValueOnce({
                 response: {
@@ -84,7 +85,7 @@ describe('BaseAgent Usage Defenses', () => {
     });
 
     it('should handle response WITH usage method', async () => {
-        const aiMock = await import('@/services/intelligence/AutonomousIntelligence');
+        const aiMock = await importWithRetry(() => import('@/services/intelligence/AutonomousIntelligence'));
         vi.mocked(aiMock.AutonomousIntelligence.generateContent)
             .mockResolvedValueOnce({
                 response: {

@@ -2,6 +2,7 @@ import React, { useMemo, memo } from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { formatSmartDate, cn } from '@/lib/utils';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { MessageSquare, Calendar, Trash2, X, Edit2, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { ConversationSession } from '@/core/store/slices/agent';
@@ -118,9 +119,15 @@ const HistoryItem = memo(({
                 )}
                 <button
                     className="p-2 hover:bg-red-500/20 hover:text-red-400 rounded-lg text-gray-600 transition-colors focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:outline-none"
-                    onClick={(e) => {
+                    onClick={async (e) => {
                         e.stopPropagation();
-                        onDelete(session.id);
+                        const ok = await ConfirmDialog.call({
+                            title: 'Delete Session',
+                            message: `Are you sure you want to delete "${session.title || 'Temporal Stream'}"? This cannot be undone.`,
+                            confirmText: 'Delete',
+                            variant: 'destructive'
+                        });
+                        if (ok) onDelete(session.id);
                     }}
                     aria-label={`Delete session: ${session.title || 'Temporal Stream'}`}
                 >

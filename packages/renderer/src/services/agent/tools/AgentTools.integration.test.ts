@@ -6,6 +6,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 // Mock Firebase
 vi.mock('@/services/firebase', () => ({
@@ -57,7 +58,7 @@ describe.skip('Agent Tool Integration Tests (Item 281)', () => {
 
     describe.skip('CoreTools', () => {
         it('delegate_task validates agent ID', async () => {
-            const { CoreTools } = await import('@/services/agent/tools/CoreTools');
+            const { CoreTools } = await importWithRetry(() => import('@/services/agent/tools/CoreTools'));
             const result = await CoreTools.delegate_task(
                 { targetAgentId: 'nonexistent-agent', task: 'Do something' },
                 { traceId: 'test-trace' },
@@ -69,7 +70,7 @@ describe.skip('Agent Tool Integration Tests (Item 281)', () => {
         });
 
         it('set_mode rejects invalid modes', async () => {
-            const { CoreTools } = await import('@/services/agent/tools/CoreTools');
+            const { CoreTools } = await importWithRetry(() => import('@/services/agent/tools/CoreTools'));
             const result = await CoreTools.set_mode(
                 { mode: 'INVALID_MODE' },
                 {},
@@ -83,7 +84,7 @@ describe.skip('Agent Tool Integration Tests (Item 281)', () => {
         });
 
         it('update_prompt returns the text', async () => {
-            const { CoreTools } = await import('@/services/agent/tools/CoreTools');
+            const { CoreTools } = await importWithRetry(() => import('@/services/agent/tools/CoreTools'));
             const result = await CoreTools.update_prompt(
                 { text: 'Generate a hip-hop beat' },
                 {},
@@ -94,7 +95,7 @@ describe.skip('Agent Tool Integration Tests (Item 281)', () => {
         });
 
         it('check_calendar_notifications returns structured data', async () => {
-            const { CoreTools } = await import('@/services/agent/tools/CoreTools');
+            const { CoreTools } = await importWithRetry(() => import('@/services/agent/tools/CoreTools'));
             const result = await CoreTools.check_calendar_notifications(
                 {},
                 {},
@@ -109,7 +110,7 @@ describe.skip('Agent Tool Integration Tests (Item 281)', () => {
 
     describe.skip('NavigationTools', () => {
         it('exports a valid tool record', async () => {
-            const { NavigationTools } = await import('@/services/agent/tools/NavigationTools');
+            const { NavigationTools } = await importWithRetry(() => import('@/services/agent/tools/NavigationTools'));
             expect(NavigationTools).toBeDefined();
             expect(typeof NavigationTools).toBe('object');
             // All values should be functions
@@ -122,7 +123,7 @@ describe.skip('Agent Tool Integration Tests (Item 281)', () => {
 
     describe.skip('MemoryTools', () => {
         it('exports a valid tool record', async () => {
-            const { MemoryTools } = await import('@/services/agent/tools/MemoryTools');
+            const { MemoryTools } = await importWithRetry(() => import('@/services/agent/tools/MemoryTools'));
             expect(MemoryTools).toBeDefined();
             expect(typeof MemoryTools).toBe('object');
             for (const [_name, fn] of Object.entries(MemoryTools)) {
@@ -141,7 +142,7 @@ describe.skip('Agent Tool Integration Tests (Item 281)', () => {
             ];
 
             for (const modulePath of toolModules) {
-                const mod = await import(modulePath);
+                const mod = await importWithRetry(() => import(modulePath));
                 const toolKeys = Object.keys(mod).filter(k => k.endsWith('Tools'));
 
                 for (const key of toolKeys) {

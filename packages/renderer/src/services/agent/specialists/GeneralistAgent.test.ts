@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GeneralistAgent } from './GeneralistAgent';
 import { useStore } from '@/core/store';
 import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 // Mock dependencies
 vi.mock('@/core/store');
@@ -146,7 +147,7 @@ describe('GeneralistAgent', () => {
         } as unknown as Awaited<ReturnType<typeof AI.generateContentStream>>);
 
         // Use dynamic import to spy on the singleton instance used by the tools
-        const { ImageGeneration } = await import('@/services/image/ImageGenerationService');
+        const { ImageGeneration } = await importWithRetry(() => import('@/services/image/ImageGenerationService'));
         const generateSpy = vi.spyOn(ImageGeneration, 'generateImages').mockResolvedValue([
             { id: 'img-1', url: 'http://img.com/1', prompt: 'A cool cat' }
         ]);

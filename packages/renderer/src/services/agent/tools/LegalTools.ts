@@ -5,6 +5,7 @@ import { wrapTool, toolError, toolSuccess } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 import { logger } from '@/utils/logger';
 import { getFineTunedModel } from '../fine-tuned-models';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 // ============================================================================
 // Types for LegalTools
@@ -116,8 +117,8 @@ Key Terms: ${args.terms}`;
 
         // Item 111: Wire to digital signature Cloud Function
         try {
-            const { functions } = await import('@/services/firebase');
-            const { httpsCallable } = await import('firebase/functions');
+            const { functions } = await importWithRetry(() => import('@/services/firebase'));
+            const { httpsCallable } = await importWithRetry(() => import('firebase/functions'));
 
             const sendForSigningFn = httpsCallable<
                 { contractId: string; signers: Array<{ name: string; email: string }>; provider: string },
@@ -222,7 +223,7 @@ Signature: ____________________________
         trackTitle?: string;
     }) => {
         // Navigate to Registration Center focused on Library of Congress
-        const { useStore } = await import('@/core/store');
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
         const store = useStore.getState();
         store.setModule('registration');
         store.setRegistrationFocus({ orgId: 'loc', trackId: args.trackId ?? null });
@@ -245,7 +246,7 @@ Signature: ____________________________
         const orgNames: Record<string, string> = { ascap: 'ASCAP', bmi: 'BMI', sesac: 'SESAC' };
         const orgName = orgNames[args.orgId] ?? args.orgId.toUpperCase();
 
-        const { useStore } = await import('@/core/store');
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
         const store = useStore.getState();
         store.setModule('registration');
         store.setRegistrationFocus({ orgId: args.orgId, trackId: args.trackId ?? null });
@@ -266,8 +267,8 @@ Signature: ____________________________
         // persists check results to Firestore for audit trail.
 
         try {
-            const { functions } = await import('@/services/firebase');
-            const { httpsCallable } = await import('firebase/functions');
+            const { functions } = await importWithRetry(() => import('@/services/firebase'));
+            const { httpsCallable } = await importWithRetry(() => import('firebase/functions'));
 
             const verifyFn = httpsCallable<
                 { trackTitle: string; originalArtist: string },
@@ -281,8 +282,8 @@ Signature: ____________________________
 
             // Persist the license check to Firestore
             try {
-                const { db, auth } = await import('@/services/firebase');
-                const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
+                const { db, auth } = await importWithRetry(() => import('@/services/firebase'));
+                const { collection, addDoc, serverTimestamp } = await importWithRetry(() => import('firebase/firestore'));
                 const userId = auth.currentUser?.uid;
                 if (userId) {
                     await addDoc(collection(db, `users/${userId}/mechanical_license_checks`), {
@@ -315,8 +316,8 @@ Signature: ____________________________
 
             // Fallback: Persist the check request for manual processing
             try {
-                const { db, auth } = await import('@/services/firebase');
-                const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
+                const { db, auth } = await importWithRetry(() => import('@/services/firebase'));
+                const { collection, addDoc, serverTimestamp } = await importWithRetry(() => import('firebase/firestore'));
                 const userId = auth.currentUser?.uid;
                 if (userId) {
                     await addDoc(collection(db, `users/${userId}/mechanical_license_checks`), {

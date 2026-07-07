@@ -4,6 +4,7 @@ import { functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { logger } from '@/utils/logger';
 import { getFineTunedModel } from '../fine-tuned-models';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 // Module-level cache for ECB exchange rates (updates once daily, cache for 1 hour)
 const ECB_CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
@@ -37,7 +38,7 @@ let _ecbCache = loadEcbCache();
 
 export const FinanceTools = {
     analyze_receipt: wrapTool('analyze_receipt', async (args: { image_data: string, mime_type: string }) => {
-        const { AutonomousIntelligence, getResponseText } = await import('@/services/intelligence/AutonomousIntelligence');
+        const { AutonomousIntelligence, getResponseText } = await importWithRetry(() => import('@/services/intelligence/AutonomousIntelligence'));
 
         // Construct Multimodal Prompt
         const prompt = `You are an expert accountant. Extract the following data from this receipt image:
@@ -72,7 +73,7 @@ export const FinanceTools = {
     }),
 
     audit_distribution: wrapTool('audit_distribution', async (args: { trackTitle: string; distributor: string }) => {
-        const { DISTRIBUTORS } = await import('@/core/config/distributors');
+        const { DISTRIBUTORS } = await importWithRetry(() => import('@/core/config/distributors'));
 
         // 1. Check Distributor Config
         const distConfig = DISTRIBUTORS[args.distributor as keyof typeof DISTRIBUTORS];
@@ -406,7 +407,7 @@ export const FinanceTools = {
 
     normalize_distributor_statements: wrapTool('normalize_distributor_statements', async (args: { csvFiles: string[] }) => {
         // Item 179: Use Gemini to parse and normalize CSV structures from different distributors
-        const { AutonomousIntelligence, getResponseText } = await import('@/services/intelligence/AutonomousIntelligence');
+        const { AutonomousIntelligence, getResponseText } = await importWithRetry(() => import('@/services/intelligence/AutonomousIntelligence'));
 
         const prompt = `
         You are a music industry financial analyst. The following CSV files have been uploaded 

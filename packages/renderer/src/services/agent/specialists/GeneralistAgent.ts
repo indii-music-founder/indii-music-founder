@@ -11,6 +11,7 @@ import { AgentPromptBuilder } from '../builders/AgentPromptBuilder';
 import { getFineTunedModel } from '../fine-tuned-models';
 
 import systemPrompt from '@agents/conductor/prompt.md?raw';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 /**
  * GeneralistAgent (indii Conductor) - The primary orchestrator and fallback agent.
@@ -83,7 +84,7 @@ export class GeneralistAgent extends BaseAgent {
      * This must be called after instantiation by the registry.
      */
     async initialize() {
-        const { TOOL_REGISTRY } = await import('../tools');
+        const { TOOL_REGISTRY } = await importWithRetry(() => import('../tools'));
         this.functions = TOOL_REGISTRY;
         this.tools = this.buildToolDeclarations();
 

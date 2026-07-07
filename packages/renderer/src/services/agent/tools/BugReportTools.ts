@@ -2,6 +2,7 @@ import { wrapTool, toolError, toolSuccess } from '../utils/ToolUtils';
 import type { AnyToolFunction, AgentContext, ToolFunctionArgs } from '../types';
 import type { ToolExecutionContext } from '../ToolExecutionContext';
 import { logger } from '@/utils/logger';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 /**
  * Bug and feature reporting tools.
@@ -25,7 +26,7 @@ export const BugReportTools: Record<string, AnyToolFunction> = {
             return toolError('Bug report requires at least a title and description.', 'MISSING_FIELDS');
         }
 
-        const { useStore } = await import('@/core/store');
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
         const state = useStore.getState();
 
         const bugReport = {
@@ -80,7 +81,7 @@ ${bugReport.errorMessage ? `### Error Message\n\`\`\`\n${bugReport.errorMessage}
 
         // 1. Save to Firestore
         try {
-            const { FirestoreService } = await import('@/services/FirestoreService');
+            const { FirestoreService } = await importWithRetry(() => import('@/services/FirestoreService'));
             const bugService = new FirestoreService<typeof bugReport>('bug_reports');
             await bugService.add(bugReport);
             logger.info(`[BugReportTools] Bug report saved: ${bugReport.id} — "${bugReport.title}"`);
@@ -94,8 +95,8 @@ ${bugReport.errorMessage ? `### Error Message\n\`\`\`\n${bugReport.errorMessage}
         let issueUrl: string | undefined;
 
         try {
-            const { httpsCallable } = await import('firebase/functions');
-            const { functions } = await import('@/services/firebase');
+            const { httpsCallable } = await importWithRetry(() => import('firebase/functions'));
+            const { functions } = await importWithRetry(() => import('@/services/firebase'));
             const reportBug = httpsCallable<{
                 title: string;
                 description: string;
@@ -133,7 +134,7 @@ ${bugReport.errorMessage ? `### Error Message\n\`\`\`\n${bugReport.errorMessage}
 
         // 3. Save to Agent Memory for context continuity
         try {
-            const { alwaysOnMemoryEngine } = await import('@/services/agent/memory/AlwaysOnMemoryEngine');
+            const { alwaysOnMemoryEngine } = await importWithRetry(() => import('@/services/agent/memory/AlwaysOnMemoryEngine'));
             await alwaysOnMemoryEngine.ingest(
                 `Bug reported: "${bugReport.title}" (${bugReport.severity}) in ${bugReport.module}. ${bugReport.description.substring(0, 100)}`,
                 'system',
@@ -169,7 +170,7 @@ ${bugReport.errorMessage ? `### Error Message\n\`\`\`\n${bugReport.errorMessage}
             return toolError('Feature request requires at least a title and description.', 'MISSING_FIELDS');
         }
 
-        const { useStore } = await import('@/core/store');
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
         const state = useStore.getState();
 
         const featureRequest = {
@@ -215,7 +216,7 @@ ${featureRequest.useCase}
 
         // 1. Save to Firestore
         try {
-            const { FirestoreService } = await import('@/services/FirestoreService');
+            const { FirestoreService } = await importWithRetry(() => import('@/services/FirestoreService'));
             const featureService = new FirestoreService<typeof featureRequest>('feature_requests');
             await featureService.add(featureRequest);
             logger.info(`[BugReportTools] Feature request saved: ${featureRequest.id} — "${featureRequest.title}"`);
@@ -226,7 +227,7 @@ ${featureRequest.useCase}
 
         // 2. Save to Agent Memory
         try {
-            const { alwaysOnMemoryEngine } = await import('@/services/agent/memory/AlwaysOnMemoryEngine');
+            const { alwaysOnMemoryEngine } = await importWithRetry(() => import('@/services/agent/memory/AlwaysOnMemoryEngine'));
             await alwaysOnMemoryEngine.ingest(
                 `Feature requested: "${featureRequest.title}" (${featureRequest.priority}) for ${featureRequest.module}. ${featureRequest.description.substring(0, 100)}`,
                 'system',

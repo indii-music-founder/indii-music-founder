@@ -4,6 +4,7 @@ import { zodToJsonSchema } from 'zod-to-json-schema';
 import { wrapTool, toolSuccess } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 import { logger } from '@/utils/logger';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 /** Typed Electron IPC bridge for publicist tools */
 interface ElectronPublicistBridge {
@@ -83,11 +84,11 @@ export const PublicistTools = {
             }
         }
 
-        const { auth, db } = await import('@/services/firebase');
+        const { auth, db } = await importWithRetry(() => import('@/services/firebase'));
         const uid = auth.currentUser?.uid;
         if (uid) {
             try {
-                const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
+                const { collection, addDoc, serverTimestamp } = await importWithRetry(() => import('firebase/firestore'));
                 await addDoc(collection(db, 'users', uid, 'press_releases'), {
                     ...validated,
                     topic,
@@ -120,11 +121,11 @@ export const PublicistTools = {
 
         const validated = GenerateCrisisResponseSchema.parse(data);
 
-        const { auth, db } = await import('@/services/firebase');
+        const { auth, db } = await importWithRetry(() => import('@/services/firebase'));
         const uid = auth.currentUser?.uid;
         if (uid) {
             try {
-                const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
+                const { collection, addDoc, serverTimestamp } = await importWithRetry(() => import('firebase/firestore'));
                 await addDoc(collection(db, 'users', uid, 'crisis_responses'), {
                     ...validated,
                     situation,
@@ -153,11 +154,11 @@ export const PublicistTools = {
 
         const validated = PitchStorySchema.parse(data);
 
-        const { auth, db } = await import('@/services/firebase');
+        const { auth, db } = await importWithRetry(() => import('@/services/firebase'));
         const uid = auth.currentUser?.uid;
         if (uid) {
             try {
-                const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
+                const { collection, addDoc, serverTimestamp } = await importWithRetry(() => import('firebase/firestore'));
                 await addDoc(collection(db, 'users', uid, 'email_pitches'), {
                     ...validated,
                     story_summary,
@@ -186,11 +187,11 @@ export const PublicistTools = {
 
         const validated = PitchStorySchema.parse(data);
 
-        const { auth, db } = await import('@/services/firebase');
+        const { auth, db } = await importWithRetry(() => import('@/services/firebase'));
         const uid = auth.currentUser?.uid;
         if (uid) {
             try {
-                const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
+                const { collection, addDoc, serverTimestamp } = await importWithRetry(() => import('firebase/firestore'));
                 await addDoc(collection(db, 'users', uid, 'email_pitches'), {
                     ...validated,
                     playlistName: args.playlistName,

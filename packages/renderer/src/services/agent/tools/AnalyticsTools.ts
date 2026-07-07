@@ -2,6 +2,7 @@ import { wrapTool, toolError, toolSuccess } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 import { detect_streaming_anomalies } from './AnalysisTools';
 import { run_cohort_analysis } from './BigQueryTools';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 export const AnalyticsTools = {
     calculate_viral_potential_score: wrapTool('calculate_viral_potential_score', async (args: { bpm: number; genre: string; mood: string }) => {
@@ -45,8 +46,8 @@ export const AnalyticsTools = {
 
     benchmark_release_velocity: wrapTool('benchmark_release_velocity', async (args: { trackId?: string; artistId?: string }) => {
         // 1. Get auth and Firestore db
-        const { db, auth } = await import('@/services/firebase');
-        const { doc, getDoc } = await import('firebase/firestore');
+        const { db, auth } = await importWithRetry(() => import('@/services/firebase'));
+        const { doc, getDoc } = await importWithRetry(() => import('firebase/firestore'));
 
         const uid = auth.currentUser?.uid;
         if (!uid) {

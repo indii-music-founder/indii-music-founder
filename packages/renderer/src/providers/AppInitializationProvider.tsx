@@ -16,7 +16,7 @@ import { logger } from '@/utils/logger';
  * - Electron-specific sync (Update channels)
  */
 export const AppInitializationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const { initializeAuthListener, loadUserProfile, user, userProfile, initializeHistory, loadProjects, loadBoardroomMessages } = useStore(
+    const { initializeAuthListener, loadUserProfile, user, userProfile, initializeHistory, loadProjects, currentOrganizationId } = useStore(
         useShallow(state => ({
             initializeAuthListener: state.initializeAuthListener,
             loadUserProfile: state.loadUserProfile,
@@ -24,7 +24,7 @@ export const AppInitializationProvider: React.FC<{ children: React.ReactNode }> 
             userProfile: state.userProfile,
             initializeHistory: state.initializeHistory,
             loadProjects: state.loadProjects,
-            loadBoardroomMessages: state.loadBoardroomMessages,
+            currentOrganizationId: state.currentOrganizationId
         }))
     );
 
@@ -50,20 +50,9 @@ export const AppInitializationProvider: React.FC<{ children: React.ReactNode }> 
     useEffect(() => {
         if (user && !user.isAnonymous && user.uid !== 'demo') {
             let isMounted = true;
-            let boardroomUnsubscribe: (() => void) | null = null;
 
             initializeHistory();
             loadProjects();
-
-            // Subscribe to boardroom messages from Firestore for cross-device persistence (ISSUE-602)
-            loadBoardroomMessages().then(unsub => {
-                if (isMounted) {
-                    boardroomUnsubscribe = unsub;
-                } else {
-                    // Component unmounted before async resolved; clean up immediately
-                    unsub();
-                }
-            }).catch(err => logger.error('Failed to load boardroom messages', err));
 
             // Re-enable Agent if needed, but keep closed by default
             useStore.setState({ isAgentOpen: false });
@@ -112,7 +101,6 @@ export const AppInitializationProvider: React.FC<{ children: React.ReactNode }> 
                 isMounted = false;
                 if (pushUnsub) pushUnsub();
                 if (handoffUnsub) handoffUnsub();
-                if (boardroomUnsubscribe) boardroomUnsubscribe();
                 import('@/services/agent/ProactiveService').then(({ proactiveService }) => {
                     proactiveService.dispose();
                 }).catch(() => { /* module already unloaded */ });
@@ -124,7 +112,7 @@ export const AppInitializationProvider: React.FC<{ children: React.ReactNode }> 
                 }).catch(() => { /* module already unloaded */ });
             };
         }
-    }, [user, initializeHistory, loadProjects, loadBoardroomMessages]);
+    }, [user, currentOrganizationId, initializeHistory, loadProjects]);
 
     // 4. Electron-specific synchronization
     useEffect(() => {
