@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { ConversationSession } from '@/core/store/slices/agent';
 import { FilterItem } from './components/FilterItem';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 export default function HistoryDashboard() {
     const {
@@ -201,7 +202,16 @@ export default function HistoryDashboard() {
                                                                     Resume
                                                                 </button>
                                                                 <button
-                                                                    onClick={() => deleteSession(item.id)}
+                                                                    onClick={async (e) => {
+                                                                        e.stopPropagation();
+                                                                        const ok = await ConfirmDialog.call({
+                                                                            title: 'Delete Session',
+                                                                            message: `Are you sure you want to delete session "${item.title}"? This cannot be undone.`,
+                                                                            confirmText: 'Delete',
+                                                                            variant: 'destructive'
+                                                                        });
+                                                                        if (ok) deleteSession(item.id);
+                                                                    }}
                                                                     className="p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors"
                                                                 >
                                                                     <Trash2 size={14} />
