@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-07-07 16:57 EDT
+**Updated:** 2026-07-07 16:59 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+55c22c379 chore: session checkpoint [16:57]
 84e4a0c40 chore: session checkpoint [16:26]
 b46212840 chore: session checkpoint [15:06]
 fb6f1c1e1 chore: session checkpoint [14:43]
@@ -13,7 +14,6 @@ a8083fda6 fix(sync): resolve cross-device sync race condition
 ea02a2ad9 chore: session checkpoint [08:13]
 3ccb285a5 chore: resolve all 15 npm-audit moderate findings
 5b1a0602c chore: session checkpoint [08:04]
-14c67a99a fix(chat): remove break-all so words wrap at spaces not mid-word
 ```
 
 ## Working State
@@ -82,6 +82,7 @@ ea02a2ad9 chore: session checkpoint [08:13]
  M packages/shared/dist/schemas/env.schema.d.ts
  M packages/shared/dist/schemas/workflowState.d.ts
  M packages/shared/src/ipc/electron-api.types.ts
+?? docs/flowcharts/test-console-sandbox-micro.md
 ?? packages/renderer/src/core/components/AgentSwitcherStrip.tsx
 ```
 
