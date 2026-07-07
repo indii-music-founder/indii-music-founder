@@ -10852,13 +10852,15 @@ PASS 7 (departments, continuing 2026-07-03): ISSUE-712..715
 
 ### ISSUE-718: `packages/renderer/src/modules/legal/tools.ts` is entirely orphaned legacy scaffolding — superseded by the real, wired agent tool system
 
-- **Status:** 🟡 IN PROGRESS (Agent B)
+- **Status:** ✅ FIXED
 - **Severity:** 🟢 LOW (dead code, not a functional bug — the real feature works fine elsewhere)
 - **Module:** Legal
 - **Depends on:** nothing — parallel-safe
 - **Summary:** `LEGAL_TOOLS` (`analyze_contract`, `check_compliance`) plus `LEGAL_MANAGER_PROMPT`/`LEGAL_EXECUTOR_PROMPT` in `modules/legal/tools.ts` are never imported anywhere in the codebase — not by `LegalDashboard.tsx`, not by any agent registry, not by any test. Also notably: neither generated prompt in this dead file carries any "not legal advice / consult an attorney" disclaimer language, unlike every other real legal-adjacent surface in the codebase. The REAL, wired implementation lives in `services/agent/tools/LegalTools.ts` (`generate_split_sheet`, `summarize_contract_terms`) consumed by `services/agent/definitions/LegalAgent.ts` and registered in `services/agent/tools/index.ts`. This old file was superseded and never deleted.
 - **Fix Direction:** Delete `modules/legal/tools.ts` entirely (confirm zero imports first — already verified via repo-wide grep this pass). If any lingering reference surfaces on a fuller search, redirect it to the real `LegalTools`/`LegalAgent` path instead.
 - **Files:** `packages/renderer/src/modules/legal/tools.ts` (delete candidate)
+**Fix:** Removed the orphaned legacy file `packages/renderer/src/modules/legal/tools.ts`.
+**Evidence:** File no longer exists, and `npm run typecheck` passes with zero errors.
 
 ### Pass 10 clean bills (verified deep, not pattern-only)
 
