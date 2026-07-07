@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import React from 'react';
+
+const toastError = vi.fn();
 
 function filterDomProps(props: Record<string, unknown>): Record<string, unknown> {
     const invalid = ['initial', 'animate', 'exit', 'transition', 'whileHover', 'whileTap', 'layout'];
@@ -21,6 +23,13 @@ vi.mock('framer-motion', () => ({
 let mockStore: Record<string, unknown> = {};
 vi.mock('@/core/store', () => ({ useStore: (s: (st: Record<string, unknown>) => unknown) => s(mockStore) }));
 vi.mock('zustand/react/shallow', () => ({ useShallow: (fn: unknown) => fn }));
+vi.mock('@/core/context/ToastContext', () => ({
+    useToast: () => ({
+        success: vi.fn(),
+        error: toastError,
+        info: vi.fn(),
+    }),
+}));
 vi.mock('@/services/memory/AlwaysOnMemoryService', () => ({
     AlwaysOnMemoryService: {
         getMemories: vi.fn(() => []),
@@ -32,6 +41,14 @@ vi.mock('@/services/memory/AlwaysOnMemoryService', () => ({
     },
 }));
 vi.mock('@/lib/utils', () => ({ cn: (...args: string[]) => args.filter(Boolean).join(' ') }));
+vi.mock('@/utils/logger', () => ({
+    logger: {
+        debug: vi.fn(),
+        error: vi.fn(),
+        info: vi.fn(),
+        warn: vi.fn(),
+    },
+}));
 vi.mock('@/types/AlwaysOnMemory', () => ({}));
 vi.mock('@/core/components/ModuleErrorBoundary', () => ({
     ModuleErrorBoundary: ({ children }: React.PropsWithChildren) => <>{children}</>,
@@ -43,6 +60,7 @@ import MemoryDashboard from './MemoryDashboard';
 
 describe('MemoryDashboard', () => {
     beforeEach(() => {
+        toastError.mockClear();
         mockStore = {
             user: { uid: 'user-1' },
             userProfile: { uid: 'user-1' },
@@ -88,5 +106,24 @@ describe('MemoryDashboard', () => {
         expect(screen.getByText('📋 Feed')).toBeInTheDocument();
         expect(screen.getByText('🔍 Query')).toBeInTheDocument();
         expect(screen.getByText('📥 Ingest')).toBeInTheDocument();
+    });
+
+    it('shows a toast when ingest fails instead of leaving the spinner hanging', async () => {
+        mockStore = {
+            ...mockStore,
+            ingestMemoryText: vi.fn().mockRejectedValue(new Error('ingest failed')),
+        };
+
+        render(<MemoryDashboard />);
+
+        fireEvent.click(screen.getByText('📥 Ingest'));
+        fireEvent.change(screen.getByPlaceholderText('Paste text, notes, articles, or anything you want to remember...'), {
+            target: { value: 'Remember this' },
+        });
+        fireEvent.click(screen.getByText('Ingest Memory'));
+
+        await waitFor(() => {
+            expect(toastError).toHaveBeenCalledWith('ingest failed');
+        });
     });
 });

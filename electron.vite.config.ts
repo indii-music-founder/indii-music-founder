@@ -7,13 +7,14 @@
  *   - Preload:  packages/main/src/preload.ts  → Sandboxed, CJS output
  *   - Renderer: packages/renderer/            → DOM, ESM output (React + Tailwind)
  */
-import { defineConfig, externalizeDepsPlugin } from 'electron-vite';
+import { defineConfig, externalizeDepsPlugin, type Plugin } from 'electron-vite';
+import type { ResolvedConfig, Connect } from 'vite';
 import { resolve } from 'path';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
-const envSanitizerPlugin = () => ({
+const envSanitizerPlugin = (): Plugin => ({
     name: 'env-sanitizer',
-    configResolved(config) {
+    configResolved(config: ResolvedConfig) {
         const isProd = config.command === 'build' || config.mode === 'production';
         const secrets = [
             'VITE_PINATA_SECRET',
@@ -43,10 +44,10 @@ const envSanitizerPlugin = () => ({
     }
 });
 
-const apiFallbackPlugin = () => ({
+const apiFallbackPlugin = (): Plugin => ({
     name: 'api-fallback',
-    configureServer(server) {
-        server.middlewares.use((req, res, next) => {
+    configureServer(server: { middlewares: Connect.Server }) {
+        server.middlewares.use((req: Connect.IncomingMessage, res: import('node:http').ServerResponse, next: Connect.NextFunction) => {
             const url = req.url;
             if (url && (url === '/api' || url.startsWith('/api/') || url.startsWith('/api?'))) {
                 res.statusCode = 404;
@@ -63,8 +64,8 @@ const apiFallbackPlugin = () => ({
             next();
         });
     },
-    configurePreviewServer(server) {
-        server.middlewares.use((req, res, next) => {
+    configurePreviewServer(server: { middlewares: Connect.Server }) {
+        server.middlewares.use((req: Connect.IncomingMessage, res: import('node:http').ServerResponse, next: Connect.NextFunction) => {
             const url = req.url;
             if (url && (url === '/api' || url.startsWith('/api/') || url.startsWith('/api?'))) {
                 res.statusCode = 404;

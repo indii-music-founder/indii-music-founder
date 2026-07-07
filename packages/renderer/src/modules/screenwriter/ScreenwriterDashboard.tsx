@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ThreePanelDashboard } from '@/components/layout/ThreePanelDashboard';
 import {
@@ -18,8 +18,118 @@ interface StoryboardScene {
     veoPrompt: string;
 }
 
+interface ScreenwriterDraft {
+    activeTab: 'scriptwriter' | 'storyboard' | 'veoprompts';
+    songConcept: string;
+    selectedTone: 'cinematic' | 'abstract' | 'hype';
+    scenes: StoryboardScene[];
+    selectedSceneId: string;
+}
+
+const SCREENWRITER_DRAFT_STORAGE_KEY = 'indii-screenwriter-draft-v1';
+
+const DEFAULT_SCENES: StoryboardScene[] = [
+    {
+        id: '1',
+        sceneNumber: 1,
+        heading: 'EXT. CITY ALLEY - NIGHT',
+        description: 'Neon glowing signs flicker. Slick puddles on concrete reflect vibrant magenta and cyan lights. Rain droplets splash slowly on the pavement.',
+        cameraAngle: 'Extreme Wide Shot - Slow tracking lateral pan',
+        duration: 5,
+        veoPrompt: 'Cinematic wide tracking shot of a rainy neon alley at night, reflections in puddles, photorealistic 8k, slow motion.'
+    },
+    {
+        id: '2',
+        sceneNumber: 2,
+        heading: 'INT. UNDERGROUND METRO STATION - NIGHT',
+        description: 'The artist descends the concrete steps. Fluorescent lights flicker overhead. The hum of a distant train echoes through the tiled vault.',
+        cameraAngle: 'Medium Close Up - Low angle looking up',
+        duration: 8,
+        veoPrompt: 'Low-angle medium close-up of a musician walking down retro underground metro subway steps, dim flickering lighting, moody aesthetic.'
+    },
+    {
+        id: '3',
+        sceneNumber: 3,
+        heading: 'EXT. ROOFTOP OVERLOOK - DAWN',
+        description: 'The sky breaks into gold and violet gradients. The artist stands at the ledge, overlooking a massive futuristic cityscape. Wind blows through their jacket.',
+        cameraAngle: 'High Angle Crane Shot - Orbit rotation',
+        duration: 7,
+        veoPrompt: 'Epic drone orbit shot of a singer on a rooftop looking at a gold and purple sunrise over a huge cyber city, wind blowing, premium CGI look.'
+    }
+];
+
+function createDefaultDraft(): ScreenwriterDraft {
+    return {
+        activeTab: 'scriptwriter',
+        songConcept: 'An independent artist walking through a neon-lit rain-slicked city alleyway, with reflections of holographic advertisements detailing their journey.',
+        selectedTone: 'cinematic',
+        scenes: DEFAULT_SCENES,
+        selectedSceneId: DEFAULT_SCENES[0]?.id ?? '1',
+    };
+}
+
+function isStoryboardScene(value: unknown): value is StoryboardScene {
+    if (!value || typeof value !== 'object') return false;
+    const scene = value as StoryboardScene;
+    return (
+        typeof scene.id === 'string' &&
+        typeof scene.sceneNumber === 'number' &&
+        typeof scene.heading === 'string' &&
+        typeof scene.description === 'string' &&
+        typeof scene.cameraAngle === 'string' &&
+        typeof scene.duration === 'number' &&
+        typeof scene.veoPrompt === 'string'
+    );
+}
+
+function normalizeDraft(value: unknown): ScreenwriterDraft {
+    const fallback = createDefaultDraft();
+    if (!value || typeof value !== 'object') return fallback;
+
+    const draft = value as Partial<ScreenwriterDraft>;
+    const scenes = Array.isArray(draft.scenes)
+        ? draft.scenes.filter(isStoryboardScene).map((scene, index) => ({
+            ...scene,
+            sceneNumber: index + 1,
+        }))
+        : fallback.scenes;
+
+    return {
+        activeTab: draft.activeTab === 'storyboard' || draft.activeTab === 'veoprompts' ? draft.activeTab : 'scriptwriter',
+        songConcept: typeof draft.songConcept === 'string' && draft.songConcept.trim() ? draft.songConcept : fallback.songConcept,
+        selectedTone: draft.selectedTone === 'abstract' || draft.selectedTone === 'hype' ? draft.selectedTone : 'cinematic',
+        scenes: scenes.length > 0 ? scenes : fallback.scenes,
+        selectedSceneId: typeof draft.selectedSceneId === 'string' && scenes.some(scene => scene.id === draft.selectedSceneId)
+            ? draft.selectedSceneId
+            : (scenes[0]?.id ?? fallback.selectedSceneId),
+    };
+}
+
+function loadDraft(): ScreenwriterDraft {
+    if (typeof window === 'undefined') return createDefaultDraft();
+
+    try {
+        const raw = window.localStorage.getItem(SCREENWRITER_DRAFT_STORAGE_KEY);
+        if (!raw) return createDefaultDraft();
+        return normalizeDraft(JSON.parse(raw));
+    } catch {
+        return createDefaultDraft();
+    }
+}
+
+function saveDraft(draft: ScreenwriterDraft): void {
+    if (typeof window === 'undefined') return;
+
+    try {
+        window.localStorage.setItem(SCREENWRITER_DRAFT_STORAGE_KEY, JSON.stringify(draft));
+    } catch {
+        // Ignore storage quota / private browsing failures.
+    }
+}
+
 export default function ScreenwriterDashboard() {
-    const [activeTab, setActiveTab] = useState<'scriptwriter' | 'storyboard' | 'veoprompts'>('scriptwriter');
+    const [initialDraft] = useState<ScreenwriterDraft>(() => loadDraft());
+    const [activeTab, setActiveTab] = useState<ScreenwriterDraft['activeTab']>(initialDraft.activeTab);
     const toast = useToast();
     const { setModule, setGenerationMode, setViewMode, setCreativePrompt } = useStore(useShallow(state => ({
         setModule: state.setModule,
@@ -31,42 +141,24 @@ export default function ScreenwriterDashboard() {
     const [isHandoffLoading, setIsHandoffLoading] = useState(false);
     
     // Default Script Mood & Song Outline
-    const [songConcept, setSongConcept] = useState('An independent artist walking through a neon-lit rain-slicked city alleyway, with reflections of holographic advertisements detailing their journey.');
-    const [selectedTone, setSelectedTone] = useState<'cinematic' | 'abstract' | 'hype'>('cinematic');
+    const [songConcept, setSongConcept] = useState(initialDraft.songConcept);
+    const [selectedTone, setSelectedTone] = useState<ScreenwriterDraft['selectedTone']>(initialDraft.selectedTone);
     const [isGenerating, setIsGenerating] = useState(false);
     
     // Manage scenes
-    const [scenes, setScenes] = useState<StoryboardScene[]>([
-        {
-            id: '1',
-            sceneNumber: 1,
-            heading: 'EXT. CITY ALLEY - NIGHT',
-            description: 'Neon glowing signs flicker. Slick puddles on concrete reflect vibrant magenta and cyan lights. Rain droplets splash slowly on the pavement.',
-            cameraAngle: 'Extreme Wide Shot - Slow tracking lateral pan',
-            duration: 5,
-            veoPrompt: 'Cinematic wide tracking shot of a rainy neon alley at night, reflections in puddles, photorealistic 8k, slow motion.'
-        },
-        {
-            id: '2',
-            sceneNumber: 2,
-            heading: 'INT. UNDERGROUND METRO STATION - NIGHT',
-            description: 'The artist descends the concrete steps. Fluorescent lights flicker overhead. The hum of a distant train echoes through the tiled vault.',
-            cameraAngle: 'Medium Close Up - Low angle looking up',
-            duration: 8,
-            veoPrompt: 'Low-angle medium close-up of a musician walking down retro underground metro subway steps, dim flickering lighting, moody aesthetic.'
-        },
-        {
-            id: '3',
-            sceneNumber: 3,
-            heading: 'EXT. ROOFTOP OVERLOOK - DAWN',
-            description: 'The sky breaks into gold and violet gradients. The artist stands at the ledge, overlooking a massive futuristic cityscape. Wind blows through their jacket.',
-            cameraAngle: 'High Angle Crane Shot - Orbit rotation',
-            duration: 7,
-            veoPrompt: 'Epic drone orbit shot of a singer on a rooftop looking at a gold and purple sunrise over a huge cyber city, wind blowing, premium CGI look.'
-        }
-    ]);
+    const [scenes, setScenes] = useState<StoryboardScene[]>(initialDraft.scenes);
 
-    const [selectedSceneId, setSelectedSceneId] = useState<string>('1');
+    const [selectedSceneId, setSelectedSceneId] = useState<string>(initialDraft.selectedSceneId);
+
+    useEffect(() => {
+        saveDraft({
+            activeTab,
+            songConcept,
+            selectedTone,
+            scenes,
+            selectedSceneId,
+        });
+    }, [activeTab, songConcept, selectedTone, scenes, selectedSceneId]);
 
     const buildStoryboardArtifact = () => {
         const sceneSections = scenes.map(scene => [

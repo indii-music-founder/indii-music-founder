@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render } from '@testing-library/react';
+import { render, fireEvent, screen, waitFor } from '@testing-library/react';
 import InfiniteCanvas from '../InfiniteCanvas';
-import React from 'react';
+import React, { act } from 'react';
 
 // Mock the store
 const mockUseStore = vi.fn();
@@ -16,22 +16,33 @@ vi.mock('@/services/image/ImageGenerationService', () => ({
 vi.mock('@/services/image/EditingService', () => ({
     Editing: { editImage: vi.fn() }
 }));
+const mockDetectObjects = vi.fn();
+vi.mock('@/services/image/ImageAnalysisService', () => ({
+    imageAnalysisService: {
+        detectObjects: (...args: any[]) => mockDetectObjects(...args),
+    }
+}));
 
+const mockToast = {
+    error: vi.fn(),
+    success: vi.fn(),
+    info: vi.fn(),
+    warning: vi.fn(),
+};
 vi.mock('@/core/context/ToastContext', () => ({
-    useToast: () => ({
-        toast: {
-            error: vi.fn(),
-            success: vi.fn(),
-            info: vi.fn(),
-            warning: vi.fn(),
-        }
-    })
+    useToast: () => mockToast
 }));
 
 describe('InfiniteCanvas Culling', () => {
     let mockContext: any;
 
     beforeEach(() => {
+        mockDetectObjects.mockReset();
+        mockToast.error.mockReset();
+        mockToast.success.mockReset();
+        mockToast.info.mockReset();
+        mockToast.warning.mockReset();
+
         // Mock Canvas context
         mockContext = {
             fillStyle: '',
@@ -46,6 +57,8 @@ describe('InfiniteCanvas Culling', () => {
             lineTo: vi.fn(),
             stroke: vi.fn(),
             strokeRect: vi.fn(),
+            fillText: vi.fn(),
+            measureText: vi.fn(() => ({ width: 80 })),
             setLineDash: vi.fn(),
         };
 
@@ -54,6 +67,8 @@ describe('InfiniteCanvas Culling', () => {
             if (type === '2d') return mockContext;
             return null;
         });
+
+        vi.spyOn(HTMLCanvasElement.prototype, 'toDataURL').mockReturnValue('data:image/png;base64,canvas-data');
 
         // Mock window.Image
         global.Image = class {
@@ -186,5 +201,56 @@ describe('InfiniteCanvas Culling', () => {
 
         // Offscreen should NOT be drawn (this expectation will fail before optimization)
         expect(offScreenCalls.length).toBe(0);
+    });
+
+    it('runs real object detection and renders bounding boxes', async () => {
+        const visibleImage = {
+            id: 'img1',
+            base64: 'data:image/png;base64,1',
+            x: 0,
+            y: 0,
+            width: 100,
+            height: 100,
+            aspect: 1,
+            projectId: 'p1'
+        };
+
+        mockDetectObjects.mockResolvedValueOnce([
+            {
+                label: 'face',
+                box: { xmin: 100, ymin: 120, xmax: 300, ymax: 420 }
+            }
+        ]);
+
+        mockUseStore.mockImplementation((selector: any) => {
+            const state = {
+                canvasImages: [visibleImage],
+                addCanvasImage: vi.fn(),
+                updateCanvasImage: vi.fn(),
+                removeCanvasImage: vi.fn(),
+                selectedCanvasImageId: null,
+                selectCanvasImage: vi.fn(),
+                currentProjectId: 'p1',
+                generatedHistory: [],
+                uploadedImages: []
+            };
+            return selector ? selector(state) : state;
+        });
+
+        render(<InfiniteCanvas />);
+        await act(async () => {
+            fireEvent.click(screen.getByRole('button', { name: /Detect Objects/i }));
+        });
+
+        await waitFor(() => {
+            expect(mockDetectObjects).toHaveBeenCalledOnce();
+            expect(mockDetectObjects).toHaveBeenCalledWith('data:image/png;base64,1');
+            expect(mockToast.success).toHaveBeenCalledWith('Detected 1 object.');
+        });
+
+        const overlayCalls = mockContext.strokeRect.mock.calls.filter((args: any[]) =>
+            args[0] === 10 && args[1] === 12 && args[2] === 20 && args[3] === 30
+        );
+        expect(overlayCalls.length).toBeGreaterThan(0);
     });
 });

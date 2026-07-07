@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 const { mockEditImageFn, mockUploadReferenceMedia } = vi.hoisted(() => {
     return {
         mockEditImageFn: vi.fn(),
-        mockUploadReferenceMedia: vi.fn(async (_userId: string, media: string) => {
+        mockUploadReferenceMedia: vi.fn(async (_userId: string, media: string): Promise<string> => {
             if (media.includes('mask')) return 'gs://mock-bucket.appspot.com/users/test-user/vault/masks/mock-mask.png';
             if (media.includes('reference')) return 'gs://mock-bucket.appspot.com/users/test-user/vault/objects/mock-reference.png';
             return 'gs://mock-bucket.appspot.com/users/test-user/vault/objects/mock-image.png';
@@ -252,6 +252,40 @@ describe('EditingService', () => {
             expect(mockEditImageFn).toHaveBeenCalledWith(
                 expect.objectContaining({
                     referenceImageUri: 'gs://mock-bucket.appspot.com/users/test-user/vault/objects/mock-reference.png',
+                })
+            );
+        });
+
+        it('should pass multiple reference images to the backend when provided', async () => {
+            mockUploadReferenceMedia.mockImplementation(async (_userId: string, media: string) => {
+                if (media.includes('reference-1')) return 'gs://mock-bucket.appspot.com/users/test-user/vault/objects/mock-reference-1.png';
+                if (media.includes('reference-2')) return 'gs://mock-bucket.appspot.com/users/test-user/vault/objects/mock-reference-2.png';
+                if (media.includes('mask')) return 'gs://mock-bucket.appspot.com/users/test-user/vault/masks/mock-mask.png';
+                return 'gs://mock-bucket.appspot.com/users/test-user/vault/objects/mock-image.png';
+            });
+            mockEditImageFn.mockResolvedValue({
+                data: {
+                    id: 'test-uuid-6',
+                    url: 'data:image/png;base64,refdata==',
+                    prompt: 'Edit (Pro): Use these references',
+                }
+            });
+
+            await EditingService.editImage({
+                image: { mimeType: 'image/png', data: 'inputbase64==' },
+                referenceImages: [
+                    { mimeType: 'image/png', data: 'reference-1==' },
+                    { mimeType: 'image/png', data: 'reference-2==' },
+                ],
+                prompt: 'Use these references',
+            });
+
+            expect(mockEditImageFn).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    referenceImageUris: [
+                        'gs://mock-bucket.appspot.com/users/test-user/vault/objects/mock-reference-1.png',
+                        'gs://mock-bucket.appspot.com/users/test-user/vault/objects/mock-reference-2.png',
+                    ],
                 })
             );
         });

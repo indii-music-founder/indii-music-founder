@@ -19,7 +19,7 @@ import {
   CheckSquare, ThumbsUp, ShoppingBag, MapPin, Sparkles, Mic, LucideIcon, Rocket, Zap,
   Cpu, Headphones, Share2, Layers, Settings, FileText, Globe, BarChart3, Shield,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  MessageSquare, Package, Wand2, Play, Pause
+  MessageSquare, Package, Wand2, Play, Pause, Navigation
 } from 'lucide-react';
 import type { ModuleId } from '@/core/constants';
 import { motion } from 'framer-motion';
@@ -124,6 +124,16 @@ export default function CommandPad({ onSendCommand, isPaired }: CommandPadProps)
       action: () => {
         triggerHaptic(40);
         navigateTo('capture' as ModuleId);
+      },
+    },
+    {
+      id: 'road-mode',
+      icon: Navigation,
+      label: 'Road Mode',
+      color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20',
+      glow: 'shadow-emerald-500/15 hover:shadow-emerald-500/30',
+      action: () => {
+        navigateTo('road');
       },
     },
     {

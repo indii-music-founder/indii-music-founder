@@ -11,14 +11,11 @@ interface CanvasHeaderProps {
     processingStatus?: string;
     isHighFidelity: boolean;
     setIsHighFidelity: (val: boolean) => void;
-    routeLabel?: string;
-    routeReason?: string;
     modelTier?: 'fast' | 'pro';
     resolution?: string;
     aspectRatio?: string;
     grounding?: boolean;
     imageSize?: string;
-    sessionId?: string;
 }
 
 export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
@@ -30,14 +27,11 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
     processingStatus,
     isHighFidelity,
     setIsHighFidelity,
-    routeLabel,
-    routeReason,
     modelTier,
     resolution,
     aspectRatio,
     grounding,
     imageSize,
-    sessionId,
 }) => {
     const isAuthenticated = !!auth.currentUser;
     const effectiveModel = modelTier || (isHighFidelity ? 'pro' : 'fast');
@@ -113,7 +107,7 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
 
                 <div className="mt-2 flex w-full max-w-[560px] flex-wrap items-center justify-center gap-1.5 text-[10px] text-gray-400">
                     <span className="rounded-full border border-white/8 bg-white/4 px-2 py-1 text-gray-300">
-                        {routeLabel || (isHighFidelity ? 'High Fidelity' : 'Rapid Edit')}
+                        {isHighFidelity ? 'High Fidelity' : 'Rapid Edit'}
                     </span>
                     <span className="rounded-full border border-white/8 bg-white/4 px-2 py-1">
                         {effectiveModel === 'pro' ? 'Tier: Pro' : 'Tier: Flash'}
@@ -127,17 +121,7 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
                     <span className="rounded-full border border-white/8 bg-white/4 px-2 py-1">
                         {aspectRatio || '1:1'}
                     </span>
-                    {sessionId && (
-                        <span className="rounded-full border border-white/8 bg-white/4 px-2 py-1 font-mono text-[9px]">
-                            {sessionId}
-                        </span>
-                    )}
                 </div>
-                {routeReason && (
-                    <p className="mt-1 w-full max-w-[560px] text-center text-[10px] leading-4 text-gray-500">
-                        {routeReason}
-                    </p>
-                )}
             </div>
 
             <div className="min-w-0" />

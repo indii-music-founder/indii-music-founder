@@ -23,6 +23,7 @@ import { VisaChecklist } from './components/VisaChecklist';
 import { logger } from '@/utils/logger';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 import { resolveTouringTab } from '@/modules/handoffViews';
+import { createTouringStopId } from './itinerary';
 
 interface EmergencyContactsPanelProps {
     contacts: EmergencyContact[];
@@ -308,6 +309,7 @@ const RoadManager: React.FC = () => {
 
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const mappedStops: ItineraryStop[] = (rawResult.stops || []).map((stop: any) => ({
+                id: createTouringStopId(),
                 city: stop.city || '',
                 date: stop.date || '',
                 venue: stop.venue || '',
@@ -319,13 +321,13 @@ const RoadManager: React.FC = () => {
             await saveItinerary({
                 stops: mappedStops,
                 totalDistance: rawResult.totalDistanceMiles ? `${rawResult.totalDistanceMiles} miles` : '0 miles',
-                estimatedBudget: 'TBD',
+                estimatedBudget: rawResult.estimatedBudget != null ? String(rawResult.estimatedBudget) : undefined,
                 tourName: `Tour ${startDate} - ${locations[0]}`
             });
 
             toast.success("Itinerary generated and saved");
-        } catch (_error: unknown) {
-            // logger.error("Itinerary Generation Failed:", error);
+        } catch (error: unknown) {
+            logger.error("Itinerary Generation Failed:", error);
             toast.error("Failed to generate itinerary");
         } finally {
             setIsGenerating(false);
@@ -342,8 +344,8 @@ const RoadManager: React.FC = () => {
             const result = response.data as LogisticsReport;
             setLogisticsReport(result);
             toast.success("Logistics check complete");
-        } catch (_error: unknown) {
-            // logger.error("Logistics Check Failed:", error);
+        } catch (error: unknown) {
+            logger.error("Logistics Check Failed:", error);
             toast.error("Failed to check logistics");
         } finally {
             setIsCheckingLogistics(false);
@@ -375,9 +377,23 @@ const RoadManager: React.FC = () => {
     const handleUpdateStop = async (updatedStop: Itinerary['stops'][number]) => {
         if (!itinerary) return;
 
+        if (!updatedStop.id) {
+            logger.error("Failed to update stop: missing stable stop id", updatedStop);
+            toast.error("Failed to update stop");
+            return;
+        }
+
+        const stopIndex = itinerary.stops.findIndex(s => s.id === updatedStop.id);
+
+        if (stopIndex === -1) {
+            logger.error("Failed to update stop: could not resolve itinerary index for stop", updatedStop);
+            toast.error("Failed to update stop");
+            return;
+        }
+
         // Optimistic UI Update
-        const newStops = itinerary.stops.map(s => {
-            if (s.date === updatedStop.date) {
+        const newStops = itinerary.stops.map((s, index) => {
+            if (index === stopIndex) {
                 return updatedStop;
             }
             return s;
@@ -385,12 +401,8 @@ const RoadManager: React.FC = () => {
         setCurrentItinerary({ ...itinerary, stops: newStops });
 
         try {
-            // Find index of stop
-            const index = itinerary.stops.findIndex(s => s.date === updatedStop.date);
-            if (index !== -1) {
-                await updateItineraryStop(index, updatedStop);
-                toast.success("Day sheet updated");
-            }
+            await updateItineraryStop(stopIndex, updatedStop);
+            toast.success("Day sheet updated");
         } catch (err: unknown) {
             logger.error("Failed to update stop", err);
             toast.error("Failed to update stop");

@@ -1,4 +1,5 @@
 import type { HistoryItem } from '@/core/types/history';
+import { STUDIO_COLORS } from '../constants';
 
 export type CreativeModelTier = 'fast' | 'pro';
 export type CreativeEditRoute = 'rapid_edit' | 'typography' | 'heavy_rendering' | 'reference_blend' | 'grounded' | 'canvas_remix';
@@ -65,7 +66,7 @@ export interface CreativeEditManifestInput {
   referenceRoles?: Record<string, CreativeVaultScope>;
   referenceAssetUris?: Record<string, string | null>;
   maskUris?: string[];
-  generatedCandidates?: Array<{ id: string; url: string; prompt: string }>;
+  generatedCandidates?: Array<{ id: string; url: string; prompt: string; storageUri?: string }>;
   settings: CreativeEditSettings;
 }
 
@@ -166,6 +167,29 @@ function buildSubjectVault(
   };
 }
 
+const ROLE_GUIDANCE: Record<'objects' | 'characters' | 'style', string> = {
+  objects: 'Use this reference for the object being inserted, replaced, or matched.',
+  characters: 'Use this reference for the character’s identity, likeness, and consistent anatomy.',
+  style: 'Use this reference for style, palette, texture, and mood only.',
+};
+
+export function buildReferenceRolePrompt(
+  definitions: Record<string, string>,
+  referenceRoles: Record<string, CreativeVaultScope>,
+  colorIds: string[]
+): string[] {
+  return colorIds.map(colorId => {
+    const definition = definitions[colorId]?.trim();
+    if (!definition) return '';
+
+    const role = referenceRoles[colorId];
+    if (role !== 'objects' && role !== 'characters' && role !== 'style') return '';
+
+    const colorName = STUDIO_COLORS.find(color => color.id === colorId)?.name ?? colorId;
+    return `${colorName} (${role.toUpperCase()}): ${ROLE_GUIDANCE[role]} Edit instruction: ${definition}`;
+  }).filter(Boolean);
+}
+
 export function compileCreativeEditManifest(input: CreativeEditManifestInput): CreativeEditManifest {
   const referenceSlots = Object.entries(input.referenceImages).map(([colorId, image]) => ({
     colorId,
@@ -189,7 +213,7 @@ export function compileCreativeEditManifest(input: CreativeEditManifestInput): C
       .filter((uri): uri is string => !!uri),
   };
 
-  const generatedCandidates = (input.generatedCandidates || []).map(candidate => candidate.url);
+  const generatedCandidates = (input.generatedCandidates || []).map(candidate => candidate.storageUri || candidate.url);
   const maskUris = input.maskUris || [];
   const route = inferRoute(
     input.prompt,

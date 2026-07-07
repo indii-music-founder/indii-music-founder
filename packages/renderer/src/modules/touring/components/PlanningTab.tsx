@@ -242,7 +242,7 @@ export const PlanningTab: React.FC<PlanningTabProps> = ({
                                 <tbody className="text-sm font-mono text-gray-300 divide-y divide-gray-800">
                                     {itinerary.stops.map((stop, index) => (
                                         <tr
-                                            key={index}
+                                            key={stop.id ?? `${stop.date}-${index}`}
                                             className="hover:bg-white/5 transition-colors cursor-pointer group"
                                             onClick={() => setSelectedStop(stop)}
                                         >

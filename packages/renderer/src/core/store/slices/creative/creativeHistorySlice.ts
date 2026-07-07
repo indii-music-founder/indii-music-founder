@@ -83,6 +83,7 @@ export function buildCreativeHistoryState(
                         logger.error("CreativeSlice: Cannot sync generated asset to file system without an authenticated user");
                     } else {
                         const filename = `${enrichedItem.origin || 'generation'}-${enrichedItem.id.slice(0, 8)}.png`;
+                        const persistedUrl = enrichedItem.storageUri || enrichedItem.url;
                         createFileNode(
                             filename,
                             null, // root
@@ -90,7 +91,11 @@ export function buildCreativeHistoryState(
                             user.uid,
                             // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             enrichedItem.type as any,
-                            { url: enrichedItem.url, origin: enrichedItem.origin }
+                            {
+                                url: persistedUrl,
+                                storagePath: enrichedItem.storageUri || undefined,
+                                origin: enrichedItem.origin
+                            }
                         ).catch(err => logger.error("CreativeSlice: File system sync error", err));
                     }
                 }

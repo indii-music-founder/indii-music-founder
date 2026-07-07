@@ -233,4 +233,70 @@ describe('RoadManager', () => {
             expect(screen.getByText('Logistics Verified')).toBeInTheDocument();
         });
     });
+
+    it('updates the selected same-day stop by stable id instead of the first matching date', async () => {
+        const setCurrentItineraryMock = vi.fn();
+        const updateItineraryStopMock = vi.fn().mockResolvedValue(undefined);
+
+        setupTouringMock({
+            currentItinerary: {
+                id: 'itinerary-123',
+                tourName: 'Test Tour',
+                stops: [
+                    {
+                        id: 'stop-1',
+                        date: '2023-10-01',
+                        city: 'Detroit',
+                        venue: 'Club A',
+                        activity: 'Travel',
+                        notes: ''
+                    },
+                    {
+                        id: 'stop-2',
+                        date: '2023-10-01',
+                        city: 'Chicago',
+                        venue: 'Club B',
+                        activity: 'Show',
+                        notes: ''
+                    }
+                ],
+                totalDistance: '300 miles',
+                estimatedBudget: '$50'
+            },
+            setCurrentItinerary: setCurrentItineraryMock,
+            updateItineraryStop: updateItineraryStopMock,
+        });
+
+        render(<RoadManager />);
+
+        await waitFor(() => {
+            expect(screen.getByText('Generated Itinerary')).toBeInTheDocument();
+        });
+
+        const editButtons = screen.getAllByText('Edit');
+        fireEvent.click(editButtons[1]!);
+
+        fireEvent.change(screen.getByLabelText('City'), { target: { value: 'Milwaukee' } });
+        fireEvent.click(screen.getByText('Save Changes'));
+
+        await waitFor(() => {
+            expect(updateItineraryStopMock).toHaveBeenCalledWith(
+                1,
+                expect.objectContaining({
+                    id: 'stop-2',
+                    date: '2023-10-01',
+                    city: 'Milwaukee',
+                })
+            );
+        });
+
+        expect(setCurrentItineraryMock).toHaveBeenCalledWith(
+            expect.objectContaining({
+                stops: [
+                    expect.objectContaining({ id: 'stop-1', city: 'Detroit' }),
+                    expect.objectContaining({ id: 'stop-2', city: 'Milwaukee' }),
+                ]
+            })
+        );
+    });
 });

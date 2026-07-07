@@ -11,6 +11,7 @@ import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/core/context/ToastContext';
 import { Logger } from '@/core/logger/Logger';
+import { CostControlService } from '@/services/billing/CostControlService';
 import { httpsCallable } from 'firebase/functions';
 import { getDownloadURL, ref } from 'firebase/storage';
 import { auth, functions, storage } from '@/services/firebase';
@@ -18,6 +19,7 @@ import { CreativeStorageService } from '@/services/creative/CreativeStorageServi
 import { StageHandoffPayload } from '@/types/handoff';
 import { resolveStorageUri } from '@/services/storage/storageUri';
 import { normalizeVideoAspectRatio } from '@/services/video/videoAspectRatio';
+import { VideoGeneration } from '@/services/video/VideoGenerationService';
 import { GenerateOmniRemixSchema } from '@indii/shared';
 
 interface StoryboardFrame {
@@ -362,13 +364,34 @@ export default function OmniWorkflow() {
         toast.info(`Synthesizing Omni Remix (${studioControls.omniPipelineMode === 'hybrid-veo' ? 'Omni + Veo 3.1 hybrid' : 'pure Omni'})...`);
 
         try {
-            const generateOmniRemixV3 = httpsCallable(functions, 'generateOmniRemixV3');
             const durationSeconds = Math.min(12, Math.max(4, studioControls.duration || 8));
+            const estimatedCost = VideoGeneration.estimateVideoCost(
+                durationSeconds,
+                studioControls.omniPipelineMode === 'hybrid-veo' ? 'veo-3.1-generate-preview' : 'veo-3.1-fast-generate-preview'
+            );
+            const costCheck = await CostControlService.checkAndReserve({
+                operationType: 'video',
+                estimatedCost,
+                userId: auth.currentUser?.uid || '',
+                metadata: {
+                    durationSeconds,
+                    pipelineMode: studioControls.omniPipelineMode,
+                    aspectRatio,
+                    referenceCount: referenceMedia.length,
+                },
+            });
+            if (!costCheck.allowed) {
+                throw new Error(`Omni remix blocked: ${costCheck.reason || 'Cost reservation failed.'}`);
+            }
+
+            const generateOmniRemixV3 = httpsCallable(functions, 'generateOmniRemixV3');
             const payload = {
                 prompt: remixPrompt,
                 referenceVideoUri,
                 audioUri: audioDubUri || undefined,
                 referenceUris: referenceMedia.map(entry => entry.uri),
+                costEstimate: estimatedCost,
+                costReservationId: costCheck.operationId,
                 pipelineMode: studioControls.omniPipelineMode,
                 aspectRatio,
                 durationSeconds,

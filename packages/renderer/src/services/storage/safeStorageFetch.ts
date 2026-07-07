@@ -26,6 +26,11 @@ export interface StorageFetchResult {
  * @throws     Only if both the direct fetch AND proxy fallback fail
  */
 export async function safeStorageFetch(url: string): Promise<StorageFetchResult> {
+    if (url.startsWith('data:')) {
+        const blob = dataUriToBlob(url);
+        return { blob, mimeType: blob.type || guessMimeFromUrl(url) };
+    }
+
     // --- Attempt 1: Direct browser fetch ---
     try {
         const res = await fetch(url, { mode: 'cors' });
@@ -113,6 +118,18 @@ function blobToBase64(blob: Blob): Promise<string> {
         reader.onerror = reject;
         reader.readAsDataURL(blob);
     });
+}
+
+function dataUriToBlob(dataUri: string): Blob {
+    const [header, base64] = dataUri.split(',');
+    const mimeMatch = /data:(.*?)(;base64)?$/i.exec(header || '');
+    const mimeType = mimeMatch?.[1] || 'application/octet-stream';
+    const byteString = atob(base64 || '');
+    const bytes = new Uint8Array(byteString.length);
+    for (let i = 0; i < byteString.length; i += 1) {
+        bytes[i] = byteString.charCodeAt(i);
+    }
+    return new Blob([bytes], { type: mimeType });
 }
 
 async function fetchViaCanvasStorageBridge(url: string): Promise<StorageFetchResult> {
