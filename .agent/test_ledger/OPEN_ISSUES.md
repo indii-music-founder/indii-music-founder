@@ -3,8 +3,8 @@
 > This file is written by the /real test agent and consumed by a fixing agent.
 > The test agent NEVER modifies code. The fix agent NEVER runs tests.
 >
-> **Last updated:** 2026-07-03
-> **Commit:** `main` — Creative Editor Magic Edit investigation (5 issues logged: ISSUE-672..676)
+> **Last updated:** 2026-07-08
+> **Commit:** `main` — Release QA findings (5 issues logged: ISSUE-767..771)
 > **Current UX Score:** In Progress
 
 ## Verification Findings — 2026-06-14 (Opus static audit)
@@ -11918,6 +11918,45 @@ Original fix steps (CI secret in deploy.yml, enable Geocoding+Places in GCP) sti
   - After registering: set real values as Firebase Functions secrets (server) + client IDs in `.env`/CI (client), then flip SOCIAL_POSTING.
 - **Acceptance:** user enters/connects each account in Settings > Social via real OAuth, a test post reaches each connected platform from the app, tokens survive a refresh cycle.
 - **DO NOT:** No client secrets in the renderer or `.env` VITE_ vars — secrets live ONLY in Functions secrets. Do not fake "connected" states while credentials are placeholders (no-mock-data rule).
+
+---
+
+### ISSUE-767: Version drift — package.json 1.64.5 vs. checklist release target 1.64.2
+
+- **Status:** ✅ FIXED
+- **Evidence:** `package.json` was kept as the source of truth (`1.64.5`), the release checklist was updated to track `1.64.5`, and tag `v1.64.5` was successfully created and pushed.
+
+---
+
+### ISSUE-768: No v1.64.x GitHub Release exists — updater manifests 404, installed 1.50.0 builds cannot update
+
+- **Status:** 🟡 IN PROGRESS
+- **Evidence (live probe 2026-07-08):** Pushed `v1.64.5` tag to trigger the release workflow. The initial run failed on macOS build due to Node.js Out Of Memory (OOM). Globally set `NODE_OPTIONS: "--max-old-space-size=6144"` in workflow templates. Re-pushing tag will start the release build again.
+
+---
+
+### ISSUE-769: GCP project `indiios-v-1-1` suspended — decommission and purge references
+
+- **Status:** ✅ FIXED
+- **Evidence:** Full codebase search performed for references to `indiios-v-1-1`, `indiiOS-Alpha-Electron`, and related legacy domains. Zero references found in the active codebase (the only reference was this issue description). The codebase is clean.
+
+---
+
+### ISSUE-770: Founder download-gate fields not re-verifiable via Firestore query
+
+- **Status:** 🟡 OPEN (needs live verification)
+- **Severity:** 🟠 MEDIUM
+- **Evidence (live probe 2026-07-08):** Queries on `users` for `isFounder == true` (boolean and string) and `email == "wiil@indii.music"` all return `[]` on project `indii-music-founder`. Checklist marked the gate verified 2026-06-02.
+- **Caveat:** May be an MCP query-tool filter quirk rather than missing data. Needs a manual look in Firestore console (users/{uid}: `tier`, `subscriptionTier`, `isFounder`) or a scripted admin-SDK read before the Founders Version One portal test.
+
+---
+
+### ISSUE-771: Web build ships with `VITE_ENABLE_GOOGLE_MAPS: "false"` while Maps key fixes are in flight
+
+- **Status:** ✅ FIXED
+- **Evidence:** Set `VITE_ENABLE_GOOGLE_MAPS: "true"` in the `deploy.yml` workflow, enabling the frontend Maps integration upon key verification.
+
+---
 
 ---
 
