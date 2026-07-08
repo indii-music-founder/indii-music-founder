@@ -211,7 +211,6 @@ export const metaAppSecret = defineSecret("META_APP_SECRET");
 // ---------------------------------------------------------------------------
 // Email OAuth Secrets (Gmail / Outlook)
 // ---------------------------------------------------------------------------
-// Actual secret access is in functions/src/email/tokenManager.ts via defineSecret.
 // Documented here for centralized reference.
 //
 // Required secrets in GCP Secret Manager:
@@ -219,6 +218,19 @@ export const metaAppSecret = defineSecret("META_APP_SECRET");
 //   - GOOGLE_OAUTH_CLIENT_SECRET  (Google Cloud Console → OAuth 2.0 Client Secret)
 //   - MICROSOFT_CLIENT_ID         (Azure Portal → App Registration → Client ID)
 //   - MICROSOFT_CLIENT_SECRET     (Azure Portal → App Registration → Client Secret)
+export const googleOAuthClientId = defineSecret("GOOGLE_OAUTH_CLIENT_ID");
+export const googleOAuthClientSecret = defineSecret("GOOGLE_OAUTH_CLIENT_SECRET");
+export const microsoftClientId = defineSecret("MICROSOFT_CLIENT_ID");
+export const microsoftClientSecret = defineSecret("MICROSOFT_CLIENT_SECRET");
+
+// ---------------------------------------------------------------------------
+// Social Media — X (Twitter) OAuth Secrets
+// ---------------------------------------------------------------------------
+// Required secrets in GCP Secret Manager:
+//   - TWITTER_CLIENT_ID      (X Developer Portal → App → Client ID)
+//   - TWITTER_CLIENT_SECRET  (X Developer Portal → App → Client Secret)
+export const twitterClientId = defineSecret("TWITTER_CLIENT_ID");
+export const twitterClientSecret = defineSecret("TWITTER_CLIENT_SECRET");
 
 export const printfulApiKey = defineSecret("PRINTFUL_API_KEY");
 
