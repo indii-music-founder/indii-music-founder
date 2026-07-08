@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-07-07 20:35 EDT
+**Updated:** 2026-07-07 20:38 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+f370fae5f build(deps): repair electron-builder dependency and build mac desktop app
+d2d8ed72a chore: session checkpoint [20:35]
 b3a73bda3 chore: session checkpoint [20:32]
 5a4836c48 chore: session checkpoint [20:05]
 88f3681d1 feat: unify project scoped conversations and boardroom persistence
@@ -12,15 +14,11 @@ ae5c0bbc4 fix(tests): resolve console spy assertions and test state contaminatio
 7ec3fb293 chore: session checkpoint [20:01]
 375cf5227 chore: session checkpoint [18:08]
 8999a7607 chore: session checkpoint [16:59]
-55c22c379 chore: session checkpoint [16:57]
-84e4a0c40 chore: session checkpoint [16:26]
 ```
 
 ## Working State
 ```
- M .agent/test_ledger/OPEN_ISSUES.md
- M package-lock.json
- M package.json
+clean working tree
 ```
 
 ## Decisions
