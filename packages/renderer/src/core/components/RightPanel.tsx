@@ -29,6 +29,7 @@ import AssetSpotlight from '@/modules/dashboard/components/AssetSpotlight';
 import { BatchingStatus } from './agent/BatchingStatus';
 import { cn } from '@/lib/utils';
 import { TextEffect } from '@/components/motion-primitives/text-effect';
+import { AgentSwitcherStrip } from './AgentSwitcherStrip';
 export default function RightPanel() {
 
     const {
@@ -42,7 +43,8 @@ export default function RightPanel() {
         userProfile,
         isAgentProcessing,
         rightPanelView: view,
-        setRightPanelView: setView
+        setRightPanelView: setView,
+        generatedHistory
     } = useStore(
         useShallow(state => ({
             currentModule: state.currentModule,
@@ -55,7 +57,8 @@ export default function RightPanel() {
             userProfile: state.userProfile,
             isAgentProcessing: state.isAgentProcessing,
             rightPanelView: state.rightPanelView,
-            setRightPanelView: state.setRightPanelView
+            setRightPanelView: state.setRightPanelView,
+            generatedHistory: state.generatedHistory
         }))
     );
 
@@ -113,13 +116,16 @@ export default function RightPanel() {
                                 Archives
                             </button>
                         </div>
-                        <button
-                            onClick={toggleRightPanel}
-                            className="p-1.5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors"
-                            aria-label="Close Panel"
-                        >
-                            <ChevronRight size={16} />
-                        </button>
+                        <div className="flex items-center gap-3">
+                            <AgentSwitcherStrip />
+                            <button
+                                onClick={toggleRightPanel}
+                                className="p-1.5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors"
+                                aria-label="Close Panel"
+                            >
+                                <ChevronRight size={16} />
+                            </button>
+                        </div>
                     </div>
 
                     <div className="flex-1 overflow-hidden relative flex flex-col">
@@ -347,6 +353,33 @@ export default function RightPanel() {
                                     </button>
                                 );
                             })}
+                            
+                            {/* Creations Affordance */}
+                            {generatedHistory.length > 0 && (
+                                <button
+                                    onClick={() => {
+                                        setRightPanelTab('assets');
+                                        toggleRightPanel();
+                                    }}
+                                    className="relative mt-auto pt-4 group flex justify-center w-full"
+                                    title="View Recent Creations"
+                                    aria-label="View Recent Creations"
+                                >
+                                    <div className="absolute inset-0 top-4 bg-green-500/20 blur-xl rounded-full opacity-50 group-hover:opacity-100 transition-opacity animate-pulse" />
+                                    <div className="relative w-8 h-8 rounded-lg overflow-hidden border-2 border-white/10 group-hover:border-green-400/50 transition-colors shadow-[0_0_15px_rgba(34,197,94,0.2)]">
+                                        {generatedHistory[0].type === 'image' && generatedHistory[0].url ? (
+                                            <img src={generatedHistory[0].url} alt="Recent creation" className="w-full h-full object-cover" />
+                                        ) : (
+                                            <div className="w-full h-full bg-white/5 flex items-center justify-center">
+                                                <Sparkles size={14} className="text-green-400" />
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="absolute top-2.5 right-0 min-w-4 h-4 rounded-full bg-green-500 flex items-center justify-center text-[9px] font-bold text-white border-2 border-[#0d1117] px-1 shadow-sm">
+                                        {generatedHistory.length > 99 ? '99+' : generatedHistory.length}
+                                    </div>
+                                </button>
+                            )}
                         </div>
                     </motion.div>
                 ) : (

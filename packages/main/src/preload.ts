@@ -270,5 +270,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
     window: {
         show: () => ipcRenderer.invoke('window:show'),
         hide: () => ipcRenderer.invoke('window:hide'),
+    },
+
+    // Menu events
+    menu: {
+        onSaveTriggered: (callback: () => void) => {
+            const handler = () => callback();
+            ipcRenderer.on('menu:save-triggered', handler);
+            return () => ipcRenderer.removeListener('menu:save-triggered', handler);
+        }
     }
 });

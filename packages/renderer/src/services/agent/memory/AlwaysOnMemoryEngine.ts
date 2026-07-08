@@ -335,7 +335,7 @@ export class AlwaysOnMemoryEngine {
 
         try {
             // Step 1: Fetch all memories (most recent first)
-            const memories = await this.getAllMemories(50);
+            const memories = await this.getAllMemories(500);
 
             // Step 2: Fetch consolidation insights
             const insights = await this.getInsights(10);
@@ -362,7 +362,8 @@ export class AlwaysOnMemoryEngine {
                 ? `Answer based ONLY on the stored memories and insights below.
 Reference memory IDs in your answer like [Memory abc123].
 Always cite your sources.`
-                : `You don't have stored memories for this topic yet, but you can answer based on your general knowledge.
+                : `You searched the indii memory engine, but no stored memories or insights were found.
+You MUST explicitly state to the user that you searched their memory engine but found nothing relevant. Then, answer the question based on your general knowledge.
 If appropriate, suggest that the user can ingest relevant information to build a memory base.`;
 
             const prompt = cleanPrompt(`
@@ -486,7 +487,7 @@ If appropriate, suggest that the user can ingest relevant information to build a
      * Get all memories for the current user, optionally filtered by project or session.
      */
     public async getAllMemories(
-        maxCount: number = 50,
+        maxCount: number = 500,
         filters?: { projectId?: string; sessionId?: string; category?: AlwaysOnMemoryCategory }
     ): Promise<AlwaysOnMemory[]> {
         if (!this.userId || this.isE2EMode) return [];

@@ -4,7 +4,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { HistoryItem } from '@/core/types/history';
 import {
     ChevronRight, Image as ImageIcon, Video, Music,
-    FileText, Search, Eye, Grid3X3, List, X, type LucideIcon
+    FileText, Search, Eye, Grid3X3, List, X, Sparkles, type LucideIcon
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/lib/utils';
@@ -341,7 +341,13 @@ export default function AssetsPanel({ toggleRightPanel }: AssetsPanelProps) {
                                     </div>
 
                                     {/* Hover overlay */}
-                                    <div className="absolute inset-0 bg-linear-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity z-10 flex items-end p-1.5">
+                                    <div className="absolute inset-0 bg-linear-to-t from-black/90 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity z-10 flex flex-col justify-end p-1.5">
+                                        {(asset.type === 'image' || asset.type === 'video') && (
+                                            <div className="flex items-center gap-1 mb-1 text-green-400">
+                                                <Sparkles size={8} />
+                                                <span className="text-[8px] font-bold uppercase tracking-wider">Edit in Studio</span>
+                                            </div>
+                                        )}
                                         <p className="text-[9px] text-white/80 line-clamp-2 leading-tight">
                                             {asset.prompt || 'Untitled'}
                                         </p>

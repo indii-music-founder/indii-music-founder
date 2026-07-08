@@ -12,6 +12,7 @@ import { MessageItem } from './chat/ChatMessage';
 import { PromptArea } from './command-bar/PromptArea';
 import { ErrorBoundary } from '@/core/components/ErrorBoundary';
 import { cn } from '@/lib/utils';
+import { AgentSwitcherStrip } from './AgentSwitcherStrip';
 
 interface ChatOverlayProps {
     onClose: () => void;
@@ -246,6 +247,8 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, onToggleMinimize }) 
 
                                 {/* Action Buttons */}
                                 <div className="flex items-center gap-1 relative z-10">
+                                    <AgentSwitcherStrip />
+                                    <div className="w-px h-4 bg-white/10 mx-1 hidden md:block" />
                                     <button onClick={() => setCommandBarDetached(!isCommandBarDetached)} className="p-2 hover:bg-white/10 rounded-lg transition-all text-gray-400 hover:text-white" aria-label={isCommandBarDetached ? "Dock Input" : "Detach Input"} title={isCommandBarDetached ? "Dock Input" : "Detach Input"} data-testid="detach-input-btn"><Maximize2 size={14} /></button>
                                     <button onClick={toggleLocalMinimize} className="p-2 hover:bg-white/10 rounded-lg transition-all text-gray-400 hover:text-white" aria-label="Minimize chat" data-testid="minimize-chat-btn"><Minimize2 size={14} /></button>
                                     <button onClick={toggleStealth} className="p-2 hover:bg-white/10 rounded-lg transition-all text-gray-400 hover:text-white" aria-label="Toggle Stealth Mode" title="Stealth Mode"><Bot size={14} className="opacity-50" /></button>

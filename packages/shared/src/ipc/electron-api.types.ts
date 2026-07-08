@@ -246,6 +246,11 @@ export interface ElectronAPI {
 
     // Top-level test
     testAgent: (query?: string) => Promise<unknown>;
+
+    // Menu
+    menu?: {
+        onSaveTriggered: (callback: () => void) => () => void;
+    };
 }
 
 // ── Window Augmentation ───────────────────────────────────────────────────

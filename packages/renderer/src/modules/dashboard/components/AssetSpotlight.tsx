@@ -51,11 +51,25 @@ export default function AssetSpotlight() {
     const [selIdx, setSelIdx] = useState<number | null>(null);
     const assets = generatedHistory.slice(0, 12);
 
-    const handleDiscuss = (asset: (typeof assets)[0]) => {
+    const handleDiscuss = async (asset: (typeof assets)[0]) => {
         const label = asset.type || 'creation';
         useStore.setState({
             commandBarInput: `Let's discuss this ${label} I created: "${asset.prompt?.slice(0, 80) ?? ''}"`,
         });
+
+        if (asset.url) {
+            try {
+                const response = await fetch(asset.url);
+                const blob = await response.blob();
+                const file = new File([blob], `asset_${asset.id}.${blob.type.split('/')[1] || 'png'}`, { type: blob.type });
+                useStore.setState(state => ({
+                    commandBarAttachments: [...(state.commandBarAttachments || []), file]
+                }));
+            } catch (error) {
+                console.error('Failed to fetch asset for attachment:', error);
+            }
+        }
+
         const canMountPanel = typeof window !== 'undefined' && window.innerWidth >= 768;
         if (canMountPanel) {
             useStore.setState({ isRightPanelOpen: true });
