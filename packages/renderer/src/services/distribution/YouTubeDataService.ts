@@ -60,8 +60,8 @@ export class YouTubeDataService {
     private accessToken: string | null = null;
 
     constructor() {
-        // Uses Firebase API key for read-only operations
-        this.apiKey = import.meta.env.VITE_FIREBASE_API_KEY || '';
+        // Uses dedicated key or fallback to Firebase API key for read-only operations
+        this.apiKey = import.meta.env.VITE_YOUTUBE_API_KEY || import.meta.env.VITE_FIREBASE_API_KEY || '';
     }
 
     /**

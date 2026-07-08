@@ -38,6 +38,33 @@ without the founder's Apple/Microsoft accounts and private signing material.
 - [ ] Smoke test the x64 installer on Windows 10/11 and confirm the app launches as `indii.music` with the `ii` icon.
 - [ ] Smoke test the ARM64 installer on a Windows ARM device or VM before publishing it as a supported artifact.
 
+### Google Cloud Console — Maps & API Keys (ISSUE-764 / ISSUE-765, added 2026-07-08)
+
+These are GCP Console settings changes an agent cannot make. The code-side fixes
+(vite config unstrip, deploy.yml secret) are tracked separately in the ledger.
+
+- [ ] In GCP Console → APIs & Services → Credentials, open the Maps API key (`VITE_GOOGLE_MAPS_API_KEY` in `.env`) and ADD **Geocoding API** and **Places API** to its allowed-API list. Keep it restricted — do NOT switch to unrestricted. (Live probe 2026-07-07: Geocoding → REQUEST_DENIED, Static Maps → 403; only Maps JavaScript API is enabled.)
+- [ ] Decide the Electron referrer strategy for the Maps key: the packaged desktop app sends no HTTP referer, so a referrer-restricted key throws `RefererNotAllowedMapError`. Options: separate key for desktop with IP/none restriction, or loosen referrer rules on the existing key. Verify in the packaged desktop build, not the web app.
+- [ ] Verify the Firebase Functions secret exists and holds a Geocoding-enabled key: `firebase functions:secrets:access GOOGLE_MAPS_API_KEY` (used server-side by the `findPlaces` touring callable).
+- [ ] Create a **dedicated YouTube Data API key** (service separation — the code currently reuses the Firebase key, which is referrer-blocked from Electron and violates API Credentials Policy §3.2.3). Add it as `VITE_GOOGLE_YOUTUBE_API_KEY` once the code fix lands.
+- [ ] Add `VITE_GOOGLE_MAPS_API_KEY` as a GitHub Actions repo secret so the hosted web build gets the key (deploy.yml injection is a code-side fix, but the secret value must be created by you).
+- [ ] Vertex AI: re-verify the 20 fine-tuned agent endpoints against the live tuningJobs API (registry last synced 2026-06-21; Anti-Pattern #9 protocol). Requires `gcloud auth login` on the machine running the check.
+
+### Social Platform Developer Registrations (ISSUE-766, added 2026-07-08)
+
+The full posting pipeline (X/Twitter, Instagram, TikTok, YouTube, Spotify) is built,
+but every credential is a `MOCK_KEY_DO_NOT_USE` placeholder. No social feature works
+until these developer apps exist. Each requires the company's accounts and, in several
+cases, a platform review process — start these early, approvals take days to weeks.
+
+- [ ] **Meta (Instagram/Facebook):** create a Meta developer app for New Detroit Music LLC; enable Instagram Graph API; request `instagram_content_publish` + pages permissions (requires Meta App Review with a screencast of the posting flow). Store `META_APP_ID` / `META_APP_SECRET`.
+- [ ] **TikTok:** register a TikTok for Developers app; apply for the **Content Posting API** (separate TikTok approval). Store `TIKTOK_CLIENT_KEY` / `TIKTOK_CLIENT_SECRET`.
+- [ ] **X / Twitter:** create a developer project; posting via API v2 requires the **paid Basic tier** (~$100/mo) — decide if X posting ships in v1 or is deferred. Store client id/secret.
+- [ ] **Spotify:** create a Spotify developer app (client id/secret); request extended quota mode before public launch (dev mode caps at 25 users).
+- [ ] **Google OAuth (YouTube upload + Gmail):** in GCP Console, create/verify the OAuth client (`VITE_GOOGLE_OAUTH_CLIENT_ID` exists in `.env`); add YouTube upload scope; complete OAuth consent-screen verification for external users (Google review required for sensitive scopes).
+- [ ] After each registration: set the SECRET half only as Firebase Functions secrets (`firebase functions:secrets:set META_APP_SECRET` etc. — never in `.env` VITE_ vars or the repo), and the public client id half in `.env` + GitHub Actions secrets.
+- [ ] When all target platforms have real credentials, tell the coding agent to flip the `SOCIAL_POSTING` feature flag and run a live test post per platform.
+
 ## Current Release Target
 
 Public release identity: **Founders Version One**.

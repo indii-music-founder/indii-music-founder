@@ -24,8 +24,6 @@ const envSanitizerPlugin = (): Plugin => ({
             'VITE_PRINTFUL_API_KEY',
             'VITE_MEM0_API_KEY',
             ...(isProd ? ['VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN'] : []),
-            'VITE_GOOGLE_MAPS_API_KEY',
-            'VITE_GOOGLE_MAPS_KEY',
         ];
         for (const key of secrets) {
             if (key in config.env) {
@@ -34,6 +32,10 @@ const envSanitizerPlugin = (): Plugin => ({
         }
         const whitelist = new Set([
             'VITE_FIREBASE_API_KEY',
+            'VITE_GOOGLE_MAPS_API_KEY',
+            'VITE_GOOGLE_MAPS_KEY',
+            'VITE_GOOGLE_OAUTH_CLIENT_ID',
+            'VITE_YOUTUBE_API_KEY',
         ]);
         for (const key of Object.keys(config.env)) {
             const val = config.env[key];
@@ -179,6 +181,11 @@ export default defineConfig({
             'VITE_ADMIN_PIN',
             'VITE_WALLETCONNECT_PROJECT_ID',
             'VITE_EXPOSE_',
+            'VITE_GOOGLE_',
+            'VITE_META_',
+            'VITE_SPOTIFY_',
+            'VITE_TIKTOK_',
+            'VITE_YOUTUBE_',
         ],
         plugins: [
             react(),
