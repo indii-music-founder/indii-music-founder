@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-07-07 20:02 EDT
+**Updated:** 2026-07-07 20:05 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+88f3681d1 feat: unify project scoped conversations and boardroom persistence
+7f8ff5ec4 chore: session checkpoint [20:02]
 ae5c0bbc4 fix(tests): resolve console spy assertions and test state contamination
 7ec3fb293 chore: session checkpoint [20:01]
 375cf5227 chore: session checkpoint [18:08]
@@ -12,71 +14,11 @@ ae5c0bbc4 fix(tests): resolve console spy assertions and test state contaminatio
 84e4a0c40 chore: session checkpoint [16:26]
 b46212840 chore: session checkpoint [15:06]
 fb6f1c1e1 chore: session checkpoint [14:43]
-dfef68e2a docs(flowcharts): create device sync and brand asset micro diagram
-20495581d docs(ledger): document cross-device sync race condition in error ledger
 ```
 
 ## Working State
 ```
- M .agent/test_ledger/OPEN_ISSUES.md
- M e2e/chat-interaction.spec.ts
- M packages/admin-dashboard/server.ts
- M packages/firebase/src/legal/mechanicalLicense.ts
- M packages/firebase/src/relay/telegramWebhook.ts
- M packages/main/src/preload.ts
- M packages/renderer/python/tests/fixtures/e2e_interop/ts_to_py/envelope.json
- M packages/renderer/src/core/AppShell.tsx
- M packages/renderer/src/core/components/ChatOverlay.tsx
- M packages/renderer/src/core/components/CommandBar.interaction.test.tsx
- M packages/renderer/src/core/components/ConversationHistoryList.tsx
- M packages/renderer/src/core/components/RightPanel.test.tsx
- M packages/renderer/src/core/components/RightPanel.tsx
- M packages/renderer/src/core/components/chat/ChatMessage.tsx
- M packages/renderer/src/core/components/chat/annotator/__tests__/ImageAnnotator.test.tsx
- D packages/renderer/src/core/components/command-bar/DelegateMenu.test.tsx
- D packages/renderer/src/core/components/command-bar/DelegateMenu.tsx
- M packages/renderer/src/core/components/right-panel/AssetsPanel.tsx
- M packages/renderer/src/core/components/right-panel/KnowledgePanel.tsx
- M packages/renderer/src/core/components/right-panel/WorkflowPanel.tsx
- M packages/renderer/src/core/components/sidebar/ProjectList.tsx
- M packages/renderer/src/core/store/applyWorkspaceSnapshot.test.ts
- M packages/renderer/src/core/store/index.ts
- M packages/renderer/src/core/store/slices/agent/agentSessionSlice.ts
- M packages/renderer/src/core/store/slices/agent/index.ts
- M packages/renderer/src/core/store/slices/appSlice.ts
- D packages/renderer/src/core/store/slices/projectSlice.ts
- M packages/renderer/src/hooks/useRemoteCommandListener.ts
- M packages/renderer/src/hooks/useWorkspaceSync.ts
- M packages/renderer/src/modules/boardroom/BoardroomModule.test.tsx
- M packages/renderer/src/modules/boardroom/BoardroomModule.tsx
- M packages/renderer/src/modules/boardroom/components/BoardroomConversationPanel.tsx
- M packages/renderer/src/modules/creative/components/DirectGenerationTab.tsx
- M packages/renderer/src/modules/dashboard/components/AssetSpotlight.tsx
- M packages/renderer/src/modules/finance/components/MerchTable.tsx
- M packages/renderer/src/modules/knowledge/components/KnowledgeChat.tsx
- M packages/renderer/src/modules/registration/components/RegistrationAutonomousRail.tsx
- M packages/renderer/src/modules/settings/settings-panel/ProfileSection.tsx
- M packages/renderer/src/modules/touring/components/VisaChecklist.tsx
- M packages/renderer/src/services/ProjectService.ts
- M packages/renderer/src/services/agent/AgentService.ts
- M packages/renderer/src/services/agent/SessionService.ts
- M packages/renderer/src/services/agent/components/ContextResolver.ts
- M packages/renderer/src/services/agent/components/HistoryManager.ts
- M packages/renderer/src/services/agent/memory/AlwaysOnMemoryEngine.ts
- M packages/renderer/src/services/dashboard/projectTypeUtils.ts
- D packages/renderer/src/services/project/ProjectService.test.ts
- D packages/renderer/src/services/project/ProjectService.ts
- M packages/renderer/src/services/sync/WorkspaceSyncService.test.ts
- M packages/renderer/src/services/sync/WorkspaceSyncService.ts
- M packages/renderer/src/test/setup.ts
- M packages/renderer/src/tests/RouterContext.test.tsx
- M packages/renderer/src/types/electron.d.ts
- M packages/shared/dist/ipc/electron-api.types.d.ts
- M packages/shared/dist/ipc/electron-api.types.d.ts.map
- M packages/shared/dist/schemas/env.schema.d.ts
- M packages/shared/dist/schemas/workflowState.d.ts
- M packages/shared/src/ipc/electron-api.types.ts
-?? packages/renderer/src/core/components/AgentSwitcherStrip.tsx
+clean working tree
 ```
 
 ## Decisions
