@@ -7,6 +7,7 @@
 import { StateCreator } from 'zustand';
 import { StoreState } from '@/core/store';
 import { CreativeStage, StageHandoffPayload, HandoffRole, VALID_ASSET_TYPES } from '@/types/handoff';
+import { logger } from '@/utils/logger';
 
 export interface CreativeHandoffSlice {
     // Pending handoff for each stage (null = no pending handoff)
@@ -45,7 +46,7 @@ export function buildCreativeHandoffState(
         // Validate asset type is valid for this role
         const validTypes = VALID_ASSET_TYPES[payload.role];
         if (!validTypes.includes(payload.item.type as 'image' | 'video' | 'music' | 'text')) {
-            console.error(
+            logger.error(
                 `[handoff] Invalid asset type "${payload.item.type}" for role "${payload.role}". Valid types: ${validTypes.join(', ')}`
             );
             return;
@@ -53,7 +54,7 @@ export function buildCreativeHandoffState(
 
         // Validate that storageUri exists (required for backend)
         if (!payload.item.storageUri) {
-            console.warn(
+            logger.warn(
                 `[handoff] Asset has no storageUri. Backend will not receive gs:// path for stage "${target}".`
             );
         }
@@ -81,7 +82,7 @@ export function buildCreativeHandoffState(
         // Ensure we're in the creative module
         if (store.setModule && store.currentModule !== 'creative') {
             store.setModule('creative').catch((err: unknown) => {
-                console.error('[handoff] Failed to navigate to creative module:', err);
+                logger.error('[handoff] Failed to navigate to creative module:', err);
             });
         }
     },

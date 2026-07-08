@@ -12,7 +12,9 @@ export interface ProjectMetadata {
     type: ModuleId;
     lastModified: number;
     assetCount: number;
+    status?: 'active' | 'paused' | 'archived';
     thumbnail?: string;
+    defaultParticipants?: string[];
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     metadata?: Record<string, any>;
 }
