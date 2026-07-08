@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-07-08 10:32 EDT
+**Updated:** 2026-07-08 11:50 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+baf1b63ea fix(main): add local emulator urls to app check bypass and handle html 404 in updater
+9e582ce17 chore: session checkpoint [10:32]
 b0ada088b chore: session checkpoint [10:17]
 84363de8a fix(google-apis): resolve ISSUE-764/765/766 — Maps key build strip + social token refresh + API surface audit
 9a015ac19 chore: session checkpoint [09:47]
@@ -12,8 +14,6 @@ b4f53ab5f chore: session checkpoint [08:51]
 63d70c202 chore: session checkpoint [22:14]
 23edfd7ff chore: session checkpoint [21:42]
 ed585f900 chore: session checkpoint [20:46]
-0fbdc754b chore: document space-in-path keytar compile issue
-29ae89cb3 chore: session checkpoint [20:44]
 ```
 
 ## Working State
@@ -23,7 +23,8 @@ ed585f900 chore: session checkpoint [20:46]
  M packages/firebase/src/functions/rights/queueRightsRegistration.ts
  M packages/firebase/src/functions/storage/fetchStorageAssetForCanvas.ts
  M packages/firebase/src/middleware/appCheck.ts
- M packages/main/src/updater.ts
+?? docs/RELEASE_CHECKLIST_COWORKER_ONBOARDING.md
+?? mock.txt
 ?? packages/firebase/src/middleware/appCheck.test.ts
 ```
 
