@@ -11860,3 +11860,18 @@ This batch has 3/7 P1s remaining and 4 a11y test failures. Next agent should:
 After those 5 fixes, the batch is deployment-ready (tests pass, blockers cleared, ledger honest).
 
 ---
+
+### ISSUE-764: TourMap "Google Maps API key is unavailable" — key stripped by envPrefix allowlist
+- **Status:** 🔴 OPEN (root cause confirmed by live probe, 2026-07-07)
+- **Severity:** 🟠 MEDIUM-HIGH (Road Manager map dead in ALL builds; blocks touring module)
+- **Location:** `packages/renderer/vite.config.ts:98` and `electron.vite.config.ts:165` (envPrefix allowlists), `.github/workflows/deploy.yml` (build env), GCP Console key restrictions
+- **Details (verified):**
+  1. `TourMap.tsx:98` reads `import.meta.env.VITE_GOOGLE_MAPS_API_KEY`, but BOTH vite configs use an `envPrefix` allowlist with no `VITE_GOOGLE_` entry — the var is stripped from every bundle (dev, web, desktop) even though `.env` has the key. This is the exact "Map unavailable / Google Maps API key is unavailable" screen William reproduced.
+  2. `deploy.yml` never injects `VITE_GOOGLE_MAPS_API_KEY`, so the hosted web build lacks it regardless of fix #1 (CI ignores `.env`).
+  3. Live curl probe of the key: Maps JavaScript API loads; Geocoding API → REQUEST_DENIED; Static Maps → 403. Key restrictions in GCP only allow the JS API; waypoint address→coords lookup needs Geocoding (+ Places, since TourMap loads `libraries=places`).
+- **Fix (in order):**
+  1. Add `'VITE_GOOGLE_'` to both envPrefix arrays.
+  2. Add `VITE_GOOGLE_MAPS_API_KEY: ${{ secrets.VITE_GOOGLE_MAPS_API_KEY }}` to the studio build step in deploy.yml + create the repo secret.
+  3. In GCP Console, enable Geocoding API + Places API for this key (keep it restricted to exactly the APIs used, per API Credentials Policy §3.2 — do NOT un-restrict it).
+  4. Verify in the DESKTOP build (watch for RefererNotAllowedMapError — referrer restrictions may also need the app origin added).
+- **DO NOT:** Do not hardcode the key in source. Do not remove all key restrictions to "make it work" — add only the needed APIs.
