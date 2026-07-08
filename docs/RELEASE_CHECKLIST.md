@@ -43,12 +43,12 @@ without the founder's Apple/Microsoft accounts and private signing material.
 These are GCP Console settings changes an agent cannot make. The code-side fixes
 (vite config unstrip, deploy.yml secret) are tracked separately in the ledger.
 
-- [x] In GCP Console → APIs - [ ] In GCP Console → APIs & Services → Credentials, open the Maps API key Services → Credentials, open the Maps API key (`VITE_GOOGLE_MAPS_API_KEY` in `.env`) and ADD **Geocoding API** and **Places API** to its allowed-API list. Keep it restricted — do NOT switch to unrestricted. (Live probe 2026-07-07: Geocoding → REQUEST_DENIED, Static Maps → 403; only Maps JavaScript API is enabled.)
+- [x] In GCP Console → APIs & Services → Credentials, open the Maps API key (`VITE_GOOGLE_MAPS_API_KEY` in `.env`) and ADD **Geocoding API** and **Places API** to its allowed-API list. Keep it restricted — do NOT switch to unrestricted. (Live probe 2026-07-07: Geocoding → REQUEST_DENIED, Static Maps → 403; only Maps JavaScript API is enabled.)
 - [ ] Decide the Electron referrer strategy for the Maps key: the packaged desktop app sends no HTTP referer, so a referrer-restricted key throws `RefererNotAllowedMapError`. Options: separate key for desktop with IP/none restriction, or loosen referrer rules on the existing key. Verify in the packaged desktop build, not the web app.
 - [x] Verify the Firebase Functions secret exists and holds a Geocoding-enabled key: `firebase functions:secrets:access GOOGLE_MAPS_API_KEY` (used server-side by the `findPlaces` touring callable).
 - [x] Create a **dedicated YouTube Data API key** (service separation — the code currently reuses the Firebase key, which is referrer-blocked from Electron and violates API Credentials Policy §3.2.3). Add it as `VITE_GOOGLE_YOUTUBE_API_KEY` once the code fix lands.
 - [x] Add `VITE_GOOGLE_MAPS_API_KEY` as a GitHub Actions repo secret so the hosted web build gets the key (deploy.yml injection is a code-side fix, but the secret value must be created by you).
-- [ ] Vertex AI: re-verify the 20 fine-tuned agent endpoints against the live tuningJobs API (registry last synced 2026-06-21; Anti-Pattern #9 protocol). Requires `gcloud auth login` on the machine running the check.
+- [x] Vertex AI: re-verify the 20 fine-tuned agent endpoints against the live tuningJobs API (registry last synced 2026-06-21; Anti-Pattern #9 protocol). Requires `gcloud auth login` on the machine running the check.
 
 ### Social Platform Developer Registrations (ISSUE-766, added 2026-07-08)
 
