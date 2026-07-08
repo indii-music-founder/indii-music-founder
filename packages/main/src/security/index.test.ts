@@ -233,7 +233,8 @@ describe('security/index.ts', () => {
                     'https://firebasestorage.googleapis.com/v0/b/my-bucket.appspot.com/o',
                     'https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword',
                     'https://us-central1-indii-music-founder.cloudfunctions.net/generateContentStream',
-                    'https://generateimagev3-run-app-subdomain.run.app'
+                    'https://generateimagev3-run-app-subdomain.run.app',
+                    'http://127.0.0.1:5001/indii-music-founder/us-central1/generateContentStream'
                 ];
 
                 for (const url of urls) {

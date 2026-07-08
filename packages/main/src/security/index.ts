@@ -123,7 +123,9 @@ export function configureSecurity(session: Session) {
             '*://*.googleapis.com/*',
             '*://*.firebaseapp.com/*',
             '*://*.cloudfunctions.net/*',
-            '*://*.run.app/*'
+            '*://*.run.app/*',
+            'http://127.0.0.1:*/*',
+            'http://localhost:*/*'
         ] },
         (details, callback) => {
             // Inject a valid production referer for all Firebase/Google APIs.
