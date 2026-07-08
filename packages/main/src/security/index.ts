@@ -117,14 +117,23 @@ export function configureSecurity(session: Session) {
         return callback(verificationResult === 'net::OK' ? 0 : -2);
     });
 
-    // 5. Inject Referer for Firebase/Google APIs (Fixes "requests from referer empty blocked")
+    // 5. Inject Referer & Client Type for Firebase/Google APIs & Cloud Functions (Fixes App Check / Referer blocks)
     session.webRequest.onBeforeSendHeaders(
-        { urls: ['*://*.googleapis.com/*', '*://*.firebaseapp.com/*'] },
+        { urls: [
+            '*://*.googleapis.com/*',
+            '*://*.firebaseapp.com/*',
+            '*://*.cloudfunctions.net/*',
+            '*://*.run.app/*'
+        ] },
         (details, callback) => {
             // Inject a valid production referer for all Firebase/Google APIs.
             // This satisfies GCP API Key restrictions which block <empty> referers,
             // fixing the 'auth/requests-from-referer-<empty>-are-blocked' error.
             details.requestHeaders['Referer'] = 'https://founder.indii.music/';
+            
+            // Inject client type to bypass App Check for desktop in production
+            details.requestHeaders['X-App-Client-Type'] = 'electron-desktop-app';
+            
             callback({ requestHeaders: details.requestHeaders });
         }
     );

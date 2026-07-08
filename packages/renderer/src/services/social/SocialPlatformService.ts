@@ -13,8 +13,9 @@
  *   228 — OAuth token refresh for all platforms
  */
 
-import { db } from '@/services/firebase';
+import { db, functions } from '@/services/firebase';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions';
 import { logger } from '@/utils/logger';
 import { fetchWithRetry } from '@/utils/async';
 
@@ -99,47 +100,23 @@ export async function refreshPlatformToken(
         return token;
     }
 
-    const refreshEndpoints: Record<string, string> = {
-        instagram: 'https://graph.facebook.com/v20.0/oauth/access_token',
-        youtube: 'https://oauth2.googleapis.com/token',
-        tiktok: 'https://open.tiktokapis.com/v2/oauth/token/',
-        twitter: 'https://api.twitter.com/2/oauth2/token',
-        spotify: 'https://accounts.spotify.com/api/token',
-    };
-
-    const url = refreshEndpoints[platform];
-    if (!url) return token;
-
     try {
-        const body = new URLSearchParams({
-            grant_type: 'refresh_token',
-            refresh_token: token.refreshToken,
-            client_id: '', // Injected from env/Firestore remote config in prod
-        });
+        const refreshSocialToken = httpsCallable<{
+            platform: SocialPlatform;
+            refreshToken: string;
+        }, {
+            accessToken: string;
+            expiresIn: number;
+            newRefreshToken?: string;
+        }>(functions, 'refreshSocialToken');
 
-        const response = await fetchWithRetry(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: body.toString(),
-            signal: AbortSignal.timeout(10000),
-        });
-
-        if (!response.ok) {
-            logger.error(`[SocialPlatformService] Token refresh failed for ${platform}: ${response.status}`);
-            return null;
-        }
-
-        const data = await response.json() as {
-            access_token: string;
-            refresh_token?: string;
-            expires_in?: number;
-        };
+        const result = await refreshSocialToken({ platform, refreshToken: token.refreshToken });
 
         const refreshed: PlatformToken = {
             ...token,
-            accessToken: data.access_token,
-            refreshToken: data.refresh_token || token.refreshToken,
-            expiresAt: data.expires_in ? Date.now() + data.expires_in * 1000 : undefined,
+            accessToken: result.data.accessToken,
+            refreshToken: result.data.newRefreshToken || token.refreshToken,
+            expiresAt: result.data.expiresIn ? Date.now() + result.data.expiresIn * 1000 : undefined,
         };
 
         await saveToken(uid, platform, refreshed);
