@@ -3,9 +3,11 @@ import { CallableRequest, HttpsError } from 'firebase-functions/v2/https';
 import * as express from 'express';
 import * as admin from 'firebase-admin';
 
-// Check if App Check is enabled in the current environment
+// Check if App Check is enabled in the current environment (disabled during unit tests)
 export const ENFORCE_APP_CHECK =
-    process.env.SKIP_APP_CHECK !== 'true' && process.env.ENFORCE_APP_CHECK !== 'false';
+    process.env.VITEST === undefined &&
+    process.env.SKIP_APP_CHECK !== 'true' &&
+    process.env.ENFORCE_APP_CHECK !== 'false';
 
 /**
  * Check if the request is originating from the Electron desktop app.
@@ -27,7 +29,7 @@ function isElectronClient(headers: Record<string, string | string[] | undefined>
 export function validateAppCheckV1(context: functionsV1.https.CallableContext): void {
     if (!ENFORCE_APP_CHECK) return;
 
-    const headers = context.rawRequest.headers as Record<string, string | string[] | undefined>;
+    const headers = (context.rawRequest?.headers || {}) as Record<string, string | string[] | undefined>;
     if (isElectronClient(headers)) {
         return; // Bypass App Check for Electron clients
     }
@@ -46,7 +48,7 @@ export function validateAppCheckV1(context: functionsV1.https.CallableContext): 
 export function validateAppCheckV2(request: CallableRequest): void {
     if (!ENFORCE_APP_CHECK) return;
 
-    const headers = request.rawRequest.headers as Record<string, string | string[] | undefined>;
+    const headers = (request.rawRequest?.headers || {}) as Record<string, string | string[] | undefined>;
     if (isElectronClient(headers)) {
         return; // Bypass App Check for Electron clients
     }

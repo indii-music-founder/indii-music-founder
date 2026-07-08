@@ -1,6 +1,7 @@
 import * as admin from 'firebase-admin';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { z } from 'zod';
+import { validateAppCheckV2 } from '../../middleware/appCheck';
 
 const ENFORCE_APP_CHECK =
   process.env.SKIP_APP_CHECK !== 'true' && process.env.ENFORCE_APP_CHECK !== 'false';
@@ -70,8 +71,9 @@ function assertUserOwnsPath(path: string, userId: string): void {
 }
 
 export const fetchStorageAssetForCanvas = onCall(
-  { timeoutSeconds: 60, memory: '512MiB', enforceAppCheck: ENFORCE_APP_CHECK },
+  { timeoutSeconds: 60, memory: '512MiB', enforceAppCheck: false },
   async (request): Promise<{ data: string; mimeType: string; size: number }> => {
+    validateAppCheckV2(request);
     if (!request.auth) {
       throw new HttpsError('unauthenticated', 'Authentication is required to load canvas assets.');
     }
