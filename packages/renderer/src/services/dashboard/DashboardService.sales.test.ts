@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { DashboardService } from './DashboardService';
 import { SalesAnalyticsSchema, SalesAnalyticsData } from './schema';
+import { logger } from '@/utils/logger';
 
 // Mock the store
 vi.mock('@/core/store', () => ({
@@ -38,6 +39,15 @@ vi.mock('firebase/firestore', () => ({
     deleteDoc: vi.fn()
 }));
 
+vi.mock('@/utils/logger', () => ({
+    logger: {
+        warn: vi.fn(),
+        error: vi.fn(),
+        info: vi.fn(),
+        debug: vi.fn()
+    }
+}));
+
 describe('DashboardService - Sales Analytics', () => {
 
     const validSalesData: SalesAnalyticsData = {
@@ -52,14 +62,7 @@ describe('DashboardService - Sales Analytics', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
-        // Default console mocks to keep test output clean
-        vi.spyOn(console, 'warn').mockImplementation(() => { });
-        vi.spyOn(console, 'error').mockImplementation(() => { });
         DashboardService.resetCache();
-    });
-
-    afterEach(() => {
-        vi.restoreAllMocks();
     });
 
     it('should return data from Firestore when it is valid', async () => {
@@ -114,7 +117,7 @@ describe('DashboardService - Sales Analytics', () => {
         // It should be the fallback data
         // We can verify a specific property known to be in the fallback but not in our mock invalid data just to be sure
         // But better yet, check that it logged a warning
-        expect(console.warn).toHaveBeenCalledWith(
+        expect(logger.warn).toHaveBeenCalledWith(
             "[Dashboard] Firestore data failed schema validation:",
             expect.anything()
         );
@@ -136,7 +139,7 @@ describe('DashboardService - Sales Analytics', () => {
 
         const result = await DashboardService.getSalesAnalytics();
 
-        expect(console.warn).toHaveBeenCalledWith(
+        expect(logger.warn).toHaveBeenCalledWith(
             "[Dashboard] Firestore fetch failed:",
             expect.any(Error)
         );
