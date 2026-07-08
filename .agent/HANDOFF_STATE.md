@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-07-07 20:01 EDT
+**Updated:** 2026-07-07 20:02 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+ae5c0bbc4 fix(tests): resolve console spy assertions and test state contamination
+7ec3fb293 chore: session checkpoint [20:01]
 375cf5227 chore: session checkpoint [18:08]
 8999a7607 chore: session checkpoint [16:59]
 55c22c379 chore: session checkpoint [16:57]
@@ -12,8 +14,6 @@ b46212840 chore: session checkpoint [15:06]
 fb6f1c1e1 chore: session checkpoint [14:43]
 dfef68e2a docs(flowcharts): create device sync and brand asset micro diagram
 20495581d docs(ledger): document cross-device sync race condition in error ledger
-a8083fda6 fix(sync): resolve cross-device sync race condition
-ea02a2ad9 chore: session checkpoint [08:13]
 ```
 
 ## Working State
@@ -44,7 +44,6 @@ ea02a2ad9 chore: session checkpoint [08:13]
  M packages/renderer/src/core/store/slices/agent/agentSessionSlice.ts
  M packages/renderer/src/core/store/slices/agent/index.ts
  M packages/renderer/src/core/store/slices/appSlice.ts
- M packages/renderer/src/core/store/slices/creative/creativeHandoffSlice.ts
  D packages/renderer/src/core/store/slices/projectSlice.ts
  M packages/renderer/src/hooks/useRemoteCommandListener.ts
  M packages/renderer/src/hooks/useWorkspaceSync.ts
@@ -54,9 +53,7 @@ ea02a2ad9 chore: session checkpoint [08:13]
  M packages/renderer/src/modules/creative/components/DirectGenerationTab.tsx
  M packages/renderer/src/modules/dashboard/components/AssetSpotlight.tsx
  M packages/renderer/src/modules/finance/components/MerchTable.tsx
- M packages/renderer/src/modules/knowledge/components/KnowledgeChat.test.tsx
  M packages/renderer/src/modules/knowledge/components/KnowledgeChat.tsx
- M packages/renderer/src/modules/merchandise/hooks/useAutoSave.ts
  M packages/renderer/src/modules/registration/components/RegistrationAutonomousRail.tsx
  M packages/renderer/src/modules/settings/settings-panel/ProfileSection.tsx
  M packages/renderer/src/modules/touring/components/VisaChecklist.tsx
@@ -66,8 +63,6 @@ ea02a2ad9 chore: session checkpoint [08:13]
  M packages/renderer/src/services/agent/components/ContextResolver.ts
  M packages/renderer/src/services/agent/components/HistoryManager.ts
  M packages/renderer/src/services/agent/memory/AlwaysOnMemoryEngine.ts
- M packages/renderer/src/services/dashboard/DashboardService.sales.test.ts
- M packages/renderer/src/services/dashboard/DashboardService.ts
  M packages/renderer/src/services/dashboard/projectTypeUtils.ts
  D packages/renderer/src/services/project/ProjectService.test.ts
  D packages/renderer/src/services/project/ProjectService.ts
@@ -76,13 +71,11 @@ ea02a2ad9 chore: session checkpoint [08:13]
  M packages/renderer/src/test/setup.ts
  M packages/renderer/src/tests/RouterContext.test.tsx
  M packages/renderer/src/types/electron.d.ts
- M packages/renderer/src/utils/logger.ts
  M packages/shared/dist/ipc/electron-api.types.d.ts
  M packages/shared/dist/ipc/electron-api.types.d.ts.map
  M packages/shared/dist/schemas/env.schema.d.ts
  M packages/shared/dist/schemas/workflowState.d.ts
  M packages/shared/src/ipc/electron-api.types.ts
-?? docs/flowcharts/test-console-sandbox-micro.md
 ?? packages/renderer/src/core/components/AgentSwitcherStrip.tsx
 ```
 
