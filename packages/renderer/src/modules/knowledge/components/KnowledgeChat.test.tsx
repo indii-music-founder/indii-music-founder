@@ -3,6 +3,7 @@ import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { KnowledgeChat } from './KnowledgeChat';
 import { knowledgeBaseService } from '../services/KnowledgeBaseService';
+import { useStore } from '@/core/store';
 
 // Mock the service
 vi.mock('../services/KnowledgeBaseService', () => ({
@@ -30,8 +31,54 @@ describe('👁️ Pixel: KnowledgeChat Stream Verification', () => {
         } as any
     };
 
+    let testSessions: Record<string, any> = {};
+
     beforeEach(() => {
         vi.clearAllMocks();
+        testSessions = {};
+        
+        const mockStore = useStore as any;
+        mockStore.getState = vi.fn(() => ({
+            sessions: testSessions,
+            createSession: (title: string, agents: string[], namespace: string) => {
+                const id = namespace || 'new-session-id';
+                testSessions = {
+                    ...testSessions,
+                    [id]: { id, messages: [], namespace }
+                };
+                return id;
+            },
+            addMessageToSession: (sessionId: string, msg: any) => {
+                const currentSession = testSessions[sessionId] || { id: sessionId, messages: [] };
+                testSessions = {
+                    ...testSessions,
+                    [sessionId]: {
+                        ...currentSession,
+                        messages: [...currentSession.messages, msg]
+                    }
+                };
+            },
+            clearAgentHistory: (sessionId: string) => {
+                if (testSessions[sessionId]) {
+                    testSessions = {
+                        ...testSessions,
+                        [sessionId]: {
+                            ...testSessions[sessionId],
+                            messages: []
+                        }
+                    };
+                }
+            }
+        }));
+        
+        mockStore.mockImplementation((selector: any) => {
+            return selector({
+                sessions: testSessions,
+                createSession: mockStore.getState().createSession,
+                addMessageToSession: mockStore.getState().addMessageToSession,
+                clearAgentHistory: mockStore.getState().clearAgentHistory
+            });
+        });
     });
 
     it('renders nothing when isOpen is false', () => {
@@ -120,7 +167,7 @@ describe('👁️ Pixel: KnowledgeChat Stream Verification', () => {
     });
 
     it('clears chat history', async () => {
-        render(<KnowledgeChat {...defaultProps} />);
+        const { rerender } = render(<KnowledgeChat {...defaultProps} />);
 
         expect(screen.getByText(/Hello!/i)).toBeInTheDocument();
 
@@ -138,6 +185,7 @@ describe('👁️ Pixel: KnowledgeChat Stream Verification', () => {
 
         // Now clear
         fireEvent.click(clearButton);
+        rerender(<KnowledgeChat {...defaultProps} />);
 
         expect(screen.queryByText('Temp Msg')).not.toBeInTheDocument();
         expect(screen.getByText(/Hello!/i)).toBeInTheDocument();

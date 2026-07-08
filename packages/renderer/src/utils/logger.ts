@@ -3,7 +3,9 @@
  * Wraps console methods to prevent leaking sensitive information in production.
  */
 
-const isDev = typeof import.meta.env !== 'undefined' ? import.meta.env.DEV : process.env.NODE_ENV !== 'production';
+const isDev = (typeof process !== 'undefined' && process.env.NODE_ENV === 'test') || (typeof import.meta.env !== 'undefined' ? import.meta.env.DEV : process.env.NODE_ENV !== 'production');
+
+const getConsole = () => typeof window !== 'undefined' && window.console ? window.console : console;
 
 export const logger = {
     /**
@@ -12,8 +14,9 @@ export const logger = {
      * In production: Logs only the message (and name if available) to avoid leaking internals.
      */
     error: (message: string, ...args: unknown[]) => {
+        const c = getConsole();
         if (isDev) {
-            console.error(message, ...args);
+            c.error(message, ...args);
         } else {
             // Production: Sanitize error output
             const sanitizedArgs = args.map(arg => {
@@ -30,7 +33,7 @@ export const logger = {
                 }
                 return 'Unknown error';
             });
-            console.error(message, ...sanitizedArgs);
+            c.error(message, ...sanitizedArgs);
         }
     },
 
@@ -39,7 +42,7 @@ export const logger = {
      */
     warn: (message: string, ...args: unknown[]) => {
         if (isDev) {
-            console.warn(message, ...args);
+            getConsole().warn(message, ...args);
         }
     },
 
@@ -48,7 +51,7 @@ export const logger = {
      */
     info: (message: string, ...args: unknown[]) => {
         if (isDev) {
-            console.info(message, ...args);
+            getConsole().info(message, ...args);
         }
     },
 
@@ -57,7 +60,7 @@ export const logger = {
      */
     debug: (message: string, ...args: unknown[]) => {
         if (isDev) {
-            console.debug(message, ...args);
+            getConsole().debug(message, ...args);
         }
     }
 };

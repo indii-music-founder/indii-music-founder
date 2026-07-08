@@ -38,7 +38,6 @@ export const useAutoSave = (
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
     const saveDesign = useCallback(async () => {
         if (!canvas || !user || !currentProjectId || !activeOrg) {
             logger.warn('Auto-save skipped: missing canvas, user, or project context', {
