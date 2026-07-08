@@ -55,6 +55,44 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Prepare Code Signing Environment
+        shell: bash
+        run: |
+          MAC_CERT="${{ secrets.MAC_CERTIFICATE_P12_BASE64 || secrets.CSC_LINK }}"
+          if [ -n "$MAC_CERT" ]; then
+            echo "CSC_LINK=$MAC_CERT" >> $GITHUB_ENV
+          fi
+          
+          MAC_PASS="${{ secrets.MAC_CERTIFICATE_PASSWORD || secrets.CSC_KEY_PASSWORD }}"
+          if [ -n "$MAC_PASS" ]; then
+            echo "CSC_KEY_PASSWORD=$MAC_PASS" >> $GITHUB_ENV
+          fi
+          
+          WIN_CERT="${{ secrets.WINDOWS_CERTIFICATE || secrets.WIN_CSC_LINK }}"
+          if [ -n "$WIN_CERT" ]; then
+            echo "WIN_CSC_LINK=$WIN_CERT" >> $GITHUB_ENV
+          fi
+          
+          WIN_PASS="${{ secrets.WINDOWS_CERTIFICATE_PASSWORD || secrets.WIN_CSC_KEY_PASSWORD }}"
+          if [ -n "$WIN_PASS" ]; then
+            echo "WIN_CSC_KEY_PASSWORD=$WIN_PASS" >> $GITHUB_ENV
+          fi
+          
+          APPLE_EMAIL="${{ secrets.APPLE_ID }}"
+          if [ -n "$APPLE_EMAIL" ]; then
+            echo "APPLE_ID=$APPLE_EMAIL" >> $GITHUB_ENV
+          fi
+          
+          APPLE_SPEC_PASS="${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}"
+          if [ -n "$APPLE_SPEC_PASS" ]; then
+            echo "APPLE_APP_SPECIFIC_PASSWORD=$APPLE_SPEC_PASS" >> $GITHUB_ENV
+          fi
+          
+          APPLE_TEAM="${{ secrets.APPLE_TEAM_ID }}"
+          if [ -n "$APPLE_TEAM" ]; then
+            echo "APPLE_TEAM_ID=$APPLE_TEAM" >> $GITHUB_ENV
+          fi
+
       # macOS code signing — uses Apple certificates from GitHub secrets.
       # Leave CSC_LINK / CSC_KEY_PASSWORD empty on forks; signing is skipped.
       - name: Build & publish desktop installer
@@ -63,16 +101,7 @@ jobs:
           npx electron-builder --publish always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # macOS signing (uncommented to enable when secrets are set)
-          CSC_LINK: ${{ secrets.MAC_CERTIFICATE_P12_BASE64 || secrets.CSC_LINK }}
-          CSC_KEY_PASSWORD: ${{ secrets.MAC_CERTIFICATE_PASSWORD || secrets.CSC_KEY_PASSWORD }}
           CSC_IDENTITY_AUTO_DISCOVERY: true
-          # Windows signing (uncommented to enable when secrets are set)
-          WIN_CSC_LINK: ${{ secrets.WINDOWS_CERTIFICATE || secrets.WIN_CSC_LINK }}
-          WIN_CSC_KEY_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD || secrets.WIN_CSC_KEY_PASSWORD }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
 
       - name: Verify updater manifest was published
         shell: bash
