@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-07-08 10:17 EDT
+**Updated:** 2026-07-08 10:32 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+b0ada088b chore: session checkpoint [10:17]
 84363de8a fix(google-apis): resolve ISSUE-764/765/766 — Maps key build strip + social token refresh + API surface audit
 9a015ac19 chore: session checkpoint [09:47]
 2180941ec chore: session checkpoint [09:45]
@@ -13,12 +14,17 @@ b4f53ab5f chore: session checkpoint [08:51]
 ed585f900 chore: session checkpoint [20:46]
 0fbdc754b chore: document space-in-path keytar compile issue
 29ae89cb3 chore: session checkpoint [20:44]
-a2934c409 chore: session checkpoint [20:38]
 ```
 
 ## Working State
 ```
-clean working tree
+ M packages/firebase/src/functions/agent/manageSemanticMemory.ts
+ M packages/firebase/src/functions/creative/gateway.ts
+ M packages/firebase/src/functions/rights/queueRightsRegistration.ts
+ M packages/firebase/src/functions/storage/fetchStorageAssetForCanvas.ts
+ M packages/firebase/src/middleware/appCheck.ts
+ M packages/main/src/updater.ts
+?? packages/firebase/src/middleware/appCheck.test.ts
 ```
 
 ## Decisions
