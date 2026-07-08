@@ -4,6 +4,7 @@
 
 ## Recent Commits
 ```
+a07778461 chore: session checkpoint [11:51]
 4585c2098 chore: session checkpoint [11:50]
 baf1b63ea fix(main): add local emulator urls to app check bypass and handle html 404 in updater
 9e582ce17 chore: session checkpoint [10:32]
@@ -13,7 +14,6 @@ b0ada088b chore: session checkpoint [10:17]
 2180941ec chore: session checkpoint [09:45]
 b4f53ab5f chore: session checkpoint [08:51]
 63d70c202 chore: session checkpoint [22:14]
-23edfd7ff chore: session checkpoint [21:42]
 ```
 
 ## Working State
@@ -24,7 +24,6 @@ b4f53ab5f chore: session checkpoint [08:51]
  M packages/firebase/src/functions/storage/fetchStorageAssetForCanvas.ts
  M packages/firebase/src/middleware/appCheck.ts
 ?? docs/RELEASE_CHECKLIST_COWORKER_ONBOARDING.md
-?? mock.txt
 ?? packages/firebase/src/middleware/appCheck.test.ts
 ```
 
