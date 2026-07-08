@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-07-07 22:14 EDT
+**Updated:** 2026-07-08 08:51 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+63d70c202 chore: session checkpoint [22:14]
 23edfd7ff chore: session checkpoint [21:42]
 ed585f900 chore: session checkpoint [20:46]
 0fbdc754b chore: document space-in-path keytar compile issue
@@ -13,7 +14,6 @@ f370fae5f build(deps): repair electron-builder dependency and build mac desktop 
 d2d8ed72a chore: session checkpoint [20:35]
 b3a73bda3 chore: session checkpoint [20:32]
 5a4836c48 chore: session checkpoint [20:05]
-88f3681d1 feat: unify project scoped conversations and boardroom persistence
 ```
 
 ## Working State
