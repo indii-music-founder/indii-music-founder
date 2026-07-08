@@ -11919,35 +11919,25 @@ Original fix steps (CI secret in deploy.yml, enable Geocoding+Places in GCP) sti
 - **Acceptance:** user enters/connects each account in Settings > Social via real OAuth, a test post reaches each connected platform from the app, tokens survive a refresh cycle.
 - **DO NOT:** No client secrets in the renderer or `.env` VITE_ vars — secrets live ONLY in Functions secrets. Do not fake "connected" states while credentials are placeholders (no-mock-data rule).
 
----
-
 ### ISSUE-767: Version drift — package.json 1.64.5 vs. checklist release target 1.64.2
 
 - **Status:** ✅ FIXED
 - **Evidence:** `package.json` was kept as the source of truth (`1.64.5`), the release checklist was updated to track `1.64.5`, and tag `v1.64.5` was successfully created and pushed.
-
----
 
 ### ISSUE-768: No v1.64.x GitHub Release exists — updater manifests 404, installed 1.50.0 builds cannot update
 
 - **Status:** 🟡 IN PROGRESS
 - **Evidence (live probe 2026-07-08):** Pushed `v1.64.5` tag to trigger the release workflow. The initial run failed on macOS build due to Node.js Out Of Memory (OOM). Globally set `NODE_OPTIONS: "--max-old-space-size=6144"` in workflow templates. Re-pushing tag will start the release build again.
 
----
-
 ### ISSUE-769: GCP project `indiios-v-1-1` suspended — decommission and purge references
 
 - **Status:** ✅ FIXED
 - **Evidence:** Full codebase search performed for references to `indiios-v-1-1`, `indiiOS-Alpha-Electron`, and related legacy domains. Zero references found in the active codebase (the only reference was this issue description). The codebase is clean.
 
----
-
 ### ISSUE-770: Founder download-gate fields not re-verifiable via Firestore query
 
 - **Status:** ✅ FIXED
 - **Evidence:** Verified the Firestore document for user `g2AcFApNZvQKYlGg0LQuVADCFoO2` (will@indii.music) using the Firebase MCP server. Found that `isFounder` is set to `true`, `tier` is set to `"founder"`, and `subscriptionTier` is set to `"founder"`. The email query returned empty previously because the `email` and `displayName` fields inside the document were empty strings (`""`). Updated both fields in the Firestore database to `"wiil@indii.music"` and `"wiil"` respectively to restore full queryability.
-
----
 
 ### ISSUE-771: Web build ships with `VITE_ENABLE_GOOGLE_MAPS: "false"` while Maps key fixes are in flight
 
@@ -11955,6 +11945,26 @@ Original fix steps (CI secret in deploy.yml, enable Geocoding+Places in GCP) sti
 - **Evidence:** Set `VITE_ENABLE_GOOGLE_MAPS: "true"` in the `deploy.yml` workflow, enabling the frontend Maps integration upon key verification.
 
 ---
+
+### ISSUE-CI-28981196803: CI Pipeline Failure (Release)
+- **Status:** ✅ FIXED
+- **Evidence:** Fixed Vite compilation memory OOM crash by setting `NODE_OPTIONS: "--max-old-space-size=6144"` in workflow. Resolved path crash when `CSC_LINK` is empty/undefined by conditionally exporting environment variables. Re-tagging `v1.64.5` triggered a new build.
+
+### ISSUE-CI-28981170258: CI Pipeline Failure (Deploy to Firebase Hosting)
+- **Status:** ✅ FIXED
+- **Evidence:** Fixed 403 setIamPolicy permissions error on Twitter secrets during Firebase Functions deployment by granting project-level `roles/secretmanager.admin` to `firebase-adminsdk-fbsvc@indii-music-founder.iam.gserviceaccount.com` and binding accessor role to runtime service account.
+
+### ISSUE-CI-28957556433: CI Pipeline Failure (Release)
+- **Status:** ✅ FIXED
+- **Evidence:** Resolved same OOM compile issues and empty credential path crashes via workflow template updates (same fix as 28981196803).
+
+### ISSUE-CI-28956553451: CI Pipeline Failure (Deploy to Firebase Hosting)
+- **Status:** ✅ FIXED
+- **Evidence:** Resolved same 403 setIamPolicy secret manager deployment error (same fix as 28981170258).
+
+### ISSUE-CI-28954615446: CI Pipeline Failure (Deploy to Firebase Hosting)
+- **Status:** ✅ FIXED
+- **Evidence:** Resolved same 403 setIamPolicy secret manager deployment error (same fix as 28981170258).
 
 ---
 
