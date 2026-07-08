@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-07-08 11:54 EDT
+**Updated:** 2026-07-08 11:56 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+064418ecd fix(firebase): pass original express req object to validateAppCheckHttp
+5d14a6388 chore: session checkpoint [11:54]
 772534d77 chore: session checkpoint [11:53]
 5d882a877 chore: session checkpoint [11:53]
 e57b09cab chore: session checkpoint [11:52]
@@ -12,19 +14,11 @@ a07778461 chore: session checkpoint [11:51]
 4585c2098 chore: session checkpoint [11:50]
 baf1b63ea fix(main): add local emulator urls to app check bypass and handle html 404 in updater
 9e582ce17 chore: session checkpoint [10:32]
-b0ada088b chore: session checkpoint [10:17]
-84363de8a fix(google-apis): resolve ISSUE-764/765/766 — Maps key build strip + social token refresh + API surface audit
 ```
 
 ## Working State
 ```
- M packages/firebase/src/functions/agent/manageSemanticMemory.ts
- M packages/firebase/src/functions/creative/gateway.ts
- M packages/firebase/src/functions/rights/queueRightsRegistration.ts
- M packages/firebase/src/functions/storage/fetchStorageAssetForCanvas.ts
- M packages/firebase/src/middleware/appCheck.ts
-?? docs/RELEASE_CHECKLIST_COWORKER_ONBOARDING.md
-?? packages/firebase/src/middleware/appCheck.test.ts
+clean working tree
 ```
 
 ## Decisions
