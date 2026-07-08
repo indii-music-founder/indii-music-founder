@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-07-08 09:47 EDT
+**Updated:** 2026-07-08 10:17 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+84363de8a fix(google-apis): resolve ISSUE-764/765/766 — Maps key build strip + social token refresh + API surface audit
+9a015ac19 chore: session checkpoint [09:47]
 2180941ec chore: session checkpoint [09:45]
 b4f53ab5f chore: session checkpoint [08:51]
 63d70c202 chore: session checkpoint [22:14]
@@ -12,14 +14,11 @@ ed585f900 chore: session checkpoint [20:46]
 0fbdc754b chore: document space-in-path keytar compile issue
 29ae89cb3 chore: session checkpoint [20:44]
 a2934c409 chore: session checkpoint [20:38]
-f370fae5f build(deps): repair electron-builder dependency and build mac desktop app
-d2d8ed72a chore: session checkpoint [20:35]
 ```
 
 ## Working State
 ```
- M .agent/test_ledger/OPEN_ISSUES.md
- M docs/RELEASE_CHECKLIST.md
+clean working tree
 ```
 
 ## Decisions
