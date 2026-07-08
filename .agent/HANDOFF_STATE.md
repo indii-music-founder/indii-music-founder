@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-07-08 11:56 EDT
+**Updated:** 2026-07-08 11:57 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+b7570f3fc chore: session checkpoint [11:56]
 f92ed7a13 chore: session checkpoint [11:56]
 064418ecd fix(firebase): pass original express req object to validateAppCheckHttp
 5d14a6388 chore: session checkpoint [11:54]
@@ -13,7 +14,6 @@ e57b09cab chore: session checkpoint [11:52]
 b130bcff5 chore: session checkpoint [11:51]
 a07778461 chore: session checkpoint [11:51]
 4585c2098 chore: session checkpoint [11:50]
-baf1b63ea fix(main): add local emulator urls to app check bypass and handle html 404 in updater
 ```
 
 ## Working State
