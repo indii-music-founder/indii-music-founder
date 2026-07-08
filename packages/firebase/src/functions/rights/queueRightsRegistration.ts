@@ -1,6 +1,7 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
 import { logger } from 'firebase-functions';
+import { validateAppCheckV2 } from '../../middleware/appCheck';
 
 // Ensure Firebase admin is initialized
 if (!admin.apps.length) {
@@ -167,8 +168,9 @@ export async function processQueueRightsRegistration(
 }
 
 export const queueRightsRegistration = onCall(
-    { enforceAppCheck: ENFORCE_APP_CHECK, timeoutSeconds: 30 },
+    { enforceAppCheck: false, timeoutSeconds: 30 },
     async (request) => {
+        validateAppCheckV2(request);
         if (!request.auth) {
             throw new HttpsError('unauthenticated', 'Sign in to queue a rights registration.');
         }
