@@ -45,15 +45,6 @@ vi.mock('@/utils/authGuards', () => ({
 describe('WorkspaceSyncService', () => {
     const mockSnapshot: WorkspaceSnapshot = {
         schemaVersion: 1,
-        boardroomMessages: [
-            {
-                id: 'msg1',
-                fromAgent: 'generalist',
-                toAgent: 'creative',
-                content: 'Hello',
-                timestamp: Date.now(),
-            },
-        ],
         activeAgents: ['generalist', 'creative'],
         referencedAssets: [
             {
@@ -194,7 +185,6 @@ describe('WorkspaceSyncService', () => {
         // (implementation in useWorkspaceSync test suite)
         const partialSnapshot: Partial<WorkspaceSnapshot> = {
             schemaVersion: 1,
-            boardroomMessages: mockSnapshot.boardroomMessages,
             activeAgents: mockSnapshot.activeAgents,
         };
 

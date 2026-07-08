@@ -92,9 +92,8 @@ describe('BoardroomModule', () => {
     beforeEach(() => {
         Object.keys(mockStoreState).forEach(key => delete mockStoreState[key]);
         Object.assign(mockStoreState, {
-            isBoardroomMode: true,
             activeAgents: [],
-            boardroomMessages: [],
+            agentHistory: [],
             toggleAgent: vi.fn(),
             setBoardroomMode: vi.fn(),
             setChatChannel: vi.fn(),
@@ -129,7 +128,7 @@ describe('BoardroomModule', () => {
     });
 
     it('shows messages when boardroomMessages is populated', () => {
-        mockStoreState.boardroomMessages = [
+        mockStoreState.agentHistory = [
             { id: 'msg-1', role: 'model', text: 'Hello from marketing', timestamp: Date.now(), agentId: 'marketing' },
             { id: 'msg-2', role: 'model', text: 'Finance agrees', timestamp: Date.now(), agentId: 'finance' },
         ];

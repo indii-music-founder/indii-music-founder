@@ -46,7 +46,7 @@ export class ContextResolver {
             userProfile,
             brandKit,
             activeModule: currentModule,
-            chatHistory: conversationMode === 'boardroom' ? state.boardroomMessages || [] : state.agentHistory || [],
+            chatHistory: conversationMode === 'boardroom' ? state.agentHistory || [] : state.agentHistory || [],
             conversationMode,
             seatedAgents: activeAgents,
             distributor,

@@ -73,14 +73,6 @@ export function useWorkspaceSync(): void {
 
                 // Echo guard: don't apply our own writes
                 if (deviceId === currentDeviceId) {
-                    const localMessages = useStore.getState().boardroomMessages;
-                    if (localMessages.length === 0 && snapshot.boardroomMessages && snapshot.boardroomMessages.length > 0) {
-                        logger.info('[WorkspaceSync] Local state empty after reload, auto-rehydrating from own device snapshot');
-                        applyWorkspaceSnapshot(snapshot);
-                        rehydratedRef.current = true;
-                        return;
-                    }
-                    
                     logger.info('[WorkspaceSync] Cloud snapshot is from this device, skipping');
                     rehydratedRef.current = true;
                     return;
@@ -146,7 +138,6 @@ export function useWorkspaceSync(): void {
         const unsubRoot = useStore.subscribe((state) => {
             // Shallow check: if major fields changed, queue a push
             if (
-                state.boardroomMessages !== prevRootState.boardroomMessages ||
                 state.activeAgents !== prevRootState.activeAgents ||
                 state.referencedAssets !== prevRootState.referencedAssets ||
                 state.currentModule !== prevRootState.currentModule ||

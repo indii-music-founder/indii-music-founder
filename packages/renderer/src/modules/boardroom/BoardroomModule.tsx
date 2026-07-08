@@ -45,7 +45,7 @@ export function BoardroomModule() {
     } = useStore(
         useShallow(state => ({
             conversationMode: state.conversationMode,
-            boardroomMessages: state.boardroomMessages,
+            boardroomMessages: state.agentHistory,
             activeAgents: state.activeAgents,
             userProfile: state.userProfile,
             setConversationMode: state.setConversationMode,

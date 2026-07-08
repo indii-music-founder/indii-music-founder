@@ -11,6 +11,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { logger } from '@/utils/logger';
 import * as ContextMenu from '@radix-ui/react-context-menu';
 import { ActionableEmptyState } from '@/components/shared/ActionableEmptyState';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 interface MerchTableProps {
     isDashboardView?: boolean;
@@ -318,6 +319,9 @@ export const MerchTable: React.FC<MerchTableProps> = ({ isDashboardView = false,
                                             <ContextMenu.Separator className="h-px bg-white/10 my-1" />
                                             <ContextMenu.Item
                                                 onSelect={async () => {
+                                                    const ok = await ConfirmDialog.call({ message: 'Are you sure you want to delete this product? This action cannot be undone.' });
+                                                    if (!ok) return;
+                                                    
                                                     try {
                                                         await MarketplaceService.deleteProduct(product.id);
                                                         toast.success('Product deleted successfully');

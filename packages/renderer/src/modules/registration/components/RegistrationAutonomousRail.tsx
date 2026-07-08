@@ -13,45 +13,58 @@ interface RegistrationAutonomousRailProps {
   className?: string;
 }
 
-interface AutonomousMessage {
-  role: 'ai' | 'user';
-  text: string;
-  ts: number;
-}
+import { AgentMessage } from '@/core/store/slices/agent';
 
 export function RegistrationAutonomousRail({ focusedAdapter, track, className }: RegistrationAutonomousRailProps) {
-  const { registrationIntelligenceMessage, setRegistrationIntelligenceMessage } = useStore(
+  const { registrationIntelligenceMessage, setRegistrationIntelligenceMessage, sessions, createSession, addMessageToSession } = useStore(
     useShallow(s => ({
       registrationIntelligenceMessage: s.registrationIntelligenceMessage,
       setRegistrationIntelligenceMessage: s.setRegistrationIntelligenceMessage,
+      sessions: s.sessions,
+      createSession: s.createSession,
+      addMessageToSession: s.addMessageToSession
     }))
   );
 
-  const [messages, setMessages] = useState<AutonomousMessage[]>([]);
+  const namespace = `registration-rail-${track?.id || 'global'}`;
+  const railSession = Object.values(sessions).find(s => s.namespace === namespace);
+  const messages = railSession?.messages || [];
+
   const [input, setInput] = useState('');
   const [isActive, setIsActive] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
 
+  // Helper to ensure session exists before adding messages
+  const ensureSessionAndAddMessage = (msg: AgentMessage) => {
+    let activeSessionId = railSession?.id;
+    if (!activeSessionId) {
+      activeSessionId = createSession(
+        `Registration: ${track?.title || 'Global'}`,
+        ['indii-registration'],
+        namespace
+      );
+    }
+    addMessageToSession(activeSessionId, msg);
+  };
+
   // Consume one-shot message from store (pushed by AgentOrchestrator / navigate_to)
   useEffect(() => {
     if (registrationIntelligenceMessage) {
-      setMessages(prev => [...prev, { role: 'ai', text: registrationIntelligenceMessage, ts: Date.now() }]);
+      ensureSessionAndAddMessage({ id: Date.now().toString(), role: 'model', text: registrationIntelligenceMessage, timestamp: Date.now() });
       setIsActive(true);
       setRegistrationIntelligenceMessage('');
     }
   }, [registrationIntelligenceMessage, setRegistrationIntelligenceMessage]);
 
-  // Greet when a new org is focused — intentionally keyed by .id to avoid
-  // duplicate greetings on every shallow prop reference change.
+  // Greet when a new org is focused
   useEffect(() => {
     if (focusedAdapter && track) {
       const greeting = buildGreeting(focusedAdapter, track);
-      setMessages(prev => {
-        const last = prev[prev.length - 1];
-        if (last?.text === greeting) return prev;
-        return [...prev, { role: 'ai', text: greeting, ts: Date.now() }];
-      });
+      const lastMsg = messages[messages.length - 1];
+      if (lastMsg?.text !== greeting) {
+        ensureSessionAndAddMessage({ id: Date.now().toString(), role: 'model', text: greeting, timestamp: Date.now() });
+      }
       setIsActive(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -65,7 +78,7 @@ export function RegistrationAutonomousRail({ focusedAdapter, track, className }:
     const text = input.trim();
     if (!text) return;
     setInput('');
-    setMessages(prev => [...prev, { role: 'user', text, ts: Date.now() }]);
+    ensureSessionAndAddMessage({ id: Date.now().toString(), role: 'user', text, timestamp: Date.now() });
 
     try {
       const systemPrompt = focusedAdapter
@@ -77,12 +90,9 @@ export function RegistrationAutonomousRail({ focusedAdapter, track, className }:
         INTELLIGENCE_MODELS.TEXT.FAST,
         systemPrompt
       );
-      setMessages(prev => [...prev, { role: 'ai', text: replyText || "I'm here — ask me anything about this registration.", ts: Date.now() }]);
+      ensureSessionAndAddMessage({ id: Date.now().toString(), role: 'model', text: replyText || "I'm here — ask me anything about this registration.", timestamp: Date.now() });
     } catch {
-      setMessages(prev => [
-        ...prev,
-        { role: 'ai', text: "I'm here — ask me anything about this registration.", ts: Date.now() },
-      ]);
+      ensureSessionAndAddMessage({ id: Date.now().toString(), role: 'model', text: "I'm here — ask me anything about this registration.", timestamp: Date.now() });
     }
   };
 
@@ -115,10 +125,10 @@ export function RegistrationAutonomousRail({ focusedAdapter, track, className }:
         )}
         {messages.map(msg => (
           <div
-            key={msg.ts}
+            key={msg.id}
             className={cn(
               'text-xs leading-relaxed rounded-xl px-3 py-2.5 max-w-[90%]',
-              msg.role === 'ai'
+              msg.role !== 'user'
                 ? 'bg-green-500/10 border border-green-500/20 text-green-100/90'
                 : 'bg-white/[0.04] border border-white/[0.06] text-gray-200 ml-auto'
             )}

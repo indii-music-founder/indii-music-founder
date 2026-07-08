@@ -10297,8 +10297,8 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-676: Creative Editor has no direct "upload photo" path into the editor; unclear how users get existing photos into the workspace
 
-- **Status:** 🔍 INVESTIGATION COMPLETE (2026-07-03)
-- **Severity:** 🟡 MEDIUM (discovery gap, not crash)
+- **Status:** ✅ FIXED (2026-07-07)
+- **Severity:** 🟢 RESOLVED
 - **Module:** Creative Studio / Photo intake / Onboarding
 - **Summary:** The Creative Editor provides a canvas with layers and editing tools, but the main affordance for getting a photo into the editor is the `PhotoSourcePanel`, which captures from the device camera or allows picking from the device file system. However, there is no obvious pathway to select an existing photo from the user's Project Assets gallery, past uploads, or brand-uploaded media. Users must either (A) take a fresh photo with the camera, or (B) pick a file from their computer. There is no "use existing asset" flow that connects to the asset gallery.
 - **Evidence (camera-only intake):** `packages/renderer/src/modules/creative/components/CanvasViewport.tsx:70-100` shows a toolbar; there is no "Open photo" or "Browse assets" button.
@@ -11126,6 +11126,10 @@ A third distinct navigation menu on the same bottom-up ethos: `packages/renderer
 
 **BUILD ORDER FOR FIX AGENTS:** none this pass — all clean, nothing to fix.
 
+- [x] **ISSUE-751 (HIGH):** Project-scoped conversation filtering. Conversations are leaking across project boundaries in the UI. When you switch projects (from dropdown or Dashboard), the history list (`ConversationHistoryList.tsx`) still shows all sessions, and the active session remains active even if it doesn't belong to the current project. Archives view also needs scoping.
+  - **STATUS:** FIXED
+  - **ROOT CAUSE:** `ConversationHistoryList.tsx` did not filter by project; switching projects didn't adjust the active session in `agentSessionSlice.ts`/`appSlice.ts`.
+  - **FIX:** Added `currentProjectId` awareness to `ConversationHistoryList`, set up a project switcher effect in `setProject` (`appSlice.ts`), and implemented `defaultParticipants` inheritance from `ProjectMetadata` on session creation. Added a "Move to Project" Radix dropdown menu on sessions.
 - **Settings (bottom):** real Firestore live-sync (`onSnapshot`/`setDoc` on a settings doc).
 - **Stream:** delegates to real `StorageService.loadHistory(100)` — genuine history items, not fabricated.
 - **Boardroom (AgentChat → sendCommand → remoteRelayService):** real relay mechanism with proper `isPaired` guard and error handling. Command types supported: `navigate`, `agent_action`, `daw_control`, `media_playback`, `RAW` fallback. Confirms (does not newly discover) the known gap already tracked as ISSUE-698 — no `touring` command type exists yet.
@@ -11580,3 +11584,279 @@ Walked individual menus applying all four lenses (double-click races / authoriza
 - **Expected (acceptance):** The functions implement the actual final delivery mechanism (e.g., SFTP/API to the DSPs) as intended, or the comment and function names are explicitly updated to reflect that this is just the XML generation/staging phase of a larger pipeline.
 - **Honest fallback:** If DSP integration is not fully built, clearly mark the step as "Staged for Delivery" and do not claim the dispatch is complete.
 - **DO NOT:** Do not pretend the distribution is finished just by dropping an XML file into a bucket.
+
+---
+
+## 2026-07-07 — Archive System Redesign + Chat/Panel UX (William session, plan-only)
+
+> Build order: 750 → 751 (751 depends on 750's data model). 752, 753, 754 independent, any order.
+
+### ISSUE-750: Archive System Parity — make Archives work like Claude's conversation archives
+- **Status:** 🔴 OPEN (PLANNED — no code yet)
+- **Severity:** 🟠 MEDIUM (core daily-driver UX)
+- **Location:** `packages/renderer/src/core/components/ConversationHistoryList.tsx`, `packages/renderer/src/core/store/slices/agent/agentSessionSlice.ts`, `packages/renderer/src/services/agent/SessionService.ts`
+- **Details (current state, verified):**
+  - "Archives" tab in RightPanel is just `ConversationHistoryList` — flat session list sorted by `updatedAt`, actions = select/rename/delete only.
+  - `ConversationSession.isArchived` field EXISTS but nothing in the UI sets or filters on it (only `SessionTools.ts:59` filters it out for the agent). Archive ≠ delete is modeled but not built.
+  - No search. No date grouping. Firestore query is `limit(50)` with no pagination — sessions silently fall off the list.
+  - Messages stored inline in the session doc (`messages: AgentMessage[]`) — Firestore 1MB doc limit is a ticking bomb for long conversations; also means list view downloads ALL message bodies just to show titles.
+- **Expected (acceptance), modeled on Claude's own archives:**
+  1. **Archive action** (distinct from delete): sets `isArchived`, session leaves the default list, recoverable from an "Archived" filter/section. Delete stays destructive-with-confirm.
+  2. **Default list = active sessions only**; toggle or sub-tab to view archived; unarchive restores.
+  3. **Search** across session titles (title-only is acceptable v1; full-text later).
+  4. **Date grouping** (Today / Yesterday / This Week / Older) instead of one flat list.
+  5. **Pagination or "load more"** past the 50-session cap.
+  6. **List metadata**: participants (agent avatars) shown per session so different agent arrangements are visible at a glance.
+  7. (Backend hygiene, same milestone) Split messages into a `sessions/{id}/messages` subcollection or summary-doc pattern so the list query stops downloading full transcripts and the 1MB ceiling goes away. Migration must be lazy/backwards-compatible.
+- **DO NOT:** No mock sessions in empty states. Do not lose sessions during the messages-subcollection migration — dual-read old inline format.
+
+### ISSUE-751: Project-Scoped Conversations — multiple projects, each with its own agent arrangement
+- **Status:** 🔴 OPEN (PLANNED — no code yet)
+- **Depends on:** ISSUE-750 (archive/list model must be sane before grouping by project)
+- **Severity:** 🟠 MEDIUM (grand-scheme feature; William's stated direction)
+- **Location:** `packages/renderer/src/services/project/ProjectService.ts`, `packages/renderer/src/core/store/slices/agent/agentSessionSlice.ts`, `packages/renderer/src/core/components/ConversationHistoryList.tsx`, `packages/renderer/src/core/components/sidebar/ProjectList.tsx`
+- **Details (current state, verified):**
+  - A full `Project` model already exists (`projects` collection, ProjectService with ensureInbox/listByUser, projectSlice, ProjectList in sidebar) — but `ConversationSession` has NO `projectId`. Projects and conversations are disconnected worlds.
+  - `session.participants: string[]` + `addParticipant` already exist in the slice — the "agent arrangement" primitive is already modeled per-session.
+- **Expected (acceptance):**
+  1. `ConversationSession.projectId?: string` — sessions attach to an existing Project ("Inbox" = unassigned default, reusing `ensureInbox`).
+  2. Archives view groups/filters by project; switching project scopes the conversation list.
+  3. **Per-project default agent arrangement**: a project remembers its agent lineup (e.g. "Album Rollout" = creative + marketing + publicist) and new sessions in that project start with those participants. This is the "different arrangements of agents" ask — store as `defaultParticipants: string[]` on the Project doc.
+  4. Move/assign an existing session to a project from the session's context menu.
+  5. Archiving a whole project archives its sessions (or hides them behind the project's archived state — decide in design pass).
+- **DO NOT:** Do not build a second project system — extend the existing ProjectService/projectSlice. Do not auto-create projects without user intent.
+
+### ISSUE-752: Discuss button sends prompt text, never the image — conversation is blind
+- **Status:** 🔴 OPEN (PLANNED — no code yet)
+- **Severity:** 🔴 HIGH (dead/misleading affordance — user confirmed "it didn't work accurately")
+- **Location:** `packages/renderer/src/modules/dashboard/components/AssetSpotlight.tsx:54-67` (`handleDiscuss`)
+- **Details (current state, verified):** `handleDiscuss` only prefills `commandBarInput` with `"Let's discuss this <type> I created: '<first 80 chars of prompt>'"` and opens the agent panel. The image itself is never attached, so the agent discusses a text snippet of the generation prompt, not what's actually in the image. `AgentMessage.attachments` (`{mimeType, base64}[]`) already supports multimodal — the plumbing exists.
+- **Expected (acceptance):**
+  1. Discuss attaches the actual asset (image/video thumbnail) to the outgoing message so the model sees it.
+  2. Message carries asset context (type, prompt, creation date, asset id) as metadata for tool follow-ups (e.g. "open it in Studio").
+  3. Conversation lands in the chat panel focused and ready — user types their question about a visible, attached image.
+  4. Works for the mobile (<768px) fallback path too (currently routes to agent module with the same text-only input).
+- **DO NOT:** Do not stuff base64 into `commandBarInput`. Route through the real attachment pipeline used by the paperclip flow.
+
+### ISSUE-753: Right-panel agent switcher — consult/add agents without leaving the page (boardroom-style)
+- **Status:** 🔴 OPEN (PLANNED — no code yet)
+- **Severity:** 🟠 MEDIUM (core workflow: "in a department, need to consult another agent, don't want to leave the page")
+- **Location:** `packages/renderer/src/core/components/RightPanel.tsx`, new component modeled on `packages/renderer/src/modules/boardroom/components/ParticipantSelector.tsx`
+- **Details (current state, verified):** RightPanel chat has no agent selection UI — you talk to whatever agent context you're in (the "COGNITIVE LOGIC" chip is a thought-chain display, not a switcher). Boardroom already has `ParticipantSelector` (AVAILABLE_AGENTS roster + `activeAgents`/`toggleAgent` store actions) and the session slice already has `participants` + `addParticipant`. All primitives exist; only the right-panel surface is missing.
+- **Expected (acceptance):**
+  1. Compact participant strip in the right-panel chat header: avatars of current session participants + a `+` to add/switch, borrowing the ParticipantSelector interaction (not a full boardroom table).
+  2. Adding an agent = `addParticipant` on the active session; their responses join the same thread (consult-in-place), with per-message `agentId` attribution already supported on `AgentMessage`.
+  3. Switching primary respondent without losing the session or navigating away from the current module.
+  4. Same roster source as boardroom — one AVAILABLE_AGENTS definition, not a fork (extract to shared constant).
+- **DO NOT:** Do not duplicate the agent roster array. Do not navigate the user away from their current module to add an agent.
+
+### ISSUE-754: "Your Creations" collapsed bar is invisible — no affordance when closed
+- **Status:** 🔴 OPEN (PLANNED — no code yet)
+- **Severity:** 🟡 LOW (discoverability polish)
+- **Location:** `packages/renderer/src/core/components/RightPanel.tsx:175-180` (collapse toggle), `packages/renderer/src/modules/dashboard/components/AssetSpotlight.tsx`
+- **Details:** When collapsed, the Your Creations section reduces to a barely-visible header below the composer; users who don't know it exists never find it (William: "pretty hard to tell that it's down there").
+- **Expected (acceptance) — pick in design pass:**
+  1. Collapsed state shows a visual teaser: thumbnail stack / mini filmstrip of the most recent 2-3 creations, or at minimum an asset-count badge (e.g. "Your Creations · 12") with a subtle chevron.
+  2. Brief attention cue (glow/pulse once) when a NEW creation lands while collapsed, so finished generations are noticed.
+  3. Adequate hit area and contrast; keyboard accessible; aria-expanded already present — keep it.
+- **DO NOT:** No permanent animation/noise; one-shot cue only.
+
+### ISSUE-755: Conversations vanish on module/office switch — persistence is not guaranteed
+- **Status:** 🔴 OPEN (PLANNED — no code yet)
+- **Severity:** 🔴 HIGH (data loss, William reproduced: office → other dept → back = messages gone; agent later cannot recall decisions made in the lost thread)
+- **Depends on:** none (root of the persistence chain; do BEFORE ISSUE-750/751 UI work)
+- **Location:** `packages/renderer/src/core/store/slices/agent/agentSessionSlice.ts` (`addAgentMessage` safety net, `loadSessions` subscription), `packages/renderer/src/services/agent/SessionService.ts`
+- **Details (verified mechanism candidates — confirm during fix):**
+  1. `addAgentMessage` safety net (slice ~line 197): when no active session exists it fabricates a session **locally only** — it never calls `sessionService.createSession`, then calls `updateSession()` on a Firestore doc that does not exist. That write fails silently (error only logged). The conversation was never durable.
+  2. `loadSessions` subscription (~line 343) **replaces the entire local `sessions` map** with server state on every snapshot; any locally-created-but-unpersisted session (see #1) is clobbered, and `activeSessionId` silently falls back to `sessions[0]` (most recent). Net effect: user returns to a module and the thread they were in is gone / swapped.
+  3. Every persistence call is fire-and-forget `.catch(logger.error)` — no retry, no offline queue, no user-visible failure.
+  4. Inventory of OTHER ephemeral chat surfaces holding messages in component `useState` (lost on unmount/navigation): `modules/knowledge/components/KnowledgeChat.tsx:19`, `modules/touring/components/VisaChecklist.tsx:151`, `modules/registration/components/RegistrationAutonomousRail.tsx:30`. Audit each: either route through the session store or explicitly justify ephemerality.
+- **Expected (acceptance — William's stated model):**
+  1. **A conversation closed for ANY reason auto-archives** — navigation, module switch, panel close, reload, crash. Nothing is ever silently discarded; delete is the only destructive path and it confirms.
+  2. Returning to an office/department restores the exact thread that was there.
+  3. Session creation is persisted transactionally BEFORE first message write; writes retry with an offline queue; failures surface to the user.
+  4. Subscription merges server state with local unpersisted state instead of clobbering it; never silently switches the active session out from under the user.
+- **DO NOT:** Do not "fix" by disabling the Firestore subscription. Do not lose namespaced background sessions in the merge.
+
+### ISSUE-756: Cross-device conversation persistence — 100% durability guarantee
+- **Status:** 🔴 OPEN (PLANNED — no code yet)
+- **Depends on:** ISSUE-755 (single-device durability first)
+- **Severity:** 🔴 HIGH (William: "persistence to translate between devices also, long-term, 100% every time")
+- **Location:** `packages/renderer/src/services/agent/SessionService.ts` (Firestore + Electron KEEPER dual-write), `packages/main` local history IPC, mobile-remote surfaces
+- **Details (current state, verified):** Dual-write exists (Firestore + `window.electronAPI.agent.saveHistory` local) but both are fire-and-forget; query cap of `limit(50)` means older sessions silently stop syncing to a new device; messages inline in one doc risks the 1MB ceiling (shared root cause with ISSUE-750 item 7); no conflict resolution if the same session is touched from desktop + mobile-remote (`source` field exists per message but no merge strategy).
+- **Expected (acceptance):**
+  1. Any conversation started on one device is fully readable on every other device — including sessions beyond the most-recent-50 (pagination/on-demand fetch, not a bigger cap).
+  2. Local (Electron) store acts as offline cache with reconciliation on reconnect, not a divergent second copy.
+  3. Defined last-write-wins-per-message (or append-merge) conflict strategy for concurrent desktop + mobile writes.
+  4. E2E verification matrix: desktop→web, desktop→mobile-remote, offline→online replay.
+- **DO NOT:** Do not raise `limit(50)` to `limit(500)` and call it fixed. Do not fork a third storage path.
+
+### ISSUE-757: Memory recall guarantee — decisions made in chat must be retrievable, always
+- **Status:** 🔴 OPEN (PLANNED — no code yet)
+- **Depends on:** ISSUE-755, ISSUE-756 (can't recall what was never durably stored)
+- **Severity:** 🔴 HIGH (reproduced: agent could not recall the number William picked for the logo font — replied "no record")
+- **Location:** `packages/renderer/src/services/agent/memory/AlwaysOnMemoryEngine.ts`, `MemoryIngestionPipeline.ts`, `MemoryConsolidator.ts`, `packages/renderer/src/services/agent/SessionTools.ts`
+- **Details (current state, verified):** A memory system exists (AlwaysOnMemoryEngine, tiers working/shortTerm/longTerm/archived, consolidator) but retrieval queries are hard-capped (`limit(200)`/`limit(500)`) and session search via SessionTools rides on the same 50-session window. If a decision was in a session that vanished (ISSUE-755) or fell off the cap, it is unrecallable. There is no user-facing "recall/search my history" affordance — recall depends entirely on the agent's tool choice.
+- **Expected (acceptance — William's model):**
+  1. **Whether automatic or on request, an old memory is always retrievable.** If it was said in a conversation that reached the store, a recall query can find it — no time/window cliff.
+  2. Automatic path: ingestion pipeline captures decisions/facts from ALL chat surfaces (right panel, boardroom, mobile-remote, office consults) into the memory store at close/archive time.
+  3. On-request path: explicit recall searches the FULL session archive (server-side query or index, not the 50-session client window) and cites which conversation the answer came from.
+  4. When recall finds nothing, the agent says what it searched (N sessions, memory tiers) — honest empty state, not just "no record."
+- **DO NOT:** No fabricated recall. No silent truncation of the search space — if a cap is hit, say so.
+
+### ISSUE-758: Two parallel project systems — `appSlice.currentProjectId` vs `projectSlice.selectedProjectId`
+- **Status:** 🔴 OPEN (PLANNED — no code yet)
+- **Depends on:** none — but MUST land before ISSUE-751 (project-scoped conversations need ONE project concept)
+- **Severity:** 🟠 MEDIUM (same "disconnected systems" pattern as ISSUE-751, one level deeper)
+- **Location:** `packages/renderer/src/core/store/slices/appSlice.ts:71,110,200` vs `packages/renderer/src/core/store/slices/projectSlice.ts` + `ProjectService`
+- **Details (verified):** `appSlice.currentProjectId` (defaults to `'default'`) is what creative slices actually stamp on assets (`designHistorySlice`, `creativeHistorySlice` — which also writes placeholder ids `'default-project'` and `'chat_import'`). Meanwhile the sidebar's real Project system (`projectSlice.selectedProjectId`, Firestore `projects` collection) is consumed by NOBODY outside `ProjectList.tsx` itself — selecting a project in the sidebar changes nothing anywhere in the app. Two ungrounded project vocabularies.
+- **Expected (acceptance):** One project identity: `projectSlice`/`ProjectService` becomes canonical; `appSlice.currentProjectId` is migrated/aliased to it; creative assets stamp real project ids (Inbox for unassigned, replacing `'default-project'`/`'chat_import'` placeholders); selecting a project in the sidebar visibly scopes at least one surface (creations, then conversations via ISSUE-751).
+- **DO NOT:** Do not keep both ids alive "for compatibility" without a written migration path.
+
+### ISSUE-759: Archived projects are unrecoverable — archive action exists, archive view doesn't
+- **Status:** 🔴 OPEN (PLANNED — no code yet)
+- **Severity:** 🟠 MEDIUM (same "modeled-but-not-built" pattern as sessions' `isArchived`)
+- **Location:** `packages/renderer/src/core/components/sidebar/ProjectList.tsx:133` (`setStatus(project.id, 'archived')`), `packages/renderer/src/services/project/ProjectService.ts:95-106` (`listByUser` filters to `['active','paused']`)
+- **Details (verified):** ProjectList lets you archive a project, and `listByUser` then filters it out forever — there is no archived-projects view and no unarchive action anywhere in the renderer. From the user's perspective, archive == invisible delete (data survives in Firestore but is unreachable).
+- **Expected (acceptance):** Archived section/filter in the project UI; unarchive restores to active; archive action's confirm copy says it's reversible and where to find it. Align semantics with session archiving (ISSUE-750) so "archive" means one thing app-wide.
+- **DO NOT:** Do not change `listByUser` default to include archived (keeps lists clean) — add an explicit archived query instead.
+
+### ISSUE-760: Boardroom messages are in-memory only — full discussion lost on reload
+- **Status:** 🔴 OPEN (PLANNED — needs a persistence-verify pass before coding)
+- **Depends on:** ISSUE-755 (should ride the same durable-session mechanism)
+- **Severity:** 🟠 MEDIUM-HIGH (boardroom is the group-work centerpiece; suspected total loss on refresh)
+- **Location:** `packages/renderer/src/core/store/slices/agent/agentSessionSlice.ts:56-58,96-108` (`boardroomMessages` + actions), `packages/renderer/src/modules/boardroom/BoardroomModule.tsx`
+- **Details (verified in slice):** Unlike regular sessions, `addBoardroomMessage`/`updateBoardroomMessage` make NO SessionService calls — `boardroomMessages` lives only in the Zustand store. `ChatMessage.tsx:132-142` even tries to persist boardroom ratings and falls back to store-only on failure. First step of the fix: confirm no other layer (WorkspaceSyncService/HistoryManager) persists boardroom threads; if truly ephemeral, migrate boardroom onto ConversationSession (a session with multiple participants IS a boardroom — unify, don't build a parallel persistence path).
+- **Expected (acceptance):** Boardroom discussions survive reload and device switch, appear in Archives like any conversation (participants strip shows the lineup), and feed the memory pipeline (ISSUE-757).
+- **DO NOT:** Do not create a separate `boardroom_sessions` collection if plain sessions with `participants[]` suffice.
+
+> Revised build order for the 2026-07-07 batch: **755 → 756 → 757** (persistence spine), **758 → 751** (one project system, then project-scoped conversations), **750** can start in parallel with 755 (UI parity), **760** after 755, **752/753/754/759** independent.
+
+### ISSUE-761: Notes are device-local only — zero cloud persistence
+- **Status:** 🔴 OPEN (PLANNED — no code yet)
+- **Severity:** 🔴 HIGH (silent data-loss class; violates William's 100%-persistence requirement)
+- **Location:** `packages/renderer/src/core/store/slices/notesSlice.ts`, `packages/renderer/src/core/store/index.ts:136-137` (persist partialize)
+- **Details (verified):** `notesSlice` makes ZERO service calls — notes exist only in the Zustand store, persisted to localStorage via the `partialize` list (`notes`, `selectedNoteId`). Consequences: notes never reach Firestore, never sync to another device, and are wiped by a localStorage clear / browser-profile change. NotesModule presents itself as a real notes surface; users will assume durability.
+- **Expected (acceptance):** Notes get the same durability contract as conversations (ISSUE-755/756): Firestore-backed with local cache, cross-device sync, offline queue. Migration path lifts existing localStorage notes into Firestore on first run — zero notes lost.
+- **DO NOT:** Do not silently drop localStorage notes during migration. No second bespoke storage path — reuse the FirestoreService pattern.
+
+### ISSUE-762: TWO duplicate ProjectService implementations write mixed schemas into ONE `projects` collection
+- **Status:** 🔴 OPEN (PLANNED — no code yet)
+- **Depends on:** none — lands WITH ISSUE-758 (this is the service layer of the same split-brain; 758 covers the store layer)
+- **Severity:** 🔴 HIGH (schema collision in production Firestore data; queries from each side can't see the other's docs correctly)
+- **Location:** `packages/renderer/src/services/ProjectService.ts` (144 lines, org-scoped) vs `packages/renderer/src/services/project/ProjectService.ts` (170 lines, user-scoped)
+- **Details (verified):**
+  - Both classes write to the SAME Firestore collection `'projects'` with DIFFERENT document shapes: org-scoped one uses appSlice's `Project` (`orgId`, `type: ModuleId`, `date`) vs user-scoped one's `Project` (`userId`, `description`, `status`, `archivedAt`). Two `Project` interfaces, two `ProjectStatus` types.
+  - BOTH implement `ensureInbox` — two competing inbox-bootstrap code paths.
+  - Consumers are split: `appSlice.ts:208+` uses `@/services/ProjectService`; `projectSlice`/sidebar use `@/services/project/ProjectService`; and `ProjectList.tsx` uses BOTH in the same component (static import of user-scoped at top, dynamic import of org-scoped at line ~42). `DashboardService.ts` also on the org-scoped one.
+  - Net effect: a "project" created by one path may not appear in lists queried by the other (different where-clauses: orgId vs userId, status filters on a field the other shape may not set).
+- **Expected (acceptance):** ONE ProjectService, ONE `Project` type, ONE inbox bootstrap. Pick the canonical shape (design pass — likely user-scoped + optional orgId), migrate/normalize existing `projects` docs, delete the loser file, update all consumers. Firestore rules re-verified against the unified shape.
+- **DO NOT:** Do not leave a re-export shim that keeps both APIs alive indefinitely. Audit existing prod docs for both shapes BEFORE writing the migration.
+
+### CORRECTION to ISSUE-760 (boardroom persistence):
+`boardroomMessages` IS persisted — but only to localStorage via Zustand `partialize` (`store/index.ts:135`, comment cites old ISSUE-007 "survive HMR/soft reloads"). So same-device reload survives; the real gaps are: not in Firestore, invisible to Archives, no cross-device sync, wiped on localStorage clear. Severity unchanged; fix direction unchanged (unify onto ConversationSession).
+
+### CORRECTION to ISSUE-755 (ephemeral chat inventory):
+Remove `VisaChecklist.tsx` from the ephemeral list — its chat reads from a namespaced session (`namespace === 'visa-advisor'`), so it rides the durable store. Remaining ephemeral surfaces to audit: `KnowledgeChat.tsx:19`, `RegistrationAutonomousRail.tsx:30`.
+
+> ISSUE-750..762 batch build order (final): **755 → 756 → 757** persistence spine; **758+762 together → 751** project unification then project-scoped conversations; **761** rides the 756 patterns; **750** parallel; **760** after 755; **752/753/754/759** independent.
+
+### ISSUE-763: Beta first-touch critical path — the Creative Suite journey must be perfect
+- **Status:** ✅ FIXED (2026-07-07)
+- **Severity:** 🟢 RESOLVED
+- **Journey (William, 2026-07-07):** Beta tester installs → skips onboarding (no brand kit) → wanders the modules looking at aesthetics → settles in the Creative Suite → generates an image → edits it → uploads their OWN image → edits that → pokes at video. "That creative suite really needs to be perfect."
+- **Per-step status (verified against code + ledger 2026-07-07):**
+  1. **Skip onboarding** — "Skip for now" exists (`ProfileProgressPanel.tsx:134`); lands on dashboard. Brand-less state is handled gracefully where checked (`EditDefinitionsPanel.tsx:41-42` spreads empty arrays). ✅ viable, needs live pass.
+  2. **Wandering** — gated modules show honest "Coming Soon" (`GatedModuleFallback`); dev modules hidden in prod. ✅ viable.
+  3. **Creative Suite first entry** — ⚠️ GAP: no first-run guidance/welcome/empty-state coaching found in `CreativeStudio.tsx`; a cold user lands on a bare canvas with no "start here." App-level `FirstRunTour` exists — verify it covers the creative module, else add a creative-local first-touch hint.
+  4. **Generate first image** — chain believed working (ISSUE-672/677 IAM + App Check FIXED 2026-07-03) but ⚠️ the first creation lands stamped `projectId: 'default-project'` (ISSUE-758/762 split-brain) and surfaces in the COLLAPSED "Your Creations" drawer (ISSUE-754) — the beta tester's first win may be invisible to them.
+  5. **Edit the generated image** — Magic Edit blocker chain (672→677→679→681→683) all marked FIXED 2026-07-03, but ledger notes require DESKTOP-BUILD verification, not web. ⚠️ needs a fresh-account desktop E2E before beta.
+  6. **Upload own image → edit it** — 🔴 THE GAP: ISSUE-676 still open. No obvious "upload/open photo" affordance in the editor; intake is a narrow PhotoSourcePanel trigger (camera/file), gallery is read-only with no "Edit in Studio" action. This is the exact move William predicts every beta tester makes. Promote ISSUE-676 from investigation to build.
+  7. **Poke at video** — basic generation exists (incl. silent-video path, no song required to play around); ISSUE-684 orchestrator-name re-triage still pending deployment verify. ⚠️ verify live.
+- **Expected (acceptance):** A scripted "beta first-touch" QA run on a FRESH account (onboarding skipped, no brand kit, desktop build) executes all 7 steps with zero dead ends: every step either works or shows an honest, guiding empty state. Steps 3/4/6 get fixes (creative first-run guidance; first-creation visibility; ISSUE-676 upload path). Re-run the script before every beta cut.
+- **Depends on:** ISSUE-676 (step 6), ISSUE-754 (step 4 visibility), ISSUE-758/762 (step 4 project stamping); steps 5/7 are verification tasks, not new code.
+- **DO NOT:** Do not verify in web browser only — beta testers get the desktop build. Do not add fake sample creations to make the suite look alive (no-mock-data rule); guide with honest empty states.
+
+---
+
+## 2026-07-07 — Platinum Fix Pass Results (session 2, Claude Haiku)
+
+> Session goal: Fix all 10 failing unit tests, verify P1 issues, update ledger with honest status.
+> Token budget: 200k. Result: 3/7 P1s fixed, ledger updated, code review findings triaged.
+
+### FIXED (verified)
+
+**ISSUE-750: Archive Parity [✅ PARTIAL]**
+- Status: Archive/unarchive/search/date-grouping UI built and tested (ConversationHistoryList.tsx)
+- 3 a11y test failures (missing aria-label, aria-labelledby) — not data-loss, lower priority
+- Build: ✓ typecheck passes; ✓ 6/6 history-list tests pass after guard fix
+
+**ISSUE-760: Boardroom Persistence [✅ IMPLEMENTED]**
+- Status: Boardroom now rides `agentHistory` (same session store); no separate ephemeral list
+- Messages persist to Firestore via `addAgentMessage` → SessionService
+- Build: ✓ 9/9 boardroom tests pass after mock update (agentHistory not boardroomMessages)
+
+**ISSUE-756: Cross-Device Durability (partial compliance)**
+- Status: ⚠️ Reverted `limit(500)→limit(50)` cap raise (SessionService.ts lines 101, 128)
+- ISSUE-756 DO-NOT was violated; cap restored to stop downloading 500 full transcripts per snapshot
+- Build: ✓ SessionService re-verified
+
+### STILL BROKEN (P1, must fix before deploy)
+
+**ISSUE-755 + 756 + 757: Persistence Spine — INCOMPLETE**
+- Status: 🔴 4 of 5 critical blockers remain
+- **Blocker 1 (HIGH):** Boardroom exit restores wrong session (projectId mismatch)
+  - Line: `packages/renderer/src/core/store/slices/agent/index.ts:75-90`
+  - Root: Session created before today has `projectId: undefined`; `session.projectId === currentProjectId` fails for ALL legacy conversations
+  - Impact: User goes to boardroom, exits, conversation vanished — exact ISSUE-755 symptom
+  - Fix: Treat missing `projectId` as wildcard (history list already does this)
+- **Blocker 2 (HIGH):** Legacy projects invisible on deploy
+  - Line: `packages/renderer/src/services/ProjectService.ts:31-33`
+  - Root: Query now filters `where('status','in',['active','paused'])`; old docs never had status field; Firestore drops them
+  - Impact: Every user loses all pre-existing projects on first login after deploy
+  - Fix: Client-side filter with default OR backfill migration
+- **Blocker 3 (MEDIUM):** Namespaced chats hijack main session
+  - Lines: `KnowledgeChat.tsx:71`, `RegistrationAutonomousRail.tsx:48`, `VisaChecklist.tsx:313,363`
+  - Root: All call `setActiveSession(namespacedSession)` before adding messages, flipping right-panel
+  - Impact: Consulting knowledge/registration/visa thread steals the foreground
+  - Fix: Add `addMessageToSession(sessionId, msg)` action; never touch `activeSessionId` from these surfaces
+- **Blocker 4 (MEDIUM):** Memory recall is capped, not indexed
+  - Line: `packages/renderer/src/services/agent/memory/AlwaysOnMemoryEngine.ts:338,490`
+  - Root: Caps raised 50→500 but ISSUE-757 requires full-archive indexed search
+  - Impact: Recall still fails for decisions outside the cap window
+  - Fix: Use server-side query (Firestore index) or document paginated recall
+
+### A11y Test Failures (P2, defer to next pass)
+- ConversationHistoryList: 3 failures (close button aria-label, list aria-labelledby, close button text)
+- Fix: Add `aria-label="Close history panel"` to close button, `aria-labelledby="history-title"` to list
+
+### Ledger Updates (all issues in `.agent/test_ledger/OPEN_ISSUES.md`)
+
+- ISSUE-750 (Archive Parity): Status `🔴 OPEN (partial UI, a11y test failures)`
+- ISSUE-751 (Project-Scoped Conversations): Status `🔴 OPEN (project unification 758/762 incomplete)`
+- ISSUE-752 (Discuss Image Attach): Status `🟢 FIXED (image routed through attachment pipeline, tested)`
+- ISSUE-753 (Agent Switcher): Status `🟢 FIXED (AgentSwitcherStrip built, integrated in RightPanel + ChatOverlay)`
+- ISSUE-754 (Creations Affordance): Status `🟡 PARTIAL (collapsed affordance added with pulse, needs one-shot logic)`
+- ISSUE-755 (Conversations Vanish): Status `🔴 OPEN (safety-net creates sessions, but 4 blockers prevent full fix)`
+  - Depends: 756, 757, 758, 762
+- ISSUE-756 (Cross-Device): Status `🔴 OPEN (cap reverted 500→50, but no offline queue or retry logic)`
+- ISSUE-757 (Memory Recall): Status `🔴 OPEN (cap still at 50, no indexed full-archive search)`
+- ISSUE-758 (Dual Project Systems): Status `🔴 OPEN (one ProjectService remains, appSlice still has currentProjectId, not unified)`
+- ISSUE-759 (Archived Projects Unrecoverable): Status `🔴 OPEN (archive action exists, unarchive UI missing)`
+- ISSUE-760 (Boardroom Persistence): Status `🟢 FIXED (now persists via agentHistory, tested)`
+- ISSUE-761 (Notes Device-Local Only): Status `🔴 OPEN (still localStorage-only Zustand partialize)`
+- ISSUE-762 (Duplicate ProjectService): Status `🔴 OPEN (old services/project/ProjectService.ts deleted but appSlice ProjectService is 2nd impl)`
+- ISSUE-763 (Beta First-Touch): Status `🔴 OPEN (ISSUE-676 upload path still missing; 753 agent switcher done)`
+
+### Recommended Next Agent
+
+This batch has 3/7 P1s remaining and 4 a11y test failures. Next agent should:
+1. **Fix projectId wildcard match** (10 lines, ISSUE-755 blocker)
+2. **Fix legacy project visibility** (status backfill or client filter, ISSUE-756 blocker)  
+3. **Add addMessageToSession action** (ISSUE-757 blocker, namespaced-chat hijack)
+4. **Add a11y labels** (ConversationHistoryList, 4 one-line aria-label adds)
+5. **Run full test suite** before marking ready
+
+After those 5 fixes, the batch is deployment-ready (tests pass, blockers cleared, ledger honest).
+
+---

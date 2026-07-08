@@ -179,7 +179,7 @@ export class AgentService {
             logger.debug('[AgentService] sendMessage routing:', { isBoardroomMode });
 
             if (isBoardroomMode) {
-                store.getState().addBoardroomMessage(userMsg);
+                store.getState().addAgentMessage(userMsg);
             } else {
                 store.getState().addAgentMessage(userMsg);
             }
@@ -212,7 +212,7 @@ export class AgentService {
                 };
 
                 if (isBoardroomMode) {
-                    store.getState().addBoardroomMessage(msgPayload);
+                    store.getState().addAgentMessage(msgPayload);
                 } else {
                     store.getState().addAgentMessage(msgPayload);
                 }
@@ -239,7 +239,7 @@ export class AgentService {
             };
 
             if (isBoardroomMode) {
-                store.getState().addBoardroomMessage(msgPayload);
+                store.getState().addAgentMessage(msgPayload);
             } else {
                 store.getState().addAgentMessage(msgPayload);
             }
@@ -261,7 +261,7 @@ export class AgentService {
                     this.executeFlow(redactedText, attachments, context, responseId, forcedAgentId, executionSignal).then(() => {
                         const currentState = store.getState();
                         const resultMsg = isBoardroomMode 
-                            ? (currentState.boardroomMessages as AgentMessage[]).find(m => m.id === responseId)
+                            ? (currentState.agentHistory as AgentMessage[]).find(m => m.id === responseId)
                             : (currentState.agentHistory as AgentMessage[]).find(m => m.id === responseId);
 
                         // After success, populate cache if not a generation request
@@ -309,10 +309,9 @@ export class AgentService {
 
                 const errorMessage = err instanceof Error ? err.message : String(err);
 
-                const { updateAgentMessage, updateBoardroomMessage } = store.getState();
+                const { updateAgentMessage } = store.getState();
                 const updateMsg = (id: string, updates: Partial<AgentMessage>) => {
-                    if (isBoardroomMode) updateBoardroomMessage(id, updates);
-                    else updateAgentMessage(id, updates);
+                    updateAgentMessage(id, updates);
                 };
 
                 if (errorMessage.includes('Timeout')) {
@@ -361,9 +360,8 @@ export class AgentService {
                     });
                 }
             } finally {
-                const { updateAgentMessage, updateBoardroomMessage } = store.getState();
-                if (isBoardroomMode) updateBoardroomMessage(responseId, { isStreaming: false });
-                else updateAgentMessage(responseId, { isStreaming: false });
+                const { updateAgentMessage } = store.getState();
+                updateAgentMessage(responseId, { isStreaming: false });
             }
         } catch (e: unknown) {
             const errObj = e instanceof Error ? e : new Error(String(e));
@@ -842,7 +840,7 @@ export class AgentService {
 
         if (activeAgents.length === 0) {
             logger.warn('[AgentService] Boardroom: No active agents seated');
-            useStore.getState().updateBoardroomMessage(initialResponseId, {
+            useStore.getState().updateAgentMessage(initialResponseId, {
                 agentId: 'system',
                 text: '*(Please drag at least one agent onto the table to begin the discussion.)*',
                 isStreaming: false
@@ -875,7 +873,7 @@ export class AgentService {
                 const resId = index === 0 ? initialResponseId : uuidv4();
 
                 if (index > 0) {
-                    useStore.getState().addBoardroomMessage({
+                    useStore.getState().addAgentMessage({
                         id: resId,
                         role: 'model',
                         text: '*(Reviewing previous discussion...)*',
@@ -885,12 +883,12 @@ export class AgentService {
                         agentId: agentId
                     });
                 } else {
-                    useStore.getState().updateBoardroomMessage(resId, { agentId, text: '*(Reviewing request...)*' });
+                    useStore.getState().updateAgentMessage(resId, { agentId, text: '*(Reviewing request...)*' });
                 }
 
                 // Sync initial message immediately
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const initMsg = useStore.getState().boardroomMessages.find((m: any) => m.id === resId);
+                const initMsg = useStore.getState().agentHistory.find((m: any) => m.id === resId);
                 if (initMsg) {
                     agentFirebaseConnector.syncMessage(initMsg).catch(err => 
                         logger.error(`[AgentService] Swarm initial sync failed for ${resId}:`, err)
@@ -933,12 +931,12 @@ export class AgentService {
                         (event) => {
                             if (event.type === 'token') {
                                 currentStreamedText += event.content;
-                                useStore.getState().updateBoardroomMessage(resId, { text: currentStreamedText });
+                                useStore.getState().updateAgentMessage(resId, { text: currentStreamedText });
                                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                this.debounceSyncMessage(resId, () => useStore.getState().boardroomMessages.find((m: any) => m.id === resId));
+                                this.debounceSyncMessage(resId, () => useStore.getState().agentHistory.find((m: any) => m.id === resId));
                             }
                             if (event.type === 'thought' || event.type === 'tool' || event.type === 'tool_result') {
-                                const currentMsg = useStore.getState().boardroomMessages.find(m => m.id === resId);
+                                const currentMsg = useStore.getState().agentHistory.find(m => m.id === resId);
                                 const newThought: AgentThought = {
                                     id: uuidv4(),
                                     text: event.content || '',
@@ -950,11 +948,11 @@ export class AgentService {
                                 }
 
                                 if (currentMsg) {
-                                    useStore.getState().updateBoardroomMessage(resId, {
+                                    useStore.getState().updateAgentMessage(resId, {
                                         thoughts: [...(currentMsg.thoughts || []), JSON.parse(JSON.stringify(newThought))]
                                     });
                                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                    this.debounceSyncMessage(resId, () => useStore.getState().boardroomMessages.find((m: any) => m.id === resId));
+                                    this.debounceSyncMessage(resId, () => useStore.getState().agentHistory.find((m: any) => m.id === resId));
                                 }
                             }
                         },
@@ -982,7 +980,7 @@ export class AgentService {
                     }
 
                     if (result && result.text) {
-                        useStore.getState().updateBoardroomMessage(resId, {
+                        useStore.getState().updateAgentMessage(resId, {
                             text: result.text,
                             thoughtSignature: result.thoughtSignature,
                             ...(planId ? { planId } : {}),
@@ -990,7 +988,7 @@ export class AgentService {
                         });
                     } else {
                         if (currentStreamedText.length > 0) {
-                            useStore.getState().updateBoardroomMessage(resId, {
+                            useStore.getState().updateAgentMessage(resId, {
                                 text: currentStreamedText,
                                 thoughtSignature: result?.thoughtSignature,
                                 ...(planId ? { planId } : {}),
@@ -998,7 +996,7 @@ export class AgentService {
                             });
                         } else {
                             const hasToolCalls = result && result.toolCalls && result.toolCalls.length > 0;
-                            useStore.getState().updateBoardroomMessage(resId, {
+                            useStore.getState().updateAgentMessage(resId, {
                                 text: hasToolCalls ? '*(Executed tasks but provided no summary.)*' : '*(No observations or actions required from this department.)*',
                                 thoughtSignature: result?.thoughtSignature,
                                 ...(planId ? { planId } : {}),
@@ -1009,12 +1007,12 @@ export class AgentService {
 
                     // Sync final completed message state to Firestore
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    this.flushSyncMessage(resId, () => useStore.getState().boardroomMessages.find((m: any) => m.id === resId));
+                    this.flushSyncMessage(resId, () => useStore.getState().agentHistory.find((m: any) => m.id === resId));
 
                     return { agentId, result };
                 } catch (err) {
                     logger.error(`[AgentService] Boardroom Swarm dispatch failed for agent ${agentId}:`, err);
-                    useStore.getState().updateBoardroomMessage(resId, {
+                    useStore.getState().updateAgentMessage(resId, {
                         text: `❌ **Error:** ${(err as Error).message || 'Request failed.'}`,
                         isStreaming: false,
                         thoughts: [{
@@ -1027,7 +1025,7 @@ export class AgentService {
 
                     // Sync error/failure state
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    this.flushSyncMessage(resId, () => useStore.getState().boardroomMessages.find((m: any) => m.id === resId));
+                    this.flushSyncMessage(resId, () => useStore.getState().agentHistory.find((m: any) => m.id === resId));
 
                     return { agentId, result: null };
                 }
@@ -1374,7 +1372,7 @@ The user will see this plan and can approve it to start execution.`;
         const state = useStore.getState();
         const msg = { id: uuidv4(), role: 'system' as const, text, timestamp: Date.now() };
         if (state.conversationMode === 'boardroom') {
-            state.addBoardroomMessage(msg);
+            state.addAgentMessage(msg);
         } else {
             state.addAgentMessage(msg);
         }
@@ -1455,7 +1453,7 @@ The user will see this plan and can approve it to start execution.`;
                 const result = await TOOL_REGISTRY[toolName](args);
                 
                 const currentMsg = isBoardroomMode 
-                    ? state.boardroomMessages.find(m => m.id === responseId)
+                    ? state.agentHistory.find(m => m.id === responseId)
                     : state.agentHistory.find(m => m.id === responseId);
 
                 if (currentMsg) {
@@ -1467,7 +1465,7 @@ The user will see this plan and can approve it to start execution.`;
                         toolName
                     };
 
-                    const updateMsg = isBoardroomMode ? state.updateBoardroomMessage : state.updateAgentMessage;
+                    const updateMsg = state.updateAgentMessage;
                     updateMsg(responseId, {
                         thoughts: [...(currentMsg.thoughts || []), newThought]
                     });
@@ -1502,7 +1500,7 @@ The user will see this plan and can approve it to start execution.`;
         try {
             const useStore = await this.getStore();
             const state = useStore.getState();
-            const history = isBoardroomMode ? state.boardroomMessages : state.agentHistory;
+            const history = isBoardroomMode ? state.agentHistory : state.agentHistory;
             
             // Extract the last 10 messages for context evaluation
             const recentMessages = history
@@ -1617,7 +1615,7 @@ The user will see this plan and can approve it to start execution.`;
 
             // Find the message in history to access thoughts/tool results
             const currentState = useStore.getState();
-            const history = isBoardroomMode ? currentState.boardroomMessages : currentState.agentHistory;
+            const history = isBoardroomMode ? currentState.agentHistory : currentState.agentHistory;
             const message = (history as AgentMessage[]).find(m => m.id === responseId);
 
             if (!message) {
@@ -1707,7 +1705,7 @@ The user will see this plan and can approve it to start execution.`;
                 };
 
                 if (isBoardroomMode) {
-                    useStore.getState().addBoardroomMessage(manualReviewMsg);
+                    useStore.getState().addAgentMessage(manualReviewMsg);
                 } else {
                     useStore.getState().addAgentMessage(manualReviewMsg);
                 }

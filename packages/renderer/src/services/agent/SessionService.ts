@@ -74,11 +74,16 @@ class SessionServiceImpl extends FirestoreService<SessionDocument> {
         }
     }
 
-    private saveToLocal(id: string, data: any) {
+    private saveToLocal(id: string, data: any, attempt = 1) {
         if (window.electronAPI?.agent?.saveHistory) {
-            // Fire and forget (or await if strict consistency needed)
+            // Fire and forget with retry logic for cross-device durability
             window.electronAPI.agent.saveHistory(id, data).catch((err: any) => {
-                logger.error('[SessionService] Failed to save to local history:', err);
+                if (attempt < 3) {
+                    logger.warn(`[SessionService] Retrying local save for ${id} (attempt ${attempt + 1})...`);
+                    setTimeout(() => this.saveToLocal(id, data, attempt + 1), 1000 * attempt);
+                } else {
+                    logger.error('[SessionService] Failed to save to local history after 3 attempts:', err);
+                }
             });
         }
     }
