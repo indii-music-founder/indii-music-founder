@@ -4,6 +4,7 @@
 
 ## Recent Commits
 ```
+f92ed7a13 chore: session checkpoint [11:56]
 064418ecd fix(firebase): pass original express req object to validateAppCheckHttp
 5d14a6388 chore: session checkpoint [11:54]
 772534d77 chore: session checkpoint [11:53]
@@ -13,7 +14,6 @@ b130bcff5 chore: session checkpoint [11:51]
 a07778461 chore: session checkpoint [11:51]
 4585c2098 chore: session checkpoint [11:50]
 baf1b63ea fix(main): add local emulator urls to app check bypass and handle html 404 in updater
-9e582ce17 chore: session checkpoint [10:32]
 ```
 
 ## Working State
