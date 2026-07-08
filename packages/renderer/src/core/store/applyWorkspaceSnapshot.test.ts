@@ -22,7 +22,6 @@ describe('applyWorkspaceSnapshot', () => {
         const { useLivingPlanSlice: useLivingPlanStore } = await import('@/core/store/slices/livingPlanSlice');
 
         useStore.setState({
-            boardroomMessages: [],
             currentModule: 'dashboard',
             creativePrompt: '',
             selectedNoteId: null,
@@ -39,7 +38,6 @@ describe('applyWorkspaceSnapshot', () => {
         const unsubscribe = useStore.subscribe(subscriber);
 
         applyWorkspaceSnapshot({
-            boardroomMessages: [{ id: 'msg-1' } as never],
             currentModule: 'studio',
             creativePrompt: 'remixed',
             selectedNoteId: 'note-1',
@@ -47,7 +45,6 @@ describe('applyWorkspaceSnapshot', () => {
         });
 
         expect(subscriber).toHaveBeenCalled();
-        expect(useStore.getState().boardroomMessages).toEqual([{ id: 'msg-1' }]);
         expect(useStore.getState().currentModule).toBe('studio');
         expect(useStore.getState().creativePrompt).toBe('remixed');
         expect(useStore.getState().selectedNoteId).toBe('note-1');

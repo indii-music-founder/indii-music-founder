@@ -1,7 +1,10 @@
 import React from 'react';
-import { Network, Play, Save, ChevronRight, Settings, Database, Activity } from 'lucide-react';
+import { Network, Play, Save, ChevronRight, Settings, Database, Activity, Loader2 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useToast } from '@/core/context/ToastContext';
+import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
+import { WorkflowEngine } from '@/modules/workflow/services/WorkflowEngine';
 
 interface WorkflowPanelProps {
     toggleRightPanel: () => void;
@@ -9,6 +12,34 @@ interface WorkflowPanelProps {
 
 export default function WorkflowPanel({ toggleRightPanel }: WorkflowPanelProps) {
     const toast = useToast();
+    const [isRunning, setIsRunning] = React.useState(false);
+
+    const { nodes, edges, setNodes } = useStore(
+        useShallow((state) => ({
+            nodes: state.nodes,
+            edges: state.edges,
+            setNodes: state.setNodes,
+        }))
+    );
+
+    const handleRunWorkflow = async () => {
+        if (isRunning) return;
+        setIsRunning(true);
+        toast.info("Workflow execution started");
+        
+        try {
+            const engine = new WorkflowEngine(nodes, edges, setNodes);
+            await engine.run();
+            toast.success("Workflow execution completed");
+        } catch (error) {
+            console.error('Workflow execution error:', error);
+            toast.error(error instanceof Error ? error.message : "Workflow failed to run");
+        } finally {
+            setIsRunning(false);
+        }
+    };
+
+    const hasDatabaseAccess = nodes.some(n => n.type === 'logicNode' && (n.data as any).operation === 'extract');
 
     return (
         <div className="flex flex-col h-full bg-linear-to-b from-bg-dark to-bg-dark/90">
@@ -30,13 +61,29 @@ export default function WorkflowPanel({ toggleRightPanel }: WorkflowPanelProps) 
                 <div className="space-y-3">
                     <label className="text-[10px] font-bold text-gray-500 tracking-wider">EXECUTION</label>
                     <motion.button
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => toast.success("Workflow execution started")}
-                        className="w-full bg-linear-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white py-3 rounded-xl font-semibold text-sm transition-all shadow-lg shadow-orange-900/20 flex items-center justify-center gap-2 border border-orange-400/20"
+                        whileHover={{ scale: isRunning ? 1 : 1.02 }}
+                        whileTap={{ scale: isRunning ? 1 : 0.98 }}
+                        onClick={handleRunWorkflow}
+                        disabled={isRunning || nodes.length === 0}
+                        className={`w-full py-3 rounded-xl font-semibold text-sm transition-all shadow-lg flex items-center justify-center gap-2 border ${
+                            isRunning 
+                            ? 'bg-orange-900/50 text-orange-200 border-orange-500/30 cursor-not-allowed shadow-none'
+                            : nodes.length === 0
+                            ? 'bg-gray-800/50 text-gray-500 border-gray-700/30 cursor-not-allowed shadow-none'
+                            : 'bg-linear-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white shadow-orange-900/20 border-orange-400/20'
+                        }`}
                     >
-                        <Play size={16} />
-                        Run Workflow
+                        {isRunning ? (
+                            <>
+                                <Loader2 size={16} className="animate-spin" />
+                                Running...
+                            </>
+                        ) : (
+                            <>
+                                <Play size={16} />
+                                Run Workflow
+                            </>
+                        )}
                     </motion.button>
                 </div>
 
@@ -45,31 +92,17 @@ export default function WorkflowPanel({ toggleRightPanel }: WorkflowPanelProps) 
                     <div className="bg-black/40 p-3 rounded-xl border border-white/5 space-y-3">
                         <div className="flex items-center justify-between">
                             <span className="text-xs text-gray-400 flex items-center gap-2"><Database size={14} /> Database</span>
-                            <span className="text-xs text-green-400 font-mono">Connected</span>
+                            <span className={`text-xs font-mono ${hasDatabaseAccess ? 'text-green-400' : 'text-gray-500'}`}>
+                                {hasDatabaseAccess ? 'Connected' : 'Unused'}
+                            </span>
                         </div>
                         <div className="flex items-center justify-between">
                             <span className="text-xs text-gray-400 flex items-center gap-2"><Activity size={14} /> Execution Queue</span>
-                            <span className="text-xs text-gray-300 font-mono">Idle</span>
+                            <span className={`text-xs font-mono ${isRunning ? 'text-orange-400' : 'text-gray-300'}`}>
+                                {isRunning ? 'Running' : 'Idle'}
+                            </span>
                         </div>
                     </div>
-                </div>
-
-                <div className="space-y-4 pt-4 border-t border-white/10">
-                    <label className="text-[10px] font-bold text-gray-500 tracking-wider">WORKFLOW SETTINGS</label>
-                    <button className="w-full p-3 bg-black/40 hover:bg-white/5 border border-white/5 rounded-xl flex items-center justify-between transition-colors group">
-                        <div className="flex items-center gap-2 text-sm text-gray-300 group-hover:text-white">
-                            <Settings size={14} className="text-gray-500 group-hover:text-white transition-colors" />
-                            Global Parameters
-                        </div>
-                        <ChevronRight size={14} className="text-gray-600" />
-                    </button>
-                    <button className="w-full p-3 bg-black/40 hover:bg-white/5 border border-white/5 rounded-xl flex items-center justify-between transition-colors group">
-                        <div className="flex items-center gap-2 text-sm text-gray-300 group-hover:text-white">
-                            <Save size={14} className="text-gray-500 group-hover:text-white transition-colors" />
-                            Save as Template
-                        </div>
-                        <ChevronRight size={14} className="text-gray-600" />
-                    </button>
                 </div>
             </div>
         </div>

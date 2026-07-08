@@ -132,7 +132,7 @@ export const useStore = create<StoreState>()(
                 conversationMode: state.conversationMode,
                 userProfile: state.userProfile,
                 // ISSUE-007: Persist boardroom chat history to survive HMR/soft reloads in dev
-                boardroomMessages: state.boardroomMessages,
+                boardroomMessages: state.agentHistory,
                 notes: state.notes,
                 selectedNoteId: state.selectedNoteId,
                 // ISSUE-006: Session persistence for draft prompts
@@ -175,7 +175,6 @@ export function getWorkspaceSnapshot(state: StoreState): WorkspaceSnapshot {
 
     return {
         schemaVersion: 1,
-        boardroomMessages: (state as any).boardroomMessages || [],
         activeAgents: (state as any).activeAgents || ['generalist'],
         referencedAssets: (state as any).referencedAssets || [],
         selectedPlan: planState.selectedPlan || null,
@@ -196,9 +195,6 @@ export function applyWorkspaceSnapshot(snapshot: Partial<WorkspaceSnapshot>): vo
     const rootUpdates: Partial<StoreState> = {};
 
     // Merge into root store
-    if (snapshot.boardroomMessages !== undefined) {
-        rootUpdates.boardroomMessages = snapshot.boardroomMessages as any;
-    }
     if (snapshot.activeAgents !== undefined) {
         rootUpdates.activeAgents = snapshot.activeAgents;
     }

@@ -47,6 +47,59 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => {
         set({ rightPanelView: 'messages' });
     };
 
+    // Override setConversationMode to coordinate Session switching
+    const originalSetConversationMode = uiState.setConversationMode;
+    uiState.setConversationMode = (mode) => {
+        const state = get() as any;
+        const projectId = state.currentProjectId;
+
+        if (mode === 'boardroom') {
+            // Entering Boardroom: save current session if it's direct/department
+            const currentActive = state.activeSessionId;
+            const isCurrentlyBoardroom = currentActive ? state.sessions[currentActive]?.namespace === 'boardroom' : false;
+            
+            if (currentActive && !isCurrentlyBoardroom) {
+                set({ lastDirectSessionId: currentActive });
+            }
+
+            // Find existing boardroom session for this project
+            const boardroomSession = Object.values(state.sessions).find(
+                (s: any) => s.namespace === 'boardroom' && s.projectId === projectId
+            );
+
+            if (boardroomSession) {
+                sessionState.setActiveSession((boardroomSession as any).id);
+            } else {
+                // Create a new boardroom session
+                const newId = sessionState.createSession('Boardroom', ['indii'], 'boardroom', projectId);
+                sessionState.setActiveSession(newId);
+            }
+        } else {
+            // Leaving Boardroom: Restore last active direct session
+            let targetSessionId = state.lastDirectSessionId;
+            
+            // Validate the target session still exists and belongs to this project (treating missing as wildcard)
+            const targetSession = targetSessionId ? state.sessions[targetSessionId] : null;
+            const isMatch = targetSession && (!targetSession.projectId || targetSession.projectId === projectId);
+            
+            if (!targetSessionId || !targetSession || !isMatch) {
+                 const fallback = Object.values(state.sessions).find(
+                     (s: any) => !s.namespace && (!s.projectId || s.projectId === projectId)
+                 );
+                 targetSessionId = fallback ? (fallback as any).id : null;
+            }
+
+            if (targetSessionId) {
+                sessionState.setActiveSession(targetSessionId);
+            } else {
+                const newId = sessionState.createSession('New Conversation', undefined, undefined, projectId);
+                sessionState.setActiveSession(newId);
+            }
+        }
+
+        originalSetConversationMode(mode);
+    };
+
     // Override loadSessions to also trigger resumeQueueFromFirestore (cross-slice concern)
     const originalLoadSessions = sessionState.loadSessions;
     sessionState.loadSessions = async () => {

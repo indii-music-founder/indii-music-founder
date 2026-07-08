@@ -114,6 +114,7 @@ describe('RightPanel', () => {
         currentModule: 'dashboard',
         rightPanelView: 'messages' as const,
         setRightPanelView: mockSetRightPanelView,
+        generatedHistory: [],
     };
 
     beforeEach(() => {

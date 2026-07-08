@@ -19,6 +19,7 @@ import { auth } from '@/services/firebase';
 import { logger } from '@/utils/logger';
 import FounderBadge from '../components/FounderBadge';
 import { SectionHeader } from './SettingsShared';
+import { StorageService } from '@/services/StorageService';
 
 const ProfileSection: React.FC = () => {
     const { t } = useTranslation();
@@ -76,24 +77,55 @@ const ProfileSection: React.FC = () => {
         return name.substring(0, 2).toUpperCase();
     };
 
+    const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file || !user) return;
+        
+        try {
+            setSaving(true);
+            const path = `avatars/${user.uid}/${Date.now()}_${file.name}`;
+            const photoURL = await StorageService.uploadFile(file, path);
+            
+            await updateProfile(user, { photoURL });
+            await setUserProfile({ ...userProfile, photoURL } as unknown as UserProfile);
+            
+            showToast('Avatar updated successfully', 'success');
+        } catch (err) {
+            logger.error('[Settings] Avatar upload failed:', err);
+            showToast('Failed to upload avatar', 'error');
+        } finally {
+            setSaving(false);
+        }
+    };
+
     return (
         <div>
             <SectionHeader title={t('settings.sections.profile.title')} description={t('settings.sections.profile.description')} />
 
             {/* Avatar */}
             <div className="flex items-center gap-5 mb-8">
-                <div className="relative group">
+                <div className="relative group cursor-pointer" onClick={() => document.getElementById('avatar-upload')?.click()}>
+                    <input 
+                        type="file" 
+                        id="avatar-upload" 
+                        accept="image/*" 
+                        className="hidden" 
+                        onChange={handleAvatarUpload} 
+                    />
                     {user?.photoURL ? (
                         <img
                             src={user.photoURL}
                             alt="Avatar"
-                            className="w-20 h-20 rounded-2xl object-cover border-2 border-slate-700"
+                            className="w-20 h-20 rounded-2xl object-cover border-2 border-slate-700 transition-opacity group-hover:opacity-70"
                         />
                     ) : (
-                        <div className="w-20 h-20 rounded-2xl bg-linear-to-br from-cyan-500 to-blue-600 flex items-center justify-center border-2 border-slate-700">
+                        <div className="w-20 h-20 rounded-2xl bg-linear-to-br from-cyan-500 to-blue-600 flex items-center justify-center border-2 border-slate-700 transition-opacity group-hover:opacity-70">
                             <span className="text-2xl font-bold text-white">{getInitials()}</span>
                         </div>
                     )}
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                        <Camera className="text-white drop-shadow-md" size={24} />
+                    </div>
                 </div>
                 <div>
                     <p className="text-sm font-medium text-white">{displayName || t('settings.profile.noName')}</p>

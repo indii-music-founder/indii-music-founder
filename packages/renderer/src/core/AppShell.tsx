@@ -34,6 +34,7 @@ import { useLocation } from 'react-router-dom';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useMobile } from '@/hooks/useMobile';
 import { GlobalKeyboardShortcuts, useGlobalShortcutsModal } from '@/components/shared/GlobalKeyboardShortcuts';
+import { useGlobalShortcut } from '@/hooks/useGlobalShortcut';
 import { UnifiedCommandMenu } from '@/components/shared/UnifiedCommandMenu';
 import { GlobalDropZone } from '@/components/shared/GlobalDropZone';
 import { UploadQueueMonitor } from '@/components/shared/UploadQueueMonitor';
@@ -342,6 +343,27 @@ function AppContent({ currentModule, showChrome, isDesktop, isAnyPhone, shortcut
         }))
     );
     const userId = useStore(s => s.user?.uid);
+
+    // Global save interceptor (Cmd+S)
+    useGlobalShortcut({
+        id: 'global-save',
+        key: 's',
+        meta: true,
+        priority: 'high',
+        ignoreInput: true,
+        handler: (e) => {
+            e.preventDefault();
+            window.dispatchEvent(new CustomEvent('indii:save-request', { detail: { source: 'keyboard' } }));
+        }
+    });
+
+    // Global menu save interceptor (Electron generic 'Save' menu item)
+    useEffect(() => {
+        if (!window.electronAPI?.menu?.onSaveTriggered) return;
+        return window.electronAPI.menu.onSaveTriggered(() => {
+            window.dispatchEvent(new CustomEvent('indii:save-request', { detail: { source: 'menu' } }));
+        });
+    }, []);
 
     return (
         <div className="flex h-screen w-screen bg-background text-foreground overflow-hidden" data-testid="app-container">

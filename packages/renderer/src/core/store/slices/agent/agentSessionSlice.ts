@@ -46,32 +46,33 @@ export interface ConversationSession {
     namespace?: string;
     /** Where this session originated from (desktop, mobile-remote, etc.) */
     source?: MessageSource;
+    /** The ID of the project this session is associated with */
+    projectId?: string;
 }
 
 export interface AgentSessionSlice {
     // Legacy mapping (computed/synced from activeSession)
     agentHistory: AgentMessage[];
 
-    // Boardroom
-    boardroomMessages: AgentMessage[];
-    addBoardroomMessage: (msg: AgentMessage) => void;
-    updateBoardroomMessage: (id: string, updates: Partial<AgentMessage>) => void;
-    removeBoardroomMessage: (id: string) => void;
-
     // Session State
     sessions: Record<string, ConversationSession>;
     activeSessionId: string | null;
+    lastDirectSessionId: string | null;
 
     // Session Actions
-    createSession: (title?: string, initialAgents?: string[], namespace?: string) => string;
+    createSession: (title?: string, initialAgents?: string[], namespace?: string, projectId?: string) => string;
     setActiveSession: (sessionId: string) => void;
     deleteSession: (sessionId: string) => void;
     updateSessionTitle: (sessionId: string, title: string) => void;
+    updateSessionProject: (sessionId: string, projectId: string | null) => void;
+    archiveSession: (sessionId: string) => void;
+    unarchiveSession: (sessionId: string) => void;
 
     // Message Actions
     addAgentMessage: (msg: AgentMessage) => void;
+    addMessageToSession: (sessionId: string, msg: AgentMessage) => void;
     updateAgentMessage: (id: string, updates: Partial<AgentMessage>) => void;
-    clearAgentHistory: () => void;
+    clearAgentHistory: (sessionId?: string) => void;
 
     // Participant Actions
     addParticipant: (sessionId: string, agentId: string) => void;
@@ -89,25 +90,20 @@ export function buildAgentSessionState(
 ): AgentSessionSlice {
     return {
         agentHistory: [],
-        boardroomMessages: [],
         sessions: {},
         activeSessionId: null,
+        lastDirectSessionId: null,
 
-        addBoardroomMessage: (msg) => set(state => ({
-            boardroomMessages: [...state.boardroomMessages, msg]
-        })),
+        createSession: (title = 'New Conversation', initialAgents?: string[], namespace?: string, projectId?: string) => {
+            const state = get() as any;
+            const resolvedProjectId = projectId || state.currentProjectId;
 
-        updateBoardroomMessage: (id, updates) => set(state => ({
-            boardroomMessages: state.boardroomMessages.map(msg =>
-                msg.id === id ? { ...msg, ...updates } : msg
-            )
-        })),
+            let resolvedAgents = initialAgents;
+            if (!resolvedAgents) {
+                const project = state.projects?.find((p: any) => p.id === resolvedProjectId);
+                resolvedAgents = project?.defaultParticipants || ['indii'];
+            }
 
-        removeBoardroomMessage: (id) => set(state => ({
-            boardroomMessages: state.boardroomMessages.filter(msg => msg.id !== id)
-        })),
-
-        createSession: (title = 'New Conversation', initialAgents = ['indii'], namespace?: string) => {
             const id = crypto.randomUUID();
             const newSession: ConversationSession = {
                 id,
@@ -115,8 +111,9 @@ export function buildAgentSessionState(
                 createdAt: Date.now(),
                 updatedAt: Date.now(),
                 messages: [],
-                participants: initialAgents,
+                participants: resolvedAgents,
                 ...(namespace ? { namespace } : {}),
+                ...(resolvedProjectId ? { projectId: resolvedProjectId } : {}),
             };
 
             set(state => {
@@ -181,16 +178,62 @@ export function buildAgentSessionState(
         }),
 
         updateSessionTitle: (sessionId, title) => {
-            set(state => ({
-                sessions: {
-                    ...state.sessions,
-                    [sessionId]: { ...state.sessions[sessionId]!, title }
-                }
-            }));
+            set(state => {
+                const session = state.sessions[sessionId];
+                if (!session) return state;
 
-            // Persist the title change
+                const updated = { ...session, title, updatedAt: Date.now() };
+                return { sessions: { ...state.sessions, [sessionId]: updated } };
+            });
+
             import('@/services/agent/SessionService').then(({ sessionService }) => {
-                sessionService.updateSession(sessionId, { title }).catch((e) => logger.error('[AgentSlice] Session sync failed:', e));
+                sessionService.updateSession(sessionId, { title, updatedAt: Date.now() })
+                    .catch(e => logger.error('[AgentSlice] Session title update failed:', e));
+            });
+        },
+
+        updateSessionProject: (sessionId, projectId) => {
+            set(state => {
+                const session = state.sessions[sessionId];
+                if (!session) return state;
+
+                const updated = { ...session, projectId: projectId || undefined, updatedAt: Date.now() };
+                return { sessions: { ...state.sessions, [sessionId]: updated } };
+            });
+
+            import('@/services/agent/SessionService').then(({ sessionService }) => {
+                sessionService.updateSession(sessionId, { projectId: projectId || undefined, updatedAt: Date.now() })
+                    .catch(e => logger.error('[AgentSlice] Session project update failed:', e));
+            });
+        },
+
+        archiveSession: (sessionId) => {
+            set(state => {
+                const session = state.sessions[sessionId];
+                if (!session) return state;
+
+                const updated = { ...session, isArchived: true, updatedAt: Date.now() };
+                return { sessions: { ...state.sessions, [sessionId]: updated } };
+            });
+
+            import('@/services/agent/SessionService').then(({ sessionService }) => {
+                sessionService.updateSession(sessionId, { isArchived: true, updatedAt: Date.now() })
+                    .catch(e => logger.error('[AgentSlice] Session archive update failed:', e));
+            });
+        },
+
+        unarchiveSession: (sessionId) => {
+            set(state => {
+                const session = state.sessions[sessionId];
+                if (!session) return state;
+
+                const updated = { ...session, isArchived: false, updatedAt: Date.now() };
+                return { sessions: { ...state.sessions, [sessionId]: updated } };
+            });
+
+            import('@/services/agent/SessionService').then(({ sessionService }) => {
+                sessionService.updateSession(sessionId, { isArchived: false, updatedAt: Date.now() })
+                    .catch(e => logger.error('[AgentSlice] Session unarchive update failed:', e));
             });
         },
 
@@ -198,9 +241,11 @@ export function buildAgentSessionState(
             // If no session exists, create one implicitly (safety net)
             let currentSessionId = state.activeSessionId;
             const sessions = { ...state.sessions };
+            let isNewSession = false;
 
             if (!currentSessionId) {
                 currentSessionId = crypto.randomUUID();
+                isNewSession = true;
                 sessions[currentSessionId] = {
                     id: currentSessionId,
                     title: 'New Conversation',
@@ -220,7 +265,11 @@ export function buildAgentSessionState(
 
             // Persist the updated session messages
             import('@/services/agent/SessionService').then(({ sessionService }) => {
-                sessionService.updateSession(currentSessionId, { messages: updatedSession.messages }).catch((e) => logger.error('[AgentSlice] Session sync failed:', e));
+                if (isNewSession) {
+                    sessionService.createSession(updatedSession).catch((e) => logger.error('[AgentSlice] Session create failed:', e));
+                } else {
+                    sessionService.updateSession(currentSessionId, { messages: updatedSession.messages }).catch((e) => logger.error('[AgentSlice] Session sync failed:', e));
+                }
             });
 
             return {
@@ -257,26 +306,56 @@ export function buildAgentSessionState(
             };
         }),
 
-        clearAgentHistory: () => set(state => {
-            if (!state.activeSessionId) return {};
+        addMessageToSession: (sessionId, msg) => set((state) => {
+            const sessions = { ...state.sessions };
+            const session = sessions[sessionId];
+            if (!session) return {};
+
+            const updatedSession = {
+                ...session,
+                messages: [...session.messages, msg],
+                updatedAt: Date.now()
+            };
+
+            import('@/services/agent/SessionService').then(({ sessionService }) => {
+                sessionService.updateSession(sessionId, { messages: updatedSession.messages }).catch((e) => logger.error('[AgentSlice] Session sync failed:', e));
+            });
+
+            const update: Partial<AgentSessionSlice> = {
+                sessions: { ...state.sessions, [sessionId]: updatedSession }
+            };
+
+            if (sessionId === state.activeSessionId) {
+                update.agentHistory = updatedSession.messages;
+            }
+
+            return update;
+        }),
+
+        clearAgentHistory: (sessionId) => set(state => {
+            const targetSessionId = sessionId || state.activeSessionId;
+            if (!targetSessionId || !state.sessions[targetSessionId]) return {};
 
             // Persist the cleared history
             import('@/services/agent/SessionService').then(({ sessionService }) => {
-                if (state.activeSessionId) {
-                    sessionService.updateSession(state.activeSessionId, { messages: [] }).catch((e) => logger.error('[AgentSlice] Session sync failed:', e));
-                }
+                sessionService.updateSession(targetSessionId, { messages: [] }).catch((e) => logger.error('[AgentSlice] Session sync failed:', e));
             });
 
-            return {
+            const update: Partial<AgentSessionSlice> = {
                 sessions: {
                     ...state.sessions,
-                    [state.activeSessionId]: {
-                        ...state.sessions[state.activeSessionId]!,
+                    [targetSessionId]: {
+                        ...state.sessions[targetSessionId]!,
                         messages: []
                     }
-                },
-                agentHistory: []
+                }
             };
+
+            if (targetSessionId === state.activeSessionId) {
+                update.agentHistory = [];
+            }
+
+            return update;
         }),
 
         addParticipant: (sessionId, agentId) => set(state => {

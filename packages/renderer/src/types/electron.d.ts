@@ -162,6 +162,11 @@ export interface ElectronAPI {
         hide: () => Promise<void>;
     };
 
+    // Menu events
+    menu?: {
+        onSaveTriggered: (callback: () => void) => () => void;
+    };
+
     // Video (Local Asset Management)
     video: {
         saveAsset: (url: string, filename: string) => Promise<string>;

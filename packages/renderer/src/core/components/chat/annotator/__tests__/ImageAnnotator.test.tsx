@@ -21,8 +21,7 @@ vi.mock('@/core/store', () => ({
     useStore: {
         getState: () => ({
             conversationMode: 'direct',
-            updateAgentMessage: vi.fn(),
-            updateBoardroomMessage: vi.fn()
+            updateAgentMessage: vi.fn()
         })
     }
 }));

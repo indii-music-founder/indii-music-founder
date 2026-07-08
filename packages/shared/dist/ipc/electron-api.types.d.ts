@@ -389,6 +389,9 @@ export interface ElectronAPI {
     power: ElectronPowerAPI;
     window: ElectronWindowAPI;
     testAgent: (query?: string) => Promise<unknown>;
+    menu?: {
+        onSaveTriggered: (callback: () => void) => () => void;
+    };
 }
 declare global {
     interface Window {

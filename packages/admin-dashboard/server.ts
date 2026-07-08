@@ -220,8 +220,22 @@ app.get('/api/founders', requireAdminAuth, async (req, res) => {
 
 // Phase 4: Agentic System Integration - Webhooks
 
+const requireWebhookSecret = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  const secret = process.env.ADMIN_WEBHOOK_SECRET;
+  if (!secret) {
+    console.error('[Webhooks] Webhook secret not configured. Failing closed.');
+    return res.status(500).send('Server configuration error');
+  }
+  const token = req.headers['x-webhook-secret'] || req.headers['authorization']?.replace('Bearer ', '');
+  if (token !== secret) {
+    console.warn('[Webhooks] Rejected request: invalid secret token');
+    return res.status(401).send('Unauthorized');
+  }
+  next();
+};
+
 // Webhook for agent@indii.music (Inbound Parse)
-app.post('/api/webhooks/agent-email', async (req, res) => {
+app.post('/api/webhooks/agent-email', requireWebhookSecret, async (req, res) => {
   try {
     const emailPayload = req.body;
     console.log(`[Agent Nexus] Received email for agent@indii.music from ${emailPayload.from}`);
@@ -234,7 +248,7 @@ app.post('/api/webhooks/agent-email', async (req, res) => {
 });
 
 // Webhook for Blacksmith.sh / GitHub Actions CI Failures
-app.post('/api/webhooks/ci-alerts', async (req, res) => {
+app.post('/api/webhooks/ci-alerts', requireWebhookSecret, async (req, res) => {
   try {
     const alertPayload = req.body;
     console.log(`[Agent Nexus] Received CI Alert for workflow: ${alertPayload.workflow_run?.name}`);
@@ -510,13 +524,46 @@ app.post('/api/google/drive/upload', requireAdminAuth, async (req, res) => {
 });
 
 // Protected Route for DNS Status
-app.get('/api/dns/status', requireAdminAuth, (req, res) => {
-  res.json({
-    domain: 'indii.music',
-    spf: 'verified',
-    dkim: 'verified',
-    dmarc: 'verified'
-  });
+app.get('/api/dns/status', requireAdminAuth, async (req, res) => {
+  try {
+    const dns = require('dns').promises;
+    const domain = 'indii.music';
+    
+    let spf = 'unverified';
+    let dkim = 'unverified';
+    let dmarc = 'unverified';
+
+    try {
+      const txtRecords = await dns.resolveTxt(domain);
+      // txtRecords is an array of arrays of strings
+      const hasSpf = txtRecords.some((record: string[]) => record.join('').includes('v=spf1'));
+      if (hasSpf) spf = 'verified';
+    } catch (e) { console.error('SPF lookup failed:', e); }
+
+    try {
+      const dmarcRecords = await dns.resolveTxt(`_dmarc.${domain}`);
+      const hasDmarc = dmarcRecords.some((record: string[]) => record.join('').includes('v=DMARC1'));
+      if (hasDmarc) dmarc = 'verified';
+    } catch (e) { console.error('DMARC lookup failed:', e); }
+
+    try {
+      // Assuming 'google' selector based on workspace integration, 
+      // but if others exist they might be needed. We'll check google.
+      const dkimRecords = await dns.resolveTxt(`google._domainkey.${domain}`);
+      const hasDkim = dkimRecords.some((record: string[]) => record.join('').includes('v=DKIM1'));
+      if (hasDkim) dkim = 'verified';
+    } catch (e) { console.error('DKIM lookup failed:', e); }
+
+    res.json({
+      domain,
+      spf,
+      dkim,
+      dmarc,
+      lastChecked: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to resolve DNS status', details: String(error) });
+  }
 });
 
 // Consolidated Messaging Inbox
