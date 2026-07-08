@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-07-08 11:51 EDT
+**Updated:** 2026-07-08 11:52 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+b130bcff5 chore: session checkpoint [11:51]
 a07778461 chore: session checkpoint [11:51]
 4585c2098 chore: session checkpoint [11:50]
 baf1b63ea fix(main): add local emulator urls to app check bypass and handle html 404 in updater
@@ -13,7 +14,6 @@ b0ada088b chore: session checkpoint [10:17]
 9a015ac19 chore: session checkpoint [09:47]
 2180941ec chore: session checkpoint [09:45]
 b4f53ab5f chore: session checkpoint [08:51]
-63d70c202 chore: session checkpoint [22:14]
 ```
 
 ## Working State
