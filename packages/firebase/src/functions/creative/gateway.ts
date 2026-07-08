@@ -2,6 +2,7 @@ import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
 import { z } from 'zod';
 import { getGeminiApiKey, geminiApiKey } from '../../config/secrets';
+import { validateAppCheckV2 } from '../../middleware/appCheck';
 import { FUNCTION_INTELLIGENCE_MODELS } from '../../config/models';
 import { getVertexAIClient } from '../../lib/vertexClient';
 import { GenerateAudioSchema, GenerateImageSchema, GenerateVideoSchema, GenerateOmniRemixSchema } from '../../shared/creative';
@@ -1006,7 +1007,8 @@ export async function executeVideoJob(jobId: string, job: VideoGenerationJobReco
 /**
  * generateImageV3 - Routes to Gemini 3 image models via Interactions API.
  */
-export const generateImageV3 = onCall({ timeoutSeconds: 120, memory: '1GiB', secrets: [geminiApiKey], enforceAppCheck: ENFORCE_APP_CHECK }, async (request) => {
+export const generateImageV3 = onCall({ timeoutSeconds: 120, memory: '1GiB', secrets: [geminiApiKey], enforceAppCheck: false }, async (request) => {
+  validateAppCheckV2(request);
   if (!request.auth) throw new HttpsError('unauthenticated', 'User must be authenticated.');
   
   const parsed = GenerateImageSchema.safeParse(request.data);
@@ -1147,7 +1149,8 @@ export const generateImageV3 = onCall({ timeoutSeconds: 120, memory: '1GiB', sec
 /**
  * generateVideoV3 - Routes to Veo 3.1 via the long-running generateVideos API.
  */
-export const generateVideoV3 = onCall({ timeoutSeconds: 540, secrets: [geminiApiKey] , enforceAppCheck: ENFORCE_APP_CHECK}, async (request) => {
+export const generateVideoV3 = onCall({ timeoutSeconds: 540, secrets: [geminiApiKey] , enforceAppCheck: false}, async (request) => {
+  validateAppCheckV2(request);
   if (!request.auth) throw new HttpsError('unauthenticated', 'User must be authenticated.');
   
   const parsed = GenerateVideoSchema.safeParse(request.data);
@@ -1298,7 +1301,8 @@ export const generateVideoV3 = onCall({ timeoutSeconds: 540, secrets: [geminiApi
   return { jobId };
 });
 
-export const cancelVideoJob = onCall({ timeoutSeconds: 30, enforceAppCheck: ENFORCE_APP_CHECK }, async (request) => {
+export const cancelVideoJob = onCall({ timeoutSeconds: 30, enforceAppCheck: false }, async (request) => {
+  validateAppCheckV2(request);
   if (!request.auth) throw new HttpsError('unauthenticated', 'User must be authenticated.');
 
   const schema = z.object({ jobId: z.string().min(1) });
@@ -1443,7 +1447,8 @@ async function fetchInteractionVideo(
  * Flow, and Shorts, with API access rolling out later. This callable is wired so
  * the UI can use the real backend path as soon as the API model ID is configured.
  */
-export const generateOmniRemixV3 = onCall({ timeoutSeconds: 540, secrets: [geminiApiKey] , enforceAppCheck: ENFORCE_APP_CHECK}, async (request) => {
+export const generateOmniRemixV3 = onCall({ timeoutSeconds: 540, secrets: [geminiApiKey] , enforceAppCheck: false}, async (request) => {
+  validateAppCheckV2(request);
   if (!request.auth) throw new HttpsError('unauthenticated', 'User must be authenticated.');
 
   const parsed = GenerateOmniRemixSchema.safeParse(request.data);
@@ -1570,7 +1575,8 @@ export const generateOmniRemixV3 = onCall({ timeoutSeconds: 540, secrets: [gemin
 /**
  * generateAudioV3 - Routes to NB2
  */
-export const generateAudioV3 = onCall({ timeoutSeconds: 300, secrets: [geminiApiKey] , enforceAppCheck: ENFORCE_APP_CHECK}, async (request) => {
+export const generateAudioV3 = onCall({ timeoutSeconds: 300, secrets: [geminiApiKey] , enforceAppCheck: false}, async (request) => {
+  validateAppCheckV2(request);
   if (!request.auth) throw new HttpsError('unauthenticated', 'User must be authenticated.');
   
   const parsed = GenerateAudioSchema.safeParse(request.data);

@@ -3,6 +3,7 @@ import * as admin from 'firebase-admin';
 import { getVertexAIClient } from '../../lib/vertexClient';
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { FieldValue } from 'firebase-admin/firestore';
+import { validateAppCheckV2 } from '../../middleware/appCheck';
 
 const ENFORCE_APP_CHECK = process.env.NODE_ENV === 'production' && process.env.SKIP_APP_CHECK !== "true" && process.env.ENFORCE_APP_CHECK !== "false";
 const DEFAULT_SEMANTIC_SEARCH_LIMIT = 5;
@@ -117,8 +118,9 @@ function normalizeSemanticAction(value: unknown): 'add' | 'search' {
 export const manageSemanticMemory = onCall({ 
     timeoutSeconds: 60, 
     memory: '256MiB', 
-    enforceAppCheck: ENFORCE_APP_CHECK 
+    enforceAppCheck: false 
 }, async (request) => {
+    validateAppCheckV2(request);
     
     // Require authentication
     if (!request.auth) {
