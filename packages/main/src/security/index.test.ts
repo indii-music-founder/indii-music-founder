@@ -223,15 +223,17 @@ describe('security/index.ts', () => {
             });
         });
 
-        describe('onBeforeSendHeaders (Referer Injection)', () => {
-            it('should inject referer for all googleapis and firebaseapp', () => {
+        describe('onBeforeSendHeaders (Referer & Client Type Injection)', () => {
+            it('should inject referer and client type for all googleapis, firebaseapp, cloudfunctions, and run.app', () => {
                 configureSecurity(mockSession as unknown as Session);
                 const handler = mockSession.webRequest.onBeforeSendHeaders.mock.calls[0][1];
 
                 const urls = [
                     'https://firestore.googleapis.com/v1/projects/my-project/databases/(default)/documents',
                     'https://firebasestorage.googleapis.com/v0/b/my-bucket.appspot.com/o',
-                    'https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword'
+                    'https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword',
+                    'https://us-central1-indii-music-founder.cloudfunctions.net/generateContentStream',
+                    'https://generateimagev3-run-app-subdomain.run.app'
                 ];
 
                 for (const url of urls) {
@@ -246,7 +248,8 @@ describe('security/index.ts', () => {
                     expect(callback).toHaveBeenCalledWith({
                         requestHeaders: {
                             'User-Agent': 'test',
-                            'Referer': 'https://founder.indii.music/'
+                            'Referer': 'https://founder.indii.music/',
+                            'X-App-Client-Type': 'electron-desktop-app'
                         }
                     });
                 }

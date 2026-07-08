@@ -35,6 +35,7 @@ import { clearbitApiKey, apolloApiKey, getClearbitApiKey, getApolloApiKey } from
 
 import { estimateVideoCost } from "./config/pricing";
 import { enforceRateLimit, RATE_LIMITS } from "./lib/rateLimit";
+import { validateAppCheckHttp } from "./middleware/appCheck";
 
 
 // Vertex AI SDK
@@ -130,6 +131,7 @@ export { processISWCMapping as processISWCMappingV2 } from './publishing/iswcMap
 
 // Social Functions (Item 226: Scheduled Post Background Delivery)
 export { deliverScheduledPosts } from './social/deliverScheduledPosts';
+export { refreshSocialToken } from './social/refreshTokenCallable';
 
 // Timeline Orchestrator (Progressive Campaign Engine — polls every 15 min for due milestones)
 export { pollTimelineMilestones } from './timeline/pollTimelineMilestones';
@@ -891,23 +893,8 @@ export const generateContentStream = functions
             }
 
             // Verify App Check manually after CORS preflight has passed.
-            if (ENFORCE_APP_CHECK) {
-                const appCheckToken = typeof req.header === 'function'
-                    ? req.header('x-firebase-appcheck')
-                    : typeof req.get === 'function'
-                        ? req.get('x-firebase-appcheck')
-                        : req.headers['x-firebase-appcheck'];
-                if (!appCheckToken) {
-                    res.status(401).send('Unauthorized: Missing App Check token');
-                    return;
-                }
-                try {
-                    await admin.appCheck().verifyToken(Array.isArray(appCheckToken) ? appCheckToken[0] : appCheckToken);
-                // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                } catch (err) {
-                    res.status(401).send('Unauthorized: Invalid App Check token');
-                    return;
-                }
+            if (!(await validateAppCheckHttp(req, res))) {
+                return;
             }
 
             try {
@@ -1083,19 +1070,8 @@ export const ragProxy = functions
             }
 
             // Verify App Check manually after CORS preflight has passed
-            if (ENFORCE_APP_CHECK) {
-                const appCheckToken = req.header('x-firebase-appcheck');
-                if (!appCheckToken) {
-                    res.status(401).send('Unauthorized: Missing App Check token');
-                    return;
-                }
-                try {
-                    await admin.appCheck().verifyToken(appCheckToken);
-                // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                } catch (err) {
-                    res.status(401).send('Unauthorized: Invalid App Check token');
-                    return;
-                }
+            if (!(await validateAppCheckHttp(req, res))) {
+                return;
             }
 
             try {
