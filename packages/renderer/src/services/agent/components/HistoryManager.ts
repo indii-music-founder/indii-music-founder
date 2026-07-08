@@ -29,7 +29,7 @@ export class HistoryManager {
         const { useStore } = await importWithRetry(() => import('@/core/store'));
         const state = useStore.getState();
 
-        const currentHistory = state.conversationMode === 'boardroom' ? state.boardroomMessages : state.agentHistory;
+        const currentHistory = state.conversationMode === 'boardroom' ? state.agentHistory : state.agentHistory;
 
         // Filter out system messages and internal logs for the conversation window
         const cleanHistory = (currentHistory || []).filter(m =>

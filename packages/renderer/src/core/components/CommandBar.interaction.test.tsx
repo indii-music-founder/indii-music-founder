@@ -141,10 +141,6 @@ vi.mock('@/services/agent/registry', () => ({
     }
 }));
 
-vi.mock('@/core/components/command-bar/DelegateMenu', () => ({
-    serverTimestamp: vi.fn(),
-    DelegateMenu: () => <div data-testid="delegate-menu">Delegate Menu</div>
-}));
 
 vi.mock('@/core/components/command-bar/AttachmentList', () => ({
     serverTimestamp: vi.fn(),

@@ -2,6 +2,7 @@ import React from 'react';
 import { Book, Search, Library, Tags, FileText, ChevronRight, Upload } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useToast } from '@/core/context/ToastContext';
+import { useStore } from '@/core/store';
 
 interface KnowledgePanelProps {
     toggleRightPanel: () => void;
@@ -9,6 +10,7 @@ interface KnowledgePanelProps {
 
 export default function KnowledgePanel({ toggleRightPanel }: KnowledgePanelProps) {
     const toast = useToast();
+    const knowledgeBase = useStore(state => state.knowledgeBase);
 
     return (
         <div className="flex flex-col h-full bg-linear-to-b from-bg-dark to-bg-dark/90">
@@ -45,15 +47,19 @@ export default function KnowledgePanel({ toggleRightPanel }: KnowledgePanelProps
                     <div className="bg-black/40 p-3 rounded-xl border border-white/5 space-y-3">
                         <div className="flex items-center justify-between">
                             <span className="text-xs text-gray-400 flex items-center gap-2"><FileText size={14} /> Indexed Files</span>
-                            <span className="text-xs text-violet-400 font-mono">1,240</span>
+                            <span className="text-xs text-violet-400 font-mono">{knowledgeBase.length.toLocaleString()}</span>
                         </div>
                         <div className="flex items-center justify-between">
-                            <span className="text-xs text-gray-400 flex items-center gap-2"><Library size={14} /> Vectors</span>
-                            <span className="text-xs text-gray-300 font-mono">82.4k</span>
+                            <span className="text-xs text-gray-400 flex items-center gap-2"><Library size={14} /> Estimated Vectors</span>
+                            <span className="text-xs text-gray-300 font-mono">{(knowledgeBase.length * 12).toLocaleString()}</span>
                         </div>
                         <div className="flex items-center justify-between">
                             <span className="text-xs text-gray-400 flex items-center gap-2"><Search size={14} /> Last Sync</span>
-                            <span className="text-xs text-gray-300 font-mono">2 mins ago</span>
+                            <span className="text-xs text-gray-300 font-mono">
+                                {knowledgeBase.length > 0 
+                                    ? new Date(Math.max(...knowledgeBase.map(d => d.createdAt || 0))).toLocaleTimeString() 
+                                    : 'Never'}
+                            </span>
                         </div>
                     </div>
                 </div>

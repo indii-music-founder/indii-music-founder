@@ -112,7 +112,7 @@ export function resolveShowMeResponse(history: HistoryItem[] | undefined): ShowM
 function findLatestRemoteAgentResponse(startedAt: number): AgentMessage | undefined {
     const state = useStore.getState();
     const messages = state.conversationMode === 'boardroom'
-        ? state.boardroomMessages
+        ? state.agentHistory
         : state.agentHistory;
 
     return [...messages]

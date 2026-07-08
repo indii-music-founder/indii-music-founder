@@ -26,9 +26,9 @@ import { db, auth } from '@/services/firebase';
 import { logger } from '@/utils/logger';
 import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 import { getRealAuthenticatedUserId } from '@/utils/authGuards';
+
 export interface WorkspaceSnapshot {
-    schemaVersion: 1;
-    boardroomMessages: unknown[];
+    schemaVersion: number;
     activeAgents: string[];
     referencedAssets: unknown[];
     selectedPlan: unknown | null;

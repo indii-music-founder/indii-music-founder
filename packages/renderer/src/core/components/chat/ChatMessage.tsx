@@ -124,25 +124,20 @@ const LivingPlanToolRenderer = memo(({ planId }: { planId: string }) => {
 
 const MessageRating = memo(({ messageId, currentRating }: { messageId: string, currentRating?: number }) => {
     const updateAgentMessage = useStore(state => state.updateAgentMessage);
-    const updateBoardroomMessage = useStore(state => state.updateBoardroomMessage);
-    const conversationMode = useStore(state => state.conversationMode);
+    const toast = useToast();
     const [hoverRating, setHoverRating] = useState<number>(0);
     const [optimisticRating, setOptimisticRating] = useState<number | undefined>(currentRating);
 
     const handleRate = async (rating: number) => {
         setOptimisticRating(rating);
-        if (conversationMode === 'boardroom') {
-            updateBoardroomMessage(messageId, { rating });
-            try {
-                const { agentFirebaseConnector } = await import('@/services/agent/AgentFirebaseConnector');
-                await agentFirebaseConnector.update(messageId, { rating });
-            } catch (err) {
-                logger.error('[ChatMessage] Failed to save boardroom message rating:', err);
-                setOptimisticRating(currentRating);
-                updateBoardroomMessage(messageId, { rating: currentRating });
-            }
-        } else {
-            updateAgentMessage(messageId, { rating });
+        updateAgentMessage(messageId, { rating });
+        try {
+            const { agentFirebaseConnector } = await import('@/services/agent/AgentFirebaseConnector');
+            await agentFirebaseConnector.update(messageId, { rating });
+        } catch (err) {
+            logger.error('[ChatMessage] Failed to save message rating:', err);
+            setOptimisticRating(currentRating);
+            updateAgentMessage(messageId, { rating: currentRating });
         }
     };
 

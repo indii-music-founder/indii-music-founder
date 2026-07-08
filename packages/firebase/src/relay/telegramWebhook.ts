@@ -75,13 +75,18 @@ export const telegramWebhook = functions
         const secret = process.env.TELEGRAM_WEBHOOK_SECRET || (() => {
             try { return telegramWebhookSecret.value(); } catch { return ""; }
         })();
-        if (secret) {
-            const incoming = req.headers['x-telegram-bot-api-secret-token'];
-            if (incoming !== secret) {
-                console.warn('[Telegram] Rejected request: invalid secret token');
-                res.status(401).send("Unauthorized");
-                return;
-            }
+        
+        if (!secret) {
+            console.error('[Telegram] Webhook secret not configured. Failing closed.');
+            res.status(500).send("Server configuration error");
+            return;
+        }
+
+        const incoming = req.headers['x-telegram-bot-api-secret-token'];
+        if (incoming !== secret) {
+            console.warn('[Telegram] Rejected request: invalid secret token');
+            res.status(401).send("Unauthorized");
+            return;
         }
 
         const update: TelegramUpdate = req.body;

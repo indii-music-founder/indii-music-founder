@@ -513,18 +513,80 @@ export default function DirectGenerationTab() {
                         </div>
 
                         <h3 className="text-sm font-extrabold text-white uppercase tracking-wider mb-2">Direct Creative Canvas</h3>
-                        <p className="text-xs text-gray-500 leading-relaxed mb-6">
-                            Welcome to the Direct Generation Hub. Skip the autonomous pipeline to generate photorealistic release art and high-fidelity video canvases.
+                        <p className="text-xs text-gray-400 leading-relaxed mb-6">
+                            Welcome to the Creative Studio. Generate photorealistic release art and high-fidelity video canvases, or bring your own assets to start editing.
                         </p>
 
-                        <div className="grid grid-cols-2 gap-4 w-full text-left">
-                            <div className="p-3 bg-white/2 rounded-xl border border-white/5">
-                                <h4 className="text-[10px] uppercase font-bold text-white mb-1">Text-to-Image</h4>
-                                <p className="text-[9.5px] text-gray-500 leading-normal">Fast, high-fidelity cover arts, poster mockups, and visual merchandise concepts.</p>
-                            </div>
-                            <div className="p-3 bg-white/2 rounded-xl border border-white/5">
-                                <h4 className="text-[10px] uppercase font-bold text-white mb-1">Text-to-Video</h4>
-                                <p className="text-[9.5px] text-gray-500 leading-normal">Cinematic camera pans, high dynamic motion, and full Spotify vertical loops.</p>
+                        <div className="flex gap-3 mb-8">
+                            <button
+                                onClick={() => {
+                                    const input = document.createElement('input');
+                                    input.type = 'file';
+                                    input.accept = 'image/*';
+                                    input.onchange = (e) => {
+                                        const file = (e.target as HTMLInputElement).files?.[0];
+                                        if (file) {
+                                            const reader = new FileReader();
+                                            reader.onload = async (event) => {
+                                                const dataUrl = event.target?.result as string;
+                                                const newId = `upload_${Date.now()}`;
+                                                const { useStore } = await import('@/core/store');
+                                                const { addUploadedImage, currentProjectId, setSelectedItem, setViewMode } = useStore.getState();
+                                                
+                                                const uploadedItem = {
+                                                    id: newId,
+                                                    url: dataUrl,
+                                                    prompt: 'Uploaded Photo',
+                                                    type: 'image' as const,
+                                                    timestamp: Date.now(),
+                                                    projectId: currentProjectId,
+                                                    origin: 'uploaded' as const
+                                                };
+                                                
+                                                addUploadedImage(uploadedItem);
+                                                setSelectedItem(uploadedItem);
+                                                setViewMode('editor');
+                                            };
+                                            reader.readAsDataURL(file);
+                                        }
+                                    };
+                                    input.click();
+                                }}
+                                className="px-5 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-bold text-white transition-all flex items-center gap-2"
+                            >
+                                <ImageIcon size={14} />
+                                Upload Photo
+                            </button>
+                            
+                            <button
+                                onClick={async () => {
+                                    const { useStore } = await import('@/core/store');
+                                    useStore.getState().setRightPanelTab('assets');
+                                }}
+                                className="px-5 py-2.5 bg-dept-creative/20 hover:bg-dept-creative/30 border border-dept-creative/30 rounded-xl text-xs font-bold text-dept-creative transition-all flex items-center gap-2"
+                            >
+                                <Layers size={14} />
+                                Browse Project Assets
+                            </button>
+                        </div>
+
+                        <div className="w-full text-left">
+                            <p className="text-[10px] uppercase font-bold text-gray-500 mb-3 text-center tracking-wider">Or try one of these prompts</p>
+                            <div className="grid grid-cols-2 gap-3">
+                                <button 
+                                    onClick={() => setLocalPrompt("A cinematic wide shot of a lone musician standing on a neon-lit bridge in Tokyo, rain falling, 8k photorealistic, cyberpunk vibe")}
+                                    className="p-3 bg-white/2 hover:bg-white/5 rounded-xl border border-white/5 transition-all text-left"
+                                >
+                                    <h4 className="text-[10px] uppercase font-bold text-white mb-1 flex items-center gap-1"><ImageIcon size={10} className="text-emerald-400" /> Album Cover</h4>
+                                    <p className="text-[9px] text-gray-500 leading-normal line-clamp-2">A cinematic wide shot of a lone musician standing on a neon-lit bridge...</p>
+                                </button>
+                                <button 
+                                    onClick={() => setLocalPrompt("Hyper-detailed 3D render of floating speakers in an abstract colorful void, slow orbit camera pan, cinematic lighting")}
+                                    className="p-3 bg-white/2 hover:bg-white/5 rounded-xl border border-white/5 transition-all text-left"
+                                >
+                                    <h4 className="text-[10px] uppercase font-bold text-white mb-1 flex items-center gap-1"><Video size={10} className="text-blue-400" /> Spotify Canvas Loop</h4>
+                                    <p className="text-[9px] text-gray-500 leading-normal line-clamp-2">Hyper-detailed 3D render of floating speakers in an abstract colorful void...</p>
+                                </button>
                             </div>
                         </div>
                     </motion.div>
