@@ -36,12 +36,14 @@ export function formatUpdaterErrorMessage(err: unknown): string {
     const message = err instanceof Error ? err.message : String(err);
     const lowerMessage = message.toLowerCase();
     const isMissingManifest =
-        lowerMessage.includes('404') &&
+        (lowerMessage.includes('404') &&
         (
             lowerMessage.includes('latest-mac.yml') ||
             lowerMessage.includes('latest.yml') ||
             lowerMessage.includes('latest-linux.yml')
-        );
+        )) ||
+        lowerMessage.includes('does not have a valid semver version: "undefined"') ||
+        lowerMessage.includes("does not have a valid semver version: 'undefined'");
 
     if (isMissingManifest) {
         return `${RELEASE_DISPLAY_NAME} cannot be installed yet because the latest GitHub release is missing its updater manifest. Publish a repaired release with latest-mac.yml, latest.yml, and latest-linux.yml, then check again.`;
@@ -111,7 +113,7 @@ export function setupAutoUpdater(): void {
     autoUpdater.allowDowngrade = false;
 
     // Load persisted settings
-    const savedSource = store.get('updater-source', 'github') as 'github' | 'firebase';
+    const savedSource = store.get('updater-source', 'firebase') as 'github' | 'firebase';
     const savedChannel = store.get('updater-channel', 'stable') as 'stable' | 'beta';
     
     applyUpdaterConfig(savedSource, savedChannel);
@@ -219,7 +221,7 @@ export function registerUpdaterHandlers(): void {
     ipcMain.handle('updater:set-channel', (_event: any, channel: 'stable' | 'beta') => {
         if (autoUpdater) {
             store.set('updater-channel', channel);
-            const currentSource = store.get('updater-source', 'github') as 'github' | 'firebase';
+            const currentSource = store.get('updater-source', 'firebase') as 'github' | 'firebase';
             applyUpdaterConfig(currentSource, channel);
             log.info(`[Updater] Channel set and persisted to: ${channel}`);
         }
@@ -237,7 +239,7 @@ export function registerUpdaterHandlers(): void {
 
     ipcMain.handle('updater:get-config', () => {
         const currentChannel = store.get('updater-channel', 'stable') as 'stable' | 'beta';
-        const currentSource = store.get('updater-source', 'github') as 'github' | 'firebase';
+        const currentSource = store.get('updater-source', 'firebase') as 'github' | 'firebase';
         return {
             channel: currentChannel,
             source: currentSource,
