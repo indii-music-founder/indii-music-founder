@@ -55,4 +55,20 @@
 
 ---
 
+## Cost of Doing Business — Founder real-world action items (added 2026-07-08)
+
+Real-world purchases/actions only William can complete. Blockers marked ⛔ gate release features.
+
+| Item | Cost | Blocks | Where |
+| --- | --- | --- | --- |
+| ⛔ Apple Developer Program (org enrollment; needs D-U-N-S for New Detroit Music LLC) | $99/yr | macOS DMG notarization → Founders release | developer.apple.com/programs/enroll |
+| ⛔ Spotify Premium on info@indii.music | ~$12/mo | Spotify Web API dev app creation (new Spotify policy) | spotify.com/premium |
+| ⛔ Windows code-signing cert (OV; via cloud signing, e.g. SSL.com eSigner or Azure Trusted Signing) | ~$200–475/yr | Windows Authenticode → Founders release | ssl.com / DigiCert / Azure |
+| X (Twitter) API Basic tier — decide ship-or-defer for v1 | ~$200/mo | X posting only | developer.x.com |
+| D-U-N-S number for New Detroit Music LLC (prereq for Apple org enrollment) | Free (up to ~30 days) | Apple enrollment | dnb.com/duns |
+
+Status notes (2026-07-08): Meta developer registration blocked at SMS verify (rate-limited; retry after a few hours). Spotify app creation blocked on Premium. GCP Maps/YouTube keys + GitHub secrets completed. `indiios-v-1-1` project deleted (30-day undelete window).
+
+---
+
 *Positive verifications from the same pass (no issues filed): Storage artifacts `founders/releases/indii-Installer.dmg` and `indii-Setup.exe` exist with valid tokens; `release.yml` signing env, manifest verification, and `gcloud storage cp` uploads all correctly wired; Firebase auth/project access healthy on `indii-music-founder`.*
