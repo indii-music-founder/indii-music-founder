@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-07-09 08:17 EDT
+**Updated:** 2026-07-09 08:18 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+2fa3f576c chore: session checkpoint [08:17]
 f1f534f66 docs: resolve and mark ISSUE-726 as FIXED in ledger
 96a54b093 docs(ledger): add Cost of Doing Business section — founder purchases & blockers
 b95cb354b docs: check off release tag and updater manifest verification in release checklist
@@ -13,12 +14,11 @@ b25907f46 test(ledger): log ISSUE-CI pipeline failures
 a5348f95d chore(ledger): log ISSUE-767..771 — release QA findings 2026-07-08
 651bc870e docs: resolve and mark ISSUE-770 as FIXED in ledger
 e00e219ce fix(ci): increase node memory limits for builds and enable maps on web
-0da876d87 chore: session checkpoint [18:43]
 ```
 
 ## Working State
 ```
- M .agent/test_ledger/OPEN_ISSUES.md
+M  .agent/test_ledger/OPEN_ISSUES.md
 ```
 
 ## Decisions
