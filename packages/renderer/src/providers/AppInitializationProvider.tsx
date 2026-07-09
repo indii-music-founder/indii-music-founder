@@ -51,7 +51,15 @@ export const AppInitializationProvider: React.FC<{ children: React.ReactNode }> 
         if (user && !user.isAnonymous && user.uid !== 'demo') {
             let isMounted = true;
 
-            initializeHistory();
+            // ISSUE-772: rescope legacy 'org-default' docs to 'personal' BEFORE the
+            // history subscription attaches, so migrated items land in the first
+            // snapshot. Never blocks boot — failures retry on next login.
+            import('@/services/LegacyOrgMigrationService')
+                .then(({ LegacyOrgMigrationService }) => LegacyOrgMigrationService.run())
+                .catch(err => logger.error('[AppInit] Legacy org migration failed:', err))
+                .finally(() => {
+                    if (isMounted) initializeHistory();
+                });
             loadProjects();
 
             // Re-enable Agent if needed, but keep closed by default

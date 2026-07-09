@@ -27,6 +27,8 @@ export interface CanvasImage {
 export interface CreativeHistorySlice {
     // History
     generatedHistory: HistoryItem[];
+    /** Non-null when the cloud history subscription failed — the gallery may be showing device-local data only (ISSUE-772). */
+    historySyncError: string | null;
     addToHistory: (item: HistoryItem) => void;
     initializeHistory: () => Promise<void>;
     updateHistoryItem: (id: string, updates: Partial<HistoryItem>) => void;
@@ -67,6 +69,7 @@ export function buildCreativeHistoryState(
 ): CreativeHistorySlice {
     return {
         generatedHistory: [],
+        historySyncError: null,
         addToHistory: (item: HistoryItem) => {
             // Use dynamic import to avoid circular dependency with store
             import('@/core/store').then(({ useStore }) => {
@@ -161,7 +164,8 @@ export function buildCreativeHistoryState(
                                     return {
                                         generatedHistory: generated.slice(0, 50),
                                         uploadedImages: uploadedImages,
-                                        uploadedAudio: uploadedAudio
+                                        uploadedAudio: uploadedAudio,
+                                        historySyncError: null
                                     };
                                 });
 
@@ -173,14 +177,18 @@ export function buildCreativeHistoryState(
 
                                 if (isPermissionError) {
                                     // Don't retry on permission errors — permissions won't change mid-session.
-                                    // Just resolve to unblock UI; this is expected in dev.
-                                    logger.debug(`[CreativeSlice] History subscription — insufficient permissions (expected in dev). Resolving.`);
+                                    // ISSUE-772: this failure mode silently hid a dead cross-device sync for
+                                    // months. Surface it loudly — an empty gallery must never masquerade as truth.
+                                    logger.error('[CreativeSlice] History subscription denied by Firestore rules — cloud library will NOT sync on this device.', error);
+                                    set({ historySyncError: 'Your creations library could not sync from the cloud on this device.' });
+                                    import('@/core/events').then(({ events }) => {
+                                        events.emit('SYSTEM_ALERT', { level: 'error', message: 'Creations library failed to sync from the cloud.' });
+                                    }).catch(() => { /* events module unavailable in some test contexts */ });
                                     resolve();
                                 } else if (retryCount < MAX_RETRIES) {
                                     // Resolve anyway to unblock UI; non-recoverable errors logged at warn level only
-                                    if (!isPermissionError) {
-                                        logger.error('[CreativeSlice] History subscription error:', error);
-                                    }
+                                    logger.error('[CreativeSlice] History subscription error:', error);
+                                    set({ historySyncError: 'Cloud sync for your creations library is temporarily unavailable.' });
                                     resolve();
                                 }
                             });
