@@ -3907,18 +3907,18 @@ Caller can decide whether to retry, surface error, or silently log.
 **File:** `packages/firebase/src/functions/creative/__tests__/gateway.integration.test.ts`
 **Error:** `Bucket name not specified or invalid. Specify a valid bucket name via the storageBucket option when initializing the app, or specify the bucket name explicitly when calling the getBucket() method.`
 
-### Root Cause
+### Root Cause (Issue 1)
 
 The test setup in `packages/firebase/src/test/integration.setup.ts` initializes Firestore but does not configure Firebase Storage with a valid `storageBucket` option. The `gateway.ts` function calls `getStorage().bucket()` without arguments, which requires a default bucket to be configured.
 
-### Fix Direction
+### Fix Direction (Issue 1)
 
 1. Update `integration.setup.ts` to pass `storageBucket` in the `admin.initializeApp()` config
 2. Use a test-safe bucket name (e.g., `test-bucket` or mock the storage service)
 3. Verify the test setup provides both `db` (Firestore) and `storage` references
 4. Rerun `npm test -- --run` to confirm gateway.integration.test.ts passes
 
-### Files to Touch
+### Files to Touch (Issue 1)
 
 - `packages/firebase/src/test/integration.setup.ts`
 - `packages/firebase/src/functions/creative/__tests__/gateway.integration.test.ts` (if needed for mock assertions)
@@ -3931,11 +3931,11 @@ The test setup in `packages/firebase/src/test/integration.setup.ts` initializes 
 **File:** `packages/renderer/src/services/agent/specialists/GeneralistAgent.ts` (line 642)
 **Error:** `TypeError: Cannot read properties of undefined (reading 'filter')`
 
-### Root Cause
+### Root Cause (Issue 2)
 
 In `GeneralistAgent.execute()`, a chain call attempts to filter an undefined value. This appears to be in a message history or content extraction path where a variable is not initialized or a prior operation returned `undefined`.
 
-### Fix Direction
+### Fix Direction (Issue 2)
 
 1. Inspect `GeneralistAgent.ts` line 642 and surrounding context to identify which variable is undefined
 2. Add null-coalescing or optional-chaining (`?.`) before the `.filter()` call
@@ -3943,7 +3943,7 @@ In `GeneralistAgent.execute()`, a chain call attempts to filter an undefined val
 4. Add a unit test for the edge case that triggers this error
 5. Rerun `npm test -- --run` to confirm the test passes
 
-### Files to Touch
+### Files to Touch (Issue 2)
 
 - `packages/renderer/src/services/agent/specialists/GeneralistAgent.ts`
 - `packages/renderer/src/services/agent/__tests__/AgentExecutor.integration.test.ts` (for test harness context)
@@ -4047,7 +4047,7 @@ No new meaningful UI screenshot could be captured in this run. The in-app browse
 
 A potential off-by-one error was reported in `src/services/audio/AudioAnalysisService.ts` at line 232, involving a loop condition `start + PATCH_frames < melSpectrogram.length`.
 
-### Steps Taken
+### Steps Taken (Archive)
 
 1. **File Inspection**: Read `src/services/audio/AudioAnalysisService.ts`.
    - The file has approximately 222 lines.
@@ -4076,7 +4076,7 @@ Therefore, no fix can be proposed or implemented.
 
 A potential off-by-one error was reported in `src/services/audio/AudioAnalysisService.ts` at line 232, involving a loop condition `start + PATCH_frames < melSpectrogram.length`.
 
-### Steps Taken
+### Steps Taken (Docs)
 
 1. **File Inspection**: Read `src/services/audio/AudioAnalysisService.ts`.
    - The file has approximately 222 lines.
@@ -8350,7 +8350,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main` due to stale assertions in `FoundersCheckout.test.tsx` failing during build validation.
 - **Fix:** Rewrote `FoundersCheckout.test.tsx` to align assertions with the new multi-step funnel design.
 
-### ISSUE-CI-28404450526: CI Pipeline Failure (Deploy to Firebase Hosting)
+### ISSUE-CI-28404450526-DUP: CI Pipeline Failure (Deploy to Firebase Hosting) (Duplicate)
 
 - **Status:** ✅ DUPLICATE — same run ID as FIXED entry at L8328 (FoundersCheckout.test.tsx fix, 2026-06-29)
 - **Severity:** 🔴 HIGH
@@ -8359,7 +8359,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/28404450526)
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
 
-### ISSUE-CI-28397738613: CI Pipeline Failure (Deploy to Firebase Hosting)
+### ISSUE-CI-28397738613-DUP: CI Pipeline Failure (Deploy to Firebase Hosting) (Duplicate)
 
 - **Status:** ✅ DUPLICATE — same run ID as FIXED entry at L8336 (FoundersCheckout.test.tsx fix, 2026-06-29)
 - **Severity:** 🔴 HIGH
@@ -8389,7 +8389,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
   2. In `.gitignore`, REPLACE the existing lines 54-55 (`# Loose QA smoke/verify screenshots ... keep tracked subdirs like artifacts/live-agent-daisy-chain/` and the `artifacts/*.png` rule's surrounding comment) so the comment no longer says "keep tracked," then add:
 
-     ```
+     ```gitignore
      # live-agent-daisy-chain E2E run output — regenerated every run; untracked
      # 2026-06-30 (ISSUE-564) to stop Stop-hook checkpoint churn. Files still
      # written on disk by e2e/live-agent-daisy-chain.spec.ts.
@@ -8545,6 +8545,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **DO NOT:** create a parallel state machine or a second test framework — the compilers ARE the tests; `WorkflowStateService` IS the state machine.
 
 ### ISSUE-CI-28451450526: CI Pipeline Failure (Deploy to Firebase Hosting)
+
 - **Status:** ✅ RESOLVED (2026-07-02, Fable) — superseded by subsequent fix commits; workflow fully green on run 28614340383 (2026-07-02 18:55 UTC, all jobs incl. deploy-production success)
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
@@ -8553,6 +8554,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
 
 ### ISSUE-CI-28451058111: CI Pipeline Failure (Deploy to Firebase Hosting)
+
 - **Status:** ✅ RESOLVED (2026-07-02, Fable) — superseded by subsequent fix commits; workflow fully green on run 28614340383 (2026-07-02 18:55 UTC, all jobs incl. deploy-production success)
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
@@ -8561,6 +8563,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
 
 ### ISSUE-CI-28447623312: CI Pipeline Failure (Deploy to Firebase Hosting)
+
 - **Status:** ✅ RESOLVED (2026-07-02, Fable) — superseded by subsequent fix commits; workflow fully green on run 28614340383 (2026-07-02 18:55 UTC, all jobs incl. deploy-production success)
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
@@ -8569,6 +8572,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
 
 ### ISSUE-CI-28442227172: CI Pipeline Failure (Deploy to Firebase Hosting)
+
 - **Status:** ✅ RESOLVED (2026-07-02, Fable) — superseded by subsequent fix commits; workflow fully green on run 28614340383 (2026-07-02 18:55 UTC, all jobs incl. deploy-production success)
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
@@ -8601,7 +8605,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Status:** 🟢 TRIAGED (2026-07-02, Fable) — 0 high/critical; 20 moderates dispositioned below, all gated on upstream majors
 - **Severity:** 🟠 MODERATE (mixed: mostly moderate/low; a few high in wallet SDKs)
 - **Module:** dependencies / package-lock
-- **Summary:** After ISSUE-CI-28478558122-AUDIT closed (@mastra removal), `npm audit` still reports ~50 findings in transitive deps: @arcjet/* (moderate), @coinbase/*+@base-org/account (high, wallet SDKs), @google-cloud/* (moderate), @ai-sdk/react|ui-utils (low), ws, vite, and others. None were tracked in the ledger before this entry.
+- **Summary:** After ISSUE-CI-28478558122-AUDIT closed (@mastra removal), `npm audit` still reports ~50 findings in transitive deps: @arcjet/* (moderate), @coinbase/_+@base-org/account (high, wallet SDKs), @google-cloud/_ (moderate), @ai-sdk/react|ui-utils (low), ws, vite, and others. None were tracked in the ledger before this entry.
 - **Current work:** A concurrent agent has in-flight manifest bumps (`ws` ^8.18.0→8.21.0, `vite` 6.4.2→6.4.3 across root/admin-dashboard/firebase) as of 2026-07-02 19:40 EDT. Per CLAUDE.md guardrail #9, no other agent may run npm install/audit-fix until that lands.
 - **Expected (acceptance):** `npm audit --audit-level=high` reports 0 high/critical; remaining moderate/low findings each have a documented disposition (fixed, accepted-risk with reason, or blocked-upstream). Typecheck/lint/tests green after every bump.
 - **DO NOT:** Run `npm audit fix --force` (major-version churn), or run npm installs concurrently with another agent's dependency work.
@@ -8616,6 +8620,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Protected issues untouched:** 495/498/499/478/493/500/479/480/482/483/486/658. WalletConnect remains fail-closed.
 
 ### ISSUE-CI-28478558122-AUDIT: npm audit — Uncontrolled Resource Consumption in @ai-sdk/provider-utils
+
 - **Status:** ✅ FIXED (2026-07-02)
 - **Severity:** ⚪ LOW
 - **Module:** Dependencies / Build
@@ -8668,6 +8673,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
   - Remaining follow-up: moderate Firebase/Google/transitive advisories and the `react-call@2.0.1` optional peer warning for `vite >=8` are separate cleanup items, not high-severity audit blockers.
 
 ### ISSUE-CI-28478558122-DEPLOY: Deploy Cloud Functions — transient GCP 503
+
 - **Status:** ✅ RESOLVED (2026-07-02, Fable) — re-verified: deploy-production succeeded on run 28614340383; the GCP 503 was transient as suspected
 - **Severity:** 🟡 MEDIUM
 - **Module:** CI/CD / Deploy
@@ -9670,7 +9676,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Status:** ✅ FIXED (25d28050b)
 - **Severity:** 🔴 HIGH
 - **Module:** Renderer / rights provider integrations
-- **GitHub:** https://github.com/indii-music-founder/indii-music-founder/issues/214
+- **GitHub:** <https://github.com/indii-music-founder/indii-music-founder/issues/214>
 - **Location:** `packages/renderer/src/services/rights/PRORightsService.ts:66-127`, `packages/renderer/src/services/rights/PRORightsService.ts:187-249`, `packages/renderer/src/services/rights/PRORightsService.ts:292-329`, `packages/renderer/src/services/rights/PRORightsService.ts:402-408`
 - **Summary:** `PRORightsService` reads third-party rights credentials from Firestore into the renderer and calls ASCAP, BMI, SoundExchange, and Music Reports endpoints directly from client code. ASCAP API keys, BMI username/password session auth, SoundExchange API keys, and Music Reports bearer credentials all enter renderer memory and client network paths.
 - **Expected (acceptance):** Rights provider credentials should stay server-side. The renderer should call a Firebase/Cloud Run endpoint with release metadata, and the backend should verify Firebase Auth/App Check, load provider credentials, call the provider, and return typed statuses.
@@ -9687,7 +9693,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Status:** ✅ FIXED (9bc23be5e)
 - **Severity:** 🔴 HIGH
 - **Module:** Renderer / rights live setlist submission
-- **GitHub:** https://github.com/indii-music-founder/indii-music-founder/issues/215
+- **GitHub:** <https://github.com/indii-music-founder/indii-music-founder/issues/215>
 - **Location:** `packages/renderer/src/services/rights/PRORightsService.ts:564-588`
 - **Summary:** `submitSetlistToPRO` logs that it is submitting to an ASCAP/BMI gateway and computes a `gatewayUrl`, but never calls the gateway. Instead it hardcodes `const mockResponseOk = true`, generates a fake `SUB-${targetPRO}-...` ID, writes `submissionStatus: 'Submitted'` to Firestore, and returns success.
 - **Expected (acceptance):** A setlist should only be marked submitted after a real secured provider/backend submission confirms success.
@@ -9703,7 +9709,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Status:** ✅ FIXED (62db6aa65)
 - **Severity:** 🔴 HIGH
 - **Module:** Renderer / finance royalty ingestion
-- **GitHub:** https://github.com/indii-music-founder/indii-music-founder/issues/216
+- **GitHub:** <https://github.com/indii-music-founder/indii-music-founder/issues/216>
 - **Location:** `packages/renderer/src/services/finance/RoyaltyService.ts:40-116`, `packages/renderer/src/services/finance/RoyaltyService.test.ts:82-89`
 - **Summary:** `RoyaltyService.ingestRevenueReport()` accepts a `reportId`, but does not use it to guard duplicate processing. It opens per-release transactions without checking whether the report was already processed, deducts recoupment, and writes each payout to a fresh random Firestore document with `doc(collection(db, this.PAYOUTS_COLLECTION))`. Re-running the same report can therefore create a second set of pending payouts and mutate recoupment a second time.
 - **Expected (acceptance):** Royalty report ingestion should be idempotent per `reportId` and source transaction/payee. Duplicate ingestion should return an already-processed/no-op result or update deterministic payout docs without increasing payout count or changing recoupment again.
@@ -9719,7 +9725,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Status:** ✅ FIXED (2026-07-02, Agent B commits 9c03b1b47/a0e5f5c49 — verified & closed by Fable)
 - **Severity:** 🔴 HIGH
 - **Module:** Renderer / distribution adapters
-- **GitHub:** https://github.com/indii-music-founder/indii-music-founder/issues/217
+- **GitHub:** <https://github.com/indii-music-founder/indii-music-founder/issues/217>
 - **Location:** `packages/renderer/src/services/distribution/adapters/TuneCoreAdapter.ts:87-139`, `packages/renderer/src/services/distribution/adapters/BelieveAdapter.ts:122-173`, `packages/renderer/src/services/distribution/adapters/OnerpmAdapter.ts:116-164`, `packages/renderer/src/services/distribution/adapters/UnitedMastersAdapter.ts:117-164`, `packages/renderer/src/services/distribution/adapters/SymphonicAdapter.ts:73-101`, `packages/renderer/src/services/distribution/adapters/DistributionAdapters.test.ts:68`
 - **Summary:** Several distributor adapters return `success: true` and `status: 'pending_review'` even when no DSP delivery was confirmed. TuneCore, Believe, OneRPM, and UnitedMasters attempt API delivery, but if the API call fails, returns non-OK, or is unavailable, they fall back to synthetic distributor release IDs and success states. Symphonic returns success from the SFTP branch even if ERN generation, staging, or upload did not actually run because nested success checks were false. The adapter test suite mocks `fetch` to reject while still expecting TuneCore create-release success as simulated API delivery.
 - **Expected (acceptance):** `success: true` should mean a real DSP API call or SFTP upload was accepted. ERN/manual-ready states should use explicit non-delivery statuses such as `manual_required`, `delivery_unavailable`, or `ready_for_manual_submission`.
@@ -9733,7 +9739,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Status:** ✅ FIXED (2026-07-02, commit 9c03b1b47 — verified by Fable)
 - **Severity:** 🔴 HIGH
 - **Module:** Renderer / distribution takedowns
-- **GitHub:** https://github.com/indii-music-founder/indii-music-founder/issues/218
+- **GitHub:** <https://github.com/indii-music-founder/indii-music-founder/issues/218>
 - **Location:** `packages/renderer/src/services/distribution/adapters/SymphonicAdapter.ts:153-163`, `packages/renderer/src/services/distribution/adapters/TuneCoreAdapter.ts:213-218`, `packages/renderer/src/services/distribution/adapters/BelieveAdapter.ts:223-225`, `packages/renderer/src/services/distribution/adapters/OnerpmAdapter.ts:214-216`, `packages/renderer/src/services/distribution/adapters/UnitedMastersAdapter.ts:207-209`, `packages/renderer/src/services/distribution/DistributorService.ts`
 - **Summary:** Multiple distributor adapters report successful takedown requests without calling any distributor API or SFTP endpoint. Symphonic only logs `Issuing Takedown`; TuneCore, Believe, OneRPM, and UnitedMasters directly return `success: true` / `status: 'takedown_requested'`. The service facade also advertises `canTakedown: true` for every registered adapter, even when the adapter cannot actually perform a takedown.
 - **Expected (acceptance):** Takedown should return success only after a secured provider endpoint or SFTP takedown message confirms acceptance. Unsupported or not-yet-wired adapters should return explicit `manual_required` or `unsupported` states.
@@ -9747,7 +9753,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Status:** ✅ FIXED (2026-07-02)
 - **Severity:** 🔴 HIGH
 - **Module:** Firebase / distribution takedown records
-- **GitHub:** https://github.com/indii-music-founder/indii-music-founder/issues/219
+- **GitHub:** <https://github.com/indii-music-founder/indii-music-founder/issues/219>
 - **Location:** `packages/firebase/src/functions/distribution/distributionRecords.ts:281-329`, `packages/renderer/src/services/agent/tools/DistributionTools.ts:770-788`, `packages/firebase/src/index.ts:94-101`
 - **Summary:** The backend `requestDistributionTakedown` callable creates internal takedown request records and immediately mutates the release document to `status: "takedown_requested"`, before any distributor/provider notification has been sent. The renderer then attempts to call `processReleaseTakedown` to notify distributors, but that callable is not exported or implemented under `packages/firebase/src`.
 - **Expected (acceptance):** Internal request creation should use an honest request-only state such as `takedown_pending_notification` or `manual_required`. The release should not move to `takedown_requested` until a real provider endpoint, SFTP takedown message, or verified backend worker accepts the handoff.
@@ -9763,7 +9769,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Status:** ✅ FIXED (2026-07-02)
 - **Severity:** 🔴 HIGH
 - **Module:** Renderer / licensing sync harness
-- **GitHub:** https://github.com/indii-music-founder/indii-music-founder/issues/220
+- **GitHub:** <https://github.com/indii-music-founder/indii-music-founder/issues/220>
 - **Location:** `packages/renderer/src/services/licensing/LicensingSyncCompiler.ts:104-146`, `packages/renderer/src/services/licensing/SyncLicensingClearanceService.ts:165-193`, `packages/renderer/src/services/licensing/LicensingSyncCompiler.test.ts:47-65`
 - **Summary:** `LicensingSyncCompiler` defaults `rightsClearanceStatus` to `cleared` unless the caller explicitly passes `hasUnClearedSamples: true`. It does not consult clearance documents, `SyncLicensingClearanceService`, provider-backed license checks, or legal review before outputting `All rights cleared` and generating a pitch package. The current test suite codifies this by expecting `hasUnClearedSamples: false` to produce `cleared` and `pitchPackageGenerated: true`.
 - **Expected (acceptance):** Unknown clearance should be `pending`, not `cleared`. The compiler should only output `cleared` when approved clearance documents or provider/legal-review evidence exists.
@@ -9824,7 +9830,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🔴 HIGH
 - **Module:** Marketing / SMS and email campaign UI
-- **GitHub:** https://github.com/indii-music-founder/indii-music-founder/issues/221
+- **GitHub:** <https://github.com/indii-music-founder/indii-music-founder/issues/221>
 - **Location:** `packages/renderer/src/modules/marketing/components/SMSMarketingPanel.tsx:32-49`, `packages/renderer/src/modules/marketing/components/SMSMarketingPanel.tsx:156-190`, `packages/renderer/src/modules/marketing/components/EmailMarketingPanel.tsx:44-50`, `packages/renderer/src/modules/marketing/components/EmailMarketingPanel.tsx:161-199`
 - **Summary:** The SMS panel verifies a Twilio sender and marks blasts sent using only `setTimeout`; it then renders `SMS Blast Sent` and `Delivered ... via Twilio`. The email panel similarly uses `setTimeout` to mark campaigns sent/scheduled and renders `Email Sent Successfully` / `Delivered ... via Mailchimp/Klaviyo`. Neither panel calls the service layer or a backend provider before showing delivery.
 - **Expected (acceptance):** SMS and email actions should call real backend/service paths and show sent/scheduled/delivered only after provider confirmation.
@@ -9838,7 +9844,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Status:** ✅ FIXED (2026-07-02, Fable)
 - **Severity:** 🔴 HIGH
 - **Module:** Marketing / social auto-poster
-- **GitHub:** https://github.com/indii-music-founder/indii-music-founder/issues/222
+- **GitHub:** <https://github.com/indii-music-founder/indii-music-founder/issues/222>
 - **Location:** `packages/renderer/src/modules/marketing/components/MultiPlatformPoster.tsx:78-95`, `packages/renderer/src/modules/marketing/components/MultiPlatformPoster.tsx:102-111`, `packages/firebase/src/lib/marketing.ts:56-65`, `packages/firebase/src/lib/marketing.ts:143-173`
 - **Summary:** `MultiPlatformPoster` stores scheduled posts only in local React state, then `Post Now` calls `socialAutoPosterService.queuePost` with only `post.platforms[0]`. After that one call resolves, the UI toasts `Post dispatched to ${post.platforms.join(', ')}` and marks the whole post `posted`. The backend `dispatchSocialPost` also rejects YouTube-style platform names even though the UI offers YouTube Shorts.
 - **Expected (acceptance):** Each selected platform should be queued/delivered independently with per-platform status, and platform identifiers should align across UI, dispatch callable, and scheduled delivery worker.
@@ -9880,7 +9886,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Status:** ✅ FIXED (2026-07-02)
 - **Severity:** 🔴 HIGH
 - **Module:** Licensing / sync brief submissions
-- **GitHub:** https://github.com/indii-music-founder/indii-music-founder/issues/224
+- **GitHub:** <https://github.com/indii-music-founder/indii-music-founder/issues/224>
 - **Location:** `packages/renderer/src/modules/licensing/components/SyncBriefMatcher.tsx:91-109`, `packages/renderer/src/modules/licensing/components/SyncBriefMatcher.tsx:230-237`, `packages/renderer/src/modules/licensing/components/SyncBriefMatcher.tsx:325-358`, `packages/renderer/src/services/licensing/SyncPitchingService.ts:50-66`
 - **Summary:** The sync brief matcher says a track can be submitted to a brief with clearance docs, but the flow only uploads files and writes an internal `licensing_clearances` document. It does not call `SyncPitchingService.createPitch`, create a supervisor portal, notify a licensor, or perform an external submission. The modal then says `Submission received` and promises licensor review within 5 business days, while the row is marked `Submitted` via component-local state.
 - **Expected (acceptance):** A sync brief submission should create a real persisted pitch/supervisor handoff or be labeled as an internal clearance upload only.
@@ -9896,7 +9902,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Status:** ✅ FIXED (2026-07-02)
 - **Severity:** 🔴 HIGH
 - **Module:** Licensing / sync brief discovery
-- **GitHub:** https://github.com/indii-music-founder/indii-music-founder/issues/223
+- **GitHub:** <https://github.com/indii-music-founder/indii-music-founder/issues/223>
 - **Location:** `packages/renderer/src/services/licensing/LicensingService.ts:250-268`, `packages/renderer/src/services/licensing/LicensingService.ts:315-333`, `packages/renderer/src/modules/licensing/components/SyncBriefMatcher.tsx:367-385`
 - **Summary:** When a user's `syncBriefs` collection is empty, `LicensingService.getSyncBriefs()` calls `seedSyncBriefs()`, asks `AutonomousIntelligence` to generate realistic briefs with network names, project titles, budgets, moods, BPM ranges, and deadlines, then writes them to Firestore. `SyncBriefMatcher` displays those generated records as matchable sync opportunities with submit controls and no sample/demo labeling.
 - **Expected (acceptance):** Production sync briefs should come only from verified provider/admin/imported sources with provenance.
@@ -9995,6 +10001,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **DO NOT:** Offer type-invalid targets (e.g. "Send image as source-video"); lose lineage (`parentId`) across hops.
 
 ### ISSUE-CI-28563776696: CI Pipeline Failure (Deploy to Firebase Hosting)
+
 - **Status:** ✅ RESOLVED (2026-07-02, Fable) — superseded by subsequent fix commits; workflow fully green on run 28614340383 (2026-07-02 18:55 UTC, all jobs incl. deploy-production success)
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
@@ -10003,6 +10010,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
 
 ### ISSUE-CI-28562069528: CI Pipeline Failure (Deploy to Firebase Hosting)
+
 - **Status:** ✅ RESOLVED (2026-07-02, Fable) — superseded by subsequent fix commits; workflow fully green on run 28614340383 (2026-07-02 18:55 UTC, all jobs incl. deploy-production success)
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
@@ -10011,6 +10019,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
 
 ### ISSUE-CI-28558762727: CI Pipeline Failure (Deploy to Firebase Hosting)
+
 - **Status:** ✅ RESOLVED (2026-07-02, Fable) — superseded by subsequent fix commits; workflow fully green on run 28614340383 (2026-07-02 18:55 UTC, all jobs incl. deploy-production success)
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
@@ -10019,14 +10028,16 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
 
 ### ISSUE-601: VisualOutputAutorater Infinite Generation Loop
+
 - **Status:** ✅ FIXED (2026-07-02, hunter session — verified by Fable)
 - **Fix evidence:** `AgentService.sendMessage` accepts `originalBrief` via options (`AgentService.ts:116,153`); the corrective retry passes the TRUE brief through (`AgentService.ts:1711`), so `getVisualAutoraterRetryKey` hashes stay stable and `MAX_CORRECTION_ATTEMPTS` caps retries. ERROR_LEDGER 2026-07-02 "Autorater Prompt Mutation Loop"; commit 808290959. Regression suite `VisualOutputAutorater.test.ts` present.
 - **Severity:** 🔴 HIGH
 - **Module:** AgentService / VisualOutputAutorater
-- **Summary:** When image generation times out but eventually completes in the background, `triggerVisualAutorater` evaluates the image. If it fails, it sends a corrective prompt. However, the `originalBrief` passed to the next retry is the *entire corrective message*, causing the `originalImageId` hash to change. This completely bypasses the `MAX_CORRECTION_ATTEMPTS` cap and causes a runaway loop of infinite image generations.
+- **Summary:** When image generation times out but eventually completes in the background, `triggerVisualAutorater` evaluates the image. If it fails, it sends a corrective prompt. However, the `originalBrief` passed to the next retry is the _entire corrective message_, causing the `originalImageId` hash to change. This completely bypasses the `MAX_CORRECTION_ATTEMPTS` cap and causes a runaway loop of infinite image generations.
 - **Fix Direction:** Extract or pass the true `originalBrief` through the corrective `sendMessage` options so the autorater correctly increments the attempt counter for the original generation request.
 
 ### ISSUE-602: Boardroom Messages Not Persisting Across Reloads
+
 - **Status:** ✅ FIXED (2026-07-02, hunter session — verified by Fable)
 - **Fix evidence:** `useWorkspaceSync` echo-guard now bypasses when local state is empty after reload and auto-rehydrates from the device snapshot (`useWorkspaceSync.ts:78`). ERROR_LEDGER 2026-07-02 "Local Zustand State Lost on Reload"; commit 808290959.
 - **Severity:** 🔴 HIGH
@@ -10035,14 +10046,16 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Fix Direction:** Ensure boardroom messages are persisted to the active session in Firestore just like direct agent messages, or synced appropriately so a reload doesn't wipe them.
 
 ### ISSUE-603: Image Generation Unprompted Subject Inclusion
+
 - **Status:** ✅ FIXED (2026-07-02, hunter session — verified by Fable)
 - **Fix evidence:** `ImageGenerationInstrument` description + prompt schema now carry a CRITICAL no-unsolicited-humans rule, and `personGeneration` defaults to `ALLOW_NONE` (`ImageGenerationInstrument.ts:28,73,115-118`). ERROR_LEDGER 2026-07-02 "Image Generation Subject Hallucination"; commit 808290959.
 - **Severity:** 🟡 MEDIUM
 - **Module:** Creative Studio / Image Generation
-- **Summary:** When users prompt for images (e.g. "a literal cassette tape cover"), the system defaults to generating images containing people/faces that are not the user, despite no pictures being shared or explicitly requested. 
+- **Summary:** When users prompt for images (e.g. "a literal cassette tape cover"), the system defaults to generating images containing people/faces that are not the user, despite no pictures being shared or explicitly requested.
 - **Fix Direction:** Update the `ImageGenerationInstrument` system prompt or default negative prompts to strongly discourage including unauthorized human subjects or defaulting to portraits unless explicitly requested by the user.
 
 ### ISSUE-CI-28614066462: CI Pipeline Failure (Deploy to Firebase Hosting)
+
 - **Status:** ✅ RESOLVED (2026-07-02, Fable) — superseded by subsequent fix commits; workflow fully green on run 28614340383 (2026-07-02 18:55 UTC, all jobs incl. deploy-production success)
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
@@ -10051,6 +10064,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
 
 ### ISSUE-CI-28613815914: CI Pipeline Failure (Deploy to Firebase Hosting)
+
 - **Status:** ✅ RESOLVED (2026-07-02, Fable) — superseded by subsequent fix commits; workflow fully green on run 28614340383 (2026-07-02 18:55 UTC, all jobs incl. deploy-production success)
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
@@ -10059,6 +10073,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
 
 ### ISSUE-CI-28613530177: CI Pipeline Failure (Deploy to Firebase Hosting)
+
 - **Status:** ✅ RESOLVED (2026-07-02, Fable) — superseded by subsequent fix commits; workflow fully green on run 28614340383 (2026-07-02 18:55 UTC, all jobs incl. deploy-production success)
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
@@ -10067,6 +10082,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
 
 ### ISSUE-CI-28612706695: CI Pipeline Failure (Deploy to Firebase Hosting)
+
 - **Status:** ✅ RESOLVED (2026-07-02, Fable) — superseded by subsequent fix commits; workflow fully green on run 28614340383 (2026-07-02 18:55 UTC, all jobs incl. deploy-production success)
 - **Severity:** 🔴 HIGH
 - **Module:** CI/CD
@@ -10075,6 +10091,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
 
 ### ISSUE-604: Creative Studio REFINE flow surfaces raw internal errors and leaves the edit intent unrecovered
+
 - **Status:** ✅ FIXED (Codex, 2026-07-03)
 - **Severity:** 🟠 HIGH
 - **Module:** Creative Studio / Magic Edit
@@ -10092,6 +10109,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Files:** `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts:470-665`; `packages/renderer/src/services/image/EditingService.ts:50-121`; `packages/firebase/src/lib/image_generation.ts:850-890`
 
 ### ISSUE-605: Creative Studio lacks a real user-facing add-layer action for blank/sketch layers
+
 - **Status:** ✅ FIXED (Codex, 2026-07-03)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Creative Studio / Layers
@@ -10109,6 +10127,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Files:** `packages/renderer/src/modules/creative/components/LayersPanel.tsx:54-160`; `packages/renderer/src/modules/creative/components/CanvasToolbar.tsx:41-112`; `packages/renderer/src/modules/creative/components/InfiniteCanvas.tsx:804-811`
 
 ### ISSUE-606: Creative Studio edit candidates still use the old single-click carousel instead of the review/apply panel
+
 - **Status:** ✅ FIXED (Codex, 2026-07-03)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Creative Studio / Magic Edit candidate review
@@ -10125,6 +10144,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Files:** `packages/renderer/src/modules/creative/components/CanvasViewport.tsx:4,79-83`; `packages/renderer/src/modules/creative/components/CandidatesCarousel.tsx:16-49`; `packages/renderer/src/modules/creative/components/CandidateReview.tsx:23-26`
 
 ### ISSUE-607: Magic Edit outputs are transient and do not immediately appear in Project Assets or history
+
 - **Status:** ✅ FIXED (2026-07-03, re-verified)
 - **Severity:** 🟠 HIGH
 - **Module:** Creative Studio / Magic Edit output persistence
@@ -10139,6 +10159,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Files:** `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts:563-627,687-694,745-777`
 
 ### ISSUE-608: Magic Edit reference images are captured but ignored by direct edit branches
+
 - **Status:** ✅ FIXED (Codex, 2026-07-03)
 - **Severity:** 🟠 HIGH
 - **Module:** Creative Studio / Magic Edit references
@@ -10157,6 +10178,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Files:** `packages/renderer/src/modules/creative/hooks/useCreativeCanvas.ts:486-524,549-561,579-588`; `packages/renderer/src/services/image/EditingService.ts:50-121`
 
 ### ISSUE-609: Creative Editor header route metadata crowds and clips the REFINE controls
+
 - **Status:** ✅ FIXED (Codex, 2026-07-03)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Creative Studio / Magic Edit header layout
@@ -10220,7 +10242,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
   2. **Function-level IAM binding** missing or configured to block `allUsers`, service accounts, or the calling identity.
   3. **App Check enforcement** (`enforceAppCheck: true`) without valid tokens from client.
   4. **Runtime service account** has insufficient permissions (unlikely — these are user-initiated callables).
-- **Expected (acceptance):** All renderer-called functions should either succeed or fail with a *specific* error (401 for auth, 429 for quota, 400 for invalid input). A blanket 403 for all 11 indicates a misconfiguration at the project or policy level, not individual bugs.
+- **Expected (acceptance):** All renderer-called functions should either succeed or fail with a _specific_ error (401 for auth, 429 for quota, 400 for invalid input). A blanket 403 for all 11 indicates a misconfiguration at the project or policy level, not individual bugs.
 - **Fix direction:**
   1. Audit GCP IAM policies: `gcloud projects get-iam-policy indii-music-founder --flatten="bindings[].members" --format="table(bindings.role,bindings.members)" | grep -E "cloudfunctions.invoker|roles/cloudfunctions"` to see who can invoke.
   2. Check if a condition-based policy is filtering by auth method, domain, or environment.
@@ -10230,9 +10252,9 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **DO NOT:** Treat 403 as transient or retry-able; it indicates a permission/policy issue that retry loops will not fix.
 - **Blocked functions (probe = HTTP 403, 2026-07-03):** `agentLoopCron`, `analyticsExchangeToken`, `analyticsRefreshToken`, `analyticsRevokeToken`, `analyzeAudio`, `calculateFuelLogistics`, `checkLogistics`, `createInfluencerBounty`, `deliverScheduledPosts`, `dispatchSocialPost`, `editImage`, `emailExchangeToken`, `emailRefreshToken`, `emailRevokeToken`, `enrichFanData`, `executeBigQueryQuery`, `executeCampaign`, `exportUserData`, `findPlaces`, `generateItinerary`, `generateReleaseDownloadUrl`, `generateSpeech`, `generateTelegramLinkCode`, `getBigQueryTableSchema`, `getGKEClusterStatus`, `getTelegramLinkStatus`, `healthCheck`, `healthCheckWest1`, `initiateSplitEscrow`, `inngestApi`, `listBigQueryDatasets`, `listGCEInstances`, `listGKEClusters`, `mcpEndpoint`, `pandadocCreateDocument`, `pandadocGetDocumentStatus`, `pandadocGetSigningLink`, `pandadocListTemplates`, `pandadocSendDocument`, `pandadocWebhook`, `pollDeliveryStatus`, `pollTimelineMilestones`, `pulseTick`, `renderVideo`, `reportBugFn`, `requestAccountDeletion`, `requestTaxForms`, `restartGCEInstance`, `scaleGKENodePool`, `sendForDigitalSignature`, `signEscrow`, `telegramWebhook`, `triggerLongFormVideoJob`, `triggerVideoJob`, `verifyMechanicalLicense`, `videoJobFirestoreOrchestrator`.
 - **⚠️ SCOPING CORRECTION (2026-07-03, Fable verification pass — supersedes "root cause candidates" above):** Root cause confirmed as missing `allUsers` invoker bindings from a historical org-policy lockout window (see ISSUE-672 for full evidence chain). Corrections and scoping for the fix agent:
-  1. **NOT everything in the 403 list should be granted `allUsers`.** Cron/scheduler functions (`agentLoopCron`, `pulseTick`, `pollTimelineMilestones`, `pollDeliveryStatus`, `deliverScheduledPosts`) and internal orchestrators (`videoJobFirestoreOrchestrator`, `inngestApi`, `mcpEndpoint`) may be *intentionally* private — Cloud Scheduler/Tasks invoke them with OIDC service-account identity. Blanket-granting those would be a security regression. Grant ONLY: (a) the renderer-called callables, (b) inbound webhooks (`pandadocWebhook`, `telegramWebhook` — external services are currently getting 403, so those integrations silently drop events), (c) `healthCheck`/`healthCheckWest1` (monitoring is currently blind).
+  1. **NOT everything in the 403 list should be granted `allUsers`.** Cron/scheduler functions (`agentLoopCron`, `pulseTick`, `pollTimelineMilestones`, `pollDeliveryStatus`, `deliverScheduledPosts`) and internal orchestrators (`videoJobFirestoreOrchestrator`, `inngestApi`, `mcpEndpoint`) may be _intentionally_ private — Cloud Scheduler/Tasks invoke them with OIDC service-account identity. Blanket-granting those would be a security regression. Grant ONLY: (a) the renderer-called callables, (b) inbound webhooks (`pandadocWebhook`, `telegramWebhook` — external services are currently getting 403, so those integrations silently drop events), (c) `healthCheck`/`healthCheckWest1` (monitoring is currently blind).
   2. **Renderer-called + 403-blocked (grant these):** `analyticsExchangeToken`, `analyticsRefreshToken`, `analyticsRevokeToken`, `analyzeAudio`, `checkLogistics`, `createInfluencerBounty`, `dispatchSocialPost`, `editImage`, `emailExchangeToken`, `emailRefreshToken`, `enrichFanData`, `executeBigQueryQuery`, `executeCampaign`, `findPlaces`, `generateItinerary`, `generateReleaseDownloadUrl`, `generateSpeech`, `getBigQueryTableSchema`, `getGKEClusterStatus`, `initiateSplitEscrow`, `listBigQueryDatasets`, `listGCEInstances`, `listGKEClusters`, `pandadocCreateDocument`, `pandadocGetDocumentStatus`, `pandadocGetSigningLink`, `pandadocListTemplates`, `pandadocSendDocument`, `renderVideo`, `requestAccountDeletion`, `requestTaxForms`, `restartGCEInstance`, `scaleGKENodePool`, `sendForDigitalSignature`, `signEscrow`, `triggerLongFormVideoJob`, `triggerVideoJob`, `verifyMechanicalLicense`, `exportUserData`, `reportBugFn` (derived from multiline-aware `httpsCallable` grep of `packages/renderer/src`; re-derive with `rg -oU "httpsCallable[^)]*?['\"]([a-zA-Z0-9_]+)['\"]" -r '$1' packages/renderer/src | sort -u`).
-  3. **False alarms corrected:** `enforceOperationCost`, `generateImageV3`, `generateOmniRemixV3` probe **401 = healthy/reachable** (2026-07-03 re-probe). Their `gcloud functions get-iam-policy` output is empty because they are **Gen2** — Gen2 invoker lives on the underlying Cloud Run service (`gcloud run services get-iam-policy <lowercase-name>`), so an empty *function-level* policy is normal. **The HTTP probe is ground truth, not `get-iam-policy`.**
+  3. **False alarms corrected:** `enforceOperationCost`, `generateImageV3`, `generateOmniRemixV3` probe **401 = healthy/reachable** (2026-07-03 re-probe). Their `gcloud functions get-iam-policy` output is empty because they are **Gen2** — Gen2 invoker lives on the underlying Cloud Run service (`gcloud run services get-iam-policy <lowercase-name>`), so an empty _function-level_ policy is normal. **The HTTP probe is ground truth, not `get-iam-policy`.**
   4. **Grant command (Gen1 + Gen2 compatible):** `gcloud functions add-invoker-policy-binding <name> --region=us-central1 --project=indii-music-founder --member="allUsers"`. **Acceptance:** every granted function's unauthenticated probe flips 403 → 401/400; then a live REFINE in the desktop app reaches the backend (execution log appears in `gcloud logging read 'resource.labels.function_name="editImage"'`).
   5. **Prevention:** add a post-deploy CI step that probes every renderer-called callable and fails on 403 — this failure mode is silent at deploy time (firebase-tools warns-and-continues) and invisible in Sentry (requests never execute server code).
 - **Fix:** Granted `roles/cloudfunctions.invoker` to `allUsers` on the 11 renderer-called functions from the audit set so the Cloud Functions IAM layer no longer blocks them before code execution.
@@ -10347,11 +10369,11 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Status:** ✅ FIXED (Codex, 2026-07-03)
 - **Severity:** 🟠 HIGH (diagnostic honesty)
 - **Module:** Creative Studio / EditingService error mapping
-- **Summary:** The ISSUE-604 fix added `normalizeEditFailure()` (`packages/renderer/src/services/image/EditingService.ts:16-40`). For the current real-world failure (IAM 403 → callable `code:'functions/internal'`, `message:'internal'`), it returns *"Creative edit failed inside the image service... try again with a simpler mask or switch model tier."* Both claims are false: the image service never executed (request blocked at Google Front End), and no mask/tier change can succeed. The user retried repeatedly on this advice ("this time it just said something about high speed... doesn't look like it did anything").
+- **Summary:** The ISSUE-604 fix added `normalizeEditFailure()` (`packages/renderer/src/services/image/EditingService.ts:16-40`). For the current real-world failure (IAM 403 → callable `code:'functions/internal'`, `message:'internal'`), it returns _"Creative edit failed inside the image service... try again with a simpler mask or switch model tier."_ Both claims are false: the image service never executed (request blocked at Google Front End), and no mask/tier change can succeed. The user retried repeatedly on this advice ("this time it just said something about high speed... doesn't look like it did anything").
 - **Fix:** Added a backend-access branch and replaced the internal fallback with neutral copy that says the backend returned an internal error without claiming the image service itself failed.
 - **Evidence:** `packages/renderer/src/services/image/EditingService.ts:32-39` now maps `permission-denied`/`forbidden` and uses neutral internal wording.
 - **Evidence:** `packages/renderer/src/services/image/EditingService.test.ts:259-269` covers both the internal fallback and the backend access denial path.
-- **Fix direction:** (1) Add branches for `permission-denied` → "The edit service rejected this app's access (infrastructure/permissions) — this is not fixable by retrying. Report to support/ops." and `not-found`/`unavailable` → service-unreachable wording. (2) For the `internal` bucket, say honestly that the request failed *before or inside* the service and include the raw code in a collapsed/secondary line for diagnostics. (3) Keep the "annotations preserved" reassurance — that part is good. (4) Log the raw error object (code+message+details) at `logger.error` so desktop logs (`~/Library/Logs/indii.music/`) capture ground truth.
+- **Fix direction:** (1) Add branches for `permission-denied` → "The edit service rejected this app's access (infrastructure/permissions) — this is not fixable by retrying. Report to support/ops." and `not-found`/`unavailable` → service-unreachable wording. (2) For the `internal` bucket, say honestly that the request failed _before or inside_ the service and include the raw code in a collapsed/secondary line for diagnostics. (3) Keep the "annotations preserved" reassurance — that part is good. (4) Log the raw error object (code+message+details) at `logger.error` so desktop logs (`~/Library/Logs/indii.music/`) capture ground truth.
 - **DO NOT:** Ship error copy that asserts a cause ("failed inside the image service") that the client cannot distinguish — fabricated diagnosis is the same anti-pattern as fabricated success (see ERROR_LEDGER "fabricated-provider-fallback").
 - **Files:** `packages/renderer/src/services/image/EditingService.ts:16-40`
 
@@ -10568,6 +10590,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 > multi-tab system.
 >
 > **BUILD ORDER FOR FIX AGENTS (mandatory — do not pick these up out of sequence):**
+>
 > 1. **ISSUE-700** (stable stop ids) and **ISSUE-697** (real TourMap) — parallel-safe, no dependencies; everything else layers on these two.
 > 2. **ISSUE-701** (error handling + TBD placeholder) — parallel-safe anytime, small.
 > 3. **ISSUE-699** (optimizer → itinerary merge) — requires 697 (map render) + 700 (stop ids).
@@ -10909,7 +10932,7 @@ PASS 7 (departments, continuing 2026-07-03): ISSUE-712..715
 - **Architectural root cause (worse than it first looked):** `packages/firebase/src/stripe/splitEscrow.ts` already implements a REAL, Firestore-backed escrow system — `initiateSplitEscrow` (creates a `PENDING_SIGNATURES` record) and `signEscrow` (records each collaborator's signature in Firestore). But this backend file has **no release/payout function** — the money-movement step was never built there. Meanwhile the frontend `SplitSheetEscrow.tsx` never calls `initiateSplitEscrow` or `signEscrow` at all (confirmed via grep — zero references) — it has its own entirely local, ephemeral signature/collaborator state and calls raw `createTransfer` directly for payout. **These are two disconnected halves of the same feature**: the backend half tracks real signatures durably but can't pay anyone; the frontend half can pay people but has no durable signature record, no persisted release state, and no idempotency. Neither half is a complete, safe implementation on its own.
 - **Fix Direction:** This needs a real design decision, not just a patch: (1) Add a `releaseEscrow` function to `splitEscrow.ts` that reads the durable `PENDING_SIGNATURES`/signed record from Firestore, verifies all required signatures are present server-side (not trusting client-computed `allSigned`), transitions the record to a `RELEASED` state with a server-side idempotency guard (e.g. a Firestore transaction that only proceeds if status is not already `RELEASED`), and only then calls Stripe transfers per collaborator with a deterministic idempotency key. (2) Rewire the frontend `SplitSheetEscrow.tsx` to actually call `initiateSplitEscrow`/`signEscrow` for signature collection instead of local-only state, and call the new `releaseEscrow` for payout instead of raw `createTransfer`. (3) Until this is rebuilt, treat the current frontend release button as unsafe for real money — consider gating it behind a feature flag or manual-review step.
 - **Files:** `packages/renderer/src/modules/finance/components/SplitSheetEscrow.tsx` (frontend, disconnected); `packages/firebase/src/stripe/splitEscrow.ts` (backend, incomplete — no release function); `packages/firebase/src/stripe/connect.ts` (createTransfer implementation, called directly by frontend bypassing the escrow record entirely).
-- **UPDATE (2026-07-03, second-pass authorization audit):** `createTransfer` (`packages/firebase/src/stripe/connect.ts:130`) requires `context.auth.token['admin']` — a genuine admin custom claim, not just "verified user." This means the entire "Release Funds" self-service flow in `SplitSheetEscrow.tsx` is **completely non-functional for its intended audience** — any real artist/collaborator (never an admin) clicking "Release Funds" gets a hard `permission-denied` from Stripe's own transfer call, surfaced only as the generic `"Transfer failed. Please try again."` message, which masks a permanent, non-retriable authorization failure with no indication of the real cause. This actually *lowers* the immediate double-payment risk (a non-admin literally cannot trigger a transfer at all right now) but means the feature is broken end-to-end for real users, not just risky. The fix in `releaseEscrow` (above) MUST also resolve this authorization mismatch — either the new function should run with appropriate elevated privileges server-side (the standard Cloud Functions pattern: the callable itself acts on the user's behalf after validating real signatures, without requiring the calling user to hold an admin claim) or a real admin-approval step needs to be added to the UI flow if manual admin sign-off was actually the intended design.
+- **UPDATE (2026-07-03, second-pass authorization audit):** `createTransfer` (`packages/firebase/src/stripe/connect.ts:130`) requires `context.auth.token['admin']` — a genuine admin custom claim, not just "verified user." This means the entire "Release Funds" self-service flow in `SplitSheetEscrow.tsx` is **completely non-functional for its intended audience** — any real artist/collaborator (never an admin) clicking "Release Funds" gets a hard `permission-denied` from Stripe's own transfer call, surfaced only as the generic `"Transfer failed. Please try again."` message, which masks a permanent, non-retriable authorization failure with no indication of the real cause. This actually _lowers_ the immediate double-payment risk (a non-admin literally cannot trigger a transfer at all right now) but means the feature is broken end-to-end for real users, not just risky. The fix in `releaseEscrow` (above) MUST also resolve this authorization mismatch — either the new function should run with appropriate elevated privileges server-side (the standard Cloud Functions pattern: the callable itself acts on the user's behalf after validating real signatures, without requiring the calling user to hold an admin claim) or a real admin-approval step needs to be added to the UI flow if manual admin sign-off was actually the intended design.
 
 ### ISSUE-721: TaxFormCollection shows a false "Collected" status for W-9/W-8BEN uploads — the file is never actually stored anywhere
 
@@ -11049,6 +11072,7 @@ Modules covered at genuine functional depth (not pattern-grep): Legal, Booking A
 Modules audited at genuine functional depth: Legal, Booking Agent, Finance, Publishing, Licensing, Workflow Builder, Marketing, Social, Distribution.
 
 **Total findings:** 11 issues (718-725, plus companion findings folded into 720/721/723).
+
 - 🔴 **CRITICAL:** 1 (ISSUE-720, SplitSheetEscrow double-payment risk)
 - 🟠 **HIGH:** 3 (ISSUE-721 TaxForm false compliance signal, ISSUE-722 Workflow infinite-loop cost risk, ISSUE-723 fake ad campaign launch)
 - 🟢 **LOW:** 4 (ISSUE-718/719/724 dead code, ISSUE-725 weak ID generation)
@@ -11074,6 +11098,7 @@ Modules audited at genuine functional depth: Legal, Booking Agent, Finance, Publ
 **Issues logged:** 725 total in the ledger (ISSUE-672 through ISSUE-725 across this multi-session effort).
 
 **This session's real, actionable findings (718-725):**
+
 - 1 CRITICAL: ISSUE-720 (SplitSheetEscrow double-payment risk)
 - 3 HIGH: ISSUE-721 (TaxForm false compliance signal), ISSUE-722 (Workflow infinite-loop cost risk), ISSUE-723 (fake ad campaign launch)
 - 4 LOW: ISSUE-718/719/724 (dead code), ISSUE-725 (weak release ID generation)
@@ -11139,6 +11164,7 @@ A third distinct navigation menu on the same bottom-up ethos: `packages/renderer
 ## THREE-MENU AUDIT COMPLETE (2026-07-03)
 
 All three distinct navigation systems in this codebase have now had a full bottom-up sweep this session:
+
 1. **Main studio app sidebar** (Passes 1-19): 19 passes, 8 real findings (718-725), 1 critical.
 2. **Admin Dashboard app** (Passes 20-24): 5 passes, 1 real finding (726).
 3. **Mobile Remote tab bar** (Pass 25): 1 pass, 0 new findings (confirms existing ISSUE-698).
@@ -11290,6 +11316,7 @@ Settings' Desktop/Security sections were deeply covered in Pass 6 (ISSUE-706/707
 ## MENU AUDIT — FULL SESSION SUMMARY (2026-07-03)
 
 Nine distinct menu-shaped surfaces fully swept this session under the "test all menus" goal:
+
 1. Main studio app sidebar (19 passes)
 2. Admin Dashboard app (5 passes)
 3. Mobile Remote tab bar (1 pass)
@@ -11358,7 +11385,7 @@ Focused follow-up to ISSUE-733: press the authorization lens across every backen
 - **Severity:** 🟡 MEDIUM (currently low-impact stubs that log-and-return, but they are the designed ingestion points for untrusted external input into the agent + CI-remediation systems; fixing before the processing logic lands is far cheaper than after)
 - **Module:** Admin Dashboard / server.ts
 - **Depends on:** nothing — parallel-safe
-- **Summary:** `packages/admin-dashboard/server.ts` mounts `/api/webhooks/agent-email` (line 224) and `/api/webhooks/ci-alerts` (line 237) as POST routes with NO `requireAdminAuth`, NO signature verification, and NO shared-secret check — they accept arbitrary bodies from any caller. Today both mostly `console.log` the payload and return 200 (the real processing is stubbed: "Here we would route the email payload to the appropriate LangChain/Genkit agent" / "Integrate with GitHub Issues or Linear here"). But the *designed* purpose is dangerous: `agent-email` is meant to receive inbound email and route it into the agent system — once wired, an unauthenticated attacker can inject arbitrary email payloads (attacker-controlled `from`, body) straight into an autonomous agent = a prompt-injection + spoofed-sender surface. `ci-alerts` is meant to trigger auto-remediation ("generate ticket", "page developer") — once wired, an attacker can spam tickets/pages or trigger remediation actions. These are unauthenticated ingestion points that should verify a signature/secret NOW, before they grow teeth.
+- **Summary:** `packages/admin-dashboard/server.ts` mounts `/api/webhooks/agent-email` (line 224) and `/api/webhooks/ci-alerts` (line 237) as POST routes with NO `requireAdminAuth`, NO signature verification, and NO shared-secret check — they accept arbitrary bodies from any caller. Today both mostly `console.log` the payload and return 200 (the real processing is stubbed: "Here we would route the email payload to the appropriate LangChain/Genkit agent" / "Integrate with GitHub Issues or Linear here"). But the _designed_ purpose is dangerous: `agent-email` is meant to receive inbound email and route it into the agent system — once wired, an unauthenticated attacker can inject arbitrary email payloads (attacker-controlled `from`, body) straight into an autonomous agent = a prompt-injection + spoofed-sender surface. `ci-alerts` is meant to trigger auto-remediation ("generate ticket", "page developer") — once wired, an attacker can spam tickets/pages or trigger remediation actions. These are unauthenticated ingestion points that should verify a signature/secret NOW, before they grow teeth.
 - **Fix Direction:** Add HMAC signature verification (or at minimum a shared-secret header check) to both webhooks, matching the pattern the main Firebase backend already uses for `pandadocWebhook`/`stripe` webhooks. For `agent-email`, verify the sending mail provider's webhook signature; for `ci-alerts`, verify the GitHub/Blacksmith webhook secret. Reject unverified requests with 401 before any processing.
 - **Files:** `packages/admin-dashboard/server.ts:224-253`
 
@@ -11368,7 +11395,7 @@ Focused follow-up to ISSUE-733: press the authorization lens across every backen
 - **Severity:** 🟡 MEDIUM (real OAuth-CSRF gap on a high-scope flow, but on the internal admin dashboard — smaller/trusted attack surface than a public app; still a standard OAuth requirement that's missing)
 - **Module:** Admin Dashboard / server.ts (Google Workspace OAuth)
 - **Depends on:** nothing — parallel-safe
-- **Summary:** The consent-URL generator (`/api/google/oauth/url`, line 288) calls `oauth2Client.generateAuthUrl({ access_type, scope, prompt })` with **no `state`** parameter, and the callback (`/api/google/oauth/callback`, line 303) exchanges `code` for tokens and writes them to a single shared `admin_secrets/google_workspace` Firestore doc with **no `state` verification**. The requested scopes are heavy: `gmail.modify` (read/send/delete mail), `calendar` (full), `drive.file`. Missing `state` = no CSRF protection on the OAuth flow: an attacker can complete the consent against an account they control and drive the callback to bind THEIR tokens into the shared admin doc, after which every admin-dashboard Gmail/Calendar/Drive operation runs against the attacker-bound account (exfiltration of admin actions, injection of attacker data), or conversely force-bind an admin's session. The callback also can't use `requireAdminAuth` (Google redirects to it), which makes the missing `state` the *only* possible integrity check — and it's absent.
+- **Summary:** The consent-URL generator (`/api/google/oauth/url`, line 288) calls `oauth2Client.generateAuthUrl({ access_type, scope, prompt })` with **no `state`** parameter, and the callback (`/api/google/oauth/callback`, line 303) exchanges `code` for tokens and writes them to a single shared `admin_secrets/google_workspace` Firestore doc with **no `state` verification**. The requested scopes are heavy: `gmail.modify` (read/send/delete mail), `calendar` (full), `drive.file`. Missing `state` = no CSRF protection on the OAuth flow: an attacker can complete the consent against an account they control and drive the callback to bind THEIR tokens into the shared admin doc, after which every admin-dashboard Gmail/Calendar/Drive operation runs against the attacker-bound account (exfiltration of admin actions, injection of attacker data), or conversely force-bind an admin's session. The callback also can't use `requireAdminAuth` (Google redirects to it), which makes the missing `state` the _only_ possible integrity check — and it's absent.
 - **Fix Direction:** Generate a cryptographically-random `state` in `/api/google/oauth/url`, store it server-side (session or a short-lived Firestore doc keyed to the initiating admin), pass it via `generateAuthUrl({ state })`, and in the callback verify `req.query.state` matches the stored value (and is unexpired) before exchanging the code. Bind the resulting tokens to the initiating admin's identity, not just a global doc, if multi-admin isolation is wanted.
 - **Files:** `packages/admin-dashboard/server.ts:288-300` (consent URL), `packages/admin-dashboard/server.ts:303-319` (callback)
 
@@ -11383,12 +11410,14 @@ Of 19 routes: 13 correctly gated by `requireAdminAuth` (all `/api/usage`, `/api/
 ### Privilege-escalation operations — clean bill (verified)
 
 The two most sensitive functions in the backend are both correctly gated against self-escalation:
+
 - **`setGodMode` (`functions/admin/setGodMode.ts`):** `enforceAppCheck: true` + requires authentication + requires the caller's OWN `request.auth.token.admin === true` before granting `god_mode` to anyone (throws `permission-denied` otherwise) + audit-logs the grant. No path to self-escalate.
 - **`activateFounderPass` (`subscription/activateFounderPass.ts:211`):** requires `request.auth.token.admin === true` — this is the manual "admin activates after alternative (Cash App/Wire) payment" path, correctly admin-only. A regular user cannot self-grant founder status through it.
 
 ### AUTHORIZATION-LENS BACKEND SWEEP — FINAL SUMMARY (2026-07-06)
 
 Comprehensive coverage of every backend authorization surface:
+
 | Surface | Result |
 | --- | --- |
 | HTTP `onRequest` endpoints (13) | Clean except telegram fail-open (ISSUE-734) |
@@ -11401,7 +11430,7 @@ Comprehensive coverage of every backend authorization surface:
 
 **Findings from this lens: 5 total** — ISSUE-733 (CRITICAL, printful zero-auth), ISSUE-734 (MED, telegram fail-open), ISSUE-735 (MED, admin webhooks unauthenticated), ISSUE-736 (MED, admin OAuth no-state CSRF), plus the earlier ISSUE-720 escalation (createTransfer admin-claim mismatch making SplitSheetEscrow non-functional).
 
-**Structural conclusion:** the codebase's *declarative* security (Firestore rules, Storage rules) is uniformly excellent — comprehensive, default-deny, real ownership enforcement. Every authorization defect found lives in *imperative* code (a Cloud Function or Express route where a developer omitted an auth/signature/state check). The single systemic recommendation: every new HTTP endpoint or callable needs an explicit auth+ownership check at the top of the handler, using `distributionRecords.ts`'s `requireAuth` + `findWritableReleaseRef` as the reference pattern; the rules layer cannot protect imperative endpoints that talk to external APIs (Printful, Google, Telegram) or bypass Firestore.
+**Structural conclusion:** the codebase's _declarative_ security (Firestore rules, Storage rules) is uniformly excellent — comprehensive, default-deny, real ownership enforcement. Every authorization defect found lives in _imperative_ code (a Cloud Function or Express route where a developer omitted an auth/signature/state check). The single systemic recommendation: every new HTTP endpoint or callable needs an explicit auth+ownership check at the top of the handler, using `distributionRecords.ts`'s `requireAuth` + `findWritableReleaseRef` as the reference pattern; the rules layer cannot protect imperative endpoints that talk to external APIs (Printful, Google, Telegram) or bypass Firestore.
 
 ## MENU WALK — all four lenses per menu (2026-07-06)
 
@@ -11421,9 +11450,9 @@ Rotating back to walking individual menus with the four lenses (double-click rac
 ### Menu-walk clean bills — four lenses (verified)
 
 - **Creative hero bar (Image/Video/Mockup/Sequence) — all four lenses PASS:**
-  - *Double-click:* every expensive AI-generation trigger is guarded against re-fire — `DirectGenerationTab` (`disabled={isGenerating || !localPrompt.trim()}`), `VideoWorkflow` (`disabled={jobStatus==='queued'||'processing'||!prompt}`), `ShowroomUI` (`disabled={...||isGeneratingMockup||isGeneratingVideo}`, cross-guards both types), `AutonomousLab` (`disabled={status==='running'||!seedImage}`), `OmniWorkflow` (`disabled={!omniReferenceVideo||isRemixing}`). No double-spend path.
-  - *Error-honesty:* `OmniWorkflow.handleStartRemix` is exemplary — precondition toasts, differentiated failure messages (`API UNAVAILABLE` vs `Omni remix failed`), and a `finally { setIsRemixing(false) }` that re-enables the control after failure (no stuck state).
-  - *Authorization:* backend-enforced (see backend sweep); frontend uses the user's own authed session.
+  - _Double-click:_ every expensive AI-generation trigger is guarded against re-fire — `DirectGenerationTab` (`disabled={isGenerating || !localPrompt.trim()}`), `VideoWorkflow` (`disabled={jobStatus==='queued'||'processing'||!prompt}`), `ShowroomUI` (`disabled={...||isGeneratingMockup||isGeneratingVideo}`, cross-guards both types), `AutonomousLab` (`disabled={status==='running'||!seedImage}`), `OmniWorkflow` (`disabled={!omniReferenceVideo||isRemixing}`). No double-spend path.
+  - _Error-honesty:_ `OmniWorkflow.handleStartRemix` is exemplary — precondition toasts, differentiated failure messages (`API UNAVAILABLE` vs `Omni remix failed`), and a `finally { setIsRemixing(false) }` that re-enables the control after failure (no stuck state).
+  - _Authorization:_ backend-enforced (see backend sweep); frontend uses the user's own authed session.
 - **Social post creation (`CreatePostModal`):** double-click-safe — `handleSave` validates then calls `onClose()` synchronously on first click, unmounting the modal before a second click is possible.
 - **Merch designer save (`MerchDesigner`):** `disabled={isSaving}` guard present.
 - **Money actions (recap from round 2):** `MicroLicensingPortal`/`SubmitReleaseModal`/`SplitSheetEscrow` all have in-session double-submit guards; ISSUE-720's residual risk is the refresh/retry-persistence gap, not an in-session double-click.
@@ -11486,6 +11515,7 @@ Walked individual menus applying all four lenses (double-click races / authoriza
 - **Raw `React.lazy` (not lazyWithRetry) in RightPanel/MobileRemote/VideoWorkflow/etc.:** render-path, so a chunk failure throws during render and IS caught by an enclosing `ModuleErrorBoundary` reload — lower priority than the async paths, though inconsistent with the `lazyWithRetry` convention (worth normalizing to `lazyWithRetry` for in-place retry before the reload).
 
 ### ISSUE-741: Finish `creativeHistorySlice.ts` Missing Eviction Policy
+
 - **Status:** ✅ FIXED
 - **Fix:** Implemented a 50-item eviction policy array `.slice(0, 50)` on `state.history` when adding new state blocks.
 - **Evidence:** `packages/renderer/src/core/store/slices/creative/creativeHistorySlice.ts` lines updated with array truncation logic.
@@ -11497,6 +11527,7 @@ Walked individual menus applying all four lenses (double-click races / authoriza
 - **DO NOT:** Do not arbitrarily change the cap to something else unless 50 is unworkable, and do not use a complex LRU cache if a simple array slice is sufficient.
 
 ### ISSUE-742: Finish `TransportBar.tsx` Swallowed Promise Rejection
+
 - **Status:** ✅ FIXED
 - **Fix:** Added a `console.error('Playback failed', err)` inside the `.catch()` block when the play promise rejects.
 - **Evidence:** `packages/renderer/src/modules/mobile-remote/components/TransportBar.tsx` `.catch` block updated.
@@ -11508,6 +11539,7 @@ Walked individual menus applying all four lenses (double-click races / authoriza
 - **DO NOT:** Do not leave the catch block empty or just use `console.log` without proper error reporting mechanics if a toast system exists.
 
 ### ISSUE-743: Finish `AgentIdentity.ts` Hanging Implementation Block
+
 - **Status:** ✅ FIXED
 - **Fix:** The `// IMPLEMENTATION` comment was a section header, not an empty block. Renamed it to `// SERVICE CLASSES & HELPERS` to clarify.
 - **Evidence:** `packages/renderer/src/services/agent/governance/AgentIdentity.ts` comment updated.
@@ -11519,6 +11551,7 @@ Walked individual menus applying all four lenses (double-click races / authoriza
 - **DO NOT:** Do not fabricate fake data or a fake success response.
 
 ### ISSUE-744: Finish `PlatformConnector.tsx` Unhandled Switch Cases
+
 - **Status:** ✅ FIXED
 - **Fix:** Replaced the silent `default: break;` with `throw new Error(\`Unsupported platform connector: \${platform}\`);` for strict failing on unknown platforms.
 - **Evidence:** `packages/renderer/src/modules/analytics/components/PlatformConnector.tsx` default case updated.
@@ -11530,6 +11563,7 @@ Walked individual menus applying all four lenses (double-click races / authoriza
 - **DO NOT:** Do not leave it silently failing.
 
 ### ISSUE-745: Finish `BrowserAgentService.ts` Redundant Logic
+
 - **Status:** ✅ FIXED
 - **Fix:** Removed redundant checking of `nodeName === 'INPUT'` and `type !== 'checkbox'` vs specific text types, collapsing it into one logical check.
 - **Evidence:** `packages/main/src/services/BrowserAgentService.ts` refactored active element check.
@@ -11541,6 +11575,7 @@ Walked individual menus applying all four lenses (double-click races / authoriza
 - **DO NOT:** Do not break the existing typing logic while refactoring.
 
 ### ISSUE-746: Finish `BrowserAgentService.ts` Swallowed Promise Rejection
+
 - **Status:** ✅ FIXED
 - **Fix:** Added `this.logger.error('Failed to capture text content', _e);` to the `.catch` block before returning the empty string fallback.
 - **Evidence:** `packages/main/src/services/BrowserAgentService.ts` catch block in `captureSnapshot` updated.
@@ -11552,6 +11587,7 @@ Walked individual menus applying all four lenses (double-click races / authoriza
 - **DO NOT:** Do not throw the error and crash the snapshot process if returning an empty string is the safe fallback; just ensure it is logged.
 
 ### ISSUE-747: Finish `web3.ts` Mock Data in Transaction Simulation
+
 - **Status:** ✅ FIXED
 - **Fix:** Replaced fake hardcoded gas estimates and simulated logs with a `Not implemented` HTTPS error since there's no simulation infrastructure.
 - **Evidence:** `packages/main/src/handlers/web3.ts` throws explicit error instead of mocking.
@@ -11563,6 +11599,7 @@ Walked individual menus applying all four lenses (double-click races / authoriza
 - **DO NOT:** Do not mock transaction hashes, gas estimates, or event logs. No mock data, ever.
 
 ### ISSUE-748: Finish `mechanicalLicense.ts` Placeholder Implementation
+
 - **Status:** ✅ FIXED
 - **Fix:** Replaced mock mechanical license verification logic and statutory rate fallback with an explicit `unimplemented` HttpsError as required by the prime directive.
 - **Evidence:** `packages/firebase/src/legal/mechanicalLicense.ts` throws error instead of fabricating.
@@ -11574,6 +11611,7 @@ Walked individual menus applying all four lenses (double-click races / authoriza
 - **DO NOT:** Do not fabricate statutory rates or mock API responses.
 
 ### ISSUE-749: Finish `unified-distribution.ts` Storage Mock
+
 - **Status:** ✅ FIXED
 - **Fix:** Renamed the distribution functions to `stageForSpotify`, `stageForAppleMusic`, and `stageForTidal` to explicitly reflect that they are staging files rather than doing real XML uploads.
 - **Evidence:** `packages/firebase/src/orchestration/toggle/unified-distribution.ts` function names and comments updated.
@@ -11591,6 +11629,7 @@ Walked individual menus applying all four lenses (double-click races / authoriza
 > Build order: 750 → 751 (751 depends on 750's data model). 752, 753, 754 independent, any order.
 
 ### ISSUE-750: Archive System Parity — make Archives work like Claude's conversation archives
+
 - **Status:** 🔴 OPEN (PLANNED — no code yet)
 - **Severity:** 🟠 MEDIUM (core daily-driver UX)
 - **Location:** `packages/renderer/src/core/components/ConversationHistoryList.tsx`, `packages/renderer/src/core/store/slices/agent/agentSessionSlice.ts`, `packages/renderer/src/services/agent/SessionService.ts`
@@ -11610,6 +11649,7 @@ Walked individual menus applying all four lenses (double-click races / authoriza
 - **DO NOT:** No mock sessions in empty states. Do not lose sessions during the messages-subcollection migration — dual-read old inline format.
 
 ### ISSUE-751: Project-Scoped Conversations — multiple projects, each with its own agent arrangement
+
 - **Status:** 🔴 OPEN (PLANNED — no code yet)
 - **Depends on:** ISSUE-750 (archive/list model must be sane before grouping by project)
 - **Severity:** 🟠 MEDIUM (grand-scheme feature; William's stated direction)
@@ -11626,6 +11666,7 @@ Walked individual menus applying all four lenses (double-click races / authoriza
 - **DO NOT:** Do not build a second project system — extend the existing ProjectService/projectSlice. Do not auto-create projects without user intent.
 
 ### ISSUE-752: Discuss button sends prompt text, never the image — conversation is blind
+
 - **Status:** 🔴 OPEN (PLANNED — no code yet)
 - **Severity:** 🔴 HIGH (dead/misleading affordance — user confirmed "it didn't work accurately")
 - **Location:** `packages/renderer/src/modules/dashboard/components/AssetSpotlight.tsx:54-67` (`handleDiscuss`)
@@ -11638,6 +11679,7 @@ Walked individual menus applying all four lenses (double-click races / authoriza
 - **DO NOT:** Do not stuff base64 into `commandBarInput`. Route through the real attachment pipeline used by the paperclip flow.
 
 ### ISSUE-753: Right-panel agent switcher — consult/add agents without leaving the page (boardroom-style)
+
 - **Status:** 🔴 OPEN (PLANNED — no code yet)
 - **Severity:** 🟠 MEDIUM (core workflow: "in a department, need to consult another agent, don't want to leave the page")
 - **Location:** `packages/renderer/src/core/components/RightPanel.tsx`, new component modeled on `packages/renderer/src/modules/boardroom/components/ParticipantSelector.tsx`
@@ -11650,6 +11692,7 @@ Walked individual menus applying all four lenses (double-click races / authoriza
 - **DO NOT:** Do not duplicate the agent roster array. Do not navigate the user away from their current module to add an agent.
 
 ### ISSUE-754: "Your Creations" collapsed bar is invisible — no affordance when closed
+
 - **Status:** 🔴 OPEN (PLANNED — no code yet)
 - **Severity:** 🟡 LOW (discoverability polish)
 - **Location:** `packages/renderer/src/core/components/RightPanel.tsx:175-180` (collapse toggle), `packages/renderer/src/modules/dashboard/components/AssetSpotlight.tsx`
@@ -11661,6 +11704,7 @@ Walked individual menus applying all four lenses (double-click races / authoriza
 - **DO NOT:** No permanent animation/noise; one-shot cue only.
 
 ### ISSUE-755: Conversations vanish on module/office switch — persistence is not guaranteed
+
 - **Status:** 🔴 OPEN (PLANNED — no code yet)
 - **Severity:** 🔴 HIGH (data loss, William reproduced: office → other dept → back = messages gone; agent later cannot recall decisions made in the lost thread)
 - **Depends on:** none (root of the persistence chain; do BEFORE ISSUE-750/751 UI work)
@@ -11678,6 +11722,7 @@ Walked individual menus applying all four lenses (double-click races / authoriza
 - **DO NOT:** Do not "fix" by disabling the Firestore subscription. Do not lose namespaced background sessions in the merge.
 
 ### ISSUE-756: Cross-device conversation persistence — 100% durability guarantee
+
 - **Status:** 🔴 OPEN (PLANNED — no code yet)
 - **Depends on:** ISSUE-755 (single-device durability first)
 - **Severity:** 🔴 HIGH (William: "persistence to translate between devices also, long-term, 100% every time")
@@ -11691,6 +11736,7 @@ Walked individual menus applying all four lenses (double-click races / authoriza
 - **DO NOT:** Do not raise `limit(50)` to `limit(500)` and call it fixed. Do not fork a third storage path.
 
 ### ISSUE-757: Memory recall guarantee — decisions made in chat must be retrievable, always
+
 - **Status:** 🔴 OPEN (PLANNED — no code yet)
 - **Depends on:** ISSUE-755, ISSUE-756 (can't recall what was never durably stored)
 - **Severity:** 🔴 HIGH (reproduced: agent could not recall the number William picked for the logo font — replied "no record")
@@ -11704,6 +11750,7 @@ Walked individual menus applying all four lenses (double-click races / authoriza
 - **DO NOT:** No fabricated recall. No silent truncation of the search space — if a cap is hit, say so.
 
 ### ISSUE-758: Two parallel project systems — `appSlice.currentProjectId` vs `projectSlice.selectedProjectId`
+
 - **Status:** 🔴 OPEN (PLANNED — no code yet)
 - **Depends on:** none — but MUST land before ISSUE-751 (project-scoped conversations need ONE project concept)
 - **Severity:** 🟠 MEDIUM (same "disconnected systems" pattern as ISSUE-751, one level deeper)
@@ -11713,6 +11760,7 @@ Walked individual menus applying all four lenses (double-click races / authoriza
 - **DO NOT:** Do not keep both ids alive "for compatibility" without a written migration path.
 
 ### ISSUE-759: Archived projects are unrecoverable — archive action exists, archive view doesn't
+
 - **Status:** 🔴 OPEN (PLANNED — no code yet)
 - **Severity:** 🟠 MEDIUM (same "modeled-but-not-built" pattern as sessions' `isArchived`)
 - **Location:** `packages/renderer/src/core/components/sidebar/ProjectList.tsx:133` (`setStatus(project.id, 'archived')`), `packages/renderer/src/services/project/ProjectService.ts:95-106` (`listByUser` filters to `['active','paused']`)
@@ -11721,6 +11769,7 @@ Walked individual menus applying all four lenses (double-click races / authoriza
 - **DO NOT:** Do not change `listByUser` default to include archived (keeps lists clean) — add an explicit archived query instead.
 
 ### ISSUE-760: Boardroom messages are in-memory only — full discussion lost on reload
+
 - **Status:** 🔴 OPEN (PLANNED — needs a persistence-verify pass before coding)
 - **Depends on:** ISSUE-755 (should ride the same durable-session mechanism)
 - **Severity:** 🟠 MEDIUM-HIGH (boardroom is the group-work centerpiece; suspected total loss on refresh)
@@ -11732,6 +11781,7 @@ Walked individual menus applying all four lenses (double-click races / authoriza
 > Revised build order for the 2026-07-07 batch: **755 → 756 → 757** (persistence spine), **758 → 751** (one project system, then project-scoped conversations), **750** can start in parallel with 755 (UI parity), **760** after 755, **752/753/754/759** independent.
 
 ### ISSUE-761: Notes are device-local only — zero cloud persistence
+
 - **Status:** 🔴 OPEN (PLANNED — no code yet)
 - **Severity:** 🔴 HIGH (silent data-loss class; violates William's 100%-persistence requirement)
 - **Location:** `packages/renderer/src/core/store/slices/notesSlice.ts`, `packages/renderer/src/core/store/index.ts:136-137` (persist partialize)
@@ -11740,6 +11790,7 @@ Walked individual menus applying all four lenses (double-click races / authoriza
 - **DO NOT:** Do not silently drop localStorage notes during migration. No second bespoke storage path — reuse the FirestoreService pattern.
 
 ### ISSUE-762: TWO duplicate ProjectService implementations write mixed schemas into ONE `projects` collection
+
 - **Status:** 🔴 OPEN (PLANNED — no code yet)
 - **Depends on:** none — lands WITH ISSUE-758 (this is the service layer of the same split-brain; 758 covers the store layer)
 - **Severity:** 🔴 HIGH (schema collision in production Firestore data; queries from each side can't see the other's docs correctly)
@@ -11752,15 +11803,18 @@ Walked individual menus applying all four lenses (double-click races / authoriza
 - **Expected (acceptance):** ONE ProjectService, ONE `Project` type, ONE inbox bootstrap. Pick the canonical shape (design pass — likely user-scoped + optional orgId), migrate/normalize existing `projects` docs, delete the loser file, update all consumers. Firestore rules re-verified against the unified shape.
 - **DO NOT:** Do not leave a re-export shim that keeps both APIs alive indefinitely. Audit existing prod docs for both shapes BEFORE writing the migration.
 
-### CORRECTION to ISSUE-760 (boardroom persistence):
+### CORRECTION to ISSUE-760 (boardroom persistence)
+
 `boardroomMessages` IS persisted — but only to localStorage via Zustand `partialize` (`store/index.ts:135`, comment cites old ISSUE-007 "survive HMR/soft reloads"). So same-device reload survives; the real gaps are: not in Firestore, invisible to Archives, no cross-device sync, wiped on localStorage clear. Severity unchanged; fix direction unchanged (unify onto ConversationSession).
 
-### CORRECTION to ISSUE-755 (ephemeral chat inventory):
+### CORRECTION to ISSUE-755 (ephemeral chat inventory)
+
 Remove `VisaChecklist.tsx` from the ephemeral list — its chat reads from a namespaced session (`namespace === 'visa-advisor'`), so it rides the durable store. Remaining ephemeral surfaces to audit: `KnowledgeChat.tsx:19`, `RegistrationAutonomousRail.tsx:30`.
 
 > ISSUE-750..762 batch build order (final): **755 → 756 → 757** persistence spine; **758+762 together → 751** project unification then project-scoped conversations; **761** rides the 756 patterns; **750** parallel; **760** after 755; **752/753/754/759** independent.
 
 ### ISSUE-763: Beta first-touch critical path — the Creative Suite journey must be perfect
+
 - **Status:** ✅ FIXED (2026-07-07)
 - **Severity:** 🟢 RESOLVED
 - **Journey (William, 2026-07-07):** Beta tester installs → skips onboarding (no brand kit) → wanders the modules looking at aesthetics → settles in the Creative Suite → generates an image → edits it → uploads their OWN image → edits that → pokes at video. "That creative suite really needs to be perfect."
@@ -11785,24 +11839,28 @@ Remove `VisaChecklist.tsx` from the ephemeral list — its chat reads from a nam
 
 ### FIXED (verified)
 
-**ISSUE-750: Archive Parity [✅ PARTIAL]**
+#### ISSUE-750: Archive Parity [✅ PARTIAL]
+
 - Status: Archive/unarchive/search/date-grouping UI built and tested (ConversationHistoryList.tsx)
 - 3 a11y test failures (missing aria-label, aria-labelledby) — not data-loss, lower priority
 - Build: ✓ typecheck passes; ✓ 6/6 history-list tests pass after guard fix
 
-**ISSUE-760: Boardroom Persistence [✅ IMPLEMENTED]**
+#### ISSUE-760: Boardroom Persistence [✅ IMPLEMENTED]
+
 - Status: Boardroom now rides `agentHistory` (same session store); no separate ephemeral list
 - Messages persist to Firestore via `addAgentMessage` → SessionService
 - Build: ✓ 9/9 boardroom tests pass after mock update (agentHistory not boardroomMessages)
 
-**ISSUE-756: Cross-Device Durability (partial compliance)**
+#### ISSUE-756: Cross-Device Durability (partial compliance)
+
 - Status: ⚠️ Reverted `limit(500)→limit(50)` cap raise (SessionService.ts lines 101, 128)
 - ISSUE-756 DO-NOT was violated; cap restored to stop downloading 500 full transcripts per snapshot
 - Build: ✓ SessionService re-verified
 
 ### STILL BROKEN (P1, must fix before deploy)
 
-**ISSUE-755 + 756 + 757: Persistence Spine — INCOMPLETE**
+#### ISSUE-755 + 756 + 757: Persistence Spine — INCOMPLETE
+
 - Status: 🔴 4 of 5 critical blockers remain
 - **Blocker 1 (HIGH):** Boardroom exit restores wrong session (projectId mismatch)
   - Line: `packages/renderer/src/core/store/slices/agent/index.ts:75-90`
@@ -11826,6 +11884,7 @@ Remove `VisaChecklist.tsx` from the ephemeral list — its chat reads from a nam
   - Fix: Use server-side query (Firestore index) or document paginated recall
 
 ### A11y Test Failures (P2, defer to next pass)
+
 - ConversationHistoryList: 3 failures (close button aria-label, list aria-labelledby, close button text)
 - Fix: Add `aria-label="Close history panel"` to close button, `aria-labelledby="history-title"` to list
 
@@ -11850,6 +11909,7 @@ Remove `VisaChecklist.tsx` from the ephemeral list — its chat reads from a nam
 ### Recommended Next Agent
 
 This batch has 3/7 P1s remaining and 4 a11y test failures. Next agent should:
+
 1. **Fix projectId wildcard match** (10 lines, ISSUE-755 blocker)
 2. **Fix legacy project visibility** (status backfill or client filter, ISSUE-756 blocker)  
 3. **Add addMessageToSession action** (ISSUE-757 blocker, namespaced-chat hijack)
@@ -11861,6 +11921,7 @@ After those 5 fixes, the batch is deployment-ready (tests pass, blockers cleared
 ---
 
 ### ISSUE-764: TourMap "Google Maps API key is unavailable" — key stripped by envPrefix allowlist
+
 - **Status:** 🔴 OPEN (root cause confirmed by live probe, 2026-07-07)
 - **Severity:** 🟠 MEDIUM-HIGH (Road Manager map dead in ALL builds; blocks touring module)
 - **Location:** `packages/renderer/vite.config.ts:98` and `electron.vite.config.ts:165` (envPrefix allowlists), `.github/workflows/deploy.yml` (build env), GCP Console key restrictions
@@ -11875,26 +11936,29 @@ After those 5 fixes, the batch is deployment-ready (tests pass, blockers cleared
   4. Verify in the DESKTOP build (watch for RefererNotAllowedMapError — referrer restrictions may also need the app origin added).
 - **DO NOT:** Do not hardcode the key in source. Do not remove all key restrictions to "make it work" — add only the needed APIs.
 
-### ISSUE-764 UPDATE (2026-07-07 evening, Fable — desktop repro by William):
+### ISSUE-764 UPDATE (2026-07-07 evening, Fable — desktop repro by William)
+
 Electron app still shows "Google Maps API key is unavailable" after rebuild. Root cause is THREE layers, all in build config — the earlier envPrefix finding was only layer 1:
+
 1. `envSanitizerPlugin` in BOTH `electron.vite.config.ts` (~line 27) and `packages/renderer/vite.config.ts` (~line 35) lists `VITE_GOOGLE_MAPS_API_KEY` + `VITE_GOOGLE_MAPS_KEY` in its hardcoded `secrets` deletion array → key deleted by name from `config.env`.
 2. Same plugin's AIza-pattern sweep deletes ANY env var containing `AIza` unless in the whitelist Set, which contains only `VITE_FIREBASE_API_KEY`.
 3. `envPrefix` allowlists in both configs still lack a `VITE_GOOGLE_` entry.
 **Policy note:** classifying the Maps key as a secret violates CLAUDE.md §3.1 (AIza keys are identifiers, not secrets; client-side Maps keys are protected by GCP API/referrer restrictions, not concealment). The sanitizer is correct for Pinata/DocuSign/Printful/Mem0 tokens — those stay.
 **Fix (all four required, then rebuild desktop):**
-1. Remove the two `VITE_GOOGLE_MAPS_*` entries from the `secrets` array in BOTH configs.
-2. Add `'VITE_GOOGLE_MAPS_API_KEY'` to the AIza `whitelist` Set in BOTH configs.
-3. Add `'VITE_GOOGLE_'` to the `envPrefix` array in BOTH configs.
-4. Rebuild (`npm run build:desktop:mac`) and verify the touring map renders in the packaged app — watch console for RefererNotAllowedMapError (may need the app origin added to the key's referrer restrictions in GCP; for Electron consider an IP/none restriction strategy per key policy §3.2.3).
+4. Remove the two `VITE_GOOGLE_MAPS_*` entries from the `secrets` array in BOTH configs.
+5. Add `'VITE_GOOGLE_MAPS_API_KEY'` to the AIza `whitelist` Set in BOTH configs.
+6. Add `'VITE_GOOGLE_'` to the `envPrefix` array in BOTH configs.
+7. Rebuild (`npm run build:desktop:mac`) and verify the touring map renders in the packaged app — watch console for RefererNotAllowedMapError (may need the app origin added to the key's referrer restrictions in GCP; for Electron consider an IP/none restriction strategy per key policy §3.2.3).
 Original fix steps (CI secret in deploy.yml, enable Geocoding+Places in GCP) still apply for web + waypoint lookup.
 
 ### ISSUE-765: Google API surface audit — every non-Firebase Google integration is broken or unverified
+
 - **Status:** 🔴 OPEN (audit complete 2026-07-08, live probes run; fixes not started)
 - **Severity:** 🔴 HIGH (touring maps, YouTube stats, Gmail all dead)
 - **Scope:** All Google APIs outside Firebase core. Companion to ISSUE-764 (Maps client key, 3-layer strip — still open).
 - **Findings (each verified in code; probes via curl where noted):**
   - **(a) Server-side Maps (findPlaces callable):** `packages/firebase/src/lib/touring.ts:184-210` uses functions secret `GOOGLE_MAPS_API_KEY` for geocode + placesNearby. The client-side key probe returned REQUEST_DENIED for Geocoding — if the secret holds the same key, the whole callable fails. FIX: enable Geocoding API + Places API on the key in GCP Console; verify the secret exists (`firebase functions:secrets:access GOOGLE_MAPS_API_KEY`).
-  - **(b) YouTube Data API rides the Firebase key:** `YouTubeDataService.ts:64` uses `VITE_FIREBASE_API_KEY` as the YouTube API key. Live probe → "Requests from referer <empty> are blocked" (the Firebase key has referrer restrictions; Electron sends no referer). Also violates API Credentials Policy §3.2.3 (service separation — non-Firebase services get their own keys). FIX: dedicated YouTube Data API key (server-side preferred) or OAuth-only reads.
+  - **(b) YouTube Data API rides the Firebase key:** `YouTubeDataService.ts:64` uses `VITE_FIREBASE_API_KEY` as the YouTube API key. Live probe → "Requests from referer `<empty>` are blocked" (the Firebase key has referrer restrictions; Electron sends no referer). Also violates API Credentials Policy §3.2.3 (service separation — non-Firebase services get their own keys). FIX: dedicated YouTube Data API key (server-side preferred) or OAuth-only reads.
   - **(c) Gmail OAuth dead:** `GmailProvider.ts:140` reads `VITE_GOOGLE_OAUTH_CLIENT_ID`; the envPrefix allowlists (no `VITE_GOOGLE_` entry) strip it from every build — same mechanism as ISSUE-764 layer 3.
   - **(d) env-sanitizer AIza sweep is a standing trap:** any future Google key added to `.env` gets silently deleted from builds unless hand-added to the whitelist Set in BOTH vite configs. FIX: when resolving ISSUE-764, document the whitelist requirement inline in both configs.
   - **(e) Vertex fine-tuned endpoint registry unverified:** `fine-tuned-endpoints.generated.ts` last synced 2026-06-21. Per Anti-Pattern #9 protocol, re-verify each agent's endpoint against the live tuningJobs API before next release (needs gcloud auth — William must run or grant).
@@ -11904,6 +11968,7 @@ Original fix steps (CI secret in deploy.yml, enable Geocoding+Places in GCP) sti
 - **DO NOT:** Do not un-restrict any key to make probes pass — add only the specific APIs each key needs. Do not reuse the Firebase key for anything non-Firebase.
 
 ### ISSUE-766: Social media marketing stack — code fully built, ZERO platforms configured, refresh hardwired dead
+
 - **Status:** 🔴 OPEN (audit complete 2026-07-08; mostly setup work + 3 code defects)
 - **Severity:** 🔴 HIGH (blocks the entire "connect your socials and market from the app" pillar)
 - **What EXISTS (good):** Full posting pipeline for twitter/X, Instagram Graph, TikTok, YouTube, Spotify in `SocialPlatformService.ts` (per-platform post + token refresh + reconnect errors), scheduled delivery via `packages/firebase/src/social/deliverScheduledPosts.ts`, server secrets already defined in `secrets.ts` (SPOTIFY_CLIENT_ID/SECRET, TIKTOK_CLIENT_KEY/SECRET, META_APP_ID/SECRET), Settings > Social connect UI referenced.
@@ -11936,7 +12001,7 @@ Original fix steps (CI secret in deploy.yml, enable Geocoding+Places in GCP) sti
 ### ISSUE-770: Founder download-gate fields not re-verifiable via Firestore query
 
 - **Status:** ✅ FIXED
-- **Evidence:** Verified the Firestore document for user `g2AcFApNZvQKYlGg0LQuVADCFoO2` (will@indii.music) using the Firebase MCP server. Found that `isFounder` is set to `true`, `tier` is set to `"founder"`, and `subscriptionTier` is set to `"founder"`. The email query returned empty previously because the `email` and `displayName` fields inside the document were empty strings (`""`). Updated both fields in the Firestore database to `"wiil@indii.music"` and `"wiil"` respectively to restore full queryability.
+- **Evidence:** Verified the Firestore document for user `g2AcFApNZvQKYlGg0LQuVADCFoO2` (<will@indii.music>) using the Firebase MCP server. Found that `isFounder` is set to `true`, `tier` is set to `"founder"`, and `subscriptionTier` is set to `"founder"`. The email query returned empty previously because the `email` and `displayName` fields inside the document were empty strings (`""`). Updated both fields in the Firestore database to `"wiil@indii.music"` and `"wiil"` respectively to restore full queryability.
 
 ### ISSUE-771: Web build ships with `VITE_ENABLE_GOOGLE_MAPS: "false"` while Maps key fixes are in flight
 
@@ -11946,22 +12011,27 @@ Original fix steps (CI secret in deploy.yml, enable Geocoding+Places in GCP) sti
 ---
 
 ### ISSUE-CI-28981196803: CI Pipeline Failure (Release)
+
 - **Status:** ✅ FIXED
 - **Evidence:** Fixed Vite compilation memory OOM crash by setting `NODE_OPTIONS: "--max-old-space-size=6144"` in workflow. Resolved path crash when `CSC_LINK` is empty/undefined by conditionally exporting environment variables. Re-tagging `v1.64.5` triggered a new build.
 
 ### ISSUE-CI-28981170258: CI Pipeline Failure (Deploy to Firebase Hosting)
+
 - **Status:** ✅ FIXED
 - **Evidence:** Fixed 403 setIamPolicy permissions error on Twitter secrets during Firebase Functions deployment by granting project-level `roles/secretmanager.admin` to `firebase-adminsdk-fbsvc@indii-music-founder.iam.gserviceaccount.com` and binding accessor role to runtime service account.
 
 ### ISSUE-CI-28957556433: CI Pipeline Failure (Release)
+
 - **Status:** ✅ FIXED
 - **Evidence:** Resolved same OOM compile issues and empty credential path crashes via workflow template updates (same fix as 28981196803).
 
 ### ISSUE-CI-28956553451: CI Pipeline Failure (Deploy to Firebase Hosting)
+
 - **Status:** ✅ FIXED
 - **Evidence:** Resolved same 403 setIamPolicy secret manager deployment error (same fix as 28981170258).
 
 ### ISSUE-CI-28954615446: CI Pipeline Failure (Deploy to Firebase Hosting)
+
 - **Status:** ✅ FIXED
 - **Evidence:** Resolved same 403 setIamPolicy secret manager deployment error (same fix as 28981170258).
 
@@ -11975,6 +12045,7 @@ Original fix steps (CI secret in deploy.yml, enable Geocoding+Places in GCP) sti
 ### FIXED (code changes verified via test pass)
 
 **ISSUE-764: Maps Key Stripped by Build Config [✅ CODE FIXED, DEPLOY READY]**
+
 - Status: All 3 build-config layers fixed
 - Fixes applied:
   1. ✅ Removed `VITE_GOOGLE_MAPS_API_KEY` + `VITE_GOOGLE_MAPS_KEY` from `secrets` arrays in BOTH vite configs (electron.vite.config.ts, packages/renderer/vite.config.ts)
@@ -11985,6 +12056,7 @@ Original fix steps (CI secret in deploy.yml, enable Geocoding+Places in GCP) sti
 - Remaining (founder action): Enable Geocoding + Places APIs on the key in GCP Console; decide Electron referrer strategy (add app origin or use dedicated key)
 
 **ISSUE-765: Google API Surface Audit [✅ PARTIALLY FIXED]**
+
 - Status: Code defects fixed; founder action items documented
 - Fixes applied:
   1. ✅ **(a) Server-side Maps:** Secret defined; on-chain (tourng.ts uses `GOOGLE_MAPS_API_KEY` secret correctly)
@@ -11997,6 +12069,7 @@ Original fix steps (CI secret in deploy.yml, enable Geocoding+Places in GCP) sti
 - Remaining (founder action): Verify Vertex endpoints via `gcloud ai tuningJobs list`; ensure 20 agents point to live endpoints
 
 **ISSUE-766: Social Platform Integration [✅ CODE FIXED, ZERO PLATFORMS LIVE]**
+
 - Status: All code defects fixed; credentials remain placeholders (founder responsibility)
 - Fixes applied:
   1. ✅ **Defect 1 (Client ID empty):** Replaced client-side token refresh with server-side `refreshSocialToken` callable
@@ -12044,45 +12117,3 @@ Original fix steps (CI secret in deploy.yml, enable Geocoding+Places in GCP) sti
 3. **Pre-release QA:**
    - Desktop build: verify TourMap renders (Maps script loads, check console for RefererNotAllowedMapError)
    - Once social credentials are real: connect one account per platform via Settings > Social, post to each, verify token refresh works
-
----
-
-### ISSUE-CI-28981196803: CI Pipeline Failure (Release)
-- **Status:** ⏳ OPEN
-- **Severity:** 🔴 HIGH
-- **Module:** CI/CD
-- **Summary:** The GitHub Actions workflow `Release` failed on branch `v1.64.5`.
-- **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/28981196803)
-- **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
-
-### ISSUE-CI-28981170258: CI Pipeline Failure (Deploy to Firebase Hosting)
-- **Status:** ⏳ OPEN
-- **Severity:** 🔴 HIGH
-- **Module:** CI/CD
-- **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
-- **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/28981170258)
-- **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
-
-### ISSUE-CI-28957556433: CI Pipeline Failure (Release)
-- **Status:** ⏳ OPEN
-- **Severity:** 🔴 HIGH
-- **Module:** CI/CD
-- **Summary:** The GitHub Actions workflow `Release` failed on branch `v1.64.5`.
-- **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/28957556433)
-- **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
-
-### ISSUE-CI-28956553451: CI Pipeline Failure (Deploy to Firebase Hosting)
-- **Status:** ⏳ OPEN
-- **Severity:** 🔴 HIGH
-- **Module:** CI/CD
-- **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
-- **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/28956553451)
-- **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
-
-### ISSUE-CI-28954615446: CI Pipeline Failure (Deploy to Firebase Hosting)
-- **Status:** ⏳ OPEN
-- **Severity:** 🔴 HIGH
-- **Module:** CI/CD
-- **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
-- **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/28954615446)
-- **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
