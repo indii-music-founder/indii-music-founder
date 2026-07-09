@@ -17,6 +17,7 @@ import { db } from './firebase';
 import { FirestoreService } from './FirestoreService';
 import { events } from '@/core/events';
 import { logger } from '@/utils/logger';
+import { DEFAULT_PROJECT_ID, LEGACY_DEFAULT_PROJECT_ID, isDefaultProject } from '@/core/constants';
 
 export interface FileNode {
     id: string;
@@ -43,10 +44,17 @@ export class FileSystemService extends FirestoreService<FileNode> {
     }
 
     async getProjectNodes(projectId: string): Promise<FileNode[]> {
+        // The default/unassigned bucket historically carries TWO sentinel values
+        // ('default' from appSlice, 'default-project' from StorageService) — both
+        // exist in production data, so default-bucket reads must match both.
+        const projectFilter = isDefaultProject(projectId)
+            ? where('projectId', 'in', [DEFAULT_PROJECT_ID, LEGACY_DEFAULT_PROJECT_ID])
+            : where('projectId', '==', projectId);
+
         try {
             const q = query(
                 this.collection,
-                where('projectId', '==', projectId),
+                projectFilter,
                 orderBy('createdAt', 'asc')
             );
 
@@ -60,7 +68,7 @@ export class FileSystemService extends FirestoreService<FileNode> {
             // Fallback for missing index error
             if (error && typeof error === 'object' && 'code' in error && error.code === 'failed-precondition') {
                 logger.warn('Firestore index missing, falling back to client-side sort', error);
-                const q = query(this.collection, where('projectId', '==', projectId));
+                const q = query(this.collection, projectFilter);
                 const snapshot = await getDocs(q);
                 return snapshot.docs.map(doc => ({
                     id: doc.id,

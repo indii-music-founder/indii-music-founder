@@ -12184,3 +12184,12 @@ Original fix steps (CI secret in deploy.yml, enable Geocoding+Places in GCP) sti
   5. ⏳ Default-projectId sentinel split (`'default'` vs `'default-project'`) NOT touched here — overlaps ISSUE-758/762; that owner must unify to one constant.
 - **Verification:** typecheck ✓; full suite 4360 passed / 0 failed (12 new tests). NOT yet live-verified — the McLear acceptance test remains: generate an image on device A (iPad web), confirm it appears on device B (desktop) same account, and confirm legacy images reappear after first login post-deploy.
 - **DO NOT (unchanged):** no rules loosening, no cap raise, no deleting legacy docs.
+
+### ISSUE-772 UPDATE 2 (2026-07-09, Fable): fix 5 (projectId sentinel split) now ALSO implemented
+- **Status:** 🟡 ALL 5 CODE FIXES DONE — awaiting live two-device verification only
+- **Implemented (fix 5):**
+  - New canonical constants in `core/constants.ts`: `DEFAULT_PROJECT_ID = 'default-project'`, `LEGACY_DEFAULT_PROJECT_ID = 'default'`, plus `isDefaultProject()` and `projectBucketMatches()` helpers (6 unit tests).
+  - `appSlice` now writes `DEFAULT_PROJECT_ID` (was `'default'`) for the initial state and the deleted-project fallback — all new writes use ONE sentinel.
+  - Read paths accept BOTH eras (no data migration needed): `FileSystemService.getProjectNodes` uses an `in` query for the default bucket; `VideoWorkflow` (×2) and `useDirectGeneration` gallery filters use `projectBucketMatches`.
+- **Note for ISSUE-758/762 owner:** import these constants instead of minting new sentinels; remaining `|| 'default-project'` fallbacks scattered in writers (CharacterLibrary, DirectorTools, MarketingPanel, useDDEXRelease) are now consistent with the appSlice default but should migrate to the constant during the project-system unification.
+- **Verification:** typecheck ✓; full suite 4366 passed / 0 failed (18 new tests across ISSUE-772 total).
