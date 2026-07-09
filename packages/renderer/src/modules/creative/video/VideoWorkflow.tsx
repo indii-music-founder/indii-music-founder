@@ -3,6 +3,7 @@ import { VideoAspectRatioSchema } from '@/modules/creative/video/schemas';
 
 import React, { useState, useEffect, useRef, useMemo, useCallback, lazy, Suspense } from 'react';
 import { useStore, HistoryItem } from '@/core/store';
+import { projectBucketMatches } from '@/core/constants';
 import { useShallow } from 'zustand/react/shallow';
 import { StageHandoffPayload } from '@/types/handoff';
 import { useVideoEditorStore } from './store/videoEditorStore';
@@ -309,7 +310,7 @@ export default function VideoWorkflow() {
 
     // ⚡ Bolt Optimization: Memoize filtered video list to prevent DailiesStrip re-renders
     const videoHistory = useMemo(() => {
-        return generatedHistory.filter(h => h.type === 'video' && (!currentProjectId || h.projectId === currentProjectId));
+        return generatedHistory.filter(h => h.type === 'video' && (!currentProjectId || projectBucketMatches(h.projectId, currentProjectId)));
     }, [generatedHistory, currentProjectId]);
 
     // Sync pending prompt
@@ -408,7 +409,7 @@ export default function VideoWorkflow() {
             // to prevent console transport errors when initializing with dead blobs from past sessions.
             const validRecent = generatedHistory.find(
                 h => h.type === 'video' &&
-                    (!currentProjectId || h.projectId === currentProjectId) &&
+                    (!currentProjectId || projectBucketMatches(h.projectId, currentProjectId)) &&
                     !h.url.startsWith('blob:')
             );
 

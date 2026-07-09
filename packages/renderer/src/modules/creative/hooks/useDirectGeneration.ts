@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useStore, HistoryItem } from '@/core/store';
+import { projectBucketMatches } from '@/core/constants';
 import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/core/context/ToastContext';
 import { WhiskService } from '@/services/WhiskService';
@@ -167,7 +168,7 @@ export function useDirectGeneration() {
     const [isGenerating, setIsGenerating] = useState(false);
     
     // Derive results from global generated history to ensure sync with Agent-triggered generations
-    const results = (generatedHistory || []).filter(h => h.projectId === currentProjectId);
+    const results = (generatedHistory || []).filter(h => projectBucketMatches(h.projectId, currentProjectId));
     
     const [activeJobs, setActiveJobs] = useState<VideoGenerationJob[]>([]);
     const [sequence, setSequence] = useState<SequenceBlock[]>([]);
