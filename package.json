@@ -59,7 +59,7 @@
     "check:dep-drift": "node scripts/check-dep-version-drift.cjs",
     "test:rules": "FIRESTORE_EMULATOR_HOST=localhost:8080 vitest run --config vitest.rules.config.ts",
     "emulator:functions": "firebase emulators:start --only functions",
-    "health:check": "vitest --run --grep '\\.integration\\.test\\.ts' -- packages/renderer/src/services",
+    "health:check": "sh -c 'files=$(find packages/renderer/src/services -name \"*.integration.test.ts\" -print); if [ -z \"$files\" ]; then echo \"No integration tests found\"; exit 0; fi; vitest run $files'",
     "health:generate-dashboard": "tsx scripts/generate-health-dashboard.ts",
     "clean": "rm -rf dist dist-electron packages/*/dist .firebase .genkit coverage test-results playwright-report",
     "validate": "node scripts/check-test-quality.js && npm run security:frontend-api-boundary && npm run lint && npm run typecheck && npm run test -- --run",

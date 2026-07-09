@@ -3,8 +3,8 @@
 > This file is written by the /real test agent and consumed by a fixing agent.
 > The test agent NEVER modifies code. The fix agent NEVER runs tests.
 >
-> **Last updated:** 2026-07-08
-> **Commit:** `main` — Release QA findings (5 issues logged: ISSUE-767..771)
+> **Last updated:** 2026-07-09
+> **Commit:** `main` — Creative Suite + rights/identity audit (ISSUE-773..886)
 > **Current UX Score:** In Progress
 
 ## Verification Findings — 2026-06-14 (Opus static audit)
@@ -11181,23 +11181,25 @@ A fourth distinct menu: `packages/renderer/src/core/components/RightPanel.tsx`, 
 
 ### ISSUE-727: WorkflowPanel's "Run Workflow" button fakes execution with a toast — zero connection to the real, working WorkflowEngine
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (static verification 2026-07-09)
 - **Severity:** 🟠 HIGH (misleads a user about a real system's execution state — the actual `WorkflowEngine` confirmed solid and functional in Pass 15/ISSUE-722 calls real, paid AI/image/video generation services; a user clicking this fake button believes their real workflow ran when nothing happened)
 - **Module:** Core / RightPanel — WorkflowPanel (Context Controls tab, shown when `currentModule === 'workflow'`)
 - **Depends on:** nothing structurally, but fix should reference the real `WorkflowEngine` API surface from Pass 15/ISSUE-722
 - **Summary:** `WorkflowPanel.tsx`'s "Run Workflow" button does `onClick={() => toast.success("Workflow execution started")}` — a bare toast with no call into `WorkflowEngine` or any workflow-related store state. The "Active Environment" section directly below it shows hardcoded fake status — literal JSX strings `"Connected"` (green, Database) and `"Idle"` (Execution Queue) — not derived from any real state, so these never change regardless of actual system status. "Global Parameters" and "Save as Template" buttons below that have **no `onClick` handler at all** — completely dead, not even a toast. Contrast with the sibling `MarketingPanel.tsx` in the same directory, which correctly imports `OrchestrationService`, does a real auth check, and calls `orchestrationService.executeWorkflow` with proper try/catch/finally — proving the correct pattern was known and available, just not applied here.
 - **Fix Direction:** Wire "Run Workflow" to the real `WorkflowEngine` execution entry point (the same one used by the main Workflow Builder canvas — see Pass 15 audit of `packages/renderer/src/modules/workflow/services/WorkflowEngine.ts`). Replace the hardcoded "Connected"/"Idle" strings with real derived state from the workflow store. Wire "Global Parameters" and "Save as Template" to their real actions, or remove them if genuinely out of scope for this quick-access panel.
 - **Files:** `packages/renderer/src/core/components/right-panel/WorkflowPanel.tsx`
+- **Resolution:** The panel now instantiates and runs the real `WorkflowEngine`, prevents parallel runs, and derives database/queue status from the live workflow nodes and execution state. The formerly dead auxiliary controls are absent rather than presented as inert actions.
 
 ### ISSUE-728: KnowledgePanel shows fabricated hardcoded index statistics and fakes document ingestion with a toast
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (code change 2026-07-09; needs runtime verification)
 - **Severity:** 🟠 HIGH (fabricated statistics presented as real system state — the actual Knowledge Base module has a real, working Gemini Files API backing confirmed in Pass 6; this quick-access panel invents numbers instead of reading real ones)
 - **Module:** Core / RightPanel — KnowledgePanel (Context Controls tab, shown when `currentModule === 'knowledge'`)
 - **Depends on:** nothing structurally, same root-cause class as ISSUE-727 — batch together
 - **Summary:** "Ingest Document" button does `onClick={() => toast.info("Opening upload dialog")}` — no file picker actually opens, no connection to the real Knowledge Base ingestion flow confirmed working elsewhere (Pass 6). "Index Stats" shows three literally hardcoded fake values in the JSX — `"Indexed Files": 1,240`, `"Vectors": 82.4k`, `"Last Sync": 2 mins ago` — permanent strings, not derived from any real data source, that will show identically to every user regardless of their actual document count or sync state. "Manage Tags" button has no `onClick` at all.
 - **Fix Direction:** Wire "Ingest Document" to the real Knowledge Base upload flow (reuse whatever `KnowledgeBase.tsx`/`KnowledgeBaseService` calls). Replace the hardcoded stats with real derived values (real indexed-file count, real vector count, real last-sync timestamp) from the actual Knowledge Base state/service. Wire "Manage Tags" to a real action or remove it.
 - **Files:** `packages/renderer/src/core/components/right-panel/KnowledgePanel.tsx`
+- **Resolution:** The panel now opens a real file picker and submits selected files through `knowledgeBaseService.uploadFiles`. It loads the actual Knowledge Base document list for its file count/last sync, labels the provider without inventing an unavailable vector count, and removes the inactive Manage Tags control.
 
 ### Pass 26 clean bills (verified deep, not pattern-only)
 
@@ -11233,13 +11235,14 @@ A completely different class of menu — not React, not a UI component tree, but
 
 ### ISSUE-729: Cmd+S / File > Save fires an IPC event with zero listeners anywhere — completely dead, silent no-op on one of the most trusted keyboard shortcuts in any desktop app
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (static verification 2026-07-09)
 - **Severity:** 🟠 HIGH (real data-loss/trust risk — Cmd+S is a deeply ingrained user habit; silent failure with no error, no toast, nothing, means a user could believe their work saved when it didn't)
 - **Module:** Electron main process / native menu bar
 - **Depends on:** nothing — parallel-safe
 - **Summary:** `packages/main/src/menu.ts`'s File menu defines a "Save" item bound to `CmdOrCtrl+S` whose `click` handler sends `mainWindow.webContents.send('menu:save-triggered')` — properly guarded against a destroyed window, with its own try/catch. But confirmed via repo-wide grep: **zero listeners** for `'menu:save-triggered'` exist anywhere — not in any renderer module, not in `preload.ts`, nowhere. The IPC message is sent into the void every time a user presses Cmd+S or clicks File > Save. No error surfaces to the user; the keystroke simply does nothing.
 - **Fix Direction:** Decide what "Save" should mean in context (likely: save the current active module's state — Creative canvas, Workflow graph, current form, etc.) and wire a real listener. Given the app is heavily module-based with different active surfaces, this probably needs a renderer-side listener that dispatches to whatever save action is contextually appropriate for `currentModule` (e.g. trigger the same save path as each module's own explicit Save button, if one exists), or at minimum wire it to the most universally-expected action (save current project/canvas state) with an honest toast confirming what was saved.
 - **Files:** `packages/main/src/menu.ts` (sender, already correct); needs a new listener in `packages/renderer/src` (e.g. a root-level `useEffect` subscribing via `window.electronAPI` or a dedicated preload-exposed `onMenuSaveTriggered` callback) — currently nothing consumes this event.
+- **Resolution:** `AppShell` subscribes to `window.electronAPI.menu.onSaveTriggered` and dispatches the shared `indii:save-request` event, matching the global keyboard shortcut pathway.
 
 ### Pass 28 clean bill (partial)
 
@@ -11255,13 +11258,14 @@ Broadened per William's explicit ask ("more broad or broader use of the term men
 
 ### ISSUE-730: MerchTable's context-menu "Delete Product" has zero confirmation dialog — violates the project's own ConfirmDialog standard, one accidental click permanently destroys a real product listing
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (static verification 2026-07-09)
 - **Severity:** 🟠 HIGH (real data-loss risk on a destructive action reachable by a single accidental right-click; also a direct violation of this repo's own standing architecture rule)
 - **Module:** Finance / MerchTable
 - **Depends on:** nothing — parallel-safe
 - **Summary:** `MerchTable.tsx`'s right-click context menu includes a real, functional "Delete Product" item that calls `MarketplaceService.deleteProduct(product.id)` directly on `onSelect` — no confirmation step of any kind. Confirmed via grep: zero `ConfirmDialog` import or usage anywhere in this file. This directly violates the project's own standing rule (CLAUDE.md: "Native `window.confirm`... are banned... use `ConfirmDialog`... never fake a modal") — this isn't even using a native confirm as a fallback, it's skipping confirmation entirely. Right-click menus are especially prone to accidental triggers (mis-click, wrong item selected in a crowded menu), making this a real, plausible data-loss path for a real merch product listing with no undo.
 - **Fix Direction:** Wrap the delete action in `const ok = await ConfirmDialog.call({ message: 'Delete this product? This cannot be undone.' }); if (!ok) return;` before calling `MarketplaceService.deleteProduct`, matching the pattern already used elsewhere in the codebase (per CLAUDE.md's dialog standard).
 - **Files:** `packages/renderer/src/modules/finance/components/MerchTable.tsx:319-333`
+- **Resolution:** The delete menu action now awaits `ConfirmDialog.call` before invoking `MarketplaceService.deleteProduct`, and exits without mutation when the user cancels.
 
 ### Pass 29 clean bills (partial)
 
@@ -11335,7 +11339,7 @@ Re-running the full menu cycle with four altered lenses per William's request. F
 
 ### ISSUE-733: Printful POD Cloud Functions are deployed with ZERO authentication — unbounded real-order creation + order-PII IDOR + arbitrary order cancellation, reachable by anyone
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (static verification 2026-07-09)
 - **Severity:** 🔴 CRITICAL (deployed, publicly-invokable unauthenticated endpoints that create real money-costing physical orders, leak customer PII, and allow arbitrary order cancellation — the single most serious security finding of the entire audit)
 - **Module:** Firebase / POD (print-on-demand) integration
 - **Depends on:** nothing — parallel-safe, but should be the FIRST fix of the whole ledger given it's a live, deployed, open financial+PII endpoint
@@ -11347,6 +11351,7 @@ Re-running the full menu cycle with four altered lenses per William's request. F
 - **Why it wasn't caught in pass 1:** the POD feature isn't wired to any client UI yet (the Merch sales dashboard honestly shows "Connect POD provider" — see Pass 8/19). Pass 1 was UI-menu-driven, so an unwired-but-deployed backend endpoint was invisible to it. The authorization lens (grep every `onCall` for a missing auth check) is what surfaced it. "No UI caller" does NOT reduce severity — an attacker invokes the deployed function directly; they don't need the app's UI.
 - **Fix Direction:** (1) Add `if (!req.auth) throw new HttpsError('unauthenticated', ...)` to every callable in the file as a baseline. (2) For `GetOrder`/`CancelOrder`, add real ownership verification — look up the order's owning user in Firestore and confirm `req.auth.uid` matches before returning/cancelling (auth alone isn't enough; without an ownership check any logged-in user could still IDOR other users' orders). (3) For `CreateOrder`, additionally verify the caller is allowed to create orders for the specified artist/project and consider server-side rate limiting. (4) Enable `enforceAppCheck` on the whole file as defense-in-depth. (5) Until fixed, consider taking these functions down / gating at the infra level, since they're live and open right now.
 - **Files:** `packages/firebase/src/pod/printful.ts` (all 8 callables); `packages/firebase/src/index.ts:1724,1731-1739` (exports/deploys them).
+- **Resolution:** Every callable now requires Firebase Authentication and App Check. Created orders are recorded under `users/{uid}/pod_orders/{orderId}`, and read/cancel operations require that ownership record before reaching Printful.
 
 ### Second-pass clean bills so far (verified, not assumed)
 
@@ -11362,10 +11367,11 @@ Focused follow-up to ISSUE-733: press the authorization lens across every backen
 
 ### ISSUE-734: Telegram webhook secret-token verification is fail-open — if the secret is unset/empty, the check is skipped entirely and anyone can POST spoofed bot updates
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (static verification 2026-07-09)
 - **Severity:** 🟡 MEDIUM (real spoofing vector, but conditional on a misconfigured/empty secret — in a correctly-deployed environment with the secret set, verification works and rejects with 401; this is a fail-closed-hardening issue, not an unconditional hole like ISSUE-733)
 - **Module:** Firebase / relay / telegramWebhook
 - **Depends on:** nothing — parallel-safe
+- **Resolution:** `telegramWebhook` now returns a server-configuration error when `TELEGRAM_WEBHOOK_SECRET` is absent and rejects every mismatched `x-telegram-bot-api-secret-token` with 401.
 - **Summary:** `packages/firebase/src/relay/telegramWebhook.ts:75-85` computes `const secret = process.env.TELEGRAM_WEBHOOK_SECRET || (() => { try { return telegramWebhookSecret.value(); } catch { return ""; } })();` then gates verification on `if (secret) { ...compare x-telegram-bot-api-secret-token, 401 on mismatch... }`. If the secret resolves to an empty string (env var unset AND the secret accessor throws), the entire `if (secret)` block is skipped and the webhook proceeds to process `req.body` as a trusted Telegram update with **no verification** — an attacker can POST arbitrary fake updates that get written to Firestore and fed into `processRelayCommand`, injecting commands into the relay system. The secret IS declared as a required function secret (line 62), so a correct deployment is protected — but the code fails OPEN on misconfiguration instead of failing CLOSED.
 - **Fix Direction:** Fail closed — if no secret is configured, reject ALL requests (`res.status(500).send('Webhook secret not configured'); return;`) rather than silently skipping verification. The secret is mandatory for this webhook's security model; its absence should be a hard stop, not a bypass.
 - **Files:** `packages/firebase/src/relay/telegramWebhook.ts:75-85`
@@ -11381,23 +11387,25 @@ Focused follow-up to ISSUE-733: press the authorization lens across every backen
 
 ### ISSUE-735: Admin-dashboard has two fully-unauthenticated webhook endpoints (`/api/webhooks/agent-email`, `/api/webhooks/ci-alerts`) — no signature, no secret, anyone can POST
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (static verification 2026-07-09)
 - **Severity:** 🟡 MEDIUM (currently low-impact stubs that log-and-return, but they are the designed ingestion points for untrusted external input into the agent + CI-remediation systems; fixing before the processing logic lands is far cheaper than after)
 - **Module:** Admin Dashboard / server.ts
 - **Depends on:** nothing — parallel-safe
 - **Summary:** `packages/admin-dashboard/server.ts` mounts `/api/webhooks/agent-email` (line 224) and `/api/webhooks/ci-alerts` (line 237) as POST routes with NO `requireAdminAuth`, NO signature verification, and NO shared-secret check — they accept arbitrary bodies from any caller. Today both mostly `console.log` the payload and return 200 (the real processing is stubbed: "Here we would route the email payload to the appropriate LangChain/Genkit agent" / "Integrate with GitHub Issues or Linear here"). But the _designed_ purpose is dangerous: `agent-email` is meant to receive inbound email and route it into the agent system — once wired, an unauthenticated attacker can inject arbitrary email payloads (attacker-controlled `from`, body) straight into an autonomous agent = a prompt-injection + spoofed-sender surface. `ci-alerts` is meant to trigger auto-remediation ("generate ticket", "page developer") — once wired, an attacker can spam tickets/pages or trigger remediation actions. These are unauthenticated ingestion points that should verify a signature/secret NOW, before they grow teeth.
 - **Fix Direction:** Add HMAC signature verification (or at minimum a shared-secret header check) to both webhooks, matching the pattern the main Firebase backend already uses for `pandadocWebhook`/`stripe` webhooks. For `agent-email`, verify the sending mail provider's webhook signature; for `ci-alerts`, verify the GitHub/Blacksmith webhook secret. Reject unverified requests with 401 before any processing.
 - **Files:** `packages/admin-dashboard/server.ts:224-253`
+- **Resolution:** Both endpoints now use a shared `requireWebhookSecret` middleware which fails closed when `ADMIN_WEBHOOK_SECRET` is unset and rejects requests without the configured secret header.
 
 ### ISSUE-736: Admin-dashboard Google OAuth flow has no `state` parameter — CSRF / account-binding gap on a flow that grants gmail.modify + full calendar + drive scopes
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (code change 2026-07-09; needs deployment verification)
 - **Severity:** 🟡 MEDIUM (real OAuth-CSRF gap on a high-scope flow, but on the internal admin dashboard — smaller/trusted attack surface than a public app; still a standard OAuth requirement that's missing)
 - **Module:** Admin Dashboard / server.ts (Google Workspace OAuth)
 - **Depends on:** nothing — parallel-safe
 - **Summary:** The consent-URL generator (`/api/google/oauth/url`, line 288) calls `oauth2Client.generateAuthUrl({ access_type, scope, prompt })` with **no `state`** parameter, and the callback (`/api/google/oauth/callback`, line 303) exchanges `code` for tokens and writes them to a single shared `admin_secrets/google_workspace` Firestore doc with **no `state` verification**. The requested scopes are heavy: `gmail.modify` (read/send/delete mail), `calendar` (full), `drive.file`. Missing `state` = no CSRF protection on the OAuth flow: an attacker can complete the consent against an account they control and drive the callback to bind THEIR tokens into the shared admin doc, after which every admin-dashboard Gmail/Calendar/Drive operation runs against the attacker-bound account (exfiltration of admin actions, injection of attacker data), or conversely force-bind an admin's session. The callback also can't use `requireAdminAuth` (Google redirects to it), which makes the missing `state` the _only_ possible integrity check — and it's absent.
 - **Fix Direction:** Generate a cryptographically-random `state` in `/api/google/oauth/url`, store it server-side (session or a short-lived Firestore doc keyed to the initiating admin), pass it via `generateAuthUrl({ state })`, and in the callback verify `req.query.state` matches the stored value (and is unexpired) before exchanging the code. Bind the resulting tokens to the initiating admin's identity, not just a global doc, if multi-admin isolation is wanted.
 - **Files:** `packages/admin-dashboard/server.ts:288-300` (consent URL), `packages/admin-dashboard/server.ts:303-319` (callback)
+- **Resolution:** The authenticated URL route creates a cryptographically random, short-lived Firestore state record bound to the initiating admin UID. The callback atomically consumes the state before exchanging the authorization code, rejecting missing, expired, or replayed state values.
 
 ### Admin-dashboard server — auth coverage verdict
 
@@ -12008,6 +12016,22 @@ Original fix steps (CI secret in deploy.yml, enable Geocoding+Places in GCP) sti
 - **Status:** ✅ FIXED
 - **Evidence:** Set `VITE_ENABLE_GOOGLE_MAPS: "true"` in the `deploy.yml` workflow, enabling the frontend Maps integration upon key verification.
 
+## Cost of Doing Business — Founder real-world action items (from release QA append, added 2026-07-09)
+
+Real-world purchases/actions only William can complete. These are tracked here because they block or materially affect product surfaces even when the code path exists.
+
+| Item | Cost | Blocks | Where |
+| --- | --- | --- | --- |
+| ⛔ Apple Developer Program (org enrollment; needs D-U-N-S for New Detroit Music LLC) | $99/yr | macOS DMG notarization → Founders release | developer.apple.com/programs/enroll |
+| ⛔ Spotify Premium on info@indii.music | $12.99/mo as of 2026-07-09 (verify at checkout) | Spotify Web API developer app creation under Spotify's current policy | spotify.com/premium |
+| ⛔ Windows code-signing cert / cloud signing | Azure Artifact Signing Basic $9.99/mo if eligible; CA fallback starts ~$536/yr | Windows Authenticode → Founders release | Azure / Sectigo / DigiCert / SSL.com |
+| X API — decide ship-or-defer for v1 | Usage-based pay-per-use as of 2026-07-09; old Basic-tier fixed-price assumption needs recheck | X posting only | docs.x.com |
+| D-U-N-S number for New Detroit Music LLC (prereq for Apple org enrollment) | Free (up to ~30 days) | Apple organization enrollment | dnb.com/duns |
+
+**Status notes from release-QA append (2026-07-08):** Meta developer registration was blocked at SMS verify (rate-limited; retry after a few hours). Spotify app creation was blocked on Premium. GCP Maps/YouTube keys + GitHub secrets were completed. `indiios-v-1-1` project was deleted with a 30-day undelete window.
+
+Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
+
 ---
 
 ### ISSUE-CI-28981196803: CI Pipeline Failure (Release)
@@ -12193,3 +12217,1363 @@ Original fix steps (CI secret in deploy.yml, enable Geocoding+Places in GCP) sti
   - Read paths accept BOTH eras (no data migration needed): `FileSystemService.getProjectNodes` uses an `in` query for the default bucket; `VideoWorkflow` (×2) and `useDirectGeneration` gallery filters use `projectBucketMatches`.
 - **Note for ISSUE-758/762 owner:** import these constants instead of minting new sentinels; remaining `|| 'default-project'` fallbacks scattered in writers (CharacterLibrary, DirectorTools, MarketingPanel, useDDEXRelease) are now consistent with the appSlice default but should migrate to the constant during the project-system unification.
 - **Verification:** typecheck ✓; full suite 4366 passed / 0 failed (18 new tests across ISSUE-772 total).
+
+---
+
+## 2026-07-09 — Creative Suite + Music Identity Audit (Codex)
+
+> Scope: Omni, image generation/editing, Veo 3.1 integration points, music identifiers,
+> rights-platform setup, and founder-owned registrations. Static audit only; no product code changed.
+
+### ISSUE-773: Omni storyboard says scenes are synced, but no storyboard data reaches generation
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 HIGH (misleading primary feature)
+- **Module:** Creative Suite / Omni
+- **Evidence:** `OmniWorkflow.tsx:270-276,494-522,741-793` creates and displays timestamped frames as `Scenes Synced`; `handleStartRemix` payload at `:387-408` contains no storyboard/frame field. `GenerateOmniRemixSchema` has no storyboard contract.
+- **Impact:** Users spend time building a sequence that has zero effect on the generated remix.
+- **Fix:** Add a shared typed scene contract (timestamp, prompt, optional frame URI), validate timestamps against source duration, include it in the callable, and compile it into the actual Omni edit request. Until supported, rename the panel to a local planning board and remove “Synced.”
+- **Acceptance:** A two-scene test proves both timestamped directives reach the backend and alter the submitted generation request.
+
+### ISSUE-774: Retired “Omni + Veo 3.1 Hybrid” mode remains selectable but never runs a Veo stage
+
+- **Status:** 🔴 OPEN (regression against ISSUE-595)
+- **Severity:** 🔴 HIGH (false capability + incorrect cost estimate)
+- **Module:** Creative Suite / Omni / right-panel controls
+- **Evidence:** ISSUE-595 explicitly retired the in-call hybrid. `StudioControlsPanel.tsx:179-188` still offers it; `OmniWorkflow.tsx:364-395,715` claims a hybrid; `gateway.ts:1508-1533` always executes one Omni Interactions request. `pipelineMode` only changes prompt text and cost classification.
+- **Impact:** The UI promises a two-engine pipeline and may reserve Pro Veo pricing for work that never invokes Veo.
+- **Fix:** Remove `hybrid-veo` from the UI/schema and use the real Omni→Veo handoff for a two-stage workflow, or implement a genuine second job with separate lineage, progress, cancellation, and cost reservations.
+- **Acceptance:** Every displayed pipeline name maps to observable jobs/models and exact cost records.
+
+### ISSUE-775: Omni labels output “SynthID Protected” without verifying any watermark
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 HIGH (provenance/compliance claim)
+- **Module:** Creative Suite / Omni
+- **Evidence:** `OmniWorkflow.tsx:579-585` renders `SynthID Protected` whenever the local toggle is on. The backend only stores `synthIdRequested` (`gateway.ts:1491-1496,1555-1564`); it neither requests a supported watermark setting nor verifies watermark metadata on the response.
+- **Impact:** A user may publish or represent media as watermarked when the system only recorded an intent.
+- **Fix:** Use “SynthID requested” until provider-returned provenance is verified. Persist `requested`, `providerReported`, and `verified` separately; show “Protected” only from verifiable output metadata.
+- **Acceptance:** Tests cover requested-but-unverified and provider-verified outputs; no local toggle can produce a protection claim.
+
+### ISSUE-776: Image sub-menu Edit/Reference/Remix actions target the wrong asset and Reference is dead state
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Creative Suite / Image
+- **Evidence:** `ImageSubMenu.tsx:50-76` always uses `generatedHistory[0]` without filtering by project or `type === 'image'`. Edit selects an item but does not enter editor view. Reference writes `activeReferenceImage`, but repo-wide reads show no production consumer—only setters/tests.
+- **Impact:** An image action can pick another project's video, appear to do nothing, or toast that a reference is active when generation never uses it.
+- **Fix:** Resolve the latest image in the active project, navigate Edit to `editor`, and replace `activeReferenceImage` with the real `referenceUris`/Whisk intake path. Disable actions with an honest empty state when no eligible image exists.
+- **Acceptance:** Interaction tests cover mixed image/video history and two projects; the selected reference URI appears in `generateImageV3`.
+
+### ISSUE-777: Image Creator exposes video settings while hiding/ignoring its real image controls
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Creative Suite / Image generation
+- **Evidence:** In image mode, `DirectGenerationTab.tsx:300-387` exposes `720p/1080p/4k` through `studioControls.resolution` and a person-safety toggle. Image submission (`useDirectGeneration.ts:331-342`) instead uses `imageSize` and omits `personGeneration`; `batchCount`, `useImageSearch`, `responseFormat`, and `includeThoughts` exist in state but have no usable page controls/payload path.
+- **Impact:** “4K” and safety selections can have no effect while actual image capabilities are undiscoverable.
+- **Fix:** Render mode-specific controls. Bind image size to `imageSize`; either implement validated image safety fields or remove the toggle; wire supported batch/image-search/response options through the shared schema and backend.
+- **Acceptance:** A request-capture test proves each visible image control changes the outbound payload; no video-only field appears in image mode.
+
+### ISSUE-778: Direct Veo sequence prompt sends literal `${...}` placeholders
+
+- **Status:** ✅ FIXED (code change 2026-07-09; needs runtime request capture)
+- **Severity:** 🟠 HIGH
+- **Module:** Creative Suite / Veo 3.1 sequence generation
+- **Evidence:** `useDirectGeneration.ts:416-417` escapes every template interpolation (`\${block.beats}`, `\${sequenceDetails}`, `\${bpm}`, `\${finalPrompt}`).
+- **Impact:** Veo receives meaningless placeholder text instead of beat counts, timing, energy, BPM, and the user's prompt.
+- **Fix:** Restore real interpolation and add a unit test for a two-block sequence at a known BPM.
+- **Acceptance:** Captured prompt contains computed seconds and original prompt, with no literal `${`.
+- **Resolution:** Restored the intended template interpolation for per-block beats, computed duration, section, energy, BPM, and the final prompt.
+
+### ISSUE-779: Direct-generation Cancel only hides the job; paid generation continues
+
+- **Status:** ✅ FIXED (code change 2026-07-09; needs deployed callable verification)
+- **Severity:** 🔴 HIGH (cost + user trust)
+- **Module:** Creative Suite / direct image-video jobs
+- **Evidence:** `VideoGenerationProgress` labels its X button “Cancel Job,” but `useDirectGeneration.ts:562-568` only removes local state and unsubscribes. It never calls the existing `cancelVideoJob` callable used by `VideoWorkflow.tsx:763-764`.
+- **Impact:** The job can keep running and consuming quota/cost after disappearing from the UI.
+- **Fix:** Call backend cancellation for video jobs, show cancelling/confirmed/unsupported states, and distinguish “Dismiss” for providers/jobs that cannot be cancelled.
+- **Acceptance:** Cancel updates the server job to `cancelled`; dismiss never uses cancel wording.
+- **Resolution:** Direct-generation cancel now awaits the `cancelVideoJob` callable before removing the job or its listener. A callable failure leaves the job visible/tracked and reports an error; the cancel control is hidden for terminal states.
+
+### ISSUE-780: Storyboard Veo continuity and “Audio-Conditioned” inputs are invalid or dropped
+
+- **Status:** ✅ FIXED (code change 2026-07-09; needs browser/runtime verification)
+- **Severity:** 🔴 HIGH
+- **Module:** Creative Suite / Veo Storyboard
+- **Evidence:** `StoryboardTimeline.tsx:201-208` passes the previous MP4 URL as `firstFrame`; `VideoGenerationService.ts:387-397` uploads it as an image. The timeline passes `inputAudio` at `:211-231`, but standard `generateVideo()` never includes `inputAudio` in its gateway payload. The UI still advertises Veo 3.1 audio conditioning.
+- **Impact:** Daisy-chain slots can fail on invalid image input, and vocal-sync generations silently ignore the uploaded stem.
+- **Fix:** Extract/upload the previous clip's last image frame before submission. Add a supported audio URI contract end-to-end or remove/rename vocal conditioning.
+- **Acceptance:** Tests assert first-frame MIME is image/* and the audio URI is present at the backend when the feature is advertised.
+- **Resolution:** Daisy chaining now extracts the final decoded frame from the previous clip as a JPEG data URL before the existing image upload path. The unsupported vocal-conditioning request and UI claims were removed; imported audio is accurately presented as timing/planning input only. The installed Veo SDK exposes no audio-reference field for `generateVideos`, so no audio URI is falsely sent or advertised.
+
+### ISSUE-781: Production paths generate unauthorized ISRCs and UPCs from example/arbitrary prefixes
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 CRITICAL (invalid industry identifiers)
+- **Module:** Distribution / Publishing / Metadata
+- **Evidence:** `IdentifierService.ts:13-19` hardcodes example ISRC registrant `QY1` and an arbitrary UPC sequence, then `MetadataOrchestrator.ts:26-28`, `ReleaseHarnessWorkspace.tsx:82-94`, `DistributionTools.ts:194-217,562-590`, and `IngestionNotificationService.ts:34-43` use it in production paths and even record status `REGISTERED`.
+- **Impact:** The app can create checksum-valid but unallocated identifiers, misattribute recordings, collide with another registrant, and send false registry status downstream.
+- **Fix:** Delete client-side issuance. Use only a backend-owned, pre-provisioned ISRC/GTIN pool tied to verified founder credentials; otherwise return `IDENTIFIER_SETUP_REQUIRED`. “Registered” requires authoritative provenance.
+- **Acceptance:** With no verified prefix/pool, every issuance path hard-fails before metadata persistence. No example prefix exists in production code.
+
+### ISSUE-782: Multi-track DDEX packaging assigns the same ISRC to every missing track
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 CRITICAL (catalog corruption)
+- **Module:** Distribution / Authority Layer
+- **Evidence:** `AuthorityPanel.tsx:59-84` generates one `activeIsrc`, then assigns that same value to every track whose ISRC is missing.
+- **Impact:** Distinct sound recordings become indistinguishable and royalty/usage reporting can be merged incorrectly.
+- **Fix:** Allocate one immutable ISRC per distinct recording in a backend transaction, preserve existing codes, and block DDEX compilation if any duplicate exists within the release.
+- **Acceptance:** A three-track release with two missing codes receives two unique codes; duplicate-ISRC fixtures fail QC.
+
+### ISSUE-783: Singles skip UPC/ICPN allocation even though downstream release packaging requires one
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Metadata / DDEX
+- **Evidence:** `MetadataOrchestrator.ts:28` and `IngestionNotificationService.ts:40-43` allocate UPC only when `releaseType !== 'Single'`. `AuthorityPanel.tsx:68-100` and DDEX release validation require release-level UPC/ICPN regardless.
+- **Impact:** Singles can be marked Golden, then deadlock during packaging or receive identifiers from a later inconsistent path.
+- **Fix:** Define the canonical release identifier policy once. Allocate/import a valid GTIN/UPC/EAN for every commercial release that needs ICPN, including singles, or use an explicitly supported catalog-number-only profile.
+- **Acceptance:** Single and album fixtures pass the same release-identity gate before DDEX generation.
+
+### ISSUE-784: DDEX compiler emits a fake DPID and an ERN 4.2 document while the app claims ERN 4.3
+
+- **Status:** 🔴 OPEN (regression against ISSUE-189/401 claims)
+- **Severity:** 🔴 CRITICAL (partner delivery rejection / identity spoofing)
+- **Module:** Firebase Publishing / DDEX
+- **Evidence:** `packages/firebase/src/publishing/ddex-generator.ts:57-65` declares ERN 4.2 and hardcodes `<PartyId>PADPIDA123456</PartyId>`. `AuthorityPanel.tsx:103-105,192-207` tells users it generated ERN 4.3.
+- **Fix:** Require the verified DDEX DPID from server configuration, use one canonical ERN 4.3 compiler, XML-escape all user data, and validate against the official XSD/business profile before delivery.
+- **Founder action:** Obtain the free DDEX Implementation Licence/DPID; a DPID uniquely identifies the message sender/recipient ([DDEX guidance](https://kb.ddex.net/general-implementation-guidance/licensing-the-standards/ddex-party-identifier-%28dpid%29/), [licence FAQ](https://ddex.net/implementation/frequently-asked-questions/)).
+- **Acceptance:** No fallback DPID exists; missing DPID blocks live packaging; output passes the selected ERN 4.3 profile validator.
+
+### ISSUE-785: Founder music-identity and royalty-registration checklist is incomplete and not connected to release readiness
+
+- **Status:** 🔴 OPEN (FOUNDER + PRODUCT)
+- **Severity:** 🔴 HIGH
+- **Module:** Registration Center / Founder operations
+- **Summary:** The Registration Center tracks Copyright, ASCAP/BMI/SESAC, SoundExchange, and MLC per track, but does not track the organization-level prerequisites that make identifier issuance, DDEX delivery, or platform rights management legitimate.
+- **Founder checklist (verify prices again at purchase):**
+  1. **US ISRC Rights Owner prefix:** apply using the legal rights-owner identity; current official page lists **$95** and up to 100,000 codes/year ([US ISRC Agency](https://redesign.usisrc.org/apply-for-an-isrc-account/?user-is-manager=false)). Music videos need distinct ISRCs from audio recordings.
+  2. **GTIN/UPC ownership:** choose official GS1 single GTINs (**$30 each, no renewal**) or a Company Prefix (currently **$250 initial/$50 annual for 1–10**, larger tiers available) ([GS1 US](https://store.gs1us.org/gs1-company-prefix/p)).
+  3. **DDEX:** accept the free Implementation Licence and obtain the company DPID; membership is optional for using the standards ([DDEX](https://ddex.net/implementation/frequently-asked-questions/)).
+  4. **PRO + IPI:** join one appropriate PRO as writer; decide whether a separate publisher affiliation/entity is required. Store writer and publisher IPI/IP-name numbers separately. IPI is authoritative system data—not app-generated ([CISAC IPI](https://www.cisac.org/services/information-services/ipi)).
+  5. **ISWC:** register complete works through the affiliated society/authorized agency; the app must never self-issue ISWCs ([official ISWC guidance](https://www.iswc.org/get-iswc)).
+  6. **The MLC:** join only for shares the founder/company self-administers; membership is free and does not replace a PRO ([The MLC](https://www.themlc.com/membership)).
+  7. **SoundExchange:** register both performer and sound-recording copyright-owner roles as applicable; registration is free ([SoundExchange](https://www.soundexchange.com/register/)).
+  8. **U.S. Copyright Office:** select the correct composition/sound-recording/group route; current electronic fees include $45 Single, $65 Standard, and $65 group album registration ([official fee schedule](https://www.copyright.gov/about/fees.html), [music guidance](https://www.copyright.gov/register/pa-sr.html)).
+  9. **Platform rights:** apply for Meta Rights Manager from an owned Facebook Page ([Meta](https://about.fb.com/news/2023/01/helping-creators-and-publishers-manage-intellectual-property/)); separately evaluate YouTube Content ID eligibility or use an approved distributor/administrator. YouTube requires exclusive rights and demonstrated need ([YouTube](https://support.google.com/youtube/answer/1311402)).
+  10. **Optional identity/discovery IDs:** capture ISNI, Spotify artist URI, Apple artist ID, YouTube channel/content-owner IDs, and platform catalog IDs when assigned; label them optional, imported identifiers—not release blockers.
+- **Product fix:** Add an organization-level “Founder Readiness” record with owner, official account URL, status, verified identifier/prefix, fee/renewal date, evidence document, and secret/config handoff. Keep per-track registrations separate.
+- **Acceptance:** Release readiness distinguishes founder prerequisites, release IDs, recording IDs, work IDs, party IDs, and optional discovery IDs; nothing is marked complete from a locally generated value alone.
+
+### ISSUE-786: YouTube/Meta rights exports default to claims the user may not legally control
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 CRITICAL (false copyright claims can terminate partner access)
+- **Module:** Distribution / Content ID / Meta Rights
+- **Evidence:** `execution/distribution/content_id_csv_generator.py:45-65` defaults missing IDs/titles, hardcodes label `Indii OS Distribution`, policy `Monetize`, and territory `Worldwide` without checking exclusive master rights, samples/loops, territory ownership, existing administrator conflicts, or actual YouTube partner access. There is no equivalent Meta Rights Manager readiness gate.
+- **External constraint:** YouTube requires exclusive rights, distinct individual references, accurate asset metadata, and partner approval; invalid claims can disable access ([eligibility](https://support.google.com/youtube/answer/1311402), [eligible content](https://support.google.com/youtube/answer/2605065), [partner responsibilities](https://support.google.com/youtube/answer/9142671)).
+- **Fix:** Treat exports as drafts unless a verified rights administrator/content-owner account is connected. Require explicit territory ownership, rights basis, exclusivity, sample/loop clearance, policy choice, label identity, ISRC, and conflict checks. Add Meta Rights Manager as a separate delivery target with its own approval state.
+- **Acceptance:** No default `Monetize`/`Worldwide`; ineligible or non-exclusive content is blocked with a precise reason; generated files identify the real rights owner and connected partner account.
+
+### ISSUE-787: Workflow video nodes submit invalid Veo options and mismatched cost reservations
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 HIGH (video workflow jobs can fail after cost reservation)
+- **Module:** Workflow Lab / Video generation
+- **Evidence:** `WorkflowEngine.ts:248-284` uses `durationSeconds: 5` for image-to-video, video-extend, and default video jobs; performance clip defaults to `10`. It also passes `imageUrl`, but `VideoGenerationOptionsSchema` only accepts `firstFrame`, `image`, `inputVideo`, or `sourceVideoUri` (`video/schemas.ts:48-64`). `video-extend` ignores `inputs.video_input` entirely. Client cost is reserved from the raw requested duration (`VideoGenerationService.ts:330-345`), then the client clamps only the payload duration to 4..8 (`:420-468`), and the backend re-normalizes to 4/6/8 with frame/resolution rules (`gateway.ts:303-309,1186-1201`).
+- **External constraint:** Current Google Veo docs list supported video lengths as 4, 6, or 8 seconds and image/reference video jobs often require 8 seconds ([Google Cloud Veo 3.1 specs](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/veo/3-1-generate)).
+- **Impact:** A 5-second workflow can reserve cost for 5 seconds while the backend expects 6 or 8; a 10-second workflow reserves for 10 while the submitted/backend-normalized job is 8. Some inputs are silently dropped before generation.
+- **Fix:** Share one client/server normalization helper for duration, model, resolution, and cost before reservation. Use `firstFrame` for image input and `sourceVideoUri`/`inputVideo` for extension input. Validate every workflow node payload against `VideoGenerationOptionsSchema` before billing.
+- **Acceptance:** Workflow tests cover text-to-video, image-to-video, extension, and performance clip; the reserved cost, submitted duration, backend normalized duration, and actual inputs match.
+
+### ISSUE-788: Veo UI advertises unsupported aspect ratios/durations and silently coerces output
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Creative Suite / Veo 3.1 controls
+- **Evidence:** `DirectGenerationTab.tsx:76-94` exposes `1:1`, `4:3`, `3:4`, and `10s`; the UI renders the 10-second choice at `:244-264`. The separate `VeoSettingsPanel.tsx:19-20` exposes `1:1` and `5s`. `useDirectGeneration.ts:453-458` silently clamps duration to 4..8, while the backend normalizes non-`9:16` aspect ratios to `16:9` (`gateway.ts:281-283`).
+- **External constraint:** Official Veo 3.1 specs list `9:16` and `16:9` only, with 4/6/8-second lengths ([Google Cloud Veo 3.1 specs](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/veo/3-1-generate)); the Gemini API page separately describes Veo 3.1 as generating 8-second videos with landscape/portrait support ([Google AI docs](https://ai.google.dev/gemini-api/docs/veo)).
+- **Impact:** Users can select settings that are not what they receive. Cost, expectations, and prompt planning drift from the actual request.
+- **Fix:** Render only valid controls for the selected model/surface. If a mode forces 8 seconds or a specific aspect ratio, disable conflicting choices and explain why before submit.
+- **Acceptance:** Request-capture tests prove every visible Veo control maps to an allowed backend payload; no 1:1/4:3/3:4/5s/10s option appears for unsupported Veo modes.
+
+### ISSUE-789: Content ID CSV generation fails the Electron/Python IPC contract
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Distribution / Content ID export
+- **Evidence:** `content_id_csv_generator.py:84-89` writes raw CSV to stdout. `distribution.ts:255-269` requires the Python agent result to be structured JSON and throws otherwise. `DistributionService.ts:299-305` expects `result.csvData` or `result.csv`, but the main handler returns `{ success: true, report: result }`.
+- **Impact:** Even before the rights-policy problems in ISSUE-786, the UI cannot reliably return the generated CSV.
+- **Fix:** Emit a structured JSON object from Python, e.g. `{ "status": "SUCCESS", "csv": "..." }`, unwrap it to a canonical `csv` field in the main handler, and update the renderer to read that field only.
+- **Acceptance:** Integration test calls `generateContentIdAssets()` and receives a downloadable CSV string; malformed Python output returns a typed error.
+
+### ISSUE-790: PRO dispatch marks registrations SUBMITTED without any external delivery
+
+- **Status:** 🔴 OPEN (regression against ISSUE-401)
+- **Severity:** 🔴 HIGH (false registration state)
+- **Module:** Publishing / PRO registration
+- **Evidence:** ISSUE-401 already flagged `dispatchPROPayload` as mock-only. Current `ddex-generator.ts:111-139` still builds a local payload with hardcoded `submitter_id: 'INDII_PUBLISHING'`, logs it, then writes `status: 'SUBMITTED'` to `users/{userId}/proRegistrations/{releaseId}`. `unified-distribution.ts:88-90` calls it and reports `pro_staged`.
+- **Impact:** The app can tell the founder a work was submitted to ASCAP/BMI/SESAC when nothing left the system.
+- **Fix:** Rename this state to `prepared` or `requires_manual_submission` unless a real CWR/API/SFTP delivery exists with an external receipt/acknowledgement ID.
+- **Acceptance:** No PRO record can enter `SUBMITTED` without storing destination, delivery method, timestamp, external acknowledgement, and the exact submitted payload.
+
+### ISSUE-791: Registration completeness can show 100% after confirming only one organization
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Registration Center / Release readiness
+- **Evidence:** `registrationSlice.ts:34-43` computes `total` from only org records that already exist. Firestore load does the same with `snap.docs.length` in `RegistrationCenter.tsx:65-92`. The UI visibly supports LoC, ASCAP, BMI, SESAC, SoundExchange, and MLC (`RegistrationSheet.tsx:19-46`), and `CatalogRail.tsx:77-93` labels any `100` score as “fully registered.”
+- **Impact:** A single confirmed record can make a track look fully registered even when most required/selected organizations have never been started.
+- **Fix:** Compute completeness from a canonical required/relevant org set: LoC optional/legal, exactly one selected PRO, SoundExchange, MLC, and any founder-specific gates. Missing records count as incomplete.
+- **Acceptance:** With selected PRO = BMI, confirming only BMI shows partial completion; `fully registered` requires every relevant org state to be confirmed or explicitly waived.
+
+### ISSUE-792: MLC “BWARM” export is the wrong shape and fabricates legal data
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 HIGH (royalty registration rejection / false writer data)
+- **Module:** Distribution / Keys Layer / MLC
+- **Evidence:** `keys_manager.py:29-79` emits a simplified CSV, defaults writer name to `John Doe`, publisher to `Self-Published`, collection share to `100`, and release date to today. `KeysPanel.tsx:223-257` labels it “BWARM Generation” and “compliant with The MLC standards.”
+- **External constraint:** The MLC describes three registration routes: individual Member Hub entry, CWR by contacting support, or bulk upload using the Bulk Work Registration template ([MLC self-administered songwriter page](https://www.themlc.com/self-administered-songwriters)). Their help page says bulk registration is for users with a Publisher IPI and otherwise walks self-administered writers through individual work registration ([MLC Help Center](https://help.themlc.com/en/support/how-to-register-works-in-the-mlc-portal)).
+- **Impact:** The export is likely rejected and can misstate writer/publisher ownership.
+- **Fix:** Either generate the actual MLC workbook/template or a valid CWR package, or relabel the current output as an internal draft. Require real writer legal names, IPIs, shares, publisher/admin data, and release dates; never default legal parties.
+- **Acceptance:** A fixture with two writers creates the accepted MLC/CWR structure with separate writer/share rows and no fabricated names or shares.
+
+### ISSUE-793: Tax certification schema mismatch blocks certification and can store raw TINs locally
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 CRITICAL (payout + PII risk)
+- **Module:** Distribution / Bank Layer / Tax
+- **Evidence:** The agent tool accepts `isUsPerson`, `tin`, and `signedUnderPerjury` (`DistributionAgent.ts:91-102`) but `DistributionTools.ts:246-252` sends `{ taxId, usPerson, signature }` through IPC. The Python engine expects `is_us_person`, `is_entity`, `tin`, and `signed_under_perjury` (`tax_withholding_engine.py:190-215`). If the Python path receives correctly shaped data, it stores raw `"tin": tin` in its local compliance JSON (`:217-223`). The main process only redacts logs for the JSON arg (`distribution.ts:193-204`); it does not encrypt/tokenize the stored TIN.
+- **Impact:** The normal agent path can never certify because the engine sees empty/default fields. A direct or future corrected path risks storing SSN/EIN/TIN in plaintext local JSON.
+- **Fix:** Align one canonical tax schema end-to-end; separate UI collection from IRS/TIN matching; never store raw TIN locally. Use encrypted storage or a tax provider token, and persist only masked/tokenized values plus verification status.
+- **Acceptance:** Certification succeeds with an integration fixture, raw TIN never appears in local storage/Firestore/logs, and payout status remains `HELD` until certification and verification are real.
+
+### ISSUE-794: Copyright guidance and fees are stale/misleading
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH (founder legal timing risk)
+- **Module:** Registration Center / Royalty profile
+- **Evidence:** `LocAdapter.ts:13` says `$45 single work / $65 group of unpublished works`. `CopyrightSection.tsx:42-70` says registration is only required if the user plans to sue and wants statutory damages, displays `$45 - $65 per work`, and suggests delaying registration until revenue/sync traction.
+- **External constraint:** Current official USCO fees list $45 single author/same claimant/one work, $65 standard, $85 group unpublished, and $65 group album music ([USCO fees](https://www.copyright.gov/about/fees.html)). Copyright timing also matters for statutory damages/attorney fees under 17 U.S.C. §412 ([law text](https://www.copyright.gov/title17/92chap4.html#412)).
+- **Impact:** The founder may choose the wrong application/fee route or miss statutory-damages/attorney-fee timing windows.
+- **Fix:** Update copy with correct fee routes, deposit/public-record caveats, prereg/registration timing, and a clear “not legal advice” note. Avoid blanket advice to delay registration.
+- **Acceptance:** Registration UI shows current fees by route and includes timing guidance before the founder decides whether to file.
+
+### ISSUE-795: “Golden Metadata” is asserted without running the Golden validator
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 HIGH (distribution readiness false positive)
+- **Module:** Metadata / Distribution / DAW intake
+- **Evidence:** `metadata/types.ts:54` says `isGolden` should mean schema-valid metadata with splits summing to 100%. `MetadataOrchestrator.ts:45-71` sets `isGolden: true` after intelligence + IDs, even when no splits exist. `DistributionTools.ts:80-100` and `:520-535` build distribution metadata with `splits: []`, `pro: 'None'`, `publisher: 'Self-Published'`, and `isGolden: true`. `DAWIntegrationService.ts:773-775` marks parsed audio golden when BPM/key/title/artist exist. The real validator requires at least one split and valid core fields (`validation.ts:58-73`), while `MusicTools.verify_metadata_golden` separately checks split totals.
+- **Impact:** Distribution, Content ID, MLC, PRO, and royalty flows can proceed from metadata that is not actually complete or rights-ready.
+- **Fix:** Centralize `computeGoldenMetadata()` behind `ExtendedGoldenMetadataSchema`, split-total validation, sample/AI/rights clearance checks, and identifier provenance. Remove manual `isGolden: true` assignments.
+- **Acceptance:** Any metadata with empty splits, missing publisher/label/provenance, or invalid identifiers returns `isGolden: false` with blocking reasons.
+
+### ISSUE-796: Web3 balance lookup still fabricates a successful 100 ETH balance
+
+- **Status:** 🔴 OPEN (same mock-data shape as prior Web3 issues)
+- **Severity:** 🟠 HIGH
+- **Module:** Web3 / Main process handlers
+- **Evidence:** `web3.ts:149-151` correctly throws for simulated transaction execution, but `getBalance()` still catches RPC failure and returns `{ success: true, balance: '0x56bc75e2d63100000', isSimulated: true }` (`:156-181`), i.e. a fake 100 ETH balance.
+- **Impact:** A wallet can appear funded when no RPC provider is available or the real provider failed.
+- **Fix:** Return an explicit unavailable/error result when no RPC balance can be fetched. Allow mock balances only behind a dev/test flag with visible environment labeling.
+- **Acceptance:** Production balance calls never return `success: true` from simulated data.
+
+### ISSUE-797: Creative gallery feedback is fake and direct gallery video downloads are named `.png`
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Creative Suite / Gallery
+- **Evidence:** Like/dislike buttons in `CreativeGallery.tsx:347-372` only show toast messages; they do not persist asset feedback. Direct gallery download in `DirectGenerationTab.tsx:684-693` always uses `${item.type}_${item.id}.png`, including videos.
+- **Impact:** The app claims feedback was recorded when no feedback store changes, and video assets can download with the wrong extension.
+- **Fix:** Persist feedback to asset metadata/analytics or relabel buttons as local reactions. Infer file extension from asset type, MIME, or URL and share one download helper.
+- **Acceptance:** Like/dislike updates an asset feedback record, and video assets download as `.mp4` or the correct detected extension.
+
+### ISSUE-798: Omni local upload/reset can keep old source job lineage
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Creative Suite / Omni lineage
+- **Evidence:** Stage handoff sets `sourceJobId` at `OmniWorkflow.tsx:278-288`. Local upload sets the new file, clears reference media, uploads video, and updates `referenceVideoUri`, but never clears `sourceJobId` (`:315-330`). Reset source clears file/URI/preview/output but not `sourceJobId` (`:539-546`). Remix payload/history then use `parentId: sourceJobId || undefined` (`:400-408,421-448`).
+- **Impact:** A new local remix can inherit the parent ID of an older Veo/Image handoff. If upload fails after `setRefVideoFile(file)`, the UI can mix a new local file with the previous reference URI/lineage.
+- **Fix:** Clear `sourceJobId` before local upload and on reset; set the local file only after upload succeeds or roll back all linked state; revoke object URLs.
+- **Acceptance:** Tests cover handoff → reset → local upload and failed local upload; no stale `parentId` or URI survives.
+
+### ISSUE-799: Veo model IDs are stale/inconsistent across app surfaces
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 HIGH (unsupported-model warnings / wrong pricing tier)
+- **Module:** Creative Suite / Firebase video endpoints
+- **Evidence:** Renderer model policy uses preview IDs for pro/fast/lite (`intelligence-models.ts:28-31`), and the gateway mirrors them (`gateway.ts:56-60`). `packages/firebase/src/config/models.ts:27-30` maps `VIDEO.FAST` to the pro preview ID, and legacy video functions still consume that map (`video_generation_direct.ts`, `video_generation.ts`, `long_form_video.ts`). Pricing also keys on those preview IDs (`ModelPricing.ts:94-96`, `VideoGenerationService.ts:255-263`).
+- **External constraint:** Google Cloud’s current Veo catalog lists GA model IDs such as `veo-3.1-generate-001`, `veo-3.1-fast-generate-001`, and `veo-3.1-lite-generate-001`; it also marks the older `veo-3.1-generate-preview` with an April 2, 2026 deprecation date ([Google Cloud Veo 3.1 model catalog](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/veo/3-1-generate)). The Gemini API docs still show the preview ID for that surface, so the app needs explicit surface-aware routing instead of one hardcoded preview map ([Google AI Veo docs](https://ai.google.dev/gemini-api/docs/veo)).
+- **Impact:** The “model does not support … lite” warning can come from sending a preview/lite ID to the wrong API surface. Fast mode may run/pay as pro in legacy endpoints.
+- **Fix:** Centralize one dated model matrix by provider surface (Gemini API vs Vertex/Cloud), capability, launch stage, and price. Migrate preview endpoints where required; assert fast != pro and lite exists only on supported surfaces.
+- **Acceptance:** A model-conformance test verifies every UI-selectable Veo tier resolves to a currently supported model for the actual backend surface and price table.
+
+### ISSUE-800: Merlin readiness assumes exclusive rights instead of collecting proof
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Distribution / Keys Layer / Merlin
+- **Evidence:** `KeysPanel.tsx:53-59` maps every catalog track to `exclusive_rights: true`. The Python check also defaults missing `exclusive_rights` to `True` (`keys_manager.py:86-90`) and awards readiness points for that assumption (`:110-114`).
+- **External constraint:** Merlin’s own membership path says applicants must control digital rights free from third-party obligations and comply with Merlin content policy before applying ([Merlin membership path](https://merlinnetwork.org/path-to-merlin-membership/)).
+- **Impact:** The app can report Merlin readiness for catalog it has not verified, including tracks distributed through another admin, containing samples, or under conflicting licenses.
+- **Fix:** Replace the heuristic with a rights-evidence checklist: master owner, territory, existing distributor/admin obligations, samples/loops, content-policy status, takedown/claim conflicts, and supporting documents. Missing proof should be `UNKNOWN`, not `true`.
+- **Acceptance:** Catalog with no explicit rights evidence returns `NOT_READY` and lists every missing proof item.
+
+### ISSUE-801: Mechanical-license gate fails open and treats “no license records” as cleared
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 CRITICAL (cover-song distribution risk)
+- **Module:** Distribution / Mechanical clearance
+- **Evidence:** `MechanicalRoyaltyService.getLicenses()` returns `[]` on unauthenticated user or Firestore failure (`MechanicalRoyaltyService.ts:161-173`). `isReleaseClearedForDistribution()` then returns `cleared: pending.length === 0` for that empty list (`:179-190`). `DistributionService.ts:611-629` catches any clearance service error that does not contain the word `blocked`, logs a warning, and continues distribution.
+- **External constraint:** Section 115 covers compulsory licensing for making/distributing phonorecords of nondramatic musical works, subject to its conditions ([U.S. Copyright Office Section 115 page](https://www.copyright.gov/licensing/sec_115.html)).
+- **Impact:** A release with no mechanical-license records, a Firestore read failure, or an unavailable clearance service can proceed as if it is cleared.
+- **Fix:** Fail closed for unknown clearance state. Require a track-level composition ownership/cover-song declaration and a positive clearance/not-required record for every track before distribution.
+- **Acceptance:** No license docs, auth failure, or clearance service failure blocks distribution with `MECHANICAL_CLEARANCE_UNKNOWN`.
+
+### ISSUE-802: Mechanical royalty calculator uses a stale 9.1¢ rate and ignores duration thresholds
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Publishing / Mechanical licensing
+- **Evidence:** `MechanicalRoyaltyService.ts:8-10,54,92-94` says and computes `9.1¢ per copy for songs ≤ 5 minutes`, with `totalFee = copies * 0.091`. It never applies current annual rates or the per-minute rule for longer works.
+- **External constraint:** Current 37 CFR §385.11 lists the 2026 physical/permanent-download rate as 13.1¢ per work or 2.52¢ per minute/fraction, whichever is larger ([eCFR 37 CFR Part 385](https://www.ecfr.gov/current/title-37/chapter-III/subchapter-E/part-385)).
+- **Impact:** Founder fee estimates can be materially undercounted, especially for physical releases, permanent downloads, and songs over five minutes.
+- **Fix:** Load statutory rates from a dated config/table by year and product type; compute per-work vs per-minute minimums using actual track duration; label streaming mechanics separately.
+- **Acceptance:** A 2026 fixture for a 4-minute work uses 13.1¢; a 6-minute work uses 6 × 2.52¢.
+
+### ISSUE-803: Submit Release modal says “delivered” even when only DDEX was built or SFTP was skipped
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Distribution / Submission UX
+- **Evidence:** `DistributionService.ts:702-734` sets task status `COMPLETED`, writes audit `status: 'success'`, and returns `{ status: 'success', ...result.report }` even when `result.report?.sftp_skipped` is true. `SubmitReleaseModal.tsx:110-127` ignores the returned report and always toasts “Release submitted successfully!”; `:317-322` always renders “Release delivered to distributor.”
+- **Impact:** A user can leave thinking a release reached a distributor when only local metadata/package generation completed.
+- **Fix:** Return and display distinct states: `ddex_built`, `ready_for_manual_submission`, `sftp_delivered`, `api_delivered`, `delivery_failed`. Never use “delivered” for skipped SFTP.
+- **Acceptance:** Dry-run/SFTP-skipped fixture renders “metadata package ready — not delivered” and writes a non-delivery audit event.
+
+### ISSUE-804: Distributor adapters can report success when SFTP upload was skipped
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** Distribution / Distributor adapters
+- **Evidence:** `BaseDistributorAdapter.uploadBundle()` logs “SFTP upload skipped (not running in Electron)” and returns successfully when `window.electronAPI?.sftp` is missing (`BaseDistributorAdapter.ts:77-85`). `DistroKidAdapter.ts:133-147` and `CDBabyAdapter.ts:140-150` call `uploadBundle()` and then return `success: true` / `in_review` or `validating`.
+- **Impact:** If staging exists but the SFTP bridge is unavailable, the adapter can mark an undelivered package as submitted/in review.
+- **Fix:** `uploadBundle()` must return a typed upload result and throw on skipped upload unless the caller explicitly requested dry-run/manual mode.
+- **Acceptance:** Missing SFTP bridge yields `success:false`, `ready_for_manual_submission`, or `SFTP_BRIDGE_UNAVAILABLE`; no adapter returns review/validating status.
+
+### ISSUE-805: ERN generation defaults to LiveMessage and ignores the DDEX live/test flag
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** DDEX / ERN generation
+- **Evidence:** `IngestionNotificationService.ts:18-27,46-58` sets `messageControlType` to `LiveMessage` unless `options?.isTestMode` is explicitly true. `generateERN()` just forwards optional options (`:157-164`). Many production calls omit options entirely (`DeliveryService.ts`, `DistroKidAdapter.ts`, `CDBabyAdapter.ts`, `TuneCoreAdapter.ts`, `BelieveAdapter.ts`, etc.). `DeliveryProfile.ts:9-14` defines `VITE_DDEX_LIVE_MODE`, but this flag is not used by `IngestionNotificationService`.
+- **Impact:** Test/manual package generation can produce live-message ERNs by default.
+- **Fix:** Default to test mode unless a verified live delivery profile and explicit live submission intent are present. Wire `VITE_DDEX_LIVE_MODE` through one delivery context, not scattered optional args.
+- **Acceptance:** No ERN is `LiveMessage` without a live profile, credentials, delivery target, and user-confirmed live submit action.
+
+### ISSUE-806: Creative media storage fabricates file extensions instead of preserving MIME/type
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Creative Suite / Storage / Likeness
+- **Evidence:** `LikenessService.ts:87-92` always stores uploaded likeness data under `*.webp` but uploads the original data URL without conversion. `CreativeStorageService.ts:131-148` compresses all images to JPEG and names them `.jpg`, names all video uploads `.mp4`, and names all audio uploads `.wav` regardless of the source MIME/extension; remote URL blobs are uploaded without preserving content type (`:151-167`).
+- **Impact:** PNG transparency, MOV/WebM clips, MP3/M4A stems, and portrait uploads can be mislabeled in Storage. Downstream model calls and players may infer the wrong MIME type.
+- **Fix:** Preserve detected MIME and extension after conversion/fetch. If converting, actually transcode and set Storage metadata contentType. Store original filename/MIME alongside normalized output.
+- **Acceptance:** Upload fixtures for PNG, JPEG, MOV, WebM, MP3, and WAV produce correct extension, contentType, and downstream MIME metadata.
+
+### ISSUE-807: Video “Audio” toggle promises a control that is only prompt text
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Creative Suite / Veo settings
+- **Evidence:** The settings UI renders a binary “Audio” toggle for video generation (`StudioSettingsPanel.tsx:289-301`). When disabled, `VideoWorkflow.tsx:554-565` only appends “silent video” language and negative prompt text; the comment admits Veo 3.1 has no API-level audio toggle. The video schema also notes `generateAudio` is retained for UI state only and never sent to the API (`video/schemas.ts:81-83`).
+- **Impact:** Users can reasonably expect audio to be disabled deterministically, but the app only asks the model to avoid audio.
+- **Fix:** Rename the control to “Request silent output” with a warning, or remove it until a provider-supported audio control exists.
+- **Acceptance:** UI copy and telemetry distinguish `audio_requested_off` from `audio_disabled_by_provider`.
+
+### ISSUE-808: Storyboard beat cards advertise beat quantization but use a fixed 120 BPM grid
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Creative Suite / Storyboard Timeline
+- **Evidence:** `StoryboardTimeline.tsx:99-124` says audio upload triggers automatic beat mapping, but it only reads duration, sets `editableGridBpm = 120`, and warns that beat/key/stem analysis is not configured. The empty-state copy still says the engine will “automatically segment your track into beat-quantized four-bar cards” (`:387-392`).
+- **Impact:** Video slots can be off-beat for almost every track while the UI claims automatic musical alignment.
+- **Fix:** Either run actual beat/BPM/downbeat analysis or label the feature as an editable 120 BPM timing scaffold before import.
+- **Acceptance:** Uploaded audio with known BPM generates slot timings from analysis, or the UI never uses “beat-quantized” language.
+
+### ISSUE-809: Video editor export has no completed cloud artifact path and local export overwrites a fixed temp path
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Creative Suite / Video editor
+- **Evidence:** `useVideoEditor.ts:117-125` calls `renderVideo`, then only toasts “Cloud render started successfully!” if it gets a `renderId`/`success`; it does not poll, store a job, fetch the final URL, or add the rendered asset to history. Local export uses a hardcoded output path (`/tmp/video.mp4` or `C:\\video.mp4`) at `:144-160`, so repeated exports overwrite the same location and never ask the user for a destination.
+- **Impact:** Cloud export can leave the user with no downloadable artifact. Local export can overwrite previous renders and may fail access checks.
+- **Fix:** Add render-job lifecycle state, polling/subscription, completed asset persistence, user-selected save destination, and unique filenames.
+- **Acceptance:** Cloud render fixture ends with a gallery asset/download URL; local render prompts for or safely creates a unique output path.
+
+### ISSUE-810: Creative file-node sync saves videos with `.png` filenames
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Creative Suite / Project files
+- **Evidence:** `creativeHistorySlice.ts:83-102` syncs both image and video history items into project file nodes, but constructs every filename as `${origin}-${id}.png` (`:88`) before passing the real item type separately.
+- **Impact:** Project file lists can show MP4/video assets as PNG files, confusing downloads, previews, and downstream asset selection.
+- **Fix:** Derive filename extension from `item.type`, MIME, storage URI, URL, or metadata; do not hardcode `.png`.
+- **Acceptance:** Generated image, video, editor render, and canvas-export assets produce correct file-node names/extensions.
+
+### ISSUE-811: Agent ISRC tool claims local/generated identifiers are officially registered
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 HIGH (same rights-identity class as ISSUE-781)
+- **Module:** Agent tools / Distribution identifiers
+- **Evidence:** `DistributionTools.ts:158-217` first tries the Electron authority layer, then falls back to `IdentifierService.nextISRC('US', 'IND')`. The fallback records a local/internal identifier only when a user is signed in (`:198-209`) but always returns `registry_status: 'REGISTERED'` and the user-facing message “generated and registered” (`:211-217`).
+- **Impact:** The agent can tell the founder an ISRC is registered even when the code was locally minted from a placeholder registrant and no official ISRC agency allocation happened.
+- **Fix:** Replace `REGISTERED` with explicit states: `generated_local`, `recorded_internal`, `officially_assigned`, and `official_registration_verified`. Block production ISRC issuance unless a verified registrant code/prefix and allocation ledger exist.
+- **Acceptance:** Unsigned users and users without verified registrant authority cannot receive a “registered” ISRC state; agent copy says “draft/internal” until official evidence is stored.
+
+### ISSUE-812: Publishing agent fabricates PRO submissions and reference IDs
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 HIGH (false registration state)
+- **Module:** Agent tools / Publishing
+- **Evidence:** `PublishingTools.ts:177-192` has a comment saying “Mock PRO registration logic since real ASCAP/BMI APIs require B2B credentials,” but returns `status: 'Submitted'`, a random `PRO-${...}` reference ID, and the message “Successfully submitted ... to ... for registration.”
+- **Impact:** A chat/tool flow can create a fake PRO confirmation, contradicting the more honest Registration Center queue/manual paths.
+- **Fix:** Make this tool prepare a draft packet only, or route to the Registration Center’s honest manual-required flow. Never emit `Submitted` or a PRO reference without a real external acknowledgement.
+- **Acceptance:** `register_work_with_pro` returns `requires_manual_submission` unless it stores destination, external receipt, submitted payload, and provider response.
+
+### ISSUE-813: ISWC readiness treats any supplied code as registered without provenance
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Publishing / Release harness / ISWC
+- **Evidence:** `ReleaseHarnessAdapters.ts:148-165` marks `iswcStatus: 'registered'` whenever `metadata.iswc` is present. `ISWCService.confirmRegistration()` writes `{ iswc, status: 'registered' }` for any caller-supplied string and does not validate format, source, PRO/CISAC evidence, or duplicate assignment (`ISWCService.ts:227-235`).
+- **Impact:** A typed or imported ISWC can satisfy release-readiness checks as if it were officially assigned to that exact work.
+- **Fix:** Split `provided`, `format_valid`, `claim_unverified`, `pending`, and `registered_verified`. Require proof source, assigning society/PRO, confirmation date, and duplicate/work-match checks before `registered_verified`.
+- **Acceptance:** A valid-looking ISWC string alone never produces `registered`; tests cover arbitrary input, wrong-format input, and verified confirmation evidence.
+
+### ISSUE-814: Distributor “connect” succeeds with unverified credentials
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Distribution / Distributor adapters
+- **Evidence:** `BaseDistributorAdapter.connect()` verifies SFTP only when `window.electronAPI?.sftp` exists (`BaseDistributorAdapter.ts:38-46`). It then marks `connected = true` if any `apiKey`, `username`, or `sftpHost` value exists, with a comment saying API keys should ideally be verified later (`:48-53`).
+- **Impact:** A distributor can appear connected with a typo, expired key, or unreachable SFTP bridge; downstream submission paths then have a false precondition.
+- **Fix:** Return `configured_unverified` separately from `connected_verified`. Require an actual ping/auth handshake for live delivery, and block live submit from unverified credentials.
+- **Acceptance:** Invalid API keys/basic credentials never set `connected: true`; missing Electron SFTP bridge cannot verify SFTP-only distributors.
+
+### ISSUE-815: Touring setlist tools overstate PRO royalty submission and payout math
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Touring / Road tools / PRO setlists
+- **Evidence:** `SetlistAnalytics.tsx:17,68-99,398-543` estimates payouts with a fixed `$0.12 per song per attendee` model and labels originals as “Direct 100% PRO songwriter royalties.” `RoadTools.log_live_setlist_for_pro()` writes `submissionStatus: 'Queued'`, `targetPROs: ['ASCAP', 'BMI', 'SESAC']`, and returns “queued for PRO performance royalty submission” (`RoadTools.ts:330-360`) without a connected PRO account, venue license data, repertoire IDs, or external submission.
+- **Impact:** The founder can believe live-performance reports were queued to all PROs and that the payout estimate is reliable.
+- **Fix:** Store setlists as internal drafts. Require selected PRO, work IDs/IPIs, venue/date/performance metadata, account connection/manual filing proof, and a per-PRO status model. Label payout numbers as rough educational estimates or remove them.
+- **Acceptance:** Saving a setlist never says PRO-submitted/queued externally unless an external receipt exists; payout UI displays assumptions and confidence.
+
+### ISSUE-816: Creator-protection readiness scores identifiers as protection evidence
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Legal / Creator protection
+- **Evidence:** `CreatorProtectionCompiler.ts:22-38` creates a profile with `copyrightStatus: 'draft'` whenever metadata has an ISRC or UPC. `scoreReadiness()` then awards 15 points and the strength “At least one protected work has identifiers or registrations attached” if any work has an ISRC, UPC, ISWC, or copyright registration (`CreatorProtectionHarnessService.ts:353-369`).
+- **Impact:** Business identifiers can inflate a legal/protection readiness score even when no copyright registration, trademark clearance, monitoring authorization, or enforcement evidence exists.
+- **Fix:** Separate “identifiers attached” from “legal protection evidence.” Score ISRC/UPC/ISWC as metadata hygiene, not copyright/trademark protection, unless verified registration/enforcement artifacts exist.
+- **Acceptance:** A work with only ISRC/UPC/ISWC cannot receive protection-credit language; readiness explains which legal evidence is missing.
+
+### ISSUE-817: DDEX deal mapper converts physical-only releases into digital streaming/download deals
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 HIGH (wrong commercial terms)
+- **Module:** DDEX / ERN deal mapping
+- **Evidence:** `IngestionNotificationMapper.buildDeals()` correctly adds a physical deal when `distributionChannels` includes `physical` (`IngestionNotificationMapper.ts:356-359`), then immediately treats “one physical deal only” as a fallback case, clears it, and replaces it with streaming/download/ad-supported deals (`:361-369`). It also defaults missing territories to `Worldwide` (`:308-311`).
+- **Impact:** A vinyl/CD-only release can generate an ERN package advertising digital rights that were not selected or cleared.
+- **Fix:** Only use the digital fallback when no channel data is supplied and the user explicitly accepts defaults. Preserve physical-only deals; require explicit territory selection for live delivery.
+- **Acceptance:** A fixture with `distributionChannels: ['physical']` emits only a physical deal; missing channel/territory data blocks live delivery or yields a clearly labeled draft.
+
+### ISSUE-818: Music metadata tools claim ID3 tags and splits were embedded/registered when only Firestore changed
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Agent tools / Music metadata
+- **Evidence:** `MusicTools.scrub_id3_tags()` builds an ID3 tag object and writes an audit doc with `status: 'completed'`, but never downloads, mutates, uploads, or returns a newly tagged audio file (`MusicTools.ts:207-249`). `inject_splits_to_metadata()` only writes `metadata.splits` to `users/{userId}/tracks/{trackId}` yet returns `status: 'Embedded in Distribution Metadata'` and says writers were “registered” (`:252-294`).
+- **Impact:** The founder can believe an audio file is export-ready with embedded ID3 metadata and registered writer splits when only local app metadata was updated.
+- **Fix:** Either implement real audio tag writing / metadata-blob export, or rename these as “draft metadata saved.” Remove “registered” unless a real PRO/publishing registration happened.
+- **Acceptance:** ID3 tool returns a new downloadable/tagged file or an honest `draft_only` result; split injection never says registered/embedded in audio unless a verified export artifact exists.
+
+### ISSUE-819: Temporal inpaint UI creates a zero-length still-image mask and passes it as a video mask
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Creative Suite / Veo temporal inpaint
+- **Evidence:** `VideoStage.tsx:421-430` captures one mask frame and sets `maskRange.startFrame` and `endFrame` to the same current frame. `VideoWorkflow.tsx:604-667` passes that same still image as both `maskFrameUri` and `maskTrackUri`. The backend only checks that `frameRange` exists (`gateway.ts:1204-1210`), then sends `config.maskVideo = { uri: maskUri, mimeType: 'image/png' }` (`gateway.ts:916-919`).
+- **Impact:** “Temporal inpaint” can be queued with no duration range and a still image masquerading as a mask video/track, leading to failed generation or a result that does not edit the intended region over time.
+- **Fix:** Add an actual mask-range selection UI, require `endFrame > startFrame`, generate/upload a valid mask track/video where needed, and validate MIME/type server-side.
+- **Acceptance:** Temporal inpaint fixtures reject zero-length ranges and still-image mask tracks; successful jobs store a source video URI, mask artifact URI, non-zero frame range, and provider-accepted payload.
+
+### ISSUE-820: Short-form social delivery queues to token/platform names that the worker cannot use
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Marketing / Social delivery
+- **Evidence:** OAuth token exchange stores Spotify/TikTok/Instagram tokens at `users/{uid}/analyticsTokens/{platform}` (`platformTokenExchange.ts:15,37-40,83-103`), while the scheduled delivery worker reads `users/{uid}/socialTokens/{platform}` (`deliverScheduledPosts.ts:47-54,234-240`). The autoposter UI/service sends `youtube_shorts` (`MultiPlatformPoster.tsx:80-91`, `SocialAutoPosterService.ts:12,70-74`), but `dispatchSocialPost.normalizeDispatchPlatform()` accepts only `twitter`, `instagram`/`meta_reels`, and `tiktok` (`marketing.ts:56-64`), even though the worker later supports `youtube` (`deliverScheduledPosts.ts:22,246-258`).
+- **Impact:** TikTok/Instagram posts can queue successfully but later fail with “No OAuth token,” and YouTube Shorts fails at queue time because the platform alias is unsupported.
+- **Fix:** Unify the token store and platform enum across analytics, social posting, dispatch, and worker code. Either migrate tokens or let the worker read the canonical analytics token path; map `youtube_shorts` to `youtube` before queueing.
+- **Acceptance:** A connected Instagram/TikTok account can queue and deliver a fixture post; YouTube Shorts queues as `youtube`; failed posts show the real missing-permission/platform reason in the UI.
+
+### ISSUE-821: Royalty release gate declares “ready to release” after PRO only
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Royalty checklist / Release gate
+- **Evidence:** `ActionPanel.tsx:10-16` sets `canContinue` from only `profile.proRegistration.status === 'active'` and comments that “Hard blocker is PRO. The rest are optional/recommended.” The success state then says “You're ready to release music!” (`ActionPanel.tsx:25-33`). `ReleaseGateBanner.tsx:10-15` hides the blocker as soon as PRO is active, while MLC is only “highly Recommended, but optional today” (`ReleaseGateBanner.tsx:35-40`). The same module still tracks four readiness items in `calculateProgress()` (`types.ts:77-86`), and SoundExchange/MLC are explicitly rendered as optional (`SoundExchangeSection.tsx:20-27`, `MlcSection.tsx:27-34`).
+- **Impact:** A founder can proceed while mechanical collection, SoundExchange neighboring-rights collection, copyright evidence, identifier provenance, cover/sample clearance, and split verification are still missing or unverified.
+- **Fix:** Replace the one-bit PRO gate with a release-readiness matrix by release type and rights posture: required/waived PRO, MLC, SoundExchange, copyright status, identifiers, splits, cover/sample declarations, and evidence links.
+- **Acceptance:** PRO active alone shows partial progress, not “ready to release”; the release CTA unlocks only when every required gate is completed or explicitly waived with reason/evidence.
+
+### ISSUE-822: Distribution checklist can show “Ready” from static defaults instead of release evidence
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Distribution / Registration checklist
+- **Evidence:** `RegistrationChecklistPanel.tsx:18-25` initializes cover art and metadata as `complete` without inspecting any selected release, and marks contributor splits optional. The component has no release props/store binding (`:27-30`). ISRC generation calls `distributionService.assignISRCs()` with no release/track metadata (`:92-100`), UPC assignment uses a generic desktop generator (`:108-123`), and the “Ready” state is only `progress === 100` over the locally mutated checklist (`:136-141`, `:155-161`).
+- **Impact:** A user can verify any audio file, generate unbound identifiers, and get a ready-to-DSP signal even when the actual release has no validated art, metadata, splits, per-track identifiers, or evidence provenance.
+- **Fix:** Bind the checklist to a selected release and derive every status from release artifacts, metadata validators, split approvals, identifier authority records, and delivery-target requirements.
+- **Acceptance:** Static defaults never count as complete; “Ready” requires release-bound audio, art, metadata, splits/waivers, verified ISRCs/UPC, and validator receipts.
+
+### ISSUE-823: Publishing rights compiler marks registration ready while MLC/IPI/ISWC are missing or pending
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Publishing / Rights harness
+- **Evidence:** `PublishingRightsCompiler.ts:140-163` treats missing ISWC as only a medium finding/recommendation and sets any supplied ISWC to `assigned`. `mlcRegistrationStatus === 'unregistered'` creates a high finding and `needsMlc = true` but no blocker (`:178-189`). Missing writer IPIs are only a medium finding (`:191-200`). `registrationReady` is then computed solely from `blockers.length === 0` (`:203-214`), and PRO `pending` is not blocked because only `unregistered` is checked (`:165-176`).
+- **Impact:** The harness can report a composition as registration-ready even though key publishing identifiers and collection registrations are missing, unverified, or only pending.
+- **Fix:** Split “draft complete,” “registration packet ready,” and “royalty collection ready.” Require verified/waived PRO, writer IPI/CAE, split approvals, MLC status, and ISWC provenance according to the intended filing path.
+- **Acceptance:** Pending PRO, missing required IPI, missing/unverified ISWC, and unregistered MLC cannot produce a generic `registrationReady: true` without explicit waiver states.
+
+### ISSUE-824: Tax form collection is disconnected from payees and renders 0/0 progress
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Finance / Tax forms
+- **Evidence:** `TaxFormCollection.tsx:21-33` initializes `collaborators` from an empty constant and does not accept props or load payees from store/backend. The empty state says “Add collaborators to collect W-9 or W-8BEN forms automatically” (`:89-95`), but the component has no add/import path. Progress renders `verifiedCount/totalCount` (`:36-38`, `:66-81`), so the default state is `0/0` and the progress width evaluates `(0 / 0) * 100`.
+- **Impact:** The finance page cannot actually drive tax-form collection from collaborator/payee data, and the UI starts in a mathematically invalid progress state.
+- **Fix:** Load payees/collaborators from the release/project/payment roster, add an explicit add/import flow, and guard empty progress as 0% with a clear setup CTA.
+- **Acceptance:** Empty state shows “connect/add payees” with no `NaN` width; adding/importing a payee creates a needed W-9/W-8BEN request row tied to secure backend status.
+
+### ISSUE-825: Bank tax UI treats percent withholding values as fractional multipliers
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 HIGH (money calculation)
+- **Module:** Distribution / Finance bank layer
+- **Evidence:** `tax_withholding_engine.py:164-170` returns `withholding_rate: 30.0` for held/uncertified users, and active treaty rates are also returned as percent values (`:177-187`). `BankPanel.tsx:257-280` treats `taxReport.withholding_rate` as a fraction by displaying `(rate * 100)%`, subtracting `amount * rate`, and computing `amount * (1 - rate)`.
+- **Impact:** A 30% withholding result displays as 3000%, subtracts 30x the gross amount, and can show a negative “net disbursable.”
+- **Fix:** Normalize the tax contract to either `withholding_rate_percent` or `withholding_rate_decimal` and convert at exactly one boundary.
+- **Acceptance:** A fixture with `$1,000` and 30% withholding displays `30.0%`, `$300` withheld, and `$700` net; tests cover active treaty and held fallback paths.
+
+### ISSUE-826: Waterfall payout UI, TypeScript contract, and Python engine use incompatible payload/report shapes
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Distribution / Finance bank layer
+- **Evidence:** `WaterfallData` defines `gross_revenue` (`types/distribution.ts:61-64`), and `BankPanel.tsx:49-52` sends that field. The Python waterfall engine requires `gross` and exits when it is missing (`waterfall_payout.py:105-116`). If the payload were corrected, the report still would not match the UI contract: the engine returns `gross`, `platform_fee`, nested `distributions`, `summary_status`, and `total_distributed` (`:79-90`), while `WaterfallReport` expects flat numeric `distributions`, `net_revenue`, and `processed_at` (`types/distribution.ts:67-70`), and the UI renders those missing fields (`BankPanel.tsx:296-323`).
+- **Impact:** The “Launch Waterfall” path either fails immediately or renders undefined/nested values, so payout simulations cannot be trusted.
+- **Fix:** Define one shared schema for request and response, map legacy aliases at IPC boundaries, and update UI rendering to match nested distribution objects or flatten the report intentionally.
+- **Acceptance:** A `$1,000` / 50-30-20 fixture completes through React → IPC → Python → UI with a timestamp, correct net revenue, and numeric displayed party amounts.
+
+### ISSUE-827: Sync-clearance upload path is disconnected from the clearance service and compiler
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Licensing / Sync clearance
+- **Evidence:** `SyncBriefMatcher.tsx:91-109` uploads files under `users/{uid}/clearance/...` and writes Firestore records to `licensing_clearances` with `status: 'uploaded'`. The reusable clearance service reads and reviews a different top-level collection, `clearance_docs` (`SyncLicensingClearanceService.ts:83-90`, `:169-184`, `:239-252`). The sync compiler also treats any non-empty `verifiedClearanceEvidenceRefs` array as `rightsClearanceStatus: 'cleared'` (`LicensingSyncCompiler.ts:106-110`) without requiring an approved clearance doc.
+- **Impact:** A user can upload clearance documents in the brief matcher, see local “Uploaded,” but the central clearance checker will not see them; a separate harness caller can also mark rights cleared with a generic evidence ref.
+- **Fix:** Use one clearance collection/schema and one status model across matcher, service, and compiler. Require reviewed/approved clearance evidence before `cleared`.
+- **Acceptance:** Uploading in the matcher creates a `clearance_docs` requirement/document visible to `checkTrackClearance`; compiler returns `pending` until the uploaded document is approved.
+
+### ISSUE-828: Licensing request flow says an agreement draft was generated when it only changes status
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Licensing / Request workflow
+- **Evidence:** `useLicensing.ts:100-116` validates request status, calls only `licensingService.updateRequestStatus(request.id!, 'negotiating')`, and shows the success toast “Agreement draft generated. Status: Negotiating.” No contract record, agreement content, artifact, or draft ID is created in that path.
+- **Impact:** The UI can tell the user a draft exists when the system only advanced workflow state.
+- **Fix:** Either generate and persist an actual licensing agreement draft before showing that toast, or rename the action to “moved to negotiation.”
+- **Acceptance:** The success message includes a draft/agreement ID and the Legal/Licensing dashboard can open it; otherwise the wording never claims generation.
+
+### ISSUE-829: Split-sheet tool reports success on invalid percentage totals
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Agent tools / Legal
+- **Evidence:** `LegalTools.generate_split_sheet()` checks contributor percentages and, when the total is not 100, returns `toolSuccess({ error: ... }, 'Failed to generate split sheet')` (`LegalTools.ts:86-94`) instead of a tool error.
+- **Impact:** Agent orchestration can treat a failed split-sheet generation as a successful tool call and continue as if the legal artifact exists.
+- **Fix:** Return `toolError(..., 'INVALID_SPLIT_TOTAL')` for invalid totals and include the current total plus missing/excess percentage.
+- **Acceptance:** A 90% or 110% split fixture yields `success: false`; no contract draft or downstream registration step is triggered.
+
+### ISSUE-830: Living-plan tools return `success: true` when required project/auth context is missing
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Agent tools / Planning
+- **Evidence:** `LivingPlanTools.propose_plan()` returns `{ success: true, error: 'No active project found...' }` and `{ success: true, error: 'User not authenticated...' }` (`LivingPlanTools.ts:27-32`). The same false-success pattern appears in `refine_plan`, `get_plan`, `cancel_plan`, `complete_step`, and `complete_plan` when no project is active (`:61-63`, `:90-92`, `:116-118`, `:139-141`, `:162-164`).
+- **Impact:** Agents can believe plans were proposed/refined/completed even though nothing was written because the tool response is marked successful.
+- **Fix:** Standardize all missing-context and blocked precondition paths as `success: false` with stable error codes.
+- **Acceptance:** Missing project/auth fixtures fail every living-plan tool and do not update any plan state.
+
+### ISSUE-831: PRO repertoire lookup can invent registry records from model memory
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH (rights data integrity)
+- **Module:** Agent tools / Publishing lookup
+- **Evidence:** `UniversalTools.pro_lookup()` performs a best-effort Google navigation/extract if an Electron bridge exists (`UniversalTools.ts:120-130`), then prompts the model to return PRO registry records and explicitly says, “If exact details are not in the provided search context, use your comprehensive internal knowledge base of registered musical works” (`:133-145`). The tool returns “Repertoire search completed” with the generated text (`:147-153`).
+- **Impact:** The app can present guessed ISWC, writer, publisher, split, or society data as a completed PRO repertoire search.
+- **Fix:** Restrict repertoire lookup to official PRO/CISAC/MLC source data with citations and confidence. If no source result is found, return `not_found`/`manual_lookup_required`; never ask the model to fill registry facts from memory.
+- **Acceptance:** With no live source context, the tool returns a non-authoritative/no-result state; every positive result has source URL, society, work ID, and retrieval timestamp.
+
+### ISSUE-832: Document query silently analyzes the first saved contract when the requested document is missing
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Agent tools / Legal document query
+- **Evidence:** `UniversalTools.document_query()` looks for a contract matching `documentId` or path/title, but then falls back to `contracts[0]` if any contract exists (`UniversalTools.ts:177-190`). It only returns `DOCUMENT_NOT_FOUND` if no contract content exists at all (`:194-199`).
+- **Impact:** A user can ask about one agreement and receive analysis of an unrelated first contract, creating legal/commercial risk.
+- **Fix:** Remove the fallback. Require an exact document ID, explicit user-selected document, or a clearly ranked list asking the user to choose.
+- **Acceptance:** Unknown document IDs fail with `DOCUMENT_NOT_FOUND`; ambiguous title matches return candidates but do not analyze content until one is selected.
+
+### ISSUE-833: Merch mockup tool labels AI product photos as POD-ready manufacturing assets
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Commerce / Merchandise agent tools
+- **Evidence:** `CommerceTools.mockup_merchandise()` creates an AI image prompt for a product photo (`CommerceTools.ts:8-25`), optionally stores only `productType`, `designIdea`, and `imageUrl` in Firestore (`:27-37`), then returns `providers: ['Printful', 'Printify']`, `readyForPOD: true`, and “ready for POD upload” (`:40-46`).
+- **Impact:** A generated mockup preview can be mistaken for a production-ready print file even though it lacks product/variant ID, print-area mapping, DPI, transparent artwork layer, bleed/safe-area checks, color profile, and provider acceptance.
+- **Fix:** Rename this result to `mockup_preview` and add a separate print-file readiness validator that checks provider product spec, image dimensions/DPI, print area, transparency, file type, and mockup/artwork distinction.
+- **Acceptance:** AI mockups never set `readyForPOD`; only validated artwork assets tied to a provider SKU/variant/print area can be marked POD-ready.
+
+### ISSUE-834: POD connection state is based on registered adapters, not verified provider credentials
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Merchandise / POD integrations
+- **Evidence:** `PrintOnDemandService.isConfigured()` returns true when a provider adapter is registered and not `internal` (`PrintOnDemandService.ts:898-900`), so `ManufacturingPanel.tsx:76-80` can mark Printful configured without checking user credentials or backend Cloud Functions. The provider implementation then calls Firebase functions like `pod_printfulGetProducts`/`pod_printfulCreateOrder` (`PrintOnDemandService.ts:209-219`, `:223-276`) and does not read the user-scoped credentials saved by `PODCredentialService` (`PODCredentialService.ts:37-66`). `PODIntegrationPanel.tsx:176-194` marks a partner connected when a Firestore key field exists, while sync failures are swallowed (`:207-217`).
+- **Impact:** The UI can show “Connected to printful” and “POD Order Created” pathways that are not actually backed by usable provider credentials or deployed functions; stored keys may not affect runtime fulfillment at all.
+- **Fix:** Make provider readiness an async verified state that checks deployed function availability plus a successful credential-authenticated provider ping. Wire saved credentials to backend secrets/user connection records, and surface sync failure reasons.
+- **Acceptance:** Without valid backend/provider auth, ManufacturingPanel shows setup required and blocks POD order creation; connected state includes provider, credential source, last verified timestamp, catalog sync count, and last error.
+
+### ISSUE-835: Campaign brief tool says the campaign was saved even when persistence fails
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Marketing / Agent tools
+- **Evidence:** `MarketingTools.create_campaign_brief()` catches and only logs persistence errors from `MarketingService.createCampaign()` (`MarketingTools.ts:92-125`), then always returns “Campaign brief created ... and saved to Marketing Dashboard” (`:127`). `schedule_content()` also returns `status: "scheduled"` for an in-memory schedule and does not persist or queue posts (`:144-177`).
+- **Impact:** The user/agent can believe a marketing campaign or schedule exists in the dashboard when it was only generated in the tool response.
+- **Fix:** Return a separate `draft_generated` state unless a campaign ID is returned from `MarketingService.createCampaign`; make schedule generation explicitly non-persistent or add a save/queue step.
+- **Acceptance:** Failed auth/Firestore validation yields `success: false` or `saved: false`; successful brief creation returns a real campaign ID visible in the Marketing Dashboard.
+
+### ISSUE-836: Marketing campaign platforms allowed by the UI are rejected by campaign execution
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Marketing / Campaign execution
+- **Evidence:** Renderer types and schemas allow scheduled posts for `Twitter`, `Instagram`, `LinkedIn`, and `Email` (`types.ts:16-24`, `schemas.ts:12-23`). `MarketingTools.toSupportedPlatform()` can generate `LinkedIn` and `Email` posts from channel names (`MarketingTools.ts:68-74`). The Firebase `executeCampaign` schema accepts only `Twitter`, `Instagram`, and `LinkedIn` (`marketing.ts:12-25`), and the actual delivery support list contains only `Twitter` and `Instagram`, rejecting unsupported platforms before queueing (`marketing.ts:35-39`, `:87-93`).
+- **Impact:** The app can create a valid-looking campaign with Email/LinkedIn posts that later fails execution.
+- **Fix:** Unify platform enums across generator, renderer schema, callable schema, and delivery worker. Split “content plan channel” from “native-delivery platform.”
+- **Acceptance:** Campaign creation cannot produce channels that execution rejects; unsupported channels are labeled export/manual-only and excluded from native queue.
+
+### ISSUE-837: A/B campaign tool marks tracking pixel configured without creating or verifying any pixel
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Marketing / Ads
+- **Evidence:** `MarketingTools.create_ab_test_campaign()` generates three local copy variants, a random campaign ID, and returns `pixel_framework.status: 'configured'` with events tracked (`MarketingTools.ts:269-287`). It does not call Meta/TikTok/Google ad APIs, create a pixel, install code, persist the campaign, or verify event receipt.
+- **Impact:** A user can believe ad tracking is initialized when no tracking infrastructure exists.
+- **Fix:** Change the status to `draft_pixel_plan` until a provider pixel ID, install location, verified event, and connected ad account are present.
+- **Acceptance:** The tool cannot return `configured` without a real provider pixel/account/event verification receipt.
+
+### ISSUE-838: Publicist tools claim generated assets were saved even when no user is signed in or persistence fails
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Publicist / Agent tools
+- **Evidence:** `write_press_release()` only attempts Firestore persistence when `auth.currentUser?.uid` exists and catches persistence failures as warnings (`PublicistTools.ts:87-100`), then returns “Press release generated” with no saved flag or ID (`:103-106`). `generate_crisis_response()`, `pitch_story()`, and `draft_pitch_email()` have the same optional/caught persistence pattern but return “developed and saved,” “created and saved,” or “drafted and saved” (`:124-139`, `:157-173`, `:190-207`).
+- **Impact:** PR assets can be lost after the tool response while the agent tells the user they were saved.
+- **Fix:** Return `saved: false` when unauthenticated or persistence fails; include document IDs on successful writes; do not use “saved” in messages without confirmation.
+- **Acceptance:** Signed-out and Firestore-failure fixtures return generated content but explicitly say not saved; signed-in success returns a Firestore doc ID.
+
+### ISSUE-839: Playlist pitch email tool asks the model to “scrape” Spotify without a scraper or source data
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Publicist / Playlist pitching
+- **Evidence:** `PublicistTools.draft_pitch_email()` prompts the model to “Scrape info for Spotify playlist” (`PublicistTools.ts:176-181`) but only calls `AutonomousIntelligence.generateStructuredData()` (`:183-188`). There is no Spotify API, web fetch, playlist URL input, curator contact lookup, or source context before the generated pitch is saved/returned (`:190-207`).
+- **Impact:** “Personalized” playlist pitches can hallucinate outlet/curator context and target outlets.
+- **Fix:** Require playlist URL/source data and fetch real playlist metadata/curator/contact fields, or label output as a generic pitch draft.
+- **Acceptance:** Without source data, the tool returns `generic_draft` and does not claim scraping/personalization; with source data, output includes source URL and retrieved metadata timestamp.
+
+### ISSUE-840: Credential storage falls back to localStorage and raw Firestore fields
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 HIGH (secret handling)
+- **Module:** Security / Credential storage
+- **Evidence:** `UniversalTools.credential_vault()` claims shared credential operations should fail closed when no real bridge exists (`UniversalTools.ts:5-10`), but if `window.electronAPI?.credentials` is unavailable it stores/retrieves arbitrary credentials in `localStorage` under `indii_vault_${service}` (`:78-99`). `PODCredentialService.saveCredential()` stores provider API keys directly as Firestore fields under `users/{uid}/integrations/pod_credentials` and only comments that KMS encryption should be considered (`PODCredentialService.ts:32-40`, `:61-66`).
+- **Impact:** Production secrets can be written to browser storage or client-readable Firestore documents instead of OS secure storage / server-side secret management.
+- **Fix:** Remove localStorage credential fallback from production builds. Route all provider credentials through Electron safeStorage/keychain or server-side secret storage with encryption, least-privilege access, and redacted reads.
+- **Acceptance:** Web/renderer credential save attempts fail closed unless an approved secure credential backend is available; no API key is returned to the renderer after storage.
+
+### ISSUE-841: Permission audit reports “Live Audit Complete” from guessed organization roles
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Security / Permissions audit
+- **Evidence:** `SecurityTools.audit_permissions()` reads `organizations/{project_id}`, iterates `data.members`, and assigns every non-owner user the role `viewer` while the owner is `admin` (`SecurityTools.ts:112-145`). It ignores `memberRoles`, custom roles, Firestore rules, Firebase Auth custom claims, IAM, and service-account permissions. The organization listing tool exposes `memberRoles` separately (`OrganizationTools.ts:298-302`), but the audit does not use it.
+- **Impact:** Security reports can understate privileges and return “Live Audit Complete” even when the actual access model is unknown.
+- **Fix:** Rename the current check to a shallow membership summary or enrich it with real role sources: org memberRoles, Auth claims, Firestore rules coverage, Cloud IAM, and service accounts.
+- **Acceptance:** A user with elevated `memberRoles` is reported correctly; if IAM/claims/rules cannot be read, the audit returns `partial` with missing sources instead of complete.
+
+### ISSUE-842: POD credential service writes to a Firestore path that the rules do not allow
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Merchandise / POD integrations / Firestore rules
+- **Evidence:** `PODCredentialService` stores API keys at `users/{uid}/integrations/pod_credentials` (`PODCredentialService.ts:17-29`, `:37-40`). The `users/{userId}` Firestore rules enumerate allowed subcollections but do not include `integrations` (`firestore.rules:198-405`), and the root catch-all denies every unmatched path (`firestore.rules:1230-1234`). `PODIntegrationPanel.handleConfirmConnect()` calls `saveCredential()` and then `doSync()` without a local error state (`PODIntegrationPanel.tsx:188-197`).
+- **Impact:** After a key validates, saving/loading the connection can fail with `permission-denied`, leaving POD integrations disconnected or stuck without a clear user-facing fix.
+- **Fix:** Add a dedicated rule for `users/{userId}/integrations/{integrationId}` with sensitive-field constraints, or move credentials to a server-side secret backend and store only non-secret connection metadata in Firestore.
+- **Acceptance:** Valid key connection succeeds or fails with a visible reason; Firestore rules tests cover `pod_credentials` read/write and deny cross-user access.
+
+### ISSUE-843: Multiple active user-scoped feature collections are missing Firestore rules
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Firebase / Firestore rules / Cross-module persistence
+- **Evidence:** Active renderer paths include `users/{uid}/analyticsTokens/spotify` (`SpotifyService.ts:55-56`), `users/{uid}/socialTokens/{platform}` (`SocialPlatformService.ts:66-81`), `users/{uid}/merchandiseMockups` (`CommerceTools.ts:27-38`), `users/{uid}/limitedDrops` (`CommerceTools.ts:85-103`), `users/{uid}/brandKit/current` (`BrandTools.ts:217-245`), and `users/{uid}/proprietaryIngestionReleases` (`PublishingTools.ts:20-24`). The owner-scoped rules list only selected subcollections such as `contacts`, `licensingDeals`, `pod_orders`, `press_releases`, `publishingCatalog`, `tasks`, and `web3Contracts` (`firestore.rules:329-346`), then denies all unmatched paths (`firestore.rules:1230-1234`).
+- **Impact:** Analytics connections, social tokens, brand kits, merch mockups, and limited-drop records can fail with `permission-denied`, often in code paths that log/catch errors and still show optimistic UI.
+- **Fix:** Generate a Firestore collection inventory from source references, classify sensitive data, and add explicit tested rules for every intended client-readable/writable path. Move secret/token paths server-side where possible.
+- **Acceptance:** Rules tests cover every `users/{uid}/...` collection used by the renderer; missing-rule regressions fail CI.
+
+### ISSUE-844: Pre-save builder exposes a shareable campaign URL without publishing a page or storing leads
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Marketing / Pre-save campaigns
+- **Evidence:** `PreSaveCampaignBuilder` derives a public `indii.vip/presave/{slug}` URL from local input (`PreSaveCampaignBuilder.tsx:35-37`), displays DSP pre-save buttons regardless of whether links are entered (`:195-200`), shows a QR placeholder (`:220-225`), and only supports copy/share actions (`:42-70`, `:231-245`). `PreSaveCampaignService.createCampaign()` only logs and returns `ps_${Date.now()}` while Firestore persistence is commented out (`PreSaveCampaignService.ts:41-49`); `recordLead()` also only logs with persistence commented out (`:55-60`).
+- **Impact:** A founder can share a URL that may not resolve to a hosted landing page, and fan email/phone collection can be lost because no published campaign or lead storage is created.
+- **Fix:** Add an explicit publish flow that writes a campaign document, provisions/validates the public route, generates a real QR code, validates required DSP links, and stores consented leads server-side.
+- **Acceptance:** Copy/share is disabled until a campaign has a persisted ID, routable URL, real QR payload, and lead-capture backend; submitted test leads appear in the campaign lead collection with consent metadata.
+
+### ISSUE-845: Ad insights silently become zero metrics when the backend is unavailable
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Marketing / Ads / Performance reporting
+- **Evidence:** `AdAutomationService.getAdInsights()` calls the `getAdInsights` Cloud Function (`AdAutomationService.ts:140-150`), but on any failure logs a warning and returns `{ impressions: 0, clicks: 0, spend: 0, ctr: 0, cpc: 0 }` (`:151-159`).
+- **Impact:** Missing backend deployment, auth, provider API errors, or network failure can be displayed as a real zero-performance ad instead of an unavailable/unknown state.
+- **Fix:** Return an explicit `unavailable`/`sync_failed` result with error code and last-success timestamp; never coerce missing metrics to zero unless the provider confirms zeros.
+- **Acceptance:** A failing `getAdInsights` callable renders “insights unavailable” and does not feed zeros into ROI, kill-switch, or campaign optimization logic.
+
+### ISSUE-846: Release velocity benchmark reports projections from a hard-coded follower baseline
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Analytics / Agent tools
+- **Evidence:** `AnalyticsTools.benchmark_release_velocity()` reads cached Spotify stats from `users/{uid}/platformStats/spotify` (`AnalyticsTools.ts:47-59`), then falls back to `followers = 1500` and `source = 'benchmark_baseline'` when no follower count exists (`:61-70`). It still returns projected day 1/7/30 streams and the message “Velocity benchmarking complete” (`:72-91`).
+- **Impact:** A user without connected analytics can receive precise-looking stream projections that are not based on their artist data.
+- **Fix:** Require connected follower/audience data for personalized projections, or label the output as a generic example benchmark and keep it out of performance forecasts.
+- **Acceptance:** With no cached/live Spotify followers, the tool returns `source: generic_benchmark`, `personalized: false`, and copy that says the result is not artist-specific.
+
+### ISSUE-847: Social analytics connection state can be inferred from denied or stale token/cache paths
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Social / Analytics / Firestore rules
+- **Evidence:** Social tokens are read from `users/{uid}/socialTokens/{platform}` (`SocialPlatformService.ts:66-81`) and stats are cached to `users/{uid}/platformStats/{platform}` (`SocialPlatformService.ts:447-448`, `:518-519`, `:565-566`, `:606-607`, `:653-654`). The dashboard marks a platform connected when live stats exist, a cached `platformStats` doc exists, or a `socialTokens` doc exists (`SocialAnalyticsDashboard.tsx:120-136`). Firestore rules for `users/{userId}` do not include `socialTokens` or `platformStats` in the allowed subcollections (`packages/firebase/firestore.rules:329-346`) and deny unmatched paths (`:1230-1234`).
+- **Impact:** Connection status can be wrong in both directions: rules can block token/cache reads while UI shows generic sync errors, or stale cache/token docs can mark a platform connected even when live API sync is failing.
+- **Fix:** Move OAuth tokens server-side, expose sanitized connection metadata, add explicit rules for non-secret analytics cache if client-readable, and separate `connected`, `authorized`, `liveSyncOk`, and `cacheOnly` UI states.
+- **Acceptance:** A denied token/cache read shows a permission/configuration error; stale cache cannot mark live sync connected; rules tests cover `platformStats` and reject client access to raw OAuth tokens.
+
+### ISSUE-848: Fan CRM tiering reports success with zero fans when auth or Firestore reads fail
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Marketing / Fan CRM
+- **Evidence:** `MarketingTools.tier_superfans()` initializes `results` to all zero (`MarketingTools.ts:429-432`), reads `users/{uid}/fanPurchases` only if `auth.currentUser?.uid` exists (`:433-458`), catches Firestore errors as warnings (`:459-461`), and always returns `toolSuccess` with `totalFans` and “Fan CRM tiered” (`:463-471`).
+- **Impact:** Signed-out users, rules failures, or missing purchase ingestion are indistinguishable from a real CRM with zero fans.
+- **Fix:** Return `AUTH_REQUIRED`, `FAN_PURCHASES_UNAVAILABLE`, or `NO_PURCHASE_DATA` states separately from a valid empty result.
+- **Acceptance:** Auth/read failures produce `success: false`; a true empty CRM includes `source: fanPurchases`, `recordsRead: 0`, and a clear “no purchase records found” message.
+
+### ISSUE-849: Limited-drop wizard says a drop is live and fans will be notified without persistence or notification backend
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Merchandise / Limited drops
+- **Evidence:** `DropCampaignWizard.handleSubmit()` waits 1.5 seconds and sets local `submitted` state only (`DropCampaignWizard.tsx:79-82`). The success view says “Drop Scheduled!”, “is live,” and “Fans will be notified when the countdown hits zero” (`:138-151`). The wizard captures pre-sale and superfan-only toggles (`:221-237`) but does not save a drop, publish a landing page, configure gating, or queue notifications before “Launch Drop” (`:269-274`).
+- **Impact:** A user can believe a scarcity campaign is live while no drop, audience gate, countdown page, or fan notification exists outside the modal.
+- **Fix:** Wire the wizard to a real `limitedDrops` create/publish service, validate selected products and future date/time, and queue/email/SMS notification jobs only after provider credentials and audience segments are verified.
+- **Acceptance:** “Launch Drop” returns a persisted drop ID and notification job status; without backend support, the UI shows “draft created” or “setup required,” never “live.”
+
+### ISSUE-850: Merch pricing engine presents default benchmarks as AI/market-backed recommendations
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Merchandise / Pricing
+- **Evidence:** `PricingEngine` says it provides “AI-recommended prices vs. indie benchmarks” and “average independent artist margins across Printful, Printify, and direct-to-fan channels” (`PricingEngine.tsx:56-72`). The actual enrichment uses `usePricingConfig()` defaults or a generic `current * 1.15` fallback (`:18-27`). `usePricingConfig` seeds hard-coded defaults like T-Shirt `$28`/`34%` and Sticker Sheet `$8`/`65%` (`usePricingConfig.ts:16-23`), and falls back to those defaults when no `merch_config` doc exists or the fetch fails (`:46-55`).
+- **Impact:** Pricing decisions can be made from static placeholder benchmarks while the UI implies live AI/market/provider data.
+- **Fix:** Add `source` metadata (`provider_catalog`, `user_config`, `static_default`, `market_survey`) and show it in the UI. Disable “AI/benchmark” claims unless current source data supports them.
+- **Acceptance:** Default-only pricing is labeled as a starter estimate; live/provider-backed recommendations include provider, cost basis, date fetched, shipping/fees assumptions, and margin formula.
+
+### ISSUE-851: Storefront deployment creates one fixed-price Stripe link for all items
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Commerce / Storefront / Stripe
+- **Evidence:** `CommerceTools.deploy_storefront_preview()` tells the user “Storefront deployed ... with N real Stripe Payment Links” after calling `createStripePaymentLinks` (`CommerceTools.ts:53-62`). The Cloud Function creates one Stripe product named `{campaignName} - Storefront Items`, puts all item names into the description, creates a single `$25.00` USD price, creates one payment link with quantity 1, and returns it as both `storefrontUrl` and the only `paymentLinks` entry (`paymentLinks.ts:19-38`).
+- **Impact:** Multi-item storefronts have no per-item pricing, quantities, SKUs, tax/shipping configuration, inventory, fulfillment metadata, or split payout routing, yet are presented as deployed real checkout.
+- **Fix:** Accept structured items with SKU, title, unit amount, currency, quantity/stock, tax/shipping settings, fulfillment provider, and payout metadata. Return one verified checkout/cart or itemized payment links.
+- **Acceptance:** A two-item storefront creates two distinct prices/line items with correct item data and rejects unpriced items; user-facing copy says “checkout preview” unless the public storefront and fulfillment path are complete.
+
+### ISSUE-852: Production UI says manufacturing started when only a pending Firestore request exists
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Merchandise / Manufacturing
+- **Evidence:** `ManufacturingPanel` falls back to default costs when catalog fetch fails (`ManufacturingPanel.tsx:87-123`), then in internal mode calls `MerchandiseService.submitToProduction()` and shows “Production Started!” when the returned object has `success: true` (`:182-199`). `submitToProduction()` only writes a `manufacture_requests` document with `status: 'pending'` and notes that Firestore triggers/listeners are expected to update it later (`MerchandiseService.ts:112-147`).
+- **Impact:** A user can think paid manufacturing has begun even though the app only queued a local request and may have no connected manufacturer, approval gate, quote, or payment authorization.
+- **Fix:** Rename the success state to “manufacturing request queued,” require an approval/quote/payment step before “started,” and display backend trigger/provider status.
+- **Acceptance:** Pending Firestore writes render as `queued`; only a provider-confirmed production order with quote/payment/expected dates can show “started.”
+
+### ISSUE-853: Split escrow tool can say funds were held when Stripe did not create an escrow payment intent
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 HIGH (money movement)
+- **Module:** Finance / Split escrow / Stripe
+- **Evidence:** `FinanceTools.initiate_split_escrow()` passes `holdAmount` directly to the callable and returns “$X successfully held in Stripe Connect escrow account” using `result.data.escrowAccount` and `result.data.status` (`FinanceTools.ts:198-218`). The backend expects `holdAmount` in USD cents (`splitEscrow.ts:13-16`), but creates the Firestore escrow even when Stripe is not configured or `paymentIntents.create()` fails, storing `stripePaymentIntentId: null` (`:63-87`, `:89-104`).
+- **Impact:** The agent can claim real funds are held when only a Firestore record exists, and amount units can be off by 100x depending on whether the caller supplied dollars or cents.
+- **Fix:** Standardize amount units with typed `amountCents`; fail the callable unless a Stripe PaymentIntent is created for real escrow mode; return `firestoreOnly: true` only for explicit sandbox/draft mode.
+- **Acceptance:** If Stripe intent creation fails, the tool returns `ESCROW_NOT_FUNDED`; success includes `stripePaymentIntentId`, amount in cents and formatted dollars, and `fundsHeld: true`.
+
+### ISSUE-854: Escrow signoff marks status RELEASED without capturing or transferring funds
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 HIGH (money movement)
+- **Module:** Finance / Split escrow / Stripe
+- **Evidence:** `splitEscrow.ts` says all signoffs transition the escrow to `RELEASED` (`splitEscrow.ts:125-128`). The implementation only updates Firestore signoff fields and sets `status: allSigned ? 'RELEASED' : 'PENDING_SIGNATURES'` (`:159-166`), then returns success (`:169`). It does not capture the manual PaymentIntent, create Stripe transfers, verify connected accounts, or record payout IDs.
+- **Impact:** Backend state can say funds are released even when no money moved.
+- **Fix:** Split legal signoff from payout execution: `FULLY_SIGNED`, `CAPTURE_PENDING`, `TRANSFER_PENDING`, `RELEASED`. Only set `RELEASED` after idempotent Stripe capture/transfers succeed and are recorded.
+- **Acceptance:** A fully signed escrow with no captured PaymentIntent remains `FULLY_SIGNED`/`PAYOUT_BLOCKED`; `RELEASED` requires Stripe payment and transfer receipts.
+
+### ISSUE-855: Split escrow UI treats zero collaborators as ready to release
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Finance / Split escrow UI
+- **Evidence:** `SplitSheetEscrow` initializes `collaborators` as an empty array (`SplitSheetEscrow.tsx:24-30`), computes `allSigned = signedCount === totalCount` (`:36-39`), and computes `progressPct` as `signedCount / totalCount` (`:39`). With zero collaborators, `allSigned` is true and `progressPct` is `NaN`, so the escrow banner can show “Ready to Release” (`:162-166`) and the release button path renders as enabled for the all-signed state (`:271-284`).
+- **Impact:** Empty setup state looks like a release-ready escrow and can produce invalid progress styles/copy.
+- **Fix:** Require `totalCount > 0`, escrow amount > 0, valid splits totaling 100, and connected accounts before `allSigned` or release-ready UI can be true.
+- **Acceptance:** With zero collaborators, the UI shows setup-required, progress is 0%, and release controls are disabled with a specific missing-collaborators reason.
+
+### ISSUE-856: Distributor statement normalization is prompt-only but reports successful normalization
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Finance / Distributor statements
+- **Evidence:** `FinanceTools.normalize_distributor_statements()` accepts `csvFiles: string[]`, inserts the strings into a prompt, and asks Gemini to “Describe the canonical normalization mapping” (`FinanceTools.ts:408-422`). It does not parse CSV files, validate columns, store normalized rows, or reconcile totals. On model success it returns `status: 'Normalized into standard indii ledger format'` and “Successfully analyzed and normalized N distributor CSV statements” (`:424-432`).
+- **Impact:** Royalty accounting can proceed from an AI narrative instead of a deterministic imported ledger, with no row counts, totals, or error report.
+- **Fix:** Implement a deterministic CSV ingestion pipeline with file content, parser, schema mapping, row-level validation, totals reconciliation, and AI assistance only for mapping suggestions.
+- **Acceptance:** Normalization returns canonical rows, rejected-row report, source file hashes, gross/net totals, and reconciliation status; prompt-only output is labeled `mapping_draft`.
+
+### ISSUE-857: Royalty forecasts use fixed approximate rates and fixed confidence as if they are verified projections
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Finance / Revenue forecasting
+- **Evidence:** `forecast_revenue()` uses hard-coded approximate per-stream rates and assumes the same stream count repeats for month 1, month 6, and year 1 (`FinanceTools.ts:92-144`). `predict_daily_royalties()` uses only two fixed rates (`Spotify` = `$0.0035`, all other platforms = `$0.006`) and returns `confidence: 0.88` without source data, territory, subscription mix, distributor fee, currency, or historical variance (`:251-267`).
+- **Impact:** Users can treat rough estimates as high-confidence royalty forecasts, which affects budgets, recoupment, and payout planning.
+- **Fix:** Mark these as rough calculators unless backed by actual distributor/DSR history. Add source, assumptions, confidence rationale, territory/currency/platform mix, distributor cut, and date of rate table.
+- **Acceptance:** No tool returns fixed high confidence without historical data; estimate output includes assumptions and `confidenceSource`, or is labeled `rough_estimate`.
+
+### ISSUE-858: DDEX readiness treats local metadata fields as delivery authority
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Distribution / DDEX readiness
+- **Evidence:** `buildDistributionReadiness()` validates identifier formats and checks that `metadata.dpid` plus ISRC/UPC/ISWC/catalog number exist (`ReleaseHarnessAdapters.ts:140-155`). It then exposes `authorityLevel: 'package_ready'` when `ddexPackageReady` and `selectedStores.length > 0` (`:168-176`). The compiler turns that into a 100 score with rationale “Metadata, identifiers, and DPID are present” (`DistributionDdexCompiler.ts:35-41`) and recommends delivery approval (`:60-71`).
+- **Impact:** A typed-in DPID and selected store names can make the package look delivery-ready without proof of a registered sender DPID, DSP recipient identities, delivery agreement, SFTP/API credentials, feed profile, or XSD-validation receipt.
+- **Fix:** Split `metadataComplete` from `deliveryAuthorityReady`. Require verified sender DPID, verified recipient SystemIdentity per selected store, active delivery credentials, feed profile, and validation receipts before `package_ready`.
+- **Acceptance:** A release with local DPID text but no verified DDEX onboarding remains `metadata_only`; selected stores without recipient credentials are listed as blocked.
+
+### ISSUE-859: Cloud DDEX generator hard-codes sender PartyId and does not validate or escape ERN XML
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 HIGH
+- **Module:** Distribution / DDEX generation
+- **Evidence:** `compileDDEXRelease()` is documented as generating “XSD-validated DDEX XML” (`ddex-generator.ts:33-36`) but only checks UPC and ISRC presence (`:45-48`) and returns a template string (`:57-104`). The template hard-codes `<PartyId>PADPIDA123456</PartyId>` (`:63-65`), omits a `MessageRecipient`, interpolates release fields directly into XML (`:61-99`), and performs no XSD/profile validation before returning.
+- **Impact:** Generated ERN can use an invalid/unregistered sender, malformed XML, or unsafe/unescaped metadata while the distribution pipeline treats it as compiled.
+- **Fix:** Use the verified ingestion identity registry for sender/recipient, XML builders with escaping, ERN 4.3 profile-specific schemas, and XSD validation as a required artifact.
+- **Acceptance:** Compilation fails without verified sender/recipient identities; metadata containing XML special characters remains valid; output includes schema/profile validation status and version.
+
+### ISSUE-860: Unified distribution moves releases to monitoring after staging XML only
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Distribution / Delivery orchestration
+- **Evidence:** `triggerUnifiedDistribution()` transitions the release FSM to `DISTRIBUTING`, generates DDEX, and runs `stageForSpotify`, `stageForAppleMusic`, `stageForTidal`, and `stageForPerformanceRightsOrganizations` (`unified-distribution.ts:17-36`). The DSP functions only save XML files to Firebase Storage (`:56-85`), with comments saying final SFTP/API dispatch is pending (`:24-27`, `:56-57`). If staging succeeds, the FSM transitions to `MONITORING` and returns `{ success: true, status: 'STAGED' }` (`:45-47`).
+- **Impact:** The release state can enter a monitoring posture even though nothing was delivered to DSPs and no DSP acknowledgement can arrive.
+- **Fix:** Add explicit states: `PACKAGE_STAGED`, `DELIVERY_PENDING`, `DELIVERED`, `ACK_RECEIVED`, `LIVE`. Do not enter monitoring until a real delivery job is submitted.
+- **Acceptance:** Staged-only runs show `PACKAGE_STAGED`; `MONITORING` requires delivery transport receipt or DSP acknowledgement source.
+
+### ISSUE-861: MCP DSP metadata formatter uses defaults and hard-coded DPID for delivery XML
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Firebase MCP / DSP metadata
+- **Evidence:** The `format_dsp_metadata` MCP tool requires only title, artists, genre, UPC, and ISRC (`mcp/index.ts:67-85`). It defaults `duration` to `PT3M30S` and `releaseDate` to today (`:111-116`), hard-codes sender `<PartyId>PADPIDA2014120901U</PartyId>` (`:117-127`), interpolates user strings directly into ERN XML (`:135-169`), and returns the text with no recipient, asset, deal, territory, explicitness, validation, or escaping step (`:175-180`).
+- **Impact:** Tool output can look like DSP-ready metadata while containing guessed release dates/durations, unverified party identity, and malformed or incomplete ERN.
+- **Fix:** Rename the tool to `draft_dsp_metadata_xml` unless it can use the verified DDEX generator/validator, require real release date/duration/assets/deals, and escape XML fields.
+- **Acceptance:** Missing duration/release date returns a required-field error for delivery mode; draft mode labels defaults clearly and includes `deliveryReady: false`.
+
+### ISSUE-862: Ingestion XML validation is structural but is used around DDEX delivery language
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Distribution / Ingestion validation
+- **Evidence:** `IngestionValidator.validateXML()` explicitly says it is “not an XSD validator” (`IngestionValidator.ts:8-12`) and checks only declarations, substring root/namespace matches, and required tag presence (`:15-57`). `IngestionNotificationService.validateIngestionNotificationXML()` performs a similar tag-presence check (`IngestionNotificationService.ts:90-119`) but its comment says it runs before SFTP delivery to catch schema violations (`:90-93`).
+- **Impact:** Invalid ERN can pass app validation as long as required tag names exist, creating false confidence before partner delivery.
+- **Fix:** Keep structural checks as fast lint, but add real DDEX XSD/profile validation and call it in any “delivery” or “package ready” path.
+- **Acceptance:** Validation distinguishes `structuralLintPassed` from `xsdValidated`; delivery-ready requires XSD/profile pass and stores the validation report.
+
+### ISSUE-863: PandaDoc webhook verification is optional despite security-critical pipeline side effects
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 HIGH (webhook security)
+- **Module:** Legal / PandaDoc webhook
+- **Evidence:** `pandadocWebhook` comments say it validates PandaDoc IP ranges (`pandadocWebhook.ts:41-44`), but the implementation only performs HMAC verification if a secret is present (`:59-80`) and does not check IP ranges. If `PANDADOC_WEBHOOK_SECRET`/`pandadocWebhookSecret` is missing, unsigned requests continue into career-event writes and auto-pipeline triggers (`:82-235`).
+- **Impact:** A misconfigured secret allows forged webhooks to mark contracts signed, create career events, queue ISWC mapping, and queue distribution work.
+- **Fix:** Fail closed when the webhook secret is missing, use timing-safe HMAC comparison, and optionally enforce PandaDoc source IP/event ID replay protection.
+- **Acceptance:** Unsigned or misconfigured webhook requests always return 401/500 before writes; tests cover missing secret, missing signature, invalid signature, and replayed event ID.
+
+### ISSUE-864: Signed-document webhook can queue publishing/distribution automation from document name alone
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Legal / PandaDoc webhook / Release automation
+- **Evidence:** On `document.completed`, the webhook classifies publishing agreements by `documentType` or name substrings like `publishing`, `songwriter`, or `composition` (`pandadocWebhook.ts:173-184`), then queues `iswc_mapper_queue` with token-derived writers (`:187-199`). It classifies distribution/release approval by type or name substrings like `distribution` and `release approval` (`:202-210`), then queues `distribution_pipeline_queue` with `isrcAssignment`, `ddexGeneration`, and `dspDelivery` pending (`:211-228`).
+- **Impact:** A completed document with matching words can start rights/distribution automation without checking the document template ID, signer roles, release ownership, rights gates, or explicit user delivery approval.
+- **Fix:** Require trusted template IDs, signed recipient role validation, release ownership lookup, rights/readiness gate pass, and idempotent event IDs before queueing automation.
+- **Acceptance:** Generic completed documents with “distribution” in the name do not queue delivery; only approved templates tied to a verified release and explicit approval create jobs.
+
+### ISSUE-865: ISWC mapper logs “composition registered” while creating only a draft work record
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Publishing / ISWC mapping
+- **Evidence:** `processISWCMapping()` warns when writer/publisher shares do not total 100 but continues (`iswcMapper.ts:84-91`). It creates an `iswc_works` record with `iswc: null` and `status: "draft"` (`:93-126`), then writes a `career_events` entry with `type: "composition_registered"` and summary `Composition "... " registered from signed publishing agreement` (`:129-139`).
+- **Impact:** Draft internal records can be mistaken for CISAC/PRO/MLC work registration, especially when splits are invalid.
+- **Fix:** Rename event/state to `composition_draft_created`; block or mark invalid split totals; only log `composition_registered` after external registration confirmation and ISWC/work ID receipt.
+- **Acceptance:** Draft ISWC records never produce “registered” career events; split totals other than 100 require correction or explicit normalization output before downstream registration.
+
+### ISSUE-866: Founder checkout payment does not automatically activate Founder access
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 HIGH (revenue/access)
+- **Module:** Founders / Stripe / Subscription activation
+- **Evidence:** `FoundersCheckout` says “Your lifetime access begins immediately” and creates a one-time `$2,500` checkout item (`FoundersCheckout.tsx:238-241`, `:73-84`). `createOneTimeCheckout` stores Stripe metadata `type: 'one_time'` (`createOneTimeCheckout.ts:80-100`). The Stripe webhook routes only `micro_transaction`, `licensing_purchase`, or subscription sessions with `tier` metadata (`webhookHandler.ts:126-144`), while the normal subscription checkout explicitly rejects `SubscriptionTier.FOUNDER` and says founder passes must be activated manually by admin (`createCheckoutSession.ts:32-34`). `activateFounderPass` is admin-only (`activateFounderPass.ts:202-213`).
+- **Impact:** A paid founder buyer can be returned to `/finance?payment=success&type=founder` without Founder tier, download access, or public recognition until a separate manual admin action occurs.
+- **Fix:** Add a dedicated Founder checkout metadata type and webhook handler that verifies seat availability/payment amount, then calls the same activation transaction or queues a clear admin fulfillment task. Update checkout copy if manual activation remains.
+- **Acceptance:** Successful founder payment either activates Founder access automatically and returns a seat/hash, or the UI clearly says “manual activation pending” with fulfillment status and support path.
+
+### ISSUE-867: Veo 3.1 model IDs still use deprecated preview names
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Creative Suite / Veo 3.1
+- **Evidence:** Renderer-approved video models are `veo-3.1-generate-preview`, `veo-3.1-fast-generate-preview`, and `veo-3.1-lite-generate-preview` (`intelligence-models.ts:28-31`, `:137-150`). The creative gateway hard-codes the same preview IDs for fast/pro/lite (`gateway.ts:56-60`). Current Google docs list stable Veo 3.1 IDs as `veo-3.1-generate-001`, `veo-3.1-fast-generate-001`, and `veo-3.1-lite-generate-001`, with preview IDs deprecated in 2026.
+- **Impact:** Users can hit “model does not support…” or model-not-found warnings even when the requested feature exists on the stable model family.
+- **Fix:** Replace preview IDs with stable IDs behind one shared registry and add a migration alias layer for old saved jobs.
+- **Acceptance:** Lite/Fast/Pro requests resolve to `*-001` IDs; tests fail if any `veo-3.1-*-preview` ID remains in production config.
+
+### ISSUE-868: Veo model and pricing registries disagree about Fast and Lite support
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Creative Suite / Model registry / Billing
+- **Evidence:** Renderer config exposes Pro/Fast/Lite models and Lite pricing (`intelligence-models.ts:28-31`, `:137-150`). The creative gateway also routes `lite` to a Lite ID and estimates Lite at `$0.05/sec` (`gateway.ts:56-60`, `:327-333`). But Cloud Functions config maps `VIDEO.FAST` to the Pro generation model and has no Lite entry (`packages/firebase/src/config/models.ts:27-31`), while `packages/firebase/src/config/pricing.ts` only has PRO/FAST pricing and chooses PRO unless `options.model === 'fast'` (`pricing.ts:6-17`, `:22-38`).
+- **Impact:** Different endpoints can charge/route the same “fast” or “lite” job differently, making cost reservations and model behavior unreliable.
+- **Fix:** Collapse model IDs and pricing into one shared package used by renderer and Firebase. Include explicit capability and pricing rows for Pro, Fast, and Lite.
+- **Acceptance:** A single registry drives UI labels, cost estimates, reservation checks, and API model IDs; `fast` never resolves to the Pro model unless explicitly configured as a fallback with user-visible notice.
+
+### ISSUE-869: Temporal inpaint can be selected with Lite/Fast models and then fails at submit time
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Creative Suite / Video editing
+- **Evidence:** Shared video schemas allow `mode: 'temporal_inpaint'` and `model: 'lite' | 'fast' | 'pro'` independently (`packages/firebase/src/shared/creative.ts:21-35`; `video/schemas.ts:48-72`). The UI model selector offers `lite`, `fast`, and `pro` (`DirectGenerationTab.tsx:327-345`), and `VideoWorkflow` sends `mode: 'temporal_inpaint'` with the current model (`VideoWorkflow.tsx:604-612`, `:651-674`). The backend rejects temporal inpaint unless `GEMINI_VEO_TEMPORAL_INPAINT_ENABLED` is true or the model ID contains `temporal`/`inpaint` (`gateway.ts:336-340`, `:1204-1210`), producing the warning shape “Model ... does not support temporal inpaint yet.”
+- **Impact:** Users can configure a valid-looking edit job, reserve cost, and then fail only after submission.
+- **Fix:** Add a capability matrix that disables temporal inpaint for unsupported models before cost reservation and explains which model/feature flag is required.
+- **Acceptance:** Unsupported model/mode combinations are blocked in the UI and API validation before reservation; supported combinations include a model capability receipt in the job metadata.
+
+### ISSUE-870: Video aspect ratio accepts unsupported shapes and silently coerces them
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Creative Suite / Video generation / Shape controls
+- **Evidence:** `GenerateVideoSchema` allows `aspectRatio` values `16:9`, `9:16`, `1:1`, `3:4`, and `4:3` (`packages/firebase/src/shared/creative.ts:21-36`). The renderer video schema also includes `1:1` (`video/schemas.ts:22-24`). But the gateway normalization returns `9:16` only for exact `9:16`; every other value becomes `16:9` (`gateway.ts:281-283`).
+- **Impact:** A user asking for square or 4:3/3:4 video can receive a 16:9 output without a clear warning, matching the “wrong shape” failure pattern.
+- **Fix:** Restrict video aspect-ratio controls to Veo-supported shapes or return a validation error for unsupported ratios instead of coercing.
+- **Acceptance:** Submitting `1:1`, `3:4`, or `4:3` either fails with a clear unsupported-ratio message or routes to a model that actually supports that shape; no silent 16:9 conversion.
+
+### ISSUE-871: Image “Lite” engine routes to the legacy 2.5 image model
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Creative Suite / Image generation / Model routing
+- **Evidence:** The direct-generation UI offers `lite`, `fast`, and `pro` engine grades (`DirectGenerationTab.tsx:327-345`). The backend image registry only defines `fast`, `pro`, and `legacy` IDs (`gateway.ts:50-54`), and `resolveImageModel()` maps both `legacy` and `lite` to `gemini-2.5-flash-image` (`gateway.ts:259-262`). The capability table says that legacy model is limited to 1K, has no reference-image support, and no Google/Image Search support (`models.ts:89-102`), while the fast 3.1 image model supports 4K, 14 reference images, thinking control, Google Search, and Image Search (`models.ts:75-88`).
+- **Impact:** A user choosing “Lite” gets a silent downgrade to a legacy model with materially different capabilities, which can produce wrong-size images and unexplained missing grounding/reference behavior.
+- **Fix:** Either remove “Lite” from image generation until a real supported Lite image model exists, or add a first-class Lite registry row with explicit capabilities and UI gating.
+- **Acceptance:** Selecting Lite displays the exact resolved model and disables controls unsupported by that model; no Lite request routes to legacy unless the UI labels it as legacy.
+
+### ISSUE-872: Omni Remix uses a placeholder model ID and Veo pricing
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Creative Suite / Omni / Cost reservation
+- **Evidence:** `generateOmniRemixV3` says API access is “rolling out later” and is wired for when a model ID is configured (`gateway.ts:1443-1449`). But `resolveOmniFlashModel()` falls back to `gemini-omni-flash-preview` (`gateway.ts:271-275`) and the callable starts jobs with that model (`gateway.ts:1463`, `:1480-1497`). Its cost reservation uses `estimateVideoCost()` with Veo Pro/Fast IDs instead of an Omni-specific pricing row (`gateway.ts:1464-1469`), and the execution path requires an Interactions API client (`gateway.ts:1500-1533`).
+- **Impact:** The Omni page can appear production-ready while reserving the wrong cost and submitting an unverified placeholder model ID.
+- **Fix:** Require an explicitly configured, supported Omni model ID and add a dedicated Omni capability/pricing row. If the env var is absent, show Omni as unavailable instead of starting a job.
+- **Acceptance:** No Omni job can start with the default placeholder ID; cost reservations cite the actual Omni model and pricing source used.
+
+### ISSUE-873: Mask-URI image edits do not tell the model the edit is masked
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Creative Suite / Image editing / Masked edits
+- **Evidence:** The renderer uploads masks to storage and sends `maskUri` to the backend (`EditingService.ts:113-149`). The backend resolves a mask from either inline `data.mask` or `data.maskUri` (`image_generation.ts:619-620`) and includes the mask media in the model parts (`:648-656`, `:707-715`). But the prompt only says “Edit the masked region...” when inline `data.mask` exists (`:681-685`, `:743-747`), not when the mask arrived as `maskUri`.
+- **Impact:** Normal secured edit flows can include a mask image but give the model a generic edit prompt, reducing inpaint precision and increasing accidental edits outside the intended area.
+- **Fix:** Build the masked-edit prompt based on `sourceMask` presence, not only inline `data.mask`, and add tests for `maskUri`-only edits.
+- **Acceptance:** A storage-backed mask edit includes an explicit masked-region instruction and preserves unmasked areas in prompt text and tests.
+
+### ISSUE-874: Image Search grounding toggle is not forwarded by direct generation
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Creative Suite / Image generation / Grounding
+- **Evidence:** The store defines `useImageSearch` as “NB2 (3.1 Flash) exclusive” (`creativeControlsSlice.ts:90-95`) and the right controls panel exposes a `+ Images` toggle when grounding is enabled on the fast model (`StudioControlsPanel.tsx:724-755`). The lower image generation service can send `useImageSearch` (`ImageGenerationService.ts:363-387`), and the gateway only enables `image_search` when `model === 'fast' && useImageSearch` (`gateway.ts:1047-1050`). But the main direct-generation hook sends only `useGoogleSearch: studioControls.useGrounding` and omits `studioControls.useImageSearch` (`useDirectGeneration.ts:331-342`).
+- **Impact:** Users can turn on `+ Images` and still get web-only grounding in the direct generation path.
+- **Fix:** Include `useImageSearch: studioControls.useImageSearch` in the direct-generation payload and validate it is only enabled for the fast image model.
+- **Acceptance:** With Fast + Google Search + Image Search enabled, the submitted payload includes `useImageSearch: true` and the gateway receives `search_types: ['web_search', 'image_search']`.
+
+### ISSUE-875: Video duration is normalized after client cost reservation
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Creative Suite / Veo / Cost reservation
+- **Evidence:** The UI exposes duration choices independently of resolution (`DirectGenerationTab.tsx:244-264`, `VeoSettingsPanel.tsx:72-90`, `StudioControlsPanel.tsx:912-927`) and resolution choices include `720p`, `1080p`, and `4k` (`StudioSettingsPanel.tsx:100-104`, `:214-220`). The client reserves cost from the raw requested duration (`VideoGenerationService.ts:330-347`). The backend then normalizes all non-720p jobs or any frame-input job to 8 seconds (`gateway.ts:303-308`) before recalculating server cost (`gateway.ts:1186-1193`) and rejecting mismatched reservations (`:1197-1201`).
+- **Impact:** Valid-looking requests such as 4s/6s at 1080p, 4s/6s with first/last frames, or 5s from Veo settings can fail after reservation with “Cost reservation estimate does not match,” or be silently treated as a longer job.
+- **Fix:** Compute the exact backend-normalized duration before client reservation and show the normalized duration in UI. Remove unsupported duration choices for the current resolution/input mode.
+- **Acceptance:** Every UI duration/resolution/frame combination either reserves the same duration the backend will use or is blocked before reservation with a clear message.
+
+### ISSUE-876: “No People” video safety setting is overridden for frame-based jobs
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Creative Suite / Veo / Safety controls
+- **Evidence:** The UI exposes “Person Generation” with `No People` / `dont_allow` (`StudioSettingsPanel.tsx:131-135`, `:238-243`) and sends `personGeneration` into video generation (`VideoWorkflow.tsx:669-680`). The backend worker calls `normalizePersonGeneration(job.personGeneration, hasFrameInput)` when building the Veo config (`gateway.ts:904-913`). That normalizer returns `allow_adult` whenever a first frame, reference URI, or last frame is present, before checking `dont_allow` (`gateway.ts:317-324`).
+- **Impact:** A user can explicitly choose “No People,” provide a start/end/reference frame, and still submit a Veo config that allows adults.
+- **Fix:** Do not override an explicit `dont_allow`; if the provider requires `allow_adult` for image-conditioned video, block the combination before submit and explain the constraint.
+- **Acceptance:** `dont_allow` remains `dont_allow` in the worker config, or the job is rejected before generation with a capability message.
+
+### ISSUE-877: Long-form video reserves requested duration but generates full 8-second blocks
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Creative Suite / Long-form Veo / Billing + quota
+- **Evidence:** Direct generation can select a 10-second duration (`DirectGenerationTab.tsx:94`, `:244-264`) and `VideoWorkflow` sends long-form when duration is over 8 seconds (`VideoWorkflow.tsx:614-634`). `generateLongFormVideo()` checks quota and reserves cost against `options.totalDuration` (`VideoGenerationService.ts:647-672`), but then computes `numBlocks = Math.ceil(totalDuration / 8)` and generates every segment with `durationSeconds: 8` while skipping per-segment cost checks (`:692-755`).
+- **Impact:** A 10-second long-form request reserves/quota-checks 10 seconds but actually generates 16 seconds. Non-multiples of 8 are under-reserved and under-quotaed.
+- **Fix:** Normalize billable/generated duration to `ceil(totalDuration / 8) * 8` before quota and cost reservation, or trim/stitch the final output to the requested duration.
+- **Acceptance:** Long-form cost, quota, displayed duration, generated segment count, and final output length agree for 10s, 15s, and exact 16s fixtures.
+
+### ISSUE-878: Long-form video completion returns only the first segment as the final output
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Creative Suite / Long-form Veo / Output assembly
+- **Evidence:** Long-form generation stores all `segmentUrls` as each segment completes (`VideoGenerationService.ts:778-786`), but on completion it sets `videoUrl`, `output.url`, and the returned result `url` to `segmentUrls[0]` (`:831-849`). There is no stitching/render handoff in this active path, despite the job being marked `status: 'completed'`.
+- **Impact:** A “completed” long-form or daisy-chain result can play/download only the first 8-second segment, while the remaining generated segments are hidden in metadata.
+- **Fix:** Add an explicit stitch/render stage before marking complete, or mark the job as `segments_ready` and route the UI to a timeline/project view that assembles all `segmentUrls`.
+- **Acceptance:** A multi-segment long-form job’s primary `videoUrl` is a stitched full-length asset, or the UI clearly presents it as a segment collection rather than a completed single video.
+
+### ISSUE-879: Video “Audio” toggle is only prompt text, not an API control
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Creative Suite / Veo / Audio controls
+- **Evidence:** Studio settings renders an `Audio` checkbox for video mode (`StudioSettingsPanel.tsx:289-301`). When disabled, `VideoWorkflow` only appends “no audio / silent video” text to the negative prompt and main prompt, while the inline comment says Veo 3.1 has no API-level audio toggle (`VideoWorkflow.tsx:554-566`).
+- **Impact:** Users can believe audio is deterministically disabled when it is only a best-effort prompt instruction.
+- **Fix:** Rename the control to “Request silent video” or route through a post-processing step that actually strips the audio track.
+- **Acceptance:** Turning audio off either removes audio from the returned MP4 or the UI clearly labels the setting as prompt-only.
+
+### ISSUE-880: Video grounding preflight uses an image model ID the gateway rejects
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Creative Suite / Veo grounding / Image preflight
+- **Evidence:** When video grounding is enabled without a first frame, `VideoGenerationService` calls `ImageGeneration.generateImages()` with `model: 'imagen-4.0-generate-001'` and catches failures, continuing without a grounded first frame (`VideoGenerationService.ts:363-384`). That service submits to `generateImageV3` (`ImageGenerationService.ts:343-410`), but the shared gateway schema only accepts image `model` values `lite`, `fast`, `pro`, or `legacy` (`packages/firebase/src/shared/creative.ts:10-18`).
+- **Impact:** The “Google Search Grounding” video path can reserve image cost, fail schema validation, log the error, and then generate an ungrounded video without telling the user.
+- **Fix:** Use a schema-supported grounded image model/tier, or add an explicit Imagen model route with validation and cost handling. If preflight fails, surface the failure instead of silently continuing ungrounded.
+- **Acceptance:** A grounded video request produces a valid first-frame URI before Veo submission, or the user sees a blocking “grounding preflight failed” error.
+
+### ISSUE-881: Image generation bypasses cost control when the cost ledger is unavailable
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Creative Suite / Image generation / Cost control
+- **Evidence:** `ImageGenerationService.generateImages()` estimates image cost and calls `CostControlService.checkAndReserve()` (`ImageGenerationService.ts:258-275`). If the denial reason looks like an infrastructure/auth failure, it logs “Cost ledger infra failure” and bypasses the cost check to proceed (`:277-284`). The backend `generateImageV3` callable does not require a cost reservation in its schema or handler (`packages/firebase/src/shared/creative.ts:10-18`, `gateway.ts:1010-1031`).
+- **Impact:** A Firestore/auth/ledger outage turns paid image generation into fail-open generation instead of fail-closed budget enforcement.
+- **Fix:** Require a backend-verified cost reservation for image jobs, or fail closed when the client cost ledger is unavailable in production.
+- **Acceptance:** With cost ledger unavailable, production image generation returns a clear cost-control error and no model call is made.
+
+### ISSUE-882: Sync-license checkout activates a license without license terms or usage scope
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Licensing / Stripe checkout / License records
+- **Evidence:** The license purchase flow sends Stripe metadata containing only `type`, `trackTitle`, `artist`, `connectedAccountId`, and `artistAmount` plus optional caller metadata (`LicensingService.ts:119-146`). The webhook then transfers `artistAmount` and creates an `active` `licenses` document with title, artist, `licenseType: 'sync'`, amount, and session ID (`webhookHandler.ts:69-113`). The app’s `License` type expects usage and optional agreement URL/date bounds (`types.ts:6-18`), but the webhook does not persist licensee, agreement URL, territory, media/use type, term, exclusivity, master/composition rights, contract version, or accepted terms.
+- **Impact:** A payment can create an “active sync license” that is not legally scoped enough to prove what was licensed.
+- **Fix:** Require a signed/accepted license agreement or immutable license terms object before checkout, store it by ID, and have the webhook activate that exact agreement after payment.
+- **Acceptance:** No `status: active` license is created unless it references a versioned agreement, licensee, usage, territory, term, rights covered, and Stripe session/payment ID.
+
+### ISSUE-883: Failed Stripe webhook retries are skipped because failed delivery docs still count as processed
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 HIGH (payments/access fulfillment)
+- **Module:** Stripe / Webhooks / Idempotency
+- **Evidence:** The webhook creates `stripe_webhook_deliveries/{event.id}` with `status: 'processing'` before handling the event (`webhookHandler.ts:385-407`). The duplicate guard skips any existing delivery doc regardless of status (`:394-410`). In the error path, the code comments “Mark failed so the next retry is not skipped” but only updates the existing doc to `status: 'failed'` (`:454-459`), so Stripe retries will still be skipped.
+- **Impact:** If a transfer, founder activation, subscription write, or license write fails after the delivery doc is created, Stripe’s retry can be acknowledged as a duplicate and the user never gets fulfilled.
+- **Fix:** Treat `failed` delivery docs as retryable, or move idempotency to per-handler effect records that can resume safely. Keep side effects idempotent by session/payment IDs.
+- **Acceptance:** A webhook event that fails once is reprocessed on retry until it reaches `processed`; duplicate `processing` events remain blocked only while another worker is active.
+
+### ISSUE-884: YouTube upload reports success after creating only the resumable upload session
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Social / YouTube upload
+- **Evidence:** `uploadToYouTube()` creates YouTube video metadata and obtains a resumable upload `Location` header (`SocialPlatformService.ts:342-385`). The comments then say the Electron main process would stream the video bytes “in production,” but the function immediately returns `success: true` with `postId` set to the upload URL or `pending` (`:387-394`). No video bytes are uploaded in this path.
+- **Impact:** The app can tell the user a YouTube upload succeeded when only an upload session was created and the video is not published.
+- **Fix:** Move YouTube uploads to a backend/Electron streaming implementation that PUTs the bytes to the resumable URL and only returns success after YouTube returns a video ID.
+- **Acceptance:** `uploadToYouTube()` returns success only after the media bytes are uploaded and a YouTube video ID is stored; upload-session URLs are never exposed as post IDs.
+
+### ISSUE-885: Parallel render orchestrator returns a hard-coded stitched URL without stitching
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Creative Suite / Remotion render / Long-form stitching
+- **Evidence:** `ParallelRenderOrchestrator.renderLongFormParallel()` renders chunk jobs and builds an FFmpeg command string (`ParallelRenderOrchestrator.ts:46-80`), but never writes the concat input file, never runs FFmpeg, and returns the fixed URL `https://storage.googleapis.com/indii-renders/output_stitched.mp4` (`:82-85`).
+- **Impact:** A long-form render can appear to have a final stitched output even though only chunk URLs and an unexecuted command exist.
+- **Fix:** Execute stitching in a backend job, upload the actual stitched artifact, and return that generated URL. Otherwise return a `chunks_ready` state with chunk URLs only.
+- **Acceptance:** The returned `outputUrl` is created during the current render job and points to an existing object whose duration matches the full project.
+
+### ISSUE-886: Creative generation quota checks fail open on subscription service outages
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Subscription / Creative Suite / Quota enforcement
+- **Evidence:** Image generation and video generation perform client-side quota preflights through `subscriptionService.canPerformAction()` (`ImageGenerationService.ts:258-338`, `VideoGenerationService.ts:323-327`, `:647-656`). That quota method explicitly returns `allowed: true` when the quota service is unavailable and says it is relying on backend usage tracking (`SubscriptionService.ts:400-409`), and its outer catch also allows the action “for demo experience” (`:525-530`). The current creative gateway has no subscription usage/quota enforcement beyond provider quota error classification (`gateway.ts:717`).
+- **Impact:** A subscription/usage outage can allow image/video generation past plan limits.
+- **Fix:** Move quota enforcement to the backend gateway or fail closed when the quota service cannot verify entitlement in production.
+- **Acceptance:** Simulated subscription service timeout prevents image/video model calls unless a backend entitlement check succeeds; no production path relies solely on client quota checks.
+
+### ISSUE-887: Backend identifier recording lets any signed-in user mark arbitrary ISRC/UPC values as REGISTERED
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 CRITICAL (rights/metadata integrity)
+- **Module:** Distribution / ISRC + UPC registry
+- **Evidence:** `recordDistributionIdentifier()` authenticates the caller and checks only that `type` is `isrc` or `upc` (`distributionRecords.ts:205-214`). It does not call `findWritableReleaseRef(releaseId, uid)`, does not validate ISRC/UPC format, does not check uniqueness, does not require official prefix/pool provenance, and writes `status: "REGISTERED"` directly to `isrc_registry` or `upc_registry` (`:216-232`). `assignDistributionIdentifier()` has the same release-ownership gap when optional `releaseId` is provided (`:181-197`) and also writes `status: "REGISTERED"` for pool assignment (`:167-175`).
+- **Impact:** A user can attach arbitrary or mistyped codes to any release ID and have the backend store them as registered identifiers, undermining DDEX, royalty tracking, copyright evidence, and DSP delivery readiness.
+- **Fix:** Require release ownership before identifier writes, validate type-specific formats, enforce uniqueness in a transaction, and split states into `recorded_external`, `allocated_from_verified_pool`, and `officially_registered/verified` with evidence source fields.
+- **Acceptance:** Calls for another user’s `releaseId`, malformed ISRC/UPC values, duplicate codes, or unverified prefixes fail; `REGISTERED` is only written with stored authoritative provenance.
+
+### ISSUE-888: Firestore rules expose identifier registries to guests or every authenticated user
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 CRITICAL (catalog/privacy leak)
+- **Module:** Firestore rules / Distribution identifiers
+- **Evidence:** `isrc_registry` allows read when the caller owns the row **or** `isGuest()` (`firestore.rules:895-897`), and allows guest create as well. `upc_registry` allows read for any authenticated user or guest, with no `userId`/org filter (`:904-906`). These collections carry release IDs, track titles, artist names, metadata snapshots, and owner/user IDs from the backend registry writers.
+- **Impact:** Identifier metadata can leak across users and guests, and guest writes can pollute ISRC records unless blocked by separate function-only assumptions.
+- **Fix:** Restrict reads to owner/org/admin, remove guest access for registries, and keep all creates behind backend callable functions or server SDK only.
+- **Acceptance:** Firestore rules tests prove User A and guest cannot read or create User B’s ISRC/UPC registry rows; only owner/org/admin reads pass.
+
+### ISSUE-889: PandaDoc proxy operations are authenticated but not document-ownership gated
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 CRITICAL (legal document exposure / unauthorized signatures)
+- **Module:** Legal / PandaDoc proxy / E-signature
+- **Evidence:** `pandadocSendDocument`, `pandadocGetDocumentStatus`, and `pandadocGetSigningLink` require `context.auth` but then call PandaDoc using only caller-provided `documentId`/`recipientId` (`pandadocProxy.ts:146-171`, `:185-218`, `:232-260`). They do not verify that the PandaDoc document ID belongs to the authenticated user/org in Firestore. `sendForDigitalSignature()` sends `/documents/${contractId}/send` before loading `users/{uid}/contracts/{contractId}`, and if the local contract doc does not exist it still returns `{ status: "sent" }` (`digitalSignature.ts:43-98`).
+- **Impact:** Any signed-in user who obtains or guesses a PandaDoc document/recipient ID can query status, generate a signing session, or send a document with the platform API key; internal contract records can also say “sent” without local ownership/existence.
+- **Fix:** Store PandaDoc document IDs with owner/org/release/contract references at creation time, require ownership checks before every status/send/session action, and reject sends before external API calls if the local contract/document record does not exist.
+- **Acceptance:** User A cannot send, read, or create signing links for User B’s PandaDoc documents; nonexistent local contract IDs fail before any PandaDoc request.
+
+### ISSUE-890: “Complete” GDPR data export omits major app data and uses two inconsistent implementations
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 HIGH (privacy/compliance trust)
+- **Module:** Privacy / Data export
+- **Evidence:** The UI says “Download a complete copy of all your indii.music data” (`PrivacySettingsPanel.tsx:52-56`) but calls the renderer-side `DataExportService.exportUserData(uid)` (`:29-38`), not the deployed `exportUserData` callable. The renderer exporter reads only a fixed subcollection list (`DataExportService.ts:25-38`), lists only `users/{uid}` storage with one nested level (`:65-98`), and cannot read server-only/root collections such as subscriptions, licenses, Stripe ledger data, distribution registries, social/analytics token metadata, org-owned records, audit queues, or generated job records. The backend callable is a second, different partial exporter that includes only profile, projects, history, organizations, and knowledge (`index.ts:1387-1446`).
+- **Impact:** Users receive a file labeled as a complete GDPR data export even though large categories of their platform data can be missing.
+- **Fix:** Route export through one backend-owned exporter with a maintained collection manifest, nested pagination, Cloud Storage manifest generation, root/org collection coverage, redaction policy for secrets, and explicit omitted-data reasons.
+- **Acceptance:** Export tests seed each user-owned data category and prove it appears in the export or is listed in an `omitted` section with legal/business rationale.
+
+### ISSUE-891: Account deletion can be partial while the UI reports permanent removal
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 HIGH (privacy/compliance trust)
+- **Module:** Privacy / Account deletion
+- **Evidence:** `PrivacySettingsPanel` calls `requestAccountDeletion` and ignores the callable result (`PrivacySettingsPanel.tsx:98-105`), then renders “Account deletion complete” and “Your data has been permanently removed” (`:112-122`). The callable deletes only the first 500 docs from a fixed subcollection list (`index.ts:1478-1497`), deletes the root user doc, and deletes the Auth user (`:1499-1508`); it does not delete Cloud Storage files, root-level collections such as `subscriptions`, `licenses`, `user_credits`, `scheduledPosts`, `isrc_registry`, `upc_registry`, `stripe_webhook_deliveries`, org records, or nested subcollections beyond the first page. It returns `success: errors.length === 0` with error details (`:1513-1518`), but the UI does not inspect that result.
+- **Impact:** A user can be told deletion is complete while data remains in storage and root/server collections, and while partial deletion errors are hidden.
+- **Fix:** Make deletion an auditable backend job with a full data-location manifest, recursive/paginated deletes, Storage cleanup, external-service tasks, retention exemptions, and user-visible final status. UI must render `partial_failed` if the callable reports errors or pending tasks.
+- **Acceptance:** Seeded deletion tests prove all erasable user-owned docs/files are removed, retained legal/financial records are listed with retention reason, and the UI never claims permanent removal on partial failure.
+
+### ISSUE-892: DevOps agent tools report successful local configuration when backend control functions are missing
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** DevOps agent / Infrastructure automation
+- **Evidence:** Several DevOps tools call undeclared/deployed backend functions and convert failures into `toolSuccess`: `run_chaos_mesh_tests` returns a fake `chaos_${Date.now()}` queued test when `runChaosMeshTests` fails (`DevOpsTools.ts:206-223`), `configure_circuit_breaker` returns `status: 'Configured (local)'` on `configureCircuitBreaker` failure (`:226-246`), `configure_websocket_keepalive` returns `Configured (local)` on `configureWebSocketKeepalive` failure (`:249-268`), `trigger_watchdog_recovery` returns `Watchdog Active (local mode)` on `triggerWatchdogRecovery` failure (`:325-345`), `configure_logical_sharding` returns a prepared capacity claim on `configureLogicalSharding` failure (`:348-370`), and `spin_up_qa_sandbox` fabricates a `https://qa-*.sandbox.indii.os` URL when `provisionQASandbox` fails (`:374-395`). Grep of Firebase exports finds no matching backend functions for those names.
+- **Impact:** The DevOps agent can tell an admin that fault injection, circuit breakers, watchdog recovery, sharding, or QA sandbox provisioning happened when no infrastructure change occurred.
+- **Fix:** Return explicit `*_UNAVAILABLE` tool errors for missing backend controls, or implement/export the real functions with audit logs and receipts. Never mark local planning as configured/provisioned.
+- **Acceptance:** With each backend callable absent or failing, the tool returns an error/manual-required state; success requires a real backend response and persisted operation ID.
+
+### ISSUE-893: Resized-image tool returns synthetic `gs://` paths for missing variants and still says variants were resolved
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Media agent tools / Firebase Storage derivatives
+- **Evidence:** `get_resized_image_variants()` derives variant names like `${basePath}_${dim}${ext}` and tries `getDownloadURL()` (`MediaTools.ts:314-340`). If the object is missing or access is denied, the catch stores `gs://${bucket}/${variantPath}` instead of failing or marking the variant missing (`:336-344`), and the tool returns success with “Resolved Firebase Extension resized variants” (`:347`).
+- **Impact:** Downstream social/poster/thumbnail flows can receive non-downloadable, non-existent derivative URIs and believe resized assets are ready.
+- **Fix:** Return per-dimension states (`ready`, `missing`, `permission_denied`, `extension_pending`) and only include usable download URLs in the ready map. Trigger or queue derivative generation explicitly if supported.
+- **Acceptance:** Missing derivative objects produce `missing` entries and no success wording that says they were resolved.
+
+### ISSUE-894: Storage scrub agent calls a nonexistent cleanup callable and reports a queued scrub
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Storage agent tools / Maintenance operations
+- **Evidence:** `scrub_orphaned_media()` calls `httpsCallable(functions, 'scrubOrphanedMedia')` (`StorageTools.ts:41-55`), but Firebase exports only scheduled storage maintenance functions such as `cleanupOrphanedVideos`, `cleanupExpiredVideoTemps`, `trackStorageQuotas`, and `flagVideosForArchival` (`index.ts:151`). When the callable fails, the tool returns `toolSuccess` with `deletedFiles: 0`, `savedBytes: 0`, and `status: 'Scan queued (deploy Cloud Function for execution)'` (`StorageTools.ts:64-72`).
+- **Impact:** An agent/admin can believe a storage cleanup was queued even though no callable exists and no scheduled run was triggered.
+- **Fix:** Either implement/export an admin-only `scrubOrphanedMedia` callable that creates a real operation record, or return `STORAGE_SCRUB_UNAVAILABLE` with the name of the existing scheduled maintenance job to run/check.
+- **Acceptance:** Missing cleanup callable returns an error/manual-run instruction; success requires a persisted maintenance run ID or actual deletion/scan receipt.
+
+### ISSUE-895: Screenwriter “Generate AI Scene” is a timer with hard-coded storyboard content
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Screenwriter / Storyboard / Veo prompts
+- **Evidence:** `generateNextScene()` is explicitly labeled “Simulate AI generation of next scene” (`ScreenwriterDashboard.tsx:233-234`), waits `setTimeout(..., 1200)` (`:235-250`), and appends the same hard-coded recording-cabin description/camera angle/Veo prompt every time (`:237-247`). The button is wired as an active generation action in the dashboard (`:303`, `:440`).
+- **Impact:** Users can believe the Screenwriter generated a scene from their concept when it only inserted canned content, polluting downstream storyboard/Veo planning.
+- **Fix:** Route scene generation through the screenwriter agent/model with the current concept, tone, previous scenes, and target duration, or rename the button to “Add template scene.”
+- **Acceptance:** A generated scene changes with concept/tone/history and includes model provenance; offline/unavailable mode shows an honest template/manual-add state.
+
+### ISSUE-896: Screenwriter Veo handoff collapses storyboard structure into one prompt string
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Screenwriter → Creative Studio / Veo handoff
+- **Evidence:** The Veo prompt tab says output “directly exports to generative pipelines” (`ScreenwriterDashboard.tsx:573-599`), but `handleOpenCreativeStudio()` only joins all scenes into a single text block, calls `setCreativePrompt(handoffPrompt)`, sets generation mode/view, and switches to Creative (`:213-228`). It does not populate `VideoWorkflow` storyboard slots, per-scene duration, camera metadata, seed/aspect controls, or a structured `pendingStageHandoff.veo` payload; `VideoWorkflow` then uses the shared `creativePrompt` as one `localPrompt` (`VideoWorkflow.tsx:213-285`, `:511-539`).
+- **Impact:** Multi-scene storyboards lose per-scene timing and generation boundaries; a three-scene music-video plan becomes one prompt for one video job.
+- **Fix:** Create a typed Screenwriter→Veo handoff contract that maps each scene to storyboard slots with prompt, duration, camera angle, ordering, and optional reference assets.
+- **Acceptance:** Opening Creative from Screenwriter creates a visible storyboard/timeline with one slot per scene and preserves scene duration/camera/prompt metadata.
+
+### ISSUE-897: Screenwriter tools use the video fine-tuned model instead of the screenwriter model
+
+- **Status:** ✅ FIXED (code change 2026-07-09; needs runtime verification)
+- **Severity:** 🟡 MEDIUM
+- **Module:** Screenwriter agent / Fine-tuned routing
+- **Evidence:** `ScreenwriterTools.format_screenplay()` calls `getFineTunedModel('video')` while asking for screenplay formatting (`ScreenwriterTools.ts:32-37`), and `analyze_script_structure()` also calls `getFineTunedModel('video')` for script-doctor analysis (`:70-75`). The repo has a dedicated screenwriter agent/config and generated screenwriter endpoint, but these tools do not use it.
+- **Impact:** Screenwriter outputs may route through video-specialized tuning instead of the narrative/screenplay specialist, reducing quality and making endpoint usage/accounting misleading.
+- **Fix:** Route Screenwriter tools through `getFineTunedModel('screenwriter')` or the screenwriter agent config; add a routing test that fails if screenwriter tools resolve to another department model.
+- **Acceptance:** Formatting and structure tools use the screenwriter endpoint/model ID and log the selected department model in diagnostics.
+- **Resolution:** Both Screenwriter tool calls now resolve `getFineTunedModel('screenwriter')`, whose generated registry entry maps to the dedicated screenwriter Vertex endpoint.
+
+### ISSUE-898: Video agent tools can report successful generation with an empty output URL
+
+- **Status:** ✅ FIXED (code change 2026-07-09; needs runtime verification)
+- **Severity:** 🟠 HIGH
+- **Module:** Video agent tools / Generation result handling
+- **Evidence:** `generate_video()` waits for a job if `videoJob.url` is missing, then sets `finalUrl = completedJob.videoUrl || ''` (`VideoTools.ts:137-142`). It still adds a history item and returns `toolSuccess` with `url: finalUrl` and message `Video generated successfully: ${finalUrl}` (`:144-158`). `extend_video()` and `interpolate_sequence()` repeat the same pattern (`:281-303`, `:415-437`).
+- **Resolution:** All three tool paths now return `GENERATION_OUTPUT_MISSING` before history persistence or success reporting when the completed job lacks an output URL.
+- **Impact:** A failed/incomplete generation can be saved to history and announced as successful with an empty video URL, breaking downstream handoff and user trust.
+- **Fix:** Treat missing final URL/storage URI as `GENERATION_INCOMPLETE` or `OUTPUT_MISSING`, do not add history, and include job ID/status for retry/polling.
+- **Acceptance:** A mocked completed job with no `videoUrl` returns a tool error and creates no history item; success requires a non-empty playable URL or durable storage URI.
+
+### ISSUE-899: Merch “Mint New Item” creates a marketplace product, not an on-chain token
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Merchandise / Finance merch table / Web3 wording
+- **Evidence:** `MerchTable` renders the CTA “Mint New Item” (`MerchTable.tsx:117-125`). `handleMint()` calls only `MarketplaceService.createProduct()` with price, inventory, images, and splits (`:71-91`), then toasts “Asset Minted successfully!” (`:93`). It does not call `SmartContractService.tokenizeAsset()` or any wallet/on-chain mint flow, which is implemented separately (`SmartContractService.ts:201-235`).
+- **Impact:** Users can believe they minted an NFT/SongShares/on-chain asset when they only created a marketplace listing.
+- **Fix:** Rename this flow to “List Product” / “Create Digital Asset Listing,” or wire it to the real wallet-backed tokenization flow and show chain, contract, token ID, and transaction hash.
+- **Acceptance:** Marketplace-only creation never uses “mint” language; on-chain mint success includes a verified transaction/contract/token record.
+
+### ISSUE-900: Credential rotation fabricates a new local key for unsupported services but says provider rotation succeeded
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 HIGH (security / credential management)
+- **Module:** Security / Electron credential rotation
+- **Evidence:** `security:rotate-credentials` performs provider API calls only for `stripe` and `github` (`security.ts:40-106`). For every other `serviceName`, it generates `crypto.randomBytes(32).toString('hex')` locally (`:107-110`) and returns `success: true` with message `Credentials for ${serviceName} rotated successfully via provider API` (`:116-122`). Earlier ledger entries ISSUE-263/287 marked this fallback fixed, but the current behavior still does not rotate the credential at the provider.
+- **Impact:** A user/admin can believe a live provider credential was rotated while the old provider key remains valid and only a local random value was created.
+- **Fix:** Remove generic rotation fallback. Return `ROTATION_PROVIDER_UNSUPPORTED` unless the service has an implemented provider API rotation adapter and revocation/verification receipt.
+- **Acceptance:** Unsupported services fail closed; supported services return provider operation IDs/new key metadata and prove the old key was revoked or superseded.
+
+### ISSUE-901: Venue roster saves every user’s additions under `users/dev-user`
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Booking/Agent roster / Firestore persistence
+- **Evidence:** `RosterService.addToRoster()` comments that it should get the current Auth user but hardcodes `const userId = 'dev-user'` (`RosterService.ts:20-26`), then writes the venue to `users/${userId}/roster/${venue.id}` (`:26-39`). The tests assert the same `users/dev-user/roster/...` path (`RosterService.test.ts:46-50`, `:73-76`), so the broken behavior is locked in. The dashboard action calls this service directly when adding a venue (`AgentDashboard.tsx:169`).
+- **Impact:** Real users can overwrite/share one global dev roster, lose their own saved venues, and leak booking/venue intent into another user’s namespace.
+- **Fix:** Require an authenticated UID from Auth/user context, pass it into `addToRoster()` or resolve it inside the service, and reject roster writes when no real user/org scope is available.
+- **Acceptance:** Two authenticated users adding the same venue produce separate docs under their own `users/{uid}/roster/{venueId}` paths; guest/offline mode uses an explicitly local-only store and never writes `dev-user`.
+
+### ISSUE-902: Security rotation contract omits `vaultData`, so supported provider rotations cannot run
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 HIGH (security / broken incident response)
+- **Module:** Security agent / Electron credential rotation bridge
+- **Evidence:** The Electron main handler requires `RotationInputSchema` with both `serviceName` and `vaultData` (`security.ts:15-18`) and then reads provider secrets from `vaultData.api_secret`, `vaultData.github_token`, `vaultData.secret_name`, and `vaultData.repo` for Stripe/GitHub rotation (`:40-106`). The renderer tool calls `window.electronAPI.security.rotateCredentials({ serviceName: service_name })` with no `vaultData` (`SecurityTools.ts:68-80`), and the global Electron type only permits `{ serviceName: string }` (`electron.d.ts:233-236`).
+- **Impact:** Even the only “supported” live rotations fail schema validation or missing-secret checks, while the Security Agent copy presents rotation as an available incident-response action.
+- **Fix:** Define one secure rotation contract: the renderer should request rotation by credential record ID/service only, the main/backend authority should fetch/decrypt the vault entry itself, and the type/test suite must cover Stripe and GitHub happy paths plus missing-vault failures.
+- **Acceptance:** Calling `rotate_credentials('stripe')` with a real vault record reaches the Stripe adapter; calling it with no authorized vault record returns a typed `VAULT_RECORD_REQUIRED`/`ROTATION_UNAVAILABLE` error before claiming rotation.
+
+### ISSUE-903: Failed Songfile search creates a mechanical license record marked `not_required`
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 CRITICAL (cover-song clearance risk)
+- **Module:** Publishing / Mechanical royalties / Clearance gate
+- **Evidence:** `MechanicalRoyaltyPanel.handleSubmit()` calls `MechanicalRoyaltyService.searchComposition()` (`MechanicalRoyaltyPanel.tsx:72`). If that search returns `null`, the UI still calls `createLicense()` with a fallback composition whose `controlled` flag is `false` (`:77-87`). `createLicense()` then sets `status: params.composition.controlled ? 'pending_search' : 'not_required'` (`MechanicalRoyaltyService.ts:96-106`) and the panel toasts “License record created” (`MechanicalRoyaltyPanel.tsx:90`). `searchComposition()` returns `null` on any failed/unavailable Songfile proxy call (`MechanicalRoyaltyService.ts:69-76`).
+- **Impact:** A network/API failure or missing Songfile integration can turn a potentially controlled cover composition into an internal `not_required` clearance record, allowing release gates to treat it as cleared.
+- **Fix:** Separate `search_failed` / `composition_unknown` from `public_domain_or_original_not_required`. A failed lookup must create no clearance or create a blocking `clearance_unknown` record, and `controlled:false` should require explicit user evidence/waiver.
+- **Acceptance:** Mocked Songfile failure creates a blocking `mechanical_clearance_unknown` state; only user-declared original work/public-domain evidence or confirmed license data can produce `not_required` / `license_active`.
+
+### ISSUE-904: Legal Agent split-sheet tool advertises e-signature initiation but only creates a draft
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Legal agent / Split sheets / E-signature workflow
+- **Evidence:** `LegalAgent` exposes `draft_split_sheet` with the tool description “Generates a standard split sheet for collaborators and initiates digital signatures through the configured signature provider” (`LegalAgent.ts:107-108`). The mapped implementation is `LegalTools.generate_split_sheet` (`LegalAgent.ts:55`), which validates the percentages and calls `draft_contract` (`LegalTools.ts:86-107`). `draft_contract` saves a draft contract to the Legal Dashboard (`:49-64`) but does not call `trigger_digital_signature`, `sendForDigitalSignature`, PandaDoc, DocuSign, or collect signer emails from the declared `collaborators` schema.
+- **Impact:** The agent can tell users a split-sheet signature flow was initiated when only a draft artifact was created, leaving collaborators unsigned and revenue-share evidence incomplete.
+- **Fix:** Either change the tool description/result copy to “draft split sheet only,” or add a second explicit approval/signature step that calls the digital-signature backend with signer emails and returns envelope/document IDs.
+- **Acceptance:** Running `draft_split_sheet` without signature dispatch returns `signatureStatus: 'not_started'`; running an approved e-signature flow returns a verified provider envelope/document ID and signer list.
+
+### ISSUE-905: Marketing Agent deployment tool descriptions claim live provider actions that the tools do not perform
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Marketing agent / Ads + email tooling
+- **Evidence:** `MarketingAgent` describes `deploy_micro_ad_campaign` as deploying “across Meta or TikTok Graph APIs” (`MarketingAgent.ts:153-155`), but `MarketingTools.deploy_micro_ad_campaign()` only returns a local package with `status: 'ready_for_approval'` and notes that live ad platform credentials are not invoked (`MarketingTools.ts:320-339`). `MarketingAgent` also describes `deploy_email_newsletter` as syncing with Mailchimp/Klaviyo APIs to deploy a template (`MarketingAgent.ts:168-170`), while `MarketingTools.deploy_email_newsletter()` only returns `status: 'requires_email_provider_credentials'` and says provider credentials are required before sending (`MarketingTools.ts:342-356`).
+- **Impact:** Agent planning can overstate that ads/newsletters were deployed or synced, even though the implementations are draft/package-only.
+- **Fix:** Rename/describe these tools as `prepare_micro_ad_campaign` and `prepare_email_newsletter`, or implement real provider dispatch with connected account IDs, provider campaign IDs, idempotency keys, and confirmed send/deploy receipts.
+- **Acceptance:** Tool declarations, return payloads, and user-facing messages all distinguish `draft/package_ready` from `deployed/sent`; provider deployment success includes a verified platform ID.
