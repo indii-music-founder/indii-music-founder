@@ -1,9 +1,12 @@
 # Handoff State
-**Updated:** 2026-07-09 08:18 EDT
+**Updated:** 2026-07-09 08:35 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+ac10a1f75 test(ledger): log ISSUE-CI pipeline failures
+2da8a8df8 chore(hygiene): resolve markdownlint formatting and duplicate heading errors in OPEN_ISSUES.md
+ee566dc22 chore: session checkpoint [08:18]
 2fa3f576c chore: session checkpoint [08:17]
 f1f534f66 docs: resolve and mark ISSUE-726 as FIXED in ledger
 96a54b093 docs(ledger): add Cost of Doing Business section — founder purchases & blockers
@@ -11,14 +14,11 @@ b95cb354b docs: check off release tag and updater manifest verification in relea
 f5fb8d94a docs: resolve and mark CI failure issues as FIXED in ledger
 a5e42b959 fix(ci): avoid exporting empty string to code signing env variables
 b25907f46 test(ledger): log ISSUE-CI pipeline failures
-a5348f95d chore(ledger): log ISSUE-767..771 — release QA findings 2026-07-08
-651bc870e docs: resolve and mark ISSUE-770 as FIXED in ledger
-e00e219ce fix(ci): increase node memory limits for builds and enable maps on web
 ```
 
 ## Working State
 ```
-M  .agent/test_ledger/OPEN_ISSUES.md
+clean working tree
 ```
 
 ## Decisions
