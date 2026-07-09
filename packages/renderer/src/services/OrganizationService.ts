@@ -33,7 +33,22 @@ class OrganizationServiceImpl extends FirestoreService<Organization> {
                 // We don't import at top level to avoid cycles during init
                 return null;
             }
-            return this.useStore.getState().currentOrganizationId || 'personal';
+            const state = this.useStore.getState();
+            const orgId = state.currentOrganizationId;
+            // 'org-default' is the pre-resolution placeholder, not a real org doc.
+            // Scoping queries to it makes Firestore reject org-scope reads wholesale
+            // (rules can't prove membership of a nonexistent org), which silently
+            // breaks cross-device history sync (ISSUE-772). Solo users are 'personal'.
+            if (!orgId || orgId === 'org-default') {
+                return 'personal';
+            }
+            // If orgs have loaded and the current id isn't among them, it's stale —
+            // fall back to personal scope rather than an unprovable org filter.
+            const orgs = state.organizations;
+            if (Array.isArray(orgs) && orgs.length > 0 && !orgs.some((o: { id: string }) => o.id === orgId)) {
+                return 'personal';
+            }
+            return orgId;
         } catch (_e: unknown) {
             return 'personal';
         }
