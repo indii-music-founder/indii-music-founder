@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-07-09 08:49 EDT
+**Updated:** 2026-07-09 08:59 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+9c2c1b2c5 fix(sync): resolve cross-device asset divergence via org scoping (ISSUE-772)
+41520d9c9 chore: session checkpoint [08:49]
 5f64281ee chore: session checkpoint [08:36]
 b2d8750fd chore: session checkpoint [08:35]
 ac10a1f75 test(ledger): log ISSUE-CI pipeline failures
@@ -12,13 +14,11 @@ ee566dc22 chore: session checkpoint [08:18]
 2fa3f576c chore: session checkpoint [08:17]
 f1f534f66 docs: resolve and mark ISSUE-726 as FIXED in ledger
 96a54b093 docs(ledger): add Cost of Doing Business section — founder purchases & blockers
-b95cb354b docs: check off release tag and updater manifest verification in release checklist
-f5fb8d94a docs: resolve and mark CI failure issues as FIXED in ledger
 ```
 
 ## Working State
 ```
- M .agent/test_ledger/OPEN_ISSUES.md
+clean working tree
 ```
 
 ## Decisions
