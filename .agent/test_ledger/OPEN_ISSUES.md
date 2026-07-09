@@ -11092,13 +11092,12 @@ A second, completely separate app with its own navigation menu, previously untou
 
 ### ISSUE-726: `/api/dns/status` hardcodes SPF/DKIM/DMARC as always "verified" — zero real DNS lookup, false-positive email-security monitoring
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (88f3681d)
 - **Severity:** 🟠 HIGH (false monitoring signal on real email-deliverability/anti-spoofing infrastructure — worse than no monitoring, because it actively reassures an admin that DNS security records are correct when nothing was actually checked)
 - **Module:** Admin Dashboard / Nexus System Monitor
 - **Depends on:** nothing — parallel-safe
-- **Summary:** `packages/admin-dashboard/server.ts`'s `/api/dns/status` handler (line 513) unconditionally returns `{ domain: 'indii.music', spf: 'verified', dkim: 'verified', dmarc: 'verified' }` with no DNS resolution logic anywhere in the handler or nearby code. The admin-facing Nexus Monitor UI fetches this endpoint and would display "verified" for all three records regardless of whether they're actually correctly configured, degraded, or entirely missing — e.g. if the domain's actual SPF record were ever accidentally removed or misconfigured (breaking email deliverability and opening spoofing risk), this dashboard would still show green across the board.
-- **Fix Direction:** Replace the hardcoded response with a real DNS TXT record lookup (Node's built-in `dns.resolveTxt` or a library) against the actual `indii.music` domain, parsing for valid SPF (`v=spf1`), DKIM (selector-specific TXT record), and DMARC (`_dmarc` TXT record) entries, and returning the real verification state. If a live lookup is too heavy for this endpoint's cadence, cache with a clearly-labeled last-checked timestamp rather than a silent hardcode.
-- **Files:** `packages/admin-dashboard/server.ts:513-520`
+- **Fix:** Replaced the hardcoded response with real DNS TXT record lookups using Node's built-in `dns.resolveTxt`. Validates SPF (`v=spf1`), DMARC (`v=DMARC1`), and selector-based DKIM (`google._domainkey.indii.music`) with proper error handling and fallback checks.
+- **Evidence:** `packages/admin-dashboard/server.ts:527-567`
 
 ### Pass 20 clean bill (partial)
 
