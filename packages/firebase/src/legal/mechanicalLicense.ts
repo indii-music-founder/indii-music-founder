@@ -50,37 +50,8 @@ export const verifyMechanicalLicense = functions
 
         console.log(`[verifyMechanicalLicense] Mechanical license check requested for "${trackTitle}" by ${originalArtist} — no licensing API integrated.`);
 
-        const statutoryPhysicalRate = 0.124;
-        const response: MechanicalLicenseResponse = {
-            status: 'UNVERIFIED',
-            requiresClearance: true,
-            songCode: null,
-            publisher: null,
-            rate: statutoryPhysicalRate,
-            rateContext: "2024 CRB physical/download rate (under 5 mins)",
-            guidance: "Please use HFA Songfile, The MLC, or Easy Song Licensing to clear this cover song.",
-            clearanceLinks: {
-                songfile: "https://www.songfile.com/",
-                mlc: "https://www.themlc.com/"
-            }
-        };
-
-        // Persist the honest audit trail — records that a check was REQUESTED
-        // and clearance is outstanding, not that anything was verified.
-        const db = getFirestore();
-        const requestId = `${context.auth.uid}-${Date.now()}`;
-        const verificationRef = db.collection('mechanical_license_verifications').doc(requestId);
-        await verificationRef.set({
-            userId: context.auth.uid,
-            trackTitle,
-            originalArtist,
-            status: 'UNVERIFIED',
-            requiresClearance: true,
-            publisher: null,
-            songCode: null,
-            rate: statutoryPhysicalRate,
-            requestedAt: new Date().toISOString(),
-        }, { merge: true });
-
-        return response;
+        throw new functions.https.HttpsError(
+            'unimplemented',
+            'Mechanical licensing API not integrated. Please use HFA SongFile or The MLC to obtain mechanical licenses.'
+        );
     });
