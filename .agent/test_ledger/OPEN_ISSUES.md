@@ -12149,3 +12149,38 @@ Original fix steps (CI secret in deploy.yml, enable Geocoding+Places in GCP) sti
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
 - **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/28956553451)
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
+
+### ISSUE-772: Cross-device asset divergence — image gallery is device-local because history sync silently fails
+- **Status:** 🔴 OPEN (root cause confirmed in code + rules, 2026-07-09)
+- **Severity:** 🔴 P0 (same-account devices show DIFFERENT image libraries — William repro: iPad vs desktop see different images in their folder)
+- **Causal chain (each link verified):**
+  1. `profileSlice.ts:82` defaults `currentOrganizationId: 'org-default'`. If the user has no docs in `organizations` (solo user), it stays `'org-default'` forever.
+  2. `StorageService.saveItem` (line ~236) stamps every generated/uploaded item `orgId: getCurrentOrgId() || 'personal'` → resolves to `'org-default'`, NOT `'personal'`.
+  3. `StorageService.subscribeToHistory` (line ~371): when orgId !== 'personal' it runs an org-scope query `where('orgId','==','org-default')` with NO `userId` filter.
+  4. `firestore.rules:630` allows history reads only when `userId == request.auth.uid` OR `isOrgMember(orgId)`. `isOrgMember('org-default')` is false (no such org doc) → the org-scope query is **rejected wholesale** (rules can't prove it for all docs).
+  5. `creativeHistorySlice.ts:174-178` catches the permission error and treats it as "**expected in dev**", silently resolving with no data. No retry, no user-visible sync-failure state.
+  6. Net effect: the 'personal' bucket query returns 0 docs (items were stamped 'org-default'), the org bucket query is permission-denied and swallowed → **cloud history never loads; each device shows only images generated in that session**. Exactly the reported symptom.
+- **Aggravating defects found in the same trace:**
+  - **(a) Split default projectId:** `appSlice.ts:115` uses `'default'` while `StorageService.saveItem` stamps `projectId || 'default-project'` — two different "no project" sentinels in one codebase; `FileSystemService` queries `where('projectId','==',currentProjectId)` so file-tree contents also diverge by device/project state. (ISSUE-758/762 family.)
+  - **(b) Legacy `placeholder:dev-data-uri-too-large` docs** (`creativeHistorySlice.ts:133`): old items whose pixels only exist on the originating device render broken everywhere else.
+  - **(c) Silent-failure policy:** permission-denied on the history subscription must NEVER be "expected" in production — it is the exact mechanism that hid this bug.
+- **Fix (build order — do in this sequence):**
+  1. **subscribeToHistory hardening:** only run the org-scope query when the orgId exists in the loaded `organizations` list; ALWAYS run the personal/userId-filtered query (provable under rules). Depends on: nothing.
+  2. **Stop stamping phantom org:** when the user has no real org, save with `orgId: 'personal'` (getCurrentOrgId should return null/'personal' when currentOrganizationId is the placeholder `'org-default'`). Depends on: 1.
+  3. **Backfill migration (client-side on login):** query own docs `where('userId','==',uid)` (allowed by rules), rewrite `orgId: 'org-default'` → `'personal'`. Idempotent, batched. Depends on: 2.
+  4. **Surface sync failure honestly:** replace the "expected in dev" swallow with a store-level `historySyncError` + visible banner/retry (no-mock-data rule: never show an empty gallery pretending to be truth when the read failed). Depends on: 1.
+  5. **Unify default projectId sentinel** to ONE constant used by appSlice, StorageService, FileSystemService. Depends on: none (parallel), but coordinate with ISSUE-758/762 owner.
+- **Acceptance:** generate an image on device A → appears on device B within one snapshot cycle on the same account, with no org configured; existing 'org-default' items reappear on all devices after backfill; killing Firestore permissions shows a visible sync-error state instead of a silently empty gallery.
+- **Depends on:** interacts with ISSUE-758/762 (project split-brain) and ISSUE-754 (creations visibility). Does NOT depend on any founder/GCP action — pure code.
+- **DO NOT:** Do not "fix" by loosening firestore.rules to allow unfiltered org reads. Do not raise the limit(50) cap as a workaround (ISSUE-756 DO-NOT). Do not delete legacy 'org-default' docs — migrate them.
+
+### ISSUE-772 UPDATE (2026-07-09, Fable): fixes 1–4 IMPLEMENTED, fix 5 deferred to ISSUE-758/762 owner
+- **Status:** 🟡 CODE FIXED (steps 1–4) — needs live two-device verification before closing
+- **Implemented:**
+  1. ✅ `OrganizationService.getCurrentOrgId()` now resolves the `'org-default'` placeholder (and any stale id not in the loaded orgs list) to `'personal'` — org-scope queries are only issued for provable, real orgs. Trusts a real org id while the orgs list hasn't loaded yet. 6 new unit tests.
+  2. ✅ (Same change covers save-stamping — `saveItem` flows through `getCurrentOrgId`.)
+  3. ✅ New `LegacyOrgMigrationService` — on login, batch-rewrites the user's own `history` AND `sessions` docs from `orgId 'org-default'` → `'personal'` (sessions included deliberately: SessionService shares getCurrentOrgId, so without the sessions backfill this fix would have made legacy conversations vanish). Idempotent; never blocks boot. Wired into `AppInitializationProvider` BEFORE `initializeHistory()` so migrated items land in the first snapshot. 4 new unit tests.
+  4. ✅ Silent permission-denied swallow removed from `creativeHistorySlice`: now logs at error level, sets new `historySyncError` store field (cleared on the next successful snapshot), and emits `SYSTEM_ALERT` (consumed by ToastContext + ActivityFeed — user-visible).
+  5. ⏳ Default-projectId sentinel split (`'default'` vs `'default-project'`) NOT touched here — overlaps ISSUE-758/762; that owner must unify to one constant.
+- **Verification:** typecheck ✓; full suite 4360 passed / 0 failed (12 new tests). NOT yet live-verified — the McLear acceptance test remains: generate an image on device A (iPad web), confirm it appears on device B (desktop) same account, and confirm legacy images reappear after first login post-deploy.
+- **DO NOT (unchanged):** no rules loosening, no cap raise, no deleting legacy docs.
