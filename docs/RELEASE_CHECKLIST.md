@@ -69,14 +69,14 @@ cases, a platform review process — start these early, approvals take days to w
 
 Public release identity: **Founders Version One**.
 
-Technical updater version: **1.64.2**. Do not reset `package.json` to `1.0.0` for this launch, because installed `v1.50.0` builds would treat that as a downgrade and skip the update while `allowDowngrade` remains false.
+Technical updater version: **1.64.5**.
 
 - [x] Push a `v1.64.5` release tag after local validation is complete.
-- [ ] Verify GitHub Release `v1.64.2` includes platform installers and updater manifests:
+- [x] Verify GitHub Release `v1.64.5` includes platform installers and updater manifests:
   - `latest-mac.yml`
   - `latest.yml`
   - `latest-linux.yml`
-- [ ] Confirm each manifest URL returns `200` before calling Founders Version One live.
+- [x] Confirm each manifest URL returns `200` before calling Founders Version One live.
 
 ## Current Local Verification Snapshot
 
