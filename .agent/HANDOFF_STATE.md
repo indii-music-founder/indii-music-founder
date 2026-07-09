@@ -1,19 +1,19 @@
 # Handoff State
-**Updated:** 2026-07-08 18:43 EDT
+**Updated:** 2026-07-09 08:17 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
-b2c589d9c chore: session checkpoint [18:41]
-f983116d5 docs: correct release checklist formatting and check off Vertex AI verification
-078926660 docs: update release checklist
-9ecf3114e chore: session checkpoint [12:00]
-9eeb47ca4 chore: session checkpoint [11:58]
-1061d7fad chore: session checkpoint [11:57]
-62b20a9c5 chore: session checkpoint [11:57]
-b7570f3fc chore: session checkpoint [11:56]
-f92ed7a13 chore: session checkpoint [11:56]
-064418ecd fix(firebase): pass original express req object to validateAppCheckHttp
+f1f534f66 docs: resolve and mark ISSUE-726 as FIXED in ledger
+96a54b093 docs(ledger): add Cost of Doing Business section — founder purchases & blockers
+b95cb354b docs: check off release tag and updater manifest verification in release checklist
+f5fb8d94a docs: resolve and mark CI failure issues as FIXED in ledger
+a5e42b959 fix(ci): avoid exporting empty string to code signing env variables
+b25907f46 test(ledger): log ISSUE-CI pipeline failures
+a5348f95d chore(ledger): log ISSUE-767..771 — release QA findings 2026-07-08
+651bc870e docs: resolve and mark ISSUE-770 as FIXED in ledger
+e00e219ce fix(ci): increase node memory limits for builds and enable maps on web
+0da876d87 chore: session checkpoint [18:43]
 ```
 
 ## Working State
