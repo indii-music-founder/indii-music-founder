@@ -34,7 +34,7 @@ function SpotlightCard({ children, className = '' }: { children: React.ReactNode
       onMouseMove={handleMouseMove}
       onMouseEnter={() => setOpacity(1)}
       onMouseLeave={() => setOpacity(0)}
-      className={`relative overflow-hidden rounded-[2.5rem] border border-white/[0.06] bg-[#0a0a0a] shadow-2xl transition-transform duration-500 hover:-translate-y-1 ${className}`}
+      className={`relative overflow-hidden rounded-[2.5rem] border border-white/6 bg-[#0a0a0a] shadow-2xl transition-transform duration-500 hover:-translate-y-1 ${className}`}
     >
       <div
         className="pointer-events-none absolute -inset-px transition-opacity duration-500 z-0"
@@ -190,16 +190,16 @@ export default function Home({ founder = true }: { founder?: boolean }) {
       </div>
 
       {/* ═══════════════ 2. NAVIGATION ═══════════════ */}
-      <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 md:px-8 py-4 md:py-5 bg-[#030303]/60 backdrop-blur-3xl border-b border-white/[0.04]" role="navigation" aria-label="Main navigation">
+      <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 md:px-8 py-4 md:py-5 bg-[#030303]/60 backdrop-blur-3xl border-b border-white/4" role="navigation" aria-label="Main navigation">
         <a href="#home" className="flex items-center gap-3 group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 rounded-lg" aria-label="indii.music home">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-gray-800 to-black border border-white/10 flex items-center justify-center shadow-[0_0_15px_rgba(245,158,11,0.1)] group-hover:shadow-[0_0_20px_rgba(245,158,11,0.3)] transition-shadow duration-500" aria-hidden="true">
+          <div className="w-8 h-8 rounded-lg bg-linear-to-br from-gray-800 to-black border border-white/10 flex items-center justify-center shadow-[0_0_15px_rgba(245,158,11,0.1)] group-hover:shadow-[0_0_20px_rgba(245,158,11,0.3)] transition-shadow duration-500" aria-hidden="true">
             <span className="text-amber-500 font-black text-[10px] tracking-tighter">indii</span>
           </div>
           <span className="font-bold tracking-tight text-white/90 group-hover:text-amber-400 transition-colors duration-500">indii.music</span>
         </a>
 
         <div className="flex items-center gap-8">
-          <div className="hidden md:flex items-center gap-8 bg-white/[0.02] border border-white/5 rounded-full px-6 py-2 backdrop-blur-md shadow-xl">
+          <div className="hidden md:flex items-center gap-8 bg-white/2 border border-white/5 rounded-full px-6 py-2 backdrop-blur-md shadow-xl">
             <a href="#capabilities" className="text-sm font-medium text-gray-400 hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 rounded px-2 py-1" aria-label="View agents and capabilities">Agents</a>
             <a href="#conductor" className="text-sm font-medium text-gray-400 hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 rounded px-2 py-1" aria-label="Learn about the Conductor">Conductor</a>
             {founder && <button onClick={() => setIsThesisOpen(true)} className="text-sm font-medium text-gray-400 hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 rounded px-2 py-1" aria-label="Open the thesis modal">The Thesis</button>}
@@ -214,7 +214,7 @@ export default function Home({ founder = true }: { founder?: boolean }) {
             className="group relative inline-flex items-center justify-center gap-2 px-4 md:px-6 py-2.5 text-xs md:text-sm font-bold text-black bg-white rounded-full overflow-hidden transition-all hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
             aria-label={loading ? 'Verifying access...' : user ? 'Resume your session' : (founder ? 'Launch Founder Preview - explore the platform' : 'Launch Studio')}
           >
-            <div className="absolute inset-0 bg-gradient-to-r from-amber-400 to-amber-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <div className="absolute inset-0 bg-linear-to-r from-amber-400 to-amber-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             <span className="relative z-10 transition-colors group-hover:text-white">
               {loading ? 'Verifying...' : user ? 'Resume Session' : (founder ? 'Launch Founder Preview' : 'Launch Studio')}
             </span>
@@ -226,7 +226,7 @@ export default function Home({ founder = true }: { founder?: boolean }) {
       {/* ═══════════════ 3. HERO ═══════════════ */}
       <motion.section
         style={{ scale: heroScale, opacity: heroOpacity, y: heroTranslateY }}
-        className="relative z-10 flex flex-col items-center justify-center w-full max-w-5xl px-4 min-h-[100vh] pt-20 pb-0 text-center"
+        className="relative z-10 flex flex-col items-center justify-center w-full max-w-5xl px-4 min-h-screen pt-20 pb-0 text-center"
         role="banner"
         aria-label="Hero section - The operating system for your musical independence"
       >
@@ -251,7 +251,7 @@ export default function Home({ founder = true }: { founder?: boolean }) {
               animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
               transition={{ duration: 0.8, delay: i * 0.05, ease: [0.16, 1, 0.3, 1] }}
               key={i}
-              className={`mr-4 last:mr-0 ${word === 'musical' || word === 'independence' ? 'text-transparent bg-clip-text bg-gradient-to-br from-amber-200 via-amber-400 to-amber-600 drop-shadow-[0_0_30px_rgba(245,158,11,0.3)]' : ''}`}
+              className={`mr-4 last:mr-0 ${word === 'musical' || word === 'independence' ? 'text-transparent bg-clip-text bg-linear-to-br from-amber-200 via-amber-400 to-amber-600 drop-shadow-[0_0_30px_rgba(245,158,11,0.3)]' : ''}`}
             >
               {word}
             </motion.span>
@@ -284,7 +284,7 @@ export default function Home({ founder = true }: { founder?: boolean }) {
               e.preventDefault();
               void handleFounderPreviewClick('hero', getStudioUrl());
             }}
-            className="group relative inline-flex items-center justify-center gap-3 px-8 py-4 text-base font-bold text-black bg-gradient-to-r from-amber-400 to-amber-600 rounded-full overflow-hidden transition-all hover:scale-105 active:scale-95 shadow-[0_0_30px_rgba(245,158,11,0.4)]"
+            className="group relative inline-flex items-center justify-center gap-3 px-8 py-4 text-base font-bold text-black bg-linear-to-r from-amber-400 to-amber-600 rounded-full overflow-hidden transition-all hover:scale-105 active:scale-95 shadow-[0_0_30px_rgba(245,158,11,0.4)]"
           >
             <span className="relative z-10">{founder ? 'Launch Founder Preview' : 'Launch Studio'}</span>
             <ArrowRight size={18} className="relative z-10 transition-transform group-hover:translate-x-1" />
@@ -323,7 +323,7 @@ export default function Home({ founder = true }: { founder?: boolean }) {
         <>
           {/* ═══════════════ 8.6 OUR STORY (PERSONAL & LOCAL) ═══════════════ */}
           <section className="w-full max-w-5xl px-4 py-12 z-20 relative">
-            <div className="relative overflow-hidden rounded-[3rem] border border-white/5 bg-gradient-to-b from-[#090909] to-[#030303] p-8 md:p-16 shadow-2xl">
+            <div className="relative overflow-hidden rounded-[3rem] border border-white/5 bg-linear-to-b from-[#090909] to-[#030303] p-8 md:p-16 shadow-2xl">
               <div className="max-w-3xl">
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 font-mono text-[10px] tracking-widest uppercase mb-8">
                   <Users size={12} className="text-amber-500" />
@@ -355,7 +355,7 @@ export default function Home({ founder = true }: { founder?: boolean }) {
 
           {/* ═══════════════ 8.7 THE INDII THESIS ═══════════════ */}
           <section className="w-full max-w-5xl px-4 py-12 z-20 relative">
-            <div className="relative overflow-hidden rounded-[3rem] border border-amber-500/20 bg-gradient-to-r from-amber-950/20 via-black to-[#0a0a0a] p-8 md:p-16 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-8">
+            <div className="relative overflow-hidden rounded-[3rem] border border-amber-500/20 bg-linear-to-r from-amber-950/20 via-black to-[#0a0a0a] p-8 md:p-16 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-8">
               <div className="flex-1 space-y-4 text-left">
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 font-mono text-[10px] tracking-widest uppercase">
                   <Film size={12} className="text-amber-500 animate-pulse" />
@@ -370,7 +370,7 @@ export default function Home({ founder = true }: { founder?: boolean }) {
               </div>
               <button
                 onClick={() => setIsThesisOpen(true)}
-                className="group relative flex items-center justify-center gap-3 px-8 py-4 bg-gradient-to-r from-amber-400 to-amber-600 hover:from-amber-300 hover:to-amber-500 text-black font-black text-base rounded-2xl transition-all hover:scale-[1.03] active:scale-[0.97] shadow-[0_0_40px_rgba(245,158,11,0.2)]"
+                className="group relative flex items-center justify-center gap-3 px-8 py-4 bg-linear-to-r from-amber-400 to-amber-600 hover:from-amber-300 hover:to-amber-500 text-black font-black text-base rounded-2xl transition-all hover:scale-[1.03] active:scale-[0.97] shadow-[0_0_40px_rgba(245,158,11,0.2)]"
               >
                 <span>Launch Cinematic Thesis</span>
                 <Film size={16} className="transition-transform group-hover:scale-110" />
@@ -384,10 +384,10 @@ export default function Home({ founder = true }: { founder?: boolean }) {
       <section className="relative z-20 w-full max-w-6xl px-4 mt-12 md:mt-20 mb-20 perspective-[2000px]">
         <motion.div
           style={{ rotateX: productRotateX, scale: productScale, opacity: productOpacity, transformStyle: 'preserve-3d' }}
-          className="w-full aspect-[16/9] rounded-t-[2.5rem] border border-white/10 bg-[#0A0A0A] shadow-[0_40px_100px_rgba(0,0,0,0.9),_0_0_80px_rgba(245,158,11,0.08)] overflow-hidden flex flex-col relative"
+          className="w-full aspect-video rounded-t-[2.5rem] border border-white/10 bg-[#0A0A0A] shadow-[0_40px_100px_rgba(0,0,0,0.9),0_0_80px_rgba(245,158,11,0.08)] overflow-hidden flex flex-col relative"
         >
-          <div className="absolute inset-0 bg-gradient-to-b from-white/[0.04] via-transparent to-transparent pointer-events-none" />
-          <div className="h-12 border-b border-white/5 flex items-center px-6 gap-3 bg-white/[0.02]">
+          <div className="absolute inset-0 bg-linear-to-b from-white/4 via-transparent to-transparent pointer-events-none" />
+          <div className="h-12 border-b border-white/5 flex items-center px-6 gap-3 bg-white/2">
             <div className="flex gap-2">
               <div className="w-3 h-3 rounded-full bg-[#FF5F56] border border-[#E0443E]" />
               <div className="w-3 h-3 rounded-full bg-[#FFBD2E] border border-[#DEA123]" />
@@ -412,7 +412,7 @@ export default function Home({ founder = true }: { founder?: boolean }) {
 
       {/* ═══════════════ 5. STATS BAR ═══════════════ */}
       <section className="w-full max-w-5xl px-4 mb-24 z-20 relative">
-        <div className="flex flex-wrap justify-center gap-8 md:gap-16 py-12 border-y border-amber-500/20 bg-gradient-to-r from-amber-500/5 via-transparent to-amber-500/5">
+        <div className="flex flex-wrap justify-center gap-8 md:gap-16 py-12 border-y border-amber-500/20 bg-linear-to-r from-amber-500/5 via-transparent to-amber-500/5">
           <AnimatedStat value="21" label="Specialists" />
           <AnimatedStat value="100" suffix="%" label="Ownership" />
           <AnimatedStat value="0" suffix="%" label="Royalties Taken" />
@@ -438,7 +438,7 @@ export default function Home({ founder = true }: { founder?: boolean }) {
         >
           <h2 className="text-4xl md:text-5xl font-black tracking-tighter text-white mb-4">
             Your Dedicated{' '}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-amber-600">Team</span>
+            <span className="text-transparent bg-clip-text bg-linear-to-r from-amber-300 to-amber-600">Team</span>
           </h2>
           <p className="text-gray-400 max-w-xl mx-auto font-light">Direct-to-platform release pipelines. High-fidelity creative synthesis. Total ownership of your masters and your career.</p>
         </motion.div>
@@ -459,7 +459,7 @@ export default function Home({ founder = true }: { founder?: boolean }) {
               <SpotlightCard className="h-full">
                 <div className="p-8 md:p-10 flex flex-col h-full">
                   <div className="flex items-center justify-between mb-8">
-                    <span className="text-6xl font-black text-white/[0.04] tracking-tighter">{s.step}</span>
+                    <span className="text-6xl font-black text-white/4 tracking-tighter">{s.step}</span>
                     <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shadow-[0_0_15px_rgba(245,158,11,0.15)]">
                       <s.icon className="text-amber-400" size={24} />
                     </div>
@@ -511,7 +511,7 @@ export default function Home({ founder = true }: { founder?: boolean }) {
 
       {/* ═══════════════ 9. FOUNDERS COVENANT ═══════════════ */}
       <section id="invest" className="w-full max-w-5xl px-4 py-24 mb-24 z-20 relative">
-        <div className="relative overflow-hidden rounded-[3rem] border border-amber-500/30 bg-gradient-to-b from-amber-900/20 to-[#0a0a0a] p-12 md:p-20 shadow-[0_0_100px_rgba(245,158,11,0.1)]">
+        <div className="relative overflow-hidden rounded-[3rem] border border-amber-500/30 bg-linear-to-b from-amber-900/20 to-[#0a0a0a] p-12 md:p-20 shadow-[0_0_100px_rgba(245,158,11,0.1)]">
           <div className="absolute top-0 right-0 p-12 opacity-10 pointer-events-none">
             <ShieldCheck size={300} className="text-amber-500" strokeWidth={0.5} />
           </div>
@@ -552,7 +552,7 @@ export default function Home({ founder = true }: { founder?: boolean }) {
                 e.preventDefault();
                 void handleFounderPreviewClick('invest', getStudioUrl());
               }}
-              className="group relative inline-flex items-center justify-center gap-3 px-10 py-5 text-lg font-black text-black bg-gradient-to-r from-amber-400 to-amber-600 rounded-full overflow-hidden transition-all hover:scale-105 active:scale-95 shadow-[0_0_30px_rgba(245,158,11,0.4)]"
+              className="group relative inline-flex items-center justify-center gap-3 px-10 py-5 text-lg font-black text-black bg-linear-to-r from-amber-400 to-amber-600 rounded-full overflow-hidden transition-all hover:scale-105 active:scale-95 shadow-[0_0_30px_rgba(245,158,11,0.4)]"
             >
               <span className="relative z-10">Secure Founder Access — $2,500</span>
               <ArrowRight size={20} className="relative z-10 transition-transform group-hover:translate-x-2" />
@@ -567,7 +567,7 @@ export default function Home({ founder = true }: { founder?: boolean }) {
       </>)}
 
       {/* ═══════════════ 10. FOOTER ═══════════════ */}
-      <footer className="w-full border-t border-white/[0.04] py-12 md:py-16 px-6 md:px-12 flex flex-col md:flex-row items-center justify-between gap-8 text-sm text-gray-500 bg-[#030303] z-20 relative">
+      <footer className="w-full border-t border-white/4 py-12 md:py-16 px-6 md:px-12 flex flex-col md:flex-row items-center justify-between gap-8 text-sm text-gray-500 bg-[#030303] z-20 relative">
         <div className="flex flex-col md:flex-row items-center gap-4 text-center md:text-left">
           <div className="w-6 h-6 rounded-lg bg-amber-500/10 border border-amber-500/30 flex justify-center items-center shadow-[0_0_10px_rgba(245,158,11,0.2)]">
             <Zap size={12} className="text-amber-500" />
