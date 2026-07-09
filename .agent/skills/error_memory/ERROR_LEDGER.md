@@ -1328,3 +1328,10 @@ Before pushing any branch, run `/plat` (see `.claude/commands/plat.md`). It exec
 - PREVENTION: Never execute `@electron/rebuild` or `electron-builder install-app-deps` directly in environments where workspace or user paths contain spaces. Use a space-free `/tmp/` staging zone for native dependency builds.
 
 **GREP:** `functions/internal`, `add-invoker-policy-binding`, `allowedPolicyMemberDomains`, `Function execution started`, `keytar.node`, `Attempting to build a module with a space in the path`
+
+## 2026-07-09 End Workflow - Vitest 4 rejects legacy `--grep` in health scripts
+- SEVERITY: Medium
+- FILE: `package.json` (`health:check`)
+- BUG: The `/health_audit` manual command `npm run health:check` failed before running tests because the script used `vitest --run --grep ...`, but the installed Vitest 4.1.8 CLI does not support `--grep`.
+- FIX: Select integration files by filename with `find packages/renderer/src/services -name "*.integration.test.ts" -print`, then pass those files to `vitest run`; exit cleanly if none exist.
+- PREVENTION: For Vitest 4, use positional file filters for filename selection and `-t/--testNamePattern` only for test-name filtering. Do not port Jest-style `--grep` flags into npm scripts without checking `npx vitest --help`.
