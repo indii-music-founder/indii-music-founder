@@ -1,5 +1,5 @@
 import { StateCreator } from 'zustand';
-import { type ModuleId, isValidModule, MODULE_AGENT_MAP } from '@/core/constants';
+import { type ModuleId, isValidModule, MODULE_AGENT_MAP, DEFAULT_PROJECT_ID } from '@/core/constants';
 import type { ProjectMetadata } from '@/services/dashboard/DashboardService';
 import { logger } from '@/utils/logger';
 
@@ -76,7 +76,7 @@ export interface AppSlice {
     addProject: (project: ProjectMetadata) => void; // Changed parameter type
     loadProjects: () => Promise<void>;
     createNewProject: (name: string, type: Project['type'], orgId: string) => Promise<string>;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     updateProjectMetadata: (projectId: string, metadata: Record<string, any>) => Promise<void>;
     updateProjectName: (projectId: string, name: string) => Promise<void>;
@@ -112,7 +112,7 @@ export interface AppSlice {
 
 export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
     currentModule: getInitialModule(),
-    currentProjectId: 'default',
+    currentProjectId: DEFAULT_PROJECT_ID,
     projects: [],
     hasUnsavedChanges: false,
     pendingCostWarning: null,
@@ -302,7 +302,7 @@ export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
 
         set((state) => ({
             projects: state.projects.filter((p) => p.id !== projectId),
-            currentProjectId: state.currentProjectId === projectId ? 'default' : state.currentProjectId
+            currentProjectId: state.currentProjectId === projectId ? DEFAULT_PROJECT_ID : state.currentProjectId
         }));
     },
     pendingPrompt: null,

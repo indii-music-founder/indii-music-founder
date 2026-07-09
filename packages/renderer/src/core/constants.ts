@@ -128,3 +128,30 @@ export const THEME = {
         secondary: 'var(--color-accent-secondary, #6366f1)'
     }
 } as const;
+
+// ============================================================================
+// Project sentinels (ISSUE-772 / ISSUE-758)
+// ============================================================================
+// Historically the codebase used TWO different "no project selected" sentinels:
+// appSlice defaulted currentProjectId to 'default' while StorageService stamped
+// assets with 'default-project'. Both values exist in production Firestore data,
+// so reads must accept both while all new writes use DEFAULT_PROJECT_ID.
+
+export const DEFAULT_PROJECT_ID = 'default-project';
+
+/** Legacy sentinel written by appSlice before unification. Read-side only. */
+export const LEGACY_DEFAULT_PROJECT_ID = 'default';
+
+/** True when the id denotes the unassigned/default project bucket (either era). */
+export function isDefaultProject(projectId: string | null | undefined): boolean {
+    return !projectId || projectId === DEFAULT_PROJECT_ID || projectId === LEGACY_DEFAULT_PROJECT_ID;
+}
+
+/**
+ * True when an item stamped with `itemProjectId` belongs to the project view
+ * `viewProjectId` — treating both default-era sentinels as one bucket.
+ */
+export function projectBucketMatches(itemProjectId: string | null | undefined, viewProjectId: string | null | undefined): boolean {
+    if (isDefaultProject(viewProjectId)) return isDefaultProject(itemProjectId);
+    return itemProjectId === viewProjectId;
+}
