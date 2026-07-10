@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-07-09 22:17 EDT
+**Updated:** 2026-07-09 22:20 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+873e55335 chore: session checkpoint [22:17]
 b77b321c3 chore: session checkpoint [22:16]
 01520f422 fix(storage): preserve MIME types and correct extensions for media uploads (ISSUE-806)
 e6597af59 fix(ddex): ERN defaults to TestMessage, requires explicit live flag (ISSUE-805)
@@ -13,7 +14,6 @@ e6597af59 fix(ddex): ERN defaults to TestMessage, requires explicit live flag (I
 1e0720b36 chore: session checkpoint [23:15] - 7 issues fixed
 3fecd946a fix(licensing): update mechanical royalty rates to 2026 statutory (ISSUE-802)
 897c51277 fix(distribution): fail-closed SFTP upload when bridge unavailable (ISSUE-804)
-fb0101408 fix(distribution): fail-closed mechanical license clearance gate (ISSUE-801)
 ```
 
 ## Working State
