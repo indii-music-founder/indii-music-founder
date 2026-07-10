@@ -43,7 +43,7 @@ export class VideoGenerationInstrument implements Instrument {
       rateLimitPerMinute: 2
     },
     computeType: 'cloud',
-    preferredModel: 'veo-3.1-generate-preview',
+    preferredModel: 'veo-3.1-generate-001',
     tags: ['ai', 'video', 'generation', 'creative', 'premium'],
     examples: [
       {

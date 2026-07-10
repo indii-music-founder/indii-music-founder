@@ -142,7 +142,7 @@ export const WORKFLOW_REGISTRY: Record<string, WorkflowDefinition> = {
             {
                 id: 'video_generation',
                 agentId: 'creative',
-                prompt: 'Trigger a Node recipe instructing the Video Agent (using veo-3.1-generate-preview) to mass-generate 6 to 15 unique 9:16 vertical video variations. Enforce the 3-Second Hook rule.',
+                prompt: 'Trigger a Node recipe instructing the Video Agent (using veo-3.1-generate-001) to mass-generate 6 to 15 unique 9:16 vertical video variations. Enforce the 3-Second Hook rule.',
                 priority: 'URGENT'
             },
             {

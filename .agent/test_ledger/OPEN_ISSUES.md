@@ -13186,7 +13186,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 - **Fix applied (2026-07-10):** FoundersCheckout now sends `metadata.type: founder_seat`; new `handleFounderSeatCheckoutCompleted` in `webhookHandler.ts` verifies paid amount ≥ $2,500, writes idempotent `founder_fulfillment_queue/{sessionId}` task, and flags `users/{uid}.founderPaymentStatus: paid_pending_activation`. Checkout copy changed from "begins immediately" to "activated within 24 hours" (activation stays deliberate: seat numbering, display name, agreement hash, GitHub commit via activateFounderPass). Underpaid/missing-uid sessions throw → Stripe retries. Deployed.
 ### ISSUE-867: Veo 3.1 model IDs still use deprecated preview names
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-10, deployed)
 - **Severity:** 🟠 HIGH
 - **Module:** Creative Suite / Veo 3.1
 - **Evidence:** Renderer-approved video models are `veo-3.1-generate-preview`, `veo-3.1-fast-generate-preview`, and `veo-3.1-lite-generate-preview` (`intelligence-models.ts:28-31`, `:137-150`). The creative gateway hard-codes the same preview IDs for fast/pro/lite (`gateway.ts:56-60`). Current Google docs list stable Veo 3.1 IDs as `veo-3.1-generate-001`, `veo-3.1-fast-generate-001`, and `veo-3.1-lite-generate-001`, with preview IDs deprecated in 2026.
@@ -13194,9 +13194,10 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 - **Fix:** Replace preview IDs with stable IDs behind one shared registry and add a migration alias layer for old saved jobs.
 - **Acceptance:** Lite/Fast/Pro requests resolve to `*-001` IDs; tests fail if any `veo-3.1-*-preview` ID remains in production config.
 
+- **Fix applied (2026-07-10):** All production Veo IDs migrated to GA `*-001`: `gateway.ts` VIDEO_MODEL_IDS, `VideoGenerationInstrument.preferredModel`, WorkflowRegistry/TimelinePhaseTemplates/NeuralCortexService/audio-types references, plus `intelligence-models.ts` + `models.ts` (done under ISSUE-799). `ModelPricing.ts` carries GA rows with preview IDs kept ONLY as marked legacy aliases so pre-migration saved jobs still price. `VideoGenerationService.estimateVideoCost` matches both. generateVideoV3/generateOmniRemixV3 deployed.
 ### ISSUE-868: Veo model and pricing registries disagree about Fast and Lite support
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-10, deployed)
 - **Severity:** 🟠 HIGH
 - **Module:** Creative Suite / Model registry / Billing
 - **Evidence:** Renderer config exposes Pro/Fast/Lite models and Lite pricing (`intelligence-models.ts:28-31`, `:137-150`). The creative gateway also routes `lite` to a Lite ID and estimates Lite at `$0.05/sec` (`gateway.ts:56-60`, `:327-333`). But Cloud Functions config maps `VIDEO.FAST` to the Pro generation model and has no Lite entry (`packages/firebase/src/config/models.ts:27-31`), while `packages/firebase/src/config/pricing.ts` only has PRO/FAST pricing and chooses PRO unless `options.model === 'fast'` (`pricing.ts:6-17`, `:22-38`).
@@ -13204,6 +13205,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 - **Fix:** Collapse model IDs and pricing into one shared package used by renderer and Firebase. Include explicit capability and pricing rows for Pro, Fast, and Lite.
 - **Acceptance:** A single registry drives UI labels, cost estimates, reservation checks, and API model IDs; `fast` never resolves to the Pro model unless explicitly configured as a fallback with user-visible notice.
 
+- **Fix applied (2026-07-10):** Registries reconciled — `packages/firebase/src/config/models.ts` VIDEO now has PRO/FAST/LITE (fast≠pro, fixed under ISSUE-799; LITE added). `pricing.ts` gains a LITE tier and `estimateVideoCost` now resolves tier from keywords OR full model IDs (lite/fast/pro), so legacy video functions, the gateway estimator, and renderer pricing agree. Deployed with 867.
 ### ISSUE-869: Temporal inpaint can be selected with Lite/Fast models and then fails at submit time
 
 - **Status:** 🔴 OPEN
