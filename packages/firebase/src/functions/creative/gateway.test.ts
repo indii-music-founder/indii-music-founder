@@ -366,7 +366,7 @@ describe('creative gateway generateVideoV3', () => {
     });
 
     expect(mockGenerateVideos).toHaveBeenCalledWith(expect.objectContaining({
-      model: 'veo-3.1-fast-generate-preview',
+      model: 'veo-3.1-fast-generate-001',
       prompt: 'A cinematic social clip',
       image: { gcsUri: 'gs://test-bucket/frames/start.png' },
       config: expect.objectContaining({
@@ -374,6 +374,7 @@ describe('creative gateway generateVideoV3', () => {
         aspectRatio: '9:16',
         durationSeconds: 8,
         resolution: '1080p',
+        enhancePrompt: true,
         personGeneration: 'allow_adult',
         negativePrompt: 'no blurry faces',
         seed: 42,
@@ -436,6 +437,11 @@ describe('creative gateway generateOmniRemixV3', () => {
     vi.clearAllMocks();
     mockDownload.mockResolvedValue([Buffer.from('video-bytes')]);
     mockGetMetadata.mockResolvedValue([{ contentType: 'video/mp4' }]);
+    process.env.GEMINI_OMNI_FLASH_MODEL = 'gemini-omni-flash-preview';
+  });
+
+  afterEach(() => {
+    delete process.env.GEMINI_OMNI_FLASH_MODEL;
   });
 
   it('generates a video via the Omni Flash Interactions API with correct payload', async () => {
