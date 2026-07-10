@@ -31,7 +31,7 @@ Attempt to infer scene headers if not explicit.
 
     const response = await AutonomousIntelligence.generateContent(
       prompt,
-      getFineTunedModel('video'),
+      getFineTunedModel('screenwriter'),
       undefined,
       systemPrompt
     );
@@ -69,7 +69,7 @@ Return ONLY valid JSON with this structure:
 
     const response = await AutonomousIntelligence.generateContent(
       prompt,
-      getFineTunedModel('video'),
+      getFineTunedModel('screenwriter'),
       undefined,
       systemPrompt
     );

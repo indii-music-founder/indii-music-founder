@@ -412,9 +412,8 @@ export function useDirectGeneration() {
         
         let sequencePrompt = finalPrompt;
         if (sequence.length > 0) {
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const sequenceDetails = sequence.map(block => `\${block.beats} beats (\${(block.beats * secondsPerBeat).toFixed(2)}s) [\${block.section || 'Uncategorized'}, \${block.energy || 'Medium'} Energy]`).join(', ');
-            sequencePrompt = `[SEQUENCE: \${sequenceDetails} at \${bpm} BPM] \${finalPrompt}`;
+            const sequenceDetails = sequence.map(block => `${block.beats} beats (${(block.beats * secondsPerBeat).toFixed(2)}s) [${block.section || 'Uncategorized'}, ${block.energy || 'Medium'} Energy]`).join(', ');
+            sequencePrompt = `[SEQUENCE: ${sequenceDetails} at ${bpm} BPM] ${finalPrompt}`;
         }
 
         const ingredientsList = videoInputs?.ingredients || [];
@@ -559,13 +558,19 @@ export function useDirectGeneration() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [localPrompt, mode, whiskState, toast, handleImageGenerate, handleVideoGenerate]);
 
-    const cancelJob = useCallback((jobId: string) => {
-        setActiveJobs(prev => prev.filter(j => j.id !== jobId));
-        if (unsubsRef.current[jobId]) {
+    const cancelJob = useCallback(async (jobId: string) => {
+        try {
+            const cancelVideoJob = httpsCallable(functions, 'cancelVideoJob');
+            await cancelVideoJob({ jobId });
+            setActiveJobs(prev => prev.filter(j => j.id !== jobId));
             unsubsRef.current[jobId]?.();
             delete unsubsRef.current[jobId];
+            toast.info('Video generation cancelled.');
+        } catch (error) {
+            logger.warn('[DirectGeneration] Failed to cancel video job', error);
+            toast.error('Unable to cancel the video generation. It is still being tracked.');
         }
-    }, []);
+    }, [toast]);
 
     return {
         mode,

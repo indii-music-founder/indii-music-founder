@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import admin from 'firebase-admin';
 import { google } from 'googleapis';
+import { randomBytes } from 'node:crypto';
 
 dotenv.config();
 
@@ -276,6 +277,30 @@ const oauth2Client = new google.auth.OAuth2(
   process.env.GOOGLE_REDIRECT_URI || 'http://localhost:5174/api/google/oauth/callback'
 );
 
+const OAUTH_STATE_TTL_MS = 10 * 60 * 1000;
+const OAUTH_STATE_COLLECTION = 'admin_oauth_states';
+
+/**
+ * Consume an OAuth state exactly once before exchanging the authorization code.
+ * The state document is deliberately server-side: the callback cannot carry an
+ * admin Firebase token after Google redirects the browser back to this service.
+ */
+async function consumeOAuthState(state: string): Promise<string | null> {
+  const stateRef = admin.firestore().collection(OAUTH_STATE_COLLECTION).doc(state);
+
+  return admin.firestore().runTransaction(async (transaction) => {
+    const snapshot = await transaction.get(stateRef);
+    const data = snapshot.data() as { adminUid?: string; expiresAt?: number } | undefined;
+    if (!snapshot.exists || !data?.adminUid || !data.expiresAt || data.expiresAt < Date.now()) {
+      if (snapshot.exists) transaction.delete(stateRef);
+      return null;
+    }
+
+    transaction.delete(stateRef);
+    return data.adminUid;
+  });
+}
+
 // Retrieve active Google API client
 async function getGoogleAuthClient() {
   try {
@@ -299,30 +324,50 @@ async function getGoogleAuthClient() {
 }
 
 // Generate OAuth Consent URL
-app.get('/api/google/oauth/url', requireAdminAuth, (req, res) => {
+app.get('/api/google/oauth/url', requireAdminAuth, async (req, res) => {
   const scopes = [
     'https://www.googleapis.com/auth/gmail.modify',
     'https://www.googleapis.com/auth/calendar',
     'https://www.googleapis.com/auth/drive.file'
   ];
-  const url = oauth2Client.generateAuthUrl({
-    access_type: 'offline',
-    scope: scopes,
-    prompt: 'consent'
-  });
-  res.json({ url });
+  const user = (req as express.Request & { user?: admin.auth.DecodedIdToken }).user;
+  if (!user?.uid) return res.status(401).json({ error: 'Unauthorized' });
+
+  try {
+    const state = randomBytes(32).toString('base64url');
+    await admin.firestore().collection(OAUTH_STATE_COLLECTION).doc(state).create({
+      adminUid: user.uid,
+      createdAt: Date.now(),
+      expiresAt: Date.now() + OAUTH_STATE_TTL_MS,
+    });
+    const url = oauth2Client.generateAuthUrl({
+      access_type: 'offline',
+      scope: scopes,
+      prompt: 'consent',
+      state,
+    });
+    res.json({ url });
+  } catch (error) {
+    console.error('Failed to create OAuth state:', error);
+    res.status(500).json({ error: 'Failed to start Google OAuth flow' });
+  }
 });
 
 // Handles Google OAuth redirect/callback
 app.get('/api/google/oauth/callback', async (req, res) => {
-  const { code } = req.query;
-  if (!code || typeof code !== 'string') {
-    return res.status(400).send('Missing code parameter');
+  const { code, state } = req.query;
+  if (!code || typeof code !== 'string' || !state || typeof state !== 'string') {
+    return res.status(400).send('Missing or invalid OAuth callback parameters');
   }
   try {
+    const initiatingAdminUid = await consumeOAuthState(state);
+    if (!initiatingAdminUid) {
+      return res.status(401).send('Invalid or expired OAuth state');
+    }
     const { tokens } = await oauth2Client.getToken(code);
     await admin.firestore().collection('admin_secrets').doc('google_workspace').set({
       tokens,
+      linkedBy: initiatingAdminUid,
       updatedAt: new Date().toISOString(),
     });
     res.redirect('http://localhost:5174/?google_linked=true');
@@ -633,4 +678,3 @@ app.get('/api/nexus/logs', requireAdminAuth, async (req, res) => {
 app.listen(PORT, () => {
   console.log(`Admin Dashboard backend listening on port ${PORT}`);
 });
-
