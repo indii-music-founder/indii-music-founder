@@ -13126,7 +13126,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 - **Fix applied (2026-07-10):** Added `PACKAGE_STAGED` to `FSMState`. `triggerUnifiedDistribution` now transitions to `PACKAGE_STAGED` (not `MONITORING`) after XML-only staging and returns `status: 'PACKAGE_STAGED', delivered: false`. Same caveat as ISSUE-859: this function is not currently exported from `index.ts`, so the fix hardens the source but there is no live Cloud Function to redeploy.
 ### ISSUE-861: MCP DSP metadata formatter uses defaults and hard-coded DPID for delivery XML
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-10, deployed)
 - **Severity:** 🟠 HIGH
 - **Module:** Firebase MCP / DSP metadata
 - **Evidence:** The `format_dsp_metadata` MCP tool requires only title, artists, genre, UPC, and ISRC (`mcp/index.ts:67-85`). It defaults `duration` to `PT3M30S` and `releaseDate` to today (`:111-116`), hard-codes sender `<PartyId>PADPIDA2014120901U</PartyId>` (`:117-127`), interpolates user strings directly into ERN XML (`:135-169`), and returns the text with no recipient, asset, deal, territory, explicitness, validation, or escaping step (`:175-180`).
@@ -13134,6 +13134,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 - **Fix:** Rename the tool to `draft_dsp_metadata_xml` unless it can use the verified DDEX generator/validator, require real release date/duration/assets/deals, and escape XML fields.
 - **Acceptance:** Missing duration/release date returns a required-field error for delivery mode; draft mode labels defaults clearly and includes `deliveryReady: false`.
 
+- **Fix applied (2026-07-10):** Tool renamed `format_dsp_metadata` → `draft_dsp_metadata_xml` with an explicit `mode: 'draft'|'delivery'` param — `delivery` throws `InvalidParams` if duration/releaseDate are missing (no guessed values allowed for delivery-ready output). All interpolated fields now escaped via `escapeXmlMcp()`. Hard-coded `PADPIDA2014120901U` replaced with `DDEX_SENDER_PARTY_ID` from env (fails closed with `InternalError` if unset — same pattern as ISSUE-859). Output includes a JSON `{ mode, deliveryReady, defaultedFields }` block plus the XML, and an XML comment banner states deliveryReady status. **Discovered in the process:** the repo has two conflicting real sender DPIDs on file (`...2604-E` vs `...2601-E`) — logged as a founder checklist item in `docs/RELEASE_CHECKLIST.md`, not silently resolved by picking one. Deployed (mcpEndpoint).
 ### ISSUE-862: Ingestion XML validation is structural but is used around DDEX delivery language
 
 - **Status:** 🔴 OPEN

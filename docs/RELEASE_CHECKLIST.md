@@ -38,6 +38,22 @@ without the founder's Apple/Microsoft accounts and private signing material.
 - [ ] Smoke test the x64 installer on Windows 10/11 and confirm the app launches as `indii.music` with the `ii` icon.
 - [ ] Smoke test the ARM64 installer on a Windows ARM device or VM before publishing it as a supported artifact.
 
+### DDEX Sender Party ID (ISSUE-859 / ISSUE-861, added 2026-07-10)
+
+The DDEX ERN generators (`ddex-generator.ts`, MCP `draft_dsp_metadata_xml`) now fail
+closed instead of emitting a hard-coded/placeholder sender `PartyId` — they require
+`DDEX_SENDER_PARTY_ID` as a Firebase Functions runtime env var.
+
+- [ ] **Resolve a DPID discrepancy found while fixing this**: the repo has TWO different
+  values on file for indii's registered sender DPID — `PA-DPIDA-2025122604-E`
+  (`distributors.ts`, `DeliveryProfile.ts`) vs `PA-DPIDA-2025122601-E`
+  (`verify-adapters.test.ts`). Verify the real value at dpid.ddex.net and correct
+  whichever file is wrong.
+- [ ] Set `DDEX_SENDER_PARTY_ID` (the confirmed value, digits-only party id form
+  e.g. `PADPIDA2025122604E`, matching the format DDEX XML expects — no dashes)
+  as a Firebase Functions runtime env var / secret. Until set, DDEX compilation
+  and the MCP metadata draft tool both throw `failed-precondition`.
+
 ### Google Cloud Console — Maps & API Keys (ISSUE-764 / ISSUE-765, added 2026-07-08)
 
 These are GCP Console settings changes an agent cannot make. The code-side fixes
