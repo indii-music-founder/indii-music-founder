@@ -10918,13 +10918,7 @@ PASS 7 (departments, continuing 2026-07-03): ISSUE-712..715
 
 **BUILD ORDER FOR FIX AGENTS:** 720 first and alone this pass — real financial-harm risk, fix before any other Finance work.
 
-### ISSUE-720: SplitSheetEscrow fires real Stripe Connect transfers with zero persisted release-state and zero idempotency protection — a refresh or partial-failure retry can double-pay collaborators
-
-- **Status:** 🟠 BLOCKED
-- **Severity:** 🔴 CRITICAL (real financial harm risk — actual money movement, not a UI bug)
-- **Fix:** Disabled the `handleReleaseFunds` button in the UI. It now safely throws a localized error preventing the non-idempotent raw `createTransfer` call from firing.
-- **Blocker:** Requires the backend `splitEscrow.ts` to be fully built out with a `releaseEscrow` function providing proper idempotency and server-side signature verification before the frontend can safely move money.
-- **Module:** Finance / SplitSheetEscrow
+### ç
 - **Depends on:** nothing — parallel-safe, but should be the FIRST Finance fix given severity
 - **Summary:** `SplitSheetEscrow.tsx` calls the real `createTransfer` Cloud Function via `httpsCallable`, moving actual money to collaborators' Stripe Connect accounts proportional to their split percentage. The component's comment claims "In production, these are loaded from a Firestore 'split_sheets' collection" — but this is aspirational only; confirmed via grep that there is **zero** Firestore code anywhere in the file (no `getDoc`/`setDoc`/`onSnapshot`), and it's mounted standalone in `FinanceDashboard.tsx` with no props and no wrapping persistence layer. Every piece of state — collaborators, escrow amount, and critically the `released` flag — is ephemeral `useState`, gone on remount/refresh.
   - **Failure mode 1 (double-release on refresh):** funds are released, `released` becomes `true` in memory, real Stripe transfers fire and succeed. User refreshes the page (or navigates away and back) — `released` resets to `false`, all collaborators still show as unpaid, and the "Release Funds" button is clickable again. Nothing stops a second real transfer batch from firing.

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { Loader2, Video, AlertCircle, CheckCircle2, X } from 'lucide-react';
 import clsx from 'clsx';
@@ -15,11 +15,12 @@ export interface VideoGenerationJob {
 
 interface VideoGenerationProgressProps {
     job: VideoGenerationJob;
-    onCancel?: (jobId: string) => void;
+    onCancel?: (jobId: string) => Promise<void> | void;
 }
 
 export const VideoGenerationProgress = React.forwardRef<HTMLDivElement, VideoGenerationProgressProps>(
 function VideoGenerationProgress({ job, onCancel }, ref) {
+    const [isCancelling, setIsCancelling] = useState(false);
     const isError = job.status === 'failed';
     const isCompleted = job.status === 'completed';
     const isProcessing = job.status === 'processing' || job.status === 'stitching';
@@ -50,17 +51,23 @@ function VideoGenerationProgress({ job, onCancel }, ref) {
                 />
             )}
 
-            {onCancel && (
+            {onCancel && !isCompleted && !isError && (
                 <button
-                    onClick={(e) => {
+                    onClick={async (e) => {
                         e.stopPropagation();
-                        onCancel(job.id);
+                        setIsCancelling(true);
+                        try {
+                            await onCancel(job.id);
+                        } finally {
+                            setIsCancelling(false);
+                        }
                     }}
+                    disabled={isCancelling}
                     className="absolute top-2 right-2 p-1.5 rounded-full bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors z-20"
-                    title="Cancel Job"
-                    aria-label="Cancel Job"
+                    title={isCancelling ? 'Cancelling Job' : 'Cancel Job'}
+                    aria-label={isCancelling ? 'Cancelling Job' : 'Cancel Job'}
                 >
-                    <X size={14} />
+                    {isCancelling ? <Loader2 size={14} className="animate-spin" /> : <X size={14} />}
                 </button>
             )}
 

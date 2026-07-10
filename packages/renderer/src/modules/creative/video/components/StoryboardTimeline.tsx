@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     Music, Play, Pause, Trash2, Cpu, Eye, Check, AlertTriangle, 
-    Sparkles, RefreshCw, Layers, Link as LinkIcon, Volume2, CloudLightning
+    Sparkles, RefreshCw, Layers, Link as LinkIcon, CloudLightning
 } from 'lucide-react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
@@ -16,6 +16,7 @@ import { useToast } from '@/core/context/ToastContext';
 import { renderService } from '@/services/video/RenderService';
 import { logger } from '@/utils/logger';
 import { useResolvedStorageUrl } from '@/hooks/useResolvedStorageUrl';
+import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
 
 function readAudioDuration(audioUrl: string): Promise<number> {
     return new Promise((resolve, reject) => {
@@ -30,6 +31,41 @@ function readAudioDuration(audioUrl: string): Promise<number> {
         };
         audio.onerror = () => reject(new Error('Unable to read audio metadata from uploaded file.'));
         audio.src = audioUrl;
+    });
+}
+
+/** Converts the final decoded frame of a generated clip into a real image input for Veo. */
+async function extractLastVideoFrame(videoUri: string): Promise<string> {
+    const videoUrl = await resolveStorageUrl(videoUri);
+
+    return new Promise((resolve, reject) => {
+        const video = document.createElement('video');
+        video.crossOrigin = 'anonymous';
+        video.preload = 'auto';
+        video.muted = true;
+
+        video.onloadedmetadata = () => {
+            if (!Number.isFinite(video.duration) || video.duration <= 0) {
+                reject(new Error('Previous clip has no readable duration.'));
+                return;
+            }
+            video.currentTime = Math.max(0, video.duration - 0.05);
+        };
+        video.onseeked = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const context = canvas.getContext('2d');
+            if (!context || !canvas.width || !canvas.height) {
+                reject(new Error('Unable to decode the previous clip frame.'));
+                return;
+            }
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            resolve(canvas.toDataURL('image/jpeg', 0.9));
+        };
+        video.onerror = () => reject(new Error('Unable to load the previous clip for continuity.'));
+        video.src = videoUrl;
+        video.load();
     });
 }
 
@@ -203,20 +239,9 @@ export function StoryboardTimeline() {
             if (slot.useDaisyChain && index > 0 && storyboardProject) {
                 const prevSlot = storyboardProject.slots[index - 1];
                 if (prevSlot?.videoUrl) {
-                    firstFrame = prevSlot.videoUrl;
-                    logger.info(`[Storyboard] Daisy-chain continuous framing applied for slot ${index + 1}`);
+                    firstFrame = await extractLastVideoFrame(prevSlot.videoUrl);
+                    logger.info(`[Storyboard] Extracted the previous clip's final image frame for slot ${index + 1}`);
                 }
-            }
-
-            let vocalAudio: string | undefined;
-            if (slot.useVocalSync) {
-                if (!slot.vocalConditioningAudioUrl) {
-                    updateStoryboardSlot(slot.id, { isGenerating: false, progress: 0 });
-                    toast.error("Vocal sync requires a real isolated vocal stem URL.");
-                    return;
-                }
-                vocalAudio = slot.vocalConditioningAudioUrl;
-                logger.info(`[Storyboard] Vocal stem conditioning enabled for slot ${index + 1}`);
             }
 
             // Trigger Veo 3.1 generation
@@ -225,7 +250,6 @@ export function StoryboardTimeline() {
                 resolution: '1080p',
                 aspectRatio: '16:9',
                 firstFrame,
-                inputAudio: vocalAudio,
                 duration: 8, // 4 bars typically at ~120BPM is ~8 seconds
                 durationSeconds: 8,
                 model: 'veo-3.1-generate-preview'
@@ -329,7 +353,7 @@ export function StoryboardTimeline() {
                     <div>
                         <h2 className="text-sm font-bold uppercase tracking-widest text-white flex items-center gap-2">
                             Beat-Quantized Storyboard Timeline
-                            <span className="text-[9px] bg-cyan-500/10 text-cyan-400 px-2 py-0.5 rounded-full border border-cyan-500/20 uppercase tracking-widest">Veo 3.1 Audio-Conditioned</span>
+                            <span className="text-[9px] bg-cyan-500/10 text-cyan-400 px-2 py-0.5 rounded-full border border-cyan-500/20 uppercase tracking-widest">Audio-timed planning</span>
                         </h2>
                         <p className="text-[10px] text-neutral-500 mt-1 font-mono uppercase tracking-wider">
                             {storyboardProject
@@ -352,7 +376,7 @@ export function StoryboardTimeline() {
                     {isIsolatingStems ? (
                         <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-green-600/20 text-green-300 border border-green-500/30 text-xs font-bold uppercase tracking-wider">
                             <RefreshCw size={14} className="animate-spin" />
-                            Isolating vocal stems...
+                            Reading audio timing...
                         </div>
                     ) : (
                         <button
@@ -495,19 +519,6 @@ export function StoryboardTimeline() {
 
                                             {/* Control Toggles */}
                                             <div className="flex items-center justify-between gap-2 pt-1 border-t border-white/5 text-[9px]">
-                                                {/* Vocal Conditioning Isolator */}
-                                                <button
-                                                    onClick={() => updateStoryboardSlot(slot.id, { useVocalSync: !slot.useVocalSync })}
-                                                    className={`flex items-center gap-1 px-2.5 py-1 rounded border font-bold uppercase tracking-wider transition-colors ${
-                                                        slot.useVocalSync 
-                                                            ? 'bg-green-600/10 border-green-500/30 text-green-400' 
-                                                            : 'bg-black/30 border-white/5 text-neutral-500 hover:text-neutral-300'
-                                                    }`}
-                                                >
-                                                    <Volume2 size={10} />
-                                                    🎙️ Sync vocals
-                                                </button>
-
                                                 {/* Daisy-Chain Continuity Checkbox */}
                                                 <button
                                                     onClick={() => updateStoryboardSlot(slot.id, { useDaisyChain: !slot.useDaisyChain })}

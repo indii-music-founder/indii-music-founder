@@ -140,6 +140,9 @@ export const VideoTools = {
                 const completedJob = await VideoGeneration.waitForJob(videoJob.id);
                 finalUrl = completedJob.videoUrl || '';
             }
+            if (!finalUrl) {
+                return toolError('Video generation completed without an output URL.', 'GENERATION_OUTPUT_MISSING');
+            }
 
             const { addToHistory, currentProjectId } = useStore.getState();
             addToHistory({
@@ -286,6 +289,9 @@ export const VideoTools = {
                 const completedJob = await VideoGeneration.waitForJob(videoJob.id);
                 finalUrl = completedJob.videoUrl || '';
             }
+            if (!finalUrl) {
+                return toolError('Video extension completed without an output URL.', 'GENERATION_OUTPUT_MISSING');
+            }
 
             const { addToHistory, currentProjectId } = useStore.getState();
             addToHistory({
@@ -419,6 +425,9 @@ export const VideoTools = {
             if (!finalUrl) {
                 const completedJob = await VideoGeneration.waitForJob(videoJob.id);
                 finalUrl = completedJob.videoUrl || '';
+            }
+            if (!finalUrl) {
+                return toolError('Sequence interpolation completed without an output URL.', 'GENERATION_OUTPUT_MISSING');
             }
 
             const { addToHistory, currentProjectId } = useStore.getState();
