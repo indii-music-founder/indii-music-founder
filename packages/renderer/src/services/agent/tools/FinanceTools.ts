@@ -195,27 +195,47 @@ export const FinanceTools = {
         }, `Waterfall calculated for "${args.trackTitle}". Total Revenue: $${args.totalRevenue}. Flagged ${total1099s} payouts for 1099 processing.`);
     }),
 
-    initiate_split_escrow: wrapTool('initiate_split_escrow', async (args: { trackId: string; holdAmount: number; parties: string[] }) => {
-        // Item 135: Initiate split escrow via Stripe Connect Cloud Function
+    initiate_split_escrow: wrapTool('initiate_split_escrow', async (args: { trackId: string; holdAmountUsd: number; holdAmount?: number; parties: string[] }) => {
+        // Item 135: Initiate split escrow via Stripe Connect Cloud Function.
+        // ISSUE-853: amounts are typed — the tool takes USD dollars and converts
+        // to integer cents exactly once here; the backend contract is cents.
         try {
+            const usd = args.holdAmountUsd ?? args.holdAmount;
+            if (typeof usd !== 'number' || !isFinite(usd) || usd <= 0) {
+                return toolError('holdAmountUsd must be a positive number of US dollars.', 'INVALID_AMOUNT');
+            }
+            const amountCents = Math.round(usd * 100);
+
             const initEscrowFn = httpsCallable<
                 { trackId: string; holdAmount: number; parties: string[] },
-                { escrowAccount: string; status: string }
+                { escrowAccount: string; status: string; stripePaymentIntentId?: string; amountCents?: number; amountFormatted?: string; fundsHeld?: boolean }
             >(functions, 'initiateSplitEscrow');
 
             const result = await initEscrowFn({
                 trackId: args.trackId,
-                holdAmount: args.holdAmount,
+                holdAmount: amountCents,
                 parties: args.parties
             });
+
+            // Backend fails closed (ISSUE-853): success implies a real PaymentIntent.
+            const intentId = result.data.stripePaymentIntentId;
+            if (!intentId || result.data.fundsHeld !== true) {
+                return toolError(
+                    'ESCROW_NOT_FUNDED: Stripe did not confirm a payment intent for this escrow. No funds are held.',
+                    'ESCROW_NOT_FUNDED'
+                );
+            }
 
             return toolSuccess({
                 trackId: args.trackId,
                 escrowAccount: result.data.escrowAccount,
-                heldAmount: args.holdAmount,
+                stripePaymentIntentId: intentId,
+                amountCents,
+                amountFormatted: `$${(amountCents / 100).toFixed(2)}`,
+                fundsHeld: true,
                 pendingSignaturesFrom: args.parties,
                 status: result.data.status
-            }, `$${args.holdAmount} successfully held in Stripe Connect escrow account (${result.data.escrowAccount}) until mathematical split sign-off is complete from all parties.`);
+            }, `$${(amountCents / 100).toFixed(2)} held in Stripe escrow (payment intent ${intentId}) until split sign-off is complete from all parties.`);
         } catch (error: unknown) {
             logger.warn('[FinanceTools] Escrow Cloud Function unavailable:', error);
             return toolError(

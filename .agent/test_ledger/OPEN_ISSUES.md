@@ -13042,7 +13042,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-853: Split escrow tool can say funds were held when Stripe did not create an escrow payment intent
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-10, deployed)
 - **Severity:** 🔴 HIGH (money movement)
 - **Module:** Finance / Split escrow / Stripe
 - **Evidence:** `FinanceTools.initiate_split_escrow()` passes `holdAmount` directly to the callable and returns “$X successfully held in Stripe Connect escrow account” using `result.data.escrowAccount` and `result.data.status` (`FinanceTools.ts:198-218`). The backend expects `holdAmount` in USD cents (`splitEscrow.ts:13-16`), but creates the Firestore escrow even when Stripe is not configured or `paymentIntents.create()` fails, storing `stripePaymentIntentId: null` (`:63-87`, `:89-104`).
@@ -13050,9 +13050,10 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 - **Fix:** Standardize amount units with typed `amountCents`; fail the callable unless a Stripe PaymentIntent is created for real escrow mode; return `firestoreOnly: true` only for explicit sandbox/draft mode.
 - **Acceptance:** If Stripe intent creation fails, the tool returns `ESCROW_NOT_FUNDED`; success includes `stripePaymentIntentId`, amount in cents and formatted dollars, and `fundsHeld: true`.
 
+- **Fix applied (2026-07-10):** `splitEscrow.ts` — fails closed: missing STRIPE_PLATFORM_ACCOUNT_ID or PaymentIntent failure now throws `ESCROW_NOT_FUNDED`; no Firestore-only escrows. Success returns `stripePaymentIntentId`, `amountCents`, `amountFormatted`, `fundsHeld: true`. `FinanceTools.initiate_split_escrow` takes `holdAmountUsd` (dollars), converts to cents once, and returns `ESCROW_NOT_FUNDED` unless the backend confirms a funded intent. Deployed.
 ### ISSUE-854: Escrow signoff marks status RELEASED without capturing or transferring funds
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-10, deployed)
 - **Severity:** 🔴 HIGH (money movement)
 - **Module:** Finance / Split escrow / Stripe
 - **Evidence:** `splitEscrow.ts` says all signoffs transition the escrow to `RELEASED` (`splitEscrow.ts:125-128`). The implementation only updates Firestore signoff fields and sets `status: allSigned ? 'RELEASED' : 'PENDING_SIGNATURES'` (`:159-166`), then returns success (`:169`). It does not capture the manual PaymentIntent, create Stripe transfers, verify connected accounts, or record payout IDs.
@@ -13060,6 +13061,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 - **Fix:** Split legal signoff from payout execution: `FULLY_SIGNED`, `CAPTURE_PENDING`, `TRANSFER_PENDING`, `RELEASED`. Only set `RELEASED` after idempotent Stripe capture/transfers succeed and are recorded.
 - **Acceptance:** A fully signed escrow with no captured PaymentIntent remains `FULLY_SIGNED`/`PAYOUT_BLOCKED`; `RELEASED` requires Stripe payment and transfer receipts.
 
+- **Fix applied (2026-07-10):** `signEscrow` now transitions to `FULLY_SIGNED` (never `RELEASED`) when all parties sign, stamps `fullySignedAt`, and returns `fundsReleased: false` with an honest message that payout execution (capture + transfers) is a separate step. `RELEASED` is reserved for a future payout step with Stripe receipts. Deployed.
 ### ISSUE-855: Split escrow UI treats zero collaborators as ready to release
 
 - **Status:** 🔴 OPEN
@@ -13142,7 +13144,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-863: PandaDoc webhook verification is optional despite security-critical pipeline side effects
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-10, deployed)
 - **Severity:** 🔴 HIGH (webhook security)
 - **Module:** Legal / PandaDoc webhook
 - **Evidence:** `pandadocWebhook` comments say it validates PandaDoc IP ranges (`pandadocWebhook.ts:41-44`), but the implementation only performs HMAC verification if a secret is present (`:59-80`) and does not check IP ranges. If `PANDADOC_WEBHOOK_SECRET`/`pandadocWebhookSecret` is missing, unsigned requests continue into career-event writes and auto-pipeline triggers (`:82-235`).
@@ -13150,6 +13152,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 - **Fix:** Fail closed when the webhook secret is missing, use timing-safe HMAC comparison, and optionally enforce PandaDoc source IP/event ID replay protection.
 - **Acceptance:** Unsigned or misconfigured webhook requests always return 401/500 before writes; tests cover missing secret, missing signature, invalid signature, and replayed event ID.
 
+- **Fix applied (2026-07-10):** `pandadocWebhook.ts` fails closed — missing `PANDADOC_WEBHOOK_SECRET` returns 500 before any read of the payload; signature compare is now `crypto.timingSafeEqual`; stale "IP ranges" doc comment corrected. Deployed.
 ### ISSUE-864: Signed-document webhook can queue publishing/distribution automation from document name alone
 
 - **Status:** 🔴 OPEN
@@ -14142,3 +14145,103 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 - **Impact:** Large/long masters can allocate multiple copies of the bytes plus ~33% base64 overhead, freeze or kill the renderer, exceed model/request limits twice, consume duplicate upload/token cost, and leave the user with a generic connectivity error.
 - **Fix:** Enforce measured size/duration/channel limits before allocation; create one bounded, content-addressed analysis proxy server-side (or one reusable compressed proxy), stream/upload once, reuse its handle for both analyses, expose cost/limits, and support cancellation/cleanup. Keep local technical QC available when semantic analysis is skipped.
 - **Acceptance:** Boundary tests just below/above limits give deterministic behavior; a large master never creates two full browser base64 copies or two raw-media uploads; both semantic jobs reuse one proxy ID; cancellation aborts requests and cleans temporary media; oversize/offline users can still run clearly labeled local technical QC without a false deep-analysis success.
+
+### ISSUE-963: Publishing asset validation converts decode failures and unsupported audio into compliant-looking metadata
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 CRITICAL (invalid release package)
+- **Module:** Publishing / Create Release assets
+- **Evidence:** Audio decoding failure is not a hard gate: it assigns extension-based defaults such as 44.1 kHz/24-bit for WAV/FLAC and 44.1 kHz/16-bit for anything else (`useDDEXRelease.ts:121-168`). Cover decode/load failure similarly returns a fabricated `3000x3000` dimension (`:171-187`). The UI then displays those values as uploaded asset facts and allows review (`ReleaseWizard.tsx:570-672`). MP3 is accepted despite copy saying WAV/FLAC (`:589-600`); the hook also supports AAC, then rewrites `audioFormat === 'aac'` to `wav` without transcoding while retaining the original URL (`useDDEXRelease.ts:271-293`, `:380-399`). No codec/signature, duration, channels, color space, square-art, minimum dimension, or actual bit-depth parser gates submission.
+- **Impact:** Corrupt, lossy, undersized, wrong-color-space, or mislabeled media can be shown as DSP-compliant and stored in a DDEX release with fabricated technical properties; an AAC payload can be declared WAV.
+- **Fix:** Validate bytes before upload/commit with a real audio/container and image parser; fail closed on decode errors; require the configured DSP format/rate/bit-depth/channel/artwork rules; never infer compliance from extension or substitute metadata. If conversion is offered, create and verify a new transcoded artifact with its own hash/URL.
+- **Acceptance:** Corrupt/renamed MP3/AAC, truncated WAV/FLAC, low-rate/unsupported-channel audio, nonsquare/undersized/CMYK/corrupt art all block review with measured reasons; valid fixtures show parser-measured values; any conversion yields a distinct verified artifact whose declared MIME/format matches its bytes.
+
+### ISSUE-964: Publishing marks a release submitted and metadata-complete when definitive packaging fails
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 CRITICAL (false release state)
+- **Module:** Publishing / Create Release submission
+- **Evidence:** Submission creates the Firestore record and immediately updates it to `status: 'metadata_complete'` before running the Publishing agent’s “definitive packaging” (`useDDEXRelease.ts:385-433`). Any agent/packaging error is caught, logged, and explicitly ignored because the record already exists; the wizard then enters `complete` and returns the release ID (`:425-442`). The terminal UI says “Release Created!” and “submitted for processing” without exposing a packaging failure or receipt (`ReleaseWizard.tsx:851-868`).
+- **Impact:** A release with no definitive package, DDEX artifact, validation receipt, or queued retry appears successfully submitted and counts as pending metadata-complete work, so users can assume delivery preparation is underway when it stopped.
+- **Fix:** Model record creation, asset validation, packaging, and delivery as separate durable states with error/retry metadata. Do not mark packaging/submission complete until a versioned package ID and validation result exist; if draft creation succeeds but packaging fails, show `draft_saved / packaging_failed` and retain retry controls.
+- **Acceptance:** Forced agent/package failure leaves a reloadable draft with `packaging_failed`, exact error, and idempotent Retry; no submitted/complete copy appears; success requires stored package artifact/hash, schema validation receipt, and job/result ID; retry cannot create duplicate releases/packages.
+
+### ISSUE-965: Closing or replacing a Publishing release draft abandons uploaded masters and cover art
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH (creative asset loss / storage leak)
+- **Module:** Publishing / Create Release draft lifecycle
+- **Evidence:** The wizard keeps all metadata/assets only in component state (`useDDEXRelease.ts:217-232`) but uploads audio and cover bytes immediately to `orgs/{org}/releases/packaging/...` before any release record exists (`:253-300`). “Replace File/Image” only clears the local asset reference (`ReleaseWizard.tsx:580-585`, `:632-637`), and both header close and terminal Done directly call `onClose` (`:851-867`, `:898-909`) with no dirty-state confirmation, draft persistence, deletion, or resumable-upload manifest. Upload `onChange` handlers also await without local error handling (`:595-601`, `:649-655`).
+- **Impact:** Accidental close/navigation/replacement permanently loses entered rights metadata and disconnects paid/private media objects from any release; repeated attempts accumulate orphaned masters and artwork with no user-visible inventory or deletion path.
+- **Fix:** Create an owned draft/upload session before media transfer, autosave fields and asset references, confirm discard, and implement explicit replace/discard cleanup with resumable recovery and retention rules. Surface per-asset upload errors without unhandled rejection.
+- **Acceptance:** Reload/close during every wizard step restores the same draft and uploaded assets; explicit Discard deletes or queues cleanup for all session-owned unreferenced objects; Replace removes the prior owned object only after the new one is durably linked; failed upload remains retryable and creates no orphan.
+
+### ISSUE-966: Failed DSR processing is followed by a success toast and modal close
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 CRITICAL (false royalty integration)
+- **Module:** Publishing / Sales report import
+- **Evidence:** `DSRUploadModal.handleProcess()` treats a resolved `onProcess` as success, announces “Royalty data integrated into dashboard,” and closes (`DSRUploadModal.tsx:55-67`). The actual parent callback wraps processing in its own `try/catch`; on any failed result or thrown write it logs/toasts the error but does not rethrow or return a failure value (`PublishingDashboard.tsx:301-327`). Consequently the callback promise resolves after its catch and the modal executes its success path, yielding both failure and success messaging while destroying the parsed preview.
+- **Impact:** Authentication, validation, Firestore, or earnings-refresh failure can be presented as completed integration; the user loses the immediate retry context and may make royalty decisions from data that never landed or landed only partially.
+- **Fix:** Use one typed awaited result boundary (`Promise<{success, batchId, ...}>` or rejection), let only the modal/controller own terminal messaging, and close only after confirmed durable integration/readback. Preserve parsed report and file on failure.
+- **Acceptance:** Forced parser/process/write/refresh failures leave the modal open with the exact preview and one error, never a success; successful integration returns a durable batch ID, closes once, and reload shows the expected records; double-click cannot process twice.
+
+### ISSUE-967: DSR import can partially write earnings, swallow receipt failure, and still return success
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 CRITICAL (non-atomic royalty ledger mutation)
+- **Module:** Publishing / Earnings report processing
+- **Evidence:** `processReport()` writes one earnings record per matched release inside a loop before returning a batch (`EarningsReportService.ts:121-155`). `processAndSaveReport()` then attempts to save the processed-report receipt only afterward (`EarningsUploadService.ts:44-67`). `saveProcessedReport()` catches Firestore failure and does not rethrow (`:83-119`), so the outer service returns `success: true` even without the receipt. If a middle earnings write fails, earlier releases remain committed because there is no batch/transaction/rollback. The generated `batchId` is timestamp-based and no source-file hash/report uniqueness guard is checked (`EarningsReportService.ts:148-154`).
+- **Impact:** A report can mutate some releases but not others, have no auditable import record, and still appear successful. Retrying cannot reliably distinguish replacement from duplication/partial replay, undermining royalty reconciliation.
+- **Fix:** Stage and validate the complete report, derive a deterministic user+sender+report/source-hash idempotency key, and commit batch receipt plus all ledger mutations atomically (or with an explicit resumable saga and per-row statuses). Never swallow receipt/write errors; retain immutable source totals and reconciliation evidence.
+- **Acceptance:** Injected failure at every release index yields either zero committed mutations or a visible resumable failed batch—not partial success; duplicate file/report import is rejected or idempotently returns the original batch; success requires a durable receipt whose row counts, source hash, matched/unmatched ISRCs, gross/net totals, and child writes reconcile exactly.
+
+### ISSUE-968: Desktop “Submit Release” invokes a distribution Python script that does not exist
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 CRITICAL (primary workflow always fails)
+- **Module:** Distribution / Submit Release / Electron IPC
+- **Evidence:** `DistributionService.submitRelease()` requires Electron and delegates to `window.electronAPI.distribution.submitRelease()` (`DistributionService.ts:585-591`, `:697-707`). The main IPC handler then calls `AgentSupervisor.execute('distribution', 'ddex_build.py', ...)` (`packages/main/src/handlers/distribution.ts:444-512`). Repository-wide search finds no `ddex_build.py`; `execution/distribution/` contains `ingestion_build.py`, generators, validators, packagers, and uploaders but not the invoked entrypoint. `AgentSupervisor` passes that exact category/script name to `PythonBridge` and throws after execution failure; it has no alias resolution (`AgentSupervisor.ts:26-77`, `:94-133`).
+- **Impact:** Every real desktop submission reaches a missing-file error before DDEX build or delivery, regardless of valid metadata, credentials, or clearance. The advertised QC→ISRC→DDEX→DSP pipeline cannot complete.
+- **Fix:** Implement and package one canonical, versioned pipeline entrypoint (or update IPC to the actual orchestrator), with a shared request/result schema and explicit stage receipts. Add startup/build-time manifest verification so a referenced execution script cannot be absent from a release bundle.
+- **Acceptance:** Packaged macOS/Windows builds resolve the entrypoint and a fixture runs QC→identifier→validated DDEX→manual/delivery terminal state; deliberately removing/renaming the script fails build/preflight, not after user submission; IPC integration tests exercise the actual packaged path and structured errors.
+
+### ISSUE-969: Distribution submission can build “delivery” metadata without any audio master or staged cover asset
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 CRITICAL (metadata-only release delivery)
+- **Module:** Distribution / Submit Release assets and QC
+- **Evidence:** `SubmitReleaseModal` collects title, artist, one track title, optional ISRC/date/artwork URL, label, and genre, but has no audio-file/asset selector, file hash, duration, filename, or staged package source (`SubmitReleaseModal.tsx:36-61`, `:85-109`, `:172-273`). `DDEXReleaseSchema` requires track metadata but makes duration and artwork optional and has no audio/cover asset schema (`DistributionSchemas.ts:7-42`). The service calls this metadata schema “QC Validation” and proceeds to the Electron delivery pipeline when it passes (`DistributionService.ts:597-609`, `:697-742`). Downstream generators can default absent sound-recording filenames (for example `ingestion_generator.py:257`) rather than proving the resource exists.
+- **Impact:** Once the missing entrypoint is repaired, the UI can declare a release delivered or ready for manual delivery even though no master recording or cover file was supplied, hashed, packaged, or transferable to a DSP.
+- **Fix:** Submit an existing owned release/package rather than reconstructing one-track metadata in the modal. Require immutable staged audio and cover asset IDs/paths, byte hashes, measured technical specs, rights/version context, and package validation before delivery; separate metadata draft/export from asset delivery.
+- **Acceptance:** Metadata-only fixtures cannot pass delivery QC; success requires that every DDEX resource reference resolves to the exact staged file, hashes match, required cover exists, package inventory reconciles, and transport receipt identifies the delivered bytes. Manual-only output is labeled metadata draft/package incomplete until those gates pass.
+
+### ISSUE-970: Registration results appear submitted locally even when their durable record fails to save
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 CRITICAL (false rights-registration record)
+- **Module:** Registration Center / Provider submissions
+- **Evidence:** Every organization adapter awaits `persistOrgRecord()` before returning its submission/manual result, but that helper catches all Firestore failures, logs a warning, and resolves normally (`RegistrationPersistence.ts:8-31`; adapter call sites in `AscapAdapter.ts`, `BmiAdapter.ts`, `MlcAdapter.ts`, `SesacAdapter.ts`, `SoundExchangeAdapter.ts`, and `LocAdapter.ts`). `RegistrationForm` then calls `onSubmitComplete`, and `RegistrationCenter` writes the submitted/in-progress/error result only into the volatile Zustand slice (`RegistrationForm.tsx:165-180`; `RegistrationCenter.tsx:174-186`; `registrationSlice.ts:18-47`).
+- **Impact:** A real external confirmation can be shown as Submitted in-session but disappear after reload, losing the confirmation number and submitted form snapshot; manual attempts can similarly vanish. Users may repeat binding filings because the app has no durable record.
+- **Fix:** Make persistence return/throw an explicit result and require durable write/readback before terminal local state. If external submission succeeded but local persistence failed, show a distinct critical `submitted_external / local_record_failed` state with confirmation export and retry-safe reconciliation—not generic failure or success.
+- **Acceptance:** Forced Firestore failure after a fake external confirmation preserves and exports the exact confirmation/form, displays the split state, and retries persistence without resubmitting externally; normal success reloads the same org record; no Submitted badge is based solely on volatile state.
+
+### ISSUE-971: Registration manual fallbacks claim form data is saved/downloadable but provide only a portal link
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH (manual filing data loss)
+- **Module:** Registration Center / Manual provider handoff
+- **Evidence:** LoC’s web fallback says “Your pre-filled registration details are ready below — you can download them,” while ASCAP says “Your form data is saved below” (`LocAdapter.ts:117-126`; `AscapAdapter.ts:82-107`). `SubmissionResultView` renders only the instruction string, an Open Provider link, and Back to form; it shows no field snapshot and has no copy/download/export action (`RegistrationForm.tsx:421-445`). LoC’s web/manual catch also does not call `persistOrgRecord`, so even the snapshot in memory is not saved (`LocAdapter.ts:114-135`).
+- **Impact:** Users leave the app for a manual portal without the promised packet and can lose all reviewed legal names, shares, identifiers, and answers on navigation/remount, forcing error-prone re-entry into a binding filing.
+- **Fix:** Persist a versioned manual filing draft before opening the portal and render a redacted review plus copy/download packet in the provider’s actual field format. Clearly separate sensitive fields, omit secrets, and provide resume/mark-submitted-with-evidence controls.
+- **Acceptance:** Every `requiresManualStep` result has a durable draft ID and visible/exportable field snapshot matching the reviewed values; reload resumes it; portal opening does not destroy it; the app never says saved/downloadable without those artifacts; sensitive data is redacted/encrypted per field policy.
+
+### ISSUE-972: Registration desktop automation is wired to an Electron API that is never exposed
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 CRITICAL (automated filing path unavailable)
+- **Module:** Registration Center / Browser automation / Electron
+- **Evidence:** MLC, SESAC, LoC and related adapters instantiate renderer `BrowserAgentService` and expect desktop automation (`MlcAdapter.ts:52-84`; `LocAdapter.ts:83-135`). The service reports `isConfigured(): true`, detects any `window.electronAPI`, then requires and calls a top-level `electronAPI.browserAgent(...)` function (`BrowserAgentService.ts:104-118`, `:130-166`, `:576-604`). The preload and shared API type expose no such function: browser controls live under `electronAPI.agent` methods such as `performAction`/`captureState`, while distribution follows its own namespace (`packages/main/src/preload.ts:100-157`; `electron-api.types.ts`). Thus the service throws “Browser agent IPC not available” on desktop and adapters fall back/fail.
+- **Impact:** The surface advertises automatic binding registrations that cannot start in the supported desktop environment; web fallback also cannot control the newly opened provider tab because it continues acting on the app DOM.
+- **Fix:** Define one typed, allowlisted browser-agent IPC contract and implement it end-to-end, including session isolation, portal/domain allowlist, signed-in human checkpoints, CAPTCHA/login/payment/terms/final-submit pauses, cancellation, evidence capture, and result schema. Until verified, report automation unavailable before the user reviews/submits rather than pretending configured.
+- **Acceptance:** Preflight `isConfigured` reflects actual IPC/model/runtime readiness; a packaged integration fixture opens only an allowlisted test portal, pauses at every high-risk/final submit, resumes after explicit approval, and returns a validated confirmation/evidence artifact; missing IPC disables automation with manual draft handoff before execution.

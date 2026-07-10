@@ -40,7 +40,8 @@ interface PandaDocWebhookEvent {
 
 /**
  * Webhook handler for PandaDoc document state changes.
- * SECURITY: Validates the request comes from PandaDoc IP ranges.
+ * SECURITY: Requires a valid HMAC-SHA256 x-signature (timing-safe compare).
+ * Fails closed if the shared secret is not configured.
  */
 export const pandadocWebhook = functions
     .region(REGION)
@@ -56,27 +57,34 @@ export const pandadocWebhook = functions
             return;
         }
 
-        // Verify PandaDoc HMAC-SHA256 signature
-        // Configure shared secret in PandaDoc Dashboard → Webhooks → Shared Key
+        // Verify PandaDoc HMAC-SHA256 signature (ISSUE-863: FAIL CLOSED).
+        // Configure shared secret in PandaDoc Dashboard → Webhooks → Shared Key.
+        // This webhook marks contracts signed and queues automation — an
+        // unverified request must never reach those writes.
         const secret = process.env.PANDADOC_WEBHOOK_SECRET || (() => {
             try { return pandadocWebhookSecret.value(); } catch { return ""; }
         })();
-        if (secret) {
-            const signature = req.headers['x-signature'] as string | undefined;
-            if (!signature) {
-                console.warn('[PandaDoc] Rejected request: missing x-signature header');
-                res.status(401).send("Unauthorized");
-                return;
-            }
-            const expected = crypto
-                .createHmac('sha256', secret)
-                .update(JSON.stringify(req.body))
-                .digest('hex');
-            if (signature !== expected) {
-                console.warn('[PandaDoc] Rejected request: invalid signature');
-                res.status(401).send("Unauthorized");
-                return;
-            }
+        if (!secret) {
+            console.error('[PandaDoc] Rejected request: PANDADOC_WEBHOOK_SECRET is not configured — failing closed.');
+            res.status(500).send("Webhook verification is not configured");
+            return;
+        }
+        const signature = req.headers['x-signature'] as string | undefined;
+        if (!signature) {
+            console.warn('[PandaDoc] Rejected request: missing x-signature header');
+            res.status(401).send("Unauthorized");
+            return;
+        }
+        const expected = crypto
+            .createHmac('sha256', secret)
+            .update(JSON.stringify(req.body))
+            .digest('hex');
+        const signatureBuf = Buffer.from(signature);
+        const expectedBuf = Buffer.from(expected);
+        if (signatureBuf.length !== expectedBuf.length || !crypto.timingSafeEqual(signatureBuf, expectedBuf)) {
+            console.warn('[PandaDoc] Rejected request: invalid signature');
+            res.status(401).send("Unauthorized");
+            return;
         }
 
         try {
