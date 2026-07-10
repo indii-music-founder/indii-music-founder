@@ -13330,7 +13330,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-881: Image generation bypasses cost control when the cost ledger is unavailable
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-10)
 - **Severity:** 🟠 HIGH
 - **Module:** Creative Suite / Image generation / Cost control
 - **Evidence:** `ImageGenerationService.generateImages()` estimates image cost and calls `CostControlService.checkAndReserve()` (`ImageGenerationService.ts:258-275`). If the denial reason looks like an infrastructure/auth failure, it logs “Cost ledger infra failure” and bypasses the cost check to proceed (`:277-284`). The backend `generateImageV3` callable does not require a cost reservation in its schema or handler (`packages/firebase/src/shared/creative.ts:10-18`, `gateway.ts:1010-1031`).
@@ -13338,6 +13338,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 - **Fix:** Require a backend-verified cost reservation for image jobs, or fail closed when the client cost ledger is unavailable in production.
 - **Acceptance:** With cost ledger unavailable, production image generation returns a clear cost-control error and no model call is made.
 
+- **Fix applied (2026-07-10):** `ImageGenerationService.generateImages()` no longer bypasses cost control on ledger infra failures — cost-ledger unavailability now throws a clear "cost-control service could not verify your budget" error before any model call (fail-closed).
 ### ISSUE-882: Sync-license checkout activates a license without license terms or usage scope
 
 - **Status:** 🔴 OPEN
@@ -13381,7 +13382,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-886: Creative generation quota checks fail open on subscription service outages
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-10)
 - **Severity:** 🟠 HIGH
 - **Module:** Subscription / Creative Suite / Quota enforcement
 - **Evidence:** Image generation and video generation perform client-side quota preflights through `subscriptionService.canPerformAction()` (`ImageGenerationService.ts:258-338`, `VideoGenerationService.ts:323-327`, `:647-656`). That quota method explicitly returns `allowed: true` when the quota service is unavailable and says it is relying on backend usage tracking (`SubscriptionService.ts:400-409`), and its outer catch also allows the action “for demo experience” (`:525-530`). The current creative gateway has no subscription usage/quota enforcement beyond provider quota error classification (`gateway.ts:717`).
@@ -13389,6 +13390,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 - **Fix:** Move quota enforcement to the backend gateway or fail closed when the quota service cannot verify entitlement in production.
 - **Acceptance:** Simulated subscription service timeout prevents image/video model calls unless a backend entitlement check succeeds; no production path relies solely on client quota checks.
 
+- **Fix applied (2026-07-10):** `SubscriptionService.canPerformAction()` fail-open paths removed: infra-outage branch (line ~406) and outer catch (line ~525) both now return `allowed: false` with the failure reason. No production path grants generation when entitlement cannot be verified.
 ### ISSUE-887: Backend identifier recording lets any signed-in user mark arbitrary ISRC/UPC values as REGISTERED
 
 - **Status:** ✅ FIXED (2026-07-10, deployed to us-central1)
