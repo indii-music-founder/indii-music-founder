@@ -25,10 +25,10 @@ export const APPROVED_MODELS = {
     AUDIO_PRO: 'gemini-3.1-pro-preview',
     AUDIO_FLASH: 'gemini-3-flash-preview',
     AUDIO_TTS: 'gemini-2.5-pro-tts',
-    VIDEO_PRO: 'veo-3.1-generate-preview',
-    VIDEO_FAST: 'veo-3.1-fast-generate-preview',  // Fast mode — lower latency, lower cost
-    VIDEO_LITE: 'veo-3.1-lite-generate-preview',  // Lite mode — lowest cost, good quality
-    VIDEO_GEN: 'veo-3.1-generate-preview',        // Alias for backward compatibility
+    VIDEO_PRO: 'veo-3.1-generate-001',
+    VIDEO_FAST: 'veo-3.1-fast-generate-001',  // Fast mode — lower latency, lower cost
+    VIDEO_LITE: 'veo-3.1-lite-generate-001',  // Lite mode — lowest cost, good quality
+    VIDEO_GEN: 'veo-3.1-generate-001',        // Alias for backward compatibility
     BROWSER_AGENT: 'gemini-3.1-pro-preview',
     EMBEDDING_DEFAULT: 'gemini-embedding-001'
 } as const;
@@ -134,17 +134,17 @@ export const MODEL_PRICING = {
     'gemini-3.1-pro-preview': { input: 1.25, output: 10.00 },
     'gemini-3-flash-preview': { input: 0.15, output: 0.60 },
     'gemini-3.1-flash-lite': { input: 0.04, output: 0.20 },
-    'veo-3.1-generate-preview': {
+    'veo-3.1-generate-001': {
         perSecond: 0.20,     // 720p/1080p Video Only
         perSecond4K: 0.40,   // 4K Video Only
         audioAddOn: 0.20     // Flat add-on for audio (up to 1080p)
     },
-    'veo-3.1-fast-generate-preview': {
+    'veo-3.1-fast-generate-001': {
         perSecond: 0.10,     // 720p/1080p Video Only
         perSecond4K: 0.30,   // 4K Video Only
         audioAddOn: 0.05     // Flat add-on for audio
     },
-    'veo-3.1-lite-generate-preview': {
+    'veo-3.1-lite-generate-001': {
         perSecond: 0.05,     // 720p/1080p Video Only — lowest cost tier
         audioAddOn: 0.02     // Flat add-on for audio
     },
