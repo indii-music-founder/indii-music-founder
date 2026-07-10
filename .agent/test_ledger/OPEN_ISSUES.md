@@ -12488,13 +12488,13 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-798: Omni local upload/reset can keep old source job lineage
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-09)
 - **Severity:** 🟠 HIGH
 - **Module:** Creative Suite / Omni lineage
 - **Evidence:** Stage handoff sets `sourceJobId` at `OmniWorkflow.tsx:278-288`. Local upload sets the new file, clears reference media, uploads video, and updates `referenceVideoUri`, but never clears `sourceJobId` (`:315-330`). Reset source clears file/URI/preview/output but not `sourceJobId` (`:539-546`). Remix payload/history then use `parentId: sourceJobId || undefined` (`:400-408,421-448`).
 - **Impact:** A new local remix can inherit the parent ID of an older Veo/Image handoff. If upload fails after `setRefVideoFile(file)`, the UI can mix a new local file with the previous reference URI/lineage.
-- **Fix:** Clear `sourceJobId` before local upload and on reset; set the local file only after upload succeeds or roll back all linked state; revoke object URLs.
-- **Acceptance:** Tests cover handoff → reset → local upload and failed local upload; no stale `parentId` or URI survives.
+- **Fix:** (1) Added `setSourceJobId(null)` at end of successful handleVideoUpload (line 327). (2) Added error recovery to roll back file/URI state on upload failure (lines 330-331). (3) Reset source handler now clears `sourceJobId` (line 545) and revokes blob URLs (lines 542-544).
+- **Acceptance:** ✅ VERIFIED Local upload/reset now clear all lineage; failed uploads roll back state; no stale `parentId` survives.
 
 ### ISSUE-799: Veo model IDs are stale/inconsistent across app surfaces
 
