@@ -80,6 +80,13 @@
         "**/node_modules/**"
       ],
       "public": "packages/landing/dist",
+      "redirects": [
+        {
+          "source": "/updates/:file*",
+          "destination": "https://github.com/indii-music-founder/indii-music-founder/releases/latest/download/:file",
+          "type": 302
+        }
+      ],
       "rewrites": [
         {
           "destination": "/index.html",
