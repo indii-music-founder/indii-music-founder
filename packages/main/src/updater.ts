@@ -112,8 +112,11 @@ export function setupAutoUpdater(): void {
     autoUpdater.autoInstallOnAppQuit = true;
     autoUpdater.allowDowngrade = false;
 
-    // Load persisted settings
-    const savedSource = store.get('updater-source', 'firebase') as 'github' | 'firebase';
+    // Load persisted settings.
+    // Default source is 'github' — the Firebase Hosting /updates/ path only redirects
+    // there anyway, and its SPA rewrite used to serve index.html for the manifest,
+    // which broke electron-updater with `semver version: "undefined"`.
+    const savedSource = store.get('updater-source', 'github') as 'github' | 'firebase';
     const savedChannel = store.get('updater-channel', 'stable') as 'stable' | 'beta';
     
     applyUpdaterConfig(savedSource, savedChannel);
