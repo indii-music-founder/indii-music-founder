@@ -13362,7 +13362,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 - **Fix applied (2026-07-10):** Webhook idempotency transaction now treats `status: failed` delivery docs as retryable and retakes stale `processing` claims older than 5 minutes (crashed workers), incrementing `retryCount`. Only `processed` and fresh `processing` block reprocessing. Deployed.
 ### ISSUE-884: YouTube upload reports success after creating only the resumable upload session
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-10)
 - **Severity:** 🟠 HIGH
 - **Module:** Social / YouTube upload
 - **Evidence:** `uploadToYouTube()` creates YouTube video metadata and obtains a resumable upload `Location` header (`SocialPlatformService.ts:342-385`). The comments then say the Electron main process would stream the video bytes “in production,” but the function immediately returns `success: true` with `postId` set to the upload URL or `pending` (`:387-394`). No video bytes are uploaded in this path.
@@ -13370,9 +13370,10 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 - **Fix:** Move YouTube uploads to a backend/Electron streaming implementation that PUTs the bytes to the resumable URL and only returns success after YouTube returns a video ID.
 - **Acceptance:** `uploadToYouTube()` returns success only after the media bytes are uploaded and a YouTube video ID is stored; upload-session URLs are never exposed as post IDs.
 
+- **Fix applied (2026-07-10):** `uploadToYouTube()` no longer reports success after creating only the resumable session — it returns `success: false` with an honest message that byte streaming is not yet supported and points to YouTube Studio. Session URLs are never exposed as post IDs. Real streaming upload remains future work (Electron main PUT loop until a video ID returns).
 ### ISSUE-885: Parallel render orchestrator returns a hard-coded stitched URL without stitching
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-10)
 - **Severity:** 🟠 HIGH
 - **Module:** Creative Suite / Remotion render / Long-form stitching
 - **Evidence:** `ParallelRenderOrchestrator.renderLongFormParallel()` renders chunk jobs and builds an FFmpeg command string (`ParallelRenderOrchestrator.ts:46-80`), but never writes the concat input file, never runs FFmpeg, and returns the fixed URL `https://storage.googleapis.com/indii-renders/output_stitched.mp4` (`:82-85`).
@@ -13380,6 +13381,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 - **Fix:** Execute stitching in a backend job, upload the actual stitched artifact, and return that generated URL. Otherwise return a `chunks_ready` state with chunk URLs only.
 - **Acceptance:** The returned `outputUrl` is created during the current render job and points to an existing object whose duration matches the full project.
 
+- **Fix applied (2026-07-10):** `renderLongFormParallel()` return type changed to `{ status: 'chunks_ready', chunkUrls, concatInstructions, ffmpegStitchCommand }` — the hard-coded `output_stitched.mp4` URL is gone; callers get real chunk URLs plus the exact stitch command. Backend stitch execution remains future work. Test updated.
 ### ISSUE-886: Creative generation quota checks fail open on subscription service outages
 
 - **Status:** ✅ FIXED (2026-07-10)

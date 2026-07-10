@@ -43,7 +43,10 @@ describe('ParallelRenderOrchestrator', () => {
         });
 
         expect(renderService.renderCompositionCloud).toHaveBeenCalledTimes(2); // 60s total / 30s segments = 2 chunks
-        expect(result.outputUrl).toBe('https://storage.googleapis.com/indii-renders/output_stitched.mp4');
+        // ISSUE-885: no fabricated stitched URL — chunks + real stitch command only
+        expect(result.status).toBe('chunks_ready');
+        expect(result.chunkUrls).toHaveLength(2);
+        expect(result.chunkUrls[0]).toBe('https://storage.googleapis.com/chunk_mock.mp4');
         expect(result.ffmpegStitchCommand).toContain('ffmpeg -f concat');
         expect(result.ffmpegStitchCommand).toContain('-i "https://example.com/song.mp3"');
     });

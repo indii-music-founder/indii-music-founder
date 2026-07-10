@@ -384,13 +384,16 @@ export async function uploadToYouTube(uid: string, payload: PostPayload): Promis
         const uploadUrl = insertRes.headers.get('Location');
         logger.info(`[SocialPlatformService] YouTube resumable upload URL obtained: ${uploadUrl?.substring(0, 60)}...`);
 
-        // In production, the Electron main process would stream the video file
-        // to this upload URL using a resumable upload. For now, return the session URL.
+        // ISSUE-884: HONESTY — only the upload *session* exists at this point.
+        // No video bytes have been streamed and YouTube has issued no video ID,
+        // so this must never be reported as a published upload. The byte-stream
+        // step (Electron main PUT to uploadUrl until a video ID returns) is not
+        // implemented yet.
         return {
             platform: 'youtube',
-            success: true,
-            postId: uploadUrl || 'pending',
-            postUrl: uploadUrl ? undefined : 'https://studio.youtube.com',
+            success: false,
+            error: 'YouTube upload session was created, but streaming the video bytes is not yet supported in this build — no video was published.',
+            postUrl: 'https://studio.youtube.com',
         };
     } catch (err: unknown) {
         return { platform: 'youtube', success: false, error: err instanceof Error ? err.message : 'YouTube error' };
