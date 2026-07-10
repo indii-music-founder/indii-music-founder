@@ -1,19 +1,19 @@
 # Handoff State
-**Updated:** 2026-07-09 22:09 EDT
+**Updated:** 2026-07-09 22:16 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+01520f422 fix(storage): preserve MIME types and correct extensions for media uploads (ISSUE-806)
+e6597af59 fix(ddex): ERN defaults to TestMessage, requires explicit live flag (ISSUE-805)
+513d6c842 fix(distribution): show distinct UX states for dry-run vs delivered (ISSUE-803)
+57759202b chore: session checkpoint [22:09]
 363f3fd37 chore: session checkpoint [21:23]
 1e0720b36 chore: session checkpoint [23:15] - 7 issues fixed
 3fecd946a fix(licensing): update mechanical royalty rates to 2026 statutory (ISSUE-802)
 897c51277 fix(distribution): fail-closed SFTP upload when bridge unavailable (ISSUE-804)
 fb0101408 fix(distribution): fail-closed mechanical license clearance gate (ISSUE-801)
 f50ec13c2 fix(video): migrate Veo models to GA IDs and fix Firebase routing (ISSUE-799)
-944bafa63 fix(omni): clear lineage on local upload and reset (ISSUE-798)
-a104a7f41 fix(creative): remove fake feedback and correct video download extension (ISSUE-797)
-628404a11 chore: session checkpoint [21:11]
-79c3a0636 chore: session checkpoint [21:10]
 ```
 
 ## Working State
