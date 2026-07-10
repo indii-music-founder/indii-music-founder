@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-07-09 21:06 EDT
+**Updated:** 2026-07-09 21:10 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+c1772aa2b fix: resolve admin dashboard, knowledge panel, video generation, and agent tools issues
 4a2476cb5 chore: session checkpoint [21:06]
 5d09028e8 chore: session checkpoint [21:06]
 40ff4a750 chore: session checkpoint [21:05]
@@ -13,20 +14,11 @@ c34275c97 chore: session checkpoint [21:04]
 518ab3e27 docs: add cost ledger end checkpoint
 eb2b41d33 chore: session checkpoint [19:00]
 7ae6ef254 fix(functions): re-apply mechanical licensing unimplemented error (ISSUE-748)
-cb9ca1b11 chore: session checkpoint [09:09]
 ```
 
 ## Working State
 ```
- M .agent/test_ledger/OPEN_ISSUES.md
- M .env.example
- M packages/admin-dashboard/server.ts
- M packages/renderer/src/core/components/right-panel/KnowledgePanel.tsx
- M packages/renderer/src/modules/creative/components/veo/VideoGenerationProgress.tsx
- M packages/renderer/src/modules/creative/hooks/useDirectGeneration.ts
- M packages/renderer/src/modules/creative/video/components/StoryboardTimeline.tsx
- M packages/renderer/src/services/agent/tools/ScreenwriterTools.ts
- M packages/renderer/src/services/agent/tools/VideoTools.ts
+clean working tree
 ```
 
 ## Decisions
