@@ -787,7 +787,7 @@ const INDII_28_DAY_FRONTLOADED: TimelineTemplate = {
                 {
                     relativePosition: 0.0,
                     type: 'asset_creation',
-                    instruction: 'Generate 5 ad creative variants for Meta Ads: 3 short-form video clips (15s, using veo-3.1-generate-preview) and 2 static image ads (using gemini-3-pro-image-preview). Each must include a clear CTA routing to the Spotify track link.',
+                    instruction: 'Generate 5 ad creative variants for Meta Ads: 3 short-form video clips (15s, using veo-3.1-generate-001) and 2 static image ads (using gemini-3-pro-image-preview). Each must include a clear CTA routing to the Spotify track link.',
                     assetStrategy: 'create_new',
                 },
                 {

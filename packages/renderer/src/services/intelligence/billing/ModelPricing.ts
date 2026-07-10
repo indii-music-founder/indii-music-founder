@@ -90,7 +90,12 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
     // ── Speech (TTS) ──────────────────────────────────────────────────────────
     'gemini-2.5-pro-tts': { kind: 'tts', perMillionChars: 16.0 },
 
-    // ── Video (Veo) ───────────────────────────────────────────────────────────
+    // ── Video (Veo) — GA IDs (ISSUE-867) ──────────────────────────────────────
+    'veo-3.1-generate-001': { kind: 'video', perSecond: 0.40 },
+    'veo-3.1-fast-generate-001': { kind: 'video', perSecond: 0.15 },
+    'veo-3.1-lite-generate-001': { kind: 'video', perSecond: 0.10 },
+    // Deprecated preview aliases — kept only so jobs saved before the GA
+    // migration still price correctly. Do not use for new generation.
     'veo-3.1-generate-preview': { kind: 'video', perSecond: 0.40 },
     'veo-3.1-fast-generate-preview': { kind: 'video', perSecond: 0.15 },
     'veo-3.1-lite-generate-preview': { kind: 'video', perSecond: 0.10 },

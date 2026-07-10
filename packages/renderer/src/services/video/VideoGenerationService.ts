@@ -27,7 +27,7 @@ import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
 
 type VideoAspectRatio = z.infer<typeof VideoAspectRatioSchema>;
 
-const DEFAULT_VIDEO_MODEL = INTELLIGENCE_MODELS.VIDEO.PRO; // 'veo-3.1-generate-preview'
+const DEFAULT_VIDEO_MODEL = INTELLIGENCE_MODELS.VIDEO.PRO; // 'veo-3.1-generate-001' (GA)
 
 
 /**
@@ -255,10 +255,12 @@ export class VideoGenerationService {
     public estimateVideoCost(durationSeconds: number, model?: string): number {
         const actualModel = model || DEFAULT_VIDEO_MODEL;
         let rate = 0.10; // Default/fast rate
-        if (actualModel.includes('pro') || actualModel === 'veo-3.1-generate-preview') {
-            rate = 0.40;
-        } else if (actualModel.includes('lite') || actualModel === 'veo-3.1-lite-generate-preview') {
+        // Match GA and legacy-preview IDs so old saved jobs still price correctly.
+        if (actualModel.includes('lite')) {
             rate = 0.05;
+        } else if (!actualModel.includes('fast') && /veo-3\.1-generate-(001|preview)/.test(actualModel)) {
+            // The pro model id carries no 'pro' marker — it's the bare generate id.
+            rate = 0.40;
         }
         return durationSeconds * rate;
     }
