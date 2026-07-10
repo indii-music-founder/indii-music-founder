@@ -75,17 +75,24 @@ export class ISRCService {
         return response.id;
     }
 
-    /** Look up a single registry record by ISRC string. Returns null if not found. */
+    /**
+     * Look up a single registry record by ISRC string. Returns null if not found.
+     * Owner-scoped: registry reads are restricted to the caller's own rows (ISSUE-888).
+     */
     async getByIsrc(isrc: string): Promise<ISRCRecordDocument | null> {
-        const q = query(this.registryRef, where('isrc', '==', isrc), limit(1));
+        const userId = auth.currentUser?.uid;
+        if (!userId) return null;
+        const q = query(this.registryRef, where('userId', '==', userId), where('isrc', '==', isrc), limit(1));
         const snap = await getDocs(q);
         if (snap.empty) return null;
         return { id: snap.docs[0]!.id, ...snap.docs[0]!.data() } as unknown as ISRCRecordDocument;
     }
 
-    /** Look up all registry records for a given release. */
+    /** Look up the caller's registry records for a given release (owner-scoped, ISSUE-888). */
     async getByRelease(releaseId: string): Promise<ISRCRecordDocument[]> {
-        const q = query(this.registryRef, where('releaseId', '==', releaseId));
+        const userId = auth.currentUser?.uid;
+        if (!userId) return [];
+        const q = query(this.registryRef, where('userId', '==', userId), where('releaseId', '==', releaseId));
         const snap = await getDocs(q);
         return snap.docs.map(d => ({ id: d.id, ...d.data() } as unknown as ISRCRecordDocument));
     }

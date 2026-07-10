@@ -197,15 +197,22 @@ const issue_isrc = wrapTool('issue_isrc', async (args: {
 
         const userId = auth.currentUser?.uid;
         if (userId) {
-            const recordIdentifier = httpsCallable(functions, 'recordDistributionIdentifier');
-            await recordIdentifier({
-                type: 'isrc',
-                isrc,
-                releaseId: `generated-${isrc}`,
-                trackTitle,
-                artistName: artist,
-                metadataSnapshot: { year, orgId: 'personal', source: 'DistributionTools.issue_isrc' },
-            });
+            // Best-effort registry record. The backend now enforces release
+            // ownership (ISSUE-887), so a synthetic releaseId is rejected —
+            // that must not fail the ISRC generation itself.
+            try {
+                const recordIdentifier = httpsCallable(functions, 'recordDistributionIdentifier');
+                await recordIdentifier({
+                    type: 'isrc',
+                    isrc,
+                    releaseId: `generated-${isrc}`,
+                    trackTitle,
+                    artistName: artist,
+                    metadataSnapshot: { year, orgId: 'personal', source: 'DistributionTools.issue_isrc' },
+                });
+            } catch (recordErr) {
+                logger.warn('[DistributionTools] ISRC registry record skipped (no owned release):', recordErr);
+            }
         }
 
         return toolSuccess({
@@ -213,8 +220,8 @@ const issue_isrc = wrapTool('issue_isrc', async (args: {
             source: 'JS Service',
             valid: true,
             track_title: trackTitle,
-            registry_status: 'REGISTERED'
-        }, `ISRC ${isrc} generated and registered for "${trackTitle}".`);
+            registry_status: 'RECORDED_EXTERNAL'
+        }, `ISRC ${isrc} generated and recorded for "${trackTitle}" (pending official registration).`);
     } catch (error: unknown) {
         return toolError(error instanceof Error ? error.message : 'ISRC failed', 'ISRC_ERROR');
     }
@@ -565,20 +572,25 @@ export const DistributionTools = {
             const upc = await IdentifierService.nextUPC();
             const isValid = IdentifierService.validateUPC(upc);
 
-            // Persist to Firestore registry
+            // Best-effort registry record — backend rejects synthetic release IDs
+            // (ISSUE-887 ownership gate); that must not fail UPC generation.
             const uid = auth.currentUser?.uid;
             if (uid) {
-                const recordIdentifier = httpsCallable(functions, 'recordDistributionIdentifier');
-                await recordIdentifier({
-                    type: 'upc',
-                    upc,
-                    releaseId: `generated-${upc}`,
-                    releaseTitle: args.releaseTitle,
-                    metadataSnapshot: {
-                        recordLabel: args.recordLabel,
-                        source: 'DistributionTools.generate_upc',
-                    },
-                });
+                try {
+                    const recordIdentifier = httpsCallable(functions, 'recordDistributionIdentifier');
+                    await recordIdentifier({
+                        type: 'upc',
+                        upc,
+                        releaseId: `generated-${upc}`,
+                        releaseTitle: args.releaseTitle,
+                        metadataSnapshot: {
+                            recordLabel: args.recordLabel,
+                            source: 'DistributionTools.generate_upc',
+                        },
+                    });
+                } catch (recordErr) {
+                    logger.warn('[DistributionTools] UPC registry record skipped (no owned release):', recordErr);
+                }
             }
 
             return toolSuccess({
