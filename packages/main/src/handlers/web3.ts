@@ -172,12 +172,13 @@ class EthereumNetworkWrapper {
             }
         }
 
-        // Return a mock balance (e.g. 100 ETH for local testing)
+        // Balance lookup failed and no provider available — return error state
+        // Do NOT fabricate success with fake balance (ISSUE-796)
         return {
-            success: true,
-            balance: '0x56bc75e2d63100000', // 100 ETH in wei
+            success: false,
+            balance: '0x0',
             unit: 'wei',
-            isSimulated: true
+            isSimulated: false
         };
     }
 

@@ -345,7 +345,7 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                             <Maximize2 size={14} />
                         </button>
                         <button
-                            onClick={(e) => { e.stopPropagation(); toast.success("Feedback recorded: Liked"); }}
+                            onClick={(e) => { e.stopPropagation(); toast.info("Liked"); }}
                             data-testid="like-btn"
                             className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-blue-500 focus-visible:ring-2 focus-visible:ring-white/50 transition-colors"
                             title="Like"
@@ -368,7 +368,7 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                             <RotateCw size={14} />
                         </button>
                         <button
-                            onClick={(e) => { e.stopPropagation(); toast.success("Feedback recorded: Disliked"); }}
+                            onClick={(e) => { e.stopPropagation(); toast.info("Disliked"); }}
                             data-testid="dislike-btn"
                             className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-orange-500 focus-visible:ring-2 focus-visible:ring-white/50 transition-colors"
                             title="Dislike"
