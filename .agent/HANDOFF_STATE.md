@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-07-09 22:20 EDT
+**Updated:** 2026-07-09 22:25 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+f57a38079 test: fix CreativeGallery feedback toast assertions
+fa4298b37 chore: session checkpoint [22:20]
 873e55335 chore: session checkpoint [22:17]
 b77b321c3 chore: session checkpoint [22:16]
 01520f422 fix(storage): preserve MIME types and correct extensions for media uploads (ISSUE-806)
@@ -12,8 +14,6 @@ e6597af59 fix(ddex): ERN defaults to TestMessage, requires explicit live flag (I
 57759202b chore: session checkpoint [22:09]
 363f3fd37 chore: session checkpoint [21:23]
 1e0720b36 chore: session checkpoint [23:15] - 7 issues fixed
-3fecd946a fix(licensing): update mechanical royalty rates to 2026 statutory (ISSUE-802)
-897c51277 fix(distribution): fail-closed SFTP upload when bridge unavailable (ISSUE-804)
 ```
 
 ## Working State
