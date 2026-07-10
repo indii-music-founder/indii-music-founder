@@ -13599,3 +13599,23 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 - **Evidence:** The phone-side pairing modal (`MobileRemote.tsx:207`) instructs "Enter the 64-character pairing code from your desktop studio Settings panel", but Settings had no such section. The desktop QR generator lived only inside the mobile-remote module, which desktop users can never reach (App.tsx routes only phone-class devices there). Backend (`createHandoffCode`/`redeemHandoffCode`) existed and was unused from desktop.
 - **Fix:** New `RemoteSection.tsx` settings section ("Mobile Remote", Smartphone icon) — generates the handoff code via `createHandoffCode`, renders QR (same `?code=` URL scheme the phone redeems) plus copyable 64-char code, 5-minute expiry countdown that clears dead codes, regenerate button, Cloud Relay status row, and honest info copy. Registered in `SettingsPanel.tsx`; i18n keys added to en/es locales.
 - **Acceptance:** Desktop Settings → Mobile Remote produces a scannable QR and manual code the phone's Link Device flow accepts.
+
+### ISSUE-909: Desktop auto-update completely broken — "semver version: undefined" on every check
+
+- **Status:** ✅ FIXED (2026-07-10)
+- **Severity:** 🔴 CRITICAL (no installed app could ever update; reported live by founder)
+- **Module:** Electron / Auto-updater / Firebase Hosting / Release pipeline
+- **Evidence:** Two stacked failures. (1) The v1.64.5 GitHub release sat in **draft** — GitHub never serves draft releases to electron-updater. (2) Even with a published release, the updater's default feed was `https://indii-music-founder.web.app/updates/` (`updater.ts:116` default `'firebase'`), where nothing was ever hosted — the landing site's SPA catch-all rewrite returned **index.html** for `latest-mac.yml`, which electron-updater parsed as a manifest with no `version` field → `does not have a valid semver version: "undefined"`.
+- **Impact:** Every installed desktop app failed every update check since launch. No fix could be delivered via update because the broken default was baked into installed binaries (chicken-and-egg).
+- **Fix:** (1) Published the draft v1.64.5 release. (2) `firebase.json`: added 302 redirect `/updates/:file*` → GitHub release `latest/download/:file` on the landing target — repairs every already-installed app with a hosting deploy, no reinstall. (3) `updater.ts`: default source `'firebase'` → `'github'` for future builds.
+- **Verification:** App's own log (2026-07-10 09:03): `[Updater] Checking for update...` → `Update for version 1.64.5 is not available (latest version: 1.64.5)` — check completes cleanly, no semver error. Manifest URL, Windows manifest, and binary range-request all verified via curl through the redirect chain.
+- **Acceptance:** Installed 1.64.x apps detect and install v1.64.6 when published. (v1.64.6 release run 29096265613 in progress — first true end-to-end test.)
+
+### ISSUE-910: CreativeGallery tests asserted the pre-ISSUE-797 fake feedback toast
+
+- **Status:** ✅ FIXED (2026-07-09)
+- **Severity:** 🟡 MEDIUM (CI blocker)
+- **Module:** Creative Suite / Tests
+- **Evidence:** After ISSUE-797 replaced `toast.success("Feedback recorded: Liked")` with `toast.info("Liked")`, `CreativeGallery.interaction.test.tsx:144` and `CreativeDaisychain12.interaction.test.tsx:292` still asserted the old message, and the interaction test's `useToast` mock lacked an `info` method — `TypeError: toast.info is not a function` + 2 failed assertions broke the deploy pipeline (run 29064307725).
+- **Fix:** Added `info` to the toast mocks; updated assertions to the new honest messages.
+- **Acceptance:** Both test files pass; deploy pipeline green.
