@@ -276,11 +276,15 @@ export class ImageGenerationService {
 
         if (!costCheck.allowed) {
             const isInfraFailure = costCheck.reason?.includes('unavailable') || costCheck.reason?.includes('permission/auth check failed');
-            
+
             if (isInfraFailure) {
-                logger.warn('[ImageGenerationService] Cost ledger infra failure. Bypassing cost check to allow generation to proceed.', { reason: costCheck.reason });
-                // If the ledger is unreachable, we log and bypass to prevent complete system lockup.
-                // The backend function may still enforce limits or we can allow a safe fallback path.
+                // ISSUE-881: FAIL CLOSED. A cost-ledger outage must not turn paid
+                // image generation into unmetered generation — the backend callable
+                // has no reservation requirement of its own to catch this.
+                logger.error('[ImageGenerationService] Cost ledger unavailable — blocking generation (fail-closed).', { reason: costCheck.reason });
+                throw new Error(
+                    'Image generation is temporarily unavailable: the cost-control service could not verify your budget. Please try again in a moment.'
+                );
             } else if (costCheck.requiresConfirmation) {
                 const approved = await new Promise<boolean>((resolve) => {
                     import('@/core/store').then(({ useStore }) => {
