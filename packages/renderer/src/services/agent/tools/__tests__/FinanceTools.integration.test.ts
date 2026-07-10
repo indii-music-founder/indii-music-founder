@@ -81,7 +81,7 @@ describe.skip('FinanceTools', () => {
 
             const result = await FinanceTools.initiate_split_escrow({
                 trackId: 'track-001',
-                holdAmount: 500,
+                holdAmountUsd: 500,
                 parties: ['user-A', 'user-B'],
             });
 
@@ -91,7 +91,29 @@ describe.skip('FinanceTools', () => {
             expect((result as any).metadata.errorCode).toBe('ESCROW_UNAVAILABLE');
         });
 
-        it('returns escrow data when Cloud Function succeeds', async () => {
+        it('returns escrow data when Cloud Function confirms a funded intent', async () => {
+            const { httpsCallable } = await importWithRetry(() => import('firebase/functions'));
+            vi.mocked(httpsCallable).mockReturnValue(
+                vi.fn().mockResolvedValue({
+                    data: { escrowAccount: 'acct_test123', status: 'PENDING_SIGNATURES', stripePaymentIntentId: 'pi_test123', fundsHeld: true },
+                }) as unknown as import('firebase/functions').HttpsCallable<unknown, unknown, unknown>
+            );
+
+            const result = await FinanceTools.initiate_split_escrow({
+                trackId: 'track-001',
+                holdAmountUsd: 500,
+                parties: ['user-A', 'user-B'],
+            });
+
+            expect(isToolSuccess(result)).toBe(true);
+            const data = (result as any).data;
+            expect(data.escrowAccount).toBe('acct_test123');
+            expect(data.status).toBe('PENDING_SIGNATURES');
+            expect(data.stripePaymentIntentId).toBe('pi_test123');
+            expect(data.amountCents).toBe(50000);
+        });
+
+        it('returns ESCROW_NOT_FUNDED when no payment intent is confirmed (ISSUE-853)', async () => {
             const { httpsCallable } = await importWithRetry(() => import('firebase/functions'));
             vi.mocked(httpsCallable).mockReturnValue(
                 vi.fn().mockResolvedValue({
@@ -101,14 +123,12 @@ describe.skip('FinanceTools', () => {
 
             const result = await FinanceTools.initiate_split_escrow({
                 trackId: 'track-001',
-                holdAmount: 500,
+                holdAmountUsd: 500,
                 parties: ['user-A', 'user-B'],
             });
 
-            expect(isToolSuccess(result)).toBe(true);
-            const data = (result as any).data;
-            expect(data.escrowAccount).toBe('acct_test123');
-            expect(data.status).toBe('PENDING_SIGNATURES');
+            expect(isToolSuccess(result)).toBe(false);
+            expect((result as any).metadata.errorCode).toBe('ESCROW_NOT_FUNDED');
         });
     });
 
