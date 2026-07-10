@@ -13175,7 +13175,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-866: Founder checkout payment does not automatically activate Founder access
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-10, deployed)
 - **Severity:** 🔴 HIGH (revenue/access)
 - **Module:** Founders / Stripe / Subscription activation
 - **Evidence:** `FoundersCheckout` says “Your lifetime access begins immediately” and creates a one-time `$2,500` checkout item (`FoundersCheckout.tsx:238-241`, `:73-84`). `createOneTimeCheckout` stores Stripe metadata `type: 'one_time'` (`createOneTimeCheckout.ts:80-100`). The Stripe webhook routes only `micro_transaction`, `licensing_purchase`, or subscription sessions with `tier` metadata (`webhookHandler.ts:126-144`), while the normal subscription checkout explicitly rejects `SubscriptionTier.FOUNDER` and says founder passes must be activated manually by admin (`createCheckoutSession.ts:32-34`). `activateFounderPass` is admin-only (`activateFounderPass.ts:202-213`).
@@ -13183,6 +13183,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 - **Fix:** Add a dedicated Founder checkout metadata type and webhook handler that verifies seat availability/payment amount, then calls the same activation transaction or queues a clear admin fulfillment task. Update checkout copy if manual activation remains.
 - **Acceptance:** Successful founder payment either activates Founder access automatically and returns a seat/hash, or the UI clearly says “manual activation pending” with fulfillment status and support path.
 
+- **Fix applied (2026-07-10):** FoundersCheckout now sends `metadata.type: founder_seat`; new `handleFounderSeatCheckoutCompleted` in `webhookHandler.ts` verifies paid amount ≥ $2,500, writes idempotent `founder_fulfillment_queue/{sessionId}` task, and flags `users/{uid}.founderPaymentStatus: paid_pending_activation`. Checkout copy changed from "begins immediately" to "activated within 24 hours" (activation stays deliberate: seat numbering, display name, agreement hash, GitHub commit via activateFounderPass). Underpaid/missing-uid sessions throw → Stripe retries. Deployed.
 ### ISSUE-867: Veo 3.1 model IDs still use deprecated preview names
 
 - **Status:** 🔴 OPEN
@@ -13345,7 +13346,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-883: Failed Stripe webhook retries are skipped because failed delivery docs still count as processed
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-10, deployed)
 - **Severity:** 🔴 HIGH (payments/access fulfillment)
 - **Module:** Stripe / Webhooks / Idempotency
 - **Evidence:** The webhook creates `stripe_webhook_deliveries/{event.id}` with `status: 'processing'` before handling the event (`webhookHandler.ts:385-407`). The duplicate guard skips any existing delivery doc regardless of status (`:394-410`). In the error path, the code comments “Mark failed so the next retry is not skipped” but only updates the existing doc to `status: 'failed'` (`:454-459`), so Stripe retries will still be skipped.
@@ -13353,6 +13354,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 - **Fix:** Treat `failed` delivery docs as retryable, or move idempotency to per-handler effect records that can resume safely. Keep side effects idempotent by session/payment IDs.
 - **Acceptance:** A webhook event that fails once is reprocessed on retry until it reaches `processed`; duplicate `processing` events remain blocked only while another worker is active.
 
+- **Fix applied (2026-07-10):** Webhook idempotency transaction now treats `status: failed` delivery docs as retryable and retakes stale `processing` claims older than 5 minutes (crashed workers), incrementing `retryCount`. Only `processed` and fresh `processing` block reprocessing. Deployed.
 ### ISSUE-884: YouTube upload reports success after creating only the resumable upload session
 
 - **Status:** 🔴 OPEN
@@ -14245,3 +14247,193 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 - **Impact:** The surface advertises automatic binding registrations that cannot start in the supported desktop environment; web fallback also cannot control the newly opened provider tab because it continues acting on the app DOM.
 - **Fix:** Define one typed, allowlisted browser-agent IPC contract and implement it end-to-end, including session isolation, portal/domain allowlist, signed-in human checkpoints, CAPTCHA/login/payment/terms/final-submit pauses, cancellation, evidence capture, and result schema. Until verified, report automation unavailable before the user reviews/submits rather than pretending configured.
 - **Acceptance:** Preflight `isConfigured` reflects actual IPC/model/runtime readiness; a packaged integration fixture opens only an allowlisted test portal, pauses at every high-risk/final submit, resumes after explicit approval, and returns a validated confirmation/evidence artifact; missing IPC disables automation with manual draft handoff before execution.
+
+### ISSUE-973: Marketplace product creation cannot satisfy the Firestore product schema
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 CRITICAL (listing workflow blocked)
+- **Module:** Marketplace / List New Product / Firestore rules
+- **Evidence:** The client lists product types `song`, `album`, `stem-pack`, `merch`, `ticket`, and `service`, then writes `isActive: true` but no `status` (`CreateProductModal.tsx:167-181`; `MarketplaceService.ts:67-79`; `marketplace/types.ts:1-25`). Firestore product creation allows only types `digital`, `physical`, `nft`, or `subscription` and requires `status` to be `draft` or `active` (`firestore.rules:537-547`). Therefore every modal-created payload violates both required rule fields before any storefront refresh.
+- **Impact:** “List Product” fails with permission denied for all visible product types; stem files may already have uploaded before the rejected document write, compounding the failure with leaked/orphaned assets.
+- **Fix:** Define one shared runtime product schema/enums for renderer, callable/service, rules tests, and stored documents. Map detailed subtypes under a canonical fulfillment type if needed; include explicit draft/active lifecycle and validate seller/auth server-side.
+- **Acceptance:** Emulator tests create every visible subtype with the exact production rule set, reject unknown/malformed types/status/seller spoofing, and reload the created listing; schema drift fails CI.
+
+### ISSUE-974: Marketplace can sell songs, albums, merch, tickets, and services with no deliverable or fulfillment contract
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 CRITICAL (paid item cannot be fulfilled)
+- **Module:** Marketplace / Product creation and buyer delivery
+- **Evidence:** The listing modal exposes six product types but only stem packs collect files; every other type creates a product with `images: []` and empty metadata (`CreateProductModal.tsx:26-39`, `:83-92`, `:167-181`). The `Product` model has only generic images/inventory/metadata and no required asset, SKU/variants, ticket event, service terms, shipping, license, or delivery policy (`marketplace/types.ts:12-25`). Repository-wide marketplace purchase code creates Checkout/purchase/revenue records but has no buyer entitlement, signed-download, ticket issuance, shipping order, service booking, refund, or digital delivery path (`MarketplaceService.ts:165-264`).
+- **Impact:** A buyer can be charged for an empty song/album, unshippable merch, nonexistent ticket, or undefined service, with no artifact or entitlement to receive.
+- **Fix:** Use discriminated product schemas with required fulfillment data per type and provision verified delivery/entitlement only from the paid webhook. Keep incomplete products as private drafts and show seller readiness checks.
+- **Acceptance:** Each visible product type has fixtures proving required fields and post-payment fulfillment; missing audio/artwork/license, merch SKU/shipping, event/date/capacity, or service scope/scheduling blocks activation; a paid clean-session buyer can access exactly the purchased entitlement and refunds revoke/adjust it correctly.
+
+### ISSUE-975: Stem-pack download-token URLs are stored in product documents readable before purchase
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 CRITICAL (paid creative asset disclosure)
+- **Module:** Marketplace / Stem pack access control
+- **Evidence:** Each stem upload calls Firebase `getDownloadURL()` and stores `{url, filename, storagePath}` in `product.metadata.stemFiles` (`MarketplaceService.ts:41-64`; `CreateProductModal.tsx:61-92`). Product documents are readable by any authenticated or guest user (`firestore.rules:537-540`), and `ProductCard` reads `metadata.stemFiles` directly (`ProductCard.tsx:65-69`, `:165-167`). Storage rules say only the owner may read stems and buyers should receive signed URLs from Cloud Functions (`storage.rules:160-168`), but no buyer delivery function exists; Firebase download-token URLs in the public product payload act as bearer capabilities and bypass the intended post-purchase authorization.
+- **Impact:** Any browser/user able to read the listing can extract and share all four paid stem URLs without purchasing, while legitimate buyers have no purchase-gated entitlement flow.
+- **Fix:** Store only nonsecret preview metadata in public listings. Keep object paths/private identifiers server-side, verify completed purchase + buyer + product + refund state, and issue short-lived/revocable signed downloads or stream through an authorized endpoint. Rotate existing leaked tokens.
+- **Acceptance:** Pre-purchase/other-user requests cannot obtain or use stem URLs; completed buyer access returns expiring URLs for only that product; refund/revocation and expiry deny access; public product snapshots contain no download token or private storage path.
+
+### ISSUE-976: Stem-pack upload and listing lifecycle leaves partial/orphaned files on failure, close, replace, or delete
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH (creative asset leak / storage cost)
+- **Module:** Marketplace / Stem pack creation
+- **Evidence:** Four stems upload concurrently via `Promise.all` into a timestamp draft path before the product document is created (`MarketplaceService.ts:41-64`; `CreateProductModal.tsx:61-92`). If any upload or the later product write fails, completed uploads are neither recorded nor deleted. Closing/replacing a selected local file has no draft/cleanup semantics, and `deleteProduct()` only sets `isActive: false` without deleting or retaining/accounting for stem objects (`MarketplaceService.ts:148-163`). There is no stable upload session, per-file progress/result, retry manifest, or garbage collector.
+- **Impact:** Partial batches, rule failures, abandoned modals, and deleted listings retain private masters indefinitely; retry creates new timestamp paths and duplicates storage.
+- **Fix:** Create an owned draft/session first, upload idempotently per slot with checksums, commit listing references transactionally, and implement explicit discard/replace/delete retention cleanup. Surface per-file state and resume safely.
+- **Acceptance:** Failure in each of four slots leaves successful files linked to a resumable draft or removed; retry reuses checksum/session without duplication; explicit discard/delete follows documented retention and removes unreferenced objects; a scheduled orphan scan finds zero objects after test scenarios.
+
+### ISSUE-977: Marketplace prices are stored as cents, displayed as dollars, and multiplied by 100 again at checkout
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 CRITICAL (100× pricing error)
+- **Module:** Marketplace / Listing price and checkout
+- **Evidence:** The modal converts `$10.00` to `1000` with `Math.round(parseFloat(price) * 100)` (`CreateProductModal.tsx:83-92`), and the type comment says price is “In cents or base unit,” leaving the contract ambiguous (`marketplace/types.ts:12-25`). `ProductCard` displays the raw value as `USD 1000` and passes it unchanged to `purchaseProduct()` (`ProductCard.tsx:90-107`, `:158-184`). The purchase service then multiplies `amount * 100` again for `OneTimePaymentItem.amount`, whose canonical contract is already cents (`MarketplaceService.ts:168-208`; `PaymentService.ts:21-26`).
+- **Impact:** A $10 listing can display as $1,000 and request a 100,000-cent ($1,000) charge; other callers using dollar values produce different behavior, making seller pricing and buyer consent unreliable.
+- **Fix:** Adopt a single integer minor-unit field (`unitAmountCents`) end-to-end, format only at UI boundaries, and make the server load authoritative product price rather than trusting a caller amount. Migrate/flag ambiguous existing records.
+- **Acceptance:** $0.50, $10.00, and large boundary fixtures display and charge exactly 50, 1000, and expected cents across card/cart/Checkout/webhook; tampered client amounts are ignored/rejected; legacy ambiguous products cannot go on sale without migration.
+
+### ISSUE-978: Marketplace reserves inventory and records completed revenue before Stripe payment succeeds
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 CRITICAL (false sales / inventory loss)
+- **Module:** Marketplace / Purchase lifecycle
+- **Evidence:** `purchaseProduct()` decrements inventory before creating Checkout (`MarketplaceService.ts:176-196`). After receiving a Checkout URL it assigns `window.location.href`, but continues client-side to create a pending purchase and immediately calls `revenueService.recordSale(... status: 'completed')` before any webhook confirmation (`:198-244`). Inventory rollback occurs only when this function throws (`:246-262`), so normal Checkout cancellation/expiry leaves the reservation consumed. `ProductCard` can also set local Owned after this pre-payment function returns (`ProductCard.tsx:44-63`).
+- **Impact:** Abandoned/cancelled sessions reduce stock, sellers see nonexistent completed revenue, scarce tickets/merch can become unavailable, and buyers may appear to own products they never paid for.
+- **Fix:** Create a server-owned checkout intent without final inventory/revenue mutation; atomically reserve with expiry where needed, then finalize purchase, entitlement, inventory, and revenue idempotently from verified Stripe webhook events. Release reservations on expiry/cancel/refund and derive UI ownership from durable paid entitlements.
+- **Acceptance:** Cancelled/expired/failed Checkout produces no completed sale/ownership and restores reservation; successful duplicate webhook delivery finalizes exactly once; concurrent last-item buyers cannot oversell; refund adjusts revenue/inventory/entitlement per policy; client navigation interruption cannot corrupt state.
+
+### ISSUE-979: CRM destroys a launch draft after `createCampaign` converts persistence failure into `null`
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH (false launch success and creative draft loss)
+- **Module:** Superfan CRM / New Drop
+- **Evidence:** `handleLaunch()` awaits `createCampaign()` and unconditionally closes the modal and clears every field when the promise resolves (`CRMDashboard.tsx:43-65`). The store action catches Firestore/auth/rules failures, sets a dashboard error, and returns `null` instead of rejecting (`crmSlice.ts:108-127`). The caller never inspects the returned ID. Consequently the same resolved path runs for a confirmed document ID and for no document at all.
+- **Impact:** An offline, signed-out, permission-denied, quota, or validation failure can erase the campaign name/type/supply/price and dismiss the form as if Launch succeeded. The user must reconstruct the drop and may retry into duplicates if the original write's outcome was uncertain.
+- **Fix:** Require a non-null persisted campaign ID/readback before closing or clearing. Make failure reject or return a discriminated result, keep the exact draft visible and retryable, add double-submit/idempotency protection, and distinguish uncertain commit state from a definite rejection.
+- **Acceptance:** Forced add rejection and `null` result leave all fields and the modal intact with an actionable error and no active card; successful launch closes only after a real ID is observable after reload; double-click/retry produces one campaign; an ambiguous network outcome reconciles by idempotency key rather than creating a duplicate.
+
+### ISSUE-980: CRM “Launch Drop” marks metadata-only campaigns active without creating a sellable or fan-facing drop
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 CRITICAL (false live commerce/engagement state)
+- **Module:** Superfan CRM / SoundLocker campaigns
+- **Evidence:** The form promises to “Launch a new Digital Vinyl or VIP drop,” and the submit button says “Launch Drop” (`CRMDashboard.tsx:289-295`, `:362-374`). It collects only name, one of four types, supply, and price (`:297-351`), then writes those fields with `status: 'active'` (`:43-55`). The `Campaign` contract contains no audio/merch/VIP deliverable, artwork, public URL, checkout/product ID, audience rule, countdown, fulfillment, terms, notification job, or launch receipt (`crmSlice.ts:7-17`). The dashboard immediately counts/renders the record as an Active Drop and projected value (`CRMDashboard.tsx:68-72`, `:119-159`, `:203-207`).
+- **Impact:** A metadata card can look live and financially meaningful even though fans cannot discover, purchase, unlock, or receive anything and no fan was notified. This can mislead release planning and projected-revenue reporting across every advertised drop type.
+- **Fix:** Separate persisted draft creation from activation. Define type-specific readiness schemas and require the real product/deliverable, public destination, price/currency, inventory/entitlement or fulfillment policy, audience/consent rules, and backend launch/notification receipts before setting `active`. Until then label the record Draft/Setup incomplete and exclude it from active/value metrics.
+- **Acceptance:** Each of Digital Vinyl, Exclusive Audio, VIP Package, and Merch Bundle has a readiness fixture and cannot activate while any required asset/fulfillment/checkout/publication field is absent; activation yields a durable public/product ID plus notification/launch status; clean-session fan purchase/access succeeds end-to-end; draft records never count as active or projected live value.
+
+### ISSUE-981: Relay responses include an undefined Firestore field, while the socket fallback omits the finality field consumers require
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 CRITICAL (remote creative generation response path can fail before work starts)
+- **Module:** Mobile Remote / RemoteRelayService / Generation Monitor
+- **Evidence:** `sendResponse()` claims to include optional fields only when defined, but its Firestore payload always contains `boardroomMessageId` even when the argument is `undefined` (`RemoteRelayService.ts:701-745`). Firestore is initialized without `ignoreUndefinedProperties` (`firebase.ts:100-106`), so normal progress/final responses without a boardroom ID are invalid writes. Image generation awaits the progress response before calling the generator (`useRemoteCommandListener.ts:515-537`); the outer catch attempts another response with the same invalid shape before it can mark the command completed (`:736-749`). Conversely, the P2P broadcast payload omits `isFinal` entirely (`RemoteRelayService.ts:709-723`), while `GenerationMonitor` accepts a result only when `response.isFinal && response.text` (`GenerationMonitor.tsx:137-160`).
+- **Impact:** Cloud-relayed generation can fail at the progress message, never render, and leave a command stuck in `processing`; local-only P2P can deliver an image response that the phone never treats as terminal and then reports as timed out. Retry can create uncertain duplicate work.
+- **Fix:** Build one shared validated response serializer for Firestore and P2P, conditionally add every optional field, and always emit an explicit terminal status/finality plus structured success/error payload. Ensure error reporting and terminal command update cannot be prevented by the original response-write failure.
+- **Acceptance:** With strict Firestore undefined handling, progress, image success, empty-result, and thrown-generation fixtures all write valid response documents and reach a terminal command state; P2P and Firestore payloads pass the same schema/contract tests; a missing optional boardroom ID creates no undefined field; the phone completes from either transport exactly once.
+
+### ISSUE-982: Quick Capture treats a `null` queue result as success and can erase the only local text or media copy
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 CRITICAL (silent creative capture loss)
+- **Module:** Mobile Remote / Live Moment Capture
+- **Evidence:** `dispatchTask()` returns `null` rather than throwing when auth/queue access is unavailable (`RemoteRelayService.ts:391-406`). Text submit ignores the returned ID and clears `momentText` (`QuickCaptureView.tsx:151-170`); media dispatch likewise ignores it, calls `clearCapture()`, and performs the success haptic (`:174-220`). Pin drop also signals success after any resolved call (`:122-139`). For media, the Storage upload has already completed before queue creation is attempted (`:184-211`), so the `null` path both erases the preview and strands a bearer download URL/object with no task record.
+- **Impact:** Auth expiry or relay unavailability can make an irreplaceable backstage note, memo, photo, scan, video, or location appear sent while no desktop task exists. Media remains privately stored but is no longer discoverable from the UI.
+- **Fix:** Make dispatch require and return a non-null durable task ID/readback or throw. Clear local state only after that receipt, retain/export failed captures, and create an upload session whose media is linked atomically to the task or deleted on abort.
+- **Acceptance:** Forced no-auth/`null`, rules rejection, offline, and queue-write failure preserve the exact text/media preview with an error and retry; no success haptic appears; successful submission shows a real task ID/status; every uploaded test object is either referenced by that task/note or removed, with no unindexed object after failure.
+
+### ISSUE-983: “Save to Notes” clears media after queue acceptance without verifying that any note was created
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH (false durable-save claim)
+- **Module:** Mobile Remote / Quick Capture / Notes handoff
+- **Evidence:** The review explicitly says the capture “writes it into Notes” and the action is labeled “Save to Notes” (`QuickCaptureView.tsx:346-410`), but the phone clears the capture immediately after adding a pending dispatch document (`:174-220`). The desktop handler turns media into a natural-language instruction asking an agent to call `save_media_note`, awaits only `agentService.sendMessage`, and then marks the dispatch task `completed` without checking a tool result or persisted note ID (`useRemoteCommandListener.ts:817-875`). The Quick Capture view neither subscribes to eventual task status nor exposes failed/retry state.
+- **Impact:** Agent refusal, malformed tool invocation, tool absence, note-write failure, desktop shutdown, or a message that resolves without saving still ends in a cleared phone capture and a task labeled completed. Users cannot distinguish queued, analyzed, and durably saved states.
+- **Fix:** Model upload, queued, processing, note-saved, and failed as separate states. Use a typed capture executor that persists the note/media reference directly or requires a validated tool receipt containing note ID and asset ID before terminal success; return that receipt to the phone and retain retry/export until confirmed.
+- **Acceptance:** Injected agent/tool/note-write failure ends `failed`, keeps the phone capture recoverable, and creates no success state; a successful run reloads a note with the exact media URL/hash and returns its ID; task `completed` is impossible without readback of that note; retries are idempotent.
+
+### ISSUE-984: Dispatch tasks have no atomic claim, so multiple desktop listeners can process one capture more than once
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 CRITICAL (duplicate notes, agent actions, and spend)
+- **Module:** Mobile Remote / Agent dispatch queue
+- **Evidence:** The normal command path uses a Firestore transaction to flip `pending` to `processing` only if still pending (`useRemoteCommandListener.ts:425-452`). The capture dispatch path does not: every listener receives an added/modified pending document (`RemoteRelayService.ts:645-668`), then independently calls a plain `updateDoc(... status: 'processing')` and executes it (`useRemoteCommandListener.ts:807-875`; `RemoteRelayService.ts:674-695`). Two open desktop windows/tabs or a listener race can both pass the pending check before either update propagates.
+- **Impact:** One tap can create duplicate notes, duplicate AI analysis/tool calls, multiple venue searches/pins, or conflicting task terminal states. Media retries and monetary model usage are not exactly-once.
+- **Fix:** Atomically lease/claim dispatch tasks with executor ID, version, lease expiry, and pending-state precondition; make each task carry an idempotency key consumed by the note/tool side effect. Add safe recovery for crashed executors.
+- **Acceptance:** Concurrency tests with 2–10 listeners produce exactly one winning claim and one note/tool invocation; losers do no side effects; expired leases can be reclaimed once; duplicate snapshots/reconnects remain idempotent; terminal status preserves the winning executor and receipt.
+
+### ISSUE-985: Voice recording can become impossible to stop and keeps the microphone alive after unpair or unmount
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 CRITICAL (privacy exposure and recording loss)
+- **Module:** Mobile Remote / Voice memo capture
+- **Evidence:** The microphone stream is a local variable and is stopped only inside `MediaRecorder.onstop` (`QuickCaptureView.tsx:54-80`). No unmount/page-hide cleanup stops the recorder or tracks. The only stop control is the same mic button, which becomes disabled when `isPaired` becomes false (`:250-260`). Therefore a heartbeat/pairing drop during recording disables the user's stop action while capture continues; navigation/unmount can also leave the stream active without producing or retaining the memo.
+- **Impact:** The device microphone may remain live unexpectedly, an irreplaceable memo can be lost, and users have no visible recovery/control once pairing changes or the component disappears.
+- **Fix:** Store the stream in a ref, keep Stop available independent of pairing/dispatch state, and synchronously stop recorder/tracks on explicit stop, unmount, page hide, route change, permission loss, and fatal error. Preserve any finalized blob locally and communicate recording state accessibly.
+- **Acceptance:** Dropping pairing mid-record never disables Stop; unmount/background/permission-revoke tests leave every track `readyState === 'ended'` within a bounded interval; one and only one final blob is retained when data exists; no post-unmount state update or active browser recording indicator remains.
+
+### ISSUE-986: Stopping a memo and immediately selecting other media can create two captures, then silently discard one
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH (cross-media race loses a selected creative asset)
+- **Module:** Mobile Remote / Quick Capture state machine
+- **Evidence:** Tapping Stop immediately sets `isRecording` false, enabling the photo/document/video controls, but the audio blob is set later in the asynchronous `onstop` callback (`QuickCaptureView.tsx:54-76`, `:269-309`). A user can select an image/video in that window; its handler clears current media and sets the new file (`:94-107`), after which delayed `onstop` adds audio too. Review/dispatch prioritizes audio over image/video (`:28-36`, `:184-211`), and successful dispatch clears every media state (`:214-228`).
+- **Impact:** The preview can describe/play one capture while another remains hidden, and Save can upload the memo then permanently clear the newly selected photo/video without warning.
+- **Fix:** Implement an explicit recorder state (`recording`→`stopping/finalizing`→`review`) and disable replacement until finalization, or cancel/confirm replacement deterministically. Enforce exactly one capture object with a stable capture ID rather than three independent nullable states.
+- **Acceptance:** Delayed-`onstop` tests combined with immediate photo/document/video selection can never produce two active assets; the UI shows exactly the asset that will upload; replacement requires an explicit choice and never clears the non-selected asset; repeated stop/data events finalize once.
+
+### ISSUE-987: Voice memo bytes are always relabeled WebM and empty/unsupported recordings can be saved
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH (corrupt or silent creative memo)
+- **Module:** Mobile Remote / MediaRecorder compatibility
+- **Evidence:** `MediaRecorder` is created without selecting/checking a supported MIME type, but its chunks are always rewrapped as `audio/webm` and uploaded with a `.webm` name (`QuickCaptureView.tsx:63-73`, `:184-192`). Browsers that emit another container/codec (notably WebKit variants) can therefore have valid bytes mislabeled. The code creates and offers Save even when no chunk arrived or the blob is zero-length; it records no duration, codec, checksum, or playback/decode validation.
+- **Impact:** A memo may preview inconsistently, upload as an unreadable file, or create a successful-looking silent note that downstream transcription/agent tooling cannot decode.
+- **Fix:** Negotiate with `MediaRecorder.isTypeSupported`, preserve `mediaRecorder.mimeType`, choose the extension from the actual container, and reject/retain-for-retry recordings that are empty, too short, undecodable, or unsupported. Persist technical metadata and hash with the capture.
+- **Acceptance:** Chrome/Firefox/Safari-compatible MIME fixtures upload with matching bytes/content-type/extension and decode server-side; zero-chunk, zero-byte, permission-loss, and sub-minimum-duration cases cannot be sent as successful notes; a valid memo reloads and plays with measured duration matching tolerance.
+
+### ISSUE-988: Venue pin capture can hang indefinitely and rejects valid zero latitude/longitude coordinates
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM (lost or misclassified field capture)
+- **Module:** Mobile Remote / Venue scouting pin
+- **Evidence:** `getCurrentPosition` is called without timeout/options, and `isDispatching` remains true until one of its callbacks fires (`QuickCaptureView.tsx:110-149`), so a stalled provider can lock all capture actions indefinitely. On desktop, a venue task is recognized only when both coordinates are truthy (`useRemoteCommandListener.ts:839-846`); valid coordinates on latitude 0 or longitude 0 fail that branch and fall into the generic “save note” instruction instead of adding/searching the pin.
+- **Impact:** Users near the equator or prime meridian get the wrong creative/scouting action, while location-provider hangs can freeze notes, media, and recording dispatch with no Cancel or retry.
+- **Fix:** Validate coordinates by finite numeric range rather than truthiness; provide explicit accuracy/timeout/maximum-age policy, cancellation, and a terminal location error that unlocks capture. Include accuracy/timestamp and let the user review the coordinate before sharing.
+- **Acceptance:** `0,0`, `0,±180`, and `±90,0` boundary fixtures route correctly when in range; NaN/out-of-range values fail; a never-calling geolocation mock times out/unlocks with retry/cancel; late callbacks cannot enqueue after cancellation; saved pins retain accuracy and capture time.
+
+### ISSUE-989: Generation timeout does not cancel the pending command, so late desktop recovery and retry can spend twice
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 CRITICAL (unbounded duplicate generation cost and conflicting results)
+- **Module:** Mobile Remote / Remote image generation
+- **Evidence:** After 90 seconds the phone only unsubscribes its response listener, clears local sending state, and shows “Generation timed out” (`GenerationMonitor.tsx:123-135`). It does not cancel/tombstone the command or query its actual status. Pending commands remain in Firestore and the desktop scans/processes backlog on mount/recovery (`useRemoteCommandListener.ts:753-770`). The enabled prompt allows the user to retry, producing another command with no idempotency relationship to the first.
+- **Impact:** An offline/busy desktop can later execute every timed-out retry, incurring multiple paid image generations and returning several visually different assets after the user believed each request failed.
+- **Fix:** Assign a client request/idempotency ID and deadline, expose queued/claimed/cancellable state, and require the desktop to atomically reject expired/cancelled work before model invocation. A retry should resume/query the same request unless the user explicitly starts a new paid generation.
+- **Acceptance:** Desktop-offline + timeout + three Retry taps results in at most one provider invocation for the request; cancellation before claim prevents all cost; cancellation after claim reports cannot-cancel/in-progress honestly; late success replaces timeout for the same request rather than appearing as an unrelated result; status survives phone reload.
+
+### ISSUE-990: “Recent Generates” mixes every relay response image into the creative gallery without command-type scoping
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH (asset misattribution and cross-context disclosure)
+- **Module:** Mobile Remote / Generation gallery
+- **Evidence:** `generatedImages` flattens every response containing `imageUrls`, regardless of the originating command's metadata/type or agent, and labels unmatched commands “Remote image generation” (`GenerationMonitor.tsx:178-203`). The same relay `imageUrls` channel is intentionally reused by non-generation `[SHOW]` responses and can be used by chat/boardroom responses (`useRemoteCommandListener.ts:562-587`; `RemoteRelayService.ts:62-73`). The gallery has no project/session/command-type filter.
+- **Impact:** A contract screenshot, prior campaign asset, boardroom image, or “show me” result can appear as a newly generated creative asset under the wrong prompt. This can expose or reuse unreleased material in the wrong creative context.
+- **Fix:** Persist a typed response artifact manifest (`kind`, command/request ID, project/session ID, source, prompt, owner, createdAt) and populate the generation gallery only from confirmed `generate_image` results for the selected scope. Keep other relay images in their originating conversation/action view.
+- **Acceptance:** Mixed fixtures for generate, show, chat, and boardroom display only generate artifacts in Recent Generates; each visible image maps to its exact command, prompt, project/session, and receipt; unmatched/orphan responses are quarantined rather than relabeled; project switching cannot reveal another project's assets.
+
+### ISSUE-991: Generation monitor displays fabricated “Allocating GPU” and “4K Upscaling” stages
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM (false creative-process telemetry)
+- **Module:** Mobile Remote / Generation progress
+- **Evidence:** While any send/generation/creative-agent flag is active, the monitor animates a looping bar labeled “Allocating GPU” and “4K Upscaling” (`GenerationMonitor.tsx:254-300`). The remote image request supplies prompt, aspect ratio, count 1, and model `pro` (`useRemoteCommandListener.ts:515-537`); it receives only generic streaming/final responses and no allocation, resolution, upscaler, or stage telemetry. The same card can render for generic `isAgentProcessing && currentModule === 'creative'`, not only an image job.
+- **Impact:** Users are told expensive/specific processing stages are underway even when the job is merely queued, using a non-4K output, failing before provider invocation, or doing unrelated creative reasoning.
+- **Fix:** Render only real backend/provider stage events tied to the active request, including queued/claimed/generating/uploading/complete where supported. Otherwise use honest indeterminate copy without resolution/GPU claims.
+- **Acceptance:** A queued/offline job never shows GPU/upscale activity; non-4K and failed-before-provider fixtures never say 4K; each displayed stage is backed by a timestamped event for the same request; absent telemetry produces a neutral “Working/Waiting for desktop” state.

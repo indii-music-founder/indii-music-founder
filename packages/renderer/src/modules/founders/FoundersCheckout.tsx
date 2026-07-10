@@ -79,6 +79,8 @@ export default function FoundersCheckout() {
                     amount: 250000, // $2,500.00
                     quantity: 1
                 }],
+                // Routes the Stripe webhook to founder fulfillment (ISSUE-866)
+                metadata: { type: 'founder_seat' },
                 successUrl,
                 cancelUrl
             });
@@ -237,7 +239,7 @@ export default function FoundersCheckout() {
 
                         <p className="text-gray-400 text-base md:text-lg max-w-2xl mx-auto leading-relaxed mb-10">
                             {selectedPath === 'software-purchase'
-                                ? 'Pay securely via Stripe. Your lifetime access begins immediately.'
+                                ? 'Pay securely via Stripe. Your Founder seat is activated within 24 hours of payment — you\'ll receive your seat number and permanent agreement hash.'
                                 : 'Support indii\'s launch and receive full platform access.'}
                         </p>
 
