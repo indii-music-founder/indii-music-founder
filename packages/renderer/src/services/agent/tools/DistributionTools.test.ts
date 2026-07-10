@@ -118,7 +118,7 @@ describe('DistributionTools', () => {
             expect(parsed.success).toBe(true);
             expect(parsed.data.isrc).toMatch(/^USIND26\d{5}$/);
             expect(parsed.data.track_title).toBe('Test Track');
-            expect(parsed.data.registry_status).toBe('REGISTERED');
+            expect(parsed.data.registry_status).toBe('RECORDED_EXTERNAL');
         });
     });
 
