@@ -1,9 +1,59 @@
 import { storage } from '@/services/firebase';
-import { ref, uploadBytes, uploadString } from 'firebase/storage';
+import { ref, uploadBytes, uploadString, UploadResult } from 'firebase/storage';
 
 export type CreativeVaultScope = 'assets' | 'objects' | 'characters' | 'style' | 'masks' | 'outputs';
 
+// MIME type to file extension mapping
+const MIME_TO_EXTENSION: Record<string, string> = {
+    'image/jpeg': 'jpg',
+    'image/png': 'png',
+    'image/webp': 'webp',
+    'image/gif': 'gif',
+    'image/svg+xml': 'svg',
+    'video/mp4': 'mp4',
+    'video/webm': 'webm',
+    'video/quicktime': 'mov',
+    'video/x-msvideo': 'avi',
+    'audio/mpeg': 'mp3',
+    'audio/mp4': 'm4a',
+    'audio/wav': 'wav',
+    'audio/webm': 'webm',
+    'audio/flac': 'flac',
+};
+
 export class CreativeStorageService {
+    /**
+     * Detect MIME type from file or data URL
+     */
+    private static detectMimeType(media: File | Blob | string): string {
+        if (media instanceof File) {
+            return media.type || 'application/octet-stream';
+        }
+        if (media instanceof Blob) {
+            return media.type || 'application/octet-stream';
+        }
+        if (typeof media === 'string' && media.startsWith('data:')) {
+            const match = media.match(/^data:([^;]+)/);
+            return match?.[1] || 'application/octet-stream';
+        }
+        return 'application/octet-stream';
+    }
+
+    /**
+     * Get extension from MIME type, defaulting by mediaType category if unknown
+     */
+    private static getExtensionForMime(mimeType: string, mediaTypeCategory: 'image' | 'video' | 'audio'): string {
+        const ext = MIME_TO_EXTENSION[mimeType];
+        if (ext) return ext;
+
+        // Fallback by category
+        if (mimeType.startsWith('image/')) return 'jpg';
+        if (mimeType.startsWith('video/')) return 'mp4';
+        if (mimeType.startsWith('audio/')) return 'wav';
+
+        // Last resort: use category default
+        return mediaTypeCategory === 'video' ? 'mp4' : mediaTypeCategory === 'audio' ? 'wav' : 'jpg';
+    }
     /**
      * Helper to downscale and compress reference images using a canvas.
      * Max dimension: 2048px. Quality: 0.8 JPEG.
@@ -130,11 +180,21 @@ export class CreativeStorageService {
 
         // Apply auto-compression for reference images before upload
         let mediaToUpload = media;
+        let detectedMimeType = this.detectMimeType(media);
+
         if (mediaType === 'image') {
             mediaToUpload = await this.compressImage(media);
+            // After compression, assume JPEG unless original was PNG (preserve transparency)
+            if (detectedMimeType === 'image/png') {
+                detectedMimeType = 'image/png';
+            } else {
+                detectedMimeType = 'image/jpeg';
+            }
         }
 
-        const extension = mediaType === 'video' ? 'mp4' : mediaType === 'audio' ? 'wav' : 'jpg';
+        // Get extension based on actual MIME type
+        const extension = this.getExtensionForMime(detectedMimeType, mediaType);
+
         const scope = options?.scope || 'assets';
         const basePath = options?.projectId
             ? mediaType === 'video'
@@ -151,20 +211,30 @@ export class CreativeStorageService {
         if (typeof mediaToUpload === 'string') {
             // Data URL string
             if (mediaToUpload.startsWith('data:')) {
-                await uploadString(storageRef, mediaToUpload, 'data_url');
+                await uploadString(storageRef, mediaToUpload, 'data_url', {
+                    contentType: detectedMimeType,
+                });
             } else if (/^https?:\/\//i.test(mediaToUpload)) {
                 const response = await fetch(mediaToUpload);
                 if (!response.ok) {
                     throw new Error(`Failed to fetch reference media: ${response.status} ${response.statusText}`);
                 }
-                await uploadBytes(storageRef, await response.blob());
+                const blob = await response.blob();
+                await uploadBytes(storageRef, blob, {
+                    contentType: blob.type || detectedMimeType,
+                });
             } else {
                 // Raw Base64
-                await uploadString(storageRef, mediaToUpload, 'base64');
+                await uploadString(storageRef, mediaToUpload, 'base64', {
+                    contentType: detectedMimeType,
+                });
             }
         } else {
             // File or Blob
-            await uploadBytes(storageRef, mediaToUpload);
+            const mimeType = (mediaToUpload as Blob).type || detectedMimeType;
+            await uploadBytes(storageRef, mediaToUpload, {
+                contentType: mimeType,
+            });
         }
 
         return `gs://${bucket}/${filename}`;

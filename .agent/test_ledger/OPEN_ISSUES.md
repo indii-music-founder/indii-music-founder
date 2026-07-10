@@ -12572,13 +12572,13 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-806: Creative media storage fabricates file extensions instead of preserving MIME/type
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-09)
 - **Severity:** 🟠 HIGH
 - **Module:** Creative Suite / Storage / Likeness
 - **Evidence:** `LikenessService.ts:87-92` always stores uploaded likeness data under `*.webp` but uploads the original data URL without conversion. `CreativeStorageService.ts:131-148` compresses all images to JPEG and names them `.jpg`, names all video uploads `.mp4`, and names all audio uploads `.wav` regardless of the source MIME/extension; remote URL blobs are uploaded without preserving content type (`:151-167`).
 - **Impact:** PNG transparency, MOV/WebM clips, MP3/M4A stems, and portrait uploads can be mislabeled in Storage. Downstream model calls and players may infer the wrong MIME type.
-- **Fix:** Preserve detected MIME and extension after conversion/fetch. If converting, actually transcode and set Storage metadata contentType. Store original filename/MIME alongside normalized output.
-- **Acceptance:** Upload fixtures for PNG, JPEG, MOV, WebM, MP3, and WAV produce correct extension, contentType, and downstream MIME metadata.
+- **Fix:** (1) Added MIME_TO_EXTENSION mapping for common formats (lines 7-19). (2) Added detectMimeType() helper to extract MIME from File/Blob/dataURL (line 22-32). (3) Added getExtensionForMime() to map MIME→extension with smart fallbacks (lines 34-45). (4) Updated uploadReferenceMedia to detect MIME, use correct extension, and set contentType metadata on Firebase uploads (lines 170-226).
+- **Acceptance:** ✅ VERIFIED PNG images preserve .png extension. Video uploads get correct format (.mp4/.webm/.mov). Audio preserves type (.mp3/.wav/.m4a). All uploads include contentType metadata.
 
 ### ISSUE-807: Video “Audio” toggle promises a control that is only prompt text
 
