@@ -123,6 +123,50 @@ async function handleLicensingCheckoutCompleted(session: Stripe.Checkout.Session
   });
 }
 
+/**
+ * Founder seat purchase completed (ISSUE-866).
+ *
+ * Founder activation itself stays a deliberate step (seat numbering, public
+ * display name, agreement hash, GitHub commit — see activateFounderPass), but
+ * the PAYMENT must never be silently dropped. This handler verifies the paid
+ * amount, records an idempotent fulfillment task, and flags the user profile
+ * so the UI can show "payment received — activation pending".
+ */
+async function handleFounderSeatCheckoutCompleted(session: Stripe.Checkout.Session): Promise<void> {
+  const userId = session.metadata?.userId || session.client_reference_id;
+  if (!userId) {
+    logger.error('[handleFounderSeatCheckoutCompleted] Missing userId metadata — cannot fulfill', { sessionId: session.id });
+    throw new Error('Founder seat checkout is missing userId metadata');
+  }
+
+  const FOUNDER_SEAT_PRICE_CENTS = 250000; // $2,500.00
+  const paidCents = session.amount_total ?? 0;
+  if (paidCents < FOUNDER_SEAT_PRICE_CENTS) {
+    logger.error(`[handleFounderSeatCheckoutCompleted] Underpaid founder seat: ${paidCents} < ${FOUNDER_SEAT_PRICE_CENTS}`, { sessionId: session.id });
+    throw new Error('Founder seat payment amount below seat price');
+  }
+
+  const db = getFirestore();
+  // Idempotent by session id — Stripe retries must not duplicate the task.
+  await db.collection('founder_fulfillment_queue').doc(session.id).set({
+    userId,
+    stripeSessionId: session.id,
+    paymentIntentId: typeof session.payment_intent === 'string' ? session.payment_intent : null,
+    amountCents: paidCents,
+    customerEmail: session.customer_details?.email || null,
+    status: 'paid_pending_activation',
+    createdAt: FieldValue.serverTimestamp(),
+  }, { merge: true });
+
+  await db.collection('users').doc(userId).set({
+    founderPaymentStatus: 'paid_pending_activation',
+    founderPaymentSessionId: session.id,
+    founderPaidAt: FieldValue.serverTimestamp(),
+  }, { merge: true });
+
+  logger.info(`[handleFounderSeatCheckoutCompleted] Founder payment recorded for ${maskId(userId)} — activation queued`);
+}
+
 async function handleCheckoutCompleted(event: Stripe.Event): Promise<void> {
   const session = event.data.object as Stripe.Checkout.Session;
 
@@ -135,6 +179,12 @@ async function handleCheckoutCompleted(event: Stripe.Event): Promise<void> {
   // Route licensing purchases separately.
   if (session.metadata?.type === 'licensing_purchase') {
     await handleLicensingCheckoutCompleted(session);
+    return;
+  }
+
+  // Route founder seat purchases separately (ISSUE-866).
+  if (session.metadata?.type === 'founder_seat') {
+    await handleFounderSeatCheckoutCompleted(session);
     return;
   }
 
@@ -394,7 +444,24 @@ export const stripeWebhook = onRequest({
     const alreadyProcessed = await db.runTransaction(async (tx) => {
       const snap = await tx.get(deliveryRef);
       if (snap.exists) {
-        return true; // Already processed or in-flight
+        // ISSUE-883: a 'failed' delivery is retryable — Stripe's retry must
+        // reprocess it, not be swallowed as a duplicate. A stale 'processing'
+        // claim (>5 min old) is also retakeable: a crashed worker never flips
+        // its doc to failed, and Stripe only retries after we 500/timeout.
+        const status = snap.get('status');
+        const receivedAt = snap.get('receivedAt');
+        const receivedMs = typeof receivedAt?.toMillis === 'function' ? receivedAt.toMillis() : 0;
+        const staleProcessing = status === 'processing' && (Date.now() - receivedMs) > 5 * 60 * 1000;
+        if (status !== 'failed' && !staleProcessing) {
+          return true; // Processed, or another worker is actively on it
+        }
+        tx.update(deliveryRef, {
+          status: 'processing',
+          receivedAt: FieldValue.serverTimestamp(),
+          retriedAt: FieldValue.serverTimestamp(),
+          retryCount: FieldValue.increment(1),
+        });
+        return false;
       }
       // Atomically mark as in-flight so concurrent retries are blocked
       tx.set(deliveryRef, {
