@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-07-09 21:05 EDT
+**Updated:** 2026-07-09 21:06 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+40ff4a750 chore: session checkpoint [21:05]
 fc2c02824 chore: session checkpoint [21:05]
 7a077c679 chore: session checkpoint [21:05]
 c34275c97 chore: session checkpoint [21:04]
@@ -13,7 +14,6 @@ eb2b41d33 chore: session checkpoint [19:00]
 cb9ca1b11 chore: session checkpoint [09:09]
 74f5353f4 fix(projects): unify split default-projectId sentinel (ISSUE-772 fix 5)
 1092957ee chore: session checkpoint [08:59]
-9c2c1b2c5 fix(sync): resolve cross-device asset divergence via org scoping (ISSUE-772)
 ```
 
 ## Working State
