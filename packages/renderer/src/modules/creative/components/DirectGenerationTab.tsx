@@ -326,9 +326,12 @@ export default function DirectGenerationTab() {
 
                                 <div className="flex flex-col gap-2">
                                     <label className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">API Engine Grade</label>
-                                    <div className="grid grid-cols-3 gap-1.5">
-                                        {['lite', 'fast', 'pro'].map((tier) => {
-                                            const isSelected = studioControls.model === tier;
+                                    <div className="grid grid-cols-2 gap-1.5">
+                                        {/* No supported Lite image model exists (ISSUE-871) — offering it
+                                            silently downgraded to the legacy 2.5 model. Fast + Pro only. */}
+                                        {['fast', 'pro'].map((tier) => {
+                                            const isSelected = studioControls.model === tier
+                                                || (tier === 'fast' && studioControls.model === 'lite');
                                             return (
                                                 <button
                                                     key={tier}

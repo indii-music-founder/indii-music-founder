@@ -259,7 +259,10 @@ function normalizeThinkingLevel(thinkingLevel?: string): 'minimal' | 'high' | un
 
 function resolveImageModel(model: z.infer<typeof GenerateImageSchema>['model']): string {
   if (model === 'pro') return IMAGE_MODEL_IDS.pro;
-  if (model === 'legacy' || model === 'lite') return IMAGE_MODEL_IDS.legacy;
+  // Explicit legacy only. 'lite' is NOT a silent downgrade to the 2.5 legacy
+  // model (ISSUE-871) — no supported Lite image model exists, so lite resolves
+  // to fast (same price tier, full capability set).
+  if (model === 'legacy') return IMAGE_MODEL_IDS.legacy;
   return IMAGE_MODEL_IDS.fast;
 }
 
@@ -269,10 +272,14 @@ function resolveVideoModel(model: string | undefined): VideoModelId {
   return VIDEO_MODEL_IDS.fast;
 }
 
-const OMNI_FLASH_DEFAULT_MODEL = 'gemini-omni-flash-preview'; // per NotebookLM Omni Flash API source
-
-function resolveOmniFlashModel(): string {
-  return process.env.GEMINI_OMNI_FLASH_MODEL || OMNI_FLASH_DEFAULT_MODEL;
+/**
+ * Omni Flash model resolution (ISSUE-872): there is NO verified default —
+ * the old 'gemini-omni-flash-preview' fallback was a placeholder that let
+ * jobs start (and reserve cost) against a model that may not exist. Omni is
+ * unavailable unless GEMINI_OMNI_FLASH_MODEL is explicitly configured.
+ */
+function resolveOmniFlashModel(): string | null {
+  return process.env.GEMINI_OMNI_FLASH_MODEL || null;
 }
 
 function sleep(ms: number): Promise<void> {
@@ -1461,7 +1468,14 @@ export const generateOmniRemixV3 = onCall({ timeoutSeconds: 540, secrets: [gemin
   const userId = request.auth.uid;
   const jobId = getDb().collection('creative_jobs').doc().id;
 
+  // ISSUE-872: no placeholder model — Omni is unavailable until configured.
   const modelId = resolveOmniFlashModel();
+  if (!modelId) {
+    throw new HttpsError(
+      'failed-precondition',
+      'Omni Remix is not available yet: no Omni model is configured on the server. No cost was reserved or charged.'
+    );
+  }
   const durationSeconds = Math.min(12, Math.max(4, data.durationSeconds));
   const serverEstimatedCost = estimateVideoCost(
     durationSeconds,
