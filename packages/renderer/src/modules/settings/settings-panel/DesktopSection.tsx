@@ -492,7 +492,9 @@ const DesktopSection: React.FC = () => {
             <div className="mt-6 flex items-start gap-3 p-3.5 rounded-xl bg-slate-800/30 border border-slate-700/30">
                 <Info size={14} className="text-slate-500 mt-0.5 shrink-0" />
                 <p className="text-xs text-slate-500 leading-relaxed">
-                    indii automatically checks for updates on launch and every 4 hours. Downloaded updates are installed when you quit the app, or you can click "Restart & Install" to apply immediately.
+                    {status === 'downloaded'
+                        ? 'An update is downloaded and ready. Click "Restart & Install" to apply it now, or it installs automatically when you quit the app.'
+                        : 'indii automatically checks for updates on launch and every 4 hours. When an update is downloaded, a "Restart & Install" button appears here.'}
                 </p>
             </div>
         </div>
