@@ -403,12 +403,9 @@ export class SubscriptionService {
           ? this.formatQuotaCheckError(subscriptionResult.reason)
           : (usageResult.status === 'rejected' ? this.formatQuotaCheckError(usageResult.reason) : 'unknown');
 
-        if (this.isQuotaServiceInfrastructureError(reason) && !this.isAuthQuotaCheckError(reason)) {
-          logger.warn(`[SubscriptionService] Quota service unavailable (${reason}); allowing action and relying on backend usage tracking.`);
-          return { allowed: true };
-        }
-
-        logger.warn(`[SubscriptionService] Pre-flight check failed (${reason}); blocking action.`);
+        // ISSUE-886: FAIL CLOSED. The creative gateway has no quota enforcement
+        // of its own, so an infra outage here must not grant unmetered access.
+        logger.warn(`[SubscriptionService] Pre-flight check failed (${reason}); blocking action (fail-closed).`);
         return { allowed: false, reason: `Subscription quota check failed: ${reason}` };
       }
 
@@ -523,10 +520,12 @@ export class SubscriptionService {
           };
       }
     } catch (error: unknown) {
-      // GRACEFUL DEGRADATION: If subscription check fails (timeout, auth, network),
-      // allow the action to proceed for demo experience. The backend will enforce limits.
-      logger.warn('[SubscriptionService] Quota check failed, allowing action with graceful degradation:', error instanceof Error ? error.message : String(error));
-      return { allowed: true };
+      // ISSUE-886: FAIL CLOSED. The backend does NOT independently enforce
+      // plan limits, so "allow on error" was unmetered generation during any
+      // subscription-service outage.
+      const message = error instanceof Error ? error.message : String(error);
+      logger.warn('[SubscriptionService] Quota check failed; blocking action (fail-closed):', message);
+      return { allowed: false, reason: `Subscription quota check failed: ${message}` };
     }
   }
 
