@@ -289,7 +289,7 @@ describe('Creative Director 12-Click Daisychain', () => {
         // --- CLICK 1: Like Item A in Gallery ---
         const likeBtn = screen.getAllByTestId('like-btn')[0]!;
         fireEvent.click(likeBtn);
-        expect(mockToastSuccess).toHaveBeenCalledWith("Feedback recorded: Liked");
+        expect(mockToastInfo).toHaveBeenCalledWith("Liked");
 
         // --- CLICK 2: Maximize Item A ---
         const maximizeButtons = screen.getAllByTestId('view-fullsize-btn');
