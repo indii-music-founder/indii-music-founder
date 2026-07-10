@@ -686,10 +686,11 @@ export default function DirectGenerationTab() {
                                                         className="p-1.5 rounded-lg bg-white/5 border border-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-colors" 
                                                         onClick={(e) => {
                                                             e.stopPropagation();
-                                                            // Simple download anchor logic
+                                                            // Download with correct file extension
                                                             const a = document.createElement('a');
                                                             a.href = item.url;
-                                                            a.download = `${item.type}_${item.id}.png`;
+                                                            const ext = item.type === 'video' ? 'mp4' : 'png';
+                                                            a.download = `${item.type}_${item.id}.${ext}`;
                                                             a.click();
                                                         }}
                                                     >
