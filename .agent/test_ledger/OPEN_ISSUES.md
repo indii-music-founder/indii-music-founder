@@ -13571,3 +13571,31 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 - **Impact:** Agent planning can overstate that ads/newsletters were deployed or synced, even though the implementations are draft/package-only.
 - **Fix:** Rename/describe these tools as `prepare_micro_ad_campaign` and `prepare_email_newsletter`, or implement real provider dispatch with connected account IDs, provider campaign IDs, idempotency keys, and confirmed send/deploy receipts.
 - **Acceptance:** Tool declarations, return payloads, and user-facing messages all distinguish `draft/package_ready` from `deployed/sent`; provider deployment success includes a verified platform ID.
+
+### ISSUE-906: Right-panel Project Assets shows giant alt text instead of images for gs:// assets
+
+- **Status:** ✅ FIXED (2026-07-10)
+- **Severity:** 🟠 HIGH (reported live by founder)
+- **Module:** Core / Right Panel / Assets
+- **Evidence:** `useSafeImageUrl.ts:34-37` passed any non-http(s) URL straight through to `<img src>`. Project file nodes store `gs://` storage URIs (creativeHistorySlice persists `storageUri || url`), which browsers cannot load — the `<img>` failed and rendered its alt text (the prompt) as large text. `AssetThumbnail` in `AssetsPanel.tsx` had no error fallback either.
+- **Impact:** The Project Assets panel showed only "large font describing the first few words of the image" — no thumbnails at all for persisted assets.
+- **Fix:** (1) `useSafeImageUrl` now resolves `gs://` URIs via `getDownloadURL` before fetching to a blob URL, and returns null for unknown schemes (e.g. `placeholder:` sentinels) instead of passing them to `<img>`. (2) `AssetThumbnail` tracks load failure and renders null on error so the type-icon fallback shows instead of browser alt text.
+- **Acceptance:** gs://-backed assets render thumbnails; failed loads show the type icon, never raw alt text.
+
+### ISSUE-907: Settings updater copy promises a "Restart & Install" button that is not rendered
+
+- **Status:** ✅ FIXED (2026-07-10)
+- **Severity:** 🟡 MEDIUM (reported live by founder)
+- **Module:** Settings / Desktop & Updates
+- **Evidence:** `DesktopSection.tsx:495` always said 'you can click "Restart & Install" to apply immediately', but the button only renders when `status === 'downloaded'`. With no update downloaded, the text pointed at a nonexistent control.
+- **Fix:** Copy is now conditional: when downloaded, it says the update is ready and the button applies it; otherwise it says the button appears once an update is downloaded.
+- **Acceptance:** The info text never references a control that is not on screen.
+
+### ISSUE-908: No desktop UI existed to generate the Mobile Remote pairing code
+
+- **Status:** ✅ FIXED (2026-07-10)
+- **Severity:** 🟠 HIGH (dead-end pairing flow)
+- **Module:** Settings / Mobile Remote
+- **Evidence:** The phone-side pairing modal (`MobileRemote.tsx:207`) instructs "Enter the 64-character pairing code from your desktop studio Settings panel", but Settings had no such section. The desktop QR generator lived only inside the mobile-remote module, which desktop users can never reach (App.tsx routes only phone-class devices there). Backend (`createHandoffCode`/`redeemHandoffCode`) existed and was unused from desktop.
+- **Fix:** New `RemoteSection.tsx` settings section ("Mobile Remote", Smartphone icon) — generates the handoff code via `createHandoffCode`, renders QR (same `?code=` URL scheme the phone redeems) plus copyable 64-char code, 5-minute expiry countdown that clears dead codes, regenerate button, Cloud Relay status row, and honest info copy. Registered in `SettingsPanel.tsx`; i18n keys added to en/es locales.
+- **Acceptance:** Desktop Settings → Mobile Remote produces a scannable QR and manual code the phone's Link Device flow accepts.

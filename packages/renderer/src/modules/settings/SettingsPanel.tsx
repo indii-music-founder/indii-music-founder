@@ -24,6 +24,7 @@ import {
     Palette,
     Shield,
     Monitor,
+    Smartphone,
     LucideIcon,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -34,16 +35,18 @@ import NotificationsSection from './settings-panel/NotificationsSection';
 import AppearanceSection from './settings-panel/AppearanceSection';
 import SecuritySection from './settings-panel/SecuritySection';
 import DesktopSection from './settings-panel/DesktopSection';
+import RemoteSection from './settings-panel/RemoteSection';
 
 // ---------------------------------------------------------------------------
 // Types & Navigation Config
 // ---------------------------------------------------------------------------
 
-type SettingsSection = 'profile' | 'connections' | 'notifications' | 'appearance' | 'desktop' | 'security';
+type SettingsSection = 'profile' | 'connections' | 'remote' | 'notifications' | 'appearance' | 'desktop' | 'security';
 
 const SECTIONS: Array<{ id: SettingsSection; label: string; icon: LucideIcon; description: string }> = [
     { id: 'profile', label: 'Profile', icon: User, description: 'Name, avatar, and bio' },
     { id: 'connections', label: 'Connected Services', icon: Link2, description: 'Email, social, and integrations' },
+    { id: 'remote', label: 'Mobile Remote', icon: Smartphone, description: 'Pair and sync your phone or tablet' },
     { id: 'notifications', label: 'Notifications', icon: Bell, description: 'Push, email, and sound preferences' },
     { id: 'appearance', label: 'Appearance', icon: Palette, description: 'Theme, layout, and animations' },
     { id: 'desktop', label: 'Desktop & Updates', icon: Monitor, description: 'App version, auto-updates' },
@@ -62,6 +65,7 @@ const SettingsPanel: React.FC = () => {
         switch (activeSection) {
             case 'profile': return <ProfileSection />;
             case 'connections': return <ConnectionsSection />;
+            case 'remote': return <RemoteSection />;
             case 'notifications': return <NotificationsSection />;
             case 'appearance': return <AppearanceSection />;
             case 'desktop': return <DesktopSection />;
