@@ -71,7 +71,7 @@ export interface AudioSemanticData {
     };
     targetPrompts: {
         image: string;      // Optimized for gemini-3-pro-image-preview
-        veo: string;        // Optimized for veo-3.1-generate-preview
+        veo: string;        // Optimized for veo-3.1-generate-001
     };
 }
 

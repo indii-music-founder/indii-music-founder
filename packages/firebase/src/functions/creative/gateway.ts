@@ -53,10 +53,11 @@ const IMAGE_MODEL_IDS = {
   legacy: 'gemini-2.5-flash-image',
 } as const;
 
+// GA model IDs (ISSUE-867) — the *-preview IDs are deprecated April 2026.
 const VIDEO_MODEL_IDS = {
-  fast: 'veo-3.1-fast-generate-preview',
-  pro: 'veo-3.1-generate-preview',
-  lite: 'veo-3.1-lite-generate-preview',
+  fast: 'veo-3.1-fast-generate-001',
+  pro: 'veo-3.1-generate-001',
+  lite: 'veo-3.1-lite-generate-001',
 } as const;
 type VideoModelId = typeof VIDEO_MODEL_IDS[keyof typeof VIDEO_MODEL_IDS];
 

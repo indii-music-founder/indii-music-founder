@@ -28,6 +28,7 @@ export const FUNCTION_INTELLIGENCE_MODELS = {
         GENERATION: 'veo-3.1-generate-001',
         PRO: 'veo-3.1-generate-001',
         FAST: 'veo-3.1-fast-generate-001',
+        LITE: 'veo-3.1-lite-generate-001',
     },
     SPEECH: {
         GENERATION: 'gemini-2.5-pro-tts',
