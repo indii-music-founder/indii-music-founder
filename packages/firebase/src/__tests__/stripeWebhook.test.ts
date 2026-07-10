@@ -220,10 +220,16 @@ describe('Stripe Webhook Handler (WO-8)', () => {
         const event: Partial<Stripe.Event> = { id: 'evt_dup', type: 'checkout.session.completed' };
         mocks.mockConstructEvent.mockReturnValue(event);
 
-        // Simulate Firestore returning "already processed"
+        // Simulate Firestore returning "already processed".
+        // The source calls snap.get('status') (DocumentSnapshot API), so the mock
+        // must provide a .get() method. status='completed' → not 'failed' → returns true.
         mocks.mockRunTransaction.mockImplementationOnce(async (cb) => {
+            const snapData: Record<string, unknown> = { status: 'completed' };
             const tx = {
-                get: vi.fn().mockResolvedValue({ exists: true }),
+                get: vi.fn().mockResolvedValue({
+                    exists: true,
+                    get: (field: string) => snapData[field],
+                }),
                 set: mocks.mockSet,
                 update: mocks.mockUpdate,
             };
