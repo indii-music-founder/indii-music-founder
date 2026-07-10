@@ -123,23 +123,30 @@ describe('MechanicalRoyaltyService', () => {
     });
 
     describe('isReleaseClearedForDistribution', () => {
-        it('should return cleared: true if no pending tracks', async () => {
+        it('should return status: cleared if no pending tracks', async () => {
             vi.spyOn(MechanicalRoyaltyService, 'getLicenses').mockResolvedValueOnce([
                 { status: 'license_active', trackTitle: 'S1' } as unknown as Awaited<ReturnType<typeof MechanicalRoyaltyService.getLicenses>>[number]
             ]);
 
             const result = await MechanicalRoyaltyService.isReleaseClearedForDistribution('r1');
-            expect(result.cleared).toBe(true);
+            expect(result.status).toBe('cleared');
         });
 
-        it('should return cleared: false if tracks are pending', async () => {
+        it('should return status: pending if tracks are pending', async () => {
             vi.spyOn(MechanicalRoyaltyService, 'getLicenses').mockResolvedValueOnce([
                 { status: 'pending_search', trackTitle: 'S1' } as unknown as Awaited<ReturnType<typeof MechanicalRoyaltyService.getLicenses>>[number]
             ]);
 
             const result = await MechanicalRoyaltyService.isReleaseClearedForDistribution('r1');
-            expect(result.cleared).toBe(false);
+            expect(result.status).toBe('pending');
             expect(result.pendingTracks).toContain('S1');
+        });
+
+        it('should return status: unknown if getLicenses returns null', async () => {
+            vi.spyOn(MechanicalRoyaltyService, 'getLicenses').mockResolvedValueOnce(null);
+
+            const result = await MechanicalRoyaltyService.isReleaseClearedForDistribution('r1');
+            expect(result.status).toBe('unknown');
         });
     });
 });
