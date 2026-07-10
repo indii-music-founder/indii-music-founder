@@ -323,9 +323,12 @@ export default function OmniWorkflow() {
                 const previewUrl = URL.createObjectURL(file);
                 const uploadedUri = await CreativeStorageService.uploadReferenceMedia(userId, file, 'video');
                 setReferenceVideoUri(uploadedUri);
+                setSourceJobId(null);
                 setStudioControls({ omniReferenceVideo: previewUrl });
                 toast.success(`Loaded reference performance: ${file.name}`);
             } catch (error) {
+                setRefVideoFile(null);
+                setReferenceVideoUri(null);
                 toast.error(`Reference upload failed: ${callableErrorMessage(error)}`);
             }
         }
@@ -537,11 +540,15 @@ export default function OmniWorkflow() {
                         Gemini Omni Stage
                     </h2>
                     {studioControls.omniReferenceVideo && (
-                        <button 
-                            onClick={() => { 
-                                setRefVideoFile(null); 
+                        <button
+                            onClick={() => {
+                                if (studioControls.omniReferenceVideo?.startsWith('blob:')) {
+                                    URL.revokeObjectURL(studioControls.omniReferenceVideo);
+                                }
+                                setRefVideoFile(null);
                                 setReferenceVideoUri(null);
-                                setStudioControls({ omniReferenceVideo: null }); 
+                                setSourceJobId(null);
+                                setStudioControls({ omniReferenceVideo: null });
                                 setOutputVideoUrl(null);
                                 toast.info("Reference video cleared");
                             }}
