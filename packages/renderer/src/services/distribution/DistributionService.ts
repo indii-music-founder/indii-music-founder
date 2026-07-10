@@ -585,7 +585,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
     async submitRelease(
         releaseData: IngestionMetadata & { sftpConfig?: SFTPConfig; releaseId?: string },
         onProgress?: (event: { step?: string; status?: string; progress?: number; detail?: string; log?: string }) => void
-    ): Promise<{ status: string; xml?: string; xml_path?: string; tracks?: unknown[] }> {
+    ): Promise<{ status: string; xml?: string; xml_path?: string; tracks?: unknown[]; sftp_skipped?: boolean }> {
         if (!window.electronAPI) {
             throw new Error('Electron environment required for release submission');
         }
