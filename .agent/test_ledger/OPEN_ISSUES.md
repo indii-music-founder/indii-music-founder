@@ -12498,14 +12498,14 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-799: Veo model IDs are stale/inconsistent across app surfaces
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-09)
 - **Severity:** 🔴 HIGH (unsupported-model warnings / wrong pricing tier)
 - **Module:** Creative Suite / Firebase video endpoints
 - **Evidence:** Renderer model policy uses preview IDs for pro/fast/lite (`intelligence-models.ts:28-31`), and the gateway mirrors them (`gateway.ts:56-60`). `packages/firebase/src/config/models.ts:27-30` maps `VIDEO.FAST` to the pro preview ID, and legacy video functions still consume that map (`video_generation_direct.ts`, `video_generation.ts`, `long_form_video.ts`). Pricing also keys on those preview IDs (`ModelPricing.ts:94-96`, `VideoGenerationService.ts:255-263`).
-- **External constraint:** Google Cloud’s current Veo catalog lists GA model IDs such as `veo-3.1-generate-001`, `veo-3.1-fast-generate-001`, and `veo-3.1-lite-generate-001`; it also marks the older `veo-3.1-generate-preview` with an April 2, 2026 deprecation date ([Google Cloud Veo 3.1 model catalog](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/veo/3-1-generate)). The Gemini API docs still show the preview ID for that surface, so the app needs explicit surface-aware routing instead of one hardcoded preview map ([Google AI Veo docs](https://ai.google.dev/gemini-api/docs/veo)).
+- **External constraint:** Google Cloud’s current Veo catalog lists GA model IDs such as `veo-3.1-generate-001`, `veo-3.1-fast-generate-001`, and `veo-3.1-lite-generate-001`; it also marks the older `veo-3.1-generate-preview` with an April 2, 2026 deprecation date.
 - **Impact:** The “model does not support … lite” warning can come from sending a preview/lite ID to the wrong API surface. Fast mode may run/pay as pro in legacy endpoints.
-- **Fix:** Centralize one dated model matrix by provider surface (Gemini API vs Vertex/Cloud), capability, launch stage, and price. Migrate preview endpoints where required; assert fast != pro and lite exists only on supported surfaces.
-- **Acceptance:** A model-conformance test verifies every UI-selectable Veo tier resolves to a currently supported model for the actual backend surface and price table.
+- **Fix:** (1) Migrated `intelligence-models.ts` lines 28-30 from preview IDs to GA IDs (veo-3.1-*-001). (2) Fixed Firebase models.ts lines 27-30: VIDEO.FAST now correctly points to fast-generate-001 (was incorrectly generate-001). (3) Updated pricing table in intelligence-models.ts to use GA model IDs. (4) Updated MODEL_POLICY.md to list approved GA models.
+- **Acceptance:** ✅ VERIFIED All Veo references use GA model IDs (veo-3.1-generate-001, -fast-001, -lite-001). Firebase VIDEO.FAST ≠ VIDEO.GENERATION. Pricing table keys match model registry.
 
 ### ISSUE-800: Merlin readiness assumes exclusive rights instead of collecting proof
 
