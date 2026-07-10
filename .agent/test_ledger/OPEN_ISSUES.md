@@ -13382,23 +13382,25 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-887: Backend identifier recording lets any signed-in user mark arbitrary ISRC/UPC values as REGISTERED
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-10, deployed to us-central1)
 - **Severity:** 🔴 CRITICAL (rights/metadata integrity)
 - **Module:** Distribution / ISRC + UPC registry
 - **Evidence:** `recordDistributionIdentifier()` authenticates the caller and checks only that `type` is `isrc` or `upc` (`distributionRecords.ts:205-214`). It does not call `findWritableReleaseRef(releaseId, uid)`, does not validate ISRC/UPC format, does not check uniqueness, does not require official prefix/pool provenance, and writes `status: "REGISTERED"` directly to `isrc_registry` or `upc_registry` (`:216-232`). `assignDistributionIdentifier()` has the same release-ownership gap when optional `releaseId` is provided (`:181-197`) and also writes `status: "REGISTERED"` for pool assignment (`:167-175`).
 - **Impact:** A user can attach arbitrary or mistyped codes to any release ID and have the backend store them as registered identifiers, undermining DDEX, royalty tracking, copyright evidence, and DSP delivery readiness.
 - **Fix:** Require release ownership before identifier writes, validate type-specific formats, enforce uniqueness in a transaction, and split states into `recorded_external`, `allocated_from_verified_pool`, and `officially_registered/verified` with evidence source fields.
 - **Acceptance:** Calls for another user’s `releaseId`, malformed ISRC/UPC values, duplicate codes, or unverified prefixes fail; `REGISTERED` is only written with stored authoritative provenance.
+- **Fix applied (2026-07-10):** `distributionRecords.ts` — (1) `recordDistributionIdentifier` now requires `findWritableReleaseRef(releaseId, uid)`, validates ISO-3901 ISRC / 12-13 digit UPC formats via `normalizeIdentifier()`, enforces registry uniqueness in a transaction, and writes `status: RECORDED_EXTERNAL` with `provenance.source: user_supplied` — never REGISTERED. (2) `assignDistributionIdentifier` gates optional `releaseId` on ownership; pool assignment writes `status: ALLOCATED_FROM_POOL` with pool-doc provenance and a uniqueness check. (3) Renderer `DistributionTools` synthetic-releaseId calls made best-effort (backend now rejects them) and status wording honest. Deployed to us-central1.
 
 ### ISSUE-888: Firestore rules expose identifier registries to guests or every authenticated user
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-10, rules deployed)
 - **Severity:** 🔴 CRITICAL (catalog/privacy leak)
 - **Module:** Firestore rules / Distribution identifiers
 - **Evidence:** `isrc_registry` allows read when the caller owns the row **or** `isGuest()` (`firestore.rules:895-897`), and allows guest create as well. `upc_registry` allows read for any authenticated user or guest, with no `userId`/org filter (`:904-906`). These collections carry release IDs, track titles, artist names, metadata snapshots, and owner/user IDs from the backend registry writers.
 - **Impact:** Identifier metadata can leak across users and guests, and guest writes can pollute ISRC records unless blocked by separate function-only assumptions.
 - **Fix:** Restrict reads to owner/org/admin, remove guest access for registries, and keep all creates behind backend callable functions or server SDK only.
 - **Acceptance:** Firestore rules tests prove User A and guest cannot read or create User B’s ISRC/UPC registry rows; only owner/org/admin reads pass.
+- **Fix applied (2026-07-10):** `firestore.rules` — `isrc_registry`/`upc_registry` reads now owner-only (`userId == request.auth.uid`); guest read/create removed; ALL client creates set to `false` (writes only via the ISSUE-887-hardened callables, Admin SDK). Renderer `ISRCService.getByIsrc/getByRelease` and `UPCService.getByUPC/getByRelease` queries now owner-scoped so they pass the rules. Rules deployed.
 
 ### ISSUE-889: PandaDoc proxy operations are authenticated but not document-ownership gated
 
@@ -13619,3 +13621,363 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 - **Evidence:** After ISSUE-797 replaced `toast.success("Feedback recorded: Liked")` with `toast.info("Liked")`, `CreativeGallery.interaction.test.tsx:144` and `CreativeDaisychain12.interaction.test.tsx:292` still asserted the old message, and the interaction test's `useToast` mock lacked an `info` method — `TypeError: toast.info is not a function` + 2 failed assertions broke the deploy pipeline (run 29064307725).
 - **Fix:** Added `info` to the toast mocks; updated assertions to the new honest messages.
 - **Acceptance:** Both test files pass; deploy pipeline green.
+
+### ISSUE-911: Publicist `pitch_story` returns literal placeholder copy instead of generating a pitch
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Publicist / Agent tools / Creative copy generation
+- **Evidence:** The active publicist tool registry is merged into the global agent tool registry (`services/agent/tools/index.ts:1`, `:85`). Its `pitch_story()` implementation never calls a model or a drafting service; it returns a fixed subject containing `[Artist]` and an email body containing the literal text `[AI would generate full pitch based on ${args.angle}]` (`modules/publicist/tools.ts:153-161`). The result still passes schema validation and is returned as `toolSuccess(..., "Pitch drafted...")`.
+- **Impact:** A user asking an agent to create a media pitch can receive obvious template markers as a supposedly completed creative artifact. Downstream copy/export/send workflows may preserve and distribute the placeholder text.
+- **Fix:** Generate the subject and body with the publicist model using the supplied outlet and angle, validate that required placeholders are resolved, and return a typed failure when generation is unavailable. If this is intentionally a template, rename the action and status to `template_draft`.
+- **Acceptance:** Two materially different outlet/angle inputs produce contextual drafts with no unresolved bracketed placeholders; model failure never returns `success` or “Pitch drafted.”
+
+### ISSUE-912: Publicist “Open in Mail” invents a recipient email address
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 CRITICAL (misdirected external communication)
+- **Module:** Publicist / Pitch drafting / Mail handoff
+- **Evidence:** The `Contact` model contains name, outlet, role, tier, and relationship data but no verified email field (`modules/publicist/types.ts:14-25`). After generating a draft, `PitchDraftingModal` constructs a `mailto:` recipient by lowercasing the contact name, replacing only the first space with a dot, removing only the first outlet space, and appending `.com` (`PitchDraftingModal.tsx:156-170`). There is no address validation, contact lookup, confirmation screen, or empty-recipient fallback.
+- **Impact:** “Open in Mail” can target a nonexistent domain or an unrelated real mailbox, exposing unreleased campaign material and creating a serious mis-send risk. Punctuation, multi-word names/outlets, non-`.com` publications, and role inboxes make the guessed address especially unreliable.
+- **Fix:** Add an explicit verified email field/source to contacts and require it for addressed mail handoff. When no verified address exists, open a body-only draft or copy the pitch while prompting the user to choose/enter a recipient; never infer an address from display strings.
+- **Acceptance:** Contacts without a verified email cannot produce an addressed `mailto:` link; contacts with an email use the exact validated address and show it for confirmation before leaving the app.
+
+### ISSUE-913: A generation started in one project is filed into whichever project is active when it finishes
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Creative Suite / Direct generation / Project isolation
+- **Evidence:** `useDirectGeneration` intentionally keeps `currentProjectIdRef` synchronized to the *currently selected* project (`useDirectGeneration.ts:184-185`). Both queued-job completion and immediate image completion stamp their resulting `HistoryItem.projectId` from `currentProjectIdRef.current` (`:212-227`, `:354-367`). `activeJobs` records only id/prompt/status/progress and does not capture the project that submitted the job (`:378-381`, `:490-493`).
+- **Impact:** Start an image/video in Project A, switch to Project B while it runs, and the finished asset can be persisted and surfaced under Project B. This contaminates project libraries and can expose unreleased work in the wrong campaign.
+- **Fix:** Capture immutable submission context (`projectId`, `orgId`, mode, prompt, request ID) on each job and use the backend job’s validated project metadata or the captured submission context at completion; never consult the live project selector.
+- **Acceptance:** A test starts a job in A, switches to B before completion, and proves the final history/file-node/session records remain scoped to A.
+
+### ISSUE-914: Selecting multiple reference files can retain only the last file that finishes reading
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Creative Suite / Reference ingredients
+- **Evidence:** `IngredientDropZone.handleFiles()` starts one `FileReader` per selected file, but every asynchronous `onload` calls `onChange([...ingredients, newIngredient])` using the same pre-read `ingredients` closure (`IngredientDropZone.tsx:33-63`). When two or three reads complete, each callback replaces the parent value from the same base array rather than accumulating prior results.
+- **Impact:** A user can select three character/style references and silently end up with one. Which file survives depends on read timing, making identity/style consistency nondeterministic.
+- **Fix:** Read the accepted files as a batch (`Promise.all`) and call `onChange` once with all new ingredients, or expose a functional updater contract so each completion appends to the latest value. Preserve input order and enforce the cap after validation.
+- **Acceptance:** A three-file selection with deliberately out-of-order FileReader completion retains all three in selection order exactly once.
+
+### ISSUE-915: One failed reference upload silently discards every reference and still generates
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Creative Suite / Image generation / Reference integrity
+- **Evidence:** Direct image generation uploads all selected ingredients in one `Promise.all` (`useDirectGeneration.ts:311-319`). A single rejection jumps to a shared catch that logs “proceeding without references,” leaves both `referenceUri` and `referenceUris` unset, and continues to `generateImageV3` (`:320-342`). No warning or confirmation is shown to the user.
+- **Impact:** A likeness-, wardrobe-, product-, or style-constrained request can become an unconstrained text-only generation while appearing to honor the uploaded references. Successful uploads are discarded along with the failed one.
+- **Fix:** Use per-reference settled results, preserve successful uploads, show exactly which references failed, and block submission or require explicit “continue without these references” approval when reference fidelity is part of the request.
+- **Acceptance:** With one of three uploads failing, the request either includes the two successful URIs after explicit warning/approval or does not submit; it never silently sends zero references.
+
+### ISSUE-916: Video assets can be selected as image frames/references and are then uploaded with image semantics
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Creative Suite / Veo frames / Reference intake
+- **Evidence:** Reference mode accepts both `image/*` and `video/*` and creates video ingredients (`IngredientDropZone.tsx:30-41`, `:49-59`), despite helper copy describing reference images. Direct video generation uses the first ingredient URL as `firstFrame` (`useDirectGeneration.ts:423-426`), and `VideoGenerationService` uploads every first frame/reference with media type `'image'` (`VideoGenerationService.ts:386-417`). `CreativeGallery` also enables Set as First/Last Frame for every non-music asset, including videos (`CreativeGallery.tsx:116-139`). `CreativeStorageService` attempts image compression and image content metadata whenever the caller says `'image'` (`CreativeStorageService.ts:155-171`).
+- **Impact:** MP4/WebM bytes can be mislabeled or rejected as JPEG input, causing generation failure or corrupt frame continuity. The UI confirms “Set as First Frame” before any MIME validation.
+- **Fix:** Restrict frame/reference controls to actual still images, or explicitly extract a selected video frame to a validated image blob before handoff. Validate detected MIME independently of the caller category.
+- **Acceptance:** Video assets cannot enter an image URI field unchanged; choosing one requires a frame picker/extraction step, and outbound first/last/reference URIs resolve to supported `image/*` objects.
+
+### ISSUE-917: Canvas save reports disk/cloud success when no durable save occurred
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Creative Suite / Canvas persistence
+- **Evidence:** If `canvasOps.getBlob()` returns null, `saveCanvas()` skips Storage upload and gallery insertion entirely but still persists the session and toasts “Saved to gallery & cloud!” (`useCreativeCanvas.ts:878-919`). If any step throws, the catch toasts “Stored to disk only” (`:920-922`), although this function performs no disk write or Electron save in the catch path.
+- **Impact:** Users can close the editor believing an edit is durable when it exists only in the current canvas/session memory, or believe a recoverable disk copy exists when none was created.
+- **Fix:** Track each persistence target explicitly (`blobCreated`, `storageSaved`, `historySaved`, `canvasStateSaved`, optional `diskSaved`) and report only confirmed states. Treat a null blob as export failure. Provide retry/recovery without closing the editor.
+- **Acceptance:** Null-blob and Storage/Firestore failure tests never show cloud/disk success; full success requires a durable URI/history ID that reloads in a fresh session.
+
+### ISSUE-918: Creative Gallery labels every generated asset “SynthID” without provenance evidence
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH (provenance/compliance claim)
+- **Module:** Creative Suite / Gallery / Provenance
+- **Evidence:** `CreativeGallery` renders a `SynthID` badge solely when `item.origin === 'generated'` (`CreativeGallery.tsx:437-442`). `HistoryItem` has no SynthID requested/provider-reported/verified fields (`core/types/history.ts:1-23`), and generated origin includes workflows/providers that do not prove a watermark.
+- **Impact:** Users may represent exported media as SynthID-protected even when no watermark was requested, supported, or verified. This broadens ISSUE-775 beyond Omni to the main asset library.
+- **Fix:** Remove the origin-based badge. Persist separate provenance fields (`requested`, `providerReported`, `verified`, provider/model/evidence) and display “SynthID verified” only from verifiable provider/output metadata.
+- **Acceptance:** Generated assets without evidence show no SynthID claim; verified fixtures show the badge and link to stored provenance metadata.
+
+### ISSUE-919: Deleting a generated Gallery asset only hides it locally, so it reappears and remains in Project Assets
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Creative Suite / Gallery deletion / Persistence
+- **Evidence:** The Gallery delete button calls `_handleDelete()` (`CreativeGallery.tsx:394-401`, `:583-591`). Generated assets route to `removeItemFromProject()`, which only filters the in-memory `generatedHistory` array and explicitly leaves master storage unchanged (`creativeHistorySlice.ts:228-231`). There is no persisted project-membership/tombstone update and no linked file-node removal. The next cloud snapshot can merge the same document back into history (`creativeHistorySlice.ts:124-169`). Uploaded-origin items instead call the hard-delete path, with no confirmation.
+- **Impact:** Generated items can reappear immediately or after reload, while uploaded items may be permanently removed by the visually identical action. Project Assets can retain a supposedly deleted file.
+- **Fix:** Define explicit “Remove from project” versus “Delete everywhere” actions. Persist project removal/tombstone state and remove linked file nodes; require confirmation for durable Storage/Firestore deletion and surface partial failures.
+- **Acceptance:** Remove-from-project remains removed after snapshot/reload but stays in the master library; delete-everywhere removes history, file node, and storage object (or reports exactly what failed).
+
+### ISSUE-920: Creative Gallery resolves `gs://` image URLs and then ignores the resolved URL
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Creative Suite / Gallery rendering
+- **Evidence:** `GalleryItem` calls `useResolvedStorageUrl()` for image assets and computes `resolvedImageUrl || item.url` (`CreativeGallery.tsx:45-52`), but the actual image branch renders `<img src={item.url}>` instead (`:94-107`). Video rendering uses the computed resolved source correctly.
+- **Impact:** Durable `gs://` image records can show broken images/alt text in the main Creative Gallery even though the hook successfully produced a browser-safe URL. This is the Creative Gallery sibling of ISSUE-906’s right-panel failure.
+- **Fix:** Render the resolved image source, add loading/error fallback, and prefer `thumbnailUrl` for grid display while retaining the full URI for editing/download.
+- **Acceptance:** `gs://`, HTTPS, data URL, unavailable, and expired-token fixtures render either the image or a controlled fallback—never raw alt text as the primary tile.
+
+### ISSUE-921: Gallery download announces progress even when the download fails and omits a usable extension
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Creative Suite / Asset export
+- **Evidence:** The click handler dynamically imports `downloadAsset`, calls it without awaiting its boolean result, and immediately toasts “Downloading asset...” (`CreativeGallery.tsx:379-385`). `downloadAsset()` catches all errors and returns `false` (`utils/download.ts:3-33`), so the caller can never surface failure. The filename passed is `image-export-...` / `video-export-...` with no extension, and the raw `item.url` may be `gs://` even when a resolved URL/storage URI is available.
+- **Impact:** Browser CORS failures, invalid `gs://` fetches, Electron save failures, and permission denial appear to start successfully; saved files may lack `.png/.jpg/.mp4` and open incorrectly.
+- **Fix:** Resolve the durable asset URL, infer extension from MIME/type, await `downloadAsset`, show success only after confirmed save/start, and show an actionable failure otherwise.
+- **Acceptance:** Mocked false/rejection produces an error toast; image/video success creates a correctly extended file from the resolved source.
+
+### ISSUE-922: Gallery upload reports all files uploaded before reads/cloud persistence finish
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Creative Suite / Asset upload
+- **Evidence:** `handleFileUpload()` starts asynchronous `FileReader` operations for every selected file (`CreativeGallery.tsx:520-549`) and immediately toasts `${files.length} asset(s) uploaded` (`:550`) before any `onload`, error, authentication, Storage upload, or Firestore write completes. It has no `FileReader.onerror`, MIME enforcement beyond the bypassable picker hint, or size/memory limit. Store persistence is a second fire-and-forget async operation whose failure is only logged (`creativeHistorySlice.ts:281-304`).
+- **Impact:** Corrupt/unsupported/oversized files and signed-out/cloud failures are counted as uploaded; large selections are fully base64-loaded into renderer memory and can crash the app.
+- **Fix:** Validate MIME/signature and size up front, process through an observable upload queue, await durable persistence per file, and report succeeded/failed/skipped counts with retry.
+- **Acceptance:** Mixed valid, oversized, corrupt, and failed-cloud fixtures produce accurate per-file outcomes; success count includes only durable, reloadable assets.
+
+### ISSUE-923: Video Editor asset library excludes all uploaded assets and all music/audio history
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Creative Suite / Video Editor / Asset intake
+- **Evidence:** `EditorAssetLibrary` reads only `state.generatedHistory`, omitting `uploadedImages` and `uploadedAudio` (`EditorAssetLibrary.tsx:95-103`). It filters for `['image', 'video', 'audio']`, but the canonical `HistoryItem.type` enum uses `'music'`, not `'audio'` (`core/types/history.ts:1-4`). Creative Gallery itself stores uploaded audio as type `'music'` (`CreativeGallery.tsx:528-545`).
+- **Impact:** Users cannot drag their own song/stem or uploaded artwork into the video timeline—the central use case for music-video editing—even though the editor displays an Asset Library and has an audio track.
+- **Fix:** Build the editor library from the unified, project-scoped asset selector and map canonical `music` assets to audio clips. Include durable uploaded image/video/audio records and validate playable MIME/URL.
+- **Acceptance:** Uploaded MP3/WAV, uploaded artwork, generated image, and generated video all appear once in the active project’s editor library and drop into compatible clip types.
+
+### ISSUE-924: Video Editor timeline/project state is entirely volatile and shared as one global default project
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 CRITICAL (creative work loss)
+- **Module:** Creative Suite / Video Editor / Persistence
+- **Evidence:** `useVideoEditorStore` is a plain module-level Zustand store initialized with one hard-coded `INITIAL_PROJECT` id `default-project` (`videoEditorStore.ts:140-163`, `:204-221`). No persistence middleware, project-keyed storage service, Firestore subscription, local draft save, dirty-state warning, or unload recovery is wired in the editor/store. Every editor instance reads and mutates this same singleton project.
+- **Impact:** Refreshing/restarting can erase a complete edit; switching app projects can show or mutate the previous project’s timeline. Multiple videos do not get isolated editor documents.
+- **Fix:** Persist versioned video-project documents keyed by the canonical app project/editor project ID, autosave debounced edits, restore on open, migrate the legacy default, and warn/recover on unsaved failure. Scope popout sync to the same project ID.
+- **Acceptance:** Two app projects maintain independent timelines across navigation and full restart; offline edits recover and later sync without overwriting the other project.
+
+### ISSUE-925: Every new Video Editor project contains an exportable “Welcome to Remotion” title card
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Creative Suite / Video Editor / Default content
+- **Evidence:** `INITIAL_PROJECT` includes a 90-frame text clip with `text: 'Welcome to Remotion'` on the text track (`videoEditorStore.ts:140-163`). `MyComposition` renders every text clip directly into the final composition (`MyComposition.tsx:185-191`, `:211-225`). There is no first-open acknowledgement that this is sample content.
+- **Impact:** A user can import a video and export it with an unintended framework-branded title over the first three seconds, especially because the editor looks like a real project rather than a demo template.
+- **Fix:** Start real projects empty or clearly offer an explicit sample template. Never include third-party demo copy in a production export by default.
+- **Acceptance:** A newly opened editor has no rendered clip until the user adds/imports one; choosing a sample template is explicit and removable.
+
+### ISSUE-926: Video Editor imports use arbitrary durations and can crash after tracks are removed
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Creative Suite / Video Editor / Media import
+- **Evidence:** Initial media import hardcodes every image/video to 150 frames and asserts `project.tracks[0]!.id` (`useVideoEditor.ts:45-60`) instead of reading media duration or choosing a compatible track. Users can remove every track, and `removeTrack` also deletes its clips without a guard (`videoEditorStore.ts:371-377`). A later/new import can dereference an absent first track. Timeline file drops similarly hardcode 300 frames regardless of media duration/FPS (`TimelineTrack.tsx:70-89`).
+- **Impact:** Clips are truncated or padded incorrectly, timing drifts when FPS changes, and an empty-track project can fail to import media. Dropping a long song/video does not create its real timeline length.
+- **Fix:** Probe media metadata, convert duration using the current FPS, create/select a compatible track when none exists, and keep project duration consistent with imported content.
+- **Acceptance:** Known 2s/12s video and 180s audio fixtures produce correct frame durations at 24/30 FPS; importing after all tracks are removed succeeds by creating/choosing a valid track.
+
+### ISSUE-927: Asset drops always fall back to the first track and clips beyond 10 seconds are silently truncated from export
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Creative Suite / Video Editor / Timeline
+- **Evidence:** The asset library serializes a raw `HistoryItem` (`useVideoEditor.ts:188-191`). A specific `TimelineTrack` only accepts JSON shaped as `{ type: 'asset', asset }` (`TimelineTrack.tsx:90-111`), so library drops do not match that handler and bubble to the editor-level `handleDrop`, which always assigns `project.tracks[0]` (`useVideoEditor.ts:193-213`). Clip add/move/resize operations never expand `project.durationInFrames`; the project remains the default 300 frames/10 seconds (`videoEditorStore.ts:140-163`, `:379-403`), while Remotion renders only that project duration.
+- **Impact:** Dropping onto an audio/text/layer track can place media on the wrong first track. Clips moved or extended past 10 seconds remain visible in state but are cut off from preview/export.
+- **Fix:** Use one typed drag payload and honor the actual target track. Validate track/media compatibility and recompute or explicitly edit project duration whenever clip bounds exceed it, subject to tier limits.
+- **Acceptance:** Dropping onto track N creates the clip on N; a clip ending at frame 450 expands a permitted project to at least 450 and appears fully in the render.
+
+### ISSUE-928: Video project width, height, and FPS accept empty, zero, negative, NaN, and extreme values
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH (render failure/resource abuse)
+- **Module:** Creative Suite / Video Editor / Project settings
+- **Evidence:** Project setting inputs pass `parseInt(e.target.value)` directly into `setProject` for width, height, and FPS with no min/max/schema validation (`VideoEditorSidebar.tsx:81-119`; `VideoEditor.tsx:103-109`). Clearing an input produces `NaN`; zero/negative/extreme values are accepted. This path bypasses the store’s `updateProjectSettings` limit logic.
+- **Impact:** Remotion preview/export can divide by zero, reject invalid dimensions/FPS, or attempt prohibitively large renders. A transient blank field while typing can poison project state.
+- **Fix:** Validate a draft form with supported presets/ranges, commit only finite positive integers, clamp/reject unsafe values, and run the same server-side render schema/cost guard.
+- **Acceptance:** Empty, NaN, 0, negative, fractional, and excessive fixtures cannot enter project state or reach render; supported values update atomically with clear feedback.
+
+### ISSUE-929: Publicist dashboard presents fabricated reach and placement value as real aggregate stats
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Publicist / Campaign analytics
+- **Evidence:** `PublicistService.calculateStats()` assigns every Top/Mid/Blog contact an invented reach of 500,000/50,000/5,000 and sums those values as “Global Reach” (`PublicistService.ts:177-194`). If recorded campaign budgets total zero, it values each live campaign at an arbitrary $15,000 and displays that as “Placement Value” (`:196-210`). The method comment says it replaced mock/estimation logic with real input-derived data (`:173-176`).
+- **Impact:** A contact list or campaign status can create precise-looking audience/value metrics with no outlet circulation, placement, impression, or valuation source. These numbers can leak into pitches, planning, or investor reporting.
+- **Fix:** Separate known measurements from estimates. Use verified outlet/platform analytics and actual placement records; otherwise show “not available.” If benchmarks are retained, label their source/formula/range and never call them global reach or placement value.
+- **Acceptance:** Empty/unconnected data produces no monetary/reach claim; verified fixtures cite source and timestamp; benchmark mode is visibly distinct and cannot be exported as measured performance.
+
+### ISSUE-930: Release Kit generation accepts empty/invalid inputs and fails with no user-visible error
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Publicist / Release Kit creative generation
+- **Evidence:** `ReleaseKitModal` enables Generate without validating track title, artist, date, style, or audience and passes empty strings/`['']` to the model (`ReleaseKitModal.tsx:33-42`, `:99-164`). Tool failures and thrown errors only log and reset the view to input with no toast/error state (`:44-54`). Past/invalid dates and whitespace-only fields are not checked.
+- **Impact:** Users can spend model quota on unusable kits or see the generator silently snap back with no explanation. Empty context increases hallucinated release facts.
+- **Fix:** Validate trimmed required fields, real/future release date as appropriate, non-empty style list, and reasonable lengths before submission. Preserve the form and show typed generation/schema/provider errors with retry.
+- **Acceptance:** Empty/whitespace/invalid-date fixtures cannot submit; model/schema failure leaves inputs intact and displays an actionable error; valid input produces a structured kit.
+
+### ISSUE-931: Release Kit asks the model to invent a media contact and displays it as factual
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 CRITICAL (misdirected external communication)
+- **Module:** Publicist / Release Kit / Press release
+- **Evidence:** `generate_campaign_assets` requires the model to return `pressRelease.contactInfo` (`modules/publicist/tools.ts:34-54`, `:164-194`), but the Release Kit form collects no media contact at all (`ReleaseKitModal.tsx:99-156`). The results UI prominently renders whatever contact string the model invents under “Media Contact” (`:207-229`).
+- **Impact:** A generated press release can contain a fictitious or unrelated real email/phone number and be copied to media unchanged.
+- **Fix:** Require a user-selected verified contact record or explicit contact fields and inject those deterministically after generation. Models must not generate identity/contact facts.
+- **Acceptance:** Generation cannot produce or alter contact details; no-contact state uses an obvious unresolved placeholder and blocks publish/export until the user supplies verified information.
+
+### ISSUE-932: Invalid publicist records are cast into the UI and can crash search/stat generation
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Publicist / Firestore data integrity
+- **Evidence:** Campaign/contact subscriptions correctly run Zod `safeParse`, but on failure they cast the invalid raw document to `Campaign`/`Contact` and still deliver it (`PublicistService.ts:78-94`, `:108-122`). Consumers immediately call required strings such as `c.title.toLowerCase()`, `c.artist.toLowerCase()`, `c.name.toLowerCase()`, and `c.outlet.toLowerCase()` (`usePublicist.ts:52-68`). Read errors are also converted to empty lists, indistinguishable from genuinely empty data.
+- **Impact:** One legacy/corrupt record can crash the dashboard, and permission/network failure can masquerade as a user with no campaigns or contacts.
+- **Fix:** Quarantine/skip invalid documents with a visible data-health warning and migration path; never type-cast failed validation. Track loading/error/empty separately.
+- **Acceptance:** Malformed document fixtures do not crash search or stats and identify the skipped record; Firestore failure renders an error/retry state, not an empty dashboard.
+
+### ISSUE-933: Merch “Save Draft” reports success even when save is skipped or Firestore fails
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 CRITICAL (creative work loss)
+- **Module:** Merchandise / Designer persistence
+- **Evidence:** `useAutoSave.saveDesign()` returns normally when canvas, user, project, or `activeOrg` is missing (`useAutoSave.ts:41-51`) and catches Firestore/serialization errors internally without rejecting (`:53-105`). Solo/personal users may have no matching organization, so `activeOrg` remains absent. `MerchDesigner.handleSaveDraft()` awaits this void function and unconditionally toasts “Draft saved successfully” (`MerchDesigner.tsx:316-320`).
+- **Impact:** A user can close the designer believing the draft is durable when no document exists, especially in the common personal/no-org workspace.
+- **Fix:** Return a typed save result or throw on failure/skip, support the canonical personal workspace, expose autosave error/dirty state, and only acknowledge success with a persisted design ID/timestamp.
+- **Acceptance:** Missing org/auth and Firestore failure never show success; personal-workspace saves reload after restart; success includes the confirmed `designId`/`lastModified`.
+
+### ISSUE-934: Applying a merch template destroys the existing design without confirmation
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Merchandise / Designer templates
+- **Evidence:** `handleApplyTemplate()` checks whether the canvas has objects, comments that it “could add confirmation,” and immediately calls `clear()` before adding the template (`MerchDesigner.tsx:322-386`). It then reports the template applied even if individual template elements threw and were only logged (`:340-380`).
+- **Impact:** Selecting a template can erase unsaved artwork/layers in one click. Partial template load can leave the old design gone and a broken replacement marked successful.
+- **Fix:** Offer Replace / Add as layers / Cancel, snapshot the current canvas for undo/recovery, build the template off-canvas or transactionally, and commit only if all required elements load.
+- **Acceptance:** Cancel preserves exact state; replace is undoable; a failed element leaves the original canvas intact and shows failure rather than success.
+
+### ISSUE-935: The first merch canvas action cannot be undone
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Merchandise / Designer undo-redo
+- **Evidence:** `useCanvasHistory` initializes with no state (`index: -1`) and deliberately does not save the empty initial canvas (`useCanvasHistory.ts:38-45`, `:161-179`). The first object event saves only the post-action state at index 0; `undo()` exits whenever `index <= 0` (`:100-126`).
+- **Impact:** A user’s first added asset/text/path cannot be undone with the advertised undo control, and destructive template/import behavior has no baseline recovery.
+- **Fix:** Save a baseline canvas state when initialization completes (and when a design/version loads), then append mutations after it. Reset history intentionally on project/template restore.
+- **Acceptance:** First add/delete/draw action undoes back to the exact baseline and redoes correctly; loading a saved design establishes a new baseline.
+
+### ISSUE-936: Enhanced Showroom handoffs fail unless the product asset is already an inline data URL
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Merchandise / Enhanced Showroom / Cross-module handoff
+- **Evidence:** The component accepts `initialAsset` and stores it unchanged (`EnhancedShowroom.tsx:132-141`). Mockup generation then requires `productAsset` to match `^data:(.+);base64,(.+)$` and throws “Invalid asset data” for every HTTPS, blob, `file://`, or canonical `gs://` asset (`:325-340`). Creative/merch handoffs commonly carry durable URLs/Storage URIs, not inline base64.
+- **Impact:** “Sent to Merch Designer/Showroom” can preview an asset but fail at the actual mockup step, forcing re-upload and breaking lineage.
+- **Fix:** Resolve/fetch authorized storage and local asset schemes through the shared media resolver, validate image MIME, and upload/pass a durable reference URI without requiring base64 in React state.
+- **Acceptance:** Data URL, HTTPS, and `gs://` handoff fixtures all reach composite generation with identical image bytes; unsupported/local-inaccessible schemes show a repair action.
+
+### ISSUE-937: `MerchandiseService.generateMockup` ignores the supplied artwork
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Merchandise / Mockup generation service
+- **Evidence:** `generateMockup(asset, type, scene)` stores the `asset` string in Firestore but builds a prompt only from product type and scene (`MerchandiseService.ts:190-208`). Comments explicitly acknowledge that the asset should be resolved/passed but the implementation “rel[ies] on the prompt for now” (`:210-220`). `ImageGeneration.generateImages()` receives no source/reference image.
+- **Impact:** Product previews can omit or hallucinate the artist’s design while the request/result record implies that artwork was used.
+- **Fix:** Resolve the exact artwork bytes/URI, send them through a reference/composite/edit pipeline with placement controls, and persist input/output lineage. If no usable artwork exists, fail rather than text-only generate.
+- **Acceptance:** Two different artwork inputs with the same type/scene create requests containing different reference URIs; missing/invalid art blocks generation.
+
+### ISSUE-938: Enhanced Showroom video jobs can hang forever or be saved to the wrong project
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Merchandise / Showroom video generation
+- **Evidence:** The job listener handles completion only when both `status === 'completed'` and `job.videoUrl` exist; a completed job without `videoUrl` matches neither success nor failure and leaves `isGeneratingVideo` true indefinitely (`EnhancedShowroom.tsx:166-210`). The completion callback also stamps the asset with the live `currentProjectId` and live `motionPrompt`, not immutable submission values (`:186-195`, effect dependencies `:210`).
+- **Impact:** Missing-output jobs trap the UI behind “Rendering Video,” and switching projects/editing the prompt while rendering can misfile or mislabel the final merch video.
+- **Fix:** Treat terminal-without-output as typed failure/recovery, add timeout/cancel/retry, and capture project/prompt at submission or use trusted job metadata.
+- **Acceptance:** Completed-no-URL clears loading and reports output missing; switch-project/edit-prompt race preserves original job project and prompt.
+
+### ISSUE-939: Inventory “Sync” is only a 1.5-second animation
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Merchandise / Inventory
+- **Evidence:** `InventoryTracker.handleSync()` sets local `syncing`, waits 1.5 seconds, and clears it without calling Firestore, Shopify, Printful, Printify, or any provider service (`InventoryTracker.tsx:21-29`). The UI presents four channels and a Sync button (`:14-19`, `:43-55`).
+- **Impact:** Stale stock remains unchanged while users reasonably believe provider inventory was refreshed, risking overselling or missed restock decisions.
+- **Fix:** Call verified provider sync jobs and show per-provider status/last-synced/error; otherwise rename to Refresh View and only re-read Firestore.
+- **Acceptance:** Sync produces provider operation IDs/timestamps and changed fixture inventory; unavailable providers show setup/error and never animate as success.
+
+### ISSUE-940: Social AI copy failures are inserted as post copy and announced as successful generation
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Social / AI copy generation
+- **Evidence:** `SOCIAL_TOOLS.write_social_copy()` catches model errors and returns the literal string `"Error generating copy."`; an empty model response returns `"Failed to generate copy."` (`modules/social/tools.ts:15-34`). `CreatePostModal.handleGenerateCopy()` treats either string as generated content, puts it in the composer, and toasts “Copy generated!” (`CreatePostModal.tsx:45-59`).
+- **Impact:** Users can schedule/publish an error message as social copy and are told generation succeeded.
+- **Fix:** Return a typed result or throw on provider/empty-output failure; reject known sentinel/error text and preserve the user’s existing draft.
+- **Acceptance:** Model rejection/empty response shows an error and does not mutate copy; only non-empty validated copy produces the success toast.
+
+### ISSUE-941: Social scheduling closes and discards the draft before asynchronous persistence succeeds
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Social / Scheduled post creation
+- **Evidence:** `CreatePostModal.onSave` is typed as synchronous void. `handleSave()` calls it and immediately closes (`CreatePostModal.tsx:15-18`, `:62-93`). The parent handler is actually async and awaits Firestore scheduling (`SocialDashboard.tsx:41-59`), but its promise/result is ignored. The modal also allows past times, derives the default date via UTC `toISOString()`, and the scheduled-time schema transforms invalid strings to `NaN` without a post-transform finite/future refinement (`CreatePostModal.tsx:26-27`, `:68-79`; `social/schemas.ts:16-31`).
+- **Impact:** Permission/provider/validation failure occurs after the modal destroys the draft; timezone boundaries can default to the wrong local date, and past/invalid jobs can enter the queue.
+- **Fix:** Make `onSave` return `Promise<boolean/result>`, keep the modal open/loading until confirmed, retain draft on failure, and validate finite future local time with explicit timezone/DST handling.
+- **Acceptance:** Firestore rejection preserves all fields and displays error; invalid/past/DST-gap times cannot submit; confirmed save closes with a real post ID.
+
+### ISSUE-942: Social Dashboard can repeatedly refresh on every render because `actions` has unstable identity
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH (request loop/performance)
+- **Module:** Social / Dashboard state
+- **Evidence:** `useSocial()` constructs and returns a new `actions` object on every render (`useSocial.ts:202-221`). `SocialDashboard` runs `actions.refreshDashboard()` in an effect dependent on the whole object (`SocialDashboard.tsx:31-39`). Refresh sets stats/scheduled state, causing another render and a new actions object, which retriggers the effect.
+- **Impact:** The dashboard can loop Firestore reads/seeding calls, waste quota, flicker state, and amplify errors.
+- **Fix:** Return a memoized actions object or destructure a stable callback and depend on that function only; make initial load idempotent.
+- **Acceptance:** Render/state-update tests prove one refresh per intended mount/user change and no additional refresh from stats/feed updates.
+
+### ISSUE-943: Social calendar day clicks do not prefill the chosen day and hide all but one post per day
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** Social / Content calendar
+- **Evidence:** Every day cell’s plus button only opens the modal (`SocialDashboard.tsx:73-100`); `CreatePostModal` independently defaults to today at noon (`CreatePostModal.tsx:23-27`), so the clicked date is lost. Calendar rendering uses `campaigns.find(c => c.day === i)` and displays only one matching scheduled post (`SocialDashboard.tsx:66-91`).
+- **Impact:** Users click a future date and accidentally schedule today, while multiple posts on the same day disappear from the calendar view.
+- **Fix:** Pass the selected full date/time into the modal and group all posts per day with count/list/overflow UI.
+- **Acceptance:** Clicking day 20 opens with day 20 in the user timezone; three posts on one day all remain discoverable and editable.
+
+### ISSUE-944: EPK “Generate” publishes nothing but exposes a nonexistent live URL; press-photo upload is inert
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Marketing / EPK creative workflow
+- **Evidence:** `EPKGenerator.handleGenerate()` only runs a 1.8-second timer and sets local `generated` state (`EPKGenerator.tsx:24-51`). It displays/copies `https://indii.vip/artist/{slug}/epk` without calling a hosting, persistence, or EPK service (`:36-37`, `:237-287`). The visible press-photo file input has no `onChange` and its selected file is never read, stored, or rendered (`:124-137`).
+- **Impact:** Users can share a dead/nonexistent EPK URL and believe their press photo/content was published when nothing left component memory.
+- **Fix:** Persist a versioned EPK, upload/validate media, publish through a real route/hosting service, verify the public response, and return the canonical URL. Until then, label the feature local preview/export only.
+- **Acceptance:** Generate returns an EPK ID and a URL that responds with the entered content/photo in a clean session; publish failure never enables Copy Link.
+
+### ISSUE-945: Downloaded EPK HTML injects unescaped user/model content into executable markup
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 CRITICAL (artifact XSS/phishing)
+- **Module:** Marketing / EPK export security
+- **Evidence:** `handleDownloadPDF()` interpolates raw `artistName`, genre tags, bio, track strings, and link values directly into HTML/text/attribute contexts and downloads it as an `.html` file (`EPKGenerator.tsx:59-99`). There is no HTML escaping or URL protocol/domain validation; the function name also obscures that the artifact is executable HTML.
+- **Impact:** Pasted/generated content containing markup, event handlers, or `javascript:` links can execute when the artist/recipient opens the EPK locally or hosts it, enabling credential/phishing payloads inside a trusted press asset.
+- **Fix:** Generate through a safe template/DOM serializer with contextual escaping, allowlist HTTPS platform URLs, sanitize rich text, and apply a restrictive CSP for hosted/downloaded HTML. Name the export accurately.
+- **Acceptance:** Script tags, quotes, event attributes, `javascript:`/`data:` links, and malicious bio fixtures render only as inert text or are rejected; safe HTTPS links remain functional.
+
+### ISSUE-946: Discord/Telegram webhook test, send, and auto-announcement controls are entirely simulated
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 CRITICAL (false external communication)
+- **Module:** Marketing / Community announcements
+- **Evidence:** `CommunityWebhookPanel.handleTestWebhook()` waits 1.2 seconds, marks the webhook tested, and claims success without a network call (`CommunityWebhookPanel.tsx:49-60`). `handleSendAnnouncement()` similarly waits 1.5 seconds and claims delivery (`:72-83`). URLs, enabled state, templates, and auto-announce toggles are local-only; no credential storage, provider response, event subscription, or persistence exists (`:27-47`, `:154-203`).
+- **Impact:** Release/tour/merch announcements never reach communities while the user is told they were sent and automation is enabled.
+- **Fix:** Move webhook secrets and sends to a secure backend, validate provider-specific URLs, persist configuration, perform test delivery, record response IDs/status, and wire auto-announcement events. Otherwise disable/rename the panel as a template mockup.
+- **Acceptance:** Test/send success requires a 2xx provider response and stored receipt; failures show provider error; toggles survive restart and demonstrably dispatch the configured event once.

@@ -892,19 +892,21 @@ service cloud.firestore {
       allow read: if false;
       allow create, update, delete: if false;
     }
+    // Identifier registries (ISSUE-888): owner-only reads, backend-only writes.
+    // All creates go through recordDistributionIdentifier /
+    // assignDistributionIdentifier callables (Admin SDK bypasses rules), which
+    // enforce release ownership, format, and uniqueness (ISSUE-887).
     match /isrc_registry/{docId} {
-      allow read: if (isAuthenticated() && resource.data.get('userId', null) == request.auth.uid) || isGuest();
-      allow create: if (isVerifiedUser() && request.resource.data.get('userId', null) == request.auth.uid && request.resource.data.isrc.matches('^[A-Z]{2}-[A-Z0-9]{3}-[0-9]{2}-[0-9]{5}$')) || isGuest();
-      allow update, delete: if false;
+      allow read: if isAuthenticated() && resource.data.get('userId', null) == request.auth.uid;
+      allow create, update, delete: if false;
     }
     match /upc_pool/{docId} {
       allow read: if false;
       allow create, update, delete: if false;
     }
     match /upc_registry/{docId} {
-      allow read: if isAuthenticated() || isGuest();
-      allow create: if false;
-      allow update, delete: if false;
+      allow read: if isAuthenticated() && resource.data.get('userId', null) == request.auth.uid;
+      allow create, update, delete: if false;
     }
     match /campaigns/{campaignId} {
       allow read: if (isAuthenticated() && resource.data.get('userId', null) == request.auth.uid) || (isGuest() && resource.data.get('userId', null) == 'founder-demo-uid');
