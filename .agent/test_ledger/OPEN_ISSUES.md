@@ -13228,7 +13228,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-871: Image “Lite” engine routes to the legacy 2.5 image model
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-10, deployed)
 - **Severity:** 🟠 HIGH
 - **Module:** Creative Suite / Image generation / Model routing
 - **Evidence:** The direct-generation UI offers `lite`, `fast`, and `pro` engine grades (`DirectGenerationTab.tsx:327-345`). The backend image registry only defines `fast`, `pro`, and `legacy` IDs (`gateway.ts:50-54`), and `resolveImageModel()` maps both `legacy` and `lite` to `gemini-2.5-flash-image` (`gateway.ts:259-262`). The capability table says that legacy model is limited to 1K, has no reference-image support, and no Google/Image Search support (`models.ts:89-102`), while the fast 3.1 image model supports 4K, 14 reference images, thinking control, Google Search, and Image Search (`models.ts:75-88`).
@@ -13236,9 +13236,10 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 - **Fix:** Either remove “Lite” from image generation until a real supported Lite image model exists, or add a first-class Lite registry row with explicit capabilities and UI gating.
 - **Acceptance:** Selecting Lite displays the exact resolved model and disables controls unsupported by that model; no Lite request routes to legacy unless the UI labels it as legacy.
 
+- **Fix applied (2026-07-10):** Lite removed from the image engine-grade selector (Fast + Pro only; a saved `lite` preference highlights Fast). Backend `resolveImageModel()` no longer maps `lite` → legacy 2.5 model; `lite` resolves to fast and only an explicit `legacy` request reaches the legacy ID. generateImageV3 deployed.
 ### ISSUE-872: Omni Remix uses a placeholder model ID and Veo pricing
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-10, deployed)
 - **Severity:** 🟠 HIGH
 - **Module:** Creative Suite / Omni / Cost reservation
 - **Evidence:** `generateOmniRemixV3` says API access is “rolling out later” and is wired for when a model ID is configured (`gateway.ts:1443-1449`). But `resolveOmniFlashModel()` falls back to `gemini-omni-flash-preview` (`gateway.ts:271-275`) and the callable starts jobs with that model (`gateway.ts:1463`, `:1480-1497`). Its cost reservation uses `estimateVideoCost()` with Veo Pro/Fast IDs instead of an Omni-specific pricing row (`gateway.ts:1464-1469`), and the execution path requires an Interactions API client (`gateway.ts:1500-1533`).
@@ -13246,6 +13247,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 - **Fix:** Require an explicitly configured, supported Omni model ID and add a dedicated Omni capability/pricing row. If the env var is absent, show Omni as unavailable instead of starting a job.
 - **Acceptance:** No Omni job can start with the default placeholder ID; cost reservations cite the actual Omni model and pricing source used.
 
+- **Fix applied (2026-07-10):** Placeholder default `gemini-omni-flash-preview` removed — `resolveOmniFlashModel()` returns null unless `GEMINI_OMNI_FLASH_MODEL` is explicitly configured, and `generateOmniRemixV3` throws `failed-precondition` ("Omni Remix is not available yet… no cost was reserved or charged") before any job/reservation write. generateOmniRemixV3 deployed.
 ### ISSUE-873: Mask-URI image edits do not tell the model the edit is masked
 
 - **Status:** 🔴 OPEN
