@@ -42,8 +42,9 @@ Legacy models are **STRICTLY PROHIBITED** under **ALL CIRCUMSTANCES**, including
 | **Image Generation**         | `gemini-3-pro-image-preview`    | All image synthesis (Nano Banana Pro)    |
 | **Audio Generation (TTS)**   | `gemini-2.5-pro-tts`            | High-quality speech synthesis            |
 | **Audio Generation (Fast)**  | `gemini-2.5-flash-tts`          | Low-latency speech synthesis             |
-| **Video Generation**         | `veo-3.1-generate-preview`      | Standard video generation                |
-| **Video Generation (Fast)**  | `veo-3.1-fast-generate-preview` | Draft/preview videos only                |
+| **Video Generation**         | `veo-3.1-generate-001`          | Standard video generation                |
+| **Video Generation (Fast)**  | `veo-3.1-fast-generate-001`     | Draft/preview videos only                |
+| **Video Generation (Lite)**  | `veo-3.1-lite-generate-001`     | Budget tier video generation             |
 | **Local Utility (DMR)**      | `llama3:8b` (or similar)        | Local processing via Docker Model Runner |
 
 ---
