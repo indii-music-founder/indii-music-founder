@@ -14,6 +14,7 @@ import { IdentifierService } from '@/services/identity/IdentifierService';
 export class IngestionNotificationService {
     /**
      * Generate an IngestionNotification message from ExtendedGoldenMetadata
+     * Defaults to TestMessage unless explicitly requested otherwise via options.forceIsTestMode
      */
     async generateIngestionNotification(
         metadata: ExtendedGoldenMetadata,
@@ -22,6 +23,7 @@ export class IngestionNotificationService {
         assets?: ReleaseAssets,
         options?: {
             isTestMode?: boolean;
+            forceIsTestMode?: boolean;
             action?: 'NewRelease' | 'Update' | 'Takedown';
         }
     ): Promise<{ success: boolean; xml?: string; error?: string }> {
@@ -43,6 +45,8 @@ export class IngestionNotificationService {
             }
 
             // 2. Use the Mapper to generate a complete IngestionNotification object
+            // FAIL-CLOSED: default to TestMessage unless explicitly confirmed for live mode
+            const isLiveMessage = options?.forceIsTestMode === false && options?.isTestMode === false;
             const ern = IngestionNotificationMapper.mapMetadataToIngestionNotification(metadata, {
                 messageId: `MSG-${Date.now()}`,
                 sender: {
@@ -54,7 +58,7 @@ export class IngestionNotificationService {
                     entityName: 'Distributor', // Ideally fetched from distributor config
                 },
                 createdDateTime: timestamp,
-                messageControlType: options?.isTestMode ? 'TestMessage' : 'LiveMessage',
+                messageControlType: isLiveMessage ? 'LiveMessage' : 'TestMessage',
                 action: options?.action,
             }, assets);
 
