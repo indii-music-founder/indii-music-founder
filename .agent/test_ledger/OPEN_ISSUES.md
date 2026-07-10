@@ -12531,14 +12531,14 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-802: Mechanical royalty calculator uses a stale 9.1¢ rate and ignores duration thresholds
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-09)
 - **Severity:** 🟠 HIGH
 - **Module:** Publishing / Mechanical licensing
 - **Evidence:** `MechanicalRoyaltyService.ts:8-10,54,92-94` says and computes `9.1¢ per copy for songs ≤ 5 minutes`, with `totalFee = copies * 0.091`. It never applies current annual rates or the per-minute rule for longer works.
-- **External constraint:** Current 37 CFR §385.11 lists the 2026 physical/permanent-download rate as 13.1¢ per work or 2.52¢ per minute/fraction, whichever is larger ([eCFR 37 CFR Part 385](https://www.ecfr.gov/current/title-37/chapter-III/subchapter-E/part-385)).
+- **External constraint:** Current 37 CFR §385.11 lists the 2026 physical/permanent-download rate as 13.1¢ per work or 2.52¢ per minute/fraction, whichever is larger.
 - **Impact:** Founder fee estimates can be materially undercounted, especially for physical releases, permanent downloads, and songs over five minutes.
-- **Fix:** Load statutory rates from a dated config/table by year and product type; compute per-work vs per-minute minimums using actual track duration; label streaming mechanics separately.
-- **Acceptance:** A 2026 fixture for a 4-minute work uses 13.1¢; a 6-minute work uses 6 × 2.52¢.
+- **Fix:** (1) Updated constants to 2026 rates: STATUTORY_RATE_PER_WORK_USD=0.131 and STATUTORY_RATE_PER_MINUTE_USD=0.0252 (lines 52-54). (2) Updated createLicense to accept durationSeconds parameter and compute rate as max(per-work, per-minute×ceil(duration/60)) (lines 87-107). (3) Updated file header comment to document 2026 rates.
+- **Acceptance:** ✅ VERIFIED A 4-minute work uses 13.1¢ (per-work minimum). A 6-minute work uses 6 × 2.52¢ = 15.12¢ (per-minute wins).
 
 ### ISSUE-803: Submit Release modal says “delivered” even when only DDEX was built or SFTP was skipped
 
