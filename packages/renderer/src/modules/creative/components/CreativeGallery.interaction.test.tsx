@@ -21,6 +21,7 @@ describe('🖱️ Click: CreativeGallery Interaction', () => {
     const mockSetVideoInput = vi.fn();
     const mockSetSelectedItem = vi.fn();
     const mockToastSuccess = vi.fn();
+    const mockToastInfo = vi.fn();
 
     const mockItem = {
         id: 'test-123',
@@ -63,6 +64,7 @@ describe('🖱️ Click: CreativeGallery Interaction', () => {
         (useStore as unknown as import("vitest").Mock).mockImplementation((selector: any) => selector ? selector(mockStore) : mockStore);
         (useToast as unknown as import("vitest").Mock).mockReturnValue({
             success: mockToastSuccess,
+            info: mockToastInfo,
             error: vi.fn()
         });
     });
@@ -141,13 +143,13 @@ describe('🖱️ Click: CreativeGallery Interaction', () => {
         render(<CreativeGallery />);
         const likeBtn = screen.getByTestId('like-btn');
         fireEvent.click(likeBtn);
-        expect(mockToastSuccess).toHaveBeenCalledWith("Feedback recorded: Liked");
+        expect(mockToastInfo).toHaveBeenCalledWith("Liked");
     });
 
     it('verifies the Dislike lifecycle (Click → Feedback)', async () => {
         render(<CreativeGallery />);
         const dislikeBtn = screen.getByTestId('dislike-btn');
         fireEvent.click(dislikeBtn);
-        expect(mockToastSuccess).toHaveBeenCalledWith("Feedback recorded: Disliked");
+        expect(mockToastInfo).toHaveBeenCalledWith("Disliked");
     });
 });
