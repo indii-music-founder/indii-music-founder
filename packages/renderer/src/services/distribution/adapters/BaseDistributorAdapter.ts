@@ -73,6 +73,7 @@ export abstract class BaseDistributorAdapter implements DistributorAdapter {
    * Uploads a directory of files to the connected SFTP server.
    * @param localPath The absolute path to the local directory containing the bundle.
    * @param remotePath The destination directory on the SFTP server.
+   * @throws Error if SFTP bridge is unavailable (prevent silent skipped uploads)
    */
   protected async uploadBundle(localPath: string, remotePath: string): Promise<void> {
     if (!this.connected || !this.credentials) {
@@ -80,8 +81,9 @@ export abstract class BaseDistributorAdapter implements DistributorAdapter {
     }
 
     if (typeof window === 'undefined' || !window.electronAPI?.sftp) {
-      logger.warn('[BaseDistributorAdapter] SFTP upload skipped (not running in Electron)');
-      return;
+      const msg = '[BaseDistributorAdapter] SFTP upload BLOCKED: bridge unavailable (not running in Electron). Bundle built but NOT uploaded.';
+      logger.error(msg);
+      throw new Error(msg);
     }
 
     logger.info(`[${this.name}] Starting SFTP upload: ${localPath} -> ${remotePath}`);
