@@ -12,13 +12,17 @@ export interface ParallelRenderOptions {
 export class ParallelRenderOrchestrator {
     /**
      * Slices a long-form composition into smaller parallel chunks,
-     * triggers concurrent Cloud Run renders, and generates the FFmpeg commands
-     * to perform a clean non-transcoded concat stitch.
+     * triggers concurrent Cloud Run renders, and generates the FFmpeg command
+     * for a clean non-transcoded concat stitch.
+     *
+     * ISSUE-885: stitching is NOT executed here — no backend stitch job exists
+     * yet — so the result is `chunks_ready` with the real chunk URLs and the
+     * command to run. It never fabricates a final stitched output URL.
      */
     static async renderLongFormParallel(
         options: ParallelRenderOptions,
         onProgress?: (pct: number) => void
-    ): Promise<{ outputUrl: string; ffmpegStitchCommand: string }> {
+    ): Promise<{ status: 'chunks_ready'; chunkUrls: string[]; concatInstructions: string; ffmpegStitchCommand: string }> {
         const store = useVideoEditorStore.getState();
         const project = store.project;
         if (!project) {
@@ -78,9 +82,11 @@ export class ParallelRenderOrchestrator {
         const ffmpegStitchCommand = `ffmpeg -f concat -safe 0 -i inputs.txt ${audioInput} -y output_stitched.mp4`;
         
         logger.info(`[ParallelRenderOrchestrator] Generated stitching command: ${ffmpegStitchCommand}`);
-        
+
         return {
-            outputUrl: 'https://storage.googleapis.com/indii-renders/output_stitched.mp4',
+            status: 'chunks_ready',
+            chunkUrls,
+            concatInstructions,
             ffmpegStitchCommand
         };
     }
