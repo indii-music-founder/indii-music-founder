@@ -13104,7 +13104,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-859: Cloud DDEX generator hard-codes sender PartyId and does not validate or escape ERN XML
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-10, source-only — function not currently deployed)
 - **Severity:** 🔴 HIGH
 - **Module:** Distribution / DDEX generation
 - **Evidence:** `compileDDEXRelease()` is documented as generating “XSD-validated DDEX XML” (`ddex-generator.ts:33-36`) but only checks UPC and ISRC presence (`:45-48`) and returns a template string (`:57-104`). The template hard-codes `<PartyId>PADPIDA123456</PartyId>` (`:63-65`), omits a `MessageRecipient`, interpolates release fields directly into XML (`:61-99`), and performs no XSD/profile validation before returning.
@@ -13112,9 +13112,10 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 - **Fix:** Use the verified ingestion identity registry for sender/recipient, XML builders with escaping, ERN 4.3 profile-specific schemas, and XSD validation as a required artifact.
 - **Acceptance:** Compilation fails without verified sender/recipient identities; metadata containing XML special characters remains valid; output includes schema/profile validation status and version.
 
+- **Fix applied (2026-07-10):** `escapeXml()` added and applied to every interpolated field. `requireSenderPartyId()` reads `DDEX_SENDER_PARTY_ID` from env and throws `failed-precondition` if unset — the hard-coded `PADPIDA123456` placeholder is gone. Doc comment corrected to not claim XSD validation (none is performed yet). NOTE: `compileDDEXRelease` is only called from `unified-distribution.ts`, which is not exported in `index.ts` (dead code, not deployed) — no redeploy needed for this fix to take effect if/when that pipeline is wired in.
 ### ISSUE-860: Unified distribution moves releases to monitoring after staging XML only
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-10, source-only — function not currently deployed)
 - **Severity:** 🟠 HIGH
 - **Module:** Distribution / Delivery orchestration
 - **Evidence:** `triggerUnifiedDistribution()` transitions the release FSM to `DISTRIBUTING`, generates DDEX, and runs `stageForSpotify`, `stageForAppleMusic`, `stageForTidal`, and `stageForPerformanceRightsOrganizations` (`unified-distribution.ts:17-36`). The DSP functions only save XML files to Firebase Storage (`:56-85`), with comments saying final SFTP/API dispatch is pending (`:24-27`, `:56-57`). If staging succeeds, the FSM transitions to `MONITORING` and returns `{ success: true, status: 'STAGED' }` (`:45-47`).
@@ -13122,6 +13123,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 - **Fix:** Add explicit states: `PACKAGE_STAGED`, `DELIVERY_PENDING`, `DELIVERED`, `ACK_RECEIVED`, `LIVE`. Do not enter monitoring until a real delivery job is submitted.
 - **Acceptance:** Staged-only runs show `PACKAGE_STAGED`; `MONITORING` requires delivery transport receipt or DSP acknowledgement source.
 
+- **Fix applied (2026-07-10):** Added `PACKAGE_STAGED` to `FSMState`. `triggerUnifiedDistribution` now transitions to `PACKAGE_STAGED` (not `MONITORING`) after XML-only staging and returns `status: 'PACKAGE_STAGED', delivered: false`. Same caveat as ISSUE-859: this function is not currently exported from `index.ts`, so the fix hardens the source but there is no live Cloud Function to redeploy.
 ### ISSUE-861: MCP DSP metadata formatter uses defaults and hard-coded DPID for delivery XML
 
 - **Status:** 🔴 OPEN
