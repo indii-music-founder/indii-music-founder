@@ -7,7 +7,7 @@
  *
  * Mechanical royalties are required whenever an artist distributes a cover song
  * (a recording of a composition they did not write). The statutory rate in the US
- * is 9.1¢ per copy for songs ≤ 5 minutes.
+ * (2026) is 13.1¢ per work or 2.52¢ per minute, whichever is larger, per 37 CFR §385.11.
  */
 
 import {
@@ -51,7 +51,11 @@ export type MechanicalLicense = MechanicalLicenseDocument;
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const STATUTORY_RATE_USD = 0.091;   // 2024 US statutory mechanical rate (≤ 5 min)
+// 2026 US statutory mechanical rates per 37 CFR §385.11
+// For permanent-digital-downloads and physical: 13.1¢ per work or 2.52¢ per minute (whichever is larger)
+// For streams: separate per-stream rate applies
+const STATUTORY_RATE_PER_WORK_USD = 0.131;     // 13.1¢ per work minimum (2026)
+const STATUTORY_RATE_PER_MINUTE_USD = 0.0252;  // 2.52¢ per minute for works over ~5 min
 const COLLECTION = 'mechanical_licenses';
 const CF_BASE = import.meta.env.VITE_FUNCTIONS_BASE_URL ?? '';
 
@@ -78,6 +82,7 @@ export const MechanicalRoyaltyService = {
 
     /**
      * Create a new mechanical license record in Firestore for a cover track.
+     * Uses 2026 statutory rates: 13.1¢/work or 2.52¢/min, whichever is larger.
      */
     async createLicense(params: {
         releaseId: string;
@@ -85,12 +90,22 @@ export const MechanicalRoyaltyService = {
         isrc?: string;
         composition: CompositionInfo;
         distributionCopies?: number;
+        durationSeconds?: number;
     }): Promise<MechanicalLicense> {
         const uid = auth.currentUser?.uid;
         if (!uid) throw new Error('Not authenticated');
 
         const copies = params.distributionCopies ?? 1000;
-        const fee = Math.round(copies * STATUTORY_RATE_USD * 100) / 100;
+
+        // Compute per-copy rate using 2026 statutory rates
+        let ratePerCopy = STATUTORY_RATE_PER_WORK_USD;
+        if (params.durationSeconds) {
+            const minutes = Math.ceil(params.durationSeconds / 60);
+            const perMinuteRate = minutes * STATUTORY_RATE_PER_MINUTE_USD;
+            ratePerCopy = Math.max(STATUTORY_RATE_PER_WORK_USD, perMinuteRate);
+        }
+
+        const fee = Math.round(copies * ratePerCopy * 100) / 100;
 
         const licenseId = `ml_${uid}_${Date.now()}`;
         const license: Omit<MechanicalLicense, 'createdAt' | 'updatedAt'> = {
@@ -102,7 +117,7 @@ export const MechanicalRoyaltyService = {
             composition: params.composition,
             status: params.composition.controlled ? 'pending_search' : 'not_required',
             distributionCopies: copies,
-            ratePerCopy: STATUTORY_RATE_USD,
+            ratePerCopy,
             totalFee: fee,
             requestedAt: Timestamp.now()
         };
