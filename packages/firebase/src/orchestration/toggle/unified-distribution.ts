@@ -42,8 +42,11 @@ export const triggerUnifiedDistribution = onCall(async (request) => {
             return { success: false, status: 'PARTIAL_FAILURE' };
         }
 
-        await fsm.transition('MONITORING');
-        return { success: true, status: 'STAGED' };
+        // ISSUE-860: only XML was staged to Storage — nothing was delivered to
+        // any DSP, so MONITORING (which implies awaiting DSP acknowledgement)
+        // would be a lie. Stay in PACKAGE_STAGED until a real delivery job runs.
+        await fsm.transition('PACKAGE_STAGED');
+        return { success: true, status: 'PACKAGE_STAGED', delivered: false };
 
     } catch (error: unknown) {
         console.error('Unified Distribution Error:', error);
