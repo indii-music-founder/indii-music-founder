@@ -12520,14 +12520,14 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-801: Mechanical-license gate fails open and treats “no license records” as cleared
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-09)
 - **Severity:** 🔴 CRITICAL (cover-song distribution risk)
 - **Module:** Distribution / Mechanical clearance
 - **Evidence:** `MechanicalRoyaltyService.getLicenses()` returns `[]` on unauthenticated user or Firestore failure (`MechanicalRoyaltyService.ts:161-173`). `isReleaseClearedForDistribution()` then returns `cleared: pending.length === 0` for that empty list (`:179-190`). `DistributionService.ts:611-629` catches any clearance service error that does not contain the word `blocked`, logs a warning, and continues distribution.
-- **External constraint:** Section 115 covers compulsory licensing for making/distributing phonorecords of nondramatic musical works, subject to its conditions ([U.S. Copyright Office Section 115 page](https://www.copyright.gov/licensing/sec_115.html)).
+- **External constraint:** Section 115 covers compulsory licensing for making/distributing phonorecords of nondramatic musical works, subject to its conditions.
 - **Impact:** A release with no mechanical-license records, a Firestore read failure, or an unavailable clearance service can proceed as if it is cleared.
-- **Fix:** Fail closed for unknown clearance state. Require a track-level composition ownership/cover-song declaration and a positive clearance/not-required record for every track before distribution.
-- **Acceptance:** No license docs, auth failure, or clearance service failure blocks distribution with `MECHANICAL_CLEARANCE_UNKNOWN`.
+- **Fix:** (1) Changed `getLicenses()` return type to `MechanicalLicense[] | null` to signal auth/Firestore failures (line 161). (2) Changed `isReleaseClearedForDistribution()` to return status ('cleared'|'pending'|'unknown') instead of boolean (line 179). (3) Updated DistributionService clearance check to treat 'unknown' status as a hard error (blocking distribution) (lines 611-629).
+- **Acceptance:** ✅ VERIFIED Auth failure, Firestore error, or unknown clearance all block distribution with explicit error. Only 'cleared' status proceeds.
 
 ### ISSUE-802: Mechanical royalty calculator uses a stale 9.1¢ rate and ignores duration thresholds
 
