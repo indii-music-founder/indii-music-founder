@@ -157,10 +157,14 @@ export const MechanicalRoyaltyService = {
 
     /**
      * Fetch all mechanical licenses for the current user, optionally filtered by releaseId.
+     * Returns error signal (null) if auth fails or Firestore is unavailable (fail-closed).
      */
-    async getLicenses(releaseId?: string): Promise<MechanicalLicense[]> {
+    async getLicenses(releaseId?: string): Promise<MechanicalLicense[] | null> {
         const uid = auth.currentUser?.uid;
-        if (!uid) return [];
+        if (!uid) {
+            logger.warn('MechanicalRoyaltyService.getLicenses: user not authenticated; returning null to block distribution');
+            return null;
+        }
 
         try {
             const col = collection(db, COLLECTION, uid, 'licenses');
@@ -168,24 +172,36 @@ export const MechanicalRoyaltyService = {
             const snap = await getDocs(q);
             return snap.docs.map(d => ({ id: d.id, ...d.data() } as MechanicalLicense));
         } catch (err: unknown) {
-            logger.error('MechanicalRoyaltyService.getLicenses failed', err);
-            return [];
+            logger.error('MechanicalRoyaltyService.getLicenses failed (Firestore unavailable)', err);
+            return null;
         }
     },
 
     /**
      * Check if all cover tracks in a release have active or not-required licenses.
+     * Returns 'unknown' if licenses cannot be fetched (auth failure / Firestore unavailable).
+     * Only returns 'cleared' if explicitly approved or not applicable, NEVER if undetermined.
      */
     async isReleaseClearedForDistribution(releaseId: string): Promise<{
-        cleared: boolean;
+        status: 'cleared' | 'pending' | 'unknown';
         pendingTracks: string[];
     }> {
         const licenses = await this.getLicenses(releaseId);
+
+        if (licenses === null) {
+            logger.error('MechanicalRoyaltyService: Cannot determine clearance; failing closed', { releaseId });
+            return {
+                status: 'unknown',
+                pendingTracks: [],
+            };
+        }
+
         const pending = licenses.filter(
             l => l.status !== 'license_active' && l.status !== 'not_required'
         );
+
         return {
-            cleared: pending.length === 0,
+            status: pending.length === 0 ? 'cleared' : 'pending',
             pendingTracks: pending.map(l => l.trackTitle),
         };
     },
