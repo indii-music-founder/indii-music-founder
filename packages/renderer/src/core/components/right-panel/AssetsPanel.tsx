@@ -25,8 +25,20 @@ interface AssetsPanelProps {
  */
 function AssetThumbnail({ src, alt, className, onError }: { src: string; alt: string; className: string; onError?: () => void }) {
     const resolvedSrc = useSafeImageUrl(src);
-    if (!resolvedSrc) return null;
-    return <img src={resolvedSrc} alt={alt} className={className} loading="lazy" onError={onError} />;
+    const [failed, setFailed] = React.useState(false);
+    React.useEffect(() => { setFailed(false); }, [resolvedSrc]);
+    // Render nothing while resolving or on failure — the caller's fallback
+    // type icon shows instead of the browser dumping alt text into the tile.
+    if (!resolvedSrc || failed) return null;
+    return (
+        <img
+            src={resolvedSrc}
+            alt={alt}
+            className={className}
+            loading="lazy"
+            onError={() => { setFailed(true); onError?.(); }}
+        />
+    );
 }
 
 export default function AssetsPanel({ toggleRightPanel }: AssetsPanelProps) {

@@ -31,15 +31,28 @@ export function useSafeImageUrl(url: string | null | undefined): string | null {
             return;
         }
 
-        if (!/^https?:\/\//i.test(url)) {
-            setResolvedUrl(url);
+        const isGsUri = url.startsWith('gs://');
+        if (!isGsUri && !/^https?:\/\//i.test(url)) {
+            // Unknown scheme (e.g. placeholder: sentinels) — <img> can't render it.
+            // Return null so callers show their fallback instead of broken alt text.
             return;
         }
 
         (async () => {
             try {
+                let fetchableUrl = url;
+                if (isGsUri) {
+                    // gs:// URIs are Storage locators, not fetchable URLs — resolve first.
+                    const [{ getDownloadURL, ref }, { storage }] = await Promise.all([
+                        import('firebase/storage'),
+                        import('@/services/firebase'),
+                    ]);
+                    const bucketPath = url.split('/').slice(3).join('/');
+                    fetchableUrl = await getDownloadURL(ref(storage, bucketPath));
+                    if (cancelled) return;
+                }
                 const { safeStorageFetch } = await import('@/services/storage/safeStorageFetch');
-                const { blob } = await safeStorageFetch(url);
+                const { blob } = await safeStorageFetch(fetchableUrl);
                 if (cancelled) return;
                 objectUrl = URL.createObjectURL(blob);
                 setResolvedUrl(objectUrl);
