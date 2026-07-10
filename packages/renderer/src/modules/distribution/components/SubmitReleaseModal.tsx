@@ -54,6 +54,7 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
         }
     }, [open, userProfile]);
     const [done, setDone] = useState(false);
+    const [deliveryState, setDeliveryState] = useState<'idle' | 'delivered' | 'ready_for_manual' | 'skipped'>('idle');
     const [steps, setSteps] = useState<PipelineStep[]>(INITIAL_STEPS);
     const [overallProgress, setOverallProgress] = useState(0);
 
@@ -67,6 +68,7 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
         setSteps(INITIAL_STEPS);
         setOverallProgress(0);
         setDone(false);
+        setDeliveryState('idle');
         setSubmitting(false);
     };
 
@@ -107,7 +109,8 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
         };
 
         try {
-            await distributionService.submitRelease(releaseData, (evt) => {
+             
+            const result = await distributionService.submitRelease(releaseData, (evt) => {
                 if (evt.progress !== undefined) {
                     setOverallProgress(evt.progress);
                 }
@@ -124,7 +127,15 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
 
             setDone(true);
             setOverallProgress(100);
-            toastSuccess('Release submitted successfully!');
+
+            // Determine delivery state from result
+            if (result?.sftp_skipped) {
+                setDeliveryState('ready_for_manual');
+                toastSuccess('Metadata package ready — manual delivery required');
+            } else {
+                setDeliveryState('delivered');
+                toastSuccess('Release delivered to distributor!');
+            }
             // Wait for user to click Done button, which triggers onSubmitted via handleClose
         } catch (err: unknown) {
             const msg = err instanceof Error ? err.message : 'Submission failed';
@@ -318,7 +329,9 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
                                 <div className="flex items-center gap-2 p-3 bg-dept-publishing/10 border border-dept-publishing/20 rounded-lg">
                                     <CheckCircle2 className="w-4 h-4 text-dept-publishing flex-shrink-0" />
                                     <span className="text-xs font-bold text-dept-publishing uppercase tracking-widest">
-                                        Release delivered to distributor
+                                        {deliveryState === 'ready_for_manual'
+                                            ? 'Metadata ready — manual delivery required'
+                                            : 'Release delivered to distributor'}
                                     </span>
                                 </div>
                             )}
