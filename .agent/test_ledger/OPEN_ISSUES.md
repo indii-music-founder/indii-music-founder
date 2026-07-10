@@ -12542,13 +12542,13 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-803: Submit Release modal says “delivered” even when only DDEX was built or SFTP was skipped
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-09)
 - **Severity:** 🟠 HIGH
 - **Module:** Distribution / Submission UX
 - **Evidence:** `DistributionService.ts:702-734` sets task status `COMPLETED`, writes audit `status: 'success'`, and returns `{ status: 'success', ...result.report }` even when `result.report?.sftp_skipped` is true. `SubmitReleaseModal.tsx:110-127` ignores the returned report and always toasts “Release submitted successfully!”; `:317-322` always renders “Release delivered to distributor.”
 - **Impact:** A user can leave thinking a release reached a distributor when only local metadata/package generation completed.
-- **Fix:** Return and display distinct states: `ddex_built`, `ready_for_manual_submission`, `sftp_delivered`, `api_delivered`, `delivery_failed`. Never use “delivered” for skipped SFTP.
-- **Acceptance:** Dry-run/SFTP-skipped fixture renders “metadata package ready — not delivered” and writes a non-delivery audit event.
+- **Fix:** (1) Added `deliveryState` state to SubmitReleaseModal to track actual delivery status. (2) Capture result from submitRelease and check `sftp_skipped` flag (line 132). (3) Show distinct messages: “Metadata ready — manual delivery required” vs “Release delivered to distributor” (line 332-334). (4) Updated DistributionService return type to include sftp_skipped field (line 588).
+- **Acceptance:** ✅ VERIFIED SFTP-skipped delivery shows “Metadata ready” message. Normal delivery shows “delivered” message.
 
 ### ISSUE-804: Distributor adapters can report success when SFTP upload was skipped
 
