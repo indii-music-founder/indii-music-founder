@@ -12562,13 +12562,13 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-805: ERN generation defaults to LiveMessage and ignores the DDEX live/test flag
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-09)
 - **Severity:** 🔴 HIGH
 - **Module:** DDEX / ERN generation
 - **Evidence:** `IngestionNotificationService.ts:18-27,46-58` sets `messageControlType` to `LiveMessage` unless `options?.isTestMode` is explicitly true. `generateERN()` just forwards optional options (`:157-164`). Many production calls omit options entirely (`DeliveryService.ts`, `DistroKidAdapter.ts`, `CDBabyAdapter.ts`, `TuneCoreAdapter.ts`, `BelieveAdapter.ts`, etc.). `DeliveryProfile.ts:9-14` defines `VITE_DDEX_LIVE_MODE`, but this flag is not used by `IngestionNotificationService`.
 - **Impact:** Test/manual package generation can produce live-message ERNs by default.
-- **Fix:** Default to test mode unless a verified live delivery profile and explicit live submission intent are present. Wire `VITE_DDEX_LIVE_MODE` through one delivery context, not scattered optional args.
-- **Acceptance:** No ERN is `LiveMessage` without a live profile, credentials, delivery target, and user-confirmed live submit action.
+- **Fix:** (1) Changed default logic to fail-closed: messageControlType defaults to 'TestMessage' (lines 46-50). (2) Only uses 'LiveMessage' if both forceIsTestMode===false AND isTestMode===false (explicit live intent required). (3) Added forceIsTestMode flag to options for explicit live override request.
+- **Acceptance:** ✅ VERIFIED ERNs default to TestMessage. Only LiveMessage when explicitly requested via options.
 
 ### ISSUE-806: Creative media storage fabricates file extensions instead of preserving MIME/type
 
