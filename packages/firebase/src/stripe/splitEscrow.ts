@@ -22,6 +22,10 @@ interface SplitEscrowResponse {
     stripeTransferGroup: string;
     status: string;
     pendingParties: string[];
+    stripePaymentIntentId: string;
+    amountCents: number;
+    amountFormatted: string;
+    fundsHeld: boolean;
 }
 
 /**
@@ -60,39 +64,47 @@ export const initiateSplitEscrow = functions
         // Transfer group ties all split payouts together for reconciliation
         const transferGroup = `escrow_${trackId}_${Date.now()}`;
 
-        // Verify the platform Stripe account is configured before creating the intent
+        // ISSUE-853: FAIL CLOSED — an escrow that claims funds are held MUST
+        // be backed by a real Stripe PaymentIntent. No Firestore-only escrows.
         const platformAccountId = process.env.STRIPE_PLATFORM_ACCOUNT_ID;
-
-        let stripeEscrowId: string | null = null;
-        if (platformAccountId) {
-            try {
-                // Create a manual-capture PaymentIntent to hold funds without charging
-                const intent = await stripe.paymentIntents.create({
-                    amount: holdAmount,
-                    currency: 'usd',
-                    capture_method: 'manual',
-                    transfer_group: transferGroup,
-                    metadata: {
-                        trackId,
-                        initiatorUid: uid,
-                        partiesCount: String(parties.length),
-                    },
-                    description: `Split escrow for track ${trackId}`,
-                });
-                stripeEscrowId = intent.id;
-            } catch (stripeErr) {
-                // Non-fatal: Stripe may not be configured yet — fall through to Firestore-only record
-                console.warn('[splitEscrow] Stripe PaymentIntent creation skipped:', stripeErr);
-            }
+        if (!platformAccountId) {
+            throw new functions.https.HttpsError(
+                'failed-precondition',
+                'ESCROW_NOT_FUNDED: Stripe platform account is not configured. No funds can be held.'
+            );
         }
 
-        // Persist the escrow record regardless of Stripe state
+        let stripeEscrowId: string;
+        try {
+            // Create a manual-capture PaymentIntent to hold funds without charging
+            const intent = await stripe.paymentIntents.create({
+                amount: holdAmount,
+                currency: 'usd',
+                capture_method: 'manual',
+                transfer_group: transferGroup,
+                metadata: {
+                    trackId,
+                    initiatorUid: uid,
+                    partiesCount: String(parties.length),
+                },
+                description: `Split escrow for track ${trackId}`,
+            });
+            stripeEscrowId = intent.id;
+        } catch (stripeErr) {
+            console.error('[splitEscrow] Stripe PaymentIntent creation failed:', stripeErr);
+            throw new functions.https.HttpsError(
+                'failed-precondition',
+                'ESCROW_NOT_FUNDED: Stripe could not create the escrow payment intent. No funds are held.'
+            );
+        }
+
         const signoffs: Record<string, boolean> = {};
         parties.forEach((p) => { signoffs[p] = false; });
 
         const escrowRef = await db.collection('split_escrows').add({
             trackId,
-            holdAmount,
+            holdAmountCents: holdAmount,
+            holdAmount, // legacy field name, same cents value
             parties,
             initiatorUid: uid,
             stripeTransferGroup: transferGroup,
@@ -111,11 +123,15 @@ export const initiateSplitEscrow = functions
             stripeTransferGroup: transferGroup,
             status: 'PENDING_SIGNATURES',
             pendingParties: parties,
+            stripePaymentIntentId: stripeEscrowId,
+            amountCents: holdAmount,
+            amountFormatted: `$${(holdAmount / 100).toFixed(2)}`,
+            fundsHeld: true,
         };
 
         console.info(
             `[splitEscrow] Created escrow ${escrowRef.id} for track ${trackId} ` +
-            `($${(holdAmount / 100).toFixed(2)}, ${parties.length} parties)`
+            `($${(holdAmount / 100).toFixed(2)}, ${parties.length} parties, intent ${stripeEscrowId})`
         );
 
         return response;
@@ -124,7 +140,12 @@ export const initiateSplitEscrow = functions
 
 /**
  * Record a collaborator's sign-off on the escrow.
- * When all parties have signed, status transitions to RELEASED.
+ *
+ * ISSUE-854: legal signoff is decoupled from payout execution. When all
+ * parties have signed, status becomes FULLY_SIGNED — never RELEASED.
+ * RELEASED is reserved for a payout step that captures the PaymentIntent
+ * and records Stripe transfer receipts; until that exists, a fully signed
+ * escrow honestly reports that no money has moved yet.
  */
 export const signEscrow = functions
     .runWith({ enforceAppCheck: true,  timeoutSeconds: 60, memory: '256MB'  })
@@ -142,6 +163,7 @@ export const signEscrow = functions
         const uid = context.auth.uid;
         const escrowRef = db.collection('split_escrows').doc(escrowDocId);
 
+        let fullySigned = false;
         await db.runTransaction(async (tx) => {
             const snap = await tx.get(escrowRef);
             if (!snap.exists) {
@@ -157,15 +179,24 @@ export const signEscrow = functions
             }
 
             const updatedSignoffs = { ...data.signoffs, [uid]: true };
-            const allSigned = data.parties.every((p: string) => updatedSignoffs[p] === true);
+            fullySigned = data.parties.every((p: string) => updatedSignoffs[p] === true);
 
             tx.update(escrowRef, {
                 [`signoffs.${uid}`]: true,
-                status: allSigned ? 'RELEASED' : 'PENDING_SIGNATURES',
+                // FULLY_SIGNED ≠ RELEASED: no capture/transfer has happened.
+                status: fullySigned ? 'FULLY_SIGNED' : 'PENDING_SIGNATURES',
+                ...(fullySigned ? { fullySignedAt: admin.firestore.FieldValue.serverTimestamp() } : {}),
                 updatedAt: admin.firestore.FieldValue.serverTimestamp(),
             });
         });
 
-        return { success: true, message: `Signoff recorded for escrow ${escrowDocId}.` };
+        return {
+            success: true,
+            status: fullySigned ? 'FULLY_SIGNED' : 'PENDING_SIGNATURES',
+            fundsReleased: false,
+            message: fullySigned
+                ? `All parties have signed escrow ${escrowDocId}. Payout execution (capture + transfers) is a separate step — no funds have moved yet.`
+                : `Signoff recorded for escrow ${escrowDocId}.`,
+        };
     }
 );
