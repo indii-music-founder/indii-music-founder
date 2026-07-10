@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-07-10 09:19 EDT
+**Updated:** 2026-07-10 09:30 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+9eae5df92 chore(release): v1.64.6
+5a9908910 chore: session checkpoint [09:19]
 fe2b28095 fix(ui): render gs:// asset thumbnails, honest updater copy, add Mobile Remote pairing to Settings
 2d7d242ae chore: session checkpoint [09:02]
 3ed274ad8 fix(updater): repair auto-update feed broken by SPA rewrite
@@ -12,8 +14,6 @@ d19b4d205 chore: session checkpoint [22:48]
 8686ee339 chore: session checkpoint [22:25]
 f57a38079 test: fix CreativeGallery feedback toast assertions
 fa4298b37 chore: session checkpoint [22:20]
-873e55335 chore: session checkpoint [22:17]
-b77b321c3 chore: session checkpoint [22:16]
 ```
 
 ## Working State
