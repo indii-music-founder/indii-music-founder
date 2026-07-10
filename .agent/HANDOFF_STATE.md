@@ -4,6 +4,7 @@
 
 ## Recent Commits
 ```
+fc2c02824 chore: session checkpoint [21:05]
 7a077c679 chore: session checkpoint [21:05]
 c34275c97 chore: session checkpoint [21:04]
 518ab3e27 docs: add cost ledger end checkpoint
@@ -13,7 +14,6 @@ cb9ca1b11 chore: session checkpoint [09:09]
 74f5353f4 fix(projects): unify split default-projectId sentinel (ISSUE-772 fix 5)
 1092957ee chore: session checkpoint [08:59]
 9c2c1b2c5 fix(sync): resolve cross-device asset divergence via org scoping (ISSUE-772)
-41520d9c9 chore: session checkpoint [08:49]
 ```
 
 ## Working State
