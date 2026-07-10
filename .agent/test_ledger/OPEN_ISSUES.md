@@ -13404,13 +13404,14 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-889: PandaDoc proxy operations are authenticated but not document-ownership gated
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-10, deployed to us-central1)
 - **Severity:** 🔴 CRITICAL (legal document exposure / unauthorized signatures)
 - **Module:** Legal / PandaDoc proxy / E-signature
 - **Evidence:** `pandadocSendDocument`, `pandadocGetDocumentStatus`, and `pandadocGetSigningLink` require `context.auth` but then call PandaDoc using only caller-provided `documentId`/`recipientId` (`pandadocProxy.ts:146-171`, `:185-218`, `:232-260`). They do not verify that the PandaDoc document ID belongs to the authenticated user/org in Firestore. `sendForDigitalSignature()` sends `/documents/${contractId}/send` before loading `users/{uid}/contracts/{contractId}`, and if the local contract doc does not exist it still returns `{ status: "sent" }` (`digitalSignature.ts:43-98`).
 - **Impact:** Any signed-in user who obtains or guesses a PandaDoc document/recipient ID can query status, generate a signing session, or send a document with the platform API key; internal contract records can also say “sent” without local ownership/existence.
 - **Fix:** Store PandaDoc document IDs with owner/org/release/contract references at creation time, require ownership checks before every status/send/session action, and reject sends before external API calls if the local contract/document record does not exist.
 - **Acceptance:** User A cannot send, read, or create signing links for User B’s PandaDoc documents; nonexistent local contract IDs fail before any PandaDoc request.
+- **Fix applied (2026-07-10):** `pandadocProxy.ts` — `pandadocCreateDocument` now records `pandadoc_documents/{docId}` with `ownerUid` at creation; `assertPandaDocOwnership()` gates `pandadocSendDocument`, `pandadocGetDocumentStatus`, and `pandadocGetSigningLink` (fail-closed for unknown/pre-registry docs; identical error for missing vs not-yours so existence never leaks). `digitalSignature.ts` — `sendForDigitalSignature` now requires `users/{uid}/contracts/{contractId}` to exist BEFORE the external PandaDoc send and no longer returns "sent" for nonexistent contracts. `pandadoc_documents` is backend-only via the rules catch-all deny. All five functions deployed.
 
 ### ISSUE-890: “Complete” GDPR data export omits major app data and uses two inconsistent implementations
 
@@ -13981,3 +13982,163 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 - **Impact:** Release/tour/merch announcements never reach communities while the user is told they were sent and automation is enabled.
 - **Fix:** Move webhook secrets and sends to a secure backend, validate provider-specific URLs, persist configuration, perform test delivery, record response IDs/status, and wire auto-announcement events. Otherwise disable/rename the panel as a template mockup.
 - **Acceptance:** Test/send success requires a 2xx provider response and stored receipt; failures show provider error; toggles survive restart and demonstrably dispatch the configured event once.
+
+### ISSUE-947: Rapid Capture reports completed OCR/ingest after only a two-second timer
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH (false analysis result)
+- **Module:** Capture / Rapid Capture
+- **Evidence:** The component explicitly describes its behavior as an “OCR analysis simulation” and its user flow as scanning followed by “INGEST COMPLETE” (`GhostCapture.tsx:12-20`). Selecting any image calls `startMockIngest()`, which only flips local state after a two-second `setTimeout`; it performs no OCR, decoding, metadata extraction, integrity check, or service request (`:38-61`). The later Transmit action uploads the original file and creates an image node without any analysis result (`:72-102`).
+- **Impact:** Corrupt, unsupported, blank, or text-free inputs receive the same authoritative completion signal as valid documents, so users can believe content was recognized and catalogued when only the bytes were previewed.
+- **Fix:** Either implement real, failure-aware OCR/ingest with a structured result and explicit confidence/unsupported states, or rename the animation to a truthful local preview/preparation step and remove analysis/completion claims. Validate decoded image content before enabling transmit.
+- **Acceptance:** A valid text fixture returns persisted extracted data attributable to a real analysis response; blank/corrupt/unsupported fixtures cannot show analysis complete; offline/provider failure is visible and retryable. If OCR remains out of scope, no UI or copy claims scanning, OCR, analysis, or ingest completion.
+
+### ISSUE-948: Quick Capture silently saves a contact without the photo the user selected
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH (silent creative-data loss)
+- **Module:** Capture / Mobile contact capture
+- **Evidence:** The selected photo is previewed and retained in `photoFile` (`QuickCapture.tsx:88-95`). During Save, any Storage import/upload/download-URL failure is caught only in a log and execution intentionally continues with `photoUrl` undefined (`:103-126`). The contact is then saved, a full “Contact captured” success toast appears, the photo state is cleared, and the sheet closes (`:117-141`).
+- **Impact:** A transient network, permission, quota, or file error permanently discards the captured portrait with no user-visible indication or recovery path, while the success message implies the complete contact was preserved.
+- **Fix:** Treat an explicitly selected photo as part of the save transaction: retain the draft and photo on failure with Retry and “Save without photo” as an informed opt-in, or persist an upload-pending record that retries safely. Validate media type/size before preview/upload.
+- **Acceptance:** Forced photo-upload failure keeps the preview and all fields open, reports the photo-specific error, and creates no incomplete contact unless the user explicitly chooses Save without photo; retry produces exactly one contact with the expected photo URL.
+
+### ISSUE-949: Campaign “Apply & Save,” copy edits, and execution state never persist to the campaign record
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 CRITICAL (creative work loss / false save)
+- **Module:** Marketing / Campaign workspace
+- **Evidence:** Image batch Apply constructs an updated campaign, calls `onComplete`, labels the button “Apply & Save,” and closes (`IntelligenceImageBatchModal.tsx:155-175`, `:361-368`). `CampaignManager` forwards every edit/image/status change through `onUpdateCampaign` (`CampaignManager.tsx:52-75`, `:93-101`, `:123-130`). At the dashboard boundary, `handleUpdateCampaign` only calls `setSelectedCampaign(updatedCampaign)` and never invokes `MarketingService` or Firestore (`CampaignDashboard.tsx:53-55`). The realtime campaign list is sourced from Firestore (`useMarketing.ts:71-105`), and its actions expose create/refresh but no update operation (`:143-185`).
+- **Impact:** Generated campaign images are uploaded at cost, but their URLs, enhanced/edited copy, and execution/failed status exist only in the current component. Navigating away, reopening the campaign, refreshing, or receiving a snapshot loses or contradicts the work despite explicit Save/Post updated/queued messaging.
+- **Fix:** Add an authorized, awaited `updateCampaign` service/hook action with revision or transaction semantics; persist only allowed fields, surface conflicts, and make all success/close behavior conditional on confirmed persistence. Reconcile callable execution responses into the persisted record rather than local state alone.
+- **Acceptance:** After Apply & Save or copy edit, a clean session loads the exact new URLs/copy from Firestore; forced write failure keeps the modal/draft open and never says saved/updated; concurrent edits cannot silently overwrite one another; execution status remains consistent after reload.
+
+### ISSUE-950: Campaign image retry uses stale state and the last failed job can be relabeled complete
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Marketing / Batch image generation
+- **Evidence:** Retry Failed first schedules failed rows to become pending with `setPostStates`, then immediately calls `handleStartGeneration()`, whose closure filters the pre-update `postStates` for pending rows (`IntelligenceImageBatchModal.tsx:49-55`, `:110-122`). It can therefore find zero jobs and report “All posts already have images.” Separately, the service emits an error event for a failed post but, after the loop, always emits a final `complete` event using the last post’s ID (`CampaignIntelligenceService.ts:300-349`). The modal maps that event to `status: 'complete'`; its result reconciliation only converts `generating`—not false `complete`—rows with no URL back to error (`IntelligenceImageBatchModal.tsx:67-98`).
+- **Impact:** Retry can do nothing, and a failed final image can show as completed with no image URL. Counts, Retry visibility, and the user’s decision to apply an incomplete campaign become unreliable.
+- **Fix:** Pass an explicit failed-post snapshot into a single generation function instead of relying on asynchronous state mutation. Model batch-level completion separately from per-post completion, and derive each row’s terminal state from an actual persisted URL/result.
+- **Acceptance:** With first/middle/last-item failures, every failed row remains Error with no success badge; Retry invokes generation exactly once for exactly those IDs; a successful retry supplies URLs and changes only those rows to Complete; zero-work messaging is accurate.
+
+### ISSUE-951: AI campaign creator closes and claims creation before persistence completes
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 CRITICAL (false save / draft loss)
+- **Module:** Marketing / Intelligence campaign generation
+- **Evidence:** The modal types `onSave` as a synchronous void callback (`IntelligenceCampaignModal.tsx:16-19`). `handleSave()` calls it without awaiting a result, immediately shows “Campaign created!”, and closes (`:115-122`). The actual parent callback is async: it creates then reloads the Firestore campaign, but on failure only logs the error and returns no failure signal (`CampaignDashboard.tsx:71-83`, `:237-241`). The generated plan and all user brief fields are destroyed when the modal unmounts.
+- **Impact:** Auth, permission, quota, offline, or validation failure still produces a success message and irrecoverably closes a potentially expensive AI-generated campaign draft that never reached the dashboard.
+- **Fix:** Change `onSave` to an awaited `Promise<{id}|result>`, keep the preview and Create button in a loading state until a confirmed campaign ID/readback, and expose retry/export-draft behavior on failure. Emit success in one layer only after persistence.
+- **Acceptance:** Forced create/readback rejection leaves the exact generated plan visible and retryable with an error and no success toast; a successful click creates exactly one campaign, closes once, and the clean-session dashboard contains that ID/content; double-click cannot duplicate it.
+
+### ISSUE-952: AI campaign output bypasses business validation and can create empty, off-brief, or unschedulable plans
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Marketing / Intelligence campaign generation
+- **Evidence:** `generateCampaign()` asks for `durationDays * postsPerDay` posts but its response schema only requires an array and basic field presence; it does not constrain array size, day bounds/integer status, requested platform membership, copy length, hashtag format, or posting-time format (`CampaignIntelligenceService.ts:43-100`). The result cleanup accepts any array—including empty—and `planToCampaignAsset()` maps it directly (`:102-147`). The UI enables Create for any non-null plan and does not validate the plan or a cleared/past `startDate` (`IntelligenceCampaignModal.tsx:102-122`, `:329-343`, `:410-425`).
+- **Impact:** A nominally successful generation can yield zero posts, days outside the campaign, unselected/unsupported platforms, over-limit copy, invalid schedule hints, or an empty/past start date, then be saved as a campaign that cannot execute as requested.
+- **Fix:** Parse model output through a runtime schema parameterized by the brief; enforce or visibly reconcile exact counts, day range, selected/supported platforms, platform copy limits, nonempty prompts, and valid future local start date. Reject/regenerate malformed output rather than silently coercing it.
+- **Acceptance:** Fixtures with empty posts, wrong platform, day 0/out-of-range/fractional day, excess count, over-limit Twitter copy, or invalid/missing start date cannot be created; a valid fixture preserves the requested platform/count/day distribution and passes execution schema validation.
+
+### ISSUE-953: Creative-to-Marketing handoff is acknowledged and deleted before the brand asset is durably saved
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH (cross-module asset loss)
+- **Module:** Creative handoff / Brand Manager Visual DNA
+- **Evidence:** `consumeHandoff('marketing')` atomically deletes the pending payload before returning it (`handoffSlice.ts:83-108`). `VisualsPanel` then applies the asset optimistically, calls async `saveBrandKit()` without awaiting/catching it, and immediately says the staged creative was loaded (`VisualsPanel.tsx:25-43`). `saveBrandKit` is the direct Firestore `updateDoc` boundary and can reject (`BrandManager.tsx:69-78`); the parallel Zustand profile save is also fire-and-forget and logs failures only (`profileSlice.ts:100-108`).
+- **Impact:** Offline/permission/quota failure can consume the only handoff, show success, and leave an asset that disappears on reload with no retry path or source-context recovery.
+- **Fix:** Use acknowledge-after-persist semantics: peek/reserve the handoff, await a single idempotent brand-kit write, then clear/acknowledge it. Retain failure state with Retry/Cancel and deduplicate by asset ID.
+- **Acceptance:** Forced write failure leaves the handoff recoverable and shows no loaded/saved success; retry after recovery persists exactly one asset and only then clears the payload; reload proves the asset remains; remount/retry cannot duplicate the asset.
+
+### ISSUE-954: Short-form reel generator accepts audio and promises synchronization but never sends the audio to generation
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 CRITICAL (ignored creative input / false output claim)
+- **Module:** Marketing / Short-Form Asset Generator
+- **Evidence:** Step 1 lets the user select audio and reports the chosen file “Ready to proceed,” with “WAV, MP3, or FLAC (max 60s)” copy (`MarketingAssetGeneratorUI.tsx:111-117`, `:187-217`). In reel mode, `handleGenerate()` calls `generateMarketingVideo(prompt, style)` without `audioFile`; only the disabled avatar branch uploads audio (`:29-70`). The generation screen nevertheless says it is “Rendering highly-detailed frames synced with your audio” (`:315-334`). Although `generateMarketingVideo` accepts an optional `audioUrl`, it receives none from this UI (`CampaignIntelligenceService.ts:241-272`). No duration/size/media decode validation enforces the displayed 60-second claim.
+- **Impact:** Artists can wait and pay for a reel believing it follows the selected song, but generation is text-only and unrelated to that audio; oversized, mislabeled, or corrupt audio is also presented as ready.
+- **Fix:** In reel mode either remove audio intake and all synchronization language, or validate/decode/upload the selected audio, pass its durable URL and timing intent to a backend/model path that actually conditions or edits to it, and preserve attribution/cleanup. Make audio required only when supported.
+- **Acceptance:** Two distinguishable audio fixtures with the same prompt result in requests containing their respective accessible audio IDs/URLs and verified timing metadata; corrupt/over-60-second/oversize fixtures are rejected before generation; omitting audio produces truthful text-to-video copy; no screen claims sync unless the backend confirms that capability.
+
+### ISSUE-955: Brand Interview accepts audio/PDF assets but analyzes no audio and only exposes PDF metadata to Intelligence
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 CRITICAL (ignored creative input / fabricated analysis context)
+- **Module:** Brand Manager / Brand Interview attachments
+- **Evidence:** The interview accepts `audio/*`, MP3/WAV/FLAC, and PDF and labels the surface “Intelligence-driven Analysis” (`BrandInterview.tsx:258-268`). `processFiles()` stores audio only as a metadata string and PDF only as `[PDF Document: name, Size: …]`; it never reads either file’s bytes/text (`useOnboarding.ts:126-184`). When building model contents, the service attaches image bytes and document text only; it has no audio branch, while a PDF document contributes the metadata placeholder as if it were content (`onboardingService.ts:253-281`). The same placeholder can be saved as a knowledge document (`:472-485`).
+- **Impact:** Music and press-kit PDFs appear attached and analyzed, but the model cannot hear/read them and may infer brand facts from filenames. A PDF can pollute the knowledge base with a size label instead of its contents.
+- **Fix:** Decode/extract supported PDF text and send supported audio through a real multimodal/file pipeline with MIME/size/duration/page limits and explicit unsupported/encrypted/scanned states. Never offer or store an attachment as analyzed content when only metadata is available.
+- **Acceptance:** Known-tone/lyric audio and known-text PDF fixtures produce request parts containing their real media/content and grounded responses; encrypted/scanned/corrupt/oversize fixtures receive truthful, actionable errors; an audio/PDF metadata-only placeholder cannot trigger a profile or knowledge-base update.
+
+### ISSUE-956: Brand Interview stores full image data URLs inside the profile document with no size/count boundary
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 CRITICAL (profile corruption / unbounded storage)
+- **Module:** Brand Manager / Brand Interview asset ingestion
+- **Evidence:** Every selected image is read completely into a base64 data URL with no file-size, decoded-dimension, count, or aggregate limit (`useOnboarding.ts:126-148`, `:188-195`). If the model calls AddImageAsset, the base64 is wrapped as `data:image/png;base64,...` regardless of original MIME and appended directly to `userProfile.brandKit.brandAssets` or `referenceImages` (`onboardingService.ts:434-469`). `setUserProfile` then saves the entire profile to IndexedDB and a single Firestore user document (`profileSlice.ts:94-99`; `repository.ts:167-212`).
+- **Impact:** One large image or repeated uploads can exceed browser memory/IndexedDB/Firestore document limits, make every future profile write fail, bloat every profile read, mislabel JPEG/WebP bytes as PNG, and strand core identity data with the asset.
+- **Fix:** Validate and decode media, upload bytes to object storage under the authenticated user, store only canonical metadata/URL references in a bounded subcollection or asset service, and make asset/profile writes transactional or recoverable. Preserve the real content type.
+- **Acceptance:** Large/dimension-bomb/duplicate/many-image fixtures cannot bloat the profile document; valid JPEG/PNG/WebP files persist as object-storage assets with correct MIME and reloadable URLs; deleting/retrying is idempotent; profile fields remain writable when an asset upload fails.
+
+### ISSUE-957: Failed Brand Interview sends discard the typed prompt and all selected attachments before asking the user to retry
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH (creative input loss)
+- **Module:** Brand Manager / Brand Interview conversation
+- **Evidence:** `handleSend()` copies the current files, then immediately clears both `input` and `files` before awaiting `runOnboardingConversation` (`useOnboarding.ts:212-232`). On timeout/rate-limit/provider failure, the catch only appends a generic “Hit send again” style model message and never restores the text or attachments (`:338-359`). File picker re-selection is also awkward because its value is not reset after a selection (`:192-196`).
+- **Impact:** Long artist narratives and locally selected reference images/audio/documents vanish on transient failure; “send again” cannot reproduce the request, and selecting the identical file may not fire another change event.
+- **Fix:** Retain an immutable pending turn until success, expose Retry/Edit/Remove, and clear composer/file input only after an accepted response or explicit discard. Reset the native input so same-file retry works, and prevent duplicate profile tool effects with a turn/idempotency key.
+- **Acceptance:** Forced timeout/rate limit preserves exact text and all file objects/previews; Retry sends the same turn once and applies tool calls once; editing/removing before retry works; selecting the same file again reliably triggers ingestion.
+
+### ISSUE-958: Brand Assets reports successful add/move/delete without durable confirmation and leaks uploaded objects
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH (asset lifecycle inconsistency)
+- **Module:** Creative Studio / Brand Assets drawer
+- **Evidence:** Multi-file upload writes each object to Storage sequentially, but commits profile references only after every upload finishes (`BrandAssetsDrawer.tsx:52-106`). A later-file failure leaves earlier objects orphaned and records none. `updateBrandKit` is typed synchronous/fire-and-forget, yet upload/move/delete paths treat it as awaitable or immediately toast success (`profileSlice.ts:27`, `:100-108`; `BrandAssetsDrawer.tsx:103-119`, `:125-171`, `:209-250`). Delete only filters profile arrays by URL; it never removes the corresponding Storage object and can remove every duplicate reference sharing that URL (`BrandAssetsDrawer.tsx:157-168`). Generated/uploaded items can likewise be announced and added to local history before profile cloud persistence succeeds.
+- **Impact:** Partial batches and failed profile writes leak paid/private media in Storage, successful-looking assets disappear on reload, delete does not actually delete user content, and URL-based bulk removal can exceed the user’s intended single-item action.
+- **Fix:** Give assets stable IDs/storage paths and an awaited repository API. Commit each batch transactionally (or surface per-file partial outcomes with cleanup/retry), make add/move/delete success conditional on durable writes, and define reference-counted soft/hard delete semantics that remove owned blobs only when safe.
+- **Acceptance:** Failure on file N leaves N−1 successful assets either visibly persisted or automatically deleted—never orphaned; forced profile-write failure shows no success; deleting one duplicate ID leaves the other; hard delete removes the owned object and references, while shared/external URLs are handled without unauthorized deletion; reload matches the final UI exactly.
+
+### ISSUE-959: Product Showroom relabels every JPEG/WebP source as PNG and does not verify file decoding
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Creative Studio / Product Showroom
+- **Evidence:** The uploader explicitly accepts PNG, JPEG, and WebP, then FileReader stores only the data URL string and no MIME metadata (`ShowroomUI.tsx:49-69`, `:160-164`). `ShowroomService` strips everything before the comma and always sends the remaining bytes to image generation as `mimeType: 'image/png'` (`ShowroomService.ts:54-67`). Neither path handles FileReader errors, decodes dimensions, checks transparency despite “Upload a transparent graphic,” or verifies that the bytes match the declared media type (`ShowroomUI.tsx:414-420`).
+- **Impact:** Valid JPEG/WebP artwork can be rejected or misdecoded by the model, renamed/spoofed/corrupt files can enter an expensive request, and users receive no actionable explanation for format-specific failures.
+- **Fix:** Preserve validated MIME/extension/dimensions with the HistoryItem or upload metadata, decode the image before enabling Generate, and pass the real supported MIME/bytes to the service. Require transparency only if the compositor truly needs it and provide a preview/conversion path.
+- **Acceptance:** Known PNG/JPEG/WebP fixtures produce matching request MIME and valid decoded bytes; renamed, corrupt, zero-dimension, oversize, and unsupported fixtures are blocked before generation with a specific error; transparency requirements are tested and accurately stated.
+
+### ISSUE-960: Product Showroom draft and results are global across projects and survive project switches
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH (cross-project creative contamination)
+- **Module:** Creative Studio / Product Showroom
+- **Evidence:** `showroomState` is a single unkeyed Zustand object containing the product asset, prompts, mockup, and in-flight flags; `setShowroomState` merges globally with no project boundary or persistence (`creativeControlsSlice.ts:159-170`, `:343-355`). `ShowroomUI` reads the live `currentProjectId` only when creating an uploaded input and when sending the displayed result to Veo (`ShowroomUI.tsx:29-69`, `:300-315`). The generated mockup/video inherits the original input’s project ID in the service (`ShowroomService.ts:78-86`, `:131-139`), even if another project is active when the awaited operation completes.
+- **Impact:** Switching projects displays another project’s artwork, scene, and result; a generation started in A can finish while B is visible yet file itself into A, and Send to Veo can stamp the same displayed result as B. Users cannot tell which project owns the paid output.
+- **Fix:** Key showroom sessions by project or clear/confirm on project switch, capture immutable project/input/prompt snapshots at submission, and route completion/handoff/history consistently to that captured target with a visible project label. Persist recoverable drafts if promised.
+- **Acceptance:** A→B switch never exposes or mutates A’s draft without an explicit transfer; completing A while B is active files and labels the result only in A; Send to Veo cannot rewrite ownership to B; switching back restores A only if per-project draft persistence is intentional.
+
+### ISSUE-961: Audio Distribution QC treats every M4A/MP4 file as a lossless master without inspecting its codec
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 CRITICAL (invalid distribution master approval)
+- **Module:** Audio Analyzer / Distribution QC
+- **Evidence:** The lossless allowlist includes `audio/x-m4a`, `audio/mp4`, `.m4a`, and labels them “ALAC containers” (`AudioAnalyzer.tsx:51-64`). `isLosslessFormat()` returns true solely from MIME or extension (`:66-72`), and both browser and Electron paths gate only on those values before running/allowing the distribution analysis (`:74-142`). M4A/MP4 are containers and can carry lossy AAC; renamed files and codec variants are not probed.
+- **Impact:** A lossy AAC `.m4a` can pass the app’s authoritative lossless-master gate and be presented/saved as distribution compliant, risking distributor rejection or degraded source delivery.
+- **Fix:** Parse container/stream metadata and require an actually lossless supported codec (for M4A, ALAC—not AAC), valid sample rate/bit depth/channel layout, and decodable nontruncated audio. Keep extension/MIME only as an initial picker hint.
+- **Acceptance:** ALAC-in-M4A passes; AAC-LC/HE-AAC-in-M4A and AAC renamed `.wav` fail with codec-specific guidance; valid WAV/FLAC/AIFF pass; corrupt/truncated/unsupported multichannel fixtures fail before “Extraction Complete” or save; the stored QC record includes measured codec/container properties.
+
+### ISSUE-962: Browser Audio QC base64-encodes and sends the full master twice in parallel with no size/duration limit
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 CRITICAL (browser crash / provider-limit failure / excess cost)
+- **Module:** Audio Analyzer / Semantic and emotional analysis
+- **Evidence:** The UI has no file size or duration gate before analysis (`AudioAnalyzer.tsx:120-143`). In browser mode, semantic analysis reads the entire lossless master into a base64 string and sends it inline (`AudioIntelligenceService.ts:229-273`, `:315-329`). At the same time, `energyMapService.mapEmotionalArc(file, ...)` independently reads the same complete file into another base64 string and sends another model request (`AudioIntelligenceService.ts:137-169`; `EnergyMapService.ts:74-80`, `:130-144`, `:158-170`). The comment assumes “typical masters (5–10 MB),” but uncompressed production WAV/AIFF files can be far larger; no request-size/cost budget or cancellation exists.
+- **Impact:** Large/long masters can allocate multiple copies of the bytes plus ~33% base64 overhead, freeze or kill the renderer, exceed model/request limits twice, consume duplicate upload/token cost, and leave the user with a generic connectivity error.
+- **Fix:** Enforce measured size/duration/channel limits before allocation; create one bounded, content-addressed analysis proxy server-side (or one reusable compressed proxy), stream/upload once, reuse its handle for both analyses, expose cost/limits, and support cancellation/cleanup. Keep local technical QC available when semantic analysis is skipped.
+- **Acceptance:** Boundary tests just below/above limits give deterministic behavior; a large master never creates two full browser base64 copies or two raw-media uploads; both semantic jobs reuse one proxy ID; cancellation aborts requests and cleans temporary media; oversize/offline users can still run clearly labeled local technical QC without a false deep-analysis success.

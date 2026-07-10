@@ -42,6 +42,19 @@ export const sendForDigitalSignature = functions
 
         console.log(`[sendForDigitalSignature] Initiating multi-party signature request via ${providerName} for contract ${contractId} with ${signers.length} signers.`);
 
+        // Ownership gate (ISSUE-889): the caller's local contract record must
+        // exist BEFORE any external PandaDoc call — the platform API key can
+        // reach any document in the account, so contractId alone is not proof.
+        const db = admin.firestore();
+        const contractRef = db.doc(`users/${context.auth.uid}/contracts/${contractId}`);
+        const existingSnap = await contractRef.get();
+        if (!existingSnap.exists) {
+            throw new functions.https.HttpsError(
+                "permission-denied",
+                "Contract was not found for this user.",
+            );
+        }
+
         const apiKey = getPandaDocApiKey();
 
         // Standard PandaDoc API document creation and send flow for multi-recipients
@@ -73,23 +86,17 @@ export const sendForDigitalSignature = functions
         }
 
         // Initialize multi-party signature tracking on the contract document in Firestore
-        const db = admin.firestore();
-        const contractRef = db.doc(`users/${context.auth.uid}/contracts/${contractId}`);
-        const existingSnap = await contractRef.get();
-
-        if (existingSnap.exists) {
-            await contractRef.update({
-                status: "sent_for_signing",
-                signers: signers.map(s => ({
-                    name: s.name,
-                    email: s.email,
-                    percentage: s.percentage,
-                    status: "pending",
-                    signedAt: null
-                })),
-                updatedAt: admin.firestore.FieldValue.serverTimestamp()
-            });
-        }
+        await contractRef.update({
+            status: "sent_for_signing",
+            signers: signers.map(s => ({
+                name: s.name,
+                email: s.email,
+                percentage: s.percentage,
+                status: "pending",
+                signedAt: null
+            })),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
 
         return {
             envelopeId: contractId,
