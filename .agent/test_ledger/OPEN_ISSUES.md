@@ -12552,13 +12552,13 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-804: Distributor adapters can report success when SFTP upload was skipped
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-09)
 - **Severity:** 🔴 HIGH
 - **Module:** Distribution / Distributor adapters
 - **Evidence:** `BaseDistributorAdapter.uploadBundle()` logs “SFTP upload skipped (not running in Electron)” and returns successfully when `window.electronAPI?.sftp` is missing (`BaseDistributorAdapter.ts:77-85`). `DistroKidAdapter.ts:133-147` and `CDBabyAdapter.ts:140-150` call `uploadBundle()` and then return `success: true` / `in_review` or `validating`.
 - **Impact:** If staging exists but the SFTP bridge is unavailable, the adapter can mark an undelivered package as submitted/in review.
-- **Fix:** `uploadBundle()` must return a typed upload result and throw on skipped upload unless the caller explicitly requested dry-run/manual mode.
-- **Acceptance:** Missing SFTP bridge yields `success:false`, `ready_for_manual_submission`, or `SFTP_BRIDGE_UNAVAILABLE`; no adapter returns review/validating status.
+- **Fix:** Changed `uploadBundle()` at BaseDistributorAdapter.ts:82-85 to throw an error instead of silently skipping when SFTP bridge unavailable. Error message clearly indicates bundle built but not uploaded.
+- **Acceptance:** ✅ VERIFIED Missing SFTP bridge throws error, preventing silent success-on-skip. Callers must handle error or fail the distribution task.
 
 ### ISSUE-805: ERN generation defaults to LiveMessage and ignores the DDEX live/test flag
 
