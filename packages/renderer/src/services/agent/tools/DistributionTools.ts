@@ -239,7 +239,7 @@ const certify_tax_profile = wrapTool('certify_tax_profile', async (args: {
     tin: string;
     signedUnderPerjury: boolean;
 }) => {
-    const { userId, fullName, isUsPerson, country, tin, signedUnderPerjury } = args;
+    const { userId, fullName, isUsPerson, isEntity, country, tin, signedUnderPerjury } = args;
     if (!fullName?.trim()) {
         return toolError('Legal name is required to certify a tax profile.', 'LEGAL_NAME_REQUIRED');
     }
@@ -249,13 +249,17 @@ const certify_tax_profile = wrapTool('certify_tax_profile', async (args: {
             // Calculate status first
             const taxResult = await window.electronAPI.distribution.calculateTax({ userId, amount: 100 });
 
-            // Certify - remove userId from the data object as it's passed as first arg
+            // ISSUE-793: field names must match tax_withholding_engine.py's
+            // certify_user() exactly (is_us_person, is_entity, tin,
+            // signed_under_perjury) — the previous taxId/usPerson/signature
+            // shape silently mismatched and certification could never succeed.
             const certResult = await window.electronAPI.distribution.certifyTax(userId, {
-                fullName: fullName.trim(),
+                full_name: fullName.trim(),
                 country,
-                taxId: tin,
-                usPerson: isUsPerson,
-                signature: signedUnderPerjury ? 'SIGNED_DIGITALLY' : ''
+                tin,
+                is_us_person: isUsPerson,
+                is_entity: isEntity ?? false,
+                signed_under_perjury: signedUnderPerjury
             });
 
             // Use 'certified' boolean and valid properties from TaxReport interface

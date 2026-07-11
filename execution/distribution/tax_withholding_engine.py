@@ -214,12 +214,14 @@ class TaxComplianceOfficer:
         # User is only fully certified if TIN is valid AND perjury signed
         certified = signed and tin_valid
 
+        # ISSUE-793: never persist the raw TIN (SSN/EIN). Validation already
+        # happened above against the in-memory value — only the masked form
+        # and the pass/fail result are stored.
         user_record = {
             "user_id": user_id,
             "form_type": form,
             "country": country,
             "tin_masked": f"...{tin[-4:]}" if len(tin) > 4 else "***",
-            "tin": tin,  # Stored securely in this mock store
             "tin_valid": tin_valid,
             "tin_message": tin_msg,
             "certified": certified,
