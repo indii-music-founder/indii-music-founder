@@ -27,6 +27,15 @@ vi.mock('@/services/firebase', () => ({
     db: 'MOCK_DB'
 }));
 
+// ISSUE-901: Mock the Zustand store to return a real user
+vi.mock('@/core/store', () => ({
+    useStore: {
+        getState: vi.fn(() => ({
+            user: { uid: 'test-user-123' }
+        }))
+    }
+}));
+
 describe('RosterService', () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -42,12 +51,13 @@ describe('RosterService', () => {
     };
 
     describe('addToRoster', () => {
-        it('should add a valid venue to the roster successfully', async () => {
+        it('should add a valid venue to the roster successfully with authenticated user', async () => {
+            // ISSUE-901: Now uses test-user-123 instead of dev-user
             await RosterService.addToRoster(validVenue);
 
-            expect(mockDoc).toHaveBeenCalledWith('MOCK_DB', `users/dev-user/roster/${validVenue.id}`);
+            expect(mockDoc).toHaveBeenCalledWith('MOCK_DB', `users/test-user-123/roster/${validVenue.id}`);
             expect(mockSetDoc).toHaveBeenCalledWith(
-                `MOCK_DOC_REF:users/dev-user/roster/${validVenue.id}`,
+                `MOCK_DOC_REF:users/test-user-123/roster/${validVenue.id}`,
                 {
                     venueId: validVenue.id,
                     name: validVenue.name,
@@ -56,6 +66,16 @@ describe('RosterService', () => {
                     addedAt: 'MOCK_TIMESTAMP'
                 }
             );
+        });
+
+        it('should throw error when user is not authenticated', async () => {
+            const { useStore } = await import('@/core/store');
+            vi.mocked(useStore).getState.mockReturnValueOnce({ user: null } as any);
+
+            await expect(RosterService.addToRoster(validVenue)).rejects.toThrow(
+                'Cannot add to roster: User is not authenticated'
+            );
+            expect(mockSetDoc).not.toHaveBeenCalled();
         });
 
         it('should throw Zod validation error if venue data is invalid', async () => {
@@ -73,7 +93,7 @@ describe('RosterService', () => {
             await RosterService.addToRoster(testVenue);
 
             expect(mockSetDoc).toHaveBeenCalledWith(
-                `MOCK_DOC_REF:users/dev-user/roster/${validVenue.id}`,
+                `MOCK_DOC_REF:users/test-user-123/roster/${validVenue.id}`,
                 {
                     venueId: validVenue.id,
                     name: validVenue.name,
@@ -90,7 +110,7 @@ describe('RosterService', () => {
             await RosterService.addToRoster(venueExtra);
 
              expect(mockSetDoc).toHaveBeenCalledWith(
-                `MOCK_DOC_REF:users/dev-user/roster/${validVenue.id}`,
+                `MOCK_DOC_REF:users/test-user-123/roster/${validVenue.id}`,
                 {
                     venueId: validVenue.id,
                     name: validVenue.name,
