@@ -4,6 +4,7 @@
 
 ## Recent Commits
 ```
+58fd80514 chore: session checkpoint [19:07]
 781f91dee fix(memory): ISSUE-757 — raise archive search cap to 10,000 for full-history recall
 33fcdbe5d fix(persistence): ISSUE-755 — merge local/remote sessions instead of clobbering + add retry logic
 ecd218287 chore: session checkpoint [18:56]
@@ -13,7 +14,6 @@ da1aec305 docs: update ledger — PR #228 merged, ISSUE-766 L1-L2 fixed
 ff0e866dc chore: session checkpoint [18:41]
 0ec050923 chore: session checkpoint [17:59]
 a5da6604d chore: session checkpoint [17:58]
-e80a24de9 chore: session checkpoint [17:47]
 ```
 
 ## Working State
