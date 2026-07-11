@@ -58,6 +58,8 @@ export interface AgentSessionSlice {
     sessions: Record<string, ConversationSession>;
     activeSessionId: string | null;
     lastDirectSessionId: string | null;
+    sessionsPaginationLoading: boolean;
+    hasMoreSessions: boolean;
 
     // Session Actions
     createSession: (title?: string, initialAgents?: string[], namespace?: string, projectId?: string) => string;
@@ -79,6 +81,7 @@ export interface AgentSessionSlice {
 
     // Persistence
     loadSessions: () => Promise<void>;
+    loadMoreSessions: () => Promise<void>;
 }
 
 /**
@@ -93,6 +96,8 @@ export function buildAgentSessionState(
         sessions: {},
         activeSessionId: null,
         lastDirectSessionId: null,
+        sessionsPaginationLoading: false,
+        hasMoreSessions: true,
 
         createSession: (title = 'New Conversation', initialAgents?: string[], namespace?: string, projectId?: string) => {
             const state = get() as any;
@@ -443,6 +448,30 @@ export function buildAgentSessionState(
                 agentSessionsUnsubscribe = unsubscribe;
             } catch (error: unknown) {
                 logger.error('[AgentSlice] Failed to initialize sessions subscription:', error);
+            }
+        },
+        loadMoreSessions: async () => {
+            const state = get() as any;
+            if (state.sessionsPaginationLoading || !state.hasMoreSessions) return;
+            
+            set({ sessionsPaginationLoading: true });
+            try {
+                const { sessionService } = await import('@/services/agent/SessionService');
+                const lastSessionId = Object.keys(state.sessions).pop();
+                const lastSession = lastSessionId ? state.sessions[lastSessionId] : null;
+                
+                const moreSessions = await sessionService.getSessionsForUserPaginated(lastSession?.id);
+                if (moreSessions.length < 50) {
+                    set({ hasMoreSessions: false });
+                }
+                
+                set(st => ({
+                    sessions: { ...st.sessions, ...Object.fromEntries(moreSessions.map(s => [s.id, s])) },
+                    sessionsPaginationLoading: false
+                }));
+            } catch (err: unknown) {
+                logger.error('[AgentSlice] Load more sessions failed:', err);
+                set({ sessionsPaginationLoading: false });
             }
         },
     };

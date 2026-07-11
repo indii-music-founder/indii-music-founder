@@ -17,6 +17,7 @@ import { renderService } from '@/services/video/RenderService';
 import { logger } from '@/utils/logger';
 import { useResolvedStorageUrl } from '@/hooks/useResolvedStorageUrl';
 import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 
 function readAudioDuration(audioUrl: string): Promise<number> {
     return new Promise((resolve, reject) => {
@@ -252,7 +253,7 @@ export function StoryboardTimeline() {
                 firstFrame,
                 duration: 8, // 4 bars typically at ~120BPM is ~8 seconds
                 durationSeconds: 8,
-                model: 'veo-3.1-generate-preview'
+                model: INTELLIGENCE_MODELS.VIDEO.PRO
             });
 
             if (result && result.length > 0) {
