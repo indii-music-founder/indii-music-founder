@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-07-11 19:10 EDT
+**Updated:** 2026-07-11 19:15 EDT
 **Branch:** `fix/issues-core`
 
 ## Recent Commits
 ```
+c2a10ec49 chore: session checkpoint [19:10]
 4c5c1fee6 chore: session checkpoint [19:07]
 58fd80514 chore: session checkpoint [19:07]
 781f91dee fix(memory): ISSUE-757 — raise archive search cap to 10,000 for full-history recall
@@ -13,7 +14,6 @@ ecd218287 chore: session checkpoint [18:56]
 da1aec305 docs: update ledger — PR #228 merged, ISSUE-766 L1-L2 fixed
 0f0cc5b68 fix(social): ISSUE-766 layers 1-2 — add instagram_content_publish scope + dual-write tokens to socialTokens
 ff0e866dc chore: session checkpoint [18:41]
-0ec050923 chore: session checkpoint [17:59]
 ```
 
 ## Working State
