@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-07-11 10:38 EDT
+**Updated:** 2026-07-11 10:42 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+d380a1e64 docs: add keyboard shortcuts & command palette issues to ledger
+621912dca chore: session checkpoint [10:38]
 47cd65564 fix(tax): align certification schema end-to-end, stop storing raw TIN (ISSUE-793)
 13170ab5f chore: session checkpoint [10:36]
 84697c5c0 docs: add user manual documentation for bug reporting feature
@@ -12,13 +14,12 @@
 aa943a9ed fix(content-id): fail-closed rights attestation, fix IPC JSON contract (ISSUE-786, ISSUE-789)
 b5e7286b6 fix(ddex): correct ERN namespace to 4.3 on both non-canonical generators (ISSUE-784)
 3ece66f0b feat(bug-reporting): user-facing dialog for bug reports and feature requests
-76418e753 fix(ci): fail-closed macOS signing gate, verify codesign before publish (ISSUE-992)
-5afa700d0 fix(publishing): honest draft status and split-total normalization in ISWC mapper (ISSUE-865)
 ```
 
 ## Working State
 ```
-clean working tree
+ M packages/renderer/src/modules/publicist/components/CreateContactModal.tsx
+ M packages/renderer/src/modules/publicist/types.ts
 ```
 
 ## Decisions
