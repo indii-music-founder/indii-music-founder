@@ -1,7 +1,7 @@
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import ScreenwriterDashboard from './ScreenwriterDashboard';
+import ScreenwriterDashboard, { screenwriterDraftStorageKey } from './ScreenwriterDashboard';
 import { useStore } from '@/core/store';
 
 const mockSuccess = vi.fn();
@@ -11,6 +11,7 @@ const mockSetModule = vi.fn().mockResolvedValue(undefined);
 const mockSetGenerationMode = vi.fn();
 const mockSetViewMode = vi.fn();
 const mockSetCreativePrompt = vi.fn();
+const DRAFT_KEY = screenwriterDraftStorageKey('test-user', 'test-project');
 
 vi.mock('@/core/context/ToastContext', () => ({
     useToast: () => ({
@@ -44,12 +45,14 @@ vi.mock('motion/react', () => ({
 describe('ScreenwriterDashboard', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        window.localStorage.removeItem('indii-screenwriter-draft-v1');
+        window.localStorage.removeItem(DRAFT_KEY);
         Object.assign(useStore.getState() as any, {
             setModule: mockSetModule,
             setGenerationMode: mockSetGenerationMode,
             setViewMode: mockSetViewMode,
             setCreativePrompt: mockSetCreativePrompt,
+            userProfile: { id: 'test-user' },
+            currentProjectId: 'test-project',
         });
         (window as any).electronAPI = {
             agent: {
@@ -108,7 +111,7 @@ describe('ScreenwriterDashboard', () => {
         fireEvent.change(sceneDescription, { target: { value: 'Reloaded scene description' } });
 
         await waitFor(() => {
-            expect(window.localStorage.getItem('indii-screenwriter-draft-v1')).toContain('Reloaded scene description');
+            expect(window.localStorage.getItem(DRAFT_KEY)).toContain('Reloaded scene description');
         });
 
         unmount();
@@ -149,13 +152,13 @@ describe('ScreenwriterDashboard', () => {
             }],
         };
         const rawDraft = JSON.stringify(corruptDraft);
-        window.localStorage.setItem('indii-screenwriter-draft-v1', rawDraft);
+        window.localStorage.setItem(DRAFT_KEY, rawDraft);
 
         render(<ScreenwriterDashboard />);
 
         expect(screen.getByRole('alert')).toHaveTextContent('invalid duration');
         const durationInput = screen.getByDisplayValue('-7');
-        expect(window.localStorage.getItem('indii-screenwriter-draft-v1')).toBe(rawDraft);
+        expect(window.localStorage.getItem(DRAFT_KEY)).toBe(rawDraft);
 
         fireEvent.click(screen.getByRole('button', { name: /open creative studio/i }));
         expect(mockSetModule).not.toHaveBeenCalled();
@@ -165,7 +168,7 @@ describe('ScreenwriterDashboard', () => {
 
         await waitFor(() => {
             expect(screen.queryByRole('alert')).not.toBeInTheDocument();
-            expect(window.localStorage.getItem('indii-screenwriter-draft-v1')).toContain('"duration":9');
+            expect(window.localStorage.getItem(DRAFT_KEY)).toContain('"duration":9');
         });
     });
 });
