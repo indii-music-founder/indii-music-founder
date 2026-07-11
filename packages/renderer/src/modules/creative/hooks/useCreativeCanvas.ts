@@ -916,9 +916,15 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                 selectedCandidateUri: candidatePersistenceUri(generatedCandidates[0]),
                 outputUri: storageUri ?? item.url,
             });
-            toast.success('Saved to gallery & cloud!');
+            // ISSUE-917: Only show success if storage actually succeeded
+            if (storageUri) {
+                toast.success('Saved to gallery & cloud!');
+            } else {
+                toast.warning('Canvas state saved, but export to gallery failed.');
+            }
         } catch {
-            toast.warning('Stored to disk only.');
+            // ISSUE-917: No disk save actually happened in catch path
+            toast.error('Canvas save failed. Changes are not persistent.');
         }
     };
 

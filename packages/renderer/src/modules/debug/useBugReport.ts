@@ -17,9 +17,11 @@ import type { BugReportType } from './BugReportDialog';
  * ```
  */
 export const useBugReport = () => {
-    const { setBugReportDialog } = useStore((state) => ({
-        setBugReportDialog: state.setBugReportDialog,
-    }));
+    // ISSUE-CI-REGRESSION: a raw object-literal selector (no useShallow, and
+    // no reason to wrap a single field in an object) forced this hook —
+    // called at the App root via useBugReportShortcut — to re-render on
+    // EVERY Zustand store change, app-wide. Select the primitive directly.
+    const setBugReportDialog = useStore((state) => state.setBugReportDialog);
 
     const open = useCallback((type: BugReportType, prefilledError?: string, prefilledModule?: string) => {
         setBugReportDialog({

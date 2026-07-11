@@ -377,12 +377,22 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                             <ThumbsDown size={14} />
                         </button>
                         <button
-                            onClick={(e) => {
+                            onClick={async (e) => {
                                 e.stopPropagation();
-                                import('@/utils/download').then(({ downloadAsset }) => {
-                                    downloadAsset(item.url, `${item.type}-export-${item.id.slice(0, 8)}`);
-                                    toast.success('Downloading asset...');
-                                });
+                                try {
+                                    const { downloadAsset } = await import('@/utils/download');
+                                    // ISSUE-921: Add proper file extension
+                                    const ext = item.type === 'video' ? '.mp4' : item.type === 'music' ? '.mp3' : '.png';
+                                    const filename = `${item.type}-export-${item.id.slice(0, 8)}${ext}`;
+                                    const success = await downloadAsset(item.url, filename);
+                                    if (success) {
+                                        toast.success('Asset downloaded successfully.');
+                                    } else {
+                                        toast.error('Failed to download asset.');
+                                    }
+                                } catch (err: unknown) {
+                                    toast.error('Download failed.');
+                                }
                             }}
                             data-testid="download-asset-btn"
                             className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-green-600 transition-colors"
@@ -435,11 +445,8 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                     <Download size={10} className="text-white" />
                 </div>
             )}
-            {item.origin === 'generated' && (
-                <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-black/50 text-white/80 text-[8px] font-mono px-1.5 py-0.5 rounded backdrop-blur-sm pointer-events-none z-10 border border-white/10">
-                    <Sparkles size={8} /> SynthID
-                </div>
-            )}
+            {/* ISSUE-918: SynthID badge removed pending proper provenance tracking.
+                Generated assets don't have verified watermark metadata yet. */}
         </div>
     );
 });
