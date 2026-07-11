@@ -262,6 +262,12 @@ export async function checkOperationBudget(
         isTest: isTestMode,
         timestamp: now,
         metadata: metadata || {},
+        ledgerDocumentIds: {
+          daily: `daily-${today}`,
+          monthly: `monthly-${month}`,
+          hourly: `hourly-${hour}`,
+          ...(isTestMode ? { test: `test-${today}` } : {}),
+        },
       });
 
       console.info('[CostControl] Operation approved and reserved (server-side)', {
@@ -293,6 +299,42 @@ export async function checkOperationBudget(
       monthlyUsed: 0,
     };
   }
+}
+
+export async function finalizeOperationReservation(params: {
+  userId: string;
+  operationId: string;
+  outcome: 'SETTLED' | 'VOIDED';
+}): Promise<void> {
+  const db = admin.firestore();
+  const operationRef = db.doc(`costLedger/${params.operationId}`);
+  await db.runTransaction(async (tx) => {
+    const snapshot = await tx.get(operationRef);
+    if (!snapshot.exists) throw new Error(`Missing cost reservation ${params.operationId}`);
+    const data = snapshot.data() || {};
+    if (data.userId !== params.userId) throw new Error('Cost reservation owner mismatch');
+    if (data.status === params.outcome) return;
+    if (data.status !== 'APPROVED') throw new Error(`Cost reservation is already ${data.status}`);
+
+    tx.update(operationRef, {
+      status: params.outcome,
+      finalizedAt: FieldValue.serverTimestamp(),
+    });
+    if (params.outcome !== 'VOIDED') return;
+
+    const cost = Number(data.estimatedCost);
+    const ledgerIds = data.ledgerDocumentIds as Record<string, string> | undefined;
+    if (!Number.isFinite(cost) || cost < 0 || !ledgerIds) {
+      throw new Error('Cost reservation cannot be safely released');
+    }
+    for (const id of Object.values(ledgerIds)) {
+      tx.set(db.doc(`costLedger/${id}`), {
+        totalCost: FieldValue.increment(-cost),
+        operationCount: FieldValue.increment(-1),
+        lastUpdated: FieldValue.serverTimestamp(),
+      }, { merge: true });
+    }
+  });
 }
 
 /**
@@ -328,5 +370,24 @@ export const enforceOperationCost = functions.https.onCall(
       metadata: req.metadata,
       forceBypass: req.forceBypass,
     });
+  },
+);
+
+export const finalizeOperationCost = functions.https.onCall(
+  { region: 'us-central1', maxInstances: 20, timeoutSeconds: 30 },
+  async (request: functions.https.CallableRequest<unknown>): Promise<{ success: true }> => {
+    if (!request.auth) {
+      throw new functions.https.HttpsError('unauthenticated', 'Must be signed in');
+    }
+    const data = request.data as { operationId?: unknown; outcome?: unknown };
+    if (typeof data.operationId !== 'string' || !['SETTLED', 'VOIDED'].includes(String(data.outcome))) {
+      throw new functions.https.HttpsError('invalid-argument', 'A valid operationId and outcome are required');
+    }
+    await finalizeOperationReservation({
+      userId: request.auth.uid,
+      operationId: data.operationId,
+      outcome: data.outcome as 'SETTLED' | 'VOIDED',
+    });
+    return { success: true };
   },
 );

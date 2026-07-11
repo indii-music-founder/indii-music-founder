@@ -222,6 +222,7 @@ export class CloudStorageService {
             await deleteObject(audioRef);
         } catch (error: unknown) {
             Logger.warn('CloudStorage', `Audio deletion failed for ${id}:`, error);
+            throw error;
         }
     }
 

@@ -253,4 +253,42 @@ describe('InfiniteCanvas Culling', () => {
         );
         expect(overlayCalls.length).toBeGreaterThan(0);
     });
+
+    it('preserves every source layer when one layer is not ready to flatten', () => {
+        const removeCanvasImage = vi.fn();
+        const images = [
+            { id: 'ready-layer', base64: 'data:image/png;base64,ready', x: 0, y: 0, width: 100, height: 100, aspect: 1, projectId: 'p1' },
+            { id: 'pending-layer', base64: 'data:image/png;base64,pending', x: 100, y: 0, width: 100, height: 100, aspect: 1, projectId: 'p1' },
+        ];
+
+        global.Image = class {
+            onload: (() => void) | null = null;
+            naturalWidth = 0;
+            complete = false;
+            width = 100;
+            height = 100;
+            set src(_value: string) {}
+        } as any;
+
+        mockUseStore.mockImplementation((selector: any) => {
+            const state = {
+                canvasImages: images,
+                addCanvasImage: vi.fn(),
+                updateCanvasImage: vi.fn(),
+                removeCanvasImage,
+                selectedCanvasImageId: null,
+                selectCanvasImage: vi.fn(),
+                currentProjectId: 'p1',
+                generatedHistory: [],
+                uploadedImages: [],
+            };
+            return selector ? selector(state) : state;
+        });
+
+        render(<InfiniteCanvas />);
+        fireEvent.click(screen.getByRole('button', { name: 'Flatten Canvas' }));
+
+        expect(mockToast.error).toHaveBeenCalledWith(expect.stringContaining('still loading or unavailable'));
+        expect(removeCanvasImage).not.toHaveBeenCalled();
+    });
 });

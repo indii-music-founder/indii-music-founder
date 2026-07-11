@@ -266,6 +266,27 @@ export class ImageGenerationService {
         const quotaCheck = await subscriptionService.canPerformAction('generateImage', count, userId);
         logger.debug('[ImageGen DEBUG] Quota check result:', quotaCheck);
 
+        if (!quotaCheck.allowed) {
+            logger.error('[ImageGen] Quota exceeded');
+            let tier: SubscriptionTier = 'free' as SubscriptionTier;
+            try {
+                const sub = userId
+                    ? await subscriptionService.getSubscription(userId)
+                    : await subscriptionService.getCurrentSubscription();
+                tier = sub.tier;
+            } catch (e: unknown) {
+                logger.warn('Failed to fetch tier for QuotaExceededError, defaulting to free', e);
+            }
+
+            throw new QuotaExceededError(
+                'images',
+                tier,
+                quotaCheck.reason || 'Quota exceeded',
+                quotaCheck.currentUsage?.used || 0,
+                quotaCheck.currentUsage?.limit || count
+            );
+        }
+
         // Cost Control: Enforce budget limits before expensive API call
         const estimatedCost = count * 0.04; // $0.04 per image
         const uid = userId || auth.currentUser.uid;
@@ -326,27 +347,8 @@ export class ImageGenerationService {
                 throw new Error(`Image generation blocked: ${costCheck.reason}`);
             }
         }
-
-
-        if (!quotaCheck.allowed) {
-            logger.error('[ImageGen] Quota exceeded');
-            let tier: SubscriptionTier = 'free' as SubscriptionTier;
-            try {
-                const sub = userId
-                    ? await subscriptionService.getSubscription(userId)
-                    : await subscriptionService.getCurrentSubscription();
-                tier = sub.tier;
-            } catch (e: unknown) {
-                logger.warn('Failed to fetch tier for QuotaExceededError, defaulting to free', e);
-            }
-
-            throw new QuotaExceededError(
-                'images',
-                tier,
-                quotaCheck.reason || 'Quota exceeded',
-                quotaCheck.currentUsage?.used || 0,
-                quotaCheck.currentUsage?.limit || count
-            );
+        if (!costCheck.operationId) {
+            throw new Error('Image generation blocked: cost reservation receipt is missing.');
         }
 
         try {
@@ -414,6 +416,7 @@ export class ImageGenerationService {
                 imageSize,
                 referenceUri,
                 referenceUris,
+                costReservationId: costCheck.operationId,
                 // Gemini 3 advanced config
                 thinkingLevel: options.thinkingLevel,
                 includeThoughts: options.includeThoughts,
@@ -553,6 +556,11 @@ export class ImageGenerationService {
                 );
             }
         } catch (err: unknown) {
+            try {
+                await CostControlService.finalize(costCheck.operationId, 'VOIDED');
+            } catch (releaseError: unknown) {
+                logger.warn('[ImageGeneration] Cost reservation release requires reconciliation:', releaseError);
+            }
             const errObj = err as { code?: string; details?: unknown };
             const errorMsg = err instanceof Error ? err.message : String(err);
             logger.error('Image Generation Error', {

@@ -584,8 +584,10 @@ vi.mock('@/services/billing/CostControlService', () => ({
             allowed: true,
             remainingBudget: 100,
             dailyUsed: 0,
-            monthlyUsed: 0
+            monthlyUsed: 0,
+            operationId: 'test-cost-reservation'
         }),
+        finalize: vi.fn().mockResolvedValue(undefined),
         getStatus: vi.fn().mockResolvedValue({
             dailyUsed: 0,
             monthlyUsed: 0,

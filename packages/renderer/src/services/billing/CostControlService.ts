@@ -211,6 +211,16 @@ export class CostControlService {
     }
   }
 
+  static async finalize(operationId: string, outcome: 'SETTLED' | 'VOIDED'): Promise<void> {
+    if (this.isE2EMode) return;
+    if (!functions) throw new Error('Firebase Functions us-central1 client is unavailable.');
+    const finalizeOperationCost = httpsCallable<
+      { operationId: string; outcome: 'SETTLED' | 'VOIDED' },
+      { success: boolean }
+    >(functions, 'finalizeOperationCost');
+    await finalizeOperationCost({ operationId, outcome });
+  }
+
   /**
    * Get current cost status (read-only, no reservation).
    * Useful for UI to show remaining budget.

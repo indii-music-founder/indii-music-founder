@@ -18,6 +18,7 @@ import { useRemoteCommandListener } from '@/hooks/useRemoteCommandListener';
 import { useConnectivityMonitor } from '@/hooks/useConnectivityMonitor';
 import { useAutoSleep } from '@/hooks/useAutoSleep';
 import { useWorkspaceSync } from '@/hooks/useWorkspaceSync';
+import { useBugReportShortcut } from '@/modules/debug/useBugReportShortcut';
 import { LoadingFallback } from '@/core/components/LoadingFallbacks';
 import { cleanupLocalStorage } from '@/lib/storageHealth';
 import { flushFounderFunnelQueue } from '@/services/founders/founderFunnel';
@@ -25,6 +26,7 @@ import '@/core/i18n'; // Initialize i18next — must run before any component re
 import { AppInitializationProvider } from '@/providers/AppInitializationProvider';
 
 const AppShell = lazy(() => import('./AppShell'));
+const BugReportDialog = lazy(() => import('@/modules/debug/BugReportDialog').then(m => ({ default: m.BugReportDialog })));
 
 export function isRemoteSurfaceDevice(
     mobile: Pick<MobileState, 'isAnyPhone' | 'isTablet' | 'isTouchDevice'>
@@ -99,6 +101,9 @@ export default function App() {
 
     const shortcutsModal = useGlobalShortcutsModal();
 
+    // Bug reporting keyboard shortcuts (Ctrl+Shift+B for bugs, Ctrl+Shift+F for features)
+    useBugReportShortcut();
+
     // Remote Relay: Listen for phone commands and process them through the desktop's agent pipeline
     useRemoteCommandListener();
 
@@ -154,13 +159,14 @@ export default function App() {
                 <UnauthenticatedApp />
             ) : (
                 <Suspense fallback={<LoadingFallback />}>
-                    <AppShell 
-                        activeModule={activeModule} 
-                        activeShowChrome={activeShowChrome} 
-                        isDesktop={isDesktop} 
-                        isAnyPhone={isAnyPhone} 
-                        shortcutsModal={shortcutsModal} 
+                    <AppShell
+                        activeModule={activeModule}
+                        activeShowChrome={activeShowChrome}
+                        isDesktop={isDesktop}
+                        isAnyPhone={isAnyPhone}
+                        shortcutsModal={shortcutsModal}
                     />
+                    <BugReportDialog />
                 </Suspense>
             )}
             {import.meta.env.DEV && <DevPortWarning />}

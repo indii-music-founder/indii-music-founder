@@ -71,6 +71,9 @@ describe('ScreenwriterDashboard', () => {
         expect(filename).toMatch(/^screenwriter-script-\d+\.md$/);
         expect(content).toContain('# Screenwriter Draft');
         expect(content).toContain('## Scene List');
+        expect(content).toContain('## Timing Manifest');
+        expect(content).toContain('"totalDurationSeconds": 20');
+        expect(content).toContain('"durationSeconds": 5');
         expect(options).toEqual({ artifactType: 'walkthrough' });
         expect(mockSuccess).toHaveBeenCalledWith('Script exported to an artifact.');
     });
@@ -84,6 +87,10 @@ describe('ScreenwriterDashboard', () => {
             expect(mockSetCreativePrompt).toHaveBeenCalled();
         });
 
+        expect(mockSetCreativePrompt).toHaveBeenCalledWith(expect.stringContaining(
+            'Storyboard timing manifest: {"totalDurationSeconds":20,"scenes":[{"sceneNumber":1,"durationSeconds":5}'
+        ));
+        expect(mockSetCreativePrompt).toHaveBeenCalledWith(expect.stringContaining('(5s)'));
         expect(mockSetGenerationMode).toHaveBeenCalledWith('video');
         expect(mockSetViewMode).toHaveBeenCalledWith('video_production');
         expect(mockSetModule).toHaveBeenCalledWith('creative');
@@ -112,5 +119,53 @@ describe('ScreenwriterDashboard', () => {
         });
 
         expect(screen.getByDisplayValue('Reloaded scene description')).toBeInTheDocument();
+    });
+
+    it('rejects invalid scene timing without corrupting the draft', () => {
+        render(<ScreenwriterDashboard />);
+        fireEvent.click(screen.getByRole('button', { name: /visual storyboarder/i }));
+
+        const durationInput = screen.getByDisplayValue('5');
+        fireEvent.change(durationInput, { target: { value: '-1' } });
+
+        expect(mockError).toHaveBeenCalledWith(expect.stringContaining('between 1 and 60 seconds'));
+        expect(durationInput).toHaveValue(5);
+    });
+
+    it('preserves a corrupt legacy duration for visible repair and blocks persistence and handoff', async () => {
+        const corruptDraft = {
+            activeTab: 'storyboard',
+            songConcept: 'Legacy concept',
+            selectedTone: 'cinematic',
+            selectedSceneId: 'legacy-scene',
+            scenes: [{
+                id: 'legacy-scene',
+                sceneNumber: 1,
+                heading: 'INT. LEGACY ROOM - NIGHT',
+                description: 'A recovered scene.',
+                cameraAngle: 'Wide shot',
+                duration: '-7',
+                veoPrompt: 'Recovered prompt',
+            }],
+        };
+        const rawDraft = JSON.stringify(corruptDraft);
+        window.localStorage.setItem('indii-screenwriter-draft-v1', rawDraft);
+
+        render(<ScreenwriterDashboard />);
+
+        expect(screen.getByRole('alert')).toHaveTextContent('invalid duration');
+        const durationInput = screen.getByDisplayValue('-7');
+        expect(window.localStorage.getItem('indii-screenwriter-draft-v1')).toBe(rawDraft);
+
+        fireEvent.click(screen.getByRole('button', { name: /open creative studio/i }));
+        expect(mockSetModule).not.toHaveBeenCalled();
+        expect(mockError).toHaveBeenCalledWith(expect.stringContaining('invalid saved duration'));
+
+        fireEvent.change(durationInput, { target: { value: '9' } });
+
+        await waitFor(() => {
+            expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+            expect(window.localStorage.getItem('indii-screenwriter-draft-v1')).toContain('"duration":9');
+        });
     });
 });
