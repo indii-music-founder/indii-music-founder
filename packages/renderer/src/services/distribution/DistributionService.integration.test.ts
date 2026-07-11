@@ -62,7 +62,17 @@ describe.skip('DistributionService Integration', () => {
     });
 
     it('should call generateContentIdCSV via IPC', async () => {
-        const data = { tracks: [] };
+        const data: import('@/types/distribution').ContentIdData = {
+            tracks: [{ isrc: 'US123', title: 'Test' }],
+            upc: '123456789012',
+            artist: 'Test Artist',
+            rights_attestation: {
+                exclusive_rights: true,
+                label: 'Test Label',
+                match_policy: 'monetize',
+                territories: ['US']
+            }
+        };
         mockElectronAPI.distribution.generateContentIdCSV.mockResolvedValue({
             success: true,
             csvData: 'ISRC,Title\nUS123,Test',
