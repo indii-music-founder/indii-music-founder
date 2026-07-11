@@ -13159,7 +13159,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 - **Fix applied (2026-07-10):** `pandadocWebhook.ts` fails closed — missing `PANDADOC_WEBHOOK_SECRET` returns 500 before any read of the payload; signature compare is now `crypto.timingSafeEqual`; stale "IP ranges" doc comment corrected. Deployed.
 ### ISSUE-864: Signed-document webhook can queue publishing/distribution automation from document name alone
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-10, deployed)
 - **Severity:** 🟠 HIGH
 - **Module:** Legal / PandaDoc webhook / Release automation
 - **Evidence:** On `document.completed`, the webhook classifies publishing agreements by `documentType` or name substrings like `publishing`, `songwriter`, or `composition` (`pandadocWebhook.ts:173-184`), then queues `iswc_mapper_queue` with token-derived writers (`:187-199`). It classifies distribution/release approval by type or name substrings like `distribution` and `release approval` (`:202-210`), then queues `distribution_pipeline_queue` with `isrcAssignment`, `ddexGeneration`, and `dspDelivery` pending (`:211-228`).
@@ -13167,6 +13167,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 - **Fix:** Require trusted template IDs, signed recipient role validation, release ownership lookup, rights/readiness gate pass, and idempotent event IDs before queueing automation.
 - **Acceptance:** Generic completed documents with “distribution” in the name do not queue delivery; only approved templates tied to a verified release and explicit approval create jobs.
 
+- **Fix applied (2026-07-10):** Removed all document-name substring matching (`docNameLower.includes('publishing')` etc.) — automation now requires an EXACT allow-listed `documentType` metadata/token value set at document-creation time, never inferred from the free-text filename. Added: (1) explicit `hasCompletedSigner` check before any trigger fires, (2) idempotency guard via `pandadoc_webhook_automation/{documentId}_{status}` transaction so PandaDoc retries can't queue duplicate pipeline jobs, (3) release-ownership verification via the newly-exported `findWritableReleaseRef()` (shared with ISSUE-887's hardened identifier registry) before queueing distribution automation — an unowned/nonexistent `releaseId` is refused and logged. **Caveat:** no caller currently sets `metadata.documentType` when creating publishing/distribution PandaDoc documents (`PandaDocService.createDocument`), so both triggers are now correctly inert (fail-closed) until that wiring is added — a separate feature-completion task, not guessed here. Deployed (pandadocWebhook).
 ### ISSUE-865: ISWC mapper logs “composition registered” while creating only a draft work record
 
 - **Status:** 🔴 OPEN
@@ -14633,13 +14634,15 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-1010: One failed Infinite Canvas variation discards successful paid sibling results
 
-- **Status:** 🟠 OPEN
+- **Status:** 🟡 PARTIAL (2026-07-11 — successful siblings preserved; failed-slot retry remains)
 - **Severity:** 🟠 HIGH (paid creative outputs become inaccessible after partial batch failure)
 - **Module:** Creative Suite / Infinite Canvas / Generate variations
 - **Evidence:** Variation generation deliberately starts four independent `ImageGeneration.generateImages()` calls in parallel (`InfiniteCanvas.tsx:658-667`) but waits with `Promise.all` (`:669`). If any one request rejects, control goes directly to the catch that only says “Failed to generate variations” (`:713-716`); it never processes the fulfilled sibling results. Only after the all-success wait does the code add outputs to canvas/history (`:672-711`). Each sibling is a real generation request with its own cost check, provider call, storage/metadata processing, and potentially an output before a different sibling fails (`ImageGenerationService.ts:258-575`).
 - **Impact:** A transient failure in one of four requests can hide the other completed variants from the canvas and gallery, while the creator sees a total-failure toast. Those successful outputs may still incur cost and storage/metadata artifacts but have no visible selection, download, retry, or cleanup route.
 - **Fix:** Use typed `Promise.allSettled` batch receipts, preserve every fulfilled output with its request/result lineage, and report completed/failed counts separately. Tie each request to a batch ID, allow retry of only failed slots, and reconcile/clean up any provider output that cannot be made recoverable in the canvas/history.
 - **Acceptance:** With 3 successful and 1 rejected variation fixtures, all three successful images appear once on canvas/history in deterministic slots, the summary reports `3 generated, 1 failed`, and the failed slot can be retried without regenerating or charging the successes; all-failed and cancellation cases preserve the source image and expose no false success; late completions after a retry/project switch cannot duplicate, orphan, or misfile a result.
+
+- **Fix progress (2026-07-11):** Replaced fail-fast `Promise.all` with indexed `Promise.allSettled`. Fulfilled sibling outputs are now placed in their deterministic request slots and saved to history; partial batches report exact generated/failed counts, while all-failed batches preserve the source and report failure. Existing Infinite Canvas tests, ESLint, renderer TypeScript, and diff checks pass. Remaining before FIXED: per-slot retry UI/idempotency and late-completion/project-switch coverage.
 
 ### ISSUE-1011: Whisk “Precise Reference” crashes on Gallery/Storage URLs because it assumes every reference is a data URI
 
@@ -14653,13 +14656,15 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-1012: Whisk inspiration trusts arbitrary model JSON and can crash the creative reference panel
 
-- **Status:** 🟡 OPEN
+- **Status:** ✅ FIXED (2026-07-11)
 - **Severity:** 🟡 MEDIUM (recoverable AI output becomes a broken authoring surface)
 - **Module:** Creative Suite / Whisk / Inspire Me
 - **Evidence:** `WhiskService.generateInspiration()` extracts the first bracketed fragment from streamed model text and returns raw `JSON.parse(...)` without checking that it is an array of bounded strings (`WhiskService.ts:201-235`). `WhiskDropZone` declares the result as `string[]`, stores it directly, then uses both `.length` and `.map(...)` to render suggestion buttons (`WhiskDropZone.tsx:107-116`, `:180-205`). A valid JSON string, object, nested array/object, numeric array, or adversarially huge array therefore passes parsing; a string/object with a truthy length can cause `inspirations.map is not a function`, while non-string elements can break selection/truncation or inject unusable prompt values.
 - **Impact:** A malformed but ordinary model response can crash or blank the Whisk category panel immediately after the creator clicks Inspire Me, interrupting their prompt/reference workflow and offering no retryable explanation.
 - **Fix:** Validate the streamed response against a strict schema: an array of 1–4 non-empty trimmed strings with per-item and aggregate length limits; reject/coerce nothing else. Parse fenced/extra model text safely, retain the prior UI state on invalid output, and show a recoverable “suggestions unavailable—retry” notice rather than rendering untrusted structure.
 - **Acceptance:** JSON string, object, nested array, number/null values, malformed JSON, markdown-fenced JSON, oversized arrays/items, and stream interruption fixtures never crash the panel or call `onAdd` with a non-string; a valid 1–4-item array renders selectable suggestions; invalid responses preserve existing references and expose retry diagnostics without leaking raw model output.
+
+- **Fix applied (2026-07-11):** Added `parseInspirationSuggestions()` as the sole structured-output boundary. It requires a JSON array of 1–4 trimmed, non-empty strings of at most 160 characters and throws a recoverable generation error for missing arrays, invalid JSON/shapes, non-string values, empty strings, or oversize output. `generateInspiration()` now validates before the panel receives state. Added focused coverage for fenced valid JSON and six malformed/oversize response classes; verified both Whisk service suites (12 tests), ESLint, and renderer TypeScript `--noEmit`.
 
 ### ISSUE-1013: Social account wizard collects creative profile/banner assets but drops them before the external signup handoff
 
@@ -14673,13 +14678,15 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-1014: Video Workflow’s 3D Stage Builder cannot receive the GLB/GLTF files it tells creators to drop
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL (2026-07-11 — intake unblocked; decode/progress hardening remains)
 - **Severity:** 🔴 CRITICAL (custom music-video set construction is blocked at intake)
 - **Module:** Creative Suite / Video Workflow / 3D Stage Builder
 - **Evidence:** The active Video Workflow lazy-loads and renders `SceneBuilder` (`VideoWorkflow.tsx:26-27`, `:1053`). Its only file intake handlers (`onDragOver`, `onDrop`) live on `DroppableArea` (`SceneBuilder.tsx:82-102`), but that element is rendered with Tailwind `pointer-events-none` (`:104-112`). It therefore cannot become the drag target or receive the events that call `URL.createObjectURL`/`onDrop`; no parent supplies alternative handlers or file picker. The UI nevertheless directs users to “Drag and drop any .glb or .gltf 3D assets” to build a custom music-video stage (`:163-179`).
 - **Impact:** The advertised 3D-stage creative workflow accepts no model asset in normal pointer-event behavior. Creators cannot construct a custom set, and a browser/device-specific non-response offers no visible error or alternate intake path.
 - **Fix:** Make a real, accessible drop target receive pointer events (while preserving any decorative overlay separately), add a file-picker fallback, validate extension plus detected GLTF/GLB structure/size, and expose loading/error/progress per asset. Add a browser-level interaction test that dispatches an actual `DataTransfer` drop rather than mocking the 3D canvas alone.
 - **Acceptance:** Dragging valid `.glb` and `.gltf` fixtures onto the visible Stage Builder invokes intake exactly once, adds a loadable asset, and reports readable progress; invalid, corrupt, oversize, multi-file, cancellation, and decode-error fixtures preserve the scene and show actionable errors; keyboard users can choose the same file via a picker; the drop target remains usable above the canvas without preventing camera controls outside the target.
+
+- **Fix progress (2026-07-11):** Moved drag/drop handling to the Stage Builder container so the decorative overlay remains pointer-transparent and OrbitControls are not blocked. Added an accessible Add Model picker, case-insensitive GLB/GLTF validation, empty/100 MB guards, collision-safe IDs, and object-URL cleanup on clear/unmount. Added four focused validation tests; Vitest, ESLint, renderer TypeScript, and diff checks pass. Remaining before FIXED: browser-level drop/picker interaction coverage plus explicit GLTF decode/progress/error UI.
 
 ### ISSUE-1015: A built 3D music-video stage is local preview state only and can never be saved or rendered into a video
 
