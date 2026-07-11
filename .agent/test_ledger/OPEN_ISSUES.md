@@ -13611,7 +13611,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-902: Security rotation contract omits `vaultData`, so supported provider rotations cannot run
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH (security / broken incident response)
 - **Module:** Security agent / Electron credential rotation bridge
 - **Evidence:** The Electron main handler requires `RotationInputSchema` with both `serviceName` and `vaultData` (`security.ts:15-18`) and then reads provider secrets from `vaultData.api_secret`, `vaultData.github_token`, `vaultData.secret_name`, and `vaultData.repo` for Stripe/GitHub rotation (`:40-106`). The renderer tool calls `window.electronAPI.security.rotateCredentials({ serviceName: service_name })` with no `vaultData` (`SecurityTools.ts:68-80`), and the global Electron type only permits `{ serviceName: string }` (`electron.d.ts:233-236`).
