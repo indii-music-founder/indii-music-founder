@@ -12375,13 +12375,14 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 - **Fix applied (2026-07-10):** `AuthorityPanel.handleGenerateDDEX` no longer generates one ISRC and reuses it across every track missing a code — it now issues one ISRC per missing track sequentially (avoids racing the backend pool transaction), then hard-fails DDEX compilation if any duplicate ISRC is detected across tracks before compilation. Single-track releases still use one code, correctly. Regression test added covering 3 tracks each missing an ISRC receiving 3 distinct codes.
 ### ISSUE-783: Singles skip UPC/ICPN allocation even though downstream release packaging requires one
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-11)
 - **Severity:** 🟠 HIGH
 - **Module:** Metadata / DDEX
 - **Evidence:** `MetadataOrchestrator.ts:28` and `IngestionNotificationService.ts:40-43` allocate UPC only when `releaseType !== 'Single'`. `AuthorityPanel.tsx:68-100` and DDEX release validation require release-level UPC/ICPN regardless.
 - **Impact:** Singles can be marked Golden, then deadlock during packaging or receive identifiers from a later inconsistent path.
 - **Fix:** Define the canonical release identifier policy once. Allocate/import a valid GTIN/UPC/EAN for every commercial release that needs ICPN, including singles, or use an explicitly supported catalog-number-only profile.
 - **Acceptance:** Single and album fixtures pass the same release-identity gate before DDEX generation.
+- **Fix applied (2026-07-11):** Removed the `releaseType !== 'Single'` gate in both `MetadataOrchestrator.createGoldenMetadata` and `IngestionNotificationService.generateIngestionNotification` — UPC is now allocated via `IdentifierService.nextUPC()` for every release type, matching `AuthorityPanel`'s existing unconditional requirement. Not done: no dedicated regression test added for this specific fixture pairing.
 
 ### ISSUE-784: DDEX compiler emits a fake DPID and an ERN 4.2 document while the app claims ERN 4.3
 
