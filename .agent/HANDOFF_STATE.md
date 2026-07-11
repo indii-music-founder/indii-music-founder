@@ -1,9 +1,12 @@
 # Handoff State
-**Updated:** 2026-07-11 11:37 EDT
+**Updated:** 2026-07-11 11:41 EDT
 **Branch:** `fix/zustand-selector-regression`
 
 ## Recent Commits
 ```
+49ab96d91 docs: mark ISSUE-900 fixed in ledger
+a27765b4c fix(security): fail closed on unsupported credential rotation (ISSUE-900)
+9711cddc6 chore: session checkpoint [11:37]
 836c1ff5d fix(debug): use shallow selector to prevent infinite re-renders in BugReportDialog
 8e0acdb27 chore: session checkpoint [11:35]
 5287d1b4d chore: session checkpoint [11:35]
@@ -11,14 +14,11 @@
 98cae3e10 fix(ci): repair generateImageV3 test broken by cost-reservation gate (ISSUE-881 follow-up)
 fdd02ff69 chore: session checkpoint [11:01]
 756c9b265 fix(remote): stop invalid Firestore writes, add missing P2P finality field (ISSUE-981)
-a7f9f3fc0 fix(merchandise): add confirmation dialog before applying destructive template (ISSUE-934)
-9def3956b chore: session checkpoint [10:57]
-78909ab5f chore: document session progress and strategic roadmap
 ```
 
 ## Working State
 ```
-clean working tree
+ M packages/renderer/src/modules/agent/services/RosterService.ts
 ```
 
 ## Decisions
