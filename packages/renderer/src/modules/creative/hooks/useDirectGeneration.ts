@@ -314,9 +314,19 @@ export function useDirectGeneration() {
             const ingredientsList = (videoInputs?.ingredients || []).filter(ingredient => !!ingredient?.url);
             if (ingredientsList.length > 0) {
                 try {
-                    referenceUris = (await Promise.all(
+                    // ISSUE-915: Use allSettled to preserve successful uploads even if some fail
+                    const results = await Promise.allSettled(
                         ingredientsList.slice(0, 14).map(ingredient => CreativeStorageService.uploadReferenceMedia(userId, ingredient.url, 'image', { scope: 'objects' }))
-                    )).filter((uri): uri is string => !!uri);
+                    );
+                    referenceUris = results
+                        .filter((r): r is PromiseFulfilledResult<string> => r.status === 'fulfilled' && !!r.value)
+                        .map(r => r.value);
+                    
+                    // Warn if any uploads failed
+                    const failedCount = results.filter(r => r.status === 'rejected').length;
+                    if (failedCount > 0) {
+                        logger.warn(`${failedCount} reference upload(s) failed, proceeding with ${referenceUris.length} successful uploads`);
+                    }
                     referenceUri = referenceUris[0];
                 } catch (uploadError: unknown) {
                     logger.warn('Reference image upload failed, proceeding without references:', uploadError);

@@ -151,14 +151,12 @@ export const PUBLICIST_TOOLS = {
     }),
 
     pitch_story: wrapTool('pitch_story', async (args: { outlet: string, angle: string }) => {
-        const pitch = {
-            outlet: args.outlet,
-            status: "drafted",
-            subjectLine: `Exclusive: Why [Artist] is the next big thing`,
-            emailBody: `Hi Team at ${args.outlet},\n\nI wanted to share a story about... [AI would generate full pitch based on ${args.angle}]`
-        };
-        PitchStorySchema.parse(pitch);
-        return toolSuccess(pitch, `Pitch drafted for ${args.outlet}.`);
+        // ISSUE-911: pitch_story requires AI model to generate real content.
+        // Placeholder implementation removed to avoid fabricating copy.
+        return toolError(
+            `pitch_story requires an active AI model connection to generate a custom pitch for ${args.outlet} based on angle: "${args.angle}". This is not yet implemented.`,
+            'NOT_IMPLEMENTED'
+        );
     }),
 
     generate_campaign_assets: wrapTool('generate_campaign_assets', async (args: { trackTitle: string, artistName: string, releaseDate: string, musicalStyle: string[], targetAudience: string }) => {

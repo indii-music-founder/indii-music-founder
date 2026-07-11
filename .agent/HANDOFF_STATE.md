@@ -1,26 +1,24 @@
 # Handoff State
-**Updated:** 2026-07-11 11:35 EDT
-**Branch:** `main`
+**Updated:** 2026-07-11 12:04 EDT
+**Branch:** `fix/zustand-selector-regression`
 
 ## Recent Commits
 ```
-5287d1b4d chore: session checkpoint [11:35]
-1dd09b914 chore: session checkpoint [11:29]
-98cae3e10 fix(ci): repair generateImageV3 test broken by cost-reservation gate (ISSUE-881 follow-up)
-fdd02ff69 chore: session checkpoint [11:01]
-756c9b265 fix(remote): stop invalid Firestore writes, add missing P2P finality field (ISSUE-981)
-a7f9f3fc0 fix(merchandise): add confirmation dialog before applying destructive template (ISSUE-934)
-9def3956b chore: session checkpoint [10:57]
-78909ab5f chore: document session progress and strategic roadmap
-4125b5a9d fix(merchandise): honest save results, support personal workspace (ISSUE-933)
-52a56c13b docs: update ledger — mark ISSUE-933 and ISSUE-764 status
+450637ea5 docs: mark ISSUE-918 fixed
+20d8cefc4 fix(creative): remove false SynthID claim pending provenance tracking (ISSUE-918)
+6363a8518 docs: mark ISSUE-915 fixed
+b37c558dd fix(creative): preserve successful reference uploads, report failures (ISSUE-915)
+1f72d3374 fix(video): use correct 'music' type in editor asset filter (ISSUE-923 partial)
+29c07dfec chore(debug): remove accidentally-committed .orig merge-backup files
+040e87ad7 chore: session checkpoint [11:57]
+839a0a7ed fix(debug): use shallow selector to prevent infinite re-renders in BugReportDialog
+b5f9fee1f docs: mark ISSUE-921 fixed
+1ecd68d17 fix(creative): await download, show error toast, add file extension (ISSUE-921)
 ```
 
 ## Working State
 ```
- M .agent/HANDOFF_STATE.md
- M packages/renderer/src/modules/debug/BugReportDialog.tsx
- M packages/renderer/src/modules/debug/useBugReport.ts
+clean working tree
 ```
 
 ## Decisions

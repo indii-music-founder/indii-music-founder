@@ -25,7 +25,9 @@ export class MetadataOrchestrator {
         
         // 2. Auto-generate Industry Identifiers if missing
         const isrc = initialData.isrc || await IdentifierService.nextISRC();
-        const upc = initialData.upc || (initialData.releaseType !== 'Single' ? await IdentifierService.nextUPC() : undefined);
+        // ISSUE-783: every commercial release requires a release-level UPC/ICPN for
+        // DDEX packaging (AuthorityPanel/DDEX validation), including singles.
+        const upc = initialData.upc || await IdentifierService.nextUPC();
 
         // 3. Map Intelligence results to Golden Metadata Schema
         const metadata: ExtendedGoldenMetadata = {

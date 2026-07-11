@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { AlertCircle, MessageSquare, Lightbulb, X } from 'lucide-react';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { agentService } from '@/services/agent/AgentService';
 import { logger } from '@/utils/logger';
 import { Modal } from '@/components/ui/Modal';
@@ -22,10 +23,16 @@ export interface BugReportDialogState {
  * Integrates with agent system to send reports as messages.
  */
 export const BugReportDialog: React.FC = () => {
-    const { bugReportDialog, setBugReportDialog } = useStore((state) => ({
-        bugReportDialog: state.bugReportDialog,
-        setBugReportDialog: state.setBugReportDialog,
-    }));
+    // ISSUE-CI-REGRESSION: a raw object-literal selector (no useShallow) forced
+    // this ALWAYS-MOUNTED component to re-render on every Zustand store
+    // change app-wide — the root cause of the production "Maximum update
+    // depth exceeded" crash (React error #185) breaking e2e/deploy.
+    const { bugReportDialog, setBugReportDialog } = useStore(
+        useShallow((state) => ({
+            bugReportDialog: state.bugReportDialog,
+            setBugReportDialog: state.setBugReportDialog,
+        }))
+    );
 
     const [formData, setFormData] = useState({
         title: bugReportDialog?.prefilledError || '',
