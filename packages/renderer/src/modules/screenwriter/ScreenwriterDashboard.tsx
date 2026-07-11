@@ -32,7 +32,9 @@ interface DraftLoadResult {
     timingRepairs: Record<string, string>;
 }
 
-const SCREENWRITER_DRAFT_STORAGE_KEY = 'indii-screenwriter-draft-v1';
+export function screenwriterDraftStorageKey(userId: string, projectId: string): string {
+    return `indii-screenwriter-draft-v2:${userId}:${projectId}`;
+}
 
 const DEFAULT_SCENES: StoryboardScene[] = [
     {
@@ -118,11 +120,12 @@ function normalizeDraft(value: unknown): DraftLoadResult {
     }, timingRepairs };
 }
 
-function loadDraft(): DraftLoadResult {
+function loadDraft(storageKey: string | null): DraftLoadResult {
     if (typeof window === 'undefined') return { draft: createDefaultDraft(), timingRepairs: {} };
+    if (!storageKey) return { draft: createDefaultDraft(), timingRepairs: {} };
 
     try {
-        const raw = window.localStorage.getItem(SCREENWRITER_DRAFT_STORAGE_KEY);
+        const raw = window.localStorage.getItem(storageKey);
         if (!raw) return { draft: createDefaultDraft(), timingRepairs: {} };
         return normalizeDraft(JSON.parse(raw));
     } catch {
@@ -130,18 +133,23 @@ function loadDraft(): DraftLoadResult {
     }
 }
 
-function saveDraft(draft: ScreenwriterDraft): void {
+function saveDraft(storageKey: string | null, draft: ScreenwriterDraft): void {
     if (typeof window === 'undefined') return;
+    if (!storageKey) return;
 
     try {
-        window.localStorage.setItem(SCREENWRITER_DRAFT_STORAGE_KEY, JSON.stringify(draft));
+        window.localStorage.setItem(storageKey, JSON.stringify(draft));
     } catch {
         // Ignore storage quota / private browsing failures.
     }
 }
 
 export default function ScreenwriterDashboard() {
-    const [initialLoad] = useState<DraftLoadResult>(() => loadDraft());
+    const storageKey = useStore(useShallow(state => {
+        const userId = state.userProfile?.id;
+        return userId && state.currentProjectId ? screenwriterDraftStorageKey(userId, state.currentProjectId) : null;
+    }));
+    const [initialLoad] = useState<DraftLoadResult>(() => loadDraft(storageKey));
     const initialDraft = initialLoad.draft;
     const [activeTab, setActiveTab] = useState<ScreenwriterDraft['activeTab']>(initialDraft.activeTab);
     const toast = useToast();
@@ -164,17 +172,26 @@ export default function ScreenwriterDashboard() {
 
     const [selectedSceneId, setSelectedSceneId] = useState<string>(initialDraft.selectedSceneId);
     const [timingRepairs, setTimingRepairs] = useState<Record<string, string>>(initialLoad.timingRepairs);
+    const [hydratedKey, setHydratedKey] = useState(storageKey);
 
     useEffect(() => {
+        const loaded = loadDraft(storageKey);
+        setActiveTab(loaded.draft.activeTab); setSongConcept(loaded.draft.songConcept); setSelectedTone(loaded.draft.selectedTone);
+        setScenes(loaded.draft.scenes); setSelectedSceneId(loaded.draft.selectedSceneId); setTimingRepairs(loaded.timingRepairs);
+        setHydratedKey(storageKey);
+    }, [storageKey]);
+
+    useEffect(() => {
+        if (hydratedKey !== storageKey) return;
         if (Object.keys(timingRepairs).length > 0 || getStoryboardTimingError(scenes.map((scene) => scene.duration))) return;
-        saveDraft({
+        saveDraft(storageKey, {
             activeTab,
             songConcept,
             selectedTone,
             scenes,
             selectedSceneId,
         });
-    }, [activeTab, songConcept, selectedTone, scenes, selectedSceneId, timingRepairs]);
+    }, [activeTab, songConcept, selectedTone, scenes, selectedSceneId, timingRepairs, storageKey, hydratedKey]);
 
     const getCurrentTimingError = () => {
         const repairSceneId = Object.keys(timingRepairs)[0];
