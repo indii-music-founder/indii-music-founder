@@ -1,9 +1,12 @@
 # Handoff State
-**Updated:** 2026-07-11 10:57 EDT
+**Updated:** 2026-07-11 11:01 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+756c9b265 fix(remote): stop invalid Firestore writes, add missing P2P finality field (ISSUE-981)
+a7f9f3fc0 fix(merchandise): add confirmation dialog before applying destructive template (ISSUE-934)
+9def3956b chore: session checkpoint [10:57]
 78909ab5f chore: document session progress and strategic roadmap
 4125b5a9d fix(merchandise): honest save results, support personal workspace (ISSUE-933)
 52a56c13b docs: update ledger — mark ISSUE-933 and ISSUE-764 status
@@ -11,9 +14,6 @@
 f5e13c53d chore: linter optimization for merchandise auto-save
 74799882c fix(merchandise): return SaveResult from saveDesign callback (ISSUE-933)
 7f88eb0be test(publicist): add regression coverage for verified-email-only mailto gate (ISSUE-912)
-0fecc25d6 chore: session checkpoint [10:46]
-4d31e9cc7 chore: session checkpoint [10:46]
-104613c42 docs: create comprehensive keyboard shortcuts reference (ISSUE-1021)
 ```
 
 ## Working State
