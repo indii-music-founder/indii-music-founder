@@ -13633,7 +13633,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-904: Legal Agent split-sheet tool advertises e-signature initiation but only creates a draft
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟠 HIGH
 - **Module:** Legal agent / Split sheets / E-signature workflow
 - **Evidence:** `LegalAgent` exposes `draft_split_sheet` with the tool description “Generates a standard split sheet for collaborators and initiates digital signatures through the configured signature provider” (`LegalAgent.ts:107-108`). The mapped implementation is `LegalTools.generate_split_sheet` (`LegalAgent.ts:55`), which validates the percentages and calls `draft_contract` (`LegalTools.ts:86-107`). `draft_contract` saves a draft contract to the Legal Dashboard (`:49-64`) but does not call `trigger_digital_signature`, `sendForDigitalSignature`, PandaDoc, DocuSign, or collect signer emails from the declared `collaborators` schema.

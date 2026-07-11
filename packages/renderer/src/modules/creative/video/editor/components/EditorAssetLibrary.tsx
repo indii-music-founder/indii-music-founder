@@ -99,13 +99,13 @@ export const EditorAssetLibrary: React.FC<EditorAssetLibraryProps> = ({ onDragSt
 
     // Filter for supported types
     const assets = history.filter((item: HistoryItem) =>
-        ['image', 'video', 'audio'].includes(item.type)
+        ['image', 'video', 'music'].includes(item.type)
     );
 
     const getIcon = (type: string) => {
         switch (type) {
             case 'video': return <Film size={12} />;
-            case 'audio': return <Music size={12} />;
+            case 'music': return <Music size={12} />;
             case 'image': return <Image size={12} />;
             default: return <FileText size={12} />;
         }
