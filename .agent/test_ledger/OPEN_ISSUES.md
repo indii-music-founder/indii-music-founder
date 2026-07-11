@@ -13762,7 +13762,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-917: Canvas save reports disk/cloud success when no durable save occurred
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟠 HIGH
 - **Module:** Creative Suite / Canvas persistence
 - **Evidence:** If `canvasOps.getBlob()` returns null, `saveCanvas()` skips Storage upload and gallery insertion entirely but still persists the session and toasts “Saved to gallery & cloud!” (`useCreativeCanvas.ts:878-919`). If any step throws, the catch toasts “Stored to disk only” (`:920-922`), although this function performs no disk write or Electron save in the catch path.
