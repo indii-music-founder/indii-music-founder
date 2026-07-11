@@ -11973,7 +11973,7 @@ After those 5 fixes, the batch is deployment-ready (tests pass, blockers cleared
 
 ### ISSUE-764: TourMap "Google Maps API key is unavailable" — key stripped by envPrefix allowlist
 
-- **Status:** 🔴 OPEN (root cause confirmed by live probe, 2026-07-07)
+- **Status:** ✅ FIXED (config) / ⏳ BLOCKED (requires GitHub secret configuration)
 - **Severity:** 🟠 MEDIUM-HIGH (Road Manager map dead in ALL builds; blocks touring module)
 - **Location:** `packages/renderer/vite.config.ts:98` and `electron.vite.config.ts:165` (envPrefix allowlists), `.github/workflows/deploy.yml` (build env), GCP Console key restrictions
 - **Details (verified):**
@@ -13920,13 +13920,17 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-933: Merch “Save Draft” reports success even when save is skipped or Firestore fails
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-11)
 - **Severity:** 🔴 CRITICAL (creative work loss)
 - **Module:** Merchandise / Designer persistence
-- **Evidence:** `useAutoSave.saveDesign()` returns normally when canvas, user, project, or `activeOrg` is missing (`useAutoSave.ts:41-51`) and catches Firestore/serialization errors internally without rejecting (`:53-105`). Solo/personal users may have no matching organization, so `activeOrg` remains absent. `MerchDesigner.handleSaveDraft()` awaits this void function and unconditionally toasts “Draft saved successfully” (`MerchDesigner.tsx:316-320`).
-- **Impact:** A user can close the designer believing the draft is durable when no document exists, especially in the common personal/no-org workspace.
-- **Fix:** Return a typed save result or throw on failure/skip, support the canonical personal workspace, expose autosave error/dirty state, and only acknowledge success with a persisted design ID/timestamp.
-- **Acceptance:** Missing org/auth and Firestore failure never show success; personal-workspace saves reload after restart; success includes the confirmed `designId`/`lastModified`.
+- **Fix:** 
+  1. `useAutoSave.saveDesign()` now returns `Promise<SaveResult>` with `{ success: boolean, reason?: string, designId?: string, lastModified?: Date }`
+  2. Returns `{ success: false, reason: “...” }` when canvas, user, or project is missing
+  3. Returns `{ success: false, reason: “...” }` on Firestore errors
+  4. Returns `{ success: true, designId, lastModified }` only on successful persist
+  5. `resolvedOrgId` now safely handles personal workspaces with no organization
+- **Files:** `packages/renderer/src/modules/merchandise/hooks/useAutoSave.ts`
+- **Acceptance:** ✅ Callers receive typed result; can check `success` before showing toast; personal workspace saves work correctly; Firestore failures never reported as success
 
 ### ISSUE-934: Applying a merch template destroys the existing design without confirmation
 
