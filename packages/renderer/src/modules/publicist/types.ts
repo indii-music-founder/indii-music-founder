@@ -22,6 +22,11 @@ export interface Contact {
     avatarUrl?: string;
     notes?: string;
     lastInteraction?: string;
+    /**
+     * Verified recipient email (ISSUE-912). Never inferred from name/outlet —
+     * "Open in Mail" must be disabled without a real address on file here.
+     */
+    email?: string;
 }
 
 export interface PublicistStats {
