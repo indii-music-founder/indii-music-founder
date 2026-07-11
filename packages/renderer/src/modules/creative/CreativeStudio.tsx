@@ -10,14 +10,13 @@ import CreativeCanvas from './components/CreativeCanvas';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/core/context/ToastContext';
-import { StageHandoffPayload } from '@/types/handoff';
-
 import { WhiskService } from '@/services/WhiskService';
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 import DirectGenerationTab from './components/DirectGenerationTab';
 import ShowroomUI from './components/ShowroomUI';
 import { logger } from '@/utils/logger';
 import { useRef } from 'react';
+import { awaitCompletedPlpVideoVariant } from './plpVideoVariant';
 
 import CreativeClipboard from './components/CreativeClipboard';
 import OmniWorkflow from './video/OmniWorkflow';
@@ -165,7 +164,7 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
 
                     // Synthesize prompt and get source images for Whisk
                     const finalPrompt = WhiskService.synthesizeWhiskPrompt(pendingPrompt, whiskState);
-                    const sourceImages = WhiskService.getSourceMedia(whiskState);
+                    const sourceImages = await WhiskService.getSourceMedia(whiskState);
 
                     if (isPLP) {
                         const { VideoGeneration } = await import('@/services/video/VideoGenerationService');
@@ -190,7 +189,7 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
 
                         // 2. Generate 5 Video Variants (Veo 3.1)
                         const videoPromises = Array(5).fill(0).map((_, i) =>
-                            VideoGeneration.generateVideo({
+                            awaitCompletedPlpVideoVariant(() => VideoGeneration.generateVideo({
                                 prompt: `${finalPrompt}, cinematic motion variant ${i + 1}`,
                                 resolution: studioControls.resolution,
                                 aspectRatio: ['9:16', '10:16', '9:21', '3:4'].includes(studioControls.aspectRatio) ? '9:16' : '16:9',
@@ -209,7 +208,7 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                                         referenceType: 'asset' as const
                                     };
                                 })
-                            })
+                            }), (jobId) => VideoGeneration.waitForJob(jobId))
                         );
 
                         const allPromises = [...imagePromises, ...videoPromises];

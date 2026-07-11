@@ -666,10 +666,17 @@ export default function InfiniteCanvas() {
                 })
             );
 
-            const resultsArrays = await Promise.all(generatePromises);
-            const results = resultsArrays.flat();
+            const settledResults = await Promise.allSettled(generatePromises);
+            const successfulResults = settledResults.flatMap((settled, requestIndex) => (
+                settled.status === 'fulfilled'
+                    ? settled.value.map((result) => ({ result, requestIndex }))
+                    : []
+            ));
+            const failedCount = settledResults.filter((settled) => (
+                settled.status === 'rejected' || settled.value.length === 0
+            )).length;
 
-            if (results && results.length > 0) {
+            if (successfulResults.length > 0) {
                 const padding = 40;
                 const ww = selectedImg.width ?? 512;
                 const wh = selectedImg.height ?? 512;
@@ -681,8 +688,8 @@ export default function InfiniteCanvas() {
                     { x: selectedImg.x + ww + padding + ww + padding, y: selectedImg.y }
                 ];
 
-                results.forEach((res, index) => {
-                    const pos = positions[index % 4]!;
+                successfulResults.forEach(({ result: res, requestIndex }) => {
+                    const pos = positions[requestIndex % 4]!;
                     addCanvasImage({
                         id: res.id,
                         base64: res.url,
@@ -708,7 +715,13 @@ export default function InfiniteCanvas() {
                     });
                 });
                 
-                toast.success(`Generated ${results.length} variations!`);
+                if (failedCount > 0) {
+                    toast.warning(`Generated ${successfulResults.length} variation${successfulResults.length === 1 ? '' : 's'}; ${failedCount} failed.`);
+                } else {
+                    toast.success(`Generated ${successfulResults.length} variations!`);
+                }
+            } else {
+                toast.error('All variation requests failed. Your source image is unchanged.');
             }
         } catch (e: unknown) {
             logger.error(e instanceof Error ? e.message : String(e));
@@ -783,6 +796,15 @@ export default function InfiniteCanvas() {
             return;
         }
 
+        const unavailableLayer = canvasImages.find((img) => {
+            const image = imageCache.current.get(img.id);
+            return !image || !image.complete || image.naturalWidth <= 0;
+        });
+        if (unavailableLayer) {
+            toast.error(`Cannot flatten yet: layer ${unavailableLayer.id.slice(0, 8)} is still loading or unavailable.`);
+            return;
+        }
+
         let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
         canvasImages.forEach(img => {
             const w = img.width ?? 0;
@@ -812,7 +834,14 @@ export default function InfiniteCanvas() {
             }
         });
 
-        const dataUrl = tempCanvas.toDataURL('image/png');
+        let dataUrl: string;
+        try {
+            dataUrl = tempCanvas.toDataURL('image/png');
+        } catch (error: unknown) {
+            logger.error('Failed to flatten canvas:', error);
+            toast.error('Could not flatten layers. The original layers were preserved.');
+            return;
+        }
         
         // Remove old images
         canvasImages.forEach(img => removeCanvasImage(img.id));
