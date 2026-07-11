@@ -1,24 +1,25 @@
 # Handoff State
-**Updated:** 2026-07-11 11:48 EDT
+**Updated:** 2026-07-11 11:57 EDT
 **Branch:** `fix/zustand-selector-regression`
 
 ## Recent Commits
 ```
-b0fc7a711 chore: update handoff state (2 issues fixed in this session)
-1d0f71f6a chore: session checkpoint — 2 issues fixed (ISSUE-900, ISSUE-901)
-2eca02878 docs: mark ISSUE-901 fixed in ledger
-f63f279e9 fix(agent): use authenticated user ID in RosterService, not hardcoded dev-user (ISSUE-901)
-724b75063 chore: session checkpoint [11:41]
-49ab96d91 docs: mark ISSUE-900 fixed in ledger
-a27765b4c fix(security): fail closed on unsupported credential rotation (ISSUE-900)
-9711cddc6 chore: session checkpoint [11:37]
-836c1ff5d fix(debug): use shallow selector to prevent infinite re-renders in BugReportDialog
-8e0acdb27 chore: session checkpoint [11:35]
+839a0a7ed fix(debug): use shallow selector to prevent infinite re-renders in BugReportDialog
+b5f9fee1f docs: mark ISSUE-921 fixed
+1ecd68d17 fix(creative): await download, show error toast, add file extension (ISSUE-921)
+776ded2d0 docs: mark ISSUE-917 fixed
+0eb42d9bd fix(creative): make canvas save toasts honest about persistence state (ISSUE-917)
+7cfda1d9d fix(metadata,creative): allocate UPC for singles, fix image sub-menu asset targeting (ISSUE-783, ISSUE-776)
+07e84a6cf docs: mark ISSUE-911 fixed
+fbc649df5 fix(publicist): remove placeholder pitch text, return honest NOT_IMPLEMENTED error (ISSUE-911)
+59ffb75d1 docs: mark ISSUE-905 fixed
+e5c0ab8de fix(marketing): correct tool descriptions to reflect draft/package status (ISSUE-905)
 ```
 
 ## Working State
 ```
-clean working tree
+ D packages/renderer/src/modules/debug/BugReportDialog.tsx.orig
+ D packages/renderer/src/modules/debug/useBugReport.ts.orig
 ```
 
 ## Decisions
