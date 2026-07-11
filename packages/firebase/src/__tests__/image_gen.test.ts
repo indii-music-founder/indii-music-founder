@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as admin from 'firebase-admin';
 
 
@@ -173,14 +173,53 @@ describe('Image and Content Generation Functions', () => {
     });
 
     describe('generateImageV3', () => {
+        // Capture the shared default firestore instance so it can be restored
+        // after overriding it below — otherwise the override leaks into
+        // sibling describe blocks (e.g. editImage's runTransaction usage).
+        const defaultFirestoreInstance = admin.firestore();
+
+        afterEach(() => {
+            vi.mocked(admin.firestore).mockReturnValue(defaultFirestoreInstance);
+        });
+
         it('should call @google/genai SDK with correct parameters', async () => {
             const context: any = { auth: { uid: 'user123' } };
             const data = {
                 prompt: 'a beautiful cat',
                 aspectRatio: '1:1',
                 count: 2,
-                model: 'fast'
+                model: 'fast',
+                // Required by GenerateImageSchema (ISSUE-881 cost-control gate) —
+                // loadCostReservation() reads this from the costLedger collection.
+                costReservationId: 'res-test-1'
             };
+
+            // costLedger doc must resolve APPROVED for the authenticated user/type;
+            // any other collection/doc falls back to the default mock's harmless
+            // docRef (which safeDbSet's own internal try/catch tolerates).
+            const defaultDocRef = { id: 'mock-doc', set: vi.fn().mockResolvedValue(undefined), update: vi.fn().mockResolvedValue(undefined) };
+            const costLedgerDocRef = {
+                get: vi.fn().mockResolvedValue({
+                    exists: true,
+                    data: () => ({
+                        userId: 'user123',
+                        type: 'image',
+                        status: 'APPROVED',
+                        estimatedCost: 0.04,
+                    }),
+                }),
+            };
+            vi.mocked(admin.firestore).mockReturnValue({
+                collection: vi.fn((name: string) => ({
+                    doc: vi.fn(() => (name === 'costLedger' ? costLedgerDocRef : defaultDocRef)),
+                })),
+                doc: vi.fn(() => costLedgerDocRef), // finalizeOperationReservation calls db.doc() directly
+                runTransaction: vi.fn((fn: (tx: unknown) => Promise<void>) => fn({
+                    get: vi.fn().mockResolvedValue({ data: () => undefined, exists: false }),
+                    set: vi.fn(),
+                    update: vi.fn(),
+                })),
+            } as any);
 
             mocks.createInteraction.mockResolvedValue({
                 output_image: {
