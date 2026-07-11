@@ -1,19 +1,19 @@
 # Handoff State
-**Updated:** 2026-07-11 15:58 EDT
+**Updated:** 2026-07-11 16:02 EDT
 **Branch:** `fix/issues-core`
 
 ## Recent Commits
 ```
+18b440eb9 fix(storyboard): use canonical Veo model
+6e3e4c19d docs: mark ISSUE-750 COMPLETE — archive parity fully implemented
+e7af99fd6 feat(archive): add participant agent avatars to session list for ISSUE-750
+e7dba06f1 fix(screenwriter): scope local drafts by user and project
+c437ee225 chore: session checkpoint [15:58]
 f1345a6d8 docs: mark ISSUE-750 pagination complete
 d8425e03d feat(archive): add session pagination for ISSUE-750
 c79a7a0fa chore: session checkpoint [15:47]
 6f3e40f5e chore: session checkpoint [15:52] — issue audit complete
 d0bf687a7 fix: mark ISSUE-772, ISSUE-732 FIXED; ISSUE-750 PARTIAL
-bd5f96694 fix(debug): use shallow selector to prevent infinite re-renders (#227)
-f1fa97ab5 fix(debug): use shallow selector to prevent infinite re-renders (#226)
-8e0acdb27 chore: session checkpoint [11:35]
-5287d1b4d chore: session checkpoint [11:35]
-1dd09b914 chore: session checkpoint [11:29]
 ```
 
 ## Working State
