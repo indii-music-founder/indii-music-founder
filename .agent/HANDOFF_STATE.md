@@ -1,9 +1,12 @@
 # Handoff State
-**Updated:** 2026-07-11 15:47 EDT
+**Updated:** 2026-07-11 15:58 EDT
 **Branch:** `fix/issues-core`
 
 ## Recent Commits
 ```
+f1345a6d8 docs: mark ISSUE-750 pagination complete
+d8425e03d feat(archive): add session pagination for ISSUE-750
+c79a7a0fa chore: session checkpoint [15:47]
 6f3e40f5e chore: session checkpoint [15:52] — issue audit complete
 d0bf687a7 fix: mark ISSUE-772, ISSUE-732 FIXED; ISSUE-750 PARTIAL
 bd5f96694 fix(debug): use shallow selector to prevent infinite re-renders (#227)
@@ -11,9 +14,6 @@ f1fa97ab5 fix(debug): use shallow selector to prevent infinite re-renders (#226)
 8e0acdb27 chore: session checkpoint [11:35]
 5287d1b4d chore: session checkpoint [11:35]
 1dd09b914 chore: session checkpoint [11:29]
-98cae3e10 fix(ci): repair generateImageV3 test broken by cost-reservation gate (ISSUE-881 follow-up)
-fdd02ff69 chore: session checkpoint [11:01]
-756c9b265 fix(remote): stop invalid Firestore writes, add missing P2P finality field (ISSUE-981)
 ```
 
 ## Working State
