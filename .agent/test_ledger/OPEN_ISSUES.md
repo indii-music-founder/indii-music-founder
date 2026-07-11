@@ -60,6 +60,36 @@ not mistaken for code-verified.
 
 ---
 
+### ISSUE-1019: User-facing bug reporting system with agent integration
+
+- **Status:** ✅ FIXED (2026-07-11)
+- **Severity:** 🟢 FEATURE (core UX improvement)
+- **What it does:** Users can report bugs and request features from anywhere in the app using:
+  - Keyboard shortcuts: `Ctrl+Shift+B` (bug), `Ctrl+Shift+F` (feature)
+  - Natural language to agents: "I have a problem" / "Can you report this?"
+  - Modal dialog with pre-filled error context
+- **Implementation:**
+  - `BugReportDialog.tsx` - Modal form (conditional for bug vs feature)
+  - `useBugReport` hook - API to open dialog from any component
+  - `useBugReportShortcut` - Global keyboard shortcuts
+  - `appSlice` - Dialog state in Zustand
+  - Agents receive reports as messages, can invoke `report_bug`/`request_feature` tools
+- **Files:**
+  - `packages/renderer/src/modules/debug/BugReportDialog.tsx`
+  - `packages/renderer/src/modules/debug/useBugReport.ts`
+  - `packages/renderer/src/modules/debug/useBugReportShortcut.ts`
+  - `packages/renderer/src/core/store/slices/appSlice.ts`
+  - `packages/renderer/src/core/App.tsx`
+- **Documentation:** `docs/USER_MANUAL_BUG_REPORTING.md` (ready to embed in user manual)
+- **User Experience:**
+  - No friction — keyboard shortcut is always available
+  - Pre-filled with error context if triggered from error state
+  - Reports flow directly to agent without extra steps
+  - Agents can immediately fix, escalate, or ask clarifying questions
+- **Testing:** Requires E2E verification that reports reach agents and persist to Firestore/GitHub
+
+---
+
 ### ISSUE-1018: Agents ignore user headshots when generating images
 
 - **Status:** ✅ FIXED (2026-07-11)

@@ -69,7 +69,7 @@ if (typeof window !== 'undefined') {
     (window as unknown as { electronAPI?: unknown }).electronAPI = undefined; // Disable by default for tests that expect JS fallback
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 function enableElectron() {
     (window as unknown as { electronAPI?: unknown }).electronAPI = {
         distribution: {
@@ -207,6 +207,34 @@ describe('DistributionTools', () => {
             const parsed = result;
             expect(parsed.success).toBe(false);
             expect(parsed.metadata?.errorCode).toBe('TAX_BANK_LAYER_REQUIRED');
+        });
+
+        it('sends the canonical snake_case schema to the Bank Layer and succeeds (ISSUE-793)', async () => {
+            enableElectron();
+            const { DistributionTools } = await importWithRetry(() => import('./DistributionTools'));
+
+            const result = await DistributionTools.certify_tax_profile({
+                userId: 'user-123',
+                fullName: 'Test User',
+                isUsPerson: true,
+                isEntity: false,
+                country: 'US',
+                tin: '123-45-6789',
+                signedUnderPerjury: true
+            });
+
+            const certifyTaxMock = (window as unknown as { electronAPI: { distribution: { certifyTax: import('vitest').Mock } } }).electronAPI.distribution.certifyTax;
+            expect(certifyTaxMock).toHaveBeenCalledWith('user-123', {
+                full_name: 'Test User',
+                country: 'US',
+                tin: '123-45-6789',
+                is_us_person: true,
+                is_entity: false,
+                signed_under_perjury: true
+            });
+
+            expect(result.success).toBe(true);
+            disableElectron();
         });
     });
 
