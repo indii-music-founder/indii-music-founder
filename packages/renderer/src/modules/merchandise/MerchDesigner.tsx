@@ -313,10 +313,14 @@ export default function MerchDesigner() {
         }
     }, [exportToImage, toast]);
 
-    // Save draft
+    // Save draft — ISSUE-933: only acknowledge success after a confirmed write.
     const handleSaveDraft = useCallback(async () => {
-        await saveDesign();
-        toast.success('Draft saved successfully');
+        const result = await saveDesign();
+        if (result.success) {
+            toast.success('Draft saved successfully');
+        } else {
+            toast.error(result.reason || 'Draft was not saved — please try again.');
+        }
     }, [saveDesign, toast]);
 
     // Apply template to canvas

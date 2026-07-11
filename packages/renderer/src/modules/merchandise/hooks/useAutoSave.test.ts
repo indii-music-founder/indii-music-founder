@@ -169,34 +169,62 @@ describe('useAutoSave', () => {
         consoleWarnSpy.mockRestore();
     });
 
-    it('should skip save when activeOrg cannot be derived', async () => {
-        // Mock store with mismatched org ID
+    it('saves successfully using the raw org id when it cannot be matched to organizations[] (ISSUE-933)', async () => {
+        // Solo/personal-workspace shape: currentOrganizationId set but no
+        // matching organizations[] entry. Must NOT block the save.
         vi.mocked(useStore).mockReturnValue({
             user: mockUser,
             currentOrganizationId: 'org-nonexistent',
-            organizations: [mockOrg], // Different org ID
+            organizations: [mockOrg], // Different org ID — no match
             currentProjectId: 'project-test-123'
         } as any);
 
-        const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => { });
+        const { setDoc: mockSetDoc } = await import('firebase/firestore');
+        vi.mocked(mockSetDoc).mockResolvedValue(undefined);
 
         const { result } = renderHook(() =>
             useAutoSave(mockCanvas, 'Test Design', 'design-123', { enabled: false })
         );
 
+        let saveResult;
         await act(async () => {
-            await result.current.saveDesign();
+            saveResult = await result.current.saveDesign();
         });
 
-        expect(consoleWarnSpy).toHaveBeenCalledWith(
-            expect.stringContaining('Auto-save skipped'),
-            expect.objectContaining({
-                hasOrg: false,
-                currentOrganizationId: 'org-nonexistent'
-            })
+        expect(saveResult).toEqual({ success: true, designId: 'design-123', lastModified: expect.any(Date) });
+        expect(mockSetDoc).toHaveBeenCalledWith(
+            undefined,
+            expect.objectContaining({ orgId: 'org-nonexistent' }),
+            { merge: true }
+        );
+    });
+
+    it('saves successfully with a null orgId when the user has no organization at all (ISSUE-933)', async () => {
+        vi.mocked(useStore).mockReturnValue({
+            user: mockUser,
+            currentOrganizationId: null,
+            organizations: [],
+            currentProjectId: 'project-test-123'
+        } as any);
+
+        const { setDoc: mockSetDoc } = await import('firebase/firestore');
+        vi.mocked(mockSetDoc).mockResolvedValue(undefined);
+
+        const { result } = renderHook(() =>
+            useAutoSave(mockCanvas, 'Test Design', 'design-123', { enabled: false })
         );
 
-        consoleWarnSpy.mockRestore();
+        let saveResult;
+        await act(async () => {
+            saveResult = await result.current.saveDesign();
+        });
+
+        expect(saveResult).toEqual({ success: true, designId: 'design-123', lastModified: expect.any(Date) });
+        expect(mockSetDoc).toHaveBeenCalledWith(
+            undefined,
+            expect.objectContaining({ orgId: null }),
+            { merge: true }
+        );
     });
 
     it('should serialize canvas and save to Firestore', async () => {

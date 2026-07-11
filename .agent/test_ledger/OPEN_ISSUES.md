@@ -13932,9 +13932,10 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 - **Files:** `packages/renderer/src/modules/merchandise/hooks/useAutoSave.ts`
 - **Acceptance:** ✅ Callers receive typed result; can check `success` before showing toast; personal workspace saves work correctly; Firestore failures never reported as success
 
+- **Fix applied (2026-07-10):** `saveDesign()` returns a typed `SaveResult` (`{success, reason?, designId?, lastModified?}`) instead of void — every skip (missing canvas/user/project) and every Firestore failure resolves `success: false` with a reason, never silently. The `activeOrg` match requirement is removed as a save gate — personal/solo-workspace users (no `organizations[]` entry) can now save; `orgId` is written as the raw `currentOrganizationId` when no matching org object exists, or `null` when there's no org at all — best-effort association, never a blocker. `MerchDesigner.handleSaveDraft` now only shows the success toast when `result.success === true`, and shows the real failure reason otherwise. Existing test rewritten (was asserting the old skip-on-no-org behavior) plus a new personal-workspace-null-org test; all 11 tests pass.
 ### ISSUE-934: Applying a merch template destroys the existing design without confirmation
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-10)
 - **Severity:** 🟠 HIGH
 - **Module:** Merchandise / Designer templates
 - **Evidence:** `handleApplyTemplate()` checks whether the canvas has objects, comments that it “could add confirmation,” and immediately calls `clear()` before adding the template (`MerchDesigner.tsx:322-386`). It then reports the template applied even if individual template elements threw and were only logged (`:340-380`).
