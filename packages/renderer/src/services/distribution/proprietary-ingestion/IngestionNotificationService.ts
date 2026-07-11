@@ -39,7 +39,9 @@ export class IngestionNotificationService {
                 logger.debug(`[IngestionNotificationService] Auto-assigned ISRC: ${metadata.isrc}`);
             }
 
-            if (metadata.releaseType !== 'Single' && !metadata.upc) {
+            // ISSUE-783: singles require a release-level UPC/ICPN too — DDEX
+            // packaging and release-identity validation apply uniformly.
+            if (!metadata.upc) {
                 metadata.upc = await IdentifierService.nextUPC();
                 logger.debug(`[IngestionNotificationService] Auto-assigned UPC: ${metadata.upc}`);
             }
