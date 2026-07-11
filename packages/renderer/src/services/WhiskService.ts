@@ -1,6 +1,7 @@
 import { WhiskState } from '@/core/store/slices/creative';
 import { ImageGeneration } from './image/ImageGenerationService';
 import { logger } from '@/utils/logger';
+import { fetchAsBase64 } from '@/services/storage/safeStorageFetch';
 
 // Inspiration prompts for each category
 const INSPIRATION_SYSTEM_PROMPTS: Record<'subject' | 'scene' | 'style' | 'motion', string> = {
@@ -112,7 +113,7 @@ export class WhiskService {
     /**
      * Prepares source media for the generation request based on the "Precise" toggle.
      */
-    static getSourceMedia(whiskState: WhiskState): { mimeType: string; data: string }[] | undefined {
+    static async getSourceMedia(whiskState: WhiskState): Promise<{ mimeType: string; data: string }[] | undefined> {
         if (!whiskState.preciseReference) return undefined;
 
         const allActiveRefs = [
@@ -125,11 +126,17 @@ export class WhiskService {
 
         if (mediaRefs.length === 0) return undefined;
 
-        return mediaRefs.map(item => {
-            const [mimeType, b64] = item.content.split(',');
-            const pureMime = mimeType!.split(':')[1]!.split(';')[0]!;
-            return { mimeType: pureMime, data: b64! };
-        });
+        return Promise.all(mediaRefs.map(async (item) => {
+            const dataUriMatch = item.content.match(/^data:([^;,]+);base64,(.+)$/s);
+            const resolved = dataUriMatch
+                ? { mimeType: dataUriMatch[1]!, base64: dataUriMatch[2]! }
+                : await fetchAsBase64(item.content);
+
+            if (!resolved.mimeType.startsWith('image/') || !resolved.base64) {
+                throw new Error(`Whisk reference ${item.id} is not a readable image.`);
+            }
+            return { mimeType: resolved.mimeType, data: resolved.base64 };
+        }));
     }
 
     /**

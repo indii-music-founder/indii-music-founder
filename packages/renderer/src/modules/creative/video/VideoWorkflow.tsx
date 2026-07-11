@@ -5,7 +5,6 @@ import React, { useState, useEffect, useRef, useMemo, useCallback, lazy, Suspens
 import { useStore, HistoryItem } from '@/core/store';
 import { projectBucketMatches } from '@/core/constants';
 import { useShallow } from 'zustand/react/shallow';
-import { StageHandoffPayload } from '@/types/handoff';
 import { useVideoEditorStore } from './store/videoEditorStore';
 import { VideoGeneration } from "@/services/video/VideoGenerationService";
 import { WhiskService } from "@/services/WhiskService";
@@ -579,7 +578,7 @@ export default function VideoWorkflow() {
 
             const whiskMediaUris = userId
                 ? (await Promise.all(
-                      (WhiskService.getSourceMedia(whiskState) || []).map(async w => {
+                      (await WhiskService.getSourceMedia(whiskState) || []).map(async w => {
                           try {
                               const dataUrl = `data:${w.mimeType};base64,${w.data}`;
                               return await CreativeStorageService.uploadReferenceMedia(userId, dataUrl, 'image', { scope: 'objects' });

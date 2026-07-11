@@ -19,6 +19,7 @@ const mockToast = {
     error: vi.fn(),
     dismiss: vi.fn(),
 };
+const mockAddToHistory = vi.fn();
 
 vi.mock('@/core/context/ToastContext', () => ({
     useToast: () => mockToast
@@ -27,7 +28,7 @@ vi.mock('@/core/context/ToastContext', () => ({
 vi.mock('@/core/store', () => ({
     useStore: () => ({
         currentProjectId: 'test-project',
-        addToHistory: vi.fn(),
+        addToHistory: mockAddToHistory,
     })
 }));
 
@@ -84,6 +85,32 @@ describe('AutonomousGenerationDialog', () => {
             expect(mockToast.success).toHaveBeenCalled();
             expect(onClose).toHaveBeenCalled();
         });
+    });
+
+    it('keeps the prompt open and does not record history when canvas insertion fails', async () => {
+        (ImageGeneration.generateImages as import("vitest").Mock).mockResolvedValue([
+            { id: '1', url: 'http://example.com/image.png', prompt: 'test prompt' }
+        ]);
+        onImageGenerated.mockRejectedValueOnce(new Error('Image decode failed'));
+
+        render(
+            <AutonomousGenerationDialog
+                isOpen={true}
+                onClose={onClose}
+                onImageGenerated={onImageGenerated}
+            />
+        );
+
+        const input = screen.getByLabelText('Describe what you want to create');
+        fireEvent.change(input, { target: { value: 'preserve this prompt' } });
+        fireEvent.click(screen.getByRole('button', { name: /generate/i }));
+
+        await waitFor(() => {
+            expect(mockToast.error).toHaveBeenCalledWith('Generation failed: Image decode failed');
+        });
+        expect(input).toHaveValue('preserve this prompt');
+        expect(onClose).not.toHaveBeenCalled();
+        expect(mockAddToHistory).not.toHaveBeenCalled();
     });
 
     it('handles generic errors correctly', async () => {
