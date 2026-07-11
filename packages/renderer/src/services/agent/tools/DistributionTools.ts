@@ -191,9 +191,9 @@ const issue_isrc = wrapTool('issue_isrc', async (args: {
         }
     }
 
-    // 2. Fallback to JS Service
+    // 2. Fallback to JS Service — issues from the verified backend pool (ISSUE-781)
     try {
-        const isrc = await IdentifierService.nextISRC('US', 'IND');
+        const isrc = await IdentifierService.nextISRC();
 
         const userId = auth.currentUser?.uid;
         if (userId) {

@@ -7,6 +7,7 @@ import { FUNCTION_INTELLIGENCE_MODELS } from '../../config/models';
 import { getVertexAIClient } from '../../lib/vertexClient';
 import { GenerateAudioSchema, GenerateImageSchema, GenerateVideoSchema, GenerateOmniRemixSchema } from '../../shared/creative';
 import { VideoJobDocumentSchema, type VideoJobDocument } from '../../shared/videoJob';
+import { finalizeOperationReservation } from '../billing/enforceOperationCost';
 import { readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -350,6 +351,7 @@ function supportsTemporalInpaint(modelId: string): boolean {
 async function loadCostReservation(
   userId: string,
   costReservationId: string,
+  expectedType: 'image' | 'video' = 'video',
 ): Promise<{ estimatedCost: number }> {
   const snapshot = await getDb().collection('costLedger').doc(costReservationId).get();
   if (!snapshot.exists) {
@@ -360,8 +362,8 @@ async function loadCostReservation(
   if (data.userId !== userId) {
     throw new HttpsError('permission-denied', 'Cost reservation does not belong to the authenticated user.');
   }
-  if (data.type !== 'video') {
-    throw new HttpsError('failed-precondition', 'Cost reservation type mismatch for video generation.');
+  if (data.type !== expectedType) {
+    throw new HttpsError('failed-precondition', `Cost reservation type mismatch for ${expectedType} generation.`);
   }
   if (data.status !== 'APPROVED') {
     throw new HttpsError('failed-precondition', 'Cost reservation is not approved.');
@@ -1024,21 +1026,23 @@ export const generateImageV3 = onCall({ timeoutSeconds: 120, memory: '1GiB', sec
     throw new HttpsError('invalid-argument', 'Payload validation failed. Ensure no base64 is passed and only gs:// URIs are used.');
   }
 
-  const { prompt, sessionId, aspectRatio, model, imageSize, thinkingLevel, useGoogleSearch, useGrounding, useImageSearch } = parsed.data;
+  const { prompt, sessionId, aspectRatio, model, imageSize, thinkingLevel, useGoogleSearch, useGrounding, useImageSearch, costReservationId } = parsed.data;
   const userId = request.auth.uid;
   const jobId = getDb().collection('creative_jobs').doc().id;
-  
-  await safeDbSet(jobId, {
-    id: jobId,
-    userId,
-    sessionId,
-    status: 'processing',
-    type: 'image',
-    prompt,
-    createdAt: new Date().toISOString()
-  });
+  await loadCostReservation(userId, costReservationId, 'image');
+  let outputCompleted = false;
 
   try {
+    await safeDbSet(jobId, {
+      id: jobId,
+      userId,
+      sessionId,
+      status: 'processing',
+      type: 'image',
+      prompt,
+      costReservationId,
+      createdAt: new Date().toISOString()
+    });
     const ai = getAiClient('image');
     const modelId = resolveImageModel(model);
     const normalizedThinkingLevel = normalizeThinkingLevel(thinkingLevel);
@@ -1128,6 +1132,12 @@ export const generateImageV3 = onCall({ timeoutSeconds: 120, memory: '1GiB', sec
       resultUri: outputUri,
       completedAt: new Date().toISOString()
     });
+    outputCompleted = true;
+    try {
+      await finalizeOperationReservation({ userId, operationId: costReservationId, outcome: 'SETTLED' });
+    } catch (settlementError) {
+      console.error('[generateImageV3] Output completed but reservation settlement needs reconciliation:', settlementError);
+    }
 
     // Return only the lightweight URI to the client
     return { jobId, resultUri: outputUri };
@@ -1150,6 +1160,13 @@ export const generateImageV3 = onCall({ timeoutSeconds: 120, memory: '1GiB', sec
       status: 'failed',
       error: errorMessage(error)
     });
+    if (!outputCompleted) {
+      try {
+        await finalizeOperationReservation({ userId, operationId: costReservationId, outcome: 'VOIDED' });
+      } catch (releaseError) {
+        console.error('[generateImageV3] Failed to release cost reservation:', releaseError);
+      }
+    }
     throw toGatewayError(error, 'Image generation failed');
   }
 });

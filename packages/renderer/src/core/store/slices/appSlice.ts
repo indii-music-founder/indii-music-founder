@@ -108,6 +108,8 @@ export interface AppSlice {
     _navigationHistory?: ModuleId[];
     /** @internal Debounce tracker for rapid module switches (ISSUE-043) */
     _lastModuleSwitch?: number;
+    bugReportDialog?: { isOpen: boolean; type: 'bug' | 'feature'; prefilledError?: string; prefilledModule?: string };
+    setBugReportDialog: (dialog: AppSlice['bugReportDialog']) => void;
 }
 
 export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
@@ -116,7 +118,9 @@ export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
     projects: [],
     hasUnsavedChanges: false,
     pendingCostWarning: null,
+    bugReportDialog: { isOpen: false, type: 'bug' },
     setPendingCostWarning: (warning) => set({ pendingCostWarning: warning }),
+    setBugReportDialog: (dialog) => set({ bugReportDialog: dialog }),
     setHasUnsavedChanges: (hasUnsaved) => set({ hasUnsavedChanges: hasUnsaved }),
     isEntryAssistantDismissed: typeof window !== 'undefined' ? localStorage.getItem('indii_entryAssistantDismissed') === 'true' : false,
     setEntryAssistantDismissed: (dismissed) => {

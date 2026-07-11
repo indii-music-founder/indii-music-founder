@@ -12325,7 +12325,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-781: Production paths generate unauthorized ISRCs and UPCs from example/arbitrary prefixes
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-10)
 - **Severity:** 🔴 CRITICAL (invalid industry identifiers)
 - **Module:** Distribution / Publishing / Metadata
 - **Evidence:** `IdentifierService.ts:13-19` hardcodes example ISRC registrant `QY1` and an arbitrary UPC sequence, then `MetadataOrchestrator.ts:26-28`, `ReleaseHarnessWorkspace.tsx:82-94`, `DistributionTools.ts:194-217,562-590`, and `IngestionNotificationService.ts:34-43` use it in production paths and even record status `REGISTERED`.
@@ -12333,9 +12333,10 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 - **Fix:** Delete client-side issuance. Use only a backend-owned, pre-provisioned ISRC/GTIN pool tied to verified founder credentials; otherwise return `IDENTIFIER_SETUP_REQUIRED`. “Registered” requires authoritative provenance.
 - **Acceptance:** With no verified prefix/pool, every issuance path hard-fails before metadata persistence. No example prefix exists in production code.
 
+- **Fix applied (2026-07-10):** `IdentifierService.nextISRC()`/`nextUPC()` rewritten to call the backend `assignDistributionIdentifier` pool callable exclusively — the local Firestore-counter generator using the 'QY1' IFPI example registrant is deleted entirely, along with the now-dead `generateISRC`/`generateUPC` local formatters. Failure (no pool, unauthenticated) throws `IDENTIFIER_SETUP_REQUIRED` instead of fabricating a code. All 6 call sites (MetadataOrchestrator, ReleaseHarnessWorkspace, ReleaseHarnessTools, DistributionTools ×2, IngestionNotificationService) now issue exclusively from the verified pool with zero code changes needed on their end. Tests pass.
 ### ISSUE-782: Multi-track DDEX packaging assigns the same ISRC to every missing track
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-10)
 - **Severity:** 🔴 CRITICAL (catalog corruption)
 - **Module:** Distribution / Authority Layer
 - **Evidence:** `AuthorityPanel.tsx:59-84` generates one `activeIsrc`, then assigns that same value to every track whose ISRC is missing.
@@ -12343,6 +12344,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 - **Fix:** Allocate one immutable ISRC per distinct recording in a backend transaction, preserve existing codes, and block DDEX compilation if any duplicate exists within the release.
 - **Acceptance:** A three-track release with two missing codes receives two unique codes; duplicate-ISRC fixtures fail QC.
 
+- **Fix applied (2026-07-10):** `AuthorityPanel.handleGenerateDDEX` no longer generates one ISRC and reuses it across every track missing a code — it now issues one ISRC per missing track sequentially (avoids racing the backend pool transaction), then hard-fails DDEX compilation if any duplicate ISRC is detected across tracks before compilation. Single-track releases still use one code, correctly. Regression test added covering 3 tracks each missing an ISRC receiving 3 distinct codes.
 ### ISSUE-783: Singles skip UPC/ICPN allocation even though downstream release packaging requires one
 
 - **Status:** 🔴 OPEN
@@ -14625,13 +14627,15 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-1006: Failed or quota-rejected image generation permanently consumes the client cost ledger before any image exists
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL (2026-07-11 — image reservations are verified and failed attempts refunded; expiry/reconciliation UI remains)
 - **Severity:** 🔴 CRITICAL (failed creative attempts exhaust a creator’s budget)
 - **Module:** Image generation / Cost control / Quota enforcement
 - **Evidence:** `ImageGenerationService.generateImages()` calls `CostControlService.checkAndReserve()` before checking subscription quota (`ImageGenerationService.ts:258-344`), before reference-media uploads (`:356-365`), and before `generateImageV3` (`:414`). The server-side cost operation immediately increments daily/monthly/hourly totals and writes `costLedger/{operationId}` as `status: 'APPROVED'` (`enforceOperationCost.ts:218-282`), not a reversible pending reservation. The image request never includes that `operationId`, the image gateway has no image reservation verification path, and neither service defines a release/void/settle operation. Any quota denial, failed reference upload, callable error, malformed response, storage-resolution failure, or zero-result response after the cost check leaves the charged ledger entry intact.
 - **Impact:** A creator can lose image-generation budget repeatedly while receiving no result—for example, when already over quota, an uploaded reference is unavailable, or the model is temporarily failing. The app’s corrected fail-closed behavior then compounds the problem by blocking later valid work based on spend that never generated an image.
 - **Fix:** Move quota/schema/reference validation before a provisional reservation; pass a server-verified reservation ID to the image gateway; atomically settle it only when a provider job/output receipt exists, and expire/release it on every preflight, cancellation, timeout, model, storage, or zero-output failure. Make budget displays distinguish pending hold, settled provider spend, and refunded/expired attempt.
 - **Acceptance:** Quota-denied, invalid-reference, callable-rejected, timeout, zero-image, and Storage-write fixtures leave daily/monthly/hourly settled spend unchanged and mark any reservation void/expired exactly once; a successful provider job settles one reservation linked to its job/output receipt; retry/concurrent-click fixtures cannot double-hold or double-charge; the UI shows an actionable failure with the hold released rather than a reduced available budget.
+
+- **Fix progress (2026-07-11):** Subscription quota is now checked before any cost reservation. Approved image reservations must include a receipt ID, which is passed to `generateImageV3`; the gateway verifies its owner, type, status, and estimate before provider work. Reservations now record their aggregate-ledger document IDs and support atomic idempotent `SETTLED`/`VOIDED` finalization: successful stored output settles server-side, provider/Storage failures void and reverse daily/monthly/hourly counters, and client-side reference/pre-call failures invoke the authenticated release callable. Added coverage proving quota denial creates no reservation, payloads carry the receipt, provider failures request a void, and the gateway settles/voids the correct receipt. Sixteen renderer tests and five focused gateway tests pass; Firebase/renderer TypeScript, ESLint (no errors), and diff checks pass. Remaining before FIXED: automatic expiry/reconciliation for abandoned client holds, explicit pending/refunded budget display, and concurrent-click/retry integration coverage.
 
 ### ISSUE-1007: “Cover Art” mode promises distributor compliance but only asks the model for it and never verifies the delivered file
 

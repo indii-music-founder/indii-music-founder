@@ -8,6 +8,7 @@ const mockGetMetadata = vi.fn();
 const mockSet = vi.fn();
 const mockUpdate = vi.fn();
 const mockSave = vi.fn();
+const mockFinalizeReservation = vi.hoisted(() => vi.fn());
 const mockCollectionNames: string[] = [];
 const mockOnCallOptions = vi.hoisted(() => [] as unknown[]);
 const mockOnCall = vi.hoisted(() => vi.fn((options, handler) => {
@@ -66,7 +67,7 @@ vi.mock('firebase-admin', () => ({
                 exists: true,
                 data: () => ({
                   userId: 'user-123',
-                  type: 'video',
+                  type: id?.startsWith('image-') ? 'image' : 'video',
                   status: 'APPROVED',
                   estimatedCost: 0.8,
                 }),
@@ -94,6 +95,10 @@ vi.mock('firebase-admin', () => ({
 vi.mock('../../config/secrets', () => ({
   geminiApiKey: {},
   getGeminiApiKey: vi.fn(() => 'test-gemini-key'),
+}));
+
+vi.mock('../billing/enforceOperationCost', () => ({
+  finalizeOperationReservation: mockFinalizeReservation,
 }));
 
 import { classifyMediaFinishFailure, generateImageV3, generateOmniRemixV3, generateVideoV3 } from './gateway';
@@ -146,6 +151,7 @@ describe('creative gateway generateImageV3', () => {
         imageSize: '2K',
         thinkingLevel: 'minimal',
         useGoogleSearch: true,
+        costReservationId: 'image-op-1',
       },
     });
 
@@ -164,6 +170,11 @@ describe('creative gateway generateImageV3', () => {
       jobId: 'job-123',
       resultUri: expect.stringContaining('gs://test-bucket/creative/user-123/'),
     }));
+    expect(mockFinalizeReservation).toHaveBeenCalledWith({
+      userId: 'user-123',
+      operationId: 'image-op-1',
+      outcome: 'SETTLED',
+    });
   });
 
   it('includes reference images in the Gemini interaction payload and rejects foreign storage paths', async () => {
@@ -182,6 +193,7 @@ describe('creative gateway generateImageV3', () => {
         aspectRatio: '1:1',
         model: 'pro',
         referenceUri: 'gs://test-bucket/creative/user-123/ref.png',
+        costReservationId: 'image-op-2',
       },
     });
 
@@ -200,6 +212,7 @@ describe('creative gateway generateImageV3', () => {
         aspectRatio: '1:1',
         model: 'pro',
         referenceUri: 'gs://test-bucket/creative/other-user/ref.png',
+        costReservationId: 'image-op-3',
       },
     })).rejects.toMatchObject({
       code: 'permission-denied',
@@ -218,6 +231,7 @@ describe('creative gateway generateImageV3', () => {
         prompt: 'Dogs having fun',
         aspectRatio: '16:9',
         model: 'pro',
+        costReservationId: 'image-op-4',
       },
     })).rejects.toMatchObject({
       code: 'failed-precondition',
@@ -227,6 +241,11 @@ describe('creative gateway generateImageV3', () => {
       status: 'failed',
       error: expect.stringContaining('model is not available'),
     }));
+    expect(mockFinalizeReservation).toHaveBeenCalledWith({
+      userId: 'user-123',
+      operationId: 'image-op-4',
+      outcome: 'VOIDED',
+    });
   });
 
   it('surfaces a prompt-rephrase message when the model declines (NO_IMAGE), not a settings rejection', async () => {
@@ -241,6 +260,7 @@ describe('creative gateway generateImageV3', () => {
         prompt: 'If you know what my dog looks like you can try that',
         aspectRatio: '16:9',
         model: 'fast',
+        costReservationId: 'image-op-5',
       },
     }).catch((error: unknown) => error as { code: string; message: string });
 
