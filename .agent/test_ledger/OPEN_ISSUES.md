@@ -12388,7 +12388,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-786: YouTube/Meta rights exports default to claims the user may not legally control
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIALLY FIXED (2026-07-10) — fabricated defaults removed, fail-closed attestation required; full rights-admin/Meta Rights Manager integration remains open
 - **Severity:** 🔴 CRITICAL (false copyright claims can terminate partner access)
 - **Module:** Distribution / Content ID / Meta Rights
 - **Evidence:** `execution/distribution/content_id_csv_generator.py:45-65` defaults missing IDs/titles, hardcodes label `Indii OS Distribution`, policy `Monetize`, and territory `Worldwide` without checking exclusive master rights, samples/loops, territory ownership, existing administrator conflicts, or actual YouTube partner access. There is no equivalent Meta Rights Manager readiness gate.
@@ -12396,6 +12396,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 - **Fix:** Treat exports as drafts unless a verified rights administrator/content-owner account is connected. Require explicit territory ownership, rights basis, exclusivity, sample/loop clearance, policy choice, label identity, ISRC, and conflict checks. Add Meta Rights Manager as a separate delivery target with its own approval state.
 - **Acceptance:** No default `Monetize`/`Worldwide`; ineligible or non-exclusive content is blocked with a precise reason; generated files identify the real rights owner and connected partner account.
 
+- **Fix applied (2026-07-10):** `content_id_csv_generator.py` no longer defaults label/match-policy/territory/ISRC — it requires an explicit `rights_attestation` (`exclusive_rights: true`, real `label`, `match_policy` ∈ {monetize,track,block}, non-empty `territories`) plus a real ISRC per track and blocks export with a precise reason (`RightsVerificationError`) if any are missing. `ContentIdData` type extended with `upc`/`artist`/`rights_attestation` (all required). `QCPanel.tsx` (the only current caller) now has an explicit rights-attestation form — no field is pre-filled/defaulted; the generate button throws before calling the backend if attestation is incomplete. Smoke-tested both fail-closed and success paths directly against the Python script. **Not done:** connected rights-administrator account, Meta Rights Manager as a delivery target, and automated territory/sample/administrator-conflict checks remain open — this fix stops the fabricated-defaults problem but does not build a full rights-verification pipeline.
 ### ISSUE-787: Workflow video nodes submit invalid Veo options and mismatched cost reservations
 
 - **Status:** 🔴 OPEN
@@ -12420,7 +12421,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-789: Content ID CSV generation fails the Electron/Python IPC contract
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-10)
 - **Severity:** 🟠 HIGH
 - **Module:** Distribution / Content ID export
 - **Evidence:** `content_id_csv_generator.py:84-89` writes raw CSV to stdout. `distribution.ts:255-269` requires the Python agent result to be structured JSON and throws otherwise. `DistributionService.ts:299-305` expects `result.csvData` or `result.csv`, but the main handler returns `{ success: true, report: result }`.
@@ -12428,6 +12429,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 - **Fix:** Emit a structured JSON object from Python, e.g. `{ "status": "SUCCESS", "csv": "..." }`, unwrap it to a canonical `csv` field in the main handler, and update the renderer to read that field only.
 - **Acceptance:** Integration test calls `generateContentIdAssets()` and receives a downloadable CSV string; malformed Python output returns a typed error.
 
+- **Fix applied (2026-07-10, bundled with ISSUE-786):** `content_id_csv_generator.py` now emits structured JSON on both success (`{status:'SUCCESS', csv, recordCount}`) and failure (`{status:'FAILED', error}`) — no more raw CSV to stdout. `distribution.ts`'s IPC handler unwraps `result.csv` to the top-level `csv` field `DistributionService.generateContentIdAssets()` already expected (was previously nesting everything under `report`, so the renderer could never resolve a CSV). Tests updated/passing.
 ### ISSUE-790: PRO dispatch marks registrations SUBMITTED without any external delivery
 
 - **Status:** 🔴 OPEN (regression against ISSUE-401)

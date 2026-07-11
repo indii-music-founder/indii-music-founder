@@ -11,7 +11,16 @@ export const QCPanel: React.FC = () => {
         artist: '',
         artwork_url: '',
         version: '',
-        isrc: ''
+        isrc: '',
+        upc: ''
+    });
+    // ISSUE-786: explicit rights attestation — no defaults. A false Content ID
+    // claim can suspend YouTube partner access.
+    const [rights, setRights] = useState({
+        exclusiveRights: false,
+        label: '',
+        matchPolicy: '' as '' | 'monetize' | 'track' | 'block',
+        territories: ''
     });
     const [loading, setLoading] = useState<'qc' | 'cid' | null>(null);
     const [qcResult, setQcResult] = useState<ValidationReport | null>(null);
@@ -57,8 +66,21 @@ export const QCPanel: React.FC = () => {
         setLoading('cid');
         setCsvOutput(null);
         try {
-            if (!metadata.title.trim() || !metadata.isrc.trim()) {
-                throw new Error('Track title and a real ISRC are required before generating a Content ID CSV.');
+            if (!metadata.title.trim() || !metadata.isrc.trim() || !metadata.artist.trim() || !metadata.upc.trim()) {
+                throw new Error('Track title, artist, a real ISRC, and UPC are required before generating a Content ID CSV.');
+            }
+            if (!rights.exclusiveRights) {
+                throw new Error('You must confirm exclusive rights before generating a Content ID CSV.');
+            }
+            if (!rights.label.trim()) {
+                throw new Error('A real rights-holder label is required — there is no default.');
+            }
+            if (!rights.matchPolicy) {
+                throw new Error('A match policy (Monetize / Track / Block) is required.');
+            }
+            const territories = rights.territories.split(',').map(t => t.trim()).filter(Boolean);
+            if (territories.length === 0) {
+                throw new Error('At least one explicit territory is required — there is no default "Worldwide".');
             }
 
             const cidPayload: import('@/types/distribution').ContentIdData = {
@@ -66,7 +88,15 @@ export const QCPanel: React.FC = () => {
                     title: metadata.title,
                     isrc: metadata.isrc,
                     asset_id: `ASSET-${Date.now()}`
-                }]
+                }],
+                upc: metadata.upc,
+                artist: metadata.artist,
+                rights_attestation: {
+                    exclusive_rights: true,
+                    label: rights.label,
+                    match_policy: rights.matchPolicy,
+                    territories
+                }
             };
             const csvData = await distributionService.generateContentIdAssets(cidPayload);
             setCsvOutput(csvData);
@@ -141,6 +171,58 @@ export const QCPanel: React.FC = () => {
                                 onChange={(e) => setMetadata(prev => ({ ...prev, artwork_url: e.target.value }))}
                                 placeholder="https://..."
                                 className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-dept-distribution/50 transition-colors placeholder:text-zinc-600"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">UPC (required for Content ID)</label>
+                            <input
+                                data-testid="qc-input-upc"
+                                type="text"
+                                value={metadata.upc}
+                                onChange={(e) => setMetadata(prev => ({ ...prev, upc: e.target.value }))}
+                                placeholder="123456789012"
+                                className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-dept-distribution/50 transition-colors placeholder:text-zinc-600 font-mono"
+                            />
+                        </div>
+
+                        <div className="border border-dept-marketing/20 bg-dept-marketing/5 rounded-lg p-4 space-y-3">
+                            <span className="text-xs font-bold text-dept-marketing uppercase tracking-widest">Content ID Rights Attestation</span>
+                            <label className="flex items-center gap-2 text-xs text-gray-300">
+                                <input
+                                    data-testid="qc-input-exclusive-rights"
+                                    type="checkbox"
+                                    checked={rights.exclusiveRights}
+                                    onChange={(e) => setRights(prev => ({ ...prev, exclusiveRights: e.target.checked }))}
+                                />
+                                I confirm exclusive rights to this recording — no sample/loop or third-party admin conflicts.
+                            </label>
+                            <input
+                                data-testid="qc-input-rights-label"
+                                type="text"
+                                value={rights.label}
+                                onChange={(e) => setRights(prev => ({ ...prev, label: e.target.value }))}
+                                placeholder="Real rights-holder label (no default)"
+                                className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-dept-marketing/50 transition-colors placeholder:text-zinc-600"
+                            />
+                            <select
+                                data-testid="qc-input-match-policy"
+                                value={rights.matchPolicy}
+                                onChange={(e) => setRights(prev => ({ ...prev, matchPolicy: e.target.value as typeof prev.matchPolicy }))}
+                                className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-dept-marketing/50 transition-colors"
+                            >
+                                <option value="">-- Select Match Policy --</option>
+                                <option value="monetize">Monetize</option>
+                                <option value="track">Track</option>
+                                <option value="block">Block</option>
+                            </select>
+                            <input
+                                data-testid="qc-input-territories"
+                                type="text"
+                                value={rights.territories}
+                                onChange={(e) => setRights(prev => ({ ...prev, territories: e.target.value }))}
+                                placeholder="Territories, comma-separated (e.g. US, CA) — no default Worldwide"
+                                className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-dept-marketing/50 transition-colors placeholder:text-zinc-600"
                             />
                         </div>
 
