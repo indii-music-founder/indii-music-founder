@@ -151,7 +151,7 @@ export const MarketingAgent: AgentConfig = {
             },
             {
                 name: "deploy_micro_ad_campaign",
-                description: "Deploys a micro-budget ($10/day) ad campaign across Meta or TikTok Graph APIs, utilizing A/B tested creatives.",
+                description: "Prepares a micro-budget (10 dollars per day) ad campaign package for review (live deployment requires provider credentials).",
                 parameters: {
                     type: "OBJECT",
                     properties: {
@@ -166,7 +166,7 @@ export const MarketingAgent: AgentConfig = {
             },
             {
                 name: "deploy_email_newsletter",
-                description: "Syncs with Mailchimp/Klaviyo APIs to deploy a custom HTML newsletter template to a specific audience segment.",
+                description: "Prepares a custom HTML newsletter template for deployment (requires connected email provider).",
                 parameters: {
                     type: "OBJECT",
                     properties: {
