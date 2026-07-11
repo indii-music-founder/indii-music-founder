@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { logger } from '@/utils/logger';
+import { getValidatedSequenceDurations } from './autonomousLabSequence';
 
 type SequenceItem = {
     id: string;
@@ -146,7 +147,11 @@ export default function AutonomousLab() {
     const transferToProduction = () => {
         if (!seedImage || !targetImage) return;
 
-        const durationsInSeconds = sequenceItems.map(item => item.type === 'seconds' ? item.value : (item.value * 60) / bpm);
+        const durationsInSeconds = getValidatedSequenceDurations(sequenceItems, bpm);
+        if (!durationsInSeconds) {
+            toast.error('Add at least one valid sequence segment (up to 60 seconds) before entering Director Mode.');
+            return;
+        }
 
         setVideoInputs({
             firstFrame: seedImage,
@@ -240,6 +245,7 @@ export default function AutonomousLab() {
                     {status === 'complete' ? (
                         <Button
                             onClick={transferToProduction}
+                            disabled={!getValidatedSequenceDurations(sequenceItems, bpm)}
                             className="bg-white text-black hover:bg-gray-200 px-8 py-6 h-auto rounded-xl transition-all shadow-[0_0_40px_rgba(255,255,255,0.1)]"
                         >
                             <Film className="w-5 h-5 mr-3" />
