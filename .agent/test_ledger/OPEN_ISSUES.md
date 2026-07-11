@@ -13601,7 +13601,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-901: Venue roster saves every user’s additions under `users/dev-user`
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟠 HIGH
 - **Module:** Booking/Agent roster / Firestore persistence
 - **Evidence:** `RosterService.addToRoster()` comments that it should get the current Auth user but hardcodes `const userId = 'dev-user'` (`RosterService.ts:20-26`), then writes the venue to `users/${userId}/roster/${venue.id}` (`:26-39`). The tests assert the same `users/dev-user/roster/...` path (`RosterService.test.ts:46-50`, `:73-76`), so the broken behavior is locked in. The dashboard action calls this service directly when adding a venue (`AgentDashboard.tsx:169`).
