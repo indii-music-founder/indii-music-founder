@@ -13591,7 +13591,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-900: Credential rotation fabricates a new local key for unsupported services but says provider rotation succeeded
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH (security / credential management)
 - **Module:** Security / Electron credential rotation
 - **Evidence:** `security:rotate-credentials` performs provider API calls only for `stripe` and `github` (`security.ts:40-106`). For every other `serviceName`, it generates `crypto.randomBytes(32).toString('hex')` locally (`:107-110`) and returns `success: true` with message `Credentials for ${serviceName} rotated successfully via provider API` (`:116-122`). Earlier ledger entries ISSUE-263/287 marked this fallback fixed, but the current behavior still does not rotate the credential at the provider.
