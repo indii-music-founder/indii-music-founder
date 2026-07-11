@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-07-11 10:36 EDT
+**Updated:** 2026-07-11 10:38 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+47cd65564 fix(tax): align certification schema end-to-end, stop storing raw TIN (ISSUE-793)
+13170ab5f chore: session checkpoint [10:36]
 84697c5c0 docs: add user manual documentation for bug reporting feature
 0c75c94a6 fix(distribution): never persist raw TIN values (ISSUE-793)
 2b3bb43fd chore: session checkpoint [10:28]
@@ -12,8 +14,6 @@ b5e7286b6 fix(ddex): correct ERN namespace to 4.3 on both non-canonical generato
 3ece66f0b feat(bug-reporting): user-facing dialog for bug reports and feature requests
 76418e753 fix(ci): fail-closed macOS signing gate, verify codesign before publish (ISSUE-992)
 5afa700d0 fix(publishing): honest draft status and split-total normalization in ISWC mapper (ISSUE-865)
-06ebb95dc chore: session checkpoint [09:34]
-4b0f9f22f chore: session checkpoint [09:33]
 ```
 
 ## Working State
