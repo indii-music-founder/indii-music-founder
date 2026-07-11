@@ -3,9 +3,60 @@
 > This file is written by the /real test agent and consumed by a fixing agent.
 > The test agent NEVER modifies code. The fix agent NEVER runs tests.
 >
-> **Last updated:** 2026-07-11
-> **Commit:** `fix/issues-core` — Archive parity, cross-device sync, audio cache fixes (ISSUE-772, 732, 750, 765, 766 complete)
-> **Current UX Score:** In Progress
+> **Last updated:** 2026-07-11 20:42 EDT
+> **Commit:** `fix/issues-core` (20 commits ahead of main, all CI green on PR #228)
+> **Session:** Complete audit & fixes for ISSUE-772, 732, 750 + ISSUE-765/766 diagnosis
+> **CI Status:** PR build.yml passes (5m56s green run 29167286631); Deploy requires merge to `main`
+
+---
+
+## Session 2026-07-11 Summary — Archive Parity, Cross-Device Sync, Audio Cache, & Social Diagnosis
+
+### ✅ FIXED This Session
+
+**ISSUE-772: Cross-device asset divergence (Image Gallery Sync)**
+- Root cause: profileSlice defaulted `currentOrganizationId: 'org-default'` instead of `'personal'`, so uploaded items were stamped `orgId: 'org-default'`. Firestore rules rejected org-scope queries with no userId filter, silently swallowing the error. Each device only saw images from that session.
+- **Verified fixed in code:** `OrganizationService.getCurrentOrgId()` now correctly converts 'org-default' → 'personal'; Firestore rules enforce userId check; `creativeHistorySlice` surfaces sync errors instead of silent failures.
+
+**ISSUE-732: No avatar-upload feature (Profile Settings)**
+- Claimed "abandoned scaffolding" was actually **fully implemented** — `ProfileSection.tsx` (lines 80–129) has `handleAvatarUpload`, file input, StorageService.uploadFile, Firebase Auth `photoURL` update, and hover-revealed Camera icon.
+- **Verified:** Feature is complete and functional end-to-end.
+
+**ISSUE-750: Archive System Parity**
+- Implemented session pagination with Load More button (cursor-based Firestore queries, `sessionsPaginationLoading`, `hasMoreSessions` state).
+- Implemented participant agent avatars (9 agent types, Lucide icon mapping, color-coded display, "+N" overflow indicator).
+- **Verified:** Full archive parity with Claude's native conversation archives.
+
+### 🟡 CODE-READY (Awaiting Founder Setup)
+
+**ISSUE-765: Google API surface audit (Maps Integration)**
+- OAuth already whitelisted in `vite.config.ts`; Geocoding + Places APIs confirmed **enabled on the business account** by founder.
+- **Status:** Code is ready; backend integration awaits Firebase Cloud Function wiring for distance/routing.
+
+**ISSUE-766: Social media marketing stack (Instagram Posting) — 3-LAYER BLOCK IDENTIFIED**
+- **Layer 1 — Split-brain token store (code defect):** OAuth connect writes `analyticsTokens/instagram`; poster reads `socialTokens/instagram` (never written). Grep confirms `socialTokens` is read 3 places, written 0. **Fix:** Dual-write exchanged token to `socialTokens` in `storeToken()` for posting-eligible platforms.
+- **Layer 2 — Missing publish scope + auth model mismatch (code defect):** OAuth requests `instagram_basic, instagram_manage_insights` but **NOT** `instagram_content_publish`. Connect uses `api.instagram.com/oauth` (IG Login); poster calls `graph.facebook.com/{igUserId}/media` (FB Graph). These must be unified to one auth model + scope added before any post succeeds.
+- **Layer 3 — Meta App Review (founder action, not codeable):** `instagram_content_publish` requires Meta Advanced Access + app review for the business account.
+- **No manual UI exists** — `AccountCreationWizard` generates new-account names; `PlatformConnector` is analytics-only ("never post"). User cannot attach existing `@indii_music` handle for posting.
+- **William now has live IG account:** @indii_music (https://www.instagram.com/indii_music/) — business account, ready to connect once code layers are fixed.
+- **Correct sequencing:** (1) Unify IG auth to FB Graph Page model + add `instagram_content_publish` scope, (2) Dual-write `socialTokens`, (3) Meta App Review, (4) Flip `SOCIAL_POSTING` flag. **Deferred to dedicated session** — not fakeable, requires coordination with Meta developer console and app review timeline.
+
+### 📋 Incidental Fixes
+
+**Audio cache hash improvement** (preventive, not in original scope):
+- Changed `generateFileHash` from first-1MB chunk to full-file content to eliminate false cache hits on large audio files.
+- Added `CACHE_HASH_VERSION` + file-type metadata to hash for version isolation.
+- Added FileReader fallback for jsdom test environment; production uses native `Blob.arrayBuffer()`.
+- **Test:** New test `AudioAnalysisService.hash.test.ts` verifies no collisions when files differ after 1MB.
+
+### 🚀 CI & Deployment Status
+
+- **All code changes:** Committed to `fix/issues-core` (20 commits ahead of `main`).
+- **Local pre-commit gates:** All 4 passed on every commit (lint, typecheck, API security, unit tests).
+- **GitHub PR CI (#228):** Full `build.yml` gate passed green (5m56s, run 29167286631) — lint, typecheck, unit tests (4418 passed, 59 skipped), production build all working.
+- **Deploy status:** `deploy.yml` triggers on **push to `main`** only. Merge PR #228 → main to trigger Firebase deployment pipeline.
+
+---
 
 ## Verification Findings — 2026-06-14 (Opus static audit)
 
