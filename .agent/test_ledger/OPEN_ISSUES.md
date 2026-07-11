@@ -14858,3 +14858,69 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 - **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
 - **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/29097607673)
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
+
+---
+
+### ISSUE-1023: Add Settings & Help commands to command palette
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟢 LOW (nice-to-have)
+- **What it needs:** Users should be able to access Settings and Help from Cmd+K
+- **Why:** Reduces friction for discovering features and changing preferences
+- **Solution:** Add commands to `UnifiedCommandMenu.tsx`:
+  - "⚙️ Settings" → Navigate to Settings module
+  - "❓ Help & Keyboard Shortcuts" → Open help modal
+  - "📖 User Manual" → Link to docs
+- **Files affected:** `packages/renderer/src/components/shared/UnifiedCommandMenu.tsx`
+
+---
+
+### ISSUE-1022: Make command palette searchable with fuzzy matching
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM (UX enhancement)
+- **What it needs:** Verify and ensure command palette filters results with fuzzy search
+- **Why:** Users should type "bug" → find "Report Bug", type "creative" → find "Creative Studio"
+- **Current state:** Uses `cmdk` which supports fuzzy search
+- **Solution:** Test fuzzy search works across all commands; ensure new commands are searchable
+- **Files affected:** `packages/renderer/src/components/shared/UnifiedCommandMenu.tsx`
+- **Testing:** Verify: type "c" → shows Creative/Chat/etc; type "bug" → shows Report Bug
+
+---
+
+### ISSUE-1021: Document all keyboard shortcuts in discoverable location
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM (UX clarity)
+- **What it needs:** Central reference for all keyboard shortcuts
+- **Why:** Users can't discover shortcuts if not documented; scattered across codebase
+- **Solution:**
+  1. Create `docs/KEYBOARD_SHORTCUTS.md` with complete reference
+  2. Add "⌨️ Keyboard Shortcuts" to help/settings
+  3. Update `GlobalKeyboardShortcuts.tsx` modal
+- **Shortcuts to document:**
+  - `Cmd+K` / `Ctrl+K` — Open command palette
+  - `Ctrl+Shift+B` — Report a bug
+  - `Ctrl+Shift+F` — Request a feature
+  - `Cmd+S` / `Ctrl+S` — Save (when implemented)
+  - `Escape` — Close dialogs
+  - Module navigation (if any)
+- **Files affected:**
+  - `docs/KEYBOARD_SHORTCUTS.md` (new)
+  - `packages/renderer/src/components/shared/GlobalKeyboardShortcuts.tsx`
+
+---
+
+### ISSUE-1020: Add bug/feature report commands to Cmd+K command palette
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM (discoverability)
+- **What it needs:** Bug/feature reports accessible via Cmd+K menu, not just keyboard shortcuts
+- **Why:** Users might not discover Ctrl+Shift+B/F; command palette is more discoverable
+- **Solution:** Add to `UnifiedCommandMenu.tsx`:
+  - "🐛 Report Bug" → `useBugReport.reportBug()`
+  - "💡 Request Feature" → `useBugReport.requestFeature()`
+  - Searchable via "bug", "report", "feature", "request"
+- **Files affected:** `packages/renderer/src/components/shared/UnifiedCommandMenu.tsx`
+- **Note:** Keep keyboard shortcuts; add commands as alternative path
+
