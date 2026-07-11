@@ -13191,7 +13191,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 - **Fix applied (2026-07-10):** Removed all document-name substring matching (`docNameLower.includes('publishing')` etc.) — automation now requires an EXACT allow-listed `documentType` metadata/token value set at document-creation time, never inferred from the free-text filename. Added: (1) explicit `hasCompletedSigner` check before any trigger fires, (2) idempotency guard via `pandadoc_webhook_automation/{documentId}_{status}` transaction so PandaDoc retries can't queue duplicate pipeline jobs, (3) release-ownership verification via the newly-exported `findWritableReleaseRef()` (shared with ISSUE-887's hardened identifier registry) before queueing distribution automation — an unowned/nonexistent `releaseId` is refused and logged. **Caveat:** no caller currently sets `metadata.documentType` when creating publishing/distribution PandaDoc documents (`PandaDocService.createDocument`), so both triggers are now correctly inert (fail-closed) until that wiring is added — a separate feature-completion task, not guessed here. Deployed (pandadocWebhook).
 ### ISSUE-865: ISWC mapper logs “composition registered” while creating only a draft work record
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-10, deployed)
 - **Severity:** 🟠 HIGH
 - **Module:** Publishing / ISWC mapping
 - **Evidence:** `processISWCMapping()` warns when writer/publisher shares do not total 100 but continues (`iswcMapper.ts:84-91`). It creates an `iswc_works` record with `iswc: null` and `status: "draft"` (`:93-126`), then writes a `career_events` entry with `type: "composition_registered"` and summary `Composition "... " registered from signed publishing agreement` (`:129-139`).
@@ -13199,6 +13199,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 - **Fix:** Rename event/state to `composition_draft_created`; block or mark invalid split totals; only log `composition_registered` after external registration confirmation and ISWC/work ID receipt.
 - **Acceptance:** Draft ISWC records never produce “registered” career events; split totals other than 100 require correction or explicit normalization output before downstream registration.
 
+- **Fix applied (2026-07-10):** Career event renamed `composition_registered` → `composition_draft_created`; summary states plainly it's a draft, not a PRO/CISAC registration. Invalid splits (total ≠ 100%) are now explicitly handled: proportionally normalized with `splitsValid: false` + `originalTotalShare` recorded on the work doc (status `draft_splits_normalized`), or `draft_invalid_splits` if the total is degenerate (≤0, can't normalize) — no longer silently proceeds under a generic 'draft' status. Deployed as `processISWCMappingV2` (the live alias — `processISWCMapping` itself is retired/unexported pending GCP cleanup, per the comment in index.ts).
 ### ISSUE-866: Founder checkout payment does not automatically activate Founder access
 
 - **Status:** ✅ FIXED (2026-07-10, deployed)
@@ -14599,13 +14600,15 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-1004: Screenwriter accepts invalid scene durations and serializes them as a production storyboard
 
-- **Status:** 🟠 OPEN
+- **Status:** 🟡 PARTIAL (2026-07-11 — invalid timing is blocked at authoring, export, and handoff; legacy recovery/manifest remains)
 - **Severity:** 🟠 HIGH (unrenderable timing can be saved, exported, and handed off as a valid treatment)
 - **Module:** Screenwriter / Storyboard timing
 - **Evidence:** The scene duration editor converts any input directly with `Number(e.target.value)` and writes it to the scene without bounds, integer/finite checks, or a validation state (`ScreenwriterDashboard.tsx:542-548`, `:260-262`). The draft loader’s only duration validation is `typeof scene.duration === 'number'`, which accepts `NaN` and infinities at runtime (`:73-81`), and its display/export paths directly sum/interpolate these values (`:163-184`, `:266`). Zero/negative/decimal durations can therefore be persisted in the device draft and emitted as `Duration: -1s`/`0s`; an empty/non-numeric editing transition can also produce `0`/`NaN` totals rather than a controlled authoring error.
 - **Impact:** The screenplay can show impossible total run times and hand a malformed shot list to export or video production. A downstream renderer may reject the treatment, clamp values differently, or generate a sequence whose timing conflicts with what the writer reviewed.
 - **Fix:** Define a schema for scene timing at every boundary: finite positive duration, documented granularity and min/max compatible with the selected video pipeline, plus a bounded total/runtime budget. Keep invalid input in a field-level draft state, block persistence/export/handoff until repaired, and normalize legacy local drafts with visible recovery rather than silently retaining malformed values.
 - **Acceptance:** Empty, zero, negative, `NaN`, infinity, decimal-outside-granularity, over-maximum, and over-total-budget fixtures cannot enter a saved/exported/handoff storyboard; valid scene edits recompute a finite correct total; loading a corrupt legacy draft identifies the affected scene and preserves editable text while requiring correction; exported artifact and video request contain the same validated duration manifest the writer saw.
+
+- **Fix progress (2026-07-11):** Added a shared storyboard timing validator enforcing whole-second scene durations from 1–60 seconds and a 600-second storyboard budget. The duration editor rejects and restores invalid values, while export and Creative Studio handoff independently fail closed with an actionable error. Added 14 focused tests covering finite/integer bounds, empty and over-budget storyboards, valid totals, and invalid editor input; Vitest, ESLint, renderer TypeScript, and diff checks pass. Remaining before FIXED: normalize corrupt legacy drafts into a visible repair state, prevent invalid draft persistence at the storage boundary, and carry one validated duration manifest unchanged through exported artifacts and video requests.
 
 ### ISSUE-1005: Generated-audio library service writes to an unruled path while rules authorize a different collection
 
@@ -14659,7 +14662,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 - **Fix:** Build flattening as a non-destructive transaction: resolve and decode every source at its exact bytes/dimensions, render off-canvas, validate the composite, then offer an undoable replace/keep-sources choice. If any layer is pending, inaccessible, tainted, or fails decode, keep all originals and show the exact failed layer with retry/repair controls; never claim success on a partial composite.
 - **Acceptance:** A fixture with one delayed, one failed-decode, one CORS-inaccessible, and one normal layer never deletes any source or emits success until every required layer is decoded and rendered; a successful flatten contains every source pixel in z-order and creates a recoverable revision/undo record; retry after the delayed layer resolves produces one complete composite without duplicate layers; forced canvas/export failure leaves original layers intact and reports a typed error.
 
-- **Fix progress (2026-07-11):** Flatten now preflights every cached layer and aborts with the exact unavailable layer before rendering or deleting anything. Canvas serialization is guarded; taint/export failure reports that originals were preserved and returns before source removal. Existing Infinite Canvas tests, ESLint, renderer TypeScript, and diff checks pass. Remaining before FIXED: durable revision/undo transaction and dedicated delayed/decode/CORS integration fixtures.
+- **Fix progress (2026-07-11):** Flatten now preflights every cached layer and aborts with the exact unavailable layer before rendering or deleting anything. Canvas serialization is guarded; taint/export failure reports that originals were preserved and returns before source removal. A dedicated regression test proves an unavailable layer emits failure and invokes no source deletion; the four-test Infinite Canvas suite, ESLint, and diff checks pass. Remaining before FIXED: durable revision/undo transaction and delayed/decode/CORS browser fixtures.
 
 ### ISSUE-1010: One failed Infinite Canvas variation discards successful paid sibling results
 
