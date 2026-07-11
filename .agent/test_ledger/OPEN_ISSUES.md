@@ -12218,7 +12218,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 - **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
 
 ### ISSUE-772: Cross-device asset divergence — image gallery is device-local because history sync silently fails
-- **Status:** 🔴 OPEN (root cause confirmed in code + rules, 2026-07-09)
+- **Status:** ✅ FIXED (2026-07-11 verified in code in code + rules, 2026-07-09)
 - **Severity:** 🔴 P0 (same-account devices show DIFFERENT image libraries — William repro: iPad vs desktop see different images in their folder)
 - **Causal chain (each link verified):**
   1. `profileSlice.ts:82` defaults `currentOrganizationId: 'org-default'`. If the user has no docs in `organizations` (solo user), it stays `'org-default'` forever.
@@ -14598,6 +14598,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 - **Fix:** Scope drafts by authenticated user plus organization/project and a stable draft ID, store ownership/version metadata, and clear or lock inaccessible local drafts on auth/project transition. Prefer encrypted local persistence plus durable server-backed drafts with explicit offline sync/conflict behavior for production use.
 - **Acceptance:** User A’s draft cannot appear after User B signs in; Project A/B drafts restore independently; logout removes or encrypts inaccessible cached content; concurrent/offline edits reconcile with version/conflict UI rather than overwrite; a handoff carries the captured draft/project ID and cannot route a prior project’s scenes into the active project.
 
+
 ### ISSUE-1000: Social content scheduling writes to an unruled Firestore collection, so calendar posts cannot persist
 
 - **Status:** 🔴 OPEN
@@ -14915,4 +14916,3 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
   - Both searchable via "bug", "report", "feature", "request"
 - **Files:** `packages/renderer/src/components/shared/UnifiedCommandMenu.tsx` (lines 165-178)
 - **Verification:** ✅ Both commands accessible via Cmd+K, labeled with icons, keyboard shortcuts still work
-
