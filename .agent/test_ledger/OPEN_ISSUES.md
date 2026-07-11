@@ -14590,13 +14590,15 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-999: Screenwriter drafts are unscoped localStorage shared across accounts and projects
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL (2026-07-11 — local drafts isolated by user/project; server sync/conflicts remain)
 - **Severity:** 🟠 HIGH (unreleased creative draft disclosure and project contamination)
 - **Module:** Screenwriter / Storyboard drafting
 - **Evidence:** Every dashboard instance reads and writes the same device-global key `indii-screenwriter-draft-v1` (`ScreenwriterDashboard.tsx:29`, `:108-128`, `:130-161`). The stored payload contains the song concept, tone, scene descriptions, camera direction, durations, and Veo prompts, but no user ID, organization, project ID, draft ID, version, ownership check, logout cleanup, or encryption. Creative handoff then routes whichever global draft is in memory into the Creative Studio (`:213-230`).
 - **Impact:** Signing out and into another artist account—or changing projects on the same device—can expose a prior user’s unreleased music-video treatment and send it into the wrong Creative Studio project. Multiple distinct projects overwrite one another’s only persisted screenwriter draft with no recovery/version lineage.
 - **Fix:** Scope drafts by authenticated user plus organization/project and a stable draft ID, store ownership/version metadata, and clear or lock inaccessible local drafts on auth/project transition. Prefer encrypted local persistence plus durable server-backed drafts with explicit offline sync/conflict behavior for production use.
 - **Acceptance:** User A’s draft cannot appear after User B signs in; Project A/B drafts restore independently; logout removes or encrypts inaccessible cached content; concurrent/offline edits reconcile with version/conflict UI rather than overwrite; a handoff carries the captured draft/project ID and cannot route a prior project’s scenes into the active project.
+
+- **Fix progress (2026-07-11):** Replaced the global key with a user-and-project scoped v2 key. The dashboard reloads on scope changes and refuses to load/save when scope is absent; hydration prevents old scope state being written into a new scope. Focused Screenwriter tests: 5 passed. Remaining: server-backed drafts, encrypted logout cleanup, conflict/revision handling, and explicit project identity in handoff.
 
 
 ### ISSUE-1000: Social content scheduling writes to an unruled Firestore collection, so calendar posts cannot persist
