@@ -13772,7 +13772,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-918: Creative Gallery labels every generated asset “SynthID” without provenance evidence
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟠 HIGH (provenance/compliance claim)
 - **Module:** Creative Suite / Gallery / Provenance
 - **Evidence:** `CreativeGallery` renders a `SynthID` badge solely when `item.origin === 'generated'` (`CreativeGallery.tsx:437-442`). `HistoryItem` has no SynthID requested/provider-reported/verified fields (`core/types/history.ts:1-23`), and generated origin includes workflows/providers that do not prove a watermark.
