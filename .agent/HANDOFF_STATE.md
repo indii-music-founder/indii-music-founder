@@ -4,6 +4,7 @@
 
 ## Recent Commits
 ```
+4d31e9cc7 chore: session checkpoint [10:46]
 104613c42 docs: create comprehensive keyboard shortcuts reference (ISSUE-1021)
 5f411c7d2 docs: mark ISSUE-1020 and ISSUE-1023 as FIXED
 7e54348fd feat: add bug/feature report and help commands to Cmd+K palette (ISSUE-1020, ISSUE-1023)
@@ -13,7 +14,6 @@ d380a1e64 docs: add keyboard shortcuts & command palette issues to ledger
 47cd65564 fix(tax): align certification schema end-to-end, stop storing raw TIN (ISSUE-793)
 13170ab5f chore: session checkpoint [10:36]
 84697c5c0 docs: add user manual documentation for bug reporting feature
-0c75c94a6 fix(distribution): never persist raw TIN values (ISSUE-793)
 ```
 
 ## Working State
