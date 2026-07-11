@@ -82,6 +82,13 @@ clean working tree
 
 ## Remaining Issues (194)
 
+### Requested creative fixes (Codex handoff)
+- **ISSUE-999 Screenwriter draft isolation:** replace the global localStorage key with a user + project scoped versioned key; do not load/save without both scopes; reload on scope transition; include the captured project/draft ID in Creative Studio handoff. Verify User A cannot restore User B data and Project A/B restore independently.
+- **ISSUE-1016 Sequence Architect trajectory:** keep an applied prompt revision distinct from editable draft text; Apply must synthesize a new target frame linked to that revision; block Director Mode while text is unapplied; pass prompt/revision/target ID into the Director request manifest. Preserve old target + editable text on failure.
+- **ISSUE-922 Gallery upload integrity:** validate MIME/signature and bounded size before reads; await each FileReader, Storage, and metadata write; toast only accurate succeeded/failed/skipped totals; preserve retry information and do not silently evict the 51st asset. Test mixed valid/oversize/read-error/persistence-error selection.
+- **ISSUE-995 Private storyboard renders:** remove Cloud Run render initiation/credentials from the renderer; use a server-owned authenticated broker and private project-scoped output. Replace overloaded URL/`CLOUD_QUEUED` strings with a persisted lifecycle receipt (`queued|running|completed|failed`); compile UI must show job status and expose Copy/Download only after an authorized final URL is read back. Test cross-user denial and queued versus completed UI.
+- **ISSUE-994 Performance Video final assembly:** share one typed callable contract across service/workflow/agent: submit `{ compositionId, inputProps: { project } }`, return an owned queued render receipt, poll/read back a final MP4 before completion messaging, and preserve retryable final-stitch state without regenerating scenes. Test envelope, rejection, queue failure, and final receipt lineage.
+
 ### Likely Quick Wins (Next Session)
 - ISSUE-923: Asset library type mismatch ('music' vs 'audio') — type fix
 - ISSUE-922: Upload progress reported before persistence completes — timing fix
