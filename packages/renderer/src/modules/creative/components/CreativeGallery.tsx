@@ -377,12 +377,22 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                             <ThumbsDown size={14} />
                         </button>
                         <button
-                            onClick={(e) => {
+                            onClick={async (e) => {
                                 e.stopPropagation();
-                                import('@/utils/download').then(({ downloadAsset }) => {
-                                    downloadAsset(item.url, `${item.type}-export-${item.id.slice(0, 8)}`);
-                                    toast.success('Downloading asset...');
-                                });
+                                try {
+                                    const { downloadAsset } = await import('@/utils/download');
+                                    // ISSUE-921: Add proper file extension
+                                    const ext = item.type === 'video' ? '.mp4' : item.type === 'music' ? '.mp3' : '.png';
+                                    const filename = `${item.type}-export-${item.id.slice(0, 8)}${ext}`;
+                                    const success = await downloadAsset(item.url, filename);
+                                    if (success) {
+                                        toast.success('Asset downloaded successfully.');
+                                    } else {
+                                        toast.error('Failed to download asset.');
+                                    }
+                                } catch (err: unknown) {
+                                    toast.error('Download failed.');
+                                }
                             }}
                             data-testid="download-asset-btn"
                             className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-green-600 transition-colors"
