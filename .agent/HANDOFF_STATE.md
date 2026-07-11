@@ -1,9 +1,12 @@
 # Handoff State
-**Updated:** 2026-07-11 09:43 EDT
+**Updated:** 2026-07-11 10:28 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+aa943a9ed fix(content-id): fail-closed rights attestation, fix IPC JSON contract (ISSUE-786, ISSUE-789)
+b5e7286b6 fix(ddex): correct ERN namespace to 4.3 on both non-canonical generators (ISSUE-784)
+3ece66f0b feat(bug-reporting): user-facing dialog for bug reports and feature requests
 76418e753 fix(ci): fail-closed macOS signing gate, verify codesign before publish (ISSUE-992)
 5afa700d0 fix(publishing): honest draft status and split-total normalization in ISWC mapper (ISSUE-865)
 06ebb95dc chore: session checkpoint [09:34]
@@ -11,29 +14,11 @@
 7037a565e fix(image-generation): auto-inject user headshots as reference images for person generation
 4d551bc5b fix(security): remove name-inferred automation triggers from PandaDoc webhook (ISSUE-864)
 c5baa6123 chore: session checkpoint [09:23]
-57e766ddb fix(ddex): distinguish structural lint from XSD validation in ingestion validators (ISSUE-862)
-b21e15b91 fix(ddex): rename MCP metadata tool, escape XML, require verified sender DPID (ISSUE-861)
-89433d924 docs(ledger): 2026-07-10 registration sprint — D-U-N-S 057447947, Apple enrollment pending, TikTok app + demo shot list, OAuth scopes
 ```
 
 ## Working State
 ```
- M packages/firebase/src/functions/billing/enforceOperationCost.ts
- M packages/firebase/src/functions/creative/gateway.ts
- M packages/firebase/src/index.ts
- M packages/firebase/src/shared/creative.ts
- M packages/renderer/src/modules/creative/components/__tests__/InfiniteCanvas.test.tsx
- M packages/renderer/src/modules/screenwriter/ScreenwriterDashboard.test.tsx
- M packages/renderer/src/modules/screenwriter/ScreenwriterDashboard.tsx
- M packages/renderer/src/services/CloudStorageService.ts
- M packages/renderer/src/services/audio/AudioPersistenceService.ts
- M packages/renderer/src/services/billing/CostControlService.ts
- M packages/renderer/src/services/image/ImageGenerationService.ts
- M packages/renderer/src/services/image/__tests__/ImageGenerationService.test.ts
- M packages/renderer/src/test/setup.ts
-?? packages/renderer/src/modules/screenwriter/screenwriterTiming.test.ts
-?? packages/renderer/src/modules/screenwriter/screenwriterTiming.ts
-?? packages/renderer/src/services/audio/AudioPersistenceService.test.ts
+ M .agent/HANDOFF_STATE.md
 ```
 
 ## Decisions
