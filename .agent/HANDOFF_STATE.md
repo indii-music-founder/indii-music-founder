@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-07-11 11:01 EDT
+**Updated:** 2026-07-11 11:29 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+98cae3e10 fix(ci): repair generateImageV3 test broken by cost-reservation gate (ISSUE-881 follow-up)
+fdd02ff69 chore: session checkpoint [11:01]
 756c9b265 fix(remote): stop invalid Firestore writes, add missing P2P finality field (ISSUE-981)
 a7f9f3fc0 fix(merchandise): add confirmation dialog before applying destructive template (ISSUE-934)
 9def3956b chore: session checkpoint [10:57]
@@ -12,8 +14,6 @@ a7f9f3fc0 fix(merchandise): add confirmation dialog before applying destructive 
 52a56c13b docs: update ledger — mark ISSUE-933 and ISSUE-764 status
 199ab4db9 chore: session checkpoint [10:53]
 f5e13c53d chore: linter optimization for merchandise auto-save
-74799882c fix(merchandise): return SaveResult from saveDesign callback (ISSUE-933)
-7f88eb0be test(publicist): add regression coverage for verified-email-only mailto gate (ISSUE-912)
 ```
 
 ## Working State
