@@ -4,6 +4,7 @@
 
 ## Recent Commits
 ```
+e694ccdb6 chore: session checkpoint [16:33]
 b01eaa21b chore: session checkpoint [16:32]
 34b911b95 chore: session checkpoint [16:18]
 ffd8d4d31 fix(audio): add FileReader fallback for test environment
@@ -13,7 +14,6 @@ ffd8d4d31 fix(audio): add FileReader fallback for test environment
 c765e8582 chore: session checkpoint [16:02]
 18b440eb9 fix(storyboard): use canonical Veo model
 6e3e4c19d docs: mark ISSUE-750 COMPLETE — archive parity fully implemented
-e7af99fd6 feat(archive): add participant agent avatars to session list for ISSUE-750
 ```
 
 ## Working State
