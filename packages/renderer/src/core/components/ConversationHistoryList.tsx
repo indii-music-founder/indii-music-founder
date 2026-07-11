@@ -220,7 +220,7 @@ const HistoryItem = memo(({
 });
 
 export const ConversationHistoryList = ({ className, onClose }: { className?: string; onClose?: () => void }) => {
-    const { sessions, activeSessionId, setActiveSession, deleteSession, updateSessionTitle, updateSessionProject, archiveSession, unarchiveSession, setRightPanelView } = useStore(
+    const { sessions, activeSessionId, setActiveSession, deleteSession, updateSessionTitle, updateSessionProject, archiveSession, unarchiveSession, setRightPanelView, loadMoreSessions, sessionsPaginationLoading, hasMoreSessions } = useStore(
         useShallow(state => ({
             sessions: state.sessions,
             activeSessionId: state.activeSessionId,
@@ -231,6 +231,9 @@ export const ConversationHistoryList = ({ className, onClose }: { className?: st
             archiveSession: state.archiveSession,
             unarchiveSession: state.unarchiveSession,
             setRightPanelView: state.setRightPanelView,
+            loadMoreSessions: state.loadMoreSessions,
+            sessionsPaginationLoading: state.sessionsPaginationLoading,
+            hasMoreSessions: state.hasMoreSessions,
         }))
     );
     
@@ -356,6 +359,15 @@ export const ConversationHistoryList = ({ className, onClose }: { className?: st
                         </div>
                     );
                 })}
+                {hasMoreSessions && (
+                    <motion.button
+                        onClick={() => loadMoreSessions()}
+                        disabled={sessionsPaginationLoading}
+                        className="w-full m-3 px-4 py-2 bg-white/5 hover:bg-white/10 disabled:opacity-50 rounded-lg text-[12px] font-medium text-gray-300 transition-colors"
+                    >
+                        {sessionsPaginationLoading ? 'Loading...' : 'Load More Sessions'}
+                    </motion.button>
+                )}
             </div>
         </div>
     );
