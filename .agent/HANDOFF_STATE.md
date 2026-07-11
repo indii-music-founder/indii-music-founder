@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-07-11 16:08 EDT
+**Updated:** 2026-07-11 16:12 EDT
 **Branch:** `fix/issues-core`
 
 ## Recent Commits
 ```
+580004483 fix(audio): improve cache hash to use full file content + version
+6e087dc78 chore: session checkpoint [16:08]
 c765e8582 chore: session checkpoint [16:02]
 18b440eb9 fix(storyboard): use canonical Veo model
 6e3e4c19d docs: mark ISSUE-750 COMPLETE — archive parity fully implemented
@@ -12,14 +14,11 @@ e7dba06f1 fix(screenwriter): scope local drafts by user and project
 c437ee225 chore: session checkpoint [15:58]
 f1345a6d8 docs: mark ISSUE-750 pagination complete
 d8425e03d feat(archive): add session pagination for ISSUE-750
-c79a7a0fa chore: session checkpoint [15:47]
-6f3e40f5e chore: session checkpoint [15:52] — issue audit complete
 ```
 
 ## Working State
 ```
- M packages/renderer/src/services/audio/AudioAnalysisService.ts
-?? packages/renderer/src/services/audio/AudioAnalysisService.hash.test.ts
+ M .agent/test_ledger/OPEN_ISSUES.md
 ```
 
 ## Decisions
