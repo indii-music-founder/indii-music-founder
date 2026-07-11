@@ -29,6 +29,22 @@
 ### Security/Data Integrity (2)
 - ISSUE-900: Remove fabricated credential rotation success
 - ISSUE-901: Use real user ID instead of hardcoded dev-user
+**Updated:** 2026-07-11 12:04 EDT
+**Branch:** `fix/zustand-selector-regression`
+
+## Recent Commits
+```
+450637ea5 docs: mark ISSUE-918 fixed
+20d8cefc4 fix(creative): remove false SynthID claim pending provenance tracking (ISSUE-918)
+6363a8518 docs: mark ISSUE-915 fixed
+b37c558dd fix(creative): preserve successful reference uploads, report failures (ISSUE-915)
+1f72d3374 fix(video): use correct 'music' type in editor asset filter (ISSUE-923 partial)
+29c07dfec chore(debug): remove accidentally-committed .orig merge-backup files
+040e87ad7 chore: session checkpoint [11:57]
+839a0a7ed fix(debug): use shallow selector to prevent infinite re-renders in BugReportDialog
+b5f9fee1f docs: mark ISSUE-921 fixed
+1ecd68d17 fix(creative): await download, show error toast, add file extension (ISSUE-921)
+```
 
 ### Agent Tools/Descriptions (3)
 - ISSUE-904: Fix split-sheet tool description
@@ -55,6 +71,7 @@ e5c0ab8de fix(marketing): correct tool descriptions to reflect draft/package sta
 f63f279e9 fix(agent): use authenticated user ID in RosterService, not hardcoded dev-user (ISSUE-901)
 49ab96d91 docs: mark ISSUE-900 fixed
 a27765b4c fix(security): fail closed on unsupported credential rotation (ISSUE-900)
+clean working tree
 ```
 
 ## Successful Patterns for Future Sessions

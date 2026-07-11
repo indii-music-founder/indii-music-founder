@@ -12300,13 +12300,14 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-776: Image sub-menu Edit/Reference/Remix actions target the wrong asset and Reference is dead state
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIALLY FIXED (2026-07-11) — wrong-asset targeting fixed; Reference→Whisk intake wiring still open
 - **Severity:** 🟠 HIGH
 - **Module:** Creative Suite / Image
 - **Evidence:** `ImageSubMenu.tsx:50-76` always uses `generatedHistory[0]` without filtering by project or `type === 'image'`. Edit selects an item but does not enter editor view. Reference writes `activeReferenceImage`, but repo-wide reads show no production consumer—only setters/tests.
 - **Impact:** An image action can pick another project's video, appear to do nothing, or toast that a reference is active when generation never uses it.
 - **Fix:** Resolve the latest image in the active project, navigate Edit to `editor`, and replace `activeReferenceImage` with the real `referenceUris`/Whisk intake path. Disable actions with an honest empty state when no eligible image exists.
 - **Acceptance:** Interaction tests cover mixed image/video history and two projects; the selected reference URI appears in `generateImageV3`.
+- **Fix applied (2026-07-11):** `ImageSubMenu.tsx` now resolves `latestImage` by filtering `generatedHistory` for `type === 'image' && projectId === currentProjectId` and uses it for all three actions; Edit/Reference/Remix buttons are `disabled` with a "No image in this project yet" title when none exists. `setSelectedItem` already triggers `CreativeStudio.tsx`'s existing `viewMode !== 'editor' → setViewMode('editor')` effect, so Edit now reliably enters the editor. **Not done:** `activeReferenceImage` still has no production consumer — wiring it to a real `referenceUris`/Whisk intake path in the generation payload is a larger feature-level change and remains open. No interaction test added.
 
 ### ISSUE-777: Image Creator exposes video settings while hiding/ignoring its real image controls
 
@@ -12375,13 +12376,14 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 - **Fix applied (2026-07-10):** `AuthorityPanel.handleGenerateDDEX` no longer generates one ISRC and reuses it across every track missing a code — it now issues one ISRC per missing track sequentially (avoids racing the backend pool transaction), then hard-fails DDEX compilation if any duplicate ISRC is detected across tracks before compilation. Single-track releases still use one code, correctly. Regression test added covering 3 tracks each missing an ISRC receiving 3 distinct codes.
 ### ISSUE-783: Singles skip UPC/ICPN allocation even though downstream release packaging requires one
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-11)
 - **Severity:** 🟠 HIGH
 - **Module:** Metadata / DDEX
 - **Evidence:** `MetadataOrchestrator.ts:28` and `IngestionNotificationService.ts:40-43` allocate UPC only when `releaseType !== 'Single'`. `AuthorityPanel.tsx:68-100` and DDEX release validation require release-level UPC/ICPN regardless.
 - **Impact:** Singles can be marked Golden, then deadlock during packaging or receive identifiers from a later inconsistent path.
 - **Fix:** Define the canonical release identifier policy once. Allocate/import a valid GTIN/UPC/EAN for every commercial release that needs ICPN, including singles, or use an explicitly supported catalog-number-only profile.
 - **Acceptance:** Single and album fixtures pass the same release-identity gate before DDEX generation.
+- **Fix applied (2026-07-11):** Removed the `releaseType !== 'Single'` gate in both `MetadataOrchestrator.createGoldenMetadata` and `IngestionNotificationService.generateIngestionNotification` — UPC is now allocated via `IdentifierService.nextUPC()` for every release type, matching `AuthorityPanel`'s existing unconditional requirement. Not done: no dedicated regression test added for this specific fixture pairing.
 
 ### ISSUE-784: DDEX compiler emits a fake DPID and an ERN 4.2 document while the app claims ERN 4.3
 
@@ -13591,7 +13593,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-900: Credential rotation fabricates a new local key for unsupported services but says provider rotation succeeded
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH (security / credential management)
 - **Module:** Security / Electron credential rotation
 - **Evidence:** `security:rotate-credentials` performs provider API calls only for `stripe` and `github` (`security.ts:40-106`). For every other `serviceName`, it generates `crypto.randomBytes(32).toString('hex')` locally (`:107-110`) and returns `success: true` with message `Credentials for ${serviceName} rotated successfully via provider API` (`:116-122`). Earlier ledger entries ISSUE-263/287 marked this fallback fixed, but the current behavior still does not rotate the credential at the provider.
@@ -13601,7 +13603,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-901: Venue roster saves every user’s additions under `users/dev-user`
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟠 HIGH
 - **Module:** Booking/Agent roster / Firestore persistence
 - **Evidence:** `RosterService.addToRoster()` comments that it should get the current Auth user but hardcodes `const userId = 'dev-user'` (`RosterService.ts:20-26`), then writes the venue to `users/${userId}/roster/${venue.id}` (`:26-39`). The tests assert the same `users/dev-user/roster/...` path (`RosterService.test.ts:46-50`, `:73-76`), so the broken behavior is locked in. The dashboard action calls this service directly when adding a venue (`AgentDashboard.tsx:169`).
@@ -13611,7 +13613,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-902: Security rotation contract omits `vaultData`, so supported provider rotations cannot run
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH (security / broken incident response)
 - **Module:** Security agent / Electron credential rotation bridge
 - **Evidence:** The Electron main handler requires `RotationInputSchema` with both `serviceName` and `vaultData` (`security.ts:15-18`) and then reads provider secrets from `vaultData.api_secret`, `vaultData.github_token`, `vaultData.secret_name`, and `vaultData.repo` for Stripe/GitHub rotation (`:40-106`). The renderer tool calls `window.electronAPI.security.rotateCredentials({ serviceName: service_name })` with no `vaultData` (`SecurityTools.ts:68-80`), and the global Electron type only permits `{ serviceName: string }` (`electron.d.ts:233-236`).
@@ -13631,7 +13633,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-904: Legal Agent split-sheet tool advertises e-signature initiation but only creates a draft
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟠 HIGH
 - **Module:** Legal agent / Split sheets / E-signature workflow
 - **Evidence:** `LegalAgent` exposes `draft_split_sheet` with the tool description “Generates a standard split sheet for collaborators and initiates digital signatures through the configured signature provider” (`LegalAgent.ts:107-108`). The mapped implementation is `LegalTools.generate_split_sheet` (`LegalAgent.ts:55`), which validates the percentages and calls `draft_contract` (`LegalTools.ts:86-107`). `draft_contract` saves a draft contract to the Legal Dashboard (`:49-64`) but does not call `trigger_digital_signature`, `sendForDigitalSignature`, PandaDoc, DocuSign, or collect signer emails from the declared `collaborators` schema.
@@ -13699,7 +13701,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-911: Publicist `pitch_story` returns literal placeholder copy instead of generating a pitch
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟠 HIGH
 - **Module:** Publicist / Agent tools / Creative copy generation
 - **Evidence:** The active publicist tool registry is merged into the global agent tool registry (`services/agent/tools/index.ts:1`, `:85`). Its `pitch_story()` implementation never calls a model or a drafting service; it returns a fixed subject containing `[Artist]` and an email body containing the literal text `[AI would generate full pitch based on ${args.angle}]` (`modules/publicist/tools.ts:153-161`). The result still passes schema validation and is returned as `toolSuccess(..., "Pitch drafted...")`.
@@ -13740,7 +13742,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-915: One failed reference upload silently discards every reference and still generates
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟠 HIGH
 - **Module:** Creative Suite / Image generation / Reference integrity
 - **Evidence:** Direct image generation uploads all selected ingredients in one `Promise.all` (`useDirectGeneration.ts:311-319`). A single rejection jumps to a shared catch that logs “proceeding without references,” leaves both `referenceUri` and `referenceUris` unset, and continues to `generateImageV3` (`:320-342`). No warning or confirmation is shown to the user.
@@ -13760,7 +13762,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-917: Canvas save reports disk/cloud success when no durable save occurred
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟠 HIGH
 - **Module:** Creative Suite / Canvas persistence
 - **Evidence:** If `canvasOps.getBlob()` returns null, `saveCanvas()` skips Storage upload and gallery insertion entirely but still persists the session and toasts “Saved to gallery & cloud!” (`useCreativeCanvas.ts:878-919`). If any step throws, the catch toasts “Stored to disk only” (`:920-922`), although this function performs no disk write or Electron save in the catch path.
@@ -13770,7 +13772,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-918: Creative Gallery labels every generated asset “SynthID” without provenance evidence
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟠 HIGH (provenance/compliance claim)
 - **Module:** Creative Suite / Gallery / Provenance
 - **Evidence:** `CreativeGallery` renders a `SynthID` badge solely when `item.origin === 'generated'` (`CreativeGallery.tsx:437-442`). `HistoryItem` has no SynthID requested/provider-reported/verified fields (`core/types/history.ts:1-23`), and generated origin includes workflows/providers that do not prove a watermark.
@@ -13800,7 +13802,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-921: Gallery download announces progress even when the download fails and omits a usable extension
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟡 MEDIUM
 - **Module:** Creative Suite / Asset export
 - **Evidence:** The click handler dynamically imports `downloadAsset`, calls it without awaiting its boolean result, and immediately toasts “Downloading asset...” (`CreativeGallery.tsx:379-385`). `downloadAsset()` catches all errors and returns `false` (`utils/download.ts:3-33`), so the caller can never surface failure. The filename passed is `image-export-...` / `video-export-...` with no extension, and the raw `item.url` may be `gs://` even when a resolved URL/storage URI is available.
