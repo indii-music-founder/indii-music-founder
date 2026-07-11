@@ -8,6 +8,7 @@ export const BaseMediaRequestSchema = z.object({
 });
 
 export const GenerateImageSchema = BaseMediaRequestSchema.extend({
+    costReservationId: z.string().min(1),
     sessionId: z.string().optional(),
     aspectRatio: z.enum(['1:1', '16:9', '9:16', '3:4', '4:3']).default('1:1'),
     model: z.enum(['lite', 'fast', 'pro', 'legacy']).default('fast'),

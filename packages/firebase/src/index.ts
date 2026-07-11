@@ -155,7 +155,7 @@ export { fetchStorageAssetForCanvas } from './functions/storage/fetchStorageAsse
 export { processRelayCommand } from './relay/relayCommandProcessor';
 
 // Billing / Cost Control
-export { enforceOperationCost } from './functions/billing/enforceOperationCost';
+export { enforceOperationCost, finalizeOperationCost } from './functions/billing/enforceOperationCost';
 
 // Telegram Bot Adapter — Phase 2 Multi-Channel (bridges Telegram → Firestore relay)
 export { telegramWebhook } from './relay/telegramWebhook';

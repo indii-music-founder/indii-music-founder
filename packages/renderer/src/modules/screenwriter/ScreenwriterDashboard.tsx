@@ -7,6 +7,7 @@ import {
 import { useToast } from '@/core/context/ToastContext';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
+import { getStoryboardTimingError, isValidStoryboardSceneDuration, MAX_STORYBOARD_SCENE_SECONDS } from './screenwriterTiming';
 
 interface StoryboardScene {
     id: string;
@@ -24,6 +25,11 @@ interface ScreenwriterDraft {
     selectedTone: 'cinematic' | 'abstract' | 'hype';
     scenes: StoryboardScene[];
     selectedSceneId: string;
+}
+
+interface DraftLoadResult {
+    draft: ScreenwriterDraft;
+    timingRepairs: Record<string, string>;
 }
 
 const SCREENWRITER_DRAFT_STORAGE_KEY = 'indii-screenwriter-draft-v1';
@@ -68,7 +74,7 @@ function createDefaultDraft(): ScreenwriterDraft {
     };
 }
 
-function isStoryboardScene(value: unknown): value is StoryboardScene {
+function isStoryboardSceneShape(value: unknown): value is Omit<StoryboardScene, 'duration'> & { duration?: unknown } {
     if (!value || typeof value !== 'object') return false;
     const scene = value as StoryboardScene;
     return (
@@ -77,24 +83,31 @@ function isStoryboardScene(value: unknown): value is StoryboardScene {
         typeof scene.heading === 'string' &&
         typeof scene.description === 'string' &&
         typeof scene.cameraAngle === 'string' &&
-        typeof scene.duration === 'number' &&
         typeof scene.veoPrompt === 'string'
     );
 }
 
-function normalizeDraft(value: unknown): ScreenwriterDraft {
+function normalizeDraft(value: unknown): DraftLoadResult {
     const fallback = createDefaultDraft();
-    if (!value || typeof value !== 'object') return fallback;
+    if (!value || typeof value !== 'object') return { draft: fallback, timingRepairs: {} };
 
     const draft = value as Partial<ScreenwriterDraft>;
+    const timingRepairs: Record<string, string> = {};
     const scenes = Array.isArray(draft.scenes)
-        ? draft.scenes.filter(isStoryboardScene).map((scene, index) => ({
-            ...scene,
-            sceneNumber: index + 1,
-        }))
+        ? draft.scenes.filter(isStoryboardSceneShape).map((scene, index) => {
+            const duration = Number(scene.duration);
+            if (!isValidStoryboardSceneDuration(duration)) {
+                timingRepairs[scene.id] = scene.duration == null ? '' : String(scene.duration);
+            }
+            return {
+                ...scene,
+                duration: isValidStoryboardSceneDuration(duration) ? duration : 5,
+                sceneNumber: index + 1,
+            };
+        })
         : fallback.scenes;
 
-    return {
+    return { draft: {
         activeTab: draft.activeTab === 'storyboard' || draft.activeTab === 'veoprompts' ? draft.activeTab : 'scriptwriter',
         songConcept: typeof draft.songConcept === 'string' && draft.songConcept.trim() ? draft.songConcept : fallback.songConcept,
         selectedTone: draft.selectedTone === 'abstract' || draft.selectedTone === 'hype' ? draft.selectedTone : 'cinematic',
@@ -102,18 +115,18 @@ function normalizeDraft(value: unknown): ScreenwriterDraft {
         selectedSceneId: typeof draft.selectedSceneId === 'string' && scenes.some(scene => scene.id === draft.selectedSceneId)
             ? draft.selectedSceneId
             : (scenes[0]?.id ?? fallback.selectedSceneId),
-    };
+    }, timingRepairs };
 }
 
-function loadDraft(): ScreenwriterDraft {
-    if (typeof window === 'undefined') return createDefaultDraft();
+function loadDraft(): DraftLoadResult {
+    if (typeof window === 'undefined') return { draft: createDefaultDraft(), timingRepairs: {} };
 
     try {
         const raw = window.localStorage.getItem(SCREENWRITER_DRAFT_STORAGE_KEY);
-        if (!raw) return createDefaultDraft();
+        if (!raw) return { draft: createDefaultDraft(), timingRepairs: {} };
         return normalizeDraft(JSON.parse(raw));
     } catch {
-        return createDefaultDraft();
+        return { draft: createDefaultDraft(), timingRepairs: {} };
     }
 }
 
@@ -128,7 +141,8 @@ function saveDraft(draft: ScreenwriterDraft): void {
 }
 
 export default function ScreenwriterDashboard() {
-    const [initialDraft] = useState<ScreenwriterDraft>(() => loadDraft());
+    const [initialLoad] = useState<DraftLoadResult>(() => loadDraft());
+    const initialDraft = initialLoad.draft;
     const [activeTab, setActiveTab] = useState<ScreenwriterDraft['activeTab']>(initialDraft.activeTab);
     const toast = useToast();
     const { setModule, setGenerationMode, setViewMode, setCreativePrompt } = useStore(useShallow(state => ({
@@ -149,8 +163,10 @@ export default function ScreenwriterDashboard() {
     const [scenes, setScenes] = useState<StoryboardScene[]>(initialDraft.scenes);
 
     const [selectedSceneId, setSelectedSceneId] = useState<string>(initialDraft.selectedSceneId);
+    const [timingRepairs, setTimingRepairs] = useState<Record<string, string>>(initialLoad.timingRepairs);
 
     useEffect(() => {
+        if (Object.keys(timingRepairs).length > 0 || getStoryboardTimingError(scenes.map((scene) => scene.duration))) return;
         saveDraft({
             activeTab,
             songConcept,
@@ -158,9 +174,27 @@ export default function ScreenwriterDashboard() {
             scenes,
             selectedSceneId,
         });
-    }, [activeTab, songConcept, selectedTone, scenes, selectedSceneId]);
+    }, [activeTab, songConcept, selectedTone, scenes, selectedSceneId, timingRepairs]);
+
+    const getCurrentTimingError = () => {
+        const repairSceneId = Object.keys(timingRepairs)[0];
+        if (repairSceneId) {
+            const sceneNumber = scenes.find((scene) => scene.id === repairSceneId)?.sceneNumber ?? 1;
+            return `Scene ${sceneNumber} has an invalid saved duration. Correct it before continuing.`;
+        }
+        return getStoryboardTimingError(scenes.map((scene) => scene.duration));
+    };
+
+    const buildTimingManifest = () => ({
+        totalDurationSeconds: scenes.reduce((sum, scene) => sum + scene.duration, 0),
+        scenes: scenes.map((scene) => ({
+            sceneNumber: scene.sceneNumber,
+            durationSeconds: scene.duration,
+        })),
+    });
 
     const buildStoryboardArtifact = () => {
+        const timingManifest = buildTimingManifest();
         const sceneSections = scenes.map(scene => [
             `### Scene ${scene.sceneNumber}`,
             `- Heading: ${scene.heading}`,
@@ -179,12 +213,22 @@ export default function ScreenwriterDashboard() {
             `## Tone`,
             selectedTone,
             '',
+            '## Timing Manifest',
+            '```json',
+            JSON.stringify(timingManifest, null, 2),
+            '```',
+            '',
             `## Scene List`,
             sceneSections,
         ].join('\n');
     };
 
     const handleExportScript = async () => {
+        const timingError = getCurrentTimingError();
+        if (timingError) {
+            toast.error(timingError);
+            return;
+        }
         if (!window.electronAPI?.agent?.createArtifact) {
             toast.error('Script export is only available in the desktop app.');
             return;
@@ -211,13 +255,20 @@ export default function ScreenwriterDashboard() {
     };
 
     const handleOpenCreativeStudio = async () => {
+        const timingError = getCurrentTimingError();
+        if (timingError) {
+            toast.error(timingError);
+            return;
+        }
         setIsHandoffLoading(true);
         try {
+            const timingManifest = buildTimingManifest();
             const handoffPrompt = [
                 `Song concept: ${songConcept}`,
                 `Tone: ${selectedTone}`,
+                `Storyboard timing manifest: ${JSON.stringify(timingManifest)}`,
                 'Storyboard beats:',
-                ...scenes.map(scene => `${scene.sceneNumber}. ${scene.heading} - ${scene.veoPrompt}`)
+                ...scenes.map(scene => `${scene.sceneNumber}. ${scene.heading} (${scene.duration}s) - ${scene.veoPrompt}`)
             ].join('\n');
 
             setCreativePrompt(handoffPrompt);
@@ -252,6 +303,11 @@ export default function ScreenwriterDashboard() {
 
     const deleteScene = (id: string) => {
         setScenes(prev => prev.filter(s => s.id !== id).map((s, idx) => ({ ...s, sceneNumber: idx + 1 })));
+        setTimingRepairs(prev => {
+            const next = { ...prev };
+            delete next[id];
+            return next;
+        });
         if (selectedSceneId === id) {
             setSelectedSceneId(scenes[0]?.id || '');
         }
@@ -414,6 +470,11 @@ export default function ScreenwriterDashboard() {
 
             {/* Editor Workspace */}
             <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+                {Object.keys(timingRepairs).length > 0 && (
+                    <div role="alert" className="mb-4 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-200">
+                        A saved scene contains an invalid duration. Its original value is preserved below; correct it before this draft can be saved, exported, or sent to Creative Studio.
+                    </div>
+                )}
                 <AnimatePresence mode="wait">
                     {activeTab === 'scriptwriter' && (
                         <motion.div
@@ -542,8 +603,28 @@ export default function ScreenwriterDashboard() {
                                             <label className="text-[10px] text-gray-400 font-bold block mb-1">DURATION (SEC)</label>
                                             <input
                                                 type="number"
-                                                value={activeScene.duration}
-                                                onChange={(e) => updateScene(activeScene.id, { duration: Number(e.target.value) })}
+                                                value={timingRepairs[activeScene.id] ?? activeScene.duration}
+                                                min={1}
+                                                max={MAX_STORYBOARD_SCENE_SECONDS}
+                                                step={1}
+                                                onChange={(e) => {
+                                                    const duration = Number(e.target.value);
+                                                    if (!isValidStoryboardSceneDuration(duration)) {
+                                                        if (timingRepairs[activeScene.id] === undefined) {
+                                                            e.currentTarget.value = String(activeScene.duration);
+                                                        } else {
+                                                            setTimingRepairs(prev => ({ ...prev, [activeScene.id]: e.target.value }));
+                                                        }
+                                                        toast.error(`Scene duration must be a whole number between 1 and ${MAX_STORYBOARD_SCENE_SECONDS} seconds.`);
+                                                        return;
+                                                    }
+                                                    updateScene(activeScene.id, { duration });
+                                                    setTimingRepairs(prev => {
+                                                        const next = { ...prev };
+                                                        delete next[activeScene.id];
+                                                        return next;
+                                                    });
+                                                }}
                                                 className="w-full bg-black border border-white/10 rounded px-3 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-green-500 font-mono"
                                             />
                                         </div>

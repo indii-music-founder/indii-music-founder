@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ImageGeneration } from "../ImageGenerationService";
 
 import { httpsCallable } from "firebase/functions";
+import { CostControlService } from '@/services/billing/CostControlService';
+import { subscriptionService } from '@/services/subscription/SubscriptionService';
 
 // Mock Firebase functions
 vi.mock("@/services/firebase", () => ({
@@ -91,6 +93,14 @@ describe("ImageGenerationService", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(subscriptionService.canPerformAction).mockResolvedValue({ allowed: true });
+    vi.mocked(CostControlService.checkAndReserve).mockResolvedValue({
+      allowed: true,
+      remainingBudget: 100,
+      dailyUsed: 0,
+      monthlyUsed: 0,
+      operationId: 'test-cost-reservation',
+    });
     mockGenerateImage.stream = vi.fn();
     vi.mocked(httpsCallable).mockReturnValue(mockGenerateImage as any);
   });
@@ -124,6 +134,7 @@ describe("ImageGenerationService", () => {
         expect.objectContaining({
           prompt: expect.stringContaining("A test image"),
           count: 1,
+          costReservationId: 'test-cost-reservation',
         }),
       );
     });
@@ -238,6 +249,20 @@ describe("ImageGenerationService", () => {
       } catch (e: unknown) {
         expect(e).toBeDefined();
       }
+      expect(CostControlService.finalize).toHaveBeenCalledWith('test-cost-reservation', 'VOIDED');
+    });
+
+    it('checks subscription quota before reserving cost', async () => {
+      vi.mocked(subscriptionService.canPerformAction).mockResolvedValue({
+        allowed: false,
+        reason: 'quota reached',
+        currentUsage: { used: 10, limit: 10, remaining: 0 },
+      });
+
+      await expect(ImageGeneration.generateImages({ prompt: 'Over quota' })).rejects.toThrow('quota reached');
+
+      expect(CostControlService.checkAndReserve).not.toHaveBeenCalled();
+      expect(mockGenerateImage).not.toHaveBeenCalled();
     });
   });
 
