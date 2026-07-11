@@ -27,6 +27,8 @@ export const ContactSchema = z.object({
     avatarUrl: z.string().url().optional(),
     notes: z.string().optional(),
     lastInteraction: z.string().optional(), // ISO Date string
+    // Verified recipient email (ISSUE-912) — never inferred from name/outlet.
+    email: z.string().email().optional(),
     userId: z.string().optional(),
     createdAt: z.any().optional(),
     updatedAt: z.any().optional(),
