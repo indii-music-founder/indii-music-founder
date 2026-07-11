@@ -331,7 +331,15 @@ export default function MerchDesigner() {
 
         // Clear existing objects if user confirms (or canvas is empty)
         if (canvas.getObjects().length > 0) {
-            // For now, just clear - could add confirmation dialog
+            const { ConfirmDialog } = await import('@/components/ui/ConfirmDialog');
+            const confirmed = await ConfirmDialog.call({
+                title: 'Apply Template',
+                message: 'Applying this template will replace all existing design elements. This action cannot be undone. Continue?',
+                confirmText: 'Apply Template',
+                cancelText: 'Cancel',
+                variant: 'destructive'
+            });
+            if (!confirmed) return;
             clear();
         }
 
