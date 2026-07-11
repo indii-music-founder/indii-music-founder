@@ -39,12 +39,19 @@ export interface TaxCalculationData {
     amount: number;
 }
 
+/**
+ * ISSUE-793: field names must match tax_withholding_engine.py's
+ * certify_user() exactly — this is the canonical shape for the
+ * distribution:certify-tax IPC call. Raw TIN is never persisted; the engine
+ * validates it in-memory and stores only tin_masked/tin_valid.
+ */
 export interface TaxCertificationData {
-    fullName: string;
+    full_name: string;
     country: string;
-    taxId: string; // TIN
-    usPerson: boolean;
-    signature: string;
+    tin: string;
+    is_us_person: boolean;
+    is_entity: boolean;
+    signed_under_perjury: boolean;
 }
 
 export interface TaxReport {
@@ -53,7 +60,7 @@ export interface TaxReport {
     tin_masked: string;
     tin_valid: boolean;
     certified: boolean;
-    payout_status: 'ACTIVE' | 'BLOCKED' | 'HOLD';
+    payout_status: 'ACTIVE' | 'HELD';
     cert_timestamp: string;
     withholding_rate: number;
 }
