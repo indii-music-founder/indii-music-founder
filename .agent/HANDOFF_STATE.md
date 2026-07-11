@@ -1,24 +1,24 @@
 # Handoff State
-**Updated:** 2026-07-11 10:53 EDT
+**Updated:** 2026-07-11 10:57 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+78909ab5f chore: document session progress and strategic roadmap
+4125b5a9d fix(merchandise): honest save results, support personal workspace (ISSUE-933)
+52a56c13b docs: update ledger — mark ISSUE-933 and ISSUE-764 status
+199ab4db9 chore: session checkpoint [10:53]
 f5e13c53d chore: linter optimization for merchandise auto-save
 74799882c fix(merchandise): return SaveResult from saveDesign callback (ISSUE-933)
 7f88eb0be test(publicist): add regression coverage for verified-email-only mailto gate (ISSUE-912)
 0fecc25d6 chore: session checkpoint [10:46]
 4d31e9cc7 chore: session checkpoint [10:46]
 104613c42 docs: create comprehensive keyboard shortcuts reference (ISSUE-1021)
-5f411c7d2 docs: mark ISSUE-1020 and ISSUE-1023 as FIXED
-7e54348fd feat: add bug/feature report and help commands to Cmd+K palette (ISSUE-1020, ISSUE-1023)
-2dc5c7ccd chore: session checkpoint [10:42]
-d380a1e64 docs: add keyboard shortcuts & command palette issues to ledger
 ```
 
 ## Working State
 ```
- M packages/renderer/src/modules/merchandise/MerchDesigner.tsx
+clean working tree
 ```
 
 ## Decisions
