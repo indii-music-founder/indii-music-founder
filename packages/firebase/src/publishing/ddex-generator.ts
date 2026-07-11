@@ -84,10 +84,13 @@ export async function compileDDEXRelease(releaseId: string): Promise<string> {
 
     const senderPartyId = requireSenderPartyId();
 
-    // DDEX XML generation (Electronic Release Notification Message 4.2).
-    // All metadata values are XML-escaped (ISSUE-859).
+    // DDEX XML generation (Electronic Release Notification Message 4.3 —
+    // ISSUE-784: was declaring the 4.2 namespace while the app told users
+    // "ERN 4.3". Matches the namespace already used by the canonical
+    // generator (IngestionParser.ts). All metadata values are XML-escaped
+    // (ISSUE-859).
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<ern:NewReleaseMessage xmlns:ern="http://ddex.net/xml/ern/42">
+<ern:NewReleaseMessage xmlns:ern="http://ddex.net/xml/ern/43">
     <MessageHeader>
         <MessageThreadId>${escapeXml(data.releaseId)}</MessageThreadId>
         <MessageId>${escapeXml(data.releaseId)}-${Date.now()}</MessageId>
