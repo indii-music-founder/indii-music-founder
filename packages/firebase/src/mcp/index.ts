@@ -160,7 +160,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
         const ddexXml = `<?xml version="1.0" encoding="utf-8"?>
 <!-- DRAFT ONLY — not XSD/profile validated, no recipient/asset/deal blocks. deliveryReady=${deliveryReady} -->
-<ern:NewReleaseMessage xmlns:ern="http://ddex.net/xml/ern/411">
+<ern:NewReleaseMessage xmlns:ern="http://ddex.net/xml/ern/43">
   <MessageHeader>
     <MessageThreadId>${escapeXmlMcp(messageId)}</MessageThreadId>
     <MessageId>${escapeXmlMcp(messageId)}</MessageId>

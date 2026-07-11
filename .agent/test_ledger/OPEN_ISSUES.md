@@ -12357,7 +12357,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-784: DDEX compiler emits a fake DPID and an ERN 4.2 document while the app claims ERN 4.3
 
-- **Status:** 🔴 OPEN (regression against ISSUE-189/401 claims)
+- **Status:** 🟡 PARTIALLY FIXED (2026-07-10) — namespace corrected on both non-canonical generators; full single-compiler consolidation and XSD/profile validation remain open
 - **Severity:** 🔴 CRITICAL (partner delivery rejection / identity spoofing)
 - **Module:** Firebase Publishing / DDEX
 - **Evidence:** `packages/firebase/src/publishing/ddex-generator.ts:57-65` declares ERN 4.2 and hardcodes `<PartyId>PADPIDA123456</PartyId>`. `AuthorityPanel.tsx:103-105,192-207` tells users it generated ERN 4.3.
@@ -12365,6 +12365,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 - **Founder action:** Obtain the free DDEX Implementation Licence/DPID; a DPID uniquely identifies the message sender/recipient ([DDEX guidance](https://kb.ddex.net/general-implementation-guidance/licensing-the-standards/ddex-party-identifier-%28dpid%29/), [licence FAQ](https://ddex.net/implementation/frequently-asked-questions/)).
 - **Acceptance:** No fallback DPID exists; missing DPID blocks live packaging; output passes the selected ERN 4.3 profile validator.
 
+- **Fix applied (2026-07-10):** Both non-canonical generators corrected to declare the real ERN 4.3 namespace (`http://ddex.net/xml/ern/43`), matching the canonical generator (`IngestionParser.ts`, already correctly 4.3) that `AuthorityPanel.tsx`/`DistributionTools.ts` actually use in production: `ddex-generator.ts` was 4.2 (that function, `compileDDEXRelease`, is confirmed dead/unexported code — not deployed, per ISSUE-859/860 finding — but its declared version now matches reality regardless), and the MCP `draft_dsp_metadata_xml` tool was 4.1.1 (deployed, fixed live). DPID and XML-escaping were already fixed under ISSUE-859/861. **Not done:** full consolidation into one single canonical compiler (the acceptance criterion's larger ask) — three separate DDEX XML generators still exist in the codebase; only the live one was ever correct, the two dead/secondary ones now at least declare the right version. No XSD/profile validator is available to verify against the DDEX 4.3 business profile. Deployed: mcpEndpoint.
 ### ISSUE-785: Founder music-identity and royalty-registration checklist is incomplete and not connected to release readiness
 
 - **Status:** 🔴 OPEN (FOUNDER + PRODUCT)
