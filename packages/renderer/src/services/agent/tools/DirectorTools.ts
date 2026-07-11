@@ -153,7 +153,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
 
             // If no source images yet and precise mode is on, get them from Whisk
             if (!sourceImages && whiskState?.preciseReference) {
-                const whiskSourceImages = WhiskService.getSourceMedia(whiskState);
+                const whiskSourceImages = await WhiskService.getSourceMedia(whiskState);
                 if (whiskSourceImages && whiskSourceImages.length > 0) {
                     sourceImages = whiskSourceImages;
                 }

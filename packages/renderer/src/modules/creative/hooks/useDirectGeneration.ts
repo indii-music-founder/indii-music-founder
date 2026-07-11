@@ -18,6 +18,7 @@ import { CreativeStorageService } from '@/services/creative/CreativeStorageServi
 import { VideoGeneration } from '@/services/video/VideoGenerationService';
 import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
+import { resolveDirectVideoFirstFrame } from './directVideoInputs';
 
 type CallableGenerationError = {
     code?: unknown;
@@ -385,7 +386,7 @@ export function useDirectGeneration() {
             throw error; // Re-throw for handleGenerate to catch
         }
 
-    }, [studioControls.aspectRatio, studioControls.model, studioControls.imageSize, studioControls.thinkingLevel, studioControls.useGrounding, localPrompt, videoInputs?.ingredients, toast]);
+    }, [studioControls.aspectRatio, studioControls.model, studioControls.imageSize, studioControls.thinkingLevel, studioControls.useGrounding, localPrompt, videoInputs?.ingredients, toast, currentProjectId, addToHistory, setSelectedItem, setViewMode]);
 
     const handleVideoGenerate = useCallback(async (finalPrompt: string) => {
         const userId = auth.currentUser?.uid;
@@ -419,12 +420,17 @@ export function useDirectGeneration() {
         const ingredientsList = videoInputs?.ingredients || [];
         const firstIngredient = ingredientsList[0];
         const firstCharRef = characterReferences?.[0];
-        const firstFrame = firstIngredient?.url || videoInputs?.firstFrame?.url || firstCharRef?.image?.url;
+        const firstFrame = resolveDirectVideoFirstFrame(
+            videoInputs?.firstFrame?.url,
+            firstIngredient?.url,
+            firstCharRef?.image?.url,
+        );
         const lastFrame = videoInputs?.lastFrame?.url;
 
         // Upload Whisk source media to storage and convert to gs:// URIs
+        const whiskSourceMedia = await WhiskService.getSourceMedia(whiskState) || [];
         const whiskMediaUris = await Promise.all(
-            (WhiskService.getSourceMedia(whiskState) || []).map(async w => {
+            whiskSourceMedia.map(async w => {
                 try {
                     const dataUrl = `data:${w.mimeType};base64,${w.data}`;
                     return await CreativeStorageService.uploadReferenceMedia(userId, dataUrl, 'image', { scope: 'objects' });

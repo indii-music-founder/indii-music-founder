@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { parseInspirationSuggestions, WhiskService } from './WhiskService';
 import { WhiskState } from '@/core/store/slices/creative';
 import { firebaseConfig } from '@/config/env';
+import { fetchAsBase64 } from '@/services/storage/safeStorageFetch';
 
 // Mock the firebase/env module
 vi.mock('@/config/env', () => ({
@@ -12,6 +13,10 @@ vi.mock('@/config/env', () => ({
         DEV: true,
         appCheckDebugToken: 'mock-debug-token'
     }
+}));
+
+vi.mock('@/services/storage/safeStorageFetch', () => ({
+    fetchAsBase64: vi.fn(),
 }));
 
 describe('WhiskService', () => {
@@ -55,5 +60,22 @@ describe('WhiskService', () => {
         ])('rejects invalid structured output: %s', (response) => {
             expect(() => parseInspirationSuggestions(response)).toThrow();
         });
+    });
+
+    it('resolves durable precise-reference URLs to validated image bytes', async () => {
+        vi.mocked(fetchAsBase64).mockResolvedValueOnce({ base64: 'resolved-bytes', mimeType: 'image/webp' });
+        const state: WhiskState = {
+            subjects: [{ id: 'url-ref', type: 'image', content: 'gs://bucket/reference.webp', checked: true, category: 'subject' }],
+            scenes: [],
+            styles: [],
+            motion: [],
+            preciseReference: true,
+            targetMedia: 'image',
+        };
+
+        await expect(WhiskService.getSourceMedia(state)).resolves.toEqual([
+            { mimeType: 'image/webp', data: 'resolved-bytes' },
+        ]);
+        expect(fetchAsBase64).toHaveBeenCalledWith('gs://bucket/reference.webp');
     });
 });

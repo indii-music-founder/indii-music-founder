@@ -165,7 +165,7 @@ export default function MerchDesigner() {
             toast.success('Autonomous asset added to canvas');
         } catch (error: unknown) {
             logger.error('Failed to add autonomous image:', error);
-            toast.error('Failed to add autonomous image');
+            throw error instanceof Error ? error : new Error('Failed to add autonomous image');
         }
     }, [addImage, toast]);
 

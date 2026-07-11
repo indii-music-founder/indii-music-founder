@@ -1,10 +1,11 @@
-import React, { useState, useMemo, useEffect, Suspense, Component, ErrorInfo } from 'react';
+import React, { useState, useMemo, useEffect, useRef, Suspense, Component, ErrorInfo } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment, ContactShadows, useGLTF } from '@react-three/drei';
 import { Mesh } from 'three'; // Item 357: Named import enables Three.js tree-shaking
-import { Download, Trash2, BoxSelect, MonitorPlay } from 'lucide-react';
+import { Download, Trash2, BoxSelect, Upload } from 'lucide-react';
 import { logger } from '@/utils/logger';
 import { useToast } from '@/core/context/ToastContext';
+import { validateSceneModelFile } from './sceneBuilderFiles';
 
 /**
  * Advanced 3D Scene Builder component implementing requirement 105.
@@ -79,54 +80,63 @@ const Model = ({ url, position, scale }: { url: string; position: [number, numbe
     return <primitive object={clonedScene} position={position} scale={scale} />;
 };
 
-const DroppableArea = ({ onDrop }: { onDrop: (url: string) => void }) => {
-    const { error: toastError } = useToast();
-    const handleDragOver = (e: React.DragEvent) => {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = 'copy';
-    };
-
-    const handleDrop = (e: React.DragEvent) => {
-        e.preventDefault();
-        const files = e.dataTransfer.files;
-        if (files && files.length > 0) {
-            const file = files[0];
-            if (!file) return;
-            if (file.name.endsWith('.glb') || file.name.endsWith('.gltf')) {
-                const url = URL.createObjectURL(file);
-                onDrop(url);
-            } else {
-                toastError('Please drop a valid .glb or .gltf 3D model file.');
-            }
-        }
-    };
-
+const DropHighlight = () => {
     return (
         <div
-            onDragOver={handleDragOver}
-            onDrop={handleDrop}
             className="absolute inset-0 z-10 pointer-events-none flex items-center justify-center border-4 border-transparent border-dashed hover:border-blue-500/50 transition-colors"
-        >
-            {/* The invisible dropzone overlay */}
-        </div>
+            aria-hidden="true"
+        />
     );
 };
 
 export const SceneBuilder = () => {
     const [assets, setAssets] = useState<DroppedAsset[]>([]);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const assetsRef = useRef<DroppedAsset[]>([]);
+    const { error: toastError } = useToast();
+
+    useEffect(() => {
+        assetsRef.current = assets;
+    }, [assets]);
+
+    useEffect(() => () => {
+        assetsRef.current.forEach((asset) => {
+            if (asset.url.startsWith('blob:')) URL.revokeObjectURL(asset.url);
+        });
+    }, []);
 
     const handleDrop = (url: string) => {
         const randValues = new Uint32Array(1);
         crypto.getRandomValues(randValues);
         const randomVal = randValues[0]! / 0xffffffff;
         const newAsset: DroppedAsset = {
-            id: Date.now().toString(),
+            id: crypto.randomUUID(),
             url,
             // Drop them slightly spread out
             position: [(randomVal - 0.5) * 5, 0, (randomVal - 0.5) * 5],
             scale: 1,
         };
         setAssets((prev) => [...prev, newAsset]);
+    };
+
+    const addModelFile = (file: File) => {
+        const validationError = validateSceneModelFile(file);
+        if (validationError) {
+            toastError(validationError);
+            return;
+        }
+        handleDrop(URL.createObjectURL(file));
+    };
+
+    const handleDragOver = (event: React.DragEvent) => {
+        event.preventDefault();
+        event.dataTransfer.dropEffect = 'copy';
+    };
+
+    const handleFileDrop = (event: React.DragEvent) => {
+        event.preventDefault();
+        const file = event.dataTransfer.files?.[0];
+        if (file) addModelFile(file);
     };
 
     const handleClear = () => {
@@ -140,7 +150,11 @@ export const SceneBuilder = () => {
     };
 
     return (
-        <div className="flex flex-col h-full bg-gray-950 rounded-lg overflow-hidden border border-gray-800 relative">
+        <div
+            className="flex flex-col h-full bg-gray-950 rounded-lg overflow-hidden border border-gray-800 relative"
+            onDragOver={handleDragOver}
+            onDrop={handleFileDrop}
+        >
 
             {/* Toolbar */}
             <div className="absolute top-0 left-0 right-0 z-20 flex justify-between items-center p-4 bg-linear-to-b from-black/80 to-transparent pointer-events-auto">
@@ -150,6 +164,26 @@ export const SceneBuilder = () => {
                     <span className="bg-blue-500/20 text-blue-300 text-xs px-2 py-1 rounded border border-blue-500/30">Beta</span>
                 </div>
                 <div className="flex items-center gap-2">
+                    <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="flex items-center gap-2 px-3 py-2 bg-blue-500/10 text-blue-300 hover:bg-blue-500/20 rounded-md transition-colors border border-blue-500/20"
+                    >
+                        <Upload className="w-4 h-4" />
+                        Add Model
+                    </button>
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept=".glb,.gltf,model/gltf-binary,model/gltf+json"
+                        className="hidden"
+                        onChange={(event) => {
+                            const file = event.target.files?.[0];
+                            if (file) addModelFile(file);
+                            event.target.value = '';
+                        }}
+                        aria-label="Choose a GLB or GLTF model"
+                    />
                     <button
                         onClick={handleClear}
                         className="flex items-center gap-2 px-3 py-2 bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded-md transition-colors border border-red-500/20"
@@ -176,7 +210,7 @@ export const SceneBuilder = () => {
             )}
 
             {/* Drag & Drop Overlay */}
-            <DroppableArea onDrop={handleDrop} />
+            <DropHighlight />
 
             {/* 3D Canvas */}
             <div className="w-full h-[600px] bg-black">

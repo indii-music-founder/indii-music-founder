@@ -60,6 +60,27 @@ not mistaken for code-verified.
 
 ---
 
+### ISSUE-1018: Agents ignore user headshots when generating images
+
+- **Status:** ✅ FIXED (2026-07-11)
+- **Severity:** 🔴 HIGH (core feature regression)
+- **Root Cause:** `ImageGenerationService.generateImages()` accepted `referenceImages` in options but never auto-fetched user's stored headshots from `UserProfile.brandKit.referenceImages`. Agents generated people that looked nothing like the user, sometimes of different ethnicities entirely.
+- **Fix:**
+  1. Added `loadImageFromUri()` private method using `fetchAsBase64()` to load user image URLs
+  2. Auto-inject user's headshot assets (category='headshot') into the reference images array before upload
+  3. Enhance prompt with instruction: "Use provided reference headshots as visual likeness guide. Match facial features, appearance, ethnicity, and distinctive characteristics."
+  4. Cap at 14 total reference images per Gemini API limits
+- **Files:** 
+  - `packages/renderer/src/services/image/ImageGenerationService.ts` (lines 17, 219-221, 351-393)
+  - Added import: `fetchAsBase64` from `safeStorageFetch`
+- **Evidence:** 
+  - Infrastructure was complete (schema, UI, storage); agents just weren't using it
+  - User headshots in `brandKit.referenceImages` now auto-loaded and injected on every generation
+  - Gemini model now receives explicit instruction to use headshots as likeness guide for person generation
+- **Testing:** Requires E2E verification with user-provided headshots in Brand Manager
+
+---
+
 ### ISSUE-001: generate_image tool fails when count > 1
 
 - **Status:** ✅ FIXED (ad903c25)
@@ -14554,7 +14575,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-1002: Autonomous merch generation declares success before its result can be added to the canvas
 
-- **Status:** 🟠 OPEN
+- **Status:** ✅ FIXED (2026-07-11)
 - **Severity:** 🟠 HIGH (creative result is reported complete but can be absent from the design)
 - **Module:** Merchandise Designer / Autonomous image generation
 - **Evidence:** After `ImageGeneration.generateImages()` returns a URL, the dialog first adds that URL to project history (`AutonomousGenerationDialog.tsx:50-63`) and calls `onImageGenerated(...)` as a synchronous `void` callback (`:65-71`). It then immediately dismisses loading, announces “Image generated successfully!”, clears the prompt, and closes (`:68-71`). The actual callback is async: `MerchDesigner` must still await `addImage(url, name)` into Fabric (`MerchDesigner.tsx:162-170`), where image loading can fail (including inaccessible/CORS/decode failures). Its late catch only emits a second error toast after the dialog and its retryable prompt have disappeared.
@@ -14562,15 +14583,19 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 - **Fix:** Make the callback return `Promise<void>` (or a typed insertion receipt), await it before any success/close/prompt-clear transition, and preserve the prompt/result with an explicit retry/add-to-canvas action on insertion failure. Record separate generation and canvas-placement lineage/status rather than treating a generated URL as a successfully placed design element.
 - **Acceptance:** A forced Fabric image load/CORS/decode failure leaves the dialog open with its prompt and generated-result retry affordance, produces no success toast or “added” history/placement state, and does not alter the canvas; a successful run proves the object is present in the canvas before close and records generation plus placement IDs; double-click/retry/unmount races create at most one canvas object and preserve a recoverable result.
 
+- **Fix applied (2026-07-11):** Made `onImageGenerated` an awaited promise contract and moved history insertion, success, prompt clearing, and dialog close after confirmed Fabric placement. The parent now rethrows placement failures so the dialog stays open with the original prompt, and an in-flight ref prevents duplicate submission before React state settles. Added a regression test proving decode failure retains the prompt, keeps the dialog open, records no history, and reports no success. The five-test component suite, ESLint, renderer TypeScript, and diff checks pass.
+
 ### ISSUE-1003: Direct video generation silently replaces the selected First Frame with the first reference ingredient
 
-- **Status:** 🟠 OPEN
+- **Status:** 🟡 PARTIAL (2026-07-11 — explicit frame precedence fixed; role manifest remains)
 - **Severity:** 🟠 HIGH (creator-selected visual anchor is not the one rendered)
 - **Module:** Creative Suite / Direct video generation / First-frame and reference controls
 - **Evidence:** The Gallery and creative handoff explicitly store a user-selected start anchor in `videoInputs.firstFrame` and confirm it as “Set as First Frame” (`CreativeGallery.tsx:119`, `CreativeStudio.tsx:395-405`); the UI separately supports reference ingredients. But `handleVideoGenerate()` derives `firstFrame` as `ingredientsList[0]` before `videoInputs.firstFrame` (`useDirectGeneration.ts:419-423`), then sends that same value as both `directorSettings.firstFrameUri` and `VideoGeneration.generateVideo({ firstFrame })` (`:457-484`). Thus any ingredient—often a style/character/reference image—silently becomes the video’s start-frame constraint even when a different explicit start frame is visibly selected.
 - **Impact:** A creator can intentionally set an opening shot, add a separate reference to guide style/identity, and receive a video anchored to the reference rather than the selected first frame. The resulting motion, interpolation behavior, continuity, cost normalization, and saved lineage can all describe a different creative input than the controls represented.
 - **Fix:** Treat First Frame, Last Frame, ingredients, and character references as distinct typed roles. Give an explicitly selected `firstFrame` deterministic precedence; only use an ingredient as a start frame through an explicit “Use as First Frame” action. Persist the immutable request manifest with role-labelled URIs and show a pre-submit summary of the exact anchor/reference order.
 - **Acceptance:** With distinct A (selected First Frame), B (ingredient), and C (character reference) fixtures, the submitted request/director settings use A exclusively as `firstFrame`, retain B/C only as references, and preserve an independently selected last frame; no-first-frame behavior may choose a documented fallback only after visible confirmation; the completed job/history manifest records the exact role and URI of every input.
+
+- **Fix progress (2026-07-11):** Added a tested `resolveDirectVideoFirstFrame()` contract and changed direct generation to prefer the explicit First Frame before ingredient/character fallbacks. Focused tests prove A wins over B/C and fallback order is deterministic; hook dependency coverage was also corrected. Vitest, ESLint, renderer TypeScript, and diff checks pass. Remaining before FIXED: visible confirmation for fallback behavior and a persisted role-labelled request/completion manifest.
 
 ### ISSUE-1004: Screenwriter accepts invalid scene durations and serializes them as a production storyboard
 
@@ -14614,7 +14639,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-1008: PLP counts queued video jobs with empty URLs as generated variants and can deploy them as ad creatives
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL (2026-07-11 — empty queued tokens excluded; batch recovery remains)
 - **Severity:** 🔴 CRITICAL (paid campaign can be built from nonexistent video assets)
 - **Module:** Creative Suite / PLP 15-variant pipeline / Ad handoff
 - **Evidence:** PLP starts five `VideoGeneration.generateVideo()` calls alongside ten image calls and treats every fulfilled array with a first item as a completed variant (`CreativeStudio.tsx:191-245`). But `generateVideo()` explicitly returns only `{ id: jobId, url: '' }` while the video is queued, instructing callers to use a job listener for the eventual URL (`VideoGenerationService.ts:484-492`). PLP immediately adds that empty URL to history as a `video` (`CreativeStudio.tsx:221-237`), increments its “N/15 Variants generated” count, and includes its ID in `creativeSeeds`; after user confirmation it sends those IDs to `deployPLPPipeline` (`:243-273`). It creates no subscription, terminal-state check, output URL readback, or failure/retry path for the five video jobs.
@@ -14622,15 +14647,19 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 - **Fix:** Model image and video outputs as typed lifecycle records. Count/present video jobs as queued until a persisted terminal result has an authorized playable URL; subscribe or poll with immutable PLP batch/job context, then add only completed output receipts to history and campaign eligibility. Prevent ad deployment until each selected creative is provider-validated and has a render URL/asset ID, while preserving failed jobs with retry/diagnostics.
 - **Acceptance:** A PLP fixture with five queued video jobs reports 10 completed images plus 5 queued videos—not 15 generated—and adds no empty-URL history item or campaign creative; completed videos become eligible only after a terminal job record supplies a validated URL; failed/completed-without-URL/cancelled jobs remain visible with retry and never enter ad deployment; mixed completion order, project switching, and duplicate listener events yield one immutable asset record per job and an accurate batch summary.
 
+- **Fix progress (2026-07-11):** Added `awaitCompletedPlpVideoVariant()` and routed all five PLP video slots through `VideoGeneration.waitForJob()`. Empty queued tokens are no longer counted, stored, or offered to ad deployment; a video becomes eligible only after a terminal job supplies a playable URL, and missing job/output IDs reject the slot. Added focused queued/completed/missing-output tests and ran the Creative Studio suite (6 tests total), ESLint, and diff checks. Remaining before FIXED: visible queued/failed slot state, targeted retry, immutable batch/project capture, and duplicate terminal-event coverage.
+
 ### ISSUE-1009: Infinite Canvas flatten silently drops unloaded layers, deletes the originals, and reports success
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL (2026-07-11 — destructive partial flatten blocked; revision/undo remains)
 - **Severity:** 🔴 CRITICAL (destructive creative data loss)
 - **Module:** Creative Suite / Infinite Canvas / Flatten layers
 - **Evidence:** `handleFlatten()` computes a composite and draws a layer only if its cached browser image is already `complete` with a positive natural width (`InfiniteCanvas.tsx:780-815`). It does not await pending loads, resolve a missing cache entry, count skipped layers, or abort. Immediately afterward it removes every source canvas image, adds the partial PNG, selects it, and toasts “Layers flattened successfully!” (`:817-835`). A slow Storage URL, fresh upload, network delay, cache eviction, or image decode failure therefore causes that layer to be omitted permanently from the flattened result.
 - **Impact:** A creator can flatten a multi-layer composition during normal loading and irreversibly lose one or more artwork layers while seeing a success message. The resulting flattened image may look superficially valid, making the missing elements difficult to detect before export or publishing.
 - **Fix:** Build flattening as a non-destructive transaction: resolve and decode every source at its exact bytes/dimensions, render off-canvas, validate the composite, then offer an undoable replace/keep-sources choice. If any layer is pending, inaccessible, tainted, or fails decode, keep all originals and show the exact failed layer with retry/repair controls; never claim success on a partial composite.
 - **Acceptance:** A fixture with one delayed, one failed-decode, one CORS-inaccessible, and one normal layer never deletes any source or emits success until every required layer is decoded and rendered; a successful flatten contains every source pixel in z-order and creates a recoverable revision/undo record; retry after the delayed layer resolves produces one complete composite without duplicate layers; forced canvas/export failure leaves original layers intact and reports a typed error.
+
+- **Fix progress (2026-07-11):** Flatten now preflights every cached layer and aborts with the exact unavailable layer before rendering or deleting anything. Canvas serialization is guarded; taint/export failure reports that originals were preserved and returns before source removal. Existing Infinite Canvas tests, ESLint, renderer TypeScript, and diff checks pass. Remaining before FIXED: durable revision/undo transaction and dedicated delayed/decode/CORS integration fixtures.
 
 ### ISSUE-1010: One failed Infinite Canvas variation discards successful paid sibling results
 
@@ -14646,13 +14675,15 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-1011: Whisk “Precise Reference” crashes on Gallery/Storage URLs because it assumes every reference is a data URI
 
-- **Status:** 🟠 OPEN
+- **Status:** 🟡 PARTIAL (2026-07-11 — durable URLs normalized; mixed-reference recovery remains)
 - **Severity:** 🟠 HIGH (selected visual references prevent creation or are not faithfully transmitted)
 - **Module:** Creative Suite / Whisk / Precise Reference
 - **Evidence:** Whisk lets a creator drag an existing Gallery image into a subject/scene/style reference and stores `item.url` unchanged (`WhiskDropZone.tsx:74-105`). Gallery items commonly use durable HTTPS or `gs://` URLs. When Precise Reference is enabled, `WhiskService.getSourceMedia()` blindly splits every active media item at a comma and dereferences the assumed `data:<mime>;base64,...` prefix (`WhiskService.ts:87-104`). A URL has no such prefix/comma, so `mimeType.split(':')[1]` is undefined and generation aborts before the image request; even the preceding caption step treats a URL as an empty-base64 `image/png` payload (`WhiskDropZone.tsx:86-94`).
 - **Impact:** A creator can see “reference set” for a Gallery/Storage asset, turn on the advertised precise-reference mode, and then get a generic generation failure instead of a reference-aware result. The workflow is especially unreliable for the durable assets the app itself creates and persists.
 - **Fix:** Normalize each Whisk reference to a typed media source at intake: detect data URI, authorized HTTPS/`gs://` URI, and local/file source; resolve/upload durable sources through the shared media resolver and validate actual MIME/bytes before captioning or generation. Keep category/role/order metadata, surface per-reference readiness, and block/repair unsupported sources rather than throwing from string parsing.
 - **Acceptance:** Data URI, HTTPS, `gs://`, expired signed URL, inaccessible URL, and malformed payload fixtures all yield either a validated reference URI/bytes payload or an explicit repair state—never a TypeError or empty-base64 request; a Gallery image dragged into Whisk with Precise Reference enabled reaches the generator with its exact bytes and role; caption failure does not corrupt the reference source; mixed references preserve user order and identify only the failed item.
+
+- **Fix progress (2026-07-11):** Made `getSourceMedia()` asynchronous and normalized both strict image data URIs and durable HTTPS/`gs://` sources through the shared authenticated byte resolver. All four image/video/agent callers now await validated image bytes; non-image/empty sources fail with the reference ID instead of string-parsing TypeErrors or empty payloads. Added durable-URL regression coverage; Whisk suites (13 tests), ESLint, renderer TypeScript, and diff checks pass. Remaining before FIXED: per-reference settled recovery/UI so one inaccessible item does not reject otherwise valid mixed references.
 
 ### ISSUE-1012: Whisk inspiration trusts arbitrary model JSON and can crash the creative reference panel
 

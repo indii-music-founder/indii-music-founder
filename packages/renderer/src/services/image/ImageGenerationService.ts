@@ -15,6 +15,7 @@ import { metadataPersistenceService } from '@/services/persistence/MetadataPersi
 import { CreativeStorageService } from '@/services/creative/CreativeStorageService';
 import { CostControlService } from '@/services/billing/CostControlService';
 import { normalizeEditImageResult } from './editResponse';
+import { fetchAsBase64 } from '@/services/storage/safeStorageFetch';
 // ============================================================================
 // TYPES
 // ============================================================================
@@ -217,6 +218,11 @@ export class ImageGenerationService {
         }
     }
 
+    private async loadImageFromUri(uri: string): Promise<{ mimeType: string; data: string }> {
+        const { base64, mimeType } = await fetchAsBase64(uri);
+        return { mimeType, data: base64 };
+    }
+
     /**
      * Triggers the image generation pipeline via Cloud Functions.
      * Performs authentication pre-flights and quota checks.
@@ -347,7 +353,13 @@ export class ImageGenerationService {
             const generateImage = httpsCallable(functions, 'generateImageV3');
             logger.debug('[ImageGen DEBUG] Calling generateImageV3');
 
-            const fullPrompt = this.buildDistributorAwarePrompt(options);
+            let fullPrompt = this.buildDistributorAwarePrompt(options);
+
+            // Enhance prompt with headshot instruction if user headshots are included
+            if (options.userProfile?.brandKit?.referenceImages?.some(a => a.category === 'headshot')) {
+                fullPrompt += ' [Reference headshots provided: Use them as a visual likeness guide. Match facial features, appearance, ethnicity, and distinctive characteristics of the person in the reference images.]';
+            }
+
             const aspectRatio = this.getAspectRatio(options);
 
             // Resolve imageSize: prefer explicit imageSize, fall back to resolution.
@@ -355,9 +367,39 @@ export class ImageGenerationService {
 
             let referenceUri: string | undefined;
             let referenceUris: string[] | undefined;
-            if (options.sourceImages && options.sourceImages.length > 0) {
+            const allReferenceImages: { mimeType: string; data: string }[] = [...(options.sourceImages || [])];
+
+            // Auto-inject user's stored headshots from profile
+            if (options.userProfile?.brandKit?.referenceImages?.length) {
+                const headshotAssets = options.userProfile.brandKit.referenceImages.filter(
+                    (asset) => asset.category === 'headshot'
+                );
+
+                if (headshotAssets.length > 0) {
+                    logger.debug(`[ImageGen] Found ${headshotAssets.length} user headshots, attempting to load`);
+
+                    const loadedHeadshots = await Promise.all(
+                        headshotAssets.map(async (asset) => {
+                            try {
+                                const img = await this.loadImageFromUri(asset.url);
+                                logger.debug(`[ImageGen] Successfully loaded headshot: ${asset.id}`);
+                                return img;
+                            } catch (e) {
+                                logger.warn(`[ImageGen] Failed to load headshot ${asset.id}:`, e);
+                                return null;
+                            }
+                        })
+                    );
+
+                    const validHeadshots = loadedHeadshots.filter((img): img is { mimeType: string; data: string } => img !== null);
+                    allReferenceImages.push(...validHeadshots);
+                    logger.debug(`[ImageGen] Injected ${validHeadshots.length} user headshots as reference images`);
+                }
+            }
+
+            if (allReferenceImages.length > 0) {
                 referenceUris = (await Promise.all(
-                    options.sourceImages.slice(0, 14).map((img) =>
+                    allReferenceImages.slice(0, 14).map((img) =>
                         CreativeStorageService.uploadReferenceMedia(uid, `data:${img.mimeType};base64,${img.data}`, 'image', { scope: 'objects' })
                     )
                 )).filter((uri): uri is string => !!uri);
