@@ -487,7 +487,7 @@ If appropriate, suggest that the user can ingest relevant information to build a
      * Get all memories for the current user, optionally filtered by project or session.
      */
     public async getAllMemories(
-        maxCount: number = 500,
+        maxCount: number = 10000,
         filters?: { projectId?: string; sessionId?: string; category?: AlwaysOnMemoryCategory }
     ): Promise<AlwaysOnMemory[]> {
         if (!this.userId || this.isE2EMode) return [];
@@ -510,7 +510,12 @@ If appropriate, suggest that the user can ingest relevant information to build a
                 q = query(q, where('category', '==', filters.category));
             }
 
+            // Query cap raised to 10,000 to support full-archive recall (ISSUE-757)
+            // Queries hitting this cap will log a warning. Future: implement cursor pagination for unbounded search.
             const snapshot = await getDocs(query(q, limit(maxCount)));
+            if (snapshot.docs.length === maxCount) {
+                logger.warn(`[AlwaysOnMemoryEngine] getAllMemories hit the ${maxCount} doc limit — archive search incomplete. Implement pagination for full-archive recall.`);
+            }
             return snapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data(),
