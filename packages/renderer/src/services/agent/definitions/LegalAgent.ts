@@ -105,7 +105,7 @@ export const LegalAgent: AgentConfig = {
             },
             {
                 name: "draft_split_sheet",
-                description: "Generates a standard split sheet for collaborators and initiates digital signatures through the configured signature provider.",
+                description: "Creates a draft split sheet for collaborators (signature initiation not yet implemented — manual review required).",
                 parameters: {
                     type: "OBJECT",
                     properties: {
