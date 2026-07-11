@@ -417,10 +417,23 @@ async function refreshInstagramLongLivedToken(accessToken: string): Promise<Inst
 // ── Firestore helpers ─────────────────────────────────────────────────────────
 
 async function storeToken(uid: string, platform: string, token: StoredToken): Promise<void> {
-    await tokenPath(uid, platform).set({
+    const tokenData = {
         ...token,
         platform,
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         connectedAt: admin.firestore.FieldValue.serverTimestamp(),
-    }, { merge: true });
+    };
+
+    await tokenPath(uid, platform).set(tokenData, { merge: true });
+
+    // Dual-write to socialTokens for platforms that support posting (ISSUE-766 Layer 1 fix)
+    const postingPlatforms = ['instagram', 'tiktok', 'youtube'];
+    if (postingPlatforms.includes(platform)) {
+        const socialTokenPath = admin.firestore()
+            .collection('users')
+            .doc(uid)
+            .collection('socialTokens')
+            .doc(platform);
+        await socialTokenPath.set(tokenData, { merge: true });
+    }
 }
