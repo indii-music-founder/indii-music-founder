@@ -445,11 +445,8 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                     <Download size={10} className="text-white" />
                 </div>
             )}
-            {item.origin === 'generated' && (
-                <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-black/50 text-white/80 text-[8px] font-mono px-1.5 py-0.5 rounded backdrop-blur-sm pointer-events-none z-10 border border-white/10">
-                    <Sparkles size={8} /> SynthID
-                </div>
-            )}
+            {/* ISSUE-918: SynthID badge removed pending proper provenance tracking.
+                Generated assets don't have verified watermark metadata yet. */}
         </div>
     );
 });
