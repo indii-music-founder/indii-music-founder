@@ -12493,7 +12493,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-793: Tax certification schema mismatch blocks certification and can store raw TINs locally
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-10)
 - **Severity:** 🔴 CRITICAL (payout + PII risk)
 - **Module:** Distribution / Bank Layer / Tax
 - **Evidence:** The agent tool accepts `isUsPerson`, `tin`, and `signedUnderPerjury` (`DistributionAgent.ts:91-102`) but `DistributionTools.ts:246-252` sends `{ taxId, usPerson, signature }` through IPC. The Python engine expects `is_us_person`, `is_entity`, `tin`, and `signed_under_perjury` (`tax_withholding_engine.py:190-215`). If the Python path receives correctly shaped data, it stores raw `"tin": tin` in its local compliance JSON (`:217-223`). The main process only redacts logs for the JSON arg (`distribution.ts:193-204`); it does not encrypt/tokenize the stored TIN.
@@ -12501,6 +12501,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 - **Fix:** Align one canonical tax schema end-to-end; separate UI collection from IRS/TIN matching; never store raw TIN locally. Use encrypted storage or a tax provider token, and persist only masked/tokenized values plus verification status.
 - **Acceptance:** Certification succeeds with an integration fixture, raw TIN never appears in local storage/Firestore/logs, and payout status remains `HELD` until certification and verification are real.
 
+- **Fix applied (2026-07-10):** Canonical schema is now the Python engine's snake_case shape end-to-end. `DistributionTools.ts`'s `certify_tax_profile` sends `{full_name, country, tin, is_us_person, is_entity, signed_under_perjury}` to `certifyTax()` — was sending `{fullName, country, taxId, usPerson, signature}`, which the engine's `.get(key, default)` calls silently defaulted, meaning certification could never succeed via the agent path. `TaxCertificationData`/`TaxReport` types corrected to match (also fixed a `payout_status` union typo: `'BLOCKED'|'HOLD'` → the engine only ever returns `'ACTIVE'|'HELD'`). `tax_withholding_engine.py`'s `certify_user()` no longer persists the raw `tin` field to the local JSON compliance store — only `tin_masked`/`tin_valid`/`tin_message` are stored; the raw value is used in-memory for validation only, within the same call. End-to-end smoke test confirms certification succeeds with correct fields and the raw TIN never appears in the stored file (`grep` returns 0 matches). New regression test added covering the exact field-name contract. **Not done:** encrypted/tokenized storage for the compliance store itself (currently plaintext JSON with no raw TIN in it, but not encrypted at rest) — separate hardening task.
 ### ISSUE-794: Copyright guidance and fees are stale/misleading
 
 - **Status:** 🔴 OPEN
