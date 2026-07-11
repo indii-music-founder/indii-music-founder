@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-07-11 17:47 EDT
+**Updated:** 2026-07-11 17:58 EDT
 **Branch:** `fix/issues-core`
 
 ## Recent Commits
 ```
+e80a24de9 chore: session checkpoint [17:47]
 d03a2a44f chore: session checkpoint [16:46]
 b298bb3f1 docs: session 2026-07-11 final summary — all findings & fixes to ledger
 ea2b4f0d5 docs(social): record confirmed 3-layer block for ISSUE-766 IG posting
@@ -13,7 +14,6 @@ e694ccdb6 chore: session checkpoint [16:33]
 b01eaa21b chore: session checkpoint [16:32]
 34b911b95 chore: session checkpoint [16:18]
 ffd8d4d31 fix(audio): add FileReader fallback for test environment
-9d9bc7b67 chore: session checkpoint [16:12]
 ```
 
 ## Working State
