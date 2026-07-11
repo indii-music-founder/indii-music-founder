@@ -1,9 +1,12 @@
 # Handoff State
-**Updated:** 2026-07-11 10:28 EDT
+**Updated:** 2026-07-11 10:36 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+84697c5c0 docs: add user manual documentation for bug reporting feature
+0c75c94a6 fix(distribution): never persist raw TIN values (ISSUE-793)
+2b3bb43fd chore: session checkpoint [10:28]
 aa943a9ed fix(content-id): fail-closed rights attestation, fix IPC JSON contract (ISSUE-786, ISSUE-789)
 b5e7286b6 fix(ddex): correct ERN namespace to 4.3 on both non-canonical generators (ISSUE-784)
 3ece66f0b feat(bug-reporting): user-facing dialog for bug reports and feature requests
@@ -11,14 +14,11 @@ b5e7286b6 fix(ddex): correct ERN namespace to 4.3 on both non-canonical generato
 5afa700d0 fix(publishing): honest draft status and split-total normalization in ISWC mapper (ISSUE-865)
 06ebb95dc chore: session checkpoint [09:34]
 4b0f9f22f chore: session checkpoint [09:33]
-7037a565e fix(image-generation): auto-inject user headshots as reference images for person generation
-4d551bc5b fix(security): remove name-inferred automation triggers from PandaDoc webhook (ISSUE-864)
-c5baa6123 chore: session checkpoint [09:23]
 ```
 
 ## Working State
 ```
- M .agent/HANDOFF_STATE.md
+clean working tree
 ```
 
 ## Decisions
