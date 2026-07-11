@@ -268,14 +268,25 @@ export function buildAgentSessionState(
                 updatedAt: Date.now()
             };
 
-            // Persist the updated session messages
-            import('@/services/agent/SessionService').then(({ sessionService }) => {
-                if (isNewSession) {
-                    sessionService.createSession(updatedSession).catch((e) => logger.error('[AgentSlice] Session create failed:', e));
-                } else {
-                    sessionService.updateSession(currentSessionId, { messages: updatedSession.messages }).catch((e) => logger.error('[AgentSlice] Session sync failed:', e));
+            // Persist the updated session messages with retry logic
+            const persistSession = async (attempt = 1) => {
+                try {
+                    const { sessionService } = await import('@/services/agent/SessionService');
+                    if (isNewSession) {
+                        await sessionService.createSession(updatedSession);
+                    } else {
+                        await sessionService.updateSession(currentSessionId, { messages: updatedSession.messages });
+                    }
+                } catch (e) {
+                    if (attempt < 3) {
+                        logger.warn(`[AgentSlice] Persistence attempt ${attempt} failed, retrying...`, e);
+                        setTimeout(() => persistSession(attempt + 1), 1000 * attempt);
+                    } else {
+                        logger.error('[AgentSlice] Session persistence failed after 3 attempts:', e);
+                    }
                 }
-            });
+            };
+            persistSession();
 
             return {
                 sessions: { ...sessions, [currentSessionId]: updatedSession },
@@ -292,12 +303,23 @@ export function buildAgentSessionState(
                 msg.id === id ? { ...msg, ...updates } : msg
             );
 
-            // Persist the updated messages
-            import('@/services/agent/SessionService').then(({ sessionService }) => {
-                if (state.activeSessionId) {
-                    sessionService.updateSession(state.activeSessionId, { messages: updatedMessages }).catch((e) => logger.error('[AgentSlice] Session sync failed:', e));
+            // Persist the updated messages with retry logic
+            const persistUpdate = async (attempt = 1) => {
+                try {
+                    const { sessionService } = await import('@/services/agent/SessionService');
+                    if (state.activeSessionId) {
+                        await sessionService.updateSession(state.activeSessionId, { messages: updatedMessages });
+                    }
+                } catch (e) {
+                    if (attempt < 3) {
+                        logger.warn(`[AgentSlice] Message update attempt ${attempt} failed, retrying...`, e);
+                        setTimeout(() => persistUpdate(attempt + 1), 1000 * attempt);
+                    } else {
+                        logger.error('[AgentSlice] Message update failed after 3 attempts:', e);
+                    }
                 }
-            });
+            };
+            persistUpdate();
 
             return {
                 sessions: {
@@ -322,9 +344,21 @@ export function buildAgentSessionState(
                 updatedAt: Date.now()
             };
 
-            import('@/services/agent/SessionService').then(({ sessionService }) => {
-                sessionService.updateSession(sessionId, { messages: updatedSession.messages }).catch((e) => logger.error('[AgentSlice] Session sync failed:', e));
-            });
+            // Persist with retry logic
+            const persistMessage = async (attempt = 1) => {
+                try {
+                    const { sessionService } = await import('@/services/agent/SessionService');
+                    await sessionService.updateSession(sessionId, { messages: updatedSession.messages });
+                } catch (e) {
+                    if (attempt < 3) {
+                        logger.warn(`[AgentSlice] Add message attempt ${attempt} failed, retrying...`, e);
+                        setTimeout(() => persistMessage(attempt + 1), 1000 * attempt);
+                    } else {
+                        logger.error('[AgentSlice] Add message failed after 3 attempts:', e);
+                    }
+                }
+            };
+            persistMessage();
 
             const update: Partial<AgentSessionSlice> = {
                 sessions: { ...state.sessions, [sessionId]: updatedSession }
@@ -341,10 +375,21 @@ export function buildAgentSessionState(
             const targetSessionId = sessionId || state.activeSessionId;
             if (!targetSessionId || !state.sessions[targetSessionId]) return {};
 
-            // Persist the cleared history
-            import('@/services/agent/SessionService').then(({ sessionService }) => {
-                sessionService.updateSession(targetSessionId, { messages: [] }).catch((e) => logger.error('[AgentSlice] Session sync failed:', e));
-            });
+            // Persist the cleared history with retry logic
+            const persistClear = async (attempt = 1) => {
+                try {
+                    const { sessionService } = await import('@/services/agent/SessionService');
+                    await sessionService.updateSession(targetSessionId, { messages: [] });
+                } catch (e) {
+                    if (attempt < 3) {
+                        logger.warn(`[AgentSlice] Clear history attempt ${attempt} failed, retrying...`, e);
+                        setTimeout(() => persistClear(attempt + 1), 1000 * attempt);
+                    } else {
+                        logger.error('[AgentSlice] Clear history failed after 3 attempts:', e);
+                    }
+                }
+            };
+            persistClear();
 
             const update: Partial<AgentSessionSlice> = {
                 sessions: {
@@ -369,9 +414,21 @@ export function buildAgentSessionState(
 
             const newParticipants = [...session.participants, agentId];
 
-            import('@/services/agent/SessionService').then(({ sessionService }) => {
-                sessionService.updateSession(sessionId, { participants: newParticipants }).catch((e) => logger.error('[AgentSlice] Session sync failed:', e));
-            });
+            // Persist with retry logic
+            const persistParticipant = async (attempt = 1) => {
+                try {
+                    const { sessionService } = await import('@/services/agent/SessionService');
+                    await sessionService.updateSession(sessionId, { participants: newParticipants });
+                } catch (e) {
+                    if (attempt < 3) {
+                        logger.warn(`[AgentSlice] Add participant attempt ${attempt} failed, retrying...`, e);
+                        setTimeout(() => persistParticipant(attempt + 1), 1000 * attempt);
+                    } else {
+                        logger.error('[AgentSlice] Add participant failed after 3 attempts:', e);
+                    }
+                }
+            };
+            persistParticipant();
 
             return {
                 sessions: {
@@ -425,20 +482,24 @@ export function buildAgentSessionState(
                     hasDoneInitialCleanup = true;
 
                     set(state => {
+                        // Merge remote sessions with local unpersisted sessions (don't replace, merge)
+                        // This prevents locally-created conversations from being lost when subscription fires
+                        const mergedSessions = { ...state.sessions, ...sessionMap };
+
                         // If we already have an active session, keep it, otherwise set latest
                         let activeId = state.activeSessionId;
 
                         // If the active session was deleted remotely, fallback to the most recent one
-                        if (activeId && !sessionMap[activeId] && sessions.length > 0) {
+                        if (activeId && !mergedSessions[activeId] && sessions.length > 0) {
                             activeId = sessions[0]!.id;
                         } else if (!activeId && sessions.length > 0) {
                             activeId = sessions[0]!.id; // Most recent due to sort
                         }
 
                         return {
-                            sessions: sessionMap,
+                            sessions: mergedSessions,
                             activeSessionId: activeId,
-                            agentHistory: activeId && sessionMap[activeId] ? sessionMap[activeId]!.messages : []
+                            agentHistory: activeId && mergedSessions[activeId] ? mergedSessions[activeId]!.messages : []
                         };
                     });
                 }, (error) => {
