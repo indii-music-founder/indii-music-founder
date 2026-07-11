@@ -101,12 +101,13 @@ export const useAutoSave = (
             canvas.setViewportTransform(currentVpt as [number, number, number, number, number, number]);
             canvas.setZoom(currentZoom);
 
-            // Save to Firestore
+            // Save to Firestore. orgId is best-effort — never blocks the save
+            // (ISSUE-933: personal/solo workspaces have no matching org entry).
             const designRef = doc(db, 'designs', designId);
             await setDoc(designRef, {
                 id: designId,
                 userId: user.uid,
-                orgId: activeOrg.id,
+                orgId: resolvedOrgId,
                 projectId: currentProjectId,
                 name: designName,
                 canvasJSON,
@@ -115,9 +116,10 @@ export const useAutoSave = (
                 ...(lastSaved ? {} : { createdAt: serverTimestamp() })
             }, { merge: true });
 
-            setLastSaved(new Date());
-            logger.debug(`Design "${designName}" auto-saved at ${new Date().toLocaleTimeString('en-US')}`);
-            return { success: true, designId, lastModified: new Date() };
+            const savedAt = new Date();
+            setLastSaved(savedAt);
+            logger.debug(`Design "${designName}" auto-saved at ${savedAt.toLocaleTimeString('en-US')}`);
+            return { success: true, designId, lastModified: savedAt };
         } catch (err: unknown) {
             const errorMsg = err instanceof Error ? err.message : 'Auto-save failed';
             logger.error('Auto-save failed:', err);
@@ -126,7 +128,7 @@ export const useAutoSave = (
         } finally {
             setIsSaving(false);
         }
-    }, [canvas, user, currentOrganizationId, currentProjectId, designName, designId, lastSaved, activeOrg]);
+    }, [canvas, user, currentProjectId, designName, designId, lastSaved, resolvedOrgId]);
 
     // Auto-save interval
     useEffect(() => {
