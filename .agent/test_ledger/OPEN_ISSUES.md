@@ -13711,7 +13711,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-912: Publicist “Open in Mail” invents a recipient email address
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-10)
 - **Severity:** 🔴 CRITICAL (misdirected external communication)
 - **Module:** Publicist / Pitch drafting / Mail handoff
 - **Evidence:** The `Contact` model contains name, outlet, role, tier, and relationship data but no verified email field (`modules/publicist/types.ts:14-25`). After generating a draft, `PitchDraftingModal` constructs a `mailto:` recipient by lowercasing the contact name, replacing only the first space with a dot, removing only the first outlet space, and appending `.com` (`PitchDraftingModal.tsx:156-170`). There is no address validation, contact lookup, confirmation screen, or empty-recipient fallback.
@@ -13719,6 +13719,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 - **Fix:** Add an explicit verified email field/source to contacts and require it for addressed mail handoff. When no verified address exists, open a body-only draft or copy the pitch while prompting the user to choose/enter a recipient; never infer an address from display strings.
 - **Acceptance:** Contacts without a verified email cannot produce an addressed `mailto:` link; contacts with an email use the exact validated address and show it for confirmation before leaving the app.
 
+- **Fix applied (2026-07-10):** `Contact` interface (both `types.ts` and the Zod `ContactSchema` — two parallel definitions that needed to stay in sync) gains an optional verified `email` field. `CreateContactModal.tsx` collects it explicitly (with format validation, optional but never guessed). `PitchDraftingModal.tsx`'s "Open in Mail" no longer constructs a `mailto:` from lowercased name + outlet — it only renders when `contact.email` exists, uses that exact address, and displays it in the button label for confirmation before the user leaves the app. Without a verified email, a disabled "No Verified Email" indicator shows instead (Copy remains available). New test file added covering both paths — asserts zero `mailto:` links exist without a verified email, and the exact address (not a guessed one) is used when present.
 ### ISSUE-913: A generation started in one project is filed into whichever project is active when it finishes
 
 - **Status:** 🔴 OPEN
