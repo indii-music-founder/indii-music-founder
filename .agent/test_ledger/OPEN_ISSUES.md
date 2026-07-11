@@ -13137,7 +13137,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 - **Fix applied (2026-07-10):** Tool renamed `format_dsp_metadata` → `draft_dsp_metadata_xml` with an explicit `mode: 'draft'|'delivery'` param — `delivery` throws `InvalidParams` if duration/releaseDate are missing (no guessed values allowed for delivery-ready output). All interpolated fields now escaped via `escapeXmlMcp()`. Hard-coded `PADPIDA2014120901U` replaced with `DDEX_SENDER_PARTY_ID` from env (fails closed with `InternalError` if unset — same pattern as ISSUE-859). Output includes a JSON `{ mode, deliveryReady, defaultedFields }` block plus the XML, and an XML comment banner states deliveryReady status. **Discovered in the process:** the repo has two conflicting real sender DPIDs on file (`...2604-E` vs `...2601-E`) — logged as a founder checklist item in `docs/RELEASE_CHECKLIST.md`, not silently resolved by picking one. Deployed (mcpEndpoint).
 ### ISSUE-862: Ingestion XML validation is structural but is used around DDEX delivery language
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-10)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Distribution / Ingestion validation
 - **Evidence:** `IngestionValidator.validateXML()` explicitly says it is “not an XSD validator” (`IngestionValidator.ts:8-12`) and checks only declarations, substring root/namespace matches, and required tag presence (`:15-57`). `IngestionNotificationService.validateIngestionNotificationXML()` performs a similar tag-presence check (`IngestionNotificationService.ts:90-119`) but its comment says it runs before SFTP delivery to catch schema violations (`:90-93`).
@@ -13145,6 +13145,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 - **Fix:** Keep structural checks as fast lint, but add real DDEX XSD/profile validation and call it in any “delivery” or “package ready” path.
 - **Acceptance:** Validation distinguishes `structuralLintPassed` from `xsdValidated`; delivery-ready requires XSD/profile pass and stores the validation report.
 
+- **Fix applied (2026-07-10):** Both validators' doc comments now state plainly that they are structural LINT ONLY, not XSD/profile validation. `generateIngestionNotification()` return type gains `structuralLintPassed`/`xsdValidated: false`. `IngestionValidator.validateXML()` return gains `xsdValidated: false`. `DistributionTools.export_ern` tool renamed its `isValid` field to `structuralLintPassed` + added `xsdValidated: false`, and its message now explicitly says 'NOT XSD/schema validated' instead of implying full validation passed. No real XSD validator exists yet — this fix makes that limitation impossible to miss, it does not implement schema validation itself.
 ### ISSUE-863: PandaDoc webhook verification is optional despite security-critical pipeline side effects
 
 - **Status:** ✅ FIXED (2026-07-10, deployed)
@@ -14702,13 +14703,15 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-1017: Clearing every Sequence Architect segment leaves “Enter Director Mode” enabled, then crashes handoff
 
-- **Status:** 🟠 OPEN
+- **Status:** ✅ FIXED (2026-07-11)
 - **Severity:** 🟠 HIGH (creator loses the completed sequence transition after a valid editing action)
 - **Module:** Creative Suite / Sequence Architect / Director handoff
 - **Evidence:** The sequence UI offers “Clear Sequence” and can set `sequenceItems` to an empty array (`AutonomousLab.tsx:515-521`). Once a seed and synthesized target exist, the header shows and enables Enter Director Mode based only on those two frames (`:240-258`), not on segment presence. `transferToProduction()` maps the empty array and then calls `durationsInSeconds.reduce((a, b) => a + b)` without an initial accumulator (`:146-168`), which throws on an empty array before routing to Director Mode. There is no error boundary/recovery in that handler.
 - **Impact:** A creator can clear/rebuild their timing sequence, press the advertised continuation button, and hit a runtime exception instead of either receiving a valid single-scene handoff or an actionable validation message. The completed frames remain stranded in local lab state.
 - **Fix:** Define explicit zero-segment semantics: either block Director handoff until at least one validated segment exists, or create a documented single-shot default duration. Use a safe reducer/default, validate finite positive per-segment and total duration at handoff, preserve the lab state on failure, and show a field-level repair action.
 - **Acceptance:** Empty-sequence, one-segment, deleted-last-segment, zero/NaN/negative segment, and 60-second-boundary fixtures never throw; empty state either disables Director Mode with explanation or hands off an explicit validated default; valid sequences transfer exact durations/total once; a failed handoff leaves seed, target, and editable timing intact with retry rather than changing views or losing work.
+
+- **Fix applied (2026-07-11):** Added a shared `getValidatedSequenceDurations()` boundary that rejects empty, non-finite, non-positive, invalid-BPM, and over-60-second sequences. Enter Director Mode is disabled when that contract fails, and the handoff revalidates with an actionable error before mutating video inputs or navigation state. Added eight focused regression tests covering empty, mixed seconds/beats conversion, invalid values/BPM, over-limit, and the exact 60-second boundary. Verified with focused Vitest, ESLint on changed files, and renderer TypeScript `--noEmit`.
 
 ### ISSUE-CI-29101015440: CI Pipeline Failure (Deploy to Firebase Hosting)
 - **Status:** ⏳ OPEN

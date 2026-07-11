@@ -33,6 +33,34 @@ Return ONLY a JSON array of 4 short descriptions (max 15 words each). No explana
 Return ONLY a JSON array of 4 short descriptions (max 15 words each). No explanations.`
 };
 
+const MAX_INSPIRATION_ITEMS = 4;
+const MAX_INSPIRATION_LENGTH = 160;
+
+export function parseInspirationSuggestions(text: string): string[] {
+    const jsonMatch = text.trim().match(/\[[\s\S]*\]/);
+    if (!jsonMatch) {
+        throw new Error('Inspiration response did not contain a JSON array.');
+    }
+
+    const parsed: unknown = JSON.parse(jsonMatch[0]);
+    if (!Array.isArray(parsed) || parsed.length === 0 || parsed.length > MAX_INSPIRATION_ITEMS) {
+        throw new Error('Inspiration response must contain between 1 and 4 suggestions.');
+    }
+
+    const suggestions = parsed.map((value) => {
+        if (typeof value !== 'string') {
+            throw new Error('Every inspiration suggestion must be text.');
+        }
+        const suggestion = value.trim();
+        if (!suggestion || suggestion.length > MAX_INSPIRATION_LENGTH) {
+            throw new Error('Inspiration suggestions must be non-empty and at most 160 characters.');
+        }
+        return suggestion;
+    });
+
+    return suggestions;
+}
+
 export class WhiskService {
     /**
      * Synthesizes a complex prompt from the user's action prompt and locked Whisk references.
@@ -221,13 +249,7 @@ export class WhiskService {
                 if (value?.text) fullText += value.text;
             }
 
-            const text = fullText.trim() || '[]';
-            // Parse JSON array from response
-            const jsonMatch = text.match(/\[[\s\S]*\]/);
-            if (jsonMatch) {
-                return JSON.parse(jsonMatch[0]);
-            }
-            return [];
+            return parseInspirationSuggestions(fullText);
         } catch (error: unknown) {
             logger.error('[WHISK_DEBUG] WhiskService.generateInspiration error:', JSON.stringify(error, null, 2));
             logger.error('[WHISK_DEBUG] Error message:', error instanceof Error ? error.message : String(error));
