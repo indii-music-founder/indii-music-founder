@@ -1,24 +1,30 @@
 # Handoff State
-**Updated:** 2026-07-10 09:34 EDT
+**Updated:** 2026-07-11 09:23 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
-8d1f4b994 docs(ledger): backfill ISSUE-909 (auto-update feed repair) and ISSUE-910 (stale toast test assertions)
-65c372c08 chore: session checkpoint [09:30]
-9eae5df92 chore(release): v1.64.6
-5a9908910 chore: session checkpoint [09:19]
-fe2b28095 fix(ui): render gs:// asset thumbnails, honest updater copy, add Mobile Remote pairing to Settings
-2d7d242ae chore: session checkpoint [09:02]
-3ed274ad8 fix(updater): repair auto-update feed broken by SPA rewrite
-d19b4d205 chore: session checkpoint [22:48]
-646fd6f47 chore: session checkpoint [22:46]
-8686ee339 chore: session checkpoint [22:25]
+57e766ddb fix(ddex): distinguish structural lint from XSD validation in ingestion validators (ISSUE-862)
+b21e15b91 fix(ddex): rename MCP metadata tool, escape XML, require verified sender DPID (ISSUE-861)
+89433d924 docs(ledger): 2026-07-10 registration sprint — D-U-N-S 057447947, Apple enrollment pending, TikTok app + demo shot list, OAuth scopes
+8b4d3d1f4 docs(ledger): mark ISSUE-859 and ISSUE-860 fixed
+ad736fe3c feat(publishing): add DDEX XML escaping, verified sender party ID gate, and PACKAGE_STAGED state
+86b57ca75 fix(tests): update DistributionTools.test.ts expectation for ISRC status
+5ce4495f5 fix(tests): update stripeWebhook duplicate test for ISSUE-883 snap.get() API
+2e75acdc7 fix(tests): update gateway tests for GA model IDs and Omni env setup
+b5cc3d9d2 test(ledger): log ISSUE-CI pipeline failures
+1b2f5590b fix(honesty): YouTube upload and parallel render no longer fabricate success (ISSUE-884, ISSUE-885)
 ```
 
 ## Working State
 ```
-clean working tree
+ M .agent/test_ledger/OPEN_ISSUES.md
+ M packages/firebase/src/functions/distribution/distributionRecords.ts
+ M packages/firebase/src/legal/pandadocWebhook.ts
+ M packages/renderer/src/modules/creative/components/InfiniteCanvas.tsx
+ M packages/renderer/src/modules/creative/video/visualizer/SceneBuilder.tsx
+?? packages/renderer/src/modules/creative/video/visualizer/sceneBuilderFiles.test.ts
+?? packages/renderer/src/modules/creative/video/visualizer/sceneBuilderFiles.ts
 ```
 
 ## Decisions
