@@ -1,9 +1,12 @@
 # Handoff State
-**Updated:** 2026-07-11 18:56 EDT
+**Updated:** 2026-07-11 19:07 EDT
 **Branch:** `fix/issues-core`
 
 ## Recent Commits
 ```
+781f91dee fix(memory): ISSUE-757 — raise archive search cap to 10,000 for full-history recall
+33fcdbe5d fix(persistence): ISSUE-755 — merge local/remote sessions instead of clobbering + add retry logic
+ecd218287 chore: session checkpoint [18:56]
 680889865 chore: session checkpoint [18:55]
 da1aec305 docs: update ledger — PR #228 merged, ISSUE-766 L1-L2 fixed
 0f0cc5b68 fix(social): ISSUE-766 layers 1-2 — add instagram_content_publish scope + dual-write tokens to socialTokens
@@ -11,9 +14,6 @@ ff0e866dc chore: session checkpoint [18:41]
 0ec050923 chore: session checkpoint [17:59]
 a5da6604d chore: session checkpoint [17:58]
 e80a24de9 chore: session checkpoint [17:47]
-d03a2a44f chore: session checkpoint [16:46]
-b298bb3f1 docs: session 2026-07-11 final summary — all findings & fixes to ledger
-ea2b4f0d5 docs(social): record confirmed 3-layer block for ISSUE-766 IG posting
 ```
 
 ## Working State
