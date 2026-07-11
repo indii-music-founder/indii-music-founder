@@ -706,6 +706,12 @@ class RemoteRelayService {
         imageUrls?: string[],
         boardroomMessageId?: string
     ): Promise<void> {
+        // ISSUE-981: isFinal must be computed once and present on BOTH
+        // transports — GenerationMonitor gates completion on
+        // `response.isFinal && response.text`, so a P2P payload missing it
+        // can never be treated as terminal.
+        const isFinal = !isStreaming;
+
         // P2P Local WebSocket broadcast fallback
         const api = window.electronAPI;
         if (api?.remote?.broadcast) {
@@ -716,6 +722,7 @@ class RemoteRelayService {
                     text,
                     agentId,
                     isStreaming,
+                    isFinal,
                     imageUrls,
                     boardroomMessageId,
                     timestamp: Date.now()
@@ -726,20 +733,24 @@ class RemoteRelayService {
         const ref = getResponsesRef();
         if (!ref) return;
 
-        // Firestore rejects undefined values — only include optional fields if defined
+        // Firestore rejects undefined values (no ignoreUndefinedProperties) —
+        // every optional field must be added conditionally, never spread in
+        // unconditionally like boardroomMessageId previously was.
         const response: Record<string, unknown> = {
             commandId,
             text,
             timestamp: serverTimestamp(),
             isStreaming,
-            isFinal: !isStreaming,
-            boardroomMessageId,
+            isFinal,
         };
         if (agentId !== undefined) {
             response.agentId = agentId;
         }
         if (imageUrls && imageUrls.length > 0) {
             response.imageUrls = imageUrls;
+        }
+        if (boardroomMessageId !== undefined) {
+            response.boardroomMessageId = boardroomMessageId;
         }
 
         await addDoc(ref, response);
