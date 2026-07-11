@@ -77,6 +77,20 @@ export interface ContentIdData {
         asset_id?: string;
         custom_id?: string;
     }>;
+    upc: string;
+    artist: string;
+    album_title?: string;
+    /**
+     * Required rights confirmation (ISSUE-786). A false copyright claim can
+     * suspend YouTube partner access — there is no default label, match
+     * policy, or territory. Every field must be an explicit, real value.
+     */
+    rights_attestation: {
+        exclusive_rights: true;
+        label: string;
+        match_policy: 'monetize' | 'track' | 'block';
+        territories: string[];
+    };
 }
 
 export interface ContentIdReport {

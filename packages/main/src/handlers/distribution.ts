@@ -255,18 +255,25 @@ export const setupDistributionHandlers = () => {
     ipcMain.handle('distribution:generate-content-id-csv', async (event, data: unknown) => {
         try {
             validateSender(event);
-            // Enforce structured JSON return from Python script
+            // ISSUE-789: unwrap the script's structured JSON to the top-level
+            // `csv` field the renderer (DistributionService.generateContentIdAssets)
+            // actually reads, and surface RightsVerificationError messages
+            // (ISSUE-786) as the returned error rather than a generic failure.
             const storagePath = getStoragePath();
-            const result = await AgentSupervisor.execute('distribution', 'content_id_csv_generator.py', [
-                JSON.stringify(data),
-                '--storage-path',
-                storagePath
-            ], { timeoutMs: 30000 }, undefined, {}, [0]); // Redact JSON data
+            const result = await AgentSupervisor.execute<{ status?: string; csv?: string; recordCount?: number; error?: string }>(
+                'distribution', 'content_id_csv_generator.py', [
+                    JSON.stringify(data),
+                    '--storage-path',
+                    storagePath
+                ], { timeoutMs: 30000 }, undefined, {}, [0]); // Redact JSON data
 
             if (typeof result !== 'object' || result === null) {
-                 throw new Error("Invalid output format: content_id_csv_generator.py must return structured JSON.");
+                throw new Error("Invalid output format: content_id_csv_generator.py must return structured JSON.");
             }
-            return { success: true, report: result };
+            if (result.status !== 'SUCCESS' || !result.csv) {
+                return { success: false, error: result.error || 'Content ID CSV generation failed.' };
+            }
+            return { success: true, csv: result.csv, recordCount: result.recordCount, report: result };
         } catch (error) {
             return { success: false, error: error instanceof Error ? error.message : String(error) };
         }
