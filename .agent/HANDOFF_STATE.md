@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-07-11 11:35 EDT
-**Branch:** `main`
+**Updated:** 2026-07-11 11:37 EDT
+**Branch:** `fix/zustand-selector-regression`
 
 ## Recent Commits
 ```
+836c1ff5d fix(debug): use shallow selector to prevent infinite re-renders in BugReportDialog
+8e0acdb27 chore: session checkpoint [11:35]
 5287d1b4d chore: session checkpoint [11:35]
 1dd09b914 chore: session checkpoint [11:29]
 98cae3e10 fix(ci): repair generateImageV3 test broken by cost-reservation gate (ISSUE-881 follow-up)
@@ -12,15 +14,11 @@ fdd02ff69 chore: session checkpoint [11:01]
 a7f9f3fc0 fix(merchandise): add confirmation dialog before applying destructive template (ISSUE-934)
 9def3956b chore: session checkpoint [10:57]
 78909ab5f chore: document session progress and strategic roadmap
-4125b5a9d fix(merchandise): honest save results, support personal workspace (ISSUE-933)
-52a56c13b docs: update ledger — mark ISSUE-933 and ISSUE-764 status
 ```
 
 ## Working State
 ```
- M .agent/HANDOFF_STATE.md
- M packages/renderer/src/modules/debug/BugReportDialog.tsx
- M packages/renderer/src/modules/debug/useBugReport.ts
+clean working tree
 ```
 
 ## Decisions
