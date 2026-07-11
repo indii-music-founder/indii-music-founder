@@ -138,7 +138,19 @@ export class AudioAnalysisService {
     }
 
     public async generateFileHash(file: Blob): Promise<string> {
-        const arrayBuffer = await file.arrayBuffer();
+        let arrayBuffer: ArrayBuffer;
+        if (file.arrayBuffer) {
+            arrayBuffer = await file.arrayBuffer();
+        } else {
+            // Fallback for test environments where Blob.arrayBuffer() is not available
+            arrayBuffer = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result as ArrayBuffer);
+                reader.onerror = reject;
+                reader.readAsArrayBuffer(file);
+            });
+        }
+
         const metadata = `${AudioAnalysisService.CACHE_HASH_VERSION}:${file.type || 'application/octet-stream'}:${file.size}`;
         const encoder = new TextEncoder();
         const metadataBuffer = encoder.encode(metadata);
