@@ -2,6 +2,33 @@
 
 Use this internal checklist to verify the Founder release artifacts (macOS DMG and Windows NSIS EXE) before and after deployment. Founders do not see this document; it is for release QA.
 
+## 🔴 LIVE INCIDENT (ISSUE-992, 2026-07-10) — stable macOS update channel is empty
+
+`v1.64.6` and `v1.64.5` were both confirmed ad-hoc signed (`codesign -d` reports
+`Signature=adhoc`, `TeamIdentifier=not set`, no `_CodeSignature/CodeResources`).
+ShipIt correctly refuses to install either — any user offered one of these
+versions enters a repeat download/fail loop. Both were flipped to **prerelease**
+on GitHub (reversible, nothing deleted) so the update feed stops serving them;
+`v1.50.0` is now the resolved "latest" as an interim fallback — its signing
+status is **unverified**, not confirmed good.
+
+**This will keep happening on every future tag** until the items in
+"Apple Developer ID / macOS Notarization" below are actually completed — the
+release workflow (`.github/workflows/release.yml`) now fails the macOS build
+outright if `MAC_CERTIFICATE_P12_BASE64`/`CSC_LINK`, `CSC_KEY_PASSWORD`,
+`APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD`, or `APPLE_TEAM_ID` are missing, and
+verifies `codesign --verify --deep --strict`, `spctl --assess`, and
+`xcrun stapler validate` against the exact artifact before it can be published.
+No further ad-hoc build can reach the update feed — but that also means **no
+new macOS release can ship at all** until real signing secrets are added.
+
+- [ ] Complete every item in "Apple Developer ID / macOS Notarization" below.
+- [ ] Add the 5 required secrets to GitHub Actions repo secrets.
+- [ ] Cut a new tag once secrets are in place; confirm the release workflow's
+      verification step passes before trusting the release.
+- [ ] Once a verified signed release exists, decide whether to leave
+      `v1.64.6`/`v1.64.5` as prerelease permanently or delete them.
+
 ## Human Action Items — Desktop Signing & Notarization
 
 These are real-world account/certificate tasks that an agent cannot complete

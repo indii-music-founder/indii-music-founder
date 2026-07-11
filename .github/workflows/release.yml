@@ -93,15 +93,93 @@ jobs:
             echo "APPLE_TEAM_ID=$APPLE_TEAM" >> $GITHUB_ENV
           fi
 
-      # macOS code signing — uses Apple certificates from GitHub secrets.
-      # Leave CSC_LINK / CSC_KEY_PASSWORD empty on forks; signing is skipped.
-      - name: Build & publish desktop installer
+      # ISSUE-992: signing/notarization secrets are REQUIRED on macOS, not optional.
+      # An ad-hoc-signed build has no resource seal and Squirrel/ShipIt correctly
+      # refuses to install it — publishing one traps every user in a repeat-
+      # failure update loop. Fail before any build work starts.
+      - name: Require macOS signing & notarization secrets
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          missing=()
+          [ -z "${{ secrets.MAC_CERTIFICATE_P12_BASE64 || secrets.CSC_LINK }}" ] && missing+=("MAC_CERTIFICATE_P12_BASE64/CSC_LINK")
+          [ -z "${{ secrets.MAC_CERTIFICATE_PASSWORD || secrets.CSC_KEY_PASSWORD }}" ] && missing+=("MAC_CERTIFICATE_PASSWORD/CSC_KEY_PASSWORD")
+          [ -z "${{ secrets.APPLE_ID }}" ] && missing+=("APPLE_ID")
+          [ -z "${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}" ] && missing+=("APPLE_APP_SPECIFIC_PASSWORD")
+          [ -z "${{ secrets.APPLE_TEAM_ID }}" ] && missing+=("APPLE_TEAM_ID")
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error::Missing required macOS signing/notarization secrets: ${missing[*]}"
+            echo "An ad-hoc-signed build cannot pass ShipIt's resource-seal check and must never be published. See docs/RELEASE_CHECKLIST.md."
+            exit 1
+          fi
+
+      # Build only — publishing is a separate, gated step below so the exact
+      # verified artifact is what gets uploaded (no re-build, no hash drift).
+      - name: Build desktop installer
         run: |
           npm run build:studio
-          npx electron-builder --publish always
+          npx electron-builder --publish never
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: true
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+
+      # ISSUE-992: verify the EXACT built artifact — Developer ID signature
+      # (not ad-hoc), resource seal present, Gatekeeper acceptance, and
+      # notarization staple — before it is ever allowed onto the update feed.
+      - name: Verify macOS code signature, seal, and notarization
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          set -euo pipefail
+          APP_PATH=$(find dist-electron -maxdepth 2 -name "*.app" -type d | head -n 1)
+          if [ -z "$APP_PATH" ]; then
+            echo "::error::No .app bundle found in dist-electron"
+            exit 1
+          fi
+          echo "Verifying: $APP_PATH"
+
+          codesign --verify --deep --strict --verbose=4 "$APP_PATH"
+
+          SIGN_INFO=$(codesign -d -vvv "$APP_PATH" 2>&1)
+          echo "$SIGN_INFO"
+          if echo "$SIGN_INFO" | grep -qE "Signature=adhoc|TeamIdentifier=not set"; then
+            echo "::error::App is ad-hoc signed or missing a Team Identifier — refusing to publish."
+            exit 1
+          fi
+
+          spctl --assess --type execute --verbose=4 "$APP_PATH"
+          xcrun stapler validate "$APP_PATH"
+
+          ZIP_FILE=$(find dist-electron -maxdepth 1 -name "*-mac.zip" -type f | head -n 1)
+          if [ -z "$ZIP_FILE" ]; then
+            echo "::error::No updater zip (*-mac.zip) found in dist-electron"
+            exit 1
+          fi
+          if ! unzip -l "$ZIP_FILE" | grep -q "_CodeSignature/CodeResources"; then
+            echo "::error::$ZIP_FILE has no _CodeSignature/CodeResources entry — this is the exact ShipIt failure from ISSUE-992."
+            exit 1
+          fi
+          echo "macOS signature, seal, and notarization verified for $ZIP_FILE"
+
+      - name: Publish verified installer to GitHub Release
+        shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CSC_IDENTITY_AUTO_DISCOVERY: true
+        run: |
+          set -euo pipefail
+          gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --title "$GITHUB_REF_NAME" --generate-notes --draft=false 2>/dev/null || true
+
+          shopt -s nullglob
+          FILES=(dist-electron/*.dmg dist-electron/*.dmg.blockmap dist-electron/*-mac.zip dist-electron/*-mac.zip.blockmap \
+                  dist-electron/*.exe dist-electron/*.exe.blockmap dist-electron/*.AppImage \
+                  dist-electron/latest-mac.yml dist-electron/latest.yml dist-electron/latest-linux.yml)
+          if [ ${#FILES[@]} -eq 0 ]; then
+            echo "::error::No release artifacts found in dist-electron to upload"
+            exit 1
+          fi
+          gh release upload "$GITHUB_REF_NAME" "${FILES[@]}" --repo "$GITHUB_REPOSITORY" --clobber
 
       - name: Verify updater manifest was published
         shell: bash
