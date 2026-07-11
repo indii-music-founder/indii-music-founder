@@ -13802,7 +13802,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-921: Gallery download announces progress even when the download fails and omits a usable extension
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟡 MEDIUM
 - **Module:** Creative Suite / Asset export
 - **Evidence:** The click handler dynamically imports `downloadAsset`, calls it without awaiting its boolean result, and immediately toasts “Downloading asset...” (`CreativeGallery.tsx:379-385`). `downloadAsset()` catches all errors and returns `false` (`utils/download.ts:3-33`), so the caller can never surface failure. The filename passed is `image-export-...` / `video-export-...` with no extension, and the raw `item.url` may be `gs://` even when a resolved URL/storage URI is available.
