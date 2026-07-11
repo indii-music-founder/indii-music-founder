@@ -109,6 +109,28 @@ class SessionServiceImpl extends FirestoreService<SessionDocument> {
         }));
     }
 
+    async getSessionsForUserPaginated(lastSessionId?: string, pageSize: number = 50): Promise<ConversationSession[]> {
+        const orgId = OrganizationService.getCurrentOrgId() || 'personal';
+        const userId = auth.currentUser?.uid;
+
+        if (!userId) return [];
+
+        const constraints = [
+            where('orgId', '==', orgId),
+            where('userId', '==', userId),
+            orderBy('updatedAt', 'desc'),
+            limit(pageSize)
+        ];
+
+        const docs = await this.list(constraints);
+        return docs.map(d => ({
+            ...d,
+            createdAt: d.createdAt.toMillis(),
+            updatedAt: d.updatedAt.toMillis()
+        }));
+    }
+
+
     subscribeToSessions(
         onUpdate: (sessions: ConversationSession[]) => void,
         onError: (error: Error) => void
