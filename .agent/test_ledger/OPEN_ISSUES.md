@@ -12300,13 +12300,14 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-776: Image sub-menu Edit/Reference/Remix actions target the wrong asset and Reference is dead state
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIALLY FIXED (2026-07-11) — wrong-asset targeting fixed; Reference→Whisk intake wiring still open
 - **Severity:** 🟠 HIGH
 - **Module:** Creative Suite / Image
 - **Evidence:** `ImageSubMenu.tsx:50-76` always uses `generatedHistory[0]` without filtering by project or `type === 'image'`. Edit selects an item but does not enter editor view. Reference writes `activeReferenceImage`, but repo-wide reads show no production consumer—only setters/tests.
 - **Impact:** An image action can pick another project's video, appear to do nothing, or toast that a reference is active when generation never uses it.
 - **Fix:** Resolve the latest image in the active project, navigate Edit to `editor`, and replace `activeReferenceImage` with the real `referenceUris`/Whisk intake path. Disable actions with an honest empty state when no eligible image exists.
 - **Acceptance:** Interaction tests cover mixed image/video history and two projects; the selected reference URI appears in `generateImageV3`.
+- **Fix applied (2026-07-11):** `ImageSubMenu.tsx` now resolves `latestImage` by filtering `generatedHistory` for `type === 'image' && projectId === currentProjectId` and uses it for all three actions; Edit/Reference/Remix buttons are `disabled` with a "No image in this project yet" title when none exists. `setSelectedItem` already triggers `CreativeStudio.tsx`'s existing `viewMode !== 'editor' → setViewMode('editor')` effect, so Edit now reliably enters the editor. **Not done:** `activeReferenceImage` still has no production consumer — wiring it to a real `referenceUris`/Whisk intake path in the generation payload is a larger feature-level change and remains open. No interaction test added.
 
 ### ISSUE-777: Image Creator exposes video settings while hiding/ignoring its real image controls
 
@@ -13700,7 +13701,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-911: Publicist `pitch_story` returns literal placeholder copy instead of generating a pitch
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟠 HIGH
 - **Module:** Publicist / Agent tools / Creative copy generation
 - **Evidence:** The active publicist tool registry is merged into the global agent tool registry (`services/agent/tools/index.ts:1`, `:85`). Its `pitch_story()` implementation never calls a model or a drafting service; it returns a fixed subject containing `[Artist]` and an email body containing the literal text `[AI would generate full pitch based on ${args.angle}]` (`modules/publicist/tools.ts:153-161`). The result still passes schema validation and is returned as `toolSuccess(..., "Pitch drafted...")`.
