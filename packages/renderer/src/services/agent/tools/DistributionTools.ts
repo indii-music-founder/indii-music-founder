@@ -551,16 +551,17 @@ export const DistributionTools = {
                 return toolError(result.error || 'ERN generation failed', 'ERN_ERROR');
             }
 
-            // Validate the generated XML
+            // Validate the generated XML (ISSUE-862: structural lint only, not XSD)
             const validationErrors = IngestionNotificationService.validateERNXML(result.xml || '');
 
             return toolSuccess({
                 releaseId: args.releaseId,
                 format: 'DDEX ERN 4.3',
-                isValid: validationErrors.length === 0,
+                structuralLintPassed: validationErrors.length === 0,
+                xsdValidated: false,
                 validationErrors: validationErrors.length > 0 ? validationErrors : undefined,
                 xmlLength: result.xml?.length || 0,
-            }, `Exported metadata for Release ${args.releaseId} to DDEX ERN 4.3 format via IngestionNotificationService. ${validationErrors.length === 0 ? 'Structural validation passed.' : `${validationErrors.length} validation issue(s) detected.`}`);
+            }, `Exported metadata for Release ${args.releaseId} to DDEX ERN 4.3 format via IngestionNotificationService. ${validationErrors.length === 0 ? 'Structural lint passed (required tags present) — NOT XSD/schema validated.' : `${validationErrors.length} structural validation issue(s) detected.`}`);
         } catch (error: unknown) {
             return toolError(error instanceof Error ? error.message : 'ERN export failed', 'ERN_EXPORT_ERROR');
         }
