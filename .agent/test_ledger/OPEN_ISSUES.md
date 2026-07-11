@@ -14861,7 +14861,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ---
 
-### ISSUE-1023: Add Settings & Help commands to command palette
+### ISSUE-1023: Add Settings & Help commands to command palette (FIXED)
 
 - **Status:** 🔴 OPEN
 - **Severity:** 🟢 LOW (nice-to-have)

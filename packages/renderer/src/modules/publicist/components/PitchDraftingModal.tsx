@@ -162,13 +162,27 @@ Do not include a subject line — just the email body.
                                             {copied ? <CheckCircle2 size={13} className="text-green-400" /> : <Copy size={13} />}
                                             {copied ? 'Copied!' : 'Copy'}
                                         </button>
-                                        <a
-                                            href={`mailto:${contact?.name?.toLowerCase().replace(' ', '.')}@${contact?.outlet?.toLowerCase().replace(' ', '')}.com?body=${encodeURIComponent(draft)}`}
-                                            className="flex items-center gap-2 px-4 py-2 bg-white text-black rounded-lg text-xs font-bold hover:bg-slate-200 transition-all ml-auto"
-                                        >
-                                            <Send size={13} />
-                                            Open in Mail
-                                        </a>
+                                        {/* ISSUE-912: never infer a recipient address from name/outlet strings —
+                                            "Open in Mail" only appears when a verified email is on file, and
+                                            shows the exact address for confirmation before leaving the app. */}
+                                        {contact?.email ? (
+                                            <a
+                                                href={`mailto:${contact.email}?body=${encodeURIComponent(draft)}`}
+                                                title={`Open in Mail to ${contact.email}`}
+                                                className="flex items-center gap-2 px-4 py-2 bg-white text-black rounded-lg text-xs font-bold hover:bg-slate-200 transition-all ml-auto"
+                                            >
+                                                <Send size={13} />
+                                                Open in Mail ({contact.email})
+                                            </a>
+                                        ) : (
+                                            <span
+                                                title="No verified email on file for this contact — add one from the contact's profile to enable Open in Mail."
+                                                className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 text-slate-500 rounded-lg text-xs font-bold ml-auto cursor-not-allowed"
+                                            >
+                                                <Mail size={13} />
+                                                No Verified Email
+                                            </span>
+                                        )}
                                     </>
                                 )}
                             </div>
