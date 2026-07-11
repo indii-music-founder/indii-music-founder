@@ -130,7 +130,8 @@ async function userCanAccessOrg(orgId: unknown, uid: string): Promise<boolean> {
     return org.ownerId === uid || memberListIncludes(org.members, uid);
 }
 
-async function findWritableReleaseRef(releaseId: string, uid: string): Promise<FirebaseFirestore.DocumentReference> {
+/** Exported for reuse by other trust boundaries that need the same release-ownership check (e.g. pandadocWebhook, ISSUE-864). */
+export async function findWritableReleaseRef(releaseId: string, uid: string): Promise<FirebaseFirestore.DocumentReference> {
     const db = admin.firestore();
 
     for (const collectionName of RELEASE_COLLECTIONS) {
