@@ -1,9 +1,12 @@
 # Handoff State
-**Updated:** 2026-07-11 09:23 EDT
+**Updated:** 2026-07-11 09:33 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+7037a565e fix(image-generation): auto-inject user headshots as reference images for person generation
+4d551bc5b fix(security): remove name-inferred automation triggers from PandaDoc webhook (ISSUE-864)
+c5baa6123 chore: session checkpoint [09:23]
 57e766ddb fix(ddex): distinguish structural lint from XSD validation in ingestion validators (ISSUE-862)
 b21e15b91 fix(ddex): rename MCP metadata tool, escape XML, require verified sender DPID (ISSUE-861)
 89433d924 docs(ledger): 2026-07-10 registration sprint — D-U-N-S 057447947, Apple enrollment pending, TikTok app + demo shot list, OAuth scopes
@@ -11,20 +14,11 @@ b21e15b91 fix(ddex): rename MCP metadata tool, escape XML, require verified send
 ad736fe3c feat(publishing): add DDEX XML escaping, verified sender party ID gate, and PACKAGE_STAGED state
 86b57ca75 fix(tests): update DistributionTools.test.ts expectation for ISRC status
 5ce4495f5 fix(tests): update stripeWebhook duplicate test for ISSUE-883 snap.get() API
-2e75acdc7 fix(tests): update gateway tests for GA model IDs and Omni env setup
-b5cc3d9d2 test(ledger): log ISSUE-CI pipeline failures
-1b2f5590b fix(honesty): YouTube upload and parallel render no longer fabricate success (ISSUE-884, ISSUE-885)
 ```
 
 ## Working State
 ```
- M .agent/test_ledger/OPEN_ISSUES.md
- M packages/firebase/src/functions/distribution/distributionRecords.ts
- M packages/firebase/src/legal/pandadocWebhook.ts
- M packages/renderer/src/modules/creative/components/InfiniteCanvas.tsx
- M packages/renderer/src/modules/creative/video/visualizer/SceneBuilder.tsx
-?? packages/renderer/src/modules/creative/video/visualizer/sceneBuilderFiles.test.ts
-?? packages/renderer/src/modules/creative/video/visualizer/sceneBuilderFiles.ts
+ M packages/renderer/src/modules/creative/components/__tests__/InfiniteCanvas.test.tsx
 ```
 
 ## Decisions
