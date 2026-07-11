@@ -13742,7 +13742,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-915: One failed reference upload silently discards every reference and still generates
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟠 HIGH
 - **Module:** Creative Suite / Image generation / Reference integrity
 - **Evidence:** Direct image generation uploads all selected ingredients in one `Promise.all` (`useDirectGeneration.ts:311-319`). A single rejection jumps to a shared catch that logs “proceeding without references,” leaves both `referenceUri` and `referenceUris` unset, and continues to `generateImageV3` (`:320-342`). No warning or confirmation is shown to the user.
