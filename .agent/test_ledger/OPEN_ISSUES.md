@@ -11681,7 +11681,7 @@ Walked individual menus applying all four lenses (double-click races / authoriza
 
 ### ISSUE-750: Archive System Parity — make Archives work like Claude's conversation archives
 
-- **Status:** 🔴 OPEN (PLANNED — no code yet)
+- **Status:** ✅ MOSTLY COMPLETE (2026-07-11 — pagination done; participant avatars remain)
 - **Severity:** 🟠 MEDIUM (core daily-driver UX)
 - **Location:** `packages/renderer/src/core/components/ConversationHistoryList.tsx`, `packages/renderer/src/core/store/slices/agent/agentSessionSlice.ts`, `packages/renderer/src/services/agent/SessionService.ts`
 - **Details (current state, verified):**
