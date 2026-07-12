@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Mic, Image as ImageIcon, Video, Send, Loader2, MapPin, FileText, Keyboard } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { remoteRelayService, waitForDispatchConfirmation } from '@/services/agent/RemoteRelayService';
@@ -10,6 +10,13 @@ import { triggerHaptic } from '../MobileRemote';
 export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
     const toast = useToast();
     const [isRecording, setIsRecording] = useState(false);
+    // ISSUE-986: true from the moment Stop is tapped until the recorder's
+    // async onstop actually delivers the audio blob. isRecording flips to
+    // false immediately (so the mic button reads "Speak" again), but the
+    // OTHER capture controls must stay blocked until finalization — otherwise
+    // a photo/video picked in that gap gets silently clobbered when the
+    // delayed audio blob lands on top of it.
+    const [isFinalizingRecording, setIsFinalizingRecording] = useState(false);
     const [isDispatching, setIsDispatching] = useState(false);
     const [capturedAudioBlob, setCapturedAudioBlob] = useState<Blob | null>(null);
     const [capturedImageBlob, setCapturedImageBlob] = useState<{file: File, type: 'photo' | 'document'} | null>(null);
@@ -24,6 +31,8 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
     
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const audioChunksRef = useRef<Blob[]>([]);
+    const streamRef = useRef<MediaStream | null>(null);
+    const isMountedRef = useRef(true);
 
     const reviewKind = capturedAudioBlob
         ? 'voice memo'
@@ -51,37 +60,129 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
         };
     }, [capturedAudioBlob, capturedImageBlob, capturedVideoBlob]);
 
+    /**
+     * ISSUE-985: stops the recorder AND the underlying tracks directly,
+     * independent of the MediaRecorder's async `onstop` event — so the mic
+     * is guaranteed dark immediately on explicit stop, unmount, page-hide,
+     * or permission loss, regardless of pairing/dispatch state or whatever
+     * state the recorder itself is in.
+     */
+    const stopRecording = useCallback(() => {
+        const recorder = mediaRecorderRef.current;
+        if (recorder && recorder.state !== 'inactive') {
+            // ISSUE-986: the audio blob only lands once onstop fires
+            // asynchronously — block photo/doc/video/pin/text replacement
+            // until then, or a capture picked in this gap gets silently
+            // clobbered when the delayed blob arrives on top of it.
+            setIsFinalizingRecording(true);
+            try {
+                recorder.stop();
+            } catch (error) {
+                console.error('Failed to stop media recorder', error);
+                setIsFinalizingRecording(false);
+            }
+        }
+        streamRef.current?.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
+        setIsRecording(false);
+    }, []);
+
+    // Track real mount state so a late onstop/onerror callback (which can
+    // fire after unmount/tab-switch) never calls setState on a dead component.
+    useEffect(() => {
+        isMountedRef.current = true;
+        return () => { isMountedRef.current = false; };
+    }, []);
+
+    // Unmount / tab-switch (QuickCaptureView is conditionally rendered by
+    // MobileRemote's tab switch, so this fires on every tab change): the mic
+    // must never stay live after this view disappears.
+    useEffect(() => {
+        return () => {
+            streamRef.current?.getTracks().forEach(track => track.stop());
+            streamRef.current = null;
+        };
+    }, []);
+
+    // Backgrounding the app/tab mid-recording must not leave the mic live
+    // with no way to stop it once the view regains focus.
+    useEffect(() => {
+        const onVisibilityChange = () => {
+            if (typeof document !== 'undefined' && document.visibilityState === 'hidden' && mediaRecorderRef.current?.state === 'recording') {
+                stopRecording();
+            }
+        };
+        document.addEventListener('visibilitychange', onVisibilityChange);
+        return () => document.removeEventListener('visibilitychange', onVisibilityChange);
+    }, [stopRecording]);
+
     const handleMicTap = async () => {
+        // Stop must always work, even if pairing dropped mid-recording —
+        // this was the exact trap: !isPaired disabled the only stop control.
+        if (isRecording) {
+            triggerHaptic([50, 100]);
+            stopRecording();
+            return;
+        }
+
         if (!isPaired) return;
         triggerHaptic([50, 100]);
-        
-        if (isRecording) {
-            mediaRecorderRef.current?.stop();
-            setIsRecording(false);
-        } else {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                mediaRecorderRef.current = new MediaRecorder(stream);
-                audioChunksRef.current = [];
 
-                mediaRecorderRef.current.ondataavailable = (e) => {
-                    if (e.data.size > 0) audioChunksRef.current.push(e.data);
-                };
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const recorder = new MediaRecorder(stream);
+            streamRef.current = stream;
+            mediaRecorderRef.current = recorder;
+            audioChunksRef.current = [];
 
-                mediaRecorderRef.current.onstop = () => {
+            // A rapid stop-then-restart can leave this session's async
+            // callbacks (onstop/onerror/track.onended) firing after a NEWER
+            // session has already taken over the refs — every callback below
+            // closes over `recorder`/`stream` and only touches shared
+            // refs/state when it's still the active session, so a stale
+            // callback can never stomp a newer one's stream or blob.
+            const isStillActiveSession = () => mediaRecorderRef.current === recorder;
+
+            recorder.ondataavailable = (e) => {
+                if (e.data.size > 0) audioChunksRef.current.push(e.data);
+            };
+
+            recorder.onstop = () => {
+                if (isMountedRef.current && isStillActiveSession()) {
                     const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
                     setCapturedAudioBlob(audioBlob);
-                    
-                    stream.getTracks().forEach(track => track.stop());
-                };
+                    setIsFinalizingRecording(false);
+                }
+                stream.getTracks().forEach(track => track.stop());
+                if (streamRef.current === stream) streamRef.current = null;
+            };
 
-                mediaRecorderRef.current.start();
-                setIsRecording(true);
-                clearMediaState();
-            } catch (error) {
-                console.error("Failed to access microphone", error);
-                triggerHaptic([100, 200, 100]);
-            }
+            recorder.onerror = (event) => {
+                console.error('MediaRecorder error', event);
+                if (isMountedRef.current && isStillActiveSession()) {
+                    toast.error('Recording failed unexpectedly.');
+                    setIsFinalizingRecording(false);
+                    stopRecording();
+                } else {
+                    stream.getTracks().forEach(track => track.stop());
+                }
+            };
+
+            // A track can end on its own (permission revoked, device
+            // disconnected) without ever going through our stop button —
+            // treat that as a stop too so isRecording/UI never goes stale.
+            stream.getTracks().forEach(track => {
+                track.onended = () => {
+                    if (isMountedRef.current && isStillActiveSession()) stopRecording();
+                };
+            });
+
+            recorder.start();
+            setIsRecording(true);
+            clearMediaState();
+        } catch (error) {
+            console.error("Failed to access microphone", error);
+            triggerHaptic([100, 200, 100]);
         }
     };
 
@@ -259,20 +360,22 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
                     )}
                     
                     <motion.button
-                        whileTap={isPaired ? { scale: 0.9 } : undefined}
+                        whileTap={(isPaired || isRecording) ? { scale: 0.9 } : undefined}
                         onClick={handleMicTap}
-                        disabled={!isPaired || isDispatching}
+                        disabled={!isRecording && (!isPaired || isDispatching)}
+                        aria-pressed={isRecording}
+                        aria-label={isRecording ? 'Stop recording' : 'Start recording a voice memo'}
                         className={cn(
                             "relative z-10 w-36 h-36 rounded-full flex flex-col items-center justify-center gap-2 transition-colors shadow-[0_0_40px_rgba(46,46,254,0.15)] border-4",
-                            isRecording 
-                                ? "bg-[#2E2EFE] border-[#2E2EFE] text-[#F0F0F0]" 
+                            isRecording
+                                ? "bg-[#2E2EFE] border-[#2E2EFE] text-[#F0F0F0]"
                                 : "bg-[#030303] border-white/10 text-[#F0F0F0] hover:border-[#2E2EFE]/50",
-                            !isPaired && "opacity-50 grayscale cursor-not-allowed"
+                            !isPaired && !isRecording && "opacity-50 grayscale cursor-not-allowed"
                         )}
                     >
                         <Mic className={cn("w-10 h-10", isRecording && "animate-pulse")} />
-                        <span className="text-[10px] font-bold uppercase tracking-widest">
-                            {isRecording ? 'Listening' : 'Speak'}
+                        <span className="text-[10px] font-bold uppercase tracking-widest" role="status">
+                            {isRecording ? 'Listening — tap to stop' : 'Speak'}
                         </span>
                     </motion.button>
                 </div>
@@ -281,7 +384,7 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
                 <div className="grid grid-cols-4 gap-4 w-full max-w-sm">
                     <button
                         onClick={() => docInputRef.current?.click()}
-                        disabled={!isPaired || isDispatching || isRecording}
+                        disabled={!isPaired || isDispatching || isRecording || isFinalizingRecording}
                         className="flex flex-col items-center gap-2 p-3 rounded-2xl border border-white/10 bg-[#1c1c1e] text-[#8e8e93] hover:text-[#F0F0F0] hover:bg-white/10 transition-colors disabled:opacity-50"
                     >
                         <FileText className="w-6 h-6" />
@@ -291,7 +394,7 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
 
                     <button
                         onClick={() => photoInputRef.current?.click()}
-                        disabled={!isPaired || isDispatching || isRecording}
+                        disabled={!isPaired || isDispatching || isRecording || isFinalizingRecording}
                         className="flex flex-col items-center gap-2 p-3 rounded-2xl border border-white/10 bg-[#1c1c1e] text-[#8e8e93] hover:text-[#F0F0F0] hover:bg-white/10 transition-colors disabled:opacity-50"
                     >
                         <ImageIcon className="w-6 h-6" />
@@ -301,7 +404,7 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
 
                     <button
                         onClick={() => videoInputRef.current?.click()}
-                        disabled={!isPaired || isDispatching || isRecording}
+                        disabled={!isPaired || isDispatching || isRecording || isFinalizingRecording}
                         className="flex flex-col items-center gap-2 p-3 rounded-2xl border border-white/10 bg-[#1c1c1e] text-[#8e8e93] hover:text-[#F0F0F0] hover:bg-white/10 transition-colors disabled:opacity-50"
                     >
                         <Video className="w-6 h-6" />
@@ -311,7 +414,7 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
 
                     <button
                         onClick={handlePinDrop}
-                        disabled={!isPaired || isDispatching || isRecording || !hasGeolocation}
+                        disabled={!isPaired || isDispatching || isRecording || isFinalizingRecording || !hasGeolocation}
                         className="flex flex-col items-center gap-2 p-3 rounded-2xl border border-white/10 bg-[#1c1c1e] text-[#8e8e93] hover:text-[#F0F0F0] hover:bg-white/10 transition-colors disabled:opacity-50"
                     >
                         <MapPin className="w-6 h-6" />
@@ -341,7 +444,7 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
                             value={momentText}
                             onChange={(e) => setMomentText(e.target.value)}
                             placeholder="Capture a live moment..."
-                            disabled={!isPaired || isDispatching || isRecording}
+                            disabled={!isPaired || isDispatching || isRecording || isFinalizingRecording}
                             className="w-full bg-[#1c1c1e] border border-white/10 rounded-[20px] py-4 pl-12 pr-14 text-sm text-[#F0F0F0] placeholder:text-[#8e8e93] focus:outline-none focus:border-[#2E2EFE]/50 transition-colors"
                         />
                         <button
