@@ -1,7 +1,7 @@
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen } from '@testing-library/react';
-import QuickCaptureView from './QuickCaptureView';
+import QuickCaptureView, { pickSupportedAudioMimeType, audioExtensionForMimeType } from './QuickCaptureView';
 
 /**
  * ISSUE-985: minimal fakes for the Web Audio recording APIs jsdom doesn't
@@ -22,11 +22,14 @@ class FakeMediaStream {
 
 class FakeMediaRecorder {
     static instances: FakeMediaRecorder[] = [];
+    static isTypeSupported = (_type: string) => true;
     state: 'inactive' | 'recording' = 'inactive';
+    mimeType: string;
     ondataavailable: ((e: { data: Blob }) => void) | null = null;
     onstop: (() => void) | null = null;
     onerror: ((e: unknown) => void) | null = null;
-    constructor(public stream: FakeMediaStream) {
+    constructor(public stream: FakeMediaStream, options?: { mimeType?: string }) {
+        this.mimeType = options?.mimeType ?? '';
         FakeMediaRecorder.instances.push(this);
     }
     start() { this.state = 'recording'; }
@@ -37,6 +40,9 @@ class FakeMediaRecorder {
         // microtask so tests can observe the gap between "stop tapped" and
         // "audio blob actually landed" (ISSUE-986).
         Promise.resolve().then(() => this.onstop?.());
+    }
+    emitData(data: Blob) {
+        this.ondataavailable?.({ data });
     }
 }
 
@@ -222,5 +228,120 @@ describe('QuickCaptureView — voice memo mic lifecycle (ISSUE-985)', () => {
         expect(photoBtn).not.toBeDisabled();
         expect(docBtn).not.toBeDisabled();
         expect(videoBtn).not.toBeDisabled();
+    });
+});
+
+describe('QuickCaptureView — voice memo MIME/validity guards (ISSUE-987)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        FakeMediaRecorder.instances = [];
+        FakeMediaRecorder.isTypeSupported = () => true;
+        Object.defineProperty(navigator, 'geolocation', { configurable: true, value: undefined });
+
+        Object.defineProperty(navigator, 'mediaDevices', {
+            configurable: true,
+            value: { getUserMedia: vi.fn(async () => new FakeMediaStream()) },
+        });
+        (globalThis as unknown as { MediaRecorder: typeof FakeMediaRecorder }).MediaRecorder = FakeMediaRecorder;
+        URL.createObjectURL = vi.fn(() => 'blob:fake-url');
+        URL.revokeObjectURL = vi.fn();
+    });
+
+    async function startRecording() {
+        const startBtn = screen.getByRole('button', { name: /start recording a voice memo/i });
+        await act(async () => {
+            fireEvent.click(startBtn);
+            await Promise.resolve();
+        });
+    }
+
+    it('picks the first browser-supported MIME candidate in priority order', () => {
+        FakeMediaRecorder.isTypeSupported = (type: string) => type === 'audio/ogg';
+        expect(pickSupportedAudioMimeType()).toBe('audio/ogg');
+    });
+
+    it('returns undefined when nothing on the candidate list is supported (browser picks its own default)', () => {
+        FakeMediaRecorder.isTypeSupported = () => false;
+        expect(pickSupportedAudioMimeType()).toBeUndefined();
+    });
+
+    it('derives the filename extension from the actual, possibly codec-qualified, mimeType', () => {
+        expect(audioExtensionForMimeType('audio/webm;codecs=opus')).toBe('webm');
+        expect(audioExtensionForMimeType('audio/mp4')).toBe('m4a');
+        expect(audioExtensionForMimeType('audio/ogg;codecs=opus')).toBe('ogg');
+        expect(audioExtensionForMimeType('audio/unknown-thing')).toBe('webm');
+    });
+
+    it('rejects a zero-byte recording instead of saving a silent note', async () => {
+        render(<QuickCaptureView isPaired={true} />);
+        await startRecording();
+
+        const stopBtn = screen.getByRole('button', { name: /stop recording/i });
+        await act(async () => {
+            fireEvent.click(stopBtn);
+            await Promise.resolve();
+            await Promise.resolve();
+        });
+
+        expect(mockError).toHaveBeenCalledWith(expect.stringMatching(/no audio was captured/i));
+        expect(screen.queryByText(/review before saving/i)).not.toBeInTheDocument();
+    });
+
+    // These two use vi.setSystemTime (NOT vi.useFakeTimers' timer-faking —
+    // no setTimeout/interval in this path) so Date.now() reads a controlled
+    // clock regardless of incidental extra calls (e.g. from React internals)
+    // between start and stop — counting exact call order was flaky.
+    it('rejects a recording shorter than the minimum duration even when data arrived', async () => {
+        vi.useFakeTimers();
+        vi.setSystemTime(1_000);
+        try {
+            render(<QuickCaptureView isPaired={true} />);
+            await startRecording();
+
+            const recorder = FakeMediaRecorder.instances[0]!;
+            recorder.emitData(new Blob(['audio-bytes'], { type: 'audio/webm' }));
+
+            vi.setSystemTime(1_100); // 100ms later — below the 300ms floor
+
+            const stopBtn = screen.getByRole('button', { name: /stop recording/i });
+            await act(async () => {
+                fireEvent.click(stopBtn);
+                await Promise.resolve();
+                await Promise.resolve();
+            });
+
+            expect(mockError).toHaveBeenCalledWith(expect.stringMatching(/too short/i));
+            expect(screen.queryByText(/review before saving/i)).not.toBeInTheDocument();
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it('saves a valid, non-empty, sufficiently long recording using the recorder\'s real mimeType', async () => {
+        vi.useFakeTimers();
+        vi.setSystemTime(1_000);
+        try {
+            render(<QuickCaptureView isPaired={true} />);
+            await startRecording();
+
+            const recorder = FakeMediaRecorder.instances[0]!;
+            recorder.mimeType = 'audio/mp4';
+            recorder.emitData(new Blob(['audio-bytes'], { type: 'audio/mp4' }));
+
+            vi.setSystemTime(2_000); // 1000ms later — comfortably above the floor
+
+            const stopBtn = screen.getByRole('button', { name: /stop recording/i });
+            await act(async () => {
+                fireEvent.click(stopBtn);
+                await Promise.resolve();
+                await Promise.resolve();
+            });
+
+            expect(mockError).not.toHaveBeenCalled();
+            expect(screen.getByText(/review before saving/i)).toBeInTheDocument();
+            expect(screen.getByText(/captured voice memo/i)).toBeInTheDocument();
+        } finally {
+            vi.useRealTimers();
+        }
     });
 });
