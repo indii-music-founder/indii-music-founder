@@ -12014,7 +12014,13 @@ After those 5 fixes, the batch is deployment-ready (tests pass, blockers cleared
 
 ### ISSUE-764: TourMap "Google Maps API key is unavailable" — key stripped by envPrefix allowlist
 
-- **Status:** ✅ FIXED (config) / ⏳ BLOCKED (requires GitHub secret configuration)
+- **Status:** ✅ FIXED AND VERIFIED LIVE (2026-07-12) — full Road Manager map confirmed rendering in production (indii.music/road), zero Maps-related console errors.
+- **Final root causes (beyond the envPrefix/sanitizer layers already fixed below):**
+  1. GCP API key restrictions on "Google Maps Desktop Key" only permitted Geocoding + Places APIs — **Maps JavaScript API itself was missing**, causing `ApiTargetBlockedMapError`. Fixed by adding Maps JavaScript API to the key's restrictions in GCP Console.
+  2. Even after the key error cleared, tiles still failed — traced to `firebase.json`'s Content-Security-Policy `img-src` directive allowing `maps.googleapis.com` for scripts/connect but not for images, so the browser's own CSP silently blocked every tile response (confirmed via direct curl: tiles returned real `200 image/webp`; only the CSP-governed browser load failed). Fixed by adding `https://maps.googleapis.com` and `https://maps.gstatic.com` to `img-src` in all 3 app-hosting CSP blocks.
+  3. Billing was confirmed already active on the GCP project (not the issue).
+- **Verified:** Deployed to production (2 deploys), live-tested in the actual Road Manager UI — map tiles, labels, and a geocoded waypoint pin all render correctly; console clean of Maps errors.
+- **Original status (superseded, kept for history):** ✅ FIXED (config) / ⏳ BLOCKED (requires GitHub secret configuration)
 - **Severity:** 🟠 MEDIUM-HIGH (Road Manager map dead in ALL builds; blocks touring module)
 - **Location:** `packages/renderer/vite.config.ts:98` and `electron.vite.config.ts:165` (envPrefix allowlists), `.github/workflows/deploy.yml` (build env), GCP Console key restrictions
 - **Details (verified):**
