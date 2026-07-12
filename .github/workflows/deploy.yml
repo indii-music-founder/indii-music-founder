@@ -87,13 +87,19 @@ jobs:
 
 
   # ─── Unit Testing (Sharded) ────────────────────────────────────────────────
-  # Item 344: Vitest test sharding — 8 parallel matrix jobs cut CI time and prevent OOM
+  # Item 344: Vitest test sharding — parallel matrix jobs cut CI time and prevent OOM
+  # ISSUE-1046: shard 7/8 recurrently hit ERR_WORKER_OUT_OF_MEMORY (never a real
+  # test failure) — vitest's --shard split is by file order, not by size, so a
+  # cluster of memory-heavy files consistently landed in one shard. Widened
+  # 8->10 shards so each shard carries fewer files, rather than raising the
+  # per-shard heap ceiling toward the runner's ~7GB total (risking an OS-level
+  # kill instead of a catchable V8 heap error).
   unit-tests:
     runs-on: ubuntu-latest
     needs: setup
     strategy:
       matrix:
-        shard: [1, 2, 3, 4, 5, 6, 7, 8]
+        shard: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
@@ -116,9 +122,9 @@ jobs:
         with:
           credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
 
-      - name: Run unit tests (shard ${{ matrix.shard }}/8)
+      - name: Run unit tests (shard ${{ matrix.shard }}/10)
         timeout-minutes: 15
-        run: NODE_OPTIONS="--max-old-space-size=4096" npm test -- --run --reporter=verbose --testTimeout=30000 --bail=3 --shard=${{ matrix.shard }}/8
+        run: NODE_OPTIONS="--max-old-space-size=4096" npm test -- --run --reporter=verbose --testTimeout=30000 --bail=3 --shard=${{ matrix.shard }}/10
         env:
           VITE_VERTEX_PROJECT_ID: ${{ secrets.VITE_VERTEX_PROJECT_ID }}
           VITE_VERTEX_LOCATION: ${{ secrets.VITE_VERTEX_LOCATION }}
