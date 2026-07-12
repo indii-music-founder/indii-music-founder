@@ -1,8 +1,21 @@
 # Boardroom Persistence Architecture (ISSUE-760)
 
-**Status:** Architecture Design (Ready for Implementation Phase)  
-**Depends on:** ISSUE-755 (✅ Conversation durability)  
-**Blocked by:** None (design complete)
+> ⚠️ **OBSOLETE / SUPERSEDED (2026-07-12).** ISSUE-760 is already FIXED in the codebase via a
+> different, cleaner approach than this doc proposes. Boardroom rides the existing
+> `ConversationSession` spine by switching `activeSessionId` to a `namespace:'boardroom'`
+> session (`store/slices/agent/index.ts:65-76`); messages persist to Firestore through
+> `addAgentMessage` → `sessionService.updateSession()` (`agentSessionSlice.ts:247-298`), and
+> `boardroomMessages` is now an alias for `state.agentHistory` (`BoardroomModule.tsx:48`).
+> **Do NOT implement the `source:'boardroom'` field or the "phases 2-4" migration below** —
+> that would create the parallel persistence path the ISSUE-760 ledger entry explicitly forbids.
+> This document is retained only as a record of the design that was considered and rejected in
+> favor of namespace-based unification. See `.agent/test_ledger/OPEN_ISSUES.md` (ISSUE-760).
+
+---
+
+**Status:** ❌ Obsolete — superseded by namespace-based session unification (see banner above)
+**Depends on:** ISSUE-755 (✅ Conversation durability)
+**Blocked by:** N/A
 
 ---
 

@@ -178,16 +178,38 @@ export const UniversalTools = {
             if (!docContent) {
                 const { LegalService } = await importWithRetry(() => import('@/services/legal/LegalService'));
                 const contracts = await LegalService.getContracts();
-                
-                const match = contracts.find(c => 
-                    c.id === args.documentId || 
+
+                const match = contracts.find(c =>
+                    c.id === args.documentId ||
                     (args.documentId && c.title.toLowerCase().includes(args.documentId.toLowerCase())) ||
                     (path && c.title.toLowerCase().includes(path.toLowerCase()))
-                ) || contracts[0]; // fallback to first contract if any exist
+                );
+
+                const requestedSpecificDocument = Boolean(args.documentId || path);
 
                 if (match) {
                     docContent = match.content;
                     fileName = match.title;
+                } else if (requestedSpecificDocument) {
+                    // ISSUE-832: a specific document was requested but not found —
+                    // never silently substitute a different contract. That used
+                    // to fall back to `contracts[0]`, risking analysis of the
+                    // wrong legal agreement.
+                    return toolError(
+                        `No document found matching "${fileName}". Please provide a valid file path or document ID.`,
+                        'DOCUMENT_NOT_FOUND'
+                    );
+                } else if (contracts.length > 1) {
+                    // No specific document was requested and multiple contracts
+                    // exist — ask the user to choose rather than guessing.
+                    return toolError(
+                        `Multiple saved contracts exist and no specific document was requested. Please specify one: ${contracts.map(c => `"${c.title}" (${c.id})`).join(', ')}.`,
+                        'DOCUMENT_AMBIGUOUS',
+                        { candidates: contracts.map(c => ({ id: c.id, title: c.title })) }
+                    );
+                } else if (contracts.length === 1) {
+                    docContent = contracts[0]!.content;
+                    fileName = contracts[0]!.title;
                 }
             }
 
