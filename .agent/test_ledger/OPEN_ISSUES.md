@@ -13276,13 +13276,14 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-848: Fan CRM tiering reports success with zero fans when auth or Firestore reads fail
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-12)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Marketing / Fan CRM
 - **Evidence:** `MarketingTools.tier_superfans()` initializes `results` to all zero (`MarketingTools.ts:429-432`), reads `users/{uid}/fanPurchases` only if `auth.currentUser?.uid` exists (`:433-458`), catches Firestore errors as warnings (`:459-461`), and always returns `toolSuccess` with `totalFans` and “Fan CRM tiered” (`:463-471`).
 - **Impact:** Signed-out users, rules failures, or missing purchase ingestion are indistinguishable from a real CRM with zero fans.
 - **Fix:** Return `AUTH_REQUIRED`, `FAN_PURCHASES_UNAVAILABLE`, or `NO_PURCHASE_DATA` states separately from a valid empty result.
 - **Acceptance:** Auth/read failures produce `success: false`; a true empty CRM includes `source: fanPurchases`, `recordsRead: 0`, and a clear “no purchase records found” message.
+- **Fix applied (2026-07-12):** Restructured `tier_superfans` into 3 distinct outcomes instead of one collapsed try/catch: (1) no `auth.currentUser` → `toolError('AUTH_REQUIRED')` before ever touching Firestore; (2) `getDocs()` throws → `toolError('FAN_PURCHASES_UNAVAILABLE')` carrying the real error message; (3) the read succeeds (with 0 or more docs) → real `toolSuccess` with `source: 'fanPurchases'` and `recordsRead: purchasesSnap.size`, and the message explicitly says "no purchase records found" when `totalFans === 0` rather than reusing the same "Fan CRM tiered" phrasing used for a real nonzero result. Tests: 3 new cases in `MarketingTools.test.ts` — signed-out returns `success: false` / `AUTH_REQUIRED` (asserted via a real `auth.currentUser = null` mutation on the shared Firebase mock, restored in a `finally`); a rejected `getDocs()` returns `success: false` / `FAN_PURCHASES_UNAVAILABLE` with the real error text; a genuinely empty read (the shared test setup's default `getDocs` mock, which resolves 0 docs) returns `success: true` with `source`, `recordsRead: 0`, and the "no purchase records found" message. Full suite (6 tests) green, typecheck/lint clean.
 
 ### ISSUE-849: Limited-drop wizard says a drop is live and fans will be notified without persistence or notification backend
 

@@ -446,41 +446,48 @@ export const MarketingTools = {
         }, `Influencer bounty draft generated for ${args.trackTitle}.`);
     }),
 
+    // ISSUE-848: this used to silently swallow both "no user signed in" and
+    // a real Firestore read failure into the same all-zero success result,
+    // making them indistinguishable from a genuinely empty CRM.
     tier_superfans: wrapTool('tier_superfans', async (args: { minSpendForVIP: number; minSpendForSuperfan: number }) => {
-        // Superfan CRM Tiering — reads real fan purchase records from Firestore
-        const results = { Standard: 0, VIP: 0, Superfan: 0 };
-
-        try {
-            const { db, auth } = await importWithRetry(() => import('@/services/firebase'));
-            const { collection, getDocs } = await importWithRetry(() => import('firebase/firestore'));
-
-            const uid = auth.currentUser?.uid;
-            if (uid) {
-                // Aggregate spend per fan from purchase records
-                const purchasesSnap = await getDocs(
-                    collection(db, 'users', uid, 'fanPurchases')
-                );
-
-                const fanSpend: Record<string, number> = {};
-                purchasesSnap.forEach(doc => {
-                    const data = doc.data();
-                    const fanId = data.fanId as string;
-                    if (fanId) {
-                        fanSpend[fanId] = (fanSpend[fanId] || 0) + (Number(data.amount) || 0);
-                    }
-                });
-
-                Object.values(fanSpend).forEach(spend => {
-                    if (spend >= args.minSpendForSuperfan) results.Superfan++;
-                    else if (spend >= args.minSpendForVIP) results.VIP++;
-                    else results.Standard++;
-                });
-            }
-        } catch (err: unknown) {
-            logger.warn('[MarketingTools] tier_superfans Firestore read failed:', err);
+        const { db, auth } = await importWithRetry(() => import('@/services/firebase'));
+        const uid = auth.currentUser?.uid;
+        if (!uid) {
+            return toolError('No user is signed in. Fan CRM tiering requires an authenticated user.', 'AUTH_REQUIRED');
         }
 
+        const { collection, getDocs } = await importWithRetry(() => import('firebase/firestore'));
+
+        let purchasesSnap;
+        try {
+            purchasesSnap = await getDocs(collection(db, 'users', uid, 'fanPurchases'));
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : String(err);
+            logger.warn('[MarketingTools] tier_superfans Firestore read failed:', err);
+            return toolError(`Could not read fan purchase records: ${message}`, 'FAN_PURCHASES_UNAVAILABLE');
+        }
+
+        const results = { Standard: 0, VIP: 0, Superfan: 0 };
+        const fanSpend: Record<string, number> = {};
+        purchasesSnap.forEach(doc => {
+            const data = doc.data();
+            const fanId = data.fanId as string;
+            if (fanId) {
+                fanSpend[fanId] = (fanSpend[fanId] || 0) + (Number(data.amount) || 0);
+            }
+        });
+
+        Object.values(fanSpend).forEach(spend => {
+            if (spend >= args.minSpendForSuperfan) results.Superfan++;
+            else if (spend >= args.minSpendForVIP) results.VIP++;
+            else results.Standard++;
+        });
+
         const total = results.Standard + results.VIP + results.Superfan;
+        const message = total === 0
+            ? 'Fan CRM tiered: no purchase records found for this account.'
+            : `Fan CRM tiered (${total} fans): ${results.Superfan} Superfans, ${results.VIP} VIPs, ${results.Standard} Standard.`;
+
         return toolSuccess({
             tiers: results,
             thresholds: {
@@ -488,7 +495,9 @@ export const MarketingTools = {
                 superfan: args.minSpendForSuperfan,
             },
             totalFans: total,
-        }, `Fan CRM tiered (${total} fans): ${results.Superfan} Superfans, ${results.VIP} VIPs, ${results.Standard} Standard.`);
+            source: 'fanPurchases',
+            recordsRead: purchasesSnap.size,
+        }, message);
     }),
 
     track_post_release_momentum: wrapTool('track_post_release_momentum', async (args: { trackId: string; adSpend: number; organicStreams: number; dsp: string }) => {
