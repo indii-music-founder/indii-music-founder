@@ -144,7 +144,9 @@ const AudioAnalyzer: React.FC = () => {
 
     const runAnalysis = async (audioFile: File | string) => {
         setIsAnalyzing(true);
-        const extractToastId = toast.loading("Executing full technical and semantic audio scan...");
+        // ISSUE-997: this is a heuristic estimate (RMS-derived loudness, unweighted
+        // peak sample) — not a certified BS.1770 loudness/true-peak measurement.
+        const extractToastId = toast.loading("Estimating technical & semantic audio profile...");
 
         try {
             const { audioIntelligence } = await import('@/services/audio/AudioIntelligenceService');
@@ -182,7 +184,7 @@ const AudioAnalyzer: React.FC = () => {
         try {
             await audioAnalysisService.saveAnalysisToFirestore(profile.technical, file.name, { ...profile.semantic });
             toast.dismiss(toastId);
-            toast.success("Distribution standards and acoustic profile saved.");
+            toast.success("Estimated technical profile saved (not a certified distribution-compliance measurement).");
         } catch (error: unknown) {
             const message = error instanceof Error ? error.message : 'Unknown error';
             logger.error("Save failed", error);
@@ -448,9 +450,14 @@ const AudioAnalyzer: React.FC = () => {
                                         <div>
                                             <h2 className="text-xl font-bold text-white flex items-center gap-2">
                                                 <Target className="text-dept-publishing" size={24} />
-                                                DSP Compliance Report
+                                                DSP Compliance Estimate
                                             </h2>
-                                            <p className="text-sm text-muted-foreground mt-1">Loudness Penalty and True Peak analysis for Spotify/Apple Music targets.</p>
+                                            <p className="text-sm text-muted-foreground mt-1">
+                                                Loudness Penalty and True Peak analysis for Spotify/Apple Music targets.
+                                                <span className="block text-yellow-400/80 mt-1">
+                                                    Heuristic estimate only — not a certified BS.1770 loudness/true-peak measurement. Confirm with a mastering engineer before final distribution.
+                                                </span>
+                                            </p>
                                         </div>
                                         <label onClick={handleLoadClick} className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-6 py-3 rounded-xl cursor-pointer transition-all flex items-center gap-3">
                                             <Upload size={18} /> Re-Audit New File
@@ -466,7 +473,7 @@ const AudioAnalyzer: React.FC = () => {
                                                     <Waves size={100} />
                                                 </div>
                                                 <div className="flex items-center gap-2 text-muted-foreground mb-6">
-                                                    <span className="text-sm font-bold uppercase tracking-wider">Integrated Loudness (LUFS)</span>
+                                                    <span className="text-sm font-bold uppercase tracking-wider">Integrated Loudness (Estimated LUFS)</span>
                                                 </div>
                                                 <div className="flex items-end gap-3 mb-4">
                                                     <span className="text-5xl font-mono text-white tracking-tighter">{profile.technical.audit.integratedLoudness.toFixed(1)}</span>
