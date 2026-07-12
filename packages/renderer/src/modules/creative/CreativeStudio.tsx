@@ -1,4 +1,5 @@
 import React, { useEffect, lazy, Suspense } from 'react';
+import { Sparkles } from 'lucide-react';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { CampaignConfigDialog } from '@/components/ui/CampaignConfigDialog';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
@@ -419,7 +420,26 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                             </div>
                         )}
                         {viewMode === 'direct' && <DirectGenerationTab />}
-                        {viewMode === 'canvas' && <InfiniteCanvas />}
+                        {viewMode === 'canvas' && (
+                            <div className="relative flex-1">
+                                <InfiniteCanvas />
+                                {/* First-run guidance: empty canvas hint */}
+                                {!selectedItem && (
+                                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                        <div className="text-center bg-black/40 backdrop-blur-sm rounded-lg p-8 max-w-md">
+                                            <Sparkles className="w-12 h-12 mx-auto mb-4 text-blue-400 opacity-80" />
+                                            <h2 className="text-white text-lg font-semibold mb-2">Create Your First Image</h2>
+                                            <p className="text-gray-300 text-sm mb-4">
+                                                Start by generating an image with a prompt, or upload your own photo to edit.
+                                            </p>
+                                            <p className="text-gray-400 text-xs">
+                                                Use the toolbar at the top to generate, upload, or browse your project's assets.
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                         {viewMode === 'video_production' && <VideoWorkflow />}
                         {viewMode === 'omni' && <OmniWorkflow />}
                         {viewMode === 'showroom' && <ShowroomUI />}
