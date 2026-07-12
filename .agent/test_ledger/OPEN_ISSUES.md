@@ -12808,13 +12808,14 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-810: Creative file-node sync saves videos with `.png` filenames
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-12)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Creative Suite / Project files
 - **Evidence:** `creativeHistorySlice.ts:83-102` syncs both image and video history items into project file nodes, but constructs every filename as `${origin}-${id}.png` (`:88`) before passing the real item type separately.
 - **Impact:** Project file lists can show MP4/video assets as PNG files, confusing downloads, previews, and downstream asset selection.
 - **Fix:** Derive filename extension from `item.type`, MIME, storage URI, URL, or metadata; do not hardcode `.png`.
 - **Acceptance:** Generated image, video, editor render, and canvas-export assets produce correct file-node names/extensions.
+- **Fix applied (2026-07-12):** Added `inferMediaExtension(item)` to `creativeHistorySlice.ts` — it first tries to parse a real extension off the asset's own `storageUri`/`url` (covers editor renders, canvas exports, or any item whose storage path already carries a real extension), matching it against a known media-extension→MIME table (mp4/webm/mov/png/jpg/jpeg/webp/gif/mp3/wav/flac). Only when no recognizable extension is present does it fall back to a per-`item.type` default (video→mp4, music→mp3, image→png) — never a blanket `.png`. `createFileNode()`'s metadata now also carries the real `mimeType`, which the file-node schema already supported (`FileNode['data'].mimeType`) but this call site never populated. Tests: 2 new cases in `creativeHistorySlice.test.ts` — a video item with no extension in its storage URI gets `.mp4`/`video/mp4` (not `.png`); a video item whose storage URI already ends in `.webm` preserves that real extension/MIME instead of overwriting it. The pre-existing image test (no extension in URI) still asserts `.png`/`image/png`, confirming the fallback behavior is unchanged for the common image-generation case. Full `creativeHistorySlice.test.ts` suite (10 tests) green, typecheck/lint clean.
 
 ### ISSUE-811: Agent ISRC tool claims local/generated identifiers are officially registered
 
