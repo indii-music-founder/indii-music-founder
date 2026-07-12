@@ -87,6 +87,7 @@ import { create } from 'zustand';
 
 const useMockStore = create<any>((set) => ({
     studioControls: { model: 'fast', aspectRatio: '16:9', resolution: '1080p', duration: 6, personGeneration: 'allow_adult', negativePrompt: '', seed: '' },
+    setStudioControls: (patch: Record<string, unknown>) => set((state: any) => ({ studioControls: { ...state.studioControls, ...patch } })),
     creativePrompt: '',
     setCreativePrompt: (val: string) => set({ creativePrompt: val }),
     addToHistory: vi.fn((item) => set((state: any) => ({ generatedHistory: [...(state.generatedHistory || []), item] }))),
@@ -157,6 +158,48 @@ describe('DirectGenerationTab', () => {
 
         fireEvent.click(imageBtn);
         expect(screen.getByPlaceholderText(/Describe your image/i)).toBeDefined();
+    });
+
+    it('ISSUE-788: only shows Veo-effective aspect ratios (16:9/9:16) in video mode', () => {
+        render(<DirectGenerationTab />);
+        fireEvent.click(screen.getByTestId('direct-video-mode-btn'));
+
+        expect(screen.getByText('Cinema')).toBeInTheDocument(); // 16:9
+        expect(screen.getByText('Vertical')).toBeInTheDocument(); // 9:16
+        expect(screen.queryByText('Square')).not.toBeInTheDocument(); // 1:1 — coerced to 16:9 server-side
+        expect(screen.queryByText('Classic')).not.toBeInTheDocument(); // 4:3
+        expect(screen.queryByText('Portrait')).not.toBeInTheDocument(); // 3:4
+    });
+
+    it('ISSUE-788: shows all aspect ratios again in image mode (no Veo restriction)', () => {
+        render(<DirectGenerationTab />);
+        fireEvent.click(screen.getByTestId('direct-video-mode-btn'));
+        fireEvent.click(screen.getByTestId('direct-image-mode-btn'));
+
+        expect(screen.getByText('Square')).toBeInTheDocument();
+        expect(screen.getByText('Classic')).toBeInTheDocument();
+        expect(screen.getByText('Portrait')).toBeInTheDocument();
+    });
+
+    it('ISSUE-788: snaps aspectRatio to 16:9 when switching into video mode with an image-only ratio selected', async () => {
+        useMockStore.setState({ studioControls: { ...useMockStore.getState().studioControls, aspectRatio: '4:3' } });
+        render(<DirectGenerationTab />);
+
+        fireEvent.click(screen.getByTestId('direct-video-mode-btn'));
+
+        await waitFor(() => {
+            expect(useMockStore.getState().studioControls.aspectRatio).toBe('16:9');
+        });
+    });
+
+    it('ISSUE-788: only offers 4/6/8-second durations in video mode, never 10s', () => {
+        render(<DirectGenerationTab />);
+        fireEvent.click(screen.getByTestId('direct-video-mode-btn'));
+
+        expect(screen.getByText('4s')).toBeInTheDocument();
+        expect(screen.getByText('6s')).toBeInTheDocument();
+        expect(screen.getByText('8s')).toBeInTheDocument();
+        expect(screen.queryByText('10s')).not.toBeInTheDocument();
     });
 
     it('handles image generation successfully', async () => {
