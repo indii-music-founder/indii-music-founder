@@ -13360,13 +13360,14 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-856: Distributor statement normalization is prompt-only but reports successful normalization
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIALLY FIXED (2026-07-12) — false completion claim removed; real CSV ingestion pipeline not built
 - **Severity:** 🟠 HIGH
 - **Module:** Finance / Distributor statements
 - **Evidence:** `FinanceTools.normalize_distributor_statements()` accepts `csvFiles: string[]`, inserts the strings into a prompt, and asks Gemini to “Describe the canonical normalization mapping” (`FinanceTools.ts:408-422`). It does not parse CSV files, validate columns, store normalized rows, or reconcile totals. On model success it returns `status: 'Normalized into standard indii ledger format'` and “Successfully analyzed and normalized N distributor CSV statements” (`:424-432`).
 - **Impact:** Royalty accounting can proceed from an AI narrative instead of a deterministic imported ledger, with no row counts, totals, or error report.
 - **Fix:** Implement a deterministic CSV ingestion pipeline with file content, parser, schema mapping, row-level validation, totals reconciliation, and AI assistance only for mapping suggestions.
 - **Acceptance:** Normalization returns canonical rows, rejected-row report, source file hashes, gross/net totals, and reconciliation status; prompt-only output is labeled `mapping_draft`.
+- **Fix applied (2026-07-12):** Took the ledger's own explicitly-permitted fallback ("prompt-only output is labeled `mapping_draft`") rather than attempting the full deterministic pipeline. Changed `status: 'Normalized into standard indii ledger format'` to `status: 'mapping_draft'`, and rewrote the message to explicitly state no files were parsed and no ledger rows were created — the response is only an AI-suggested column mapping, with real CSV import/validation/reconciliation still required before it can be trusted as ledger data. Verified via full-repo grep that this tool is currently unregistered in any agent definition (dead code, unreachable today), so this is a zero-live-blast-radius honesty fix. Tests: new `normalize_distributor_statements (ISSUE-856)` case in `FinanceTools.test.ts` — asserts `status: 'mapping_draft'` (explicitly not the old fake string) and that the message names both the "no files parsed" caveat and the draft-mapping framing. Full suite (7 tests) green, typecheck/lint clean. **Not done (genuinely out of scope for this pass):** the real deterministic CSV ingestion pipeline itself — no CSV parsing library is even installed in this project (`papaparse`/`csv-parse` grep returns zero hits), and building per-distributor schema mapping, row-level validation, and totals reconciliation without any real distributor CSV sample files to test against would be unverified guesswork about real-world formats (Spotify/Apple Music/etc. all differ). This requires either sourcing real sample statements or dedicated follow-up work, not a quick fix.
 
 ### ISSUE-857: Royalty forecasts use fixed approximate rates and fixed confidence as if they are verified projections
 
