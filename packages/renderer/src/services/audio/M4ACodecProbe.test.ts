@@ -48,8 +48,19 @@ function buildM4A(codecFourCC: string, handlerType: string = 'soun'): Uint8Array
     return concat(ftypBox, moovBox);
 }
 
+// jsdom in this project's test environment ships neither
+// Blob.prototype.arrayBuffer nor Blob.prototype.text, so a real `File`
+// instance can't round-trip binary bytes here. detectM4ACodec only calls
+// `file.arrayBuffer()`, so a minimal duck-typed stand-in is sufficient and
+// byte-accurate (unlike a text()-based polyfill, which cannot survive
+// non-UTF-8 bytes anyway).
 function toFile(bytes: Uint8Array, name = 'test.m4a'): File {
-    return new File([bytes.slice().buffer], name, { type: 'audio/mp4' });
+    const buffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+    return {
+        name,
+        type: 'audio/mp4',
+        arrayBuffer: async () => buffer,
+    } as unknown as File;
 }
 
 describe('detectM4ACodec (ISSUE-961)', () => {
