@@ -65,6 +65,46 @@ function cleanPrompt(commandText?: string): string {
         .trim() || 'Remote image generation';
 }
 
+/**
+ * ISSUE-990: the same relay `imageUrls` channel is reused by non-generation
+ * responses ([SHOW] retrievals, chat/boardroom replies). Only a command the
+ * phone itself tagged as a real image generation request
+ * (`metadata.type === 'generate_image'`) may populate the "Recent Generates"
+ * gallery — an unmatched/orphan response is quarantined (excluded), never
+ * relabeled with a generic "Remote image generation" caption.
+ */
+export function buildGeneratedImagesGallery(
+    relayCommands: RemoteCommand[],
+    relayResponses: RemoteResponse[],
+    localGeneratedImages: GeneratedImage[]
+): GeneratedImage[] {
+    const generateImagePromptById = new Map<string, string>();
+    relayCommands.forEach(command => {
+        if (command.id && command.metadata?.type === 'generate_image') {
+            generateImagePromptById.set(command.id, cleanPrompt(command.text));
+        }
+    });
+
+    const relayImages = relayResponses.flatMap(response => {
+        if (!response.imageUrls || response.imageUrls.length === 0) return [];
+        const prompt = generateImagePromptById.get(response.commandId);
+        if (prompt === undefined) return [];
+        const timestamp = timestampToMillis(response.timestamp);
+        return response.imageUrls.map(url => ({ url, prompt, timestamp }));
+    });
+
+    const byUrl = new Map<string, GeneratedImage>();
+    [...relayImages, ...localGeneratedImages].forEach(image => {
+        if (!byUrl.has(image.url)) {
+            byUrl.set(image.url, image);
+        }
+    });
+
+    return Array.from(byUrl.values())
+        .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
+        .slice(0, 24);
+}
+
 export default function GenerationMonitor() {
     const {
         isGenerating,
@@ -188,32 +228,10 @@ export default function GenerationMonitor() {
         };
     }, []);
 
-    const generatedImages = useMemo(() => {
-        const commandPromptById = new Map<string, string>();
-        relayCommands.forEach(command => {
-            if (command.id) {
-                commandPromptById.set(command.id, cleanPrompt(command.text));
-            }
-        });
-
-        const relayImages = relayResponses.flatMap(response => {
-            if (!response.imageUrls || response.imageUrls.length === 0) return [];
-            const timestamp = timestampToMillis(response.timestamp);
-            const prompt = commandPromptById.get(response.commandId) || 'Remote image generation';
-            return response.imageUrls.map(url => ({ url, prompt, timestamp }));
-        });
-
-        const byUrl = new Map<string, GeneratedImage>();
-        [...relayImages, ...localGeneratedImages].forEach(image => {
-            if (!byUrl.has(image.url)) {
-                byUrl.set(image.url, image);
-            }
-        });
-
-        return Array.from(byUrl.values())
-            .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
-            .slice(0, 24);
-    }, [localGeneratedImages, relayCommands, relayResponses]);
+    const generatedImages = useMemo(
+        () => buildGeneratedImagesGallery(relayCommands, relayResponses, localGeneratedImages),
+        [localGeneratedImages, relayCommands, relayResponses]
+    );
 
     useEffect(() => {
         return () => {
@@ -309,9 +327,14 @@ export default function GenerationMonitor() {
                                             className="h-full bg-gradient-to-r from-blue-500 via-indigo-500 to-green-600 shadow-[0_0_10px_rgba(59,130,246,0.4)]"
                                         />
                                     </div>
-                                    <div className="flex justify-between items-center text-[9px] font-bold text-white/20 uppercase tracking-widest">
-                                        <span>Allocating GPU</span>
-                                        <span>4K Upscaling</span>
+                                    {/* ISSUE-991: no backend stage telemetry (allocation/resolution/
+                                        upscaler) reaches the phone at all — this used to claim
+                                        specific processing stages regardless of whether they were
+                                        real, whether the job had even reached the provider, or
+                                        whether it was an image job at all. Honest indeterminate
+                                        copy only. */}
+                                    <div className="flex justify-center items-center text-[9px] font-bold text-white/20 uppercase tracking-widest">
+                                        <span>{isSending ? 'Working — no ETA available' : 'Waiting for desktop'}</span>
                                     </div>
                                 </div>
                             </div>
