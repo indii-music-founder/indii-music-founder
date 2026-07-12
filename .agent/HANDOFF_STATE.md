@@ -1,26 +1,25 @@
 # Handoff State
-**Updated:** 2026-07-12 18:02 EDT
+**Updated:** 2026-07-12 18:09 EDT
 **Branch:** `fix/issues-core`
 
 ## Recent Commits
 ```
+2df1eb784 docs(ledger): close detailed ISSUE-758/762 entries (deep-history section)
+a8d03dd7d docs(ledger): mark ISSUE-758/762 fixed — sentinel migration complete
+857525bda fix(project): finish ISSUE-758/762 sentinel unification — migrate scattered literals to DEFAULT_PROJECT_ID
+f08b1078c fix(marketing): stop claiming a campaign brief was saved when persistence fails (ISSUE-835)
+3484f6601 chore: session checkpoint [18:02]
 1d90a8287 chore: session checkpoint [17:59]
 e771bc35e chore: handoff — persistence+beta batch verified complete except ISSUE-758/762
 a04c2d5b6 docs(ledger): reconcile ISSUE-759 to verified-DONE (archive UI already exists)
 8c59f958b docs(ledger): reconcile ISSUE-760 to verified-DONE; mark boardroom arch doc obsolete
 a1b5467e2 fix(agent): stop document_query from silently analyzing an unrelated contract (ISSUE-832)
-c42d52817 fix(legal): return a real tool error for invalid split-sheet percentage totals (ISSUE-829)
-9389f9139 fix(tests): update ReleaseHarnessService test for the ISSUE-813 iswcStatus fix
-f46fc7dce fix(distribution): verify TuneCore API credentials at connect time (ISSUE-814)
-1e1453163 chore: session checkpoint — ISSUE-763 complete, ISSUE-760 ready
-1514a2eae docs(ledger): mark ISSUE-763 complete — beta first-touch guidance + E2E suite
 ```
 
 ## Working State
 ```
- M packages/renderer/src/services/agent/definitions/MarketingAgent.ts
- M packages/renderer/src/services/agent/tools/MarketingTools.ts
- M packages/renderer/src/services/agent/tools/__tests__/MarketingTools.test.ts
+ M packages/renderer/src/services/agent/tools/PublicistTools.ts
+ M packages/renderer/src/services/agent/tools/__tests__/PublicistTools.test.ts
 ```
 
 ## Decisions
