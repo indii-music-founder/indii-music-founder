@@ -1,5 +1,6 @@
 import { StateCreator } from 'zustand';
 import { logger } from '@/utils/logger';
+import type { SessionPageCursor } from '@/services/agent/SessionService';
 
 let agentSessionsUnsubscribe: (() => void) | null = null;
 
@@ -60,7 +61,7 @@ export interface AgentSessionSlice {
     lastDirectSessionId: string | null;
     sessionsPaginationLoading: boolean;
     hasMoreSessions: boolean;
-    sessionsPaginationCursor?: number; // Timestamp cursor for paginated queries
+    sessionsPaginationCursor?: SessionPageCursor;
 
     // Session Actions
     createSession: (title?: string, initialAgents?: string[], namespace?: string, projectId?: string) => string;
