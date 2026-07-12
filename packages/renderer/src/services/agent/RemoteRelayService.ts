@@ -55,6 +55,12 @@ export interface RemoteCommand {
     text: string;
     targetAgentId?: string;
     metadata?: Record<string, unknown>;
+    /**
+     * The sole executor allowed to claim this command. Keeping this on the
+     * durable command record prevents the Studio listener and Cloud Function
+     * from racing to claim the same pending request.
+     */
+    executionTarget?: RemoteExecutionTarget;
     timestamp: Timestamp | ReturnType<typeof serverTimestamp>;
     // 'cancelled' (ISSUE-989): the phone gave up (timeout/unmount) before the
     // desktop claimed the command — the atomic claim precondition in
@@ -83,12 +89,49 @@ export interface DesktopState {
     activeSessionId: string;
     timestamp: Timestamp | ReturnType<typeof serverTimestamp>;
     online: boolean;
+    /** Presence must come from a Studio executor, never the Controller. */
+    role?: 'studio';
+    /** Per-running-Studio identity, used to distinguish a live executor lease. */
+    studioInstanceId?: string;
+    /** The Studio has mounted its queue consumer and may safely accept work. */
+    listenerReady?: boolean;
     /**
      * True when the desktop is in sleep mode (window hidden to tray, still
      * listening to the relay queue). Lets the phone show Sleeping vs Active vs
      * Offline. Absent/false in the web/PWA build (no Electron tray).
      */
     sleepMode?: boolean;
+}
+
+export type RemoteExecutionTarget = 'cloud' | 'studio';
+
+const LEGACY_STUDIO_COMMAND_PREFIXES = [
+    '[GENERATE_IMAGE]',
+    '[SHOW]',
+    '[WAKE]',
+    '[NAVIGATE]',
+    '[AGENT_ACTION]',
+    '[DAW_CONTROL]',
+    '[MEDIA_PLAYBACK]',
+    '[RAW]',
+] as const;
+
+/**
+ * Legacy commands did not record their executor. Preserve those established
+ * Studio controls while making all unmarked text cloud-owned. New callers
+ * always persist the target, so this fallback is only for already-queued docs.
+ */
+export function resolveRemoteCommandExecutionTarget(
+    command: Pick<RemoteCommand, 'text' | 'executionTarget'>
+): RemoteExecutionTarget {
+    if (command.executionTarget === 'studio' || command.executionTarget === 'cloud') {
+        return command.executionTarget;
+    }
+
+    const text = command.text.trim();
+    return LEGACY_STUDIO_COMMAND_PREFIXES.some(prefix => text.startsWith(prefix))
+        ? 'studio'
+        : 'cloud';
 }
 
 export interface AgentDispatchTask {
@@ -249,6 +292,23 @@ export function isFreshDesktopState(
     return Math.abs(now - timestamp) <= staleMs + CLOCK_SKEW_TOLERANCE_MS;
 }
 
+/**
+ * A generic fresh state document is not enough to call a Controller connected:
+ * older Controller builds could write the same document themselves. Only a
+ * current Studio executor lease proves that Studio work can be dispatched.
+ */
+export function isFreshStudioState(
+    state: DesktopState | null | undefined,
+    now = Date.now(),
+    staleMs = DESKTOP_HEARTBEAT_STALE_MS
+): boolean {
+    return isFreshDesktopState(state, now, staleMs)
+        && state?.role === 'studio'
+        && typeof state.studioInstanceId === 'string'
+        && state.studioInstanceId.length > 0
+        && state.listenerReady === true;
+}
+
 export function cacheRemotePairingToken(token: string | null | undefined): string | null {
     const normalized = token?.trim();
     if (!normalized) return null;
@@ -361,7 +421,13 @@ class RemoteRelayService {
     /**
      * Send a command from the phone. Returns the command document ID.
      */
-    async sendCommand(text: string, targetAgentId?: string, metadata?: Record<string, unknown>): Promise<string | null> {
+    async sendCommand(
+        text: string,
+        targetAgentId?: string,
+        metadata?: Record<string, unknown>,
+        executionTarget?: RemoteExecutionTarget
+    ): Promise<string | null> {
+        const resolvedExecutionTarget = executionTarget ?? resolveRemoteCommandExecutionTarget({ text });
         // P2P WebSocket send path
         if (this.localWs && this.localWs.readyState === 1 /* OPEN */) {
             const commandId = `p2p-${Math.random().toString(36).substring(2)}`;
@@ -371,7 +437,8 @@ class RemoteRelayService {
                     id: commandId,
                     text,
                     targetAgentId,
-                    metadata
+                    metadata,
+                    executionTarget: resolvedExecutionTarget,
                 },
                 ts: Date.now()
             };
@@ -393,6 +460,7 @@ class RemoteRelayService {
             createdAt: serverTimestamp(),
             ...(targetAgentId ? { targetAgentId } : {}),
             ...(metadata ? { metadata } : {}),
+            executionTarget: resolvedExecutionTarget,
         };
 
         const docRef = await addDoc(ref, command);
@@ -626,6 +694,7 @@ class RemoteRelayService {
                         text: payload.command.text,
                         targetAgentId: payload.command.targetAgentId,
                         metadata: payload.command.metadata,
+                        executionTarget: payload.command.executionTarget,
                         timestamp: Timestamp.fromMillis(payload.ts || Date.now()),
                         status: 'pending',
                         createdAt: Timestamp.fromMillis(payload.ts || Date.now()),
@@ -644,6 +713,7 @@ class RemoteRelayService {
      * Mark a command as processing (desktop side).
      */
     async markCommandProcessing(commandId: string): Promise<void> {
+        if (commandId.startsWith('p2p-')) return;
         const uid = getUserId();
         if (!uid) return;
         await updateDoc(doc(db, 'users', uid, 'remote-relay-commands', commandId), {
@@ -655,6 +725,7 @@ class RemoteRelayService {
      * Mark a command as completed (desktop side).
      */
     async markCommandCompleted(commandId: string): Promise<void> {
+        if (commandId.startsWith('p2p-')) return;
         const uid = getUserId();
         if (!uid) return;
         await updateDoc(doc(db, 'users', uid, 'remote-relay-commands', commandId), {
@@ -899,6 +970,29 @@ class RemoteRelayService {
             ...state,
             timestamp: serverTimestamp(),
         }, { merge: true });
+    }
+
+    /**
+     * A closing Studio may mark only its own lease offline. Without this guard,
+     * a Controller route transition or a second Studio window can overwrite a
+     * healthy executor's presence document.
+     */
+    async releaseStudioPresence(studioInstanceId: string): Promise<void> {
+        if (isFirebaseE2EMockEnabled()) return;
+        const ref = getRelayRef();
+        if (!ref) return;
+
+        await runTransaction(db, async (tx) => {
+            const snapshot = await tx.get(ref);
+            if (!snapshot.exists() || snapshot.data()?.studioInstanceId !== studioInstanceId) {
+                return;
+            }
+            tx.update(ref, {
+                online: false,
+                listenerReady: false,
+                timestamp: serverTimestamp(),
+            });
+        });
     }
 
     // -----------------------------------------------------------------------

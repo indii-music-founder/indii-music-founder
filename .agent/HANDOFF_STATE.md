@@ -1,24 +1,27 @@
 # Handoff State
-**Updated:** 2026-07-12 06:44 EDT
+**Updated:** 2026-07-12 09:36 EDT
 **Branch:** `fix/issues-core`
 
 ## Recent Commits
 ```
+5a9c7fe65 fix(remote): separate controller from studio executor
+4f0f57391 fix(creative): stop claiming Omni's storyboard sequence is "Synced" to generation
+fabc53510 docs(ledger): log ISSUE-1025 -- Mobile Controller falsely reports Studio Connected
+31665d84a fix(creative): remove Omni's dead "Hybrid Veo" mode and its 4x overcharge
+178e2fd75 test(dashboard): lock in AssetSpotlight's Discuss-attaches-the-asset fix, correct stale ledger entry
+4cdad01a2 fix(test): update stale toast assertion broken by the ISSUE-997 copy change
+2123036d0 fix(creative): stop claiming Omni output is SynthID "Protected"
+2766bc3d8 chore: session checkpoint [06:44]
 11d780d9e fix(audio): stop presenting heuristic loudness/true-peak estimates as certified compliance
 d2d85dea7 docs(ledger): mark ISSUE-996 verified fixed -- was already resolved, ledger was stale
-daa51e106 fix(video): fix Performance Video's render request/response contract mismatch
-d77dead12 fix(mobile-remote): stop relabeling non-generation images as fresh creative assets
-745e8ff20 fix(mobile-remote): stop showing fabricated GPU/4K stage telemetry
-15c1a27b0 fix(mobile-remote): actually cancel timed-out generation commands, not just detach the listener
-b6f530b2b fix(mobile-remote): bound venue pin location requests, accept zero coordinates
-b52055ead fix(mobile-remote): negotiate a real audio MIME type and reject empty/too-short memos
-66739371e fix(mobile-remote): block capture replacement until the delayed audio blob lands
-ef2b6dff4 fix(mobile-remote): keep mic Stop reachable and release hardware reliably
 ```
 
 ## Working State
 ```
-clean working tree
+ M .agent/test_ledger/OPEN_ISSUES.md
+ M packages/renderer/src/modules/creative/components/DirectGenerationTab.tsx
+ M packages/renderer/src/modules/creative/components/__tests__/DirectGenerationTab.test.tsx
+ M packages/renderer/src/modules/creative/components/veo/VeoSettingsPanel.tsx
 ```
 
 ## Decisions

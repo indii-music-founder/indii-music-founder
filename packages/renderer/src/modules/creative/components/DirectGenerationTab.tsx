@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
     Loader2, Image as ImageIcon, Video, Send, Settings2, Download, 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -15,6 +15,12 @@ import { useShallow } from 'zustand/react/shallow';
 import { VideoGenerationProgress } from './veo/VideoGenerationProgress';
 import { WhiskService } from '@/services/WhiskService';
 import { useToast } from '@/core/context/ToastContext';
+
+// ISSUE-788: the backend only special-cases '9:16' for a Veo video request
+// and silently coerces every other aspect ratio to '16:9'
+// (gateway.ts normalizeVideoAspectRatio) — 1:1/4:3/3:4 look selectable in
+// video mode but have zero effect once submitted.
+const VALID_VIDEO_ASPECT_RATIOS = new Set(['16:9', '9:16']);
 
 export default function DirectGenerationTab() {
     const toast = useToast();
@@ -81,6 +87,12 @@ export default function DirectGenerationTab() {
         { id: '3:4', label: 'Portrait', desc: 'Editorial / Poster', w: 'w-5.25', h: 'h-7' }
     ] as const;
 
+    // Image generation (Nano Banana) has no aspect-ratio restriction, so
+    // only video mode is filtered against VALID_VIDEO_ASPECT_RATIOS.
+    const visibleAspectRatios = mode === 'video'
+        ? aspectRatios.filter(ratio => VALID_VIDEO_ASPECT_RATIOS.has(ratio.id))
+        : aspectRatios;
+
     const cameraMovements = [
         'Static',
         'Pan Left',
@@ -91,9 +103,21 @@ export default function DirectGenerationTab() {
         'Orbiting Sweep'
     ] as const;
 
-    const durationOptions = [4, 6, 8, 10] as const;
+    // ISSUE-788: Veo 3.1 only supports 4/6/8-second lengths — the backend
+    // clamps anything else (VideoGenerationService.ts), so "10s" looked
+    // selectable but never produced a 10-second video.
+    const durationOptions = [4, 6, 8] as const;
     const directorFps = studioControls.fps || 24;
     const directorFrames = Math.round((studioControls.duration || 0) * directorFps);
+
+    // Snap to a real video aspect ratio when entering video mode with an
+    // image-only selection still active, so the UI never shows nothing
+    // selected (or a choice that would silently become 16:9 anyway).
+    useEffect(() => {
+        if (mode === 'video' && !VALID_VIDEO_ASPECT_RATIOS.has(studioControls.aspectRatio)) {
+            setStudioControls({ aspectRatio: '16:9' });
+        }
+    }, [mode, studioControls.aspectRatio, setStudioControls]);
 
     return (
         <div className="flex flex-col md:flex-row h-full w-full bg-[#050406] text-foreground select-none overflow-hidden">
@@ -178,7 +202,7 @@ export default function DirectGenerationTab() {
                                         <Layers size={10} /> Choose Aspect Ratio
                                     </label>
                                     <div className="grid grid-cols-2 gap-2">
-                                        {aspectRatios.map((ratio) => {
+                                        {visibleAspectRatios.map((ratio) => {
                                             const isSelected = studioControls.aspectRatio === ratio.id;
                                             return (
                                                 <button

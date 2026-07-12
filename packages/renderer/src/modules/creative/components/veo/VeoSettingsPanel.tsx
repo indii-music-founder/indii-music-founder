@@ -16,8 +16,12 @@ export function VeoSettingsPanel({ isOpen }: VeoSettingsPanelProps) {
         setStudioControls: state.setStudioControls
     })));
 
-    const aspectRatios = ['16:9', '9:16', '1:1'] as const;
-    const durations = [4, 5, 6, 8];
+    // ISSUE-788: Veo 3.1 only honors '9:16' specially and coerces every
+    // other aspect ratio to '16:9' server-side (gateway.ts
+    // normalizeVideoAspectRatio); supported lengths are 4/6/8 seconds only.
+    // '1:1' and '5' looked selectable here but had no effect once submitted.
+    const aspectRatios = ['16:9', '9:16'] as const;
+    const durations = [4, 6, 8];
     const cameraMovements = ['Static', 'Pan', 'Tilt', 'Zoom', 'Orbit'];
     const directorFps = studioControls.fps || 24;
     const directorFrames = Math.round((studioControls.duration || 0) * directorFps);

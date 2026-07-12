@@ -35,8 +35,10 @@ import {
     cacheRemotePairingToken,
     getCachedRemotePairingToken,
     isFreshDesktopState,
+    isFreshStudioState,
     isPrivateIP,
     relayTimestampToMillis,
+    resolveRemoteCommandExecutionTarget,
     remoteRelayService,
     DESKTOP_HEARTBEAT_STALE_MS as _DESKTOP_HEARTBEAT_STALE_MS,
     type DesktopState
@@ -341,5 +343,55 @@ describe('RemoteRelayService - isFreshDesktopState', () => {
         // the phone considers the desktop offline, even though it was active 5s ago!
         const state = createMockState(now - 151000, true);
         expect(isFreshDesktopState(state, now)).toBe(false);
+    });
+});
+
+describe('RemoteRelayService - Studio executor lease (ISSUE-1025)', () => {
+    const now = Date.now();
+    const baseState: DesktopState = {
+        currentModule: 'dashboard',
+        isAgentProcessing: false,
+        activeSessionId: 'session-123',
+        online: true,
+        timestamp: Timestamp.fromMillis(now),
+    };
+
+    it('does not treat a generic authenticated-client heartbeat as a Studio', () => {
+        expect(isFreshDesktopState(baseState, now)).toBe(true);
+        expect(isFreshStudioState(baseState, now)).toBe(false);
+    });
+
+    it('requires a fresh ready Studio lease before declaring the Studio connected', () => {
+        expect(isFreshStudioState({
+            ...baseState,
+            role: 'studio',
+            studioInstanceId: 'studio-window-1',
+            listenerReady: true,
+        }, now)).toBe(true);
+
+        expect(isFreshStudioState({
+            ...baseState,
+            role: 'studio',
+            studioInstanceId: 'studio-window-1',
+            listenerReady: false,
+        }, now)).toBe(false);
+    });
+});
+
+describe('RemoteRelayService - command ownership (ISSUE-1025)', () => {
+    it('uses the explicit target over text heuristics', () => {
+        expect(resolveRemoteCommandExecutionTarget({
+            text: '[GENERATE_IMAGE] cover art',
+            executionTarget: 'cloud',
+        })).toBe('cloud');
+    });
+
+    it('keeps established Studio controls on the Studio queue for legacy clients', () => {
+        expect(resolveRemoteCommandExecutionTarget({ text: '[WAKE]' })).toBe('studio');
+        expect(resolveRemoteCommandExecutionTarget({ text: '[SHOW]' })).toBe('studio');
+    });
+
+    it('assigns unmarked chat to Cloud instead of letting Cloud and Studio race', () => {
+        expect(resolveRemoteCommandExecutionTarget({ text: 'Hi Boardroom' })).toBe('cloud');
     });
 });

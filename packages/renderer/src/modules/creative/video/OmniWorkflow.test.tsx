@@ -190,4 +190,37 @@ describe('OmniWorkflow', () => {
         await waitFor(() => expect(screen.getByText('SynthID Requested')).toBeInTheDocument());
         expect(screen.queryByText('SynthID Protected')).not.toBeInTheDocument();
     });
+
+    it('ISSUE-773: a built storyboard sequence never reaches the generation payload and is never called "Synced"', async () => {
+        render(<OmniWorkflow />);
+
+        const fileInput = screen.getByLabelText('Upload Artist Base Performance Video');
+        fireEvent.change(fileInput, {
+            target: {
+                files: [new File(['video-bytes'], 'reference.mp4', { type: 'video/mp4' })],
+            },
+        });
+        await waitFor(() => expect(mockUploadReferenceMedia).toHaveBeenCalled());
+
+        // Build a one-scene storyboard sequence via the local planning board.
+        fireEvent.click(screen.getByText('Add Frame'));
+        fireEvent.change(screen.getByPlaceholderText('Describe the styling, action, or camera movement...'), {
+            target: { value: 'Slow zoom on the crowd, neon rim light' },
+        });
+        fireEvent.click(screen.getByText('Add Frame to Sequence'));
+
+        // Honest labeling: never claims the sequence is "Synced".
+        expect(await screen.findByText('1 Scenes Planned')).toBeInTheDocument();
+        expect(screen.queryByText(/Scenes Synced/i)).not.toBeInTheDocument();
+
+        const remixButton = screen.getByRole('button', { name: /synthesize omni remix/i });
+        await waitFor(() => expect(remixButton).not.toBeDisabled());
+        fireEvent.click(remixButton);
+
+        await waitFor(() => expect(mockGenerateOmniRemixFn).toHaveBeenCalled());
+        const [sentPayload] = mockGenerateOmniRemixFn.mock.calls[0]!;
+        expect(sentPayload).not.toHaveProperty('storyboard');
+        expect(sentPayload).not.toHaveProperty('frames');
+        expect(sentPayload).not.toHaveProperty('scenes');
+    });
 });

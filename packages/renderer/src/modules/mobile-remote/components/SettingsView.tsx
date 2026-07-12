@@ -17,7 +17,7 @@ import { motion } from 'framer-motion';
 import { Moon, Sun, Power, MonitorSmartphone, Check } from 'lucide-react';
 import { auth, db } from '@/services/firebase';
 import {
-    isFreshDesktopState,
+    isFreshStudioState,
     remoteRelayService,
     type DesktopState,
 } from '@/services/agent/RemoteRelayService';
@@ -38,7 +38,7 @@ interface SettingsViewProps {
 type DesktopStatus = 'active' | 'sleeping' | 'offline';
 
 function resolveStatus(state: DesktopState | null): DesktopStatus {
-    if (!isFreshDesktopState(state)) return 'offline';
+    if (!isFreshStudioState(state)) return 'offline';
     return state?.sleepMode ? 'sleeping' : 'active';
 }
 
@@ -96,7 +96,7 @@ export default function SettingsView({ desktopState, isPaired }: SettingsViewPro
         triggerHaptic(50);
         setIsWaking(true);
         try {
-            await remoteRelayService.sendCommand('[WAKE]');
+            await remoteRelayService.sendCommand('[WAKE]', undefined, undefined, 'studio');
         } catch (err) {
             logger.error('[SettingsView] Wake command failed:', err);
         } finally {
