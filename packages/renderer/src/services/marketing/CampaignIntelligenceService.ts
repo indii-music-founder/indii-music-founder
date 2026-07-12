@@ -236,12 +236,17 @@ Ensure all versions respect the platform's character limit.
     // =========================================================================
 
     /**
-     * Generate a short-form video asset for marketing
+     * Generate a short-form video asset for marketing.
+     *
+     * ISSUE-954: text-to-video only — GenAI.generateVideo below takes a
+     * text prompt and config, nothing audio-related. A previous `audioUrl`
+     * parameter was never referenced in this function body and no caller
+     * ever passed one; removed rather than kept as an unused parameter that
+     * implies audio-conditioned generation is possible here.
      */
     async generateMarketingVideo(
         prompt: string,
         style: string,
-        audioUrl?: string,
         config?: Record<string, unknown>
     ): Promise<string> {
         const brandContext = await this.getBrandContext();
