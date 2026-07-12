@@ -14,6 +14,7 @@ import { agentService } from '@/services/agent/AgentService';
 import type { ExtendedGoldenMetadata, DDEXReleaseRecord } from '@/services/metadata/types';
 import type { DistributorId, ReleaseAssets } from '@/services/distribution/types/distributor';
 import { logger } from '@/utils/logger';
+import { DEFAULT_PROJECT_ID } from '@/core/constants';
 
 // Map display names from onboarding to DistributorId
 const DISTRIBUTOR_NAME_MAP: Record<string, DistributorId> = {
@@ -190,11 +191,12 @@ async function extractImageDimensions(imageUrl: string): Promise<{ width: number
 }
 
 export function useDDEXRelease(): UseDDEXReleaseReturn {
-  const { currentOrganizationId, organizations, userProfile } = useStore(
+  const { currentOrganizationId, organizations, userProfile, currentProjectId } = useStore(
     useShallow(state => ({
       currentOrganizationId: state.currentOrganizationId,
       organizations: state.organizations,
       userProfile: state.userProfile,
+      currentProjectId: state.currentProjectId,
     }))
   );
 
@@ -204,8 +206,7 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
     [organizations, currentOrganizationId]
   );
 
-  // For now, use a default project ID (can be enhanced later)
-  const activeProjectId = 'default-project';
+  const activeProjectId = currentProjectId || DEFAULT_PROJECT_ID;
 
   // Get user's preferred distributor from onboarding profile
   const userDistributor = useMemo(() => {

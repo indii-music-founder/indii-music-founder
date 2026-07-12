@@ -10,6 +10,7 @@ import { OrganizationService } from './OrganizationService';
 import { Logger } from '@/core/logger/Logger';
 import { events } from '@/core/events';
 import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
+import { DEFAULT_PROJECT_ID } from '@/core/constants';
 
 interface HistoryDocument extends Omit<HistoryItem, 'timestamp'> {
     timestamp: Timestamp;
@@ -232,7 +233,7 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
             thumbnailUrl,
             storageUri: storageUri ?? item.storageUri,
             timestamp: Timestamp.fromMillis(item.timestamp),
-            projectId: item.projectId || 'default-project',
+            projectId: item.projectId || DEFAULT_PROJECT_ID,
             orgId: orgId || 'personal',
             userId: auth.currentUser.uid
         } as HistoryDocument);
