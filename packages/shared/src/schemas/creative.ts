@@ -52,6 +52,10 @@ export const GenerateOmniRemixSchema = z.object({
     referenceUris: z.array(z.string().startsWith('gs://')).max(8).optional(),
     costEstimate: z.number().optional(),
     costReservationId: z.string().optional(),
+    // ISSUE-774: 'hybrid-veo' is retired — the UI no longer offers it and the
+    // server no longer prices it differently (it never ran a second Veo
+    // stage). Kept accepted here only so a client with a stale persisted
+    // selection doesn't fail payload validation.
     pipelineMode: z.enum(['pure-omni', 'hybrid-veo']).default('pure-omni'),
     aspectRatio: z.enum(['16:9', '9:16']).default('16:9'),
     durationSeconds: z.number().min(4).max(12).default(8),
