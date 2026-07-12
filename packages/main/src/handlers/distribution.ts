@@ -495,7 +495,12 @@ export const setupDistributionHandlers = () => {
 
             const result = await AgentSupervisor.execute<Record<string, unknown>>(
                 'distribution',
-                'ddex_build.py',
+                // ISSUE-968: this pointed at 'ddex_build.py', which has never existed —
+                // every desktop submission failed with a missing-file error before
+                // reaching QC/ISRC/DDEX at all. ingestion_build.py is the actual
+                // end-to-end orchestrator (QC -> ISRC -> DDEX ERN XML -> SFTP) and
+                // accepts this exact <release_json> [--storage-path PATH] signature.
+                'ingestion_build.py',
                 [JSON.stringify(releaseData), '--storage-path', storagePath],
                 { timeoutMs: 300000 },  // 5 min for large releases
                 (progress, log) => {
