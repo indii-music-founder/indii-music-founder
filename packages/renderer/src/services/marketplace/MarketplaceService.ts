@@ -1,4 +1,4 @@
-import { db, storage } from '@/services/firebase';
+import { db, storage, functions } from '@/services/firebase';
 import {
     collection,
     addDoc,
@@ -11,13 +11,11 @@ import {
     serverTimestamp,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     Timestamp,
-    updateDoc,
-    increment
+    updateDoc
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { Product, Purchase, StemFile, StemLabel } from './types';
-import { createOneTimePayment } from '@/services/payment/PaymentService';
-import { revenueService } from '@/services/RevenueService';
+import { httpsCallable } from 'firebase/functions';
+import { Product, StemFile, StemLabel } from './types';
 import { logger } from '@/utils/logger';
 
 export class MarketplaceService {
@@ -146,6 +144,21 @@ export class MarketplaceService {
     }
 
     /**
+     * Check whether a buyer already holds a completed purchase for a product.
+     * Reflects the durable, webhook-finalized record — not client-side intent.
+     */
+    static async hasCompletedPurchase(buyerId: string, productId: string): Promise<boolean> {
+        const q = query(
+            collection(db, this.PURCHASES_COLLECTION),
+            where('buyerId', '==', buyerId),
+            where('productId', '==', productId),
+            where('status', '==', 'completed')
+        );
+        const snapshot = await getDocs(q);
+        return !snapshot.empty;
+    }
+
+    /**
      * Deletes a product by marking it as inactive.
      */
     static async deleteProduct(productId: string): Promise<void> {
@@ -163,103 +176,37 @@ export class MarketplaceService {
     }
 
     /**
-     * Process a purchase for a product.
+     * Initiate a purchase for a product.
+     *
+     * ISSUE-977 / ISSUE-978 fix: the price is loaded server-side from the
+     * authoritative product record (never trusted from the client), and
+     * inventory/revenue are only ever mutated by the `createMarketplaceCheckout`
+     * Cloud Function (atomic reservation) and the Stripe webhook (finalization
+     * after payment is confirmed) — never by this client call. This redirects
+     * to Stripe Checkout; there is nothing left to record here.
      */
     static async purchaseProduct(
         productId: string,
-        buyerId: string,
-        sellerId: string,
-        amount: number,
         source: string = 'direct',
         sourceId?: string
-    ): Promise<string> {
-        // 1. Validate Product Availability (Inventory)
-        const productRef = doc(db, this.PRODUCTS_COLLECTION, productId);
-        const productSnap = await getDoc(productRef);
+    ): Promise<void> {
+        const createMarketplaceCheckout = httpsCallable<
+            { productId: string; source?: string; sourceId?: string; successUrl: string; cancelUrl: string },
+            { checkoutUrl: string; sessionId: string }
+        >(functions, 'createMarketplaceCheckout');
 
-        if (!productSnap.exists()) {
-            throw new Error('Product not found');
+        const result = await createMarketplaceCheckout({
+            productId,
+            source,
+            sourceId,
+            successUrl: `${window.location.origin}${window.location.pathname}?purchase=success`,
+            cancelUrl: `${window.location.origin}${window.location.pathname}?purchase=cancelled`,
+        });
+
+        if (!result.data.checkoutUrl) {
+            throw new Error('No checkout URL returned from server.');
         }
 
-        const productData = productSnap.data() as Product;
-        const hasInventoryTracking = typeof productData.inventory === 'number';
-
-        if (hasInventoryTracking && (productData.inventory as number) <= 0) {
-            throw new Error('Out of Stock');
-        }
-
-        // 1.5 Reserve Inventory (Optimistic Decrement)
-        if (hasInventoryTracking) {
-            await updateDoc(productRef, {
-                inventory: increment(-1)
-            });
-        }
-
-        // 2. Process Payment via Stripe Checkout (redirects user to Stripe hosted page).
-        // The webhook handler completes the purchase recording on checkout.session.completed.
-        try {
-            const checkoutUrl = await createOneTimePayment({
-                userId: buyerId,
-                items: [{
-                    name: productData.title,
-                    amount: Math.round(amount * 100), // convert to cents
-                    quantity: 1,
-                    metadata: { productId, sellerId, source, sourceId: sourceId || '' },
-                }],
-                metadata: { productId, sellerId, source },
-            });
-
-            // Redirect to Stripe Checkout — purchase recording happens via webhook
-            if (typeof window !== 'undefined') {
-                window.location.href = checkoutUrl;
-            }
-
-            // Return a pending purchase record ID so the caller can track intent
-            const purchaseData: Omit<Purchase, 'id'> = {
-                buyerId,
-                sellerId,
-                productId,
-                amount,
-                currency: 'USD',
-                status: 'pending',
-                transactionId: 'stripe_checkout_pending',
-                createdAt: new Date().toISOString()
-            };
-
-            const purchaseRef = await addDoc(collection(db, this.PURCHASES_COLLECTION), purchaseData);
-
-            // 4. Record for Revenue Tracking
-            await revenueService.recordSale({
-                userId: sellerId,
-                productId,
-                productName: productData.title,
-                amount,
-                currency: 'USD',
-                source: source === 'social' ? 'social_drop' : source,
-                sourceId,
-                customerId: buyerId,
-                status: 'completed'
-            });
-
-            return purchaseRef.id;
-
-        } catch (error: unknown) {
-            logger.error('[MarketplaceService] Purchase failed:', error);
-
-            // ROLLBACK: Restore inventory if payment failed
-            if (hasInventoryTracking) {
-                try {
-                    await updateDoc(productRef, {
-                        inventory: increment(1)
-                    });
-                    logger.info(`[MarketplaceService] Rolled back inventory for ${productId}`);
-                } catch (rollbackError: unknown) {
-                    logger.error(`[MarketplaceService] CRITICAL: Failed to rollback inventory for ${productId}`, rollbackError);
-                    // In a real system, we'd log this to an admin alert queue
-                }
-            }
-
-            throw error; // Propagate error to UI
-        }
+        window.location.href = result.data.checkoutUrl;
     }
 }

@@ -13036,13 +13036,12 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-842: POD credential service writes to a Firestore path that the rules do not allow
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-12, part of systemic unruled-collections sweep)
 - **Severity:** 🟠 HIGH
 - **Module:** Merchandise / POD integrations / Firestore rules
-- **Evidence:** `PODCredentialService` stores API keys at `users/{uid}/integrations/pod_credentials` (`PODCredentialService.ts:17-29`, `:37-40`). The `users/{userId}` Firestore rules enumerate allowed subcollections but do not include `integrations` (`firestore.rules:198-405`), and the root catch-all denies every unmatched path (`firestore.rules:1230-1234`). `PODIntegrationPanel.handleConfirmConnect()` calls `saveCredential()` and then `doSync()` without a local error state (`PODIntegrationPanel.tsx:188-197`).
-- **Impact:** After a key validates, saving/loading the connection can fail with `permission-denied`, leaving POD integrations disconnected or stuck without a clear user-facing fix.
-- **Fix:** Add a dedicated rule for `users/{userId}/integrations/{integrationId}` with sensitive-field constraints, or move credentials to a server-side secret backend and store only non-secret connection metadata in Firestore.
-- **Acceptance:** Valid key connection succeeds or fails with a visible reason; Firestore rules tests cover `pod_credentials` read/write and deny cross-user access.
+- **Fix:** Added `match /users/{userId}/integrations/{docId} { allow read, write: if isOwner(userId); }`. See the sweep summary at ISSUE-998 for the full methodology and the other 24 collections fixed in the same pass.
+- **Files:** `packages/firebase/firestore.rules`
+- **Not yet done:** `PODIntegrationPanel.handleConfirmConnect()` still has no local error surface on save failure — that UI-layer gap is separate from the rules fix and remains open.
 
 ### ISSUE-843: Multiple active user-scoped feature collections are missing Firestore rules
 
@@ -14374,13 +14373,12 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-973: Marketplace product creation cannot satisfy the Firestore product schema
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-12)
 - **Severity:** 🔴 CRITICAL (listing workflow blocked)
 - **Module:** Marketplace / List New Product / Firestore rules
-- **Evidence:** The client lists product types `song`, `album`, `stem-pack`, `merch`, `ticket`, and `service`, then writes `isActive: true` but no `status` (`CreateProductModal.tsx:167-181`; `MarketplaceService.ts:67-79`; `marketplace/types.ts:1-25`). Firestore product creation allows only types `digital`, `physical`, `nft`, or `subscription` and requires `status` to be `draft` or `active` (`firestore.rules:537-547`). Therefore every modal-created payload violates both required rule fields before any storefront refresh.
-- **Impact:** “List Product” fails with permission denied for all visible product types; stem files may already have uploaded before the rejected document write, compounding the failure with leaked/orphaned assets.
-- **Fix:** Define one shared runtime product schema/enums for renderer, callable/service, rules tests, and stored documents. Map detailed subtypes under a canonical fulfillment type if needed; include explicit draft/active lifecycle and validate seller/auth server-side.
-- **Acceptance:** Emulator tests create every visible subtype with the exact production rule set, reject unknown/malformed types/status/seller spoofing, and reload the created listing; schema drift fails CI.
+- **Fix:** `firestore.rules` `products` create rule now matches the real schema the app actually writes: `type in ['song','album','merch','ticket','digital-asset','service','stem-pack']`, `isActive is bool`, `price is int` (was `type in ['digital','physical','nft','subscription']` + a nonexistent `status` field — every listing was rejected). Also added the previously-**missing** `purchases` collection rule (buyer/seller read-only; all writes are server-only via the Stripe webhook) — this collection had zero rules before, so purchase records couldn't even be read.
+- **Files:** `packages/firebase/firestore.rules`
+- **Verified:** Rules brace-balance checked; no existing rules-emulator test references `products`/`purchases` so nothing regressed. Live emulator verification of the full create→list→purchase flow not yet run — recommend before next deploy.
 
 ### ISSUE-974: Marketplace can sell songs, albums, merch, tickets, and services with no deliverable or fulfillment contract
 
@@ -14414,23 +14412,27 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-977: Marketplace prices are stored as cents, displayed as dollars, and multiplied by 100 again at checkout
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-12)
 - **Severity:** 🔴 CRITICAL (100× pricing error)
 - **Module:** Marketplace / Listing price and checkout
-- **Evidence:** The modal converts `$10.00` to `1000` with `Math.round(parseFloat(price) * 100)` (`CreateProductModal.tsx:83-92`), and the type comment says price is “In cents or base unit,” leaving the contract ambiguous (`marketplace/types.ts:12-25`). `ProductCard` displays the raw value as `USD 1000` and passes it unchanged to `purchaseProduct()` (`ProductCard.tsx:90-107`, `:158-184`). The purchase service then multiplies `amount * 100` again for `OneTimePaymentItem.amount`, whose canonical contract is already cents (`MarketplaceService.ts:168-208`; `PaymentService.ts:21-26`).
-- **Impact:** A $10 listing can display as $1,000 and request a 100,000-cent ($1,000) charge; other callers using dollar values produce different behavior, making seller pricing and buyer consent unreliable.
-- **Fix:** Adopt a single integer minor-unit field (`unitAmountCents`) end-to-end, format only at UI boundaries, and make the server load authoritative product price rather than trusting a caller amount. Migrate/flag ambiguous existing records.
-- **Acceptance:** $0.50, $10.00, and large boundary fixtures display and charge exactly 50, 1000, and expected cents across card/cart/Checkout/webhook; tampered client amounts are ignored/rejected; legacy ambiguous products cannot go on sale without migration.
+- **Fix:** Price is now an integer-cents field trusted ONLY from the server. New `createMarketplaceCheckout` Cloud Function loads `product.price` directly from Firestore inside the reservation transaction — the client never sends an amount/price at all (test asserts a malicious client payload with `amount:1` is fully ignored). `ProductCard` now formats `(product.price / 100).toFixed(2)` at the UI boundary instead of displaying raw cents.
+- **Files:** `packages/firebase/src/marketplace/createMarketplaceCheckout.ts` (new), `packages/renderer/src/services/marketplace/MarketplaceService.ts`, `packages/renderer/src/modules/marketplace/components/ProductCard.tsx`
+- **Tests:** `createMarketplaceCheckout.test.ts` (6 tests, incl. "never trusts a client-supplied price" adversarial case), `MarketplaceService.test.ts`, `ProductCard.test.tsx` — all passing.
 
 ### ISSUE-978: Marketplace reserves inventory and records completed revenue before Stripe payment succeeds
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-12)
 - **Severity:** 🔴 CRITICAL (false sales / inventory loss)
 - **Module:** Marketplace / Purchase lifecycle
-- **Evidence:** `purchaseProduct()` decrements inventory before creating Checkout (`MarketplaceService.ts:176-196`). After receiving a Checkout URL it assigns `window.location.href`, but continues client-side to create a pending purchase and immediately calls `revenueService.recordSale(... status: 'completed')` before any webhook confirmation (`:198-244`). Inventory rollback occurs only when this function throws (`:246-262`), so normal Checkout cancellation/expiry leaves the reservation consumed. `ProductCard` can also set local Owned after this pre-payment function returns (`ProductCard.tsx:44-63`).
-- **Impact:** Abandoned/cancelled sessions reduce stock, sellers see nonexistent completed revenue, scarce tickets/merch can become unavailable, and buyers may appear to own products they never paid for.
-- **Fix:** Create a server-owned checkout intent without final inventory/revenue mutation; atomically reserve with expiry where needed, then finalize purchase, entitlement, inventory, and revenue idempotently from verified Stripe webhook events. Release reservations on expiry/cancel/refund and derive UI ownership from durable paid entitlements.
-- **Acceptance:** Cancelled/expired/failed Checkout produces no completed sale/ownership and restores reservation; successful duplicate webhook delivery finalizes exactly once; concurrent last-item buyers cannot oversell; refund adjusts revenue/inventory/entitlement per policy; client navigation interruption cannot corrupt state.
+- **Fix:** Full webhook-driven redesign, paired with ISSUE-977:
+  1. `createMarketplaceCheckout` atomically reserves inventory (Firestore transaction, decrement-if-available) and writes a `marketplace_reservations` doc BEFORE ever contacting Stripe — this is what actually prevents oversell (not a post-hoc rollback).
+  2. The Stripe Checkout session's `expires_at` is pinned to the same 30-minute reservation TTL.
+  3. `checkout.session.completed` → new `handleMarketplacePurchaseCompleted` webhook handler finalizes the sale (creates `purchases` doc keyed by Stripe session id for idempotency, records `revenue`, marks reservation completed) — only ever runs after Stripe confirms payment. It never touches inventory again (already reserved).
+  4. `checkout.session.expired` → new `handleMarketplaceCheckoutExpired` handler releases the reservation and restores inventory if the buyer never paid.
+  5. Client-side `MarketplaceService.purchaseProduct()` no longer decrements inventory, records revenue, or creates a purchase doc — it only calls the Cloud Function and redirects. `ProductCard` no longer optimistically sets "Owned" on click; it now checks the real `purchases` collection (`hasCompletedPurchase`) on mount via a new Firestore rule allowing buyers/sellers to read their own purchase records (previously `purchases` had **no rule at all** — reads were silently failing too).
+- **Files:** `packages/firebase/src/marketplace/createMarketplaceCheckout.ts` (new), `packages/firebase/src/stripe/webhookHandler.ts`, `packages/firebase/src/index.ts`, `packages/firebase/firestore.rules`, `packages/renderer/src/services/marketplace/MarketplaceService.ts`, `packages/renderer/src/modules/marketplace/components/ProductCard.tsx`
+- **Not yet done:** Refund handling (`charge.refunded` → revoke revenue/entitlement) is not implemented — acceptance criterion "refund adjusts revenue/inventory/entitlement" remains open as a follow-up.
+- **Tests:** `createMarketplaceCheckout.test.ts` (oversell prevention, reservation release on Stripe failure, self-purchase rejection), `stripeWebhook.test.ts` (+2 tests: idempotent completion, expiry release) — all passing. Full test suite: 4429 passed, 0 failed.
 
 ### ISSUE-979: CRM destroys a launch draft after `createCampaign` converts persistence failure into `null`
 
@@ -14629,13 +14631,25 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-998: Merchandise Service’s catalog, product, and mockup collections are all denied by Firestore rules
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-12, systemic unruled-collections sweep — see below)
 - **Severity:** 🔴 CRITICAL (merchandise creation workflow is blocked before design/production)
 - **Module:** Merchandise / Catalog / Product design / Mockup persistence
-- **Evidence:** The active `MerchandiseService` reads/writes root collections `merchandise_catalog`, `merchandise`, and `mockup_generations` (`MerchandiseService.ts:12-13`, `:19-35`, `:41-61`, `:96-102`, `:190-239`). None has a matching rule in `packages/firebase/firestore.rules`; only `manufacture_requests` and `sample_requests` are covered in the commerce area (`firestore.rules:1029-1032`, `:1147-1150`), and the final catch-all denies unmatched documents (`:1235-1236`). `getCatalog()` catches the permission error and returns an empty catalog (`MerchandiseService.ts:41-62`), which causes the Manufacturing panel to silently fall back to fabricated default costs (`ManufacturingPanel.tsx:87-123`). Mockup generation attempts its denied Firestore write before invoking image generation (`MerchandiseService.ts:200-217`).
-- **Impact:** Catalog-backed product design, product listing, and service-level mockup generation can fail with `permission-denied`; the user may instead see an empty catalog or default manufacturing economics. The creative workflow cannot establish a durable product/design record, and later production may be based on an unverified draft/fallback state.
-- **Fix:** Decide and document a single merchandise data model. Add narrowly scoped, schema-validated rules for user-owned design/product drafts and server/admin-only rules for catalog templates, or move all mutations to authenticated callables. Do not convert a rules failure into an empty catalog or production-price fallback; surface setup/availability state and preserve drafts for retry.
-- **Acceptance:** Emulator tests prove authorized users can create/read only their own merchandise designs/products and mockup job records, cross-user attempts fail, and catalog reads have explicit public/authenticated/admin policy; rules deny arbitrary status/price/owner mutation; a denied catalog/mutation renders a visible error with no fake default quote; a successful mockup creates a durable owned request/result that survives reload and is linked to the exact artwork input.
+- **Fix:** Added rules for all three: `merchandise_catalog` (public read / admin-only write — it's a template catalog, not user data), `merchandise` (owner-scoped, the actual product/design instances — this one wasn't even named in the original evidence text), and `mockup_generations` (owner-scoped).
+- **Not yet done:** The "fabricated default costs on empty catalog" fallback behavior in `ManufacturingPanel.tsx` is a separate honesty-of-fallback issue, not fixed here — the catalog reads will now succeed, but that silent-fallback code path itself wasn't audited/removed.
+
+---
+
+**Systemic sweep note (2026-07-12):** This session did a full audit of every `collection(db, ...)` reference across `packages/renderer/src` (incl. `extends FirestoreService` subclasses and per-class `XXX_COLLECTION` constants) against every `match /X/{...}` rule in `firestore.rules`. Found **26 top-level collections + 4 user subcollections with literally zero matching rule** (silently hitting the final catch-all deny), plus **one collection-name mismatch bug** (`LabelDealRecoupmentService` wrote to `labelDeals` camelCase while the only existing rule matched `label_deals` snake_case — that service has never successfully persisted a single deal). All fixed in one pass:
+
+Top-level (owner-by-`userId` pattern unless noted): `composition_drafts`, `designs`, `earnings_reports`, `epk_portals` (public read — press-facing by design), `influencerBounties`, `instrument_usage_stats` (shared aggregate, any-authenticated), `iswc_works`, `ledger` (client-writable, distinct from the server-only `users/{uid}/ledger` subcollection), `merchandise_catalog` (public read/admin write), `merchandise`, `merchandise_inventory`, `mockup_generations`, `organization_invites` (org-member scoped), `print_jobs`, `promoter_pitches`, `recoupment_balances`, `royalty_report_claims`, `scheduledPosts`, `smart_contracts`, `user_preferences` (doc ID = uid), `vinyl_campaigns`, `_health_check` (read-only), `ai_context_cache` (shared, any-authenticated), `purchases` (see ISSUE-978).
+
+Subcollections: `users/{uid}/living_files`, `users/{uid}/styleLedger`, `users/{uid}/styleDNA`, `users/{uid}/integrations` (ISSUE-842), `label_deals/{dealId}/transactions`.
+
+Naming fix: `LabelDealRecoupmentService.ts` collection literal `'labelDeals'` → `'label_deals'`.
+
+**Files:** `packages/firebase/firestore.rules`, `packages/renderer/src/services/finance/LabelDealRecoupmentService.ts`
+**Verified:** Typecheck clean, full suite 4428/4429 passed (1 pre-existing flaky test in `KnowledgeChat.test.tsx` unrelated to this change, confirmed via git-stash A/B — fails ~2/3 runs with or without this diff).
+**Not yet done:** No Firestore-emulator rules tests were added for these 30 new/changed rules — recommend an emulator test pass before the next deploy, since a rules typo here fails silently in production exactly like the bugs this sweep just fixed.
 
 ### ISSUE-999: Screenwriter drafts are unscoped localStorage shared across accounts and projects
 
@@ -14652,23 +14666,19 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-1000: Social content scheduling writes to an unruled Firestore collection, so calendar posts cannot persist
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-12, part of the systemic sweep — see ISSUE-998)
 - **Severity:** 🔴 CRITICAL (creative publishing schedule is blocked)
 - **Module:** Social / Content calendar / Scheduled posts
-- **Evidence:** `SocialService.schedulePost()` adds the validated content calendar record to root `scheduledPosts` (`SocialService.ts:151-195`), and the Social hook treats a resolved write as “Post scheduled successfully!” (`useSocial.ts:166-184`). Repository rules contain no `match /scheduledPosts/{...}` rule; root `posts` is covered separately (`firestore.rules:1003-1007`), while the final catch-all denies all other paths (`:1235-1236`). The scheduling UI’s parent catches errors without retaining the composer’s draft (`SocialDashboard.tsx:41-59`), and the modal closes immediately after issuing its unawaited save callback (`CreatePostModal.tsx:62-93`).
-- **Impact:** Valid social copy, chosen media, and scheduled time can be discarded by `permission-denied` rather than becoming a durable calendar item. The creator may only see the modal disappear and an empty calendar, with no retryable draft or provider queue receipt.
-- **Fix:** Add an explicit owner-scoped, schema-constrained rule for scheduled posts (or move scheduling through a verified callable), and make the composer await a durable ID/readback before close. Retain the exact draft on rules/network failure and distinguish internal calendar scheduling from externally queued/published platform delivery.
-- **Acceptance:** Firestore emulator tests allow a verified user to create/read only their own valid scheduled-post schema and reject cross-user/status/author spoofing; successful composer save returns a real ID visible after reload; forced permission/offline failure leaves copy/media/date/time open and retryable with no success/close; terminal delivery status requires a provider queue/receipt, not merely a calendar document.
+- **Fix:** Added owner-scoped `scheduledPosts` rule.
+- **Not yet done:** The composer still closes on an unawaited save callback without confirming a durable ID/readback (`CreatePostModal.tsx:62-93`) — that race is a separate UI-layer issue, not fixed here. The write itself will now succeed instead of silently failing.
 
 ### ISSUE-1001: Merchandise Designer auto-save and version history are denied, then presented as an empty history
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-12, part of the systemic sweep — see ISSUE-998)
 - **Severity:** 🔴 CRITICAL (creative merchandise designs have no durable save or recovery path)
 - **Module:** Merchandise Designer / Canvas auto-save / Version History
-- **Evidence:** The active designer enables `useAutoSave()` for every canvas (`MerchDesigner.tsx:104-110`), which serializes the complete Fabric canvas plus a data-URL thumbnail and writes it to root `designs` (`useAutoSave.ts:56-96`). Version History queries and deletes that same root collection (`VersionHistory.tsx:45-92`, `:115-121`). There is no matching `match /designs/{...}` rule in `packages/firebase/firestore.rules`; the final catch-all rejects it (`:1235-1236`). On write failure, the hook only stores `error` internally (`useAutoSave.ts:100-104`), but its consuming editor destructures only `saveDesign`, `lastSaved`, and `isSaving` (`MerchDesigner.tsx:105-110`). A denied history read is merely logged and leaves `versions` empty (`VersionHistory.tsx:85-89`), while the UI calls that state “No saved versions yet” and promises designs will be auto-saved (`VersionHistory.tsx:163-169`).
-- **Impact:** A creator can spend time designing merch, see normal editing UI, and later find no persisted design or recoverable history after reload, permission loss, or device change. The error is indistinguishable from a genuinely empty history, and there is no visible retry/export/preserve-draft recovery path.
-- **Fix:** Add owner/org/project-scoped, schema-validated `designs` rules (or route save/history through authenticated callables), with document IDs and field validation that prevent owner/org/project reassignment and arbitrary cross-tenant reads/deletes. Surface auto-save/read/delete failures in the editor, retain the local canvas until a confirmed write/readback, and label history as unavailable on permission/network failure instead of empty.
-- **Acceptance:** Firestore emulator tests prove a user can create/read/update/delete only designs owned by their active organization/project and cannot spoof ownership or access another tenant; a successful save returns a durable revision visible in Version History after a clean reload; forced permission/offline/write failures show an actionable persistent error, keep the local canvas and retry/export option, and never show “No saved versions yet”; deletion failure leaves the version visible and reports failure; oversized/corrupt canvas/thumbnail payloads fail before mutation with a preserve-and-retry path.
+- **Fix:** Added owner-scoped `designs` rule (`resource.data.userId`/`request.resource.data.userId`).
+- **Not yet done:** `useAutoSave`'s failure path still only stores `error` internally without the editor surfacing it, and `VersionHistory` still can't distinguish "denied" from "genuinely empty" — those UI-honesty gaps are separate from the rules fix and remain open.
 
 ### ISSUE-1002: Autonomous merch generation declares success before its result can be added to the canvas
 

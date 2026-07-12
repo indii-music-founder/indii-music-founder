@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Product, StemFile } from '@/services/marketplace/types';
 import { MarketplaceService } from '@/services/marketplace/MarketplaceService';
 import { useStore } from '@/core/store';
@@ -41,23 +41,28 @@ const ProductCard = React.memo(({ product, variant = 'default', source, sourceId
     const [purchased, setPurchased] = useState(false);
     const currentUser = useStore(useShallow((state) => state.userProfile));
 
+    // Prices are stored as integer cents end-to-end; format only at this UI boundary.
+    const displayPrice = (product.price / 100).toFixed(2);
+
+    useEffect(() => {
+        let cancelled = false;
+        if (!currentUser || !product.id) return;
+        MarketplaceService.hasCompletedPurchase(currentUser.id, product.id)
+            .then((owned) => { if (!cancelled) setPurchased(owned); })
+            .catch((error: unknown) => logger.error('Failed to check purchase ownership:', error));
+        return () => { cancelled = true; };
+    }, [currentUser, product.id]);
+
     const handlePurchase = async () => {
         if (!currentUser) return;
 
         setPurchasing(true);
         try {
-            await MarketplaceService.purchaseProduct(
-                product.id!,
-                currentUser.id,
-                product.sellerId,
-                product.price,
-                source,
-                sourceId
-            );
-            setPurchased(true);
+            // Redirects to Stripe Checkout — there is no local "purchased" state to
+            // set here; ownership is derived from the webhook-finalized purchase record.
+            await MarketplaceService.purchaseProduct(product.id!, source, sourceId);
         } catch (error: unknown) {
             logger.error("Purchase failed:", error);
-        } finally {
             setPurchasing(false);
         }
     };
@@ -97,14 +102,14 @@ const ProductCard = React.memo(({ product, variant = 'default', source, sourceId
                             </p>
                         </div>
                         <span className="text-green-400 font-bold text-sm">
-                            {product.currency} {product.price}
+                            {product.currency} {displayPrice}
                         </span>
                     </div>
 
                     <button
                         onClick={handlePurchase}
                         disabled={purchasing || purchased || product.inventory === 0}
-                        aria-label={purchased ? `Owned: ${product.title}` : `Buy ${product.title} for ${product.currency} ${product.price}`}
+                        aria-label={purchased ? `Owned: ${product.title}` : `Buy ${product.title} for ${product.currency} ${displayPrice}`}
                         className={`w-full mt-auto py-1.5 px-3 rounded text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors
                             ${purchased
                                 ? 'bg-green-600/20 text-green-400 cursor-default'
@@ -158,7 +163,7 @@ const ProductCard = React.memo(({ product, variant = 'default', source, sourceId
                     <div className="flex justify-between items-start gap-2 mb-1">
                         <h3 className="font-bold text-white leading-tight">{product.title}</h3>
                         <span className="text-green-400 font-bold whitespace-nowrap">
-                            {product.currency} {product.price}
+                            {product.currency} {displayPrice}
                         </span>
                     </div>
                     <p className="text-sm text-gray-400 line-clamp-2">{product.description}</p>
@@ -181,7 +186,7 @@ const ProductCard = React.memo(({ product, variant = 'default', source, sourceId
                     <button
                         onClick={handlePurchase}
                         disabled={purchasing || purchased || product.inventory === 0}
-                        aria-label={purchased ? `Owned: ${product.title}` : `Purchase ${product.title} for ${product.currency} ${product.price}`}
+                        aria-label={purchased ? `Owned: ${product.title}` : `Purchase ${product.title} for ${product.currency} ${displayPrice}`}
                         className={`px-4 py-2 rounded-lg font-semibold text-sm flex items-center gap-2 transition-all
                             ${purchased
                                 ? 'bg-green-600/20 text-green-400 cursor-default'
