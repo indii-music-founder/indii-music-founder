@@ -303,27 +303,28 @@ export default function PublishingDashboard() {
                         isOpen={isDSRModalOpen}
                         onClose={() => setIsDSRModalOpen(false)}
                         onProcess={async (report) => {
-                            try {
-                                const { dsrUploadService } = await import('@/services/distribution/proprietary-ingestion/EarningsUploadService');
-                                const catalog = new Map(
-                                    releases
-                                        .filter(r => r.metadata.isrc)
-                                        .map(r => [r.metadata.isrc!, r.metadata])
-                                );
+                            // ISSUE-966: this callback must reject on failure and let the
+                            // modal (the single terminal-messaging owner) handle the error
+                            // path — it must NOT swallow the error here, or the modal's
+                            // `await onProcess(...)` resolves normally and shows success
+                            // (plus closes, discarding the preview) even when processing failed.
+                            const { dsrUploadService } = await import('@/services/distribution/proprietary-ingestion/EarningsUploadService');
+                            const catalog = new Map(
+                                releases
+                                    .filter(r => r.metadata.isrc)
+                                    .map(r => [r.metadata.isrc!, r.metadata])
+                            );
 
-                                const result = await dsrUploadService.processAndSaveReport(report, catalog);
+                            const result = await dsrUploadService.processAndSaveReport(report, catalog);
 
-                                if (!result.success) {
-                                    throw new Error(result.error || 'Failed to process report');
-                                }
-
-                                setIsDSRModalOpen(false);
-                                toast.success(`Integrated ${result.matchedReleases} releases from report`);
-                                await fetchEarnings({ startDate: defaultDateRange.start, endDate: defaultDateRange.end });
-                            } catch (error: unknown) {
-                                logger.error('[DSR Upload] Error:', error);
-                                toast.error('Failed to process sales report');
+                            if (!result.success) {
+                                logger.error('[DSR Upload] Processing failed:', result.error);
+                                throw new Error(result.error || 'Failed to process report');
                             }
+
+                            // Success path only — the modal closes itself after this resolves.
+                            toast.success(`Integrated ${result.matchedReleases} releases from report`);
+                            await fetchEarnings({ startDate: defaultDateRange.start, endDate: defaultDateRange.end });
                         }}
                     />
                 )}

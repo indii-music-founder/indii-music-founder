@@ -80,6 +80,15 @@ export class EarningsService extends FirestoreService<EarningsDocument> {
     }
 
     /**
+     * Deterministic earnings doc ID — shared by recordEarnings() and any caller
+     * (e.g. EarningsUploadService's atomic batch write) that needs to write to
+     * the same collection/ID scheme without going through a single-doc `set`.
+     */
+    static buildEarningsId(distributorId: string, releaseId: string, period: { startDate: string; endDate: string }): string {
+        return `${distributorId}_${releaseId}_${period.startDate}_${period.endDate}`;
+    }
+
+    /**
      * Record new earnings data (Ingest)
      */
     async recordEarnings(data: Omit<EarningsDocument, 'id' | 'createdAt' | 'updatedAt' | 'userId'>): Promise<string> {
@@ -87,7 +96,7 @@ export class EarningsService extends FirestoreService<EarningsDocument> {
             const userId = auth.currentUser?.uid;
             if (!userId) throw new Error('User not authenticated');
 
-            const earningsId = `${data.distributorId}_${data.releaseId}_${data.period.startDate}_${data.period.endDate}`;
+            const earningsId = EarningsService.buildEarningsId(data.distributorId, data.releaseId, data.period);
 
             const record: EarningsDocument = {
                 ...data,
