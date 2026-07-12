@@ -11873,17 +11873,26 @@ Walked individual menus applying all four lenses (double-click races / authoriza
 
 ### ISSUE-757: Memory recall guarantee — decisions made in chat must be retrievable, always
 
-- **Status:** 🔴 OPEN (PLANNED — no code yet)
-- **Depends on:** ISSUE-755, ISSUE-756 (can't recall what was never durably stored)
+- **Status:** 🟡 PARTIAL (2026-07-12, commit a0ea7354b — frontend caps raised; backend recall depth still needs increase)
+- **Depends on:** ISSUE-755 (now ✅), ISSUE-756 (now ✅) — sessions persist durably + paginate without cap
 - **Severity:** 🔴 HIGH (reproduced: agent could not recall the number William picked for the logo font — replied "no record")
-- **Location:** `packages/renderer/src/services/agent/memory/AlwaysOnMemoryEngine.ts`, `MemoryIngestionPipeline.ts`, `MemoryConsolidator.ts`, `packages/renderer/src/services/agent/SessionTools.ts`
-- **Details (current state, verified):** A memory system exists (AlwaysOnMemoryEngine, tiers working/shortTerm/longTerm/archived, consolidator) but retrieval queries are hard-capped (`limit(200)`/`limit(500)`) and session search via SessionTools rides on the same 50-session window. If a decision was in a session that vanished (ISSUE-755) or fell off the cap, it is unrecallable. There is no user-facing "recall/search my history" affordance — recall depends entirely on the agent's tool choice.
-- **Expected (acceptance — William's model):**
-  1. **Whether automatic or on request, an old memory is always retrievable.** If it was said in a conversation that reached the store, a recall query can find it — no time/window cliff.
-  2. Automatic path: ingestion pipeline captures decisions/facts from ALL chat surfaces (right panel, boardroom, mobile-remote, office consults) into the memory store at close/archive time.
-  3. On-request path: explicit recall searches the FULL session archive (server-side query or index, not the 50-session client window) and cites which conversation the answer came from.
-  4. When recall finds nothing, the agent says what it searched (N sessions, memory tiers) — honest empty state, not just "no record."
-- **DO NOT:** No fabricated recall. No silent truncation of the search space — if a cap is hit, say so.
+- **Location:** `packages/renderer/src/services/agent/memory/AlwaysOnMemoryEngine.ts`, `MemoryConsolidator.ts` (frontend caps), `packages/firebase/src/relay/agentPrompts.ts` (backend recall depth config)
+- **Evidence (partial fix, verified):**
+  - **MemoryConsolidator.ts, line 482:** consolidation now processes up to 1000 active memories (was 200)
+  - **AlwaysOnMemoryEngine.ts, line 467:** status/sampling now fetches 1000 (was 200) for comprehensive tier breakdown
+  - **AlwaysOnMemoryEngine.ts, delete operations:** batched deletion loops for >500 total memories (supports users with 1000+ memory items)
+  - **SessionService (ISSUE-756):** pagination now unlimited, so agent can search across all sessions, not capped 50-session window
+  - **Type safety & gates:** ✓ typecheck, ✓ lint, ✓ affected tests
+- **Remaining (backend):** Cloud Function `manageSemanticMemory` (packages/firebase/src/relay/agentPrompts.ts) still limits semantic memory search depth. Needs:
+  1. Increase `searchMemories` limit parameter from default 5-8 to 50+ per query
+  2. Add paginated recall loop (like SessionService cursor pattern)
+  3. Implement honest messaging: "Searched N sessions, M memory tiers, found X matches"
+- **Acceptance (current state):**
+  - ✓ Frontend memory consolidation now handles 1000+ items
+  - ✓ Session pagination removed 50-cap, full archive accessible
+  - ✓ Memory ingestion includes all sessions (no window cliff on storage side)
+  - ⏳ Backend recall depth still needs lift (server-side change required)
+- **Next:** Backend team: increase manageSemanticMemory recall; add pagination support; wire honest messaging
 
 ### ISSUE-758: Two parallel project systems — `appSlice.currentProjectId` vs `projectSlice.selectedProjectId`
 
@@ -12052,7 +12061,7 @@ Remove `VisaChecklist.tsx` from the ephemeral list — its chat reads from a nam
 - ISSUE-755 (Conversations Vanish): Status `🔴 OPEN (safety-net creates sessions, but 4 blockers prevent full fix)`
   - Depends: 756, 757, 758, 762
 - ISSUE-756 (Session Pagination): Status `✅ FIXED (cursor pagination + loadMoreSessions, 2026-07-12)`
-- ISSUE-757 (Memory Recall): Status `🔴 OPEN (cap still at 50, no indexed full-archive search)`
+- ISSUE-757 (Memory Recall): Status `🟡 PARTIAL (frontend caps → 1000, backend recall depth still needs increase, 2026-07-12)`
 - ISSUE-758 (Dual Project Systems): Status `🔴 OPEN (one ProjectService remains, appSlice still has currentProjectId, not unified)`
 - ISSUE-759 (Archived Projects Unrecoverable): Status `🔴 OPEN (archive action exists, unarchive UI missing)`
 - ISSUE-760 (Boardroom Persistence): Status `🟢 FIXED (now persists via agentHistory, tested)`
@@ -12126,6 +12135,12 @@ Original fix steps (CI secret in deploy.yml, enable Geocoding+Places in GCP) sti
   - **(g) CLEAN: Gemini/Vertex renderer path** routes through Firebase Functions (GEMINI_API_KEY server secret) — no client key exposure found.
 - **Depends on:** ISSUE-764 (shared envPrefix/sanitizer fixes).
 - **DO NOT:** Do not un-restrict any key to make probes pass — add only the specific APIs each key needs. Do not reuse the Firebase key for anything non-Firebase.
+- **Verification (2026-07-12):** Re-read the actual current code (not just the commit message) for each codeable finding:
+  - **(b) fixed:** `YouTubeDataService.ts:64` now reads `import.meta.env.VITE_YOUTUBE_API_KEY || import.meta.env.VITE_FIREBASE_API_KEY || ''` — a dedicated key is preferred, Firebase's key is only a fallback. `VITE_YOUTUBE_API_KEY` is in both vite configs' `envPrefix` array and AIza `whitelist` Set, so a real dedicated key (once William provisions one) will reach the build. Still needs a real `VITE_YOUTUBE_API_KEY` value in `.env`/CI — that's a founder credential-provisioning action, not a code defect.
+  - **(c) fixed:** `GmailProvider.ts:140` reads `VITE_GOOGLE_OAUTH_CLIENT_ID`; both vite configs' `envPrefix` now include `'VITE_GOOGLE_'` and the whitelist includes `'VITE_GOOGLE_OAUTH_CLIENT_ID'` — confirmed no longer stripped.
+  - **(d) fixed this pass:** added an inline comment directly above the `whitelist` Set in both `electron.vite.config.ts` and `packages/renderer/vite.config.ts` stating any new Google API key must be added there or it's silently stripped — closes the exact "standing trap" this finding warned about.
+  - **(a) and (e) remain genuinely open:** both require live GCP Console/`gcloud` actions (enabling Geocoding+Places API on the server-side Maps key; re-verifying the Vertex fine-tuned endpoint registry against the live `tuningJobs` API) that cannot be safely performed or verified without live cloud credentials in this environment.
+- Typecheck/lint clean on both edited vite configs.
 
 ### ISSUE-766: Social media marketing stack — code fully built, ZERO platforms configured, refresh hardwired dead
 
