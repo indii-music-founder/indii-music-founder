@@ -167,12 +167,111 @@ async function handleFounderSeatCheckoutCompleted(session: Stripe.Checkout.Sessi
   logger.info(`[handleFounderSeatCheckoutCompleted] Founder payment recorded for ${maskId(userId)} — activation queued`);
 }
 
+/**
+ * Marketplace purchase completed (ISSUE-977 / ISSUE-978).
+ *
+ * The reservation (see createMarketplaceCheckout.ts) already decremented
+ * inventory atomically before Stripe was ever contacted. This handler's job
+ * is purely to turn a *paid* reservation into a durable, idempotent sale —
+ * it must never touch inventory again (that already happened at reservation
+ * time, which is what prevents oversell).
+ */
+async function handleMarketplacePurchaseCompleted(session: Stripe.Checkout.Session): Promise<void> {
+  const reservationId = session.metadata?.reservationId;
+  if (!reservationId) {
+    logger.error('[handleMarketplacePurchaseCompleted] Missing reservationId metadata', { sessionId: session.id });
+    return;
+  }
+
+  const db = getFirestore();
+  const reservationRef = db.collection('marketplace_reservations').doc(reservationId);
+
+  await db.runTransaction(async (tx) => {
+    const resSnap = await tx.get(reservationRef);
+    if (!resSnap.exists) {
+      logger.error(`[handleMarketplacePurchaseCompleted] Reservation ${reservationId} not found`);
+      return;
+    }
+    const reservation = resSnap.data()!;
+
+    // Idempotent: duplicate webhook delivery for an already-completed reservation is a no-op.
+    if (reservation.status === 'completed') {
+      logger.info(`[handleMarketplacePurchaseCompleted] Reservation ${reservationId} already completed — skipping`);
+      return;
+    }
+
+    const purchaseRef = db.collection('purchases').doc(session.id); // Stripe session id = natural idempotency key
+    tx.set(purchaseRef, {
+      buyerId: reservation.buyerId,
+      sellerId: reservation.sellerId,
+      productId: reservation.productId,
+      amount: reservation.priceCents,
+      currency: reservation.currency,
+      status: 'completed',
+      transactionId: session.id,
+      createdAt: FieldValue.serverTimestamp(),
+    }, { merge: true });
+
+    tx.set(db.collection('revenue').doc(), {
+      userId: reservation.sellerId,
+      productId: reservation.productId,
+      productName: reservation.productTitle,
+      amount: reservation.priceCents,
+      currency: reservation.currency,
+      source: reservation.source === 'social' ? 'social_drop' : reservation.source,
+      sourceId: reservation.sourceId || undefined,
+      customerId: reservation.buyerId,
+      status: 'completed',
+      createdAt: FieldValue.serverTimestamp(),
+    });
+
+    tx.update(reservationRef, { status: 'completed', completedAt: FieldValue.serverTimestamp() });
+  });
+
+  logger.info(`[handleMarketplacePurchaseCompleted] Finalized sale for reservation ${reservationId}, session ${session.id}`);
+}
+
+/**
+ * Marketplace checkout expired/cancelled without payment — release the
+ * inventory reservation made at checkout-creation time (ISSUE-978).
+ */
+async function handleMarketplaceCheckoutExpired(session: Stripe.Checkout.Session): Promise<void> {
+  const reservationId = session.metadata?.reservationId;
+  if (!reservationId || session.metadata?.type !== 'marketplace_purchase') return;
+
+  const db = getFirestore();
+  const reservationRef = db.collection('marketplace_reservations').doc(reservationId);
+  const productRef = db.collection('products').doc(session.metadata!.productId as string);
+
+  await db.runTransaction(async (tx) => {
+    const resSnap = await tx.get(reservationRef);
+    if (!resSnap.exists) return;
+    const reservation = resSnap.data()!;
+
+    // Only release reservations still pending — a completed or already-released one is untouched.
+    if (reservation.status !== 'reserved') return;
+
+    if (reservation.hasInventoryTracking) {
+      tx.update(productRef, { inventory: FieldValue.increment(1) });
+    }
+    tx.update(reservationRef, { status: 'released', releasedReason: 'checkout_expired' });
+  });
+
+  logger.info(`[handleMarketplaceCheckoutExpired] Released reservation ${reservationId} for expired session ${session.id}`);
+}
+
 async function handleCheckoutCompleted(event: Stripe.Event): Promise<void> {
   const session = event.data.object as Stripe.Checkout.Session;
 
   // Route micro-transactions separately.
   if (session.metadata?.type === 'micro_transaction') {
     await handleMicroTransactionCheckoutCompleted(session);
+    return;
+  }
+
+  // Route marketplace purchases separately.
+  if (session.metadata?.type === 'marketplace_purchase') {
+    await handleMarketplacePurchaseCompleted(session);
     return;
   }
 
@@ -487,6 +586,9 @@ export const stripeWebhook = onRequest({
     switch (event.type) {
       case 'checkout.session.completed':
         await handleCheckoutCompleted(event);
+        break;
+      case 'checkout.session.expired':
+        await handleMarketplaceCheckoutExpired(event.data.object as Stripe.Checkout.Session);
         break;
       case 'customer.subscription.created':
         await handleSubscriptionCreated(event);

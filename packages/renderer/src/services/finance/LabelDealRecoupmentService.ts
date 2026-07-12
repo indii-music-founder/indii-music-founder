@@ -82,7 +82,10 @@ export interface RecoupmentSummary {
 }
 
 class LabelDealRecoupmentService {
-    private readonly dealsCollection = 'labelDeals';
+    // NOTE: must match the Firestore rule at firestore.rules `match /label_deals/{dealId}`
+    // — this collection name previously read 'labelDeals' (camelCase), a silent mismatch
+    // that made every read/write here hit the default-deny catch-all.
+    private readonly dealsCollection = 'label_deals';
 
     /**
      * Create a new label deal for tracking

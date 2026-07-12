@@ -1357,11 +1357,13 @@ import { trackUsage } from "./subscription/trackUsage";
 import { stripeWebhook } from "./stripe/webhookHandler";
 import { activateFounderPass } from "./subscription/activateFounderPass";
 import { createMicroTransaction } from "./subscription/createMicroTransaction";
+import { createMarketplaceCheckout } from "./marketplace/createMarketplaceCheckout";
 
 export {
     getSubscription,
     createCheckoutSession,
     createOneTimeCheckout,
+    createMarketplaceCheckout,
     generateInvoice,
     cancelSubscription,
     resumeSubscription,
