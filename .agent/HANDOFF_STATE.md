@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-07-11 20:29 EDT
+**Updated:** 2026-07-11 22:03 EDT
 **Branch:** `fix/issues-core`
 
 ## Recent Commits
 ```
+edabf5c0d chore: session checkpoint [20:29]
 c1a307568 chore: session checkpoint [20:00]
 d09d59f6e chore: session checkpoint [19:15]
 c2a10ec49 chore: session checkpoint [19:10]
@@ -13,7 +14,6 @@ c2a10ec49 chore: session checkpoint [19:10]
 33fcdbe5d fix(persistence): ISSUE-755 — merge local/remote sessions instead of clobbering + add retry logic
 ecd218287 chore: session checkpoint [18:56]
 680889865 chore: session checkpoint [18:55]
-da1aec305 docs: update ledger — PR #228 merged, ISSUE-766 L1-L2 fixed
 ```
 
 ## Working State
