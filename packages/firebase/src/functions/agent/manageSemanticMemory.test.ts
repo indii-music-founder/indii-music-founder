@@ -219,13 +219,13 @@ describe('manageSemanticMemory', () => {
         query: 'trimmed query',
         limit: '7',
       },
-    })).resolves.toEqual({ results: [] });
+    })).resolves.toEqual({ results: [], hasMore: false });
 
     expect(mockFindNearest).toHaveBeenCalledWith(
       expect.objectContaining({
         vectorField: 'embedding',
         queryVector: [0.3, 0.3, 0.3],
-        limit: 7,
+        limit: 8,
         distanceMeasure: 'COSINE',
       }),
     );
@@ -361,13 +361,14 @@ describe('manageSemanticMemory', () => {
           created_at: '2026-07-01T00:00:00.000Z',
         },
       ],
+      hasMore: false,
     });
 
     expect(mockFindNearest).toHaveBeenCalledWith(
       expect.objectContaining({
         vectorField: 'embedding',
         queryVector: [0.1, 0.2, 0.3],
-        limit: 5,
+        limit: 6,
         distanceMeasure: 'COSINE',
       }),
     );
@@ -397,7 +398,7 @@ describe('manageSemanticMemory', () => {
       expect.objectContaining({
         vectorField: 'embedding',
         queryVector: [0.2, 0.4, 0.6],
-        limit: 20,
+        limit: 101,
         distanceMeasure: 'COSINE',
       }),
     );
