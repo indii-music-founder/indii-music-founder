@@ -150,7 +150,7 @@ export const PublishingAgent: AgentConfig = {
             },
             {
                 name: "register_work_with_pro",
-                description: "Submit a musical work registration directly to a PRO (ASCAP/BMI/SESAC).",
+                description: "Prepare a draft work-registration packet for a PRO (ASCAP/BMI/SESAC). indii has no direct filing integration with any PRO — this stores the draft and returns a requires_manual_submission status; the user must file it themselves on the PRO's own portal.",
                 parameters: {
                     type: "OBJECT",
                     properties: {
