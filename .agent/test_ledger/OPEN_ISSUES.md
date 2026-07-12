@@ -12778,13 +12778,14 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-807: Video “Audio” toggle promises a control that is only prompt text
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIALLY FIXED (2026-07-12) — UI now discloses the toggle is a best-effort request, not a guarantee; telemetry event distinction not implemented
 - **Severity:** 🟡 MEDIUM
 - **Module:** Creative Suite / Veo settings
 - **Evidence:** The settings UI renders a binary “Audio” toggle for video generation (`StudioSettingsPanel.tsx:289-301`). When disabled, `VideoWorkflow.tsx:554-565` only appends “silent video” language and negative prompt text; the comment admits Veo 3.1 has no API-level audio toggle. The video schema also notes `generateAudio` is retained for UI state only and never sent to the API (`video/schemas.ts:81-83`).
 - **Impact:** Users can reasonably expect audio to be disabled deterministically, but the app only asks the model to avoid audio.
 - **Fix:** Rename the control to “Request silent output” with a warning, or remove it until a provider-supported audio control exists.
 - **Acceptance:** UI copy and telemetry distinguish `audio_requested_off` from `audio_disabled_by_provider`.
+- **Fix applied (2026-07-12):** `StudioSettingsPanel.tsx`'s Audio toggle label changed from bare "Audio" to "Audio (requested)", and the `<label>` now carries a `title` tooltip stating plainly that "Veo has no API-level audio control — unchecking this only asks the model (via prompt text) to generate a silent clip. It is a request, not a guarantee." No behavior change — `VideoWorkflow.tsx`'s existing prompt-augmentation logic (already honest in its own code comment) is untouched. Tests: new `StudioSettingsPanel.test.tsx` (2 cases) — asserts the renamed label text and asserts the tooltip text explicitly names both "no API-level audio control" and "request, not a guarantee." Typecheck/lint clean. **Not done:** the Acceptance criterion asking telemetry to distinguish `audio_requested_off` from `audio_disabled_by_provider` as named events — no analytics/telemetry pipeline call was added; this pass only fixed the user-facing honesty gap (the control no longer implies a guarantee), not event-level instrumentation, which would need integration with wherever this app's telemetry events are actually emitted/consumed (not investigated this pass).
 
 ### ISSUE-808: Storyboard beat cards advertise beat quantization but use a fixed 120 BPM grid
 
