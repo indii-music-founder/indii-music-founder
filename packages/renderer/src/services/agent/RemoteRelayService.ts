@@ -56,7 +56,11 @@ export interface RemoteCommand {
     targetAgentId?: string;
     metadata?: Record<string, unknown>;
     timestamp: Timestamp | ReturnType<typeof serverTimestamp>;
-    status: 'pending' | 'processing' | 'completed';
+    // 'cancelled' (ISSUE-989): the phone gave up (timeout/unmount) before the
+    // desktop claimed the command — the atomic claim precondition in
+    // processSingleCommand() only matches 'pending', so a cancelled command
+    // can never be picked up by a later backlog scan/recovery.
+    status: 'pending' | 'processing' | 'completed' | 'cancelled';
     createdAt: Timestamp | ReturnType<typeof serverTimestamp>;
 }
 
@@ -656,6 +660,39 @@ class RemoteRelayService {
         await updateDoc(doc(db, 'users', uid, 'remote-relay-commands', commandId), {
             status: 'completed',
         });
+    }
+
+    /**
+     * Atomically cancel a command if the desktop hasn't claimed it yet
+     * (phone side — timeout or giving up on a request).
+     *
+     * ISSUE-989: a client-side generation timeout previously only detached
+     * the phone's listener; the Firestore command stayed 'pending' forever,
+     * so a desktop that came back online later (mount/recovery backlog scan)
+     * would still execute it — potentially alongside a brand-new retry
+     * command, paying for the same generation twice. Returns `true` when the
+     * command was genuinely cancelled before being claimed (no cost was
+     * incurred); `false` when the desktop already claimed it (work may still
+     * be in progress — cannot be cancelled for free) or it doesn't exist.
+     */
+    async cancelCommand(commandId: string): Promise<boolean> {
+        const uid = getUserId();
+        if (!uid) return false;
+
+        const ref = doc(db, 'users', uid, 'remote-relay-commands', commandId);
+        try {
+            return await runTransaction(db, async (tx) => {
+                const snap = await tx.get(ref);
+                if (snap.exists() && snap.data()?.status === 'pending') {
+                    tx.update(ref, { status: 'cancelled' });
+                    return true;
+                }
+                return false;
+            });
+        } catch (error) {
+            logger.error('[RemoteRelay] Command cancel failed:', error);
+            return false;
+        }
     }
 
     /**
