@@ -167,7 +167,7 @@ describe('AudioAnalyzer Interaction: Save Analysis', () => {
         fireEvent.click(saveBtn);
 
         await waitFor(() => {
-            expect(mockToast.success).toHaveBeenCalledWith('Distribution standards and acoustic profile saved.');
+            expect(mockToast.success).toHaveBeenCalledWith('Estimated technical profile saved (not a certified distribution-compliance measurement).');
         });
     });
 });
