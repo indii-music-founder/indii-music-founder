@@ -345,3 +345,59 @@ describe('QuickCaptureView — voice memo MIME/validity guards (ISSUE-987)', () 
         }
     });
 });
+
+describe('QuickCaptureView — venue pin geolocation (ISSUE-988)', () => {
+    let getCurrentPosition: ReturnType<typeof vi.fn>;
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        getCurrentPosition = vi.fn();
+        Object.defineProperty(navigator, 'geolocation', {
+            configurable: true,
+            value: { getCurrentPosition },
+        });
+    });
+
+    it('requests location with an explicit timeout so a stalled provider cannot hang forever', () => {
+        render(<QuickCaptureView isPaired={true} />);
+        const pinBtn = screen.getByRole('button', { name: /^pin$/i });
+        fireEvent.click(pinBtn);
+
+        expect(getCurrentPosition).toHaveBeenCalledTimes(1);
+        const options = getCurrentPosition.mock.calls[0]![2];
+        expect(options.timeout).toEqual(expect.any(Number));
+        expect(options.timeout).toBeGreaterThan(0);
+    });
+
+    it('unlocks capture and shows a clear message when the provider times out', async () => {
+        getCurrentPosition.mockImplementation((_success, error) => {
+            error({ code: 3, TIMEOUT: 3, PERMISSION_DENIED: 1, POSITION_UNAVAILABLE: 2, message: 'Timeout' });
+        });
+
+        render(<QuickCaptureView isPaired={true} />);
+        const pinBtn = screen.getByRole('button', { name: /^pin$/i });
+
+        await act(async () => {
+            fireEvent.click(pinBtn);
+        });
+
+        expect(mockError).toHaveBeenCalledWith(expect.stringMatching(/timed out/i));
+        expect(pinBtn).not.toBeDisabled();
+    });
+
+    it('unlocks capture on a non-timeout location error too', async () => {
+        getCurrentPosition.mockImplementation((_success, error) => {
+            error({ code: 2, TIMEOUT: 3, PERMISSION_DENIED: 1, POSITION_UNAVAILABLE: 2, message: 'Unavailable' });
+        });
+
+        render(<QuickCaptureView isPaired={true} />);
+        const pinBtn = screen.getByRole('button', { name: /^pin$/i });
+
+        await act(async () => {
+            fireEvent.click(pinBtn);
+        });
+
+        expect(mockError).toHaveBeenCalledWith('Location capture failed. Please try again.');
+        expect(pinBtn).not.toBeDisabled();
+    });
+});
