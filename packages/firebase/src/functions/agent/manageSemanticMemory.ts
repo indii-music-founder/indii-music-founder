@@ -7,7 +7,7 @@ import { validateAppCheckV2 } from '../../middleware/appCheck';
 
 const ENFORCE_APP_CHECK = process.env.NODE_ENV === 'production' && process.env.SKIP_APP_CHECK !== "true" && process.env.ENFORCE_APP_CHECK !== "false";
 const DEFAULT_SEMANTIC_SEARCH_LIMIT = 5;
-const MAX_SEMANTIC_SEARCH_LIMIT = 20;
+const MAX_SEMANTIC_SEARCH_LIMIT = 100; // Increased from 20 to support full-archive recall (ISSUE-757)
 const MAX_SEMANTIC_TEXT_LENGTH = 4_000;
 const SEMANTIC_EMBEDDING_MODEL = 'text-embedding-004';
 
@@ -180,17 +180,23 @@ export const manageSemanticMemory = onCall({
 
             const queryVector = await generateSemanticEmbedding(genai, normalizedQuery, 'query');
 
-            // Perform vector search
+            // Perform vector search with +1 to detect if more results exist (pagination support)
             // findNearest is available in the current firebase-admin SDK line used by this repo.
             const vectorQuery = memoriesRef.findNearest({
                 vectorField: 'embedding',
                 queryVector,
-                limit: searchLimit,
+                limit: searchLimit + 1, // +1 to detect more results
                 distanceMeasure: 'COSINE'
             });
 
             const snapshot = await vectorQuery.get();
-            const results = snapshot.docs.map(doc => {
+            const docs = snapshot.docs;
+
+            // Check if there are more results beyond our limit
+            const hasMore = docs.length > searchLimit;
+            const limitedDocs = hasMore ? docs.slice(0, searchLimit) : docs;
+
+            const results = limitedDocs.map(doc => {
                 const data = doc.data();
                 return {
                     id: doc.id,
@@ -199,7 +205,10 @@ export const manageSemanticMemory = onCall({
                 };
             });
 
-            return { results };
+            return {
+                results,
+                hasMore // Return pagination indicator for agent to know if more results exist
+            };
         }
 
         throw new HttpsError('invalid-argument', 'Unknown action. Use "add" or "search".');
