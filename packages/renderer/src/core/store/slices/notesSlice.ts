@@ -1,6 +1,8 @@
 import { StateCreator } from 'zustand';
 import { StoreState } from '../index';
 import { v4 as uuidv4 } from 'uuid';
+import { logger } from '@/utils/logger';
+import { useStore } from '../index';
 
 export interface Note {
     id: string;
@@ -15,6 +17,8 @@ export interface Note {
 export interface NotesSlice {
     notes: Note[];
     selectedNoteId: string | null;
+    notesLoading: boolean;
+    notesSyncError: string | null;
 
     // Actions
     addNote: (note: Omit<Note, 'id' | 'createdAt' | 'updatedAt'>) => string;
@@ -22,11 +26,14 @@ export interface NotesSlice {
     deleteNote: (id: string) => void;
     setSelectedNote: (id: string | null) => void;
     addAttachmentToNote: (id: string, url: string) => void;
+    loadNotesFromCloud: () => Promise<void>;
 }
 
 export const createNotesSlice: StateCreator<StoreState, [], [], NotesSlice> = (set) => ({
     notes: [],
     selectedNoteId: null,
+    notesLoading: false,
+    notesSyncError: null,
 
     addNote: (noteData) => {
         const id = uuidv4();
@@ -42,17 +49,38 @@ export const createNotesSlice: StateCreator<StoreState, [], [], NotesSlice> = (s
             notes: [newNote, ...state.notes]
         }));
 
+        // Sync to Firestore (fire-and-forget, but with retry queue)
+        import('@/services/notes/NotesService').then(({ notesService }) => {
+            notesService.pushNote(newNote).catch(e =>
+                logger.error('[NotesSlice] Failed to push new note:', e)
+            );
+        });
+
         return id;
     },
 
     updateNote: (id, updates) => {
-        set((state) => ({
-            notes: state.notes.map(note =>
-                note.id === id
-                    ? { ...note, ...updates, updatedAt: Date.now() }
-                    : note
-            )
-        }));
+        set((state) => {
+            const updatedNote = state.notes.find(n => n.id === id);
+            if (!updatedNote) return {};
+
+            const updated = { ...updatedNote, ...updates, updatedAt: Date.now() };
+            return {
+                notes: state.notes.map(note =>
+                    note.id === id ? updated : note
+                )
+            };
+        });
+
+        // Sync to Firestore
+        const updatedNote = useStore.getState().notes.find((n: Note) => n.id === id);
+        if (updatedNote) {
+            import('@/services/notes/NotesService').then(({ notesService }) => {
+                notesService.pushNote(updatedNote).catch(e =>
+                    logger.error('[NotesSlice] Failed to push updated note:', e)
+                );
+            });
+        }
     },
 
     deleteNote: (id) => {
@@ -60,6 +88,13 @@ export const createNotesSlice: StateCreator<StoreState, [], [], NotesSlice> = (s
             notes: state.notes.filter(note => note.id !== id),
             selectedNoteId: state.selectedNoteId === id ? null : state.selectedNoteId
         }));
+
+        // Delete from Firestore
+        import('@/services/notes/NotesService').then(({ notesService }) => {
+            notesService.deleteNote(id).catch(e =>
+                logger.error('[NotesSlice] Failed to delete note:', e)
+            );
+        });
     },
 
     setSelectedNote: (id) => {
@@ -67,12 +102,36 @@ export const createNotesSlice: StateCreator<StoreState, [], [], NotesSlice> = (s
     },
 
     addAttachmentToNote: (id, url) => {
-        set((state) => ({
-            notes: state.notes.map(note =>
+        set((state) => {
+            const updated = state.notes.map(note =>
                 note.id === id
                     ? { ...note, attachments: [...note.attachments, url], updatedAt: Date.now() }
                     : note
-            )
-        }));
+            );
+            return { notes: updated };
+        });
+
+        // Sync to Firestore
+        const updatedNote = useStore.getState().notes.find((n: Note) => n.id === id);
+        if (updatedNote) {
+            import('@/services/notes/NotesService').then(({ notesService }) => {
+                notesService.pushNote(updatedNote).catch(e =>
+                    logger.error('[NotesSlice] Failed to push attachment:', e)
+                );
+            });
+        }
+    },
+
+    loadNotesFromCloud: async () => {
+        set({ notesLoading: true, notesSyncError: null });
+        try {
+            const { notesService } = await import('@/services/notes/NotesService');
+            const cloudNotes = await notesService.pullNotes();
+            set({ notes: cloudNotes, notesLoading: false });
+        } catch (error) {
+            const errorMsg = error instanceof Error ? error.message : 'Failed to load notes';
+            logger.error('[NotesSlice] Load notes failed:', error);
+            set({ notesLoading: false, notesSyncError: errorMsg });
+        }
     }
 });
