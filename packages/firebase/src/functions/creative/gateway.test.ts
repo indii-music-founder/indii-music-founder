@@ -554,4 +554,39 @@ describe('creative gateway generateOmniRemixV3', () => {
       resultUri: expect.stringContaining('gs://test-bucket/creative/user-123/'),
     }));
   });
+
+  it('ISSUE-774: never prices "hybrid-veo" at the Pro rate — it never runs a second Veo stage', async () => {
+    mockInteractionsCreate.mockResolvedValueOnce({
+      id: 'interaction-123',
+      status: 'ACTIVE',
+      output_video: {
+        data: Buffer.from('omni-video-bytes').toString('base64'),
+        mime_type: 'video/mp4',
+      },
+    });
+
+    // A client with a stale persisted 'hybrid-veo' selection still reserves
+    // at the real (fast) rate. If the server priced this at the Pro rate
+    // (0.4/sec instead of 0.1/sec), 8 * 0.4 = 3.2 would mismatch this 0.8
+    // reservation and the job would be rejected before ever running.
+    const result = await callGenerateOmniRemix({
+      auth: { uid: 'user-123' },
+      data: {
+        prompt: 'Add neon glow effects to the performance',
+        referenceVideoUri: 'gs://test-bucket/base/performance.mp4',
+        aspectRatio: '16:9',
+        durationSeconds: 8,
+        pipelineMode: 'hybrid-veo',
+        costEstimate: 0.8,
+        costReservationId: 'cost-op-1',
+      },
+    });
+
+    expect(result).toEqual(expect.objectContaining({
+      jobId: 'job-123',
+      resultUri: expect.stringContaining('gs://test-bucket/creative/user-123/'),
+    }));
+    // Confirm exactly one generation call happened — no second Veo stage.
+    expect(mockInteractionsCreate).toHaveBeenCalledTimes(1);
+  });
 });

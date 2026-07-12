@@ -1494,9 +1494,14 @@ export const generateOmniRemixV3 = onCall({ timeoutSeconds: 540, secrets: [gemin
     );
   }
   const durationSeconds = Math.min(12, Math.max(4, data.durationSeconds));
+  // ISSUE-774: exactly one ai.interactions.create() call happens below,
+  // regardless of pipelineMode — there is no second Veo stage to charge Pro
+  // pricing for. `pipelineMode` no longer affects cost; it's accepted as a
+  // legacy/no-op field only (kept in the schema so any client with a stale
+  // persisted 'hybrid-veo' selection doesn't fail payload validation).
   const serverEstimatedCost = estimateVideoCost(
     durationSeconds,
-    data.pipelineMode === 'hybrid-veo' ? VIDEO_MODEL_IDS.pro : VIDEO_MODEL_IDS.fast,
+    VIDEO_MODEL_IDS.fast,
     data.pipelineMode,
   );
   const reservation = data.costReservationId

@@ -172,21 +172,14 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                             icon={<Sparkles className="text-green-400" size={14} />}
                         >
                             <div className="space-y-4">
+                                {/* ISSUE-774: "Hybrid Veo" retired — it never ran a second Veo
+                                    stage (always the same single Omni call) and only overcharged
+                                    at Pro pricing for identical output. Pure Omni is the only
+                                    real engine, so there is no longer a choice to make here. */}
                                 <div className="space-y-1.5">
                                     <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest font-mono">Pipeline Mode</span>
-                                    <div className="grid grid-cols-2 gap-1 p-1 bg-black/60 rounded-lg border border-white/5 font-mono text-[9px]">
-                                        <button
-                                            onClick={() => setStudioControls({ omniPipelineMode: 'pure-omni' })}
-                                            className={`py-1 rounded transition-colors ${studioControls.omniPipelineMode === 'pure-omni' ? 'bg-green-500/20 text-green-400 font-bold border border-green-500/20' : 'text-gray-400 hover:text-white'}`}
-                                        >
-                                            Pure Omni
-                                        </button>
-                                        <button
-                                            onClick={() => setStudioControls({ omniPipelineMode: 'hybrid-veo' })}
-                                            className={`py-1 rounded transition-colors ${studioControls.omniPipelineMode === 'hybrid-veo' ? 'bg-green-500/20 text-green-400 font-bold border border-green-500/20' : 'text-gray-400 hover:text-white'}`}
-                                        >
-                                            Hybrid Veo
-                                        </button>
+                                    <div className="flex items-center gap-1.5 p-2 bg-black/60 rounded-lg border border-green-500/20 font-mono text-[9px] text-green-400 font-bold">
+                                        Pure Omni V2V Engine
                                     </div>
                                 </div>
 
