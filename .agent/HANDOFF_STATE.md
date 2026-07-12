@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-07-12 09:41 EDT
+**Updated:** 2026-07-12 09:47 EDT
 **Branch:** `fix/issues-core`
 
 ## Recent Commits
 ```
+7945c9667 chore: session checkpoint [09:41]
 a948550fa fix(creative): stop advertising Veo aspect ratios/durations the backend silently discards
 c91d027c1 chore: session checkpoint [09:36]
 5a9c7fe65 fix(remote): separate controller from studio executor
@@ -13,12 +14,15 @@ fabc53510 docs(ledger): log ISSUE-1025 -- Mobile Controller falsely reports Stud
 178e2fd75 test(dashboard): lock in AssetSpotlight's Discuss-attaches-the-asset fix, correct stale ledger entry
 4cdad01a2 fix(test): update stale toast assertion broken by the ISSUE-997 copy change
 2123036d0 fix(creative): stop claiming Omni output is SynthID "Protected"
-2766bc3d8 chore: session checkpoint [06:44]
 ```
 
 ## Working State
 ```
+ M .agent/HANDOFF_STATE.md
+ M .agent/test_ledger/OPEN_ISSUES.md
+ M packages/firebase/src/lib/marketing.ts
 ?? docs/USER_MANUAL_REMOTE_SETUP_AND_SYNC.md
+?? packages/firebase/src/lib/marketing.test.ts
 ```
 
 ## Decisions
