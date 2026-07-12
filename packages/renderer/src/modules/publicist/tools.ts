@@ -39,8 +39,19 @@ const PitchStorySchema = z.object({
     emailBody: z.string()
 });
 
+// ISSUE-931: the model must never invent contact/identity facts. The
+// press release it drafts for generate_campaign_assets omits contactInfo
+// entirely — it is injected deterministically after generation from the
+// user-supplied form field (see generate_campaign_assets below).
+const CampaignPressReleaseSchema = z.object({
+    headline: z.string(),
+    content: z.string()
+});
+
+export const UNRESOLVED_MEDIA_CONTACT = 'MEDIA CONTACT NOT PROVIDED — add a verified contact before sending to press';
+
 const CampaignAssetsSchema = z.object({
-    pressRelease: PressReleaseSchema,
+    pressRelease: CampaignPressReleaseSchema,
     socialPosts: z.array(z.object({
         platform: z.string(),
         content: z.string(),
@@ -159,11 +170,11 @@ export const PUBLICIST_TOOLS = {
         );
     }),
 
-    generate_campaign_assets: wrapTool('generate_campaign_assets', async (args: { trackTitle: string, artistName: string, releaseDate: string, musicalStyle: string[], targetAudience: string }) => {
+    generate_campaign_assets: wrapTool('generate_campaign_assets', async (args: { trackTitle: string, artistName: string, releaseDate: string, musicalStyle: string[], targetAudience: string, contactInfo?: string }) => {
         const prompt = `
         You are a Music Marketing Strategist.
         Create a complete "Release Kit" for a new single.
-        
+
         Track: ${args.trackTitle}
         Artist: ${args.artistName}
         Release Date: ${args.releaseDate}
@@ -171,13 +182,15 @@ export const PUBLICIST_TOOLS = {
         Audience: ${args.targetAudience}
 
         Generate the following assets:
-        1. Press Release (Formal, concise)
+        1. Press Release (Formal, concise) — headline and body ONLY. Do NOT invent a
+           media contact, email address, phone number, or any other contact detail;
+           that is supplied separately by the user and injected after generation.
         2. Social Media Posts (3 posts: Instagram, Twitter/X, TikTok - engaging, use emojis)
         3. Email Blast (Direct to fans, personal tone)
 
         Output a STRICT JSON object matching this schema:
         {
-            "pressRelease": { "headline": string, "content": string, "contactInfo": string },
+            "pressRelease": { "headline": string, "content": string },
             "socialPosts": [ { "platform": string, "content": string, "hashtags": string[] } ],
             "emailBlast": { "subject": string, "body": string }
         }
@@ -188,7 +201,18 @@ export const PUBLICIST_TOOLS = {
             const text = getResponseText(res);
             const jsonText = text.replace(/```json\n|\n```/g, '').trim();
             const parsed = JSON.parse(jsonText);
-            const result = CampaignAssetsSchema.parse(parsed);
+            const generated = CampaignAssetsSchema.parse(parsed);
+
+            // ISSUE-931: contact info is never model-generated. Inject the
+            // user-supplied value deterministically, or an obvious
+            // unresolved placeholder if none was provided.
+            const result = {
+                ...generated,
+                pressRelease: {
+                    ...generated.pressRelease,
+                    contactInfo: args.contactInfo?.trim() || UNRESOLVED_MEDIA_CONTACT
+                }
+            };
 
             return toolSuccess(result, `Campaign assets generated for ${args.trackTitle}.`);
         } catch (e: unknown) {
