@@ -1,19 +1,19 @@
 # Handoff State
-**Updated:** 2026-07-12 18:31 EDT
+**Updated:** 2026-07-12 18:55 EDT
 **Branch:** `fix/issues-core`
 
 ## Recent Commits
 ```
+3f7ae4780 fix(notes): wire loadNotesFromCloud into app init; merge instead of overwrite (hunter finding, ISSUE-761)
+79c22fbac fix(e2e): correct video-mode nav path, honestly skip desktop-only Magic Edit check
+db2bf449f fix(e2e): correct creative-studio testid to creative-studio-container
+c397fa6da fix(e2e): use the shared authedPage fixture instead of a broken hand-rolled onboarding skip
+889fb1bb5 fix(ci): widen unit-test sharding 8->10 to stop shard 7 OOMing (ISSUE-1046)
+fa85d056a fix(sessions): tiebreak pagination cursor on documentId() to stop silent session drops (hunter finding, ISSUE-756)
+1d6b3e684 fix(creative,e2e): hunter findings on ISSUE-763 work — real selectors + correct guidance gate
+66b9777d9 chore: session checkpoint [18:31]
 d389f9822 docs: add /ci-validate workflow to triage main deploy failures vs the known OOM flake
 18dfcf74a chore: session checkpoint [18:23]
-8cccca1fd fix(marketing): distinguish auth/read failures from a real empty Fan CRM (ISSUE-848)
-780a12ec0 docs(ledger): log ISSUE-1046 (CI shard 7/8 recurring OOM) and ISSUE-1045 (per-surface icon colors)
-02d53a9d7 fix(publicist): stop claiming PR assets were saved when persistence fails (ISSUE-838)
-9c1261f0d chore: session checkpoint [18:09]
-2df1eb784 docs(ledger): close detailed ISSUE-758/762 entries (deep-history section)
-a8d03dd7d docs(ledger): mark ISSUE-758/762 fixed — sentinel migration complete
-857525bda fix(project): finish ISSUE-758/762 sentinel unification — migrate scattered literals to DEFAULT_PROJECT_ID
-f08b1078c fix(marketing): stop claiming a campaign brief was saved when persistence fails (ISSUE-835)
 ```
 
 ## Working State
