@@ -9,7 +9,7 @@ import time
 # Ensure we can import sibling modules
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 try:
-    from ingestion_generator import Proprietary Ingestion IPGenerator
+    from ingestion_generator import DDEXGenerator
 except ImportError:
     # Fallback if running from a different context
     pass
@@ -36,7 +36,7 @@ def package_itmsp(release_id, staging_path):
 
     1. Validates staging directory and metadata.
     2. Calculates checksums for assets.
-    3. Generates Proprietary Ingestion IP Ingestion Protocol 4.3 XML.
+    3. Generates DDEX Ingestion Protocol 4.3 XML.
     4. Creates .itmsp directory structure.
     5. Moves assets and XML into the bundle.
     """
@@ -82,12 +82,12 @@ def package_itmsp(release_id, staging_path):
 
         # 3. Generate XML
         try:
-            generator = Proprietary Ingestion IPGenerator()
+            generator = DDEXGenerator()
             xml_content = generator.generate_ern(metadata)
         except NameError:
              # Handle case where import failed
-             from ingestion_generator import Proprietary Ingestion IPGenerator
-             generator = Proprietary Ingestion IPGenerator()
+             from ingestion_generator import DDEXGenerator
+             generator = DDEXGenerator()
              xml_content = generator.generate_ern(metadata)
 
         # 4. Create Bundle Structure
