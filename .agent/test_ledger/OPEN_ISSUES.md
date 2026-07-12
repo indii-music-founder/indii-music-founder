@@ -49,10 +49,14 @@
 - **Fix:** Add `<ArchiveFilter>` to ProjectList; update `listByUser` to allow toggle
 - **Est. time:** 30 min
 
-**ISSUE-760: Boardroom Persistence (architectural)**
-- **Status:** 🟡 READY — needs migration boardroomSlice → ConversationSession
-- **Blocker:** ISSUE-755 (now ✅), but requires session system expansion
-- **Recommended:** Consolidate boardroom a2aMessages into session.messages with source='boardroom'
+**ISSUE-760: Boardroom Persistence ✅ FIXED (verified 2026-07-12 code-audit)**
+- **Status:** 🟢 DONE — boardroom already rides the ConversationSession spine → Firestore. My earlier "🟡 READY / needs migration" was STALE.
+- **Verified in code (MCLEAR pass):**
+  - `store/slices/agent/index.ts:65-76` — entering boardroom switches `activeSessionId` to a `namespace:'boardroom'`, projectId-scoped session (creates it via `createSession('Boardroom', ['indii'], 'boardroom', projectId)` if absent).
+  - `agentSessionSlice.ts:247-298` — `addAgentMessage` persists every message to Firestore via `sessionService.updateSession()` with 3-attempt retry backoff. Boardroom messages flow through this exact path.
+  - `BoardroomModule.tsx:48` + `store/index.ts:135` — `boardroomMessages` is now an ALIAS for `state.agentHistory` (active session messages), NOT a separate array. The localStorage `boardroomMessages` partialize key is a legacy ISSUE-007 HMR-survival shim, not the source of truth.
+- **Acceptance met:** Firestore persistence ✅, cross-device sync (sessions sync) ✅, archive visibility (namespaced session) ✅, reload survival ✅, feeds memory pipeline ✅.
+- **OBSOLETE:** `docs/BOARDROOM_PERSISTENCE_ARCHITECTURE.md` phases 2-4 (source-field migration) are NOT needed — the `namespace` approach superseded them and honors the DO-NOT ("do not create a separate persistence path"). Doc marked obsolete.
 
 **ISSUE-763: Beta First-Touch ✅ FIXED**
 - **Completed:** First-run guidance overlay added to CreativeStudio canvas (hint: "Create Your First Image")
@@ -11969,7 +11973,7 @@ Walked individual menus applying all four lenses (double-click races / authoriza
 
 ### ISSUE-760: Boardroom messages are in-memory only — full discussion lost on reload
 
-- **Status:** 🔴 OPEN (PLANNED — needs a persistence-verify pass before coding)
+- **Status:** 🟢 FIXED (verified 2026-07-12) — the persistence-verify pass is done; boardroom rides the durable session spine → Firestore. See the reconciled entry in the session-summary section above for the exact code evidence (`agent/index.ts:65-76`, `agentSessionSlice.ts:247-298`, `BoardroomModule.tsx:48`). No new code was required; the fix landed via session unification (`namespace:'boardroom'`), not a parallel store.
 - **Depends on:** ISSUE-755 (should ride the same durable-session mechanism)
 - **Severity:** 🟠 MEDIUM-HIGH (boardroom is the group-work centerpiece; suspected total loss on refresh)
 - **Location:** `packages/renderer/src/core/store/slices/agent/agentSessionSlice.ts:56-58,96-108` (`boardroomMessages` + actions), `packages/renderer/src/modules/boardroom/BoardroomModule.tsx`
