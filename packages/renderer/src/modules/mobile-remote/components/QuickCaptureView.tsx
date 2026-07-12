@@ -10,6 +10,13 @@ import { triggerHaptic } from '../MobileRemote';
 export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
     const toast = useToast();
     const [isRecording, setIsRecording] = useState(false);
+    // ISSUE-986: true from the moment Stop is tapped until the recorder's
+    // async onstop actually delivers the audio blob. isRecording flips to
+    // false immediately (so the mic button reads "Speak" again), but the
+    // OTHER capture controls must stay blocked until finalization — otherwise
+    // a photo/video picked in that gap gets silently clobbered when the
+    // delayed audio blob lands on top of it.
+    const [isFinalizingRecording, setIsFinalizingRecording] = useState(false);
     const [isDispatching, setIsDispatching] = useState(false);
     const [capturedAudioBlob, setCapturedAudioBlob] = useState<Blob | null>(null);
     const [capturedImageBlob, setCapturedImageBlob] = useState<{file: File, type: 'photo' | 'document'} | null>(null);
@@ -63,10 +70,16 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
     const stopRecording = useCallback(() => {
         const recorder = mediaRecorderRef.current;
         if (recorder && recorder.state !== 'inactive') {
+            // ISSUE-986: the audio blob only lands once onstop fires
+            // asynchronously — block photo/doc/video/pin/text replacement
+            // until then, or a capture picked in this gap gets silently
+            // clobbered when the delayed blob arrives on top of it.
+            setIsFinalizingRecording(true);
             try {
                 recorder.stop();
             } catch (error) {
                 console.error('Failed to stop media recorder', error);
+                setIsFinalizingRecording(false);
             }
         }
         streamRef.current?.getTracks().forEach(track => track.stop());
@@ -138,6 +151,7 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
                 if (isMountedRef.current && isStillActiveSession()) {
                     const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
                     setCapturedAudioBlob(audioBlob);
+                    setIsFinalizingRecording(false);
                 }
                 stream.getTracks().forEach(track => track.stop());
                 if (streamRef.current === stream) streamRef.current = null;
@@ -147,6 +161,7 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
                 console.error('MediaRecorder error', event);
                 if (isMountedRef.current && isStillActiveSession()) {
                     toast.error('Recording failed unexpectedly.');
+                    setIsFinalizingRecording(false);
                     stopRecording();
                 } else {
                     stream.getTracks().forEach(track => track.stop());
@@ -369,7 +384,7 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
                 <div className="grid grid-cols-4 gap-4 w-full max-w-sm">
                     <button
                         onClick={() => docInputRef.current?.click()}
-                        disabled={!isPaired || isDispatching || isRecording}
+                        disabled={!isPaired || isDispatching || isRecording || isFinalizingRecording}
                         className="flex flex-col items-center gap-2 p-3 rounded-2xl border border-white/10 bg-[#1c1c1e] text-[#8e8e93] hover:text-[#F0F0F0] hover:bg-white/10 transition-colors disabled:opacity-50"
                     >
                         <FileText className="w-6 h-6" />
@@ -379,7 +394,7 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
 
                     <button
                         onClick={() => photoInputRef.current?.click()}
-                        disabled={!isPaired || isDispatching || isRecording}
+                        disabled={!isPaired || isDispatching || isRecording || isFinalizingRecording}
                         className="flex flex-col items-center gap-2 p-3 rounded-2xl border border-white/10 bg-[#1c1c1e] text-[#8e8e93] hover:text-[#F0F0F0] hover:bg-white/10 transition-colors disabled:opacity-50"
                     >
                         <ImageIcon className="w-6 h-6" />
@@ -389,7 +404,7 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
 
                     <button
                         onClick={() => videoInputRef.current?.click()}
-                        disabled={!isPaired || isDispatching || isRecording}
+                        disabled={!isPaired || isDispatching || isRecording || isFinalizingRecording}
                         className="flex flex-col items-center gap-2 p-3 rounded-2xl border border-white/10 bg-[#1c1c1e] text-[#8e8e93] hover:text-[#F0F0F0] hover:bg-white/10 transition-colors disabled:opacity-50"
                     >
                         <Video className="w-6 h-6" />
@@ -399,7 +414,7 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
 
                     <button
                         onClick={handlePinDrop}
-                        disabled={!isPaired || isDispatching || isRecording || !hasGeolocation}
+                        disabled={!isPaired || isDispatching || isRecording || isFinalizingRecording || !hasGeolocation}
                         className="flex flex-col items-center gap-2 p-3 rounded-2xl border border-white/10 bg-[#1c1c1e] text-[#8e8e93] hover:text-[#F0F0F0] hover:bg-white/10 transition-colors disabled:opacity-50"
                     >
                         <MapPin className="w-6 h-6" />
@@ -429,7 +444,7 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
                             value={momentText}
                             onChange={(e) => setMomentText(e.target.value)}
                             placeholder="Capture a live moment..."
-                            disabled={!isPaired || isDispatching || isRecording}
+                            disabled={!isPaired || isDispatching || isRecording || isFinalizingRecording}
                             className="w-full bg-[#1c1c1e] border border-white/10 rounded-[20px] py-4 pl-12 pr-14 text-sm text-[#F0F0F0] placeholder:text-[#8e8e93] focus:outline-none focus:border-[#2E2EFE]/50 transition-colors"
                         />
                         <button
