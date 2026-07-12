@@ -106,7 +106,9 @@ describe('ReleaseHarnessService', () => {
 
     expect(result.releaseDna.genreSignals).toContain('Electronic');
     expect(result.distributionReadiness.ddexPackageReady).toBe(true);
-    expect(result.distributionReadiness.identifiers.iswcStatus).toBe('registered');
+    // ISSUE-813: a caller-supplied ISWC string is an unverified claim, not
+    // proof of CISAC/PRO registration, so this reports 'draft', not 'registered'.
+    expect(result.distributionReadiness.identifiers.iswcStatus).toBe('draft');
     expect(result.recommendedStrategy).toBeDefined();
     expect(result.warnings).toContain('Storefront delivery is not authorized by this harness run; this is package/readiness output only.');
   });
