@@ -64,12 +64,14 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
         initializeDesignHistory,
         pendingStageHandoff,
         consumeStageHandoff,
-        addCharacterReference
+        addCharacterReference,
+        canvasImages
     } = useStore(useShallow(state => ({
         viewMode: state.viewMode,
         setViewMode: state.setViewMode,
         selectedItem: state.selectedItem,
         setSelectedItem: state.setSelectedItem,
+        canvasImages: state.canvasImages,
         generationMode: state.generationMode,
         setGenerationMode: state.setGenerationMode,
         pendingPrompt: state.pendingPrompt,
@@ -423,8 +425,8 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                         {viewMode === 'canvas' && (
                             <div className="relative flex-1">
                                 <InfiniteCanvas />
-                                {/* First-run guidance: empty canvas hint */}
-                                {!selectedItem && (
+                                {/* First-run guidance: only when the canvas has no images yet */}
+                                {canvasImages.length === 0 && (
                                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                                         <div className="text-center bg-black/40 backdrop-blur-sm rounded-lg p-8 max-w-md">
                                             <Sparkles className="w-12 h-12 mx-auto mb-4 text-blue-400 opacity-80" />
