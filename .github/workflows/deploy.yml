@@ -89,11 +89,12 @@ jobs:
   # ─── Unit Testing (Sharded) ────────────────────────────────────────────────
   # Item 344: Vitest test sharding — parallel matrix jobs cut CI time and prevent OOM
   # ISSUE-1046: shard 7/8 recurrently hit ERR_WORKER_OUT_OF_MEMORY (never a real
-  # test failure) — vitest's --shard split is by file order, not by size, so a
-  # cluster of memory-heavy files consistently landed in one shard. Widened
-  # 8->10 shards so each shard carries fewer files, rather than raising the
-  # per-shard heap ceiling toward the runner's ~7GB total (risking an OS-level
-  # kill instead of a catchable V8 heap error).
+  # test failure). Widening 8->10 shards alone only moved the OOM to different
+  # shards (9/10, 10/10) rather than eliminating it — confirmed live via a
+  # workflow_dispatch run — so the 4096MB per-shard heap ceiling itself was
+  # genuinely too low, not just an artifact of file distribution. Raised to
+  # 5120MB (moderate increase, still leaving ~2GB headroom on the runner's
+  # ~7GB total for OS/V8 non-heap overhead) alongside the wider shard split.
   unit-tests:
     runs-on: ubuntu-latest
     needs: setup
@@ -124,7 +125,7 @@ jobs:
 
       - name: Run unit tests (shard ${{ matrix.shard }}/10)
         timeout-minutes: 15
-        run: NODE_OPTIONS="--max-old-space-size=4096" npm test -- --run --reporter=verbose --testTimeout=30000 --bail=3 --shard=${{ matrix.shard }}/10
+        run: NODE_OPTIONS="--max-old-space-size=5120" npm test -- --run --reporter=verbose --testTimeout=30000 --bail=3 --shard=${{ matrix.shard }}/10
         env:
           VITE_VERTEX_PROJECT_ID: ${{ secrets.VITE_VERTEX_PROJECT_ID }}
           VITE_VERTEX_LOCATION: ${{ secrets.VITE_VERTEX_LOCATION }}

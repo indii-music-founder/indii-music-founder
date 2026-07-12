@@ -71,16 +71,15 @@ test.describe('ISSUE-763: Beta First-Touch Journey', () => {
     });
   });
 
-  test('5. Magic Edit control is reachable from the canvas (full edit verified on desktop build only)', async ({ authedPage: page }) => {
-    await page.getByTestId('nav-item-creative').click();
-    await expect(page.getByTestId('creative-studio-container')).toBeVisible({ timeout: 10000 });
-    await page.getByTestId('canvas-view-btn').click();
-
-    // CanvasHeader.tsx:61 — data-testid="magic-generate-btn". Per the ISSUE-763 ledger entry,
-    // the full Magic Edit chain (672→677→679→681→683) is verified FIXED but requires a
-    // DESKTOP build (App Check + data-URI persistence don't behave identically in a web
-    // preview) — this test only proves the entry point exists, not that editing succeeds.
-    await expect(page.getByTestId('magic-generate-btn')).toBeAttached();
+  test.skip('5. Magic Edit — requires desktop build, not verifiable in this E2E harness', async () => {
+    // magic-generate-btn (CanvasHeader.tsx:61) only renders in viewMode === 'editor' with a
+    // selectedItem — i.e. CreativeCanvas, not InfiniteCanvas (the empty gallery this suite's
+    // "canvas" step lands on). Reaching it for real requires a generated/selected image, and
+    // this fixture's network mocks (e2e/fixtures/auth.ts) don't cover the image-generation
+    // endpoint, so no selectable canvas item is ever produced here. Per the ISSUE-763 ledger,
+    // the full Magic Edit chain (672→677→679→681→683) is verified FIXED but explicitly
+    // requires a DESKTOP build (App Check + data-URI persistence differ from a web preview) —
+    // this step was never going to be honestly verifiable from a web E2E run.
   });
 
   test('6. Upload own image — KNOWN GAP (ISSUE-676, tracked in OPEN_ISSUES.md)', async ({ authedPage: page }) => {
@@ -101,7 +100,12 @@ test.describe('ISSUE-763: Beta First-Touch Journey', () => {
     await page.getByTestId('nav-item-creative').click();
     await expect(page.getByTestId('creative-studio-container')).toBeVisible({ timeout: 10000 });
 
-    // CreativeNavbar.tsx:74 — testId: 'director-view-btn' (label: 'Produce')
+    // CreativeNavbar.tsx:71-77 — Video mode has 2 sub-views (video_production, omni), so its
+    // secondary-view row is NOT the default active mode and only renders after clicking the
+    // top-level mode button first (isSingle=false → testid is `mode-video-btn`, not
+    // director-view-btn directly). Image mode IS the default, which is why canvas-view-btn/
+    // direct-view-btn work without this extra click.
+    await page.getByTestId('mode-video-btn').click();
     await page.getByTestId('director-view-btn').click();
 
     // VideoWorkflow.tsx:985 — data-testid="video-generate-btn"; proves the module
@@ -109,10 +113,11 @@ test.describe('ISSUE-763: Beta First-Touch Journey', () => {
     await expect(page.getByTestId('video-generate-btn')).toBeVisible({ timeout: 10000 });
   });
 
-  test('Complete beta flow smoke test: Skip → Wander → Create → Edit-entry → Video', async ({ authedPage: page }) => {
-    // Combines steps 1,2,3,4,5,7 (all verified-working). Step 6 is excluded here — it's
-    // asserted separately as a known-failing gap above; bundling it would make this
-    // "complete flow" test permanently red for a reason unrelated to the other 5 steps.
+  test('Complete beta flow smoke test: Skip → Wander → Create → Video', async ({ authedPage: page }) => {
+    // Combines steps 1,2,3,4,7 (all verified-working). Step 5 is desktop-only (see the
+    // skipped test above) and step 6 is a known app gap (test.fail() above) — bundling
+    // either here would make this "complete flow" test red for reasons unrelated to the
+    // other 4 steps.
     await expect(page.getByTestId('app-container')).toBeVisible();
     await expect(page.getByTestId('nav-item-creative')).toBeVisible();
 
@@ -121,11 +126,11 @@ test.describe('ISSUE-763: Beta First-Touch Journey', () => {
 
     await page.getByTestId('canvas-view-btn').click();
     await expect(page.getByText('Create Your First Image')).toBeVisible();
-    await expect(page.getByTestId('magic-generate-btn')).toBeAttached();
 
     await page.getByTestId('direct-view-btn').click();
     await expect(page.getByTestId('direct-prompt-input')).toBeVisible();
 
+    await page.getByTestId('mode-video-btn').click();
     await page.getByTestId('director-view-btn').click();
     await expect(page.getByTestId('video-generate-btn')).toBeVisible({ timeout: 10000 });
   });
