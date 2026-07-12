@@ -154,7 +154,8 @@ export default function GenerationMonitor() {
             const commandId = await remoteRelayService.sendCommand(
                 `[GENERATE_IMAGE] ${inputPrompt.trim()}`,
                 undefined,
-                { aspectRatio, type: 'generate_image' } as Record<string, unknown>
+                { aspectRatio, type: 'generate_image' } as Record<string, unknown>,
+                'studio'
             );
 
             if (!commandId) {

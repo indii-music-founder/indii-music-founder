@@ -24,7 +24,12 @@ import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { agentService } from '@/services/agent/AgentService';
 import { entryCommandService } from '@/services/commands/EntryCommandService';
-import { remoteRelayService, type RemoteCommand, type AgentDispatchTask } from '@/services/agent/RemoteRelayService';
+import {
+    remoteRelayService,
+    resolveRemoteCommandExecutionTarget,
+    type RemoteCommand,
+    type AgentDispatchTask,
+} from '@/services/agent/RemoteRelayService';
 import { NotesTools } from '@/services/agent/tools/NotesTools';
 import { parseRemoteCommand } from '@/hooks/remoteCommandSecurity';
 import { auth, db } from '@/services/firebase';
@@ -101,6 +106,15 @@ export function buildLiveMomentNote(noteText: string) {
         attachments: [],
         tags: ['live-moment', 'mobile-remote'],
     };
+}
+
+/** Controller and cloud-owned commands must never be claimed by a Studio. */
+export function shouldProcessStudioCommand(command: Pick<RemoteCommand, 'text' | 'executionTarget'>): boolean {
+    return resolveRemoteCommandExecutionTarget(command) === 'studio';
+}
+
+export function isLocalP2PCommand(commandId: string): boolean {
+    return commandId.startsWith('p2p-');
 }
 
 /** Write relay diagnostics to Firestore (console is stripped in prod by terser) */
@@ -333,6 +347,14 @@ function useHttpRelayFallback(enabled: boolean) {
 // ---------------------------------------------------------------------------
 function useFirestoreRelay(enabled: boolean) {
     const isProcessing = useRef(false);
+    const studioInstanceIdRef = useRef<string | null>(null);
+    const hasPublishedPresenceRef = useRef(false);
+
+    if (!studioInstanceIdRef.current) {
+        studioInstanceIdRef.current = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+            ? crypto.randomUUID()
+            : `studio-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    }
 
     // Track enabled ref to allow loop to see changes without re-triggering effect cleanup
     const enabledRef = useRef(enabled);
@@ -385,12 +407,15 @@ function useFirestoreRelay(enabled: boolean) {
         });
     }, [setIsSleeping]);
 
-    // 1. Loop effect - runs every 5 seconds, mount-once to avoid unmount cleanup online:false flip-flops on navigation
+    // 1. Only an explicit Studio executor may publish the heartbeat. Controller
+    // routes used to mount this hook too, making the phone announce itself as a
+    // connected desktop and claim its own commands.
     useEffect(() => {
+        if (!enabled) return;
         let active = true;
 
         const pushState = async () => {
-            if (!enabledRef.current) return;
+            if (!enabledRef.current || !studioInstanceIdRef.current) return;
             try {
                 await remoteRelayService.pushDesktopState({
                     currentModule: currentModuleRef.current || 'dashboard',
@@ -398,7 +423,11 @@ function useFirestoreRelay(enabled: boolean) {
                     activeSessionId: activeSessionIdRef.current || '',
                     online: true,
                     sleepMode: isSleepingRef.current,
+                    role: 'studio',
+                    studioInstanceId: studioInstanceIdRef.current,
+                    listenerReady: true,
                 });
+                hasPublishedPresenceRef.current = true;
             } catch (error: unknown) {
                 logger.warn('[RemoteRelay/Firestore] Loop state push failed:', error);
             }
@@ -430,29 +459,12 @@ function useFirestoreRelay(enabled: boolean) {
             if (typeof document !== 'undefined') {
                 document.removeEventListener('visibilitychange', onVisible);
             }
-            remoteRelayService.pushDesktopState({
-                currentModule: currentModuleRef.current || 'dashboard',
-                isAgentProcessing: false,
-                activeSessionId: activeSessionIdRef.current || '',
-                online: false,
-            }).catch((err: unknown) => {
-                logger.warn('[RemoteRelay] Failed to push offline status during cleanup:', err);
-            });
+            if (hasPublishedPresenceRef.current && studioInstanceIdRef.current) {
+                remoteRelayService.releaseStudioPresence(studioInstanceIdRef.current).catch((err: unknown) => {
+                    logger.warn('[RemoteRelay] Failed to release owned Studio presence during cleanup:', err);
+                });
+            }
         };
-    }, []);
-
-    // 1b. Write online:false when enabled transitions to false
-    useEffect(() => {
-        if (!enabled) {
-            remoteRelayService.pushDesktopState({
-                currentModule: currentModuleRef.current || 'dashboard',
-                isAgentProcessing: false,
-                activeSessionId: activeSessionIdRef.current || '',
-                online: false,
-            }).catch((err: unknown) => {
-                logger.warn('[RemoteRelay] Failed to push offline status during disable:', err);
-            });
-        }
     }, [enabled]);
 
     // 2. Immediate push effect - pushes immediately on state change, but never writes online: false
@@ -467,7 +479,11 @@ function useFirestoreRelay(enabled: boolean) {
                     activeSessionId: activeSessionId || '',
                     online: true,
                     sleepMode: isSleeping,
+                    role: 'studio',
+                    studioInstanceId: studioInstanceIdRef.current!,
+                    listenerReady: true,
                 });
+                hasPublishedPresenceRef.current = true;
             } catch (error: unknown) {
                 logger.warn('[RemoteRelay/Firestore] Immediate state push failed:', error);
             }
@@ -478,25 +494,32 @@ function useFirestoreRelay(enabled: boolean) {
 
     const processSingleCommand = async (command: RemoteCommand & { id: string }) => {
         if (isProcessing.current) return;
+        if (!shouldProcessStudioCommand(command)) {
+            logger.info(`[RemoteRelay/Firestore] ⏭️ Command ${command.id} belongs to the cloud executor`);
+            return;
+        }
 
         // Atomic claim: try to flip pending → processing. First one wins.
+        const localP2PCommand = isLocalP2PCommand(command.id);
         const uid = getRealAuthenticatedUserId(auth.currentUser);
-        if (!uid) return;
-
-        let claimed = false;
-        try {
-            claimed = await runTransaction(db, async (tx) => {
-                const cmdRef = doc(db, 'users', uid, 'remote-relay-commands', command.id);
-                const cmdSnap = await tx.get(cmdRef);
-                if (cmdSnap.exists() && cmdSnap.data()?.status === 'pending') {
-                    tx.update(cmdRef, { status: 'processing' });
-                    return true;
-                }
-                return false;
-            });
-        } catch (err) {
-            logger.warn('[RemoteRelay] Atomic claim failed:', err);
-            return;
+        if (!localP2PCommand && !uid) return;
+        let claimed = localP2PCommand;
+        if (!localP2PCommand) {
+            if (!uid) return;
+            try {
+                claimed = await runTransaction(db, async (tx) => {
+                    const cmdRef = doc(db, 'users', uid, 'remote-relay-commands', command.id);
+                    const cmdSnap = await tx.get(cmdRef);
+                    if (cmdSnap.exists() && cmdSnap.data()?.status === 'pending') {
+                        tx.update(cmdRef, { status: 'processing' });
+                        return true;
+                    }
+                    return false;
+                });
+            } catch (err) {
+                logger.warn('[RemoteRelay] Atomic claim failed:', err);
+                return;
+            }
         }
 
         if (!claimed) {
@@ -817,6 +840,7 @@ function useFirestoreRelay(enabled: boolean) {
             for (const docSnap of querySnap.docs) {
                 if (isProcessing.current) break;
                 const data = docSnap.data() as RemoteCommand;
+                if (!shouldProcessStudioCommand(data)) continue;
                 await processSingleCommand({ ...data, id: docSnap.id });
             }
         } catch (err) {
@@ -842,6 +866,11 @@ function useFirestoreRelay(enabled: boolean) {
         const unsubscribe = remoteRelayService.onCommand(async (command: RemoteCommand & { id: string }) => {
             if (!command.text) {
                 logger.info(`[RemoteRelay/Firestore] ⏭️ Ignoring empty command ${command.id}`);
+                return;
+            }
+
+            if (!shouldProcessStudioCommand(command)) {
+                logger.info(`[RemoteRelay/Firestore] ⏭️ Ignoring cloud-owned command ${command.id}`);
                 return;
             }
 
@@ -980,7 +1009,7 @@ Format the findings and then CALL the \`save_scout_leads_to_map\` tool to plot t
 // ---------------------------------------------------------------------------
 // Main Hook — auto-selects Firestore or HTTP based on auth
 // ---------------------------------------------------------------------------
-export function useRemoteCommandListener() {
+export function useRemoteCommandListener(executorSurfaceEnabled = true) {
     const { user } = useStore(useShallow(state => ({ user: state.user })));
     const [isAuthenticated, setIsAuthenticated] = useState(false);
 
@@ -996,7 +1025,7 @@ export function useRemoteCommandListener() {
     // Disable remote command listener completely for guest sessions or mock user to prevent
     // console permission errors and unneeded firestore polling.
     const isGuest = isAnonymousOrDemoUser(user);
-    const shouldEnableRelay = isAuthenticated && !isGuest;
+    const shouldEnableRelay = executorSurfaceEnabled && isAuthenticated && !isGuest;
 
     // Use Firestore relay when authenticated.
     useFirestoreRelay(shouldEnableRelay);
