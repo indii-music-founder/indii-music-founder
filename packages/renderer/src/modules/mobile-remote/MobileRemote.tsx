@@ -21,9 +21,8 @@
 import { useEffect, useCallback, useState, useRef, lazy, Suspense } from 'react';
 import {
   DESKTOP_HEARTBEAT_STALE_MS,
-  isFreshDesktopState,
+  isFreshStudioState,
   remoteRelayService,
-  isPrivateIP,
   type DesktopState,
 } from '@/services/agent/RemoteRelayService';
 import { auth } from '@/services/firebase';
@@ -75,171 +74,30 @@ const TABS: Tab[] = [
 
 const TRANSIENT_HEARTBEAT_GRACE_MS = 10_000;
 
-// We import QRCodeRenderer dynamically so it doesn't inflate load times if not used
-import { QRCodeSVG } from 'qrcode.react';
-
-// ─── Pairing Modal (Cloud Relay version) ─────────────────────────────────────
+// ─── Pairing Help ────────────────────────────────────────────────────────────
 
 function PairingModal({ onClose }: { onClose: () => void }) {
-  const [qrUrl, setQrUrl] = useState<string>('');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [manualCode, setManualCode] = useState<string>('');
-  const [redeeming, setRedeeming] = useState(false);
-  const [isPhoneMode, setIsPhoneMode] = useState(false);
-
-  useEffect(() => {
-    let active = true;
-
-    const generateCode = async () => {
-      try {
-        setLoading(true);
-        const currentUser = auth.currentUser;
-        if (!currentUser) {
-          setIsPhoneMode(true);
-          setLoading(false);
-          return;
-        }
-
-        const idToken = await currentUser.getIdToken();
-        const { endpointService } = await import('@/core/config/EndpointService');
-        const createUrl = endpointService.getFunctionUrl('createHandoffCode');
-
-        const response = await fetch(createUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ idToken }),
-        });
-
-        if (!response.ok) {
-          throw new Error(await response.text());
-        }
-
-        const data = await response.json();
-        if (!data.code) {
-          throw new Error('No pairing code returned');
-        }
-
-        if (active) {
-          const isDev = window.location.hostname === 'localhost' || isPrivateIP(window.location.hostname);
-          const base = isDev ? window.location.origin + '/mobile-remote' : 'https://indii.music/mobile-remote';
-          setQrUrl(`${base}?code=${data.code}`);
-          setLoading(false);
-        }
-      } catch (err) {
-        logger.error('[PairingModal] Failed to generate handoff code:', err);
-        if (active) {
-          setError(err instanceof Error ? err.message : 'Failed to generate code');
-          setLoading(false);
-        }
-      }
-    };
-
-    generateCode();
-
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  const handleRedeemManualCode = async () => {
-    if (!manualCode.trim()) return;
-    setRedeeming(true);
-    setError(null);
-    try {
-      const code = manualCode.trim();
-      if (!/^[a-fA-F0-9]{64}$/.test(code)) {
-        throw new Error('Invalid code format. Must be a 64-character hex string.');
-      }
-
-      const { endpointService } = await import('@/core/config/EndpointService');
-      const redeemUrl = endpointService.getFunctionUrl('redeemHandoffCode');
-      const response = await fetch(redeemUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code }),
-      });
-
-      if (!response.ok) {
-        throw new Error(await response.text());
-      }
-
-      const data = await response.json();
-      if (data.customToken) {
-        logger.info('[MobileRemote] Redeem success, signing in with custom token...');
-        const { signInWithCustomToken } = await import('firebase/auth');
-        await signInWithCustomToken(auth, data.customToken);
-        logger.info('[MobileRemote] Signed in successfully!');
-        // Workspace sync is auto-triggered by useWorkspaceSync hook when auth.currentUser is set
-        onClose();
-      } else {
-        throw new Error('No customToken returned');
-      }
-    } catch (err) {
-      logger.error('[PairingModal] Redeem failed:', err);
-      setError(err instanceof Error ? err.message : 'Failed to redeem pairing code');
-    } finally {
-      setRedeeming(false);
-    }
-  };
-
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/90 backdrop-blur-2xl p-6"
     >
-      <motion.div 
+      <motion.div
         initial={{ scale: 0.9, opacity: 0, y: 20 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
-        exit={{ scale: 0.9, opacity: 0, y: 20 }}
+        exit={{ opacity: 0, y: 20 }}
         transition={{ type: 'spring', damping: 25, stiffness: 300 }}
         className="bg-[#1c1c1e] border border-white/10 rounded-[32px] p-8 max-w-sm w-full flex flex-col items-center shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)]"
       >
         <div className="w-14 h-14 rounded-2xl bg-blue-500/10 flex items-center justify-center mb-6 border border-blue-500/20">
           <QrCode className="w-7 h-7 text-blue-400" />
         </div>
-
-        <h2 className="text-2xl font-bold text-white mb-2 text-center tracking-tight">Link Device</h2>
+        <h2 className="text-2xl font-bold text-white mb-2 text-center tracking-tight">Pair from Studio</h2>
         <p className="text-[#a1a1a6] text-center text-sm mb-8 leading-relaxed">
-          {isPhoneMode
-            ? 'Enter the 64-character pairing code from your desktop studio Settings panel to sync workspace and control remotely.'
-            : 'Scan this code to link your phone or iPad. Sync your workspace and control your studio from anywhere in the world.'}
+          Open the desktop Studio, then go to Settings → Mobile Remote and scan its pairing code. Controller pages cannot create Studio pairing codes.
         </p>
-
-        <div className="bg-white p-5 rounded-3xl mb-8 shadow-[0_0_40px_rgba(255,255,255,0.1)] flex items-center justify-center w-[220px] h-[220px]">
-          {loading ? (
-            <div className="w-full h-full flex items-center justify-center text-gray-400">
-               <div className="w-6 h-6 border-2 border-gray-300 border-t-transparent rounded-full animate-spin" />
-            </div>
-          ) : error ? (
-            <div className="text-red-500 text-xs text-center px-4 font-semibold overflow-y-auto max-h-[180px]">
-              {error}
-            </div>
-          ) : isPhoneMode ? (
-            <div className="flex flex-col items-center justify-center w-full h-full p-2">
-              <span className="text-black text-xs font-semibold text-center mb-2">Enter Pairing Code:</span>
-              <input
-                type="text"
-                placeholder="64-character hex code"
-                value={manualCode}
-                onChange={(e) => setManualCode(e.target.value)}
-                className="w-full px-3 py-2 text-black bg-gray-100 border border-gray-300 rounded-lg text-xs font-mono focus:outline-hidden"
-              />
-              <button
-                onClick={handleRedeemManualCode}
-                disabled={redeeming || !manualCode.trim()}
-                className="mt-4 w-full h-9 bg-blue-600 hover:bg-blue-500 disabled:bg-blue-600/40 text-white rounded-lg text-xs font-bold transition-all cursor-pointer"
-              >
-                {redeeming ? 'Pairing...' : 'Link Device'}
-              </button>
-            </div>
-          ) : (
-            <QRCodeSVG value={qrUrl} size={180} />
-          )}
-        </div>
-
         <button
           onClick={onClose}
           className="w-full h-12 flex items-center justify-center rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-base font-semibold transition-all active:scale-[0.98] cursor-pointer"
@@ -247,12 +105,6 @@ function PairingModal({ onClose }: { onClose: () => void }) {
         >
           Close
         </button>
-
-        <div className="mt-6 flex items-center gap-2 text-[#636366] text-[10px] font-medium uppercase tracking-[0.2em]">
-          <span className="w-1 h-1 rounded-full bg-[#636366]" />
-          Powered by indii Cloud Relay
-          <span className="w-1 h-1 rounded-full bg-[#636366]" />
-        </div>
       </motion.div>
     </motion.div>
   );
@@ -297,7 +149,6 @@ export default function MobileRemote() {
       setIsAuth(authenticated);
       if (authenticated) {
         setConnectionStatus(prev => prev === 'idle' ? 'pairing' : prev);
-        setIsPaired(true);
       } else {
         setConnectionStatus('idle');
         setIsPaired(false);
@@ -390,7 +241,7 @@ export default function MobileRemote() {
         setConnectionStatus('pairing');
         transientHeartbeatTimeoutRef.current = setTimeout(() => {
           transientHeartbeatTimeoutRef.current = null;
-          if (isFreshDesktopState(desktopStateRef.current)) {
+          if (isFreshStudioState(desktopStateRef.current)) {
             setConnectionStatus('connected');
             setIsReconnecting(false);
             setReconnectAttempts(0);
@@ -398,6 +249,7 @@ export default function MobileRemote() {
           }
 
           logger.warn('[MobileRemote] Desktop heartbeat still stale after grace window. Initiating auto-reconnect sequence…');
+          setIsPaired(false);
           setIsReconnecting(true);
           setConnectionStatus('pairing');
           setReconnectAttempts(1);
@@ -419,7 +271,7 @@ export default function MobileRemote() {
 
       const isVisible = typeof document === 'undefined' || document.visibilityState === 'visible';
 
-      if (isFreshDesktopState(state)) {
+      if (isFreshStudioState(state)) {
         if (transientHeartbeatTimeoutRef.current) {
           clearTimeout(transientHeartbeatTimeoutRef.current);
           transientHeartbeatTimeoutRef.current = null;
@@ -460,7 +312,7 @@ export default function MobileRemote() {
         // Wait 15 seconds for Firestore sync before checking presence
         stalePresenceTimeoutRef.current = setTimeout(() => {
           logger.info('[MobileRemote] Delayed visibility check running...');
-          if (!isFreshDesktopState(desktopStateRef.current)) {
+          if (!isFreshStudioState(desktopStateRef.current)) {
             markDesktopOffline();
           }
         }, 15000);
@@ -570,7 +422,7 @@ export default function MobileRemote() {
       commandStr = `[RAW] ${JSON.stringify(command)}`;
     }
 
-    remoteRelayService.sendCommand(commandStr).catch(err => {
+    remoteRelayService.sendCommand(commandStr, undefined, undefined, 'studio').catch(err => {
       logger.error('[MobileRemote] Failed to send command to relay:', err);
     });
   }, [isPaired]);
@@ -706,19 +558,6 @@ export default function MobileRemote() {
           </motion.div>
 
           <div className="flex items-center gap-3">
-            {isPaired && auth.currentUser && (
-              <motion.button
-                whileTap={{ scale: 0.95 }}
-                onClick={() => {
-                  triggerHaptic(50);
-                  setShowPairingModal(true);
-                }}
-                className="flex items-center justify-center p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white cursor-pointer"
-                title="Show Pairing Code"
-              >
-                <QrCode className="w-4 h-4 text-blue-400" />
-              </motion.button>
-            )}
             <AnimatePresence mode="wait">
               {isPaired ? (
                 connectionStatus === 'connected' ? (

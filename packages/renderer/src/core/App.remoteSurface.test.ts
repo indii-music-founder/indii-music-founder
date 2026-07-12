@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isRemoteSurfaceDevice } from './App';
+import { isRemoteSurfaceDevice, isStudioExecutorSurface } from './App';
 
 describe('isRemoteSurfaceDevice', () => {
     it('routes phones to the remote surface', () => {
@@ -40,5 +40,19 @@ describe('isRemoteSurfaceDevice', () => {
                 isTouchDevice: false,
             })
         ).toBe(false);
+    });
+});
+
+describe('isStudioExecutorSurface (ISSUE-1025)', () => {
+    it('never lets a phone or tablet Controller publish Studio presence', () => {
+        expect(isStudioExecutorSurface('dashboard', true)).toBe(false);
+    });
+
+    it('also excludes a desktop-sized Controller route', () => {
+        expect(isStudioExecutorSurface('mobile-remote', false)).toBe(false);
+    });
+
+    it('allows the actual desktop Studio surface to own the relay', () => {
+        expect(isStudioExecutorSurface('dashboard', false)).toBe(true);
     });
 });

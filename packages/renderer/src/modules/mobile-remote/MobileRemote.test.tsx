@@ -27,11 +27,23 @@ vi.mock('@/services/firebase', () => ({
 
 vi.mock('@/services/agent/RemoteRelayService', () => ({
     DESKTOP_HEARTBEAT_STALE_MS: 1000,
-    isFreshDesktopState: vi.fn(() => false),
+    isFreshStudioState: vi.fn(() => true),
     isPrivateIP: vi.fn(() => false),
     remoteRelayService: {
         isAuthenticated: vi.fn(() => true),
-        onDesktopState: vi.fn(() => vi.fn()),
+        onDesktopState: vi.fn((callback: (state: unknown) => void) => {
+            callback({
+                currentModule: 'dashboard',
+                isAgentProcessing: false,
+                activeSessionId: 'studio-session',
+                online: true,
+                role: 'studio',
+                studioInstanceId: 'studio-1',
+                listenerReady: true,
+                timestamp: { toMillis: () => Date.now() },
+            });
+            return vi.fn();
+        }),
         sendCommand: vi.fn(),
     },
 }));

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildLiveMomentNote, isValidCoordinate } from '../useRemoteCommandListener';
+import { buildLiveMomentNote, isLocalP2PCommand, isValidCoordinate, shouldProcessStudioCommand } from '../useRemoteCommandListener';
 
 describe('buildLiveMomentNote', () => {
     it('trims the captured text and derives a team-ready title from the first line', () => {
@@ -45,5 +45,23 @@ describe('isValidCoordinate (ISSUE-988)', () => {
         expect(isValidCoordinate(0, Infinity)).toBe(false);
         expect(isValidCoordinate(undefined, 0)).toBe(false);
         expect(isValidCoordinate('42', 0)).toBe(false);
+    });
+});
+
+describe('shouldProcessStudioCommand (ISSUE-1025)', () => {
+    it('does not let the Studio listener claim cloud-owned Boardroom chat', () => {
+        expect(shouldProcessStudioCommand({ text: 'Hi', executionTarget: 'cloud' })).toBe(false);
+    });
+
+    it('only accepts explicitly Studio-owned work', () => {
+        expect(shouldProcessStudioCommand({ text: 'Hi', executionTarget: 'studio' })).toBe(true);
+        expect(shouldProcessStudioCommand({ text: '[GENERATE_IMAGE] artwork' })).toBe(true);
+    });
+});
+
+describe('isLocalP2PCommand (ISSUE-1025)', () => {
+    it('keeps synthetic WebSocket commands out of the Firestore claim/completion path', () => {
+        expect(isLocalP2PCommand('p2p-remote-123')).toBe(true);
+        expect(isLocalP2PCommand('firestore-command-123')).toBe(false);
     });
 });
