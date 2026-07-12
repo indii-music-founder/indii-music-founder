@@ -11964,7 +11964,12 @@ Walked individual menus applying all four lenses (double-click races / authoriza
 
 ### ISSUE-758: Two parallel project systems — `appSlice.currentProjectId` vs `projectSlice.selectedProjectId`
 
-- **Status:** 🔴 OPEN (PLANNED — no code yet)
+- **Status:** 🟢 FIXED (verified + completed 2026-07-12, commit 857525bda). `projectSlice.ts` no longer
+  exists — the sidebar's project system was already unified into `appSlice.currentProjectId` /
+  `ProjectService` (commit `88f3681d1`, 2026-07-07). This entry describing the file was stale. The one
+  concrete gap that survived — scattered raw `'default-project'` literals bypassing `DEFAULT_PROJECT_ID`
+  — is closed; see the reconciled ISSUE-758/762 entry in the session-summary section above for exact
+  file/line evidence.
 - **Depends on:** none — but MUST land before ISSUE-751 (project-scoped conversations need ONE project concept)
 - **Severity:** 🟠 MEDIUM (same "disconnected systems" pattern as ISSUE-751, one level deeper)
 - **Location:** `packages/renderer/src/core/store/slices/appSlice.ts:71,110,200` vs `packages/renderer/src/core/store/slices/projectSlice.ts` + `ProjectService`
@@ -12022,7 +12027,12 @@ Walked individual menus applying all four lenses (double-click races / authoriza
 
 ### ISSUE-762: TWO duplicate ProjectService implementations write mixed schemas into ONE `projects` collection
 
-- **Status:** 🔴 OPEN (PLANNED — no code yet)
+- **Status:** 🟢 FIXED (verified 2026-07-12). `packages/renderer/src/services/project/ProjectService.ts`
+  (the user-scoped duplicate) no longer exists on disk — deleted in commit `88f3681d1` (2026-07-07).
+  Only `packages/renderer/src/services/ProjectService.ts` remains: ONE class, ONE `Project` type
+  (imported from `appSlice`), ONE `ensureInbox` (with a dedup-on-read safety net for legacy duplicate
+  Inbox docs, lines 114-126). All 3 consumers (`appSlice.ts`, `ProjectList.tsx`, `DashboardService.ts`)
+  import the single canonical path via `import('@/services/ProjectService')`. This ledger entry was stale.
 - **Depends on:** none — lands WITH ISSUE-758 (this is the service layer of the same split-brain; 758 covers the store layer)
 - **Severity:** 🔴 HIGH (schema collision in production Firestore data; queries from each side can't see the other's docs correctly)
 - **Location:** `packages/renderer/src/services/ProjectService.ts` (144 lines, org-scoped) vs `packages/renderer/src/services/project/ProjectService.ts` (170 lines, user-scoped)
