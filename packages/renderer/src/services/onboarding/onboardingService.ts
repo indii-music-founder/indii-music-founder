@@ -277,6 +277,19 @@ ALWAYS preserve what they're NOT changing.`;
                     lastMsg.parts.push({
                         text: `[Attached Document: ${file.file.name}]\n${file.content}`
                     });
+                } else if (file.type === 'audio' && file.base64) {
+                    // ISSUE-955: previously had no audio branch at all — an
+                    // attached track was silently dropped from the model's
+                    // context even though the UI implied it would be heard.
+                    lastMsg.parts.push({
+                        text: `[Attached Audio: ${file.file.name}]`
+                    });
+                    lastMsg.parts.push({
+                        inlineData: {
+                            mimeType: file.file.type || inferAudioMimeType(file.file.name),
+                            data: file.base64
+                        }
+                    });
                 }
             });
         }
@@ -367,6 +380,21 @@ function inferImageMimeType(file: File): string {
     if (file.type) return file.type;
     const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
     return IMAGE_MIME_BY_EXTENSION[ext] ?? 'application/octet-stream';
+}
+
+const AUDIO_MIME_BY_EXTENSION: Record<string, string> = {
+    mp3: 'audio/mpeg',
+    wav: 'audio/wav',
+    flac: 'audio/flac',
+    m4a: 'audio/mp4',
+    aac: 'audio/aac',
+    ogg: 'audio/ogg',
+    aiff: 'audio/aiff',
+};
+
+function inferAudioMimeType(fileName: string): string {
+    const ext = fileName.split('.').pop()?.toLowerCase() ?? '';
+    return AUDIO_MIME_BY_EXTENSION[ext] ?? 'audio/mpeg';
 }
 
 export function processFunctionCalls(
