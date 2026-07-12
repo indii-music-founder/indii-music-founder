@@ -39,7 +39,7 @@ vi.mock('@/core/context/ToastContext', () => ({
 // Mock Service
 vi.mock('@/services/onboarding/onboardingService', () => ({
     runOnboardingConversation: vi.fn(),
-    processFunctionCalls: vi.fn(() => ({ updatedProfile: {}, isFinished: false, updates: [] })),
+    processFunctionCalls: vi.fn(() => ({ updatedProfile: {}, isFinished: false, updates: [], warnings: [] })),
     calculateProfileStatus: () => ({ coreProgress: 0, releaseProgress: 0, coreMissing: [], releaseMissing: [] }),
     determinePhase: vi.fn(() => 'discovery'),
     generateNaturalFallback: vi.fn(() => 'Mock fallback response'),

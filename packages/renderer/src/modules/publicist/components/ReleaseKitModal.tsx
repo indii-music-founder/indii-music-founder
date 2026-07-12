@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Sparkles, Copy, Check } from 'lucide-react';
-import { PUBLICIST_TOOLS } from '../tools';
+import { PUBLICIST_TOOLS, UNRESOLVED_MEDIA_CONTACT } from '../tools';
 import { logger } from '@/utils/logger';
 
 interface ReleaseKitModalProps {
@@ -24,7 +24,8 @@ export const ReleaseKitModal: React.FC<ReleaseKitModalProps> = ({ isOpen, onClos
         artistName: '',
         releaseDate: '',
         musicalStyle: '',
-        targetAudience: ''
+        targetAudience: '',
+        mediaContact: ''
     });
     const [assets, setAssets] = useState<GeneratedAssets | null>(null);
     const [activeTab, setActiveTab] = useState<'press' | 'social' | 'email'>('press');
@@ -38,7 +39,8 @@ export const ReleaseKitModal: React.FC<ReleaseKitModalProps> = ({ isOpen, onClos
                 artistName: formData.artistName,
                 releaseDate: formData.releaseDate,
                 musicalStyle: formData.musicalStyle.split(',').map(s => s.trim()),
-                targetAudience: formData.targetAudience
+                targetAudience: formData.targetAudience,
+                contactInfo: formData.mediaContact
             });
 
             if (result.success && result.data) {
@@ -154,6 +156,18 @@ export const ReleaseKitModal: React.FC<ReleaseKitModalProps> = ({ isOpen, onClos
                                             placeholder={t('publicist.hints.target_audience')}
                                         />
                                     </div>
+                                    <div className="space-y-2">
+                                        <label htmlFor="rk-media-contact" className="text-xs font-bold text-gray-400 uppercase tracking-wider">Media Contact (Name &amp; Email/Phone)</label>
+                                        <input
+                                            id="rk-media-contact"
+                                            type="text"
+                                            value={formData.mediaContact}
+                                            onChange={e => setFormData({ ...formData, mediaContact: e.target.value })}
+                                            className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-green-500 transition-colors"
+                                            placeholder="Jane Doe, press@yourlabel.com"
+                                        />
+                                        <p className="text-xs text-gray-500">Never auto-generated — the press release uses exactly what you enter here, or an unresolved placeholder if left blank.</p>
+                                    </div>
                                 </div>
                                 <button
                                     onClick={handleGenerate}
@@ -223,9 +237,13 @@ export const ReleaseKitModal: React.FC<ReleaseKitModalProps> = ({ isOpen, onClos
                                             <div className="prose prose-invert max-w-none">
                                                 <p className="whitespace-pre-wrap text-gray-300 leading-relaxed font-serif text-lg">{assets.pressRelease.content}</p>
                                             </div>
-                                            <div className="pt-6 border-t border-white/10">
+                                            <div className={`pt-6 border-t ${assets.pressRelease.contactInfo === UNRESOLVED_MEDIA_CONTACT ? 'border-red-500/30' : 'border-white/10'}`}>
                                                 <p className="text-sm text-gray-500 font-bold uppercase">Media Contact</p>
-                                                <p className="text-green-400">{assets.pressRelease.contactInfo}</p>
+                                                {assets.pressRelease.contactInfo === UNRESOLVED_MEDIA_CONTACT ? (
+                                                    <p className="text-red-400 font-bold">⚠ {assets.pressRelease.contactInfo}</p>
+                                                ) : (
+                                                    <p className="text-green-400">{assets.pressRelease.contactInfo}</p>
+                                                )}
                                             </div>
                                         </div>
                                     )}

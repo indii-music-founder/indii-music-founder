@@ -60,12 +60,12 @@ describe('PUBLICIST_TOOLS', () => {
     });
 
     it('generate_campaign_assets should return structured campaign kit', async () => {
-        // Mock specific response for this call
+        // ISSUE-931: the model is never asked for (and never returns)
+        // contactInfo — it drafts headline/content only.
         const mockCampaign = {
             pressRelease: {
                 headline: "New Single Out Now",
-                content: "Exciting news...",
-                contactInfo: "pr@label.com"
+                content: "Exciting news..."
             },
             socialPosts: [
                 { platform: "Instagram", content: "Check this out! 🎵", hashtags: ["#NewMusic"] }
@@ -97,6 +97,57 @@ describe('PUBLICIST_TOOLS', () => {
         expect(result.data.pressRelease.headline).toBe("New Single Out Now");
         expect(result.data.socialPosts).toHaveLength(1);
         expect(result.data.emailBlast.subject).toBe("For our biggest fans");
+    });
+
+    it('ISSUE-931: generate_campaign_assets never lets the model invent contact info', async () => {
+        const mockCampaign = {
+            pressRelease: { headline: "New Single Out Now", content: "Exciting news..." },
+            socialPosts: [{ platform: "Instagram", content: "🎵", hashtags: [] }],
+            emailBlast: { subject: "x", body: "y" }
+        };
+
+        vi.spyOn(AutonomousIntelligence, 'generateContent').mockResolvedValue({
+            response: {
+                text: () => JSON.stringify(mockCampaign),
+                inlineDataParts: [],
+                functionCalls: [],
+                thoughtSummary: ""
+            }
+        } as any);
+
+        const withoutContact = await PUBLICIST_TOOLS.generate_campaign_assets({
+            trackTitle: "Neon Nights", artistName: "Retro Wave", releaseDate: "2026-02-01",
+            musicalStyle: ["Synthpop"], targetAudience: "Gen Z"
+        });
+        expect(withoutContact.data.pressRelease.contactInfo).toMatch(/NOT PROVIDED/);
+
+        const withContact = await PUBLICIST_TOOLS.generate_campaign_assets({
+            trackTitle: "Neon Nights", artistName: "Retro Wave", releaseDate: "2026-02-01",
+            musicalStyle: ["Synthpop"], targetAudience: "Gen Z", contactInfo: "Jane Doe, press@label.com"
+        });
+        expect(withContact.data.pressRelease.contactInfo).toBe("Jane Doe, press@label.com");
+    });
+
+    it('ISSUE-931: generate_campaign_assets ignores a contactInfo the model tries to smuggle into the JSON', async () => {
+        vi.spyOn(AutonomousIntelligence, 'generateContent').mockResolvedValueOnce({
+            response: {
+                text: () => JSON.stringify({
+                    pressRelease: { headline: "H", content: "C", contactInfo: "fabricated@fake.com" },
+                    socialPosts: [],
+                    emailBlast: { subject: "s", body: "b" }
+                }),
+                inlineDataParts: [],
+                functionCalls: [],
+                thoughtSummary: ""
+            }
+        } as any);
+
+        const result = await PUBLICIST_TOOLS.generate_campaign_assets({
+            trackTitle: "T", artistName: "A", releaseDate: "2026-02-01",
+            musicalStyle: ["Pop"], targetAudience: "Fans", contactInfo: "Real Contact, real@label.com"
+        });
+
+        expect(result.data.pressRelease.contactInfo).toBe("Real Contact, real@label.com");
     });
 });
 

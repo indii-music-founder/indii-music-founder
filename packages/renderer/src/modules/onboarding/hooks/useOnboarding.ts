@@ -67,7 +67,7 @@ export function useOnboarding(options: UseOnboardingOptions = {}) {
             removeActiveAgent: state.removeActiveAgent
         }))
     );
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+     
     const { showToast } = useToast();
     const [input, setInput] = useState('');
     const [history, setHistory] = useState<HistoryItem[]>([]);
@@ -234,8 +234,10 @@ export function useOnboarding(options: UseOnboardingOptions = {}) {
             let uiToolCall: HistoryItem['toolCall'] = null;
 
             if (functionCalls && functionCalls.length > 0) {
-                const { updatedProfile, isFinished, updates } = processFunctionCalls(functionCalls, userProfile, currentFiles);
+                const { updatedProfile, isFinished, updates, warnings } = processFunctionCalls(functionCalls, userProfile, currentFiles);
                 setUserProfile(updatedProfile);
+
+                warnings.forEach(warning => showToast(warning, 'error'));
 
                 if (updatedProfile.careerProfile && updatedProfile.careerProfile !== userProfile.careerProfile) {
                     const seatingMap: Record<string, string[]> = {
