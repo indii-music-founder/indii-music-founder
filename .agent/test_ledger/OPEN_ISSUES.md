@@ -12014,7 +12014,13 @@ After those 5 fixes, the batch is deployment-ready (tests pass, blockers cleared
 
 ### ISSUE-764: TourMap "Google Maps API key is unavailable" — key stripped by envPrefix allowlist
 
-- **Status:** ✅ FIXED (config) / ⏳ BLOCKED (requires GitHub secret configuration)
+- **Status:** ✅ FIXED AND VERIFIED LIVE (2026-07-12) — full Road Manager map confirmed rendering in production (indii.music/road), zero Maps-related console errors.
+- **Final root causes (beyond the envPrefix/sanitizer layers already fixed below):**
+  1. GCP API key restrictions on "Google Maps Desktop Key" only permitted Geocoding + Places APIs — **Maps JavaScript API itself was missing**, causing `ApiTargetBlockedMapError`. Fixed by adding Maps JavaScript API to the key's restrictions in GCP Console.
+  2. Even after the key error cleared, tiles still failed — traced to `firebase.json`'s Content-Security-Policy `img-src` directive allowing `maps.googleapis.com` for scripts/connect but not for images, so the browser's own CSP silently blocked every tile response (confirmed via direct curl: tiles returned real `200 image/webp`; only the CSP-governed browser load failed). Fixed by adding `https://maps.googleapis.com` and `https://maps.gstatic.com` to `img-src` in all 3 app-hosting CSP blocks.
+  3. Billing was confirmed already active on the GCP project (not the issue).
+- **Verified:** Deployed to production (2 deploys), live-tested in the actual Road Manager UI — map tiles, labels, and a geocoded waypoint pin all render correctly; console clean of Maps errors.
+- **Original status (superseded, kept for history):** ✅ FIXED (config) / ⏳ BLOCKED (requires GitHub secret configuration)
 - **Severity:** 🟠 MEDIUM-HIGH (Road Manager map dead in ALL builds; blocks touring module)
 - **Location:** `packages/renderer/vite.config.ts:98` and `electron.vite.config.ts:165` (envPrefix allowlists), `.github/workflows/deploy.yml` (build env), GCP Console key restrictions
 - **Details (verified):**
@@ -12866,13 +12872,12 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-825: Bank tax UI treats percent withholding values as fractional multipliers
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-12)
 - **Severity:** 🔴 HIGH (money calculation)
 - **Module:** Distribution / Finance bank layer
-- **Evidence:** `tax_withholding_engine.py:164-170` returns `withholding_rate: 30.0` for held/uncertified users, and active treaty rates are also returned as percent values (`:177-187`). `BankPanel.tsx:257-280` treats `taxReport.withholding_rate` as a fraction by displaying `(rate * 100)%`, subtracting `amount * rate`, and computing `amount * (1 - rate)`.
-- **Impact:** A 30% withholding result displays as 3000%, subtracts 30x the gross amount, and can show a negative “net disbursable.”
-- **Fix:** Normalize the tax contract to either `withholding_rate_percent` or `withholding_rate_decimal` and convert at exactly one boundary.
-- **Acceptance:** A fixture with `$1,000` and 30% withholding displays `30.0%`, `$300` withheld, and `$700` net; tests cover active treaty and held fallback paths.
+- **Fix:** Corrected all 3 math sites in `BankPanel.tsx` to treat `withholding_rate` as the percent value it actually is (matches both the HELD and ACTIVE-treaty Python return paths — no Python change needed): display now shows the value directly (no `* 100`), withheld amount divides by 100 before multiplying, net disbursable divides by 100 before subtracting. Documented the contract with a comment on the `TaxReport.withholding_rate` field.
+- **Files:** `packages/renderer/src/modules/distribution/components/BankPanel.tsx`, `packages/renderer/src/types/distribution.ts`
+- **Tests:** New `BankPanel.test.tsx` — the exact ledger acceptance fixture ($1,000 @ 30% → displays `30.0%`, nets `$700`), would have failed against the old `* 100` / un-divided-by-100 code.
 
 ### ISSUE-826: Waterfall payout UI, TypeScript contract, and Python engine use incompatible payload/report shapes
 
@@ -14093,13 +14098,12 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-945: Downloaded EPK HTML injects unescaped user/model content into executable markup
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-12)
 - **Severity:** 🔴 CRITICAL (artifact XSS/phishing)
 - **Module:** Marketing / EPK export security
-- **Evidence:** `handleDownloadPDF()` interpolates raw `artistName`, genre tags, bio, track strings, and link values directly into HTML/text/attribute contexts and downloads it as an `.html` file (`EPKGenerator.tsx:59-99`). There is no HTML escaping or URL protocol/domain validation; the function name also obscures that the artifact is executable HTML.
-- **Impact:** Pasted/generated content containing markup, event handlers, or `javascript:` links can execute when the artist/recipient opens the EPK locally or hosts it, enabling credential/phishing payloads inside a trusted press asset.
-- **Fix:** Generate through a safe template/DOM serializer with contextual escaping, allowlist HTTPS platform URLs, sanitize rich text, and apply a restrictive CSP for hosted/downloaded HTML. Name the export accurately.
-- **Acceptance:** Script tags, quotes, event attributes, `javascript:`/`data:` links, and malicious bio fixtures render only as inert text or are rejected; safe HTTPS links remain functional.
+- **Fix:** Added `escapeHtml()` (entity-escapes `& < > " '`) applied to every text/attribute interpolation (artist name, bio, genre tags, track fields, EPK URL), and `sanitizeHttpsUrl()` which parses each link with the `URL` constructor and drops anything not `https:` (rejects `javascript:`, `data:`, malformed URLs) before it's ever placed in an `href`. Also added a restrictive `Content-Security-Policy` meta tag to the exported HTML itself (`default-src 'none'`) as defense-in-depth, and renamed `handleDownloadPDF` → `handleDownloadHtml` to stop mislabeling an executable HTML file as a PDF.
+- **Files:** `packages/renderer/src/modules/marketing/components/EPKGenerator.tsx`
+- **Tests:** New `EPKGenerator.test.tsx` (5 tests) — captures the actual downloaded Blob content and asserts: script-tag name/bio is inert, `javascript:`/`data:` links are dropped entirely (not just escaped), legitimate `https://` links remain functional, quote-based attribute breakout is escaped. All passing.
 
 ### ISSUE-946: Discord/Telegram webhook test, send, and auto-announcement controls are entirely simulated
 
@@ -14323,13 +14327,15 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-968: Desktop “Submit Release” invokes a distribution Python script that does not exist
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-12)
 - **Severity:** 🔴 CRITICAL (primary workflow always fails)
 - **Module:** Distribution / Submit Release / Electron IPC
-- **Evidence:** `DistributionService.submitRelease()` requires Electron and delegates to `window.electronAPI.distribution.submitRelease()` (`DistributionService.ts:585-591`, `:697-707`). The main IPC handler then calls `AgentSupervisor.execute('distribution', 'ddex_build.py', ...)` (`packages/main/src/handlers/distribution.ts:444-512`). Repository-wide search finds no `ddex_build.py`; `execution/distribution/` contains `ingestion_build.py`, generators, validators, packagers, and uploaders but not the invoked entrypoint. `AgentSupervisor` passes that exact category/script name to `PythonBridge` and throws after execution failure; it has no alias resolution (`AgentSupervisor.ts:26-77`, `:94-133`).
-- **Impact:** Every real desktop submission reaches a missing-file error before DDEX build or delivery, regardless of valid metadata, credentials, or clearance. The advertised QC→ISRC→DDEX→DSP pipeline cannot complete.
-- **Fix:** Implement and package one canonical, versioned pipeline entrypoint (or update IPC to the actual orchestrator), with a shared request/result schema and explicit stage receipts. Add startup/build-time manifest verification so a referenced execution script cannot be absent from a release bundle.
-- **Acceptance:** Packaged macOS/Windows builds resolve the entrypoint and a fixture runs QC→identifier→validated DDEX→manual/delivery terminal state; deliberately removing/renaming the script fails build/preflight, not after user submission; IPC integration tests exercise the actual packaged path and structured errors.
+- **Fix:** Two stacked bugs, both fixed:
+  1. `packages/main/src/handlers/distribution.ts:498` called `AgentSupervisor.execute('distribution', 'ddex_build.py', ...)` — that file has never existed. The actual matching orchestrator is `ingestion_build.py` (its own docstring documents the exact same `<release_json> [--storage-path PATH] [--dry-run]` signature already used at the call site). Repointed the call.
+  2. Even after fixing #1, the script would have crashed immediately: `ingestion_build.py`, `ingestion_generator.py`, and 7 other files in `execution/distribution/` (plus `execution/triage_tests.py`) had been corrupted by what looks like an automated find-replace of "DDEX" → "Proprietary Ingestion IP" and "ERN" → "Ingestion Notification" — including inside identifiers, which is invalid Python syntax (e.g. `class Proprietary Ingestion IPGenerator:`, `Ingestion Notification_NS = "..."`). The "ERN" replace also clobbered the substring inside unrelated words like `PATTERN` → `PATTIngestion Notification`. Restored `DDEX`/`ERN` everywhere across all 9 affected files.
+- **Files:** `packages/main/src/handlers/distribution.ts`; `execution/distribution/{ingestion_build,ingestion_generator,xsd_validator,package_spotify,package_itmsp,test_ingestion_structure,test_pipeline_e2e,isrc_manager,sftp_uploader}.py`; `execution/triage_tests.py`
+- **Verified:** All 9 Python files now compile cleanly (`python3 -m py_compile`). Ran the actual pipeline end-to-end with a minimal fixture (`ingestion_build.py <release_json> --dry-run`): QC validation → ISRC assignment → valid DDEX ERN 4.3 XML generation all succeeded. Existing pytest suite (`test_pipeline_e2e.py` + `test_ingestion_structure.py`, 12 tests) — previously uncollectable due to the syntax errors — now all pass. TS typecheck/lint clean.
+- **Not yet done:** No IPC-level integration test exercises the actual Electron packaged path end-to-end (per the original acceptance criteria) — the verification above was direct Python invocation, not through `AgentSupervisor`/Electron IPC. No build-time manifest check was added to catch a future script rename/removal before it reaches a user.
 
 ### ISSUE-969: Distribution submission can build “delivery” metadata without any audio master or staged cover asset
 

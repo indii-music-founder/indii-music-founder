@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-ingestion_generator.py - Proprietary Ingestion IP Ingestion Protocol 4.3 XML Generator
+ingestion_generator.py - DDEX Ingestion Protocol 4.3 XML Generator
 
-Industrial-grade Proprietary Ingestion IP Electronic Release Notification generator
+Industrial-grade DDEX Electronic Release Notification generator
 for direct ingestion by Apple Music, Spotify, Amazon, and other DSPs.
 
-Implements Proprietary Ingestion IP Ingestion Protocol 4.3 standard (https://kb.ingestion.net/display/Ingestion NotificationDG/Ingestion Notification+4)
+Implements DDEX Ingestion Protocol 4.3 standard (https://kb.ingestion.net/display/ERNDG/ERN+4)
 """
 
 import datetime
@@ -27,30 +27,30 @@ logging.basicConfig(
 logger = logging.getLogger("ingestion_generator")
 
 
-class Proprietary Ingestion IPGenerator:
-    """Generates Proprietary Ingestion IP Ingestion Protocol 4.3 compliant XML messages.
+class DDEXGenerator:
+    """Generates DDEX Ingestion Protocol 4.3 compliant XML messages.
 
     This generator creates NewReleaseMessage documents for
     digital music distribution to DSPs.
     """
 
-    # Proprietary Ingestion IP Namespace
-    Ingestion Notification_NS = "http://ingestion.net/xml/ern/43"
+    # DDEX Namespace
+    ERN_NS = "http://ingestion.net/xml/ern/43"
 
     # Registered DPID for New Detroit Music LLC (dpid.ingestion.net)
-    # Override via Proprietary Ingestion IP_SENDER_DPID env var for multi-tenant deployments
-    DEFAULT_SENDER_DPID = os.environ.get("Proprietary Ingestion IP_SENDER_DPID", "PA-DPIDA-2025122604-E")
-    DEFAULT_SENDER_NAME = os.environ.get("Proprietary Ingestion IP_SENDER_NAME", "New Detroit Music LLC")
+    # Override via DDEX_SENDER_DPID env var for multi-tenant deployments
+    DEFAULT_SENDER_DPID = os.environ.get("DDEX_SENDER_DPID", "PA-DPIDA-2025122604-E")
+    DEFAULT_SENDER_NAME = os.environ.get("DDEX_SENDER_NAME", "New Detroit Music LLC")
 
     def __init__(self, sender_dpid: Optional[str] = None,
                  sender_name: Optional[str] = None):
-        """Initialize the Proprietary Ingestion IP Generator.
+        """Initialize the DDEX Generator.
 
         Args:
-            sender_dpid: Proprietary Ingestion IP Party ID for the sender (distributor).
-                         Defaults to Proprietary Ingestion IP_SENDER_DPID env var or the registered indii DPID.
+            sender_dpid: DDEX Party ID for the sender (distributor).
+                         Defaults to DDEX_SENDER_DPID env var or the registered indii DPID.
             sender_name: Human-readable sender name.
-                         Defaults to Proprietary Ingestion IP_SENDER_NAME env var or 'New Detroit Music LLC'.
+                         Defaults to DDEX_SENDER_NAME env var or 'New Detroit Music LLC'.
         """
         self.sender_dpid = sender_dpid or self.DEFAULT_SENDER_DPID
         self.sender_name = sender_name or self.DEFAULT_SENDER_NAME
@@ -269,7 +269,7 @@ class Proprietary Ingestion IPGenerator:
                                 release_data: Dict[str, Any]) -> ET.Element:
         """Generate an Image resource for cover art.
 
-        Both Apple Music and Spotify require cover art as a resource in the Ingestion Notification.
+        Both Apple Music and Spotify require cover art as a resource in the ERN.
         Apple: minimum 3000x3000 pixels, JPEG or PNG.
         Spotify: minimum 3000x3000 pixels, JPEG.
         """
@@ -482,10 +482,10 @@ class Proprietary Ingestion IPGenerator:
         return deal
 
     def generate_ern(self, release_data: Dict[str, Any]) -> str:
-        """Generate a complete Proprietary Ingestion IP Ingestion Protocol 4.3 NewReleaseMessage."""
+        """Generate a complete DDEX Ingestion Protocol 4.3 NewReleaseMessage."""
         # Create root element with namespace
         root = ET.Element("NewReleaseMessage")
-        root.set("xmlns", self.Ingestion Notification_NS)
+        root.set("xmlns", self.ERN_NS)
         root.set("ReleaseProfileVersionId", "CommonReleaseTypes/14")
         root.set("LanguageAndScriptCode", "en")
 
@@ -525,7 +525,7 @@ class Proprietary Ingestion IPGenerator:
 # Legacy compatibility function
 def generate_ingestion(artist_data: Dict[str, Any]) -> str:
     """Legacy wrapper for backward compatibility."""
-    generator = Proprietary Ingestion IPGenerator()
+    generator = DDEXGenerator()
     return generator.generate_ern(artist_data)
 
 
@@ -533,7 +533,7 @@ def generate_ingestion(artist_data: Dict[str, Any]) -> str:
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description="Proprietary Ingestion IP Ingestion Protocol 4.3 Generator")
+    parser = argparse.ArgumentParser(description="DDEX Ingestion Protocol 4.3 Generator")
     parser.add_argument("json_data", help="JSON payload string")
     parser.add_argument("--storage-path", help="Optional path for file persistence")
 
@@ -543,8 +543,8 @@ if __name__ == "__main__":
         # Parse input JSON
         release_data = json.loads(args.json_data)
 
-        # Generate Proprietary Ingestion IP XML
-        generator = Proprietary Ingestion IPGenerator()
+        # Generate DDEX XML
+        generator = DDEXGenerator()
         xml_output = generator.generate_ern(release_data)
 
         # Return as JSON with the XML embedded
@@ -562,6 +562,6 @@ if __name__ == "__main__":
         print(json.dumps({"error": f"Invalid JSON: {str(e)}"}))
         sys.exit(1)
     except Exception as e:
-        logger.exception("Proprietary Ingestion IP Generator Execution Error")
+        logger.exception("DDEX Generator Execution Error")
         print(json.dumps({"error": str(e)}))
         sys.exit(1)
