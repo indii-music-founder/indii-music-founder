@@ -89,6 +89,9 @@ export default function GenerationMonitor() {
     const [error, setError] = useState<string | null>(null);
     const [activeStylePreset, setActiveStylePreset] = useState<string | null>(null);
     const activeListenerRef = useRef<Unsubscribe | null>(null);
+    // ISSUE-989: tracks the in-flight command so a timeout OR unmount can
+    // actually cancel it in Firestore, not just detach the local listener.
+    const activeCommandIdRef = useRef<string | null>(null);
 
     const handleStylePreset = useCallback((preset: typeof STYLE_PRESETS[0]) => {
         if (activeStylePreset === preset.label) {
@@ -124,14 +127,23 @@ export default function GenerationMonitor() {
                 activeListenerRef.current();
                 activeListenerRef.current = null;
             }
+            activeCommandIdRef.current = commandId;
 
-            const timeout = setTimeout(() => {
+            const timeout = setTimeout(async () => {
                 if (activeListenerRef.current) {
                     activeListenerRef.current();
                     activeListenerRef.current = null;
                 }
                 setIsSending(false);
-                setError('Generation timed out. Check desktop studio.');
+                // ISSUE-989: actively cancel in Firestore, not just detach the
+                // listener — otherwise a pending command survives and a later
+                // desktop recovery/backlog scan can still execute (and pay
+                // for) a generation the phone already gave up on.
+                const cancelled = await remoteRelayService.cancelCommand(commandId);
+                activeCommandIdRef.current = null;
+                setError(cancelled
+                    ? 'Generation timed out and was cancelled — no cost incurred.'
+                    : 'Generation timed out, but the desktop had already started — check desktop studio before retrying to avoid duplicate cost.');
             }, 90000);
 
             activeListenerRef.current = remoteRelayService.onResponse(commandId, (response: RemoteResponse) => {
@@ -141,6 +153,7 @@ export default function GenerationMonitor() {
                         activeListenerRef.current();
                         activeListenerRef.current = null;
                     }
+                    activeCommandIdRef.current = null;
                     setIsSending(false);
 
                     if (response.imageUrls && response.imageUrls.length > 0) {
@@ -207,6 +220,13 @@ export default function GenerationMonitor() {
             if (activeListenerRef.current) {
                 activeListenerRef.current();
                 activeListenerRef.current = null;
+            }
+            // ISSUE-989: navigating away mid-generation must not leave a
+            // pending (uncancelled) command for a later backlog scan to pick
+            // up — cancel it if the desktop hasn't claimed it yet.
+            if (activeCommandIdRef.current) {
+                remoteRelayService.cancelCommand(activeCommandIdRef.current).catch(() => {});
+                activeCommandIdRef.current = null;
             }
         };
     }, []);

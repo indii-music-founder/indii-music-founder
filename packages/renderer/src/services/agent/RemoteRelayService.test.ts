@@ -142,6 +142,68 @@ describe('RemoteRelayService - claimDispatchTask (ISSUE-984)', () => {
     });
 });
 
+describe('RemoteRelayService - cancelCommand (ISSUE-989)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mocks.isFirebaseE2EMockEnabled.mockReturnValue(false);
+        mocks.currentUser = { uid: 'user-1' };
+    });
+
+    it('cancels a still-pending command before the desktop claims it', async () => {
+        const txUpdate = vi.fn();
+        mocks.runTransaction.mockImplementation(async (_db, updateFn) => {
+            const tx = {
+                get: vi.fn().mockResolvedValue({ exists: () => true, data: () => ({ status: 'pending' }) }),
+                update: txUpdate,
+            };
+            return updateFn(tx);
+        });
+
+        const cancelled = await remoteRelayService.cancelCommand('cmd-1');
+
+        expect(cancelled).toBe(true);
+        expect(txUpdate).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ status: 'cancelled' }));
+    });
+
+    it('cannot cancel a command the desktop already claimed — reports honestly instead of no-op-succeeding', async () => {
+        const txUpdate = vi.fn();
+        mocks.runTransaction.mockImplementation(async (_db, updateFn) => {
+            const tx = {
+                get: vi.fn().mockResolvedValue({ exists: () => true, data: () => ({ status: 'processing' }) }),
+                update: txUpdate,
+            };
+            return updateFn(tx);
+        });
+
+        const cancelled = await remoteRelayService.cancelCommand('cmd-1');
+
+        expect(cancelled).toBe(false);
+        expect(txUpdate).not.toHaveBeenCalled();
+    });
+
+    it('returns false for a nonexistent command (e.g. a synthetic P2P id with no Firestore doc)', async () => {
+        mocks.runTransaction.mockImplementation(async (_db, updateFn) => {
+            const tx = { get: vi.fn().mockResolvedValue({ exists: () => false, data: () => undefined }), update: vi.fn() };
+            return updateFn(tx);
+        });
+
+        expect(await remoteRelayService.cancelCommand('p2p-abc123')).toBe(false);
+    });
+
+    it('returns false (not throw) when the transaction itself fails', async () => {
+        mocks.runTransaction.mockRejectedValue(new Error('Firestore unavailable'));
+
+        await expect(remoteRelayService.cancelCommand('cmd-1')).resolves.toBe(false);
+    });
+
+    it('returns false without touching Firestore when no user is authenticated', async () => {
+        mocks.currentUser = null;
+
+        expect(await remoteRelayService.cancelCommand('cmd-1')).toBe(false);
+        expect(mocks.runTransaction).not.toHaveBeenCalled();
+    });
+});
+
 describe('RemoteRelayService - local pairing token cache', () => {
     it('caches a URL passcode for reconnect auth', () => {
         localStorage.clear();
