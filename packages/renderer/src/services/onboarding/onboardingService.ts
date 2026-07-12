@@ -344,15 +344,41 @@ ALWAYS preserve what they're NOT changing.`;
 
 // --- Function Call Processor ---
 
+/**
+ * ISSUE-956: images are embedded as base64 data URLs directly inside the
+ * profile document (no object-storage upload path exists yet). Until that
+ * lands, bound the damage a single asset or a burst of assets can do to
+ * Firestore document size / IndexedDB / renderer memory.
+ */
+const MAX_BRAND_ASSET_BYTES = 5 * 1024 * 1024; // ~6.7MB base64-encoded
+const MAX_BRAND_ASSETS_PER_PROFILE = 20; // brandAssets + referenceImages combined
+
+const IMAGE_MIME_BY_EXTENSION: Record<string, string> = {
+    png: 'image/png',
+    jpg: 'image/jpeg',
+    jpeg: 'image/jpeg',
+    webp: 'image/webp',
+    gif: 'image/gif',
+    bmp: 'image/bmp',
+    svg: 'image/svg+xml',
+};
+
+function inferImageMimeType(file: File): string {
+    if (file.type) return file.type;
+    const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
+    return IMAGE_MIME_BY_EXTENSION[ext] ?? 'application/octet-stream';
+}
+
 export function processFunctionCalls(
     functionCalls: FunctionCallPart['functionCall'][],
     currentProfile: UserProfile,
     files: ConversationFile[]
-): { updatedProfile: UserProfile, isFinished: boolean, updates: string[] } {
+): { updatedProfile: UserProfile, isFinished: boolean, updates: string[], warnings: string[] } {
     // Start with a shallow copy
     let updatedProfile = { ...currentProfile };
     let isFinished = false;
     const updates: string[] = [];
+    const warnings: string[] = [];
 
     functionCalls.forEach(call => {
         switch (call.name) {
