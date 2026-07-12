@@ -44,10 +44,9 @@
 - **Blocker:** Complex refactor; 758 is dependency for 751; 762 is dependency for 758
 - **Recommended:** Schedule dedicated 2-3 hour session for unification
 
-**ISSUE-759: Archived Projects (quick win)**
-- **Status:** 🟡 READY — archive UI/unarchive action missing
-- **Fix:** Add `<ArchiveFilter>` to ProjectList; update `listByUser` to allow toggle
-- **Est. time:** 30 min
+**ISSUE-759: Archived Projects ✅ FIXED (verified 2026-07-12 code-audit)**
+- **Status:** 🟢 DONE — full archive/unarchive UI already present. Earlier "🟡 READY / UI missing" was STALE.
+- **Verified in code:** `core/components/sidebar/ProjectList.tsx` — archive action (`setProjectStatus(id,'archived')` L96), unarchive handler (L108-115), and a separate rendered archived section (`activeProjects`/`archivedProjects` split L125-126, `isArchivedList` render path L128/168). Persistence via `ProjectService.setStatus` (L80-84, stamps `archivedAt`).
 
 **ISSUE-760: Boardroom Persistence ✅ FIXED (verified 2026-07-12 code-audit)**
 - **Status:** 🟢 DONE — boardroom already rides the ConversationSession spine → Firestore. My earlier "🟡 READY / needs migration" was STALE.
