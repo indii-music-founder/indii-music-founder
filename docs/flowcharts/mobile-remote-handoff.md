@@ -38,10 +38,10 @@ sequenceDiagram
 
     %% Connection State & Commands
     Note over Desktop, Mobile: 3. Session Connection & Commands
-    Mobile->>FS: Listen to desktop state doc (users/{uid}/remote-relay/state)
-    Desktop->>FS: Periodically updates state doc (online: true, every 5s)
-    Mobile->>FS: Write command (users/{uid}/remote-relay-commands)
-    Desktop->>FS: Read command & set status to 'processing'
+    Mobile->>FS: Listen to Studio executor lease (users/{uid}/remote-relay/state)
+    Desktop->>FS: Publishes {role: studio, studioInstanceId, listenerReady, online} every 5s
+    Mobile->>FS: Write Studio-owned command (executionTarget: studio)
+    Desktop->>FS: Read only Studio-owned command & set status to 'processing'
     Desktop->>CF: (Execute command and stream responses)
     Desktop->>FS: Mark command 'completed'
 ```
@@ -61,5 +61,5 @@ sequenceDiagram
 4. **Mobile Handoff Scan (Steps 27-28)**: The artist scans the QR code using their mobile device. The Mobile App extracts the `code` query parameter from the scanned URL and runs a strict client-side format validation to check for a 64-hexadecimal format.
 5. **Custom Token Redemption (Steps 29-35)**: The Mobile App submits the code to the `/redeemHandoffCode` Cloud Function. The endpoint sanitizes the input, performs a transaction-locked rate limit lookup, validates the code against Firestore, deletes the single-use handoff document, generates a Firebase Custom Auth Token using the admin SDK, and returns it to the Mobile App.
 6. **Passwordless Auto-Authentication (Steps 36-38)**: The Mobile App invokes `signInWithCustomToken` to securely authenticate the artist on the companion device, completing sign-in and replacing the browser history to remove the short-lived code from the URL.
-7. **Heartbeat Session Setup (Steps 41-42)**: Once authenticated, the Mobile App starts listening to the user's desktop state document in Firestore (`users/{uid}/remote-relay/state`), while the Desktop App periodically updates the document every 5 seconds (heartbeat) to broadcast its online presence.
-8. **Command Flow Coordination (Steps 43-47)**: The Mobile App writes remote control commands to the command queue document. The Desktop App's `useRemoteCommandListener` detects the new command, flags it as `processing`, executes the associated action in the Studio, and updates the status to `completed` upon completion, keeping the companion updated in real-time.
+7. **Studio Executor Lease (Steps 41-42)**: Once authenticated, the Controller listens to the user's Studio executor lease in Firestore (`users/{uid}/remote-relay/state`). Only the actual Studio surface publishes it, including `role: studio`, a per-window `studioInstanceId`, and `listenerReady`; a Controller must never publish or accept its own lease as proof that Studio is connected.
+8. **Command Flow Coordination (Steps 43-47)**: The Controller writes each remote-control command with `executionTarget: studio`. The Studio's `useRemoteCommandListener` reads only Studio-owned commands, flags one as `processing`, executes it, and updates it to `completed`. Cloud-owned commands use a separate declared target, so the cloud worker and Studio cannot race to claim the same request.

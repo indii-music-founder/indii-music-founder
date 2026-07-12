@@ -42,11 +42,19 @@ const PROCESSING_INDICATOR = "⏳ Processing your request...";
 const RELAY_COMMAND_COST_ESTIMATE_USD = 0.02;
 
 /**
- * Markers that indicate a command is handled exclusively by the desktop client
- * (e.g. image generation). The cloud relay is text-only, so any command
- * starting with one of these markers must be left untouched for the desktop.
+ * Legacy commands predate the explicit `executionTarget` field. Preserve their
+ * established Studio ownership while new writes always declare an executor.
  */
-const DESKTOP_ONLY_MARKERS = ["[GENERATE_IMAGE]"] as const;
+const LEGACY_STUDIO_COMMAND_PREFIXES = [
+    "[GENERATE_IMAGE]",
+    "[SHOW]",
+    "[WAKE]",
+    "[NAVIGATE]",
+    "[AGENT_ACTION]",
+    "[DAW_CONTROL]",
+    "[MEDIA_PLAYBACK]",
+    "[RAW]",
+] as const;
 
 // User-facing messages — these MUST NOT leak internal endpoint names or other
 // implementation identifiers (see Change 4).
@@ -71,6 +79,10 @@ export const processRelayCommand = functions
 
         const text = data.text;
         const targetAgentId: string | undefined = data.targetAgentId;
+        const executionTarget: "cloud" | "studio" = data.executionTarget === "studio"
+            || (typeof text === "string" && LEGACY_STUDIO_COMMAND_PREFIXES.some(marker => text.trim().startsWith(marker)))
+            ? "studio"
+            : "cloud";
 
         // ---------------------------------------------------------------
         // 1. Validate command text
@@ -92,8 +104,8 @@ export const processRelayCommand = functions
         // it — leaving the doc "pending" so the desktop can pick it up. This
         // prevents the cloud function from breaking image requests.
         // ---------------------------------------------------------------
-        if (DESKTOP_ONLY_MARKERS.some((marker) => trimmedText.startsWith(marker))) {
-            console.log(`[Relay] Skipping command ${commandId} — desktop-only marker detected; leaving for desktop client.`);
+        if (executionTarget === "studio") {
+            console.log(`[Relay] Skipping command ${commandId} — explicitly owned by the Studio executor.`);
             return;
         }
 

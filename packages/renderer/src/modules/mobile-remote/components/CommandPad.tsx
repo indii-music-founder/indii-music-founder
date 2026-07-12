@@ -69,7 +69,7 @@ export default function CommandPad({ onSendCommand, isPaired }: CommandPadProps)
     triggerHaptic([40, 60]);
     navigateTo(moduleId);
     if (isPaired) {
-      remoteRelayService.sendCommand(prompt).catch(err => {
+      remoteRelayService.sendCommand(prompt, undefined, undefined, 'studio').catch(err => {
         logger.error(`[CommandPad] Failed to trigger agent action:`, err);
       });
     }
@@ -87,7 +87,8 @@ export default function CommandPad({ onSendCommand, isPaired }: CommandPadProps)
         remoteRelayService.sendCommand(
           '[GENERATE_IMAGE] Create a stunning visual — cinematic lighting, bold composition',
           undefined,
-          { aspectRatio: '1:1', type: 'generate_image' }
+          { aspectRatio: '1:1', type: 'generate_image' },
+          'studio'
         ).catch(err => logger.error('[CommandPad] Generate failed:', err));
       },
     },
@@ -100,7 +101,7 @@ export default function CommandPad({ onSendCommand, isPaired }: CommandPadProps)
       action: () => {
         triggerHaptic(40);
         // ISSUE-REMOTE-SHOW-20260622: surface the latest desktop visual artifact on the phone.
-        remoteRelayService.sendCommand('[SHOW]').catch(err =>
+        remoteRelayService.sendCommand('[SHOW]', undefined, undefined, 'studio').catch(err =>
           logger.error('[CommandPad] Show Me failed:', err)
         );
       },
@@ -155,7 +156,10 @@ export default function CommandPad({ onSendCommand, isPaired }: CommandPadProps)
       glow: 'shadow-amber-500/15 hover:shadow-amber-500/30',
       action: () => {
         remoteRelayService.sendCommand(
-          "Let's brainstorm. Give me 5 creative ideas for my next project based on my profile and recent work."
+          "Let's brainstorm. Give me 5 creative ideas for my next project based on my profile and recent work.",
+          undefined,
+          undefined,
+          'studio'
         ).catch(err => logger.error('[CommandPad] Brainstorm failed:', err));
       },
     },

@@ -34,6 +34,18 @@ export function isRemoteSurfaceDevice(
     return mobile.isAnyPhone || (mobile.isTablet && mobile.isTouchDevice);
 }
 
+/**
+ * The Controller is a command producer, never a Studio executor. This check
+ * deliberately excludes a desktop-sized `/mobile-remote` page too; viewport
+ * detection alone allowed that page to publish a fake Studio heartbeat.
+ */
+export function isStudioExecutorSurface(
+    currentModule: string,
+    shouldUseRemoteSurface: boolean
+): boolean {
+    return !shouldUseRemoteSurface && currentModule !== 'mobile-remote';
+}
+
 function DevPortWarning() {
     const port = window.location.port;
     if (!import.meta.env.DEV || port === '4243') return null;
@@ -104,9 +116,6 @@ export default function App() {
     // Bug reporting keyboard shortcuts (Ctrl+Shift+B for bugs, Ctrl+Shift+F for features)
     useBugReportShortcut();
 
-    // Remote Relay: Listen for phone commands and process them through the desktop's agent pipeline
-    useRemoteCommandListener();
-
     // Monitor actual connectivity in Electron — fixes stuck offline state
     useConnectivityMonitor();
 
@@ -119,6 +128,11 @@ export default function App() {
     const mobile = useMobile();
     const shouldUseRemoteSurface = isRemoteSurfaceDevice(mobile);
     const { isAnyPhone } = mobile;
+    const isStudioExecutor = isStudioExecutorSurface(currentModule, shouldUseRemoteSurface);
+
+    // Remote Relay: only the actual Studio surface may publish presence or
+    // consume Studio-owned work. Controller pages can only produce commands.
+    useRemoteCommandListener(isStudioExecutor);
 
     const publicLegalPage = useMemo(() => {
         const path = location.pathname.replace(/\/+$/, '') || '/';
