@@ -37,7 +37,7 @@ test.describe('ISSUE-763: Beta First-Touch Journey', () => {
 
   test('3. Enter Creative Suite and see first-run guidance on an empty canvas', async ({ authedPage: page }) => {
     await page.getByTestId('nav-item-creative').click();
-    await expect(page.getByTestId('creative-studio')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByTestId('creative-studio-container')).toBeVisible({ timeout: 10000 });
 
     // CreativeNavbar.tsx:68 — testId: 'canvas-view-btn'
     await page.getByTestId('canvas-view-btn').click();
@@ -49,7 +49,7 @@ test.describe('ISSUE-763: Beta First-Touch Journey', () => {
 
   test('4. Generate image from prompt', async ({ authedPage: page }) => {
     await page.getByTestId('nav-item-creative').click();
-    await expect(page.getByTestId('creative-studio')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByTestId('creative-studio-container')).toBeVisible({ timeout: 10000 });
 
     // CreativeNavbar.tsx:67 — testId: 'direct-view-btn'
     await page.getByTestId('direct-view-btn').click();
@@ -73,7 +73,7 @@ test.describe('ISSUE-763: Beta First-Touch Journey', () => {
 
   test('5. Magic Edit control is reachable from the canvas (full edit verified on desktop build only)', async ({ authedPage: page }) => {
     await page.getByTestId('nav-item-creative').click();
-    await expect(page.getByTestId('creative-studio')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByTestId('creative-studio-container')).toBeVisible({ timeout: 10000 });
     await page.getByTestId('canvas-view-btn').click();
 
     // CanvasHeader.tsx:61 — data-testid="magic-generate-btn". Per the ISSUE-763 ledger entry,
@@ -85,7 +85,7 @@ test.describe('ISSUE-763: Beta First-Touch Journey', () => {
 
   test('6. Upload own image — KNOWN GAP (ISSUE-676, tracked in OPEN_ISSUES.md)', async ({ authedPage: page }) => {
     await page.getByTestId('nav-item-creative').click();
-    await expect(page.getByTestId('creative-studio')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByTestId('creative-studio-container')).toBeVisible({ timeout: 10000 });
     await page.getByTestId('canvas-view-btn').click();
 
     // No upload/open-photo affordance exists on the canvas today (verified: no
@@ -99,7 +99,7 @@ test.describe('ISSUE-763: Beta First-Touch Journey', () => {
 
   test('7. Video tab is reachable and renders its own controls', async ({ authedPage: page }) => {
     await page.getByTestId('nav-item-creative').click();
-    await expect(page.getByTestId('creative-studio')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByTestId('creative-studio-container')).toBeVisible({ timeout: 10000 });
 
     // CreativeNavbar.tsx:74 — testId: 'director-view-btn' (label: 'Produce')
     await page.getByTestId('director-view-btn').click();
@@ -117,7 +117,7 @@ test.describe('ISSUE-763: Beta First-Touch Journey', () => {
     await expect(page.getByTestId('nav-item-creative')).toBeVisible();
 
     await page.getByTestId('nav-item-creative').click();
-    await expect(page.getByTestId('creative-studio')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByTestId('creative-studio-container')).toBeVisible({ timeout: 10000 });
 
     await page.getByTestId('canvas-view-btn').click();
     await expect(page.getByText('Create Your First Image')).toBeVisible();
