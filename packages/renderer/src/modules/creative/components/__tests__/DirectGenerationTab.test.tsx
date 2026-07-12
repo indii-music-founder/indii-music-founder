@@ -171,6 +171,35 @@ describe('DirectGenerationTab', () => {
         expect(screen.queryByText('Portrait')).not.toBeInTheDocument(); // 3:4
     });
 
+    /**
+     * ISSUE-777: the Advanced Config panel used to render "Engine Resolution
+     * Preset" (bound to studioControls.resolution) and "Safety Policy Grade"
+     * (bound to personGeneration) in BOTH modes, but handleImageGenerate
+     * (useDirectGeneration.ts) only ever sends imageSize/model/aspectRatio —
+     * resolution and personGeneration never reach the image payload, and
+     * GenerateImageSchema has no personGeneration field at all. These prove
+     * each control now only appears where it actually affects the request.
+     */
+    it('ISSUE-777: image mode shows Image Output Size, hides video-only Resolution/Safety controls', () => {
+        render(<DirectGenerationTab />);
+        fireEvent.click(screen.getByTestId('direct-image-mode-btn'));
+        fireEvent.click(screen.getByText('Advanced Config'));
+
+        expect(screen.getByText('Image Output Size')).toBeInTheDocument();
+        expect(screen.queryByText('Engine Resolution Preset')).not.toBeInTheDocument();
+        expect(screen.queryByText('Safety Policy Grade')).not.toBeInTheDocument();
+    });
+
+    it('ISSUE-777: video mode shows Resolution/Safety controls, hides image-only Image Output Size', () => {
+        render(<DirectGenerationTab />);
+        fireEvent.click(screen.getByTestId('direct-video-mode-btn'));
+        fireEvent.click(screen.getByText('Advanced Config'));
+
+        expect(screen.getByText('Engine Resolution Preset')).toBeInTheDocument();
+        expect(screen.getByText('Safety Policy Grade')).toBeInTheDocument();
+        expect(screen.queryByText('Image Output Size')).not.toBeInTheDocument();
+    });
+
     it('ISSUE-788: shows all aspect ratios again in image mode (no Veo restriction)', () => {
         render(<DirectGenerationTab />);
         fireEvent.click(screen.getByTestId('direct-video-mode-btn'));
