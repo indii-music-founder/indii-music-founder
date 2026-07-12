@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-07-12 11:32 EDT
+**Updated:** 2026-07-12 11:37 EDT
 **Branch:** `fix/issues-core`
 
 ## Recent Commits
 ```
+e2b96cca3 fix(creative): warn that the 3D Stage Builder is unsaved and confirm Clear Stage
+7eaeed4a6 chore: session checkpoint [11:32]
 49a331d23 fix(creative): actually validate cover art dimensions against distributor rules
 6f80b9453 chore: session checkpoint [11:24]
 de1d85494 fix(distribution): require a real analyzed track and staged cover before submission
@@ -12,8 +14,6 @@ de1d85494 fix(distribution): require a real analyzed track and staged cover befo
 1257337af chore: session checkpoint [11:07]
 a73a653e3 fix(onboarding): actually extract PDF text and attach audio for Brand Interview
 6a92d87d2 chore: session checkpoint [11:01]
-f7496e0ef fix(marketing): make Discord/Telegram webhook Test/Send real network calls
-499d20b16 chore: session checkpoint [10:53]
 ```
 
 ## Working State
