@@ -3,7 +3,8 @@ import { Product, StemFile } from '@/services/marketplace/types';
 import { MarketplaceService } from '@/services/marketplace/MarketplaceService';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import { ShoppingBag, Loader2, Check, Music } from 'lucide-react';
+import { ShoppingBag, Loader2, Check, Music, Download } from 'lucide-react';
+import { useToast } from '@/core/context/ToastContext';
 import { logger } from '@/utils/logger';
 
 const STEM_LABEL_DISPLAY: Record<string, string> = {
@@ -39,7 +40,9 @@ interface ProductCardProps {
 const ProductCard = React.memo(({ product, variant = 'default', source, sourceId }: ProductCardProps) => {
     const [purchasing, setPurchasing] = useState(false);
     const [purchased, setPurchased] = useState(false);
+    const [downloadingStems, setDownloadingStems] = useState(false);
     const currentUser = useStore(useShallow((state) => state.userProfile));
+    const toast = useToast();
 
     // Prices are stored as integer cents end-to-end; format only at this UI boundary.
     const displayPrice = (product.price / 100).toFixed(2);
@@ -72,6 +75,28 @@ const ProductCard = React.memo(({ product, variant = 'default', source, sourceId
     const stemFiles = isStemPack
         ? ((product.metadata?.stemFiles ?? []) as StemFile[])
         : [];
+
+    // ISSUE-975: buyers get a short-lived signed URL per stem, resolved server-side
+    // after verifying the completed purchase — never a stored bearer-token URL.
+    const handleDownloadStems = async (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (!product.id || downloadingStems) return;
+        setDownloadingStems(true);
+        try {
+            for (const stem of stemFiles) {
+                const url = await MarketplaceService.getStemDownloadUrl(product.id, stem.label);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = stem.filename;
+                a.click();
+            }
+        } catch (error: unknown) {
+            logger.error('Failed to download stems:', error);
+            toast.error('Failed to generate download link. Please try again.');
+        } finally {
+            setDownloadingStems(false);
+        }
+    };
 
     if (isEmbedded) {
         return (
@@ -183,30 +208,46 @@ const ProductCard = React.memo(({ product, variant = 'default', source, sourceId
                         {isStemPack ? 'Stem Pack' : product.type}
                     </span>
 
-                    <button
-                        onClick={handlePurchase}
-                        disabled={purchasing || purchased || product.inventory === 0}
-                        aria-label={purchased ? `Owned: ${product.title}` : `Purchase ${product.title} for ${product.currency} ${displayPrice}`}
-                        className={`px-4 py-2 rounded-lg font-semibold text-sm flex items-center gap-2 transition-all
-                            ${purchased
-                                ? 'bg-green-600/20 text-green-400 cursor-default'
-                                : 'bg-white text-black hover:bg-gray-200'
-                            }`}
-                    >
-                        {purchasing ? (
-                            <>
+                    {purchased && isStemPack ? (
+                        <button
+                            onClick={handleDownloadStems}
+                            disabled={downloadingStems}
+                            aria-label={`Download stems for ${product.title}`}
+                            className="px-4 py-2 rounded-lg font-semibold text-sm flex items-center gap-2 transition-all bg-green-600/20 text-green-400 hover:bg-green-600/30"
+                        >
+                            {downloadingStems ? (
                                 <Loader2 size={16} className="animate-spin" aria-hidden="true" />
-                                Processing...
-                            </>
-                        ) : purchased ? (
-                            <>
-                                <Check size={16} aria-hidden="true" />
-                                In Collection
-                            </>
-                        ) : (
-                            'Purchase'
-                        )}
-                    </button>
+                            ) : (
+                                <Download size={16} aria-hidden="true" />
+                            )}
+                            Download Stems
+                        </button>
+                    ) : (
+                        <button
+                            onClick={handlePurchase}
+                            disabled={purchasing || purchased || product.inventory === 0}
+                            aria-label={purchased ? `Owned: ${product.title}` : `Purchase ${product.title} for ${product.currency} ${displayPrice}`}
+                            className={`px-4 py-2 rounded-lg font-semibold text-sm flex items-center gap-2 transition-all
+                                ${purchased
+                                    ? 'bg-green-600/20 text-green-400 cursor-default'
+                                    : 'bg-white text-black hover:bg-gray-200'
+                                }`}
+                        >
+                            {purchasing ? (
+                                <>
+                                    <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+                                    Processing...
+                                </>
+                            ) : purchased ? (
+                                <>
+                                    <Check size={16} aria-hidden="true" />
+                                    In Collection
+                                </>
+                            ) : (
+                                'Purchase'
+                            )}
+                        </button>
+                    )}
                 </div>
             </div>
         </div>

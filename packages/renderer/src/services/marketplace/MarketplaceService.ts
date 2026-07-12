@@ -11,16 +11,18 @@ import {
     serverTimestamp,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     Timestamp,
-    updateDoc
+    updateDoc,
+    setDoc
 } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytes } from 'firebase/storage';
 import { httpsCallable } from 'firebase/functions';
-import { Product, StemFile, StemLabel } from './types';
+import { Product, StemFileManifestEntry, StemLabel } from './types';
 import { logger } from '@/utils/logger';
 
 export class MarketplaceService {
     private static PRODUCTS_COLLECTION = 'products';
     private static PURCHASES_COLLECTION = 'purchases';
+    private static STEM_MANIFESTS_COLLECTION = 'marketplace_stem_manifests';
 
     // ⚡ Bolt Optimization: Simple in-memory cache to prevent N+1 reads in feeds
     // Using a Map with a size limit to prevent memory leaks
@@ -29,8 +31,11 @@ export class MarketplaceService {
     private static MAX_CACHE_SIZE = 100;
 
     /**
-     * Uploads stem files to Firebase Storage and returns StemFile metadata.
-     * Call this before createProduct() when type === 'stem-pack'.
+     * Uploads stem files to Firebase Storage. Returns the private manifest
+     * entries (with storagePath) — call saveStemManifest() with these once
+     * the product doc exists. Never fetches/stores a public download URL:
+     * that bearer-token URL would bypass purchase gating entirely if it
+     * ended up on the public product doc (ISSUE-975).
      *
      * @param sellerId  - The authenticated user's ID (used for storage path scoping)
      * @param draftId   - A temporary ID generated before the product doc exists
@@ -40,7 +45,7 @@ export class MarketplaceService {
         sellerId: string,
         draftId: string,
         stems: { label: StemLabel; file: File }[]
-    ): Promise<StemFile[]> {
+    ): Promise<StemFileManifestEntry[]> {
         const results = await Promise.all(
             stems.map(async ({ label, file }) => {
                 const ext = file.name.split('.').pop() ?? 'mp3';
@@ -52,13 +57,45 @@ export class MarketplaceService {
                     customMetadata: { sellerId, draftId, label },
                 });
 
-                const url = await getDownloadURL(storageRef);
-                return { label, url, filename: file.name, storagePath } as StemFile;
+                return { label, filename: file.name, storagePath } as StemFileManifestEntry;
             })
         );
 
         logger.info(`[MarketplaceService] Uploaded ${results.length} stems for draft ${draftId}`);
         return results;
+    }
+
+    /**
+     * Persist the private stem manifest (storage paths) for a product.
+     * Write-only from the client — see the `marketplace_stem_manifests`
+     * Firestore rule. Only getStemDownloadUrl (Cloud Function) reads it back.
+     */
+    static async saveStemManifest(
+        productId: string,
+        sellerId: string,
+        stemFiles: StemFileManifestEntry[]
+    ): Promise<void> {
+        await setDoc(doc(db, this.STEM_MANIFESTS_COLLECTION, productId), {
+            productId,
+            sellerId,
+            stemFiles,
+            createdAt: serverTimestamp(),
+        });
+    }
+
+    /**
+     * Request a short-lived signed download URL for one stem of a purchased
+     * (or self-owned) stem-pack product. Authorization is verified server-side
+     * against the completed `purchases` record or seller identity — ISSUE-975.
+     */
+    static async getStemDownloadUrl(productId: string, label: StemLabel): Promise<string> {
+        const getStemDownloadUrlFn = httpsCallable<
+            { productId: string; label: StemLabel },
+            { url: string; expiresAt: number }
+        >(functions, 'getStemDownloadUrl');
+
+        const result = await getStemDownloadUrlFn({ productId, label });
+        return result.data.url;
     }
 
     /**
