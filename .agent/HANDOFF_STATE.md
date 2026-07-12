@@ -1,24 +1,25 @@
 # Handoff State
-**Updated:** 2026-07-12 11:46 EDT
+**Updated:** 2026-07-12 12:15 EDT
 **Branch:** `fix/issues-core`
 
 ## Recent Commits
 ```
+f500cc8ef chore: session checkpoint [12:12]
+5609430fe chore: session checkpoint [12:11]
+a4a4090e8 fix(publishing): fail closed on audio/image decode errors instead of fabricating metadata
+f38342d0a docs: persistence fix roadmap (4-phase, beta-blocking)
+66e8eb39d chore: session checkpoint [12:06]
+621bae462 chore: session checkpoint [12:00]
+d1b08b22c fix(registration): stop claiming desktop browser automation works
+9e3b469fe chore: session checkpoint [11:46]
 f6e2877ce fix(crm): require a real deliverable before a drop can go Active
 a1ef03c9b chore: session checkpoint [11:37]
-e2b96cca3 fix(creative): warn that the 3D Stage Builder is unsaved and confirm Clear Stage
-7eaeed4a6 chore: session checkpoint [11:32]
-49a331d23 fix(creative): actually validate cover art dimensions against distributor rules
-6f80b9453 chore: session checkpoint [11:24]
-de1d85494 fix(distribution): require a real analyzed track and staged cover before submission
-9aecd2b9a chore: session checkpoint [11:15]
-61b301d9d fix(publishing): stop marking releases metadata_complete when packaging fails
-1257337af chore: session checkpoint [11:07]
 ```
 
 ## Working State
 ```
-clean working tree
+MM packages/renderer/src/core/store/slices/notesSlice.ts
+AM packages/renderer/src/services/notes/NotesService.ts
 ```
 
 ## Decisions

@@ -120,9 +120,12 @@ const STEP_ORDER: WizardStep[] = ['metadata', 'distribution', 'ai_disclosure', '
 
 /**
  * Extract real audio metadata (sample rate, bit depth) from a File using the Web Audio API.
- * Falls back to format-based defaults if AudioContext decoding fails.
+ *
+ * ISSUE-963: returns null on decode failure instead of fabricating
+ * format-based defaults — a file that cannot be decoded must never be
+ * displayed/stored as if it were measured.
  */
-async function extractAudioMetadata(file: File): Promise<{ sampleRate: number; bitDepth: number }> {
+async function extractAudioMetadata(file: File): Promise<{ sampleRate: number; bitDepth: number } | null> {
   try {
     const arrayBuffer = await file.arrayBuffer();
     const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
@@ -159,20 +162,19 @@ async function extractAudioMetadata(file: File): Promise<{ sampleRate: number; b
       await audioContext.close();
     }
   } catch (error: unknown) {
-    logger.warn('[useDDEXRelease] AudioContext decoding failed, using format defaults:', error);
-    // Fallback: derive from file extension
-    const ext = file.name.split('.').pop()?.toLowerCase();
-    if (ext === 'wav') return { sampleRate: 44100, bitDepth: 24 };
-    if (ext === 'flac') return { sampleRate: 44100, bitDepth: 24 };
-    return { sampleRate: 44100, bitDepth: 16 };
+    logger.warn('[useDDEXRelease] AudioContext decoding failed — file cannot be verified:', error);
+    return null;
   }
 }
 
 /**
  * Extract real image dimensions from an image URL using the Image API.
- * Returns { width, height } or falls back to 3000x3000 on error.
+ *
+ * ISSUE-963: returns null on failure instead of fabricating a 3000x3000
+ * default — an image that cannot be decoded must never be displayed/stored
+ * as if its dimensions were measured.
  */
-async function extractImageDimensions(imageUrl: string): Promise<{ width: number; height: number }> {
+async function extractImageDimensions(imageUrl: string): Promise<{ width: number; height: number } | null> {
   try {
     return await new Promise<{ width: number; height: number }>((resolve, reject) => {
       const img = new Image();
@@ -181,9 +183,9 @@ async function extractImageDimensions(imageUrl: string): Promise<{ width: number
       img.onerror = () => reject(new Error('Image failed to load'));
       img.src = imageUrl;
     });
-  } catch {
-    logger.warn('[useDDEXRelease] Failed to extract image dimensions, using 3000x3000 default');
-    return { width: 3000, height: 3000 };
+  } catch (error: unknown) {
+    logger.warn('[useDDEXRelease] Failed to extract image dimensions — file cannot be verified:', error);
+    return null;
   }
 }
 
@@ -256,6 +258,20 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
       throw new Error('Missing organization or user context');
     }
 
+    // ISSUE-963: reject lossy audio formats before uploading any bytes —
+    // MP3/AAC were previously accepted by the file picker (and by AAC-aware
+    // extraction logic) despite the UI copy promising "WAV or FLAC" only,
+    // and were silently relabeled as 'wav' at submission with no
+    // transcoding. A release master must actually be lossless.
+    if (type === 'audio') {
+      const ext = file.name.split('.').pop()?.toLowerCase();
+      if (ext !== 'wav' && ext !== 'flac') {
+        const message = `"${file.name}" is a ${ext?.toUpperCase() || 'unrecognized'} file. Only WAV or FLAC masters are accepted for release delivery.`;
+        setSubmitError(message);
+        throw new Error(message);
+      }
+    }
+
     // Use a dedicated 'packaging' path to differentiate from analysis-only uploads
     const path = `orgs/${activeOrg.id}/releases/packaging/${Date.now()}_${file.name}`;
 
@@ -271,6 +287,11 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
       // Extract real metadata from audio file using Web Audio API
       if (type === 'audio') {
         const audioMetadata = await extractAudioMetadata(file);
+        if (!audioMetadata) {
+          const message = `Could not decode "${file.name}" — it may be corrupt or use an unsupported codec. It was not accepted as the release master.`;
+          setSubmitError(message);
+          throw new Error(message);
+        }
         const audioInfo = {
           url,
           mimeType: file.type,
@@ -279,10 +300,16 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
           sampleRate: audioMetadata.sampleRate,
           bitDepth: audioMetadata.bitDepth,
         };
+        setSubmitError(null);
         updateAssets({ audioFile: audioInfo });
       } else {
         // Extract real image dimensions
         const dimensions = await extractImageDimensions(url);
+        if (!dimensions) {
+          const message = `Could not read image dimensions for "${file.name}" — it may be corrupt or an unsupported format. It was not accepted as cover art.`;
+          setSubmitError(message);
+          throw new Error(message);
+        }
         const coverInfo = {
           url,
           mimeType: file.type,
@@ -290,6 +317,7 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
           width: dimensions.width,
           height: dimensions.height,
         };
+        setSubmitError(null);
         updateAssets({ coverArt: coverInfo });
       }
 
@@ -383,9 +411,16 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
       let docId = releaseId;
 
       if (!docId) {
-        // Determine audio format, defaulting to 'wav' if aac or unknown
-        const rawFormat = assets.audioFile?.format || 'wav';
-        const audioFormat: AudioFormat = (rawFormat === 'aac' ? 'wav' : rawFormat) as AudioFormat;
+        // ISSUE-963: previously silently relabeled 'aac' as 'wav' here with
+        // no transcoding, so a lossy AAC payload could be declared as a
+        // lossless WAV master. uploadAsset() now rejects non-WAV/FLAC
+        // formats before this point is ever reached; this is a defensive
+        // second gate, not the primary enforcement.
+        const rawFormat = assets.audioFile?.format;
+        if (rawFormat !== 'wav' && rawFormat !== 'flac') {
+          throw new Error(`Release audio must be WAV or FLAC (got "${rawFormat || 'unknown'}"). Re-upload a lossless master before submitting.`);
+        }
+        const audioFormat: AudioFormat = rawFormat;
 
         // Create release record
         const releaseRecord: Omit<DDEXReleaseRecord, 'id'> = {
