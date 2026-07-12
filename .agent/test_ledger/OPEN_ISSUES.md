@@ -15318,3 +15318,14 @@ Naming fix: `LabelDealRecoupmentService.ts` collection literal `'labelDeals'` �
 - **Acceptance:** Looking only at the icon (browser tab, Dock, phone home screen) is enough to tell which of the 3 surfaces (web / Electron / remote) is open, with no other UI visible.
 - **DO NOT:** Do not change the core mark/shape — only the color per surface. Do not fork the manifest content (share_target, shortcuts, etc.) beyond what's needed to give the remote module its own icon identity.
 
+### ISSUE-1046: CI unit-test shard 7/8 recurrently OOMs on GitHub Actions (main deploys)
+
+- **Status:** 🔴 OPEN (observed recurring, 2026-07-12 — 4 separate `main` deploy runs so far)
+- **Severity:** 🟡 MEDIUM (CI reliability — every affected run shows "failure" even though no test actually failed)
+- **Module:** CI/CD — `.github/workflows/deploy.yml` unit-test sharding
+- **Evidence:** Across at least 4 independent `Deploy to Firebase Hosting` runs on `main` this session (`29201663294`, `29210446935`, `29210611369`, `29210902917`), shard 7/8 consistently crashes with `Error: Worker terminated due to reaching memory limit: JS heap out of memory` / `{code: 'ERR_WORKER_OUT_OF_MEMORY'}` — never a real assertion failure in that shard. Each time, all tests that ran before the crash passed (e.g. one run showed "529 passed | 2 skipped" before the OOM). The job runs with `NODE_OPTIONS="--max-old-space-size=4096"` for the test command itself, even though the job env sets `NODE_OPTIONS: --max-old-space-size=6144` — the per-command override wins and is lower than the job default.
+- **Impact:** Every affected deploy shows as a red ❌ in GitHub Actions even when 100% of tests that ran actually passed, which trains reviewers to ignore "failure" status on this workflow and could mask a real regression landing in the same shard on a day it doesn't OOM.
+- **Fix:** Either raise the per-shard `--max-old-space-size` to match (or exceed) the job-level 6144MB default, or rebalance the 8-way shard split so shard 7 doesn't consistently draw a heavier subset of memory-hungry test files, or reduce the shard count so each shard's peak heap has more headroom.
+- **DO NOT:** Do not silently mark the workflow `continue-on-error` for unit tests — that would hide real failures too. Fix the actual memory ceiling/sharding, not the symptom.
+- **Not investigated further this pass:** identifying which specific test files in shard 7 are memory-heavy, and whether `--max-old-space-size=4096` in the `npm test` script itself (vs. the job's 6144 env var) is an intentional lower cap or an oversight — this is a CI/workflow-config change I did not make without being asked, and is out of scope for a code-issue fixing pass.
+
