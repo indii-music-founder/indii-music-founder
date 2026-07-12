@@ -12830,13 +12830,14 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-812: Publishing agent fabricates PRO submissions and reference IDs
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-12)
 - **Severity:** 🔴 HIGH (false registration state)
 - **Module:** Agent tools / Publishing
 - **Evidence:** `PublishingTools.ts:177-192` has a comment saying “Mock PRO registration logic since real ASCAP/BMI APIs require B2B credentials,” but returns `status: 'Submitted'`, a random `PRO-${...}` reference ID, and the message “Successfully submitted ... to ... for registration.”
 - **Impact:** A chat/tool flow can create a fake PRO confirmation, contradicting the more honest Registration Center queue/manual paths.
 - **Fix:** Make this tool prepare a draft packet only, or route to the Registration Center’s honest manual-required flow. Never emit `Submitted` or a PRO reference without a real external acknowledgement.
 - **Acceptance:** `register_work_with_pro` returns `requires_manual_submission` unless it stores destination, external receipt, submitted payload, and provider response.
+- **Fix applied (2026-07-12):** `register_work_with_pro` in `PublishingTools.ts` no longer fabricates anything — it now requires authentication (mirroring the sibling `register_catalog_work`/`update_catalog_work` tools in the same file), stores a real Firestore draft record under `users/{uid}/proSubmissionDrafts` with `status: 'requires_manual_submission'`, and returns that same honest status plus the real `draftId` and a message naming the correct manual-filing portal URL for the given society (ASCAP/BMI/SESAC — reusing the exact portal-URL logic already used by this file's `queryProDatabase`). The random `PRO-${...}` reference ID and the fake `'Submitted'` status are gone entirely — there is no code path left that can return either. The agent tool's own declaration (`PublishingAgent.ts:152-153`), which told the model "Submit a musical work registration directly to a PRO," was also corrected to describe the real (manual-draft) behavior, so the agent can no longer tell a user it filed something it didn't. Tests: new `PublishingTools.test.ts` (3 cases) — asserts the result never contains `proReferenceId` and never reports `status: 'Submitted'`; asserts a real Firestore draft doc is created with the correct collection path and fields; asserts an unauthenticated caller is rejected rather than given an anonymous draft. Typecheck/lint clean, all 3 tests green.
 
 ### ISSUE-813: ISWC readiness treats any supplied code as registered without provenance
 
