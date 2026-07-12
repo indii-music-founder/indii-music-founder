@@ -84,26 +84,40 @@ export const PublicistTools = {
             }
         }
 
+        // ISSUE-838: this used to always say "generated" with no saved
+        // state, even when unauthenticated or the write failed. docId is
+        // now only set on a real, confirmed Firestore write.
         const { auth, db } = await importWithRetry(() => import('@/services/firebase'));
         const uid = auth.currentUser?.uid;
+        let docId: string | undefined;
+        let saveError: string | undefined;
         if (uid) {
             try {
                 const { collection, addDoc, serverTimestamp } = await importWithRetry(() => import('firebase/firestore'));
-                await addDoc(collection(db, 'users', uid, 'press_releases'), {
+                const docRef = await addDoc(collection(db, 'users', uid, 'press_releases'), {
                     ...validated,
                     topic,
                     pdfPath: pdfResult?.path || null,
                     createdAt: serverTimestamp()
                 });
+                docId = docRef.id;
             } catch (err: unknown) {
+                saveError = err instanceof Error ? err.message : String(err);
                 logger.warn('[PublicistTools] Failed to persist press release:', err);
             }
+        } else {
+            saveError = 'No user is signed in.';
         }
 
+        const pdfNote = pdfResult?.success ? ' (PDF Created)' : '';
         return toolSuccess({
             ...validated,
-            pdf: pdfResult
-        }, `Press release generated: ${validated.headline}${pdfResult?.success ? ' (PDF Created)' : ''}`);
+            pdf: pdfResult,
+            saved: Boolean(docId),
+            docId
+        }, docId
+            ? `Press release generated: ${validated.headline}${pdfNote} and saved (ID: ${docId}).`
+            : `Press release generated: ${validated.headline}${pdfNote}, but NOT saved to your Publicist Dashboard: ${saveError}`);
     }),
 
     generate_crisis_response: wrapTool('generate_crisis_response', async ({ situation, tone }: { situation: string; tone?: string }) => {
@@ -123,20 +137,31 @@ export const PublicistTools = {
 
         const { auth, db } = await importWithRetry(() => import('@/services/firebase'));
         const uid = auth.currentUser?.uid;
+        let docId: string | undefined;
+        let saveError: string | undefined;
         if (uid) {
             try {
                 const { collection, addDoc, serverTimestamp } = await importWithRetry(() => import('firebase/firestore'));
-                await addDoc(collection(db, 'users', uid, 'crisis_responses'), {
+                const docRef = await addDoc(collection(db, 'users', uid, 'crisis_responses'), {
                     ...validated,
                     situation,
                     createdAt: serverTimestamp()
                 });
+                docId = docRef.id;
             } catch (err: unknown) {
+                saveError = err instanceof Error ? err.message : String(err);
                 logger.warn('[PublicistTools] Failed to persist crisis response:', err);
             }
+        } else {
+            saveError = 'No user is signed in.';
         }
 
-        return toolSuccess(validated, "Crisis response strategy developed and saved.");
+        return toolSuccess(
+            { ...validated, saved: Boolean(docId), docId },
+            docId
+                ? `Crisis response strategy developed and saved (ID: ${docId}).`
+                : `Crisis response strategy developed, but NOT saved: ${saveError}`
+        );
     }),
 
     pitch_story: wrapTool('pitch_story', async ({ story_summary, recipient_type }: { story_summary: string; recipient_type?: string }) => {
@@ -156,21 +181,32 @@ export const PublicistTools = {
 
         const { auth, db } = await importWithRetry(() => import('@/services/firebase'));
         const uid = auth.currentUser?.uid;
+        let docId: string | undefined;
+        let saveError: string | undefined;
         if (uid) {
             try {
                 const { collection, addDoc, serverTimestamp } = await importWithRetry(() => import('firebase/firestore'));
-                await addDoc(collection(db, 'users', uid, 'email_pitches'), {
+                const docRef = await addDoc(collection(db, 'users', uid, 'email_pitches'), {
                     ...validated,
                     story_summary,
                     recipient_type,
                     createdAt: serverTimestamp()
                 });
+                docId = docRef.id;
             } catch (err: unknown) {
+                saveError = err instanceof Error ? err.message : String(err);
                 logger.warn('[PublicistTools] Failed to persist email pitch:', err);
             }
+        } else {
+            saveError = 'No user is signed in.';
         }
 
-        return toolSuccess(validated, `Email pitch created and saved: ${validated.subject_line}`);
+        return toolSuccess(
+            { ...validated, saved: Boolean(docId), docId },
+            docId
+                ? `Email pitch created and saved: ${validated.subject_line} (ID: ${docId}).`
+                : `Email pitch created for "${validated.subject_line}", but NOT saved: ${saveError}`
+        );
     }),
 
     draft_pitch_email: wrapTool('draft_pitch_email', async (args: { playlistName: string; genre: string; trackTitle: string }) => {
@@ -189,21 +225,32 @@ export const PublicistTools = {
 
         const { auth, db } = await importWithRetry(() => import('@/services/firebase'));
         const uid = auth.currentUser?.uid;
+        let docId: string | undefined;
+        let saveError: string | undefined;
         if (uid) {
             try {
                 const { collection, addDoc, serverTimestamp } = await importWithRetry(() => import('firebase/firestore'));
-                await addDoc(collection(db, 'users', uid, 'email_pitches'), {
+                const docRef = await addDoc(collection(db, 'users', uid, 'email_pitches'), {
                     ...validated,
                     playlistName: args.playlistName,
                     trackTitle: args.trackTitle,
                     createdAt: serverTimestamp()
                 });
+                docId = docRef.id;
             } catch (err: unknown) {
+                saveError = err instanceof Error ? err.message : String(err);
                 logger.warn('[PublicistTools] Failed to persist playlist pitch:', err);
             }
+        } else {
+            saveError = 'No user is signed in.';
         }
 
-        return toolSuccess(validated, `Personalized pitch email drafted and saved for Spotify playlist "${args.playlistName}".`);
+        return toolSuccess(
+            { ...validated, saved: Boolean(docId), docId },
+            docId
+                ? `Personalized pitch email drafted and saved for Spotify playlist "${args.playlistName}" (ID: ${docId}).`
+                : `Personalized pitch email drafted for Spotify playlist "${args.playlistName}", but NOT saved: ${saveError}`
+        );
     })
 } satisfies Record<string, AnyToolFunction>;
 
