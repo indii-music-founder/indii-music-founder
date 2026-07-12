@@ -1,9 +1,12 @@
 # Handoff State
-**Updated:** 2026-07-12 10:34 EDT
+**Updated:** 2026-07-12 10:53 EDT
 **Branch:** `fix/issues-core`
 
 ## Recent Commits
 ```
+9e9cd49dc fix(marketing): keep AI campaign draft alive until creation actually confirms
+318865fdd fix(marketing): actually persist campaign updates instead of local state only
+b3076afb5 chore: session checkpoint [10:34]
 16bdc2edb fix(marketing): stop claiming the reel generator syncs to uploaded audio
 7029f4ae0 fix(publicist): stop letting the model invent Release Kit media contacts
 55a40d58f fix(onboarding): bound brand image uploads and fix MIME mislabeling
@@ -11,9 +14,6 @@
 d0aab24ba docs: cross-device persistence audit for mobile-first model
 c7d596e6b chore: session checkpoint [10:18]
 64ab2633f docs: mobile device routing policy for indii.music
-58191c1c3 fix(audio): cap browser master size and stop double-encoding audio for AI analysis
-f6cdb4919 fix(audio): make M4ACodecProbe tests byte-accurate; log ISSUE-961 fix
-bddda35a5 chore: session checkpoint [10:01]
 ```
 
 ## Working State
