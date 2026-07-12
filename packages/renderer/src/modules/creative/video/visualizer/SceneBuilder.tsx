@@ -2,10 +2,11 @@ import React, { useState, useMemo, useEffect, useRef, Suspense, Component, Error
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment, ContactShadows, useGLTF } from '@react-three/drei';
 import { Mesh } from 'three'; // Item 357: Named import enables Three.js tree-shaking
-import { Download, Trash2, BoxSelect, Upload } from 'lucide-react';
+import { Download, Trash2, BoxSelect, Upload, AlertTriangle } from 'lucide-react';
 import { logger } from '@/utils/logger';
 import { useToast } from '@/core/context/ToastContext';
 import { validateSceneModelFile } from './sceneBuilderFiles';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 /**
  * Advanced 3D Scene Builder component implementing requirement 105.
@@ -139,7 +140,20 @@ export const SceneBuilder = () => {
         if (file) addModelFile(file);
     };
 
-    const handleClear = () => {
+    const handleClear = async () => {
+        if (assets.length === 0) return;
+
+        // ISSUE-1015: this stage has no save/persistence path at all — Clear
+        // Stage is the only way to lose it faster than just navigating away,
+        // so it needs its own confirmation rather than a single accidental click.
+        const confirmed = await ConfirmDialog.call({
+            title: 'Clear Stage?',
+            message: `This will remove all ${assets.length} model${assets.length === 1 ? '' : 's'} from the stage. This cannot be undone — the stage is not saved anywhere.`,
+            confirmText: 'Clear Stage',
+            variant: 'destructive',
+        });
+        if (!confirmed) return;
+
         // Revoke blob URLs created by URL.createObjectURL to free browser memory
         assets.forEach(asset => {
             if (asset.url.startsWith('blob:')) {
@@ -162,6 +176,13 @@ export const SceneBuilder = () => {
                     <BoxSelect className="w-6 h-6 text-blue-400" />
                     <h2 className="text-white font-semibold text-lg">3D Stage Builder</h2>
                     <span className="bg-blue-500/20 text-blue-300 text-xs px-2 py-1 rounded border border-blue-500/30">Beta</span>
+                    {/* ISSUE-1015: this stage has no save/persistence path and is not
+                        consumed by any video render — make that explicit rather than
+                        letting a navigate-away/refresh silently discard the only copy. */}
+                    <span className="flex items-center gap-1 bg-amber-500/15 text-amber-300 text-xs px-2 py-1 rounded border border-amber-500/30">
+                        <AlertTriangle className="w-3 h-3" />
+                        Preview only — not saved
+                    </span>
                 </div>
                 <div className="flex items-center gap-2">
                     <button
