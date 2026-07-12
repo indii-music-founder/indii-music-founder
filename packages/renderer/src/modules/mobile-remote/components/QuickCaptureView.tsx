@@ -7,6 +7,43 @@ import { useToast } from '@/core/context/ToastContext';
 import { cn } from '@/lib/utils';
 import { triggerHaptic } from '../MobileRemote';
 
+/**
+ * ISSUE-987: candidates in priority order — WebKit/Safari commonly can't
+ * produce webm at all, so hardcoding `audio/webm` mislabels whatever bytes
+ * the browser actually emitted. `undefined` (last resort) lets the browser
+ * pick its own default rather than forcing an unsupported type.
+ */
+const AUDIO_MIME_CANDIDATES = [
+    'audio/webm;codecs=opus',
+    'audio/webm',
+    'audio/ogg;codecs=opus',
+    'audio/ogg',
+    'audio/mp4',
+];
+
+const AUDIO_MIME_EXTENSIONS: Record<string, string> = {
+    'audio/webm': 'webm',
+    'audio/ogg': 'ogg',
+    'audio/mp4': 'm4a',
+    'audio/mpeg': 'mp3',
+    'audio/wav': 'wav',
+};
+
+export const pickSupportedAudioMimeType = (): string | undefined => {
+    if (typeof MediaRecorder === 'undefined' || typeof MediaRecorder.isTypeSupported !== 'function') {
+        return undefined;
+    }
+    return AUDIO_MIME_CANDIDATES.find(type => MediaRecorder.isTypeSupported(type));
+};
+
+/** Derive the real filename extension from the recorder's actual (possibly codec-qualified) mimeType, instead of always writing `.webm`. */
+export const audioExtensionForMimeType = (mimeType: string): string => {
+    const base = mimeType.split(';')[0]?.trim().toLowerCase() ?? '';
+    return AUDIO_MIME_EXTENSIONS[base] ?? 'webm';
+};
+
+const MIN_RECORDING_DURATION_MS = 300;
+
 export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
     const toast = useToast();
     const [isRecording, setIsRecording] = useState(false);
@@ -33,6 +70,7 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
     const audioChunksRef = useRef<Blob[]>([]);
     const streamRef = useRef<MediaStream | null>(null);
     const isMountedRef = useRef(true);
+    const recordingStartedAtRef = useRef(0);
 
     const reviewKind = capturedAudioBlob
         ? 'voice memo'
@@ -130,7 +168,8 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
 
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            const recorder = new MediaRecorder(stream);
+            const mimeType = pickSupportedAudioMimeType();
+            const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
             streamRef.current = stream;
             mediaRecorderRef.current = recorder;
             audioChunksRef.current = [];
@@ -149,8 +188,19 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
 
             recorder.onstop = () => {
                 if (isMountedRef.current && isStillActiveSession()) {
-                    const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-                    setCapturedAudioBlob(audioBlob);
+                    // ISSUE-987: label the blob with what the recorder actually
+                    // produced (recorder.mimeType), never a hardcoded assumption.
+                    const actualMimeType = recorder.mimeType || 'audio/webm';
+                    const audioBlob = new Blob(audioChunksRef.current, { type: actualMimeType });
+                    const durationMs = Date.now() - recordingStartedAtRef.current;
+
+                    if (audioBlob.size === 0) {
+                        toast.error('No audio was captured — try again.');
+                    } else if (durationMs < MIN_RECORDING_DURATION_MS) {
+                        toast.error('Recording was too short to save.');
+                    } else {
+                        setCapturedAudioBlob(audioBlob);
+                    }
                     setIsFinalizingRecording(false);
                 }
                 stream.getTracks().forEach(track => track.stop());
@@ -177,6 +227,7 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
                 };
             });
 
+            recordingStartedAtRef.current = Date.now();
             recorder.start();
             setIsRecording(true);
             clearMediaState();
@@ -284,7 +335,12 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
 
             let taskId: string;
             if (capturedAudioBlob) {
-                const filename = `voice_memo_${Date.now()}.webm`;
+                // ISSUE-987: name the upload from the blob's real mimeType
+                // instead of assuming .webm — Safari/WebKit commonly record
+                // mp4/aac, and a mismatched extension breaks downstream
+                // playback/transcription that infers format from the name.
+                const extension = audioExtensionForMimeType(capturedAudioBlob.type);
+                const filename = `voice_memo_${Date.now()}.${extension}`;
                 const path = `users/${userId}/voice_memos/${filename}`;
                 const downloadUrl = await StorageService.uploadFile(capturedAudioBlob, path);
 
