@@ -12,6 +12,13 @@ export interface Campaign {
     price: number;
     status: 'active' | 'completed' | 'draft';
     type: 'Digital Vinyl' | 'Exclusive Audio' | 'VIP Package' | 'Merch Bundle';
+    /**
+     * ISSUE-980: the URL fans actually receive/redeem once they "buy" this
+     * drop (a Storage-hosted file, external store link, ticketing page,
+     * etc). Required before a campaign can be `active` — without it there
+     * is nothing for a fan to discover, purchase, or unlock.
+     */
+    deliverableUrl?: string;
     createdAt?: any;
     updatedAt?: any;
 }
@@ -110,8 +117,16 @@ export const createCRMSlice: StateCreator<CRMSlice> = (set, get) => ({
         const userId = user?.uid || 'founder-demo-uid';
 
         try {
+            // ISSUE-980: enforced here (not just in the UI form) so no
+            // caller can write an "active" campaign with no real
+            // deliverable for a fan to discover, purchase, or unlock.
+            const status = campaignData.status === 'active' && !campaignData.deliverableUrl?.trim()
+                ? 'draft'
+                : campaignData.status;
+
             const id = await campaignFirestoreService.add({
                 ...campaignData,
+                status,
                 userId,
             });
             return id;
