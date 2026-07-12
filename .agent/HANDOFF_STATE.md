@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-07-12 11:01 EDT
+**Updated:** 2026-07-12 11:07 EDT
 **Branch:** `fix/issues-core`
 
 ## Recent Commits
 ```
+a73a653e3 fix(onboarding): actually extract PDF text and attach audio for Brand Interview
+6a92d87d2 chore: session checkpoint [11:01]
 f7496e0ef fix(marketing): make Discord/Telegram webhook Test/Send real network calls
 499d20b16 chore: session checkpoint [10:53]
 9e9cd49dc fix(marketing): keep AI campaign draft alive until creation actually confirms
@@ -12,8 +14,6 @@ b3076afb5 chore: session checkpoint [10:34]
 16bdc2edb fix(marketing): stop claiming the reel generator syncs to uploaded audio
 7029f4ae0 fix(publicist): stop letting the model invent Release Kit media contacts
 55a40d58f fix(onboarding): bound brand image uploads and fix MIME mislabeling
-21aa422c4 chore: session checkpoint [10:20]
-d0aab24ba docs: cross-device persistence audit for mobile-first model
 ```
 
 ## Working State
