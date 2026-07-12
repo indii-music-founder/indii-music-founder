@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-07-11 22:31 EDT
+**Updated:** 2026-07-11 23:17 EDT
 **Branch:** `fix/issues-core`
 
 ## Recent Commits
 ```
+897b69d8f chore: session checkpoint [22:31]
 dcd9cf9fd chore: session checkpoint [22:03]
 edabf5c0d chore: session checkpoint [20:29]
 c1a307568 chore: session checkpoint [20:00]
@@ -13,7 +14,6 @@ c2a10ec49 chore: session checkpoint [19:10]
 58fd80514 chore: session checkpoint [19:07]
 781f91dee fix(memory): ISSUE-757 — raise archive search cap to 10,000 for full-history recall
 33fcdbe5d fix(persistence): ISSUE-755 — merge local/remote sessions instead of clobbering + add retry logic
-ecd218287 chore: session checkpoint [18:56]
 ```
 
 ## Working State
