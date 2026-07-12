@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-07-12 12:32 EDT
+**Updated:** 2026-07-12 12:33 EDT
 **Branch:** `fix/issues-core`
 
 ## Recent Commits
 ```
+c13f76ff4 chore: session checkpoint [12:32]
 078ea1357 chore: session checkpoint [14:45]
 72e7da52c fix(creative): derive real file extension for generated video/image file-nodes (ISSUE-810)
 f41361707 docs(ledger): log ISSUE-757 partial fix — frontend memory caps raised to 1000 (2026-07-12)
@@ -13,12 +14,12 @@ a0ea7354b fix(memory): raise caps to full Firestore batch limits for recall (ISS
 63dadbb12 docs(ledger): log ISSUE-761 fix — Firestore cloud sync for notes (2026-07-12)
 e0a503b1d fix(notes): implement Firestore cloud sync for cross-device persistence (ISSUE-761)
 62eef6c4b chore: session checkpoint [12:15]
-a530899d7 chore: session checkpoint [12:12]
 ```
 
 ## Working State
 ```
-clean working tree
+ M packages/renderer/src/modules/creative/components/StudioSettingsPanel.tsx
+?? packages/renderer/src/modules/creative/components/StudioSettingsPanel.test.tsx
 ```
 
 ## Decisions
