@@ -212,6 +212,64 @@ describe('creativeHistorySlice — openImageInStudio', () => {
                 expect.objectContaining({
                     url: 'gs://bucket/users/test-user/assets/history-1',
                     storagePath: 'gs://bucket/users/test-user/assets/history-1',
+                    mimeType: 'image/png',
+                })
+            );
+        }, { timeout: 3000 });
+    });
+
+    /**
+     * ISSUE-810: file-node sync previously hardcoded every generated asset's
+     * filename as `.png` — even videos. These prove a video asset now gets a
+     * real video extension instead of a fabricated image one.
+     */
+    it('syncs a video history item with a .mp4 filename, not .png (ISSUE-810)', async () => {
+        slice.addToHistory({
+            id: 'history-video-1',
+            url: 'data:video/mp4;base64,preview-only',
+            storageUri: 'gs://bucket/users/test-user/assets/history-video-1',
+            prompt: 'generated video',
+            type: 'video',
+            timestamp: Date.now(),
+            projectId: 'test-project',
+            origin: 'generated',
+        });
+
+        await waitFor(() => {
+            expect(createFileNodeMock).toHaveBeenCalledWith(
+                'generated-history-.mp4',
+                null,
+                'test-project',
+                'test-user',
+                'video',
+                expect.objectContaining({
+                    mimeType: 'video/mp4',
+                })
+            );
+        }, { timeout: 3000 });
+    });
+
+    it('preserves the real extension when the storage URI already carries one (ISSUE-810)', async () => {
+        slice.addToHistory({
+            id: 'history-webm-1',
+            url: 'https://storage.example.com/renders/history-webm-1.webm',
+            storageUri: 'gs://bucket/users/test-user/assets/history-webm-1.webm',
+            prompt: 'generated video',
+            type: 'video',
+            timestamp: Date.now(),
+            projectId: 'test-project',
+            origin: 'generated',
+        });
+
+        await waitFor(() => {
+            expect(createFileNodeMock).toHaveBeenCalledWith(
+                'generated-history-.webm',
+                null,
+                'test-project',
+                'test-user',
+                'video',
+                expect.objectContaining({
+                    mimeType: 'video/webm',
                 })
             );
         }, { timeout: 3000 });
