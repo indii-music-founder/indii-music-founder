@@ -14513,13 +14513,20 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-985: Voice recording can become impossible to stop and keeps the microphone alive after unpair or unmount
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-12)
 - **Severity:** 🔴 CRITICAL (privacy exposure and recording loss)
 - **Module:** Mobile Remote / Voice memo capture
 - **Evidence:** The microphone stream is a local variable and is stopped only inside `MediaRecorder.onstop` (`QuickCaptureView.tsx:54-80`). No unmount/page-hide cleanup stops the recorder or tracks. The only stop control is the same mic button, which becomes disabled when `isPaired` becomes false (`:250-260`). Therefore a heartbeat/pairing drop during recording disables the user's stop action while capture continues; navigation/unmount can also leave the stream active without producing or retaining the memo.
 - **Impact:** The device microphone may remain live unexpectedly, an irreplaceable memo can be lost, and users have no visible recovery/control once pairing changes or the component disappears.
 - **Fix:** Store the stream in a ref, keep Stop available independent of pairing/dispatch state, and synchronously stop recorder/tracks on explicit stop, unmount, page hide, route change, permission loss, and fatal error. Preserve any finalized blob locally and communicate recording state accessibly.
 - **Acceptance:** Dropping pairing mid-record never disables Stop; unmount/background/permission-revoke tests leave every track `readyState === 'ended'` within a bounded interval; one and only one final blob is retained when data exists; no post-unmount state update or active browser recording indicator remains.
+- **Fix applied (2026-07-12):** `QuickCaptureView.tsx` —
+  - `handleMicTap()`'s stop branch now runs *before* the `!isPaired` guard, so pairing dropping mid-record can never disable the only stop control (the exact reported trap). The mic button's `disabled`/style/`whileTap` all changed from `!isPaired` to `!isRecording && !isPaired` so Stop stays clickable and visually active regardless of pairing.
+  - The `MediaStream` is now held in a `streamRef` (previously a closure-local `stream` variable reachable only from inside `onstop`), and a new `stopRecording()` stops the recorder AND calls `track.stop()` on every track directly — not solely relying on the recorder's async `onstop` to release the hardware.
+  - New unmount effect stops every track on `streamRef.current` immediately (`QuickCaptureView` is conditionally rendered by `MobileRemote`'s tab switch, so this covers "route change" too). New `visibilitychange` listener calls `stopRecording()` if the page hides while `recorder.state === 'recording'`. Each `MediaStreamTrack` gets an `onended` handler (fires on external permission revocation/device disconnect) that also calls `stopRecording()`. `MediaRecorder.onerror` shows `toast.error(...)` and stops.
+  - Rapid stop-then-restart race: `onstop`/`onerror`/`track.onended` close over their own session's `recorder`/`stream` instead of dereferencing the shared refs, and only touch `streamRef`/component state via an `isStillActiveSession()` check (`mediaRecorderRef.current === recorder`) — a stale async callback from a superseded session can never null out or toggle state for a newer one. `isMountedRef` guards every callback against a post-unmount `setState`.
+  - Added `aria-pressed`/`aria-label` (`'Stop recording'` / `'Start recording a voice memo'`) to the mic button for accessible state.
+  - Tests (`QuickCaptureView.test.tsx`, 4 new cases, fake `MediaRecorder`/`MediaStream`/`MediaStreamTrack`): Stop stays clickable and functional after `isPaired` flips to `false` mid-recording; unmount stops every track (`readyState === 'ended'`); page-hide (`visibilitychange`) stops the recorder and returns the UI to the idle state; an externally-ended track is treated as a stop. All pass; full `typecheck`/`lint`/mobile-remote+hooks suite (108 tests) green.
 
 ### ISSUE-986: Stopping a memo and immediately selecting other media can create two captures, then silently discard one
 
