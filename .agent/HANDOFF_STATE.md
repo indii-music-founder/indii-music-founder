@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-07-12 18:10 EDT
+**Updated:** 2026-07-12 18:26 EDT
 **Branch:** `main` (merged from `fix/issues-core`)
 
 ## Recent Commits
 ```
+d389f9822 docs: add /ci-validate workflow to triage main deploy failures vs the known OOM flake
+8cccca1fd fix(marketing): distinguish auth/read failures from a real empty Fan CRM (ISSUE-848)
 780a12ec0 docs(ledger): log ISSUE-1046 (CI shard 7/8 recurring OOM) and ISSUE-1045 (per-surface icon colors)
 02d53a9d7 fix(publicist): stop claiming PR assets were saved when persistence fails (ISSUE-838)
 2df1eb784 docs(ledger): close detailed ISSUE-758/762 entries (deep-history section)
@@ -12,8 +14,6 @@ a8d03dd7d docs(ledger): mark ISSUE-758/762 fixed — sentinel migration complete
 f08b1078c fix(marketing): stop claiming a campaign brief was saved when persistence fails (ISSUE-835)
 a1b5467e2 fix(agent): stop document_query from silently analyzing an unrelated contract (ISSUE-832)
 c42d52817 fix(legal): return a real tool error for invalid split-sheet percentage totals (ISSUE-829)
-9389f9139 fix(tests): update ReleaseHarnessService test for the ISSUE-813 iswcStatus fix
-f46fc7dce fix(distribution): verify TuneCore API credentials at connect time (ISSUE-814)
 ```
 
 ## Working State

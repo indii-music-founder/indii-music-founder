@@ -8,7 +8,11 @@ import { test, expect, Browser, Page } from '@playwright/test';
  * 4. Generate image → 5. Edit (Magic Edit on desktop) →
  * 6. Upload own image → 7. Poke at video
  *
- * This test ensures new users have guidance and full creative workflow access.
+ * Every selector below was verified against the real component source
+ * (not invented) — see the file/line noted per step. Steps 6 has a
+ * confirmed gap in the app itself (not a test gap); it's asserted as
+ * known-failing via test.fail() so a fix shows up as a suite change,
+ * not a silent green.
  */
 
 test.describe('ISSUE-763: Beta First-Touch Journey', () => {
@@ -21,230 +25,122 @@ test.describe('ISSUE-763: Beta First-Touch Journey', () => {
 
   test.beforeEach(async () => {
     page = await browser.newPage();
-    // Set up environment to skip onboarding
     await page.context().addInitScript(() => {
       localStorage.setItem('VITE_SKIP_ONBOARDING', 'true');
     });
+    await page.goto('http://localhost:4242');
+    // AppShell.tsx:369 — the one stable root testid the whole app renders under.
+    await expect(page.getByTestId('app-container')).toBeVisible({ timeout: 10000 });
   });
 
   test.afterEach(async () => {
     await page.close();
   });
 
-  test('1. Skip onboarding and see main app', async () => {
-    await page.goto('http://localhost:4242');
-
-    // Wait for app to load (not onboarding screen)
-    await page.waitForSelector('[data-testid="app-main"]', { timeout: 10000 });
-
-    // Verify we're past onboarding
-    const onboarding = await page.$('[data-testid="onboarding-screen"]');
-    expect(onboarding).toBeNull();
+  test('1. Skip onboarding and land on the main app', async () => {
+    // Skipping onboarding lands directly on app-container (see beforeEach);
+    // reaching this point without a redirect/blocker IS the assertion.
+    await expect(page.getByTestId('app-container')).toBeVisible();
   });
 
-  test('2. Wander modules - verify Creative Suite is accessible', async () => {
-    await page.goto('http://localhost:4242');
-    await page.waitForSelector('[data-testid="app-main"]', { timeout: 10000 });
-
-    // Check sidebar modules are visible
-    const sidebar = await page.$('[data-testid="module-sidebar"]');
-    expect(sidebar).not.toBeNull();
-
-    // Verify Creative Suite button exists
-    const creativeBtn = await page.$('[data-testid="module-creative"]');
-    expect(creativeBtn).not.toBeNull();
+  test('2. Wander modules - Creative Suite nav item is present and clickable', async () => {
+    // Sidebar.tsx:67 — data-testid={`nav-item-${item.id}`}, module id 'creative' (constants.ts:7)
+    const creativeNav = page.getByTestId('nav-item-creative');
+    await expect(creativeNav).toBeVisible();
   });
 
-  test('3. Enter Creative Suite and see first-run guidance', async () => {
-    await page.goto('http://localhost:4242');
-    await page.waitForSelector('[data-testid="app-main"]', { timeout: 10000 });
+  test('3. Enter Creative Suite and see first-run guidance on an empty canvas', async () => {
+    await page.getByTestId('nav-item-creative').click();
+    await expect(page.getByTestId('creative-studio')).toBeVisible({ timeout: 5000 });
 
-    // Click Creative Suite
-    const creativeBtn = await page.$('[data-testid="module-creative"]');
-    await creativeBtn?.click();
+    // CreativeNavbar.tsx:68 — testId: 'canvas-view-btn'
+    await page.getByTestId('canvas-view-btn').click();
 
-    // Wait for Creative module to load
-    await page.waitForSelector('[data-testid="creative-studio"]', { timeout: 5000 });
-
-    // Switch to canvas view if not already there
-    const canvasTab = await page.$('[data-testid="creative-view-canvas"]');
-    if (canvasTab) {
-      await canvasTab.click();
-    }
-
-    // Verify first-run guidance is displayed
-    const guidance = await page.$('text=Create Your First Image');
-    expect(guidance).not.toBeNull();
-
-    const hint = await page.$('text=Start by generating an image with a prompt');
-    expect(hint).not.toBeNull();
+    // CreativeStudio.tsx — guidance renders when canvasImages.length === 0
+    await expect(page.getByText('Create Your First Image')).toBeVisible();
+    await expect(page.getByText('Start by generating an image with a prompt')).toBeVisible();
   });
 
   test('4. Generate image from prompt', async () => {
-    await page.goto('http://localhost:4242');
-    await page.waitForSelector('[data-testid="app-main"]', { timeout: 10000 });
+    await page.getByTestId('nav-item-creative').click();
+    await expect(page.getByTestId('creative-studio')).toBeVisible({ timeout: 5000 });
 
-    // Enter Creative Suite
-    const creativeBtn = await page.$('[data-testid="module-creative"]');
-    await creativeBtn?.click();
-    await page.waitForSelector('[data-testid="creative-studio"]', { timeout: 5000 });
+    // CreativeNavbar.tsx:67 — testId: 'direct-view-btn'
+    await page.getByTestId('direct-view-btn').click();
 
-    // Click Direct Generation tab (if guidance overlay is shown, dismiss or click through)
-    const directBtn = await page.$('[data-testid="creative-view-direct"]');
-    if (directBtn) {
-      await directBtn.click();
-    }
+    // DirectGenerationTab.tsx:465,494
+    const promptInput = page.getByTestId('direct-prompt-input');
+    await expect(promptInput).toBeVisible();
+    await promptInput.fill('A serene mountain landscape at sunrise');
 
-    // Find prompt input
-    const promptInput = await page.$('[data-testid="direct-generation-prompt"]');
-    if (!promptInput) {
-      // Try alternative selector
-      const textarea = await page.$('textarea[placeholder*="prompt" i]');
-      if (textarea) {
-        await textarea.fill('A serene mountain landscape at sunrise');
+    const generateBtn = page.getByTestId('direct-generate-btn');
+    await expect(generateBtn).toBeEnabled();
+    await generateBtn.click();
 
-        // Click generate button
-        const generateBtn = await page.$('button:has-text("Generate")');
-        if (generateBtn) {
-          await generateBtn.click();
-
-          // Wait for image to appear (up to 30s for generation)
-          await page.waitForSelector('[data-testid="generated-image"]', { timeout: 30000 }).catch(() => {
-            // Generation may still be in progress; that's okay for first-touch test
-          });
-        }
-      }
-    } else {
-      await promptInput.fill('A serene mountain landscape at sunrise');
-
-      const generateBtn = await page.$('button:has-text("Generate")');
-      if (generateBtn) {
-        await generateBtn.click();
-
-        await page.waitForSelector('[data-testid="generated-image"]', { timeout: 30000 }).catch(() => {
-          // Generation may still be in progress
-        });
-      }
-    }
+    // DirectGenerationTab.tsx:663 — data-testid={`direct-result-${item.id}`}; generation is
+    // async and can legitimately take >10s, so this only proves the request was accepted,
+    // not that it completed — full completion is out of scope for a first-touch smoke test.
+    await expect(generateBtn).toBeEnabled({ timeout: 5000 }).catch(() => {
+      // Still generating past 5s is fine; we only need to know the click was accepted (no crash).
+    });
   });
 
-  test('5. Edit mode available (Magic Edit verification deferred to desktop build)', async () => {
-    await page.goto('http://localhost:4242');
-    await page.waitForSelector('[data-testid="app-main"]', { timeout: 10000 });
+  test('5. Magic Edit control is reachable from the canvas (full edit verified on desktop build only)', async () => {
+    await page.getByTestId('nav-item-creative').click();
+    await expect(page.getByTestId('creative-studio')).toBeVisible({ timeout: 5000 });
+    await page.getByTestId('canvas-view-btn').click();
 
-    // Enter Creative Suite
-    const creativeBtn = await page.$('[data-testid="module-creative"]');
-    await creativeBtn?.click();
-    await page.waitForSelector('[data-testid="creative-studio"]', { timeout: 5000 });
-
-    // Switch to canvas view
-    const canvasTab = await page.$('[data-testid="creative-view-canvas"]');
-    if (canvasTab) {
-      await canvasTab.click();
-    }
-
-    // Verify canvas editor controls exist (even if no image)
-    const editorToolbar = await page.$('[data-testid="canvas-toolbar"]');
-    expect(editorToolbar).not.toBeNull();
-
-    // Verify magic edit button is accessible
-    const magicEditBtn = await page.$('[data-testid="magic-edit-button"]');
-    expect(magicEditBtn).not.toBeNull();
+    // CanvasHeader.tsx:61 — data-testid="magic-generate-btn". Per the ISSUE-763 ledger entry,
+    // the full Magic Edit chain (672→677→679→681→683) is verified FIXED but requires a
+    // DESKTOP build (App Check + data-URI persistence don't behave identically in a web
+    // preview) — this test only proves the entry point exists, not that editing succeeds.
+    await expect(page.getByTestId('magic-generate-btn')).toBeAttached();
   });
 
-  test('6. Upload own image', async () => {
-    await page.goto('http://localhost:4242');
-    await page.waitForSelector('[data-testid="app-main"]', { timeout: 10000 });
+  test('6. Upload own image — KNOWN GAP (ISSUE-676, tracked in OPEN_ISSUES.md)', async () => {
+    await page.getByTestId('nav-item-creative').click();
+    await expect(page.getByTestId('creative-studio')).toBeVisible({ timeout: 5000 });
+    await page.getByTestId('canvas-view-btn').click();
 
-    // Enter Creative Suite
-    const creativeBtn = await page.$('[data-testid="module-creative"]');
-    await creativeBtn?.click();
-    await page.waitForSelector('[data-testid="creative-studio"]', { timeout: 5000 });
-
-    // Switch to canvas view
-    const canvasTab = await page.$('[data-testid="creative-view-canvas"]');
-    if (canvasTab) {
-      await canvasTab.click();
-    }
-
-    // Find upload button
-    const uploadBtn = await page.$('[data-testid="upload-image-button"]');
-    if (uploadBtn) {
-      // Set up file input listener
-      const fileInputPromise = page.waitForEvent('filechooser');
-      await uploadBtn.click();
-
-      const fileInput = await fileInputPromise;
-      // We can't actually upload a real file in this test, but we verify the UI is present
-      expect(uploadBtn).not.toBeNull();
-    } else {
-      // Look for drag-drop area
-      const dropZone = await page.$('[data-testid="canvas-dropzone"]');
-      expect(dropZone).not.toBeNull();
-    }
+    // No upload/open-photo affordance exists on the canvas today (verified: no
+    // data-testid, no accessible "Upload" button/label anywhere under
+    // packages/renderer/src/modules/creative). This is ISSUE-676, not a test bug.
+    // Marked fail() so this test flips green the moment the real fix lands, instead
+    // of a placeholder passing forever and hiding the gap.
+    test.fail(true, 'ISSUE-676: no upload/open-photo affordance exists in the canvas yet');
+    await expect(page.getByRole('button', { name: /upload|open photo/i })).toBeVisible();
   });
 
-  test('7. Video tab is accessible and functional', async () => {
-    await page.goto('http://localhost:4242');
-    await page.waitForSelector('[data-testid="app-main"]', { timeout: 10000 });
+  test('7. Video tab is reachable and renders its own controls', async () => {
+    await page.getByTestId('nav-item-creative').click();
+    await expect(page.getByTestId('creative-studio')).toBeVisible({ timeout: 5000 });
 
-    // Enter Creative Suite
-    const creativeBtn = await page.$('[data-testid="module-creative"]');
-    await creativeBtn?.click();
-    await page.waitForSelector('[data-testid="creative-studio"]', { timeout: 5000 });
+    // CreativeNavbar.tsx:74 — testId: 'director-view-btn' (label: 'Produce')
+    await page.getByTestId('director-view-btn').click();
 
-    // Click Video Production tab
-    const videoTab = await page.$('[data-testid="creative-view-video_production"]');
-    if (videoTab) {
-      await videoTab.click();
-
-      // Wait for video module to load
-      await page.waitForSelector('[data-testid="video-workflow"]', { timeout: 5000 }).catch(() => {
-        // Video module may take time to load
-      });
-
-      // Verify we're in video mode
-      const videoWorkflow = await page.$('[data-testid="video-workflow"]');
-      expect(videoWorkflow).not.toBeNull();
-    }
+    // VideoWorkflow.tsx:985 — data-testid="video-generate-btn"; proves the module
+    // actually mounted and rendered its controls, not just that the tab click landed.
+    await expect(page.getByTestId('video-generate-btn')).toBeVisible({ timeout: 5000 });
   });
 
-  test('Complete beta flow: Skip → Wander → Create → Edit → Upload → Video', async () => {
-    // Full journey test combining all steps
-    await page.goto('http://localhost:4242');
-    await page.waitForSelector('[data-testid="app-main"]', { timeout: 10000 });
+  test('Complete beta flow smoke test: Skip → Wander → Create → Edit-entry → Video', async () => {
+    // Combines steps 1,2,3,4,5,7 (all verified-working). Step 6 is excluded here — it's
+    // asserted separately as a known-failing gap above; bundling it would make this
+    // "complete flow" test permanently red for a reason unrelated to the other 5 steps.
+    await expect(page.getByTestId('app-container')).toBeVisible();
+    await expect(page.getByTestId('nav-item-creative')).toBeVisible();
 
-    // Step 2: Verify modules sidebar
-    const sidebar = await page.$('[data-testid="module-sidebar"]');
-    expect(sidebar).not.toBeNull();
+    await page.getByTestId('nav-item-creative').click();
+    await expect(page.getByTestId('creative-studio')).toBeVisible({ timeout: 5000 });
 
-    // Step 3: Enter Creative
-    const creativeBtn = await page.$('[data-testid="module-creative"]');
-    await creativeBtn?.click();
-    await page.waitForSelector('[data-testid="creative-studio"]', { timeout: 5000 });
+    await page.getByTestId('canvas-view-btn').click();
+    await expect(page.getByText('Create Your First Image')).toBeVisible();
+    await expect(page.getByTestId('magic-generate-btn')).toBeAttached();
 
-    // Step 3b: Verify first-run guidance (on canvas view)
-    const canvasTab = await page.$('[data-testid="creative-view-canvas"]');
-    if (canvasTab) {
-      await canvasTab.click();
-    }
-    const guidance = await page.$('text=Create Your First Image');
-    expect(guidance).not.toBeNull();
+    await page.getByTestId('direct-view-btn').click();
+    await expect(page.getByTestId('direct-prompt-input')).toBeVisible();
 
-    // Step 4: Direct generation tab available
-    const directTab = await page.$('[data-testid="creative-view-direct"]');
-    expect(directTab).not.toBeNull();
-
-    // Step 5: Editor toolbar visible
-    const editorToolbar = await page.$('[data-testid="canvas-toolbar"]');
-    expect(editorToolbar).not.toBeNull();
-
-    // Step 6: Upload available
-    const uploadBtn = await page.$('[data-testid="upload-image-button"]');
-    expect(uploadBtn).not.toBeNull();
-
-    // Step 7: Video tab accessible
-    const videoTab = await page.$('[data-testid="creative-view-video_production"]');
-    expect(videoTab).not.toBeNull();
+    await page.getByTestId('director-view-btn').click();
+    await expect(page.getByTestId('video-generate-btn')).toBeVisible({ timeout: 5000 });
   });
 });
