@@ -162,7 +162,7 @@ describe('CRMDashboard', () => {
         expect(mockUnsubscribe).toHaveBeenCalled();
     });
 
-    it('opens modal, handles form submissions, calls createCampaign, and resets inputs', async () => {
+    it('ISSUE-980: saves as a Draft (not Active) when no deliverable link is provided', async () => {
         render(<CRMDashboard />);
 
         // Modal should be closed initially
@@ -175,7 +175,7 @@ describe('CRMDashboard', () => {
         // Modal should open
         expect(screen.getByText('Launch a new Digital Vinyl or VIP drop for your superfans.')).toBeInTheDocument();
 
-        // Fill form fields
+        // Fill form fields — deliberately no deliverable link
         const nameInput = screen.getByPlaceholderText('e.g. Genesis Digital Vinyl Drop');
         const supplyInput = screen.getByPlaceholderText('100');
         const priceInput = screen.getByPlaceholderText('9.99');
@@ -184,7 +184,33 @@ describe('CRMDashboard', () => {
         fireEvent.change(supplyInput, { target: { value: '250' } });
         fireEvent.change(priceInput, { target: { value: '14.99' } });
 
-        // Click Launch
+        // Button honestly reflects that this will save as a draft, not launch.
+        const submitBtn = screen.getByText('Save as Draft');
+        fireEvent.click(submitBtn);
+
+        await waitFor(() => {
+            expect(mockCreateCampaign).toHaveBeenCalledWith({
+                name: 'Synthwave Collector Pack',
+                type: 'Digital Vinyl',
+                supply: 250,
+                price: 14.99,
+                deliverableUrl: undefined,
+                status: 'draft'
+            });
+            expect(screen.queryByText('Launch a new Digital Vinyl or VIP drop for your superfans.')).not.toBeInTheDocument();
+        });
+    });
+
+    it('ISSUE-980: launches as Active only once a real deliverable link is provided', async () => {
+        render(<CRMDashboard />);
+
+        fireEvent.click(screen.getByText('New Drop'));
+
+        fireEvent.change(screen.getByPlaceholderText('e.g. Genesis Digital Vinyl Drop'), { target: { value: 'Synthwave Collector Pack' } });
+        fireEvent.change(screen.getByPlaceholderText('100'), { target: { value: '250' } });
+        fireEvent.change(screen.getByPlaceholderText('9.99'), { target: { value: '14.99' } });
+        fireEvent.change(screen.getByPlaceholderText(/Where fans get this/), { target: { value: 'https://cdn.example.com/vinyl.zip' } });
+
         const launchBtn = screen.getByText('Launch Drop');
         fireEvent.click(launchBtn);
 
@@ -194,9 +220,9 @@ describe('CRMDashboard', () => {
                 type: 'Digital Vinyl',
                 supply: 250,
                 price: 14.99,
+                deliverableUrl: 'https://cdn.example.com/vinyl.zip',
                 status: 'active'
             });
-            expect(screen.queryByText('Launch a new Digital Vinyl or VIP drop for your superfans.')).not.toBeInTheDocument();
         });
     });
 
