@@ -1,19 +1,19 @@
 # Handoff State
-**Updated:** 2026-07-11 23:54 EDT
+**Updated:** 2026-07-12 03:32 EDT
 **Branch:** `fix/issues-core`
 
 ## Recent Commits
 ```
-bc921a353 fix(security): ISSUE-764 — allow Google Maps tile images in CSP img-src
-3e19a9784 chore: session checkpoint [23:17]
-897b69d8f chore: session checkpoint [22:31]
-dcd9cf9fd chore: session checkpoint [22:03]
-edabf5c0d chore: session checkpoint [20:29]
-c1a307568 chore: session checkpoint [20:00]
-d09d59f6e chore: session checkpoint [19:15]
-c2a10ec49 chore: session checkpoint [19:10]
-4c5c1fee6 chore: session checkpoint [19:07]
-58fd80514 chore: session checkpoint [19:07]
+4819d849f fix(registration): stop showing false success when local record fails to save
+973617824 fix(publishing): atomic + idempotent DSR import, stop false success on failure
+a6965b91c fix(marketplace): stop leaking stem-pack download tokens in public listings
+3eb0f75e5 fix(distribution): repoint submit-release IPC to the real script + fix Python syntax corruption
+b64863f27 docs: confirm ISSUE-764 Google Maps fix verified live in production
+69018cc84 fix(finance): correct 100x tax withholding display/math error in BankPanel
+1f9790a33 fix(security): escape HTML/sanitize URLs in downloaded EPK export
+eb675823e fix(firestore): systemic sweep of unruled collections blocking silent permission-denied
+3cf48b90e fix(marketplace): server-authoritative pricing and webhook purchase finalization
+4c9ca0e58 chore: session checkpoint [23:54]
 ```
 
 ## Working State
