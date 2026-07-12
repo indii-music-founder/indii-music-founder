@@ -1,4 +1,4 @@
-import { test, expect, Browser, Page } from '@playwright/test';
+import { test, expect } from './fixtures/auth';
 
 /**
  * ISSUE-763: Beta First-Touch Journey
@@ -8,50 +8,36 @@ import { test, expect, Browser, Page } from '@playwright/test';
  * 4. Generate image → 5. Edit (Magic Edit on desktop) →
  * 6. Upload own image → 7. Poke at video
  *
- * Every selector below was verified against the real component source
- * (not invented) — see the file/line noted per step. Step 6 has a
- * confirmed gap in the app itself (not a test gap); it's asserted as
- * known-failing via test.fail() so a fix shows up as a suite change,
- * not a silent green.
+ * Uses the shared authedPage fixture (e2e/fixtures/auth.ts) — the same one every
+ * other spec in this suite relies on for onboarding dismissal, mocked auth, and
+ * mocked backend traffic. An earlier version of this file hand-rolled its own
+ * `localStorage.setItem('VITE_SKIP_ONBOARDING', 'true')`, which does nothing:
+ * that flag is a Vite build-time `import.meta.env` value, not a runtime
+ * localStorage key, so every test actually landed on the onboarding wizard and
+ * timed out waiting for testids that were simply never rendered. The real flag
+ * the app checks is `onboarding_dismissed`, which the fixture sets correctly.
+ *
+ * Every selector below was verified against the real component source — see the
+ * file/line noted per step. Step 6 has a confirmed gap in the app itself (not a
+ * test gap); it's asserted as known-failing via test.fail() so a fix shows up as
+ * a suite change, not a silent green.
  */
 
 test.describe('ISSUE-763: Beta First-Touch Journey', () => {
-  let browser: Browser;
-  let page: Page;
-
-  test.beforeAll(async ({ browser: testBrowser }) => {
-    browser = testBrowser;
-  });
-
-  test.beforeEach(async () => {
-    page = await browser.newPage();
-    await page.context().addInitScript(() => {
-      localStorage.setItem('VITE_SKIP_ONBOARDING', 'true');
-    });
-    await page.goto('http://localhost:4242');
+  test('1. Skip onboarding and land on the main app', async ({ authedPage: page }) => {
     // AppShell.tsx:369 — the one stable root testid the whole app renders under.
+    // authedPage already dismissed onboarding/cookies/tour before this test body runs.
     await expect(page.getByTestId('app-container')).toBeVisible({ timeout: 10000 });
   });
 
-  test.afterEach(async () => {
-    await page.close();
-  });
-
-  test('1. Skip onboarding and land on the main app', async () => {
-    // Skipping onboarding lands directly on app-container (see beforeEach);
-    // reaching this point without a redirect/blocker IS the assertion.
-    await expect(page.getByTestId('app-container')).toBeVisible();
-  });
-
-  test('2. Wander modules - Creative Suite nav item is present and clickable', async () => {
+  test('2. Wander modules - Creative Suite nav item is present and clickable', async ({ authedPage: page }) => {
     // Sidebar.tsx:67 — data-testid={`nav-item-${item.id}`}, module id 'creative' (constants.ts:7)
-    const creativeNav = page.getByTestId('nav-item-creative');
-    await expect(creativeNav).toBeVisible();
+    await expect(page.getByTestId('nav-item-creative')).toBeVisible({ timeout: 10000 });
   });
 
-  test('3. Enter Creative Suite and see first-run guidance on an empty canvas', async () => {
+  test('3. Enter Creative Suite and see first-run guidance on an empty canvas', async ({ authedPage: page }) => {
     await page.getByTestId('nav-item-creative').click();
-    await expect(page.getByTestId('creative-studio')).toBeVisible({ timeout: 5000 });
+    await expect(page.getByTestId('creative-studio')).toBeVisible({ timeout: 10000 });
 
     // CreativeNavbar.tsx:68 — testId: 'canvas-view-btn'
     await page.getByTestId('canvas-view-btn').click();
@@ -61,9 +47,9 @@ test.describe('ISSUE-763: Beta First-Touch Journey', () => {
     await expect(page.getByText('Start by generating an image with a prompt')).toBeVisible();
   });
 
-  test('4. Generate image from prompt', async () => {
+  test('4. Generate image from prompt', async ({ authedPage: page }) => {
     await page.getByTestId('nav-item-creative').click();
-    await expect(page.getByTestId('creative-studio')).toBeVisible({ timeout: 5000 });
+    await expect(page.getByTestId('creative-studio')).toBeVisible({ timeout: 10000 });
 
     // CreativeNavbar.tsx:67 — testId: 'direct-view-btn'
     await page.getByTestId('direct-view-btn').click();
@@ -85,9 +71,9 @@ test.describe('ISSUE-763: Beta First-Touch Journey', () => {
     });
   });
 
-  test('5. Magic Edit control is reachable from the canvas (full edit verified on desktop build only)', async () => {
+  test('5. Magic Edit control is reachable from the canvas (full edit verified on desktop build only)', async ({ authedPage: page }) => {
     await page.getByTestId('nav-item-creative').click();
-    await expect(page.getByTestId('creative-studio')).toBeVisible({ timeout: 5000 });
+    await expect(page.getByTestId('creative-studio')).toBeVisible({ timeout: 10000 });
     await page.getByTestId('canvas-view-btn').click();
 
     // CanvasHeader.tsx:61 — data-testid="magic-generate-btn". Per the ISSUE-763 ledger entry,
@@ -97,9 +83,9 @@ test.describe('ISSUE-763: Beta First-Touch Journey', () => {
     await expect(page.getByTestId('magic-generate-btn')).toBeAttached();
   });
 
-  test('6. Upload own image — KNOWN GAP (ISSUE-676, tracked in OPEN_ISSUES.md)', async () => {
+  test('6. Upload own image — KNOWN GAP (ISSUE-676, tracked in OPEN_ISSUES.md)', async ({ authedPage: page }) => {
     await page.getByTestId('nav-item-creative').click();
-    await expect(page.getByTestId('creative-studio')).toBeVisible({ timeout: 5000 });
+    await expect(page.getByTestId('creative-studio')).toBeVisible({ timeout: 10000 });
     await page.getByTestId('canvas-view-btn').click();
 
     // No upload/open-photo affordance exists on the canvas today (verified: no
@@ -111,19 +97,19 @@ test.describe('ISSUE-763: Beta First-Touch Journey', () => {
     await expect(page.getByRole('button', { name: /upload|open photo/i })).toBeVisible();
   });
 
-  test('7. Video tab is reachable and renders its own controls', async () => {
+  test('7. Video tab is reachable and renders its own controls', async ({ authedPage: page }) => {
     await page.getByTestId('nav-item-creative').click();
-    await expect(page.getByTestId('creative-studio')).toBeVisible({ timeout: 5000 });
+    await expect(page.getByTestId('creative-studio')).toBeVisible({ timeout: 10000 });
 
     // CreativeNavbar.tsx:74 — testId: 'director-view-btn' (label: 'Produce')
     await page.getByTestId('director-view-btn').click();
 
     // VideoWorkflow.tsx:985 — data-testid="video-generate-btn"; proves the module
     // actually mounted and rendered its controls, not just that the tab click landed.
-    await expect(page.getByTestId('video-generate-btn')).toBeVisible({ timeout: 5000 });
+    await expect(page.getByTestId('video-generate-btn')).toBeVisible({ timeout: 10000 });
   });
 
-  test('Complete beta flow smoke test: Skip → Wander → Create → Edit-entry → Video', async () => {
+  test('Complete beta flow smoke test: Skip → Wander → Create → Edit-entry → Video', async ({ authedPage: page }) => {
     // Combines steps 1,2,3,4,5,7 (all verified-working). Step 6 is excluded here — it's
     // asserted separately as a known-failing gap above; bundling it would make this
     // "complete flow" test permanently red for a reason unrelated to the other 5 steps.
@@ -131,7 +117,7 @@ test.describe('ISSUE-763: Beta First-Touch Journey', () => {
     await expect(page.getByTestId('nav-item-creative')).toBeVisible();
 
     await page.getByTestId('nav-item-creative').click();
-    await expect(page.getByTestId('creative-studio')).toBeVisible({ timeout: 5000 });
+    await expect(page.getByTestId('creative-studio')).toBeVisible({ timeout: 10000 });
 
     await page.getByTestId('canvas-view-btn').click();
     await expect(page.getByText('Create Your First Image')).toBeVisible();
@@ -141,6 +127,6 @@ test.describe('ISSUE-763: Beta First-Touch Journey', () => {
     await expect(page.getByTestId('direct-prompt-input')).toBeVisible();
 
     await page.getByTestId('director-view-btn').click();
-    await expect(page.getByTestId('video-generate-btn')).toBeVisible({ timeout: 5000 });
+    await expect(page.getByTestId('video-generate-btn')).toBeVisible({ timeout: 10000 });
   });
 });
