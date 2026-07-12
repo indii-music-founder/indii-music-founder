@@ -91,11 +91,14 @@ export function OrgStatusCard({ adapter, status, confirmationNumber, isSelected,
         </div>
       )}
 
-      {/* Manual step indicator */}
-      {adapter.requiresDesktop && status === 'not_started' && typeof window !== 'undefined' && !window.electronAPI && (
+      {/* Manual step indicator — ISSUE-972: shown regardless of platform.
+          Desktop browser automation doesn't actually work in any current
+          build (see BrowserAgentService.isConfigured()'s doc comment), so
+          this can no longer imply the desktop app makes filing automatic. */}
+      {adapter.requiresDesktop && status === 'not_started' && (
         <div className="mt-2 flex items-center gap-1 text-[11px] text-amber-500/80">
           <ExternalLink size={10} />
-          <span>Manual step required on web</span>
+          <span>Manual step required — automated filing isn&apos;t available yet</span>
         </div>
       )}
     </button>
