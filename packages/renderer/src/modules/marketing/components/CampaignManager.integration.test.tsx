@@ -61,7 +61,7 @@ describe('CampaignManager Integration', () => {
     });
 
     it('calls executeCampaign cloud function with correct payload when "Execute" is clicked', async () => {
-        const onUpdateCampaign = vi.fn();
+        const onUpdateCampaign = vi.fn(async () => undefined);
 
         // Mock successful response from backend
         mockHttpsCallable.mockResolvedValue({
@@ -106,7 +106,7 @@ describe('CampaignManager Integration', () => {
     }, 15000);
 
     it('handles backend errors gracefully', async () => {
-        const onUpdateCampaign = vi.fn();
+        const onUpdateCampaign = vi.fn(async () => undefined);
 
         mockHttpsCallable.mockRejectedValue(new Error('Validation Failed'));
 

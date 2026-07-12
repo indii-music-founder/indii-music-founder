@@ -14,7 +14,7 @@ interface CampaignManagerProps {
     campaigns: CampaignAsset[];
     selectedCampaign: CampaignAsset | null;
     onSelectCampaign: (campaign: CampaignAsset | null) => void;
-    onUpdateCampaign: (updatedCampaign: CampaignAsset) => void;
+    onUpdateCampaign: (updatedCampaign: CampaignAsset) => Promise<void>;
     onCreateNew: () => void;
     onAIGenerate?: () => void;
 }
@@ -49,9 +49,11 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
         setIsExecuting(true);
         toast.info("Initializing campaign execution sequence...");
 
-        // Optimistically update status to EXECUTING
+        // Optimistically update status to EXECUTING. onUpdateCampaign already
+        // surfaces its own error toast on a failed persist; swallow the
+        // rejection here so it doesn't also become an unhandled-rejection.
         const executingState = { ...selectedCampaign, status: CampaignStatus.EXECUTING };
-        onUpdateCampaign(executingState);
+        onUpdateCampaign(executingState).catch(() => {});
 
         try {
             // REAL PRODUCTION BINDING
@@ -71,7 +73,7 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
                     ...selectedCampaign,
                     posts: responseData.posts,
                     status: CampaignStatus.EXECUTING
-                });
+                }).catch(() => {});
                 toast.success(responseData.message || "Campaign queued for scheduled delivery.");
             } else {
                 throw new Error(responseData.message || "Execution returned failure status.");
@@ -81,7 +83,7 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
             logger.error("Campaign Execution Failed:", error);
 
             // Revert status or set to FAILED
-            onUpdateCampaign({ ...selectedCampaign, status: CampaignStatus.FAILED });
+            onUpdateCampaign({ ...selectedCampaign, status: CampaignStatus.FAILED }).catch(() => {});
 
             const errorMsg = error instanceof Error ? error.message : "Unknown error";
             toast.error(`Execution failed: ${errorMsg}`);
@@ -90,15 +92,23 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
         }
     };
 
-    const handleSaveCopy = (postId: string, newCopy: string) => {
+    const handleSaveCopy = async (postId: string, newCopy: string) => {
         if (!selectedCampaign) return;
 
         const updatedPosts = selectedCampaign.posts.map(post =>
             post.id === postId ? { ...post, copy: newCopy } : post
         );
-        onUpdateCampaign({ ...selectedCampaign, posts: updatedPosts });
-        setEditingPost(null);
-        toast.success("Post updated");
+
+        try {
+            // ISSUE-949: only close the editor and claim success once the
+            // edit has actually persisted — onUpdateCampaign already
+            // surfaces its own error toast if the write fails.
+            await onUpdateCampaign({ ...selectedCampaign, posts: updatedPosts });
+            setEditingPost(null);
+            toast.success("Post updated");
+        } catch {
+            // Keep the editor open on a failed save; error already toasted.
+        }
     };
 
     return (
@@ -124,8 +134,12 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
                         <IntelligenceImageBatchModal
                             campaign={selectedCampaign}
                             onClose={() => setShowImageBatchModal(false)}
-                            onComplete={(updatedCampaign) => {
-                                onUpdateCampaign(updatedCampaign);
+                            onComplete={async (updatedCampaign) => {
+                                // ISSUE-949: only close the modal once the
+                                // generated image URLs have actually
+                                // persisted — never claim "Apply & Save"
+                                // succeeded when the write failed.
+                                await onUpdateCampaign(updatedCampaign);
                                 setShowImageBatchModal(false);
                             }}
                         />
