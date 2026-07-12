@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-07-12 09:36 EDT
+**Updated:** 2026-07-12 09:41 EDT
 **Branch:** `fix/issues-core`
 
 ## Recent Commits
 ```
+a948550fa fix(creative): stop advertising Veo aspect ratios/durations the backend silently discards
+c91d027c1 chore: session checkpoint [09:36]
 5a9c7fe65 fix(remote): separate controller from studio executor
 4f0f57391 fix(creative): stop claiming Omni's storyboard sequence is "Synced" to generation
 fabc53510 docs(ledger): log ISSUE-1025 -- Mobile Controller falsely reports Studio Connected
@@ -12,16 +14,11 @@ fabc53510 docs(ledger): log ISSUE-1025 -- Mobile Controller falsely reports Stud
 4cdad01a2 fix(test): update stale toast assertion broken by the ISSUE-997 copy change
 2123036d0 fix(creative): stop claiming Omni output is SynthID "Protected"
 2766bc3d8 chore: session checkpoint [06:44]
-11d780d9e fix(audio): stop presenting heuristic loudness/true-peak estimates as certified compliance
-d2d85dea7 docs(ledger): mark ISSUE-996 verified fixed -- was already resolved, ledger was stale
 ```
 
 ## Working State
 ```
- M .agent/test_ledger/OPEN_ISSUES.md
- M packages/renderer/src/modules/creative/components/DirectGenerationTab.tsx
- M packages/renderer/src/modules/creative/components/__tests__/DirectGenerationTab.test.tsx
- M packages/renderer/src/modules/creative/components/veo/VeoSettingsPanel.tsx
+?? docs/USER_MANUAL_REMOTE_SETUP_AND_SYNC.md
 ```
 
 ## Decisions
