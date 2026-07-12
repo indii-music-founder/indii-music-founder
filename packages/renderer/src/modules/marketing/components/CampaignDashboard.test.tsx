@@ -51,10 +51,11 @@ vi.mock('@/modules/marketing/hooks/useMarketing', () => ({
 }));
 
 const TEST_CAMPAIGN = { id: 'campaign-1', title: 'Test Campaign', posts: [] };
+const AI_GENERATED_CAMPAIGN = { title: 'AI Generated Campaign', posts: [] };
 
 // Mock CampaignManager as it has its own complexities
 vi.mock('./CampaignManager', () => ({
-    default: ({ selectedCampaign, onCreateNew, onUpdateCampaign }: any) => {
+    default: ({ selectedCampaign, onCreateNew, onUpdateCampaign, onAIGenerate }: any) => {
         // If selectedCampaign is present, show "Managing: Title"
         // Otherwise show list/empty state which includes "Create New Campaign" button
         if (selectedCampaign) {
@@ -69,10 +70,22 @@ vi.mock('./CampaignManager', () => ({
                 <div>Campaign Manager</div>
                 <button onClick={onCreateNew}>Create New Campaign</button>
                 <button onClick={() => { onUpdateCampaign(TEST_CAMPAIGN).catch(() => {}); }}>Trigger Update</button>
+                <button onClick={onAIGenerate}>Open AI Modal</button>
                 <div>Select a campaign</div>
             </div>
         );
     },
+}));
+
+// Mock IntelligenceCampaignModal to directly exercise handleAISave without
+// driving the full generate-then-create UI flow (already covered in
+// IntelligenceCampaignModal.test.tsx).
+vi.mock('./IntelligenceCampaignModal', () => ({
+    default: ({ onSave }: any) => (
+        <div data-testid="ai-campaign-modal">
+            <button onClick={() => { onSave(AI_GENERATED_CAMPAIGN).catch(() => {}); }}>Trigger AI Save</button>
+        </div>
+    ),
 }));
 
 describe('CampaignDashboard', () => {
@@ -128,6 +141,44 @@ describe('CampaignDashboard', () => {
             await waitFor(() => {
                 expect(mockToastError).toHaveBeenCalledWith(expect.stringContaining('Failed to save'));
             });
+        });
+    });
+
+    describe('ISSUE-951: AI campaign creator only closes after confirmed persistence', () => {
+        it('creates, reads back, and closes the AI modal only on success', async () => {
+            (MarketingService.createCampaign as ReturnType<typeof vi.fn>).mockResolvedValue('new-campaign-id');
+            (MarketingService.getCampaignById as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 'new-campaign-id', title: 'AI Generated Campaign' });
+
+            render(<CampaignDashboard />);
+            fireEvent.click(screen.getByRole('button', { name: 'Open AI Modal' }));
+            fireEvent.click(screen.getByRole('button', { name: 'Trigger AI Save' }));
+
+            await waitFor(() => {
+                expect(MarketingService.createCampaign).toHaveBeenCalledWith(expect.objectContaining({ title: 'AI Generated Campaign' }));
+                expect(MarketingService.getCampaignById).toHaveBeenCalledWith('new-campaign-id');
+            });
+
+            // Modal closes and the created campaign becomes the managed one.
+            await waitFor(() => {
+                expect(screen.queryByTestId('ai-campaign-modal')).not.toBeInTheDocument();
+                expect(screen.getByTestId('campaign-manager')).toHaveTextContent('Managing: AI Generated Campaign');
+            });
+        });
+
+        it('keeps the AI modal open and never claims success when creation fails', async () => {
+            (MarketingService.createCampaign as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Quota exceeded'));
+
+            render(<CampaignDashboard />);
+            fireEvent.click(screen.getByRole('button', { name: 'Open AI Modal' }));
+            fireEvent.click(screen.getByRole('button', { name: 'Trigger AI Save' }));
+
+            await waitFor(() => {
+                expect(mockToastError).toHaveBeenCalledWith(expect.stringContaining('Failed to create campaign'));
+            });
+
+            // Never silently swaps to a "managed" view or drops the modal.
+            expect(screen.getByTestId('ai-campaign-modal')).toBeInTheDocument();
+            expect(screen.queryByTestId('campaign-manager')).not.toBeInTheDocument();
         });
     });
 });

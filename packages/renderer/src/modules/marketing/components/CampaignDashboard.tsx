@@ -91,8 +91,15 @@ const CampaignDashboard: React.FC = () => {
         }
     }, []);
 
+    /**
+     * ISSUE-951: previously closed the modal (setIsAIModalOpen(false))
+     * BEFORE attempting creation, so the modal always appeared to succeed
+     * regardless of an auth/permission/quota/validation failure — and the
+     * generated plan was gone forever since the modal had already unmounted.
+     * Now only closes after a confirmed created+read-back campaign; on
+     * failure, re-throws so the modal keeps the plan visible and retryable.
+     */
     const handleAISave = useCallback(async (campaign: CampaignAsset) => {
-        setIsAIModalOpen(false);
         try {
             const newId = await MarketingService.createCampaign({
                 ...campaign,
@@ -100,10 +107,13 @@ const CampaignDashboard: React.FC = () => {
             });
             const savedCampaign = await MarketingService.getCampaignById(newId);
             if (savedCampaign) setSelectedCampaign(savedCampaign);
+            setIsAIModalOpen(false);
         } catch (error: unknown) {
             logger.error("Failed to save Autonomous campaign", error);
+            toast.error("Failed to create campaign. Please try again.");
+            throw error;
         }
-    }, []);
+    }, [toast]);
 
     const handleCreateNew = useCallback(() => {
         setIsCreateModalOpen(true);
