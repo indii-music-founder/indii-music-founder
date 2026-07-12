@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-07-12 10:53 EDT
+**Updated:** 2026-07-12 11:01 EDT
 **Branch:** `fix/issues-core`
 
 ## Recent Commits
 ```
+f7496e0ef fix(marketing): make Discord/Telegram webhook Test/Send real network calls
+499d20b16 chore: session checkpoint [10:53]
 9e9cd49dc fix(marketing): keep AI campaign draft alive until creation actually confirms
 318865fdd fix(marketing): actually persist campaign updates instead of local state only
 b3076afb5 chore: session checkpoint [10:34]
@@ -12,8 +14,6 @@ b3076afb5 chore: session checkpoint [10:34]
 55a40d58f fix(onboarding): bound brand image uploads and fix MIME mislabeling
 21aa422c4 chore: session checkpoint [10:20]
 d0aab24ba docs: cross-device persistence audit for mobile-first model
-c7d596e6b chore: session checkpoint [10:18]
-64ab2633f docs: mobile device routing policy for indii.music
 ```
 
 ## Working State
