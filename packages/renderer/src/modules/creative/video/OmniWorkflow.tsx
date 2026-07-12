@@ -584,10 +584,14 @@ export default function OmniWorkflow() {
                                 loop
                             />
                             {/* Synth ID Watermark Overlay Indicator */}
+                            {/* ISSUE-775: this reflects the local generation-time toggle only —
+                                the server never requests a provider-side watermark parameter and
+                                never reads back verified provenance metadata, so this can never
+                                claim the output IS protected, only that it was requested. */}
                             {studioControls.synthIdEnabled && (
                                 <div className="absolute top-6 right-6 flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-500/10 border border-emerald-500/20 backdrop-blur-md rounded-full shadow-lg pointer-events-none select-none z-30">
                                     <Shield size={10} className="text-emerald-400" />
-                                    <span className="text-[9px] font-bold text-emerald-400 font-mono uppercase tracking-widest">SynthID Protected</span>
+                                    <span className="text-[9px] font-bold text-emerald-400 font-mono uppercase tracking-widest">SynthID Requested</span>
                                 </div>
                             )}
 
