@@ -79,6 +79,20 @@ const SEMANTIC_SCHEMA: Schema = {
     ]
 } as unknown as Schema;
 
+/**
+ * ISSUE-962: the browser (non-Electron-proxy) path sends the full master as
+ * base64 inlineData. Gemini's documented inlineData limit is ~100MB
+ * base64-encoded (some regions/models still enforce an older 20MB limit).
+ * Base64 adds ~33% overhead on top of holding the raw file in memory, and
+ * this is now encoded ONCE and shared between semantic + energy-map calls
+ * (previously encoded independently, twice). Capping the raw file at 50MB
+ * keeps the encoded payload (~67MB) safely under the documented limit with
+ * margin, while comfortably covering a real mastered WAV/AIFF track (a
+ * "typical master" is 5-10MB per the original inline-vs-Files-API note
+ * below).
+ */
+export const MAX_BROWSER_ANALYSIS_BYTES = 50 * 1024 * 1024;
+
 export class AudioIntelligenceService {
 
     /**
@@ -158,8 +172,24 @@ export class AudioIntelligenceService {
                 if (typeof file === 'string') {
                     throw new Error('Cannot run browser base64 audio upload with a file path string. Must be a File object.');
                 }
-                semanticPromise = this.analyzeSemantic(file, technical.bpm, technical.key);
-                energyMapPromise = energyMapService.mapEmotionalArc(file, technical)
+
+                if (file.size > MAX_BROWSER_ANALYSIS_BYTES) {
+                    throw new Error(
+                        `This master is ${(file.size / 1024 / 1024).toFixed(0)}MB, too large for browser-based deep analysis (limit ${MAX_BROWSER_ANALYSIS_BYTES / 1024 / 1024}MB). Local technical QC is still available; semantic/emotional analysis requires the desktop app or a smaller file.`
+                    );
+                }
+
+                // ISSUE-962: encode once and reuse for both semantic + energy
+                // map analysis, instead of each independently reading and
+                // base64-encoding the full master (two full copies + two
+                // uploads for one file).
+                Logger.info('AudioIntelligence', 'Converting audio to base64 for inline Gemini analysis...');
+                const mimeType = file.type || this.inferAudioMimeType(file.name);
+                const base64Data = await this.fileToBase64(file);
+                Logger.info('AudioIntelligence', `Audio converted: ${(base64Data.length * 0.75 / 1024 / 1024).toFixed(1)} MB, sharing one encoded copy across both analyses`);
+
+                semanticPromise = this.analyzeSemanticWithBase64(base64Data, mimeType, technical.bpm, technical.key);
+                energyMapPromise = energyMapService.mapEmotionalArcWithProxy(base64Data, mimeType, technical)
                     .catch(e => {
                         Logger.warn('AudioIntelligence', `EnergyMap failed (non-fatal): ${String(e)}`);
                         return undefined;
@@ -265,13 +295,7 @@ export class AudioIntelligenceService {
      * upload → poll → cleanup lifecycle and the CORS failure mode entirely.
      * For typical masters (5-10 MB), the base64 overhead is negligible.
      */
-    private async analyzeSemantic(file: File, bpm: number, key: string): Promise<AudioSemanticData> {
-        Logger.info('AudioIntelligence', 'Converting audio to base64 for inline Gemini analysis...');
-
-        const mimeType = file.type || this.inferAudioMimeType(file.name);
-        const base64Data = await this.fileToBase64(file);
-        Logger.info('AudioIntelligence', `Audio converted: ${(base64Data.length * 0.75 / 1024 / 1024).toFixed(1)} MB original, sending as inlineData`);
-
+    private async analyzeSemanticWithBase64(base64Data: string, mimeType: string, bpm: number, key: string): Promise<AudioSemanticData> {
         const systemPrompt = `
 You are a world-class Musicologist, A&R Director, and Mastering Engineer with 20 years of experience at major labels.
 PHYSICALLY LISTEN to this audio track. Every field below must be derived from what you ACTUALLY HEAR — not assumptions.
