@@ -8,7 +8,7 @@ import { logger } from '@/utils/logger';
 interface IntelligenceImageBatchModalProps {
     campaign: CampaignAsset;
     onClose: () => void;
-    onComplete: (updatedCampaign: CampaignAsset) => void;
+    onComplete: (updatedCampaign: CampaignAsset) => Promise<void>;
 }
 
 type PostImageStatus = 'pending' | 'generating' | 'complete' | 'error' | 'skipped';
@@ -30,6 +30,7 @@ export default function IntelligenceImageBatchModal({ campaign, onClose, onCompl
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [currentIndex, setCurrentIndex] = useState(0);
     const [progress, setProgress] = useState<BatchImageProgress | null>(null);
+    const [isApplying, setIsApplying] = useState(false);
 
     // Initialize post states
     useEffect(() => {
@@ -152,7 +153,7 @@ export default function IntelligenceImageBatchModal({ campaign, onClose, onCompl
         }
     };
 
-    const handleApply = () => {
+    const handleApply = async () => {
         const updatedPosts = campaign.posts.map(post => {
             const state = postStates.find(s => s.post.id === post.id);
             if (state?.imageUrl) {
@@ -167,11 +168,23 @@ export default function IntelligenceImageBatchModal({ campaign, onClose, onCompl
             return post;
         });
 
-        onComplete({
-            ...campaign,
-            posts: updatedPosts
-        });
-        onClose();
+        setIsApplying(true);
+        try {
+            // ISSUE-949: only close once the generated image URLs have
+            // actually persisted to the campaign record — previously this
+            // closed unconditionally, so a failed write silently lost the
+            // (already-uploaded, already-paid-for) generated images.
+            await onComplete({
+                ...campaign,
+                posts: updatedPosts
+            });
+            onClose();
+        } catch (error: unknown) {
+            logger.error('Failed to apply generated images to campaign', error);
+            toast.error('Failed to save generated images. Please try again.');
+        } finally {
+            setIsApplying(false);
+        }
     };
 
     const progressPercent = progress
@@ -345,7 +358,7 @@ export default function IntelligenceImageBatchModal({ campaign, onClose, onCompl
                         <button
                             onClick={onClose}
                             className="px-4 py-2 text-gray-400 hover:text-white transition-colors"
-                            disabled={isGenerating}
+                            disabled={isGenerating || isApplying}
                         >
                             Cancel
                         </button>
@@ -361,10 +374,11 @@ export default function IntelligenceImageBatchModal({ campaign, onClose, onCompl
                         {(completedCount > 0 || skippedCount > 0) && !isGenerating && (
                             <button
                                 onClick={handleApply}
-                                className="px-6 py-2 bg-white hover:bg-gray-200 text-black font-bold rounded-lg transition-colors flex items-center gap-2"
+                                disabled={isApplying}
+                                className="px-6 py-2 bg-white hover:bg-gray-200 text-black font-bold rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                <Check size={16} />
-                                Apply & Save
+                                {isApplying ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
+                                {isApplying ? 'Saving...' : 'Apply & Save'}
                             </button>
                         )}
                     </div>

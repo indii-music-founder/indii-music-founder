@@ -1,13 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, cleanup } from '@testing-library/react';
+import { render, screen, fireEvent, cleanup, waitFor } from '@testing-library/react';
 import CampaignDashboard from './CampaignDashboard';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { MarketingService } from '@/services/marketing/MarketingService';
+
+const { mockToastError } = vi.hoisted(() => ({
+    mockToastError: vi.fn(),
+}));
+
 // Mock dependencies
 vi.mock('@/core/context/ToastContext', () => ({
     useToast: () => ({
         success: vi.fn(),
-        error: vi.fn(),
+        error: mockToastError,
         info: vi.fn(),
     }),
 }));
@@ -29,6 +33,7 @@ vi.mock('@/services/marketing/MarketingService', () => ({
         getCampaignById: vi.fn(),
         createCampaign: vi.fn(),
         getCampaigns: vi.fn(),
+        updateCampaign: vi.fn(),
         subscribeToCampaigns: vi.fn(() => () => { }), // Mock subscription
     }
 }));
@@ -45,9 +50,11 @@ vi.mock('@/modules/marketing/hooks/useMarketing', () => ({
     })
 }));
 
+const TEST_CAMPAIGN = { id: 'campaign-1', title: 'Test Campaign', posts: [] };
+
 // Mock CampaignManager as it has its own complexities
 vi.mock('./CampaignManager', () => ({
-    default: ({ selectedCampaign, onCreateNew }: any) => {
+    default: ({ selectedCampaign, onCreateNew, onUpdateCampaign }: any) => {
         // If selectedCampaign is present, show "Managing: Title"
         // Otherwise show list/empty state which includes "Create New Campaign" button
         if (selectedCampaign) {
@@ -61,6 +68,7 @@ vi.mock('./CampaignManager', () => ({
             <div>
                 <div>Campaign Manager</div>
                 <button onClick={onCreateNew}>Create New Campaign</button>
+                <button onClick={() => { onUpdateCampaign(TEST_CAMPAIGN).catch(() => {}); }}>Trigger Update</button>
                 <div>Select a campaign</div>
             </div>
         );
@@ -94,5 +102,32 @@ describe('CampaignDashboard', () => {
         expect(screen.getByLabelText(/Description/)).toBeInTheDocument();
         expect(screen.getByLabelText(/Start Date/)).toBeInTheDocument();
         expect(screen.getByLabelText(/Platform/)).toBeInTheDocument();
+    });
+
+    describe('ISSUE-949: campaign updates actually persist', () => {
+        it('persists an update via MarketingService.updateCampaign', async () => {
+            (MarketingService.updateCampaign as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+
+            render(<CampaignDashboard />);
+            fireEvent.click(screen.getByRole('button', { name: 'Trigger Update' }));
+
+            await waitFor(() => {
+                expect(MarketingService.updateCampaign).toHaveBeenCalledWith('campaign-1', expect.objectContaining({
+                    id: 'campaign-1',
+                    title: 'Test Campaign'
+                }));
+            });
+        });
+
+        it('surfaces an error toast and does not silently claim success when the write fails', async () => {
+            (MarketingService.updateCampaign as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Firestore write failed'));
+
+            render(<CampaignDashboard />);
+            fireEvent.click(screen.getByRole('button', { name: 'Trigger Update' }));
+
+            await waitFor(() => {
+                expect(mockToastError).toHaveBeenCalledWith(expect.stringContaining('Failed to save'));
+            });
+        });
     });
 });
