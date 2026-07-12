@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-07-11 23:17 EDT
+**Updated:** 2026-07-11 23:54 EDT
 **Branch:** `fix/issues-core`
 
 ## Recent Commits
 ```
+bc921a353 fix(security): ISSUE-764 — allow Google Maps tile images in CSP img-src
+3e19a9784 chore: session checkpoint [23:17]
 897b69d8f chore: session checkpoint [22:31]
 dcd9cf9fd chore: session checkpoint [22:03]
 edabf5c0d chore: session checkpoint [20:29]
@@ -12,8 +14,6 @@ d09d59f6e chore: session checkpoint [19:15]
 c2a10ec49 chore: session checkpoint [19:10]
 4c5c1fee6 chore: session checkpoint [19:07]
 58fd80514 chore: session checkpoint [19:07]
-781f91dee fix(memory): ISSUE-757 — raise archive search cap to 10,000 for full-history recall
-33fcdbe5d fix(persistence): ISSUE-755 — merge local/remote sessions instead of clobbering + add retry logic
 ```
 
 ## Working State
