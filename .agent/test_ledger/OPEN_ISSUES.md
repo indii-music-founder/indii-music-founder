@@ -13124,13 +13124,14 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-835: Campaign brief tool says the campaign was saved even when persistence fails
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-12)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Marketing / Agent tools
 - **Evidence:** `MarketingTools.create_campaign_brief()` catches and only logs persistence errors from `MarketingService.createCampaign()` (`MarketingTools.ts:92-125`), then always returns “Campaign brief created ... and saved to Marketing Dashboard” (`:127`). `schedule_content()` also returns `status: "scheduled"` for an in-memory schedule and does not persist or queue posts (`:144-177`).
 - **Impact:** The user/agent can believe a marketing campaign or schedule exists in the dashboard when it was only generated in the tool response.
 - **Fix:** Return a separate `draft_generated` state unless a campaign ID is returned from `MarketingService.createCampaign`; make schedule generation explicitly non-persistent or add a save/queue step.
 - **Acceptance:** Failed auth/Firestore validation yields `success: false` or `saved: false`; successful brief creation returns a real campaign ID visible in the Marketing Dashboard.
+- **Fix applied (2026-07-12):** `create_campaign_brief` now captures the real `campaignId` returned by `MarketingService.createCampaign()` (or the persistence error message) instead of discarding both. It only claims "saved to Marketing Dashboard" when a real `campaignId` came back (`saved: true`, ID included in both the data and the message); on any persistence failure (auth missing, invalid data, Firestore error) it returns `saved: false` with the real error message and explicitly states the brief "exists only in this response" — never a false success claim. `schedule_content()`'s `status: "scheduled"` (implying real delivery) was renamed to `"draft_generated"` with a message clarifying nothing was saved or queued — this function has always been in-memory-only date math with no persistence layer to wire up, so the honest label was the correct fix rather than inventing a new save/queue mechanism. Also corrected the `schedule_content` tool's own agent-facing description, which said "Schedule a batch of content posts" — now states it's a draft plan only. Tests: `MarketingTools.test.ts` — updated `schedule_content generates real dates` to assert `status: 'draft_generated'`; updated `create_campaign_brief calls AI` to mock a real `campaignId` and assert `saved: true`; added a new case asserting `saved: false` + the real error message when `MarketingService.createCampaign` rejects. Full suite (3 tests) green, typecheck/lint clean. **Not done:** `MarketingTools.integration.test.ts` has a pre-existing `describe.skip` block asserting the old `'scheduled'` string — left untouched since it's already skipped (not run in CI) and touching skipped, out-of-scope tests wasn't part of this fix.
 
 ### ISSUE-836: Marketing campaign platforms allowed by the UI are rejected by campaign execution
 
