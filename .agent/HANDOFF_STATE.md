@@ -1,26 +1,24 @@
 # Handoff State
-**Updated:** 2026-07-12 10:20 EDT
+**Updated:** 2026-07-12 10:34 EDT
 **Branch:** `fix/issues-core`
 
 ## Recent Commits
 ```
+16bdc2edb fix(marketing): stop claiming the reel generator syncs to uploaded audio
+7029f4ae0 fix(publicist): stop letting the model invent Release Kit media contacts
+55a40d58f fix(onboarding): bound brand image uploads and fix MIME mislabeling
+21aa422c4 chore: session checkpoint [10:20]
 d0aab24ba docs: cross-device persistence audit for mobile-first model
 c7d596e6b chore: session checkpoint [10:18]
 64ab2633f docs: mobile device routing policy for indii.music
 58191c1c3 fix(audio): cap browser master size and stop double-encoding audio for AI analysis
 f6cdb4919 fix(audio): make M4ACodecProbe tests byte-accurate; log ISSUE-961 fix
 bddda35a5 chore: session checkpoint [10:01]
-8c1829629 docs: remote relay testing & file browser design
-abf040f84 chore: session checkpoint [09:56]
-72c413751 fix(audio): stop fabricating DAW project-file loudness/true-peak compliance verdicts
-a66e83ec9 chore: session checkpoint [09:55]
 ```
 
 ## Working State
 ```
- M packages/renderer/src/modules/onboarding/hooks/useOnboarding.ts
- M packages/renderer/src/services/onboarding/onboardingService.test.ts
- M packages/renderer/src/services/onboarding/onboardingService.ts
+clean working tree
 ```
 
 ## Decisions
