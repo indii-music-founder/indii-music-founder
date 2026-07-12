@@ -1,17 +1,17 @@
 # Handoff State
 **Updated:** 2026-07-12 12:54 EDT
-**Branch:** `main`
+**Branch:** `main` (merged from `fix/issues-core`)
 
 ## Recent Commits
 ```
-b82fe47e5 Merge branch 'fix/issues-core'
+f2b87e7e1 fix(tests): update manageSemanticMemory tests for the ISSUE-757 hasMore/limit change
+af557e6a5 fix(publishing): stop claiming an unverified ISWC is registered (ISSUE-813)
+a4c988b19 docs(architecture): boardroom persistence design + E2E suite ready
+438ae4e21 chore: final handoff — all 4 mandatory tasks complete
 a5edd868d fix(publishing): stop fabricating PRO submission confirmations (ISSUE-812)
 012a66646 fix(memory): increase semantic search limit to 100 for deep recall (ISSUE-757)
 8822ff7a2 Merge branch 'fix/issues-core'
 aa0864937 fix(creative): disclose that the video Audio toggle is a prompt request, not a guarantee (ISSUE-807)
-db5018ddd chore: session checkpoint [12:33]
-c13f76ff4 chore: session checkpoint [12:32]
-078ea1357 chore: session checkpoint [14:45]
 72e7da52c fix(creative): derive real file extension for generated video/image file-nodes (ISSUE-810)
 f41361707 docs(ledger): log ISSUE-757 partial fix — frontend memory caps raised to 1000 (2026-07-12)
 ```

@@ -102,7 +102,11 @@ export function ReleaseHarnessWorkspace({
               isrc: updates.isrc ?? result.distributionReadiness.identifiers.isrc,
               upc: updates.upc ?? result.distributionReadiness.identifiers.upc,
               iswc: result.distributionReadiness.identifiers.iswc,
-              iswcStatus: result.distributionReadiness.identifiers.iswc ? 'registered' : work ? 'draft' : result.distributionReadiness.identifiers.iswcStatus,
+              // ISSUE-813: don't re-derive 'registered' from mere string
+              // presence — only a freshly created work draft (real
+              // ISWCService record) justifies 'draft'; otherwise carry
+              // forward whatever status was already known.
+              iswcStatus: work ? 'draft' : result.distributionReadiness.identifiers.iswcStatus,
               workId: work?.id ?? result.distributionReadiness.identifiers.workId,
               catalogNumber: updates.catalogNumber ?? result.distributionReadiness.identifiers.catalogNumber,
               missing: result.distributionReadiness.identifiers.missing.filter(id => id === 'iswc' || !(id in updates)),
