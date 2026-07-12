@@ -4,6 +4,7 @@ import { motion } from 'motion/react';
 import { useToast } from '@/core/context/ToastContext';
 import { useStore } from '@/core/store';
 import { OrchestrationService } from '@/services/agent/OrchestrationService';
+import { DEFAULT_PROJECT_ID } from '@/core/constants';
 
 interface MarketingPanelProps {
     toggleRightPanel: () => void;
@@ -14,7 +15,7 @@ export default function MarketingPanel({ toggleRightPanel }: MarketingPanelProps
     const [isDeploying, setIsDeploying] = useState(false);
     const [selectedTemplate, setSelectedTemplate] = useState('INDII_GROWTH_PROTOCOL');
     const [dailyBudget, setDailyBudget] = useState(10);
-    const projectId = useStore(state => state.currentProjectId || 'default-project');
+    const projectId = useStore(state => state.currentProjectId || DEFAULT_PROJECT_ID);
     const userProfile = useStore(state => state.userProfile);
 
     const handleDeploy = async () => {
