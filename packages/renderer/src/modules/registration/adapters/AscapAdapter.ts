@@ -77,7 +77,7 @@ export const AscapAdapter: OrgAdapter = {
 
       const result = await registerWithASCAP(userId, metadata as Parameters<typeof registerWithASCAP>[1]);
 
-      await persistOrgRecord(userId, track.id, 'ascap', data, result.workId);
+      const persisted = await persistOrgRecord(userId, track.id, 'ascap', data, result.workId);
 
       if (!result.success) {
         return {
@@ -94,6 +94,7 @@ export const AscapAdapter: OrgAdapter = {
         success: true,
         confirmationNumber: result.workId,
         submittedAt: new Date(),
+        localRecordFailed: !persisted,
       };
     } catch (err: unknown) {
       logger.error('[AscapAdapter] Registration failed:', err);
