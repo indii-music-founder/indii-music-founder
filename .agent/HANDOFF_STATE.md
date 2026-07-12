@@ -1,27 +1,24 @@
 # Handoff State
-**Updated:** 2026-07-12 09:36 EDT
+**Updated:** 2026-07-12 10:01 EDT
 **Branch:** `fix/issues-core`
 
 ## Recent Commits
 ```
+8c1829629 docs: remote relay testing & file browser design
+abf040f84 chore: session checkpoint [09:56]
+72c413751 fix(audio): stop fabricating DAW project-file loudness/true-peak compliance verdicts
+a66e83ec9 chore: session checkpoint [09:55]
+905c3b4da fix(marketing): map youtube_shorts to the worker-recognized youtube platform id
+ba4184b32 chore: session checkpoint [09:47]
+7945c9667 chore: session checkpoint [09:41]
+a948550fa fix(creative): stop advertising Veo aspect ratios/durations the backend silently discards
+c91d027c1 chore: session checkpoint [09:36]
 5a9c7fe65 fix(remote): separate controller from studio executor
-4f0f57391 fix(creative): stop claiming Omni's storyboard sequence is "Synced" to generation
-fabc53510 docs(ledger): log ISSUE-1025 -- Mobile Controller falsely reports Studio Connected
-31665d84a fix(creative): remove Omni's dead "Hybrid Veo" mode and its 4x overcharge
-178e2fd75 test(dashboard): lock in AssetSpotlight's Discuss-attaches-the-asset fix, correct stale ledger entry
-4cdad01a2 fix(test): update stale toast assertion broken by the ISSUE-997 copy change
-2123036d0 fix(creative): stop claiming Omni output is SynthID "Protected"
-2766bc3d8 chore: session checkpoint [06:44]
-11d780d9e fix(audio): stop presenting heuristic loudness/true-peak estimates as certified compliance
-d2d85dea7 docs(ledger): mark ISSUE-996 verified fixed -- was already resolved, ledger was stale
 ```
 
 ## Working State
 ```
- M .agent/test_ledger/OPEN_ISSUES.md
- M packages/renderer/src/modules/creative/components/DirectGenerationTab.tsx
- M packages/renderer/src/modules/creative/components/__tests__/DirectGenerationTab.test.tsx
- M packages/renderer/src/modules/creative/components/veo/VeoSettingsPanel.tsx
+clean working tree
 ```
 
 ## Decisions
