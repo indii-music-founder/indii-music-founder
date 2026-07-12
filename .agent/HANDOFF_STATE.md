@@ -1,19 +1,19 @@
 # Handoff State
-**Updated:** 2026-07-12 11:07 EDT
+**Updated:** 2026-07-12 11:24 EDT
 **Branch:** `fix/issues-core`
 
 ## Recent Commits
 ```
+de1d85494 fix(distribution): require a real analyzed track and staged cover before submission
+9aecd2b9a chore: session checkpoint [11:15]
+61b301d9d fix(publishing): stop marking releases metadata_complete when packaging fails
+1257337af chore: session checkpoint [11:07]
 a73a653e3 fix(onboarding): actually extract PDF text and attach audio for Brand Interview
 6a92d87d2 chore: session checkpoint [11:01]
 f7496e0ef fix(marketing): make Discord/Telegram webhook Test/Send real network calls
 499d20b16 chore: session checkpoint [10:53]
 9e9cd49dc fix(marketing): keep AI campaign draft alive until creation actually confirms
 318865fdd fix(marketing): actually persist campaign updates instead of local state only
-b3076afb5 chore: session checkpoint [10:34]
-16bdc2edb fix(marketing): stop claiming the reel generator syncs to uploaded audio
-7029f4ae0 fix(publicist): stop letting the model invent Release Kit media contacts
-55a40d58f fix(onboarding): bound brand image uploads and fix MIME mislabeling
 ```
 
 ## Working State
