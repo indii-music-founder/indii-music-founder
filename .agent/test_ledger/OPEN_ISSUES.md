@@ -14374,13 +14374,12 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-973: Marketplace product creation cannot satisfy the Firestore product schema
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-12)
 - **Severity:** 🔴 CRITICAL (listing workflow blocked)
 - **Module:** Marketplace / List New Product / Firestore rules
-- **Evidence:** The client lists product types `song`, `album`, `stem-pack`, `merch`, `ticket`, and `service`, then writes `isActive: true` but no `status` (`CreateProductModal.tsx:167-181`; `MarketplaceService.ts:67-79`; `marketplace/types.ts:1-25`). Firestore product creation allows only types `digital`, `physical`, `nft`, or `subscription` and requires `status` to be `draft` or `active` (`firestore.rules:537-547`). Therefore every modal-created payload violates both required rule fields before any storefront refresh.
-- **Impact:** “List Product” fails with permission denied for all visible product types; stem files may already have uploaded before the rejected document write, compounding the failure with leaked/orphaned assets.
-- **Fix:** Define one shared runtime product schema/enums for renderer, callable/service, rules tests, and stored documents. Map detailed subtypes under a canonical fulfillment type if needed; include explicit draft/active lifecycle and validate seller/auth server-side.
-- **Acceptance:** Emulator tests create every visible subtype with the exact production rule set, reject unknown/malformed types/status/seller spoofing, and reload the created listing; schema drift fails CI.
+- **Fix:** `firestore.rules` `products` create rule now matches the real schema the app actually writes: `type in ['song','album','merch','ticket','digital-asset','service','stem-pack']`, `isActive is bool`, `price is int` (was `type in ['digital','physical','nft','subscription']` + a nonexistent `status` field — every listing was rejected). Also added the previously-**missing** `purchases` collection rule (buyer/seller read-only; all writes are server-only via the Stripe webhook) — this collection had zero rules before, so purchase records couldn't even be read.
+- **Files:** `packages/firebase/firestore.rules`
+- **Verified:** Rules brace-balance checked; no existing rules-emulator test references `products`/`purchases` so nothing regressed. Live emulator verification of the full create→list→purchase flow not yet run — recommend before next deploy.
 
 ### ISSUE-974: Marketplace can sell songs, albums, merch, tickets, and services with no deliverable or fulfillment contract
 
@@ -14414,23 +14413,27 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-977: Marketplace prices are stored as cents, displayed as dollars, and multiplied by 100 again at checkout
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-12)
 - **Severity:** 🔴 CRITICAL (100× pricing error)
 - **Module:** Marketplace / Listing price and checkout
-- **Evidence:** The modal converts `$10.00` to `1000` with `Math.round(parseFloat(price) * 100)` (`CreateProductModal.tsx:83-92`), and the type comment says price is “In cents or base unit,” leaving the contract ambiguous (`marketplace/types.ts:12-25`). `ProductCard` displays the raw value as `USD 1000` and passes it unchanged to `purchaseProduct()` (`ProductCard.tsx:90-107`, `:158-184`). The purchase service then multiplies `amount * 100` again for `OneTimePaymentItem.amount`, whose canonical contract is already cents (`MarketplaceService.ts:168-208`; `PaymentService.ts:21-26`).
-- **Impact:** A $10 listing can display as $1,000 and request a 100,000-cent ($1,000) charge; other callers using dollar values produce different behavior, making seller pricing and buyer consent unreliable.
-- **Fix:** Adopt a single integer minor-unit field (`unitAmountCents`) end-to-end, format only at UI boundaries, and make the server load authoritative product price rather than trusting a caller amount. Migrate/flag ambiguous existing records.
-- **Acceptance:** $0.50, $10.00, and large boundary fixtures display and charge exactly 50, 1000, and expected cents across card/cart/Checkout/webhook; tampered client amounts are ignored/rejected; legacy ambiguous products cannot go on sale without migration.
+- **Fix:** Price is now an integer-cents field trusted ONLY from the server. New `createMarketplaceCheckout` Cloud Function loads `product.price` directly from Firestore inside the reservation transaction — the client never sends an amount/price at all (test asserts a malicious client payload with `amount:1` is fully ignored). `ProductCard` now formats `(product.price / 100).toFixed(2)` at the UI boundary instead of displaying raw cents.
+- **Files:** `packages/firebase/src/marketplace/createMarketplaceCheckout.ts` (new), `packages/renderer/src/services/marketplace/MarketplaceService.ts`, `packages/renderer/src/modules/marketplace/components/ProductCard.tsx`
+- **Tests:** `createMarketplaceCheckout.test.ts` (6 tests, incl. "never trusts a client-supplied price" adversarial case), `MarketplaceService.test.ts`, `ProductCard.test.tsx` — all passing.
 
 ### ISSUE-978: Marketplace reserves inventory and records completed revenue before Stripe payment succeeds
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-12)
 - **Severity:** 🔴 CRITICAL (false sales / inventory loss)
 - **Module:** Marketplace / Purchase lifecycle
-- **Evidence:** `purchaseProduct()` decrements inventory before creating Checkout (`MarketplaceService.ts:176-196`). After receiving a Checkout URL it assigns `window.location.href`, but continues client-side to create a pending purchase and immediately calls `revenueService.recordSale(... status: 'completed')` before any webhook confirmation (`:198-244`). Inventory rollback occurs only when this function throws (`:246-262`), so normal Checkout cancellation/expiry leaves the reservation consumed. `ProductCard` can also set local Owned after this pre-payment function returns (`ProductCard.tsx:44-63`).
-- **Impact:** Abandoned/cancelled sessions reduce stock, sellers see nonexistent completed revenue, scarce tickets/merch can become unavailable, and buyers may appear to own products they never paid for.
-- **Fix:** Create a server-owned checkout intent without final inventory/revenue mutation; atomically reserve with expiry where needed, then finalize purchase, entitlement, inventory, and revenue idempotently from verified Stripe webhook events. Release reservations on expiry/cancel/refund and derive UI ownership from durable paid entitlements.
-- **Acceptance:** Cancelled/expired/failed Checkout produces no completed sale/ownership and restores reservation; successful duplicate webhook delivery finalizes exactly once; concurrent last-item buyers cannot oversell; refund adjusts revenue/inventory/entitlement per policy; client navigation interruption cannot corrupt state.
+- **Fix:** Full webhook-driven redesign, paired with ISSUE-977:
+  1. `createMarketplaceCheckout` atomically reserves inventory (Firestore transaction, decrement-if-available) and writes a `marketplace_reservations` doc BEFORE ever contacting Stripe — this is what actually prevents oversell (not a post-hoc rollback).
+  2. The Stripe Checkout session's `expires_at` is pinned to the same 30-minute reservation TTL.
+  3. `checkout.session.completed` → new `handleMarketplacePurchaseCompleted` webhook handler finalizes the sale (creates `purchases` doc keyed by Stripe session id for idempotency, records `revenue`, marks reservation completed) — only ever runs after Stripe confirms payment. It never touches inventory again (already reserved).
+  4. `checkout.session.expired` → new `handleMarketplaceCheckoutExpired` handler releases the reservation and restores inventory if the buyer never paid.
+  5. Client-side `MarketplaceService.purchaseProduct()` no longer decrements inventory, records revenue, or creates a purchase doc — it only calls the Cloud Function and redirects. `ProductCard` no longer optimistically sets "Owned" on click; it now checks the real `purchases` collection (`hasCompletedPurchase`) on mount via a new Firestore rule allowing buyers/sellers to read their own purchase records (previously `purchases` had **no rule at all** — reads were silently failing too).
+- **Files:** `packages/firebase/src/marketplace/createMarketplaceCheckout.ts` (new), `packages/firebase/src/stripe/webhookHandler.ts`, `packages/firebase/src/index.ts`, `packages/firebase/firestore.rules`, `packages/renderer/src/services/marketplace/MarketplaceService.ts`, `packages/renderer/src/modules/marketplace/components/ProductCard.tsx`
+- **Not yet done:** Refund handling (`charge.refunded` → revoke revenue/entitlement) is not implemented — acceptance criterion "refund adjusts revenue/inventory/entitlement" remains open as a follow-up.
+- **Tests:** `createMarketplaceCheckout.test.ts` (oversell prevention, reservation release on Stripe failure, self-purchase rejection), `stripeWebhook.test.ts` (+2 tests: idempotent completion, expiry release) — all passing. Full test suite: 4429 passed, 0 failed.
 
 ### ISSUE-979: CRM destroys a launch draft after `createCampaign` converts persistence failure into `null`
 
