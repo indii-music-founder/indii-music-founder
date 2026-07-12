@@ -1,19 +1,19 @@
 # Handoff State
-**Updated:** 2026-07-12 03:32 EDT
+**Updated:** 2026-07-12 06:44 EDT
 **Branch:** `fix/issues-core`
 
 ## Recent Commits
 ```
-4819d849f fix(registration): stop showing false success when local record fails to save
-973617824 fix(publishing): atomic + idempotent DSR import, stop false success on failure
-a6965b91c fix(marketplace): stop leaking stem-pack download tokens in public listings
-3eb0f75e5 fix(distribution): repoint submit-release IPC to the real script + fix Python syntax corruption
-b64863f27 docs: confirm ISSUE-764 Google Maps fix verified live in production
-69018cc84 fix(finance): correct 100x tax withholding display/math error in BankPanel
-1f9790a33 fix(security): escape HTML/sanitize URLs in downloaded EPK export
-eb675823e fix(firestore): systemic sweep of unruled collections blocking silent permission-denied
-3cf48b90e fix(marketplace): server-authoritative pricing and webhook purchase finalization
-4c9ca0e58 chore: session checkpoint [23:54]
+11d780d9e fix(audio): stop presenting heuristic loudness/true-peak estimates as certified compliance
+d2d85dea7 docs(ledger): mark ISSUE-996 verified fixed -- was already resolved, ledger was stale
+daa51e106 fix(video): fix Performance Video's render request/response contract mismatch
+d77dead12 fix(mobile-remote): stop relabeling non-generation images as fresh creative assets
+745e8ff20 fix(mobile-remote): stop showing fabricated GPU/4K stage telemetry
+15c1a27b0 fix(mobile-remote): actually cancel timed-out generation commands, not just detach the listener
+b6f530b2b fix(mobile-remote): bound venue pin location requests, accept zero coordinates
+b52055ead fix(mobile-remote): negotiate a real audio MIME type and reject empty/too-short memos
+66739371e fix(mobile-remote): block capture replacement until the delayed audio blob lands
+ef2b6dff4 fix(mobile-remote): keep mic Stop reachable and release hardware reliably
 ```
 
 ## Working State
