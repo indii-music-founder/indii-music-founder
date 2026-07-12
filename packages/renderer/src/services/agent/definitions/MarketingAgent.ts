@@ -60,7 +60,7 @@ export const MarketingAgent: AgentConfig = {
             },
             {
                 name: 'schedule_content',
-                description: 'Schedule a batch of content posts.',
+                description: 'Generate a draft content posting plan with real dates. This does not persist or queue anything for delivery — it is a plan the user must still act on.',
                 parameters: {
                     type: 'OBJECT',
                     properties: {

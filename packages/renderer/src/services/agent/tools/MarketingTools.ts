@@ -90,6 +90,12 @@ export const MarketingTools = {
         const parsed = CreateCampaignBriefSchema.parse(data);
 
         // AUTO-PERSIST: Save the generated brief to the database
+        // ISSUE-835: this used to catch-and-log a persistence failure, then
+        // ALWAYS report "saved to Marketing Dashboard" regardless of whether
+        // it actually was. campaignId is now only present when the write
+        // really succeeded, and the response honestly reflects that.
+        let campaignId: string | undefined;
+        let persistErrorMessage: string | undefined;
         try {
             const durationDays = parseDurationDays(duration);
             const startDate = new Date().toISOString().split('T')[0]!;
@@ -108,7 +114,7 @@ export const MarketingTools = {
                 status: CampaignStatus.PENDING,
             }));
 
-            await MarketingService.createCampaign({
+            campaignId = await MarketingService.createCampaign({
                 assetType: 'campaign',
                 title: parsed.campaignName,
                 description: `${goal} Target audience: ${parsed.targetAudience}. KPIs: ${parsed.kpis.join(', ') || 'TBD'}.`,
@@ -121,10 +127,21 @@ export const MarketingTools = {
             });
             logger.info(`[MarketingTools] Campaign brief persisted: ${parsed.campaignName}`);
         } catch (persistError: unknown) {
+            persistErrorMessage = persistError instanceof Error ? persistError.message : String(persistError);
             logger.warn('[MarketingTools] Persistence failed:', persistError);
         }
 
-        return toolSuccess(parsed, `Campaign brief created for ${parsed.campaignName} and saved to Marketing Dashboard.`);
+        if (campaignId) {
+            return toolSuccess(
+                { ...parsed, campaignId, saved: true },
+                `Campaign brief created for ${parsed.campaignName} and saved to Marketing Dashboard (ID: ${campaignId}).`
+            );
+        }
+
+        return toolSuccess(
+            { ...parsed, saved: false },
+            `Campaign brief generated for ${parsed.campaignName}, but it was NOT saved to the Marketing Dashboard: ${persistErrorMessage}. This brief exists only in this response.`
+        );
     }),
 
     analyze_audience: wrapTool('analyze_audience', async ({ genre, similar_artists }: { genre: string; similar_artists?: string[] }) => {
@@ -169,12 +186,15 @@ export const MarketingTools = {
 
         schedule.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
+        // ISSUE-835: this schedule is generated in-memory only — nothing is
+        // persisted or queued for delivery. "scheduled" implied posts would
+        // actually go out; "draft_generated" is the honest state.
         return toolSuccess({
-            status: "scheduled",
+            status: "draft_generated",
             count: schedule.length,
             schedule: schedule,
             nextPost: schedule.length > 0 ? schedule[0]!.date : "None"
-        }, `Content schedule generated with ${schedule.length} posts across ${platforms.join(', ')}.`);
+        }, `Draft content schedule generated with ${schedule.length} posts across ${platforms.join(', ')}. This is a plan only — no posts have been saved or queued for delivery.`);
     }),
 
     track_performance: wrapTool('track_performance', async ({ campaignId }: { campaignId: string }) => {

@@ -46,7 +46,9 @@ describe('MarketingTools', () => {
 
         expect(result.success).toBe(true);
         const parsed = result.data;
-        expect(parsed.status).toBe("scheduled");
+        // ISSUE-835: "scheduled" implied posts would actually go out; this is
+        // an in-memory plan only, never persisted or queued for delivery.
+        expect(parsed.status).toBe("draft_generated");
         expect(parsed.schedule).toHaveLength(4);
 
         const firstDate = new Date(parsed.schedule[0].date);
@@ -68,10 +70,11 @@ describe('MarketingTools', () => {
             kpis: []
         };
         vi.mocked(AutonomousIntelligence.generateStructuredData).mockResolvedValue(mockResponse as unknown as Awaited<ReturnType<typeof AutonomousIntelligence.generateStructuredData>>);
+        vi.mocked(MarketingService.createCampaign).mockResolvedValue('campaign-real-id');
 
         const result = await MarketingTools.create_campaign_brief({ product: 'Test', goal: 'Win' });
         expect(result.success).toBe(true);
-        expect(result.data).toEqual(mockResponse);
+        expect(result.data).toEqual({ ...mockResponse, campaignId: 'campaign-real-id', saved: true });
         expect(MarketingService.createCampaign).toHaveBeenCalledWith(expect.objectContaining({
             assetType: 'campaign',
             title: 'Test',
@@ -89,5 +92,30 @@ describe('MarketingTools', () => {
             status: 'PENDING',
             attachedAssets: [],
         }));
+    });
+
+    /**
+     * ISSUE-835: create_campaign_brief used to catch-and-log a persistence
+     * failure, then ALWAYS report "saved to Marketing Dashboard" regardless
+     * of whether the write actually succeeded.
+     */
+    it('create_campaign_brief reports saved: false and does not claim persistence when Firestore write fails', async () => {
+        const mockResponse = {
+            campaignName: "Test",
+            targetAudience: "All",
+            budget: "100",
+            channels: [],
+            kpis: []
+        };
+        vi.mocked(AutonomousIntelligence.generateStructuredData).mockResolvedValue(mockResponse as unknown as Awaited<ReturnType<typeof AutonomousIntelligence.generateStructuredData>>);
+        vi.mocked(MarketingService.createCampaign).mockRejectedValue(new Error('User not authenticated'));
+
+        const result = await MarketingTools.create_campaign_brief({ product: 'Test', goal: 'Win' });
+
+        expect(result.success).toBe(true);
+        expect(result.data.saved).toBe(false);
+        expect(result.data.campaignId).toBeUndefined();
+        expect(result.message).toContain('NOT saved');
+        expect(result.message).toContain('User not authenticated');
     });
 });
