@@ -257,7 +257,8 @@ export const BankPanel: React.FC = () => {
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="p-6 rounded-2xl bg-black/40 border border-white/10 group hover:border-dept-distribution/50 transition-all">
                                         <span className="block text-[10px] font-black text-gray-600 uppercase tracking-widest mb-2">Withholding</span>
-                                        <span data-testid="bank-tax-withholding-rate" className="text-base font-black text-white italic">{(taxReport.withholding_rate * 100).toFixed(1)}%</span>
+                                        {/* withholding_rate is already a percent value (e.g. 30.0 = 30%) — do NOT multiply by 100 */}
+                                        <span data-testid="bank-tax-withholding-rate" className="text-base font-black text-white italic">{taxReport.withholding_rate.toFixed(1)}%</span>
                                     </div>
                                     <div className="p-6 rounded-2xl bg-black/40 border border-white/10 group hover:border-dept-licensing/50 transition-all">
                                         <span className="block text-[10px] font-black text-gray-600 uppercase tracking-widest mb-2">Payout Node</span>
@@ -272,12 +273,12 @@ export const BankPanel: React.FC = () => {
                                     </div>
                                     <div className="flex justify-between items-end">
                                         <span className="text-[10px] font-black text-dept-marketing uppercase tracking-widest">Compliance Levy</span>
-                                        <span className="text-lg font-black text-dept-marketing italic">-${(parseFloat(amount) * taxReport.withholding_rate).toLocaleString('en-US')}</span>
+                                        <span className="text-lg font-black text-dept-marketing italic">-${(parseFloat(amount) * (taxReport.withholding_rate / 100)).toLocaleString('en-US')}</span>
                                     </div>
                                     <div className="border-t border-gray-900 pt-4 flex justify-between items-end">
                                         <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Net Disbursable</span>
                                         <span data-testid="bank-tax-net-disbursable" className="text-lg font-black text-white italic tracking-tighter shadow-dept-licensing/20 drop-shadow-lg">
-                                            ${(parseFloat(amount) * (1 - taxReport.withholding_rate)).toLocaleString('en-US')}
+                                            ${(parseFloat(amount) * (1 - taxReport.withholding_rate / 100)).toLocaleString('en-US')}
                                         </span>
                                     </div>
                                 </div>

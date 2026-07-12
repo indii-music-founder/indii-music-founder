@@ -12866,13 +12866,12 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-825: Bank tax UI treats percent withholding values as fractional multipliers
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-12)
 - **Severity:** 🔴 HIGH (money calculation)
 - **Module:** Distribution / Finance bank layer
-- **Evidence:** `tax_withholding_engine.py:164-170` returns `withholding_rate: 30.0` for held/uncertified users, and active treaty rates are also returned as percent values (`:177-187`). `BankPanel.tsx:257-280` treats `taxReport.withholding_rate` as a fraction by displaying `(rate * 100)%`, subtracting `amount * rate`, and computing `amount * (1 - rate)`.
-- **Impact:** A 30% withholding result displays as 3000%, subtracts 30x the gross amount, and can show a negative “net disbursable.”
-- **Fix:** Normalize the tax contract to either `withholding_rate_percent` or `withholding_rate_decimal` and convert at exactly one boundary.
-- **Acceptance:** A fixture with `$1,000` and 30% withholding displays `30.0%`, `$300` withheld, and `$700` net; tests cover active treaty and held fallback paths.
+- **Fix:** Corrected all 3 math sites in `BankPanel.tsx` to treat `withholding_rate` as the percent value it actually is (matches both the HELD and ACTIVE-treaty Python return paths — no Python change needed): display now shows the value directly (no `* 100`), withheld amount divides by 100 before multiplying, net disbursable divides by 100 before subtracting. Documented the contract with a comment on the `TaxReport.withholding_rate` field.
+- **Files:** `packages/renderer/src/modules/distribution/components/BankPanel.tsx`, `packages/renderer/src/types/distribution.ts`
+- **Tests:** New `BankPanel.test.tsx` — the exact ledger acceptance fixture ($1,000 @ 30% → displays `30.0%`, nets `$700`), would have failed against the old `* 100` / un-divided-by-100 code.
 
 ### ISSUE-826: Waterfall payout UI, TypeScript contract, and Python engine use incompatible payload/report shapes
 
