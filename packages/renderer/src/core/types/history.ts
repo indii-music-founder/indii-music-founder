@@ -17,4 +17,18 @@ export interface HistoryItem {
     localPath?: string; // Path to locally saved file (Electron/Veo)
     /** ID of the source HistoryItem this was derived from (e.g., canvas-export of a generated image) */
     parentId?: string;
+    /**
+     * ISSUE-1007: cover-art mode asked the model for compliant dimensions
+     * but never measured or validated the actual output against the
+     * user's distributor requirements. Present only when the image was
+     * generated in cover-art mode and its real decoded dimensions were
+     * successfully measured.
+     */
+    distributorCompliance?: {
+        valid: boolean;
+        errors: string[];
+        warnings: string[];
+        measuredWidth: number;
+        measuredHeight: number;
+    };
 }
