@@ -89,8 +89,17 @@ Key Terms: ${args.terms}`;
     }) => {
         // Validation
         const total = args.contributors.reduce((acc, c) => acc + c.percentage, 0);
-        if (total !== 100) {
-            return toolSuccess({ error: `Percentages must add up to 100%. Current total: ${total}%` }, 'Failed to generate split sheet');
+        // ISSUE-829: an invalid split total must be a tool error, not a
+        // toolSuccess() carrying an error string in its data — agent
+        // orchestration otherwise treats this as a real generated artifact.
+        // Tolerance of 0.01 absorbs floating-point drift from fractional
+        // splits (e.g. three-way 33.33/33.33/33.34), not real invalid totals.
+        if (Math.abs(total - 100) > 0.01) {
+            return toolError(
+                `Split percentages must add up to 100%. Current total: ${total}%.`,
+                'INVALID_SPLIT_TOTAL',
+                { total, difference: Number((100 - total).toFixed(2)) }
+            );
         }
 
         const terms = `Track Title: ${args.trackTitle}\nContributors:\n` + args.contributors.map(c => `- ${c.name} (${c.role}): ${c.percentage}%`).join('\n');
