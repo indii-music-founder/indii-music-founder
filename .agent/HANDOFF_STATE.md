@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-07-12 12:12 EDT
+**Updated:** 2026-07-12 12:15 EDT
 **Branch:** `fix/issues-core`
 
 ## Recent Commits
 ```
+f500cc8ef chore: session checkpoint [12:12]
 5609430fe chore: session checkpoint [12:11]
 a4a4090e8 fix(publishing): fail closed on audio/image decode errors instead of fabricating metadata
 f38342d0a docs: persistence fix roadmap (4-phase, beta-blocking)
@@ -13,12 +14,12 @@ d1b08b22c fix(registration): stop claiming desktop browser automation works
 9e3b469fe chore: session checkpoint [11:46]
 f6e2877ce fix(crm): require a real deliverable before a drop can go Active
 a1ef03c9b chore: session checkpoint [11:37]
-e2b96cca3 fix(creative): warn that the 3D Stage Builder is unsaved and confirm Clear Stage
 ```
 
 ## Working State
 ```
-M  .agent/test_ledger/OPEN_ISSUES.md
+MM packages/renderer/src/core/store/slices/notesSlice.ts
+AM packages/renderer/src/services/notes/NotesService.ts
 ```
 
 ## Decisions
