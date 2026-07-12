@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-07-12 19:03 EDT
+**Updated:** 2026-07-12 19:05 EDT
 **Branch:** `fix/issues-core`
 
 ## Recent Commits
 ```
+ffb46e401 chore: session checkpoint [19:03]
 8b78b47b8 fix(ci): cap CI unit-test worker concurrency to 1 after two memory-tuning attempts failed (ISSUE-1046)
 b10ab4b27 chore: session checkpoint [18:55]
 3f7ae4780 fix(notes): wire loadNotesFromCloud into app init; merge instead of overwrite (hunter finding, ISSUE-761)
@@ -20,8 +21,11 @@ d389f9822 docs: add /ci-validate workflow to triage main deploy failures vs the 
 
 ## Working State
 ```
- M packages/firebase/src/functions/creative/gateway.ts
- M packages/renderer/src/core/components/SidebarNavigation.test.tsx
+M  .agent/test_ledger/OPEN_ISSUES.md
+M  packages/firebase/src/functions/creative/gateway.test.ts
+M  packages/firebase/src/functions/creative/gateway.ts
+M  packages/renderer/src/core/components/SidebarNavigation.test.tsx
+M  packages/renderer/src/tests/RouterContext.test.tsx
 ```
 
 ## Decisions
