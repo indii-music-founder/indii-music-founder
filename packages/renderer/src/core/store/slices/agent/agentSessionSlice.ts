@@ -3,7 +3,7 @@ import { logger } from '@/utils/logger';
 
 let agentSessionsUnsubscribe: (() => void) | null = null;
 
-export type MessageSource = 'desktop' | 'mobile-remote' | 'background' | 'api';
+export type MessageSource = 'desktop' | 'mobile-remote' | 'background' | 'api' | 'boardroom';
 
 export interface AgentMessage {
     id: string;
