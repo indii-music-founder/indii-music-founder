@@ -33,7 +33,10 @@ class FakeMediaRecorder {
     stop() {
         if (this.state === 'inactive') return;
         this.state = 'inactive';
-        this.onstop?.();
+        // Real MediaRecorder finalizes asynchronously — defer onstop to a
+        // microtask so tests can observe the gap between "stop tapped" and
+        // "audio blob actually landed" (ISSUE-986).
+        Promise.resolve().then(() => this.onstop?.());
     }
 }
 
@@ -130,10 +133,15 @@ describe('QuickCaptureView — voice memo mic lifecycle (ISSUE-985)', () => {
         expect(stopBtnAfterUnpair).not.toBeDisabled();
 
         const recorder = FakeMediaRecorder.instances[0]!;
-        fireEvent.click(stopBtnAfterUnpair);
+        act(() => {
+            fireEvent.click(stopBtnAfterUnpair);
+        });
 
         expect(recorder.state).toBe('inactive');
         expect(recorder.stream.getTracks()[0]!.stop).toHaveBeenCalled();
+
+        // Flush the deferred onstop microtask so it can't leak into the next test.
+        await act(async () => { await Promise.resolve(); });
     });
 
     it('stops every track when the component unmounts mid-recording', async () => {
@@ -180,5 +188,39 @@ describe('QuickCaptureView — voice memo mic lifecycle (ISSUE-985)', () => {
 
         expect(recorder.state).toBe('inactive');
         expect(await screen.findByRole('button', { name: /start recording a voice memo/i })).toBeInTheDocument();
+    });
+
+    it('ISSUE-986: blocks photo/doc/video replacement until the delayed audio blob finalizes, then unblocks', async () => {
+        render(<QuickCaptureView isPaired={true} />);
+        await startRecording();
+
+        const photoBtn = screen.getByRole('button', { name: /photo/i });
+        const docBtn = screen.getByRole('button', { name: /^doc$/i });
+        const videoBtn = screen.getByRole('button', { name: /video/i });
+        expect(photoBtn).toBeDisabled();
+
+        const stopBtn = screen.getByRole('button', { name: /stop recording/i });
+        act(() => {
+            fireEvent.click(stopBtn);
+        });
+
+        // isRecording already flipped false (mic button reads "Speak" again)
+        // but the audio blob hasn't landed yet — replacement must stay blocked.
+        // Checked BEFORE any await: an awaited query would let the deferred
+        // onstop microtask drain early and defeat the point of this test.
+        expect(screen.getByRole('button', { name: /start recording a voice memo/i })).toBeInTheDocument();
+        expect(photoBtn).toBeDisabled();
+        expect(docBtn).toBeDisabled();
+        expect(videoBtn).toBeDisabled();
+
+        // Flush the deferred onstop microtask — finalization completes.
+        await act(async () => {
+            await Promise.resolve();
+            await Promise.resolve();
+        });
+
+        expect(photoBtn).not.toBeDisabled();
+        expect(docBtn).not.toBeDisabled();
+        expect(videoBtn).not.toBeDisabled();
     });
 });
