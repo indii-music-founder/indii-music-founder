@@ -691,7 +691,6 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
     <ReleaseHarnessWorkspace
       metadata={metadata}
       selectedStores={selectedDistributors}
-      projectId="default-project"
       onApplyMetadata={updateMetadata}
     />
   );

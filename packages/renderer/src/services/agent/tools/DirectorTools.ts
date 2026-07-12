@@ -10,6 +10,7 @@ import type { ToolExecutionContext } from '../ToolExecutionContext';
 import { MusicTools } from './MusicTools';
 import { CanvasTools } from './CanvasTools';
 import { importWithRetry } from '@/utils/dynamicImport';
+import { DEFAULT_PROJECT_ID } from '@/core/constants';
 
 /**
  * Extracts a specific frame from a 2x2 grid image using Canvas API.
@@ -196,7 +197,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
                         prompt: res.prompt,
                         type: 'image',
                         timestamp: Date.now(),
-                        projectId: currentProjectId || 'default-project'
+                        projectId: currentProjectId || DEFAULT_PROJECT_ID
                     });
                 });
                 const imageMarkdown = results.map((r: { id: string, url: string }) => `![Generated Image](${r.url})`).join('\n\n');
@@ -322,7 +323,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
                     prompt: res.prompt,
                     type: 'image',
                     timestamp: Date.now(),
-                    projectId: currentProjectId || 'default-project',
+                    projectId: currentProjectId || DEFAULT_PROJECT_ID,
                     meta: `high_res_${args.templateType}`
                 });
 
@@ -372,7 +373,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
                     prompt: res.prompt,
                     type: 'image',
                     timestamp: Date.now(),
-                    projectId: currentProjectId || 'default-project',
+                    projectId: currentProjectId || DEFAULT_PROJECT_ID,
                     meta: 'cinematic_grid'
                 });
 
@@ -526,7 +527,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
                     prompt: res.prompt,
                     type: 'image',
                     timestamp: Date.now(),
-                    projectId: currentProjectId || 'default-project',
+                    projectId: currentProjectId || DEFAULT_PROJECT_ID,
                     meta: 'moodboard'
                 });
 
