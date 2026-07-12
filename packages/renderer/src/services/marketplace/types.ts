@@ -2,11 +2,25 @@ export type ProductType = 'song' | 'album' | 'merch' | 'ticket' | 'digital-asset
 
 export type StemLabel = 'drums' | 'bass' | 'melody' | 'vocals';
 
+/**
+ * Public preview metadata for a stem — safe to store on the product doc,
+ * which is readable by any authenticated user. No storage path, no download
+ * URL/token: those are bearer-equivalent capabilities and must never appear
+ * in a publicly-readable document (ISSUE-975). See `StemFileManifestEntry`.
+ */
 export interface StemFile {
     label: StemLabel;
-    url: string;      // Firebase Storage download URL
     filename: string; // Original filename for display
-    storagePath: string; // Full path in Firebase Storage
+}
+
+/**
+ * Private manifest entry — storage path for a stem, kept in the
+ * write-only/read-never `marketplace_stem_manifests/{productId}` collection.
+ * Only the `getStemDownloadUrl` Cloud Function (Admin SDK) ever reads this,
+ * after verifying a completed purchase or seller identity.
+ */
+export interface StemFileManifestEntry extends StemFile {
+    storagePath: string;
 }
 
 export interface Product {

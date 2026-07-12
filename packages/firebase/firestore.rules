@@ -569,6 +569,17 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
 
+    // Private stem-pack manifests (storage paths for each stem file) — ISSUE-975
+    // fix. The seller may write this once at listing time, but NOBODY may read
+    // it back via the client SDK: only the getStemDownloadUrl Cloud Function
+    // (Admin SDK) resolves storage paths, after verifying a completed purchase
+    // or seller identity, and hands back a short-lived signed URL. This keeps
+    // storage paths and any future private fields out of the public product doc.
+    match /marketplace_stem_manifests/{productId} {
+      allow create: if isVerifiedUser() && request.resource.data.sellerId == request.auth.uid;
+      allow read, update, delete: if false;
+    }
+
     // Transactions / Purchase records
     match /transactions/{transactionId} {
       // Users can read their own transactions (as buyer or seller)
