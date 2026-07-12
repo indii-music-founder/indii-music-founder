@@ -1,19 +1,19 @@
 # Handoff State
-**Updated:** 2026-07-12 12:56 EDT
-**Branch:** `main`
+**Updated:** 2026-07-12 13:10 EDT
+**Branch:** `main` (merged from `fix/issues-core`)
 
 ## Recent Commits
 ```
-2243e1382 Merge branch 'fix/issues-core'
-88141d665 chore: session checkpoint [12:54]
+9389f9139 fix(tests): update ReleaseHarnessService test for the ISSUE-813 iswcStatus fix
+f46fc7dce fix(distribution): verify TuneCore API credentials at connect time (ISSUE-814)
+1e1453163 chore: session checkpoint — ISSUE-763 complete, ISSUE-760 ready
+1514a2eae docs(ledger): mark ISSUE-763 complete — beta first-touch guidance + E2E suite
+2de2525c3 test(e2e): add comprehensive beta first-touch journey suite (ISSUE-763)
+26d22ba4d feat(creative): add first-run guidance overlay to canvas view (ISSUE-763)
 5c87da246 feat(boardroom): add 'boardroom' source type to MessageSource (ISSUE-760 phase 1)
 f2b87e7e1 fix(tests): update manageSemanticMemory tests for the ISSUE-757 hasMore/limit change
-7f90fab9a chore: session checkpoint [12:51]
-47ba9cc05 chore: session checkpoint [12:50]
 af557e6a5 fix(publishing): stop claiming an unverified ISWC is registered (ISSUE-813)
 a4c988b19 docs(architecture): boardroom persistence design + E2E suite ready
-3724132a9 chore: session checkpoint [12:45]
-438ae4e21 chore: final handoff — all 4 mandatory tasks complete
 ```
 
 ## Working State
