@@ -15089,3 +15089,34 @@ Naming fix: `LabelDealRecoupmentService.ts` collection literal `'labelDeals'` �
   2. Upload manifest files to existing GitHub release: `gh release upload vX.X.X dist-electron/latest-*.yml --clobber`
   3. Or: delete existing release tag, push new tag to trigger full `release.yml` workflow (recommended for consistency)
 - **Verification:** After fix, installer updater should recognize release and allow installation; no "missing manifest" error
+
+---
+
+### ISSUE-1044: Remote Relay Cannot Access Local Desktop File System
+
+- **Status:** 🔴 OPEN (discovered live 2026-07-12)
+- **Severity:** 🟠 MEDIUM-HIGH (blocks creative asset discovery from phone)
+- **Module:** Mobile Remote / Agent Asset Access / Cloud Relay
+- **Discovered:** User asked phone agent to find "font logo" in local assets → agent searched but couldn't access the files
+- **Root Cause:** Cloud agents (Gemini running in Firebase Functions) have no permissions to read the desktop's local file system. Assets must be:
+  1. Already indexed in Firestore Storage
+  2. Accessible via HTTP URL
+  3. Exposed through a specific tool (file browser)
+- **Impact:** Artist working on desktop can't ask the phone remote to find/reference local project files. Asset discovery is blocked unless files are pre-uploaded.
+- **Design Solution:** Create a **Desktop File Browser Tool** that:
+  1. Desktop app exposes a local file index (via Electron IPC or Firebase Realtime DB)
+  2. Cloud agent calls `browse_local_files(path: "/Users/.../Photos", filter: "*.png")` 
+  3. Desktop service returns: `[{ name, size, modifiedAt, url }]` for matching files
+  4. Agent can then reference files by name or download them
+  5. Agent stores metadata in Firestore for cross-device access
+- **Architecture:**
+  - **Desktop side:** `DesktopFileService.ts` → scans local folders (Photos, Projects, Downloads) → posts to Firestore collection `users/{uid}/file-index/{folderId}` or via IPC
+  - **Cloud side:** `browseLoacalFiles` tool in Cloud Function → calls `firestoreClient.query('file-index')` or desktop IPC bridge
+  - **Phone side:** Agent can ask "find font logo in photos" → tool returns matches → agent presents options
+- **Acceptance:**
+  1. Phone agent can search for files by name/extension in Desktop's Photos/Projects/Downloads
+  2. Agent can suggest specific matching files
+  3. Desktop can mark files as "assets" for faster indexing
+  4. Offline scenario: desktop caches file index locally, syncs when online
+- **DO NOT:** Do not expose arbitrary file system access — only whitelisted folders (Photos, Projects, Downloads, Creative Cache). Enforce strict path validation to prevent directory traversal.
+
