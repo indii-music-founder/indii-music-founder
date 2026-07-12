@@ -170,6 +170,61 @@ describe('IntelligenceCampaignModal', () => {
         expect(defaultProps.onClose).toHaveBeenCalled();
     });
 
+    it('ISSUE-951: keeps the generated plan visible and retryable when onSave (the real persistence) fails', async () => {
+        const user = userEvent.setup();
+        (CampaignIntelligence.generateCampaign as import("vitest").Mock).mockResolvedValue(mockGeneratedPlan);
+        const mockCampaignAsset = { id: 'new-camp', title: 'Asset' };
+        (CampaignIntelligence.planToCampaignAsset as import("vitest").Mock).mockReturnValue(mockCampaignAsset);
+        const onSave = vi.fn().mockRejectedValue(new Error('Firestore create failed'));
+        const onClose = vi.fn();
+
+        render(<IntelligenceCampaignModal onClose={onClose} onSave={onSave} />);
+
+        await user.type(screen.getByPlaceholderText(/e.g., New album/i), 'Save Topic');
+        await user.click(screen.getByRole('button', { name: /Generate Campaign/i }));
+
+        await waitFor(() => {
+            expect(screen.getByText(mockGeneratedPlan.title)).toBeInTheDocument();
+        });
+
+        await user.click(screen.getByRole('button', { name: /Create Campaign/i }));
+
+        await waitFor(() => expect(onSave).toHaveBeenCalled());
+
+        // Never closes, never claims success, and the plan is still there to retry.
+        expect(onClose).not.toHaveBeenCalled();
+        expect(mockToast.success).not.toHaveBeenCalledWith('Campaign created!');
+        expect(screen.getByText(mockGeneratedPlan.title)).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Create Campaign/i })).toBeInTheDocument();
+    });
+
+    it('ISSUE-951: disables Create Campaign while a save is in flight to prevent double-submit', async () => {
+        const user = userEvent.setup();
+        (CampaignIntelligence.generateCampaign as import("vitest").Mock).mockResolvedValue(mockGeneratedPlan);
+        (CampaignIntelligence.planToCampaignAsset as import("vitest").Mock).mockReturnValue({ id: 'new-camp' });
+
+        let resolveSave!: () => void;
+        const onSave = vi.fn(() => new Promise<void>(resolve => { resolveSave = resolve; }));
+
+        render(<IntelligenceCampaignModal onClose={vi.fn()} onSave={onSave} />);
+
+        await user.type(screen.getByPlaceholderText(/e.g., New album/i), 'Save Topic');
+        await user.click(screen.getByRole('button', { name: /Generate Campaign/i }));
+        await waitFor(() => {
+            expect(screen.getByText(mockGeneratedPlan.title)).toBeInTheDocument();
+        });
+
+        await user.click(screen.getByRole('button', { name: /Create Campaign/i }));
+
+        expect(screen.getByRole('button', { name: /Creating/i })).toBeDisabled();
+        expect(onSave).toHaveBeenCalledTimes(1);
+
+        const { act } = await import('@testing-library/react');
+        await act(async () => {
+            resolveSave();
+        });
+    });
+
     it('supports keyboard navigation for platform selection', async () => {
         const user = userEvent.setup();
         render(<IntelligenceCampaignModal {...defaultProps} />);
