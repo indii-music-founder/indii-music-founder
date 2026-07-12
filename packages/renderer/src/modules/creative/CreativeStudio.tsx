@@ -17,9 +17,24 @@ import ShowroomUI from './components/ShowroomUI';
 import { logger } from '@/utils/logger';
 import { useRef } from 'react';
 import { awaitCompletedPlpVideoVariant } from './plpVideoVariant';
+import { validateImageForDistributor } from '@/services/onboarding/DistributorContext';
 
 import CreativeClipboard from './components/CreativeClipboard';
 import OmniWorkflow from './video/OmniWorkflow';
+
+/**
+ * ISSUE-1007: decodes the actual persisted image's pixel dimensions instead
+ * of trusting the requested aspectRatio/resolution — cover-art compliance
+ * must be checked against what was really generated.
+ */
+function loadImageDimensions(url: string): Promise<{ width: number; height: number }> {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
+        img.onerror = () => reject(new Error('Failed to decode image dimensions'));
+        img.src = url;
+    });
+}
 
 /** Map UI-friendly person generation values to Intelligence API uppercase constants. */
 const PERSON_GEN_API_MAP: Record<string, string> = {
@@ -300,7 +315,26 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                         });
 
                         if (results.length > 0) {
-                            results.forEach(res => {
+                            // ISSUE-1007: measure and validate the actual
+                            // output against distributor requirements
+                            // instead of trusting the requested aspect
+                            // ratio/resolution and declaring success blind.
+                            const measured = await Promise.all(results.map(async res => {
+                                if (!isCoverArt || !userProfile) return { res, compliance: undefined };
+                                try {
+                                    const { width, height } = await loadImageDimensions(res.url);
+                                    const validation = validateImageForDistributor(userProfile, width, height);
+                                    return {
+                                        res,
+                                        compliance: { ...validation, measuredWidth: width, measuredHeight: height }
+                                    };
+                                } catch (dimErr: unknown) {
+                                    logger.warn('[CreativeStudio] Could not measure cover art dimensions for compliance check', dimErr);
+                                    return { res, compliance: undefined };
+                                }
+                            }));
+
+                            measured.forEach(({ res, compliance }) => {
                                 addToHistory({
                                     id: res.id,
                                     url: res.url,
@@ -308,10 +342,21 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                                     type: 'image',
                                     timestamp: Date.now(),
                                     projectId: currentProjectId,
-                                    origin: 'generated'
+                                    origin: 'generated',
+                                    ...(compliance && { distributorCompliance: compliance })
                                 });
                             });
-                            toast.success("Image generated!");
+
+                            if (isCoverArt) {
+                                const nonCompliant = measured.find(m => m.compliance && !m.compliance.valid);
+                                if (nonCompliant?.compliance) {
+                                    toast.error(`Cover art does not meet distributor requirements: ${nonCompliant.compliance.errors.join('; ')}`);
+                                } else {
+                                    toast.success("Cover art generated and meets distributor size requirements.");
+                                }
+                            } else {
+                                toast.success("Image generated!");
+                            }
                         } else {
                             toast.error("Generation returned no images. Please try again.");
                         }
