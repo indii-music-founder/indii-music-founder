@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-07-12 09:56 EDT
+**Updated:** 2026-07-12 10:01 EDT
 **Branch:** `fix/issues-core`
 
 ## Recent Commits
 ```
+8c1829629 docs: remote relay testing & file browser design
+abf040f84 chore: session checkpoint [09:56]
 72c413751 fix(audio): stop fabricating DAW project-file loudness/true-peak compliance verdicts
 a66e83ec9 chore: session checkpoint [09:55]
 905c3b4da fix(marketing): map youtube_shorts to the worker-recognized youtube platform id
@@ -12,13 +14,11 @@ ba4184b32 chore: session checkpoint [09:47]
 a948550fa fix(creative): stop advertising Veo aspect ratios/durations the backend silently discards
 c91d027c1 chore: session checkpoint [09:36]
 5a9c7fe65 fix(remote): separate controller from studio executor
-4f0f57391 fix(creative): stop claiming Omni's storyboard sequence is "Synced" to generation
-fabc53510 docs(ledger): log ISSUE-1025 -- Mobile Controller falsely reports Studio Connected
 ```
 
 ## Working State
 ```
-?? docs/USER_MANUAL_REMOTE_SETUP_AND_SYNC.md
+clean working tree
 ```
 
 ## Decisions
