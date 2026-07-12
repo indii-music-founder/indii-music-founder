@@ -594,10 +594,17 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
             <div className="relative inline-block">
               <input
                 type="file"
-                accept=".wav,.flac,.mp3"
+                accept=".wav,.flac"
                 onChange={async (e) => {
                   const file = e.target.files?.[0];
-                  if (file) await uploadAsset('audio', file);
+                  e.target.value = '';
+                  if (file) {
+                    try {
+                      await uploadAsset('audio', file);
+                    } catch (err: unknown) {
+                      logger.error('Audio upload failed:', err);
+                    }
+                  }
                 }}
                 className="absolute inset-0 opacity-0 cursor-pointer"
               />
@@ -651,7 +658,14 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
                 accept=".jpg,.jpeg,.png"
                 onChange={async (e) => {
                   const file = e.target.files?.[0];
-                  if (file) await uploadAsset('cover', file);
+                  e.target.value = '';
+                  if (file) {
+                    try {
+                      await uploadAsset('cover', file);
+                    } catch (err: unknown) {
+                      logger.error('Cover art upload failed:', err);
+                    }
+                  }
                 }}
                 className="absolute inset-0 opacity-0 cursor-pointer"
               />
