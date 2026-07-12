@@ -13059,13 +13059,14 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-829: Split-sheet tool reports success on invalid percentage totals
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-12)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Agent tools / Legal
 - **Evidence:** `LegalTools.generate_split_sheet()` checks contributor percentages and, when the total is not 100, returns `toolSuccess({ error: ... }, 'Failed to generate split sheet')` (`LegalTools.ts:86-94`) instead of a tool error.
 - **Impact:** Agent orchestration can treat a failed split-sheet generation as a successful tool call and continue as if the legal artifact exists.
 - **Fix:** Return `toolError(..., 'INVALID_SPLIT_TOTAL')` for invalid totals and include the current total plus missing/excess percentage.
 - **Acceptance:** A 90% or 110% split fixture yields `success: false`; no contract draft or downstream registration step is triggered.
+- **Fix applied (2026-07-12):** `generate_split_sheet` now returns `toolError(..., 'INVALID_SPLIT_TOTAL', { total, difference })` instead of a fake success wrapping an error string, so a failed validation can no longer be mistaken for a generated artifact by agent orchestration. Widened the equality check from strict `total !== 100` to a `Math.abs(total - 100) > 0.01` tolerance, since real fractional splits (e.g. a three-way 33.33/33.33/33.34) would otherwise fail this check on floating-point drift even though they're a legitimate 100% total. Tests: 3 new cases in `LegalTools.test.ts` — a 90% total returns `success: false` with `errorCode: 'INVALID_SPLIT_TOTAL'` and the message names the actual total; a 110% total does the same; a fractional-but-valid 33.33/33.33/33.34 split still succeeds. Full `LegalTools.test.ts` suite (5 tests) green, typecheck/lint clean.
 
 ### ISSUE-830: Living-plan tools return `success: true` when required project/auth context is missing
 
@@ -15274,4 +15275,19 @@ Naming fix: `LabelDealRecoupmentService.ts` collection literal `'labelDeals'` �
   3. Desktop can mark files as "assets" for faster indexing
   4. Offline scenario: desktop caches file index locally, syncs when online
 - **DO NOT:** Do not expose arbitrary file system access — only whitelisted folders (Photos, Projects, Downloads, Creative Cache). Enforce strict path validation to prevent directory traversal.
+
+### ISSUE-1045: App icon/favicon gives no visual cue for which surface is open (web / Electron / remote)
+
+- **Status:** 🔴 OPEN (requested by William, 2026-07-12 — noticed while juggling multiple open browser/app tabs and couldn't tell them apart at a glance)
+- **Severity:** 🟡 MEDIUM (UX/orientation — no data or security impact)
+- **Module:** Branding / Build assets (web manifest, Electron packaging, mobile-remote PWA)
+- **Request:** Same core mark (the "double eye"/`II` logo), but recolored per runtime surface so the browser tab, the Dock/taskbar icon, and the phone remote icon are each visually distinct at a glance — one color for web browser, one for the Electron desktop app, one for the remote/mobile app.
+- **Evidence (current state, verified):** There is currently exactly ONE icon per platform, no per-surface variation:
+  - Web/PWA: `packages/renderer/public/favicon.svg` + `indii-logo.svg`, both referenced from the single `packages/renderer/public/manifest.json` used for every browser tab AND the installed PWA.
+  - Electron desktop: separate native icon set already exists (`build/icon.icns`, `build/icon.ico`, `build/icon.png`, `assets/icon-studio.icns`) — packaged app already CAN look different from the web favicon, but hasn't been deliberately color-coded as part of one coherent 3-way scheme.
+  - Mobile remote: the `mobile-remote` module (see ISSUE-1044) is served from the SAME SPA/manifest as regular desktop-web — it has no distinct icon/manifest of its own, so a phone that has the remote view installed as a PWA is visually identical to a phone/desktop with the regular studio installed.
+- **Impact:** With the web app, the Electron app, and the phone remote view potentially all open at once, there's no glanceable way to tell which one is which from the icon alone (tab strip, Dock, home-screen icon, alt-tab switcher).
+- **Fix:** Define one base mark with 3 official colorways (e.g. via a shared SVG + fill-color token): (1) web browser favicon/tab icon, (2) Electron desktop app icon (Dock/taskbar/installer), (3) remote/mobile PWA icon (phone home screen). Give the mobile-remote module its own `manifest.json`/icon set distinct from the main studio manifest so it can carry the third color independently, and update the Electron `build/icon.*` assets to use the second color deliberately (not just "whatever it happens to be now").
+- **Acceptance:** Looking only at the icon (browser tab, Dock, phone home screen) is enough to tell which of the 3 surfaces (web / Electron / remote) is open, with no other UI visible.
+- **DO NOT:** Do not change the core mark/shape — only the color per surface. Do not fork the manifest content (share_target, shortcuts, etc.) beyond what's needed to give the remote module its own icon identity.
 
