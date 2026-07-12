@@ -12343,13 +12343,14 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-775: Omni labels output “SynthID Protected” without verifying any watermark
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIALLY FIXED (2026-07-12) — the false "Protected" claim is removed; requested/providerReported/verified tri-state metadata is not implemented (no provider signal exists to populate it)
 - **Severity:** 🔴 HIGH (provenance/compliance claim)
 - **Module:** Creative Suite / Omni
 - **Evidence:** `OmniWorkflow.tsx:579-585` renders `SynthID Protected` whenever the local toggle is on. The backend only stores `synthIdRequested` (`gateway.ts:1491-1496,1555-1564`); it neither requests a supported watermark setting nor verifies watermark metadata on the response.
 - **Impact:** A user may publish or represent media as watermarked when the system only recorded an intent.
 - **Fix:** Use “SynthID requested” until provider-returned provenance is verified. Persist `requested`, `providerReported`, and `verified` separately; show “Protected” only from verifiable output metadata.
 - **Acceptance:** Tests cover requested-but-unverified and provider-verified outputs; no local toggle can produce a protection claim.
+- **Fix applied (2026-07-12):** Confirmed via `gateway.ts` (both `omni-video` job-creation and completion writes) that the server never passes any watermark/synthID parameter into the actual `ai.interactions.create()` provider call, and never reads back any watermark/provenance field from the provider's response — `synthIdRequested` is pure client-toggle bookkeeping with zero connection to the actual generated output. `OmniWorkflow.tsx`'s post-generation overlay badge changed from "SynthID Protected" to "SynthID Requested" — the only change needed to satisfy "no local toggle can produce a protection claim," since the badge is driven entirely by that toggle. Test: extended the existing `OmniWorkflow.test.tsx` remix-flow test to assert the overlay reads "SynthID Requested" and never "SynthID Protected" once generation completes. Typecheck/lint clean. **Not done:** the fuller `requested`/`providerReported`/`verified` tri-state model — there is currently no provider-returned signal anywhere in the pipeline to populate `providerReported`/`verified` with, so building that schema now would just be unused scaffolding; it should land together with whatever backend change (if any) actually wires a real watermark parameter into the provider call.
 
 ### ISSUE-776: Image sub-menu Edit/Reference/Remix actions target the wrong asset and Reference is dead state
 

@@ -183,5 +183,11 @@ describe('OmniWorkflow', () => {
             pipelineMode: 'pure-omni',
             referenceVideoUri: 'gs://mock-bucket.appspot.com/creative/user-123/omni/reference.mp4',
         }));
+
+        // ISSUE-775: the server never requests a provider-side watermark or
+        // reads back verified provenance — the overlay must say "Requested",
+        // never "Protected", since that would claim verified provenance.
+        await waitFor(() => expect(screen.getByText('SynthID Requested')).toBeInTheDocument());
+        expect(screen.queryByText('SynthID Protected')).not.toBeInTheDocument();
     });
 });
