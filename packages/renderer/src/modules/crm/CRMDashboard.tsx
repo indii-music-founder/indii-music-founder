@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useStore } from '@/core/store';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { useToast } from '@/core/context/ToastContext';
 import { 
     Plus, 
     Trash2, 
@@ -24,6 +25,7 @@ export default function CRMDashboard() {
     // Connect to Zustand store
     const { crm, subscribeToCampaigns, createCampaign, deleteCampaign } = useStore();
     const { campaigns, loading, error } = crm;
+    const toast = useToast();
 
     // Subscribe to Firestore campaigns collection on mount
     useEffect(() => {
@@ -38,11 +40,17 @@ export default function CRMDashboard() {
     const [campaignType, setCampaignType] = useState<Campaign['type']>('Digital Vinyl');
     const [supply, setSupply] = useState('');
     const [price, setPrice] = useState('');
+    const [deliverableUrl, setDeliverableUrl] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleLaunch = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!campaignName || !supply || !price) return;
+
+        // ISSUE-980: a drop with no real deliverable link cannot go live —
+        // it saves as a draft instead of silently becoming "Active" with
+        // nothing for a fan to discover, purchase, or unlock.
+        const hasDeliverable = !!deliverableUrl.trim();
 
         setIsSubmitting(true);
         try {
@@ -51,13 +59,18 @@ export default function CRMDashboard() {
                 type: campaignType,
                 supply: parseInt(supply, 10),
                 price: parseFloat(price),
-                status: 'active'
+                deliverableUrl: deliverableUrl.trim() || undefined,
+                status: hasDeliverable ? 'active' : 'draft'
             });
+            toast.success(hasDeliverable
+                ? 'Drop launched!'
+                : 'Saved as a draft — add a deliverable link to launch it.');
             setIsModalOpen(false);
             setCampaignName('');
             setCampaignType('Digital Vinyl');
             setSupply('');
             setPrice('');
+            setDeliverableUrl('');
         } catch (err) {
             console.error('Failed to create campaign:', err);
         } finally {
@@ -65,11 +78,13 @@ export default function CRMDashboard() {
         }
     };
 
-    // Calculate metrics
+    // Calculate metrics — draft campaigns never count as active or projected live value.
     const totalCampaigns = campaigns.length;
     const activeCampaigns = campaigns.filter(c => c.status === 'active').length;
     const totalSupply = campaigns.reduce((acc, c) => acc + (c.supply || 0), 0);
-    const projectedRevenue = campaigns.reduce((acc, c) => acc + ((c.supply || 0) * (c.price || 0)), 0);
+    const projectedRevenue = campaigns
+        .filter(c => c.status === 'active')
+        .reduce((acc, c) => acc + ((c.supply || 0) * (c.price || 0)), 0);
 
     const getTypeColor = (type: Campaign['type']) => {
         switch (type) {
@@ -204,6 +219,11 @@ export default function CRMDashboard() {
                                                 <span className="flex items-center gap-1 text-[10px] uppercase font-bold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
                                                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                                                     Active
+                                                </span>
+                                            )}
+                                            {camp.status === 'draft' && (
+                                                <span className="flex items-center gap-1 text-[10px] uppercase font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20" title="No deliverable link — fans cannot discover, purchase, or unlock this drop yet">
+                                                    Draft — Setup Incomplete
                                                 </span>
                                             )}
                                         </div>
@@ -350,6 +370,24 @@ export default function CRMDashboard() {
                                     </div>
                                 </div>
 
+                                <div className="flex flex-col gap-1.5">
+                                    <label className="text-xs font-semibold text-text-secondary uppercase tracking-wider">
+                                        Deliverable Link <span className="text-text-secondary/60 normal-case font-medium">(optional — required to go live)</span>
+                                    </label>
+                                    <input
+                                        type="url"
+                                        value={deliverableUrl}
+                                        onChange={e => setDeliverableUrl(e.target.value)}
+                                        placeholder="Where fans get this once they buy it (file link, store page, ticket page...)"
+                                        className="px-3.5 py-2.5 bg-background border border-border rounded-xl focus:outline-none focus:border-accent-primary text-sm transition-all"
+                                    />
+                                    <p className="text-[11px] text-text-secondary/70">
+                                        {deliverableUrl.trim()
+                                            ? 'This drop will launch as Active.'
+                                            : 'Without this, the drop saves as a Draft — fans cannot discover, purchase, or unlock anything until it\'s added.'}
+                                    </p>
+                                </div>
+
                                 <div className="flex justify-end gap-3 mt-6">
                                     <button
                                         type="button"
@@ -367,10 +405,10 @@ export default function CRMDashboard() {
                                         {isSubmitting ? (
                                             <>
                                                 <Loader2 className="w-4 h-4 animate-spin" />
-                                                <span>Launching...</span>
+                                                <span>{deliverableUrl.trim() ? 'Launching...' : 'Saving...'}</span>
                                             </>
                                         ) : (
-                                            <span>Launch Drop</span>
+                                            <span>{deliverableUrl.trim() ? 'Launch Drop' : 'Save as Draft'}</span>
                                         )}
                                     </button>
                                 </div>
