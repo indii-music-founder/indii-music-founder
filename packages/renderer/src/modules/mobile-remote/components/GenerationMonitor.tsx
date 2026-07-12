@@ -309,9 +309,14 @@ export default function GenerationMonitor() {
                                             className="h-full bg-gradient-to-r from-blue-500 via-indigo-500 to-green-600 shadow-[0_0_10px_rgba(59,130,246,0.4)]"
                                         />
                                     </div>
-                                    <div className="flex justify-between items-center text-[9px] font-bold text-white/20 uppercase tracking-widest">
-                                        <span>Allocating GPU</span>
-                                        <span>4K Upscaling</span>
+                                    {/* ISSUE-991: no backend stage telemetry (allocation/resolution/
+                                        upscaler) reaches the phone at all — this used to claim
+                                        specific processing stages regardless of whether they were
+                                        real, whether the job had even reached the provider, or
+                                        whether it was an image job at all. Honest indeterminate
+                                        copy only. */}
+                                    <div className="flex justify-center items-center text-[9px] font-bold text-white/20 uppercase tracking-widest">
+                                        <span>{isSending ? 'Working — no ETA available' : 'Waiting for desktop'}</span>
                                     </div>
                                 </div>
                             </div>
