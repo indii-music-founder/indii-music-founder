@@ -290,15 +290,32 @@ export class PerformanceVideoService {
 
   /**
    * Call the renderVideo Cloud Function to compose the Remotion project into an mp4.
+   *
+   * ISSUE-994 fix: the callable requires `{ compositionId, inputProps: { project } }`
+   * (a bare `{ project }` fails its own `inputProps.project` validation) and only
+   * queues an Inngest stitch job — it returns `{ success, renderId, message }`,
+   * never a `videoUrl`. The actual asset only exists once the `videoJobs/{renderId}`
+   * doc reaches a terminal status, so this now polls via the same `waitForJob()`
+   * used by every other video job in this codebase (VideoTools' generate_video/
+   * generate_video_chain) instead of reading a field the callable never returns.
    */
   private async renderVideo(project: VideoProject): Promise<string> {
-    const renderVideo = httpsCallable<{ project: VideoProject }, { videoUrl: string }>(
-      functions,
-      'renderVideo'
-    );
+    const renderVideo = httpsCallable<
+      { compositionId: string; inputProps: { project: VideoProject } },
+      { success: boolean; renderId: string; message: string }
+    >(functions, 'renderVideo');
 
-    const response = await renderVideo({ project });
-    return response.data.videoUrl;
+    const response = await renderVideo({ compositionId: project.id, inputProps: { project } });
+    if (!response.data.renderId) {
+      throw new Error(response.data.message || 'Render job could not be queued.');
+    }
+
+    const completedJob = await this.videoGenService.waitForJob(response.data.renderId);
+    const videoUrl = completedJob.output?.url || completedJob.videoUrl || completedJob.url;
+    if (!videoUrl) {
+      throw new Error('Render completed without a video URL.');
+    }
+    return videoUrl;
   }
 }
 
