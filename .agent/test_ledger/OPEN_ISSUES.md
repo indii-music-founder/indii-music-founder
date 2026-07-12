@@ -13510,13 +13510,14 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-870: Video aspect ratio accepts unsupported shapes and silently coerces them
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-12)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Creative Suite / Video generation / Shape controls
 - **Evidence:** `GenerateVideoSchema` allows `aspectRatio` values `16:9`, `9:16`, `1:1`, `3:4`, and `4:3` (`packages/firebase/src/shared/creative.ts:21-36`). The renderer video schema also includes `1:1` (`video/schemas.ts:22-24`). But the gateway normalization returns `9:16` only for exact `9:16`; every other value becomes `16:9` (`gateway.ts:281-283`).
 - **Impact:** A user asking for square or 4:3/3:4 video can receive a 16:9 output without a clear warning, matching the “wrong shape” failure pattern.
 - **Fix:** Restrict video aspect-ratio controls to Veo-supported shapes or return a validation error for unsupported ratios instead of coercing.
 - **Acceptance:** Submitting `1:1`, `3:4`, or `4:3` either fails with a clear unsupported-ratio message or routes to a model that actually supports that shape; no silent 16:9 conversion.
+- **Fix applied (2026-07-12):** Chose "return a validation error" over narrowing the schema — a sibling schema in the same file (the pure-omni/hybrid-veo pipeline, `creative.ts:61`) already correctly restricts `aspectRatio` to only `['16:9', '9:16']`, confirming those are genuinely the only Veo-supported shapes and this codebase already has an established convention for it; narrowing `GenerateVideoSchema`'s wider enum felt riskier (unclear whether any live UI depends on `1:1` for video specifically) than rejecting at the point of use. Added a check in `generateVideoV3()` (`gateway.ts`) immediately after destructuring the validated request — before any cost-reservation loading or Firestore writes — that throws `HttpsError('invalid-argument', ...)` naming the actual rejected ratio for anything other than `16:9`/`9:16`. Left `normalizeVideoAspectRatio()` and its job-resume call sites (which read `job.aspectRatio ?? '16:9'` for already-persisted jobs) unchanged — those are a safe fallback for resuming legacy/in-flight jobs, not a fresh-request validation path. Tests: 3 new parameterized cases in `gateway.test.ts` (`1:1`, `3:4`, `4:3`) — each asserts the callable rejects with `code: 'invalid-argument'` naming the actual ratio in the message, and that no job document is ever written (`mockSet` not called). Confirmed all 16 pre-existing tests in this suite still pass unchanged (none submit an unsupported ratio expecting success). Typecheck clean (firebase package has its own `tsc --noEmit`, not covered by the root `npm run typecheck`), lint clean (only pre-existing unrelated warnings).
 
 ### ISSUE-871: Image “Lite” engine routes to the legacy 2.5 image model
 
