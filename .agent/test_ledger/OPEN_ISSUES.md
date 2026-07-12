@@ -15038,13 +15038,14 @@ Naming fix: `LabelDealRecoupmentService.ts` collection literal `'labelDeals'` �
 
 ### ISSUE-1024: DAW project-file DSP compliance check uses hardcoded fake loudness/true-peak constants regardless of the actual audio
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-12)
 - **Severity:** 🔴 CRITICAL (false master-compliance decisions, same class as ISSUE-997 but with no content-dependence at all)
 - **Module:** Audio Analyzer / DAW project import / Distribution QC
 - **Evidence:** `DAWIntegrationService.verifyDSPCompliance()` (`DAWIntegrationService.ts:784-796`) parses `sampleRate`/`bitDepth` from the actual DAW project file, but hardcodes `const integratedLufs = -15.0;` and `const truePeakDb = -1.0;` with the comment "We use mock/standard defaults for loudness/true-peak since DAW project files do not have audio streams" — then passes these fake constants into `DSPComplianceValidator.validateAudio()`, which returns a compliance report as if they were measured. Discovered while fixing ISSUE-997 (the related browser-analyzer heuristic issue).
 - **Impact:** Every DAW project file (Ableton `.als`, Logic `.logicx`, FL Studio `.flp`, etc.) run through this compliance check reports an **identical** loudness/true-peak compliance result regardless of what the actual mixed/mastered audio sounds like — the check is content-independent theater, worse than ISSUE-997's heuristic (which at least varies with the input).
 - **Fix:** Either render/bounce the project's audio (or its export stems) and measure that, or — if no audio is available at this stage — do not call `validateAudio()` with fabricated loudness/peak values at all; report loudness/true-peak as "Not available for project files" and only report the genuinely-parsed sampleRate/bitDepth checks.
 - **Acceptance:** Two DAW project fixtures with different actual mixes never receive identical LUFS/true-peak-based compliance verdicts from fabricated inputs; the UI never displays a LUFS/true-peak number for a project file that was never measured; sampleRate/bitDepth-only checks (which ARE parsed from the file) remain functional.
+- **Fix applied (2026-07-12):** Added `DSPComplianceValidator.validateFormatOnly(sampleRate, bitDepth)` — checks only the genuinely-parsed format fields against DSP platform limits, sets `measurementMethod: 'unavailable'`, and adds an explicit flag `'Loudness/true-peak compliance not evaluated: project files carry no audio stream to measure.'` instead of computing any loudness/true-peak pass/fail. `DAWIntegrationService.verifyDSPCompliance()` now calls this instead of fabricating `-15.0`/`-1.0` and feeding them into `validateAudio()`. Widened `DSPComplianceReport.measurementMethod` to `'estimated' | 'unavailable'` so callers/UI can distinguish a heuristic estimate (ISSUE-997) from no measurement at all. `verifyDSPCompliance()` has zero external callers today (confirmed via repo-wide grep) — fixed anyway per platinum standards since it's reachable ledger-cited logic, not deleted per the asset-pruning caution. Tests: new `DSPComplianceValidator.test.ts` cases prove `validateFormatOnly()` never emits a LUFS/dBTP-referencing warning and still fails sub-standard sample rate/bit depth; `DAWIntegrationService.test.ts`'s existing `verifyDSPCompliance` spec (nested inside a pre-existing, unrelated `describe.skip('DAWIntegrationService', ...)` block from `b99097bc5` "skip integration tests in CI/test environments" — out of scope to un-skip here) got a third case asserting the same no-fabricated-verdict behavior for documentation parity, though it doesn't execute in CI; the executable coverage lives in `DSPComplianceValidator.test.ts`. Full `packages/renderer/src/services/audio/` suite green (19 passed, 1 file intentionally skipped), typecheck/lint clean.
 
 ### ISSUE-1025: Mobile Controller impersonates desktop presence, falsely reports “Studio Connected,” and can steal its own Boardroom commands
 
@@ -15073,3 +15074,18 @@ Naming fix: `LabelDealRecoupmentService.ts` collection literal `'labelDeals'` �
   3. Add same-UID Firestore emulator test: open Controller tab, verify `pushDesktopState` not called; verify Controller UI says offline; send command, verify it routes to cloud worker. Then open real Studio, verify one fresh lease and one successful command route.
   4. Verify no production code regresses after the rule changes (search for any other code writing these fields).
   5. **Production risk reduced by:** (a) Desktop app's `isStudioExecutor` flag + `enabled` parameter prevents Controller routes from mounting the relay hook; (b) `isFreshStudioState()` requires `role === 'studio'` AND `studioInstanceId` AND `listenerReady === true`; (c) Cloud Function ignores `executionTarget: 'studio'` commands (skips processing, leaves pending for desktop). Multi-layer defense until Firestore rules can enforce it server-side.
+
+---
+
+### ISSUE-1043: GitHub Release Missing Updater Manifest Files
+
+- **Status:** 🔴 OPEN (blocks Founders Version One installation)
+- **Severity:** 🔴 CRITICAL (installers cannot check for updates)
+- **Error Message:** "Founders Version One cannot be installed yet because the latest GitHub release is missing its updater manifest. Publish a repaired release with latest-mac.yml, latest.yml, and latest-linux.yml, then check again."
+- **Root Cause:** Last GitHub release was published manually or by workflow failure — missing `latest-mac.yml`, `latest.yml`, `latest-linux.yml` in release assets
+- **Location:** GitHub repo releases tab; `.github/workflows/release.yml` verification gate (lines 184-217)
+- **Fix:**
+  1. Rebuild desktop installers locally: `npm run build:studio && npx electron-builder --publish never`
+  2. Upload manifest files to existing GitHub release: `gh release upload vX.X.X dist-electron/latest-*.yml --clobber`
+  3. Or: delete existing release tag, push new tag to trigger full `release.yml` workflow (recommended for consistency)
+- **Verification:** After fix, installer updater should recognize release and allow installation; no "missing manifest" error
