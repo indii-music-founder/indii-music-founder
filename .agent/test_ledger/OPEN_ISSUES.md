@@ -12324,13 +12324,14 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-773: Omni storyboard says scenes are synced, but no storyboard data reaches generation
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIALLY FIXED (2026-07-12) — took the "until supported, rename + remove Synced" fallback rather than building the real storyboard-to-generation pipeline
 - **Severity:** 🔴 HIGH (misleading primary feature)
 - **Module:** Creative Suite / Omni
 - **Evidence:** `OmniWorkflow.tsx:270-276,494-522,741-793` creates and displays timestamped frames as `Scenes Synced`; `handleStartRemix` payload at `:387-408` contains no storyboard/frame field. `GenerateOmniRemixSchema` has no storyboard contract.
 - **Impact:** Users spend time building a sequence that has zero effect on the generated remix.
 - **Fix:** Add a shared typed scene contract (timestamp, prompt, optional frame URI), validate timestamps against source duration, include it in the callable, and compile it into the actual Omni edit request. Until supported, rename the panel to a local planning board and remove “Synced.”
 - **Acceptance:** A two-scene test proves both timestamped directives reach the backend and alter the submitted generation request.
+- **Fix applied (2026-07-12):** Building the real end-to-end pipeline (shared scene contract, timestamp validation against source duration, and — critically — actually compiling per-scene directives into the Omni Interactions request) requires knowing whether the underlying Gemini Omni Flash API can even consume frame-level scene directives in a single edit call; there's no evidence in this codebase that it can, and guessing at a wire format server-side would be worse than the current honest-but-limited state. Took the fallback instead: `OmniWorkflow.tsx`'s bottom panel header changed from "Storyboard Sequences (Flow Builder)" to "Local Planning Board (not sent to generation)", and the count badge from "{n} Scenes Synced" to "{n} Scenes Planned" — no code claims synchronization that doesn't exist. Confirmed via code read that `storyboard` state is never referenced anywhere near the `handleStartRemix` payload construction. Test: extended `OmniWorkflow.test.tsx` (1 new case) — builds a one-scene sequence through the real Add-Frame modal flow, asserts the honest "1 Scenes Planned" label (and that "Scenes Synced" never appears), then runs the full remix flow and asserts the payload sent to the callable has no `storyboard`/`frames`/`scenes` key. Full creative/video suite (104 tests) green, typecheck/lint clean. **Not done:** the real fix (a working storyboard-to-generation contract) — this remains open as a genuine feature gap, now at least honestly labeled instead of falsely claiming sync.
 
 ### ISSUE-774: Retired “Omni + Veo 3.1 Hybrid” mode remains selectable but never runs a Veo stage
 
