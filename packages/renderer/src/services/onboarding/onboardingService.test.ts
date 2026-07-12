@@ -234,6 +234,68 @@ describe('onboardingService', () => {
             expect(updates).toContain('Brand Asset');
         });
 
+        it('ISSUE-956: preserves the real image MIME type instead of hardcoding image/png', () => {
+            const files: ConversationFile[] = [{
+                id: '1',
+                type: 'image',
+                file: { name: 'photo.jpg', type: 'image/jpeg', size: 1024 } as File,
+                preview: 'data:image...',
+                base64: 'base64data'
+            }];
+
+            const calls = [{
+                name: OnboardingTools.AddImageAsset,
+                args: { file_name: 'photo.jpg', asset_type: 'brand_asset', description: 'Headshot' }
+            }];
+
+            const { updatedProfile } = processFunctionCalls(calls, baseProfile, files);
+            expect(updatedProfile.brandKit!.brandAssets[0]!.url).toBe('data:image/jpeg;base64,base64data');
+        });
+
+        it('ISSUE-956: rejects an oversized image instead of embedding it in the profile', () => {
+            const files: ConversationFile[] = [{
+                id: '1',
+                type: 'image',
+                file: { name: 'huge.png', type: 'image/png', size: 6 * 1024 * 1024 } as File,
+                preview: 'data:image...',
+                base64: 'base64data'
+            }];
+
+            const calls = [{
+                name: OnboardingTools.AddImageAsset,
+                args: { file_name: 'huge.png', asset_type: 'brand_asset', description: 'Too big' }
+            }];
+
+            const { updatedProfile, updates, warnings } = processFunctionCalls(calls, baseProfile, files);
+            expect(updatedProfile.brandKit!.brandAssets).toHaveLength(0);
+            expect(updates).not.toContain('Brand Asset');
+            expect(warnings.some(w => w.includes('huge.png'))).toBe(true);
+        });
+
+        it('ISSUE-956: rejects a new image once the profile already holds the max brand images', () => {
+            const manyAssets = Array.from({ length: 20 }, (_, i) => ({ url: `data:image/png;base64,x${i}`, description: `asset ${i}` }));
+            const profileAtLimit: UserProfile = {
+                ...baseProfile,
+                brandKit: { ...baseProfile.brandKit!, brandAssets: manyAssets, referenceImages: [] }
+            };
+            const files: ConversationFile[] = [{
+                id: '1',
+                type: 'image',
+                file: { name: 'one-more.png', type: 'image/png', size: 1024 } as File,
+                preview: 'data:image...',
+                base64: 'base64data'
+            }];
+
+            const calls = [{
+                name: OnboardingTools.AddImageAsset,
+                args: { file_name: 'one-more.png', asset_type: 'brand_asset', description: 'One more' }
+            }];
+
+            const { updatedProfile, warnings } = processFunctionCalls(calls, profileAtLimit, files);
+            expect(updatedProfile.brandKit!.brandAssets).toHaveLength(20);
+            expect(warnings.some(w => w.includes('maximum'))).toBe(true);
+        });
+
         it('should finish onboarding', () => {
             const calls = [{
                 name: OnboardingTools.FinishOnboarding,

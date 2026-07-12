@@ -461,8 +461,27 @@ export function processFunctionCalls(
                 const args = call.args as unknown as AddImageAssetArgs;
                 const file = files.find(f => f.file.name === args.file_name);
                 if (file && file.base64) {
+                    const existingCount = (updatedProfile.brandKit?.brandAssets?.length || 0)
+                        + (updatedProfile.brandKit?.referenceImages?.length || 0);
+
+                    if (file.file.size > MAX_BRAND_ASSET_BYTES) {
+                        const warning = `"${args.file_name}" is ${(file.file.size / 1024 / 1024).toFixed(1)}MB, over the ${MAX_BRAND_ASSET_BYTES / 1024 / 1024}MB limit for brand images and was not added.`;
+                        logger.warn(`[onboardingService] ${warning}`);
+                        warnings.push(warning);
+                        break;
+                    }
+                    if (existingCount >= MAX_BRAND_ASSETS_PER_PROFILE) {
+                        const warning = `"${args.file_name}" was not added — this profile already has the maximum of ${MAX_BRAND_ASSETS_PER_PROFILE} brand images.`;
+                        logger.warn(`[onboardingService] ${warning}`);
+                        warnings.push(warning);
+                        break;
+                    }
+
+                    // ISSUE-956: previously hardcoded `data:image/png;base64,...`
+                    // regardless of the file's real type, mislabeling every
+                    // JPEG/WebP/GIF upload as PNG.
                     const newAsset: BrandAsset = {
-                        url: `data:image/png;base64,${file.base64}`,
+                        url: `data:${inferImageMimeType(file.file)};base64,${file.base64}`,
                         description: args.description,
                         category: args.category,
                         tags: args.tags,
@@ -518,7 +537,7 @@ export function processFunctionCalls(
         }
     });
 
-    return { updatedProfile, isFinished, updates };
+    return { updatedProfile, isFinished, updates, warnings };
 }
 
 
