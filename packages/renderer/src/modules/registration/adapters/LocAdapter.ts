@@ -104,12 +104,13 @@ export const LocAdapter: OrgAdapter = {
       );
 
       const confirmationNumber = getConfirmedAutomationResult(result, 'Library of Congress');
-      await persistOrgRecord(userId, track.id, 'loc', data, confirmationNumber);
+      const persisted = await persistOrgRecord(userId, track.id, 'loc', data, confirmationNumber);
 
       return {
         success: true,
         confirmationNumber,
         submittedAt: new Date(),
+        localRecordFailed: !persisted,
       };
     } catch (err: unknown) {
       const isWebSession = typeof window !== 'undefined' && !window.electronAPI;

@@ -24,6 +24,10 @@ const STATUS_CONFIG: Record<RegistrationStatus, {
   submitted: { icon: Clock, label: 'Submitted', color: 'text-blue-400', dot: 'bg-blue-400' },
   confirmed: { icon: CheckCircle2, label: 'Confirmed', color: 'text-green-400', dot: 'bg-green-400' },
   error: { icon: AlertCircle, label: 'Error', color: 'text-red-400', dot: 'bg-red-400' },
+  // ISSUE-970: filed externally (real confirmation), but no durable local
+  // record yet — visually distinct from both 'submitted' and 'error' so it
+  // can never be mistaken for a clean success.
+  submitted_local_record_failed: { icon: AlertCircle, label: 'Filed — not saved locally', color: 'text-amber-400', dot: 'bg-amber-400' },
 };
 
 
@@ -69,10 +73,13 @@ export function OrgStatusCard({ adapter, status, confirmationNumber, isSelected,
         </div>
       </div>
 
-      {/* Confirmation number if confirmed */}
-      {status === 'confirmed' && confirmationNumber && (
+      {/* Confirmation number if confirmed, or if filed but not durably saved (ISSUE-970) */}
+      {(status === 'confirmed' || status === 'submitted_local_record_failed') && confirmationNumber && (
         <div className="mt-2 pt-2 border-t border-white/[0.04] text-[11px] text-gray-500">
           Confirmation: <span className="text-gray-300 font-mono">{confirmationNumber}</span>
+          {status === 'submitted_local_record_failed' && (
+            <span className="block text-amber-400/90 mt-0.5">Open this filing to retry saving locally.</span>
+          )}
         </div>
       )}
 
