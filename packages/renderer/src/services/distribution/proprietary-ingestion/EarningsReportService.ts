@@ -118,33 +118,11 @@ export class EarningsReportService {
             royalties.push(calc);
         }
 
-        // indii Phase 4: Persist processed earnings to Firestore
-        const { earningsService } = await import('@/services/distribution/EarningsService');
-
-        // Find distributorId from mapping
-        const distributorId = (distributorKey || 'unknown') as DistributorId;
-
-        // Group royalties by release to create DistributorEarnings records
-        for (const calc of royalties) {
-            await earningsService.recordEarnings({
-                distributorId,
-                releaseId: calc.releaseId,
-                period: {
-                    startDate: calc.period.startDate,
-                    endDate: calc.period.endDate || new Date().toISOString()
-                },
-                streams: calc.totalStreams,
-                downloads: calc.totalDownloads,
-                grossRevenue: calc.grossRevenue,
-                distributorFee: calc.distributorFees,
-                netRevenue: calc.netRevenue,
-                platformFee: calc.platformFees,
-                currencyCode: calc.currencyCode,
-                matchedReleases: 1, // Individual record per release
-                unmatchedISRCs: []
-            });
-        }
-
+        // ISSUE-967 fix: this is now a pure calculation with no Firestore I/O.
+        // Persisting earnings + the batch receipt atomically is the caller's
+        // job (EarningsUploadService.processAndSaveReport) — writing here, one
+        // release at a time with no transaction, was how a mid-loop failure
+        // left some releases committed and others not, with no way to tell.
         return {
             batchId: `BATCH-${Date.now()}`,
             reportId: report.reportId,

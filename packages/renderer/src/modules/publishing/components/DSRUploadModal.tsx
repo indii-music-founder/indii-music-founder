@@ -56,12 +56,18 @@ export const DSRUploadModal: React.FC<DSRUploadModalProps> = ({ isOpen, onClose,
         if (!parsedReport) return;
 
         setIsParsing(true);
+        setError(null);
         try {
+            // onProcess must reject on failure (ISSUE-966) — this is the single
+            // terminal-messaging boundary: close + parent's own success toast only
+            // fire if that promise actually resolves. On failure, the parsed
+            // preview and file stay intact for retry, and the error is shown here.
             await onProcess(parsedReport);
-            toast.success('Royalty data integrated into dashboard');
             onClose();
         } catch (err: unknown) {
-            setError(err instanceof Error ? err.message : 'Failed to process report data.');
+            const message = err instanceof Error ? err.message : 'Failed to process report data.';
+            setError(message);
+            toast.error(message);
         } finally {
             setIsParsing(false);
         }
@@ -178,6 +184,17 @@ export const DSRUploadModal: React.FC<DSRUploadModalProps> = ({ isOpen, onClose,
                                         </table>
                                     </div>
                                 </div>
+
+                                {error && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex gap-3"
+                                    >
+                                        <AlertCircle className="text-red-500 shrink-0" size={20} />
+                                        <p className="text-sm text-red-200/80 leading-relaxed">{error}</p>
+                                    </motion.div>
+                                )}
                             </motion.div>
                         )}
                     </div>
