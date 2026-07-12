@@ -2,6 +2,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { PublicistTools } from '../PublicistTools';
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
+import { addDoc } from 'firebase/firestore';
 // Mock Firebase AI
 vi.mock('@/services/intelligence/FirebaseIntelligenceService', () => {
     const mockFirebaseAI = {
@@ -39,7 +40,11 @@ describe('PublicistTools', () => {
         const result = await PublicistTools.write_press_release({ topic: 'New Album' });
 
         expect(result.success).toBe(true);
-        expect(result.data).toEqual(mockResponse); // result.data is the ToolFunctionResult.data
+        // ISSUE-838: the tool now reports real saved/docId state instead of
+        // an unconditional "saved" claim — the shared test setup's Firebase
+        // mock has a signed-in user and a resolving addDoc, so this is the
+        // real-write-succeeded path.
+        expect(result.data).toEqual({ ...mockResponse, saved: true, docId: 'mock-doc-id' });
         expect(AutonomousIntelligence.generateStructuredData).toHaveBeenCalled();
     });
 
@@ -57,7 +62,7 @@ describe('PublicistTools', () => {
         const result = await PublicistTools.draft_pitch_email({ playlistName: 'RapCaviar', genre: 'Hip Hop', trackTitle: 'Hot Track' });
 
         expect(result.success).toBe(true);
-        expect(result.data).toEqual(mockResponse);
+        expect(result.data).toEqual({ ...mockResponse, saved: true, docId: 'mock-doc-id' });
     });
 
     it('generate_crisis_response returns valid schema', async () => {
@@ -73,7 +78,7 @@ describe('PublicistTools', () => {
         const result = await PublicistTools.generate_crisis_response({ situation: 'Leak' });
 
         expect(result.success).toBe(true);
-        expect(result.data).toEqual(mockResponse);
+        expect(result.data).toEqual({ ...mockResponse, saved: true, docId: 'mock-doc-id' });
     });
 
     it('pitch_story returns valid schema', async () => {
@@ -90,7 +95,63 @@ describe('PublicistTools', () => {
         const result = await PublicistTools.pitch_story({ story_summary: 'We cool', recipient_type: 'blog' });
 
         expect(result.success).toBe(true);
-        expect(result.data).toEqual(mockResponse);
+        expect(result.data).toEqual({ ...mockResponse, saved: true, docId: 'mock-doc-id' });
+    });
+
+    /**
+     * ISSUE-838: these tools used to claim "saved"/"created and saved" even
+     * when no user was signed in or the Firestore write failed. These prove
+     * the response now honestly reports saved: false with the real reason.
+     */
+    it('write_press_release reports saved: false when no user is signed in', async () => {
+        const { auth } = await import('@/services/firebase');
+        const originalUser = auth.currentUser;
+        (auth as { currentUser: unknown }).currentUser = null;
+
+        const mockResponse = {
+            headline: 'New Release',
+            dateline: 'NEW YORK, Jan 2026',
+            introduction: 'Intro',
+            body_paragraphs: ['Para 1'],
+            quotes: [{ speaker: 'Artist', text: 'Stoked' }],
+            boilerplate: 'About us',
+            contact_info: { name: 'PR', email: 'pr@example.com' },
+            pdf: null
+        };
+        vi.mocked(AutonomousIntelligence.generateStructuredData).mockResolvedValue(mockResponse as unknown as Awaited<ReturnType<typeof AutonomousIntelligence.generateStructuredData>>);
+
+        try {
+            const result = await PublicistTools.write_press_release({ topic: 'New Album' });
+
+            expect(result.success).toBe(true);
+            expect(result.data.saved).toBe(false);
+            expect(result.data.docId).toBeUndefined();
+            expect(result.message).toContain('NOT saved');
+            expect(result.message).toContain('No user is signed in');
+        } finally {
+            (auth as { currentUser: unknown }).currentUser = originalUser;
+        }
+    });
+
+    it('pitch_story reports saved: false with the real error when the Firestore write fails', async () => {
+        vi.mocked(addDoc).mockRejectedValueOnce(new Error('Firestore unavailable'));
+        const mockResponse = {
+            subject_line: 'Pitch',
+            hook: 'Hook',
+            body: 'Body',
+            call_to_action: 'CTA',
+            angle: 'Angle',
+            target_outlets: ['Outlet 1']
+        };
+        vi.mocked(AutonomousIntelligence.generateStructuredData).mockResolvedValue(mockResponse as unknown as Awaited<ReturnType<typeof AutonomousIntelligence.generateStructuredData>>);
+
+        const result = await PublicistTools.pitch_story({ story_summary: 'We cool', recipient_type: 'blog' });
+
+        expect(result.success).toBe(true);
+        expect(result.data.saved).toBe(false);
+        expect(result.data.docId).toBeUndefined();
+        expect(result.message).toContain('NOT saved');
+        expect(result.message).toContain('Firestore unavailable');
     });
 
     it('handles Autonomous failure gracefully', async () => {
