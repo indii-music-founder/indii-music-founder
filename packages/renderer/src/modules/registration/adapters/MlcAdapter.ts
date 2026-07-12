@@ -67,9 +67,9 @@ export const MlcAdapter: OrgAdapter = {
         'https://portal.themlc.com'
       );
       const confirmationNumber = getConfirmedAutomationResult(result, 'MLC');
-      await persistOrgRecord(userId, track.id, 'mlc', data, confirmationNumber);
+      const persisted = await persistOrgRecord(userId, track.id, 'mlc', data, confirmationNumber);
 
-      return { success: true, confirmationNumber, submittedAt: new Date() };
+      return { success: true, confirmationNumber, submittedAt: new Date(), localRecordFailed: !persisted };
     } catch (err: unknown) {
       const isWebSession = typeof window !== 'undefined' && !window.electronAPI;
       logger.warn('[MlcAdapter] Submission failed:', err);

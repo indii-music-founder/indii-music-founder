@@ -176,7 +176,9 @@ export default function RegistrationCenter() {
     if (!trackId) return;
     const record: OrgRegistrationRecord = {
       orgId,
-      status: result.success ? 'submitted' : result.requiresManualStep ? 'in_progress' : 'error',
+      status: result.success
+        ? (result.localRecordFailed ? 'submitted_local_record_failed' : 'submitted')
+        : result.requiresManualStep ? 'in_progress' : 'error',
       submittedAt: result.submittedAt,
       confirmationNumber: result.confirmationNumber,
       errorMessage: result.errorMessage,

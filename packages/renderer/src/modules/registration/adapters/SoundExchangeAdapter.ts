@@ -65,7 +65,7 @@ export const SoundExchangeAdapter: OrgAdapter = {
 
       const result = await enrollWithSoundExchange(userId, metadata as Parameters<typeof enrollWithSoundExchange>[1]);
 
-      await persistOrgRecord(userId, track.id, 'soundexchange', data, result.enrollmentId);
+      const persisted = await persistOrgRecord(userId, track.id, 'soundexchange', data, result.enrollmentId);
 
       if (!result.success) {
         return {
@@ -78,7 +78,7 @@ export const SoundExchangeAdapter: OrgAdapter = {
         };
       }
 
-      return { success: true, confirmationNumber: result.enrollmentId, submittedAt: new Date() };
+      return { success: true, confirmationNumber: result.enrollmentId, submittedAt: new Date(), localRecordFailed: !persisted };
     } catch (err: unknown) {
       logger.error('[SoundExchangeAdapter] Enrollment failed:', err);
       await persistOrgRecord(userId, track.id, 'soundexchange', data, undefined);
