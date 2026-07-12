@@ -58,29 +58,35 @@ export default function CreateProductModal({ onClose, onProductCreated }: Create
 
         setIsLoading(true);
         try {
-            // For stem packs: upload files first, then create the product doc
+            // For stem packs: upload files first, then create the product doc.
+            // ISSUE-975: only non-secret preview info (label, filename) goes into
+            // the public product doc's metadata — storage paths live exclusively
+            // in the private, write-only marketplace_stem_manifests collection,
+            // saved right after the product doc exists (needs its real ID).
             let stemMetadata: Record<string, unknown> = {};
+            let manifestEntries: Awaited<ReturnType<typeof MarketplaceService.uploadStemFiles>> = [];
+            let draftId = '';
             if (isStemPack) {
-                const draftId = `draft_${Date.now()}`;
+                draftId = `draft_${Date.now()}`;
                 const uploadPayload = STEM_SLOTS.map(s => ({
                     label: s.label,
                     file: stemFiles[s.label]!,
                 }));
 
                 toast.info('Uploading stems…');
-                const uploaded = await MarketplaceService.uploadStemFiles(
+                manifestEntries = await MarketplaceService.uploadStemFiles(
                     currentUser.id,
                     draftId,
                     uploadPayload
                 );
                 stemMetadata = {
-                    stemFiles: uploaded,
-                    stemCount: uploaded.length,
+                    stemFiles: manifestEntries.map(({ label, filename }) => ({ label, filename })),
+                    stemCount: manifestEntries.length,
                     draftId,
                 };
             }
 
-            await MarketplaceService.createProduct({
+            const productId = await MarketplaceService.createProduct({
                 sellerId: currentUser.id,
                 title,
                 description,
@@ -90,6 +96,10 @@ export default function CreateProductModal({ onClose, onProductCreated }: Create
                 images: [],
                 metadata: stemMetadata,
             });
+
+            if (isStemPack) {
+                await MarketplaceService.saveStemManifest(productId, currentUser.id, manifestEntries);
+            }
 
             toast.success('Product listed!');
             onProductCreated();
