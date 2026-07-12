@@ -19,6 +19,33 @@ import type { ConversationFile } from '@/modules/workflow/types';
 import { v4 as uuidv4 } from 'uuid';
 import { validateOptions, isSemanticallySimilar, OPENING_GREETINGS } from '../onboardingUtils';
 import { secureRandomPick } from '@/utils/crypto-random';
+import { logger } from '@/utils/logger';
+
+/**
+ * ISSUE-955: Brand Interview audio attachments are sent to Gemini as
+ * inlineData (base64), same as images. Capped well under Gemini's
+ * inlineData limit — this is a short reference clip in a chat attachment,
+ * not a full master (see AudioIntelligenceService's larger cap for that
+ * separate, dedicated analysis flow).
+ */
+const MAX_ONBOARDING_AUDIO_BYTES = 15 * 1024 * 1024;
+
+function fileToBase64(file: File): Promise<string> {
+    return new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            const dataUrl = reader.result as string;
+            const base64 = dataUrl.split(',')[1];
+            if (!base64) {
+                reject(new Error('FileReader produced an empty base64 payload'));
+                return;
+            }
+            resolve(base64);
+        };
+        reader.onerror = () => reject(new Error('FileReader failed to read file'));
+        reader.readAsDataURL(file);
+    });
+}
 
 export interface HistoryItem {
     role: string;
@@ -127,14 +154,14 @@ export function useOnboarding(options: UseOnboardingOptions = {}) {
         const filesArray = Array.from(fileList);
         if (filesArray.length === 0) return;
 
-        const filePromises = filesArray.map(file => {
-            return new Promise<ConversationFile>((resolve) => {
-                const isImage = file.type.startsWith('image/');
-                const isAudio = file.type.startsWith('audio/') || ['.mp3', '.wav', '.flac', '.aiff', '.m4a', '.ogg', '.aac'].some(ext => file.name.toLowerCase().endsWith(ext));
-                const isText = file.type === 'text/plain' || file.type === 'application/json' || file.type === 'text/markdown';
-                const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+        const filePromises = filesArray.map(async (file): Promise<ConversationFile> => {
+            const isImage = file.type.startsWith('image/');
+            const isAudio = file.type.startsWith('audio/') || ['.mp3', '.wav', '.flac', '.aiff', '.m4a', '.ogg', '.aac'].some(ext => file.name.toLowerCase().endsWith(ext));
+            const isText = file.type === 'text/plain' || file.type === 'application/json' || file.type === 'text/markdown';
+            const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
 
-                if (isImage) {
+            if (isImage) {
+                return new Promise<ConversationFile>((resolve) => {
                     const reader = new FileReader();
                     reader.onload = (e) => {
                         resolve({
@@ -146,43 +173,87 @@ export function useOnboarding(options: UseOnboardingOptions = {}) {
                         });
                     };
                     reader.readAsDataURL(file);
-                } else if (isAudio) {
-                    resolve({
+                });
+            }
+
+            if (isAudio) {
+                // ISSUE-955: previously stored only a metadata string —
+                // the model could never hear the audio. Attach the real
+                // bytes (bounded) so onboardingService can send them to
+                // Gemini as inlineData, same as images.
+                if (file.size > MAX_ONBOARDING_AUDIO_BYTES) {
+                    return {
                         id: uuidv4(),
                         file,
                         preview: '',
                         type: 'audio',
-                        content: `[Audio File: ${file.name}, Size: ${(file.size / 1024 / 1024).toFixed(2)}MB, Type: ${file.type}]`
-                    });
-                } else if (isPdf) {
-                    resolve({
+                        content: `[Audio File: ${file.name} is ${(file.size / 1024 / 1024).toFixed(1)}MB, over the ${MAX_ONBOARDING_AUDIO_BYTES / 1024 / 1024}MB limit — not attached for analysis.]`
+                    };
+                }
+                try {
+                    const base64 = await fileToBase64(file);
+                    return {
                         id: uuidv4(),
                         file,
                         preview: '',
-                        type: 'document',
-                        content: `[PDF Document: ${file.name}, Size: ${(file.size / 1024 / 1024).toFixed(2)}MB]`
-                    });
-                } else if (isText) {
-                    file.text().then(text => {
-                        resolve({
+                        type: 'audio',
+                        base64
+                    };
+                } catch (error: unknown) {
+                    logger.error('Failed to read audio file for onboarding attachment', error);
+                    return {
+                        id: uuidv4(),
+                        file,
+                        preview: '',
+                        type: 'audio',
+                        content: `[Audio File: ${file.name} could not be read — it may be corrupt.]`
+                    };
+                }
+            }
+
+            if (isPdf) {
+                // ISSUE-955: previously stored only a "[PDF Document: name,
+                // Size: ...]" placeholder as if it were the document's
+                // content. Extract the real text via the existing
+                // PDFService (pdfjs-dist) instead.
+                try {
+                    const { PDFService } = await import('@/services/utils/PDFService');
+                    const text = await PDFService.extractText(file);
+                    if (!text.trim()) {
+                        return {
                             id: uuidv4(),
                             file,
                             preview: '',
                             type: 'document',
-                            content: text
-                        });
-                    });
-                } else {
-                    // Fallback — treat unknown types as generic documents
-                    resolve({
+                            content: `[PDF Document: ${file.name} — no extractable text found. It may be a scanned/image-only PDF.]`
+                        };
+                    }
+                    return { id: uuidv4(), file, preview: '', type: 'document', content: text };
+                } catch (error: unknown) {
+                    logger.error('Failed to extract PDF text for onboarding attachment', error);
+                    return {
                         id: uuidv4(),
                         file,
                         preview: '',
                         type: 'document',
-                        content: `[File: ${file.name}, Size: ${(file.size / 1024 / 1024).toFixed(2)}MB, Type: ${file.type || 'unknown'}]`
-                    });
+                        content: `[PDF Document: ${file.name} could not be read — it may be encrypted or corrupt.]`
+                    };
                 }
-            });
+            }
+
+            if (isText) {
+                const text = await file.text();
+                return { id: uuidv4(), file, preview: '', type: 'document', content: text };
+            }
+
+            // Fallback — treat unknown types as generic documents
+            return {
+                id: uuidv4(),
+                file,
+                preview: '',
+                type: 'document',
+                content: `[File: ${file.name}, Size: ${(file.size / 1024 / 1024).toFixed(2)}MB, Type: ${file.type || 'unknown'}]`
+            };
         });
 
         const newFiles = await Promise.all(filePromises);
