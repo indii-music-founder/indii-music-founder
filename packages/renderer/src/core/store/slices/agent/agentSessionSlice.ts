@@ -60,6 +60,7 @@ export interface AgentSessionSlice {
     lastDirectSessionId: string | null;
     sessionsPaginationLoading: boolean;
     hasMoreSessions: boolean;
+    sessionsPaginationCursor?: number; // Timestamp cursor for paginated queries
 
     // Session Actions
     createSession: (title?: string, initialAgents?: string[], namespace?: string, projectId?: string) => string;
@@ -98,6 +99,7 @@ export function buildAgentSessionState(
         lastDirectSessionId: null,
         sessionsPaginationLoading: false,
         hasMoreSessions: true,
+        sessionsPaginationCursor: undefined,
 
         createSession: (title = 'New Conversation', initialAgents?: string[], namespace?: string, projectId?: string) => {
             const state = get() as any;
@@ -514,20 +516,22 @@ export function buildAgentSessionState(
         loadMoreSessions: async () => {
             const state = get() as any;
             if (state.sessionsPaginationLoading || !state.hasMoreSessions) return;
-            
+
             set({ sessionsPaginationLoading: true });
             try {
                 const { sessionService } = await import('@/services/agent/SessionService');
-                const lastSessionId = Object.keys(state.sessions).pop();
-                const lastSession = lastSessionId ? state.sessions[lastSessionId] : null;
-                
-                const moreSessions = await sessionService.getSessionsForUserPaginated(lastSession?.id);
-                if (moreSessions.length < 50) {
-                    set({ hasMoreSessions: false });
-                }
-                
+                const { sessions: moreSessions, nextCursor } = await sessionService.getSessionsForUserPaginated(
+                    state.sessionsPaginationCursor,
+                    50
+                );
+
+                // Determine if there are more sessions to load
+                const hasMore = !!nextCursor;
+
                 set(st => ({
                     sessions: { ...st.sessions, ...Object.fromEntries(moreSessions.map(s => [s.id, s])) },
+                    sessionsPaginationCursor: nextCursor,
+                    hasMoreSessions: hasMore,
                     sessionsPaginationLoading: false
                 }));
             } catch (err: unknown) {
