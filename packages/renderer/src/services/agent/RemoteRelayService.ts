@@ -387,12 +387,20 @@ class RemoteRelayService {
 
     /**
      * Dispatch a generic task to the desktop executor (Mobile side).
+     *
+     * ISSUE-982: callers (QuickCaptureView) treat a resolved promise as success
+     * and clear the user's only local copy of the note/media. Silently
+     * returning null on missing auth let that happen invisibly. Auth failure
+     * must throw so it lands in the caller's existing try/catch instead.
      */
-    async dispatchTask(task: Omit<AgentDispatchTask, 'id' | 'status' | 'createdAt'>): Promise<string | null> {
+    async dispatchTask(task: Omit<AgentDispatchTask, 'id' | 'status' | 'createdAt'>): Promise<string> {
+        if (isFirebaseE2EMockEnabled()) {
+            return `e2e-dispatch-${Date.now()}`;
+        }
+
         const ref = getDispatchQueueRef();
         if (!ref) {
-            logger.warn('[RemoteRelay] No auth — cannot dispatch task');
-            return null;
+            throw new Error('Not authenticated — cannot dispatch task');
         }
 
         const dispatchDoc: AgentDispatchTask = {
