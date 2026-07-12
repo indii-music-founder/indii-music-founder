@@ -14593,13 +14593,14 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-991: Generation monitor displays fabricated “Allocating GPU” and “4K Upscaling” stages
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-12)
 - **Severity:** 🟡 MEDIUM (false creative-process telemetry)
 - **Module:** Mobile Remote / Generation progress
 - **Evidence:** While any send/generation/creative-agent flag is active, the monitor animates a looping bar labeled “Allocating GPU” and “4K Upscaling” (`GenerationMonitor.tsx:254-300`). The remote image request supplies prompt, aspect ratio, count 1, and model `pro` (`useRemoteCommandListener.ts:515-537`); it receives only generic streaming/final responses and no allocation, resolution, upscaler, or stage telemetry. The same card can render for generic `isAgentProcessing && currentModule === 'creative'`, not only an image job.
 - **Impact:** Users are told expensive/specific processing stages are underway even when the job is merely queued, using a non-4K output, failing before provider invocation, or doing unrelated creative reasoning.
 - **Fix:** Render only real backend/provider stage events tied to the active request, including queued/claimed/generating/uploading/complete where supported. Otherwise use honest indeterminate copy without resolution/GPU claims.
 - **Acceptance:** A queued/offline job never shows GPU/upscale activity; non-4K and failed-before-provider fixtures never say 4K; each displayed stage is backed by a timestamped event for the same request; absent telemetry produces a neutral “Working/Waiting for desktop” state.
+- **Fix applied (2026-07-12):** `GenerationMonitor.tsx` — no stage-level telemetry (allocation, resolution, upscaler) reaches the phone from anywhere in the relay pipeline; there was never any real data behind these labels, for any job. Replaced the fabricated "Allocating GPU"/"4K Upscaling" two-column row with a single honest, indeterminate status line — "Working — no ETA available" while the phone is actively sending, "Waiting for desktop" for the generic `isAgentProcessing` case — matching the acceptance criteria's suggested neutral copy exactly. No resolution/GPU/upscaler claim appears under any state (queued, offline, non-image job, or failed-before-provider) since none was ever backed by real telemetry. Typecheck/lint clean; no dedicated test added (this is a static-copy-only change with no branching logic to exercise — the existing conditions gating this card were untouched).
 
 ### ISSUE-992: Published macOS 1.64.6 update is ad-hoc/unsigned and ShipIt rejects its missing resource seal
 
