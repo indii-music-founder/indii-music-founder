@@ -1,9 +1,12 @@
 # Handoff State
-**Updated:** 2026-07-12 12:45 EDT
+**Updated:** 2026-07-12 12:50 EDT
 **Branch:** `fix/issues-core`
 
 ## Recent Commits
 ```
+af557e6a5 fix(publishing): stop claiming an unverified ISWC is registered (ISSUE-813)
+a4c988b19 docs(architecture): boardroom persistence design + E2E suite ready
+3724132a9 chore: session checkpoint [12:45]
 438ae4e21 chore: final handoff — all 4 mandatory tasks complete
 f5c8361c3 docs(ledger): session checkpoint — 4 mandatory tasks: push✅ QA✅ backend✅ audit✅
 a5edd868d fix(publishing): stop fabricating PRO submission confirmations (ISSUE-812)
@@ -11,9 +14,6 @@ a5edd868d fix(publishing): stop fabricating PRO submission confirmations (ISSUE-
 aa0864937 fix(creative): disclose that the video Audio toggle is a prompt request, not a guarantee (ISSUE-807)
 db5018ddd chore: session checkpoint [12:33]
 c13f76ff4 chore: session checkpoint [12:32]
-078ea1357 chore: session checkpoint [14:45]
-72e7da52c fix(creative): derive real file extension for generated video/image file-nodes (ISSUE-810)
-f41361707 docs(ledger): log ISSUE-757 partial fix — frontend memory caps raised to 1000 (2026-07-12)
 ```
 
 ## Working State
