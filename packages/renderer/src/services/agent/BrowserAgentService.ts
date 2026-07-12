@@ -112,9 +112,23 @@ export class BrowserAgentService {
 
     /**
      * Check if the service is ready to run.
+     *
+     * ISSUE-972: real end-to-end desktop browser automation does not work
+     * in ANY current build, for three independent reasons: (1) `executeViaIPC`
+     * below calls `electronAPI.browserAgent(...)`, which does not exist —
+     * `packages/main/src/preload.ts` only exposes `electronAPI.agent.{
+     * navigateAndExtract, performAction, captureState}`; (2) those handlers
+     * are registered only when `!app.isPackaged` (`packages/main/src/
+     * handlers/agent.ts`), so even a corrected call would fail in a shipped
+     * desktop build; (3) `agent:perform-action` takes a CSS selector
+     * (`performAction(action, selector, text)`), not the coordinate-based
+     * `{x, y}` click/type model this Gemini Computer Use service is built
+     * around — the two automation paradigms don't line up without a real
+     * architecture change. Report unconfigured rather than implying
+     * automatic filing works today.
      */
     isConfigured(): boolean {
-        return true;
+        return false;
     }
 
     /**
@@ -572,6 +586,11 @@ Respond with a JSON object describing your next action. Use one of these types:
      * In Electron, the main process has access to Node.js Playwright.
      * The renderer sends the task configuration via IPC and receives
      * step-by-step updates via a stream or polling mechanism.
+     *
+     * ISSUE-972: currently unreachable — `executeTask` returns early via
+     * `isConfigured()` before this can run. Kept as a scaffold for the real
+     * IPC bridge described in `isConfigured()`'s doc comment; the
+     * `electronAPI.browserAgent` call below does not exist yet.
      */
     private async executeViaIPC(
         task: AgentTask,
