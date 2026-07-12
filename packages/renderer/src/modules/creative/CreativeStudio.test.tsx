@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import CreativeStudio from './CreativeStudio';
 import { useStore } from '@/core/store';
@@ -199,6 +199,87 @@ describe('CreativeStudio', () => {
 
         await waitFor(() => {
             expect(mockToastError).toHaveBeenCalledWith(expect.stringContaining('Image generation failed'));
+        });
+    });
+
+    describe('ISSUE-1007: cover-art distributor compliance', () => {
+        class MockImage {
+            onload: (() => void) | null = null;
+            onerror: (() => void) | null = null;
+            naturalWidth = 0;
+            naturalHeight = 0;
+            private _src = '';
+            set src(value: string) {
+                this._src = value;
+                const [w, h] = value.split('x').map(Number);
+                this.naturalWidth = w || 0;
+                this.naturalHeight = h || 0;
+                queueMicrotask(() => this.onload?.());
+            }
+            get src() { return this._src; }
+        }
+
+        beforeEach(() => {
+            vi.stubGlobal('Image', MockImage as unknown as typeof Image);
+        });
+
+        afterEach(() => {
+            vi.unstubAllGlobals();
+        });
+
+        it('marks a compliant cover art image as meeting distributor requirements', async () => {
+            const currentStore = (useStore as any).getState();
+            const updatedStore = {
+                ...currentStore,
+                pendingPrompt: 'cover art prompt',
+                generationMode: 'image',
+                userProfile: { id: 'u1', brandKit: {} },
+                studioControls: { ...currentStore.studioControls, isCoverArtMode: true }
+            };
+            (useStore as unknown as import("vitest").Mock).mockImplementation((selector: any) =>
+                selector ? selector(updatedStore) : updatedStore
+            );
+            (useStore as any).getState.mockReturnValue(updatedStore);
+
+            // Encodes real measured dimensions into the mock Image's fake "src" for the test.
+            mockGenerateImages.mockResolvedValue([{ id: 'img-1', url: '3000x3000', prompt: 'cover art prompt' }]);
+
+            render(<CreativeStudio />);
+
+            await waitFor(() => {
+                expect(mockAddToHistory).toHaveBeenCalledWith(expect.objectContaining({
+                    distributorCompliance: expect.objectContaining({ valid: true, measuredWidth: 3000, measuredHeight: 3000 })
+                }));
+            });
+            expect(mockToastSuccess).toHaveBeenCalledWith(expect.stringContaining('meets distributor size requirements'));
+        });
+
+        it('flags an undersized cover art image instead of declaring it compliant', async () => {
+            const currentStore = (useStore as any).getState();
+            const updatedStore = {
+                ...currentStore,
+                pendingPrompt: 'cover art prompt',
+                generationMode: 'image',
+                userProfile: { id: 'u1', brandKit: {} },
+                studioControls: { ...currentStore.studioControls, isCoverArtMode: true }
+            };
+            (useStore as unknown as import("vitest").Mock).mockImplementation((selector: any) =>
+                selector ? selector(updatedStore) : updatedStore
+            );
+            (useStore as any).getState.mockReturnValue(updatedStore);
+
+            // A 512x512 fallback-compressed preview — well under the 3000x3000 minimum.
+            mockGenerateImages.mockResolvedValue([{ id: 'img-1', url: '512x512', prompt: 'cover art prompt' }]);
+
+            render(<CreativeStudio />);
+
+            await waitFor(() => {
+                expect(mockAddToHistory).toHaveBeenCalledWith(expect.objectContaining({
+                    distributorCompliance: expect.objectContaining({ valid: false })
+                }));
+            });
+            expect(mockToastError).toHaveBeenCalledWith(expect.stringContaining('does not meet distributor requirements'));
+            expect(mockToastSuccess).not.toHaveBeenCalledWith(expect.stringContaining('meets distributor'));
         });
     });
 
