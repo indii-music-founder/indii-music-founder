@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-07-12 09:55 EDT
+**Updated:** 2026-07-12 09:56 EDT
 **Branch:** `fix/issues-core`
 
 ## Recent Commits
 ```
+72c413751 fix(audio): stop fabricating DAW project-file loudness/true-peak compliance verdicts
+a66e83ec9 chore: session checkpoint [09:55]
 905c3b4da fix(marketing): map youtube_shorts to the worker-recognized youtube platform id
 ba4184b32 chore: session checkpoint [09:47]
 7945c9667 chore: session checkpoint [09:41]
@@ -12,17 +14,10 @@ c91d027c1 chore: session checkpoint [09:36]
 5a9c7fe65 fix(remote): separate controller from studio executor
 4f0f57391 fix(creative): stop claiming Omni's storyboard sequence is "Synced" to generation
 fabc53510 docs(ledger): log ISSUE-1025 -- Mobile Controller falsely reports Studio Connected
-31665d84a fix(creative): remove Omni's dead "Hybrid Veo" mode and its 4x overcharge
-178e2fd75 test(dashboard): lock in AssetSpotlight's Discuss-attaches-the-asset fix, correct stale ledger entry
 ```
 
 ## Working State
 ```
- M .agent/test_ledger/OPEN_ISSUES.md
- M packages/renderer/src/services/audio/DAWIntegrationService.test.ts
- M packages/renderer/src/services/audio/DAWIntegrationService.ts
- M packages/renderer/src/services/audio/DSPComplianceValidator.test.ts
- M packages/renderer/src/services/audio/DSPComplianceValidator.ts
 ?? docs/USER_MANUAL_REMOTE_SETUP_AND_SYNC.md
 ```
 
