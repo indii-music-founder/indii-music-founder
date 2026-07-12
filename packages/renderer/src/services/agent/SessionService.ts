@@ -4,7 +4,7 @@ import { FirestoreService } from '../FirestoreService';
 import type { ConversationSession } from '@/core/store/slices/agent'; // Direct import to avoid circular dep risks? Or from index?
 import { OrganizationService } from '../OrganizationService';
 import { auth } from '../firebase';
-import { where, orderBy, limit, Timestamp, onSnapshot, collection, query, Unsubscribe, startAfter, getDocs, QueryConstraint } from 'firebase/firestore';
+import { where, orderBy, limit, Timestamp, onSnapshot, collection, query, Unsubscribe, startAfter, getDocs, QueryConstraint, documentId } from 'firebase/firestore';
 import { db } from '../firebase';
 import { cleanFirestoreData } from '@/services/utils/firebase';
 import { logger } from '@/utils/logger';
@@ -15,6 +15,12 @@ interface SessionDocument extends Omit<ConversationSession, 'createdAt' | 'updat
     updatedAt: Timestamp;
     userId: string;
     orgId: string;
+}
+
+/** Compound pagination cursor: (updatedAt, id) tiebreak avoids skipping same-millisecond docs. */
+export interface SessionPageCursor {
+    updatedAt: number;
+    id: string;
 }
 
 class SessionServiceImpl extends FirestoreService<SessionDocument> {
@@ -110,24 +116,27 @@ class SessionServiceImpl extends FirestoreService<SessionDocument> {
     }
 
     async getSessionsForUserPaginated(
-        cursorTimestamp?: number,
+        cursor?: SessionPageCursor,
         pageSize: number = 50
-    ): Promise<{ sessions: ConversationSession[]; nextCursor?: number }> {
+    ): Promise<{ sessions: ConversationSession[]; nextCursor?: SessionPageCursor }> {
         const orgId = OrganizationService.getCurrentOrgId() || 'personal';
         const userId = auth.currentUser?.uid;
 
         if (!userId) return { sessions: [] };
 
-        // Build constraints with cursor support
+        // Order by updatedAt with documentId() as a tiebreaker: two sessions can share the
+        // exact same millisecond updatedAt (concurrent writes), and startAfter() on a single
+        // non-unique field silently skips every doc that ties the cursor value, not just the
+        // one already returned. The compound orderBy/startAfter makes the cursor unique.
         const constraints: QueryConstraint[] = [
             where('orgId', '==', orgId),
             where('userId', '==', userId),
             orderBy('updatedAt', 'desc'),
+            orderBy(documentId(), 'desc'),
         ];
 
-        // If cursor provided, start after that timestamp
-        if (cursorTimestamp) {
-            constraints.push(startAfter(Timestamp.fromMillis(cursorTimestamp)));
+        if (cursor) {
+            constraints.push(startAfter(Timestamp.fromMillis(cursor.updatedAt), cursor.id));
         }
 
         constraints.push(limit(pageSize + 1)); // +1 to detect if more exist
@@ -148,7 +157,8 @@ class SessionServiceImpl extends FirestoreService<SessionDocument> {
         // Check if there are more docs
         const hasMore = docs.length > pageSize;
         const sessions = hasMore ? docs.slice(0, pageSize) : docs;
-        const nextCursor = hasMore ? sessions[sessions.length - 1]?.updatedAt : undefined;
+        const lastSession = sessions[sessions.length - 1];
+        const nextCursor = hasMore && lastSession ? { updatedAt: lastSession.updatedAt, id: lastSession.id } : undefined;
 
         return { sessions, nextCursor };
     }
@@ -159,7 +169,7 @@ class SessionServiceImpl extends FirestoreService<SessionDocument> {
      */
     async loadAllSessions(): Promise<ConversationSession[]> {
         const allSessions: ConversationSession[] = [];
-        let cursor: number | undefined;
+        let cursor: SessionPageCursor | undefined;
         const pageSize = 50;
 
         try {
