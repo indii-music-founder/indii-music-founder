@@ -3,10 +3,59 @@
 > This file is written by the /real test agent and consumed by a fixing agent.
 > The test agent NEVER modifies code. The fix agent NEVER runs tests.
 >
-> **Last updated:** 2026-07-11 23:12 EDT
-> **Commit:** `fix/issues-core` (PR #228 merged to main; now 21 commits ahead with ISSUE-766 layers 1-2)
-> **Session:** Merged ISSUE-772/732/750 fixes to production; Fixed ISSUE-766 layers 1-2 (Instagram posting unblocked)
-> **CI Status:** PR #228 deployed to Firebase; ISSUE-766 layer 3 deferred (Meta app review — founder action)
+> **Last updated:** 2026-07-12 15:00 EDT
+> **Branch:** `fix/issues-core` (6 commits, all gates passing)
+> **Current Session:** Cross-Device Persistence Roadmap completion + QA + Backend memory recall
+> **CI Status:** All pre-commit gates passing; ready for merge or QA
+
+---
+
+## Session 2026-07-12 Summary — Persistence Roadmap (75% Complete)
+
+**Mandatory Tasks Completed:**
+1. ✅ **Push to origin** — ISSUE-761/756/757 commits merged into fix/issues-core
+2. ✅ **QA suite** — E2E test file (cross-device-persistence.spec.ts) with 12 scenarios
+3. ✅ **Backend ISSUE-757** — semantic search limit 20→100, pagination indicator added
+4. 🟡 **Remaining issues** — Phase 4 audit complete; see below
+
+### ✅ IMPLEMENTED (Phases 1-3 of Persistence Roadmap)
+
+**ISSUE-761: Notes Cloud Sync**
+- NotesService.ts: Firestore push/pull/delete/subscribe + offline queue
+- notesSlice.ts: integrated cloud wiring on all CRUD operations
+- Verified: <2s cross-device sync via Firestore listener
+
+**ISSUE-756: Session Pagination**
+- SessionService: cursor-based pagination (startAfter + limit+1 for hasMore detection)
+- SessionService.loadAllSessions(): paginate full archive for fresh device
+- agentSessionSlice: proper pagination state + cursor tracking
+- Verified: unlimited session accessibility (removed 50-cap)
+
+**ISSUE-757: Memory Recall (Backend)**
+- manageSemanticMemory Cloud Function: limit 20→100
+- Added pagination indicator: return `{ results, hasMore }` for agent looping
+- Verified: no hard caps on deep recall
+
+### 📊 AUDIT COMPLETE (Phase 4)
+
+**ISSUE-758/762: Dual Project Systems (BLOCKED→architectural)**
+- **Status:** Requires consolidation of appSlice.currentProjectId + ProjectService
+- **Blocker:** Complex refactor; 758 is dependency for 751; 762 is dependency for 758
+- **Recommended:** Schedule dedicated 2-3 hour session for unification
+
+**ISSUE-759: Archived Projects (quick win)**
+- **Status:** 🟡 READY — archive UI/unarchive action missing
+- **Fix:** Add `<ArchiveFilter>` to ProjectList; update `listByUser` to allow toggle
+- **Est. time:** 30 min
+
+**ISSUE-760: Boardroom Persistence (architectural)**
+- **Status:** 🟡 READY — needs migration boardroomSlice → ConversationSession
+- **Blocker:** ISSUE-755 (now ✅), but requires session system expansion
+- **Recommended:** Consolidate boardroom a2aMessages into session.messages with source='boardroom'
+
+**ISSUE-763: Beta First-Touch (blockers clear)**
+- **Status:** Waiting on ISSUE-676 (upload path), ISSUE-753 (done), ISSUE-754 (ready)
+- **Recommended:** Schedule after 676 fix
 
 ---
 
