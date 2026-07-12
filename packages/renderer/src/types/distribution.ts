@@ -62,6 +62,7 @@ export interface TaxReport {
     certified: boolean;
     payout_status: 'ACTIVE' | 'HELD';
     cert_timestamp: string;
+    /** A percent value, e.g. 30.0 means 30% — NOT a 0-1 fraction. Divide by 100 to use in amount math. */
     withholding_rate: number;
 }
 
