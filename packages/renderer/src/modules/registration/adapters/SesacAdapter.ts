@@ -57,9 +57,9 @@ export const SesacAdapter: OrgAdapter = {
         'https://www.sesac.com'
       );
       const confirmationNumber = getConfirmedAutomationResult(result, 'SESAC');
-      await persistOrgRecord(userId, track.id, 'sesac', data, confirmationNumber);
+      const persisted = await persistOrgRecord(userId, track.id, 'sesac', data, confirmationNumber);
 
-      return { success: true, confirmationNumber, submittedAt: new Date() };
+      return { success: true, confirmationNumber, submittedAt: new Date(), localRecordFailed: !persisted };
     } catch (err: unknown) {
       const isWebSession = typeof window !== 'undefined' && !window.electronAPI;
       logger.warn('[SesacAdapter] Submission failed:', err);
