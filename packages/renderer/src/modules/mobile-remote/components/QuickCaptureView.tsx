@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Mic, Image as ImageIcon, Video, Send, Loader2, MapPin, FileText, Keyboard } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { remoteRelayService } from '@/services/agent/RemoteRelayService';
+import { remoteRelayService, waitForDispatchConfirmation } from '@/services/agent/RemoteRelayService';
 import { StorageService } from '@/services/StorageService';
 import { useToast } from '@/core/context/ToastContext';
 import { cn } from '@/lib/utils';
@@ -181,12 +181,13 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
             const userId = auth.currentUser?.uid;
             if (!userId) throw new Error("User not authenticated");
 
+            let taskId: string;
             if (capturedAudioBlob) {
                 const filename = `voice_memo_${Date.now()}.webm`;
                 const path = `users/${userId}/voice_memos/${filename}`;
                 const downloadUrl = await StorageService.uploadFile(capturedAudioBlob, path);
 
-                await remoteRelayService.dispatchTask({
+                taskId = await remoteRelayService.dispatchTask({
                     type: 'voice_memo',
                     payload: { audioUrl: downloadUrl }
                 });
@@ -196,7 +197,7 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
                 const path = `users/${userId}/assets/captured_media/${filename}`;
                 const downloadUrl = await StorageService.uploadFile(file, path);
 
-                await remoteRelayService.dispatchTask({
+                taskId = await remoteRelayService.dispatchTask({
                     type: capturedImageBlob.type === 'document' ? 'document_scan' : 'media_capture',
                     payload: { imageUrl: downloadUrl }
                 });
@@ -205,16 +206,26 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
                 const path = `users/${userId}/assets/captured_media/${filename}`;
                 const downloadUrl = await StorageService.uploadFile(capturedVideoBlob, path);
 
-                await remoteRelayService.dispatchTask({
+                taskId = await remoteRelayService.dispatchTask({
                     type: 'media_capture',
                     payload: { videoUrl: downloadUrl }
                 });
+            } else {
+                return;
             }
-            
+
+            // ISSUE-983: don't clear the capture until the desktop confirms a
+            // note actually exists — queue acceptance alone is not success.
+            const outcome = await waitForDispatchConfirmation(taskId);
+            if (outcome.status === 'failed') {
+                throw new Error(outcome.error?.message || 'Failed to save to Notes');
+            }
+
             clearCapture();
             triggerHaptic([50, 50, 50]);
         } catch (error) {
             console.error('Failed to dispatch media:', error);
+            toast.error(error instanceof Error ? error.message : 'Failed to save to Notes');
             triggerHaptic([100, 200, 100]);
         } finally {
             setIsDispatching(false);
