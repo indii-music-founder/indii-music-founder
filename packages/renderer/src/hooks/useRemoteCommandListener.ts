@@ -38,6 +38,16 @@ import type { AgentMessage } from '@/core/store/slices/agent/agentSessionSlice';
 import type { HistoryItem } from '@/core/types/history';
 
 /**
+ * ISSUE-988: `lat && lng` truthiness rejects valid zero coordinates (equator
+ * or prime meridian) — validate as finite numbers within real latitude/
+ * longitude range instead.
+ */
+export function isValidCoordinate(lat: unknown, lng: unknown): boolean {
+    return typeof lat === 'number' && Number.isFinite(lat) && lat >= -90 && lat <= 90 &&
+        typeof lng === 'number' && Number.isFinite(lng) && lng >= -180 && lng <= 180;
+}
+
+/**
  * ISSUE-983: for capture types where the correct Notes action is unambiguous
  * (a plain image/video/audio attachment, no text needing summarization or
  * an explicit command), call the Notes tool directly and return its real
@@ -897,7 +907,7 @@ function useFirestoreRelay(enabled: boolean) {
                         // no structural receipt is available for these yet.
                         let text = task.payload.commandText || task.payload.transcription;
                         if (!text) {
-                            if (task.type === 'venue_log' && task.payload.lat && task.payload.lng) {
+                            if (task.type === 'venue_log' && isValidCoordinate(task.payload.lat, task.payload.lng)) {
                                 // 1. Add user's pin directly to the map
                                 useStore.getState().addUserPin({ lat: task.payload.lat, lng: task.payload.lng });
 
