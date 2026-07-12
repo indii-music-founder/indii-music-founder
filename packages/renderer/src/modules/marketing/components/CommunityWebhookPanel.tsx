@@ -1,14 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Webhook, Send, CheckCircle, Loader2, AlertCircle,
     ToggleLeft, ToggleRight, MessageSquare
 } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
+import { logger } from '@/utils/logger';
 
 interface PlatformConfig {
     name: 'Discord' | 'Telegram';
     icon: string;
     webhookUrl: string;
+    chatId?: string; // Telegram only — sendMessage requires a target chat_id
     enabled: boolean;
     testing: boolean;
     tested: boolean;
@@ -24,39 +26,151 @@ const DEFAULT_MESSAGE = 'Hey {artist} community! 🎵 "{release_title}" drops on
 
 const VARIABLES = ['{artist}', '{release_title}', '{release_date}'];
 
+const STORAGE_KEY = 'indii_community_webhook_config';
+
+const DISCORD_WEBHOOK_PATTERN = /^https:\/\/(discord|discordapp)\.com\/api\/webhooks\/\d+\/[\w-]+$/;
+const TELEGRAM_WEBHOOK_PATTERN = /^https:\/\/api\.telegram\.org\/bot[\w:-]+\/sendMessage$/;
+
+function validateWebhookUrl(platform: PlatformConfig['name'], url: string): string | null {
+    if (platform === 'Discord' && !DISCORD_WEBHOOK_PATTERN.test(url)) {
+        return 'Not a valid Discord webhook URL (expected https://discord.com/api/webhooks/<id>/<token>).';
+    }
+    if (platform === 'Telegram' && !TELEGRAM_WEBHOOK_PATTERN.test(url)) {
+        return 'Not a valid Telegram bot URL (expected https://api.telegram.org/bot<token>/sendMessage).';
+    }
+    return null;
+}
+
+/**
+ * ISSUE-946: sends the actual HTTP request to the provider instead of
+ * faking success with a timer. Returns the real outcome so callers can
+ * report the provider's actual response rather than an assumed one.
+ */
+async function dispatchToProvider(platform: PlatformConfig, message: string): Promise<{ ok: boolean; error?: string }> {
+    try {
+        if (platform.name === 'Discord') {
+            const response = await fetch(platform.webhookUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content: message }),
+            });
+            if (!response.ok) {
+                return { ok: false, error: `Discord responded ${response.status} ${response.statusText}` };
+            }
+            return { ok: true };
+        }
+
+        // Telegram
+        if (!platform.chatId?.trim()) {
+            return { ok: false, error: 'Telegram requires a Chat ID.' };
+        }
+        const response = await fetch(platform.webhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chat_id: platform.chatId.trim(), text: message }),
+        });
+        const body = await response.json().catch(() => null);
+        if (!response.ok || body?.ok === false) {
+            return { ok: false, error: body?.description || `Telegram responded ${response.status} ${response.statusText}` };
+        }
+        return { ok: true };
+    } catch (error: unknown) {
+        return { ok: false, error: error instanceof Error ? error.message : 'Network request failed' };
+    }
+}
+
+interface PersistedConfig {
+    platforms: Pick<PlatformConfig, 'name' | 'webhookUrl' | 'chatId' | 'enabled'>[];
+    messageTemplate: string;
+    autoToggles: AutoToggle[];
+}
+
+function loadPersistedConfig(): PersistedConfig | null {
+    try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        return raw ? JSON.parse(raw) as PersistedConfig : null;
+    } catch (error: unknown) {
+        logger.warn('[CommunityWebhookPanel] Failed to load persisted config', error);
+        return null;
+    }
+}
+
+const DEFAULT_PLATFORMS: PlatformConfig[] = [
+    { name: 'Discord', icon: '🎮', webhookUrl: '', enabled: true, testing: false, tested: false },
+    { name: 'Telegram', icon: '📱', webhookUrl: '', chatId: '', enabled: false, testing: false, tested: false },
+];
+
+const DEFAULT_AUTO_TOGGLES: AutoToggle[] = [
+    { id: 'new-release', label: 'New Release', enabled: true },
+    { id: 'tour-date', label: 'Tour Date', enabled: false },
+    { id: 'merch-drop', label: 'Merch Drop', enabled: true },
+];
+
 export default function CommunityWebhookPanel() {
     const { showToast } = useToast();
 
-    const [platforms, setPlatforms] = useState<PlatformConfig[]>([
-        { name: 'Discord', icon: '🎮', webhookUrl: '', enabled: true, testing: false, tested: false },
-        { name: 'Telegram', icon: '📱', webhookUrl: '', enabled: false, testing: false, tested: false },
-    ]);
+    const [platforms, setPlatforms] = useState<PlatformConfig[]>(() => {
+        const persisted = loadPersistedConfig();
+        if (!persisted) return DEFAULT_PLATFORMS;
+        return DEFAULT_PLATFORMS.map(defaultPlatform => {
+            const saved = persisted.platforms.find(p => p.name === defaultPlatform.name);
+            return saved
+                ? { ...defaultPlatform, webhookUrl: saved.webhookUrl, chatId: saved.chatId, enabled: saved.enabled }
+                : defaultPlatform;
+        });
+    });
 
-    const [messageTemplate, setMessageTemplate] = useState(DEFAULT_MESSAGE);
+    const [messageTemplate, setMessageTemplate] = useState(() => loadPersistedConfig()?.messageTemplate ?? DEFAULT_MESSAGE);
 
-    const [autoToggles, setAutoToggles] = useState<AutoToggle[]>([
-        { id: 'new-release', label: 'New Release', enabled: true },
-        { id: 'tour-date', label: 'Tour Date', enabled: false },
-        { id: 'merch-drop', label: 'Merch Drop', enabled: true },
-    ]);
+    const [autoToggles, setAutoToggles] = useState<AutoToggle[]>(() => loadPersistedConfig()?.autoToggles ?? DEFAULT_AUTO_TOGGLES);
 
     const [sending, setSending] = useState(false);
+
+    // ISSUE-946: previously nothing persisted at all — every toggle, URL,
+    // and template reset on remount/refresh. This survives a browser
+    // refresh (not yet cross-device Firestore sync — see ledger).
+    useEffect(() => {
+        try {
+            const toPersist: PersistedConfig = {
+                platforms: platforms.map(({ name, webhookUrl, chatId, enabled }) => ({ name, webhookUrl, chatId, enabled })),
+                messageTemplate,
+                autoToggles,
+            };
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(toPersist));
+        } catch (error: unknown) {
+            logger.warn('[CommunityWebhookPanel] Failed to persist config', error);
+        }
+    }, [platforms, messageTemplate, autoToggles]);
 
     const updatePlatform = (idx: number, update: Partial<PlatformConfig>) => {
         setPlatforms(prev => prev.map((p, i) => (i === idx ? { ...p, ...update } : p)));
     };
 
-    const handleTestWebhook = (idx: number) => {
+    const handleTestWebhook = async (idx: number) => {
         const p = platforms[idx]!;
         if (!p.webhookUrl) {
             showToast('Please enter a webhook URL first.', 'error');
             return;
         }
+
+        const validationError = validateWebhookUrl(p.name, p.webhookUrl);
+        if (validationError) {
+            showToast(validationError, 'error');
+            return;
+        }
+
         updatePlatform(idx, { testing: true, tested: false });
-        setTimeout(() => {
+
+        const result = await dispatchToProvider(p, 'indii.music test message — your webhook is connected.');
+
+        if (result.ok) {
             updatePlatform(idx, { testing: false, tested: true });
             showToast(`Test message sent to ${p.name} successfully.`, 'success');
-        }, 1200);
+        } else {
+            updatePlatform(idx, { testing: false, tested: false });
+            logger.error(`[CommunityWebhookPanel] ${p.name} test failed`, result.error);
+            showToast(`${p.name} test failed: ${result.error}`, 'error');
+        }
     };
 
     const toggleAutoAnnounce = (id: string) => {
@@ -69,17 +183,31 @@ export default function CommunityWebhookPanel() {
         setMessageTemplate(prev => prev + ' ' + variable);
     };
 
-    const handleSendAnnouncement = () => {
+    const handleSendAnnouncement = async () => {
         const activePlatforms = platforms.filter(p => p.enabled && p.webhookUrl);
         if (activePlatforms.length === 0) {
             showToast('Enable at least one platform with a webhook URL.', 'error');
             return;
         }
+
         setSending(true);
-        setTimeout(() => {
-            setSending(false);
-            showToast(`Announcement sent to ${activePlatforms.map(p => p.name).join(' & ')}!`, 'success');
-        }, 1500);
+
+        const results = await Promise.all(
+            activePlatforms.map(async p => ({ platform: p.name, ...(await dispatchToProvider(p, messageTemplate)) }))
+        );
+
+        setSending(false);
+
+        const succeeded = results.filter(r => r.ok).map(r => r.platform);
+        const failed = results.filter(r => !r.ok);
+
+        if (succeeded.length > 0) {
+            showToast(`Announcement sent to ${succeeded.join(' & ')}!`, 'success');
+        }
+        failed.forEach(f => {
+            logger.error(`[CommunityWebhookPanel] Send failed for ${f.platform}`, f.error);
+            showToast(`Failed to send to ${f.platform}: ${f.error}`, 'error');
+        });
     };
 
     return (
@@ -147,6 +275,16 @@ export default function CommunityWebhookPanel() {
                                 {p.tested ? 'OK' : 'Test'}
                             </button>
                         </div>
+                        {p.name === 'Telegram' && (
+                            <input
+                                type="text"
+                                value={p.chatId ?? ''}
+                                onChange={e => updatePlatform(idx, { chatId: e.target.value, tested: false })}
+                                placeholder="Chat ID (required for Telegram — e.g. -100123456789)"
+                                disabled={!p.enabled}
+                                className="mt-2 w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-xs text-white placeholder-gray-700 focus:border-dept-marketing/50 outline-none disabled:opacity-40"
+                            />
+                        )}
                     </div>
                 ))}
             </div>
@@ -175,26 +313,32 @@ export default function CommunityWebhookPanel() {
                     rows={3}
                     className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white focus:border-dept-marketing/50 outline-none resize-none leading-relaxed"
                 />
+                <p className="text-[10px] text-gray-600 mt-1">
+                    Variable tokens are inserted as literal text — replace them by hand before sending; there is no automatic substitution.
+                </p>
             </div>
 
             {/* Auto-Announce Toggles */}
             <div>
-                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 block">
+                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-2">
                     Auto-Announce
+                    <span className="text-[9px] normal-case font-normal text-amber-500/80 tracking-normal">Not yet wired to release/tour/drop events</span>
                 </label>
-                <div className="space-y-2">
+                <div className="space-y-2 opacity-60">
                     {autoToggles.map(t => (
                         <div
                             key={t.id}
-                            className="flex items-center justify-between p-3 rounded-xl bg-white/[0.03] border border-white/5 hover:border-white/10 transition-all"
+                            className="flex items-center justify-between p-3 rounded-xl bg-white/[0.03] border border-white/5"
                         >
-                            <span className="text-sm text-gray-300">{t.label}</span>
+                            <span className="text-sm text-gray-400">{t.label}</span>
                             <button
                                 onClick={() => toggleAutoAnnounce(t.id)}
-                                className="transition-colors"
+                                disabled
+                                className="cursor-not-allowed"
+                                title="Auto-announce is not yet wired to real release/tour/drop events"
                             >
                                 {t.enabled
-                                    ? <ToggleRight size={20} className="text-dept-marketing" />
+                                    ? <ToggleRight size={20} className="text-gray-600" />
                                     : <ToggleLeft size={20} className="text-gray-600" />
                                 }
                             </button>
