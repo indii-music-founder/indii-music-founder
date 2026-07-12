@@ -15,6 +15,15 @@ export interface DSPComplianceReport {
         warnings: string[];
     }>;
     flags: string[];
+    /**
+     * ISSUE-997: neither browser input (RMS-derived loudness, unweighted peak
+     * sample) nor project-file input (hardcoded -15 LUFS/-1.0 dBTP defaults)
+     * implements real BS.1770 gated/K-weighted loudness or oversampled true
+     * peak — this is always a heuristic estimate, never a certified
+     * measurement. Callers/UI must label results accordingly and must not
+     * present `isCompliant` as a certified distribution-compliance pass.
+     */
+    measurementMethod: 'estimated';
 }
 
 export class DSPComplianceValidator {
@@ -37,7 +46,8 @@ export class DSPComplianceValidator {
         const report: DSPComplianceReport = {
             isCompliant: true,
             platformChecks: {},
-            flags: []
+            flags: [],
+            measurementMethod: 'estimated'
         };
 
         let hasFails = false;
