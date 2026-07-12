@@ -25,6 +25,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { agentService } from '@/services/agent/AgentService';
 import { entryCommandService } from '@/services/commands/EntryCommandService';
 import { remoteRelayService, type RemoteCommand, type AgentDispatchTask } from '@/services/agent/RemoteRelayService';
+import { NotesTools } from '@/services/agent/tools/NotesTools';
 import { parseRemoteCommand } from '@/hooks/remoteCommandSecurity';
 import { auth, db } from '@/services/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -35,6 +36,49 @@ import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 import { getRealAuthenticatedUserId, isAnonymousOrDemoUser } from '@/utils/authGuards';
 import type { AgentMessage } from '@/core/store/slices/agent/agentSessionSlice';
 import type { HistoryItem } from '@/core/types/history';
+
+/**
+ * ISSUE-983: for capture types where the correct Notes action is unambiguous
+ * (a plain image/video/audio attachment, no text needing summarization or
+ * an explicit command), call the Notes tool directly and return its real
+ * receipt instead of asking an LLM to decide whether to call it. Returns
+ * null when the task genuinely needs agent judgment (a transcription to
+ * summarize, an explicit command, or a scout search) — those stay on the
+ * `sendMessage` path, which cannot yet produce a structural receipt.
+ */
+export async function saveCaptureNoteDirectly(
+    task: Pick<AgentDispatchTask, 'type' | 'payload'>
+): Promise<{ noteId: string; assetUrl?: string } | null> {
+    const { type, payload } = task;
+    if (payload.commandText || payload.transcription) return null;
+
+    let url: string | undefined;
+    let description: string;
+    if (type === 'document_scan' && payload.imageUrl) {
+        url = payload.imageUrl;
+        description = 'Scanned document';
+    } else if (type === 'receipt_log' && payload.imageUrl) {
+        url = payload.imageUrl;
+        description = 'Receipt';
+    } else if (type === 'media_capture' && payload.imageUrl) {
+        url = payload.imageUrl;
+        description = 'Captured photo';
+    } else if (type === 'media_capture' && payload.videoUrl) {
+        url = payload.videoUrl;
+        description = 'Captured video';
+    } else if ((type === 'voice_memo' || type === 'quick_contact') && payload.audioUrl) {
+        url = payload.audioUrl;
+        description = 'Voice memo';
+    } else {
+        return null;
+    }
+
+    const result = await NotesTools.save_media_note({ url, description });
+    if (!result.success || !result.data?.id) {
+        throw new Error(result.error || 'Failed to save media note');
+    }
+    return { noteId: result.data.id as string, assetUrl: result.data.url as string | undefined };
+}
 
 export function buildLiveMomentNote(noteText: string) {
     const content = noteText.trim();
@@ -807,13 +851,20 @@ function useFirestoreRelay(enabled: boolean) {
         const unsubscribeDispatch = remoteRelayService.onDispatchTask(async (task: AgentDispatchTask & { id: string }) => {
             logger.info(`[RemoteRelay/Firestore] 📱→🖥️ Processing Dispatch Task: [${task.type}] ${task.id}`);
 
+            // ISSUE-984: atomic claim — first listener to win the transaction
+            // processes the task; every other concurrent listener (another
+            // open tab/window) bails out here instead of double-processing.
+            const claimed = await remoteRelayService.claimDispatchTask(task.id);
+            if (!claimed) {
+                logger.info(`[RemoteRelay/Firestore] ⏭️ Dispatch task ${task.id} already claimed elsewhere`);
+                return;
+            }
+
             // Automatic wake: any task from the phone surfaces a sleeping desktop
             // before processing, so results are visible when the user looks.
             wakeDesktop();
 
             try {
-                await remoteRelayService.updateDispatchTaskStatus(task.id, 'processing');
-                
                 // Switch based on the dispatch task type
                 switch (task.type) {
                     case 'voice_memo':
@@ -824,32 +875,36 @@ function useFirestoreRelay(enabled: boolean) {
                     case 'document_scan':
                     case 'venue_log':
                     case 'agent_command': {
-                        // Fallback simple handler for Phase 2: Route directly to agent
+                        if (task.type === 'live_moment' && task.payload.noteText) {
+                            const noteId = useStore.getState().addNote(buildLiveMomentNote(task.payload.noteText));
+                            await remoteRelayService.updateDispatchTaskStatus(task.id, 'completed', undefined, { noteId });
+                            break;
+                        } else if (task.type === 'live_moment') {
+                            throw new Error('Missing live moment text');
+                        }
+
+                        // ISSUE-983: deterministic capture types get a direct tool
+                        // call and a real receipt instead of hoping an LLM decides
+                        // to call save_media_note.
+                        const directResult = await saveCaptureNoteDirectly(task);
+                        if (directResult) {
+                            await remoteRelayService.updateDispatchTaskStatus(task.id, 'completed', undefined, directResult);
+                            break;
+                        }
+
+                        // Remaining cases genuinely need agent judgment (summarizing
+                        // a transcription, an explicit command, or a scout search) —
+                        // no structural receipt is available for these yet.
                         let text = task.payload.commandText || task.payload.transcription;
                         if (!text) {
-                            if (task.type === 'live_moment' && task.payload.noteText) {
-                                useStore.getState().addNote(buildLiveMomentNote(task.payload.noteText));
-                                break;
-                            } else if (task.type === 'live_moment') {
-                                throw new Error('Missing live moment text');
-                            } else if (task.type === 'receipt_log' && task.payload.imageUrl) {
-                                text = `Please process this receipt image. Use your tools to extract data, and CALL the \`save_media_note\` tool to attach it to my Notes: ${task.payload.imageUrl}`;
-                            } else if (task.type === 'document_scan' && task.payload.imageUrl) {
-                                text = `Please analyze and file this scanned document. CALL the \`save_media_note\` tool with url="${task.payload.imageUrl}" and a description of the document.`;
-                            } else if (task.type === 'venue_log' && task.payload.lat && task.payload.lng) {
+                            if (task.type === 'venue_log' && task.payload.lat && task.payload.lng) {
                                 // 1. Add user's pin directly to the map
                                 useStore.getState().addUserPin({ lat: task.payload.lat, lng: task.payload.lng });
-                                
+
                                 // 2. Formulate explicit instruction for Scout Agent
-                                text = `I just dropped a pin at Latitude ${task.payload.lat}, Longitude ${task.payload.lng}. 
-Please act as my Scout. Use your search tools to find 3-5 live music venues, clubs, or relevant music businesses within a 5-mile radius of this coordinate. 
+                                text = `I just dropped a pin at Latitude ${task.payload.lat}, Longitude ${task.payload.lng}.
+Please act as my Scout. Use your search tools to find 3-5 live music venues, clubs, or relevant music businesses within a 5-mile radius of this coordinate.
 Format the findings and then CALL the \`save_scout_leads_to_map\` tool to plot them directly on my studio map. Ensure you include coordinates (lat/lng) for each venue you find.`;
-                            } else if (task.type === 'media_capture' && task.payload.imageUrl) {
-                                text = `I captured a photo. CALL the \`save_media_note\` tool with url="${task.payload.imageUrl}" to save it to my Notes.`;
-                            } else if (task.type === 'media_capture' && task.payload.videoUrl) {
-                                text = `I captured a video. CALL the \`save_media_note\` tool with url="${task.payload.videoUrl}" to save it to my Notes.`;
-                            } else if ((task.type === 'voice_memo' || task.type === 'quick_contact') && task.payload.audioUrl) {
-                                text = `I captured a voice memo. If there's a transcription available, please summarize it and CALL \`save_note\`. If it's just audio, CALL \`save_media_note\` with url="${task.payload.audioUrl}".`;
                             } else {
                                 text = `I captured a ${task.type}. Please act on it and CALL \`save_note\` or \`save_media_note\` to save it to my Notes.`;
                             }
@@ -859,19 +914,20 @@ Format the findings and then CALL the \`save_scout_leads_to_map\` tool to plot t
                             if (task.payload.videoUrl) text += `\n\nVideo Attachment: ${task.payload.videoUrl}`;
                             if (task.payload.audioUrl) text += `\n\nAudio Attachment: ${task.payload.audioUrl}`;
                         }
-                        
+
                         logger.info(`[RemoteRelay/Firestore] Dispatching to Agent Service: "${text}"`);
                         await agentService.sendMessage(text, undefined, 'generalist', {
                             source: 'mobile-remote'
                         });
+                        await remoteRelayService.updateDispatchTaskStatus(task.id, 'completed');
                         break;
                     }
                     default:
                         logger.warn(`[RemoteRelay/Firestore] Unknown dispatch task type: ${task.type}`);
+                        await remoteRelayService.updateDispatchTaskStatus(task.id, 'completed');
                         break;
                 }
-                
-                await remoteRelayService.updateDispatchTaskStatus(task.id, 'completed');
+
                 writeDiagnostic('dispatch_task_done', { taskId: task.id, type: task.type });
             } catch (error: unknown) {
                 logger.error('[RemoteRelay/Firestore] Dispatch task failed:', error);
