@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import {
     DESKTOP_HEARTBEAT_STALE_MS,
-    isFreshDesktopState,
+    isFreshStudioState,
     remoteRelayService,
     type RemoteResponse,
     type RemoteCommand,
@@ -109,7 +109,6 @@ MessageRating.displayName = 'MessageRating';
 // spinner death.
 const RESPONSE_TIMEOUT_MS = 120_000;
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: AgentChatProps) {
     const [input, setInput] = useState('');
     const [rawCommands, setRawCommands] = useState<RemoteCommand[]>([]);
@@ -117,6 +116,7 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
     const [isWaiting, setIsWaiting] = useState(false);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [desktopState, setDesktopState] = useState<DesktopState | null>(null);
+    const isStudioOnline = isFreshStudioState(desktopState);
     
     // Mode and targeting state for mobile remote
     const [selectedMode, setSelectedMode] = useState<ConversationMode>('boardroom');
@@ -209,7 +209,7 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
                 stalePresenceTimeoutRef.current = null;
             }
 
-            if (isFreshDesktopState(state)) {
+            if (isFreshStudioState(state)) {
                 setDesktopState(state);
                 stalePresenceTimeoutRef.current = setTimeout(() => {
                     setDesktopState(null);
@@ -289,7 +289,7 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
     }, [messages.length, messages[messages.length - 1]?.text]);
 
     const handleSend = useCallback(async () => {
-        if (!input.trim() || isWaiting || !isAuthenticated) return;
+        if (!input.trim() || isWaiting || !isAuthenticated || !isPaired || !isStudioOnline) return;
         if (isListening) toggleListening(); // stop dictation before sending
         const userText = input.trim();
         setInput('');
@@ -307,7 +307,8 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
             const commandId = await remoteRelayService.sendCommand(
                 userText,
                 targetAgentId,
-                entryCommand ? { entryCommandId: entryCommand.id, source: 'mobile-remote' } : undefined
+                entryCommand ? { entryCommandId: entryCommand.id, source: 'mobile-remote' } : undefined,
+                'studio'
             );
             if (!commandId) throw new Error('Failed to send command');
 
@@ -332,16 +333,31 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
             responseTimeoutRef.current = setTimeout(() => {
                 teardownResponseWatch();
                 setIsWaiting(false);
-                setSystemNotices(prev => [
-                    ...prev,
-                    {
-                        id: `notice-${commandId}-timeout`,
-                        commandId,
-                        role: 'model',
-                        text: "Couldn't reach your studio. Open the desktop app, make sure you're signed in, then try again.",
-                        timestamp: Date.now(),
-                    },
-                ]);
+                void remoteRelayService.cancelCommand(commandId).then((cancelled) => {
+                    setSystemNotices(prev => [
+                        ...prev,
+                        {
+                            id: `notice-${commandId}-timeout`,
+                            commandId,
+                            role: 'model',
+                            text: cancelled
+                                ? "Your studio did not claim this request, so it was cancelled. Reconnect the desktop studio before trying again."
+                                : "Your studio started this request but did not return a final response. Check the desktop studio before retrying.",
+                            timestamp: Date.now(),
+                        },
+                    ]);
+                }).catch(() => {
+                    setSystemNotices(prev => [
+                        ...prev,
+                        {
+                            id: `notice-${commandId}-timeout`,
+                            commandId,
+                            role: 'model',
+                            text: "Your studio did not return a final response. Check the desktop studio before retrying.",
+                            timestamp: Date.now(),
+                        },
+                    ]);
+                });
             }, RESPONSE_TIMEOUT_MS);
 
         } catch (error: unknown) {
@@ -350,7 +366,7 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
             setIsWaiting(false);
             setInput(userText); // Restore input on failure
         }
-    }, [input, isWaiting, isAuthenticated, selectedAgent, selectedMode, selectedDept, teardownResponseWatch, isListening, toggleListening]);
+    }, [input, isWaiting, isAuthenticated, isPaired, isStudioOnline, selectedAgent, selectedMode, selectedDept, teardownResponseWatch, isListening, toggleListening]);
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter' && !e.shiftKey) {
@@ -373,22 +389,20 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
         );
     }
 
-    const isDesktopOnline = isFreshDesktopState(desktopState);
-
     return (
         <div className="flex flex-col h-full relative">
             {/* Connection Banner */}
             <div className={cn(
                 "flex items-center gap-2 px-3.5 py-3 mb-4 rounded-xl text-[10px] font-extrabold uppercase tracking-widest transition-all duration-500",
-                isDesktopOnline 
+                isStudioOnline
                     ? "text-blue-400 bg-blue-500/5 border border-blue-500/10 shadow-[0_2px_8px_rgba(59,130,246,0.05)]" 
                     : "text-amber-400 bg-amber-500/5 border border-amber-500/10 shadow-[0_2px_8px_rgba(245,158,11,0.05)]"
             )}>
                 <div className={cn(
                     "w-2 h-2 rounded-full",
-                    isDesktopOnline ? "bg-blue-400 animate-pulse shadow-[0_0_8px_rgba(96,165,250,0.8)]" : "bg-amber-400"
+                    isStudioOnline ? "bg-blue-400 animate-pulse shadow-[0_0_8px_rgba(96,165,250,0.8)]" : "bg-amber-400"
                 )} />
-                {isDesktopOnline ? "Studio Connected" : "Desktop App Offline"}
+                {isStudioOnline ? "Studio Connected" : "Studio Executor Offline"}
             </div>
 
             {/* Messages Area */}
@@ -551,7 +565,7 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
                                 selectedMode === 'department' ? `Message ${selectedDept || 'Dept'}…` :
                                 `Direct message ${selectedAgent || 'Agent'}…`
                             }
-                            disabled={isWaiting}
+                            disabled={isWaiting || !isPaired || !isStudioOnline}
                             className="w-full bg-transparent border-none px-2 py-2 text-sm text-white placeholder:text-[#636366] focus:ring-0 resize-none max-h-32 custom-scrollbar"
                         />
                     </div>
@@ -578,10 +592,10 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
                         <motion.button
                             whileTap={{ scale: 0.9 }}
                             onClick={handleSend}
-                            disabled={!input.trim() || isWaiting}
+                            disabled={!input.trim() || isWaiting || !isPaired || !isStudioOnline}
                             className={cn(
                                 "w-11 h-11 rounded-xl flex items-center justify-center transition-all shadow-lg cursor-pointer",
-                                input.trim() && !isWaiting 
+                                input.trim() && !isWaiting && isPaired && isStudioOnline
                                     ? "bg-white text-black shadow-white/10" 
                                     : "bg-white/5 text-[#48484a] cursor-not-allowed"
                             )}
