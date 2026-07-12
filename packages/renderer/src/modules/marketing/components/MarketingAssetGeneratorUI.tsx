@@ -202,20 +202,32 @@ export default function MarketingAssetGeneratorUI() {
                                         : 'Text-to-video generation starts from the visual direction in the next step.'}
                                 </p>
 
-                                <div
-                                    className="flex-1 border-2 border-dashed border-white/10 hover:border-dept-marketing/50 bg-white/[0.02] hover:bg-dept-marketing/5 transition-all rounded-xl flex flex-col items-center justify-center cursor-pointer group p-8"
-                                    onClick={() => audioInputRef.current?.click()}
-                                >
-                                    <div className="w-16 h-16 rounded-full bg-white/5 group-hover:bg-dept-marketing/20 text-gray-400 group-hover:text-dept-marketing flex items-center justify-center mb-4 transition-colors">
-                                        {audioFile ? <FileAudio size={32} /> : <Upload size={32} />}
+                                {/* ISSUE-954: reel mode is text-to-video only — GenAI.generateVideo
+                                    never receives or conditions on audio, so this upload step only
+                                    appears for avatar mode, where the audio genuinely drives lip-sync. */}
+                                {generatorMode === 'avatar' ? (
+                                    <div
+                                        className="flex-1 border-2 border-dashed border-white/10 hover:border-dept-marketing/50 bg-white/[0.02] hover:bg-dept-marketing/5 transition-all rounded-xl flex flex-col items-center justify-center cursor-pointer group p-8"
+                                        onClick={() => audioInputRef.current?.click()}
+                                    >
+                                        <div className="w-16 h-16 rounded-full bg-white/5 group-hover:bg-dept-marketing/20 text-gray-400 group-hover:text-dept-marketing flex items-center justify-center mb-4 transition-colors">
+                                            {audioFile ? <FileAudio size={32} /> : <Upload size={32} />}
+                                        </div>
+                                        <h3 className="text-white font-semibold mb-1">
+                                            {audioFile ? audioFile.name : 'Click or drag to upload audio'}
+                                        </h3>
+                                        <p className="text-gray-500 text-sm">
+                                            {audioFile ? 'Ready to proceed' : 'WAV, MP3, or FLAC (max 60s)'}
+                                        </p>
                                     </div>
-                                    <h3 className="text-white font-semibold mb-1">
-                                        {audioFile ? audioFile.name : 'Click or drag to upload audio'}
-                                    </h3>
-                                    <p className="text-gray-500 text-sm">
-                                        {audioFile ? 'Ready to proceed' : 'WAV, MP3, or FLAC (max 60s)'}
-                                    </p>
-                                </div>
+                                ) : (
+                                    <div className="flex-1 border-2 border-dashed border-white/10 bg-white/[0.02] rounded-xl flex flex-col items-center justify-center p-8">
+                                        <Video size={32} className="text-gray-500 mb-4" />
+                                        <p className="text-gray-500 text-sm text-center max-w-xs">
+                                            Cinematic Reel mode generates video from your text prompt only — no audio is uploaded or synchronized.
+                                        </p>
+                                    </div>
+                                )}
 
                                 {generatorMode === 'avatar' && (
                                     <div className="mt-4 flex-1">
@@ -269,7 +281,7 @@ export default function MarketingAssetGeneratorUI() {
                                         <textarea
                                             value={prompt}
                                             onChange={(e) => setPrompt(e.target.value)}
-                                            placeholder="E.g., A lone astronaut floating through a neon-lit cyber city, synchronized to the beat..."
+                                            placeholder="E.g., A lone astronaut floating through a neon-lit cyber city, dynamic camera movement..."
                                             className="w-full h-32 bg-black/40 border border-white/10 rounded-xl p-4 text-white placeholder:text-gray-600 focus:outline-none focus:border-dept-marketing/50 resize-none transition-colors"
                                         />
                                     </div>
@@ -330,7 +342,9 @@ export default function MarketingAssetGeneratorUI() {
                                 </div>
                                 <h2 className="text-base font-black text-white mb-3">Synthesizing Visuals</h2>
                                 <p className="text-gray-400 text-center max-w-sm">
-                                    Rendering highly-detailed frames synced with your audio. This normally takes a few minutes via background job...
+                                    {generatorMode === 'avatar'
+                                        ? 'Rendering the avatar lip-sync from your audio and portrait. This normally takes a few minutes via background job...'
+                                        : 'Rendering highly-detailed frames from your prompt. This normally takes a few minutes via background job...'}
                                 </p>
                             </motion.div>
                         )}

@@ -26,6 +26,7 @@ import { useStore } from '@/core/store';
 import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 import { useShallow } from 'zustand/react/shallow';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
+import { useToast } from '@/core/context/ToastContext';
 
 /* ================================================================== */
 /*  Campaign Dashboard — Three-Panel Layout                             */
@@ -42,6 +43,7 @@ import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 const CampaignDashboard: React.FC = () => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { campaigns, actions, isLoading } = useMarketing();
+    const toast = useToast();
 
     const [selectedCampaign, setSelectedCampaign] = useState<CampaignAsset | null>(null);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -50,9 +52,30 @@ const CampaignDashboard: React.FC = () => {
     const [isAIModalOpen, setIsAIModalOpen] = useState(false);
     const [activeTab, setActiveTab] = useState('campaigns');
 
-    const handleUpdateCampaign = useCallback((updatedCampaign: CampaignAsset) => {
+    /**
+     * ISSUE-949: previously only called setSelectedCampaign — image batch
+     * Apply & Save, copy edits, and execution status updates all vanished
+     * on navigate-away/refresh because nothing ever reached Firestore.
+     * Now persists via MarketingService.updateCampaign (already implemented,
+     * but had zero callers anywhere in the app) and reverts the optimistic
+     * local update if the write fails, so the UI never claims a save that
+     * didn't happen.
+     */
+    const handleUpdateCampaign = useCallback(async (updatedCampaign: CampaignAsset) => {
+        const previousCampaign = selectedCampaign;
         setSelectedCampaign(updatedCampaign);
-    }, []);
+
+        if (!updatedCampaign.id) return;
+
+        try {
+            await MarketingService.updateCampaign(updatedCampaign.id, updatedCampaign);
+        } catch (error: unknown) {
+            logger.error("Failed to persist campaign update", error);
+            setSelectedCampaign(previousCampaign);
+            toast.error("Failed to save campaign changes. Please try again.");
+            throw error;
+        }
+    }, [selectedCampaign, toast]);
 
     const handleCreateSave = useCallback(async (campaignId?: string) => {
         setIsCreateModalOpen(false);
