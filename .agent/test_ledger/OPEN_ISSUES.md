@@ -11759,7 +11759,7 @@ Walked individual menus applying all four lenses (double-click races / authoriza
 
 ### ISSUE-752: Discuss button sends prompt text, never the image — conversation is blind
 
-- **Status:** 🔴 OPEN (PLANNED — no code yet)
+- **Status:** ✅ VERIFIED FIXED (2026-07-12) — already fixed in the same commit that wrote this bug report; ledger was stale. Test coverage added.
 - **Severity:** 🔴 HIGH (dead/misleading affordance — user confirmed "it didn't work accurately")
 - **Location:** `packages/renderer/src/modules/dashboard/components/AssetSpotlight.tsx:54-67` (`handleDiscuss`)
 - **Details (current state, verified):** `handleDiscuss` only prefills `commandBarInput` with `"Let's discuss this <type> I created: '<first 80 chars of prompt>'"` and opens the agent panel. The image itself is never attached, so the agent discusses a text snippet of the generation prompt, not what's actually in the image. `AgentMessage.attachments` (`{mimeType, base64}[]`) already supports multimodal — the plumbing exists.
@@ -11769,6 +11769,7 @@ Walked individual menus applying all four lenses (double-click races / authoriza
   3. Conversation lands in the chat panel focused and ready — user types their question about a visible, attached image.
   4. Works for the mobile (<768px) fallback path too (currently routes to agent module with the same text-only input).
 - **DO NOT:** Do not stuff base64 into `commandBarInput`. Route through the real attachment pipeline used by the paperclip flow.
+- **Verification (2026-07-12):** `git log` shows commit `88f3681d1` ("feat: unify project scoped conversations and boardroom persistence", 2026-07-07) both wrote this ledger entry AND fixed the code in the same commit — the entry was simply never updated afterward. `handleDiscuss()` now `fetch()`es `asset.url`, builds a real `File`, and pushes it into `commandBarAttachments` (the actual paperclip-flow store field `PromptArea.tsx` reads and sends as real multimodal attachments) — not base64-stuffed into `commandBarInput`. This runs unconditionally before the desktop/mobile branch, so both paths (item 4) get the attachment. Items 1, 3, 4 of Acceptance are satisfied. Added `AssetSpotlight.test.tsx` (3 cases, none existed before): Discuss fetches and attaches the asset as a real `File` via `commandBarAttachments` (not just a text prefill); the desktop path opens the agent panel focused on messages; the mobile (<768px) path also attaches the asset. Typecheck/lint clean. **Not done:** acceptance item 2 (asset id/creation date as *structured* metadata for tool follow-ups like "open it in Studio") — the text prefill carries type + a prompt snippet, but no structured `{assetId, createdAt}` metadata is attached alongside the file for a tool to key off of. Minor completeness gap, not the "blind conversation" defect this issue reported.
 
 ### ISSUE-753: Right-panel agent switcher — consult/add agents without leaving the page (boardroom-style)
 
