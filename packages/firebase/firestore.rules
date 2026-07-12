@@ -637,6 +637,143 @@ service cloud.firestore {
     }
 
     // =========================================================================
+    // Previously-unruled collections (fell through to the final catch-all deny,
+    // silently breaking every feature below with permission-denied). Audited
+    // 2026-07-12 against actual renderer usage — see ISSUE-842/944/998/1000/1001
+    // and the systemic sweep in that session's ledger entry. Standard owner-by-
+    // `userId`-field pattern, matching the convention already used above.
+    // =========================================================================
+
+    match /composition_drafts/{draftId} {
+      allow read, update, delete: if isVerifiedUser() && resource.data.userId == request.auth.uid;
+      allow create: if isVerifiedUser() && request.resource.data.userId == request.auth.uid;
+    }
+
+    match /designs/{designId} {
+      allow read, update, delete: if isVerifiedUser() && resource.data.userId == request.auth.uid;
+      allow create: if isVerifiedUser() && request.resource.data.userId == request.auth.uid;
+    }
+
+    match /earnings_reports/{reportId} {
+      allow read: if isVerifiedUser() && resource.data.userId == request.auth.uid;
+      allow create, update: if isVerifiedUser() && request.resource.data.userId == request.auth.uid;
+      allow delete: if false;
+    }
+
+    // EPK portals are meant to be shared with press/media outside the app —
+    // public read by design, owner-only write.
+    match /epk_portals/{portalId} {
+      allow read: if true;
+      allow create: if isVerifiedUser() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isVerifiedUser() && resource.data.userId == request.auth.uid;
+    }
+
+    match /influencerBounties/{bountyId} {
+      allow read, update, delete: if isVerifiedUser() && resource.data.userId == request.auth.uid;
+      allow create: if isVerifiedUser() && request.resource.data.userId == request.auth.uid;
+    }
+
+    // Global, non-sensitive aggregate operational stats (doc ID = instrumentId).
+    match /instrument_usage_stats/{instrumentId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /iswc_works/{workId} {
+      allow read, update, delete: if isVerifiedUser() && resource.data.userId == request.auth.uid;
+      allow create: if isVerifiedUser() && request.resource.data.userId == request.auth.uid;
+    }
+
+    // Client-writable financial ledger records (SmartContractService), separate
+    // from the `users/{uid}/ledger` server-only subcollection written by webhooks.
+    match /ledger/{entryId} {
+      allow read, update, delete: if isVerifiedUser() && resource.data.userId == request.auth.uid;
+      allow create: if isVerifiedUser() && request.resource.data.userId == request.auth.uid;
+    }
+
+    // Merchandise design/product catalog templates: public read, admin-only write
+    // (client never creates catalog entries — a denied write here is correct).
+    match /merchandise_catalog/{catalogId} {
+      allow read: if isAuthenticated() || isGuest();
+      allow write: if isAdmin();
+    }
+
+    // User-created merch product/design instances (distinct from the catalog
+    // templates above) — MerchandiseService.addProduct/deleteProduct.
+    match /merchandise/{productId} {
+      allow read, update, delete: if isVerifiedUser() && resource.data.userId == request.auth.uid;
+      allow create: if isVerifiedUser() && request.resource.data.userId == request.auth.uid;
+    }
+
+    match /merchandise_inventory/{itemId} {
+      allow read, update, delete: if isVerifiedUser() && resource.data.userId == request.auth.uid;
+      allow create: if isVerifiedUser() && request.resource.data.userId == request.auth.uid;
+    }
+
+    match /mockup_generations/{mockupId} {
+      allow read, update, delete: if isVerifiedUser() && resource.data.userId == request.auth.uid;
+      allow create: if isVerifiedUser() && request.resource.data.userId == request.auth.uid;
+    }
+
+    // Org invites: visible/creatable by members of the referenced org.
+    match /organization_invites/{inviteId} {
+      allow read: if isAuthenticated() && isOrgMember(resource.data.orgId);
+      allow create: if isAuthenticated() && isOrgMember(request.resource.data.orgId);
+      allow update, delete: if isAuthenticated() && isOrgMember(resource.data.orgId);
+    }
+
+    match /print_jobs/{jobId} {
+      allow read, update, delete: if isVerifiedUser() && resource.data.userId == request.auth.uid;
+      allow create: if isVerifiedUser() && request.resource.data.userId == request.auth.uid;
+    }
+
+    match /promoter_pitches/{pitchId} {
+      allow read, update, delete: if isVerifiedUser() && resource.data.userId == request.auth.uid;
+      allow create: if isVerifiedUser() && request.resource.data.userId == request.auth.uid;
+    }
+
+    match /recoupment_balances/{balanceId} {
+      allow read, update, delete: if isVerifiedUser() && resource.data.userId == request.auth.uid;
+      allow create: if isVerifiedUser() && request.resource.data.userId == request.auth.uid;
+    }
+
+    match /royalty_report_claims/{claimId} {
+      allow read, update, delete: if isVerifiedUser() && resource.data.userId == request.auth.uid;
+      allow create: if isVerifiedUser() && request.resource.data.userId == request.auth.uid;
+    }
+
+    match /scheduledPosts/{postId} {
+      allow read, update, delete: if isVerifiedUser() && resource.data.userId == request.auth.uid;
+      allow create: if isVerifiedUser() && request.resource.data.userId == request.auth.uid;
+    }
+
+    match /smart_contracts/{contractId} {
+      allow read, update, delete: if isVerifiedUser() && resource.data.userId == request.auth.uid;
+      allow create: if isVerifiedUser() && request.resource.data.userId == request.auth.uid;
+    }
+
+    // Doc ID is the user's own uid — no separate userId field needed.
+    match /user_preferences/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    match /vinyl_campaigns/{campaignId} {
+      allow read, update, delete: if isVerifiedUser() && resource.data.userId == request.auth.uid;
+      allow create: if isVerifiedUser() && request.resource.data.userId == request.auth.uid;
+    }
+
+    // Read-only connectivity probe (HealthPanel) — no client writes expected.
+    match /_health_check/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+
+    // Shared, non-sensitive Vertex context-cache metadata (doc ID = content hash,
+    // not user-scoped by design — the whole point is cross-session reuse).
+    match /ai_context_cache/{hash} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // =========================================================================
     // Generated Content / History
     // =========================================================================
     match /history/{historyId} {
@@ -791,6 +928,25 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // Owner-scoped user subcollections previously missing rules entirely
+    // (ISSUE-842 for integrations; LivingFileService/StyleMemoryStore had none).
+    match /users/{userId}/living_files/{fileName} {
+      allow read, write: if isOwner(userId);
+    }
+
+    match /users/{userId}/styleLedger/{entryId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    match /users/{userId}/styleDNA/{docId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // PODCredentialService — POD provider API keys, field-level per provider.
+    match /users/{userId}/integrations/{docId} {
+      allow read, write: if isOwner(userId);
+    }
+
     // =========================================================================
     // Licensing Clearances
     // =========================================================================
@@ -808,6 +964,13 @@ service cloud.firestore {
       allow create: if (isVerifiedUser() && request.resource.data.get('userId', null) == request.auth.uid) || (isGuest() && request.resource.data.get('userId', null) == 'founder-demo-uid');
       allow update: if (isVerifiedUser() && resource.data.get('userId', null) == request.auth.uid) || (isGuest() && resource.data.get('userId', null) == 'founder-demo-uid');
       allow delete: if false;
+
+      // Recoupment transactions applied against this deal — owner of the parent deal only.
+      match /transactions/{txId} {
+        allow read, create: if isVerifiedUser() &&
+          get(/databases/$(database)/documents/label_deals/$(dealId)).data.userId == request.auth.uid;
+        allow update, delete: if false;
+      }
     }
 
     // =========================================================================
