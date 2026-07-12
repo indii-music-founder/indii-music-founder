@@ -12832,13 +12832,14 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-820: Short-form social delivery queues to token/platform names that the worker cannot use
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIALLY FIXED (2026-07-12) — YouTube Shorts platform-alias mismatch fixed; token-store split was already resolved by a prior ISSUE-766 patch for tiktok/instagram; YouTube token population itself is a separate, deeper gap
 - **Severity:** 🟠 HIGH
 - **Module:** Marketing / Social delivery
 - **Evidence:** OAuth token exchange stores Spotify/TikTok/Instagram tokens at `users/{uid}/analyticsTokens/{platform}` (`platformTokenExchange.ts:15,37-40,83-103`), while the scheduled delivery worker reads `users/{uid}/socialTokens/{platform}` (`deliverScheduledPosts.ts:47-54,234-240`). The autoposter UI/service sends `youtube_shorts` (`MultiPlatformPoster.tsx:80-91`, `SocialAutoPosterService.ts:12,70-74`), but `dispatchSocialPost.normalizeDispatchPlatform()` accepts only `twitter`, `instagram`/`meta_reels`, and `tiktok` (`marketing.ts:56-64`), even though the worker later supports `youtube` (`deliverScheduledPosts.ts:22,246-258`).
 - **Impact:** TikTok/Instagram posts can queue successfully but later fail with “No OAuth token,” and YouTube Shorts fails at queue time because the platform alias is unsupported.
 - **Fix:** Unify the token store and platform enum across analytics, social posting, dispatch, and worker code. Either migrate tokens or let the worker read the canonical analytics token path; map `youtube_shorts` to `youtube` before queueing.
 - **Acceptance:** A connected Instagram/TikTok account can queue and deliver a fixture post; YouTube Shorts queues as `youtube`; failed posts show the real missing-permission/platform reason in the UI.
+- **Fix applied (2026-07-12):** `normalizeDispatchPlatform()` (`marketing.ts`) now maps both `'youtube'` and `'youtube_shorts'` (the literal id `MultiPlatformPoster`/`SocialAutoPosterService` actually send) to `'youtube'` — the exact value `deliverScheduledPosts.ts`'s platform switch matches. Previously any YouTube Shorts post was rejected with `HttpsError('failed-precondition', ...)` at queue time, before ever reaching the worker or a token check. Investigated the token-store-split half of the evidence and found it was **already fixed** by a prior commit (referenced in this same ledger under ISSUE-766): `platformTokenExchange.ts`'s `storeToken()` dual-writes to both `analyticsTokens/{platform}` and `socialTokens/{platform}` for `instagram`/`tiktok`/`youtube` — so a connected Instagram or TikTok account's token is already discoverable at the path the worker reads from. Tests: new `marketing.test.ts` (5 cases) — `youtube_shorts`→`youtube`, plain `youtube`, existing twitter/instagram/tiktok aliases unchanged, case/whitespace tolerance, still rejects a genuinely unsupported platform. Exported `normalizeDispatchPlatform` (was module-private) to make it directly unit-testable without standing up a full callable/Firestore mock. Full firebase package suite (343 tests) green, typecheck/lint clean on both packages. **Not done:** no code path ever calls `storeToken(uid, 'youtube', ...)` — the comment in `platformTokenExchange.ts` states YouTube is meant to use the client-side Google OAuth token directly, but nothing actually persists it to `socialTokens/youtube`. This means a YouTube Shorts post now correctly *queues* as `'youtube'` (closing this issue's specific "fails at queue time" defect and satisfying the "YouTube Shorts queues as youtube" acceptance line) but will still fail at *delivery* time with an honest `"No OAuth token for youtube"` error (matching the "failed posts show the real...reason" acceptance line) until the deeper YouTube-OAuth-token-population gap — a distinct, larger piece of work already covered by ISSUE-766's broader "credentials not configured" scope — is addressed.
 
 ### ISSUE-821: Royalty release gate declares “ready to release” after PRO only
 
@@ -14267,13 +14268,14 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-961: Audio Distribution QC treats every M4A/MP4 file as a lossless master without inspecting its codec
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIALLY FIXED (2026-07-12) — browser/web upload path now probes the real codec; Electron desktop path still unaddressed
 - **Severity:** 🔴 CRITICAL (invalid distribution master approval)
 - **Module:** Audio Analyzer / Distribution QC
 - **Evidence:** The lossless allowlist includes `audio/x-m4a`, `audio/mp4`, `.m4a`, and labels them “ALAC containers” (`AudioAnalyzer.tsx:51-64`). `isLosslessFormat()` returns true solely from MIME or extension (`:66-72`), and both browser and Electron paths gate only on those values before running/allowing the distribution analysis (`:74-142`). M4A/MP4 are containers and can carry lossy AAC; renamed files and codec variants are not probed.
 - **Impact:** A lossy AAC `.m4a` can pass the app’s authoritative lossless-master gate and be presented/saved as distribution compliant, risking distributor rejection or degraded source delivery.
 - **Fix:** Parse container/stream metadata and require an actually lossless supported codec (for M4A, ALAC—not AAC), valid sample rate/bit depth/channel layout, and decodable nontruncated audio. Keep extension/MIME only as an initial picker hint.
 - **Acceptance:** ALAC-in-M4A passes; AAC-LC/HE-AAC-in-M4A and AAC renamed `.wav` fail with codec-specific guidance; valid WAV/FLAC/AIFF pass; corrupt/truncated/unsupported multichannel fixtures fail before “Extraction Complete” or save; the stored QC record includes measured codec/container properties.
+- **Fix applied (2026-07-12):** Added `M4ACodecProbe.ts`'s `detectM4ACodec(file)` — walks the real ISO-BMFF box tree (`moov`→`trak`→`mdia`→`hdlr`(`soun`)→`minf`→`stbl`→`stsd`) to read the actual sample-entry codec fourcc, returning `'lossless'` only for `alac`, `'lossy'` with the real codec name (e.g. `mp4a`/AAC) otherwise, and `'undetermined'` for anything unparseable (corrupt/truncated box, non-ISO-BMFF bytes despite the extension, or no audio track found) — `'undetermined'` is treated as a hard fail, never an implicit pass. Wired into `AudioAnalyzer.tsx`'s `handleFileUpload` (the browser/web upload path): after the existing MIME/extension gate, `.m4a`/`.alac`-flagged files are probed before analysis runs, with a codec-specific rejection toast for AAC and a corrupt-container toast for undetermined. Tests: new `M4ACodecProbe.test.ts` (5 cases, synthetic ISO-BMFF fixtures built byte-for-byte) prove ALAC passes, AAC (`mp4a`) is rejected, non-container/truncated/video-only-track files are all `'undetermined'`. **Not done:** the Electron desktop path (`handleLoadClick`) only ever receives a file PATH from the native dialog — no bytes reach the renderer to probe, so this gap remains open there pending a new main-process IPC channel to read local file bytes (flagged inline in the code, not attempted this pass — modifying Electron main-process file-system IPC needs its own scoped review). The "AAC renamed to `.wav`" and "unsupported multichannel" acceptance items, and persisting measured codec/container properties into the stored QC record, are also not addressed — those require validating WAV/FLAC/AIFF containers themselves (not just M4A) and are closer in scope to ISSUE-963's broader asset-validation rewrite than to this M4A-specific gate.
 
 ### ISSUE-962: Browser Audio QC base64-encodes and sends the full master twice in parallel with no size/duration limit
 
@@ -15037,13 +15039,14 @@ Naming fix: `LabelDealRecoupmentService.ts` collection literal `'labelDeals'` �
 
 ### ISSUE-1024: DAW project-file DSP compliance check uses hardcoded fake loudness/true-peak constants regardless of the actual audio
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-12)
 - **Severity:** 🔴 CRITICAL (false master-compliance decisions, same class as ISSUE-997 but with no content-dependence at all)
 - **Module:** Audio Analyzer / DAW project import / Distribution QC
 - **Evidence:** `DAWIntegrationService.verifyDSPCompliance()` (`DAWIntegrationService.ts:784-796`) parses `sampleRate`/`bitDepth` from the actual DAW project file, but hardcodes `const integratedLufs = -15.0;` and `const truePeakDb = -1.0;` with the comment "We use mock/standard defaults for loudness/true-peak since DAW project files do not have audio streams" — then passes these fake constants into `DSPComplianceValidator.validateAudio()`, which returns a compliance report as if they were measured. Discovered while fixing ISSUE-997 (the related browser-analyzer heuristic issue).
 - **Impact:** Every DAW project file (Ableton `.als`, Logic `.logicx`, FL Studio `.flp`, etc.) run through this compliance check reports an **identical** loudness/true-peak compliance result regardless of what the actual mixed/mastered audio sounds like — the check is content-independent theater, worse than ISSUE-997's heuristic (which at least varies with the input).
 - **Fix:** Either render/bounce the project's audio (or its export stems) and measure that, or — if no audio is available at this stage — do not call `validateAudio()` with fabricated loudness/peak values at all; report loudness/true-peak as "Not available for project files" and only report the genuinely-parsed sampleRate/bitDepth checks.
 - **Acceptance:** Two DAW project fixtures with different actual mixes never receive identical LUFS/true-peak-based compliance verdicts from fabricated inputs; the UI never displays a LUFS/true-peak number for a project file that was never measured; sampleRate/bitDepth-only checks (which ARE parsed from the file) remain functional.
+- **Fix applied (2026-07-12):** Added `DSPComplianceValidator.validateFormatOnly(sampleRate, bitDepth)` — checks only the genuinely-parsed format fields against DSP platform limits, sets `measurementMethod: 'unavailable'`, and adds an explicit flag `'Loudness/true-peak compliance not evaluated: project files carry no audio stream to measure.'` instead of computing any loudness/true-peak pass/fail. `DAWIntegrationService.verifyDSPCompliance()` now calls this instead of fabricating `-15.0`/`-1.0` and feeding them into `validateAudio()`. Widened `DSPComplianceReport.measurementMethod` to `'estimated' | 'unavailable'` so callers/UI can distinguish a heuristic estimate (ISSUE-997) from no measurement at all. `verifyDSPCompliance()` has zero external callers today (confirmed via repo-wide grep) — fixed anyway per platinum standards since it's reachable ledger-cited logic, not deleted per the asset-pruning caution. Tests: new `DSPComplianceValidator.test.ts` cases prove `validateFormatOnly()` never emits a LUFS/dBTP-referencing warning and still fails sub-standard sample rate/bit depth; `DAWIntegrationService.test.ts`'s existing `verifyDSPCompliance` spec (nested inside a pre-existing, unrelated `describe.skip('DAWIntegrationService', ...)` block from `b99097bc5` "skip integration tests in CI/test environments" — out of scope to un-skip here) got a third case asserting the same no-fabricated-verdict behavior for documentation parity, though it doesn't execute in CI; the executable coverage lives in `DSPComplianceValidator.test.ts`. Full `packages/renderer/src/services/audio/` suite green (19 passed, 1 file intentionally skipped), typecheck/lint clean.
 
 ### ISSUE-1025: Mobile Controller impersonates desktop presence, falsely reports “Studio Connected,” and can steal its own Boardroom commands
 
@@ -15064,8 +15067,57 @@ Naming fix: `LabelDealRecoupmentService.ts` collection literal `'labelDeals'` �
   - **Missing Integration Test for Same-UID Race:** Current `App.remoteSurface.test.ts` tests device classification but NOT same-UID multi-client scenarios. No test covers Controller + Desktop browser in parallel, verifying the Controller cannot call `pushDesktopState`, claim commands, or self-promote presence. Emulator-backed test required.
   - **Production Risk:** In a shipped two-browser scenario (phone Controller open in Safari + desktop app closed), if the user accidentally opens the Controller URL on the desktop browser, that second Controller instance could write a fake heartbeat, causing the phone to show `Studio Connected`, send a command, and hang for 120s waiting for an executor that's actually just another Controller.
   
+  **Live Verification (2026-07-12):** Phone remote can send commands to desktop and receive full agent responses. "Processing in desktop studio..." → full Conductor response including project context. End-to-end relay chain working. The `studioInstanceId` + `role` + `listenerReady` guards are preventing Controller self-promotion in normal operations.
+  
   **Required fixes (sequenced):**
   1. Create a server-side Studio lease issuer (Cloud Function) that mints a time-bounded `executorToken` only when the real Studio app registers with OS credentials (MAC address, device ID, etc.).
   2. Enhance Firestore rules to reject `role: 'studio'`, `listenerReady: true`, and `executionTarget: 'studio'` writes unless the request includes a valid `executorToken` claim.
   3. Add same-UID Firestore emulator test: open Controller tab, verify `pushDesktopState` not called; verify Controller UI says offline; send command, verify it routes to cloud worker. Then open real Studio, verify one fresh lease and one successful command route.
   4. Verify no production code regresses after the rule changes (search for any other code writing these fields).
+  5. **Production risk reduced by:** (a) Desktop app's `isStudioExecutor` flag + `enabled` parameter prevents Controller routes from mounting the relay hook; (b) `isFreshStudioState()` requires `role === 'studio'` AND `studioInstanceId` AND `listenerReady === true`; (c) Cloud Function ignores `executionTarget: 'studio'` commands (skips processing, leaves pending for desktop). Multi-layer defense until Firestore rules can enforce it server-side.
+
+---
+
+### ISSUE-1043: GitHub Release Missing Updater Manifest Files
+
+- **Status:** 🔴 OPEN (blocks Founders Version One installation)
+- **Severity:** 🔴 CRITICAL (installers cannot check for updates)
+- **Error Message:** "Founders Version One cannot be installed yet because the latest GitHub release is missing its updater manifest. Publish a repaired release with latest-mac.yml, latest.yml, and latest-linux.yml, then check again."
+- **Root Cause:** Last GitHub release was published manually or by workflow failure — missing `latest-mac.yml`, `latest.yml`, `latest-linux.yml` in release assets
+- **Location:** GitHub repo releases tab; `.github/workflows/release.yml` verification gate (lines 184-217)
+- **Fix:**
+  1. Rebuild desktop installers locally: `npm run build:studio && npx electron-builder --publish never`
+  2. Upload manifest files to existing GitHub release: `gh release upload vX.X.X dist-electron/latest-*.yml --clobber`
+  3. Or: delete existing release tag, push new tag to trigger full `release.yml` workflow (recommended for consistency)
+- **Verification:** After fix, installer updater should recognize release and allow installation; no "missing manifest" error
+
+---
+
+### ISSUE-1044: Remote Relay Cannot Access Local Desktop File System
+
+- **Status:** 🔴 OPEN (discovered live 2026-07-12)
+- **Severity:** 🟠 MEDIUM-HIGH (blocks creative asset discovery from phone)
+- **Module:** Mobile Remote / Agent Asset Access / Cloud Relay
+- **Discovered:** User asked phone agent to find "font logo" in local assets → agent searched but couldn't access the files
+- **Root Cause:** Cloud agents (Gemini running in Firebase Functions) have no permissions to read the desktop's local file system. Assets must be:
+  1. Already indexed in Firestore Storage
+  2. Accessible via HTTP URL
+  3. Exposed through a specific tool (file browser)
+- **Impact:** Artist working on desktop can't ask the phone remote to find/reference local project files. Asset discovery is blocked unless files are pre-uploaded.
+- **Design Solution:** Create a **Desktop File Browser Tool** that:
+  1. Desktop app exposes a local file index (via Electron IPC or Firebase Realtime DB)
+  2. Cloud agent calls `browse_local_files(path: "/Users/.../Photos", filter: "*.png")` 
+  3. Desktop service returns: `[{ name, size, modifiedAt, url }]` for matching files
+  4. Agent can then reference files by name or download them
+  5. Agent stores metadata in Firestore for cross-device access
+- **Architecture:**
+  - **Desktop side:** `DesktopFileService.ts` → scans local folders (Photos, Projects, Downloads) → posts to Firestore collection `users/{uid}/file-index/{folderId}` or via IPC
+  - **Cloud side:** `browseLoacalFiles` tool in Cloud Function → calls `firestoreClient.query('file-index')` or desktop IPC bridge
+  - **Phone side:** Agent can ask "find font logo in photos" → tool returns matches → agent presents options
+- **Acceptance:**
+  1. Phone agent can search for files by name/extension in Desktop's Photos/Projects/Downloads
+  2. Agent can suggest specific matching files
+  3. Desktop can mark files as "assets" for faster indexing
+  4. Offline scenario: desktop caches file index locally, syncs when online
+- **DO NOT:** Do not expose arbitrary file system access — only whitelisted folders (Photos, Projects, Downloads, Creative Cache). Enforce strict path validation to prevent directory traversal.
+

@@ -28,3 +28,36 @@ describe('DSPComplianceValidator.validateAudio (ISSUE-997)', () => {
         expect(report.measurementMethod).toBe('estimated');
     });
 });
+
+/**
+ * ISSUE-1024: DAWIntegrationService.verifyDSPCompliance() used to fabricate
+ * -15 LUFS/-1.0 dBTP constants for every DAW project file (no audio stream
+ * exists to measure) and validate against them as if measured, producing an
+ * identical, content-independent compliance verdict regardless of the
+ * actual mix. validateFormatOnly() must never make a loudness/true-peak
+ * claim at all.
+ */
+describe('DSPComplianceValidator.validateFormatOnly (ISSUE-1024)', () => {
+    it('never claims a loudness/true-peak measurement', () => {
+        const report = DSPComplianceValidator.validateFormatOnly(48000, 24);
+        expect(report.measurementMethod).toBe('unavailable');
+        expect(report.flags).toContain('Loudness/true-peak compliance not evaluated: project files carry no audio stream to measure.');
+        for (const check of Object.values(report.platformChecks)) {
+            expect(check.warnings.join(' ')).not.toMatch(/LUFS|dBTP/);
+        }
+    });
+
+    it('still evaluates the genuinely-parsed sampleRate/bitDepth', () => {
+        const compliant = DSPComplianceValidator.validateFormatOnly(48000, 24);
+        expect(compliant.isCompliant).toBe(true);
+
+        const subStandard = DSPComplianceValidator.validateFormatOnly(22050, 8);
+        expect(subStandard.isCompliant).toBe(false);
+        expect(subStandard.flags).toContain('REJECTION RISK: Format below required 44.1kHz threshold.');
+    });
+
+    it('defaults bitDepth to 16 when not provided, matching validateAudio()', () => {
+        const report = DSPComplianceValidator.validateFormatOnly(44100);
+        expect(report.isCompliant).toBe(true);
+    });
+});

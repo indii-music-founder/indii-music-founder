@@ -10,6 +10,7 @@ import { useToast } from '@/core/context/ToastContext';
 import { TagMatrix } from './components/TagMatrix';
 import { AudioIntelligenceProfile } from '@/services/audio/types';
 import { audioAnalysisService } from '@/services/audio/AudioAnalysisService';
+import { detectM4ACodec } from '@/services/audio/M4ACodecProbe';
 import { AudioWaveformViewer } from '@/components/shared/AudioWaveformViewer';
 import { useStore } from '@/core/store';
 import { logger } from '@/utils/logger';
@@ -71,6 +72,17 @@ const AudioAnalyzer: React.FC = () => {
         return LOSSLESS_EXTENSIONS.has(ext);
     };
 
+    // ISSUE-961: M4A/MP4 is a container, not a codec — it can carry lossy
+    // AAC just as easily as lossless ALAC. Extension/MIME alone can't tell
+    // them apart; the actual sample-entry codec must be probed.
+    const M4A_MIME_TYPES = new Set(['audio/x-m4a', 'audio/mp4', 'audio/alac']);
+    const M4A_EXTENSIONS = new Set(['.m4a', '.alac']);
+    const isM4AContainer = (f: File): boolean => {
+        if (f.type && M4A_MIME_TYPES.has(f.type.toLowerCase())) return true;
+        const ext = '.' + f.name.split('.').pop()?.toLowerCase();
+        return M4A_EXTENSIONS.has(ext);
+    };
+
     const handleLoadClick = async (e: React.MouseEvent<HTMLLabelElement>) => {
         if (window.electronAPI) {
             e.preventDefault();
@@ -81,8 +93,15 @@ const AudioAnalyzer: React.FC = () => {
                     title: 'Select Lossless Master Track',
                     filters: [{ name: 'Lossless Audio', extensions: ['wav', 'flac', 'aif', 'aiff', 'm4a'] }]
                 });
-                
+
                 if (filePath) {
+                    // ISSUE-961: the Electron path only ever receives a file
+                    // PATH from the native dialog (no bytes reach the
+                    // renderer), so the M4A codec probe below — which reads
+                    // File.arrayBuffer() — cannot run here. A real fix needs
+                    // a new main-process IPC channel to read file bytes;
+                    // this pass only closes the gap for the browser/web
+                    // upload path, which does have real bytes to inspect.
                     const pathStr = filePath as string;
                     const ext = '.' + pathStr.split('.').pop()?.toLowerCase();
                     if (!LOSSLESS_EXTENSIONS.has(ext)) {
@@ -130,6 +149,26 @@ const AudioAnalyzer: React.FC = () => {
             // Reset the input so the same file can be re-selected after conversion
             e.target.value = '';
             return;
+        }
+
+        // ISSUE-961: extension/MIME says "M4A" but that only names the
+        // container — probe the actual sample-entry codec before trusting it.
+        if (isM4AContainer(uploadedFile)) {
+            const probe = await detectM4ACodec(uploadedFile);
+            if (probe.status === 'lossy') {
+                toast.error(
+                    `This M4A contains ${probe.codec.toUpperCase()} audio, a lossy codec. Distributors require a lossless master (WAV, FLAC, AIFF, or ALAC-in-M4A). Please re-export as lossless.`
+                );
+                e.target.value = '';
+                return;
+            }
+            if (probe.status === 'undetermined') {
+                toast.error(
+                    `This M4A file's audio codec could not be verified — the container may be corrupt or truncated. Please re-export as WAV, FLAC, or AIFF.`
+                );
+                e.target.value = '';
+                return;
+            }
         }
 
         setFile(uploadedFile);
