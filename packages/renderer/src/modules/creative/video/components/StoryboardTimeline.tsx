@@ -334,8 +334,14 @@ export function StoryboardTimeline() {
                 outputLocation: 'local_ignored.mp4',
                 useCloudQueue: true
             });
-            
-            toast.success(`Showreel dispatched successfully! URL: ${result}`);
+
+            // ISSUE-995: a queued render has no shareable URL yet — don't
+            // claim one exists. Only a real, completed public URL is a link.
+            if (typeof result === 'string') {
+                toast.success(`Showreel render complete! URL: ${result}`);
+            } else {
+                toast.info(`Showreel render queued (ID: ${result.renderId}). No shareable link yet — this can take several minutes.`);
+            }
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             logger.error('[StoryboardTimeline] Showreel render failed:', error);
