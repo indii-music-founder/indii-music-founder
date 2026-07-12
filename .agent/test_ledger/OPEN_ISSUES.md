@@ -49,10 +49,14 @@
 - **Fix:** Add `<ArchiveFilter>` to ProjectList; update `listByUser` to allow toggle
 - **Est. time:** 30 min
 
-**ISSUE-760: Boardroom Persistence (architectural)**
-- **Status:** 🟡 READY — needs migration boardroomSlice → ConversationSession
-- **Blocker:** ISSUE-755 (now ✅), but requires session system expansion
-- **Recommended:** Consolidate boardroom a2aMessages into session.messages with source='boardroom'
+**ISSUE-760: Boardroom Persistence ✅ FIXED (verified 2026-07-12 code-audit)**
+- **Status:** 🟢 DONE — boardroom already rides the ConversationSession spine → Firestore. My earlier "🟡 READY / needs migration" was STALE.
+- **Verified in code (MCLEAR pass):**
+  - `store/slices/agent/index.ts:65-76` — entering boardroom switches `activeSessionId` to a `namespace:'boardroom'`, projectId-scoped session (creates it via `createSession('Boardroom', ['indii'], 'boardroom', projectId)` if absent).
+  - `agentSessionSlice.ts:247-298` — `addAgentMessage` persists every message to Firestore via `sessionService.updateSession()` with 3-attempt retry backoff. Boardroom messages flow through this exact path.
+  - `BoardroomModule.tsx:48` + `store/index.ts:135` — `boardroomMessages` is now an ALIAS for `state.agentHistory` (active session messages), NOT a separate array. The localStorage `boardroomMessages` partialize key is a legacy ISSUE-007 HMR-survival shim, not the source of truth.
+- **Acceptance met:** Firestore persistence ✅, cross-device sync (sessions sync) ✅, archive visibility (namespaced session) ✅, reload survival ✅, feeds memory pipeline ✅.
+- **OBSOLETE:** `docs/BOARDROOM_PERSISTENCE_ARCHITECTURE.md` phases 2-4 (source-field migration) are NOT needed — the `namespace` approach superseded them and honors the DO-NOT ("do not create a separate persistence path"). Doc marked obsolete.
 
 **ISSUE-763: Beta First-Touch ✅ FIXED**
 - **Completed:** First-run guidance overlay added to CreativeStudio canvas (hint: "Create Your First Image")
@@ -11969,7 +11973,7 @@ Walked individual menus applying all four lenses (double-click races / authoriza
 
 ### ISSUE-760: Boardroom messages are in-memory only — full discussion lost on reload
 
-- **Status:** 🔴 OPEN (PLANNED — needs a persistence-verify pass before coding)
+- **Status:** 🟢 FIXED (verified 2026-07-12) — the persistence-verify pass is done; boardroom rides the durable session spine → Firestore. See the reconciled entry in the session-summary section above for the exact code evidence (`agent/index.ts:65-76`, `agentSessionSlice.ts:247-298`, `BoardroomModule.tsx:48`). No new code was required; the fix landed via session unification (`namespace:'boardroom'`), not a parallel store.
 - **Depends on:** ISSUE-755 (should ride the same durable-session mechanism)
 - **Severity:** 🟠 MEDIUM-HIGH (boardroom is the group-work centerpiece; suspected total loss on refresh)
 - **Location:** `packages/renderer/src/core/store/slices/agent/agentSessionSlice.ts:56-58,96-108` (`boardroomMessages` + actions), `packages/renderer/src/modules/boardroom/BoardroomModule.tsx`
@@ -13090,13 +13094,14 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-832: Document query silently analyzes the first saved contract when the requested document is missing
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-12)
 - **Severity:** 🟠 HIGH
 - **Module:** Agent tools / Legal document query
 - **Evidence:** `UniversalTools.document_query()` looks for a contract matching `documentId` or path/title, but then falls back to `contracts[0]` if any contract exists (`UniversalTools.ts:177-190`). It only returns `DOCUMENT_NOT_FOUND` if no contract content exists at all (`:194-199`).
 - **Impact:** A user can ask about one agreement and receive analysis of an unrelated first contract, creating legal/commercial risk.
 - **Fix:** Remove the fallback. Require an exact document ID, explicit user-selected document, or a clearly ranked list asking the user to choose.
 - **Acceptance:** Unknown document IDs fail with `DOCUMENT_NOT_FOUND`; ambiguous title matches return candidates but do not analyze content until one is selected.
+- **Fix applied (2026-07-12):** Removed the `|| contracts[0]` fallback entirely. New logic: (1) if `documentId`/path was explicitly given and no contract matches it, return `DOCUMENT_NOT_FOUND` — never substitutes a different document; (2) if no specific document was requested and more than one contract exists, return a new `DOCUMENT_AMBIGUOUS` error carrying `candidates: [{id, title}]` for every saved contract, so the agent can ask the user to choose instead of guessing; (3) if no specific document was requested and exactly one contract exists, that single contract is unambiguous and is used directly (unchanged convenience case — there's nothing to guess between). Tests: new `UniversalTools.test.ts` (4 cases) — an unmatched `documentId` returns `DOCUMENT_NOT_FOUND` and never calls the LLM; no document requested with 2+ contracts returns `DOCUMENT_AMBIGUOUS` with the real candidate list and never calls the LLM; no document requested with exactly 1 contract analyzes it; an exact `documentId` match analyzes the correct contract. Typecheck clean; lint has only pre-existing unrelated `no-explicit-any` warnings elsewhere in the file.
 
 ### ISSUE-833: Merch mockup tool labels AI product photos as POD-ready manufacturing assets
 
