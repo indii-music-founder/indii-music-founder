@@ -199,7 +199,6 @@ describe.skip('DAWIntegrationService', () => {
             const report = dawIntegrationService.verifyDSPCompliance(parsed);
 
             expect(report.isCompliant).toBe(true);
-            expect(report.flags).toHaveLength(0);
         });
 
         it('should raise rejection risks and warning flags for sub-standard sample rates', () => {
@@ -213,6 +212,22 @@ describe.skip('DAWIntegrationService', () => {
 
             expect(report.isCompliant).toBe(false);
             expect(report.flags).toContain('REJECTION RISK: Format below required 44.1kHz threshold.');
+        });
+
+        it('ISSUE-1024: never fabricates a loudness/true-peak verdict for a project file', () => {
+            const quietMix = dawIntegrationService.verifyDSPCompliance({ sampleRate: 48000, bitDepth: 24, format: 'wav' as const });
+            const loudMix = dawIntegrationService.verifyDSPCompliance({ sampleRate: 48000, bitDepth: 24, format: 'wav' as const });
+
+            // Same format specs -> same verdict, but for the RIGHT reason: no
+            // loudness/true-peak claim is made at all, not because two
+            // differently-mixed masters coincidentally hashed to the same
+            // hardcoded -15 LUFS/-1.0 dBTP constants.
+            expect(quietMix.measurementMethod).toBe('unavailable');
+            expect(loudMix.measurementMethod).toBe('unavailable');
+            expect(quietMix.flags).toContain('Loudness/true-peak compliance not evaluated: project files carry no audio stream to measure.');
+            for (const check of Object.values(quietMix.platformChecks)) {
+                expect(check.warnings.join(' ')).not.toMatch(/LUFS|dBTP/);
+            }
         });
     });
 });
