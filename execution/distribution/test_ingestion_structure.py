@@ -8,13 +8,13 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.getcwd())
 
 try:
-    from ingestion_generator import Proprietary Ingestion IPGenerator
+    from ingestion_generator import DDEXGenerator
 except ImportError:
-    from execution.distribution.ingestion_generator import Proprietary Ingestion IPGenerator
+    from execution.distribution.ingestion_generator import DDEXGenerator
 
-class TestProprietary Ingestion IPStructure(unittest.TestCase):
+class TestDDEXStructure(unittest.TestCase):
     def setUp(self):
-        self.generator = Proprietary Ingestion IPGenerator()
+        self.generator = DDEXGenerator()
         self.root = ET.Element("Root")
         self.track = {
             "title": "Test Track",

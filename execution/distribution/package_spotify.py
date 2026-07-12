@@ -6,7 +6,7 @@ Creates the directory structure required by Spotify's ingestion pipeline:
 
     /inbox/
       └── {batch_id}/
-          ├── {release_id}.xml      (Proprietary Ingestion IP Ingestion Protocol 4.3)
+          ├── {release_id}.xml      (DDEX Ingestion Protocol 4.3)
           ├── resources/
           │   ├── track_1.flac
           │   ├── track_2.flac
@@ -14,7 +14,7 @@ Creates the directory structure required by Spotify's ingestion pipeline:
           └── manifest.xml           (batch manifest)
 
 Requirements from Spotify's Content Provider Onboarding Guide:
-- Proprietary Ingestion IP Ingestion Protocol 4.3 XML validated against official XSD
+- DDEX Ingestion Protocol 4.3 XML validated against official XSD
 - All tracks must have valid ISRCs
 - Cover art: minimum 3000x3000 JPEG
 - Content must be delivered 5+ business days before street date
@@ -37,7 +37,7 @@ from xml.dom import minidom
 # Ensure sibling modules are importable
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 try:
-    from ingestion_generator import Proprietary Ingestion IPGenerator
+    from ingestion_generator import DDEXGenerator
 except ImportError:
     pass
 
@@ -76,7 +76,7 @@ def generate_manifest(batch_id: str, releases: List[Dict[str, Any]]) -> str:
 
     # Sender (indii)
     sender = ET.SubElement(header, "MessageSender")
-    sender_dpid = os.environ.get("Proprietary Ingestion IP_SENDER_DPID", "PA-DPIDA-2025122604-E")
+    sender_dpid = os.environ.get("DDEX_SENDER_DPID", "PA-DPIDA-2025122604-E")
     ET.SubElement(sender, "PartyId").text = sender_dpid
 
     # Release List in this batch
@@ -193,13 +193,13 @@ def package_spotify(
                     "error": "Cover art file missing. Spotify requires cover art (JPEG, 3000x3000 minimum)."
                 }
 
-        # ─── 4. Generate Proprietary Ingestion IP Ingestion Protocol 4.3 XML ──────────────────────────────────
+        # ─── 4. Generate DDEX Ingestion Protocol 4.3 XML ──────────────────────────────────
         try:
-            generator = Proprietary Ingestion IPGenerator()
+            generator = DDEXGenerator()
             xml_content = generator.generate_ern(metadata)
         except NameError:
-            from ingestion_generator import Proprietary Ingestion IPGenerator
-            generator = Proprietary Ingestion IPGenerator()
+            from ingestion_generator import DDEXGenerator
+            generator = DDEXGenerator()
             xml_content = generator.generate_ern(metadata)
 
         # ─── 5. Build Spotify package directory structure ──────────────────
@@ -214,7 +214,7 @@ def package_spotify(
         resources_path = os.path.join(package_path, "resources")
         os.makedirs(resources_path)
 
-        # Write Ingestion Notification XML
+        # Write ERN XML
         xml_filename = f"{release_id}.xml"
         with open(os.path.join(package_path, xml_filename), 'w', encoding='utf-8') as f:
             f.write(xml_content)
