@@ -425,12 +425,21 @@ export const FinanceTools = {
         }
     }),
 
+    // ISSUE-856: this tool never reads CSV file content, parses rows, validates
+    // columns, or reconciles totals — args.csvFiles are treated as bare
+    // filenames dropped into a prompt asking Gemini to DESCRIBE a mapping
+    // conceptually. It used to return status: 'Normalized into standard indii
+    // ledger format', letting an AI narrative pass for a deterministic
+    // imported ledger. A real CSV ingestion/reconciliation pipeline is a
+    // separate, larger build (parser, per-distributor schema mapping,
+    // row-level validation, totals reconciliation) — this fix only stops the
+    // false completion claim, labeling the output what it actually is: a
+    // draft mapping suggestion, not normalized ledger data.
     normalize_distributor_statements: wrapTool('normalize_distributor_statements', async (args: { csvFiles: string[] }) => {
-        // Item 179: Use Gemini to parse and normalize CSV structures from different distributors
         const { AutonomousIntelligence, getResponseText } = await importWithRetry(() => import('@/services/intelligence/AutonomousIntelligence'));
 
         const prompt = `
-        You are a music industry financial analyst. The following CSV files have been uploaded 
+        You are a music industry financial analyst. The following CSV files have been uploaded
         from ${args.csvFiles.length} different music distributors:
         ${args.csvFiles.map((f, i) => `${i + 1}. ${f}`).join('\n')}
 
@@ -448,8 +457,8 @@ export const FinanceTools = {
             return toolSuccess({
                 filesProcessed: args.csvFiles.length,
                 normalizationAnalysis: analysisText,
-                status: 'Normalized into standard indii ledger format'
-            }, `Successfully analyzed and normalized ${args.csvFiles.length} distributor CSV statements into a unified format.`);
+                status: 'mapping_draft'
+            }, `Generated a draft normalization mapping suggestion for ${args.csvFiles.length} distributor statement(s). No files were actually parsed and no ledger rows were created — this is an AI-suggested column mapping only. Real CSV import, row validation, and totals reconciliation still need to happen before this can be trusted as ledger data.`);
         } catch (error: unknown) {
             logger.warn('[FinanceTools] Gemini normalization failed:', error);
             return toolError(
