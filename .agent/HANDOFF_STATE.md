@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-07-12 11:37 EDT
+**Updated:** 2026-07-12 11:46 EDT
 **Branch:** `fix/issues-core`
 
 ## Recent Commits
 ```
+f6e2877ce fix(crm): require a real deliverable before a drop can go Active
+a1ef03c9b chore: session checkpoint [11:37]
 e2b96cca3 fix(creative): warn that the 3D Stage Builder is unsaved and confirm Clear Stage
 7eaeed4a6 chore: session checkpoint [11:32]
 49a331d23 fix(creative): actually validate cover art dimensions against distributor rules
@@ -12,8 +14,6 @@ de1d85494 fix(distribution): require a real analyzed track and staged cover befo
 9aecd2b9a chore: session checkpoint [11:15]
 61b301d9d fix(publishing): stop marking releases metadata_complete when packaging fails
 1257337af chore: session checkpoint [11:07]
-a73a653e3 fix(onboarding): actually extract PDF text and attach audio for Brand Interview
-6a92d87d2 chore: session checkpoint [11:01]
 ```
 
 ## Working State
