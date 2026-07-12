@@ -174,22 +174,55 @@ export const PublishingTools = {
         };
     }),
 
+    // ISSUE-812: this tool used to fabricate `status: 'Submitted'` and a
+    // random `proReferenceId` — there is no real ASCAP/BMI/SESAC API
+    // integration (those require B2B credentials this app doesn't have).
+    // It now stores a real draft packet and honestly reports that manual
+    // submission at the PRO's own portal is required — never a fake
+    // confirmation or reference ID.
     register_work_with_pro: wrapTool('register_work_with_pro', async (args: {
         workTitle: string;
         writers: Array<{ name: string; ipi?: string; role: string; split: number }>;
         publisher?: { name: string; ipi?: string; split: number };
         society: 'ASCAP' | 'BMI' | 'SESAC' | string;
     }) => {
-        // Mock PRO registration logic since real ASCAP/BMI APIs require B2B credentials
-        return toolSuccess({
-            status: 'Submitted',
-            workTitle: args.workTitle,
-            society: args.society,
-            writers: args.writers,
-            publisher: args.publisher,
-            estimatedProcessingTime: '3-5 business days',
-            proReferenceId: `PRO-${Math.random().toString(36).substring(2, 9).toUpperCase()}`
-        }, `Successfully submitted "${args.workTitle}" to ${args.society} for registration.`);
+        try {
+            const { db, auth } = await importWithRetry(() => import('@/services/firebase'));
+            const { collection, addDoc, serverTimestamp } = await importWithRetry(() => import('firebase/firestore'));
+
+            const uid = auth.currentUser?.uid;
+            if (!uid) {
+                return toolError("User must be authenticated to prepare a PRO registration draft.");
+            }
+
+            const portalUrl = args.society === 'ASCAP' ? 'https://www.ascap.com/repertory'
+                : args.society === 'BMI' ? 'https://repertoire.bmi.com'
+                : args.society === 'SESAC' ? 'https://www.sesac.com'
+                : `the ${args.society} member portal`;
+
+            const docRef = await addDoc(collection(db, 'users', uid, 'proSubmissionDrafts'), {
+                workTitle: args.workTitle,
+                writers: args.writers,
+                publisher: args.publisher || null,
+                society: args.society,
+                status: 'requires_manual_submission',
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp()
+            });
+
+            return toolSuccess({
+                status: 'requires_manual_submission',
+                draftId: docRef.id,
+                workTitle: args.workTitle,
+                society: args.society,
+                writers: args.writers,
+                publisher: args.publisher
+            }, `Prepared a draft registration packet for "${args.workTitle}" (ID: ${docRef.id}). indii has no direct ${args.society} filing integration — submit this work manually at ${portalUrl}.`);
+        } catch (e: unknown) {
+            const error = e as Error;
+            logger.error('[PublishingTools] PRO draft creation failed:', error);
+            return toolError(`Failed to prepare PRO registration draft: ${error.message}`);
+        }
     })
 } satisfies Record<string, AnyToolFunction>;
 
