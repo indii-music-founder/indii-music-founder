@@ -1,25 +1,25 @@
 # Handoff State
-**Updated:** 2026-07-12 12:15 EDT
+**Updated:** 2026-07-12 12:33 EDT
 **Branch:** `fix/issues-core`
 
 ## Recent Commits
 ```
-f500cc8ef chore: session checkpoint [12:12]
-5609430fe chore: session checkpoint [12:11]
-a4a4090e8 fix(publishing): fail closed on audio/image decode errors instead of fabricating metadata
-f38342d0a docs: persistence fix roadmap (4-phase, beta-blocking)
-66e8eb39d chore: session checkpoint [12:06]
-621bae462 chore: session checkpoint [12:00]
-d1b08b22c fix(registration): stop claiming desktop browser automation works
-9e3b469fe chore: session checkpoint [11:46]
-f6e2877ce fix(crm): require a real deliverable before a drop can go Active
-a1ef03c9b chore: session checkpoint [11:37]
+c13f76ff4 chore: session checkpoint [12:32]
+078ea1357 chore: session checkpoint [14:45]
+72e7da52c fix(creative): derive real file extension for generated video/image file-nodes (ISSUE-810)
+f41361707 docs(ledger): log ISSUE-757 partial fix — frontend memory caps raised to 1000 (2026-07-12)
+a0ea7354b fix(memory): raise caps to full Firestore batch limits for recall (ISSUE-757 partial)
+9edbc8984 docs(ledger): log ISSUE-756 fix — cursor-based session pagination (2026-07-12)
+39b255bda fix(sessions): implement cursor-based pagination for session history (ISSUE-756)
+63dadbb12 docs(ledger): log ISSUE-761 fix — Firestore cloud sync for notes (2026-07-12)
+e0a503b1d fix(notes): implement Firestore cloud sync for cross-device persistence (ISSUE-761)
+62eef6c4b chore: session checkpoint [12:15]
 ```
 
 ## Working State
 ```
-MM packages/renderer/src/core/store/slices/notesSlice.ts
-AM packages/renderer/src/services/notes/NotesService.ts
+ M packages/renderer/src/modules/creative/components/StudioSettingsPanel.tsx
+?? packages/renderer/src/modules/creative/components/StudioSettingsPanel.test.tsx
 ```
 
 ## Decisions

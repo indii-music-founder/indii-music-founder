@@ -479,7 +479,7 @@ export class MemoryConsolidator {
             const q = query(
                 memoryRef,
                 where('isActive', '==', true),
-                limit(200)
+                limit(1000) // Increased to Firestore batch limit for comprehensive consolidation
             );
 
             const snapshot = await getDocs(q);

@@ -287,7 +287,11 @@ export default function StudioSettingsPanel({ onClose }: { onClose: () => void }
                     </label>
 
                     {generationMode === 'video' && (
-                        <label className="flex items-center gap-2 cursor-pointer" data-testid="settings-audio-toggle">
+                        <label
+                            className="flex items-center gap-2 cursor-pointer"
+                            data-testid="settings-audio-toggle"
+                            title="Veo has no API-level audio control — unchecking this only asks the model (via prompt text) to generate a silent clip. It is a request, not a guarantee."
+                        >
                             <input
                                 type="checkbox"
                                 checked={studioControls.generateAudio}
@@ -297,7 +301,7 @@ export default function StudioSettingsPanel({ onClose }: { onClose: () => void }
                             <div className="w-7 h-4 bg-white/10 peer-checked:bg-emerald-500/50 rounded-full relative transition-colors">
                                 <div className="absolute top-0.5 left-0.5 w-3 h-3 bg-gray-400 peer-checked:bg-emerald-300 rounded-full transition-all peer-checked:translate-x-3" />
                             </div>
-                            <span className="text-[10px] text-gray-400 font-medium">Audio</span>
+                            <span className="text-[10px] text-gray-400 font-medium">Audio (requested)</span>
                         </label>
                     )}
 

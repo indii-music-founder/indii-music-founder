@@ -5,6 +5,46 @@ import { StoreState } from '@/core/store';
 
 let creativeHistoryUnsubscribe: (() => void) | null = null;
 
+const KNOWN_MEDIA_EXTENSIONS: Record<string, string> = {
+    mp4: 'video/mp4',
+    webm: 'video/webm',
+    mov: 'video/quicktime',
+    png: 'image/png',
+    jpg: 'image/jpeg',
+    jpeg: 'image/jpeg',
+    webp: 'image/webp',
+    gif: 'image/gif',
+    mp3: 'audio/mpeg',
+    wav: 'audio/wav',
+    flac: 'audio/flac',
+};
+
+/**
+ * ISSUE-810: file-node sync previously hardcoded every generated asset's
+ * filename as `.png`, even for videos. Prefer the real extension found in
+ * the asset's own URL/storage URI; only fall back to a per-type default
+ * when no recognizable extension is present.
+ */
+function inferMediaExtension(item: HistoryItem): { extension: string; mimeType: string } {
+    const source = item.storageUri || item.url || '';
+    const match = /\.([a-zA-Z0-9]{2,4})(?:[?#]|$)/.exec(source);
+    const rawExt = match?.[1]?.toLowerCase();
+    if (rawExt && KNOWN_MEDIA_EXTENSIONS[rawExt]) {
+        return { extension: rawExt, mimeType: KNOWN_MEDIA_EXTENSIONS[rawExt] };
+    }
+
+    switch (item.type) {
+        case 'video':
+            return { extension: 'mp4', mimeType: 'video/mp4' };
+        case 'music':
+            return { extension: 'mp3', mimeType: 'audio/mpeg' };
+        case 'image':
+            return { extension: 'png', mimeType: 'image/png' };
+        default:
+            return { extension: 'bin', mimeType: 'application/octet-stream' };
+    }
+}
+
 export interface CanvasImage {
     id: string;
     base64: string;
@@ -85,7 +125,8 @@ export function buildCreativeHistoryState(
                     if (!user?.uid) {
                         logger.error("CreativeSlice: Cannot sync generated asset to file system without an authenticated user");
                     } else {
-                        const filename = `${enrichedItem.origin || 'generation'}-${enrichedItem.id.slice(0, 8)}.png`;
+                        const { extension, mimeType } = inferMediaExtension(enrichedItem);
+                        const filename = `${enrichedItem.origin || 'generation'}-${enrichedItem.id.slice(0, 8)}.${extension}`;
                         const persistedUrl = enrichedItem.storageUri || enrichedItem.url;
                         createFileNode(
                             filename,
@@ -97,7 +138,8 @@ export function buildCreativeHistoryState(
                             {
                                 url: persistedUrl,
                                 storagePath: enrichedItem.storageUri || undefined,
-                                origin: enrichedItem.origin
+                                origin: enrichedItem.origin,
+                                mimeType
                             }
                         ).catch(err => logger.error("CreativeSlice: File system sync error", err));
                     }

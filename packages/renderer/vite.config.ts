@@ -38,6 +38,9 @@ const envSanitizerPlugin = (): Plugin => ({
                 delete config.env[key];
             }
         }
+        // ISSUE-765(d): any new Google API key (identifier, not a secret —
+        // see CLAUDE.md §3.1) must be added here explicitly, or the AIza
+        // sweep below silently strips it from every build.
         const whitelist = new Set([
             'VITE_FIREBASE_API_KEY',
             'VITE_GOOGLE_MAPS_API_KEY',
