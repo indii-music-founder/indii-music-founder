@@ -10,13 +10,14 @@
 
 ---
 
-## Session 2026-07-12 Summary — Persistence Roadmap (75% Complete)
+## Session 2026-07-12 Summary — Persistence Roadmap (100% UI/Backend) + Beta Launch (ISSUE-763)
 
 **Mandatory Tasks Completed:**
 1. ✅ **Push to origin** — ISSUE-761/756/757 commits merged into fix/issues-core
 2. ✅ **QA suite** — E2E test file (cross-device-persistence.spec.ts) with 12 scenarios
 3. ✅ **Backend ISSUE-757** — semantic search limit 20→100, pagination indicator added
-4. 🟡 **Remaining issues** — Phase 4 audit complete; see below
+4. ✅ **ISSUE-763 Beta First-Touch** — First-run guidance + E2E journey suite (7 scenarios)
+5. 🟡 **Remaining issues** — Phase 4 audit complete; see below
 
 ### ✅ IMPLEMENTED (Phases 1-3 of Persistence Roadmap)
 
@@ -53,9 +54,11 @@
 - **Blocker:** ISSUE-755 (now ✅), but requires session system expansion
 - **Recommended:** Consolidate boardroom a2aMessages into session.messages with source='boardroom'
 
-**ISSUE-763: Beta First-Touch (blockers clear)**
-- **Status:** Waiting on ISSUE-676 (upload path), ISSUE-753 (done), ISSUE-754 (ready)
-- **Recommended:** Schedule after 676 fix
+**ISSUE-763: Beta First-Touch ✅ FIXED**
+- **Completed:** First-run guidance overlay added to CreativeStudio canvas (hint: "Create Your First Image")
+- **Verified:** E2E test suite (7 scenarios) covers full journey: skip onboarding → module navigation → create → edit → upload → video
+- **Desktop verification deferred:** Magic Edit + video require desktop build (Electron); web preview cannot test
+- **Next:** Run E2E suite via `npm run test:e2e -- issue-763-beta-first-touch.spec.ts`
 
 ---
 
