@@ -66,7 +66,7 @@ export const BmiAdapter: OrgAdapter = {
 
       const result = await registerWithBMI(userId, metadata as Parameters<typeof registerWithBMI>[1]);
 
-      await persistOrgRecord(userId, track.id, 'bmi', data, result.workId);
+      const persisted = await persistOrgRecord(userId, track.id, 'bmi', data, result.workId);
 
       if (!result.success) {
         return {
@@ -83,6 +83,7 @@ export const BmiAdapter: OrgAdapter = {
         success: true,
         confirmationNumber: result.workId,
         submittedAt: new Date(),
+        localRecordFailed: !persisted,
       };
     } catch (err: unknown) {
       logger.error('[BmiAdapter] Registration failed:', err);

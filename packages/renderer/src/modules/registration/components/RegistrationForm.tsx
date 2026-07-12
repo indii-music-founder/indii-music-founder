@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { HelpCircle, Loader2, CheckCircle2, ExternalLink, AlertCircle } from 'lucide-react';
+import { HelpCircle, Loader2, CheckCircle2, ExternalLink, AlertCircle, Copy, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { OrgAdapter, CatalogTrack, FormValues, RegistrationField, SubmissionResult } from '../types';
 import { compileHarness } from '@/services/business-harness/HarnessCompiler';
 import type { HarnessRun } from '@indii/shared';
 import type { PublishingRightsOutput } from '@/services/publishing/PublishingRightsCompiler';
 import { computePassportHash, validateApprovalFreshness } from '../services/PassportHashService';
+import { persistOrgRecord } from '../services/RegistrationPersistence';
 
 interface RegistrationFormProps {
   adapter: OrgAdapter;
@@ -250,7 +251,22 @@ export function RegistrationForm({ adapter, track, userId, onSubmitComplete }: R
   }
 
   if (result) {
-    return <SubmissionResultView result={result} adapter={adapter} onReset={() => setResult(null)} />;
+    return (
+      <SubmissionResultView
+        result={result}
+        adapter={adapter}
+        onReset={() => setResult(null)}
+        onRetryPersist={async () => {
+          const persisted = await persistOrgRecord(userId, track.id, adapter.id, values, result.confirmationNumber);
+          if (persisted) {
+            const updated = { ...result, localRecordFailed: false };
+            setResult(updated);
+            onSubmitComplete(updated);
+          }
+          return persisted;
+        }}
+      />
+    );
   }
 
   return (
@@ -394,11 +410,73 @@ function SubmissionResultView({
   result,
   adapter,
   onReset,
+  onRetryPersist,
 }: {
   result: SubmissionResult;
   adapter: OrgAdapter;
   onReset: () => void;
+  onRetryPersist?: () => Promise<boolean>;
 }) {
+  const [retrying, setRetrying] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const handleRetryPersist = async () => {
+    if (!onRetryPersist) return;
+    setRetrying(true);
+    try {
+      await onRetryPersist();
+    } finally {
+      setRetrying(false);
+    }
+  };
+
+  const handleCopyConfirmation = () => {
+    if (!result.confirmationNumber) return;
+    void navigator.clipboard.writeText(result.confirmationNumber);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  // ISSUE-970: the external filing genuinely succeeded (real confirmation
+  // number) but our own durable record failed to save — this is neither
+  // plain success nor plain failure. Never let this silently render as a
+  // green checkmark: the confirmation must stay visible/copyable until a
+  // retry confirms it's durably saved.
+  if (result.success && result.localRecordFailed) {
+    return (
+      <div className="space-y-4 py-2">
+        <div className="flex items-start gap-3 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+          <AlertCircle size={16} className="text-amber-400 flex-shrink-0 mt-0.5" />
+          <div className="text-sm text-amber-200/80">
+            Your registration was submitted to {adapter.name} and is real and binding, but indii could not save a
+            local record of it. <strong>Save this confirmation number now</strong> — if you leave this page before
+            retrying, this receipt will not be recoverable here.
+          </div>
+        </div>
+        {result.confirmationNumber && (
+          <div className="flex items-center justify-between gap-2 p-3 bg-black/30 border border-white/10 rounded-lg">
+            <span className="font-mono text-sm text-gray-200 truncate">{result.confirmationNumber}</span>
+            <button
+              onClick={handleCopyConfirmation}
+              className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-white transition-colors flex-shrink-0"
+            >
+              {copied ? <Check size={14} className="text-green-400" /> : <Copy size={14} />}
+              {copied ? 'Copied' : 'Copy'}
+            </button>
+          </div>
+        )}
+        <button
+          onClick={handleRetryPersist}
+          disabled={retrying || !onRetryPersist}
+          className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-amber-500/20 border border-amber-500/40 text-sm text-amber-200 hover:bg-amber-500/30 transition-colors disabled:opacity-50"
+        >
+          {retrying ? <Loader2 size={14} className="animate-spin" /> : null}
+          {retrying ? 'Retrying…' : 'Retry Saving Locally'}
+        </button>
+      </div>
+    );
+  }
+
   if (result.success) {
     return (
       <div className="text-center space-y-4 py-4">
