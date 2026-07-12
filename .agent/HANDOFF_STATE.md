@@ -1,19 +1,19 @@
 # Handoff State
-**Updated:** 2026-07-11 16:46 EDT
+**Updated:** 2026-07-11 23:17 EDT
 **Branch:** `fix/issues-core`
 
 ## Recent Commits
 ```
-b298bb3f1 docs: session 2026-07-11 final summary — all findings & fixes to ledger
-ea2b4f0d5 docs(social): record confirmed 3-layer block for ISSUE-766 IG posting
-1db027977 chore: session checkpoint [16:34]
-2c8b54cac chore: session checkpoint [16:33]
-e694ccdb6 chore: session checkpoint [16:33]
-b01eaa21b chore: session checkpoint [16:32]
-34b911b95 chore: session checkpoint [16:18]
-ffd8d4d31 fix(audio): add FileReader fallback for test environment
-9d9bc7b67 chore: session checkpoint [16:12]
-580004483 fix(audio): improve cache hash to use full file content + version
+897b69d8f chore: session checkpoint [22:31]
+dcd9cf9fd chore: session checkpoint [22:03]
+edabf5c0d chore: session checkpoint [20:29]
+c1a307568 chore: session checkpoint [20:00]
+d09d59f6e chore: session checkpoint [19:15]
+c2a10ec49 chore: session checkpoint [19:10]
+4c5c1fee6 chore: session checkpoint [19:07]
+58fd80514 chore: session checkpoint [19:07]
+781f91dee fix(memory): ISSUE-757 — raise archive search cap to 10,000 for full-history recall
+33fcdbe5d fix(persistence): ISSUE-755 — merge local/remote sessions instead of clobbering + add retry logic
 ```
 
 ## Working State

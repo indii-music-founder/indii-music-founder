@@ -3,10 +3,10 @@
 > This file is written by the /real test agent and consumed by a fixing agent.
 > The test agent NEVER modifies code. The fix agent NEVER runs tests.
 >
-> **Last updated:** 2026-07-11 20:42 EDT
-> **Commit:** `fix/issues-core` (20 commits ahead of main, all CI green on PR #228)
-> **Session:** Complete audit & fixes for ISSUE-772, 732, 750 + ISSUE-765/766 diagnosis
-> **CI Status:** PR build.yml passes (5m56s green run 29167286631); Deploy requires merge to `main`
+> **Last updated:** 2026-07-11 23:12 EDT
+> **Commit:** `fix/issues-core` (PR #228 merged to main; now 21 commits ahead with ISSUE-766 layers 1-2)
+> **Session:** Merged ISSUE-772/732/750 fixes to production; Fixed ISSUE-766 layers 1-2 (Instagram posting unblocked)
+> **CI Status:** PR #228 deployed to Firebase; ISSUE-766 layer 3 deferred (Meta app review — founder action)
 
 ---
 
@@ -11393,16 +11393,6 @@ Broadened per William's explicit ask ("more broad or broader use of the term men
 Settings' Desktop/Security sections were deeply covered in Pass 6 (ISSUE-706/707/708). This pass covers the remaining three: Profile, Connections, Notifications, Appearance.
 
 **BUILD ORDER FOR FIX AGENTS:** 732 only — isolated, no dependency chain.
-
-### ISSUE-732: No avatar-upload feature exists anywhere in the app — Profile settings shows photoURL/initials only, with abandoned scaffolding for an upload button that was never built
-
-- **Status:** 🔴 OPEN
-- **Severity:** 🟡 MEDIUM (missing basic personalization feature, not a data-loss/money risk, but a real functionality gap in the most fundamental "make this account yours" surface)
-- **Module:** Settings / ProfileSection
-- **Depends on:** nothing — parallel-safe
-- **Summary:** `ProfileSection.tsx` imports `Camera` from `lucide-react` (flagged by lint earlier this session as an unused import) and wraps the avatar display in a `group` class — both signals that a hover-to-reveal upload button was planned. But the actual avatar markup only ever renders `user.photoURL` (an `<img>`) or an initials fallback — no upload trigger, no file input, no `Camera` icon rendered anywhere. Confirmed via repo-wide grep: zero avatar/photoURL-upload capability exists anywhere in the renderer codebase — this isn't just missing from Settings, it doesn't exist at all. A user has no way to change their profile picture.
-- **Fix Direction:** Build the avatar upload: a hover-revealed camera-icon button over the avatar (matching the `group` class already in place), wired to a file picker → `StorageService.uploadFile` (the same real upload service already used elsewhere, e.g. mobile-remote's QuickCaptureView) → update `photoURL` via the real profile-update path (`updatePreferences`'s sibling or a dedicated `updateProfile` action) → persist via the existing `saveProfileToStorage`.
-- **Files:** `packages/renderer/src/modules/settings/settings-panel/ProfileSection.tsx`
 
 ### Pass 31 clean bills (verified deep, not pattern-only)
 
