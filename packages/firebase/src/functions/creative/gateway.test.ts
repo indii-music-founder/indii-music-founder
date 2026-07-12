@@ -347,6 +347,31 @@ describe('creative gateway generateVideoV3', () => {
     expect(mockSet).toHaveBeenCalledTimes(2);
   });
 
+  /**
+   * ISSUE-870: GenerateVideoSchema's aspectRatio enum includes 1:1/3:4/4:3,
+   * but Veo only actually produces 16:9 or 9:16 — normalizeVideoAspectRatio()
+   * used to silently coerce any of those to 16:9 with no warning. This
+   * proves the callable now rejects them instead of lying about the shape.
+   */
+  it.each(['1:1', '3:4', '4:3'])('rejects an unsupported aspect ratio (%s) instead of silently coercing to 16:9', async (unsupportedRatio) => {
+    await expect(callGenerateVideo({
+      auth: { uid: 'user-123' },
+      data: {
+        prompt: 'A cinematic social clip',
+        aspectRatio: unsupportedRatio,
+        model: 'fast',
+        resolution: '1080p',
+        durationSeconds: 6,
+        costReservationId: 'op-123',
+      },
+    })).rejects.toMatchObject({
+      code: 'invalid-argument',
+      message: expect.stringContaining(unsupportedRatio),
+    });
+
+    expect(mockSet).not.toHaveBeenCalled();
+  });
+
   it('processes a queued video job asynchronously and stores the rendered output', async () => {
     mockGenerateVideos.mockResolvedValueOnce({
       done: true,

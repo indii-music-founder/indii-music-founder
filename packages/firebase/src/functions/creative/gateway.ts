@@ -1206,6 +1206,18 @@ export const generateVideoV3 = onCall({ timeoutSeconds: 540, secrets: [geminiApi
     directorSettings: requestedDirectorSettings,
     parentId,
   } = parsed.data;
+
+  // ISSUE-870: GenerateVideoSchema's aspectRatio enum includes 1:1/3:4/4:3,
+  // but Veo only actually produces 16:9 or 9:16 — normalizeVideoAspectRatio()
+  // used to silently coerce anything else to 16:9 with no warning. Reject
+  // unsupported shapes here instead of lying about what was generated.
+  if (aspectRatio !== '16:9' && aspectRatio !== '9:16') {
+    throw new HttpsError(
+      'invalid-argument',
+      `Video generation only supports 16:9 or 9:16 aspect ratios. "${aspectRatio}" is not supported by the video model.`
+    );
+  }
+
   const userId = request.auth.uid;
   const jobId = getDb().collection('creative_jobs').doc().id;
   const normalizedResolution = normalizeVideoResolution(resolution, model);
