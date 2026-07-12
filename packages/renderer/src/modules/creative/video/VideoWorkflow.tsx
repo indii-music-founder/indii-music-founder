@@ -747,6 +747,10 @@ export default function VideoWorkflow() {
                 userMessage = 'Service temporarily unavailable due to repeated errors. Please wait a moment and try again.';
             } else if (message.includes('400') || message.includes('INVALID_ARGUMENT')) {
                 userMessage = `Invalid request: ${message}. Please check your settings and try again.`;
+            } else if (message.includes('does not support temporal inpaint')) {
+                // ISSUE-869: temporal inpaint is gated by a server feature flag with no
+                // client-side mirror, so the UI can't know in advance it's disabled.
+                userMessage = 'Temporal inpaint is not enabled on this server yet. Try Interpolation (first/last frame) or standard scene generation instead.';
             } else {
                 userMessage = `Generation failed: ${message}`;
             }
