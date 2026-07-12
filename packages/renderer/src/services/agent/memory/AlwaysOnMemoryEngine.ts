@@ -464,7 +464,7 @@ If appropriate, suggest that the user can ingest relevant information to build a
 
             // Get tier breakdown (fetch a sample to estimate)
             const tierSample = await getDocs(
-                query(memoryRef, where('isActive', '==', true), limit(200))
+                query(memoryRef, where('isActive', '==', true), limit(1000))
             );
             for (const doc of tierSample.docs) {
                 const data = doc.data();
@@ -604,34 +604,43 @@ If appropriate, suggest that the user can ingest relevant information to build a
         let memoriesDeleted = 0;
         let insightsDeleted = 0;
 
-        // Delete all memories
+        // Delete all memories (batch by 500 to respect Firestore write limits)
         const memoryRef = collection(db, 'users', this.userId, 'alwaysOnMemories');
-        const memorySnapshot = await getDocs(query(memoryRef, limit(500)));
-        const memBatch = writeBatch(db);
-        for (const doc of memorySnapshot.docs) {
-            memBatch.delete(doc.ref);
-            memoriesDeleted++;
+        let memoryBatch = await getDocs(query(memoryRef, limit(500)));
+        while (!memoryBatch.empty) {
+            const memBatch = writeBatch(db);
+            for (const doc of memoryBatch.docs) {
+                memBatch.delete(doc.ref);
+                memoriesDeleted++;
+            }
+            if (memoriesDeleted > 0) await memBatch.commit();
+            memoryBatch = await getDocs(query(memoryRef, limit(500)));
         }
-        if (memoriesDeleted > 0) await memBatch.commit();
 
-        // Delete all insights
+        // Delete all insights (batch by 500 to respect Firestore write limits)
         const insightRef = collection(db, 'users', this.userId, 'consolidationInsights');
-        const insightSnapshot = await getDocs(query(insightRef, limit(500)));
-        const insBatch = writeBatch(db);
-        for (const doc of insightSnapshot.docs) {
-            insBatch.delete(doc.ref);
-            insightsDeleted++;
+        let insightBatch = await getDocs(query(insightRef, limit(500)));
+        while (!insightBatch.empty) {
+            const insBatch = writeBatch(db);
+            for (const doc of insightBatch.docs) {
+                insBatch.delete(doc.ref);
+                insightsDeleted++;
+            }
+            if (insightsDeleted > 0) await insBatch.commit();
+            insightBatch = await getDocs(query(insightRef, limit(500)));
         }
-        if (insightsDeleted > 0) await insBatch.commit();
 
-        // Delete all ingestion events
+        // Delete all ingestion events (batch by 500 to respect Firestore write limits)
         const eventRef = collection(db, 'users', this.userId, 'ingestionEvents');
-        const eventSnapshot = await getDocs(query(eventRef, limit(500)));
-        const evtBatch = writeBatch(db);
-        for (const doc of eventSnapshot.docs) {
-            evtBatch.delete(doc.ref);
+        let eventBatch = await getDocs(query(eventRef, limit(500)));
+        while (!eventBatch.empty) {
+            const evtBatch = writeBatch(db);
+            for (const doc of eventBatch.docs) {
+                evtBatch.delete(doc.ref);
+            }
+            if (!eventBatch.empty) await evtBatch.commit();
+            eventBatch = await getDocs(query(eventRef, limit(500)));
         }
-        if (!eventSnapshot.empty) await evtBatch.commit();
 
         logger.info(
             `[AlwaysOnMemoryEngine] 🗑️ Full reset: ${memoriesDeleted} memories, ${insightsDeleted} insights deleted`

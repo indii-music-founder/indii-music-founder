@@ -12113,7 +12113,7 @@ Original fix steps (CI secret in deploy.yml, enable Geocoding+Places in GCP) sti
 
 ### ISSUE-765: Google API surface audit — every non-Firebase Google integration is broken or unverified
 
-- **Status:** 🔴 OPEN (audit complete 2026-07-08, live probes run; fixes not started)
+- **Status:** 🟡 PARTIALLY FIXED (2026-07-12) — every codeable finding (b, c, d) is verified already fixed in code (commit `84363de8a`, 2026-07-08); only the GCP-console/infra items (a, e) remain genuinely open. This entry was stale — it still read "fixes not started" after the code fix landed.
 - **Severity:** 🔴 HIGH (touring maps, YouTube stats, Gmail all dead)
 - **Scope:** All Google APIs outside Firebase core. Companion to ISSUE-764 (Maps client key, 3-layer strip — still open).
 - **Findings (each verified in code; probes via curl where noted):**
