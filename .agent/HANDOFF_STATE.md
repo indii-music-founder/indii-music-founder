@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-07-12 17:59 EDT
+**Updated:** 2026-07-12 18:02 EDT
 **Branch:** `fix/issues-core`
 
 ## Recent Commits
 ```
+1d90a8287 chore: session checkpoint [17:59]
 e771bc35e chore: handoff — persistence+beta batch verified complete except ISSUE-758/762
 a04c2d5b6 docs(ledger): reconcile ISSUE-759 to verified-DONE (archive UI already exists)
 8c59f958b docs(ledger): reconcile ISSUE-760 to verified-DONE; mark boardroom arch doc obsolete
@@ -13,12 +14,13 @@ c42d52817 fix(legal): return a real tool error for invalid split-sheet percentag
 f46fc7dce fix(distribution): verify TuneCore API credentials at connect time (ISSUE-814)
 1e1453163 chore: session checkpoint — ISSUE-763 complete, ISSUE-760 ready
 1514a2eae docs(ledger): mark ISSUE-763 complete — beta first-touch guidance + E2E suite
-2de2525c3 test(e2e): add comprehensive beta first-touch journey suite (ISSUE-763)
 ```
 
 ## Working State
 ```
-clean working tree
+ M packages/renderer/src/services/agent/definitions/MarketingAgent.ts
+ M packages/renderer/src/services/agent/tools/MarketingTools.ts
+ M packages/renderer/src/services/agent/tools/__tests__/MarketingTools.test.ts
 ```
 
 ## Decisions
