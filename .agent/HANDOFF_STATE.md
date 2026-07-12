@@ -1,31 +1,25 @@
 # Handoff State
-**Updated:** 2026-07-12 19:05 EDT
+**Updated:** 2026-07-12 19:27 EDT
 **Branch:** `fix/issues-core`
 
 ## Recent Commits
 ```
-ffb46e401 chore: session checkpoint [19:03]
+c2dd57c9e docs(ledger): stop CI OOM iteration for ISSUE-1046 with a precise diagnostic finding
+8b035f01c fix(finance): stop claiming AI-narrative statement mapping is a completed normalization (ISSUE-856)
+6d6ddaf99 fix(video): reject unsupported aspect ratios instead of silently coercing to 16:9 (ISSUE-870)
+299ca25c6 chore: session checkpoint [19:03]
+23ed993b7 Merge branch 'main' into fix/issues-core
 8b78b47b8 fix(ci): cap CI unit-test worker concurrency to 1 after two memory-tuning attempts failed (ISSUE-1046)
 b10ab4b27 chore: session checkpoint [18:55]
 3f7ae4780 fix(notes): wire loadNotesFromCloud into app init; merge instead of overwrite (hunter finding, ISSUE-761)
 79c22fbac fix(e2e): correct video-mode nav path, honestly skip desktop-only Magic Edit check
 db2bf449f fix(e2e): correct creative-studio testid to creative-studio-container
-c397fa6da fix(e2e): use the shared authedPage fixture instead of a broken hand-rolled onboarding skip
-889fb1bb5 fix(ci): widen unit-test sharding 8->10 to stop shard 7 OOMing (ISSUE-1046)
-fa85d056a fix(sessions): tiebreak pagination cursor on documentId() to stop silent session drops (hunter finding, ISSUE-756)
-1d6b3e684 fix(creative,e2e): hunter findings on ISSUE-763 work — real selectors + correct guidance gate
-66b9777d9 chore: session checkpoint [18:31]
-d389f9822 docs: add /ci-validate workflow to triage main deploy failures vs the known OOM flake
-18dfcf74a chore: session checkpoint [18:23]
 ```
 
 ## Working State
 ```
-M  .agent/test_ledger/OPEN_ISSUES.md
-M  packages/firebase/src/functions/creative/gateway.test.ts
-M  packages/firebase/src/functions/creative/gateway.ts
-M  packages/renderer/src/core/components/SidebarNavigation.test.tsx
-M  packages/renderer/src/tests/RouterContext.test.tsx
+ M packages/firebase/src/functions/creative/gateway.test.ts
+ M packages/firebase/src/functions/creative/gateway.ts
 ```
 
 ## Decisions
