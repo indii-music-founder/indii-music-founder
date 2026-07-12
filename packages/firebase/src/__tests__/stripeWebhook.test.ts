@@ -103,6 +103,7 @@ vi.mock('firebase-admin/firestore', () => ({
     FieldValue: {
         serverTimestamp: () => 'MOCK_TIMESTAMP',
         delete: () => 'MOCK_DELETE',
+        increment: (n: number) => n,
     },
 }));
 
@@ -520,5 +521,135 @@ describe('Stripe Webhook Handler (WO-8)', () => {
 
         expect(statusFn).not.toHaveBeenCalled();
         expect(jsonFn).toHaveBeenCalledWith({ received: true, status: 'unhandled_event', type: 'payment_intent.created' });
+    });
+
+    // ── checkout.session.completed — Marketplace Purchase (ISSUE-977/978) ────
+
+    it('should finalize a marketplace purchase as a durable sale without touching inventory again', async () => {
+        const session: Partial<Stripe.Checkout.Session> = {
+            id: 'cs_mkt_001',
+            metadata: {
+                type: 'marketplace_purchase',
+                reservationId: 'res-1',
+                productId: 'prod-1',
+                buyerId: 'buyer-1',
+                sellerId: 'seller-1',
+            },
+        };
+        const event: Partial<Stripe.Event> = {
+            id: 'evt_checkout_mkt',
+            type: 'checkout.session.completed',
+            data: { object: session as Stripe.Checkout.Session },
+        };
+        mocks.mockConstructEvent.mockReturnValue(event);
+
+        // Call 1: outer webhook idempotency check (not yet processed).
+        // Call 2: handleMarketplacePurchaseCompleted's own transaction, reading the reservation.
+        mocks.mockRunTransaction
+            .mockImplementationOnce(async (cb: (tx: unknown) => Promise<unknown>) => cb({
+                get: vi.fn().mockResolvedValue(mocks.makeSnap(false)),
+                set: mocks.mockSet,
+                update: mocks.mockUpdate,
+            }))
+            .mockImplementationOnce(async (cb: (tx: unknown) => Promise<unknown>) => cb({
+                get: vi.fn().mockResolvedValue({
+                    exists: true,
+                    data: () => ({
+                        status: 'reserved',
+                        buyerId: 'buyer-1',
+                        sellerId: 'seller-1',
+                        productId: 'prod-1',
+                        productTitle: 'Beat Pack',
+                        priceCents: 999,
+                        currency: 'USD',
+                        source: 'direct',
+                    }),
+                }),
+                set: mocks.mockSet,
+                update: mocks.mockUpdate,
+            }));
+
+        const { req, res, jsonFn, statusFn } = makeReqRes(event);
+        await stripeWebhook(req, res);
+
+        expect(statusFn).not.toHaveBeenCalled();
+        expect(jsonFn).toHaveBeenCalledWith({ received: true });
+
+        // A durable purchase record, keyed by the Stripe session id (idempotency key).
+        expect(mocks.mockDb.collection).toHaveBeenCalledWith('purchases');
+        expect(mocks.mockSet).toHaveBeenCalledWith(
+            expect.anything(),
+            expect.objectContaining({ status: 'completed', amount: 999, productId: 'prod-1', transactionId: 'cs_mkt_001' }),
+            { merge: true }
+        );
+
+        // Revenue is recorded only now — after Stripe confirmed payment.
+        expect(mocks.mockDb.collection).toHaveBeenCalledWith('revenue');
+        expect(mocks.mockSet).toHaveBeenCalledWith(
+            expect.anything(),
+            expect.objectContaining({ userId: 'seller-1', amount: 999, status: 'completed' })
+        );
+
+        // The reservation transitions to completed; inventory is never touched here again
+        // (it was already decremented atomically at reservation time).
+        expect(mocks.mockUpdate).toHaveBeenCalledWith(
+            expect.anything(),
+            expect.objectContaining({ status: 'completed' })
+        );
+        expect(mocks.mockUpdate).not.toHaveBeenCalledWith(
+            expect.anything(),
+            expect.objectContaining({ inventory: expect.anything() })
+        );
+    });
+
+    it('should release the inventory reservation when a marketplace checkout session expires unpaid', async () => {
+        const session: Partial<Stripe.Checkout.Session> = {
+            id: 'cs_mkt_expired',
+            metadata: {
+                type: 'marketplace_purchase',
+                reservationId: 'res-2',
+                productId: 'prod-2',
+                buyerId: 'buyer-1',
+                sellerId: 'seller-1',
+            },
+        };
+        const event: Partial<Stripe.Event> = {
+            id: 'evt_checkout_expired',
+            type: 'checkout.session.expired',
+            data: { object: session as Stripe.Checkout.Session },
+        };
+        mocks.mockConstructEvent.mockReturnValue(event);
+
+        // Call 1: outer webhook idempotency check (not yet processed) — runs for every event type.
+        // Call 2: handleMarketplaceCheckoutExpired's own transaction, releasing the reservation.
+        mocks.mockRunTransaction
+            .mockImplementationOnce(async (cb: (tx: unknown) => Promise<unknown>) => cb({
+                get: vi.fn().mockResolvedValue(mocks.makeSnap(false)),
+                set: mocks.mockSet,
+                update: mocks.mockUpdate,
+            }))
+            .mockImplementationOnce(async (cb: (tx: unknown) => Promise<unknown>) => cb({
+                get: vi.fn().mockResolvedValue({
+                    exists: true,
+                    data: () => ({ status: 'reserved', hasInventoryTracking: true }),
+                }),
+                set: mocks.mockSet,
+                update: mocks.mockUpdate,
+            }));
+
+        const { req, res, jsonFn, statusFn } = makeReqRes(event);
+        await stripeWebhook(req, res);
+
+        expect(statusFn).not.toHaveBeenCalled();
+        expect(jsonFn).toHaveBeenCalledWith({ received: true });
+
+        expect(mocks.mockUpdate).toHaveBeenCalledWith(
+            expect.anything(),
+            expect.objectContaining({ inventory: 1 }) // FieldValue.increment(1) mocked as identity passthrough of n
+        );
+        expect(mocks.mockUpdate).toHaveBeenCalledWith(
+            expect.anything(),
+            expect.objectContaining({ status: 'released', releasedReason: 'checkout_expired' })
+        );
     });
 });
