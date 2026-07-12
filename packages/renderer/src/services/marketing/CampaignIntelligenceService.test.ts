@@ -8,7 +8,8 @@ vi.mock('../intelligence/AutonomousIntelligence', () => ({
     AutonomousIntelligence: {
         generateStructuredData: vi.fn(),
         generateImage: vi.fn(),
-        generateText: vi.fn()
+        generateText: vi.fn(),
+        generateVideo: vi.fn(async () => 'https://mock-video-url.com/asset.mp4')
     }
 }));
 
@@ -562,6 +563,24 @@ describe('CampaignIntelligenceService', () => {
             expect(result.overallScore).toBe(50); // Default
             expect(result.platformBreakdown).toEqual([]);
             expect(result.recommendations).toEqual([]);
+        });
+    });
+
+    describe('generateMarketingVideo (ISSUE-954)', () => {
+        it('is text-to-video only: never receives or forwards an audio reference', async () => {
+            const result = await CampaignIntelligence.generateMarketingVideo('A neon city at night', 'cyberpunk');
+
+            expect(result).toBe('https://mock-video-url.com/asset.mp4');
+            const [callArgs] = (AI.generateVideo as ReturnType<typeof vi.fn>).mock.calls[0] as [Record<string, unknown>];
+            expect(JSON.stringify(callArgs)).not.toMatch(/audio/i);
+            expect(callArgs.prompt).toContain('A neon city at night');
+        });
+
+        it('merges an optional config without requiring an audio field', async () => {
+            await CampaignIntelligence.generateMarketingVideo('A prompt', 'anime', { durationSeconds: 8 });
+
+            const [callArgs] = (AI.generateVideo as ReturnType<typeof vi.fn>).mock.calls[0] as [Record<string, unknown>];
+            expect((callArgs.config as Record<string, unknown>).durationSeconds).toBe(8);
         });
     });
 });
