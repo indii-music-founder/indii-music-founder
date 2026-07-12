@@ -481,6 +481,9 @@ export const VideoTools = {
 
         try {
             const result = await performanceVideoService.generate(args);
+            if (!result.videoUrl) {
+                return toolError('Performance video completed without an output URL.', 'GENERATION_OUTPUT_MISSING');
+            }
             return toolSuccess(
                 { videoUrl: result.videoUrl, projectId: result.projectId },
                 `Performance video generated successfully: ${result.videoUrl}`
