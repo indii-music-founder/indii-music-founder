@@ -12334,13 +12334,19 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-774: Retired “Omni + Veo 3.1 Hybrid” mode remains selectable but never runs a Veo stage
 
-- **Status:** 🔴 OPEN (regression against ISSUE-595)
+- **Status:** ✅ FIXED (2026-07-12) — chose "remove hybrid-veo from the UI" over building a genuine second-stage pipeline, matching ISSUE-595's original retirement decision
 - **Severity:** 🔴 HIGH (false capability + incorrect cost estimate)
 - **Module:** Creative Suite / Omni / right-panel controls
 - **Evidence:** ISSUE-595 explicitly retired the in-call hybrid. `StudioControlsPanel.tsx:179-188` still offers it; `OmniWorkflow.tsx:364-395,715` claims a hybrid; `gateway.ts:1508-1533` always executes one Omni Interactions request. `pipelineMode` only changes prompt text and cost classification.
 - **Impact:** The UI promises a two-engine pipeline and may reserve Pro Veo pricing for work that never invokes Veo.
 - **Fix:** Remove `hybrid-veo` from the UI/schema and use the real Omni→Veo handoff for a two-stage workflow, or implement a genuine second job with separate lineage, progress, cancellation, and cost reservations.
 - **Acceptance:** Every displayed pipeline name maps to observable jobs/models and exact cost records.
+- **Fix applied (2026-07-12):** Confirmed via `gateway.ts`'s `generateOmniRemixV3` that exactly one `ai.interactions.create()` call ever executes, regardless of `pipelineMode` — there was never a real second Veo stage to retain, matching ISSUE-595's decision.
+  - **Overcharge fixed** (the actual financial-harm bug): `gateway.ts`'s server-side cost estimate no longer branches `data.pipelineMode === 'hybrid-veo' ? VIDEO_MODEL_IDS.pro : VIDEO_MODEL_IDS.fast` — it always prices at the real (`fast`) rate now, since the work performed never differs. Before this fix, selecting "Hybrid Veo" charged **4x** (`0.4`/sec Pro rate vs `0.1`/sec fast rate) for byte-for-byte identical output.
+  - `StudioControlsPanel.tsx`'s "Hybrid Veo" toggle button removed — the 2-button Pipeline Mode selector is now a single static "Pure Omni V2V Engine" indicator (no click handler; there's no real second option to switch to).
+  - `OmniWorkflow.tsx` — the toast, cost-estimate call, and status badge all dropped their `omniPipelineMode === 'hybrid-veo'` ternaries and now unconditionally show/estimate the real ("pure Omni") behavior.
+  - `pipelineMode` stays in the type/schema (`creativeControlsSlice.ts`, `packages/shared/src/schemas/creative.ts`, `packages/firebase/src/shared/creative.ts`) accepting `'hybrid-veo'` as a legacy/no-op value — deliberately NOT purged, so a client with an already-persisted `'hybrid-veo'` selection from before this fix doesn't get a hard payload-validation rejection; it simply can no longer be *selected* again, and no longer changes cost or behavior even if present.
+  - Tests: `gateway.test.ts` (1 new case) — an explicit `pipelineMode: 'hybrid-veo'` payload reserved at the fast rate (`0.8` for 8s) is accepted rather than rejected for a cost mismatch, proving the server no longer computes Pro pricing for it; confirms exactly one `interactions.create()` call. `StudioControlsPanel.test.tsx` (existing 2 tests updated) — asserts the static "Pure Omni V2V Engine" label renders and "Hybrid Veo" is no longer in the document; removed the now-inapplicable toggle-click test. Full creative/video + right-panel + gateway suites (159 tests total) green, typecheck/lint clean across both `packages/renderer` and `packages/firebase`.
 
 ### ISSUE-775: Omni labels output “SynthID Protected” without verifying any watermark
 

@@ -335,26 +335,12 @@ describe('StudioControlsPanel', () => {
         expect(omniStageBtn).toBeInTheDocument();
         fireEvent.click(omniStageBtn!);
 
-        expect(screen.getByText('Pure Omni')).toBeInTheDocument();
-        expect(screen.getByText('Hybrid Veo')).toBeInTheDocument();
+        // ISSUE-774: "Hybrid Veo" retired — it never ran a second Veo stage
+        // and only overcharged at Pro pricing for identical output. Pure
+        // Omni is now a static indicator, not a selectable option.
+        expect(screen.getByText('Pure Omni V2V Engine')).toBeInTheDocument();
+        expect(screen.queryByText('Hybrid Veo')).not.toBeInTheDocument();
         expect(screen.getByText('Character X-Ray')).toBeInTheDocument();
-    });
-
-    it('handles Omni Pipeline Mode changes', () => {
-        (useStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
-            ...defaultState,
-            viewMode: 'omni'
-        });
-        render(<StudioControlsPanel toggleRightPanel={mockToggleRightPanel} />);
-        
-        // Expand Omni Stage Controls first
-        const omniStageBtn = screen.getByText('Omni Stage Controls').closest('button');
-        expect(omniStageBtn).toBeInTheDocument();
-        fireEvent.click(omniStageBtn!);
-
-        const hybridBtn = screen.getByText('Hybrid Veo');
-        fireEvent.click(hybridBtn);
-        expect(mockSetStudioControls).toHaveBeenCalledWith({ omniPipelineMode: 'hybrid-veo' });
     });
 
     it('handles Character X-Ray toggle in omni viewMode', () => {

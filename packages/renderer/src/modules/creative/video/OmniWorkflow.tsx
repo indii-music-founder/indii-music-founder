@@ -364,13 +364,17 @@ export default function OmniWorkflow() {
         setIsRemixing(true);
         setOutputVideoUrl(null);
         setOutputStorageUri(undefined);
-        toast.info(`Synthesizing Omni Remix (${studioControls.omniPipelineMode === 'hybrid-veo' ? 'Omni + Veo 3.1 hybrid' : 'pure Omni'})...`);
+        toast.info('Synthesizing Omni Remix (pure Omni)...');
 
         try {
             const durationSeconds = Math.min(12, Math.max(4, studioControls.duration || 8));
+            // ISSUE-774: the retired "hybrid-veo" mode never actually invoked a
+            // second Veo stage — exactly one Omni Interactions call runs either
+            // way — so cost is always estimated at the real (fast) rate now,
+            // never the 4x "pro" rate the dead hybrid option used to charge.
             const estimatedCost = VideoGeneration.estimateVideoCost(
                 durationSeconds,
-                studioControls.omniPipelineMode === 'hybrid-veo' ? 'veo-3.1-generate-preview' : 'veo-3.1-fast-generate-preview'
+                'veo-3.1-fast-generate-preview'
             );
             const costCheck = await CostControlService.checkAndReserve({
                 operationType: 'video',
@@ -723,7 +727,9 @@ export default function OmniWorkflow() {
 
                             <div className="flex items-center justify-between mt-auto z-10">
                                 <span className="text-[10px] font-mono text-gray-500 bg-black/40 px-2 py-1 rounded border border-white/5 truncate max-w-[200px]">{refVideoFile?.name || "base_performance.mp4"}</span>
-                                <span className="text-[9px] font-mono text-green-400 font-bold uppercase tracking-widest">{studioControls.omniPipelineMode === 'hybrid-veo' ? 'OMNI + VEO 3.1 HYBRID' : 'PURE OMNI V2V ENGINE'}</span>
+                                {/* ISSUE-774: "hybrid-veo" never ran a second Veo stage — only one
+                                    engine has ever executed here, so only one badge is ever shown. */}
+                                <span className="text-[9px] font-mono text-green-400 font-bold uppercase tracking-widest">PURE OMNI V2V ENGINE</span>
                             </div>
                         </div>
                     ) : (
