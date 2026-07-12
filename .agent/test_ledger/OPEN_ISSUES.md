@@ -14093,13 +14093,12 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-945: Downloaded EPK HTML injects unescaped user/model content into executable markup
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-12)
 - **Severity:** 🔴 CRITICAL (artifact XSS/phishing)
 - **Module:** Marketing / EPK export security
-- **Evidence:** `handleDownloadPDF()` interpolates raw `artistName`, genre tags, bio, track strings, and link values directly into HTML/text/attribute contexts and downloads it as an `.html` file (`EPKGenerator.tsx:59-99`). There is no HTML escaping or URL protocol/domain validation; the function name also obscures that the artifact is executable HTML.
-- **Impact:** Pasted/generated content containing markup, event handlers, or `javascript:` links can execute when the artist/recipient opens the EPK locally or hosts it, enabling credential/phishing payloads inside a trusted press asset.
-- **Fix:** Generate through a safe template/DOM serializer with contextual escaping, allowlist HTTPS platform URLs, sanitize rich text, and apply a restrictive CSP for hosted/downloaded HTML. Name the export accurately.
-- **Acceptance:** Script tags, quotes, event attributes, `javascript:`/`data:` links, and malicious bio fixtures render only as inert text or are rejected; safe HTTPS links remain functional.
+- **Fix:** Added `escapeHtml()` (entity-escapes `& < > " '`) applied to every text/attribute interpolation (artist name, bio, genre tags, track fields, EPK URL), and `sanitizeHttpsUrl()` which parses each link with the `URL` constructor and drops anything not `https:` (rejects `javascript:`, `data:`, malformed URLs) before it's ever placed in an `href`. Also added a restrictive `Content-Security-Policy` meta tag to the exported HTML itself (`default-src 'none'`) as defense-in-depth, and renamed `handleDownloadPDF` → `handleDownloadHtml` to stop mislabeling an executable HTML file as a PDF.
+- **Files:** `packages/renderer/src/modules/marketing/components/EPKGenerator.tsx`
+- **Tests:** New `EPKGenerator.test.tsx` (5 tests) — captures the actual downloaded Blob content and asserts: script-tag name/bio is inert, `javascript:`/`data:` links are dropped entirely (not just escaped), legitimate `https://` links remain functional, quote-based attribute breakout is escaped. All passing.
 
 ### ISSUE-946: Discord/Telegram webhook test, send, and auto-announcement controls are entirely simulated
 
