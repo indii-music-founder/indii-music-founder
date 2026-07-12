@@ -756,11 +756,17 @@ export default function OmniWorkflow() {
                 </div>
 
                 {/* Bottom Storyboard Panel */}
+                {/* ISSUE-773: this panel's frames are never sent to the Omni
+                    generation callable — GenerateOmniRemixSchema has no
+                    storyboard/frame field, so building a sequence here has
+                    zero effect on the remix. Labeled as a local planning
+                    board, not "synced", until a real storyboard contract
+                    exists end-to-end. */}
                 <div className="h-48 mt-6 border-t border-white/5 pt-4 flex flex-col gap-2 shrink-0">
                     <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider font-mono">Storyboard Sequences (Flow Builder)</span>
+                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider font-mono">Local Planning Board (not sent to generation)</span>
                         <div className="flex items-center gap-2">
-                            <span className="text-[9px] text-green-400 uppercase font-mono tracking-widest">{storyboard.length} Scenes Synced</span>
+                            <span className="text-[9px] text-gray-400 uppercase font-mono tracking-widest">{storyboard.length} Scenes Planned</span>
                             <button
                                 onClick={() => setIsAddingFrame(true)}
                                 className="flex items-center gap-1 px-2 py-1 bg-green-600 hover:bg-green-500 text-[9px] font-bold uppercase font-mono tracking-wider rounded transition-colors"
