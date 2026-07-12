@@ -537,26 +537,38 @@ service cloud.firestore {
     match /products/{productId} {
       // Anyone authenticated can browse products
       allow read: if isAuthenticated() || isGuest();
-      
-      // Sellers can create products
+
+      // Sellers can create products. Price is stored as an integer in cents
+      // (minor currency unit) end-to-end — ISSUE-977 fix contract.
       allow create: if isVerifiedUser() &&
         request.resource.data.sellerId == request.auth.uid &&
-        request.resource.data.type in ['digital', 'physical', 'nft', 'subscription'] &&
-        request.resource.data.status in ['draft', 'active'] &&
+        request.resource.data.type in ['song', 'album', 'merch', 'ticket', 'digital-asset', 'service', 'stem-pack'] &&
+        request.resource.data.isActive is bool &&
+        request.resource.data.price is int &&
         request.resource.data.price >= 0 &&
         isValidString(request.resource.data.title, 1, 200);
-      
+
       // Sellers can update their own products
       allow update: if isVerifiedUser() &&
         resource.data.sellerId == request.auth.uid &&
         // Cannot change seller
         request.resource.data.sellerId == resource.data.sellerId;
-      
+
       // Sellers can delete their own products (soft delete preferred)
       allow delete: if isVerifiedUser() &&
         resource.data.sellerId == request.auth.uid;
     }
-    
+
+    // Marketplace purchase records. Writes happen server-side only, from the
+    // Stripe webhook (Admin SDK, bypasses these rules) after payment is
+    // verified — ISSUE-978 fix contract. Clients may only read their own.
+    match /purchases/{purchaseId} {
+      allow read: if isAuthenticated() &&
+        (resource.data.buyerId == request.auth.uid ||
+         resource.data.sellerId == request.auth.uid);
+      allow create, update, delete: if false;
+    }
+
     // Transactions / Purchase records
     match /transactions/{transactionId} {
       // Users can read their own transactions (as buyer or seller)
