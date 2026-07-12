@@ -4,7 +4,7 @@ import { FirestoreService } from '../FirestoreService';
 import type { ConversationSession } from '@/core/store/slices/agent'; // Direct import to avoid circular dep risks? Or from index?
 import { OrganizationService } from '../OrganizationService';
 import { auth } from '../firebase';
-import { where, orderBy, limit, Timestamp, onSnapshot, collection, query, Unsubscribe } from 'firebase/firestore';
+import { where, orderBy, limit, Timestamp, onSnapshot, collection, query, Unsubscribe, startAfter, getDocs, QueryConstraint } from 'firebase/firestore';
 import { db } from '../firebase';
 import { cleanFirestoreData } from '@/services/utils/firebase';
 import { logger } from '@/utils/logger';
@@ -109,27 +109,76 @@ class SessionServiceImpl extends FirestoreService<SessionDocument> {
         }));
     }
 
-    async getSessionsForUserPaginated(lastSessionId?: string, pageSize: number = 50): Promise<ConversationSession[]> {
+    async getSessionsForUserPaginated(
+        cursorTimestamp?: number,
+        pageSize: number = 50
+    ): Promise<{ sessions: ConversationSession[]; nextCursor?: number }> {
         const orgId = OrganizationService.getCurrentOrgId() || 'personal';
         const userId = auth.currentUser?.uid;
 
-        if (!userId) return [];
+        if (!userId) return { sessions: [] };
 
-        const constraints = [
+        // Build constraints with cursor support
+        const constraints: QueryConstraint[] = [
             where('orgId', '==', orgId),
             where('userId', '==', userId),
             orderBy('updatedAt', 'desc'),
-            limit(pageSize)
         ];
 
-        const docs = await this.list(constraints);
-        return docs.map(d => ({
-            ...d,
-            createdAt: d.createdAt.toMillis(),
-            updatedAt: d.updatedAt.toMillis()
-        }));
+        // If cursor provided, start after that timestamp
+        if (cursorTimestamp) {
+            constraints.push(startAfter(Timestamp.fromMillis(cursorTimestamp)));
+        }
+
+        constraints.push(limit(pageSize + 1)); // +1 to detect if more exist
+
+        const q = query(collection(db, 'sessions'), ...constraints);
+        const snapshot = await getDocs(q);
+
+        const docs = snapshot.docs.map(doc => {
+            const d = doc.data() as SessionDocument;
+            return {
+                ...d,
+                id: doc.id,
+                createdAt: d.createdAt.toMillis(),
+                updatedAt: d.updatedAt.toMillis()
+            } as ConversationSession;
+        });
+
+        // Check if there are more docs
+        const hasMore = docs.length > pageSize;
+        const sessions = hasMore ? docs.slice(0, pageSize) : docs;
+        const nextCursor = hasMore ? sessions[sessions.length - 1]?.updatedAt : undefined;
+
+        return { sessions, nextCursor };
     }
 
+    /**
+     * Load all sessions on first login (paginate through entire archive).
+     * Used to sync all sessions to a fresh device (phone/iPad).
+     */
+    async loadAllSessions(): Promise<ConversationSession[]> {
+        const allSessions: ConversationSession[] = [];
+        let cursor: number | undefined;
+        const pageSize = 50;
+
+        try {
+            while (true) {
+                const { sessions, nextCursor } = await this.getSessionsForUserPaginated(cursor, pageSize);
+                if (sessions.length === 0) break;
+
+                allSessions.push(...sessions);
+                if (!nextCursor) break; // No more pages
+
+                cursor = nextCursor;
+            }
+            logger.info(`[SessionService] Loaded ${allSessions.length} total sessions on first login`);
+            return allSessions;
+        } catch (error) {
+            logger.error('[SessionService] Failed to load all sessions:', error);
+            return [];
+        }
+    }
 
     subscribeToSessions(
         onUpdate: (sessions: ConversationSession[]) => void,
