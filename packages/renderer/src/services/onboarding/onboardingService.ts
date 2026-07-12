@@ -344,15 +344,41 @@ ALWAYS preserve what they're NOT changing.`;
 
 // --- Function Call Processor ---
 
+/**
+ * ISSUE-956: images are embedded as base64 data URLs directly inside the
+ * profile document (no object-storage upload path exists yet). Until that
+ * lands, bound the damage a single asset or a burst of assets can do to
+ * Firestore document size / IndexedDB / renderer memory.
+ */
+const MAX_BRAND_ASSET_BYTES = 5 * 1024 * 1024; // ~6.7MB base64-encoded
+const MAX_BRAND_ASSETS_PER_PROFILE = 20; // brandAssets + referenceImages combined
+
+const IMAGE_MIME_BY_EXTENSION: Record<string, string> = {
+    png: 'image/png',
+    jpg: 'image/jpeg',
+    jpeg: 'image/jpeg',
+    webp: 'image/webp',
+    gif: 'image/gif',
+    bmp: 'image/bmp',
+    svg: 'image/svg+xml',
+};
+
+function inferImageMimeType(file: File): string {
+    if (file.type) return file.type;
+    const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
+    return IMAGE_MIME_BY_EXTENSION[ext] ?? 'application/octet-stream';
+}
+
 export function processFunctionCalls(
     functionCalls: FunctionCallPart['functionCall'][],
     currentProfile: UserProfile,
     files: ConversationFile[]
-): { updatedProfile: UserProfile, isFinished: boolean, updates: string[] } {
+): { updatedProfile: UserProfile, isFinished: boolean, updates: string[], warnings: string[] } {
     // Start with a shallow copy
     let updatedProfile = { ...currentProfile };
     let isFinished = false;
     const updates: string[] = [];
+    const warnings: string[] = [];
 
     functionCalls.forEach(call => {
         switch (call.name) {
@@ -435,8 +461,27 @@ export function processFunctionCalls(
                 const args = call.args as unknown as AddImageAssetArgs;
                 const file = files.find(f => f.file.name === args.file_name);
                 if (file && file.base64) {
+                    const existingCount = (updatedProfile.brandKit?.brandAssets?.length || 0)
+                        + (updatedProfile.brandKit?.referenceImages?.length || 0);
+
+                    if (file.file.size > MAX_BRAND_ASSET_BYTES) {
+                        const warning = `"${args.file_name}" is ${(file.file.size / 1024 / 1024).toFixed(1)}MB, over the ${MAX_BRAND_ASSET_BYTES / 1024 / 1024}MB limit for brand images and was not added.`;
+                        logger.warn(`[onboardingService] ${warning}`);
+                        warnings.push(warning);
+                        break;
+                    }
+                    if (existingCount >= MAX_BRAND_ASSETS_PER_PROFILE) {
+                        const warning = `"${args.file_name}" was not added — this profile already has the maximum of ${MAX_BRAND_ASSETS_PER_PROFILE} brand images.`;
+                        logger.warn(`[onboardingService] ${warning}`);
+                        warnings.push(warning);
+                        break;
+                    }
+
+                    // ISSUE-956: previously hardcoded `data:image/png;base64,...`
+                    // regardless of the file's real type, mislabeling every
+                    // JPEG/WebP/GIF upload as PNG.
                     const newAsset: BrandAsset = {
-                        url: `data:image/png;base64,${file.base64}`,
+                        url: `data:${inferImageMimeType(file.file)};base64,${file.base64}`,
                         description: args.description,
                         category: args.category,
                         tags: args.tags,
@@ -492,7 +537,7 @@ export function processFunctionCalls(
         }
     });
 
-    return { updatedProfile, isFinished, updates };
+    return { updatedProfile, isFinished, updates, warnings };
 }
 
 

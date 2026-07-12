@@ -1,24 +1,26 @@
 # Handoff State
-**Updated:** 2026-07-12 10:01 EDT
+**Updated:** 2026-07-12 10:20 EDT
 **Branch:** `fix/issues-core`
 
 ## Recent Commits
 ```
+d0aab24ba docs: cross-device persistence audit for mobile-first model
+c7d596e6b chore: session checkpoint [10:18]
+64ab2633f docs: mobile device routing policy for indii.music
+58191c1c3 fix(audio): cap browser master size and stop double-encoding audio for AI analysis
+f6cdb4919 fix(audio): make M4ACodecProbe tests byte-accurate; log ISSUE-961 fix
+bddda35a5 chore: session checkpoint [10:01]
 8c1829629 docs: remote relay testing & file browser design
 abf040f84 chore: session checkpoint [09:56]
 72c413751 fix(audio): stop fabricating DAW project-file loudness/true-peak compliance verdicts
 a66e83ec9 chore: session checkpoint [09:55]
-905c3b4da fix(marketing): map youtube_shorts to the worker-recognized youtube platform id
-ba4184b32 chore: session checkpoint [09:47]
-7945c9667 chore: session checkpoint [09:41]
-a948550fa fix(creative): stop advertising Veo aspect ratios/durations the backend silently discards
-c91d027c1 chore: session checkpoint [09:36]
-5a9c7fe65 fix(remote): separate controller from studio executor
 ```
 
 ## Working State
 ```
-clean working tree
+ M packages/renderer/src/modules/onboarding/hooks/useOnboarding.ts
+ M packages/renderer/src/services/onboarding/onboardingService.test.ts
+ M packages/renderer/src/services/onboarding/onboardingService.ts
 ```
 
 ## Decisions
