@@ -39,10 +39,21 @@
 
 ### 📊 AUDIT COMPLETE (Phase 4)
 
-**ISSUE-758/762: Dual Project Systems (BLOCKED→architectural)**
-- **Status:** Requires consolidation of appSlice.currentProjectId + ProjectService
-- **Blocker:** Complex refactor; 758 is dependency for 751; 762 is dependency for 758
-- **Recommended:** Schedule dedicated 2-3 hour session for unification
+**ISSUE-758/762: Dual Project Systems ✅ FIXED (2026-07-12, commit 857525bda)**
+- **Status:** 🟢 DONE. The core unification (deleting the duplicate ProjectService, single
+  `Project` type, `DEFAULT_PROJECT_ID`/`isDefaultProject()` constants) had already landed in
+  commit `88f3681d1` (2026-07-07) — that part of the ledger was stale. What remained was the
+  explicit migration TODO left in `constants.ts`'s own comment: 8 write-sites still hardcoded
+  the raw `'default-project'` string instead of importing the constant.
+- **Fixed this session:** Migrated all 8 sites (MarketingPanel, CharacterLibrary x3, StorageService,
+  DirectorTools x4) to `DEFAULT_PROJECT_ID`. Also fixed a real bug found along the way:
+  `useDDEXRelease.ts` hardcoded `activeProjectId = 'default-project'` unconditionally
+  ("For now, use a default project ID") — releases never picked up the user's actual selected
+  project. Now reads `state.currentProjectId` with the constant as fallback.
+- **Verified:** 0 typecheck errors, 0 lint errors, 9 test files / 77 tests pass.
+- **Left alone:** `videoEditorStore.ts`'s `'default-project'` is a `VideoProject.id` (Remotion
+  timeline entity) — unrelated domain, same string by coincidence. Migrating it would wrongly
+  couple two unrelated sentinel systems.
 
 **ISSUE-759: Archived Projects ✅ FIXED (verified 2026-07-12 code-audit)**
 - **Status:** 🟢 DONE — full archive/unarchive UI already present. Earlier "🟡 READY / UI missing" was STALE.
