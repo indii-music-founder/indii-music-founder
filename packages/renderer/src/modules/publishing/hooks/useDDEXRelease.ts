@@ -378,68 +378,82 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
     setCurrentStep('submitting');
 
     try {
-      // Determine audio format, defaulting to 'wav' if aac or unknown
-      const rawFormat = assets.audioFile?.format || 'wav';
-      const audioFormat: AudioFormat = (rawFormat === 'aac' ? 'wav' : rawFormat) as AudioFormat;
+      // ISSUE-964: a retry after a prior packaging failure reuses the
+      // existing draft doc instead of creating a duplicate release record.
+      let docId = releaseId;
 
-      // Create release record
-      const releaseRecord: Omit<DDEXReleaseRecord, 'id'> = {
-        orgId: activeOrg.id,
-        projectId: activeProjectId,
-        userId: userProfile.id,
-        metadata: metadata as ExtendedGoldenMetadata,
-        assets: {
-          audioUrl: assets.audioFile?.url || '',
-          audioFormat,
-          audioSampleRate: assets.audioFile?.sampleRate || 44100,
-          audioBitDepth: assets.audioFile?.bitDepth || 16,
-          coverArtUrl: assets.coverArt?.url || '',
-          coverArtWidth: assets.coverArt?.width || 3000,
-          coverArtHeight: assets.coverArt?.height || 3000
-        },
-        status: 'draft',
-        distributors: selectedDistributors.map(id => ({
-          distributorId: id,
-          status: 'pending'
-        })),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
+      if (!docId) {
+        // Determine audio format, defaulting to 'wav' if aac or unknown
+        const rawFormat = assets.audioFile?.format || 'wav';
+        const audioFormat: AudioFormat = (rawFormat === 'aac' ? 'wav' : rawFormat) as AudioFormat;
 
-      // Save to Firestore
-      const docRef = await addDoc(collection(db, 'proprietaryIngestionReleases'), {
-        ...releaseRecord,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      });
+        // Create release record
+        const releaseRecord: Omit<DDEXReleaseRecord, 'id'> = {
+          orgId: activeOrg.id,
+          projectId: activeProjectId,
+          userId: userProfile.id,
+          metadata: metadata as ExtendedGoldenMetadata,
+          assets: {
+            audioUrl: assets.audioFile?.url || '',
+            audioFormat,
+            audioSampleRate: assets.audioFile?.sampleRate || 44100,
+            audioBitDepth: assets.audioFile?.bitDepth || 16,
+            coverArtUrl: assets.coverArt?.url || '',
+            coverArtWidth: assets.coverArt?.width || 3000,
+            coverArtHeight: assets.coverArt?.height || 3000
+          },
+          status: 'draft',
+          distributors: selectedDistributors.map(id => ({
+            distributorId: id,
+            status: 'pending'
+          })),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
 
-      // Update status to validating
-      // Update status to complete
-      await updateDoc(doc(db, 'proprietaryIngestionReleases', docRef.id), {
-        status: 'metadata_complete',
-        updatedAt: serverTimestamp()
-      });
+        // Save to Firestore
+        const docRef = await addDoc(collection(db, 'proprietaryIngestionReleases'), {
+          ...releaseRecord,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
 
-      setReleaseId(docRef.id);
+        docId = docRef.id;
+        setReleaseId(docId);
+      }
 
-      // Trigger definitive packaging via the Publishing Department Agent
-      // This is the ONLY time music is packaged for distribution.
+      // ISSUE-964: packaging must succeed before the release is ever
+      // marked metadata_complete. A failure here throws (propagating to
+      // the outer catch below) instead of being logged and ignored, so
+      // the record stays truthfully in packaging_failed with the real
+      // error and can be retried without duplicating the draft.
       try {
         await agentService.runAgent(
           'publishing',
-          `Package the definitive assets for release ID: ${docRef.id}.
+          `Package the definitive assets for release ID: ${docId}.
           Audio URL: ${assets.audioFile?.url}
           Cover Art URL: ${assets.coverArt?.url}`
         );
       } catch (agentError: unknown) {
-        logger.warn('[useDDEXRelease] Agent packaging trigger failed:', agentError);
-        // We don't fail the whole submission if the agent trigger fails,
-        // since the record is already saved.
+        const packagingErrorMessage = agentError instanceof Error ? agentError.message : 'Packaging failed';
+        logger.error('[useDDEXRelease] Definitive packaging failed:', agentError);
+        await updateDoc(doc(db, 'proprietaryIngestionReleases', docId), {
+          status: 'packaging_failed',
+          packagingError: packagingErrorMessage,
+          updatedAt: serverTimestamp()
+        });
+        throw new Error(`Packaging failed: ${packagingErrorMessage}. Your draft is saved — you can retry.`);
       }
+
+      // Packaging confirmed — only now is it truthful to mark complete.
+      await updateDoc(doc(db, 'proprietaryIngestionReleases', docId), {
+        status: 'metadata_complete',
+        updatedAt: serverTimestamp()
+      });
 
       setCurrentStep('complete');
 
-      return docRef.id;
+      return docId;
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to submit release';
       setSubmitError(errorMessage);
@@ -448,7 +462,7 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
     } finally {
       setIsSubmitting(false);
     }
-  }, [activeOrg, activeProjectId, userProfile, metadata, assets, selectedDistributors]);
+  }, [activeOrg, activeProjectId, userProfile, metadata, assets, selectedDistributors, releaseId]);
 
   // Reset wizard
   const resetWizard = useCallback(() => {
