@@ -5,7 +5,7 @@ ingestion_build.py - End-to-End Release Submission Orchestrator
 Chains the full distribution pipeline in a single invocation:
   1. QC validate metadata
   2. Assign ISRC (if not provided)
-  3. Generate Proprietary Ingestion IP Ingestion Protocol 4.3 XML
+  3. Generate DDEX Ingestion Protocol 4.3 XML
   4. SFTP upload to distributor endpoint
 
 Emits JSON progress events to stdout so the Electron AgentSupervisor
@@ -39,7 +39,7 @@ if _DIR not in sys.path:
 
 from qc_validator import QCValidator
 from isrc_manager import IdentityManager
-from ingestion_generator import Proprietary Ingestion IPGenerator
+from ingestion_generator import DDEXGenerator
 from sftp_uploader import SFTPUploader
 
 
@@ -92,12 +92,12 @@ def run(release: Dict[str, Any], storage_path: str, dry_run: bool) -> Dict[str, 
     emit("isrc", "done", 45, f"ISRC assigned to {len(tracks)} track(s)", {"tracks": [t.get("isrc") for t in tracks]})
 
     # -----------------------------------------------------------------------
-    # STEP 3 — Proprietary Ingestion IP XML Generation
+    # STEP 3 — DDEX XML Generation
     # -----------------------------------------------------------------------
-    emit("ingestion", "running", 50, "Generating Proprietary Ingestion IP Ingestion Protocol 4.3 XML…")
-    generator = Proprietary Ingestion IPGenerator()
+    emit("ingestion", "running", 50, "Generating DDEX Ingestion Protocol 4.3 XML…")
+    generator = DDEXGenerator()
 
-    # Normalise the release dict into the shape expected by Proprietary Ingestion IPGenerator
+    # Normalise the release dict into the shape expected by DDEXGenerator
     # Ensure mandatory cover fields are present if using artwork_url
     if "artwork_url" in release and "cover_filename" not in release:
         release["cover_filename"] = "cover.jpg"
@@ -114,7 +114,7 @@ def run(release: Dict[str, Any], storage_path: str, dry_run: bool) -> Dict[str, 
     with open(xml_path, "w", encoding="utf-8") as f:
         f.write(xml_string)
 
-    emit("ingestion", "done", 70, f"Proprietary Ingestion IP XML written → {xml_path}", {"xml_path": xml_path})
+    emit("ingestion", "done", 70, f"DDEX XML written → {xml_path}", {"xml_path": xml_path})
 
     # -----------------------------------------------------------------------
     # STEP 4 — SFTP Upload (skipped in dry-run mode)
@@ -167,7 +167,7 @@ def run(release: Dict[str, Any], storage_path: str, dry_run: bool) -> Dict[str, 
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="indii Proprietary Ingestion IP Build Orchestrator")
+    parser = argparse.ArgumentParser(description="indii DDEX Build Orchestrator")
     parser.add_argument("release_json", help="JSON string containing release metadata")
     parser.add_argument("--storage-path", default=os.path.join(tempfile.gettempdir(), "indii-dist"),
                         help="Working directory for output files")
