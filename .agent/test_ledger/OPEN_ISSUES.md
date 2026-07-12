@@ -13176,13 +13176,14 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-838: Publicist tools claim generated assets were saved even when no user is signed in or persistence fails
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-12)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Publicist / Agent tools
 - **Evidence:** `write_press_release()` only attempts Firestore persistence when `auth.currentUser?.uid` exists and catches persistence failures as warnings (`PublicistTools.ts:87-100`), then returns “Press release generated” with no saved flag or ID (`:103-106`). `generate_crisis_response()`, `pitch_story()`, and `draft_pitch_email()` have the same optional/caught persistence pattern but return “developed and saved,” “created and saved,” or “drafted and saved” (`:124-139`, `:157-173`, `:190-207`).
 - **Impact:** PR assets can be lost after the tool response while the agent tells the user they were saved.
 - **Fix:** Return `saved: false` when unauthenticated or persistence fails; include document IDs on successful writes; do not use “saved” in messages without confirmation.
 - **Acceptance:** Signed-out and Firestore-failure fixtures return generated content but explicitly say not saved; signed-in success returns a Firestore doc ID.
+- **Fix applied (2026-07-12):** Applied the identical fix to all 4 functions (`write_press_release`, `generate_crisis_response`, `pitch_story`, `draft_pitch_email`) — each now captures the real Firestore `docRef.id` on a successful write, or the real error message when unauthenticated (`'No user is signed in.'`) or when the write throws. The response's `data` now includes `saved: boolean` and `docId` (present only on real success), and the message only uses "saved" language with a real doc ID attached — the unsaved path explicitly says "NOT saved" plus the concrete reason. Tests: updated all 4 existing `PublicistTools.test.ts` "returns valid schema" cases to expect the real `saved: true, docId: 'mock-doc-id'` fields (the shared test setup's Firebase mock has a signed-in user and a resolving `addDoc`, so these already exercised the real-success path once assertions were widened). Added 2 new cases: `write_press_release` with `auth.currentUser` set to `null` asserts `saved: false` and a "No user is signed in" message; `pitch_story` with `addDoc` mocked to reject asserts `saved: false` and the real Firestore error surfaces in the message. Full suite (7 tests) green, typecheck/lint clean. **Not done:** ISSUE-839 (the "scrape" claim in `draft_pitch_email`'s prompt) is a separate, distinct issue about a different kind of fabrication in the same function — not touched here, only the save-honesty gap was in scope for ISSUE-838.
 
 ### ISSUE-839: Playlist pitch email tool asks the model to “scrape” Spotify without a scraper or source data
 
