@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-07-12 09:47 EDT
+**Updated:** 2026-07-12 09:55 EDT
 **Branch:** `fix/issues-core`
 
 ## Recent Commits
 ```
+905c3b4da fix(marketing): map youtube_shorts to the worker-recognized youtube platform id
+ba4184b32 chore: session checkpoint [09:47]
 7945c9667 chore: session checkpoint [09:41]
 a948550fa fix(creative): stop advertising Veo aspect ratios/durations the backend silently discards
 c91d027c1 chore: session checkpoint [09:36]
@@ -12,17 +14,16 @@ c91d027c1 chore: session checkpoint [09:36]
 fabc53510 docs(ledger): log ISSUE-1025 -- Mobile Controller falsely reports Studio Connected
 31665d84a fix(creative): remove Omni's dead "Hybrid Veo" mode and its 4x overcharge
 178e2fd75 test(dashboard): lock in AssetSpotlight's Discuss-attaches-the-asset fix, correct stale ledger entry
-4cdad01a2 fix(test): update stale toast assertion broken by the ISSUE-997 copy change
-2123036d0 fix(creative): stop claiming Omni output is SynthID "Protected"
 ```
 
 ## Working State
 ```
- M .agent/HANDOFF_STATE.md
  M .agent/test_ledger/OPEN_ISSUES.md
- M packages/firebase/src/lib/marketing.ts
+ M packages/renderer/src/services/audio/DAWIntegrationService.test.ts
+ M packages/renderer/src/services/audio/DAWIntegrationService.ts
+ M packages/renderer/src/services/audio/DSPComplianceValidator.test.ts
+ M packages/renderer/src/services/audio/DSPComplianceValidator.ts
 ?? docs/USER_MANUAL_REMOTE_SETUP_AND_SYNC.md
-?? packages/firebase/src/lib/marketing.test.ts
 ```
 
 ## Decisions
