@@ -14552,13 +14552,18 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-988: Venue pin capture can hang indefinitely and rejects valid zero latitude/longitude coordinates
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIALLY FIXED (2026-07-12) — the two reported defects (hang, zero-coordinate rejection) are fixed; accuracy/timestamp capture and a review-before-send step remain open
 - **Severity:** 🟡 MEDIUM (lost or misclassified field capture)
 - **Module:** Mobile Remote / Venue scouting pin
 - **Evidence:** `getCurrentPosition` is called without timeout/options, and `isDispatching` remains true until one of its callbacks fires (`QuickCaptureView.tsx:110-149`), so a stalled provider can lock all capture actions indefinitely. On desktop, a venue task is recognized only when both coordinates are truthy (`useRemoteCommandListener.ts:839-846`); valid coordinates on latitude 0 or longitude 0 fail that branch and fall into the generic “save note” instruction instead of adding/searching the pin.
 - **Impact:** Users near the equator or prime meridian get the wrong creative/scouting action, while location-provider hangs can freeze notes, media, and recording dispatch with no Cancel or retry.
 - **Fix:** Validate coordinates by finite numeric range rather than truthiness; provide explicit accuracy/timeout/maximum-age policy, cancellation, and a terminal location error that unlocks capture. Include accuracy/timestamp and let the user review the coordinate before sharing.
 - **Acceptance:** `0,0`, `0,±180`, and `±90,0` boundary fixtures route correctly when in range; NaN/out-of-range values fail; a never-calling geolocation mock times out/unlocks with retry/cancel; late callbacks cannot enqueue after cancellation; saved pins retain accuracy and capture time.
+- **Fix applied (2026-07-12):**
+  - `QuickCaptureView.tsx`'s `handlePinDrop()` now passes `{ enableHighAccuracy: false, timeout: 15000, maximumAge: 0 }` to `getCurrentPosition()`, so a stalled provider fires the error callback (which already unlocks `isDispatching`) instead of hanging forever; a `TIMEOUT`-coded error now shows a distinct "Location request timed out" message instead of the generic failure text.
+  - `useRemoteCommandListener.ts` — new exported `isValidCoordinate(lat, lng)` validates both as finite numbers within real latitude (`±90`)/longitude (`±180`) range, replacing the `lat && lng` truthiness check that silently rejected valid `0` coordinates and routed them into the generic "save note" fallback instead of the scout-pin flow.
+  - Tests: `useRemoteCommandListener.test.ts` (4 new cases) — `isValidCoordinate` accepts `0,0` and other zero-axis coordinates a truthiness check would reject, accepts the `±90/±180` boundaries, rejects out-of-range and non-finite/non-numeric values. `QuickCaptureView.test.tsx` (3 new cases) — `getCurrentPosition` is called with an explicit positive `timeout`; a `TIMEOUT`-coded error re-enables the Pin button with the distinct message; a non-timeout error also re-enables it. Full mobile-remote+hooks suite (122 tests) green.
+  - **Not done:** no accuracy/timestamp is captured or persisted alongside the pin, and there is no user-facing review/confirm step before the coordinate is sent (the Acceptance criteria's "saved pins retain accuracy and capture time" and the Fix's "let the user review the coordinate before sharing") — both are additive UX/schema work beyond the two specific reported defects (hang, zero-coordinate rejection) this fix closes.
 
 ### ISSUE-989: Generation timeout does not cancel the pending command, so late desktop recovery and retry can spend twice
 

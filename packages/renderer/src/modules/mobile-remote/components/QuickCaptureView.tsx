@@ -277,7 +277,7 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
                 try {
                     await remoteRelayService.dispatchTask({
                         type: 'venue_log',
-                        payload: { 
+                        payload: {
                             lat: position.coords.latitude,
                             lng: position.coords.longitude
                         }
@@ -292,11 +292,20 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
             },
             (error) => {
                 console.error("Error getting location", error);
-                setGeoError('Location capture failed. Please try again.');
-                toast.error('Location capture failed. Please try again.');
+                // ISSUE-988: TIMEOUT gets a clearer message; every branch still
+                // unlocks isDispatching so a stalled provider can't freeze capture.
+                const message = error.code === error.TIMEOUT
+                    ? 'Location request timed out. Please try again.'
+                    : 'Location capture failed. Please try again.';
+                setGeoError(message);
+                toast.error(message);
                 triggerHaptic([100, 200, 100]);
                 setIsDispatching(false);
-            }
+            },
+            // ISSUE-988: without an explicit timeout, a stalled location
+            // provider left isDispatching (and every capture control) locked
+            // forever with no error and no recovery.
+            { enableHighAccuracy: false, timeout: 15000, maximumAge: 0 }
         );
     };
 
