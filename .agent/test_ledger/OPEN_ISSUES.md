@@ -13964,13 +13964,14 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-931: Release Kit asks the model to invent a media contact and displays it as factual
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-12)
 - **Severity:** 🔴 CRITICAL (misdirected external communication)
 - **Module:** Publicist / Release Kit / Press release
 - **Evidence:** `generate_campaign_assets` requires the model to return `pressRelease.contactInfo` (`modules/publicist/tools.ts:34-54`, `:164-194`), but the Release Kit form collects no media contact at all (`ReleaseKitModal.tsx:99-156`). The results UI prominently renders whatever contact string the model invents under “Media Contact” (`:207-229`).
 - **Impact:** A generated press release can contain a fictitious or unrelated real email/phone number and be copied to media unchanged.
 - **Fix:** Require a user-selected verified contact record or explicit contact fields and inject those deterministically after generation. Models must not generate identity/contact facts.
 - **Acceptance:** Generation cannot produce or alter contact details; no-contact state uses an obvious unresolved placeholder and blocks publish/export until the user supplies verified information.
+- **Fix applied (2026-07-12):** `generate_campaign_assets`'s output schema no longer includes `contactInfo` at all — the model's prompt now explicitly forbids inventing contact details, and `CampaignPressReleaseSchema` (headline + content only) strips any `contactInfo` the model tries to smuggle into its JSON regardless (Zod drops unknown keys by default). Added a "Media Contact" field to `ReleaseKitModal.tsx`'s input form, passed through as `contactInfo` to the tool, which injects it deterministically AFTER generation: the real user-supplied value, or the obvious sentinel `UNRESOLVED_MEDIA_CONTACT` ("MEDIA CONTACT NOT PROVIDED — add a verified contact before sending to press") if left blank. The results panel renders the unresolved sentinel in red with a ⚠ marker instead of the normal green "verified-looking" styling. Tests: 2 new cases in `PublicistAgentModule.test.ts` prove the placeholder appears when no contact is supplied, a real supplied contact passes through unchanged, and a contact the model tries to fabricate in its JSON response is discarded in favor of the user-supplied value. Existing `write_press_release` tool (a separate, uncited code path that already took `contact_info` as a real user-supplied input argument, just echoed through the model rather than model-invented) was left unchanged — out of this issue's cited evidence scope. Full publicist test suite green (17 tests), typecheck/lint clean. **Not done:** no "verified contact record" selection (e.g. picking from a saved media-contacts list) — just a free-text field; there is no actual publish/export/send action in this modal today (it's copy-to-clipboard only), so "blocks publish/export" has no literal UI hook to attach to — the visual warning state is the closest available safeguard.
 
 ### ISSUE-932: Invalid publicist records are cast into the UI and can crash search/stat generation
 
