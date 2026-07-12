@@ -105,6 +105,9 @@ export interface CreativeControlsSlice {
         synthIdEnabled: boolean;
         selectedLanguage: string;
         omniReferenceVideo: string | null;
+        // ISSUE-774: 'hybrid-veo' is retired (the UI no longer sets it) —
+        // kept in the type only so a stale persisted value doesn't break
+        // hydration for existing users.
         omniPipelineMode: 'pure-omni' | 'hybrid-veo';
         activePosePreset: string;
         lyricsText: string;
