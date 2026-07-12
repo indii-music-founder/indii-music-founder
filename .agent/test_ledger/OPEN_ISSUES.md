@@ -39,10 +39,21 @@
 
 ### 📊 AUDIT COMPLETE (Phase 4)
 
-**ISSUE-758/762: Dual Project Systems (BLOCKED→architectural)**
-- **Status:** Requires consolidation of appSlice.currentProjectId + ProjectService
-- **Blocker:** Complex refactor; 758 is dependency for 751; 762 is dependency for 758
-- **Recommended:** Schedule dedicated 2-3 hour session for unification
+**ISSUE-758/762: Dual Project Systems ✅ FIXED (2026-07-12, commit 857525bda)**
+- **Status:** 🟢 DONE. The core unification (deleting the duplicate ProjectService, single
+  `Project` type, `DEFAULT_PROJECT_ID`/`isDefaultProject()` constants) had already landed in
+  commit `88f3681d1` (2026-07-07) — that part of the ledger was stale. What remained was the
+  explicit migration TODO left in `constants.ts`'s own comment: 8 write-sites still hardcoded
+  the raw `'default-project'` string instead of importing the constant.
+- **Fixed this session:** Migrated all 8 sites (MarketingPanel, CharacterLibrary x3, StorageService,
+  DirectorTools x4) to `DEFAULT_PROJECT_ID`. Also fixed a real bug found along the way:
+  `useDDEXRelease.ts` hardcoded `activeProjectId = 'default-project'` unconditionally
+  ("For now, use a default project ID") — releases never picked up the user's actual selected
+  project. Now reads `state.currentProjectId` with the constant as fallback.
+- **Verified:** 0 typecheck errors, 0 lint errors, 9 test files / 77 tests pass.
+- **Left alone:** `videoEditorStore.ts`'s `'default-project'` is a `VideoProject.id` (Remotion
+  timeline entity) — unrelated domain, same string by coincidence. Migrating it would wrongly
+  couple two unrelated sentinel systems.
 
 **ISSUE-759: Archived Projects ✅ FIXED (verified 2026-07-12 code-audit)**
 - **Status:** 🟢 DONE — full archive/unarchive UI already present. Earlier "🟡 READY / UI missing" was STALE.
@@ -11953,7 +11964,12 @@ Walked individual menus applying all four lenses (double-click races / authoriza
 
 ### ISSUE-758: Two parallel project systems — `appSlice.currentProjectId` vs `projectSlice.selectedProjectId`
 
-- **Status:** 🔴 OPEN (PLANNED — no code yet)
+- **Status:** 🟢 FIXED (verified + completed 2026-07-12, commit 857525bda). `projectSlice.ts` no longer
+  exists — the sidebar's project system was already unified into `appSlice.currentProjectId` /
+  `ProjectService` (commit `88f3681d1`, 2026-07-07). This entry describing the file was stale. The one
+  concrete gap that survived — scattered raw `'default-project'` literals bypassing `DEFAULT_PROJECT_ID`
+  — is closed; see the reconciled ISSUE-758/762 entry in the session-summary section above for exact
+  file/line evidence.
 - **Depends on:** none — but MUST land before ISSUE-751 (project-scoped conversations need ONE project concept)
 - **Severity:** 🟠 MEDIUM (same "disconnected systems" pattern as ISSUE-751, one level deeper)
 - **Location:** `packages/renderer/src/core/store/slices/appSlice.ts:71,110,200` vs `packages/renderer/src/core/store/slices/projectSlice.ts` + `ProjectService`
@@ -12011,7 +12027,12 @@ Walked individual menus applying all four lenses (double-click races / authoriza
 
 ### ISSUE-762: TWO duplicate ProjectService implementations write mixed schemas into ONE `projects` collection
 
-- **Status:** 🔴 OPEN (PLANNED — no code yet)
+- **Status:** 🟢 FIXED (verified 2026-07-12). `packages/renderer/src/services/project/ProjectService.ts`
+  (the user-scoped duplicate) no longer exists on disk — deleted in commit `88f3681d1` (2026-07-07).
+  Only `packages/renderer/src/services/ProjectService.ts` remains: ONE class, ONE `Project` type
+  (imported from `appSlice`), ONE `ensureInbox` (with a dedup-on-read safety net for legacy duplicate
+  Inbox docs, lines 114-126). All 3 consumers (`appSlice.ts`, `ProjectList.tsx`, `DashboardService.ts`)
+  import the single canonical path via `import('@/services/ProjectService')`. This ledger entry was stale.
 - **Depends on:** none — lands WITH ISSUE-758 (this is the service layer of the same split-brain; 758 covers the store layer)
 - **Severity:** 🔴 HIGH (schema collision in production Firestore data; queries from each side can't see the other's docs correctly)
 - **Location:** `packages/renderer/src/services/ProjectService.ts` (144 lines, org-scoped) vs `packages/renderer/src/services/project/ProjectService.ts` (170 lines, user-scoped)
@@ -13155,13 +13176,14 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-838: Publicist tools claim generated assets were saved even when no user is signed in or persistence fails
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-12)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Publicist / Agent tools
 - **Evidence:** `write_press_release()` only attempts Firestore persistence when `auth.currentUser?.uid` exists and catches persistence failures as warnings (`PublicistTools.ts:87-100`), then returns “Press release generated” with no saved flag or ID (`:103-106`). `generate_crisis_response()`, `pitch_story()`, and `draft_pitch_email()` have the same optional/caught persistence pattern but return “developed and saved,” “created and saved,” or “drafted and saved” (`:124-139`, `:157-173`, `:190-207`).
 - **Impact:** PR assets can be lost after the tool response while the agent tells the user they were saved.
 - **Fix:** Return `saved: false` when unauthenticated or persistence fails; include document IDs on successful writes; do not use “saved” in messages without confirmation.
 - **Acceptance:** Signed-out and Firestore-failure fixtures return generated content but explicitly say not saved; signed-in success returns a Firestore doc ID.
+- **Fix applied (2026-07-12):** Applied the identical fix to all 4 functions (`write_press_release`, `generate_crisis_response`, `pitch_story`, `draft_pitch_email`) — each now captures the real Firestore `docRef.id` on a successful write, or the real error message when unauthenticated (`'No user is signed in.'`) or when the write throws. The response's `data` now includes `saved: boolean` and `docId` (present only on real success), and the message only uses "saved" language with a real doc ID attached — the unsaved path explicitly says "NOT saved" plus the concrete reason. Tests: updated all 4 existing `PublicistTools.test.ts` "returns valid schema" cases to expect the real `saved: true, docId: 'mock-doc-id'` fields (the shared test setup's Firebase mock has a signed-in user and a resolving `addDoc`, so these already exercised the real-success path once assertions were widened). Added 2 new cases: `write_press_release` with `auth.currentUser` set to `null` asserts `saved: false` and a "No user is signed in" message; `pitch_story` with `addDoc` mocked to reject asserts `saved: false` and the real Firestore error surfaces in the message. Full suite (7 tests) green, typecheck/lint clean. **Not done:** ISSUE-839 (the "scrape" claim in `draft_pitch_email`'s prompt) is a separate, distinct issue about a different kind of fabrication in the same function — not touched here, only the save-honesty gap was in scope for ISSUE-838.
 
 ### ISSUE-839: Playlist pitch email tool asks the model to “scrape” Spotify without a scraper or source data
 
@@ -15295,4 +15317,15 @@ Naming fix: `LabelDealRecoupmentService.ts` collection literal `'labelDeals'` �
 - **Fix:** Define one base mark with 3 official colorways (e.g. via a shared SVG + fill-color token): (1) web browser favicon/tab icon, (2) Electron desktop app icon (Dock/taskbar/installer), (3) remote/mobile PWA icon (phone home screen). Give the mobile-remote module its own `manifest.json`/icon set distinct from the main studio manifest so it can carry the third color independently, and update the Electron `build/icon.*` assets to use the second color deliberately (not just "whatever it happens to be now").
 - **Acceptance:** Looking only at the icon (browser tab, Dock, phone home screen) is enough to tell which of the 3 surfaces (web / Electron / remote) is open, with no other UI visible.
 - **DO NOT:** Do not change the core mark/shape — only the color per surface. Do not fork the manifest content (share_target, shortcuts, etc.) beyond what's needed to give the remote module its own icon identity.
+
+### ISSUE-1046: CI unit-test shard 7/8 recurrently OOMs on GitHub Actions (main deploys)
+
+- **Status:** 🔴 OPEN (observed recurring, 2026-07-12 — 4 separate `main` deploy runs so far)
+- **Severity:** 🟡 MEDIUM (CI reliability — every affected run shows "failure" even though no test actually failed)
+- **Module:** CI/CD — `.github/workflows/deploy.yml` unit-test sharding
+- **Evidence:** Across at least 4 independent `Deploy to Firebase Hosting` runs on `main` this session (`29201663294`, `29210446935`, `29210611369`, `29210902917`), shard 7/8 consistently crashes with `Error: Worker terminated due to reaching memory limit: JS heap out of memory` / `{code: 'ERR_WORKER_OUT_OF_MEMORY'}` — never a real assertion failure in that shard. Each time, all tests that ran before the crash passed (e.g. one run showed "529 passed | 2 skipped" before the OOM). The job runs with `NODE_OPTIONS="--max-old-space-size=4096"` for the test command itself, even though the job env sets `NODE_OPTIONS: --max-old-space-size=6144` — the per-command override wins and is lower than the job default.
+- **Impact:** Every affected deploy shows as a red ❌ in GitHub Actions even when 100% of tests that ran actually passed, which trains reviewers to ignore "failure" status on this workflow and could mask a real regression landing in the same shard on a day it doesn't OOM.
+- **Fix:** Either raise the per-shard `--max-old-space-size` to match (or exceed) the job-level 6144MB default, or rebalance the 8-way shard split so shard 7 doesn't consistently draw a heavier subset of memory-hungry test files, or reduce the shard count so each shard's peak heap has more headroom.
+- **DO NOT:** Do not silently mark the workflow `continue-on-error` for unit tests — that would hide real failures too. Fix the actual memory ceiling/sharding, not the symptom.
+- **Not investigated further this pass:** identifying which specific test files in shard 7 are memory-heavy, and whether `--max-old-space-size=4096` in the `npm test` script itself (vs. the job's 6144 env var) is an intentional lower cap or an oversight — this is a CI/workflow-config change I did not make without being asked, and is out of scope for a code-issue fixing pass.
 

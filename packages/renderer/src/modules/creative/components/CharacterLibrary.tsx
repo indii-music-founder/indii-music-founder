@@ -5,6 +5,7 @@ import { User, X, Upload, AlertTriangle, Grid3x3, Eye, Palette, Pencil, ImagePlu
 import { useToast } from '@/core/context/ToastContext';
 import { logger } from '@/utils/logger';
 import { BrandAsset } from '@/types/User';
+import { DEFAULT_PROJECT_ID } from '@/core/constants';
 
 /** Maximum file size for character reference images: 10MB */
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
@@ -125,7 +126,7 @@ export const CharacterLibrary: React.FC = () => {
             type: 'image' as const,
             timestamp: Date.now(),
             category: 'headshot' as const,
-            projectId: currentProjectId || 'default-project'
+            projectId: currentProjectId || DEFAULT_PROJECT_ID
         };
 
         addUploadedImage(newItem);
@@ -174,7 +175,7 @@ export const CharacterLibrary: React.FC = () => {
             type: 'image' as const,
             timestamp: Date.now(),
             category: 'headshot' as const,
-            projectId: currentProjectId || 'default-project'
+            projectId: currentProjectId || DEFAULT_PROJECT_ID
         };
 
         addUploadedImage(newItem);
@@ -202,7 +203,7 @@ export const CharacterLibrary: React.FC = () => {
             type: 'image' as const,
             timestamp: Date.now(),
             category: 'headshot' as const,
-            projectId: currentProjectId || 'default-project'
+            projectId: currentProjectId || DEFAULT_PROJECT_ID
         };
 
         addUploadedImage(newItem);

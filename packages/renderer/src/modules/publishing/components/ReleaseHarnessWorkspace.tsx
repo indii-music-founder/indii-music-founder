@@ -5,6 +5,7 @@ import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import { releaseHarnessService, saveReleaseHarnessRun, type ReleaseHarnessResult } from '@/services/release-harness';
 import { IdentifierService } from '@/services/identity/IdentifierService';
 import { ISWCService } from '@/services/publishing/ISWCService';
+import { DEFAULT_PROJECT_ID } from '@/core/constants';
 
 interface ReleaseHarnessWorkspaceProps {
   metadata: Partial<ExtendedGoldenMetadata>;
@@ -19,7 +20,7 @@ export function ReleaseHarnessWorkspace({
   metadata,
   selectedStores,
   audioFile,
-  projectId = 'default-project',
+  projectId = DEFAULT_PROJECT_ID,
   onApplyMetadata,
   onSaved,
 }: ReleaseHarnessWorkspaceProps) {
