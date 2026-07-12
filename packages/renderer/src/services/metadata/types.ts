@@ -155,7 +155,12 @@ export type ReleaseDistributionStatus =
     | 'delivering'
     | 'live'
     | 'takedown_requested'
-    | 'taken_down';
+    | 'taken_down'
+    // ISSUE-964: the draft record can be created successfully while the
+    // Publishing agent's definitive packaging step fails — this state
+    // makes that distinction reloadable/retryable instead of silently
+    // advancing to 'metadata_complete' regardless of packaging outcome.
+    | 'packaging_failed';
 
 // Release record for Firestore
 export interface DDEXReleaseRecord {
@@ -180,6 +185,7 @@ export interface DDEXReleaseRecord {
 
     // Distribution State
     status: ReleaseDistributionStatus;
+    packagingError?: string; // set when status === 'packaging_failed'
     distributors: {
         distributorId: string;
         releaseId?: string;
