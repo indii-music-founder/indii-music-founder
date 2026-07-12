@@ -34,6 +34,7 @@ import {
     serverTimestamp,
     deleteDoc,
     getDocs,
+    runTransaction,
     Timestamp,
     type Unsubscribe,
     type WithFieldValue,
@@ -108,6 +109,16 @@ export interface AgentDispatchTask {
     error?: {
         code: string;
         message: string;
+    };
+    /**
+     * ISSUE-983: the durable receipt proving a note/attachment was actually
+     * created — populated only when the desktop executor calls the Notes
+     * tool directly and gets a real ID back, never inferred from an agent
+     * chat reply.
+     */
+    result?: {
+        noteId?: string;
+        assetUrl?: string;
     };
 }
 
@@ -387,12 +398,20 @@ class RemoteRelayService {
 
     /**
      * Dispatch a generic task to the desktop executor (Mobile side).
+     *
+     * ISSUE-982: callers (QuickCaptureView) treat a resolved promise as success
+     * and clear the user's only local copy of the note/media. Silently
+     * returning null on missing auth let that happen invisibly. Auth failure
+     * must throw so it lands in the caller's existing try/catch instead.
      */
-    async dispatchTask(task: Omit<AgentDispatchTask, 'id' | 'status' | 'createdAt'>): Promise<string | null> {
+    async dispatchTask(task: Omit<AgentDispatchTask, 'id' | 'status' | 'createdAt'>): Promise<string> {
+        if (isFirebaseE2EMockEnabled()) {
+            return `e2e-dispatch-${Date.now()}`;
+        }
+
         const ref = getDispatchQueueRef();
         if (!ref) {
-            logger.warn('[RemoteRelay] No auth — cannot dispatch task');
-            return null;
+            throw new Error('Not authenticated — cannot dispatch task');
         }
 
         const dispatchDoc: AgentDispatchTask = {
@@ -669,30 +688,93 @@ class RemoteRelayService {
     }
 
     /**
+     * Atomically claim a dispatch task by flipping pending → processing
+     * inside a Firestore transaction. First caller to commit wins.
+     *
+     * ISSUE-984: `onDispatchTask` can fire for the same pending task on
+     * multiple open desktop listeners (two tabs/windows, or a re-subscribe)
+     * before any of them has written back a status change. Without an
+     * atomic precondition, every one of them would independently pass and
+     * process the same capture — duplicate notes, duplicate AI calls,
+     * duplicate spend. The transaction re-reads status inside the commit
+     * attempt, so only one caller observes 'pending' and wins the claim.
+     */
+    async claimDispatchTask(taskId: string): Promise<boolean> {
+        const uid = getUserId();
+        if (!uid) return false;
+
+        const ref = doc(db, 'users', uid, 'agent_dispatch_queue', taskId);
+        try {
+            return await runTransaction(db, async (tx) => {
+                const snap = await tx.get(ref);
+                if (snap.exists() && snap.data()?.status === 'pending') {
+                    tx.update(ref, { status: 'processing', pickedUpAt: serverTimestamp() });
+                    return true;
+                }
+                return false;
+            });
+        } catch (error) {
+            logger.error('[RemoteRelay] Dispatch task atomic claim failed:', error);
+            return false;
+        }
+    }
+
+    /**
      * Update the status of a dispatch task (desktop side).
      */
     async updateDispatchTaskStatus(
-        taskId: string, 
-        status: AgentDispatchTask['status'], 
-        error?: AgentDispatchTask['error']
+        taskId: string,
+        status: AgentDispatchTask['status'],
+        error?: AgentDispatchTask['error'],
+        result?: AgentDispatchTask['result']
     ): Promise<void> {
         const uid = getUserId();
         if (!uid) return;
-        
+
         const updateData: WithFieldValue<Partial<AgentDispatchTask>> = { status };
-        
+
         if (status === 'processing') {
             updateData.pickedUpAt = serverTimestamp();
         } else if (status === 'completed' || status === 'failed') {
             updateData.completedAt = serverTimestamp();
         }
-        
+
         if (error) {
             updateData.error = error;
         }
 
+        if (result) {
+            updateData.result = result;
+        }
+
         await updateDoc(doc(db, 'users', uid, 'agent_dispatch_queue', taskId), updateData);
         logger.info(`[RemoteRelay] 🖥️ Dispatch task ${taskId} marked as ${status}`);
+    }
+
+    /**
+     * Listen for status/result changes on a single dispatch task (phone side).
+     * ISSUE-983: lets the capture UI wait for a real terminal receipt
+     * ('completed' with a noteId, or 'failed') instead of treating queue
+     * acceptance itself as success.
+     */
+    onDispatchTaskUpdate(
+        taskId: string,
+        callback: (task: AgentDispatchTask & { id: string }) => void
+    ): Unsubscribe {
+        if (isFirebaseE2EMockEnabled()) return () => {};
+        const uid = getUserId();
+        if (!uid) return () => {};
+
+        return onSnapshot(
+            doc(db, 'users', uid, 'agent_dispatch_queue', taskId),
+            (snap) => {
+                if (!snap.exists()) return;
+                callback({ ...(snap.data() as AgentDispatchTask), id: snap.id });
+            },
+            (error) => {
+                logger.error('[RemoteRelay] Dispatch task update listener error:', error);
+            }
+        );
     }
 
     /**
@@ -835,3 +917,34 @@ class RemoteRelayService {
 }
 
 export const remoteRelayService = new RemoteRelayService();
+
+const DISPATCH_CONFIRMATION_TIMEOUT_MS = 90000;
+
+/**
+ * ISSUE-983: wait for a dispatch task's real terminal status instead of
+ * treating queue acceptance as success — so "Save to Notes" only clears the
+ * capture once a note actually exists (or surfaces a genuine failure/timeout).
+ */
+export function waitForDispatchConfirmation(
+    taskId: string
+): Promise<{ status: 'completed' | 'failed'; error?: AgentDispatchTask['error'] }> {
+    return new Promise((resolve) => {
+        let settled = false;
+
+        const timeout = setTimeout(() => {
+            if (settled) return;
+            settled = true;
+            unsubscribe();
+            resolve({ status: 'failed', error: { code: 'TIMEOUT', message: 'Saving timed out. Check desktop studio.' } });
+        }, DISPATCH_CONFIRMATION_TIMEOUT_MS);
+
+        const unsubscribe = remoteRelayService.onDispatchTaskUpdate(taskId, (task) => {
+            if (task.status !== 'completed' && task.status !== 'failed') return;
+            if (settled) return;
+            settled = true;
+            clearTimeout(timeout);
+            unsubscribe();
+            resolve({ status: task.status, error: task.error });
+        });
+    });
+}
