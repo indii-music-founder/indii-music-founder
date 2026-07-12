@@ -5,6 +5,7 @@ import { earningsService } from '../EarningsService';
 import {
     DistributorId,
     DistributorRequirements,
+    DistributorCredentials,
     ReleaseStatus,
     ReleaseResult,
     DistributorEarnings,
@@ -62,6 +63,36 @@ export class TuneCoreAdapter extends BaseDistributorAdapter {
             payoutPercentage: 100,
         }
     };
+
+    // ISSUE-814: the base class's connect() marks any adapter "connected" from
+    // mere apiKey presence, with no verification. Believe/OneRPM/UnitedMasters
+    // already override connect() to ping their real API and reject on 401/403 —
+    // TuneCore had the same apiBaseUrl but never did this check. Mirrors that
+    // exact, already-shipped pattern rather than inventing a new one.
+    async connect(credentials: DistributorCredentials): Promise<void> {
+        await super.connect(credentials);
+        if (credentials.apiKey) {
+            try {
+                const response = await fetch(`${this.apiBaseUrl}/version`, {
+                    headers: {
+                        'Authorization': `Bearer ${credentials.apiKey}`,
+                        ...this.getVersionedHeaders(),
+                    },
+                    signal: AbortSignal.timeout(5000),
+                });
+                if (response.status === 401 || response.status === 403) {
+                    throw new Error('Invalid API key or credentials for TuneCore');
+                }
+            } catch (err: unknown) {
+                if (err instanceof Error && err.message.includes('Invalid')) {
+                    this.connected = false;
+                    this.credentials = undefined;
+                    throw err;
+                }
+                logger.warn('[TuneCore] API connection verification warning:', err);
+            }
+        }
+    }
 
     async createRelease(metadata: ExtendedGoldenMetadata, assets: ReleaseAssets): Promise<ReleaseResult> {
         const isConnected = await this.isConnected();
