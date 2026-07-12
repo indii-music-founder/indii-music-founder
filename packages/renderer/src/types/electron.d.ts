@@ -12,6 +12,7 @@ export interface RemoteMobilePayload {
         text: string;
         targetAgentId?: string;
         metadata?: Record<string, unknown>;
+        executionTarget?: 'cloud' | 'studio';
     };
 }
 export interface AuthTokenData {
