@@ -851,13 +851,20 @@ function useFirestoreRelay(enabled: boolean) {
         const unsubscribeDispatch = remoteRelayService.onDispatchTask(async (task: AgentDispatchTask & { id: string }) => {
             logger.info(`[RemoteRelay/Firestore] 📱→🖥️ Processing Dispatch Task: [${task.type}] ${task.id}`);
 
+            // ISSUE-984: atomic claim — first listener to win the transaction
+            // processes the task; every other concurrent listener (another
+            // open tab/window) bails out here instead of double-processing.
+            const claimed = await remoteRelayService.claimDispatchTask(task.id);
+            if (!claimed) {
+                logger.info(`[RemoteRelay/Firestore] ⏭️ Dispatch task ${task.id} already claimed elsewhere`);
+                return;
+            }
+
             // Automatic wake: any task from the phone surfaces a sleeping desktop
             // before processing, so results are visible when the user looks.
             wakeDesktop();
 
             try {
-                await remoteRelayService.updateDispatchTaskStatus(task.id, 'processing');
-                
                 // Switch based on the dispatch task type
                 switch (task.type) {
                     case 'voice_memo':

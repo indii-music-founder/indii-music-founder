@@ -34,6 +34,7 @@ import {
     serverTimestamp,
     deleteDoc,
     getDocs,
+    runTransaction,
     Timestamp,
     type Unsubscribe,
     type WithFieldValue,
@@ -684,6 +685,38 @@ class RemoteRelayService {
             });
         }
         return unsubFirestore;
+    }
+
+    /**
+     * Atomically claim a dispatch task by flipping pending → processing
+     * inside a Firestore transaction. First caller to commit wins.
+     *
+     * ISSUE-984: `onDispatchTask` can fire for the same pending task on
+     * multiple open desktop listeners (two tabs/windows, or a re-subscribe)
+     * before any of them has written back a status change. Without an
+     * atomic precondition, every one of them would independently pass and
+     * process the same capture — duplicate notes, duplicate AI calls,
+     * duplicate spend. The transaction re-reads status inside the commit
+     * attempt, so only one caller observes 'pending' and wins the claim.
+     */
+    async claimDispatchTask(taskId: string): Promise<boolean> {
+        const uid = getUserId();
+        if (!uid) return false;
+
+        const ref = doc(db, 'users', uid, 'agent_dispatch_queue', taskId);
+        try {
+            return await runTransaction(db, async (tx) => {
+                const snap = await tx.get(ref);
+                if (snap.exists() && snap.data()?.status === 'pending') {
+                    tx.update(ref, { status: 'processing', pickedUpAt: serverTimestamp() });
+                    return true;
+                }
+                return false;
+            });
+        } catch (error) {
+            logger.error('[RemoteRelay] Dispatch task atomic claim failed:', error);
+            return false;
+        }
     }
 
     /**

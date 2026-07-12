@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
     isFirebaseE2EMockEnabled: vi.fn(() => false),
     currentUser: null as { uid: string } | null,
     addDoc: vi.fn(),
+    runTransaction: vi.fn(),
 }));
 
 vi.mock('@/utils/e2eMode', () => ({
@@ -23,7 +24,9 @@ vi.mock('firebase/firestore', async (importOriginal) => {
     return {
         ...actual,
         collection: vi.fn(() => ({ __collection: true })),
+        doc: vi.fn(() => ({ __doc: true })),
         addDoc: mocks.addDoc,
+        runTransaction: mocks.runTransaction,
         serverTimestamp: vi.fn(() => 'server-timestamp'),
     };
 });
@@ -74,6 +77,68 @@ describe('RemoteRelayService - dispatchTask (ISSUE-982)', () => {
 
         expect(id).toBeTruthy();
         expect(mocks.addDoc).not.toHaveBeenCalled();
+    });
+});
+
+describe('RemoteRelayService - claimDispatchTask (ISSUE-984)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mocks.isFirebaseE2EMockEnabled.mockReturnValue(false);
+        mocks.currentUser = { uid: 'user-1' };
+    });
+
+    it('wins the claim and flips pending → processing when the task is still pending', async () => {
+        const txUpdate = vi.fn();
+        mocks.runTransaction.mockImplementation(async (_db, updateFn) => {
+            const tx = {
+                get: vi.fn().mockResolvedValue({ exists: () => true, data: () => ({ status: 'pending' }) }),
+                update: txUpdate,
+            };
+            return updateFn(tx);
+        });
+
+        const claimed = await remoteRelayService.claimDispatchTask('task-1');
+
+        expect(claimed).toBe(true);
+        expect(txUpdate).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ status: 'processing' }));
+    });
+
+    it('loses the claim without writing when another listener already claimed it', async () => {
+        const txUpdate = vi.fn();
+        mocks.runTransaction.mockImplementation(async (_db, updateFn) => {
+            const tx = {
+                get: vi.fn().mockResolvedValue({ exists: () => true, data: () => ({ status: 'processing' }) }),
+                update: txUpdate,
+            };
+            return updateFn(tx);
+        });
+
+        const claimed = await remoteRelayService.claimDispatchTask('task-1');
+
+        expect(claimed).toBe(false);
+        expect(txUpdate).not.toHaveBeenCalled();
+    });
+
+    it('loses the claim when the task no longer exists', async () => {
+        mocks.runTransaction.mockImplementation(async (_db, updateFn) => {
+            const tx = { get: vi.fn().mockResolvedValue({ exists: () => false, data: () => undefined }), update: vi.fn() };
+            return updateFn(tx);
+        });
+
+        expect(await remoteRelayService.claimDispatchTask('task-1')).toBe(false);
+    });
+
+    it('returns false (not throw) when the transaction itself fails', async () => {
+        mocks.runTransaction.mockRejectedValue(new Error('Firestore unavailable'));
+
+        await expect(remoteRelayService.claimDispatchTask('task-1')).resolves.toBe(false);
+    });
+
+    it('returns false without touching Firestore when no user is authenticated', async () => {
+        mocks.currentUser = null;
+
+        expect(await remoteRelayService.claimDispatchTask('task-1')).toBe(false);
+        expect(mocks.runTransaction).not.toHaveBeenCalled();
     });
 });
 
