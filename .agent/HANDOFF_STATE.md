@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-07-12 18:55 EDT
+**Updated:** 2026-07-12 19:03 EDT
 **Branch:** `fix/issues-core`
 
 ## Recent Commits
 ```
+8b78b47b8 fix(ci): cap CI unit-test worker concurrency to 1 after two memory-tuning attempts failed (ISSUE-1046)
+b10ab4b27 chore: session checkpoint [18:55]
 3f7ae4780 fix(notes): wire loadNotesFromCloud into app init; merge instead of overwrite (hunter finding, ISSUE-761)
 79c22fbac fix(e2e): correct video-mode nav path, honestly skip desktop-only Magic Edit check
 db2bf449f fix(e2e): correct creative-studio testid to creative-studio-container
@@ -14,26 +16,12 @@ fa85d056a fix(sessions): tiebreak pagination cursor on documentId() to stop sile
 66b9777d9 chore: session checkpoint [18:31]
 d389f9822 docs: add /ci-validate workflow to triage main deploy failures vs the known OOM flake
 18dfcf74a chore: session checkpoint [18:23]
-**Updated:** 2026-07-12 18:26 EDT
-**Branch:** `main` (merged from `fix/issues-core`)
-
-## Recent Commits
-```
-d389f9822 docs: add /ci-validate workflow to triage main deploy failures vs the known OOM flake
-8cccca1fd fix(marketing): distinguish auth/read failures from a real empty Fan CRM (ISSUE-848)
-780a12ec0 docs(ledger): log ISSUE-1046 (CI shard 7/8 recurring OOM) and ISSUE-1045 (per-surface icon colors)
-02d53a9d7 fix(publicist): stop claiming PR assets were saved when persistence fails (ISSUE-838)
-2df1eb784 docs(ledger): close detailed ISSUE-758/762 entries (deep-history section)
-a8d03dd7d docs(ledger): mark ISSUE-758/762 fixed — sentinel migration complete
-857525bda fix(project): finish ISSUE-758/762 sentinel unification — migrate scattered literals to DEFAULT_PROJECT_ID
-f08b1078c fix(marketing): stop claiming a campaign brief was saved when persistence fails (ISSUE-835)
-a1b5467e2 fix(agent): stop document_query from silently analyzing an unrelated contract (ISSUE-832)
-c42d52817 fix(legal): return a real tool error for invalid split-sheet percentage totals (ISSUE-829)
 ```
 
 ## Working State
 ```
-clean working tree
+ M packages/firebase/src/functions/creative/gateway.ts
+ M packages/renderer/src/core/components/SidebarNavigation.test.tsx
 ```
 
 ## Decisions
