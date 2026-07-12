@@ -1,25 +1,24 @@
 # Handoff State
-**Updated:** 2026-07-12 12:33 EDT
-**Branch:** `fix/issues-core`
+**Updated:** 2026-07-12 12:54 EDT
+**Branch:** `main`
 
 ## Recent Commits
 ```
+b82fe47e5 Merge branch 'fix/issues-core'
+a5edd868d fix(publishing): stop fabricating PRO submission confirmations (ISSUE-812)
+012a66646 fix(memory): increase semantic search limit to 100 for deep recall (ISSUE-757)
+8822ff7a2 Merge branch 'fix/issues-core'
+aa0864937 fix(creative): disclose that the video Audio toggle is a prompt request, not a guarantee (ISSUE-807)
+db5018ddd chore: session checkpoint [12:33]
 c13f76ff4 chore: session checkpoint [12:32]
 078ea1357 chore: session checkpoint [14:45]
 72e7da52c fix(creative): derive real file extension for generated video/image file-nodes (ISSUE-810)
 f41361707 docs(ledger): log ISSUE-757 partial fix — frontend memory caps raised to 1000 (2026-07-12)
-a0ea7354b fix(memory): raise caps to full Firestore batch limits for recall (ISSUE-757 partial)
-9edbc8984 docs(ledger): log ISSUE-756 fix — cursor-based session pagination (2026-07-12)
-39b255bda fix(sessions): implement cursor-based pagination for session history (ISSUE-756)
-63dadbb12 docs(ledger): log ISSUE-761 fix — Firestore cloud sync for notes (2026-07-12)
-e0a503b1d fix(notes): implement Firestore cloud sync for cross-device persistence (ISSUE-761)
-62eef6c4b chore: session checkpoint [12:15]
 ```
 
 ## Working State
 ```
- M packages/renderer/src/modules/creative/components/StudioSettingsPanel.tsx
-?? packages/renderer/src/modules/creative/components/StudioSettingsPanel.test.tsx
+clean working tree
 ```
 
 ## Decisions
