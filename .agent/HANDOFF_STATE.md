@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-07-13 11:44 EDT
+**Updated:** 2026-07-13 12:06 EDT
 **Branch:** `fix/issues-core`
 
 ## Recent Commits
 ```
+aee797bd9 chore: session checkpoint [11:44]
 352638b63 chore: session checkpoint [11:39]
 37baa4c9a chore: session checkpoint [11:20]
 95358bc9a fix(test): make video editor store tests assert deltas, not absolute counts (ISSUE-1046 follow-up)
@@ -13,11 +14,11 @@
 f3285a76e chore: session checkpoint [10:16]
 5f3e8a69f chore: session checkpoint [10:13]
 709d1faa3 chore: session checkpoint [07:31]
-e4cb076a9 chore: session checkpoint [06:57]
 ```
 
 ## Working State
 ```
+ M .agent/test_ledger/OPEN_ISSUES.md
  M .agents/workflows/ci-validate.md
  M .github/workflows/deploy.yml
  M packages/firebase/firestore.indexes.json
