@@ -1,5 +1,5 @@
 # Handoff State
-**Updated:** 2026-07-13 13:58 EDT
+**Updated:** 2026-07-13 14:04 EDT
 **Branch:** `claude/inspiring-greider-59ed4a` (merged with `main`)
 
 ## Recent Commits
@@ -16,6 +16,10 @@ f36e1f62b fix(creative): gate first-run guidance on canvas emptiness, not editor
 d389f9822 docs: add /ci-validate workflow to triage main deploy failures vs the known OOM flake
 
 ## Merged from main
+883a2eb22 Merge pull request #237 from indii-music-founder/fix/issues-core
+9881b61dc docs(ledger): mark ISSUE-757 as FIXED with paginated recall + honest messaging complete (2026-07-13)
+db9e296dd fix(memory): implement paginated recall loop with honest search scope messaging (ISSUE-757)
+8367118c7 fix(ui): add asset count badge + one-shot pulse cue to collapsed creations bar (ISSUE-754)
 37e1bd61e Merge pull request #236 from indii-music-founder/fix/issues-core
 92c708d6a fix(core): comprehensive system improvements across firebase, audio, creative, and state management
 95358bc9a fix(test): make video editor store tests assert deltas, not absolute counts (ISSUE-1046 follow-up)
