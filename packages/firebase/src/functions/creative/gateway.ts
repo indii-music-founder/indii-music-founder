@@ -1205,6 +1205,7 @@ export const generateVideoV3 = onCall({ timeoutSeconds: 540, secrets: [geminiApi
     costReservationId,
     directorSettings: requestedDirectorSettings,
     parentId,
+    inputManifest,
   } = parsed.data;
 
   // ISSUE-870: GenerateVideoSchema's aspectRatio enum includes 1:1/3:4/4:3,
@@ -1298,6 +1299,7 @@ export const generateVideoV3 = onCall({ timeoutSeconds: 540, secrets: [geminiApi
       maskFrameUri,
       maskTrackUri,
       frameRange,
+      inputManifest,
       cameraPhysics: undefined,
     },
     directorSettings,

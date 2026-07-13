@@ -20,6 +20,7 @@ import {
     AnyToolFunction,
     DelegateTaskArgs,
     ConsultExpertsArgs,
+    ShareNoteArgs,
     ExpertConsultation,
     ToolFunctionArgs,
     ToolFunctionResult,
@@ -38,6 +39,8 @@ import { AgentEventBus } from './governance/AgentEventBus';
 import { getFineTunedModel } from './fine-tuned-models';
 import { agentIdentityService, type AgentIdentityCard } from './governance/AgentIdentity';
 import { getDepartmentOf, isHead, sameDepartment } from './departments';
+import { validateAgentCommunication } from './governance/AgentCommunicationPolicy';
+import { agentNoteService } from './AgentNoteService';
 
 import { AgentPromptBuilder } from './builders/AgentPromptBuilder';
 import { getAgentStreamingService } from './AgentStreamingService';
@@ -137,6 +140,34 @@ export class BaseAgent implements SpecializedAgent {
                 if (!project) return { success: false, error: 'Project not found' };
                 return { success: true, data: project };
             },
+            approve_local_asset_folder: async () => {
+                try {
+                    const { desktopFileIndexService } = await importWithRetry(() => import('./DesktopFileIndexService'));
+                    const folder = await desktopFileIndexService.approveFolder();
+                    if (!folder) return { success: false, message: 'No folder was approved. Ask the creator to select a folder in the Studio dialog.' };
+                    return { success: true, data: { folderId: folder.id, label: folder.label }, message: `Approved ${folder.label} for local asset discovery.` };
+                } catch (error: unknown) {
+                    return toolError(error instanceof Error ? error.message : 'Could not approve a local asset folder.', 'LOCAL_ASSET_FOLDER_UNAVAILABLE');
+                }
+            },
+            browse_local_files: async (args: Record<string, unknown>) => {
+                const query = typeof args.query === 'string' ? args.query.trim() : '';
+                const extensions = Array.isArray(args.extensions)
+                    ? args.extensions.filter((value): value is string => typeof value === 'string').slice(0, 20)
+                    : undefined;
+                if (!query) return toolError('Provide words to search in previously approved folder names.', 'INVALID_LOCAL_ASSET_QUERY');
+                try {
+                    const { desktopFileIndexService } = await importWithRetry(() => import('./DesktopFileIndexService'));
+                    const assets = await desktopFileIndexService.search(query, extensions);
+                    return {
+                        success: true,
+                        data: { assets },
+                        message: assets.length ? `Found ${assets.length} approved local asset${assets.length === 1 ? '' : 's'}.` : 'No matching files in the creator-approved folders. Ask the creator to approve a folder or try different terms.'
+                    };
+                } catch (error: unknown) {
+                    return toolError(error instanceof Error ? error.message : 'Could not search local assets.', 'LOCAL_ASSET_SEARCH_UNAVAILABLE');
+                }
+            },
             // Phase 3.5: Updated signature to accept toolContext (not used, but consistent)
             delegate_task: async ({ targetAgentId, task }: DelegateTaskArgs, context, _toolContext?: ToolExecutionContext) => {
                 // Phase 2: Check for delegation loops
@@ -156,6 +187,17 @@ export class BaseAgent implements SpecializedAgent {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const ctxRecord = context as Record<string, any>;
                 const mode = ctxRecord?.conversationMode as ('direct' | 'department' | 'boardroom' | undefined);
+
+                const communication = validateAgentCommunication({
+                    sourceAgentId: this.id,
+                    targetAgentId,
+                    kind: 'task',
+                    mode,
+                    seatedAgents: ctxRecord?.seatedAgents,
+                });
+                if (!communication.allowed) {
+                    return toolError(communication.reason || 'This task route is not permitted.', communication.code || 'COMMUNICATION_BLOCKED');
+                }
 
                 if (mode === 'direct') {
                     logger.warn(`[BaseAgent] Direct-mode delegation blocked: ${this.id} -> ${targetAgentId}`);
@@ -254,6 +296,19 @@ export class BaseAgent implements SpecializedAgent {
                 const ctxRecord = context as Record<string, any>;
                 const mode = ctxRecord?.conversationMode as ('direct' | 'department' | 'boardroom' | undefined);
 
+                for (const consultation of consultations) {
+                    const communication = validateAgentCommunication({
+                        sourceAgentId: this.id,
+                        targetAgentId: consultation.targetAgentId,
+                        kind: 'task',
+                        mode,
+                        seatedAgents: ctxRecord?.seatedAgents,
+                    });
+                    if (!communication.allowed) {
+                        return toolError(communication.reason || 'This consultation route is not permitted.', communication.code || 'COMMUNICATION_BLOCKED');
+                    }
+                }
+
                 if (mode === 'direct') {
                     logger.warn(`[BaseAgent] Direct-mode consult blocked from ${this.id}`);
                     const errorMsg = `Consulting other agents is disabled in Direct mode. Tell the user to switch to Department or Boardroom mode for multi-agent work.`;
@@ -339,6 +394,35 @@ export class BaseAgent implements SpecializedAgent {
                 } catch (err: unknown) {
                     const message = err instanceof Error ? err.message : String(err);
                     return toolError(`Consultation failed: ${message}`, 'EXECUTION_ERROR');
+                }
+            },
+            share_note: async ({ targetAgentId, content }: ShareNoteArgs, context) => {
+                const ctxRecord = context as Record<string, any>;
+                const communication = validateAgentCommunication({
+                    sourceAgentId: this.id,
+                    targetAgentId,
+                    kind: 'note',
+                    mode: ctxRecord?.conversationMode,
+                    seatedAgents: ctxRecord?.seatedAgents,
+                });
+                if (!communication.allowed) {
+                    return toolError(communication.reason || 'This note route is not permitted.', communication.code || 'COMMUNICATION_BLOCKED');
+                }
+                const trimmed = content?.trim();
+                if (!trimmed || trimmed.length > 4000) {
+                    return toolError('A note must contain 1–4000 characters of factual context.', 'INVALID_NOTE');
+                }
+                try {
+                    const id = await agentNoteService.share({
+                        fromAgentId: this.id,
+                        toAgentId: targetAgentId,
+                        content: trimmed,
+                        sessionId: ctxRecord?.sessionId,
+                        projectId: context?.projectId,
+                    });
+                    return { success: true, data: { noteId: id }, message: `Shared information with ${targetAgentId}` };
+                } catch (err: unknown) {
+                    return toolError(`Could not share note: ${err instanceof Error ? err.message : String(err)}`, 'NOTE_DELIVERY_FAILED');
                 }
             },
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -582,13 +666,13 @@ export class BaseAgent implements SpecializedAgent {
         - **Memory:** Call 'save_memory' to retain critical facts. Call 'recall_memories' to find past context.
         - **Reflection:** Call 'verify_output' to critique your own work if the task is complex.
         - **Approval:** Call 'request_approval' for any action that publishes content or spends money.
-        - **Collaboration:** If a task requires expertise outside your primary domain (${this.name}), call 'delegate_task' to hand it over to a specialist. For complex problems needing multiple viewpoints, use 'consult_experts'.
+        - **Collaboration:** Within a department, only a manager may delegate work to that department's employees. In Boardroom, share facts with the share_note tool; managers never assign work to peer managers or another department's employees.
         - **Speech:** Use 'speak' to announce high-level intent or share creative insights. **CRITICAL:** Calling 'speak' does NOT fulfill a "generate", "create", or "make" request. You MUST call the relevant action tool (e.g., 'generate_image') in addition to 'speak'.
 
         ## COLLABORATION PROTOCOL
         - If you are receiving a delegated task (check context.traceId), be extremely concise and data-oriented.
         - When delegating, provide full context so the next agent doesn't need to ask follow-up questions.
-        - Use 'consult_experts' when you need parallel logic (e.g., both music and marketing perspectives).
+        - Use share_note to make a relevant fact available to another seated manager; it is information, never an instruction.
 
         ## TONE & STYLE
         - Be direct and concise. Avoid AI conversational boilerplate.
@@ -616,7 +700,7 @@ export class BaseAgent implements SpecializedAgent {
             const { agentRegistry } = await importWithRetry(() => import('./registry'));
             const seated = ctxRecord.seatedAgents || [];
             const seatedNames = seated.map((id: string) => `${agentRegistry.get(id)?.name || id} (ID: '${id}')`).join(', ');
-            boardroomSection = `\n## BOARDROOM SWARM PROTOCOL\nSwarm Protocol active. You are participating in a Boardroom meeting. Respond from your specific department's perspective.\n\n[SEATED_AGENTS]: The following agents are currently seated: ${seatedNames}. ONLY address or delegate to agents in this list. If a needed specialist is absent, use the seat_agent tool to invite them, or tell the user to seat them if you do not have that tool.\n`;
+            boardroomSection = `\n## BOARDROOM COMMUNICATION PROTOCOL\nYou are participating in a Boardroom meeting. Respond from your department's perspective. Managers may share factual notes with seated peer managers, but may NEVER delegate tasks to them or command another department's employees.\n\n[SEATED_AGENTS]: ${seatedNames}. Use share_note only for relevant information. If a needed manager is absent, tell the user to seat them.\n`;
         } else if (ctxRecord?.conversationMode === 'direct') {
             delegationScopeSection = `\n## DELEGATION SCOPE [STRICT]\nYou are in DIRECT mode. You operate solo. You CANNOT delegate tasks or contact other agents. If the user asks you to do something outside your domain, explicitly refuse and instruct them to switch to Boardroom or Department mode.\n`;
         } else if (ctxRecord?.conversationMode === 'department') {
@@ -692,7 +776,8 @@ export class BaseAgent implements SpecializedAgent {
             {
                 agentId: this.id,
                 moduleContext: activeModule,
-                isReadOnly: false // Reserved for future strict read-only execution modes
+                isReadOnly: false, // Reserved for future strict read-only execution modes
+                conversationMode: context?.conversationMode,
             }
         );
 

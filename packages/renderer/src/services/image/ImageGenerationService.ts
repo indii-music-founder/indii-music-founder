@@ -126,6 +126,25 @@ export interface RemixOptions {
  * distributor-aware prompt injection and quota pre-flights.
  */
 export class ImageGenerationService {
+    private readonly inFlightGenerations = new Map<string, Promise<ImageGenerationResult[]>>();
+
+    private generationKey(options: ImageGenerationOptions): string {
+        // Deliberately includes the creative inputs which affect provider output;
+        // two concurrent clicks for the same request share one reservation/job.
+        return JSON.stringify({
+            userId: auth.currentUser?.uid,
+            prompt: options.prompt,
+            count: options.count ?? 1,
+            aspectRatio: options.aspectRatio,
+            resolution: options.resolution,
+            model: options.model,
+            seed: options.seed,
+            sessionId: options.sessionId,
+            sourceImages: options.sourceImages,
+            referenceImages: options.referenceImages,
+        });
+    }
+
 
     /**
      * Retrieves architectural constraints for image generation based on user's distributor.
@@ -233,6 +252,18 @@ export class ImageGenerationService {
      * @throws {QuotaExceededError} If usage limits are reached.
      */
     async generateImages(options: ImageGenerationOptions): Promise<ImageGenerationResult[]> {
+        const key = this.generationKey(options);
+        const existing = this.inFlightGenerations.get(key);
+        if (existing) return existing;
+
+        const request = this.generateImagesUncached(options).finally(() => {
+            this.inFlightGenerations.delete(key);
+        });
+        this.inFlightGenerations.set(key, request);
+        return request;
+    }
+
+    private async generateImagesUncached(options: ImageGenerationOptions): Promise<ImageGenerationResult[]> {
         logger.debug('[ImageGen DEBUG] Entering generateImages', options);
         const results: ImageGenerationResult[] = [];
         const count = options.count || 1;

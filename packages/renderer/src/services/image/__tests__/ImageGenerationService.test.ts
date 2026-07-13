@@ -139,6 +139,20 @@ describe("ImageGenerationService", () => {
       );
     });
 
+    it('deduplicates concurrent identical requests before reserving cost', async () => {
+      let resolveGeneration!: (value: { data: { images: Array<{ bytesBase64Encoded: string; mimeType: string }> } }) => void;
+      mockGenerateImage.mockReturnValue(new Promise(resolve => { resolveGeneration = resolve; }));
+
+      const first = ImageGeneration.generateImages({ prompt: 'same intent', count: 1, sessionId: 'project-1' });
+      const second = ImageGeneration.generateImages({ prompt: 'same intent', count: 1, sessionId: 'project-1' });
+      await Promise.resolve();
+      resolveGeneration({ data: { images: [{ bytesBase64Encoded: 'base64data', mimeType: 'image/png' }] } });
+
+      await expect(Promise.all([first, second])).resolves.toHaveLength(2);
+      expect(CostControlService.checkAndReserve).toHaveBeenCalledTimes(1);
+      expect(mockGenerateImage).toHaveBeenCalledTimes(1);
+    });
+
     it("should handle distributor-aware cover art generation", async () => {
       const mockResponse = {
         data: {

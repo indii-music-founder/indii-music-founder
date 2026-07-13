@@ -194,7 +194,11 @@ export default function EnhancedShowroom({ initialAsset = null, productId }: Enh
                         projectId: currentProjectId
                     });
                 }
-            } else if (job.status === 'failed') {
+            } else if (job.status === 'completed') {
+                setIsGeneratingVideo(false);
+                setCurrentVideoJobId(null);
+                toast.error('Video generation completed without a playable output. Please retry.');
+            } else if (job.status === 'failed' || job.status === 'cancelled') {
                 setIsGeneratingVideo(false);
                 setCurrentVideoJobId(null);
                 toast.error(`Video generation failed: ${job.error || 'Unknown error'}`);

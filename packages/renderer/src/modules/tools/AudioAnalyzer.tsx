@@ -83,6 +83,11 @@ const AudioAnalyzer: React.FC = () => {
         return M4A_EXTENSIONS.has(ext);
     };
 
+    const isVerifiedDesktopLosslessCodec = (codec?: string): boolean => {
+        const normalized = codec?.toLowerCase() || '';
+        return normalized === 'alac' || normalized === 'flac' || normalized.startsWith('pcm_');
+    };
+
     const handleLoadClick = async (e: React.MouseEvent<HTMLLabelElement>) => {
         if (window.electronAPI) {
             e.preventDefault();
@@ -95,18 +100,25 @@ const AudioAnalyzer: React.FC = () => {
                 });
 
                 if (filePath) {
-                    // ISSUE-961: the Electron path only ever receives a file
-                    // PATH from the native dialog (no bytes reach the
-                    // renderer), so the M4A codec probe below — which reads
-                    // File.arrayBuffer() — cannot run here. A real fix needs
-                    // a new main-process IPC channel to read file bytes;
-                    // this pass only closes the gap for the browser/web
-                    // upload path, which does have real bytes to inspect.
                     const pathStr = filePath as string;
                     const ext = '.' + pathStr.split('.').pop()?.toLowerCase();
                     if (!LOSSLESS_EXTENSIONS.has(ext)) {
                         toast.error(
                             `${ext.toUpperCase()} files are not accepted. Distributors require lossless masters (WAV, FLAC, or AIFF). Please select a lossless format.`
+                        );
+                        return;
+                    }
+
+                    // Electron already runs FFprobe for desktop analysis and
+                    // exposes stream metadata through audio:analyze. Do not
+                    // trust the selected extension: AAC can be inside M4A or
+                    // renamed to WAV. Only known lossless codecs may enter QC.
+                    const probe = await window.electronAPI.audio.analyze(pathStr);
+                    const audioStream = probe.streams?.find(stream => stream.codec_type === 'audio');
+                    if (probe.status !== 'success' || !isVerifiedDesktopLosslessCodec(audioStream?.codec_name)) {
+                        const codec = audioStream?.codec_name?.toUpperCase() || 'unknown';
+                        toast.error(
+                            `Desktop codec check rejected this master (${codec}). Distributors require PCM WAV/AIFF, FLAC, or ALAC-in-M4A — not AAC or another lossy codec.`
                         );
                         return;
                     }

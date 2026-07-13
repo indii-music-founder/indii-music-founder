@@ -966,7 +966,7 @@ export default function OmniWorkflow() {
                                 <Shield size={12} className={studioControls.synthIdEnabled ? 'text-emerald-400' : 'text-gray-400'} />
                                 Synth ID Mark
                             </span>
-                            <span className="text-[9px] text-gray-500 mt-0.5">Imperceptible digital watermark</span>
+                            <span className="text-[9px] text-gray-500 mt-0.5">Records a provenance request; watermark verification is not available yet</span>
                         </div>
                         <button 
                             onClick={() => setStudioControls({ synthIdEnabled: !studioControls.synthIdEnabled })}

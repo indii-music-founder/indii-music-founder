@@ -67,6 +67,8 @@ export interface AudioAnalysisResult {
             sampleRate: number;
             isStereo: boolean;
             rejectionRisks: string[];
+            measurementMethod?: 'measured';
+            bitDepth?: number;
         };
     } | null;
     proxyBase64?: string | null;
@@ -80,6 +82,13 @@ export interface ElectronAPI {
     setPrivacyMode: (enabled: boolean) => Promise<void>;
     selectFile: (options?: { title?: string, filters?: { name: string, extensions: string[] }[] }) => Promise<string | null>;
     selectDirectory: (options?: { title?: string }) => Promise<string | null>;
+    searchApprovedAssets: (dirPath: string, options?: { query?: string; extensions?: string[]; maxResults?: number }) => Promise<Array<{
+        name: string;
+        relativePath: string;
+        extension: string;
+        sizeBytes: number;
+        modifiedAt: number;
+    }>>;
     showNotification: (title: string, body: string) => void;
 
     // System Info (Mobile Remote, Device Detection)

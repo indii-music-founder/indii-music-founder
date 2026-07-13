@@ -5,7 +5,7 @@ import { Mesh } from 'three'; // Item 357: Named import enables Three.js tree-sh
 import { Download, Trash2, BoxSelect, Upload, AlertTriangle } from 'lucide-react';
 import { logger } from '@/utils/logger';
 import { useToast } from '@/core/context/ToastContext';
-import { validateSceneModelFile } from './sceneBuilderFiles';
+import { validateSceneModelFile, validateSceneModelContents } from './sceneBuilderFiles';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 /**
@@ -21,14 +21,15 @@ interface DroppedAsset {
 }
 
 // Error boundary so a bad GLTF file doesn't crash the whole canvas
-class ModelErrorBoundary extends Component<{ key?: React.Key; children: React.ReactNode }, { hasError: boolean }> {
-    constructor(props: { key?: React.Key; children: React.ReactNode }) {
+class ModelErrorBoundary extends Component<{ key?: React.Key; children: React.ReactNode; onLoadError: (message: string) => void }, { hasError: boolean }> {
+    constructor(props: { key?: React.Key; children: React.ReactNode; onLoadError: (message: string) => void }) {
         super(props);
         this.state = { hasError: false };
     }
     static getDerivedStateFromError(_: Error) { return { hasError: true }; }
     componentDidCatch(error: Error, errorInfo: ErrorInfo) {
         logger.error('Failed to load GLTF model:', error, errorInfo);
+        this.props.onLoadError(error.message || 'The model could not be decoded by the 3D viewer.');
     }
     render() {
         if (this.state.hasError) return null;
@@ -92,6 +93,8 @@ const DropHighlight = () => {
 
 export const SceneBuilder = () => {
     const [assets, setAssets] = useState<DroppedAsset[]>([]);
+    const [intakeStatus, setIntakeStatus] = useState<string | null>(null);
+    const [assetErrors, setAssetErrors] = useState<Record<string, string>>({});
     const fileInputRef = useRef<HTMLInputElement>(null);
     const assetsRef = useRef<DroppedAsset[]>([]);
     const { error: toastError } = useToast();
@@ -118,15 +121,27 @@ export const SceneBuilder = () => {
             scale: 1,
         };
         setAssets((prev) => [...prev, newAsset]);
+        setAssetErrors((prev) => {
+            const { [newAsset.id]: _ignored, ...rest } = prev;
+            return rest;
+        });
     };
 
-    const addModelFile = (file: File) => {
+    const addModelFile = async (file: File) => {
         const validationError = validateSceneModelFile(file);
         if (validationError) {
             toastError(validationError);
             return;
         }
+        setIntakeStatus(`Validating ${file.name}…`);
+        const contentError = await validateSceneModelContents(file);
+        if (contentError) {
+            setIntakeStatus(null);
+            toastError(contentError);
+            return;
+        }
         handleDrop(URL.createObjectURL(file));
+        setIntakeStatus(null);
     };
 
     const handleDragOver = (event: React.DragEvent) => {
@@ -136,8 +151,12 @@ export const SceneBuilder = () => {
 
     const handleFileDrop = (event: React.DragEvent) => {
         event.preventDefault();
-        const file = event.dataTransfer.files?.[0];
-        if (file) addModelFile(file);
+        const files = event.dataTransfer.files;
+        if (files.length !== 1) {
+            toastError('Drop one GLB or GLTF model at a time.');
+            return;
+        }
+        void addModelFile(files[0]!);
     };
 
     const handleClear = async () => {
@@ -161,6 +180,7 @@ export const SceneBuilder = () => {
             }
         });
         setAssets([]);
+        setAssetErrors({});
     };
 
     return (
@@ -176,6 +196,7 @@ export const SceneBuilder = () => {
                     <BoxSelect className="w-6 h-6 text-blue-400" />
                     <h2 className="text-white font-semibold text-lg">3D Stage Builder</h2>
                     <span className="bg-blue-500/20 text-blue-300 text-xs px-2 py-1 rounded border border-blue-500/30">Beta</span>
+                    {intakeStatus && <span role="status" className="text-xs text-blue-200">{intakeStatus}</span>}
                     {/* ISSUE-1015: this stage has no save/persistence path and is not
                         consumed by any video render — make that explicit rather than
                         letting a navigate-away/refresh silently discard the only copy. */}
@@ -200,7 +221,7 @@ export const SceneBuilder = () => {
                         className="hidden"
                         onChange={(event) => {
                             const file = event.target.files?.[0];
-                            if (file) addModelFile(file);
+                            if (file) void addModelFile(file);
                             event.target.value = '';
                         }}
                         aria-label="Choose a GLB or GLTF model"
@@ -214,6 +235,12 @@ export const SceneBuilder = () => {
                     </button>
                 </div>
             </div>
+
+            {Object.entries(assetErrors).map(([assetId, message]) => (
+                <div key={assetId} role="alert" className="absolute top-16 left-4 right-4 z-20 rounded border border-red-500/40 bg-red-950/85 px-3 py-2 text-xs text-red-200">
+                    A stage model could not load. Keep the original file, remove it, or choose a different GLB/GLTF asset. {message}
+                </div>
+            ))}
 
             {/* Instruction Overlay when empty */}
             {assets.length === 0 && (
@@ -247,7 +274,10 @@ export const SceneBuilder = () => {
                     <Suspense fallback={null}>
                         {/* Render all dropped assets */}
                         {assets.map((asset) => (
-                            <ModelErrorBoundary key={asset.id}>
+                            <ModelErrorBoundary
+                                key={asset.id}
+                                onLoadError={(message) => setAssetErrors(prev => ({ ...prev, [asset.id]: message }))}
+                            >
                                 <Model url={asset.url} position={asset.position} scale={asset.scale} />
                             </ModelErrorBoundary>
                         ))}

@@ -1,5 +1,6 @@
 import { logger } from '@/utils/logger';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
+import { WhiskService } from '@/services/WhiskService';
 import { VideoGenerationService } from '@/services/video/VideoGenerationService';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { HistoryItem } from '@/core/types/history';
@@ -51,17 +52,16 @@ export class ShowroomService {
             Output a single, perfect composition.
         `.trim();
 
-        // Extract raw base64 data from data URI if present
-        const assetData = options.asset.url.includes(',') 
-            ? options.asset.url.split(',')[1] 
-            : options.asset.url;
+        // Gallery/Storage assets are normally durable URLs, not inline data.
+        // Resolve either form to validated image bytes before provider handoff.
+        const assetData = await WhiskService.resolveReferenceMedia(options.asset.url, options.asset.id);
 
         const results = await ImageGeneration.generateImages({
             prompt,
             model: 'pro', // Nano Banana Pro (gemini-3-pro-image-preview)
             sourceImages: [{
-                mimeType: 'image/png', // Most showroom assets are transparent PNGs
-                data: assetData as string
+                mimeType: assetData.mimeType,
+                data: assetData.data
             }],
             imageSize: '2k',
             aspectRatio: '16:9'
