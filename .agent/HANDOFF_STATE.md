@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-07-13 13:42 EDT
+**Updated:** 2026-07-13 13:55 EDT
 **Branch:** `claude/inspiring-greider-59ed4a`
 
 ## Recent Commits
 ```
+f8990cddd chore: session checkpoint [13:42]
 1ceae97c8 chore: session checkpoint [13:41]
 487213490 chore: session checkpoint [13:32]
 7fe88b1ec fix(store): wrap unstable useStore object-selectors in useShallow (ISSUE-1047)
@@ -13,7 +14,6 @@ f36e1f62b fix(creative): gate first-run guidance on canvas emptiness, not editor
 9b085a87a fix(e2e): replace invented data-testid selectors with verified real ones (hunter finding)
 d389f9822 docs: add /ci-validate workflow to triage main deploy failures vs the known OOM flake
 18dfcf74a chore: session checkpoint [18:23]
-078b04609 Merge branch 'fix/issues-core'
 ```
 
 ## Working State
