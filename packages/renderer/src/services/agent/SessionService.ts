@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Service layer uses dynamic types for external API responses */
 
 import { FirestoreService } from '../FirestoreService';
-import type { ConversationSession } from '@/core/store/slices/agent'; // Direct import to avoid circular dep risks? Or from index?
+import type { ConversationSession, AgentMessage } from '@/core/store/slices/agent'; // Direct import to avoid circular dep risks? Or from index?
 import { OrganizationService } from '../OrganizationService';
 import { auth } from '../firebase';
-import { where, orderBy, limit, Timestamp, onSnapshot, collection, query, Unsubscribe, startAfter, getDocs, QueryConstraint, documentId } from 'firebase/firestore';
+import { where, orderBy, limit, Timestamp, onSnapshot, collection, query, Unsubscribe, startAfter, getDocs, QueryConstraint, documentId, doc, updateDoc, serverTimestamp, writeBatch, runTransaction } from 'firebase/firestore';
 import { db } from '../firebase';
 import { cleanFirestoreData } from '@/services/utils/firebase';
 import { logger } from '@/utils/logger';
@@ -67,6 +67,71 @@ class SessionServiceImpl extends FirestoreService<SessionDocument> {
 
         // KEEPER: Dual Write for Electron Local Persistence
         this.saveToLocal(id, updates);
+    }
+
+    /**
+     * Messages are append-only child documents. Updating a parent `messages`
+     * array caused simultaneous desktop and phone writes to erase each other.
+     */
+    async appendMessage(sessionId: string, message: AgentMessage): Promise<void> {
+        const userId = auth.currentUser?.uid;
+        if (!userId) throw new Error('User must be authenticated to append a session message.');
+        const orgId = OrganizationService.getCurrentOrgId() || 'personal';
+        const sessionRef = doc(db, 'sessions', sessionId);
+        const messageRef = doc(db, 'sessions', sessionId, 'messages', message.id);
+        await runTransaction(db, async transaction => {
+            const current = await transaction.get(sessionRef);
+            if (!current.exists()) throw new Error(`Session '${sessionId}' no longer exists.`);
+            const data = current.data() as SessionDocument;
+
+            // One atomic, idempotent bridge for existing array-backed sessions.
+            // Concurrent phone/desktop appends retry the transaction, so both
+            // messages plus the legacy history survive the format transition.
+            if (data.messageStorage !== 'subcollection') {
+                for (const legacyMessage of data.messages || []) {
+                    transaction.set(doc(db, 'sessions', sessionId, 'messages', legacyMessage.id), cleanFirestoreData({
+                        ...legacyMessage,
+                        userId,
+                        orgId,
+                        createdAt: serverTimestamp(),
+                    }));
+                }
+            }
+            transaction.set(messageRef, cleanFirestoreData({
+                ...message,
+                userId,
+                orgId,
+                createdAt: serverTimestamp(),
+            }));
+            transaction.update(sessionRef, { updatedAt: serverTimestamp(), messageStorage: 'subcollection' });
+        });
+    }
+
+    async updateMessage(sessionId: string, messageId: string, updates: Partial<AgentMessage>): Promise<void> {
+        await updateDoc(doc(db, 'sessions', sessionId, 'messages', messageId), cleanFirestoreData(updates));
+        await this.update(sessionId, { updatedAt: serverTimestamp(), messageStorage: 'subcollection' } as unknown as Partial<SessionDocument>);
+    }
+
+    async clearMessages(sessionId: string): Promise<void> {
+        const snapshot = await getDocs(collection(db, 'sessions', sessionId, 'messages'));
+        const batch = writeBatch(db);
+        snapshot.docs.forEach(message => batch.delete(message.ref));
+        await batch.commit();
+        await this.update(sessionId, { updatedAt: serverTimestamp(), messageStorage: 'subcollection' } as unknown as Partial<SessionDocument>);
+    }
+
+    subscribeToMessages(
+        sessionId: string,
+        onUpdate: (messages: AgentMessage[]) => void,
+        onError: (error: Error) => void,
+    ): Unsubscribe {
+        const q = query(collection(db, 'sessions', sessionId, 'messages'), orderBy('timestamp', 'asc'));
+        return onSnapshot(q, snapshot => {
+            onUpdate(snapshot.docs.map(message => {
+                const { userId: _userId, orgId: _orgId, createdAt: _createdAt, ...data } = message.data();
+                return { ...data, id: message.id } as AgentMessage;
+            }));
+        }, onError);
     }
 
     async deleteSession(id: string): Promise<void> {

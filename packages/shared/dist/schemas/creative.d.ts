@@ -27,24 +27,24 @@ export declare const GenerateImageSchema: z.ZodObject<{
     useGrounding: z.ZodOptional<z.ZodBoolean>;
 }, "strip", z.ZodTypeAny, {
     prompt: string;
-    aspectRatio: "1:1" | "16:9" | "9:16" | "3:4" | "4:3";
+    aspectRatio: "16:9" | "9:16" | "1:1" | "3:4" | "4:3";
     model: "lite" | "fast" | "pro" | "legacy";
+    sessionId?: string | undefined;
     referenceUri?: string | undefined;
     referenceUris?: string[] | undefined;
-    sessionId?: string | undefined;
-    imageSize?: "512" | "0.5K" | "1K" | "2K" | "4K" | "1k" | "2k" | "4k" | undefined;
+    imageSize?: "4k" | "512" | "0.5K" | "1K" | "2K" | "4K" | "1k" | "2k" | undefined;
     thinkingLevel?: "none" | "minimal" | "low" | "medium" | "high" | undefined;
     useGoogleSearch?: boolean | undefined;
     useImageSearch?: boolean | undefined;
     useGrounding?: boolean | undefined;
 }, {
     prompt: string;
+    aspectRatio?: "16:9" | "9:16" | "1:1" | "3:4" | "4:3" | undefined;
+    sessionId?: string | undefined;
+    model?: "lite" | "fast" | "pro" | "legacy" | undefined;
     referenceUri?: string | undefined;
     referenceUris?: string[] | undefined;
-    sessionId?: string | undefined;
-    aspectRatio?: "1:1" | "16:9" | "9:16" | "3:4" | "4:3" | undefined;
-    model?: "lite" | "fast" | "pro" | "legacy" | undefined;
-    imageSize?: "512" | "0.5K" | "1K" | "2K" | "4K" | "1k" | "2k" | "4k" | undefined;
+    imageSize?: "4k" | "512" | "0.5K" | "1K" | "2K" | "4K" | "1k" | "2k" | undefined;
     thinkingLevel?: "none" | "minimal" | "low" | "medium" | "high" | undefined;
     useGoogleSearch?: boolean | undefined;
     useImageSearch?: boolean | undefined;
@@ -165,19 +165,23 @@ export declare const GenerateVideoSchema: z.ZodObject<{
     costEstimate: z.ZodOptional<z.ZodNumber>;
     costReservationId: z.ZodOptional<z.ZodString>;
     parentId: z.ZodOptional<z.ZodString>;
+    inputManifest: z.ZodOptional<z.ZodArray<z.ZodObject<{
+        role: z.ZodEnum<["first_frame", "last_frame", "ingredient", "character_reference", "whisk_reference"]>;
+        uri: z.ZodString;
+    }, "strip", z.ZodTypeAny, {
+        role: "first_frame" | "last_frame" | "ingredient" | "character_reference" | "whisk_reference";
+        uri: string;
+    }, {
+        role: "first_frame" | "last_frame" | "ingredient" | "character_reference" | "whisk_reference";
+        uri: string;
+    }>, "many">>;
 }, "strip", z.ZodTypeAny, {
     prompt: string;
-    aspectRatio: "1:1" | "16:9" | "9:16" | "3:4" | "4:3";
-    model: "lite" | "fast" | "pro";
-    resolution: "4k" | "720p" | "1080p" | "1280x720" | "1920x1080" | "3840x2160";
     durationSeconds: number;
-    referenceUri?: string | undefined;
-    referenceUris?: string[] | undefined;
-    mode?: "video_remix" | "temporal_inpaint" | undefined;
-    skipCostCheck?: boolean | undefined;
+    aspectRatio: "16:9" | "9:16" | "1:1" | "3:4" | "4:3";
+    resolution: "720p" | "1080p" | "4k" | "1280x720" | "1920x1080" | "3840x2160";
+    model: "lite" | "fast" | "pro";
     sourceVideoUri?: string | undefined;
-    firstFrameUri?: string | undefined;
-    lastFrameUri?: string | undefined;
     maskFrameUri?: string | undefined;
     maskTrackUri?: string | undefined;
     frameRange?: {
@@ -185,6 +189,9 @@ export declare const GenerateVideoSchema: z.ZodObject<{
         endFrame: number;
     } | undefined;
     seed?: string | number | undefined;
+    firstFrameUri?: string | undefined;
+    lastFrameUri?: string | undefined;
+    mode?: "temporal_inpaint" | "video_remix" | undefined;
     directorSettings?: z.objectOutputType<{
         fps: z.ZodDefault<z.ZodNumber>;
         durationSeconds: z.ZodOptional<z.ZodNumber>;
@@ -213,32 +220,35 @@ export declare const GenerateVideoSchema: z.ZodObject<{
         cameraMovement: z.ZodOptional<z.ZodString>;
         motionStrength: z.ZodOptional<z.ZodNumber>;
     }, z.ZodTypeAny, "passthrough"> | undefined;
+    costEstimate?: number | undefined;
+    costReservationId?: string | undefined;
+    referenceUri?: string | undefined;
+    referenceUris?: string[] | undefined;
+    skipCostCheck?: boolean | undefined;
     personGeneration?: "allow_adult" | "dont_allow" | "allow_all" | undefined;
     negativePrompt?: string | undefined;
     enhancePrompt?: boolean | undefined;
-    costEstimate?: number | undefined;
-    costReservationId?: string | undefined;
     parentId?: string | undefined;
+    inputManifest?: {
+        role: "first_frame" | "last_frame" | "ingredient" | "character_reference" | "whisk_reference";
+        uri: string;
+    }[] | undefined;
 }, {
     prompt: string;
-    referenceUri?: string | undefined;
-    referenceUris?: string[] | undefined;
-    aspectRatio?: "1:1" | "16:9" | "9:16" | "3:4" | "4:3" | undefined;
-    model?: "lite" | "fast" | "pro" | undefined;
-    mode?: "video_remix" | "temporal_inpaint" | undefined;
-    skipCostCheck?: boolean | undefined;
     sourceVideoUri?: string | undefined;
-    firstFrameUri?: string | undefined;
-    lastFrameUri?: string | undefined;
     maskFrameUri?: string | undefined;
     maskTrackUri?: string | undefined;
     frameRange?: {
         startFrame: number;
         endFrame: number;
     } | undefined;
-    resolution?: "4k" | "720p" | "1080p" | "1280x720" | "1920x1080" | "3840x2160" | undefined;
     durationSeconds?: number | undefined;
+    aspectRatio?: "16:9" | "9:16" | "1:1" | "3:4" | "4:3" | undefined;
+    resolution?: "720p" | "1080p" | "4k" | "1280x720" | "1920x1080" | "3840x2160" | undefined;
     seed?: string | number | undefined;
+    firstFrameUri?: string | undefined;
+    lastFrameUri?: string | undefined;
+    mode?: "temporal_inpaint" | "video_remix" | undefined;
     directorSettings?: z.objectInputType<{
         fps: z.ZodDefault<z.ZodNumber>;
         durationSeconds: z.ZodOptional<z.ZodNumber>;
@@ -267,12 +277,20 @@ export declare const GenerateVideoSchema: z.ZodObject<{
         cameraMovement: z.ZodOptional<z.ZodString>;
         motionStrength: z.ZodOptional<z.ZodNumber>;
     }, z.ZodTypeAny, "passthrough"> | undefined;
+    model?: "lite" | "fast" | "pro" | undefined;
+    costEstimate?: number | undefined;
+    costReservationId?: string | undefined;
+    referenceUri?: string | undefined;
+    referenceUris?: string[] | undefined;
+    skipCostCheck?: boolean | undefined;
     personGeneration?: "allow_adult" | "dont_allow" | "allow_all" | undefined;
     negativePrompt?: string | undefined;
     enhancePrompt?: boolean | undefined;
-    costEstimate?: number | undefined;
-    costReservationId?: string | undefined;
     parentId?: string | undefined;
+    inputManifest?: {
+        role: "first_frame" | "last_frame" | "ingredient" | "character_reference" | "whisk_reference";
+        uri: string;
+    }[] | undefined;
 }>;
 export declare const GenerateOmniRemixSchema: z.ZodObject<{
     prompt: z.ZodString;
@@ -296,13 +314,13 @@ export declare const GenerateOmniRemixSchema: z.ZodObject<{
     visualizerColor: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
     prompt: string;
-    aspectRatio: "16:9" | "9:16";
     durationSeconds: number;
+    aspectRatio: "16:9" | "9:16";
     referenceVideoUri: string;
     pipelineMode: "pure-omni" | "hybrid-veo";
-    referenceUris?: string[] | undefined;
     costEstimate?: number | undefined;
     costReservationId?: string | undefined;
+    referenceUris?: string[] | undefined;
     parentId?: string | undefined;
     audioUri?: string | undefined;
     posePreservation?: number | undefined;
@@ -317,11 +335,11 @@ export declare const GenerateOmniRemixSchema: z.ZodObject<{
 }, {
     prompt: string;
     referenceVideoUri: string;
-    referenceUris?: string[] | undefined;
-    aspectRatio?: "16:9" | "9:16" | undefined;
     durationSeconds?: number | undefined;
+    aspectRatio?: "16:9" | "9:16" | undefined;
     costEstimate?: number | undefined;
     costReservationId?: string | undefined;
+    referenceUris?: string[] | undefined;
     parentId?: string | undefined;
     audioUri?: string | undefined;
     pipelineMode?: "pure-omni" | "hybrid-veo" | undefined;
@@ -348,9 +366,9 @@ export declare const GenerateAudioSchema: z.ZodObject<{
     referenceUris?: string[] | undefined;
 }, {
     prompt: string;
+    durationSeconds?: number | undefined;
     referenceUri?: string | undefined;
     referenceUris?: string[] | undefined;
-    durationSeconds?: number | undefined;
 }>;
 export type BaseMediaRequest = z.infer<typeof BaseMediaRequestSchema>;
 export type GenerateImage = z.infer<typeof GenerateImageSchema>;

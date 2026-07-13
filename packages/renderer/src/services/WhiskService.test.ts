@@ -78,4 +78,30 @@ describe('WhiskService', () => {
         ]);
         expect(fetchAsBase64).toHaveBeenCalledWith('gs://bucket/reference.webp');
     });
+
+    it('keeps readable references when one precise-reference URL is unavailable', async () => {
+        vi.mocked(fetchAsBase64)
+            .mockResolvedValueOnce({ base64: 'good-bytes', mimeType: 'image/png' })
+            .mockRejectedValueOnce(new Error('storage object missing'));
+        const state: WhiskState = {
+            subjects: [
+                { id: 'good', type: 'image', content: 'gs://bucket/good.png', checked: true, category: 'subject' },
+                { id: 'missing', type: 'image', content: 'gs://bucket/missing.png', checked: true, category: 'subject' },
+            ],
+            scenes: [], styles: [], motion: [], preciseReference: true, targetMedia: 'image',
+        };
+
+        await expect(WhiskService.getSourceMedia(state)).resolves.toEqual([
+            { mimeType: 'image/png', data: 'good-bytes' },
+        ]);
+    });
+
+    it('fails honestly when every selected precise reference is unreadable', async () => {
+        vi.mocked(fetchAsBase64).mockRejectedValueOnce(new Error('storage object missing'));
+        const state: WhiskState = {
+            subjects: [{ id: 'missing', type: 'image', content: 'gs://bucket/missing.png', checked: true, category: 'subject' }],
+            scenes: [], styles: [], motion: [], preciseReference: true, targetMedia: 'image',
+        };
+        await expect(WhiskService.getSourceMedia(state)).rejects.toThrow(/None of the selected/);
+    });
 });

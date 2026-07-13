@@ -18,6 +18,8 @@ export default function ImageSubMenu({ onShowBrandAssets, showBrandAssets, onTog
         currentProjectId,
         setSelectedItem,
         setActiveReferenceImage,
+        setVideoInputs,
+        setGenerationMode,
         setViewMode,
         setCreativePrompt,
         userProfile
@@ -26,6 +28,8 @@ export default function ImageSubMenu({ onShowBrandAssets, showBrandAssets, onTog
         currentProjectId: state.currentProjectId,
         setSelectedItem: state.setSelectedItem,
         setActiveReferenceImage: state.setActiveReferenceImage,
+        setVideoInputs: state.setVideoInputs,
+        setGenerationMode: state.setGenerationMode,
         setViewMode: state.setViewMode,
         setCreativePrompt: state.setCreativePrompt,
         userProfile: state.userProfile
@@ -67,8 +71,14 @@ export default function ImageSubMenu({ onShowBrandAssets, showBrandAssets, onTog
             <button
                 onClick={() => {
                     if (latestImage) {
+                        // Direct image generation consumes the shared ingredient list.
+                        // Keep the legacy selection for visual context, but write the
+                        // actual generator input and open the active generation surface.
                         setActiveReferenceImage(latestImage);
-                        toast.success("Latest image set as reference");
+                        setVideoInputs({ ingredients: [latestImage] });
+                        setGenerationMode('image');
+                        setViewMode('direct');
+                        toast.success("Latest image added as a generation reference");
                     }
                 }}
                 disabled={!latestImage}

@@ -10,8 +10,7 @@
  * Server-side enforcement in enforceOperationCost Cloud Function provides the kill-switch.
  */
 
-import { db, auth, functions } from '@/services/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { auth, functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { logger } from '@/utils/logger';
 import { isTestHarnessRuntime } from '@/utils/e2eMode';
@@ -37,18 +36,6 @@ export interface CostCheckResponse {
   monthlyUsed: number;
   operationId?: string;
 }
-
-interface BudgetLimits {
-  daily: number;
-  monthly: number;
-  hourly: number;
-}
-
-const BUDGET_LIMITS: Record<UserTier, BudgetLimits> = {
-  free: { daily: 5, monthly: 50, hourly: 1 },
-  pro: { daily: 25, monthly: 250, hourly: 5 },
-  enterprise: { daily: 100, monthly: 1000, hourly: 20 },
-};
 
 type ServerCostCheckResponse = Partial<CostCheckResponse> & {
   allowed: boolean;
@@ -231,35 +218,19 @@ export class CostControlService {
     dailyRemaining: number;
     monthlyRemaining: number;
     tier: UserTier;
+    pendingHoldCost: number;
+    pendingHoldCount: number;
+    settledCost: number;
+    voidedCost: number;
   }> {
     try {
-      const isoString = new Date().toISOString();
-      const today = (isoString.split('T')[0] as string) || isoString;
-      const month = today.slice(0, 7);
-
-      const dailyRef = doc(db, 'costLedger', `daily-${today}`);
-      const monthlyRef = doc(db, 'costLedger', `monthly-${month}`);
-      const userRef = doc(db, 'users', userId);
-
-      const [dailySnap, monthlySnap, userSnap] = await Promise.all([
-        getDoc(dailyRef),
-        getDoc(monthlyRef),
-        getDoc(userRef),
-      ]);
-
-      const dailyUsed = dailySnap.exists() ? (dailySnap.data()?.totalCost || 0) : 0;
-      const monthlyUsed = monthlySnap.exists() ? (monthlySnap.data()?.totalCost || 0) : 0;
-      const tier: UserTier = userSnap.exists() ? (userSnap.data()?.tier || 'free') : 'free';
-
-      const limits = BUDGET_LIMITS[tier];
-
-      return {
-        dailyUsed,
-        monthlyUsed,
-        dailyRemaining: limits.daily - dailyUsed,
-        monthlyRemaining: limits.monthly - monthlyUsed,
-        tier,
-      };
+      if (!functions || auth.currentUser?.uid !== userId) throw new Error('Authenticated owner is required for cost status');
+      const getOperationCostStatus = httpsCallable<undefined, {
+        dailyUsed: number; monthlyUsed: number; dailyRemaining: number; monthlyRemaining: number;
+        tier: UserTier; pendingHoldCost: number; pendingHoldCount: number; settledCost: number; voidedCost: number;
+      }>(functions, 'getOperationCostStatus');
+      const result = await getOperationCostStatus();
+      return result.data;
     } catch (err) {
       logger.error('[CostControl] Status fetch failed', err);
       return {
@@ -268,6 +239,10 @@ export class CostControlService {
         dailyRemaining: 0,
         monthlyRemaining: 0,
         tier: 'free',
+        pendingHoldCost: 0,
+        pendingHoldCount: 0,
+        settledCost: 0,
+        voidedCost: 0,
       };
     }
   }

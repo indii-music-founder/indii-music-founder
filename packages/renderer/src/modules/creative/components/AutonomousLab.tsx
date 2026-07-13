@@ -60,6 +60,7 @@ export default function AutonomousLab() {
     const [seedImage, setSeedImage] = useState<HistoryItem | null>(null);
     const [targetImage, setTargetImage] = useState<HistoryItem | null>(null);
     const [predictedPrompt, setPredictedPrompt] = useState<string>('');
+    const [appliedTrajectory, setAppliedTrajectory] = useState<string>('');
     const [error, setError] = useState<string | null>(null);
     const [sequenceItems, setSequenceItems] = useState<SequenceItem[]>(() => [{ id: crypto.randomUUID(), type: 'seconds', value: 6 }]);
     const [bpm, setBpm] = useState<number>(120);
@@ -108,6 +109,7 @@ export default function AutonomousLab() {
 
             const refinedTargetPrompt = `${climaxDescription}, capturing the logical conclusion of the scene with cinematic lighting.`;
             setPredictedPrompt(refinedTargetPrompt);
+            setAppliedTrajectory(refinedTargetPrompt);
 
             setCurrentStep(3);
             toast.info("Synthesizing sequence conclusion...");
@@ -144,8 +146,47 @@ export default function AutonomousLab() {
         }
     };
 
+    const applyTrajectory = async () => {
+        if (!seedImage || !predictedPrompt.trim()) return;
+        setStatus('running');
+        setError(null);
+        try {
+            const source = seedImage.url.startsWith('data:')
+                ? seedImage.url.split(',')[1] ?? ''
+                : await (async () => {
+                    const blob = await (await fetch(seedImage.url)).blob();
+                    return await new Promise<string>((resolve) => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => resolve((reader.result as string).split(',')[1] ?? '');
+                        reader.readAsDataURL(blob);
+                    });
+                })();
+            const result = await ImageGeneration.remixImage({
+                contentImage: { mimeType: 'image/png', data: source },
+                styleImage: { mimeType: 'image/png', data: source },
+                prompt: predictedPrompt.trim()
+            });
+            if (!result?.url) throw new Error('Updated target synthesis failed.');
+            const targetAsset: HistoryItem = { id: crypto.randomUUID(), url: result.url, prompt: `Conclusion: ${predictedPrompt.trim().substring(0, 50)}...`, type: 'image', timestamp: Date.now(), projectId: currentProjectId };
+            addToHistory(targetAsset);
+            setTargetImage(targetAsset);
+            setAppliedTrajectory(predictedPrompt.trim());
+            setStatus('complete');
+            toast.success('Updated trajectory applied to a new target frame.');
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'Updated target synthesis failed.';
+            setError(message);
+            setStatus('complete');
+            toast.error(message);
+        }
+    };
+
     const transferToProduction = () => {
         if (!seedImage || !targetImage) return;
+        if (predictedPrompt.trim() !== appliedTrajectory) {
+            toast.error('Apply the edited trajectory to create an updated target frame before entering Director Mode.');
+            return;
+        }
 
         const durationsInSeconds = getValidatedSequenceDurations(sequenceItems, bpm);
         if (!durationsInSeconds) {
@@ -317,8 +358,9 @@ export default function AutonomousLab() {
                                         className="w-full min-h-[300px] bg-black/20 border border-white/[0.05] rounded-xl p-5 text-sm text-gray-300 leading-relaxed font-light italic resize-y outline-none focus:border-blue-500/50 focus:bg-black/40 transition-all custom-scrollbar"
                                         placeholder="Review and edit the cinematic trajectory..."
                                     />
-                                    <div className="mt-3 flex justify-end">
-                                        <span className="text-[10px] text-gray-500 uppercase tracking-widest font-semibold px-2 py-1 bg-white/[0.03] rounded-md border border-white/[0.05]">Editable Context</span>
+                                    <div className="mt-3 flex items-center justify-between gap-3">
+                                        <span className="text-[10px] text-gray-500 uppercase tracking-widest font-semibold px-2 py-1 bg-white/[0.03] rounded-md border border-white/[0.05]">{predictedPrompt.trim() === appliedTrajectory ? 'Applied to target frame' : 'Draft only — target frame unchanged'}</span>
+                                        <Button onClick={() => void applyTrajectory()} disabled={status === 'running' || !predictedPrompt.trim() || predictedPrompt.trim() === appliedTrajectory} className="text-xs">Apply &amp; re-synthesize</Button>
                                     </div>
                                 </motion.div>
                             )}

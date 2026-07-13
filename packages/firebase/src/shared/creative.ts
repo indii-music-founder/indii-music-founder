@@ -44,6 +44,10 @@ export const GenerateVideoSchema = BaseMediaRequestSchema.extend({
     costEstimate: z.number().optional(),
     costReservationId: z.string().optional(),
     parentId: z.string().optional(),
+    inputManifest: z.array(z.object({
+        role: z.enum(['first_frame', 'last_frame', 'ingredient', 'character_reference', 'whisk_reference']),
+        uri: z.string().startsWith('gs://'),
+    })).max(5).optional(),
 });
 
 export const GenerateOmniRemixSchema = z.object({

@@ -63,6 +63,18 @@ export function parseInspirationSuggestions(text: string): string[] {
 }
 
 export class WhiskService {
+    /** Resolve a Whisk media source without assuming it is a data URI. */
+    static async resolveReferenceMedia(content: string, referenceId = 'unknown'): Promise<{ mimeType: string; data: string }> {
+        const dataUriMatch = content.match(/^data:([^;,]+);base64,(.+)$/s);
+        const resolved = dataUriMatch
+            ? { mimeType: dataUriMatch[1]!, base64: dataUriMatch[2]! }
+            : await fetchAsBase64(content);
+        if (!resolved.mimeType.startsWith('image/') || !resolved.base64) {
+            throw new Error(`Whisk reference ${referenceId} is not a readable image.`);
+        }
+        return { mimeType: resolved.mimeType, data: resolved.base64 };
+    }
+
     /**
      * Synthesizes a complex prompt from the user's action prompt and locked Whisk references.
      */
@@ -126,17 +138,26 @@ export class WhiskService {
 
         if (mediaRefs.length === 0) return undefined;
 
-        return Promise.all(mediaRefs.map(async (item) => {
-            const dataUriMatch = item.content.match(/^data:([^;,]+);base64,(.+)$/s);
-            const resolved = dataUriMatch
-                ? { mimeType: dataUriMatch[1]!, base64: dataUriMatch[2]! }
-                : await fetchAsBase64(item.content);
+        const settled = await Promise.allSettled(
+            mediaRefs.map(item => this.resolveReferenceMedia(item.content, item.id))
+        );
+        const resolved = settled.flatMap((result, index) => {
+            if (result.status === 'fulfilled') return [result.value];
+            const reference = mediaRefs[index];
+            logger.warn('[Whisk] Skipping unreadable precise reference', {
+                referenceId: reference?.id,
+                error: result.reason instanceof Error ? result.reason.message : String(result.reason),
+            });
+            return [];
+        });
 
-            if (!resolved.mimeType.startsWith('image/') || !resolved.base64) {
-                throw new Error(`Whisk reference ${item.id} is not a readable image.`);
-            }
-            return { mimeType: resolved.mimeType, data: resolved.base64 };
-        }));
+        // A single stale Storage/gallery URL must not discard every valid
+        // locked reference. If none resolve, fail honestly so callers do not
+        // silently run a supposedly "precise" generation with no media.
+        if (resolved.length === 0) {
+            throw new Error('None of the selected precise references could be read. Repair or remove the unavailable reference and try again.');
+        }
+        return resolved;
     }
 
     /**

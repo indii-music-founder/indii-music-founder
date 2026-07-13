@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ThreePanelDashboard } from '@/components/layout/ThreePanelDashboard';
 import {
@@ -8,8 +8,14 @@ import { useToast } from '@/core/context/ToastContext';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { getStoryboardTimingError, isValidStoryboardSceneDuration, MAX_STORYBOARD_SCENE_SECONDS } from './screenwriterTiming';
+import {
+    screenwriterDraftService,
+    ScreenwriterDraftConflictError,
+    type PersistedScreenwriterDraft,
+    type ScreenwriterDraftPayload,
+} from '@/services/screenwriter/ScreenwriterDraftService';
 
-interface StoryboardScene {
+export interface StoryboardScene {
     id: string;
     sceneNumber: number;
     heading: string;
@@ -19,7 +25,7 @@ interface StoryboardScene {
     veoPrompt: string;
 }
 
-interface ScreenwriterDraft {
+export interface ScreenwriterDraft {
     activeTab: 'scriptwriter' | 'storyboard' | 'veoprompts';
     songConcept: string;
     selectedTone: 'cinematic' | 'abstract' | 'hype';
@@ -145,10 +151,12 @@ function saveDraft(storageKey: string | null, draft: ScreenwriterDraft): void {
 }
 
 export default function ScreenwriterDashboard() {
-    const storageKey = useStore(useShallow(state => {
+    const draftScope = useStore(useShallow(state => {
         const userId = state.userProfile?.id;
-        return userId && state.currentProjectId ? screenwriterDraftStorageKey(userId, state.currentProjectId) : null;
+        const projectId = state.currentProjectId;
+        return userId && projectId ? { userId, projectId, storageKey: screenwriterDraftStorageKey(userId, projectId) } : null;
     }));
+    const storageKey = draftScope?.storageKey ?? null;
     const [initialLoad] = useState<DraftLoadResult>(() => loadDraft(storageKey));
     const initialDraft = initialLoad.draft;
     const [activeTab, setActiveTab] = useState<ScreenwriterDraft['activeTab']>(initialDraft.activeTab);
@@ -173,13 +181,47 @@ export default function ScreenwriterDashboard() {
     const [selectedSceneId, setSelectedSceneId] = useState<string>(initialDraft.selectedSceneId);
     const [timingRepairs, setTimingRepairs] = useState<Record<string, string>>(initialLoad.timingRepairs);
     const [hydratedKey, setHydratedKey] = useState(storageKey);
+    const [cloudRevision, setCloudRevision] = useState<number | null>(null);
+    const [cloudHydratedKey, setCloudHydratedKey] = useState<string | null>(null);
+    const [draftConflict, setDraftConflict] = useState<PersistedScreenwriterDraft | null>(null);
+    const lastSyncedPayload = useRef<string | null>(null);
+    const lastScopedStorageKey = useRef<string | null>(storageKey);
 
     useEffect(() => {
+        if (!draftScope && lastScopedStorageKey.current && typeof window !== 'undefined') {
+            window.localStorage.removeItem(lastScopedStorageKey.current);
+            lastScopedStorageKey.current = null;
+        }
+        if (storageKey) lastScopedStorageKey.current = storageKey;
         const loaded = loadDraft(storageKey);
         setActiveTab(loaded.draft.activeTab); setSongConcept(loaded.draft.songConcept); setSelectedTone(loaded.draft.selectedTone);
         setScenes(loaded.draft.scenes); setSelectedSceneId(loaded.draft.selectedSceneId); setTimingRepairs(loaded.timingRepairs);
         setHydratedKey(storageKey);
-    }, [storageKey]);
+        setCloudRevision(null);
+        setCloudHydratedKey(null);
+        setDraftConflict(null);
+        lastSyncedPayload.current = null;
+        if (!draftScope) return;
+
+        let cancelled = false;
+        void screenwriterDraftService.load(draftScope.userId, draftScope.projectId)
+            .then(remote => {
+                if (cancelled || !remote) return;
+                const normalized = normalizeDraft(remote.payload);
+                setActiveTab(normalized.draft.activeTab); setSongConcept(normalized.draft.songConcept); setSelectedTone(normalized.draft.selectedTone);
+                setScenes(normalized.draft.scenes); setSelectedSceneId(normalized.draft.selectedSceneId); setTimingRepairs(normalized.timingRepairs);
+                saveDraft(storageKey, normalized.draft);
+                setCloudRevision(remote.revision);
+                lastSyncedPayload.current = JSON.stringify(normalized.draft);
+            })
+            .catch(() => {
+                // Local persistence is the explicit offline fallback.
+            })
+            .finally(() => {
+                if (!cancelled) setCloudHydratedKey(storageKey);
+            });
+        return () => { cancelled = true; };
+    }, [storageKey, draftScope?.userId, draftScope?.projectId]);
 
     useEffect(() => {
         if (hydratedKey !== storageKey) return;
@@ -192,6 +234,43 @@ export default function ScreenwriterDashboard() {
             selectedSceneId,
         });
     }, [activeTab, songConcept, selectedTone, scenes, selectedSceneId, timingRepairs, storageKey, hydratedKey]);
+
+    useEffect(() => {
+        if (!draftScope || hydratedKey !== storageKey || cloudHydratedKey !== storageKey) return;
+        if (Object.keys(timingRepairs).length > 0 || getStoryboardTimingError(scenes.map(scene => scene.duration))) return;
+        const payload: ScreenwriterDraftPayload = { activeTab, songConcept, selectedTone, scenes, selectedSceneId };
+        const payloadSignature = JSON.stringify(payload);
+        if (lastSyncedPayload.current === payloadSignature) return;
+        const timeout = window.setTimeout(() => {
+            void screenwriterDraftService.save(draftScope.userId, draftScope.projectId, payload, cloudRevision)
+                .then(revision => { lastSyncedPayload.current = payloadSignature; setCloudRevision(revision); })
+                .catch(error => {
+                    if (error instanceof ScreenwriterDraftConflictError) setDraftConflict(error.current);
+                });
+        }, 750);
+        return () => window.clearTimeout(timeout);
+    }, [activeTab, cloudHydratedKey, cloudRevision, draftScope?.projectId, draftScope?.userId, hydratedKey, scenes, selectedSceneId, selectedTone, songConcept, storageKey, timingRepairs]);
+
+    const useCloudDraft = () => {
+        if (!draftConflict) return;
+        const normalized = normalizeDraft(draftConflict.payload);
+        setActiveTab(normalized.draft.activeTab); setSongConcept(normalized.draft.songConcept); setSelectedTone(normalized.draft.selectedTone);
+        setScenes(normalized.draft.scenes); setSelectedSceneId(normalized.draft.selectedSceneId); setTimingRepairs(normalized.timingRepairs);
+        setCloudRevision(draftConflict.revision);
+        lastSyncedPayload.current = JSON.stringify(normalized.draft);
+        setDraftConflict(null);
+    };
+
+    const keepLocalDraft = () => {
+        if (!draftScope || !draftConflict) return;
+        const payload: ScreenwriterDraftPayload = { activeTab, songConcept, selectedTone, scenes, selectedSceneId };
+        void screenwriterDraftService.save(draftScope.userId, draftScope.projectId, payload, draftConflict.revision)
+            .then(revision => { lastSyncedPayload.current = JSON.stringify(payload); setCloudRevision(revision); setDraftConflict(null); })
+            .catch(error => {
+                if (error instanceof ScreenwriterDraftConflictError) setDraftConflict(error.current);
+                else toast.error('Could not keep this draft. Your local copy is still safe on this device.');
+            });
+    };
 
     const getCurrentTimingError = () => {
         const repairSceneId = Object.keys(timingRepairs)[0];
@@ -281,6 +360,7 @@ export default function ScreenwriterDashboard() {
         try {
             const timingManifest = buildTimingManifest();
             const handoffPrompt = [
+                `Project ID: ${draftScope?.projectId ?? 'unscoped'}`,
                 `Song concept: ${songConcept}`,
                 `Tone: ${selectedTone}`,
                 `Storyboard timing manifest: ${JSON.stringify(timingManifest)}`,
@@ -487,6 +567,15 @@ export default function ScreenwriterDashboard() {
 
             {/* Editor Workspace */}
             <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+                {draftConflict && (
+                    <div role="alert" className="mb-4 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-100">
+                        This draft changed on another device. Choose which version to keep before the next sync.
+                        <div className="mt-2 flex gap-2">
+                            <button onClick={useCloudDraft} className="rounded bg-white/10 px-2 py-1 font-bold hover:bg-white/20">Load cloud draft</button>
+                            <button onClick={keepLocalDraft} className="rounded bg-amber-500/20 px-2 py-1 font-bold hover:bg-amber-500/30">Keep this device’s draft</button>
+                        </div>
+                    </div>
+                )}
                 {Object.keys(timingRepairs).length > 0 && (
                     <div role="alert" className="mb-4 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-200">
                         A saved scene contains an invalid duration. Its original value is preserved below; correct it before this draft can be saved, exported, or sent to Creative Studio.

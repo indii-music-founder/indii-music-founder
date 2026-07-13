@@ -64,6 +64,20 @@ export default function RightPanel() {
 
     const chatEndRef = React.useRef<HTMLDivElement>(null);
     const [isCreationsCollapsed, setIsCreationsCollapsed] = React.useState(true);
+    const [shouldPulseCreations, setShouldPulseCreations] = React.useState(false);
+
+    React.useEffect(() => {
+        if (generatedHistory.length === 0 || typeof window === 'undefined') return;
+        const key = `indii:creations-affordance-seen:${userProfile?.id || 'anonymous'}`;
+        setShouldPulseCreations(window.localStorage.getItem(key) !== 'true');
+    }, [generatedHistory.length, userProfile?.id]);
+
+    const acknowledgeCreationsAffordance = React.useCallback(() => {
+        if (typeof window !== 'undefined') {
+            window.localStorage.setItem(`indii:creations-affordance-seen:${userProfile?.id || 'anonymous'}`, 'true');
+        }
+        setShouldPulseCreations(false);
+    }, [userProfile?.id]);
 
     React.useEffect(() => {
         if (view === 'messages') {
@@ -358,6 +372,7 @@ export default function RightPanel() {
                             {generatedHistory.length > 0 && (
                                 <button
                                     onClick={() => {
+                                        acknowledgeCreationsAffordance();
                                         setRightPanelTab('assets');
                                         toggleRightPanel();
                                     }}
@@ -365,7 +380,7 @@ export default function RightPanel() {
                                     title="View Recent Creations"
                                     aria-label="View Recent Creations"
                                 >
-                                    <div className="absolute inset-0 top-4 bg-green-500/20 blur-xl rounded-full opacity-50 group-hover:opacity-100 transition-opacity animate-pulse" />
+                                    <div className={`absolute inset-0 top-4 bg-green-500/20 blur-xl rounded-full opacity-50 group-hover:opacity-100 transition-opacity ${shouldPulseCreations ? 'animate-pulse' : ''}`} />
                                     <div className="relative w-8 h-8 rounded-lg overflow-hidden border-2 border-white/10 group-hover:border-green-400/50 transition-colors shadow-[0_0_15px_rgba(34,197,94,0.2)]">
                                         {generatedHistory[0].type === 'image' && generatedHistory[0].url ? (
                                             <img src={generatedHistory[0].url} alt="Recent creation" className="w-full h-full object-cover" />
