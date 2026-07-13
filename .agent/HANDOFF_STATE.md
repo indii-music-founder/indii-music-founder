@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-07-13 10:16 EDT
+**Updated:** 2026-07-13 10:19 EDT
 **Branch:** `fix/issues-core`
 
 ## Recent Commits
 ```
+f3285a76e chore: session checkpoint [10:16]
 5f3e8a69f chore: session checkpoint [10:13]
 709d1faa3 chore: session checkpoint [07:31]
 e4cb076a9 chore: session checkpoint [06:57]
@@ -13,12 +14,12 @@ c6b89ce32 chore: session checkpoint [19:27]
 c2dd57c9e docs(ledger): stop CI OOM iteration for ISSUE-1046 with a precise diagnostic finding
 8b035f01c fix(finance): stop claiming AI-narrative statement mapping is a completed normalization (ISSUE-856)
 6d6ddaf99 fix(video): reject unsupported aspect ratios instead of silently coercing to 16:9 (ISSUE-870)
-299ca25c6 chore: session checkpoint [19:03]
 ```
 
 ## Working State
 ```
  M .agent/test_ledger/OPEN_ISSUES.md
+ M .agents/workflows/ci-validate.md
  M .github/workflows/deploy.yml
  M packages/firebase/firestore.indexes.json
  M packages/firebase/firestore.rules
