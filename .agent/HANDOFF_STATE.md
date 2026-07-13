@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-07-13 19:35 EDT
-**Branch:** `fix/issues-core`
+**Updated:** 2026-07-13 19:41 EDT
+**Branch:** `main`
 
 ## Recent Commits
 ```
+b16c79d24 Merge branch 'fix/issues-core'
+afea6dc03 chore: session checkpoint [19:35]
 e4604f9cd chore: session checkpoint [19:34]
 fe009bbf2 chore: session checkpoint [18:47]
 ae802baba chore: session checkpoint [18:44]
@@ -12,8 +14,6 @@ ae802baba chore: session checkpoint [18:44]
 a87292074 chore: session checkpoint [18:20]
 7572c5577 chore: session checkpoint [18:13]
 7aa5412fa chore: session checkpoint [18:01]
-bdbdab9d2 chore: session checkpoint [18:00]
-cedd5bc5f chore: session 2026-07-13 checkpoint — Road Manager finish + partial issues audit
 ```
 
 ## Working State
