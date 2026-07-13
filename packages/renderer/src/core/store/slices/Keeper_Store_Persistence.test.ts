@@ -1,8 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createStore } from 'zustand';
 
-const { mockUpdateSession, mockGetSessionsForUser } = vi.hoisted(() => ({
+const { mockUpdateSession, mockAppendMessage, mockUpdateMessage, mockClearMessages, mockGetSessionsForUser } = vi.hoisted(() => ({
     mockUpdateSession: vi.fn().mockResolvedValue(true),
+    mockAppendMessage: vi.fn().mockResolvedValue(true),
+    mockUpdateMessage: vi.fn().mockResolvedValue(true),
+    mockClearMessages: vi.fn().mockResolvedValue(true),
     mockGetSessionsForUser: vi.fn().mockResolvedValue([])
 }));
 
@@ -10,6 +13,10 @@ const { mockUpdateSession, mockGetSessionsForUser } = vi.hoisted(() => ({
 vi.mock('@/services/agent/SessionService', () => ({
     sessionService: {
         updateSession: mockUpdateSession,
+        appendMessage: mockAppendMessage,
+        updateMessage: mockUpdateMessage,
+        clearMessages: mockClearMessages,
+        subscribeToMessages: vi.fn((_id: string, _onUpdate: unknown) => () => {}),
         getSessionsForUser: mockGetSessionsForUser,
         createSession: vi.fn().mockResolvedValue('new-session-id'),
         deleteSession: vi.fn().mockResolvedValue(true),
@@ -81,20 +88,19 @@ describe('📚 Keeper: Persistence', () => {
 
         // Assert: Persistence is called — 10s timeout handles worst-case shard CPU pressure
         await vi.waitFor(() => {
-            expect(mockUpdateSession).toHaveBeenCalled();
+            expect(mockAppendMessage).toHaveBeenCalled();
         }, { timeout: 10000, interval: 100 });
 
-        const [sessionId, updatePayload] = mockUpdateSession.mock.calls[0]!;
+        const [sessionId, updatePayload] = mockAppendMessage.mock.calls[0]!;
         expect(sessionId).toBe(state.activeSessionId);
-        expect(updatePayload.messages).toHaveLength(1);
-        expect(updatePayload.messages[0].text).toBe('Hello, Keeper!');
+        expect(updatePayload.text).toBe('Hello, Keeper!');
     }, 15000);
 
     it('should persist cleared history to SessionService', async () => {
         // Setup: Add a message first
         api.getState().addAgentMessage({ id: 'msg-1', role: 'user', text: 'To be deleted', timestamp: Date.now() });
         await new Promise(resolve => setTimeout(resolve, 100));
-        mockUpdateSession.mockClear();
+        mockClearMessages.mockClear();
 
         // Action: Clear History
         api.getState().clearAgentHistory();
@@ -106,18 +112,17 @@ describe('📚 Keeper: Persistence', () => {
 
         // Assert: Persistence called with empty array
         await vi.waitFor(() => {
-            expect(mockUpdateSession).toHaveBeenCalled();
+            expect(mockClearMessages).toHaveBeenCalled();
         }, { timeout: 3000, interval: 100 });
 
-        const [_, updatePayload] = mockUpdateSession.mock.calls[0]!;
-        expect(updatePayload.messages).toEqual([]);
+        expect(mockClearMessages).toHaveBeenCalledWith(state.activeSessionId);
     }, 15000);
 
     it('should persist message updates (e.g. streaming chunks) to SessionService', async () => {
         // Setup
         api.getState().addAgentMessage({ id: 'msg-1', role: 'model', text: 'Think...', timestamp: Date.now() });
         await new Promise(resolve => setTimeout(resolve, 200));
-        mockUpdateSession.mockClear();
+        mockUpdateMessage.mockClear();
 
         // Action: Update Message
         api.getState().updateAgentMessage('msg-1', { text: 'Thinking complete.' });
@@ -125,10 +130,10 @@ describe('📚 Keeper: Persistence', () => {
 
         // Assert: Persistence called
         await vi.waitFor(() => {
-            expect(mockUpdateSession).toHaveBeenCalled();
+            expect(mockUpdateMessage).toHaveBeenCalled();
         }, { timeout: 3000, interval: 100 });
 
-        const [_, updatePayload] = mockUpdateSession.mock.calls[0]!;
-        expect(updatePayload.messages[0].text).toBe('Thinking complete.');
+        const [_, __, updatePayload] = mockUpdateMessage.mock.calls[0]!;
+        expect(updatePayload.text).toBe('Thinking complete.');
     }, 15000);
 });

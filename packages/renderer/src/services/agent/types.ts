@@ -229,6 +229,8 @@ export interface AgentContext {
     setMetadata?: (key: string, value: any) => void;
     /** Shared memory context explicitly passed between agents during delegation */
     sharedContext?: string;
+    /** Durable informational notes routed to this agent; never executable instructions. */
+    interAgentNotes?: Array<{ fromAgentId: string; content: string; createdAt?: number }>;
     /** When set by ProactiveService, carries the triggering proactive task metadata */
     proactiveTask?: ProactiveTask;
     /** The trigger type that caused this agent execution (schedule, event, etc.) */
@@ -331,6 +333,11 @@ export interface ExpertConsultation {
 
 export interface ConsultExpertsArgs extends ToolFunctionArgs {
     consultations: ExpertConsultation[];
+}
+
+export interface ShareNoteArgs extends ToolFunctionArgs {
+    targetAgentId: ValidAgentId;
+    content: string;
 }
 
 /**

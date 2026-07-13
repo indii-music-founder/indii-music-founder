@@ -9,8 +9,7 @@
  *   1. Direct mode — Finance head attempts cross-agent work → DIRECT_MODE_NO_DELEGATION
  *   2. Department mode — Finance head delegates to its own worker → succeeds.
  *      Finance head attempts cross-dept (legal) → DEPARTMENT_SCOPE_VIOLATION
- *   3. Boardroom mode — head→head with seating → succeeds. head→worker (unseated tier)
- *      → BOARDROOM_TIER_VIOLATION. head→unseated head → BOARDROOM_SEATING_VIOLATION
+ *   3. Boardroom mode — heads can exchange notes, but peer delegation is always blocked.
  */
 
 import { describe, it, expect, vi } from 'vitest';
@@ -142,7 +141,7 @@ describe('Conversation Mode enforcement — QA scenarios', () => {
     });
 
     describe('3. Boardroom mode (BOARDROOM_TIER_VIOLATION + SEATING)', () => {
-        it('allows head→head delegation when both heads are seated', async () => {
+        it('blocks head→head delegation even when both managers are seated', async () => {
             const finance = makeAgent('finance');
             const ctx = makeCtx({
                 conversationMode: 'boardroom',
@@ -155,8 +154,9 @@ describe('Conversation Mode enforcement — QA scenarios', () => {
                 ctx,
             );
 
-            expect(result.success).toBe(true);
-            expect(ctx.runAgent).toHaveBeenCalled();
+            expect(result.success).toBe(false);
+            expect(result.metadata?.errorCode).toBe('BOARDROOM_NOTES_ONLY');
+            expect(ctx.runAgent).not.toHaveBeenCalled();
         });
 
         it('blocks head→worker delegation in Boardroom (workers cannot be seated)', async () => {
@@ -203,7 +203,7 @@ describe('Conversation Mode enforcement — QA scenarios', () => {
             expect(ctx.runAgent).not.toHaveBeenCalled();
         });
 
-        it('consult_experts surfaces tier violation when any target is a worker', async () => {
+        it('blocks Boardroom consultation as a task route before it can reach a worker', async () => {
             const dept = DEPARTMENTS.finance!;
             dept.workerIds.push('finance.tax');
             try {
@@ -225,7 +225,7 @@ describe('Conversation Mode enforcement — QA scenarios', () => {
                 );
 
                 expect(result.success).toBe(false);
-                expect(result.metadata?.errorCode).toBe('BOARDROOM_TIER_VIOLATION');
+                expect(result.metadata?.errorCode).toBe('BOARDROOM_NOTES_ONLY');
             } finally {
                 dept.workerIds.length = 0;
             }

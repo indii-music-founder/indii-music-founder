@@ -27,6 +27,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     selectFile: (options?: unknown) => ipcRenderer.invoke('system:select-file', options),
     selectDirectory: (options?: unknown) => ipcRenderer.invoke('system:select-directory', options),
     getDirectoryContents: (dirPath: string, options?: { recursive?: boolean, extensions?: string[] }) => ipcRenderer.invoke('system:get-directory-contents', dirPath, options),
+    searchApprovedAssets: (dirPath: string, options?: { query?: string, extensions?: string[], maxResults?: number }) => ipcRenderer.invoke('system:search-approved-assets', dirPath, options),
     getGpuInfo: () => ipcRenderer.invoke('system:get-gpu-info'),
     showNotification: (title: string, body: string) => ipcRenderer.send('show-notification', { title, body }),
 

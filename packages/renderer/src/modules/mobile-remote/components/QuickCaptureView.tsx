@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Mic, Image as ImageIcon, Video, Send, Loader2, MapPin, FileText, Keyboard } from 'lucide-react';
+import { Mic, Image as ImageIcon, Video, Send, Loader2, MapPin, FileText, Keyboard, Download } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { remoteRelayService, waitForDispatchConfirmation } from '@/services/agent/RemoteRelayService';
 import { StorageService } from '@/services/StorageService';
 import { useToast } from '@/core/context/ToastContext';
 import { cn } from '@/lib/utils';
 import { triggerHaptic } from '../MobileRemote';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 /**
  * ISSUE-987: candidates in priority order — WebKit/Safari commonly can't
@@ -42,11 +43,22 @@ export const audioExtensionForMimeType = (mimeType: string): string => {
     return AUDIO_MIME_EXTENSIONS[base] ?? 'webm';
 };
 
+export function downloadCapturedMedia(source: Blob, filename: string): void {
+    const url = URL.createObjectURL(source);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = filename;
+    anchor.click();
+    // Let the browser start the download before releasing this temporary URL.
+    setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
 const MIN_RECORDING_DURATION_MS = 300;
 
 export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
     const toast = useToast();
     const [isRecording, setIsRecording] = useState(false);
+    const locationRequestId = useRef(0);
     // ISSUE-986: true from the moment Stop is tapped until the recorder's
     // async onstop actually delivers the audio blob. isRecording flips to
     // false immediately (so the mic button reads "Speak" again), but the
@@ -81,6 +93,16 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
                 : capturedVideoBlob
                     ? 'video'
                     : null;
+
+    const downloadReviewCopy = () => {
+        const source = capturedAudioBlob ?? capturedImageBlob?.file ?? capturedVideoBlob;
+        if (!source) return;
+        const extension = capturedAudioBlob
+            ? audioExtensionForMimeType(capturedAudioBlob.type)
+            : capturedImageBlob?.file.name.split('.').pop() || capturedVideoBlob?.name.split('.').pop() || 'bin';
+        downloadCapturedMedia(source, `indii-capture-${Date.now()}.${extension}`);
+        toast.info('Downloaded a local copy of this capture.');
+    };
     const hasGeolocation = typeof navigator !== 'undefined' && !!navigator.geolocation;
 
     useEffect(() => {
@@ -129,7 +151,13 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
     // fire after unmount/tab-switch) never calls setState on a dead component.
     useEffect(() => {
         isMountedRef.current = true;
-        return () => { isMountedRef.current = false; };
+        return () => {
+            isMountedRef.current = false;
+            // Geolocation has no browser cancellation handle. Invalidate any
+            // callback that arrives after this surface is gone so it cannot
+            // confirm/dispatch a venue pin from an abandoned screen.
+            locationRequestId.current += 1;
+        };
     }, []);
 
     // Unmount / tab-switch (QuickCaptureView is conditionally rendered by
@@ -272,14 +300,27 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
         }
 
         setIsDispatching(true);
+        const requestId = ++locationRequestId.current;
         navigator.geolocation.getCurrentPosition(
             async (position) => {
+                if (requestId !== locationRequestId.current) return;
                 try {
+                    const latitude = position.coords.latitude;
+                    const longitude = position.coords.longitude;
+                    const accuracy = position.coords.accuracy;
+                    const confirmed = await ConfirmDialog.call({
+                        title: 'Send venue pin?',
+                        message: `Latitude ${latitude.toFixed(5)}, longitude ${longitude.toFixed(5)}${Number.isFinite(accuracy) ? ` (±${Math.round(accuracy)} m)` : ''}.`,
+                        confirmText: 'Send Pin',
+                    });
+                    if (!confirmed) return;
                     await remoteRelayService.dispatchTask({
                         type: 'venue_log',
                         payload: {
-                            lat: position.coords.latitude,
-                            lng: position.coords.longitude
+                            lat: latitude,
+                            lng: longitude,
+                            accuracyMeters: accuracy,
+                            capturedAt: new Date(position.timestamp).toISOString(),
                         }
                     });
                     triggerHaptic([50, 50, 50]);
@@ -291,6 +332,7 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
                 }
             },
             (error) => {
+                if (requestId !== locationRequestId.current) return;
                 console.error("Error getting location", error);
                 // ISSUE-988: TIMEOUT gets a clearer message; every branch still
                 // unlocks isDispatching so a stalled provider can't freeze capture.
@@ -316,7 +358,6 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
         
         setIsDispatching(true);
         triggerHaptic(50);
-        
         try {
             await remoteRelayService.dispatchTask({
                 type: 'live_moment',
@@ -336,6 +377,8 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
         if (!isPaired) return;
         setIsDispatching(true);
         triggerHaptic(50);
+        let uploadedPath: string | null = null;
+        let dispatchAccepted = false;
         
         try {
             const { auth } = await import('@/services/firebase');
@@ -352,30 +395,36 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
                 const filename = `voice_memo_${Date.now()}.${extension}`;
                 const path = `users/${userId}/voice_memos/${filename}`;
                 const downloadUrl = await StorageService.uploadFile(capturedAudioBlob, path);
+                uploadedPath = path;
 
                 taskId = await remoteRelayService.dispatchTask({
                     type: 'voice_memo',
                     payload: { audioUrl: downloadUrl }
                 });
+                dispatchAccepted = true;
             } else if (capturedImageBlob) {
                 const file = capturedImageBlob.file;
                 const filename = `photo_${Date.now()}.${file.name.split('.').pop() || 'jpg'}`;
                 const path = `users/${userId}/assets/captured_media/${filename}`;
                 const downloadUrl = await StorageService.uploadFile(file, path);
+                uploadedPath = path;
 
                 taskId = await remoteRelayService.dispatchTask({
                     type: capturedImageBlob.type === 'document' ? 'document_scan' : 'media_capture',
                     payload: { imageUrl: downloadUrl }
                 });
+                dispatchAccepted = true;
             } else if (capturedVideoBlob) {
                 const filename = `video_${Date.now()}.${capturedVideoBlob.name.split('.').pop() || 'mp4'}`;
                 const path = `users/${userId}/assets/captured_media/${filename}`;
                 const downloadUrl = await StorageService.uploadFile(capturedVideoBlob, path);
+                uploadedPath = path;
 
                 taskId = await remoteRelayService.dispatchTask({
                     type: 'media_capture',
                     payload: { videoUrl: downloadUrl }
                 });
+                dispatchAccepted = true;
             } else {
                 return;
             }
@@ -390,6 +439,11 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
             clearCapture();
             triggerHaptic([50, 50, 50]);
         } catch (error) {
+            // If queue creation failed, no durable task refers to this upload.
+            // Preserve the local preview for retry, but remove the orphaned blob.
+            if (uploadedPath && !dispatchAccepted) {
+                await StorageService.deleteFile(uploadedPath);
+            }
             console.error('Failed to dispatch media:', error);
             toast.error(error instanceof Error ? error.message : 'Failed to save to Notes');
             triggerHaptic([100, 200, 100]);
@@ -567,6 +621,15 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
                             </div>
 
                             <div className="mt-4 flex items-center gap-3">
+                                <button
+                                    onClick={downloadReviewCopy}
+                                    disabled={isDispatching}
+                                    className="h-12 w-12 shrink-0 rounded-2xl border border-white/10 bg-white/5 text-white/80 transition-colors hover:bg-white/10 disabled:opacity-50"
+                                    aria-label="Download local copy"
+                                    title="Download local copy"
+                                >
+                                    <Download className="mx-auto h-4 w-4" />
+                                </button>
                                 <button 
                                     onClick={clearCapture}
                                     disabled={isDispatching}

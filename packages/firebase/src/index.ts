@@ -27,6 +27,7 @@ import { generateVideoDirect } from "./lib/video_generation_direct";
 import { executeMilestoneFn } from "./timeline/milestone_execution";
 import { editImageFn } from "./lib/image_generation";
 export { generateImageV3, generateVideoV3, generateOmniRemixV3, generateAudioV3 } from "./functions/creative/gateway";
+export { getOperationCostStatus } from "./functions/billing/enforceOperationCost";
 export { cancelVideoJob } from "./functions/creative/gateway";
 export { videoJobFirestoreOrchestrator } from "./functions/creative/videoJobOrchestrator";
 import { analyzeAudioFn } from "./lib/audio";
@@ -153,9 +154,10 @@ export { fetchStorageAssetForCanvas } from './functions/storage/fetchStorageAsse
 
 // Remote Relay — Server-Side Agent Processing (replaces desktop-browser-dependent relay)
 export { processRelayCommand } from './relay/relayCommandProcessor';
+export { issueStudioExecutorLease, publishStudioPresence, releaseStudioPresence, claimStudioCommand, publishStudioResponse, completeStudioCommand } from './functions/remote/issueStudioExecutorLease';
 
 // Billing / Cost Control
-export { enforceOperationCost, finalizeOperationCost } from './functions/billing/enforceOperationCost';
+export { enforceOperationCost, finalizeOperationCost, expireStaleOperationCostReservations } from './functions/billing/enforceOperationCost';
 
 // Telegram Bot Adapter — Phase 2 Multi-Channel (bridges Telegram → Firestore relay)
 export { telegramWebhook } from './relay/telegramWebhook';

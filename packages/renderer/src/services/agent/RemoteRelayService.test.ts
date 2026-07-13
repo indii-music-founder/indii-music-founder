@@ -38,11 +38,27 @@ import {
     isFreshStudioState,
     isPrivateIP,
     relayTimestampToMillis,
+    serializeRemoteResponse,
     resolveRemoteCommandExecutionTarget,
     remoteRelayService,
     DESKTOP_HEARTBEAT_STALE_MS as _DESKTOP_HEARTBEAT_STALE_MS,
     type DesktopState
 } from './RemoteRelayService';
+
+describe('serializeRemoteResponse (ISSUE-981)', () => {
+    it('uses the same terminal contract without undefined optional fields', () => {
+        expect(serializeRemoteResponse({ commandId: 'c1', text: 'done' })).toEqual({
+            commandId: 'c1', text: 'done', isStreaming: false, isFinal: true,
+        });
+    });
+
+    it('preserves optional response metadata and marks streaming responses non-final', () => {
+        expect(serializeRemoteResponse({ commandId: 'c2', text: 'working', isStreaming: true, agentId: 'brand', imageUrls: ['https://x/image.png'], boardroomMessageId: 'm1' })).toEqual({
+            commandId: 'c2', text: 'working', isStreaming: true, isFinal: false,
+            agentId: 'brand', imageUrls: ['https://x/image.png'], boardroomMessageId: 'm1',
+        });
+    });
+});
 
 describe('RemoteRelayService - dispatchTask (ISSUE-982)', () => {
     beforeEach(() => {

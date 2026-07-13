@@ -2,8 +2,16 @@ import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { createStore } from 'zustand';
 
 // Mock must be defined before imports that use it
-const { mockUpdateSession, mockCreateSession, mockDeleteSession, mockGetSessionsForUser } = vi.hoisted(() => ({
+const { mockUpdateSession, mockAppendMessage, mockUpdateMessage, mockClearMessages, mockSubscribeToMessages, messageSubscribers, mockCreateSession, mockDeleteSession, mockGetSessionsForUser } = vi.hoisted(() => ({
     mockUpdateSession: vi.fn().mockResolvedValue(undefined),
+    mockAppendMessage: vi.fn().mockResolvedValue(undefined),
+    mockUpdateMessage: vi.fn().mockResolvedValue(undefined),
+    mockClearMessages: vi.fn().mockResolvedValue(undefined),
+    messageSubscribers: [] as Array<(messages: AgentMessage[]) => void>,
+    mockSubscribeToMessages: vi.fn((_id: string, onUpdate: (messages: AgentMessage[]) => void) => {
+        messageSubscribers.push(onUpdate);
+        return () => {};
+    }),
     mockGetSessionsForUser: vi.fn().mockResolvedValue([]),
     mockCreateSession: vi.fn().mockResolvedValue('new-session-id'),
     mockDeleteSession: vi.fn().mockResolvedValue(undefined)
@@ -12,6 +20,10 @@ const { mockUpdateSession, mockCreateSession, mockDeleteSession, mockGetSessions
 vi.mock('@/services/agent/SessionService', () => ({
     sessionService: {
         updateSession: mockUpdateSession,
+        appendMessage: mockAppendMessage,
+        updateMessage: mockUpdateMessage,
+        clearMessages: mockClearMessages,
+        subscribeToMessages: mockSubscribeToMessages,
         getSessionsForUser: mockGetSessionsForUser,
         createSession: mockCreateSession,
         deleteSession: mockDeleteSession
@@ -27,6 +39,7 @@ describe('AgentSlice Persistence (The Amnesia Check)', () => {
 
     beforeEach(async () => {
         vi.clearAllMocks();
+        messageSubscribers.length = 0;
         // Create a fresh store for each test
         useStore = createStore<AgentSlice>((...a) => createAgentSlice(...a));
 
@@ -58,13 +71,9 @@ describe('AgentSlice Persistence (The Amnesia Check)', () => {
         await new Promise(resolve => setTimeout(resolve, 200));
 
         // Expectation: The message should be persisted to storage
-        expect(sessionService.updateSession).toHaveBeenCalledWith(
+        expect(sessionService.appendMessage).toHaveBeenCalledWith(
             sessionId,
-            expect.objectContaining({
-                messages: expect.arrayContaining([
-                    expect.objectContaining({ id: 'msg-1', text: 'Hello, Keeper!' })
-                ])
-            })
+            expect.objectContaining({ id: 'msg-1', text: 'Hello, Keeper!' })
         );
     });
 
@@ -79,7 +88,7 @@ describe('AgentSlice Persistence (The Amnesia Check)', () => {
         // Wait for the side effect of seeding to finish!
         await new Promise(resolve => setTimeout(resolve, 100));
 
-        (sessionService.updateSession as any).mockClear(); // Clear the call from addAgentMessage
+        (sessionService.updateMessage as any).mockClear(); // Clear the call from addAgentMessage
 
         // Action: Update the message
         store.updateAgentMessage('msg-1', { text: 'New text' });
@@ -88,13 +97,10 @@ describe('AgentSlice Persistence (The Amnesia Check)', () => {
         await new Promise(resolve => setTimeout(resolve, 100));
 
         // Expectation: The update should be persisted
-        expect(sessionService.updateSession).toHaveBeenCalledWith(
+        expect(sessionService.updateMessage).toHaveBeenCalledWith(
             sessionId,
-            expect.objectContaining({
-                messages: expect.arrayContaining([
-                    expect.objectContaining({ id: 'msg-1', text: 'New text' })
-                ])
-            })
+            'msg-1',
+            expect.objectContaining({ text: 'New text' })
         );
     });
 
@@ -106,7 +112,7 @@ describe('AgentSlice Persistence (The Amnesia Check)', () => {
         // Wait for the side effect of seeding to finish!
         await new Promise(resolve => setTimeout(resolve, 100));
 
-        (sessionService.updateSession as any).mockClear();
+        (sessionService.clearMessages as any).mockClear();
 
         // Action: Clear history
         store.clearAgentHistory();
@@ -115,9 +121,22 @@ describe('AgentSlice Persistence (The Amnesia Check)', () => {
         await new Promise(resolve => setTimeout(resolve, 100));
 
         // Expectation: The empty message list should be persisted
-        expect(sessionService.updateSession).toHaveBeenCalledWith(
-            sessionId,
-            expect.objectContaining({ messages: [] })
-        );
+        expect(sessionService.clearMessages).toHaveBeenCalledWith(sessionId);
+    });
+
+    it('keeps messages from concurrent surfaces when the append-only stream updates', async () => {
+        const sessionId = useStore.getState().activeSessionId!;
+        useStore.getState().setActiveSession(sessionId);
+        await vi.waitFor(() => expect(messageSubscribers.length).toBeGreaterThan(0));
+        const receive = messageSubscribers.at(-1)!;
+
+        receive([
+            { id: 'desktop-1', role: 'user', text: 'Desktop fact', timestamp: 10 },
+            { id: 'phone-1', role: 'user', text: 'Phone fact', timestamp: 11 },
+        ]);
+
+        const session = useStore.getState().sessions[sessionId];
+        expect(session.messages.map(message => message.id)).toEqual(['desktop-1', 'phone-1']);
+        expect(useStore.getState().agentHistory.map(message => message.id)).toEqual(['desktop-1', 'phone-1']);
     });
 });

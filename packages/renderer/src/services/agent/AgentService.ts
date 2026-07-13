@@ -1317,6 +1317,15 @@ The user will see this plan and can approve it to start execution.`;
         if (!context.chatHistory) context.chatHistory = [];
         if (!context.chatHistoryString) context.chatHistoryString = '';
 
+        // A manager's notes are durable Firestore documents, so a fact shared on
+        // phone is available to the same manager on desktop before its next run.
+        try {
+            const { agentNoteService } = await importWithRetry(() => import('./AgentNoteService'));
+            context.interAgentNotes = await agentNoteService.forAgent(agentId, context.projectId);
+        } catch (error) {
+            logger.warn('[AgentService] Could not load inter-agent notes (non-blocking):', error);
+        }
+
         // Hub and Spoke: Inject runner for intra-agent delegation
         context.runAgent = this.runAgent.bind(this);
 
