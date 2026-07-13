@@ -69,6 +69,17 @@ export default function CreatePostModal({ onClose, onSave, initialScheduledDate 
 
         const timestamp = new Date(`${scheduledDate}T${scheduledTime}`).getTime();
 
+        // Validate timestamp is finite and in future
+        if (!Number.isFinite(timestamp)) {
+            toast.error('Invalid date or time selected');
+            return;
+        }
+
+        if (timestamp <= Date.now()) {
+            toast.error('Post must be scheduled for a future time');
+            return;
+        }
+
         const newPostData = {
             id: crypto.randomUUID(),
             platform,

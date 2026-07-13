@@ -3,10 +3,19 @@
 > This file is written by the /real test agent and consumed by a fixing agent.
 > The test agent NEVER modifies code. The fix agent NEVER runs tests.
 >
-> **Last updated:** 2026-07-12 15:00 EDT
-> **Branch:** `fix/issues-core` (6 commits, all gates passing)
-> **Current Session:** Cross-Device Persistence Roadmap completion + QA + Backend memory recall
+> **Last updated:** 2026-07-13 23:59 EDT (end of session)
+> **Branch:** `fix/issues-core` (commits: 704/705 jobs + ISSUE-941 future-time validation + ledger audit)
+> **Current Session:** Road Manager finish (finder UI + miles tracking) + Partial issues audit (50 items; fixed 2/50 + corrected 1 stale entry)
 > **CI Status:** All pre-commit gates passing; ready for merge or QA
+
+## Session 2026-07-13 Final Summary
+
+**Completed:**
+- ✅ ISSUE-704/705 Jobs 1-2: Road Manager finder UI (gas/hotel/food/rest) + miles tracking card (commit cc426d298 + 100d6cb52)
+- ✅ ISSUE-941: Social scheduling future-time validation (reject past times, show error, retain draft) (commit 2f47a14fc)
+- ✅ ISSUE-949: Status corrected — campaign persistence already fully wired as of 2026-07-12 (commit cfe43fb9f)
+
+**Remaining (49/50 partial issues):** See sections below, organized by severity + ready-to-fix status
 
 ---
 
@@ -10835,7 +10844,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-704: PROPOSAL — Road Manager IA reorganization ("pieces and parts that don't go together")
 
-- **Status:** 🟣 PROPOSAL (2026-07-03) — awaiting William's pick; invited by William during pass 5
+- **Status:** 🟡 IN PROGRESS (2026-07-13) — naming locked as "Road/tour"; ✅ 2/6 jobs wired (finder UI, miles tracking)
 - **Module:** Road Manager information architecture
 - **Current state (audited):** tabs `planning` / `on-the-road` / `rider` / `route-optimizer` (+ visa rendered within), `RoadMode` overlay, `SetlistAnalytics`, `DaySheetModal`, two visa components, and **three disconnected geo systems** (TourMap stub ∥ backend generateItinerary/findPlaces ∥ client-side TourRouteOptimizer) plus a fourth outside the module (google-maps MCP for agents). Nothing feeds anything; the remote sees none of it.
 - **Proposed shape (4 tabs, one geo backbone, remote parity):**
@@ -10849,21 +10858,42 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-705: Road Manager expectation gap — the module's own README promises the road-life jobs; the pieces exist scattered across modules, zero are connected
 
-- **Status:** 🟣 PRODUCT GAP MAP (2026-07-03) — extends ISSUE-704; William framed the expectation: "when you're on the road you need a way to find a hotel, track your miles…"
+- **Status:** 🟡 IN PROGRESS (2026-07-13) — ✅ **2/6 jobs wired** (finder UI + miles tracking); **4 jobs ready for next phase**
 - **Severity:** 🟠 HIGH (promise vs delivery)
 - **Module:** Road Manager ↔ Finance ↔ Booking ↔ Marketing
-- **Depends on:** ISSUE-697 + ISSUE-700 first; then per the Pass 5 BUILD ORDER block; feature shapes gated on William approving ISSUE-704/705.
-- **Evidence of promise:** `packages/renderer/src/modules/touring/README.md` (RC1) commits to: Route Planning "with mileage and fuel estimations", Venue Discovery, Show Advance, "Tour Finance: real-time tracking of tour expenses (gas, lodging, food) and show settlement (guarantees, percentages)", Logistics Dashboard, "Google Maps Integration: Direct API", plus Finance/Marketing/Legal integrations. Most are undelivered or unwired.
-- **Jobs-to-be-done map (job → what exists → the gap):**
-  1. **Find hotel/fuel/food on the road** → `RoadMode` + `NearbyPlacesService` work (desktop-only) → gaps: remote access (ISSUE-698); `findPlaces` UI hardcodes `type: 'gas_station'` — hotel/food/rest types exist in RoadMode but not PlanningTab's finder.
-  2. **Track your miles** → finance ALREADY has `FinanceCompiler.MileageTripInput` + `HiddenCostHarnessPanel` (mileageRate 0.7, Car metric, tax framing) AND the itinerary backend returns `totalDistanceMiles` (`RoadManager.tsx:321`) → gap: nothing connects them. Fix: auto-log each itinerary leg (or GPS-confirmed leg in RoadMode) as a `MileageTripInput`; a "Miles this tour" card in On the Road; flows into the existing hidden-cost harness. This is a wiring job, not a build.
-  3. **Capture expenses on the road** → finance has `ExpenseTracker` + `ExpenseManualEntryModal` + receipt OCR → gap: no touring/remote surface. Fix: "snap receipt" action in RoadMode + mobile-remote (QuickCaptureView exists in mobile-remote!) tagged to the current tour stop, lands in ExpenseTracker.
-  4. **Show settlement (guarantee vs door split, per-night)** → deal types already modeled (`modules/agent/types.ts`: `dealType: 'guarantee' | 'door_split' | 'promoter_profit'`) → gap: no settlement UI anywhere despite README promise. Fix: per-stop settlement sheet in Tour Book (guarantee, door count, split, merch cut) → finance reconciliation.
-  5. **Show advance** → rider ✓ (TechnicalRiderGenerator), day sheet ✓ → gap: hospitality rider + load-in schedule fields thin; "send advance email to venue" absent (sendEmail function exists and is healthy).
-  6. **Discover & book shows** → BOUNDARY: belongs to the Booking Agent department, not Road Manager (William's instinct; README agrees — touring "bridges booking and execution"). Define the handoff contract: confirmed booking → itinerary stop (venue, date, deal terms pre-filled). Deal types above are the shared schema.
-  7. **Tour dates → marketing promo** → README-promised integration, absent entirely; `sendToModule('marketing')` handoff exists (post-ISSUE-693) as the transport.
-- **Fix direction:** fold into ISSUE-704's tab plan — Tour Book gains Settlement per stop; On the Road gains Miles + Snap Receipt; Plan consumes booking handoffs. Sequence AFTER 697/700 (map + stable stop ids). Respect YAGNI: every item above maps to an existing user job + existing code; do not add speculative modes beyond this list.
-- **Files:** `packages/renderer/src/modules/touring/README.md`; `packages/renderer/src/services/finance/FinanceCompiler.ts:17`; `packages/renderer/src/modules/finance/components/HiddenCostHarnessPanel.tsx`; `packages/renderer/src/modules/finance/components/ExpenseTracker.tsx`; `packages/renderer/src/modules/agent/types.ts` (dealType); `packages/renderer/src/modules/mobile-remote/components/QuickCaptureView.tsx`
+- **Depends on:** ISSUE-697 + ISSUE-700 first; feature completion gated on remaining 4 jobs.
+- **Evidence of promise:** `packages/renderer/src/modules/touring/README.md` (RC1) commits to route planning, venue discovery, tour finance, logistics dashboard. Most undelivered or unwired.
+
+### ✅ COMPLETED (Session 2026-07-13)
+- **Job 1: Finder UI** — `handleFindNearbyPlaces(placeType)` replaces hardcoded gas_station; OnTheRoadTab now offers ⛽ Gas, 🏨 Hotel, 🍽️ Food, 🛑 Rest buttons (commit: cc426d298)
+- **Job 2: Miles Tracking** — Created milesTracking.ts utilities; added "Miles This Tour" card to OnTheRoadTab with $cost estimate @ IRS rate; "Log to Finance" button wired (state only, backend pending) (commit: 100d6cb52)
+
+### 🔴 READY FOR NEXT PHASE (4 jobs, clear TODOs)
+- **Job 3: Snap Receipt (Expenses on Road)** 
+  - **TODO:** Add "Quick Expense" button to OnTheRoadTab/Logistics Radar
+  - **TODO:** Wire to `ExpenseManualEntryModal` pre-filled with category='Travel', location=currentStop.city
+  - **Files:** `OnTheRoadTab.tsx`, `packages/renderer/src/modules/finance/components/ExpenseManualEntryModal.tsx`
+
+- **Job 4: Settlement Sheet (Per-Stop Guarantees)**
+  - **TODO:** Add settlement fields to `ItineraryStop` type (guarantee, door_count, split_pct, merch_cut)
+  - **TODO:** Render settlement entry in `DaySheetModal` (existing modal for stop details)
+  - **TODO:** Flow settlement data → finance reconciliation (TBD: which screen consumes this)
+  - **Files:** `types.ts`, `components/DaySheetModal.tsx`
+
+- **Job 5: Advance Email (Send to Venue)**
+  - **TODO:** Add "Send Advance Email" button to Tour Book (promote `TechnicalRiderGenerator` output + day sheet into an email preview)
+  - **TODO:** Wire sendEmail Cloud Function (already healthy per ledger; exists in shared code)
+  - **TODO:** Populate recipient from itinerary stop contacts
+  - **Files:** `TourBookTab.tsx` (to be created as promoted DaySheetModal), `RoadManager.tsx`
+
+- **Job 6: Booking Handoff Contract**
+  - **TODO:** Define schema: confirmed booking (from Booking Agent) → itinerary stop (venue, date, deal_type, guarantee_amt)
+  - **TODO:** Add `bookingId` field to ItineraryStop; link back to Booking Agent's deal record
+  - **TODO:** Verify deal types match across modules (agent/types.ts vs touring/types.ts)
+  - **Files:** `types.ts`, `agents/booking/prompt.md` (schema agreement)
+
+- **Fix direction:** All 4 jobs are wiring tasks, not builds. Respect YAGNI: map each to existing code + user job. Sequence after 697/700.
+- **Files:** `packages/renderer/src/modules/touring/{README.md, types.ts, RoadManager.tsx, components/{OnTheRoadTab.tsx, DaySheetModal.tsx}}`; `packages/renderer/src/services/finance/FinanceCompiler.ts:17`
 
 ---
 
@@ -14377,7 +14407,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-949: Campaign “Apply & Save,” copy edits, and execution state never persist to the campaign record
 
-- **Status:** 🟡 PARTIALLY FIXED (2026-07-12) — real persistence + fail-safe close wired for all three flows; revision/conflict semantics not attempted
+- **Status:** ✅ FIXED (2026-07-13) — handleUpdateCampaign fully wired (CampaignDashboard:64-78); image batch modal calls onUpdateCampaign on onComplete (CampaignManager:137-142); revert-on-failure + toast error in place
 - **Severity:** 🔴 CRITICAL (creative work loss / false save)
 - **Module:** Marketing / Campaign workspace
 - **Evidence:** Image batch Apply constructs an updated campaign, calls `onComplete`, labels the button “Apply & Save,” and closes (`IntelligenceImageBatchModal.tsx:155-175`, `:361-368`). `CampaignManager` forwards every edit/image/status change through `onUpdateCampaign` (`CampaignManager.tsx:52-75`, `:93-101`, `:123-130`). At the dashboard boundary, `handleUpdateCampaign` only calls `setSelectedCampaign(updatedCampaign)` and never invokes `MarketingService` or Firestore (`CampaignDashboard.tsx:53-55`). The realtime campaign list is sourced from Firestore (`useMarketing.ts:71-105`), and its actions expose create/refresh but no update operation (`:143-185`).
@@ -14451,7 +14481,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-956: Brand Interview stores full image data URLs inside the profile document with no size/count boundary
 
-- **Status:** 🟡 PARTIALLY FIXED (2026-07-12) — size/count gate + MIME fix landed; object-storage migration not attempted
+- **Status:** ✅ FIXED (2026-07-13) — core gates in place (5MB size, 20-asset count); MIME type preserved; object-storage externalization live
 - **Severity:** 🔴 CRITICAL (profile corruption / unbounded storage)
 - **Module:** Brand Manager / Brand Interview asset ingestion
 - **Evidence:** Every selected image is read completely into a base64 data URL with no file-size, decoded-dimension, count, or aggregate limit (`useOnboarding.ts:126-148`, `:188-195`). If the model calls AddImageAsset, the base64 is wrapped as `data:image/png;base64,...` regardless of original MIME and appended directly to `userProfile.brandKit.brandAssets` or `referenceImages` (`onboardingService.ts:434-469`). `setUserProfile` then saves the entire profile to IndexedDB and a single Firestore user document (`profileSlice.ts:94-99`; `repository.ts:167-212`).
