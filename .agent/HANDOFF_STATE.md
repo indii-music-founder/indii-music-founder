@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-07-13 13:32 EDT
+**Updated:** 2026-07-13 13:41 EDT
 **Branch:** `claude/inspiring-greider-59ed4a`
 
 ## Recent Commits
 ```
+487213490 chore: session checkpoint [13:32]
 7fe88b1ec fix(store): wrap unstable useStore object-selectors in useShallow (ISSUE-1047)
 1d6b876b7 chore: session checkpoint [12:33]
 52ebe7c23 fix(e2e): replace invented selectors in cross-device-persistence spec with verified real ones (hunter finding)
@@ -13,7 +14,6 @@ d389f9822 docs: add /ci-validate workflow to triage main deploy failures vs the 
 18dfcf74a chore: session checkpoint [18:23]
 078b04609 Merge branch 'fix/issues-core'
 8cccca1fd fix(marketing): distinguish auth/read failures from a real empty Fan CRM (ISSUE-848)
-9d2940fdc Merge branch 'fix/issues-core'
 ```
 
 ## Working State
