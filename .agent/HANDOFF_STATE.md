@@ -1,19 +1,19 @@
 # Handoff State
-**Updated:** 2026-07-13 14:45 EDT
+**Updated:** 2026-07-13 14:59 EDT
 **Branch:** `fix/issues-core`
 
 ## Recent Commits
 ```
+dc4975f87 chore: ISSUE-704/705 progress checkpoint — 2 jobs complete, 4 jobs TODOs documented
+100d6cb52 fix(road-manager): add miles tracking UI card + calculation utilities (ISSUE-705 job 2)
+cc426d298 fix(road-manager): generalize nearby places finder to support gas, hotel, food, rest types (ISSUE-705 job 1)
+b6530533e chore: session checkpoint [14:45]
 7e850923c chore: session checkpoint [14:43]
 6f7bfb6bb chore: session checkpoint [14:04]
 2cc9aeb21 chore: session checkpoint [13:55]
 9881b61dc docs(ledger): mark ISSUE-757 as FIXED with paginated recall + honest messaging complete (2026-07-13)
 db9e296dd fix(memory): implement paginated recall loop with honest search scope messaging (ISSUE-757)
 53a8c6542 chore: session checkpoint [13:05]
-29820185e chore: session checkpoint [12:43]
-8367118c7 fix(ui): add asset count badge + one-shot pulse cue to collapsed creations bar (ISSUE-754)
-c72299f23 chore: session checkpoint [12:20]
-d6cbef411 chore: session checkpoint [12:12]
 ```
 
 ## Working State
