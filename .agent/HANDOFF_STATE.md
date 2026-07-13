@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-07-13 06:57 EDT
+**Updated:** 2026-07-13 07:31 EDT
 **Branch:** `fix/issues-core`
 
 ## Recent Commits
 ```
+e4cb076a9 chore: session checkpoint [06:57]
 426457575 fix(creative): make Direct Generation advanced controls mode-aware (ISSUE-777)
 394a4a013 fix(video): check temporal-inpaint capability before reservation (ISSUE-869)
 c6b89ce32 chore: session checkpoint [19:27]
@@ -13,7 +14,6 @@ c2dd57c9e docs(ledger): stop CI OOM iteration for ISSUE-1046 with a precise diag
 299ca25c6 chore: session checkpoint [19:03]
 23ed993b7 Merge branch 'main' into fix/issues-core
 8b78b47b8 fix(ci): cap CI unit-test worker concurrency to 1 after two memory-tuning attempts failed (ISSUE-1046)
-b10ab4b27 chore: session checkpoint [18:55]
 ```
 
 ## Working State
@@ -55,19 +55,30 @@ b10ab4b27 chore: session checkpoint [18:55]
  M packages/renderer/src/modules/creative/video/OmniWorkflow.tsx
  M packages/renderer/src/modules/creative/video/components/StoryboardTimeline.tsx
  M packages/renderer/src/modules/creative/video/schemas.ts
+ M packages/renderer/src/modules/creative/video/store/videoEditorStore.test.ts
+ M packages/renderer/src/modules/creative/video/store/videoEditorStore.ts
  M packages/renderer/src/modules/creative/video/visualizer/SceneBuilder.test.tsx
  M packages/renderer/src/modules/creative/video/visualizer/SceneBuilder.tsx
  M packages/renderer/src/modules/creative/video/visualizer/sceneBuilderFiles.test.ts
  M packages/renderer/src/modules/creative/video/visualizer/sceneBuilderFiles.ts
+ M packages/renderer/src/modules/marketing/components/EPKGenerator.tsx
+ M packages/renderer/src/modules/merchandise/components/EnhancedShowroom.tsx
+ M packages/renderer/src/modules/merchandise/components/InventoryTracker.tsx
+ M packages/renderer/src/modules/merchandise/hooks/useCanvasHistory.ts
  M packages/renderer/src/modules/mobile-remote/components/QuickCaptureView.test.tsx
  M packages/renderer/src/modules/mobile-remote/components/QuickCaptureView.tsx
  M packages/renderer/src/modules/onboarding/OnboardingModal.tsx
  M packages/renderer/src/modules/onboarding/hooks/useOnboarding.ts
+ M packages/renderer/src/modules/publicist/components/ReleaseKitModal.tsx
  M packages/renderer/src/modules/publishing/hooks/useDDEXRelease.test.ts
  M packages/renderer/src/modules/publishing/hooks/useDDEXRelease.ts
  M packages/renderer/src/modules/screenwriter/ScreenwriterDashboard.tsx
  M packages/renderer/src/modules/settings/settings-panel/RemoteSection.tsx
+ M packages/renderer/src/modules/social/SocialDashboard.tsx
  M packages/renderer/src/modules/social/components/AccountCreationWizard.tsx
+ M packages/renderer/src/modules/social/components/CreatePostModal.tsx
+ M packages/renderer/src/modules/social/hooks/useSocial.ts
+ M packages/renderer/src/modules/social/tools.ts
  M packages/renderer/src/modules/tools/AudioAnalyzer.tsx
  M packages/renderer/src/services/WhiskService.test.ts
  M packages/renderer/src/services/WhiskService.ts
@@ -90,10 +101,13 @@ b10ab4b27 chore: session checkpoint [18:55]
  M packages/renderer/src/services/audio/DSPComplianceValidator.ts
  M packages/renderer/src/services/billing/CostControlService.test.ts
  M packages/renderer/src/services/billing/CostControlService.ts
+ M packages/renderer/src/services/creative/ShowroomService.ts
  M packages/renderer/src/services/image/ImageGenerationService.ts
  M packages/renderer/src/services/image/__tests__/ImageGenerationService.test.ts
+ M packages/renderer/src/services/merchandise/MerchandiseService.ts
  M packages/renderer/src/services/onboarding/onboardingService.test.ts
  M packages/renderer/src/services/onboarding/onboardingService.ts
+ M packages/renderer/src/services/publicist/PublicistService.ts
  M packages/renderer/src/services/publishing/ISWCService.ts
  M packages/renderer/src/services/video/VideoGenerationService.schema.test.ts
  M packages/renderer/src/services/video/VideoGenerationService.ts
