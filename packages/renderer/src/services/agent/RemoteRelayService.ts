@@ -83,6 +83,27 @@ export interface RemoteResponse {
     rating?: number;
 }
 
+/** One transport-neutral response contract. Optional keys are omitted, never undefined. */
+export function serializeRemoteResponse(input: {
+    commandId: string;
+    text: string;
+    agentId?: string;
+    isStreaming?: boolean;
+    imageUrls?: string[];
+    boardroomMessageId?: string;
+}): Omit<RemoteResponse, 'timestamp'> {
+    const isStreaming = input.isStreaming === true;
+    return {
+        commandId: input.commandId,
+        text: input.text,
+        isStreaming,
+        isFinal: !isStreaming,
+        ...(input.agentId ? { agentId: input.agentId } : {}),
+        ...(input.imageUrls?.length ? { imageUrls: input.imageUrls } : {}),
+        ...(input.boardroomMessageId ? { boardroomMessageId: input.boardroomMessageId } : {}),
+    };
+}
+
 export interface DesktopState {
     currentModule: string;
     isAgentProcessing: boolean;
@@ -95,6 +116,7 @@ export interface DesktopState {
     studioInstanceId?: string;
     /** The Studio has mounted its queue consumer and may safely accept work. */
     listenerReady?: boolean;
+    executorDeviceId?: string;
     /**
      * True when the desktop is in sleep mode (window hidden to tray, still
      * listening to the relay queue). Lets the phone show Sleeping vs Active vs
@@ -147,6 +169,8 @@ export interface AgentDispatchTask {
         noteText?: string;
         lat?: number;
         lng?: number;
+        accuracyMeters?: number;
+        capturedAt?: string;
     };
     status: 'pending' | 'processing' | 'completed' | 'failed';
     executorId?: string;
@@ -726,11 +750,8 @@ class RemoteRelayService {
      */
     async markCommandCompleted(commandId: string): Promise<void> {
         if (commandId.startsWith('p2p-')) return;
-        const uid = getUserId();
-        if (!uid) return;
-        await updateDoc(doc(db, 'users', uid, 'remote-relay-commands', commandId), {
-            status: 'completed',
-        });
+        const { studioExecutorLeaseService } = await import('./StudioExecutorLeaseService');
+        await studioExecutorLeaseService.completeCommand(commandId);
     }
 
     /**
@@ -896,11 +917,7 @@ class RemoteRelayService {
         imageUrls?: string[],
         boardroomMessageId?: string
     ): Promise<void> {
-        // ISSUE-981: isFinal must be computed once and present on BOTH
-        // transports — GenerationMonitor gates completion on
-        // `response.isFinal && response.text`, so a P2P payload missing it
-        // can never be treated as terminal.
-        const isFinal = !isStreaming;
+        const response = serializeRemoteResponse({ commandId, text, agentId, isStreaming, imageUrls, boardroomMessageId });
 
         // P2P Local WebSocket broadcast fallback
         const api = window.electronAPI;
@@ -908,42 +925,19 @@ class RemoteRelayService {
             api.remote.broadcast({
                 type: 'response',
                 response: {
-                    commandId,
-                    text,
-                    agentId,
-                    isStreaming,
-                    isFinal,
-                    imageUrls,
-                    boardroomMessageId,
+                    ...response,
                     timestamp: Date.now()
                 }
             });
         }
 
-        const ref = getResponsesRef();
-        if (!ref) return;
+        if (commandId.startsWith('p2p-')) return;
 
         // Firestore rejects undefined values (no ignoreUndefinedProperties) —
         // every optional field must be added conditionally, never spread in
         // unconditionally like boardroomMessageId previously was.
-        const response: Record<string, unknown> = {
-            commandId,
-            text,
-            timestamp: serverTimestamp(),
-            isStreaming,
-            isFinal,
-        };
-        if (agentId !== undefined) {
-            response.agentId = agentId;
-        }
-        if (imageUrls && imageUrls.length > 0) {
-            response.imageUrls = imageUrls;
-        }
-        if (boardroomMessageId !== undefined) {
-            response.boardroomMessageId = boardroomMessageId;
-        }
-
-        await addDoc(ref, response);
+        const { studioExecutorLeaseService } = await import('./StudioExecutorLeaseService');
+        await studioExecutorLeaseService.publishResponse(response);
         logger.info(`[RemoteRelay] 🖥️ Response sent for command ${commandId} (${text.length} chars, ${imageUrls?.length || 0} images)`);
     }
 
@@ -962,14 +956,8 @@ class RemoteRelayService {
         }
 
         if (isFirebaseE2EMockEnabled()) return;
-        
-        const ref = getRelayRef();
-        if (!ref) return;
-
-        await setDoc(ref, {
-            ...state,
-            timestamp: serverTimestamp(),
-        }, { merge: true });
+        const { studioExecutorLeaseService } = await import('./StudioExecutorLeaseService');
+        await studioExecutorLeaseService.publishPresence(state);
     }
 
     /**
@@ -979,20 +967,8 @@ class RemoteRelayService {
      */
     async releaseStudioPresence(studioInstanceId: string): Promise<void> {
         if (isFirebaseE2EMockEnabled()) return;
-        const ref = getRelayRef();
-        if (!ref) return;
-
-        await runTransaction(db, async (tx) => {
-            const snapshot = await tx.get(ref);
-            if (!snapshot.exists() || snapshot.data()?.studioInstanceId !== studioInstanceId) {
-                return;
-            }
-            tx.update(ref, {
-                online: false,
-                listenerReady: false,
-                timestamp: serverTimestamp(),
-            });
-        });
+        const { studioExecutorLeaseService } = await import('./StudioExecutorLeaseService');
+        await studioExecutorLeaseService.releasePresence(studioInstanceId);
     }
 
     // -----------------------------------------------------------------------

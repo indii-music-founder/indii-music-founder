@@ -210,6 +210,14 @@ export interface ElectronWindowAPI {
     hide: () => Promise<void>;
 }
 
+export interface ApprovedAssetMetadata {
+    name: string;
+    relativePath: string;
+    extension: string;
+    sizeBytes: number;
+    modifiedAt: number;
+}
+
 // ── Root ElectronAPI Interface ─────────────────────────────────────────────
 
 export interface ElectronAPI {
@@ -218,8 +226,9 @@ export interface ElectronAPI {
     getAppVersion: () => Promise<string>;
     setPrivacyMode: (enabled: boolean) => Promise<void>;
     selectFile: (options?: unknown) => Promise<unknown>;
-    selectDirectory: (options?: unknown) => Promise<unknown>;
+    selectDirectory: (options?: { title?: string }) => Promise<string | null>;
     getDirectoryContents: (dirPath: string, options?: { recursive?: boolean; extensions?: string[] }) => Promise<unknown>;
+    searchApprovedAssets: (dirPath: string, options?: { query?: string; extensions?: string[]; maxResults?: number }) => Promise<ApprovedAssetMetadata[]>;
     getGpuInfo: () => Promise<unknown>;
     showNotification: (title: string, body: string) => void;
 

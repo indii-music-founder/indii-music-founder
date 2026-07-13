@@ -174,8 +174,9 @@ export const useCanvasHistory = (
     canvas.on('object:removed', handleUpdate);
     canvas.on('path:created', handleUpdate);
 
-    // Initial state save - handled by object:added or manual trigger if needed
-    // Removed synchronous saveState() from here to prevent cascading renders
+    // Establish a baseline before any user mutation. Without it the first
+    // object-added event becomes history index 0 and Undo has nowhere to go.
+    const baselineTimer = setTimeout(saveState, 0);
 
     return () => {
       canvas.off('object:modified', handleUpdate);
@@ -186,8 +187,9 @@ export const useCanvasHistory = (
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
+      clearTimeout(baselineTimer);
     };
-  }, [canvas, debouncedSaveState, saveState, history.states.length]);
+  }, [canvas, debouncedSaveState, saveState]);
 
   // Keyboard shortcuts via Orchestrator
   useGlobalShortcut({

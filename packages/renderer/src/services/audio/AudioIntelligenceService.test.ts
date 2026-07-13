@@ -113,6 +113,7 @@ describe('AudioIntelligenceService (ISSUE-962)', () => {
         Object.defineProperty(oversized, 'size', { value: MAX_BROWSER_ANALYSIS_BYTES + 1 });
 
         await expect(service.analyze(oversized)).rejects.toThrow(/too large for browser-based deep analysis/);
+        expect(mockAudioAnalyze).not.toHaveBeenCalled();
 
         expect(mockGenerateStructuredData).not.toHaveBeenCalled();
         expect(mockMapEmotionalArcWithProxy).not.toHaveBeenCalled();

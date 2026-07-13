@@ -76,16 +76,15 @@ export class PublicistService {
         );
 
         return onSnapshot(q, (snapshot) => {
-            const campaigns = snapshot.docs.map(doc => {
+            const campaigns = snapshot.docs.flatMap(doc => {
                 const data = doc.data();
                 // Safe parsing with fallback to ensure UI doesn't crash on schema mismatches
                 const parsed = CampaignSchema.safeParse({ id: doc.id, ...data });
                 if (parsed.success) {
-                    return { ...parsed.data, id: doc.id } as Campaign;
+                    return [{ ...parsed.data, id: doc.id } as Campaign];
                 }
                 logger.warn(`[PublicistService] Invalid campaign ${doc.id}:`, parsed.error);
-                // Return data casted to Campaign as fallback, ensuring budget exists
-                return { ...data, id: doc.id, budget: data.budget || 0 } as Campaign;
+                return [];
             });
             callback(campaigns);
         }, (error) => {
@@ -106,14 +105,14 @@ export class PublicistService {
         );
 
         return onSnapshot(q, (snapshot) => {
-            const contacts = snapshot.docs.map(doc => {
+            const contacts = snapshot.docs.flatMap(doc => {
                 const data = doc.data();
                 const parsed = ContactSchema.safeParse({ id: doc.id, ...data });
                 if (parsed.success) {
-                    return { ...parsed.data, id: doc.id } as Contact;
+                    return [{ ...parsed.data, id: doc.id } as Contact];
                 }
                 logger.warn(`[PublicistService] Invalid contact ${doc.id}:`, parsed.error);
-                return { ...data, id: doc.id } as Contact;
+                return [];
             });
             callback(contacts);
         }, (error) => {
@@ -179,35 +178,14 @@ export class PublicistService {
         const totalOpenRate = campaigns.reduce((acc, c) => acc + (c.openRate || 0), 0);
         const avgOpenRateVal = campaigns.length > 0 ? Math.round(totalOpenRate / campaigns.length) : 0;
 
-        // 2. Estimate Global Reach based on Contacts Tier
-        // Using standardized tier values
-        const TierValues = { 'Top': 500000, 'Mid': 50000, 'Blog': 5000 };
-        const reach = contacts.reduce((acc, c) => {
-            return acc + (TierValues[c.tier] || 5000);
-        }, 0);
-
-        // Format reach (e.g. 1.2M, 850k)
-        const formatReach = (n: number) => {
-            if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
-            if (n >= 1000) return `${(n / 1000).toFixed(0)}k`;
-            return n.toString();
-        };
-
-        // 3. Calculate Placement Value
-        // Prioritize explicit budget if set, otherwise use estimation for legacy/empty data
-        const totalBudget = campaigns.reduce((acc, c) => acc + (c.budget || 0), 0);
-
-        let value = totalBudget;
-        // Fallback for empty budget on live campaigns (Legacy support)
-        if (value === 0) {
-            const liveCampaigns = campaigns.filter(c => c.status === 'Live').length;
-            value = liveCampaigns * 15000; // Legacy estimation fallback
-        }
+        // Contacts and campaign status contain no verified audience impression,
+        // outlet circulation, or placement valuation receipt. Never turn tiers or
+        // budgets into performance claims.
 
         return {
-            globalReach: formatReach(reach),
+            globalReach: 'Not available',
             avgOpenRate: `${avgOpenRateVal}%`,
-            placementValue: `$${(value / 1000).toFixed(0)}k`
+            placementValue: 'Not available'
         };
     }
 }

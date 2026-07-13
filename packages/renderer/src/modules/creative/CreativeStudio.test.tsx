@@ -221,6 +221,10 @@ describe('CreativeStudio', () => {
 
         beforeEach(() => {
             vi.stubGlobal('Image', MockImage as unknown as typeof Image);
+            vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+                ok: true,
+                blob: async () => new Blob(['cover-art-bytes'], { type: 'image/png' }),
+            }));
         });
 
         afterEach(() => {
@@ -248,7 +252,14 @@ describe('CreativeStudio', () => {
 
             await waitFor(() => {
                 expect(mockAddToHistory).toHaveBeenCalledWith(expect.objectContaining({
-                    distributorCompliance: expect.objectContaining({ valid: true, measuredWidth: 3000, measuredHeight: 3000 })
+                    distributorCompliance: expect.objectContaining({
+                        valid: true,
+                        measuredWidth: 3000,
+                        measuredHeight: 3000,
+                        mimeType: 'image/png',
+                        sizeBytes: 15,
+                        sha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+                    })
                 }));
             });
             expect(mockToastSuccess).toHaveBeenCalledWith(expect.stringContaining('meets distributor size requirements'));
@@ -279,6 +290,39 @@ describe('CreativeStudio', () => {
                 }));
             });
             expect(mockToastError).toHaveBeenCalledWith(expect.stringContaining('does not meet distributor requirements'));
+            expect(mockToastSuccess).not.toHaveBeenCalledWith(expect.stringContaining('meets distributor'));
+        });
+
+        it('fails closed when the generated file cannot be measured', async () => {
+            class BrokenImage {
+                onload: (() => void) | null = null;
+                onerror: (() => void) | null = null;
+                set src(_value: string) { queueMicrotask(() => this.onerror?.()); }
+            }
+            vi.stubGlobal('Image', BrokenImage as unknown as typeof Image);
+
+            const currentStore = (useStore as any).getState();
+            const updatedStore = {
+                ...currentStore,
+                pendingPrompt: 'cover art prompt',
+                generationMode: 'image',
+                userProfile: { id: 'u1', brandKit: {} },
+                studioControls: { ...currentStore.studioControls, isCoverArtMode: true }
+            };
+            (useStore as unknown as import("vitest").Mock).mockImplementation((selector: any) =>
+                selector ? selector(updatedStore) : updatedStore
+            );
+            (useStore as any).getState.mockReturnValue(updatedStore);
+            mockGenerateImages.mockResolvedValue([{ id: 'img-1', url: 'unreadable-image', prompt: 'cover art prompt' }]);
+
+            render(<CreativeStudio />);
+
+            await waitFor(() => {
+                expect(mockAddToHistory).toHaveBeenCalledWith(expect.objectContaining({
+                    distributorCompliance: expect.objectContaining({ valid: false, measuredWidth: 0, measuredHeight: 0 })
+                }));
+            });
+            expect(mockToastError).toHaveBeenCalledWith(expect.stringContaining('Could not verify'));
             expect(mockToastSuccess).not.toHaveBeenCalledWith(expect.stringContaining('meets distributor'));
         });
     });

@@ -77,6 +77,23 @@ export const SUPERPOWER_TOOLS: FunctionDeclaration[] = [
         }
     },
     {
+        name: 'approve_local_asset_folder',
+        description: 'Open a Studio folder picker so the creator can explicitly approve one local folder for agent asset discovery. Never assume access to a folder.',
+        parameters: { type: 'OBJECT', properties: {} }
+    },
+    {
+        name: 'browse_local_files',
+        description: 'Search metadata from folders the creator previously approved in the open Studio app. Returns names and relative paths only; never file contents or absolute paths.',
+        parameters: {
+            type: 'OBJECT',
+            properties: {
+                query: { type: 'STRING', description: 'Words to match in asset names, such as "font logo".' },
+                extensions: { type: 'ARRAY', items: { type: 'STRING' }, description: 'Optional extensions, without a dot (for example png, svg, ttf).' }
+            },
+            required: ['query']
+        }
+    },
+    {
         name: 'delegate_task',
         description: `Delegate a sub-task to another specialized agent. ONLY use valid agent IDs from this list: ${VALID_AGENT_IDS_LIST}. Using any other ID will fail.`,
         parameters: {
@@ -108,6 +125,18 @@ export const SUPERPOWER_TOOLS: FunctionDeclaration[] = [
                 }
             },
             required: ['consultations']
+        }
+    },
+    {
+        name: 'share_note',
+        description: `Share factual context with another manager or your own manager. This never assigns work. Valid IDs: ${VALID_AGENT_IDS_LIST}`,
+        parameters: {
+            type: 'OBJECT',
+            properties: {
+                targetAgentId: { type: 'STRING', description: `Receiving agent. MUST be one of: ${VALID_AGENT_IDS_LIST}` },
+                content: { type: 'STRING', description: 'A concise factual note, decision, or context update. Do not phrase as an instruction.' }
+            },
+            required: ['targetAgentId', 'content']
         }
     },
     {

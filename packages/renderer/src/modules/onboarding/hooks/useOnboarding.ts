@@ -5,6 +5,7 @@ import { useShallow } from 'zustand/react/shallow';
 import {
     runOnboardingConversation,
     processFunctionCalls,
+    externalizeOnboardingBrandAssets,
     calculateProfileStatus,
     generateNaturalFallback,
     generateEmptyResponseFallback,
@@ -306,18 +307,20 @@ export function useOnboarding(options: UseOnboardingOptions = {}) {
 
             if (functionCalls && functionCalls.length > 0) {
                 const { updatedProfile, isFinished, updates, warnings } = processFunctionCalls(functionCalls, userProfile, currentFiles);
-                setUserProfile(updatedProfile);
+                const externalized = await externalizeOnboardingBrandAssets(updatedProfile, currentFiles);
+                const persistedProfile = externalized.profile;
+                setUserProfile(persistedProfile);
 
-                warnings.forEach(warning => showToast(warning, 'error'));
+                [...warnings, ...externalized.warnings].forEach(warning => showToast(warning, 'error'));
 
-                if (updatedProfile.careerProfile && updatedProfile.careerProfile !== userProfile.careerProfile) {
+                if (persistedProfile.careerProfile && persistedProfile.careerProfile !== userProfile.careerProfile) {
                     const seatingMap: Record<string, string[]> = {
                         dj: ['generalist', 'marketing', 'social', 'creative'],
                         sync_producer: ['generalist', 'legal', 'licensing', 'publishing'],
                         touring_band: ['generalist', 'road', 'marketing', 'merchandise', 'finance'],
                         label_manager: ['generalist', 'legal', 'finance', 'distribution', 'publishing']
                     };
-                    const agentsToSeat = seatingMap[updatedProfile.careerProfile] || ['generalist'];
+                    const agentsToSeat = seatingMap[persistedProfile.careerProfile] || ['generalist'];
                     agentsToSeat.forEach(agentId => addActiveAgent(agentId));
                 }
 

@@ -15381,16 +15381,29 @@ Naming fix: `LabelDealRecoupmentService.ts` collection literal `'labelDeals'` �
 
 ### ISSUE-1043: GitHub Release Missing Updater Manifest Files
 
-- **Status:** 🔴 OPEN (blocks Founders Version One installation)
+- **Status:** 🔴 OPEN (blocks Founders Version One installation; blocked on ISSUE-992 founder signing secrets)
 - **Severity:** 🔴 CRITICAL (installers cannot check for updates)
-- **Error Message:** "Founders Version One cannot be installed yet because the latest GitHub release is missing its updater manifest. Publish a repaired release with latest-mac.yml, latest.yml, and latest-linux.yml, then check again."
-- **Root Cause:** Last GitHub release was published manually or by workflow failure — missing `latest-mac.yml`, `latest.yml`, `latest-linux.yml` in release assets
-- **Location:** GitHub repo releases tab; `.github/workflows/release.yml` verification gate (lines 184-217)
-- **Fix:**
-  1. Rebuild desktop installers locally: `npm run build:studio && npx electron-builder --publish never`
-  2. Upload manifest files to existing GitHub release: `gh release upload vX.X.X dist-electron/latest-*.yml --clobber`
-  3. Or: delete existing release tag, push new tag to trigger full `release.yml` workflow (recommended for consistency)
-- **Verification:** After fix, installer updater should recognize release and allow installation; no "missing manifest" error
+- **Error Message:** "Founders Version One cannot be installed yet because the latest GitHub release is missing its updater manifest. Publish a repaired release with latest-mac.yml, latest.yml, and latest-linux.yml, then check again." (produced by `packages/main/src/updater.ts:49` when electron-updater 404s on a manifest)
+- **Root Cause (investigated 2026-07-13, supersedes the original guess of "published manually or by workflow failure"):** This error is the direct, predictable consequence of the ISSUE-992 mitigation plus an empty fallback release. Chain of events, all verified against the live GitHub Releases API:
+  1. `v1.64.5` and `v1.64.6` were built and published by `release.yml` with ALL required assets — including `latest-mac.yml`, `latest.yml`, `latest-linux.yml` (verified via `gh release view`: 10 assets each). The manifests are NOT missing from those releases.
+  2. On 2026-07-10 both were deliberately flipped to **Pre-release** as the ISSUE-992 incident pull (their macOS builds are ad-hoc signed; ShipIt refuses them). That mitigation is correct and must NOT be reverted.
+  3. The stable updater channel (`updater.ts` → `allowPrerelease: false`, `releaseType: 'release'`) therefore skips both and resolves "latest" = `v1.50.0` (published 2026-05-19, predates the hardened workflow).
+  4. `v1.50.0` has **ZERO assets** (verified: `assets: []`). electron-updater requests `latest-mac.yml` from it, gets 404, and `formatUpdaterErrorMessage()` maps that to this error. Every stable-channel desktop client shows it on every check.
+- **Why it will recur without systemic fixes (write-downs for prevention):**
+  1. **Feed-level blind spot in `release.yml`:** the "Verify updater manifest was published" gate (lines 184-217) only checks assets on the *tag's own release*. It never verifies (a) the release is non-prerelease, or (b) what the stable feed actually resolves as "latest" serves valid manifests. A green release run can still leave every installed client broken — exactly the current state. Fix: add a post-publish feed check that fetches `https://github.com/indii-music-founder/indii-music-founder/releases/latest/download/latest-mac.yml` (and `latest.yml`, `latest-linux.yml`), asserts HTTP 200, and asserts the manifest `version:` matches the tag being released.
+  2. **No empty-release guard:** nothing detects a "latest" release with zero assets (the `v1.50.0` state). Once a repaired release exists, delete `v1.50.0` or backfill it; add an assets-not-empty check on the resolved latest release to `/plat` or a scheduled CI check.
+  3. **Incident-pull runbook gap:** flipping a bad release to prerelease changes which release the feed resolves — the 2026-07-10 pull correctly stopped serving broken installers but silently converted the failure mode from "update fails to install" to "cannot check for updates at all," because nobody verified the resulting fallback. Add to `docs/RELEASE_CHECKLIST.md`: after any prerelease flip/deletion, curl the three `releases/latest/download/latest*.yml` URLs and confirm 200 + a signed, verified version.
+  4. **Error swallowing + race in publish step:** `release.yml:172` runs `gh release create ... 2>/dev/null || true` across 3 concurrent matrix runners. This hides ALL failures (auth, permissions), not just "already exists." Make idempotency explicit (`gh release view || gh release create`) and stop discarding stderr.
+  5. **Publisher-facing copy shown to end users:** `updater.ts:49` tells the *user* to "Publish a repaired release with latest-mac.yml…" — that instruction is for the maintainer, not the artist. Replace with user-appropriate copy ("Updates are temporarily unavailable; your current version keeps working") while logging the technical detail.
+  6. **Vestigial Release Please workflow:** `.github/workflows/release-please.yml` runs have all been cancelled at the 24h timeout since May and it plays no role in the current tag flow — either fix or remove it to avoid future confusion about what creates releases.
+- **Fix (sequenced — the ONLY safe repair path):**
+  1. **Founder prerequisite (ISSUE-992):** add the 5 Apple signing/notarization secrets to GitHub Actions. `release.yml` now fails closed on macOS without them, so no repaired release can ship at all until this is done.
+  2. Cut a new tag (`v1.64.7`+) so `release.yml` builds, signature-verifies, and publishes a **non-prerelease** release with all installers + all three manifests.
+  3. Confirm the stable feed resolves to it (curl the three `releases/latest/download/latest*.yml` URLs → 200, correct version), then delete or backfill the empty `v1.50.0`.
+  4. Implement prevention items 1-5 above in `release.yml`, `updater.ts`, and `docs/RELEASE_CHECKLIST.md`.
+- **DO NOT:** Do not upload manifests to `v1.50.0` — its manifests would reference installer assets that don't exist there (or unverified ones), pointing every client at a dead or untrusted download. Do not rebuild locally and upload unsigned artifacts — that recreates ISSUE-992. Do not un-prerelease `v1.64.5`/`v1.64.6` — they are confirmed ad-hoc signed and ShipIt rejects them.
+- **Verification:** A stable-channel desktop client (source: github, channel: stable) completes `checkForUpdates()` with no error; `releases/latest/download/latest-mac.yml` returns 200 with the new version; new release is non-prerelease with ≥10 assets including all three manifests.
+- **Related:** ISSUE-992 (root incident — ad-hoc signed macOS builds; its mitigation created this state)
 
 ---
 

@@ -30,5 +30,8 @@ export interface HistoryItem {
         warnings: string[];
         measuredWidth: number;
         measuredHeight: number;
+        mimeType?: string;
+        sizeBytes?: number;
+        sha256?: string;
     };
 }

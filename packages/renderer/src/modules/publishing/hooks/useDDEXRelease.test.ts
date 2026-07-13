@@ -51,6 +51,14 @@ const VALID_AUDIO_FILE = {
     bitDepth: 24,
 };
 
+const VALID_COVER_ART = {
+    url: 'https://example.com/cover.png',
+    mimeType: 'image/png',
+    sizeBytes: 2_000_000,
+    width: 3000,
+    height: 3000,
+};
+
 /**
  * ISSUE-964: submission previously marked the release metadata_complete
  * BEFORE packaging ran, then swallowed any packaging error entirely — a
@@ -67,7 +75,7 @@ describe('useDDEXRelease.submitRelease (ISSUE-964)', () => {
     it('only marks metadata_complete after packaging actually succeeds', async () => {
         mockRunAgent.mockResolvedValue({ text: 'Packaged successfully' });
         const { result } = renderHook(() => useDDEXRelease());
-        act(() => { result.current.updateAssets({ audioFile: VALID_AUDIO_FILE }); });
+        act(() => { result.current.updateAssets({ audioFile: VALID_AUDIO_FILE, coverArt: VALID_COVER_ART }); });
 
         let returnedId = '';
         await act(async () => {
@@ -84,7 +92,7 @@ describe('useDDEXRelease.submitRelease (ISSUE-964)', () => {
     it('marks packaging_failed with the real error instead of silently advancing to complete', async () => {
         mockRunAgent.mockRejectedValue(new Error('Publishing agent unavailable'));
         const { result } = renderHook(() => useDDEXRelease());
-        act(() => { result.current.updateAssets({ audioFile: VALID_AUDIO_FILE }); });
+        act(() => { result.current.updateAssets({ audioFile: VALID_AUDIO_FILE, coverArt: VALID_COVER_ART }); });
 
         await act(async () => {
             await expect(result.current.submitRelease()).rejects.toThrow(/Packaging failed/);
@@ -107,7 +115,7 @@ describe('useDDEXRelease.submitRelease (ISSUE-964)', () => {
             .mockResolvedValueOnce({ text: 'Packaged successfully' });
 
         const { result } = renderHook(() => useDDEXRelease());
-        act(() => { result.current.updateAssets({ audioFile: VALID_AUDIO_FILE }); });
+        act(() => { result.current.updateAssets({ audioFile: VALID_AUDIO_FILE, coverArt: VALID_COVER_ART }); });
 
         await act(async () => {
             await expect(result.current.submitRelease()).rejects.toThrow();
@@ -124,6 +132,22 @@ describe('useDDEXRelease.submitRelease (ISSUE-964)', () => {
         expect(mockAddDoc).toHaveBeenCalledTimes(1);
         expect(retryId).toBe('release-1');
         expect(result.current.currentStep).toBe('complete');
+    });
+
+    it('rejects an undersized cover before creating a packaging draft', async () => {
+        const { result } = renderHook(() => useDDEXRelease());
+        act(() => {
+            result.current.updateAssets({
+                audioFile: VALID_AUDIO_FILE,
+                coverArt: { ...VALID_COVER_ART, width: 512, height: 512 },
+            });
+        });
+
+        await act(async () => {
+            await expect(result.current.submitRelease()).rejects.toThrow(/Cover art: Image too small/);
+        });
+        expect(mockAddDoc).not.toHaveBeenCalled();
+        expect(mockRunAgent).not.toHaveBeenCalled();
     });
 });
 
