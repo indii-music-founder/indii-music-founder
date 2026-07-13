@@ -92,17 +92,16 @@ jobs:
   # test failure). Two prior attempts (widening 8->10 shards, then raising the
   # heap ceiling 4096->5120MB) both confirmed live via workflow_dispatch and
   # both only partially helped — the OOM kept moving to different shards.
-  # root-cause: vitest.config.ts sets maxWorkers: 2 + isolate: true, so up to
-  # 2 fully-isolated test-file contexts run concurrently within a single
-  # shard's process — that concurrency, not just the heap ceiling, is what's
-  # driving peak memory. Capped to 1 worker for the CI command only (left
-  # vitest.config.ts's maxWorkers: 2 untouched for local dev speed).
+  # root-cause: isolated test-file contexts accumulate in a long-lived Vitest
+  # worker. Capping concurrency to one worker was insufficient at roughly 75
+  # files per shard, so use 20 shards to keep each worker near 38 files while
+  # preserving full test coverage and normal failure handling.
   unit-tests:
     runs-on: ubuntu-latest
     needs: setup
     strategy:
       matrix:
-        shard: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        shard: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
@@ -125,9 +124,9 @@ jobs:
         with:
           credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
 
-      - name: Run unit tests (shard ${{ matrix.shard }}/10)
+      - name: Run unit tests (shard ${{ matrix.shard }}/20)
         timeout-minutes: 15
-        run: NODE_OPTIONS="--max-old-space-size=5120" npm test -- --run --reporter=verbose --testTimeout=30000 --bail=3 --shard=${{ matrix.shard }}/10 --maxWorkers=1
+        run: NODE_OPTIONS="--max-old-space-size=5120" npm test -- --run --reporter=verbose --testTimeout=30000 --bail=3 --shard=${{ matrix.shard }}/20 --maxWorkers=1
         env:
           VITE_VERTEX_PROJECT_ID: ${{ secrets.VITE_VERTEX_PROJECT_ID }}
           VITE_VERTEX_LOCATION: ${{ secrets.VITE_VERTEX_LOCATION }}
