@@ -31,9 +31,10 @@ import { setupE2EPage } from './fixtures/auth';
  *                          discovered live; the original assumption that MobileTabBar
  *                          renders on phone under this harness was WRONG (App.tsx redirects
  *                          before it would mount at all).
- *   - NotesModule.tsx      opening this module throws "Maximum update depth exceeded" on
- *                          mount (unstable useStore selector, no useShallow) — discovered
- *                          live, logged as ISSUE-1047, asserted via test.fail() below.
+ *   - NotesModule.tsx      opening this module used to throw "Maximum update depth exceeded"
+ *                          on mount (unstable useStore selector, no useShallow) — discovered
+ *                          live, logged and fixed as ISSUE-1047 (NotesModule.tsx now wraps
+ *                          its selector in useShallow), re-verified passing below.
  *   - ConversationHistoryList.tsx:406  exact button text "Load More Sessions"
  *   - notesSlice.ts / agentSessionSlice.ts  real store actions (addNote, createSession, window.useStore)
  *
@@ -106,32 +107,36 @@ test.describe('Cross-Device Persistence (ISSUE-755/756/757/761)', () => {
   // ─────────────────────────────────────────────────────────────────────────
 
   test.describe('ISSUE-761: Notes', () => {
-    test('opening Notes and creating a note — KNOWN GAP: NotesModule crashes on mount (new, ISSUE-1047)', async () => {
-      // Discovered live while writing this suite (not a pre-existing ledger entry):
-      // opening the Notes module throws "Maximum update depth exceeded" almost
-      // immediately, with React separately warning "The result of getSnapshot should
-      // be cached to avoid an infinite loop" at NotesModule.tsx:7 — NotesModule's
-      // `useStore(state => ({ notes: state.notes, ... }))` selector returns a brand
-      // new object every render instead of using `useShallow` (the pattern this repo's
-      // own CLAUDE.md documents as required — "Use useShallow ... to prevent
-      // unnecessary re-renders"). ModuleErrorBoundary (ModuleErrorBoundary.tsx:58-88)
-      // catches it and settles into its static "Something went wrong" fallback — so
-      // Notes never reaches its real title input. Logged to
-      // .agent/test_ledger/OPEN_ISSUES.md as ISSUE-1047 for a dedicated fix; out of
-      // scope for this pass (fixing invented e2e selectors, not app source). Marked
-      // failing so this flips green the moment NotesModule.tsx is fixed, instead of
-      // silently asserting past a real, reproducible crash. Short explicit timeouts
-      // below make the failure quick rather than hanging to the full test timeout —
-      // test.fail() expects a clean rejected assertion, not a hard test-level
-      // timeout — and the try/finally guarantees tabletPage is navigated back to a
-      // stable module afterward so later tests don't inherit the crashed Notes tree.
-      test.fail(true, 'ISSUE-1047: NotesModule.tsx crashes with "Maximum update depth exceeded" on mount');
-
+    test('opening Notes and creating a note updates the tablet\'s own notes list (ISSUE-1047 fixed)', async () => {
+      // NotesModule.tsx:7 used to call useStore(state => ({...})) with a plain
+      // object-literal selector — no useShallow — which handed useSyncExternalStore
+      // a brand-new object every render ("getSnapshot should be cached" warning) and
+      // escalated to "Maximum update depth exceeded", crashing the module on mount
+      // (caught previously by this exact test; logged as ISSUE-1047). Fixed by
+      // wrapping the selector in useShallow, matching the pattern this repo's own
+      // CLAUDE.md documents and every other slice-consuming module already follows
+      // (ConversationHistoryList.tsx, BoardroomModule.tsx, RightPanel.tsx).
       try {
         await tabletPage.getByTestId('nav-item-notes').click();
+
+        // NotesModule.tsx has no data-testid on the "new note" button (icon-only, no
+        // accessible name) — select it structurally via its real sibling relationship
+        // to the "Notes" heading (NotesModule.tsx:56-63), not an invented testid.
         const notesHeader = tabletPage.getByRole('heading', { name: 'Notes' }).locator('..');
-        await notesHeader.getByRole('button').click({ timeout: 5_000 });
-        await expect(tabletPage.getByPlaceholder('Note Title')).toBeVisible({ timeout: 5_000 });
+        await notesHeader.getByRole('button').click();
+
+        // A new note defaults to title "Untitled Note" (NotesModule.tsx:39) and becomes
+        // the active note, exposing the real title input (placeholder="Note Title").
+        const titleInput = tabletPage.getByPlaceholder('Note Title');
+        await expect(titleInput).toBeVisible({ timeout: 5_000 });
+        await titleInput.fill('Tablet Test Note');
+
+        const contentArea = tabletPage.getByPlaceholder('Start typing...');
+        await contentArea.fill('Written from the tablet context.');
+
+        // No Save button exists — NotesModule persists via onChange (updateNote on
+        // every keystroke). The sidebar list reflects the new title with no save step.
+        await expect(tabletPage.getByRole('button', { name: /Tablet Test Note/ })).toBeVisible();
       } finally {
         await tabletPage.getByTestId('return-hq-btn').click({ timeout: 5_000 }).catch(() => {});
       }
