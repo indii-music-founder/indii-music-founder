@@ -10,6 +10,11 @@ export interface MemoryBankResult {
     updated_at?: string;
 }
 
+export interface MemorySearchResponse {
+    results: MemoryBankResult[];
+    hasMore: boolean;
+}
+
 /**
  * MemoryBankService — Bridge to GEAP's managed Memory Bank (Mem0).
  * Handles persistent long-term and episodic memory via vector search.
@@ -51,18 +56,49 @@ class MemoryBankService {
     }
 
     /**
-     * Search memories for a user based on a query.
+     * Search memories for a user based on a query (single page).
+     * @returns { results, hasMore } for pagination support
      */
-    async searchMemories(userId: string, query: string, limit: number = 5): Promise<MemoryBankResult[]> {
+    async searchMemories(userId: string, query: string, limit: number = 100): Promise<MemorySearchResponse> {
         const redactedQuery = this.redactPII(query);
         try {
-            const callable = httpsCallable<{ action: string; query: string; limit: number }, { results: MemoryBankResult[] }>(functions, 'manageSemanticMemory');
+            const callable = httpsCallable<
+                { action: string; query: string; limit: number },
+                { results: MemoryBankResult[]; hasMore: boolean }
+            >(functions, 'manageSemanticMemory');
             const result = await callable({ action: 'search', query: redactedQuery, limit });
-            return result.data.results || [];
+            return { results: result.data.results || [], hasMore: result.data.hasMore ?? false };
         } catch (error) {
             logger.error('[MemoryBank] Failed to search memories via manageSemanticMemory proxy', error);
-            return [];
+            return { results: [], hasMore: false };
         }
+    }
+
+    /**
+     * Paginated memory search — fetches all matching results across pages.
+     * @returns all matching results with honest search scope metrics
+     */
+    async searchMemoriesAllPages(
+        userId: string,
+        query: string,
+        maxPages: number = 10
+    ): Promise<{ results: MemoryBankResult[]; totalPages: number; scopeMessage: string }> {
+        const allResults: MemoryBankResult[] = [];
+        let page = 0;
+        let hasMore = true;
+
+        while (hasMore && page < maxPages) {
+            const response = await this.searchMemories(userId, query, 100);
+            allResults.push(...response.results);
+            hasMore = response.hasMore;
+            page++;
+        }
+
+        const scopeMessage = allResults.length > 0
+            ? `Searched memory across ${page} page(s), found ${allResults.length} matching memory item(s).`
+            : `Searched memory across ${page} page(s), found no matching results.`;
+
+        return { results: allResults, totalPages: page, scopeMessage };
     }
 
     /**
