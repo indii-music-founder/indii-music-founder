@@ -1,24 +1,26 @@
 # Handoff State
-**Updated:** 2026-07-12 18:26 EDT
-**Branch:** `main` (merged from `fix/issues-core`)
+**Updated:** 2026-07-13 12:33 EDT
+**Branch:** `claude/inspiring-greider-59ed4a`
 
 ## Recent Commits
 ```
+52ebe7c23 fix(e2e): replace invented selectors in cross-device-persistence spec with verified real ones (hunter finding)
+f36e1f62b fix(creative): gate first-run guidance on canvas emptiness, not editor-selection (hunter finding)
+9b085a87a fix(e2e): replace invented data-testid selectors with verified real ones (hunter finding)
 d389f9822 docs: add /ci-validate workflow to triage main deploy failures vs the known OOM flake
+18dfcf74a chore: session checkpoint [18:23]
+078b04609 Merge branch 'fix/issues-core'
 8cccca1fd fix(marketing): distinguish auth/read failures from a real empty Fan CRM (ISSUE-848)
+9d2940fdc Merge branch 'fix/issues-core'
 780a12ec0 docs(ledger): log ISSUE-1046 (CI shard 7/8 recurring OOM) and ISSUE-1045 (per-surface icon colors)
 02d53a9d7 fix(publicist): stop claiming PR assets were saved when persistence fails (ISSUE-838)
-2df1eb784 docs(ledger): close detailed ISSUE-758/762 entries (deep-history section)
-a8d03dd7d docs(ledger): mark ISSUE-758/762 fixed — sentinel migration complete
-857525bda fix(project): finish ISSUE-758/762 sentinel unification — migrate scattered literals to DEFAULT_PROJECT_ID
-f08b1078c fix(marketing): stop claiming a campaign brief was saved when persistence fails (ISSUE-835)
-a1b5467e2 fix(agent): stop document_query from silently analyzing an unrelated contract (ISSUE-832)
-c42d52817 fix(legal): return a real tool error for invalid split-sheet percentage totals (ISSUE-829)
 ```
 
 ## Working State
 ```
-clean working tree
+ M packages/shared/dist/schemas/creative.d.ts
+ M packages/shared/dist/schemas/env.schema.d.ts
+ M packages/shared/dist/schemas/workflowState.d.ts
 ```
 
 ## Decisions
