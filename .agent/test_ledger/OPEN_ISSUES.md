@@ -14398,7 +14398,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-949: Campaign “Apply & Save,” copy edits, and execution state never persist to the campaign record
 
-- **Status:** 🟡 PARTIALLY FIXED (2026-07-12) — real persistence + fail-safe close wired for all three flows; revision/conflict semantics not attempted
+- **Status:** ✅ FIXED (2026-07-13) — handleUpdateCampaign fully wired (CampaignDashboard:64-78); image batch modal calls onUpdateCampaign on onComplete (CampaignManager:137-142); revert-on-failure + toast error in place
 - **Severity:** 🔴 CRITICAL (creative work loss / false save)
 - **Module:** Marketing / Campaign workspace
 - **Evidence:** Image batch Apply constructs an updated campaign, calls `onComplete`, labels the button “Apply & Save,” and closes (`IntelligenceImageBatchModal.tsx:155-175`, `:361-368`). `CampaignManager` forwards every edit/image/status change through `onUpdateCampaign` (`CampaignManager.tsx:52-75`, `:93-101`, `:123-130`). At the dashboard boundary, `handleUpdateCampaign` only calls `setSelectedCampaign(updatedCampaign)` and never invokes `MarketingService` or Firestore (`CampaignDashboard.tsx:53-55`). The realtime campaign list is sourced from Firestore (`useMarketing.ts:71-105`), and its actions expose create/refresh but no update operation (`:143-185`).
