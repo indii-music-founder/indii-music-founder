@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-07-13 10:13 EDT
+**Updated:** 2026-07-13 10:16 EDT
 **Branch:** `fix/issues-core`
 
 ## Recent Commits
 ```
+5f3e8a69f chore: session checkpoint [10:13]
 709d1faa3 chore: session checkpoint [07:31]
 e4cb076a9 chore: session checkpoint [06:57]
 426457575 fix(creative): make Direct Generation advanced controls mode-aware (ISSUE-777)
@@ -13,7 +14,6 @@ c2dd57c9e docs(ledger): stop CI OOM iteration for ISSUE-1046 with a precise diag
 8b035f01c fix(finance): stop claiming AI-narrative statement mapping is a completed normalization (ISSUE-856)
 6d6ddaf99 fix(video): reject unsupported aspect ratios instead of silently coercing to 16:9 (ISSUE-870)
 299ca25c6 chore: session checkpoint [19:03]
-23ed993b7 Merge branch 'main' into fix/issues-core
 ```
 
 ## Working State
