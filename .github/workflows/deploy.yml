@@ -92,10 +92,10 @@ jobs:
   # test failure). Two prior attempts (widening 8->10 shards, then raising the
   # heap ceiling 4096->5120MB) both confirmed live via workflow_dispatch and
   # both only partially helped — the OOM kept moving to different shards.
-  # NODE_OPTIONS applies to Vitest's coordinator, but not reliably to its
-  # worker thread. Keep one thread per shard and pass the larger heap directly
-  # to that worker with --execArgv. This is deliberately CI-only; local tests
-  # retain their configured worker behavior.
+  # The thread pool still OOMs after limiting it to one worker: its worker
+  # isolate has a smaller independent heap than the Node process. Use one
+  # forked worker per shard so NODE_OPTIONS applies to the actual test process.
+  # This is deliberately CI-only; local tests retain the faster thread pool.
   unit-tests:
     runs-on: ubuntu-latest
     needs: setup
@@ -126,7 +126,7 @@ jobs:
 
       - name: Run unit tests (shard ${{ matrix.shard }}/10)
         timeout-minutes: 15
-        run: npm test -- --run --reporter=verbose --testTimeout=30000 --bail=3 --shard=${{ matrix.shard }}/10 --pool=threads --maxWorkers=1 --execArgv=--max-old-space-size=5120
+        run: NODE_OPTIONS="--max-old-space-size=5120" npm test -- --run --reporter=verbose --testTimeout=30000 --bail=3 --shard=${{ matrix.shard }}/10 --pool=forks --maxWorkers=1
         env:
           VITE_VERTEX_PROJECT_ID: ${{ secrets.VITE_VERTEX_PROJECT_ID }}
           VITE_VERTEX_LOCATION: ${{ secrets.VITE_VERTEX_LOCATION }}
