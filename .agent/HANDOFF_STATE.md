@@ -1,9 +1,12 @@
 # Handoff State
-**Updated:** 2026-07-13 18:20 EDT
+**Updated:** 2026-07-13 18:44 EDT
 **Branch:** `fix/issues-core`
 
 ## Recent Commits
 ```
+523492644 chore: ISSUE-956 audit — core fixes verified as complete
+54079816e chore: update task ledger for partial issues phase
+a87292074 chore: session checkpoint [18:20]
 7572c5577 chore: session checkpoint [18:13]
 7aa5412fa chore: session checkpoint [18:01]
 bdbdab9d2 chore: session checkpoint [18:00]
@@ -11,9 +14,6 @@ cedd5bc5f chore: session 2026-07-13 checkpoint — Road Manager finish + partial
 cfe43fb9f chore: mark ISSUE-949 FIXED — campaign persistence audit showed ledger was stale
 521cd7be3 chore: session checkpoint [17:58]
 2f47a14fc fix(social): validate future-time only for post scheduling (ISSUE-941)
-6394eeccf chore: session checkpoint [17:57]
-b6d5a7f86 chore: session checkpoint [14:59]
-dc4975f87 chore: ISSUE-704/705 progress checkpoint — 2 jobs complete, 4 jobs TODOs documented
 ```
 
 ## Working State
