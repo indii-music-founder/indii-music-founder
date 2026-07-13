@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-07-13 12:43 EDT
+**Updated:** 2026-07-13 13:05 EDT
 **Branch:** `fix/issues-core`
 
 ## Recent Commits
 ```
+29820185e chore: session checkpoint [12:43]
 8367118c7 fix(ui): add asset count badge + one-shot pulse cue to collapsed creations bar (ISSUE-754)
 c72299f23 chore: session checkpoint [12:20]
 d6cbef411 chore: session checkpoint [12:12]
@@ -13,7 +14,6 @@ bcb662de0 chore: session checkpoint [12:11]
 aee797bd9 chore: session checkpoint [11:44]
 352638b63 chore: session checkpoint [11:39]
 37baa4c9a chore: session checkpoint [11:20]
-95358bc9a fix(test): make video editor store tests assert deltas, not absolute counts (ISSUE-1046 follow-up)
 ```
 
 ## Working State
