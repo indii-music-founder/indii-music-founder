@@ -50,6 +50,33 @@ const calculateFileHash = (filePath: string): Promise<string> => {
     });
 };
 
+interface LoudnessMeasurement {
+    integratedLufs: number;
+    truePeakDb: number;
+}
+
+/** FFmpeg's ebur128 filter implements EBU R128 integrated loudness and true peak. */
+const measureLoudness = (filePath: string): Promise<LoudnessMeasurement> => new Promise((resolve, reject) => {
+    let stderr = '';
+    ffmpeg(filePath)
+        .audioFilters('ebur128=peak=true')
+        .format('null')
+        .output('-')
+        .on('stderr', line => { stderr += `${line}\n`; })
+        .on('end', () => {
+            const integratedMatches = [...stderr.matchAll(/\bI:\s*(-?\d+(?:\.\d+)?)\s*LUFS/g)];
+            const integrated = integratedMatches.at(-1);
+            const truePeak = stderr.match(/\bTrue peak:\s*\n\s*Peak:\s*(-?\d+(?:\.\d+)?)\s*dBFS/) || stderr.match(/\bTPK:\s*(-?\d+(?:\.\d+)?)\s/);
+            if (!integrated || !truePeak) {
+                reject(new Error('FFmpeg did not return EBU R128 integrated loudness and true-peak metrics.'));
+                return;
+            }
+            resolve({ integratedLufs: Number(integrated[1]), truePeakDb: Number(truePeak[1]) });
+        })
+        .on('error', reject)
+        .run();
+});
+
 
 
 export function registerAudioHandlers() {
@@ -65,14 +92,18 @@ export function registerAudioHandlers() {
                 throw new Error(`Security Violation: Access to ${validatedPath} is denied. File was not authorized by user.`);
             }
 
-            const [hash, probeData] = await Promise.all([
+            const [hash, probeData, loudness] = await Promise.all([
                 calculateFileHash(validatedPath),
                 new Promise<{ format: ffmpeg.FfprobeFormat; streams: ffmpeg.FfprobeStream[] }>((resolve, reject) => {
                     ffmpeg.ffprobe(validatedPath, (err, metadata) => {
                         if (err) reject(err);
                         else resolve({ format: metadata.format, streams: metadata.streams });
                     });
-                })
+                }),
+                measureLoudness(validatedPath).catch(error => {
+                    log.warn(`[AudioHandler] EBU R128 measurement unavailable; keeping analysis non-certified: ${error instanceof Error ? error.message : String(error)}`);
+                    return null;
+                }),
             ]);
 
             log.info("Generating compressed MP3 proxy for cloud analysis...");
@@ -106,7 +137,19 @@ export function registerAudioHandlers() {
                     bitrate: probeData.format.bit_rate ? Number(probeData.format.bit_rate) : 0
                 },
                 streams: probeData.streams ?? [],
-                features: null, // Basic features will be extracted via Web Audio API in Renderer
+                features: loudness ? {
+                    loudness: loudness.integratedLufs,
+                    audit: {
+                        peakLevel: loudness.truePeakDb,
+                        truePeakDb: loudness.truePeakDb,
+                        integratedLoudness: loudness.integratedLufs,
+                        sampleRate: Number(probeData.streams.find(stream => stream.codec_type === 'audio')?.sample_rate || 0),
+                        isStereo: (probeData.streams.find(stream => stream.codec_type === 'audio')?.channels || 0) > 1,
+                        rejectionRisks: [],
+                        measurementMethod: 'measured',
+                        bitDepth: Number(probeData.streams.find(stream => stream.codec_type === 'audio')?.bits_per_raw_sample || probeData.streams.find(stream => stream.codec_type === 'audio')?.bits_per_sample || 0),
+                    }
+                } : null,
                 proxyBase64
             };
         } catch (error) {

@@ -24,7 +24,7 @@ export interface DSPComplianceReport {
      * label results accordingly and must not present `isCompliant` as a
      * certified distribution-compliance pass.
      */
-    measurementMethod: 'estimated' | 'unavailable';
+    measurementMethod: 'measured' | 'estimated' | 'unavailable';
 }
 
 export class DSPComplianceValidator {
@@ -42,13 +42,14 @@ export class DSPComplianceValidator {
         integratedLufs: number,
         truePeakDb: number,
         sampleRate: number,
-        bitDepth: number = 16 // Default to 16-bit unless verified
+        bitDepth: number = 16,
+        measurementMethod: 'measured' | 'estimated' = 'estimated'
     ): DSPComplianceReport {
         const report: DSPComplianceReport = {
             isCompliant: true,
             platformChecks: {},
             flags: [],
-            measurementMethod: 'estimated'
+            measurementMethod
         };
 
         let hasFails = false;

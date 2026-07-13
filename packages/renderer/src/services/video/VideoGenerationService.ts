@@ -29,6 +29,21 @@ type VideoAspectRatio = z.infer<typeof VideoAspectRatioSchema>;
 
 const DEFAULT_VIDEO_MODEL = INTELLIGENCE_MODELS.VIDEO.PRO; // 'veo-3.1-generate-001' (GA)
 
+const VIDEO_MODEL_TIERS = {
+    'veo-3.1-lite-generate-001': 'lite',
+    'veo-3.1-fast-generate-001': 'fast',
+    'veo-3.1-generate-001': 'pro',
+} as const;
+
+/** Convert the UI's canonical GA provider IDs into the shared gateway tier. */
+export function normalizeVideoModelTier(model?: string): 'lite' | 'fast' | 'pro' {
+    if (!model) return 'fast';
+    if (model === 'lite' || model === 'fast' || model === 'pro') return model;
+    const tier = VIDEO_MODEL_TIERS[model as keyof typeof VIDEO_MODEL_TIERS];
+    if (tier) return tier;
+    throw new Error(`Unsupported video model "${model}". Choose an approved GA Veo model.`);
+}
+
 
 /**
  * VideoGenerationService - Client-side orchestrator for Intelligence video production
@@ -315,6 +330,10 @@ export class VideoGenerationService {
             const errorMsg = validation.error.issues.map(i => i.message).join(', ');
             throw new Error(`Invalid video parameters: ${errorMsg}`);
         }
+        // Normalize before quota/cost reservation. A retired preview model must
+        // never reserve spend and a canonical GA ID must not later fail the
+        // shared gateway schema that accepts only tier names.
+        const modelTier = normalizeVideoModelTier(options.model);
 
         const currentUser = auth.currentUser;
         if (!currentUser) {
@@ -330,7 +349,7 @@ export class VideoGenerationService {
         }
 
         const videoDuration = options.durationSeconds || options.duration || 8;
-        const estimatedCost = this.estimateVideoCost(videoDuration, options.model);
+        const estimatedCost = this.estimateVideoCost(videoDuration, modelTier);
         let costReservationId: string | undefined;
         if (!options.skipCostCheck && !options.costReservationId) {
             const costCheck = await CostControlService.checkAndReserve({
@@ -339,7 +358,7 @@ export class VideoGenerationService {
                 userId,
                 metadata: {
                     durationSeconds: videoDuration,
-                    model: options.model || DEFAULT_VIDEO_MODEL,
+                    model: modelTier,
                     resolution: options.resolution,
                     aspectRatio: options.aspectRatio,
                     mode: options.mode || 'video_remix',
@@ -435,6 +454,12 @@ export class VideoGenerationService {
             cameraMovement: options.cameraMovement,
             motionStrength: options.motionStrength,
         });
+        const referenceRoles = options.inputManifest?.filter(input => ['ingredient', 'character_reference', 'whisk_reference'].includes(input.role)) ?? [];
+        const inputManifest = [
+            ...(firstFrameUri ? [{ role: 'first_frame' as const, uri: firstFrameUri }] : []),
+            ...(lastFrameUri ? [{ role: 'last_frame' as const, uri: lastFrameUri }] : []),
+            ...(referenceUris ?? []).map((uri, index) => ({ role: referenceRoles[index]?.role ?? 'ingredient' as const, uri })),
+        ];
 
         const sanitizedPrompt = InputSanitizer.sanitize(options.prompt);
         const enrichedPrompt = this.enrichPrompt(sanitizedPrompt, {
@@ -459,7 +484,7 @@ export class VideoGenerationService {
                 skipCostCheck: options.skipCostCheck,
                 referenceUris: referenceUris && referenceUris.length > 0 ? referenceUris : undefined,
                 aspectRatio: options.aspectRatio,
-                model: options.model,
+                model: modelTier,
                 resolution: options.resolution,
                 durationSeconds: clampedDuration,
                 directorSettings,
@@ -469,6 +494,7 @@ export class VideoGenerationService {
                 costEstimate: estimatedCost,
                 costReservationId: effectiveCostReservationId,
                 parentId: options.parentId,
+                inputManifest: inputManifest.length > 0 ? inputManifest : undefined,
             };
 
             const compactedPayload = Object.fromEntries(
@@ -645,6 +671,10 @@ export class VideoGenerationService {
     }): Promise<{ id: string, url: string, prompt: string }[]> {
         // Security: Sanitize Prompt (Redact PII)
         const sanitizedPrompt = InputSanitizer.sanitize(options.prompt);
+        // Long-form callers also accept UI model strings, so reject retired IDs
+        // before their aggregate reservation and pass a gateway-safe tier to
+        // every generated segment.
+        const modelTier = normalizeVideoModelTier(options.model);
 
         // Pre-flight duration quota check
         const quotaCheck = await subscriptionService.canPerformAction('generateVideo', options.totalDuration);
@@ -659,14 +689,14 @@ export class VideoGenerationService {
             );
         }
 
-        const estimatedCost = this.estimateVideoCost(options.totalDuration, options.model);
+        const estimatedCost = this.estimateVideoCost(options.totalDuration, modelTier);
         const costCheck = await CostControlService.checkAndReserve({
             operationType: 'video',
             estimatedCost,
             userId: auth.currentUser?.uid || 'unknown',
             metadata: {
                 durationSeconds: options.totalDuration,
-                model: options.model || DEFAULT_VIDEO_MODEL,
+                model: modelTier,
                 resolution: options.resolution,
                 aspectRatio: options.aspectRatio,
                 mode: 'long_form',
@@ -747,7 +777,7 @@ export class VideoGenerationService {
                     async () => {
                         const results = await this.generateVideo({
                             prompt: segmentPrompt,
-                            model: options.model || DEFAULT_VIDEO_MODEL,
+                            model: modelTier,
                             skipCostCheck: true,
                             image: previousLastFrame
                                 ? { imageBytes: previousLastFrame, mimeType: 'image/jpeg' }
