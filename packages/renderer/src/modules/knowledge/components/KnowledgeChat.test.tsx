@@ -183,11 +183,20 @@ describe('👁️ Pixel: KnowledgeChat Stream Verification', () => {
         await waitFor(() => screen.getByText('Temp Msg'));
         await waitFor(() => screen.getByText('Response'));
 
-        // Now clear
-        fireEvent.click(clearButton);
-        rerender(<KnowledgeChat {...defaultProps} />);
+        // Now clear. clearChat() mutates the mocked store's closure state directly
+        // (no setState of its own), so the component only picks it up on its next
+        // render — force one via rerender(), inside act() so React flushes fully
+        // before the assertion. A bare synchronous expect() right after was flaky
+        // under full-suite load (deterministic pass standalone, deterministic fail
+        // under concurrent forks) — wait for the DOM to actually settle instead.
+        await act(async () => {
+            fireEvent.click(clearButton);
+            rerender(<KnowledgeChat {...defaultProps} />);
+        });
 
-        expect(screen.queryByText('Temp Msg')).not.toBeInTheDocument();
+        await waitFor(() => {
+            expect(screen.queryByText('Temp Msg')).not.toBeInTheDocument();
+        });
         expect(screen.getByText(/Hello!/i)).toBeInTheDocument();
     });
 
