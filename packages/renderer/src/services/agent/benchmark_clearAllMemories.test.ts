@@ -17,7 +17,12 @@ vi.mock('@/services/firebase', () => ({
 
 vi.mock('firebase/firestore', () => ({
     collection: vi.fn(),
-    getDocs: vi.fn().mockResolvedValue({ docs: [] }),
+    // clearAll() loops `while (!batch.empty)` to paginate deletes (see
+    // AlwaysOnMemoryEngine.ts:610-643 and the matching fix in
+    // AlwaysOnMemoryEngine.test.ts's "Clear All" block). Without `empty: true`
+    // here, `.empty` is undefined and the loop never terminates — it spins
+    // forever until the process OOMs.
+    getDocs: vi.fn().mockResolvedValue({ docs: [], empty: true }),
     deleteDoc: vi.fn(),
     doc: vi.fn(),
     query: vi.fn(),

@@ -15,6 +15,7 @@ import { AutonomousIntelligence as AI } from '../intelligence/AutonomousIntellig
 import { INTELLIGENCE_CONFIG, INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '@/utils/logger';
+import { StorageService } from '@/services/StorageService';
 
 // Re-export everything from sub-modules for backward compatibility
 export type {
@@ -566,6 +567,59 @@ export function processFunctionCalls(
     });
 
     return { updatedProfile, isFinished, updates, warnings };
+}
+
+/**
+ * Moves newly selected Brand Interview images out of the profile document.
+ * The synchronous tool processor remains deterministic; callers await this
+ * storage boundary before persisting the returned profile.
+ */
+export async function externalizeOnboardingBrandAssets(
+    profile: UserProfile,
+    files: ConversationFile[],
+): Promise<{ profile: UserProfile; warnings: string[] }> {
+    const userId = profile.id;
+    if (!userId) return { profile, warnings: ['Brand image was not saved because the profile has no authenticated owner.'] };
+
+    const fileByDataUrl = new Map<string, ConversationFile>();
+    for (const file of files) {
+        if (!file.base64 || !file.file.type.startsWith('image/')) continue;
+        fileByDataUrl.set(`data:${inferImageMimeType(file.file)};base64,${file.base64}`, file);
+    }
+    const warnings: string[] = [];
+    const externalize = async (assets: BrandAsset[] = []): Promise<BrandAsset[]> => {
+        const results = await Promise.all(assets.map(async (asset) => {
+            const source = fileByDataUrl.get(asset.url);
+            if (!source) return asset; // existing legacy/remote asset, not this turn's upload
+            try {
+                const safeName = source.file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+                const url = await StorageService.uploadFile(
+                    source.file,
+                    `users/${userId}/brand-assets/${uuidv4()}-${safeName}`,
+                );
+                return { ...asset, url };
+            } catch (error) {
+                warnings.push(`"${source.file.name}" could not be uploaded and was not added to your profile. Your other profile changes were kept.`);
+                logger.error('[onboardingService] Brand asset upload failed', error);
+                return null;
+            }
+        }));
+        return results.filter((asset): asset is BrandAsset => asset !== null);
+    };
+
+    const brandKit = profile.brandKit;
+    if (!brandKit) return { profile, warnings };
+    return {
+        profile: {
+            ...profile,
+            brandKit: {
+                ...brandKit,
+                brandAssets: await externalize(brandKit.brandAssets),
+                referenceImages: await externalize(brandKit.referenceImages),
+            },
+        },
+        warnings,
+    };
 }
 
 

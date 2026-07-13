@@ -45,6 +45,15 @@ export const DirectorSettingsSchema = z.object({
     motionStrength: z.number().min(0).max(1).optional(),
 });
 
+// UI callers may use a semantic tier or the canonical GA provider ID from
+// INTELLIGENCE_MODELS. Preview/retired IDs are deliberately absent.
+export const SupportedVideoModelSchema = z.enum([
+    'lite', 'fast', 'pro',
+    'veo-3.1-lite-generate-001',
+    'veo-3.1-fast-generate-001',
+    'veo-3.1-generate-001',
+]);
+
 export const VideoGenerationOptionsSchema = z.object({
     prompt: z.string().min(1, "Prompt is required"),
     mode: z.enum(['video_remix', 'temporal_inpaint']).optional(),
@@ -52,7 +61,7 @@ export const VideoGenerationOptionsSchema = z.object({
     resolution: VideoResolutionSchema.optional(),
     seed: z.number().int().optional(),
     negativePrompt: z.string().optional(),
-    model: z.string().optional(),
+    model: SupportedVideoModelSchema.optional(),
     firstFrame: z.string().optional(), // Allow Data URI or URL
     lastFrame: z.string().optional(),  // Allow Data URI or URL
     inputVideo: z.string().optional(), // For video extensions (URL or Base64)
@@ -89,6 +98,10 @@ export const VideoGenerationOptionsSchema = z.object({
     skipCostCheck: z.boolean().optional(),
     costReservationId: z.string().optional(),
     parentId: z.string().optional(),
+    inputManifest: z.array(z.object({
+        role: z.enum(['first_frame', 'last_frame', 'ingredient', 'character_reference', 'whisk_reference']),
+        uri: z.string(),
+    })).max(5).optional(),
 });
 
 export type VideoGenerationOptions = z.infer<typeof VideoGenerationOptionsSchema>;

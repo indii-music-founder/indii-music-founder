@@ -12,11 +12,12 @@
  */
 import React, { useEffect, useRef, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import { Smartphone, QrCode, Copy, Check, RefreshCw, Info, Wifi } from 'lucide-react';
+import { Smartphone, QrCode, Copy, Check, RefreshCw, Info, Wifi, FolderPlus, Trash2, HardDrive } from 'lucide-react';
 import { SectionHeader, SettingRow } from './SettingsShared';
 import { auth } from '@/services/firebase';
 import { isPrivateIP } from '@/services/agent/RemoteRelayService';
 import { logger } from '@/utils/logger';
+import { desktopFileIndexService, type ApprovedAssetFolder } from '@/services/agent/DesktopFileIndexService';
 
 const CODE_TTL_MS = 5 * 60 * 1000; // matches auth_handoffs expiry in functions/auth/handoff.ts
 
@@ -27,6 +28,9 @@ const RemoteSection: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [copied, setCopied] = useState(false);
     const [secondsLeft, setSecondsLeft] = useState(0);
+    const [assetFolders, setAssetFolders] = useState<ApprovedAssetFolder[]>([]);
+    const [assetFolderError, setAssetFolderError] = useState<string | null>(null);
+    const [assetFolderBusy, setAssetFolderBusy] = useState(false);
     const expiryTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
     const clearExpiryTimer = () => {
@@ -37,6 +41,42 @@ const RemoteSection: React.FC = () => {
     };
 
     useEffect(() => clearExpiryTimer, []);
+
+    const loadAssetFolders = async () => {
+        try {
+            setAssetFolders(await desktopFileIndexService.listApprovedFolders());
+        } catch (err) {
+            setAssetFolderError(err instanceof Error ? err.message : 'Could not load approved asset folders.');
+        }
+    };
+
+    useEffect(() => { loadAssetFolders(); }, []);
+
+    const handleApproveAssetFolder = async () => {
+        setAssetFolderBusy(true);
+        setAssetFolderError(null);
+        try {
+            await desktopFileIndexService.approveFolder();
+            await loadAssetFolders();
+        } catch (err) {
+            setAssetFolderError(err instanceof Error ? err.message : 'Could not approve this folder.');
+        } finally {
+            setAssetFolderBusy(false);
+        }
+    };
+
+    const handleRevokeAssetFolder = async (folderId: string) => {
+        setAssetFolderBusy(true);
+        setAssetFolderError(null);
+        try {
+            await desktopFileIndexService.revokeFolder(folderId);
+            await loadAssetFolders();
+        } catch (err) {
+            setAssetFolderError(err instanceof Error ? err.message : 'Could not remove this folder.');
+        } finally {
+            setAssetFolderBusy(false);
+        }
+    };
 
     const handleGenerate = async () => {
         setGenerating(true);
@@ -193,6 +233,32 @@ const RemoteSection: React.FC = () => {
                         {error}
                     </p>
                 )}
+            </div>
+
+            <div className="p-5 rounded-2xl bg-slate-800/30 border border-slate-700/30 mb-6">
+                <div className="flex items-center gap-3 mb-3">
+                    <div className="w-9 h-9 rounded-lg bg-violet-500/10 border border-violet-500/20 flex items-center justify-center">
+                        <HardDrive size={16} className="text-violet-300" />
+                    </div>
+                    <div>
+                        <p className="text-sm font-medium text-white">Desktop Asset Folders</p>
+                        <p className="text-xs text-slate-500">Only folders you approve here can be searched by your Studio agents. File contents and absolute paths are never shared.</p>
+                    </div>
+                </div>
+                <div className="space-y-2 mb-3">
+                    {assetFolders.length === 0 ? (
+                        <p className="text-xs text-slate-500 rounded-lg border border-slate-700/40 bg-black/20 px-3 py-2.5">No folders approved yet. Add Photos, Projects, Downloads, or a creative cache folder when you want agents to find local assets.</p>
+                    ) : assetFolders.map(folder => (
+                        <div key={folder.id} className="flex items-center gap-2 rounded-lg border border-slate-700/40 bg-black/20 px-3 py-2">
+                            <span className="flex-1 min-w-0 text-xs text-slate-200 truncate" title={folder.path}>{folder.label}</span>
+                            <button onClick={() => handleRevokeAssetFolder(folder.id)} disabled={assetFolderBusy} className="p-1.5 text-slate-500 hover:text-red-300 disabled:opacity-40" aria-label={`Remove ${folder.label}`} title="Remove folder access"><Trash2 size={14} /></button>
+                        </div>
+                    ))}
+                </div>
+                <button onClick={handleApproveAssetFolder} disabled={assetFolderBusy} className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium text-violet-200 bg-violet-500/10 hover:bg-violet-500/20 border border-violet-500/20 disabled:opacity-40">
+                    <FolderPlus size={14} /> {assetFolderBusy ? 'Updating…' : 'Approve Folder'}
+                </button>
+                {assetFolderError && <p className="mt-3 text-xs text-red-400/80">{assetFolderError}</p>}
             </div>
 
             {/* Sync status */}

@@ -14,6 +14,7 @@ import { WhiskDropZone } from '@/modules/creative/components/whisk/WhiskDropZone
 import WhiskPresetStyles from '@/modules/creative/components/whisk/WhiskPresetStyles';
 import { motion, AnimatePresence } from 'motion/react';
 import { CharacterLibrary } from '@/modules/creative/components/CharacterLibrary';
+import { CostControlService } from '@/services/billing/CostControlService';
 
 type AspectRatio = z.infer<typeof AspectRatioSchema>;
 type VideoResolution = z.infer<typeof VideoResolutionSchema>;
@@ -83,6 +84,7 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
 
     const [expandedSection, setExpandedSection] = useState<string>('mixer');
     const [prevViewMode, setPrevViewMode] = useState(viewMode);
+    const [budgetStatus, setBudgetStatus] = useState<Awaited<ReturnType<typeof CostControlService.getStatus>> | null>(null);
 
     const persistVideoFrame = async (content: string, label: string) => {
         const userId = user?.uid;
@@ -116,6 +118,18 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
         return 0;
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [whiskState?.targetMedia, studioControls?.model, studioControls?.resolution]);
+
+    useEffect(() => {
+        if (!user?.uid) {
+            setBudgetStatus(null);
+            return;
+        }
+        let active = true;
+        CostControlService.getStatus(user.uid)
+            .then(status => { if (active) setBudgetStatus(status); })
+            .catch(() => { if (active) setBudgetStatus(null); });
+        return () => { active = false; };
+    }, [user?.uid]);
 
     if (!whiskState) return null;
 
@@ -597,6 +611,22 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                         icon={<Zap className="text-yellow-400" size={14} />}
                     >
                         <div className="space-y-4">
+                            {budgetStatus && (
+                                <div className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-[10px]" data-testid="creative-budget-status">
+                                    <div className="flex justify-between text-gray-300">
+                                        <span>Daily creative budget</span>
+                                        <span className="font-mono text-white">${budgetStatus.dailyRemaining.toFixed(2)} remaining</span>
+                                    </div>
+                                    <p className="mt-1 text-gray-500">
+                                        ${budgetStatus.settledCost.toFixed(2)} settled · ${budgetStatus.voidedCost.toFixed(2)} refunded
+                                    </p>
+                                    {budgetStatus.pendingHoldCount > 0 && (
+                                        <p className="mt-1 text-amber-300">
+                                            ${budgetStatus.pendingHoldCost.toFixed(2)} in {budgetStatus.pendingHoldCount} pending hold{budgetStatus.pendingHoldCount === 1 ? '' : 's'} — released automatically if generation fails.
+                                        </p>
+                                    )}
+                                </div>
+                            )}
                             {/* ── Model Tier ─────────────────────────────── */}
                             <div className="grid grid-cols-2 gap-3">
                                 <div className="bg-black/60 p-1 rounded-xl flex relative h-9 border border-white/5">

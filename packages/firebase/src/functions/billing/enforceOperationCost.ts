@@ -1,6 +1,7 @@
 import * as functions from 'firebase-functions/v2';
 import * as admin from 'firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
+import { onSchedule } from 'firebase-functions/v2/scheduler';
 
 type OperationType = 'video' | 'image' | 'agent_stream';
 
@@ -22,6 +23,18 @@ interface CostEnforcementResponse {
   operationId?: string;
 }
 
+export interface CostStatusResponse {
+  dailyUsed: number;
+  monthlyUsed: number;
+  dailyRemaining: number;
+  monthlyRemaining: number;
+  tier: string;
+  pendingHoldCost: number;
+  pendingHoldCount: number;
+  settledCost: number;
+  voidedCost: number;
+}
+
 /** Parameters for the reusable budget-check helper. */
 export interface CheckOperationBudgetParams {
   userId: string;
@@ -35,12 +48,17 @@ const RUNAWAY_LIMIT = 500; // Global kill-switch: no account can exceed $500/mon
 const TEST_MODE_DAILY_LIMIT = 5; // Testing should never cost more than $5/day total
 const USER_CONFIRMATION_THRESHOLD = 20; // $20
 const TEST_CONFIRMATION_THRESHOLD = 2; // $2
+const RESERVATION_TTL_MS = 15 * 60 * 1000;
 const BUDGET_LIMITS: Record<string, { daily: number; monthly: number; hourly: number }> = {
   free: { daily: 5, monthly: 50, hourly: 1 },
   pro: { daily: 25, monthly: 250, hourly: 5 },
   enterprise: { daily: 100, monthly: 1000, hourly: 20 },
   founder: { daily: 1000, monthly: 10000, hourly: Number.POSITIVE_INFINITY },
 };
+
+function userLedgerDocument(userId: string, id: string): string {
+  return `users/${userId}/costLedger/${id}`;
+}
 
 /**
  * Core budget-check logic (transport-agnostic).
@@ -77,11 +95,11 @@ export async function checkOperationBudget(
 
   try {
     const db = admin.firestore();
-    const dailyRef = db.doc(`costLedger/daily-${today}`);
-    const monthlyRef = db.doc(`costLedger/monthly-${month}`);
-    const hourlyRef = db.doc(`costLedger/hourly-${hour}`);
+    const dailyRef = db.doc(userLedgerDocument(userId, `daily-${today}`));
+    const monthlyRef = db.doc(userLedgerDocument(userId, `monthly-${month}`));
+    const hourlyRef = db.doc(userLedgerDocument(userId, `hourly-${hour}`));
     const userRef = db.doc(`users/${userId}`);
-    const testLedgerRef = db.doc(`costLedger/test-${today}`);
+    const testLedgerRef = db.doc(userLedgerDocument(userId, `test-${today}`));
 
     return await db.runTransaction(async (tx) => {
       const [dailySnap, monthlySnap, hourlySnap, userSnap, testSnap] = await Promise.all([
@@ -220,6 +238,7 @@ export async function checkOperationBudget(
       const now = FieldValue.serverTimestamp();
 
       tx.set(dailyRef, {
+        userId,
         date: today,
         totalCost: increment(estimatedCost),
         operationCount: increment(1),
@@ -229,6 +248,7 @@ export async function checkOperationBudget(
       }, { merge: true });
 
       tx.set(monthlyRef, {
+        userId,
         month,
         totalCost: increment(estimatedCost),
         operationCount: increment(1),
@@ -237,6 +257,7 @@ export async function checkOperationBudget(
       }, { merge: true });
 
       tx.set(hourlyRef, {
+        userId,
         hour,
         totalCost: increment(estimatedCost),
         operationCount: increment(1),
@@ -245,6 +266,7 @@ export async function checkOperationBudget(
 
       if (isTestMode) {
         tx.set(testLedgerRef, {
+          userId,
           date: today,
           totalCost: increment(estimatedCost),
           operationCount: increment(1),
@@ -267,6 +289,14 @@ export async function checkOperationBudget(
           monthly: `monthly-${month}`,
           hourly: `hourly-${hour}`,
           ...(isTestMode ? { test: `test-${today}` } : {}),
+        },
+        // Paths make refund/finalization unambiguous now aggregates are
+        // owner-scoped. Retain IDs for legacy reservations already in flight.
+        ledgerDocumentPaths: {
+          daily: dailyRef.path,
+          monthly: monthlyRef.path,
+          hourly: hourlyRef.path,
+          ...(isTestMode ? { test: testLedgerRef.path } : {}),
         },
       });
 
@@ -323,12 +353,16 @@ export async function finalizeOperationReservation(params: {
     if (params.outcome !== 'VOIDED') return;
 
     const cost = Number(data.estimatedCost);
-    const ledgerIds = data.ledgerDocumentIds as Record<string, string> | undefined;
-    if (!Number.isFinite(cost) || cost < 0 || !ledgerIds) {
+    const ledgerPaths = data.ledgerDocumentPaths as Record<string, string> | undefined;
+    const legacyLedgerIds = data.ledgerDocumentIds as Record<string, string> | undefined;
+    const paths = ledgerPaths
+      ? Object.values(ledgerPaths)
+      : legacyLedgerIds ? Object.values(legacyLedgerIds).map(id => `costLedger/${id}`) : [];
+    if (!Number.isFinite(cost) || cost < 0 || paths.length === 0) {
       throw new Error('Cost reservation cannot be safely released');
     }
-    for (const id of Object.values(ledgerIds)) {
-      tx.set(db.doc(`costLedger/${id}`), {
+    for (const path of paths) {
+      tx.set(db.doc(path), {
         totalCost: FieldValue.increment(-cost),
         operationCount: FieldValue.increment(-1),
         lastUpdated: FieldValue.serverTimestamp(),
@@ -336,6 +370,49 @@ export async function finalizeOperationReservation(params: {
     }
   });
 }
+
+/**
+ * Reconciles abandoned provisional holds. A gateway settlement/void is still
+ * authoritative; this is only the bounded recovery path for clients that die
+ * after reserving but before submitting a job.
+ */
+export async function expireStaleOperationReservations(now = new Date()): Promise<number> {
+  const db = admin.firestore();
+  const cutoff = admin.firestore.Timestamp.fromMillis(now.getTime() - RESERVATION_TTL_MS);
+  const stale = await db.collection('costLedger')
+    .where('status', '==', 'APPROVED')
+    .where('timestamp', '<=', cutoff)
+    .orderBy('timestamp', 'asc')
+    .limit(100)
+    .get();
+
+  let expired = 0;
+  for (const operation of stale.docs) {
+    const data = operation.data();
+    const userId = typeof data.userId === 'string' ? data.userId : null;
+    if (!userId) {
+      console.error('[CostControl] Cannot expire malformed reservation', operation.id);
+      continue;
+    }
+    try {
+      await finalizeOperationReservation({ userId, operationId: operation.id, outcome: 'VOIDED' });
+      expired += 1;
+    } catch (error) {
+      // Another gateway/scheduler may have finalized it first. The transactional
+      // finalizer is idempotent for an identical outcome and prevents double refunds.
+      console.warn('[CostControl] Reservation expiry reconciliation skipped', operation.id, error);
+    }
+  }
+  return expired;
+}
+
+export const expireStaleOperationCostReservations = onSchedule(
+  { schedule: 'every 5 minutes', timeZone: 'Etc/UTC', region: 'us-central1' },
+  async () => {
+    const expired = await expireStaleOperationReservations();
+    console.info('[CostControl] Expired stale reservations', { expired });
+  },
+);
 
 /**
  * Cloud Function: Server-side cost enforcement (final kill-switch).
@@ -389,5 +466,59 @@ export const finalizeOperationCost = functions.https.onCall(
       outcome: data.outcome as 'SETTLED' | 'VOIDED',
     });
     return { success: true };
+  },
+);
+
+/**
+ * Owner-scoped billing receipt for UI. Aggregate ledgers include approved
+ * holds, so the pending breakdown is returned explicitly rather than making
+ * a renderer guess from mutable client state.
+ */
+export const getOperationCostStatus = functions.https.onCall(
+  { region: 'us-central1', maxInstances: 20, timeoutSeconds: 30 },
+  async (request: functions.https.CallableRequest<unknown>): Promise<CostStatusResponse> => {
+    if (!request.auth) {
+      throw new functions.https.HttpsError('unauthenticated', 'Must be signed in');
+    }
+    const userId = request.auth.uid;
+    const timestamp = new Date();
+    const today = timestamp.toISOString().slice(0, 10);
+    const month = today.slice(0, 7);
+    const db = admin.firestore();
+    const [dailySnap, monthlySnap, userSnap, pendingSnap, settledSnap, voidedSnap] = await Promise.all([
+      db.doc(userLedgerDocument(userId, `daily-${today}`)).get(),
+      db.doc(userLedgerDocument(userId, `monthly-${month}`)).get(),
+      db.doc(`users/${userId}`).get(),
+      db.collection('costLedger')
+        .where('userId', '==', userId)
+        .where('status', '==', 'APPROVED')
+        .limit(100)
+        .get(),
+      db.collection('costLedger').where('userId', '==', userId).where('status', '==', 'SETTLED').limit(100).get(),
+      db.collection('costLedger').where('userId', '==', userId).where('status', '==', 'VOIDED').limit(100).get(),
+    ]);
+    const tier = String(userSnap.data()?.tier || 'free');
+    const limits = BUDGET_LIMITS[tier] || BUDGET_LIMITS.free;
+    const dailyUsed = Number(dailySnap.data()?.totalCost || 0);
+    const monthlyUsed = Number(monthlySnap.data()?.totalCost || 0);
+    const pendingHoldCost = pendingSnap.docs.reduce((sum, operation) => {
+      const value = Number(operation.data().estimatedCost || 0);
+      return Number.isFinite(value) && value > 0 ? sum + value : sum;
+    }, 0);
+    const sumCost = (snapshot: FirebaseFirestore.QuerySnapshot) => snapshot.docs.reduce((sum, operation) => {
+      const value = Number(operation.data().estimatedCost || 0);
+      return Number.isFinite(value) && value > 0 ? sum + value : sum;
+    }, 0);
+    return {
+      dailyUsed,
+      monthlyUsed,
+      dailyRemaining: Math.max(0, limits.daily - dailyUsed),
+      monthlyRemaining: Math.max(0, limits.monthly - monthlyUsed),
+      tier,
+      pendingHoldCost,
+      pendingHoldCount: pendingSnap.size,
+      settledCost: sumCost(settledSnap),
+      voidedCost: sumCost(voidedSnap),
+    };
   },
 );

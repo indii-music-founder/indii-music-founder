@@ -108,6 +108,19 @@ export class AudioIntelligenceService {
 
             Logger.info('AudioIntelligence', `Starting analysis for ${filename}`);
 
+            // This must precede fingerprinting and technical analysis: both can
+            // read/decode the full browser File. A gate immediately before the
+            // inline base64 conversion still lets an oversize master allocate
+            // enough memory to crash the renderer first.
+            const browserFile = typeof file !== 'string' && !(window.electronAPI && (file as { path?: string }).path)
+                ? file
+                : null;
+            if (browserFile && browserFile.size > MAX_BROWSER_ANALYSIS_BYTES) {
+                throw new Error(
+                    `This master is ${(browserFile.size / 1024 / 1024).toFixed(0)}MB, too large for browser-based deep analysis (limit ${MAX_BROWSER_ANALYSIS_BYTES / 1024 / 1024}MB). Local technical QC is still available; semantic/emotional analysis requires the desktop app or a smaller file.`
+                );
+            }
+
             // 1. Generate ID (Fingerprint)
             let id = '';
             const filePath = typeof file === 'string' ? file : (file as { path?: string }).path;
@@ -171,12 +184,6 @@ export class AudioIntelligenceService {
             } else {
                 if (typeof file === 'string') {
                     throw new Error('Cannot run browser base64 audio upload with a file path string. Must be a File object.');
-                }
-
-                if (file.size > MAX_BROWSER_ANALYSIS_BYTES) {
-                    throw new Error(
-                        `This master is ${(file.size / 1024 / 1024).toFixed(0)}MB, too large for browser-based deep analysis (limit ${MAX_BROWSER_ANALYSIS_BYTES / 1024 / 1024}MB). Local technical QC is still available; semantic/emotional analysis requires the desktop app or a smaller file.`
-                    );
                 }
 
                 // ISSUE-962: encode once and reuse for both semantic + energy

@@ -26,6 +26,15 @@ export interface AdCreative {
     callToAction: 'LEARN_MORE' | 'SHOP_NOW' | 'LISTEN_NOW';
 }
 
+/**
+ * ISSUE-845: a real zero-performance ad and a backend/network failure must
+ * never be indistinguishable — callers must check `available` before
+ * reading metrics.
+ */
+export type AdInsightsResult =
+    | { available: true; impressions: number; clicks: number; spend: number; ctr: number; cpc: number }
+    | { available: false; errorCode: 'INSIGHTS_UNAVAILABLE'; reason: string };
+
 export class AdAutomationService {
     /**
      * Deploys a micro-budget campaign for a specific creative.
@@ -133,8 +142,12 @@ export class AdAutomationService {
 
     /**
      * Retrieves basic performance metrics for an active campaign.
+     *
+     * ISSUE-845: never coerce a backend/network failure into real-looking
+     * zero metrics — a missing Cloud Function deploy, auth failure, or
+     * provider API error must not read as "this ad has zero impressions."
      */
-    async getAdInsights(adId: string) {
+    async getAdInsights(adId: string): Promise<AdInsightsResult> {
         logger.info(`[AdAutomation] Fetching insights for ad ${adId}.`);
 
         try {
@@ -147,15 +160,14 @@ export class AdAutomationService {
             >(functionsWest1, 'getAdInsights');
 
             const result = await getInsightsFn({ adId });
-            return result.data;
-        } catch (_error: unknown) {
-            logger.warn(`[AdAutomation] Insights Cloud Function unavailable for ad ${adId}. Deploy Cloud Function 'getAdInsights'.`);
+            return { available: true, ...result.data };
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : String(error);
+            logger.warn(`[AdAutomation] Insights Cloud Function unavailable for ad ${adId}: ${message}`);
             return {
-                impressions: 0,
-                clicks: 0,
-                spend: 0,
-                ctr: 0,
-                cpc: 0
+                available: false,
+                errorCode: 'INSIGHTS_UNAVAILABLE',
+                reason: `Ad insights are unavailable for ${adId}: ${message}`,
             };
         }
     }

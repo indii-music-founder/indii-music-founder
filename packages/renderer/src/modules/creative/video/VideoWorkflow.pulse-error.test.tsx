@@ -228,6 +228,33 @@ describe('Pulse: Video Workflow Error Handling', () => {
         expect(screen.getByText(/Director's Chair/i)).toBeInTheDocument();
     });
 
+    /**
+     * ISSUE-869: the server gates temporal_inpaint behind a feature flag with
+     * no client-side mirror, so the UI can't preflight this — it must translate
+     * the resulting failed-precondition error into an actionable message
+     * instead of the generic "Generation failed: ..." fallback.
+     */
+    it('translates a temporal-inpaint-unsupported server error into an actionable message', async () => {
+        const user = userEvent.setup();
+        render(<VideoWorkflow />);
+
+        const input = screen.getByTestId('direct-prompt-input');
+        await user.type(input, 'A masked temporal edit');
+        const generateBtn = screen.getByTestId('video-generate-btn');
+        await user.click(generateBtn);
+
+        await act(async () => {
+            if (rejectGeneratePromise) {
+                rejectGeneratePromise(new Error('Model veo-3.1-fast-generate-001 does not support temporal inpaint yet.'));
+            }
+        });
+
+        expect(mockToastError).toHaveBeenCalledWith(
+            'Temporal inpaint is not enabled on this server yet. Try Interpolation (first/last frame) or standard scene generation instead.'
+        );
+        expect(mockSetJobStatus).toHaveBeenCalledWith('failed');
+    });
+
     it('handles async job failures (e.g. Out of VRAM)', async () => {
         vi.mocked(VideoGeneration.generateVideo).mockRejectedValueOnce(new Error('CUDA Out of Memory'));
 

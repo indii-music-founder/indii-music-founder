@@ -125,6 +125,15 @@ export default function App() {
     // Cross-device workspace sync (push/pull, debounced)
     useWorkspaceSync();
 
+    // Session metadata and the active session's append-only message stream must
+    // be live on every signed-in surface, not only after opening the archive.
+    useEffect(() => {
+        if (!user) return;
+        useStore.getState().loadSessions().catch(error => {
+            console.error('[App] Failed to start live agent-session sync:', error);
+        });
+    }, [user?.uid]);
+
     const mobile = useMobile();
     const shouldUseRemoteSurface = isRemoteSurfaceDevice(mobile);
     const { isAnyPhone } = mobile;

@@ -1205,7 +1205,20 @@ export const generateVideoV3 = onCall({ timeoutSeconds: 540, secrets: [geminiApi
     costReservationId,
     directorSettings: requestedDirectorSettings,
     parentId,
+    inputManifest,
   } = parsed.data;
+
+  // ISSUE-870: GenerateVideoSchema's aspectRatio enum includes 1:1/3:4/4:3,
+  // but Veo only actually produces 16:9 or 9:16 — normalizeVideoAspectRatio()
+  // used to silently coerce anything else to 16:9 with no warning. Reject
+  // unsupported shapes here instead of lying about what was generated.
+  if (aspectRatio !== '16:9' && aspectRatio !== '9:16') {
+    throw new HttpsError(
+      'invalid-argument',
+      `Video generation only supports 16:9 or 9:16 aspect ratios. "${aspectRatio}" is not supported by the video model.`
+    );
+  }
+
   const userId = request.auth.uid;
   const jobId = getDb().collection('creative_jobs').doc().id;
   const normalizedResolution = normalizeVideoResolution(resolution, model);
@@ -1215,6 +1228,21 @@ export const generateVideoV3 = onCall({ timeoutSeconds: 540, secrets: [geminiApi
   const effectiveMode = resolveVideoJobMode(mode);
   const resolvedSourceVideoUri = sourceVideoUri || firstFrameUri || referenceUri;
   const resolvedMaskUri = maskTrackUri || maskFrameUri;
+
+  // ISSUE-869: check temporal-inpaint capability BEFORE loading/validating the
+  // cost reservation. The reservation itself was already made client-side
+  // before this call, so this can't prevent that charge — but it does avoid
+  // an extra Firestore read for a request that's going to be rejected anyway,
+  // and fails on the clearest, earliest signal available server-side.
+  if (effectiveMode === 'temporal_inpaint') {
+    if (!supportsTemporalInpaint(modelId)) {
+      throw new HttpsError('failed-precondition', `Model ${modelId} does not support temporal inpaint yet.`);
+    }
+    if (!resolvedSourceVideoUri || !resolvedMaskUri || !frameRange) {
+      throw new HttpsError('invalid-argument', 'Temporal inpaint requires sourceVideoUri, maskFrameUri or maskTrackUri, and frameRange.');
+    }
+  }
+
   const serverEstimatedCost = estimateVideoCost(normalizedDuration, modelId, effectiveMode);
   const reservation = !skipCostCheck && costReservationId
     ? await loadCostReservation(userId, costReservationId)
@@ -1224,15 +1252,6 @@ export const generateVideoV3 = onCall({ timeoutSeconds: 540, secrets: [geminiApi
   }
   if (!skipCostCheck && Math.abs((reservation?.estimatedCost ?? serverEstimatedCost) - serverEstimatedCost) > 0.01) {
     throw new HttpsError('failed-precondition', 'Cost reservation estimate does not match the current job estimate.');
-  }
-
-  if (effectiveMode === 'temporal_inpaint') {
-    if (!supportsTemporalInpaint(modelId)) {
-      throw new HttpsError('failed-precondition', `Model ${modelId} does not support temporal inpaint yet.`);
-    }
-    if (!resolvedSourceVideoUri || !resolvedMaskUri || !frameRange) {
-      throw new HttpsError('invalid-argument', 'Temporal inpaint requires sourceVideoUri, maskFrameUri or maskTrackUri, and frameRange.');
-    }
   }
 
   const inputUris = [
@@ -1280,6 +1299,7 @@ export const generateVideoV3 = onCall({ timeoutSeconds: 540, secrets: [geminiApi
       maskFrameUri,
       maskTrackUri,
       frameRange,
+      inputManifest,
       cameraPhysics: undefined,
     },
     directorSettings,

@@ -18,7 +18,7 @@ import { CreativeStorageService } from '@/services/creative/CreativeStorageServi
 import { VideoGeneration } from '@/services/video/VideoGenerationService';
 import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
-import { resolveDirectVideoFirstFrame } from './directVideoInputs';
+import { buildDirectVideoInputManifest } from './directVideoInputs';
 
 type CallableGenerationError = {
     code?: unknown;
@@ -428,14 +428,6 @@ export function useDirectGeneration() {
         }
 
         const ingredientsList = videoInputs?.ingredients || [];
-        const firstIngredient = ingredientsList[0];
-        const firstCharRef = characterReferences?.[0];
-        const firstFrame = resolveDirectVideoFirstFrame(
-            videoInputs?.firstFrame?.url,
-            firstIngredient?.url,
-            firstCharRef?.image?.url,
-        );
-        const lastFrame = videoInputs?.lastFrame?.url;
 
         // Upload Whisk source media to storage and convert to gs:// URIs
         const whiskSourceMedia = await WhiskService.getSourceMedia(whiskState) || [];
@@ -450,20 +442,15 @@ export function useDirectGeneration() {
             })
         );
 
-        const combinedReferenceImages = [
-            ...(characterReferences || [])
-                .filter(ref => ref?.image?.url)
-                .map(ref => ({
-                    image: { uri: ref.image.url },
-                    referenceType: 'asset' as const
-                })),
-            ...whiskMediaUris
-                .filter((uri): uri is string => !!uri)
-                .map(uri => ({
-                    image: { uri },
-                    referenceType: 'asset' as const
-                }))
-        ].slice(0, 3);
+        const directInputs = buildDirectVideoInputManifest({
+            explicitFirstFrame: videoInputs?.firstFrame?.url,
+            explicitLastFrame: videoInputs?.lastFrame?.url,
+            ingredients: ingredientsList.map(ingredient => ingredient?.url).filter((url): url is string => !!url),
+            characterReferences: (characterReferences || []).map(ref => ref?.image?.url).filter((url): url is string => !!url),
+            whiskReferences: whiskMediaUris.filter((uri): uri is string => !!uri),
+        });
+        const { firstFrame, lastFrame, inputManifest } = directInputs;
+        const combinedReferenceImages = directInputs.references.map(reference => ({ image: { uri: reference.uri }, referenceType: 'asset' as const }));
 
         const parsedSeed = studioControls.seed ? Number(studioControls.seed) : undefined;
         const validatedAR = VideoAspectRatioSchema.safeParse(studioControls.aspectRatio);
@@ -496,7 +483,8 @@ export function useDirectGeneration() {
             personGeneration: studioControls.personGeneration,
             negativePrompt: studioControls.negativePrompt || undefined,
             seed: Number.isSafeInteger(parsedSeed) ? parsedSeed : undefined,
-            useGrounding: studioControls.useGrounding
+            useGrounding: studioControls.useGrounding,
+            inputManifest,
         });
 
         if (results && results.length > 0) {

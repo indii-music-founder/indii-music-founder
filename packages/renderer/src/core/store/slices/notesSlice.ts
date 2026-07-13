@@ -127,7 +127,15 @@ export const createNotesSlice: StateCreator<StoreState, [], [], NotesSlice> = (s
         try {
             const { notesService } = await import('@/services/notes/NotesService');
             const cloudNotes = await notesService.pullNotes();
-            set({ notes: cloudNotes, notesLoading: false });
+            // Merge rather than overwrite: a note created locally in the brief window
+            // before this cloud pull resolves (e.g. right at app boot) hasn't synced yet
+            // and wouldn't be in cloudNotes — replacing wholesale would make it vanish
+            // from the UI even though it's about to be pushed successfully.
+            set((state) => {
+                const cloudIds = new Set(cloudNotes.map(n => n.id));
+                const localOnly = state.notes.filter(n => !cloudIds.has(n.id));
+                return { notes: [...localOnly, ...cloudNotes], notesLoading: false };
+            });
         } catch (error) {
             const errorMsg = error instanceof Error ? error.message : 'Failed to load notes';
             logger.error('[NotesSlice] Load notes failed:', error);

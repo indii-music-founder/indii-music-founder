@@ -14,20 +14,22 @@ const PLATFORM_LIMITS = {
 
 interface CreatePostModalProps {
     onClose: () => void;
-    onSave: (post: ScheduledPost) => void;
+    onSave: (post: ScheduledPost) => Promise<boolean>;
+    initialScheduledDate?: string;
 }
 
-export default function CreatePostModal({ onClose, onSave }: CreatePostModalProps) {
+export default function CreatePostModal({ onClose, onSave, initialScheduledDate }: CreatePostModalProps) {
     const { t } = useTranslation();
     const toast = useToast();
     const [platform, setPlatform] = useState<'Twitter' | 'Instagram'>('Twitter');
     const [copy, setCopy] = useState('');
     const [selectedImage, setSelectedImage] = useState<ImageAsset | null>(null);
-    const [scheduledDate, setScheduledDate] = useState<string>(new Date().toISOString().split('T')[0]!);
+    const [scheduledDate, setScheduledDate] = useState<string>(initialScheduledDate || new Date().toISOString().split('T')[0]!);
     const [scheduledTime, setScheduledTime] = useState<string>('12:00');
 
     const [isGenerating, setIsGenerating] = useState(false);
     const [isAssetDrawerOpen, setIsAssetDrawerOpen] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
 
     // IDs for accessibility
     const copyInputId = useId();
@@ -59,7 +61,7 @@ export default function CreatePostModal({ onClose, onSave }: CreatePostModalProp
         }
     };
 
-    const handleSave = () => {
+    const handleSave = async () => {
         if (isOverLimit) {
             toast.error(`Post exceeds character limit for ${platform}`);
             return;
@@ -88,8 +90,15 @@ export default function CreatePostModal({ onClose, onSave }: CreatePostModalProp
         }
 
         // Pass validated data
-        onSave(validation.data as unknown as ScheduledPost);
-        onClose();
+        setIsSaving(true);
+        try {
+            if (await onSave(validation.data as unknown as ScheduledPost)) onClose();
+            else toast.error('Could not schedule this post. Your draft is still available.');
+        } catch {
+            toast.error('Could not schedule this post. Your draft is still available.');
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     return (
