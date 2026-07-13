@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-07-13 12:33 EDT
+**Updated:** 2026-07-13 13:32 EDT
 **Branch:** `claude/inspiring-greider-59ed4a`
 
 ## Recent Commits
 ```
+7fe88b1ec fix(store): wrap unstable useStore object-selectors in useShallow (ISSUE-1047)
+1d6b876b7 chore: session checkpoint [12:33]
 52ebe7c23 fix(e2e): replace invented selectors in cross-device-persistence spec with verified real ones (hunter finding)
 f36e1f62b fix(creative): gate first-run guidance on canvas emptiness, not editor-selection (hunter finding)
 9b085a87a fix(e2e): replace invented data-testid selectors with verified real ones (hunter finding)
@@ -12,8 +14,6 @@ d389f9822 docs: add /ci-validate workflow to triage main deploy failures vs the 
 078b04609 Merge branch 'fix/issues-core'
 8cccca1fd fix(marketing): distinguish auth/read failures from a real empty Fan CRM (ISSUE-848)
 9d2940fdc Merge branch 'fix/issues-core'
-780a12ec0 docs(ledger): log ISSUE-1046 (CI shard 7/8 recurring OOM) and ISSUE-1045 (per-surface icon colors)
-02d53a9d7 fix(publicist): stop claiming PR assets were saved when persistence fails (ISSUE-838)
 ```
 
 ## Working State
