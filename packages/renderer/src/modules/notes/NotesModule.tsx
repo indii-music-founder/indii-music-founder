@@ -1,18 +1,21 @@
 import React, { useState } from 'react';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { Plus, Search, Trash2, FileText, ImageIcon, Image as ImageIconRegular, Cloud, HardDrive } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function NotesModule() {
-    const { notes, selectedNoteId, addNote, updateNote, deleteNote, setSelectedNote, user } = useStore(state => ({
-        notes: state.notes,
-        selectedNoteId: state.selectedNoteId,
-        addNote: state.addNote,
-        updateNote: state.updateNote,
-        deleteNote: state.deleteNote,
-        setSelectedNote: state.setSelectedNote,
-        user: state.user,
-    }));
+    const { notes, selectedNoteId, addNote, updateNote, deleteNote, setSelectedNote, user } = useStore(
+        useShallow(state => ({
+            notes: state.notes,
+            selectedNoteId: state.selectedNoteId,
+            addNote: state.addNote,
+            updateNote: state.updateNote,
+            deleteNote: state.deleteNote,
+            setSelectedNote: state.setSelectedNote,
+            user: state.user,
+        }))
+    );
 
     const [searchQuery, setSearchQuery] = useState('');
 
