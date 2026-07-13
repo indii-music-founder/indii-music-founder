@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-07-13 11:20 EDT
+**Updated:** 2026-07-13 11:39 EDT
 **Branch:** `fix/issues-core`
 
 ## Recent Commits
 ```
+37baa4c9a chore: session checkpoint [11:20]
 95358bc9a fix(test): make video editor store tests assert deltas, not absolute counts (ISSUE-1046 follow-up)
 47ccc8aef fix(ci): resolve CI unit-test OOM by switching vitest pool to forks (ISSUE-1046)
 35c14c97d chore: session checkpoint [10:20]
@@ -13,7 +14,6 @@ f3285a76e chore: session checkpoint [10:16]
 709d1faa3 chore: session checkpoint [07:31]
 e4cb076a9 chore: session checkpoint [06:57]
 426457575 fix(creative): make Direct Generation advanced controls mode-aware (ISSUE-777)
-394a4a013 fix(video): check temporal-inpaint capability before reservation (ISSUE-869)
 ```
 
 ## Working State
