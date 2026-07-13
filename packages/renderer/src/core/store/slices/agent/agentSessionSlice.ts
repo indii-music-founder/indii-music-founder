@@ -1,7 +1,9 @@
 import { StateCreator } from 'zustand';
 import { logger } from '@/utils/logger';
+import type { SessionPageCursor } from '@/services/agent/SessionService';
 
 let agentSessionsUnsubscribe: (() => void) | null = null;
+let agentMessagesUnsubscribe: (() => void) | null = null;
 
 export type MessageSource = 'desktop' | 'mobile-remote' | 'background' | 'api' | 'boardroom';
 
@@ -48,6 +50,8 @@ export interface ConversationSession {
     source?: MessageSource;
     /** The ID of the project this session is associated with */
     projectId?: string;
+    /** New sessions store messages in append-only child documents. */
+    messageStorage?: 'array' | 'subcollection';
 }
 
 export interface AgentSessionSlice {
@@ -60,7 +64,7 @@ export interface AgentSessionSlice {
     lastDirectSessionId: string | null;
     sessionsPaginationLoading: boolean;
     hasMoreSessions: boolean;
-    sessionsPaginationCursor?: number; // Timestamp cursor for paginated queries
+    sessionsPaginationCursor?: SessionPageCursor;
 
     // Session Actions
     createSession: (title?: string, initialAgents?: string[], namespace?: string, projectId?: string) => string;
@@ -92,6 +96,27 @@ export function buildAgentSessionState(
     set: Parameters<StateCreator<AgentSessionSlice>>[0],
     get: Parameters<StateCreator<AgentSessionSlice>>[1]
 ): AgentSessionSlice {
+    const subscribeToActiveMessages = (sessionId: string) => {
+        if (agentMessagesUnsubscribe) agentMessagesUnsubscribe();
+        agentMessagesUnsubscribe = null;
+        import('@/services/agent/SessionService').then(({ sessionService }) => {
+            agentMessagesUnsubscribe = sessionService.subscribeToMessages(sessionId, (messages) => {
+                set(state => {
+                    const session = state.sessions[sessionId];
+                    if (!session) return {};
+                    // Keep legacy documents readable until their messages have
+                    // been migrated, but child documents are authoritative once
+                    // one exists.
+                    const nextMessages = session.messageStorage === 'subcollection' ? messages : (messages.length > 0 ? messages : session.messages);
+                    return {
+                        sessions: { ...state.sessions, [sessionId]: { ...session, messages: nextMessages } },
+                        ...(state.activeSessionId === sessionId ? { agentHistory: nextMessages } : {}),
+                    };
+                });
+            }, error => logger.error('[AgentSlice] Message subscription failed:', error));
+        }).catch(error => logger.error('[AgentSlice] Failed to start message subscription:', error));
+    };
+
     return {
         agentHistory: [],
         sessions: {},
@@ -137,7 +162,9 @@ export function buildAgentSessionState(
 
             // Persist the new session immediately
             import('@/services/agent/SessionService').then(({ sessionService }) => {
-                sessionService.createSession(newSession).catch((e) => logger.error('[AgentSlice] Session sync failed:', e));
+                sessionService.createSession(newSession)
+                    .then(() => { if (!namespace) subscribeToActiveMessages(id); })
+                    .catch((e) => logger.error('[AgentSlice] Session sync failed:', e));
             });
 
             return id;
@@ -150,6 +177,7 @@ export function buildAgentSessionState(
                     activeSessionId: sessionId,
                     agentHistory: sessions[sessionId].messages,
                 });
+                subscribeToActiveMessages(sessionId);
             }
         },
 
@@ -259,6 +287,7 @@ export function buildAgentSessionState(
                     createdAt: Date.now(),
                     updatedAt: Date.now(),
                     messages: [],
+                    messageStorage: 'subcollection',
                     participants: ['indii']
                 };
             }
@@ -275,10 +304,10 @@ export function buildAgentSessionState(
                 try {
                     const { sessionService } = await import('@/services/agent/SessionService');
                     if (isNewSession) {
-                        await sessionService.createSession(updatedSession);
-                    } else {
-                        await sessionService.updateSession(currentSessionId, { messages: updatedSession.messages });
+                        await sessionService.createSession(currentSession);
+                        subscribeToActiveMessages(currentSessionId);
                     }
+                    await sessionService.appendMessage(currentSessionId, msg);
                 } catch (e) {
                     if (attempt < 3) {
                         logger.warn(`[AgentSlice] Persistence attempt ${attempt} failed, retrying...`, e);
@@ -310,7 +339,7 @@ export function buildAgentSessionState(
                 try {
                     const { sessionService } = await import('@/services/agent/SessionService');
                     if (state.activeSessionId) {
-                        await sessionService.updateSession(state.activeSessionId, { messages: updatedMessages });
+                        await sessionService.updateMessage(state.activeSessionId, id, updates);
                     }
                 } catch (e) {
                     if (attempt < 3) {
@@ -350,7 +379,7 @@ export function buildAgentSessionState(
             const persistMessage = async (attempt = 1) => {
                 try {
                     const { sessionService } = await import('@/services/agent/SessionService');
-                    await sessionService.updateSession(sessionId, { messages: updatedSession.messages });
+                    await sessionService.appendMessage(sessionId, msg);
                 } catch (e) {
                     if (attempt < 3) {
                         logger.warn(`[AgentSlice] Add message attempt ${attempt} failed, retrying...`, e);
@@ -381,7 +410,7 @@ export function buildAgentSessionState(
             const persistClear = async (attempt = 1) => {
                 try {
                     const { sessionService } = await import('@/services/agent/SessionService');
-                    await sessionService.updateSession(targetSessionId, { messages: [] });
+                    await sessionService.clearMessages(targetSessionId);
                 } catch (e) {
                     if (attempt < 3) {
                         logger.warn(`[AgentSlice] Clear history attempt ${attempt} failed, retrying...`, e);
@@ -504,6 +533,8 @@ export function buildAgentSessionState(
                             agentHistory: activeId && mergedSessions[activeId] ? mergedSessions[activeId]!.messages : []
                         };
                     });
+                    const activeId = get().activeSessionId;
+                    if (activeId) subscribeToActiveMessages(activeId);
                 }, (error) => {
                     logger.error('[AgentSlice] Sessions subscription error:', error);
                 });

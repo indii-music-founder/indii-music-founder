@@ -1,5 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
+const firestoreMocks = vi.hoisted(() => ({
+    transactionSet: vi.fn(),
+    transactionUpdate: vi.fn(),
+    transactionGet: vi.fn(),
+    runTransaction: vi.fn(),
+}));
+
 // 1. Mock External Dependencies (Firebase/Firestore)
 vi.mock('firebase/firestore', () => ({
   serverTimestamp: vi.fn(),
@@ -10,7 +17,12 @@ vi.mock('firebase/firestore', () => ({
         fromMillis: (ms: number) => ({ toMillis: () => ms, seconds: ms / 1000, nanoseconds: 0 }),
         now: () => ({
   serverTimestamp: vi.fn(), toMillis: () => Date.now() })
-    }
+    },
+    doc: vi.fn((_db: unknown, ...segments: string[]) => ({ path: segments.join('/') })),
+    runTransaction: firestoreMocks.runTransaction,
+    updateDoc: vi.fn(),
+    writeBatch: vi.fn(),
+    getDocs: vi.fn(),
 }));
 
 // 2. Mock FirestoreService Base Class
@@ -39,7 +51,8 @@ vi.mock('../FirestoreService', () => {
 // 3. Mock Auth & Org Services
 vi.mock('../firebase', () => ({
   serverTimestamp: vi.fn(),
-    auth: { currentUser: { uid: 'test-user-id' } }
+    auth: { currentUser: { uid: 'test-user-id' } },
+    db: {}
 }));
 
 vi.mock('../OrganizationService', () => ({
@@ -59,6 +72,15 @@ describe('SessionService Persistence (Dual Write)', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        firestoreMocks.transactionGet.mockResolvedValue({
+            exists: () => true,
+            data: () => ({ messageStorage: 'array', messages: [{ id: 'legacy', role: 'user', text: 'Earlier', timestamp: 1 }] }),
+        });
+        firestoreMocks.runTransaction.mockImplementation(async (_db: unknown, callback: (transaction: unknown) => Promise<void>) => callback({
+            get: firestoreMocks.transactionGet,
+            set: firestoreMocks.transactionSet,
+            update: firestoreMocks.transactionUpdate,
+        }));
 
         // Setup window.electronAPI mock
         vi.stubGlobal('window', {
@@ -136,5 +158,18 @@ describe('SessionService Persistence (Dual Write)', () => {
 
         expect(mockSet).toHaveBeenCalled();
         expect(mockElectronSave).not.toHaveBeenCalled();
+    });
+
+    it('atomically migrates legacy history and appends the new message', async () => {
+        await sessionService.appendMessage('session-123', {
+            id: 'phone-message', role: 'user', text: 'From phone', timestamp: 2,
+        });
+
+        expect(firestoreMocks.runTransaction).toHaveBeenCalled();
+        expect(firestoreMocks.transactionSet).toHaveBeenCalledTimes(2);
+        expect(firestoreMocks.transactionUpdate).toHaveBeenCalledWith(
+            expect.anything(),
+            expect.objectContaining({ messageStorage: 'subcollection' })
+        );
     });
 });

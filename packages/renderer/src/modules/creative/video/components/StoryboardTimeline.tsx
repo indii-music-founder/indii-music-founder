@@ -359,13 +359,13 @@ export function StoryboardTimeline() {
                     </div>
                     <div>
                         <h2 className="text-sm font-bold uppercase tracking-widest text-white flex items-center gap-2">
-                            Beat-Quantized Storyboard Timeline
+                            Editable Timing Storyboard
                             <span className="text-[9px] bg-cyan-500/10 text-cyan-400 px-2 py-0.5 rounded-full border border-cyan-500/20 uppercase tracking-widest">Audio-timed planning</span>
                         </h2>
                         <p className="text-[10px] text-neutral-500 mt-1 font-mono uppercase tracking-wider">
                             {storyboardProject
                                 ? `Active: ${storyboardProject.name} · Grid: ${storyboardProject.bpm} BPM${storyboardProject.key ? ` · Key: ${storyboardProject.key}` : ' · Key: not analyzed'}`
-                                : "Upload audio to generate bar-aligned video segments"
+                                : "Load audio to create an editable 120 BPM timing scaffold"
                             }
                         </p>
                     </div>
@@ -419,7 +419,7 @@ export function StoryboardTimeline() {
                                 Import master audio to begin storyboarding
                             </p>
                             <p className="text-[10px] text-neutral-600 leading-normal max-w-sm mx-auto uppercase">
-                                The engine will automatically segment your track into beat-quantized four-bar cards, ready for sequential video generation.
+                                Load a track to create editable four-bar timing cards on a 120 BPM scaffold. Beat, key, and stem analysis are not configured yet.
                             </p>
                         </div>
                         <button

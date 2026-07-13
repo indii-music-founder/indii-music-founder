@@ -347,6 +347,64 @@ describe('creative gateway generateVideoV3', () => {
     expect(mockSet).toHaveBeenCalledTimes(2);
   });
 
+  /**
+   * ISSUE-870: GenerateVideoSchema's aspectRatio enum includes 1:1/3:4/4:3,
+   * but Veo only actually produces 16:9 or 9:16 — normalizeVideoAspectRatio()
+   * used to silently coerce any of those to 16:9 with no warning. This
+   * proves the callable now rejects them instead of lying about the shape.
+   */
+  it.each(['1:1', '3:4', '4:3'])('rejects an unsupported aspect ratio (%s) instead of silently coercing to 16:9', async (unsupportedRatio) => {
+    await expect(callGenerateVideo({
+      auth: { uid: 'user-123' },
+      data: {
+        prompt: 'A cinematic social clip',
+        aspectRatio: unsupportedRatio,
+        model: 'fast',
+        resolution: '1080p',
+        durationSeconds: 6,
+        costReservationId: 'op-123',
+      },
+    })).rejects.toMatchObject({
+      code: 'invalid-argument',
+      message: expect.stringContaining(unsupportedRatio),
+    });
+
+    expect(mockSet).not.toHaveBeenCalled();
+  });
+
+  /**
+   * ISSUE-869: temporal_inpaint capability is checked BEFORE the cost
+   * reservation is loaded/validated, so an unsupported request fails on the
+   * clearest signal without an extra Firestore read for a job that's going
+   * to be rejected anyway. GEMINI_VEO_TEMPORAL_INPAINT_ENABLED is unset in
+   * this test env, so real Veo model IDs (fast/lite/pro) never satisfy
+   * supportsTemporalInpaint() — matching the real-world default-disabled case.
+   */
+  it('rejects temporal_inpaint before loading the cost reservation when the capability is unsupported', async () => {
+    await expect(callGenerateVideo({
+      auth: { uid: 'user-123' },
+      data: {
+        prompt: 'A cinematic social clip',
+        aspectRatio: '16:9',
+        mode: 'temporal_inpaint',
+        model: 'fast',
+        resolution: '1080p',
+        durationSeconds: 6,
+        sourceVideoUri: 'gs://test-bucket/source.mp4',
+        maskFrameUri: 'gs://test-bucket/mask.png',
+        frameRange: { startFrame: 0, endFrame: 10 },
+        costReservationId: 'op-123',
+      },
+    })).rejects.toMatchObject({
+      code: 'failed-precondition',
+      message: expect.stringContaining('does not support temporal inpaint'),
+    });
+
+    // The cost reservation collection is never even queried.
+    expect(mockCollectionNames).not.toContain('costLedger');
+    expect(mockSet).not.toHaveBeenCalled();
+  });
+
   it('processes a queued video job asynchronously and stores the rendered output', async () => {
     mockGenerateVideos.mockResolvedValueOnce({
       done: true,

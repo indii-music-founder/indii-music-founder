@@ -30,15 +30,24 @@ export const ReleaseKitModal: React.FC<ReleaseKitModalProps> = ({ isOpen, onClos
     const [assets, setAssets] = useState<GeneratedAssets | null>(null);
     const [activeTab, setActiveTab] = useState<'press' | 'social' | 'email'>('press');
     const [copied, setCopied] = useState<string | null>(null);
+    const [error, setError] = useState<string | null>(null);
 
     const handleGenerate = async () => {
+        const styles = formData.musicalStyle.split(',').map(s => s.trim()).filter(Boolean);
+        const required = [formData.trackTitle, formData.artistName, formData.targetAudience];
+        const parsedDate = new Date(`${formData.releaseDate}T00:00:00`);
+        if (required.some(value => !value.trim()) || styles.length === 0 || !formData.releaseDate || Number.isNaN(parsedDate.getTime())) {
+            setError('Enter a track title, artist name, valid release date, at least one musical style, and target audience.');
+            return;
+        }
+        setError(null);
         setStep('generating');
         try {
             const result = await PUBLICIST_TOOLS.generate_campaign_assets!({
                 trackTitle: formData.trackTitle,
                 artistName: formData.artistName,
                 releaseDate: formData.releaseDate,
-                musicalStyle: formData.musicalStyle.split(',').map(s => s.trim()),
+                musicalStyle: styles,
                 targetAudience: formData.targetAudience,
                 contactInfo: formData.mediaContact
             });
@@ -48,10 +57,12 @@ export const ReleaseKitModal: React.FC<ReleaseKitModalProps> = ({ isOpen, onClos
                 setStep('results');
             } else {
                 logger.error("Generation failed", result);
-                setStep('input'); // Reset on failure for now
+                setError(result.error || 'Release Kit generation failed. Your details are still here—please retry.');
+                setStep('input');
             }
         } catch (e: unknown) {
             logger.error("Operation failed:", e);
+            setError(e instanceof Error ? e.message : 'Release Kit generation failed. Please retry.');
             setStep('input');
         }
     };
@@ -100,6 +111,7 @@ export const ReleaseKitModal: React.FC<ReleaseKitModalProps> = ({ isOpen, onClos
                     <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
                         {step === 'input' && (
                             <div className="space-y-6 max-w-xl mx-auto py-8">
+                                {error && <div role="alert" className="rounded-lg border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-300">{error}</div>}
                                 <div className="space-y-4">
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2">

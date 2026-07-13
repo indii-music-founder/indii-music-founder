@@ -154,4 +154,34 @@ describe('CostControlService', () => {
     expect(result.allowed).toBe(false);
     expect(result.remainingBudget).toBe(0);
   });
+
+  it('gets owner-scoped status and explicit pending holds from the server receipt', async () => {
+    mocks.callable.mockResolvedValueOnce({
+      data: {
+        dailyUsed: 4,
+        monthlyUsed: 17,
+        dailyRemaining: 21,
+        monthlyRemaining: 233,
+        tier: 'pro',
+        pendingHoldCost: 1.5,
+        pendingHoldCount: 2,
+        settledCost: 12.5,
+        voidedCost: 3,
+      },
+    });
+
+    await expect(CostControlService.getStatus('auth-user-1')).resolves.toEqual({
+      dailyUsed: 4,
+      monthlyUsed: 17,
+      dailyRemaining: 21,
+      monthlyRemaining: 233,
+      tier: 'pro',
+      pendingHoldCost: 1.5,
+      pendingHoldCount: 2,
+      settledCost: 12.5,
+      voidedCost: 3,
+    });
+    expect(mocks.httpsCallable).toHaveBeenCalledWith({ region: 'us-central1' }, 'getOperationCostStatus');
+    expect(mocks.callable).toHaveBeenCalledWith();
+  });
 });

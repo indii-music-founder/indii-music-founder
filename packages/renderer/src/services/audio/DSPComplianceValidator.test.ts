@@ -27,6 +27,12 @@ describe('DSPComplianceValidator.validateAudio (ISSUE-997)', () => {
         expect(report.isCompliant).toBe(false);
         expect(report.measurementMethod).toBe('estimated');
     });
+
+    it('preserves a measured method only when the native EBU R128 path supplies it', () => {
+        const report = DSPComplianceValidator.validateAudio(-15.5, -1.5, 48000, 24, 'measured');
+        expect(report.measurementMethod).toBe('measured');
+        expect(report.isCompliant).toBe(true);
+    });
 });
 
 /**

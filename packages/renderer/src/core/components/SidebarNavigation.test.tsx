@@ -112,7 +112,8 @@ describe('Sidebar Navigation Integration', () => {
         initializeHistory: mockInitializeHistory,
         loadProjects: mockLoadProjects,
         loadBoardroomMessages: vi.fn().mockResolvedValue(vi.fn()),
-        loadSessions: vi.fn(),
+        // App.tsx calls loadSessions().catch(...) on mount — must resolve, not return undefined.
+        loadSessions: vi.fn().mockResolvedValue(undefined),
         pendingCount: 0,
         isSyncing: false,
         lastSyncError: null,
@@ -127,6 +128,11 @@ describe('Sidebar Navigation Integration', () => {
         updatePreferences: vi.fn(),
         setCommandMenuOpen: vi.fn(),
         logout: vi.fn(),
+        // ISSUE-761: AppInitializationProvider.tsx now calls loadNotesFromCloud()
+        // on mount (Firestore notes cloud sync) — an incomplete mock made this
+        // throw "loadNotesFromCloud is not a function" for every test in this
+        // file, a real regression (not a flake) caught via a CI run.
+        loadNotesFromCloud: vi.fn().mockResolvedValue(undefined),
         ...overrides,
     });
 

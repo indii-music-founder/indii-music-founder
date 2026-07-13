@@ -35,8 +35,14 @@ vi.mock('../core/store', () => {
         loadUserProfile: vi.fn(),
         initializeHistory: vi.fn(),
         loadProjects: vi.fn(),
+        // ISSUE-761: AppInitializationProvider.tsx calls loadNotesFromCloud()
+        // on mount (Firestore notes cloud sync) — a real regression caught
+        // via CI, not a flake: an incomplete mock throws
+        // "loadNotesFromCloud is not a function" when App actually renders.
+        loadNotesFromCloud: vi.fn().mockResolvedValue(undefined),
         loadBoardroomMessages: vi.fn().mockResolvedValue(vi.fn()),
-        loadSessions: vi.fn(),
+        // App.tsx calls loadSessions().catch(...) on mount — must resolve, not return undefined.
+        loadSessions: vi.fn().mockResolvedValue(undefined),
         loginWithGoogle: vi.fn(),
         pendingCount: 0,
         isSyncing: false,

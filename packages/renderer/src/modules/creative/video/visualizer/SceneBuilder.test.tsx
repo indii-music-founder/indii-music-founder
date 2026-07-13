@@ -32,6 +32,7 @@ vi.mock('@/components/ui/ConfirmDialog', () => ({
 
 vi.mock('./sceneBuilderFiles', () => ({
     validateSceneModelFile: () => null,
+    validateSceneModelContents: () => Promise.resolve(null),
 }));
 
 /**
@@ -65,6 +66,9 @@ describe('SceneBuilder (ISSUE-1015)', () => {
         const fileInput = screen.getByLabelText('Choose a GLB or GLTF model');
         const file = new File(['glb-bytes'], 'model.glb', { type: 'model/gltf-binary' });
         fireEvent.change(fileInput, { target: { files: [file] } });
+
+        // Intake now validates model bytes asynchronously before it mutates the stage.
+        await waitFor(() => expect(screen.queryByText('Build Your Set')).not.toBeInTheDocument());
 
         fireEvent.click(screen.getByText('Clear Stage'));
 

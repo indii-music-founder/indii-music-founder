@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { onSnapshot, doc, collection, query, where, orderBy, limit } from 'firebase/firestore';
 import { safeUnsubscribe } from '@/utils/safeUnsubscribe';
 import { db } from '@/services/firebase';
@@ -199,6 +199,13 @@ export function useSocial(userId?: string) {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [loadFeed, loadDashboardData]);
 
+    const actions = useMemo(() => ({
+        schedulePost,
+        createPost,
+        refreshDashboard: loadDashboardData,
+        refreshFeed: loadFeed
+    }), [schedulePost, createPost, loadDashboardData, loadFeed]);
+
     return {
         // Data
         stats,
@@ -213,11 +220,6 @@ export function useSocial(userId?: string) {
         setFilter,
 
         // Actions
-        actions: {
-            schedulePost,
-            createPost,
-            refreshDashboard: loadDashboardData,
-            refreshFeed: loadFeed
-        }
+        actions
     };
 }

@@ -18,6 +18,13 @@ describe('The Director 🎬', () => {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const store = useVideoEditorStore.getState();
 
+        // Baseline before adding — don't assume a specific starting count.
+        // videoEditorStore.ts's own initial state has clips: [], but CI has
+        // shown this can differ from local runs depending on file execution
+        // order within a shard; assert the delta this test itself produces,
+        // not an absolute count that depends on state outside this test.
+        const baselineCount = useVideoEditorStore.getState().project.clips.length;
+
         // 1. Add multiple clips (The "Dailies")
         const clipsToAdd = 10;
         act(() => {
@@ -33,10 +40,9 @@ describe('The Director 🎬', () => {
             }
         });
 
-        // Verify all 10 clips added + default initial clip
-        // Initial project has 1 clip.
+        // Verify all 10 clips added.
         let currentClips = useVideoEditorStore.getState().project.clips;
-        expect(currentClips.length).toBe(clipsToAdd + 1);
+        expect(currentClips.length).toBe(baselineCount + clipsToAdd);
 
         // 2. Perform "The Editor's Cut" (Reordering / Moving)
         // Move the last added clip to the beginning (Time 0)
@@ -54,7 +60,7 @@ describe('The Director 🎬', () => {
 
         // 3. "Kill your darlings" (Deletion)
         // Remove 5 clips
-        const clipsToRemove = currentClips.slice(1, 6); // Skip default clip
+        const clipsToRemove = currentClips.slice(0, 5);
         act(() => {
             clipsToRemove.forEach(clip => {
                 useVideoEditorStore.getState().removeClip(clip.id);
@@ -62,7 +68,7 @@ describe('The Director 🎬', () => {
         });
 
         currentClips = useVideoEditorStore.getState().project.clips;
-        expect(currentClips.length).toBe(clipsToAdd + 1 - 5);
+        expect(currentClips.length).toBe(baselineCount + clipsToAdd - 5);
     });
 
     it('Scenario: Timeline Durability - handles track management', () => {
