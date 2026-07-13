@@ -54,6 +54,7 @@ describe('The Anarchist Ⓐ', () => {
     it('Scenario: The Squatter (Permission Defiance) - handles missing resources', () => {
         // Attempt to update a clip that doesn't exist (Ghost ID)
         const ghostId = 'phantom-clip-id';
+        const baselineCount = useVideoEditorStore.getState().project.clips.length;
 
         act(() => {
             useVideoEditorStore.getState().updateClip(ghostId, {
@@ -61,12 +62,13 @@ describe('The Anarchist Ⓐ', () => {
             });
         });
 
-        // Verify: No clips should be affected. The store's default project
-        // starts with zero clips (videoEditorStore.ts's initial state has
-        // clips: []) — updating a ghost ID must stay a no-op, not conjure one.
+        // Verify: no clips should be affected — updating a ghost ID must stay a
+        // no-op, not conjure one. Assert against the baseline captured above
+        // rather than an assumed starting count (0 locally, but CI has shown
+        // this can differ depending on file execution order within a shard).
         // Map based update (c.id === id ? ... : c) is safe.
         const clips = useVideoEditorStore.getState().project.clips;
-        expect(clips.length).toBe(0);
+        expect(clips.length).toBe(baselineCount);
     });
 
     it('Scenario: The Mutiny (State Rebellion) - survives impossible states', () => {
