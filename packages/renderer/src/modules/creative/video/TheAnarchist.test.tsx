@@ -61,12 +61,12 @@ describe('The Anarchist Ⓐ', () => {
             });
         });
 
-        // Verify: No clips should be affected.
-        // If logic was "find index -> update at index", index -1 might cause issues.
+        // Verify: No clips should be affected. The store's default project
+        // starts with zero clips (videoEditorStore.ts's initial state has
+        // clips: []) — updating a ghost ID must stay a no-op, not conjure one.
         // Map based update (c.id === id ? ... : c) is safe.
         const clips = useVideoEditorStore.getState().project.clips;
-        expect(clips.length).toBe(1); // Default clip only
-        expect(clips[0]!.startFrame).toBe(0); // Unchanged
+        expect(clips.length).toBe(0);
     });
 
     it('Scenario: The Mutiny (State Rebellion) - survives impossible states', () => {
