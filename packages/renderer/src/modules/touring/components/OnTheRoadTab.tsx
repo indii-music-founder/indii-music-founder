@@ -1,12 +1,13 @@
 import { useTranslation } from 'react-i18next';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import { motion } from 'motion/react';
-import { Navigation, Fuel, Clock, Crosshair } from 'lucide-react';
+import { Navigation, Fuel, Clock, Crosshair, TrendingUp } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Itinerary, ItineraryStop, NearbyPlace, FuelLogistics } from '../types';
+import { getTotalMilesFromItinerary, calculateMileageCost } from '../milesTracking';
 
 import { TourMap } from './TourMap';
 import { logger } from '@/utils/logger';
@@ -34,9 +35,13 @@ export const OnTheRoadTab: React.FC<OnTheRoadTabProps> = ({
     itinerary
 }) => {
     const { t } = useTranslation();
+    const [isLoggingMiles, setIsLoggingMiles] = useState(false);
+
     // Find next stop logic
     const today = new Date();
     const nextStop = itinerary?.stops.find((s: ItineraryStop) => new Date(s.date) >= today) || itinerary?.stops[0];
+    const totalMiles = getTotalMilesFromItinerary(itinerary);
+    const mileageCost = calculateMileageCost(totalMiles);
 
     const handleLocateMe = () => {
         if (!navigator.geolocation) return;
@@ -58,9 +63,11 @@ export const OnTheRoadTab: React.FC<OnTheRoadTabProps> = ({
     return (
         <div className="flex flex-col gap-6 h-full">
             {/* Top Row: Command Center & Map */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[400px]">
-                {/* Main Telemetry / Command Center */}
-                <Card className="lg:col-span-1 bg-[#161b22] border-gray-800 shadow-2xl flex flex-col justify-between overflow-hidden relative group">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Left Column: Command Center & Miles */}
+                <div className="flex flex-col gap-6 h-[400px]">
+                    {/* Main Telemetry / Command Center */}
+                    <Card className="bg-[#161b22] border-gray-800 shadow-2xl flex flex-col justify-between overflow-hidden relative group">
                     <div className="absolute top-0 right-0 p-4 opacity-50 group-hover:opacity-100 transition-opacity z-10">
                         <div className="flex items-center gap-2">
                             <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
@@ -102,8 +109,37 @@ export const OnTheRoadTab: React.FC<OnTheRoadTabProps> = ({
                     </CardContent>
                 </Card>
 
+                    {/* Miles This Tour */}
+                    {totalMiles > 0 && (
+                        <Card className="bg-[#161b22] border-gray-800 shadow-2xl flex flex-col justify-between overflow-hidden relative group">
+                            <CardHeader>
+                                <CardTitle className="text-lg font-bold text-white flex items-center gap-2 mb-1">
+                                    <TrendingUp className="text-amber-500" size={20} />
+                                    Miles This Tour
+                                </CardTitle>
+                                <p className="text-xs text-gray-500 font-mono uppercase tracking-wider">Tax Deductible</p>
+                            </CardHeader>
+
+                            <CardContent className="flex-1 flex flex-col justify-center gap-4">
+                                <div className="bg-bg-dark p-4 rounded-lg border border-gray-800">
+                                    <div className="text-3xl font-mono text-white font-bold">{totalMiles.toLocaleString()} <span className="text-xs text-gray-600">mi</span></div>
+                                    <div className="text-sm text-amber-400 font-mono mt-2">≈ ${mileageCost.toFixed(2)} @ IRS rate</div>
+                                </div>
+
+                                <Button
+                                    onClick={() => setIsLoggingMiles(!isLoggingMiles)}
+                                    disabled={isLoggingMiles}
+                                    className="bg-amber-600 hover:bg-amber-700 w-full"
+                                >
+                                    {isLoggingMiles ? 'Logging to Finance...' : 'Log to Finance'}
+                                </Button>
+                            </CardContent>
+                        </Card>
+                    )}
+                </div>
+
                 {/* Map Display */}
-                <Card className="lg:col-span-2 bg-bg-dark border-gray-800 rounded-xl overflow-hidden relative shadow-2xl p-0">
+                <Card className="lg:col-span-2 bg-bg-dark border-gray-800 rounded-xl overflow-hidden relative shadow-2xl p-0 h-[400px]">
                     <TourMap
                         currentLocation={currentLocation}
                         // Map nearby places to markers
