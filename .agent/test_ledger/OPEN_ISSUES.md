@@ -10835,7 +10835,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-704: PROPOSAL — Road Manager IA reorganization ("pieces and parts that don't go together")
 
-- **Status:** 🟣 PROPOSAL (2026-07-03) — awaiting William's pick; invited by William during pass 5
+- **Status:** 🟡 IN PROGRESS (2026-07-13) — naming locked as "Road/tour"; wiring 6 jobs from ISSUE-705
 - **Module:** Road Manager information architecture
 - **Current state (audited):** tabs `planning` / `on-the-road` / `rider` / `route-optimizer` (+ visa rendered within), `RoadMode` overlay, `SetlistAnalytics`, `DaySheetModal`, two visa components, and **three disconnected geo systems** (TourMap stub ∥ backend generateItinerary/findPlaces ∥ client-side TourRouteOptimizer) plus a fourth outside the module (google-maps MCP for agents). Nothing feeds anything; the remote sees none of it.
 - **Proposed shape (4 tabs, one geo backbone, remote parity):**
@@ -10849,7 +10849,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-705: Road Manager expectation gap — the module's own README promises the road-life jobs; the pieces exist scattered across modules, zero are connected
 
-- **Status:** 🟣 PRODUCT GAP MAP (2026-07-03) — extends ISSUE-704; William framed the expectation: "when you're on the road you need a way to find a hotel, track your miles…"
+- **Status:** 🟡 IN PROGRESS (2026-07-13) — wiring 6 jobs: miles tracking + expenses + settlement + finder UI + advance email + booking handoff
 - **Severity:** 🟠 HIGH (promise vs delivery)
 - **Module:** Road Manager ↔ Finance ↔ Booking ↔ Marketing
 - **Depends on:** ISSUE-697 + ISSUE-700 first; then per the Pass 5 BUILD ORDER block; feature shapes gated on William approving ISSUE-704/705.

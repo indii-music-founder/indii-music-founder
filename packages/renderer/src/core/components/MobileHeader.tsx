@@ -27,7 +27,7 @@ const MODULE_DISPLAY_NAMES: Partial<Record<ModuleId, string>> = {
     'marketing': 'Marketing',
     'workflow': 'Workflow Lab',
     'knowledge': 'Knowledge Base',
-    'road': 'Road Manager',
+    'road': 'Road/tour',
     'social': 'Social Media',
     'brand': 'Brand Manager',
     'campaign': 'Campaign Manager',
