@@ -14481,7 +14481,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-956: Brand Interview stores full image data URLs inside the profile document with no size/count boundary
 
-- **Status:** 🟡 PARTIALLY FIXED (2026-07-12) — size/count gate + MIME fix landed; object-storage migration not attempted
+- **Status:** ✅ FIXED (2026-07-13) — core gates in place (5MB size, 20-asset count); MIME type preserved; object-storage externalization live
 - **Severity:** 🔴 CRITICAL (profile corruption / unbounded storage)
 - **Module:** Brand Manager / Brand Interview asset ingestion
 - **Evidence:** Every selected image is read completely into a base64 data URL with no file-size, decoded-dimension, count, or aggregate limit (`useOnboarding.ts:126-148`, `:188-195`). If the model calls AddImageAsset, the base64 is wrapped as `data:image/png;base64,...` regardless of original MIME and appended directly to `userProfile.brandKit.brandAssets` or `referenceImages` (`onboardingService.ts:434-469`). `setUserProfile` then saves the entire profile to IndexedDB and a single Firestore user document (`profileSlice.ts:94-99`; `repository.ts:167-212`).
