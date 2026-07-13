@@ -59,10 +59,21 @@ vi.mock('../AlwaysOnMemoryEngine', () => ({
 // Layer (User) — Memory Bank (Mem0)
 vi.mock('../MemoryBankService', () => ({
     memoryBankService: {
-        searchMemories: vi.fn().mockResolvedValue([
-            { id: 'bank-1', memory: 'User prefers warm color palettes' },
-            { id: 'bank-2', memory: 'Always use formal language' },
-        ]),
+        searchMemories: vi.fn().mockResolvedValue({
+            results: [
+                { id: 'bank-1', memory: 'User prefers warm color palettes' },
+                { id: 'bank-2', memory: 'Always use formal language' },
+            ],
+            hasMore: false,
+        }),
+        searchMemoriesAllPages: vi.fn().mockResolvedValue({
+            results: [
+                { id: 'bank-1', memory: 'User prefers warm color palettes' },
+                { id: 'bank-2', memory: 'Always use formal language' },
+            ],
+            totalPages: 1,
+            scopeMessage: 'Searched memory across 1 page(s), found 2 matching memory item(s).',
+        }),
     },
 }));
 
@@ -96,10 +107,21 @@ describe('BigBrainEngine', () => {
         vi.mocked(alwaysOnMemoryEngine.getAllMemories).mockResolvedValue([
             { id: 'm1', content: 'Recent discussion about album sequencing', summary: 'Album sequencing conversation', tier: 'working', category: 'interaction', createdAt: Date.now(), topics: [] } as any,
         ]);
-        vi.mocked(memoryBankService.searchMemories).mockResolvedValue([
-            { id: 'bank-1', memory: 'User prefers warm color palettes' } as any,
-            { id: 'bank-2', memory: 'Always use formal language' } as any,
-        ]);
+        vi.mocked(memoryBankService.searchMemories).mockResolvedValue({
+            results: [
+                { id: 'bank-1', memory: 'User prefers warm color palettes' } as any,
+                { id: 'bank-2', memory: 'Always use formal language' } as any,
+            ],
+            hasMore: false,
+        });
+        vi.mocked(memoryBankService.searchMemoriesAllPages).mockResolvedValue({
+            results: [
+                { id: 'bank-1', memory: 'User prefers warm color palettes' } as any,
+                { id: 'bank-2', memory: 'Always use formal language' } as any,
+            ],
+            totalPages: 1,
+            scopeMessage: 'Searched memory across 1 page(s), found 2 matching memory item(s).',
+        });
     });
 
     describe('assembleContext', () => {
