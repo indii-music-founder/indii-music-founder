@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-07-13 18:13 EDT
+**Updated:** 2026-07-13 18:20 EDT
 **Branch:** `fix/issues-core`
 
 ## Recent Commits
 ```
+7572c5577 chore: session checkpoint [18:13]
 7aa5412fa chore: session checkpoint [18:01]
 bdbdab9d2 chore: session checkpoint [18:00]
 cedd5bc5f chore: session 2026-07-13 checkpoint — Road Manager finish + partial issues audit
@@ -13,7 +14,6 @@ cfe43fb9f chore: mark ISSUE-949 FIXED — campaign persistence audit showed ledg
 6394eeccf chore: session checkpoint [17:57]
 b6d5a7f86 chore: session checkpoint [14:59]
 dc4975f87 chore: ISSUE-704/705 progress checkpoint — 2 jobs complete, 4 jobs TODOs documented
-100d6cb52 fix(road-manager): add miles tracking UI card + calculation utilities (ISSUE-705 job 2)
 ```
 
 ## Working State
