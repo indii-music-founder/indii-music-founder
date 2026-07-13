@@ -48,8 +48,18 @@ export type AuthFixtures = {
   authedPage: Page;
 };
 
-export const test = base.extend<AuthFixtures>({
-  authedPage: async ({ page }, use) => {
+/**
+ * Applies the full E2E mock harness (CORS patching, Firestore/Auth/Vertex/RAG route
+ * interception, injected electronAPI + FIREBASE_E2E_MOCK globals, localStorage bypass
+ * flags, and the login-form-or-dashboard wait) to an arbitrary Playwright `Page`.
+ *
+ * This is the same setup the `authedPage` fixture below applies to its single page —
+ * extracted so multi-context specs (e.g. simulating two independent devices sharing
+ * one browser process) can apply identical mocking to each context's page individually.
+ * Playwright fixtures only ever hand you one `page`; tests that need N independent
+ * browser contexts must call this directly on each context's page.
+ */
+export async function setupE2EPage(page: Page): Promise<void> {
     // Dynamically patch all page.route handlers to return correct CORS headers matching request origin
     const originalRoute = page.route.bind(page);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1105,7 +1115,11 @@ export const test = base.extend<AuthFixtures>({
     } else if (await dashboardBtn.isVisible().catch(() => false)) {
       console.log("[E2E] Dashboard already visible. Already authenticated.");
     }
+}
 
+export const test = base.extend<AuthFixtures>({
+  authedPage: async ({ page }, use) => {
+    await setupE2EPage(page);
     // eslint-disable-next-line react-hooks/rules-of-hooks
     await use(page);
   },
