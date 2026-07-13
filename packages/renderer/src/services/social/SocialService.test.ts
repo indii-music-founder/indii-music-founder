@@ -172,7 +172,7 @@ describe('SocialService', () => {
                     caption: 'Caption'
                 },
                 day: 1,
-                scheduledTime: Date.now()
+                scheduledTime: Date.now() + 60_000
             };
 
             const id = await SocialService.schedulePost(post);

@@ -158,7 +158,7 @@ describe('Sidebar Navigation Integration', () => {
         );
 
         expect(screen.getByText('Brand Manager')).toBeInTheDocument();
-        expect(screen.getByText('Road Manager')).toBeInTheDocument();
+        expect(screen.getByText('Road/tour')).toBeInTheDocument();
         expect(screen.getByText('Campaign Manager')).toBeInTheDocument();
         expect(screen.getByText('Publicist')).toBeInTheDocument();
         expect(screen.getByText('Marketing Department')).toBeInTheDocument();

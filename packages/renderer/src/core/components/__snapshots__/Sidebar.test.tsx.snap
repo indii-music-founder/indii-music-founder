@@ -135,7 +135,7 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
           />
         </button>
         <button
-          aria-label="Road Manager"
+          aria-label="Road/tour"
           class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-road"
@@ -754,7 +754,7 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
           <span
             class="truncate relative z-10 font-medium transition-all duration-300 group-hover:translate-x-0.5"
           >
-            Road Manager
+            Road/tour
           </span>
         </button>
         <button

@@ -63,7 +63,7 @@ describe('Social Schemas', () => {
         });
 
         it('should transform scheduledTime correctly', () => {
-            const now = Date.now();
+            const now = Date.now() + 60_000; // must be strictly future per ISSUE-941 refinement
 
             // Number
             let result = ScheduledPostSchema.parse({ platform: 'Twitter', copy: 'Hi', scheduledTime: now });
