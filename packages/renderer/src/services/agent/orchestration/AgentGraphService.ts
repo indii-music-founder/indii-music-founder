@@ -295,8 +295,8 @@ export class AgentGraphService {
                 // GEAP Pillar 2: SCALE - Pull relevant memories before execution
                 let memoryContext = '';
                 try {
-                    const memories = await memoryBankService.searchMemories(userId, prompt, 5);
-                    memoryContext = memories.map(m => m.memory).join('\n---\n');
+                    const { results } = await memoryBankService.searchMemories(userId, prompt, 100);
+                    memoryContext = results.map(m => m.memory).join('\n---\n');
                 } catch (memErr) {
                     logger.warn(`[AgentGraph] Memory retrieval failed for node ${node.id}, continuing without it.`, memErr);
                 }
