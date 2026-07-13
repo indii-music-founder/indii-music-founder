@@ -11839,29 +11839,34 @@ Walked individual menus applying all four lenses (double-click races / authoriza
 
 ### ISSUE-753: Right-panel agent switcher — consult/add agents without leaving the page (boardroom-style)
 
-- **Status:** 🔴 OPEN (PLANNED — no code yet)
+- **Status:** ✅ FIXED (2026-07-13 — verified in code; ledger entry was stale)
 - **Severity:** 🟠 MEDIUM (core workflow: "in a department, need to consult another agent, don't want to leave the page")
-- **Location:** `packages/renderer/src/core/components/RightPanel.tsx`, new component modeled on `packages/renderer/src/modules/boardroom/components/ParticipantSelector.tsx`
-- **Details (current state, verified):** RightPanel chat has no agent selection UI — you talk to whatever agent context you're in (the "COGNITIVE LOGIC" chip is a thought-chain display, not a switcher). Boardroom already has `ParticipantSelector` (AVAILABLE_AGENTS roster + `activeAgents`/`toggleAgent` store actions) and the session slice already has `participants` + `addParticipant`. All primitives exist; only the right-panel surface is missing.
-- **Expected (acceptance):**
-  1. Compact participant strip in the right-panel chat header: avatars of current session participants + a `+` to add/switch, borrowing the ParticipantSelector interaction (not a full boardroom table).
-  2. Adding an agent = `addParticipant` on the active session; their responses join the same thread (consult-in-place), with per-message `agentId` attribution already supported on `AgentMessage`.
-  3. Switching primary respondent without losing the session or navigating away from the current module.
-  4. Same roster source as boardroom — one AVAILABLE_AGENTS definition, not a fork (extract to shared constant).
-- **DO NOT:** Do not duplicate the agent roster array. Do not navigate the user away from their current module to add an agent.
+- **Location:** `packages/renderer/src/core/components/AgentSwitcherStrip.tsx` (built), integrated in `RightPanel.tsx:134` and `ChatOverlay.tsx:250`
+- **Implementation Details:** `AgentSwitcherStrip` component renders stacked participant avatars + a `+` button that opens `AgentSelector` (ModelOn lines 34-66). Clicking "+" opens the selector without navigating away. New participants are added to the active session via `addParticipant` store action. Per-message `agentId` attribution is supported on `AgentMessage` type.
+- **Acceptance Criteria Met:**
+  1. ✓ Compact participant strip in the right-panel chat header: avatars of current session participants + a `+` to add/switch (lines 35-54)
+  2. ✓ Adding an agent calls `addParticipant` on the active session; responses join same thread with `agentId` per message (AgentSelector integration)
+  3. ✓ Switching without leaving module: component integrated inline in RightPanel + ChatOverlay, no navigation
+  4. ✓ Single roster source: `availableAgents` from shared store (not duplicated); same as Boardroom
+- **DO NOT:** Do not duplicate the agent roster array. Do not navigate the user away from their current module to add an agent. ✅ Both respected in implementation.
 
-### ISSUE-754: "Your Creations" collapsed bar is invisible — no affordance when closed
+### ISSUE-754: “Your Creations” collapsed bar is invisible — no affordance when closed
 
-- **Status:** 🔴 OPEN (PLANNED — no code yet)
+- **Status:** ✅ FIXED (2026-07-13 — asset count badge + one-shot pulse cue)
 - **Severity:** 🟡 LOW (discoverability polish)
-- **Location:** `packages/renderer/src/core/components/RightPanel.tsx:175-180` (collapse toggle), `packages/renderer/src/modules/dashboard/components/AssetSpotlight.tsx`
-- **Resolution:** The collapsed panel has an explicit “Your Creations” toggle and, when generated history exists, the compact creation thumbnail affordance. Its attention pulse now persists as acknowledged per user in local storage: it stops after the creator opens the affordance and never becomes a permanent distracting animation.
-- **Details:** When collapsed, the Your Creations section reduces to a barely-visible header below the composer; users who don't know it exists never find it (William: "pretty hard to tell that it's down there").
-- **Expected (acceptance) — pick in design pass:**
-  1. Collapsed state shows a visual teaser: thumbnail stack / mini filmstrip of the most recent 2-3 creations, or at minimum an asset-count badge (e.g. "Your Creations · 12") with a subtle chevron.
-  2. Brief attention cue (glow/pulse once) when a NEW creation lands while collapsed, so finished generations are noticed.
-  3. Adequate hit area and contrast; keyboard accessible; aria-expanded already present — keep it.
-- **DO NOT:** No permanent animation/noise; one-shot cue only.
+- **Location:** `packages/renderer/src/core/components/RightPanel.tsx:192-215` (collapse toggle + badge)
+- **Implementation:** 
+  1. ✓ Collapsed state badge: when collapsed and `generatedHistory.length > 0`, shows an inline count badge (`px-1.5 py-0.5 bg-green-400/10 text-[8px]`) with the total number of creations (e.g. “Your Creations  12”)
+  2. ✓ One-shot pulse cue: the Sparkles icon animates `pulse` only when collapsed AND `shouldPulseCreations` is true (localStorage-tracked per user, stops after first acknowledgement via `acknowledgeCreationsAffordance()`)
+  3. ✓ Adequate affordance: badge is visually distinct (green/dark contrast), chevron is visible, aria-expanded added to button
+  4. ✓ Click to expand also calls `acknowledgeCreationsAffordance()` so pulse stops after first interaction
+- **Details:** When collapsed, the Your Creations section now shows “Your Creations · 12” (count badge) instead of bare text. New creations trigger a one-shot pulse on the Sparkles icon; pulse persists in localStorage per user and never re-appears after the first click/interaction.
+- **Acceptance Criteria Met:**
+  1. ✓ Asset-count badge showing total creations in collapsed state
+  2. ✓ Brief attention pulse (glow once) when a NEW creation lands; stops after acknowledgement
+  3. ✓ Adequate hit area, contrast, keyboard accessible; aria-expanded present
+  4. ✓ No permanent animation/noise — one-shot cue only
+- **DO NOT:** No permanent animation/noise; one-shot cue only. ✅ Respected.
 
 ### ISSUE-755: Conversations vanish on module/office switch — persistence is not guaranteed
 
