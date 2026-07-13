@@ -18,7 +18,11 @@ export const ScheduledPostSchema = z.object({
     scheduledTime: z.union([z.number(), z.date(), z.string()]).transform((val) => {
         if (typeof val === 'number') return val;
         if (val instanceof Date) return val.getTime();
-        return new Date(val).getTime();
+        const parsed = new Date(val).getTime();
+        if (!Number.isFinite(parsed)) throw new Error('Invalid date/time');
+        return parsed;
+    }).refine((ts) => ts > Date.now(), {
+        message: "Post must be scheduled for a future time"
     }).optional(),
     status: CampaignStatusSchema.default('PENDING'),
     authorId: z.string().optional() // Assigned by backend/service
