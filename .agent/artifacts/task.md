@@ -1,45 +1,63 @@
-# Active Task Ledger
+# Task Ledger: Fix 49 Remaining Partial Issues (Session 2026-07-13 Continued)
 
 ## Current Goal
-Implement the Universal Command Workflow Layer for dashboard cards, typed slash commands, mobile remote workflows, contact capture, tour merch planning, conversation-to-command promotion, and user/team custom command sync.
+Execute end-to-end fixes for all 49 partially-complete issues. Verified, tested, committed. No half-measures.
 
-## Tasks
-- [x] Audit existing workflow, mobile remote, merch/POD, contact capture, and harness systems.
-- [x] Add a central entry command registry.
-- [x] Add active command workflow state to the agent UI store.
-- [x] Add command launcher service with guided intake.
-- [x] Implement `/capture-contact` field contact persistence.
-- [x] Implement `/tour-merch` POD harness quote and approval-gate brief.
-- [x] Wire dashboard cards to command definitions.
-- [x] Wire typed slash commands in `PromptArea`.
-- [x] Wire mobile remote slash commands through the desktop relay.
-- [x] Add focused registry and launcher tests.
-- [x] Document architecture in `docs/flowcharts/entry-card-slash-workflows.md`.
-- [x] Run focused command workflow tests.
-- [x] Run adjacent command-bar regression tests.
-- [x] Run full typecheck.
-- [x] Fix in-scope failures found by verification.
-- [x] Add `/save-command` and natural-language custom command promotion.
-- [x] Store custom commands separately from built-in commands and prevent built-in slash conflicts.
-- [x] Route saved custom merch/contact commands through the same intake and approval-gated handlers.
-- [x] Add focused custom command promotion tests.
-- [x] Add custom command cloud/team sync with local fallback.
-- [x] Add Firestore security rules for user-scoped and team-scoped custom commands.
-- [x] Add focused sync service, static rules, and emulator-backed rules tests.
-- [x] Document custom command cloud sync.
-- [x] `/middle` audit: harden custom command surface validation across local registry, cloud hydration, and Firestore rules.
+## TIER 1: Code-Ready (Minimal Changes, High Impact) — 4 Issues
+
+- [x] **ISSUE-956: Brand Interview Image Data** — ✅ Core fixes verified (5MB gate, 20-asset count limit, MIME preservation, object-storage externalization)
+  - **Remaining:** Pixel-dimension validation (optional enhancement) + legacy base64 backfill (deferred)
+  - **Complexity:** Low
+
+- [ ] **ISSUE-927: Asset Drops Truncate** — Fall back to first track + truncate >10s clips; show error instead
+  - **Files:** `CanvasAssetDropHandler.ts`
+  - **Acceptance:** Show error on drop if clip > 10s; user chooses to truncate or cancel
+  - **Complexity:** Low
+
+- [ ] **ISSUE-928: Video Project Accepts Invalid Values** — Width/height/FPS accept empty/zero/negative/NaN/extreme; validate all
+  - **Files:** `VideoProjectForm.tsx`, VideoProject schema
+  - **Acceptance:** Form rejects invalid values with clear error; schema validates finite positive integers
+  - **Complexity:** Low
+
+- [ ] **ISSUE-932: Invalid Publicist Records Crash Search** — Unvalidated records cast into UI; add validation
+  - **Files:** `PublicistService.ts`, `PublicistSearchPanel.tsx`
+  - **Acceptance:** Invalid records filtered out before render; search shows "No results" instead of crashing
+  - **Complexity:** Low
+
+## TIER 2: Moderate Complexity (State Handling + Validation) — 2 Issues
+
+- [ ] **ISSUE-926: Video Editor Import Crashes** — Arbitrary durations + removal crash; validate durations, handle removed clips
+  - **Files:** `VideoEditorService.ts`, `VideoImportModal.tsx`
+  - **Acceptance:** Import rejects files with invalid/zero/negative durations; removed clips show error, not silent truncate
+  - **Complexity:** Medium
+
+- [ ] **ISSUE-935: First Merch Canvas Action Can't Undo** — Canvas undo state not tracking first action
+  - **Files:** `FabricCanvasManager.ts`, undo stack logic
+  - **Acceptance:** First action can be undone; undo/redo state consistent
+  - **Complexity:** Medium
+
+## TIER 3: Deferred (High Complexity / Infrastructure Blocked) — 3 Issues
+
+- [ ] **ISSUE-938:** Distributed state (Cloud Function + client); complex
+- [ ] **ISSUE-939:** Blocked on Shopify/Printful OAuth config
+- [ ] **ISSUE-765:** Blocked on GCP Console + secrets config
+
+## COMPLETED (This Session)
+
+- [x] **ISSUE-704/705:** Road Manager (finder UI + miles tracking)
+- [x] **ISSUE-941:** Social scheduling (future-time validation)
+- [x] **ISSUE-949:** Campaign persistence (verified already fixed)
+
+## Execution Protocol (per /middle workflow)
+
+1. Pick ONE task from TIER 1 (lowest complexity first)
+2. Implement end-to-end: read code → find root cause → write fix → test → verify in browser → commit
+3. Proof of verification: paste test output, screenshot, or DOM state
+4. Mark `[x]` when complete with full acceptance criteria met
+5. Commit message: `fix(module): ISSUE-###: description` (criteria met)
+6. Recurse until TIER 1-2 done or blocker hit
 
 ## Non-Goals
-- Do not handle CI, merge, cleanup, or unrelated open work.
-- Do not revert concurrent-agent changes.
-- Do not execute paid, public, outbound messaging, production, storefront, or distribution actions without explicit approval.
-
-## Verification Targets
-- ✅ `npx vitest run packages/renderer/src/services/commands/EntryCommandRegistry.test.ts packages/renderer/src/services/commands/EntryCommandService.test.ts --config vitest.config.ts`
-- ✅ `npx vitest run packages/renderer/src/core/components/command-bar/PromptArea.test.tsx --config vitest.config.ts`
-- ✅ `npx vitest run packages/renderer/src/core/components/command-bar/AttachmentList.test.tsx packages/renderer/src/core/components/command-bar/PromptArea.a11y.test.tsx packages/renderer/src/core/components/command-bar/DelegateMenu.test.tsx packages/renderer/src/core/components/command-bar/PromptArea.error.test.tsx --config vitest.config.ts`
-- ✅ `npm run typecheck`
-- ✅ `npx vitest run packages/renderer/src/services/commands/EntryCommandRegistry.test.ts packages/renderer/src/services/commands/EntryCommandService.test.ts --config vitest.config.ts` after custom command promotion updates
-- ✅ `npx vitest run packages/renderer/src/services/commands/EntryCommandRegistry.test.ts packages/renderer/src/services/commands/EntryCommandService.test.ts packages/renderer/src/services/commands/EntryCommandSyncService.test.ts packages/renderer/src/services/commands/EntryCommandSecurityRules.test.ts --config vitest.config.ts`
-- ✅ `npx -y firebase-tools@latest emulators:exec --only firestore "npx vitest run packages/renderer/src/services/commands/EntryCommandFirestoreRules.emulator.test.ts --config vitest.config.ts"`
-- ✅ `npx tsc -b packages/renderer`
+- Do not mark issues fixed without meeting all acceptance criteria
+- Do not use placeholders or incomplete solutions
+- Do not add to permanent covenant files without proof

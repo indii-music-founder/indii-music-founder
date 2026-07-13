@@ -47,7 +47,7 @@ const MORE_SECTIONS: { title: string; items: NavItem[] }[] = [
         title: "Manager's Office",
         items: [
             { id: 'brand', label: 'Brand Manager' },
-            { id: 'road', label: 'Road Manager' },
+            { id: 'road', label: 'Road/tour' },
             { id: 'campaign', label: 'Campaign Manager' },
             { id: 'agent', label: 'Booking Agent' },
             { id: 'publicist', label: 'Publicist' },
