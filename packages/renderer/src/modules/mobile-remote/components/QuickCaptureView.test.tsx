@@ -1,7 +1,7 @@
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen } from '@testing-library/react';
-import QuickCaptureView, { pickSupportedAudioMimeType, audioExtensionForMimeType } from './QuickCaptureView';
+import QuickCaptureView, { pickSupportedAudioMimeType, audioExtensionForMimeType, downloadCapturedMedia } from './QuickCaptureView';
 
 /**
  * ISSUE-985: minimal fakes for the Web Audio recording APIs jsdom doesn't
@@ -46,8 +46,9 @@ class FakeMediaRecorder {
     }
 }
 
-const { mockError } = vi.hoisted(() => ({
+const { mockError, mockDispatchTask } = vi.hoisted(() => ({
     mockError: vi.fn(),
+    mockDispatchTask: vi.fn(),
 }));
 
 vi.mock('@/core/context/ToastContext', () => ({
@@ -60,7 +61,7 @@ vi.mock('@/core/context/ToastContext', () => ({
 
 vi.mock('@/services/agent/RemoteRelayService', () => ({
     remoteRelayService: {
-        dispatchTask: vi.fn(),
+        dispatchTask: mockDispatchTask,
     },
 }));
 
@@ -97,6 +98,28 @@ describe('QuickCaptureView', () => {
         expect(screen.getByRole('button', { name: /pin n\/a/i })).toBeDisabled();
         expect(screen.getByText('Location capture is unavailable in this browser.')).toBeInTheDocument();
         expect(mockError).not.toHaveBeenCalled();
+    });
+});
+
+describe('QuickCaptureView — local export (ISSUE-982)', () => {
+    it('downloads a local copy without mutating the captured blob', () => {
+        const create = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:download-copy');
+        const revoke = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
+        const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined);
+        vi.useFakeTimers();
+        try {
+            const blob = new Blob(['irreplaceable capture'], { type: 'audio/mp4' });
+            downloadCapturedMedia(blob, 'indii-capture.m4a');
+            expect(create).toHaveBeenCalledWith(blob);
+            expect(click).toHaveBeenCalledOnce();
+            vi.runAllTimers();
+            expect(revoke).toHaveBeenCalledWith('blob:download-copy');
+        } finally {
+            vi.useRealTimers();
+            create.mockRestore();
+            revoke.mockRestore();
+            click.mockRestore();
+        }
     });
 });
 
@@ -399,5 +422,51 @@ describe('QuickCaptureView — venue pin geolocation (ISSUE-988)', () => {
 
         expect(mockError).toHaveBeenCalledWith('Location capture failed. Please try again.');
         expect(pinBtn).not.toBeDisabled();
+    });
+
+    it('ignores a delayed success callback from a request that was already superseded', async () => {
+        const callbacks: Array<{ success: PositionCallback; error: PositionErrorCallback }> = [];
+        getCurrentPosition.mockImplementation((success, error) => {
+            callbacks.push({ success, error });
+        });
+
+        render(<QuickCaptureView isPaired={true} />);
+        const pinBtn = screen.getByRole('button', { name: /^pin$/i });
+        fireEvent.click(pinBtn);
+        expect(callbacks).toHaveLength(1);
+
+        // The first request becomes retryable, then a new request takes over.
+        await act(async () => {
+            callbacks[0]!.error({ code: 2, TIMEOUT: 3, PERMISSION_DENIED: 1, POSITION_UNAVAILABLE: 2, message: 'Unavailable' });
+        });
+        fireEvent.click(pinBtn);
+        expect(callbacks).toHaveLength(2);
+
+        // A provider can still deliver the old success after an error/retry.
+        // It must not open confirmation or enqueue a stale venue pin.
+        await act(async () => {
+            callbacks[0]!.success({
+                coords: { latitude: 42, longitude: -83, accuracy: 8 } as GeolocationCoordinates,
+                timestamp: Date.now(),
+            } as GeolocationPosition);
+        });
+        expect(mockDispatchTask).not.toHaveBeenCalled();
+        expect(pinBtn).toBeDisabled(); // second request is still the active one
+    });
+
+    it('ignores a late geolocation success after the capture surface unmounts', async () => {
+        let success: PositionCallback | undefined;
+        getCurrentPosition.mockImplementation((onSuccess) => { success = onSuccess; });
+        const view = render(<QuickCaptureView isPaired={true} />);
+        fireEvent.click(screen.getByRole('button', { name: /^pin$/i }));
+        view.unmount();
+
+        await act(async () => {
+            success?.({
+                coords: { latitude: 42, longitude: -83, accuracy: 8 } as GeolocationCoordinates,
+                timestamp: Date.now(),
+            } as GeolocationPosition);
+        });
+        expect(mockDispatchTask).not.toHaveBeenCalled();
     });
 });

@@ -5,6 +5,7 @@ import { MerchProduct, CatalogProductSchema, CatalogProduct, ManufactureRequestS
 import { AppException, AppErrorCode } from '@/shared/types/errors';
 // useStore removed
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
+import { WhiskService } from '@/services/WhiskService';
 import { httpsCallable } from 'firebase/functions';
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '@/utils/logger';
@@ -195,7 +196,7 @@ export const MerchandiseService = {
             throw new AppException(AppErrorCode.AUTH_ERROR, 'User must be logged in to generate mockups.');
         }
 
-        const prompt = `Photorealistic product mockup of a ${type} with the following design: ${scene}. Professional studio lighting, high resolution, product photography.`;
+        const prompt = `Photorealistic product mockup of a ${type} using the supplied artwork, ${scene}. Professional studio lighting, high resolution, product photography.`;
 
         // Record the generation request
         const docRef = await addDoc(collection(db, 'mockup_generations'), {
@@ -208,16 +209,13 @@ export const MerchandiseService = {
         });
 
         try {
-            // Call the real Image Generation Service
-            // Note: asset is a string ID here, usually you'd resolve it to a URL or base64.
-            // For now, we assume the 'scene' description includes enough info or 'asset' is a URL.
-            // If asset is a URL, we should ideally fetch and pass it as sourceImage, but ImageGenerationService.generateImages supports sourceImages as {mimeType, data}.
-            // Given the signature, we'll rely on the prompt for now.
+            const artwork = await WhiskService.resolveReferenceMedia(asset, docRef.id);
 
             const results = await ImageGeneration.generateImages({
                 prompt: prompt,
                 count: 1,
-                aspectRatio: '1:1'
+                aspectRatio: '1:1',
+                sourceImages: [{ mimeType: artwork.mimeType, data: artwork.data }]
             });
 
             if (results.length > 0) {

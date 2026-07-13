@@ -29,6 +29,8 @@ export default function DirectGenerationTab() {
         isPromptBuilderOpen, 
         togglePromptBuilder, 
         whiskState,
+        videoInputs,
+        characterReferences,
         setStudioControls,
         pinToClipboard
     } = useStore(useShallow(state => ({
@@ -36,6 +38,8 @@ export default function DirectGenerationTab() {
         isPromptBuilderOpen: state.isPromptBuilderOpen,
         togglePromptBuilder: state.togglePromptBuilder,
         whiskState: state.whiskState,
+        videoInputs: state.videoInputs,
+        characterReferences: state.characterReferences,
         setStudioControls: state.setStudioControls,
         pinToClipboard: state.pinToClipboard
     })));
@@ -67,6 +71,12 @@ export default function DirectGenerationTab() {
             : WhiskService.synthesizeVideoPrompt(localPrompt, whiskState))
         : '';
     const hasWhiskModifiers = synthesizedPrompt !== localPrompt && synthesizedPrompt.length > 0;
+    const videoInputSummary = mode === 'video' ? [
+        ...(videoInputs.firstFrame?.url ? ['First frame: selected anchor'] : ['First frame: none selected (references will not become an anchor)']),
+        ...(videoInputs.lastFrame?.url ? ['Last frame: selected end anchor'] : []),
+        ...(mappedIngredients.length ? [`Ingredients: ${mappedIngredients.length} reference${mappedIngredients.length === 1 ? '' : 's'}`] : []),
+        ...(characterReferences.length ? [`Characters: ${characterReferences.length} reference${characterReferences.length === 1 ? '' : 's'}`] : []),
+    ] : [];
 
     const quickModifiers = [
         'Cinematic Lighting',
@@ -478,6 +488,10 @@ export default function DirectGenerationTab() {
                                 onChange={handleIngredientsChange} 
                                 mode="reference" 
                             />
+                            <div data-testid="video-input-summary" className="mt-2 rounded-lg border border-white/8 bg-black/20 px-3 py-2 text-[10px] text-gray-400">
+                                <span className="mr-2 font-bold uppercase tracking-wider text-gray-500">Render inputs</span>
+                                {videoInputSummary.join(' · ')}
+                            </div>
                         </motion.div>
                     )}
 

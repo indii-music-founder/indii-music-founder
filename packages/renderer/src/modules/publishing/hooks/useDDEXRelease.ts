@@ -15,6 +15,8 @@ import type { ExtendedGoldenMetadata, DDEXReleaseRecord } from '@/services/metad
 import type { DistributorId, ReleaseAssets } from '@/services/distribution/types/distributor';
 import { logger } from '@/utils/logger';
 import { DEFAULT_PROJECT_ID } from '@/core/constants';
+import { validateImageForDistributor } from '@/services/onboarding/DistributorContext';
+import { measureReleaseAudio, sha256Hex, validateReleaseAudio } from './releaseAssetValidation';
 
 // Map display names from onboarding to DistributorId
 const DISTRIBUTOR_NAME_MAP: Record<string, DistributorId> = {
@@ -126,42 +128,12 @@ const STEP_ORDER: WizardStep[] = ['metadata', 'distribution', 'ai_disclosure', '
  * format-based defaults — a file that cannot be decoded must never be
  * displayed/stored as if it were measured.
  */
-async function extractAudioMetadata(file: File): Promise<{ sampleRate: number; bitDepth: number } | null> {
+async function extractAudioMetadata(file: File): Promise<{ sampleRate: number; bitDepth: number; channels: number; format: 'wav' | 'flac'; hash: string } | null> {
   try {
-    const arrayBuffer = await file.arrayBuffer();
-    const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-    const audioContext = new AudioContextClass();
-
-    try {
-      const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-      const sampleRate = audioBuffer.sampleRate; // Real sample rate (e.g., 44100, 48000, 96000)
-
-      // Bit depth: Web Audio API always decodes to 32-bit float internally.
-      // We derive the original bit depth from the file extension / MIME type.
-      const ext = file.name.split('.').pop()?.toLowerCase();
-      let bitDepth = 16; // Default
-      if (ext === 'wav') {
-        // WAV files: check file size to estimate bit depth
-        // size ≈ sampleRate * channels * (bitDepth/8) * duration
-        const channels = audioBuffer.numberOfChannels;
-        const duration = audioBuffer.duration;
-        const expectedBytesPerSample = file.size / (sampleRate * channels * duration);
-        if (expectedBytesPerSample >= 3.8) bitDepth = 32;
-        else if (expectedBytesPerSample >= 2.8) bitDepth = 24;
-        else bitDepth = 16;
-      } else if (ext === 'flac') {
-        // FLAC is typically 16 or 24-bit; estimate from file size ratio
-        const rawPcmSize = audioBuffer.sampleRate * audioBuffer.numberOfChannels * 2 * audioBuffer.duration;
-        bitDepth = file.size > rawPcmSize * 0.8 ? 24 : 16;
-      } else if (ext === 'mp3' || ext === 'aac') {
-        // Lossy formats: bit depth concept doesn't apply, but DSPs expect 16
-        bitDepth = 16;
-      }
-
-      return { sampleRate, bitDepth };
-    } finally {
-      await audioContext.close();
-    }
+    const measurement = await measureReleaseAudio(file);
+    const validationError = validateReleaseAudio(measurement);
+    if (validationError) throw new Error(validationError);
+    return { ...measurement, hash: await sha256Hex(file) };
   } catch (error: unknown) {
     logger.warn('[useDDEXRelease] AudioContext decoding failed — file cannot be verified:', error);
     return null;
@@ -175,7 +147,8 @@ async function extractAudioMetadata(file: File): Promise<{ sampleRate: number; b
  * default — an image that cannot be decoded must never be displayed/stored
  * as if its dimensions were measured.
  */
-async function extractImageDimensions(imageUrl: string): Promise<{ width: number; height: number } | null> {
+async function extractImageDimensions(file: File): Promise<{ width: number; height: number } | null> {
+  const imageUrl = URL.createObjectURL(file);
   try {
     return await new Promise<{ width: number; height: number }>((resolve, reject) => {
       const img = new Image();
@@ -187,6 +160,8 @@ async function extractImageDimensions(imageUrl: string): Promise<{ width: number
   } catch (error: unknown) {
     logger.warn('[useDDEXRelease] Failed to extract image dimensions — file cannot be verified:', error);
     return null;
+  } finally {
+    URL.revokeObjectURL(imageUrl);
   }
 }
 
@@ -273,10 +248,22 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
       }
     }
 
-    // Use a dedicated 'packaging' path to differentiate from analysis-only uploads
-    const path = `orgs/${activeOrg.id}/releases/packaging/${Date.now()}_${file.name}`;
-
     try {
+      // A rejected master must not leave behind an orphaned package object.
+      const audioMetadata = type === 'audio' ? await extractAudioMetadata(file) : null;
+      const imageDimensions = type === 'cover' ? await extractImageDimensions(file) : null;
+      if (type === 'audio' && !audioMetadata) {
+        const message = `Could not decode or validate "${file.name}" — it may be corrupt or violate release-master requirements. It was not uploaded.`;
+        setSubmitError(message);
+        throw new Error(message);
+      }
+      if (type === 'cover' && !imageDimensions) {
+        const message = `Could not read image dimensions for "${file.name}" — it may be corrupt or an unsupported format. It was not uploaded as cover art.`;
+        setSubmitError(message);
+        throw new Error(message);
+      }
+      // Use a dedicated 'packaging' path to differentiate from analysis-only uploads
+      const path = `orgs/${activeOrg.id}/releases/packaging/${Date.now()}_${file.name}`;
       const url = await StorageService.uploadFileWithProgress(
         file,
         path,
@@ -287,36 +274,25 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
 
       // Extract real metadata from audio file using Web Audio API
       if (type === 'audio') {
-        const audioMetadata = await extractAudioMetadata(file);
-        if (!audioMetadata) {
-          const message = `Could not decode "${file.name}" — it may be corrupt or use an unsupported codec. It was not accepted as the release master.`;
-          setSubmitError(message);
-          throw new Error(message);
-        }
         const audioInfo = {
           url,
           mimeType: file.type,
           sizeBytes: file.size,
-          format: (file.name.split('.').pop()?.toLowerCase() || 'wav') as 'wav' | 'flac' | 'mp3' | 'aac',
+          format: audioMetadata.format,
           sampleRate: audioMetadata.sampleRate,
           bitDepth: audioMetadata.bitDepth,
+          hash: audioMetadata.hash,
         };
         setSubmitError(null);
         updateAssets({ audioFile: audioInfo });
       } else {
         // Extract real image dimensions
-        const dimensions = await extractImageDimensions(url);
-        if (!dimensions) {
-          const message = `Could not read image dimensions for "${file.name}" — it may be corrupt or an unsupported format. It was not accepted as cover art.`;
-          setSubmitError(message);
-          throw new Error(message);
-        }
         const coverInfo = {
           url,
           mimeType: file.type,
           sizeBytes: file.size,
-          width: dimensions.width,
-          height: dimensions.height,
+          width: imageDimensions.width,
+          height: imageDimensions.height,
         };
         setSubmitError(null);
         updateAssets({ coverArt: coverInfo });
@@ -354,6 +330,14 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
       case 'assets':
         if (!assets.audioFile) errors.push('Audio file is required');
         if (!assets.coverArt) errors.push('Cover art is required');
+        if (assets.coverArt && userProfile) {
+          const coverValidation = validateImageForDistributor(
+            userProfile,
+            assets.coverArt.width,
+            assets.coverArt.height
+          );
+          errors.push(...coverValidation.errors.map(error => `Cover art: ${error}`));
+        }
         break;
 
       case 'harness':
@@ -370,7 +354,7 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
     }
 
     return errors;
-  }, [metadata, selectedDistributors, assets]);
+  }, [metadata, selectedDistributors, assets, userProfile]);
 
   const validationErrors = getValidationErrors(currentStep);
 
@@ -400,6 +384,14 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
   const submitRelease = useCallback(async (): Promise<string> => {
     if (!activeOrg?.id || !userProfile?.id) {
       throw new Error('Missing organization or user context');
+    }
+
+    // Navigation normally prevents this, but callers can invoke submission
+    // directly. Recheck the real measured asset here so an undersized/non-square
+    // cover can never enter the packaging record by bypassing the UI step.
+    const assetErrors = getValidationErrors('assets');
+    if (assetErrors.length > 0) {
+      throw new Error(`Release assets are not ready: ${assetErrors.join('; ')}`);
     }
 
     setIsSubmitting(true);
@@ -498,7 +490,7 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
     } finally {
       setIsSubmitting(false);
     }
-  }, [activeOrg, activeProjectId, userProfile, metadata, assets, selectedDistributors, releaseId]);
+  }, [activeOrg, activeProjectId, userProfile, metadata, assets, selectedDistributors, releaseId, getValidationErrors]);
 
   // Reset wizard
   const resetWizard = useCallback(() => {

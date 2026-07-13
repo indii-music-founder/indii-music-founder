@@ -55,6 +55,7 @@ export default function EPKGenerator() {
     const [generating, setGenerating] = useState(false);
     const [generated, setGenerated] = useState(false);
     const [copied, setCopied] = useState(false);
+    const [pressPhotoUrl, setPressPhotoUrl] = useState<string | null>(null);
 
     const slug = slugify(artistName || 'your-artist');
     const epkUrl = `indii.vip/artist/${slug}/epk`;
@@ -71,6 +72,12 @@ export default function EPKGenerator() {
             setGenerating(false);
             setGenerated(true);
         }, 1800);
+    };
+
+    const handlePressPhoto = (file: File | undefined) => {
+        if (!file) return;
+        if (pressPhotoUrl) URL.revokeObjectURL(pressPhotoUrl);
+        setPressPhotoUrl(URL.createObjectURL(file));
     };
 
     const handleCopyLink = () => {
@@ -170,11 +177,11 @@ export default function EPKGenerator() {
                 </label>
                 <div className="flex items-center gap-4">
                     <div className="w-20 h-20 rounded-xl bg-linear-to-br from-dept-marketing/30 to-green-600/20 border border-white/10 flex items-center justify-center flex-shrink-0">
-                        <ImageIcon size={20} className="text-gray-600" />
+                        {pressPhotoUrl ? <img src={pressPhotoUrl} alt="Selected press" className="w-full h-full object-cover rounded-xl" /> : <ImageIcon size={20} className="text-gray-600" />}
                     </div>
                     <label className="flex-1 flex flex-col items-center py-3 rounded-xl border border-dashed border-white/10 hover:border-dept-marketing/30 text-xs text-gray-500 cursor-pointer hover:text-gray-400 transition-all bg-white/[0.02]">
                         Click to upload press photo
-                        <input type="file" accept="image/*" className="sr-only" />
+                        <input type="file" accept="image/*" className="sr-only" onChange={e => handlePressPhoto(e.target.files?.[0])} />
                     </label>
                 </div>
             </div>
