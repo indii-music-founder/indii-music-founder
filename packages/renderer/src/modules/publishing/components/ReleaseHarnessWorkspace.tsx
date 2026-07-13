@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { AlertTriangle, Bot, CheckCircle2, Database, GitBranch, Loader2, Music2, Save, Sparkles } from 'lucide-react';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import { releaseHarnessService, saveReleaseHarnessRun, type ReleaseHarnessResult } from '@/services/release-harness';
 import { IdentifierService } from '@/services/identity/IdentifierService';
@@ -24,10 +25,12 @@ export function ReleaseHarnessWorkspace({
   onApplyMetadata,
   onSaved,
 }: ReleaseHarnessWorkspaceProps) {
-  const { userProfile, analyticsReports } = useStore(state => ({
-    userProfile: state.userProfile,
-    analyticsReports: state.analyticsReports,
-  }));
+  const { userProfile, analyticsReports } = useStore(
+    useShallow(state => ({
+      userProfile: state.userProfile,
+      analyticsReports: state.analyticsReports,
+    }))
+  );
   const [result, setResult] = useState<ReleaseHarnessResult | null>(null);
   const [isCompiling, setIsCompiling] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
