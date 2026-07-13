@@ -81,6 +81,7 @@ export class AudioAnalysisService {
                     
                     // Since we removed local Python ML, we use Web Audio for basic features (BPM/Key)
                     const { features } = await this.analyzeDeep(file, fileHash);
+                    this.applyNativeMeasurement(features, result);
                     
                     // Attach the compressed proxy from Electron
                     const proxyBase64 = result.proxyBase64 || undefined;
@@ -375,7 +376,7 @@ export class AudioAnalysisService {
             rejectionRisks: []
         };
 
-        return {
+        const features: DeepAudioFeatures = {
             bpm: technical?.bpm ?? 120,
             key: technical?.key ?? 'C',
             scale: technical?.scale ?? 'major',
@@ -387,6 +388,34 @@ export class AudioAnalysisService {
             genre: technical?.genre ?? {},
             moods: technical?.moods ?? { happy: 0, aggressive: 0, relaxed: 0, sad: 0 },
             audit
+        };
+        this.applyNativeMeasurement(features, result);
+        return features;
+    }
+
+    private applyNativeMeasurement(features: DeepAudioFeatures, result: AudioAnalysisResult): void {
+        const nativeAudit = result.features?.audit as { integratedLoudness?: number; truePeakDb?: number; sampleRate?: number; bitDepth?: number; isStereo?: boolean; measurementMethod?: string } | undefined;
+        if (nativeAudit?.measurementMethod !== 'measured' ||
+            !Number.isFinite(nativeAudit.integratedLoudness) ||
+            !Number.isFinite(nativeAudit.truePeakDb) ||
+            !Number.isFinite(nativeAudit.sampleRate)) return;
+        const bitDepth = Number.isFinite(nativeAudit.bitDepth) && nativeAudit.bitDepth! > 0 ? nativeAudit.bitDepth! : 16;
+        const compliance = DSPComplianceValidator.validateAudio(
+            nativeAudit.integratedLoudness!,
+            nativeAudit.truePeakDb!,
+            nativeAudit.sampleRate!,
+            bitDepth,
+            'measured'
+        );
+        features.loudness = nativeAudit.integratedLoudness!;
+        features.audit = {
+            peakLevel: nativeAudit.truePeakDb!,
+            truePeakDb: nativeAudit.truePeakDb!,
+            integratedLoudness: nativeAudit.integratedLoudness!,
+            sampleRate: nativeAudit.sampleRate!,
+            isStereo: nativeAudit.isStereo === true,
+            rejectionRisks: compliance.flags,
+            compliance,
         };
     }
 

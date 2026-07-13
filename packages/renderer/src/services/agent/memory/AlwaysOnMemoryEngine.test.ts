@@ -342,13 +342,22 @@ describe('AlwaysOnMemoryEngine', () => {
 
     describe('Clear All', () => {
         beforeEach(async () => {
-            mockGetDocs.mockResolvedValue({
-                docs: [
-                    { ref: 'ref-1', id: 'mem-1', data: () => ({}) },
-                    { ref: 'ref-2', id: 'mem-2', data: () => ({}) },
-                ],
-                empty: false,
-            });
+            // clearAll() re-queries getDocs in a `while (!batch.empty)` loop to
+            // paginate real Firestore deletes (AlwaysOnMemoryEngine.ts:610-643).
+            // A static mockResolvedValue that always reports empty:false never
+            // terminates that loop — it spins forever, allocating a fresh batch
+            // each iteration, until the process OOMs (caught locally: heap grew
+            // to 4GB+ and crashed with FATAL ERROR: Reached heap limit). Return
+            // one non-empty page, then empty, like real pagination would.
+            mockGetDocs
+                .mockResolvedValueOnce({
+                    docs: [
+                        { ref: 'ref-1', id: 'mem-1', data: () => ({}) },
+                        { ref: 'ref-2', id: 'mem-2', data: () => ({}) },
+                    ],
+                    empty: false,
+                })
+                .mockResolvedValue({ docs: [], empty: true });
 
             await engine.start('test-user-123');
         });

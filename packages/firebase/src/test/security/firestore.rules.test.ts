@@ -932,6 +932,119 @@ describe('Firestore Security Rules', () => {
         });
     });
 
+    describe('remote relay Studio executor boundary (ISSUE-1025)', () => {
+        beforeEach(async () => {
+            if (requireEmulator()) return;
+            await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                await setDoc(doc(ctx.firestore(), 'users', ALICE_UID), { uid: ALICE_UID });
+                await setDoc(doc(ctx.firestore(), 'users', ALICE_UID, 'remote-relay', 'state'), {
+                    role: 'studio', online: true, listenerReady: true, studioInstanceId: 'studio-1'
+                });
+            });
+        });
+
+        it('same-account Controller cannot forge Studio presence or a Studio response', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(ALICE_UID).firestore();
+            await assertFails(setDoc(doc(db, 'users', ALICE_UID, 'remote-relay', 'state'), {
+                role: 'studio', online: true, listenerReady: true, studioInstanceId: 'controller-fake'
+            }));
+            await assertFails(setDoc(doc(db, 'users', ALICE_UID, 'remote-relay-responses', 'forged'), {
+                commandId: 'command-1', text: 'forged success', isFinal: true
+            }));
+        });
+
+        it('same-account Controller can submit then cancel an unclaimed Studio command', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(ALICE_UID).firestore();
+            const command = doc(db, 'users', ALICE_UID, 'remote-relay-commands', 'phone-command');
+            await assertSucceeds(setDoc(command, { text: 'Hi', status: 'pending', executionTarget: 'studio' }));
+            await assertSucceeds(updateDoc(command, { status: 'cancelled' }));
+            await assertFails(updateDoc(command, { status: 'completed' }));
+        });
+    });
+
+    describe('audio_assets/{audioId} (ISSUE-1005)', () => {
+        const audioId = 'audio-1';
+        const audioData = {
+            id: audioId,
+            userId: ALICE_UID,
+            type: 'music',
+            prompt: 'A bright synth intro',
+            mimeType: 'audio/wav',
+            estimatedDuration: 12,
+            generatedAt: '2026-07-12T23:00:00.000Z',
+            storageUrl: 'https://storage.example/audio-1.wav',
+        };
+
+        beforeEach(async () => {
+            if (requireEmulator()) return;
+            await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                await setDoc(doc(ctx.firestore(), 'audio_assets', audioId), audioData);
+            });
+        });
+
+        it('owner can create a schema-valid playable asset and read it back', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(ALICE_UID).firestore();
+            const newAsset = { ...audioData, id: 'audio-2', prompt: 'A second cue' };
+            await assertSucceeds(setDoc(doc(db, 'audio_assets', 'audio-2'), newAsset));
+            await assertSucceeds(getDoc(doc(db, 'audio_assets', audioId)));
+        });
+
+        it('rejects cross-user reads and ownership spoofing', async () => {
+            if (requireEmulator()) return;
+            const bobDb = verifiedCtx(BOB_UID).firestore();
+            await assertFails(getDoc(doc(bobDb, 'audio_assets', audioId)));
+            await assertFails(setDoc(doc(bobDb, 'audio_assets', 'spoofed'), {
+                ...audioData,
+                id: 'spoofed',
+                userId: ALICE_UID,
+            }));
+        });
+
+        it('rejects malformed assets and immutable-owner spoofing on update', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(ALICE_UID).firestore();
+            await assertFails(setDoc(doc(db, 'audio_assets', 'invalid'), {
+                ...audioData,
+                id: 'wrong-document-id',
+                type: 'unknown',
+                storageUrl: '',
+            }));
+            await assertFails(updateDoc(doc(db, 'audio_assets', audioId), { userId: BOB_UID }));
+        });
+    });
+
+    describe('users/{uid}/costLedger/{ledgerId} (ISSUE-1006)', () => {
+        const ledger = { userId: ALICE_UID, totalCost: 1.25, operationCount: 1 };
+
+        beforeEach(async () => {
+            if (requireEmulator()) return;
+            await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                await setDoc(doc(ctx.firestore(), 'users', ALICE_UID, 'costLedger', 'daily-2026-07-12'), ledger);
+                await setDoc(doc(ctx.firestore(), 'costLedger', 'op-owner'), { userId: ALICE_UID, status: 'SETTLED' });
+            });
+        });
+
+        it('exposes aggregates and reservation receipts only to their owner', async () => {
+            if (requireEmulator()) return;
+            const alice = verifiedCtx(ALICE_UID).firestore();
+            const bob = verifiedCtx(BOB_UID).firestore();
+            await assertSucceeds(getDoc(doc(alice, 'users', ALICE_UID, 'costLedger', 'daily-2026-07-12')));
+            await assertSucceeds(getDoc(doc(alice, 'costLedger', 'op-owner')));
+            await assertFails(getDoc(doc(bob, 'users', ALICE_UID, 'costLedger', 'daily-2026-07-12')));
+            await assertFails(getDoc(doc(bob, 'costLedger', 'op-owner')));
+        });
+
+        it('does not let a client forge an aggregate or reservation state', async () => {
+            if (requireEmulator()) return;
+            const alice = verifiedCtx(ALICE_UID).firestore();
+            await assertFails(setDoc(doc(alice, 'users', ALICE_UID, 'costLedger', 'daily-forged'), ledger));
+            await assertFails(updateDoc(doc(alice, 'costLedger', 'op-owner'), { status: 'VOIDED' }));
+        });
+    });
+
     // ──────────────────────────────────────────────────────────────────────
     // DENY-ALL: arbitrary collection access denied
     // ──────────────────────────────────────────────────────────────────────

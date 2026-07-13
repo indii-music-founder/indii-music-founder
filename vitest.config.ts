@@ -50,7 +50,16 @@ export default defineConfig({
     testTimeout: 30000,
     teardownTimeout: 1000,
     hookTimeout: 30000,
-    pool: 'threads',
+    // pool: 'forks' (not 'threads') — jsdom + isolate:true means every one of the
+    // ~940 test files gets a fresh jsdom global. Under 'threads', isolated contexts
+    // share one OS thread/heap and V8 doesn't reliably return that memory to the OS
+    // between files, so RSS compounds across a long shard until it blows the heap
+    // ceiling near the tail (ISSUE-1046). 'forks' isolates via real OS processes,
+    // so memory is actually reclaimed between files instead of merely context-
+    // switched. Switching pools surfaced (and this fixed) several real,
+    // pool-independent bugs that 'threads' + earlier CI OOM truncation had been
+    // masking — see ISSUE-1046 ledger entry for the full list.
+    pool: 'forks',
     isolate: true,
     maxWorkers: 2,
     // Test discovery is now handled by vitest.workspace.ts

@@ -507,15 +507,8 @@ function useFirestoreRelay(enabled: boolean) {
         if (!localP2PCommand) {
             if (!uid) return;
             try {
-                claimed = await runTransaction(db, async (tx) => {
-                    const cmdRef = doc(db, 'users', uid, 'remote-relay-commands', command.id);
-                    const cmdSnap = await tx.get(cmdRef);
-                    if (cmdSnap.exists() && cmdSnap.data()?.status === 'pending') {
-                        tx.update(cmdRef, { status: 'processing' });
-                        return true;
-                    }
-                    return false;
-                });
+                const { studioExecutorLeaseService } = await import('@/services/agent/StudioExecutorLeaseService');
+                claimed = await studioExecutorLeaseService.claimCommand(command.id, studioInstanceIdRef.current!);
             } catch (err) {
                 logger.warn('[RemoteRelay] Atomic claim failed:', err);
                 return;

@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { Move, MousePointer2, ImagePlus, Eraser, Layers, Crop, ZoomIn, ZoomOut, ScanSearch } from 'lucide-react';
+import { Move, MousePointer2, ImagePlus, Eraser, Layers, Crop, ZoomIn, ZoomOut, ScanSearch, Undo2 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface InfiniteCanvasHUDProps {
@@ -8,7 +8,11 @@ interface InfiniteCanvasHUDProps {
     selectedCanvasImageId: string | null;
     removeCanvasImage: (id: string) => void;
     onFlatten?: () => void;
+    onUndoFlatten?: () => void;
+    canUndoFlatten?: boolean;
     onGenerateVariations?: () => void;
+    onRetryFailedVariations?: () => void;
+    failedVariationCount?: number;
     onZoomIn?: () => void;
     onZoomOut?: () => void;
     onDetectObjects?: () => void;
@@ -22,7 +26,11 @@ export const InfiniteCanvasHUD: React.FC<InfiniteCanvasHUDProps> = memo(({
     selectedCanvasImageId,
     removeCanvasImage,
     onFlatten,
+    onUndoFlatten,
+    canUndoFlatten,
     onGenerateVariations,
+    onRetryFailedVariations,
+    failedVariationCount,
     onZoomIn,
     onZoomOut,
     onDetectObjects
@@ -158,6 +166,23 @@ export const InfiniteCanvasHUD: React.FC<InfiniteCanvasHUDProps> = memo(({
                     </Tooltip>
                 )}
 
+                {onUndoFlatten && (
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <button
+                                title="Undo Flatten"
+                                onClick={onUndoFlatten}
+                                disabled={!canUndoFlatten}
+                                className="p-2 rounded-full text-gray-400 hover:text-white hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:outline-none"
+                                aria-label="Undo Flatten"
+                            >
+                                <Undo2 size={18} />
+                            </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="bg-[#1a1a1a] text-white border-white/10 z-50">Restore layers from last flatten</TooltipContent>
+                    </Tooltip>
+                )}
+
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <button
@@ -189,6 +214,17 @@ export const InfiniteCanvasHUD: React.FC<InfiniteCanvasHUDProps> = memo(({
                         <TooltipContent side="bottom" className="bg-[#1a1a1a] text-white border-white/10 z-50">Generate Variations</TooltipContent>
                     </Tooltip>
                 )}
+
+                {onRetryFailedVariations && failedVariationCount && failedVariationCount > 0 ? (
+                    <button
+                        title="Retry Failed Variations"
+                        onClick={onRetryFailedVariations}
+                        className="px-3 py-1.5 rounded-full text-sm font-medium border border-amber-400/50 text-amber-200 hover:bg-amber-400/10 transition-colors"
+                        aria-label="Retry Failed Variations"
+                    >
+                        Retry {failedVariationCount} failed
+                    </button>
+                ) : null}
             </div>
         </TooltipProvider>
     );

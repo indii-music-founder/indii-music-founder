@@ -16,7 +16,7 @@ import { logger } from '@/utils/logger';
  * - Electron-specific sync (Update channels)
  */
 export const AppInitializationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const { initializeAuthListener, loadUserProfile, user, userProfile, initializeHistory, loadProjects, currentOrganizationId } = useStore(
+    const { initializeAuthListener, loadUserProfile, user, userProfile, initializeHistory, loadProjects, loadNotesFromCloud, currentOrganizationId } = useStore(
         useShallow(state => ({
             initializeAuthListener: state.initializeAuthListener,
             loadUserProfile: state.loadUserProfile,
@@ -24,6 +24,7 @@ export const AppInitializationProvider: React.FC<{ children: React.ReactNode }> 
             userProfile: state.userProfile,
             initializeHistory: state.initializeHistory,
             loadProjects: state.loadProjects,
+            loadNotesFromCloud: state.loadNotesFromCloud,
             currentOrganizationId: state.currentOrganizationId
         }))
     );
@@ -61,6 +62,7 @@ export const AppInitializationProvider: React.FC<{ children: React.ReactNode }> 
                     if (isMounted) initializeHistory();
                 });
             loadProjects();
+            loadNotesFromCloud();
 
             // Re-enable Agent if needed, but keep closed by default
             useStore.setState({ isAgentOpen: false });
@@ -120,7 +122,7 @@ export const AppInitializationProvider: React.FC<{ children: React.ReactNode }> 
                 }).catch(() => { /* module already unloaded */ });
             };
         }
-    }, [user, currentOrganizationId, initializeHistory, loadProjects]);
+    }, [user, currentOrganizationId, initializeHistory, loadProjects, loadNotesFromCloud]);
 
     // 4. Electron-specific synchronization
     useEffect(() => {

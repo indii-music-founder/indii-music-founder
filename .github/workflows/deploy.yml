@@ -87,13 +87,21 @@ jobs:
 
 
   # ─── Unit Testing (Sharded) ────────────────────────────────────────────────
-  # Item 344: Vitest test sharding — 8 parallel matrix jobs cut CI time and prevent OOM
+  # Item 344: Vitest test sharding — parallel matrix jobs cut CI time and prevent OOM
+  # ISSUE-1046: some shards recurrently hit ERR_WORKER_OUT_OF_MEMORY (never a
+  # real test failure). A worker retains enough Vite/jsdom state between files
+  # that long shards eventually exhaust their heap even at one worker.
+  # root-cause: vitest.config.ts sets maxWorkers: 2 + isolate: true, so up to
+  # 2 fully-isolated test-file contexts run concurrently within a single
+  # shard's process — that concurrency, not just the heap ceiling, is what's
+  # driving peak memory. Cap CI at one worker and keep shards short; leave
+  # vitest.config.ts's maxWorkers: 2 untouched for local development speed.
   unit-tests:
     runs-on: ubuntu-latest
     needs: setup
     strategy:
       matrix:
-        shard: [1, 2, 3, 4, 5, 6, 7, 8]
+        shard: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
@@ -116,9 +124,9 @@ jobs:
         with:
           credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
 
-      - name: Run unit tests (shard ${{ matrix.shard }}/8)
+      - name: Run unit tests (shard ${{ matrix.shard }}/20)
         timeout-minutes: 15
-        run: NODE_OPTIONS="--max-old-space-size=4096" npm test -- --run --reporter=verbose --testTimeout=30000 --bail=3 --shard=${{ matrix.shard }}/8
+        run: NODE_OPTIONS="--max-old-space-size=5120" npm test -- --run --reporter=verbose --testTimeout=30000 --bail=3 --shard=${{ matrix.shard }}/20 --maxWorkers=1
         env:
           VITE_VERTEX_PROJECT_ID: ${{ secrets.VITE_VERTEX_PROJECT_ID }}
           VITE_VERTEX_LOCATION: ${{ secrets.VITE_VERTEX_LOCATION }}

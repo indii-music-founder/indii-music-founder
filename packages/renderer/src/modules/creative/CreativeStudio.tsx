@@ -18,7 +18,7 @@ import ShowroomUI from './components/ShowroomUI';
 import { logger } from '@/utils/logger';
 import { useRef } from 'react';
 import { awaitCompletedPlpVideoVariant } from './plpVideoVariant';
-import { validateImageForDistributor } from '@/services/onboarding/DistributorContext';
+import { buildDistributorContext, validateImageForDistributor } from '@/services/onboarding/DistributorContext';
 
 import CreativeClipboard from './components/CreativeClipboard';
 import OmniWorkflow from './video/OmniWorkflow';
@@ -35,6 +35,65 @@ function loadImageDimensions(url: string): Promise<{ width: number; height: numb
         img.onerror = () => reject(new Error('Failed to decode image dimensions'));
         img.src = url;
     });
+}
+
+function normalizeImageFormat(mimeType: string): string | null {
+    if (mimeType === 'image/jpeg') return 'JPG';
+    if (mimeType === 'image/png') return 'PNG';
+    if (mimeType === 'image/webp') return 'WEBP';
+    return null;
+}
+
+async function sha256(blob: Blob): Promise<string> {
+    const blobWithArrayBuffer = blob as Blob & { arrayBuffer?: () => Promise<ArrayBuffer> };
+    const bytes = blobWithArrayBuffer.arrayBuffer
+        ? await blobWithArrayBuffer.arrayBuffer()
+        : await new Promise<ArrayBuffer>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as ArrayBuffer);
+            reader.onerror = () => reject(reader.error ?? new Error('Could not read cover-art bytes'));
+            reader.readAsArrayBuffer(blob);
+        });
+    const digest = await crypto.subtle.digest('SHA-256', bytes);
+    return Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('');
+}
+
+function parseMegabytes(value?: string): number | undefined {
+    const match = value?.trim().match(/^(\d+(?:\.\d+)?)\s*MB$/i);
+    return match ? Math.round(Number(match[1]) * 1024 * 1024) : undefined;
+}
+
+/**
+ * Measures the concrete file delivered by the provider/storage path. Requested
+ * resolution is not evidence of a distributor-safe output.
+ */
+async function measureCoverArt(url: string, profile: Parameters<typeof buildDistributorContext>[0]) {
+    const [dimensions, response] = await Promise.all([loadImageDimensions(url), fetch(url)]);
+    if (!response.ok) throw new Error(`Could not read generated cover-art bytes (${response.status})`);
+    const blob = await response.blob();
+    const mimeType = blob.type.toLowerCase();
+    const context = buildDistributorContext(profile);
+    const validation = validateImageForDistributor(profile, dimensions.width, dimensions.height);
+    const errors = [...validation.errors];
+    const format = normalizeImageFormat(mimeType);
+    if (!format || !context.image.format.includes(format)) {
+        errors.push(`Unsupported cover-art format: ${mimeType || 'unknown'}. Allowed: ${context.image.format.join(', ')}.`);
+    }
+    const maxSize = parseMegabytes(context.distributor?.coverArt.maxFileSize);
+    if (maxSize && blob.size > maxSize) {
+        errors.push(`Cover art exceeds the ${context.distributor?.coverArt.maxFileSize} file-size limit.`);
+    }
+
+    return {
+        valid: errors.length === 0,
+        errors,
+        warnings: validation.warnings,
+        measuredWidth: dimensions.width,
+        measuredHeight: dimensions.height,
+        mimeType,
+        sizeBytes: blob.size,
+        sha256: await sha256(blob),
+    };
 }
 
 /** Map UI-friendly person generation values to Intelligence API uppercase constants. */
@@ -187,6 +246,10 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                     if (isPLP) {
                         const { VideoGeneration } = await import('@/services/video/VideoGenerationService');
                         const { adAutomationService } = await import('@/services/marketing/AdAutomationService');
+                        // Hold every result to the project that explicitly started this batch.
+                        // A view/project switch while video jobs are pending must not refile
+                        // their output into the newly active project.
+                        const plpProjectId = currentProjectId;
 
                         // 1. Generate 10 Image Variants
                         const imagePromises = Array(10).fill(0).map((_, i) =>
@@ -201,7 +264,7 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                                 model: studioControls.model,
                                 thinkingLevel: studioControls.thinkingLevel === 'none' ? undefined : studioControls.thinkingLevel,
                                 useGrounding: studioControls.useGrounding,
-                                sessionId: currentProjectId ? `creative_${currentProjectId}` : undefined,
+                                sessionId: plpProjectId ? `creative_${plpProjectId}` : undefined,
                             })
                         );
 
@@ -247,7 +310,7 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                                     prompt: pendingPrompt,
                                     type: isVideo ? 'video' : 'image',
                                     timestamp: Date.now(),
-                                    projectId: currentProjectId,
+                                    projectId: plpProjectId,
                                     origin: 'generated'
                                 });
 
@@ -259,6 +322,11 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
 
                         if (successCount > 0) {
                             toast.success(`PLP: ${successCount}/15 Variants generated.`);
+
+                            if (useStore.getState().currentProjectId !== plpProjectId) {
+                                toast.warning('PLP variants were saved to the project that started this batch. Switch back to review them before launch.');
+                                return;
+                            }
 
                             // ISSUE-495: deploying to a REAL paid Meta ad campaign spends money.
                             // Never auto-launch — the user reviews and edits budget, duration,
@@ -325,15 +393,22 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                             const measured = await Promise.all(results.map(async res => {
                                 if (!isCoverArt || !userProfile) return { res, compliance: undefined };
                                 try {
-                                    const { width, height } = await loadImageDimensions(res.url);
-                                    const validation = validateImageForDistributor(userProfile, width, height);
-                                    return {
-                                        res,
-                                        compliance: { ...validation, measuredWidth: width, measuredHeight: height }
-                                    };
+                                    return { res, compliance: await measureCoverArt(res.url, userProfile) };
                                 } catch (dimErr: unknown) {
                                     logger.warn('[CreativeStudio] Could not measure cover art dimensions for compliance check', dimErr);
-                                    return { res, compliance: undefined };
+                                    // Release artwork is only compliant after the delivered file has
+                                    // been measured. Treating an unreadable URL as "no result" let
+                                    // the success branch call it distributor-ready without evidence.
+                                    return {
+                                        res,
+                                        compliance: {
+                                            valid: false,
+                                            errors: ['Could not verify the generated file dimensions. Download or re-export the artwork before attaching it to a release.'],
+                                            warnings: [],
+                                            measuredWidth: 0,
+                                            measuredHeight: 0,
+                                        },
+                                    };
                                 }
                             }));
 

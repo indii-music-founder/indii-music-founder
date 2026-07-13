@@ -1,6 +1,6 @@
 # Handoff State
 **Updated:** 2026-07-13 13:58 EDT
-**Branch:** `claude/inspiring-greider-59ed4a`
+**Branch:** `claude/inspiring-greider-59ed4a` (merged with `main`)
 
 ## Recent Commits
 ```
@@ -14,6 +14,12 @@ f8990cddd chore: session checkpoint [13:42]
 f36e1f62b fix(creative): gate first-run guidance on canvas emptiness, not editor-selection (hunter finding)
 9b085a87a fix(e2e): replace invented data-testid selectors with verified real ones (hunter finding)
 d389f9822 docs: add /ci-validate workflow to triage main deploy failures vs the known OOM flake
+
+## Merged from main
+37e1bd61e Merge pull request #236 from indii-music-founder/fix/issues-core
+92c708d6a fix(core): comprehensive system improvements across firebase, audio, creative, and state management
+95358bc9a fix(test): make video editor store tests assert deltas, not absolute counts (ISSUE-1046 follow-up)
+47ccc8aef fix(ci): resolve CI unit-test OOM by switching vitest pool to forks (ISSUE-1046)
 ```
 
 ## Working State

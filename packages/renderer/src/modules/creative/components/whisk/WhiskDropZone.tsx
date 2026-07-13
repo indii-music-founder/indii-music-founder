@@ -86,11 +86,10 @@ export const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggl
         if (item && item.type === 'image') {
             toast.info(`Analyzing ${category} reference...`);
             try {
-                const [mimeType = '', b64 = ''] = item.url.split(',');
-                const pureMime = mimeType.split(':')[1]?.split(';')[0] ?? 'image/png';
+                const source = await WhiskService.resolveReferenceMedia(item.url, item.id);
                 // For motion category, use 'style' for captioning as motion is described visually
                 const captionCategory = category === 'motion' ? 'style' : category as 'subject' | 'scene' | 'style';
-                const caption = await ImageGeneration.captionImage({ mimeType: pureMime, data: b64 }, captionCategory);
+                const caption = await ImageGeneration.captionImage(source, captionCategory);
                 onAdd('image', item.url, caption);
                 toast.success(`${title} reference set!`);
             } catch (err: unknown) {

@@ -1,5 +1,5 @@
 
-import { calculateProfileStatus, processFunctionCalls, runOnboardingConversation, OnboardingTools, determinePhase } from './onboardingService';
+import { calculateProfileStatus, processFunctionCalls, externalizeOnboardingBrandAssets, runOnboardingConversation, OnboardingTools, determinePhase } from './onboardingService';
 import type { UserProfile, ConversationFile } from '../../modules/workflow/types';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { AutonomousIntelligence as AI } from '../intelligence/AutonomousIntelligence';
@@ -12,6 +12,11 @@ vi.mock('../intelligence/AutonomousIntelligence', () => ({
     AI: {
         generateContent: vi.fn()
     }
+}));
+
+const { mockUploadFile } = vi.hoisted(() => ({ mockUploadFile: vi.fn() }));
+vi.mock('@/services/StorageService', () => ({
+    StorageService: { uploadFile: mockUploadFile },
 }));
 
 describe('onboardingService', () => {
@@ -250,6 +255,36 @@ describe('onboardingService', () => {
 
             const { updatedProfile } = processFunctionCalls(calls, baseProfile, files);
             expect(updatedProfile.brandKit!.brandAssets[0]!.url).toBe('data:image/jpeg;base64,base64data');
+        });
+
+        it('ISSUE-956: externalizes a new profile image and removes it if upload fails', async () => {
+            const file = {
+                id: '1', type: 'image',
+                file: { name: 'photo.jpg', type: 'image/jpeg', size: 1024 } as File,
+                preview: 'data:image...', base64: 'base64data',
+            } as ConversationFile;
+            const withEmbeddedAsset: UserProfile = {
+                ...baseProfile,
+                brandKit: {
+                    ...baseProfile.brandKit!,
+                    brandAssets: [{ url: 'data:image/jpeg;base64,base64data', description: 'Headshot' }],
+                    referenceImages: [],
+                },
+            };
+            mockUploadFile.mockResolvedValueOnce('https://storage.example.com/brand/photo.jpg');
+            await expect(externalizeOnboardingBrandAssets(withEmbeddedAsset, [file])).resolves.toEqual(expect.objectContaining({
+                profile: expect.objectContaining({
+                    brandKit: expect.objectContaining({
+                        brandAssets: [expect.objectContaining({ url: 'https://storage.example.com/brand/photo.jpg' })],
+                    }),
+                }),
+                warnings: [],
+            }));
+
+            mockUploadFile.mockRejectedValueOnce(new Error('offline'));
+            const failed = await externalizeOnboardingBrandAssets(withEmbeddedAsset, [file]);
+            expect(failed.profile.brandKit!.brandAssets).toEqual([]);
+            expect(failed.warnings).toHaveLength(1);
         });
 
         it('ISSUE-956: rejects an oversized image instead of embedding it in the profile', () => {

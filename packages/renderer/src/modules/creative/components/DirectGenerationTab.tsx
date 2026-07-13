@@ -29,6 +29,8 @@ export default function DirectGenerationTab() {
         isPromptBuilderOpen, 
         togglePromptBuilder, 
         whiskState,
+        videoInputs,
+        characterReferences,
         setStudioControls,
         pinToClipboard
     } = useStore(useShallow(state => ({
@@ -36,6 +38,8 @@ export default function DirectGenerationTab() {
         isPromptBuilderOpen: state.isPromptBuilderOpen,
         togglePromptBuilder: state.togglePromptBuilder,
         whiskState: state.whiskState,
+        videoInputs: state.videoInputs,
+        characterReferences: state.characterReferences,
         setStudioControls: state.setStudioControls,
         pinToClipboard: state.pinToClipboard
     })));
@@ -67,6 +71,12 @@ export default function DirectGenerationTab() {
             : WhiskService.synthesizeVideoPrompt(localPrompt, whiskState))
         : '';
     const hasWhiskModifiers = synthesizedPrompt !== localPrompt && synthesizedPrompt.length > 0;
+    const videoInputSummary = mode === 'video' ? [
+        ...(videoInputs.firstFrame?.url ? ['First frame: selected anchor'] : ['First frame: none selected (references will not become an anchor)']),
+        ...(videoInputs.lastFrame?.url ? ['Last frame: selected end anchor'] : []),
+        ...(mappedIngredients.length ? [`Ingredients: ${mappedIngredients.length} reference${mappedIngredients.length === 1 ? '' : 's'}`] : []),
+        ...(characterReferences.length ? [`Characters: ${characterReferences.length} reference${characterReferences.length === 1 ? '' : 's'}`] : []),
+    ] : [];
 
     const quickModifiers = [
         'Cinematic Lighting',
@@ -327,26 +337,53 @@ export default function DirectGenerationTab() {
                                 className="flex flex-col gap-4 text-xs"
                             >
                                 {/* Advanced configs */}
-                                <div className="flex flex-col gap-2">
-                                    <label className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Engine Resolution Preset</label>
-                                    <div className="grid grid-cols-3 gap-1.5">
-                                        {['720p', '1080p', '4k'].map((res) => {
-                                            const isSelected = studioControls.resolution === res;
-                                            return (
-                                                <button
-                                                    key={res}
-                                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                                    onClick={() => setStudioControls({ resolution: res as any })}
-                                                    className={`py-1.5 rounded-lg text-[10px] font-bold uppercase border transition-all ${isSelected
-                                                        ? 'bg-white/5 border-white/25 text-white font-extrabold shadow-sm'
-                                                        : 'bg-white/2 border-white/5 text-gray-500 hover:text-gray-300'}`}
-                                                >
-                                                    {res}
-                                                </button>
-                                            );
-                                        })}
+                                {/* ISSUE-777: resolution only reaches the video payload
+                                    (useDirectGeneration.ts handleVideoGenerate's effectiveResolution);
+                                    image submission uses imageSize instead, so this control did
+                                    nothing in image mode. Mode-aware, matching StudioControlsPanel. */}
+                                {mode === 'video' ? (
+                                    <div className="flex flex-col gap-2">
+                                        <label className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Engine Resolution Preset</label>
+                                        <div className="grid grid-cols-3 gap-1.5">
+                                            {['720p', '1080p', '4k'].map((res) => {
+                                                const isSelected = studioControls.resolution === res;
+                                                return (
+                                                    <button
+                                                        key={res}
+                                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                                        onClick={() => setStudioControls({ resolution: res as any })}
+                                                        className={`py-1.5 rounded-lg text-[10px] font-bold uppercase border transition-all ${isSelected
+                                                            ? 'bg-white/5 border-white/25 text-white font-extrabold shadow-sm'
+                                                            : 'bg-white/2 border-white/5 text-gray-500 hover:text-gray-300'}`}
+                                                    >
+                                                        {res}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
                                     </div>
-                                </div>
+                                ) : (
+                                    <div className="flex flex-col gap-2">
+                                        <label className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Image Output Size</label>
+                                        <div className="grid grid-cols-3 gap-1.5">
+                                            {(studioControls.model === 'fast' ? ['0.5K', '1K', '2K'] : ['1K', '2K', '4K']).map((size) => {
+                                                const isSelected = (studioControls.imageSize || '2K') === size;
+                                                return (
+                                                    <button
+                                                        key={size}
+                                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                                        onClick={() => setStudioControls({ imageSize: size as any })}
+                                                        className={`py-1.5 rounded-lg text-[10px] font-bold uppercase border transition-all ${isSelected
+                                                            ? 'bg-white/5 border-white/25 text-white font-extrabold shadow-sm'
+                                                            : 'bg-white/2 border-white/5 text-gray-500 hover:text-gray-300'}`}
+                                                    >
+                                                        {size}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                )}
 
                                 <div className="flex flex-col gap-2">
                                     <label className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">API Engine Grade</label>
@@ -391,27 +428,33 @@ export default function DirectGenerationTab() {
                                     </div>
                                 </div>
 
-                                <div className="flex flex-col gap-2 bg-white/2 p-3 rounded-xl border border-white/5">
-                                    <div className="flex justify-between items-center">
-                                        <div className="flex items-center gap-2">
-                                            <Shield size={13} className="text-gray-400" />
-                                            <div>
-                                                <h4 className="text-[11px] font-bold text-white">Safety Policy Grade</h4>
-                                                <p className="text-[9px] text-gray-500">Filters adult or unsafe contents</p>
+                                {/* ISSUE-777: personGeneration is only in GenerateVideoSchema —
+                                    the image payload (handleImageGenerate) never sends it, so this
+                                    toggle had zero effect in image mode. Video-only until the image
+                                    gateway/schema actually accepts a safety field. */}
+                                {mode === 'video' && (
+                                    <div className="flex flex-col gap-2 bg-white/2 p-3 rounded-xl border border-white/5">
+                                        <div className="flex justify-between items-center">
+                                            <div className="flex items-center gap-2">
+                                                <Shield size={13} className="text-gray-400" />
+                                                <div>
+                                                    <h4 className="text-[11px] font-bold text-white">Safety Policy Grade</h4>
+                                                    <p className="text-[9px] text-gray-500">Filters adult or unsafe contents</p>
+                                                </div>
                                             </div>
+                                            <button
+                                                onClick={() => setStudioControls({
+                                                    personGeneration: studioControls.personGeneration === 'allow_adult' ? 'dont_allow' : 'allow_adult'
+                                                })}
+                                                className={`px-2 py-1 rounded-lg text-[9px] font-extrabold uppercase border transition-all ${studioControls.personGeneration === 'allow_adult'
+                                                    ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                                                    : 'bg-rose-500/10 border-rose-500/20 text-rose-400'}`}
+                                            >
+                                                {studioControls.personGeneration === 'allow_adult' ? 'Standard' : 'Strict'}
+                                            </button>
                                         </div>
-                                        <button
-                                            onClick={() => setStudioControls({ 
-                                                personGeneration: studioControls.personGeneration === 'allow_adult' ? 'dont_allow' : 'allow_adult' 
-                                            })}
-                                            className={`px-2 py-1 rounded-lg text-[9px] font-extrabold uppercase border transition-all ${studioControls.personGeneration === 'allow_adult'
-                                                ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-                                                : 'bg-rose-500/10 border-rose-500/20 text-rose-400'}`}
-                                        >
-                                            {studioControls.personGeneration === 'allow_adult' ? 'Standard' : 'Strict'}
-                                        </button>
                                     </div>
-                                </div>
+                                )}
                             </motion.div>
                         )}
                     </div>
@@ -445,6 +488,10 @@ export default function DirectGenerationTab() {
                                 onChange={handleIngredientsChange} 
                                 mode="reference" 
                             />
+                            <div data-testid="video-input-summary" className="mt-2 rounded-lg border border-white/8 bg-black/20 px-3 py-2 text-[10px] text-gray-400">
+                                <span className="mr-2 font-bold uppercase tracking-wider text-gray-500">Render inputs</span>
+                                {videoInputSummary.join(' · ')}
+                            </div>
                         </motion.div>
                     )}
 

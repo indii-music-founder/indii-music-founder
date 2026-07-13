@@ -91,6 +91,19 @@ export interface WorkComposer {
     pro?: 'ASCAP' | 'BMI' | 'SESAC' | 'GMR' | 'None';
 }
 
+export interface ISWCRegistrationEvidence {
+    /** CISAC member society/PRO that assigned or confirmed the work. */
+    assigningSociety: string;
+    /** Provider-issued confirmation/work-registration receipt. */
+    confirmationReference: string;
+    /** Exact title shown on the provider confirmation. */
+    confirmedWorkTitle: string;
+    /** ISO timestamp supplied by the authoritative confirmation. */
+    confirmedAt: string;
+    /** IPI values shown by the confirmation, used to prevent work mismatch. */
+    confirmedComposerIpis: string[];
+}
+
 const WORKS_COLLECTION = 'iswc_works';
 
 export class ISWCService {
@@ -224,13 +237,46 @@ export class ISWCService {
     /**
      * Record a confirmed ISWC from CISAC.
      */
-    static async confirmRegistration(workId: string, iswc: string): Promise<void> {
+    static async confirmRegistration(workId: string, iswc: string, evidence: ISWCRegistrationEvidence): Promise<void> {
+        const user = auth.currentUser;
+        if (!user) throw new Error('Authentication required');
+        const normalizedIswc = iswc.trim().toUpperCase();
+        if (!/^T-\d{3}\.\d{3}\.\d{3}-\d$/.test(normalizedIswc)) {
+            throw new Error('ISWC must use the format T-123.456.789-0.');
+        }
+        if (!evidence.assigningSociety.trim() || !evidence.confirmationReference.trim()) {
+            throw new Error('ISWC confirmation requires an assigning society and confirmation reference.');
+        }
+        if (!Number.isFinite(Date.parse(evidence.confirmedAt))) {
+            throw new Error('ISWC confirmation requires a valid confirmation date.');
+        }
+        const work = await ISWCService.getById(workId);
+        if (!work || work.userId !== user.uid) throw new Error('Work not found or not owned by the current user.');
+        if (work.title.trim().toLocaleLowerCase() !== evidence.confirmedWorkTitle.trim().toLocaleLowerCase()) {
+            throw new Error('ISWC confirmation title does not match this work.');
+        }
+        const expectedIpis = work.composers.map(composer => composer.ipiNumber).filter((ipi): ipi is string => !!ipi).sort();
+        const confirmedIpis = [...new Set(evidence.confirmedComposerIpis.map(ipi => ipi.trim()).filter(Boolean))].sort();
+        if (expectedIpis.length > 0 && (expectedIpis.length !== confirmedIpis.length || expectedIpis.some((ipi, index) => ipi !== confirmedIpis[index]))) {
+            throw new Error('ISWC confirmation composers do not match this work.');
+        }
+        const duplicate = await getDocs(query(collection(db, WORKS_COLLECTION), where('iswc', '==', normalizedIswc)));
+        if (duplicate.docs.some(snapshot => snapshot.id !== workId)) {
+            throw new Error('This ISWC is already assigned to a different local work.');
+        }
         const docRef = doc(db, WORKS_COLLECTION, workId);
         await setDoc(docRef, {
-            iswc,
+            iswc: normalizedIswc,
             status: 'registered',
             registeredAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
+            registrationEvidence: {
+                assigningSociety: evidence.assigningSociety.trim(),
+                confirmationReference: evidence.confirmationReference.trim(),
+                confirmedAt: evidence.confirmedAt,
+                confirmedWorkTitle: evidence.confirmedWorkTitle.trim(),
+                confirmedComposerIpis: confirmedIpis,
+            },
         }, { merge: true });
     }
 }

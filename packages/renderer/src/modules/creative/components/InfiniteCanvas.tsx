@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { useStore, HistoryItem } from '@/core/store';
+import type { CanvasImage } from '@/core/store/slices/creative/creativeHistorySlice';
 import { useShallow } from 'zustand/react/shallow';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { Editing } from '@/services/image/EditingService';
@@ -20,7 +21,8 @@ export default function InfiniteCanvas() {
         selectedCanvasImageId,
         selectCanvasImage,
         currentProjectId,
-        addToHistory
+        addToHistory,
+        saveDesignVersion
     } = useStore(useShallow(state => ({
         canvasImages: state.canvasImages,
         addCanvasImage: state.addCanvasImage,
@@ -29,7 +31,8 @@ export default function InfiniteCanvas() {
         selectedCanvasImageId: state.selectedCanvasImageId,
         selectCanvasImage: state.selectCanvasImage,
         currentProjectId: state.currentProjectId,
-        addToHistory: state.addToHistory
+        addToHistory: state.addToHistory,
+        saveDesignVersion: state.saveDesignVersion
     })));
     const toast = useToast();
 
@@ -44,6 +47,8 @@ export default function InfiniteCanvas() {
     const [cropOverlay, setCropOverlay] = useState<{ sx: number, sy: number, w: number, h: number } | null>(null);
     const [promptText, setPromptText] = useState("");
     const [detectedObjects, setDetectedObjects] = useState<{ sourceImageId: string; objects: DetectedObject[] } | null>(null);
+    const [flattenRevision, setFlattenRevision] = useState<{ flattenedId: string; sources: CanvasImage[] } | null>(null);
+    const [failedVariationBatch, setFailedVariationBatch] = useState<{ source: CanvasImage; prompt: string; mimeType: string; base64Data: string; projectId: string; slots: number[] } | null>(null);
 
     // Interaction State
     const isDragging = useRef(false);
@@ -675,6 +680,9 @@ export default function InfiniteCanvas() {
             const failedCount = settledResults.filter((settled) => (
                 settled.status === 'rejected' || settled.value.length === 0
             )).length;
+            const failedSlots = settledResults.flatMap((settled, requestIndex) => (
+                settled.status === 'rejected' || settled.value.length === 0 ? [requestIndex] : []
+            ));
 
             if (successfulResults.length > 0) {
                 const padding = 40;
@@ -716,16 +724,69 @@ export default function InfiniteCanvas() {
                 });
                 
                 if (failedCount > 0) {
+                    setFailedVariationBatch({ source: { ...selectedImg }, prompt, mimeType, base64Data, projectId: currentProjectId, slots: failedSlots });
                     toast.warning(`Generated ${successfulResults.length} variation${successfulResults.length === 1 ? '' : 's'}; ${failedCount} failed.`);
                 } else {
+                    setFailedVariationBatch(null);
                     toast.success(`Generated ${successfulResults.length} variations!`);
                 }
             } else {
+                setFailedVariationBatch({ source: { ...selectedImg }, prompt, mimeType, base64Data, projectId: currentProjectId, slots: failedSlots });
                 toast.error('All variation requests failed. Your source image is unchanged.');
             }
         } catch (e: unknown) {
             logger.error(e instanceof Error ? e.message : String(e));
             toast.error('Failed to generate variations.');
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
+    const handleRetryFailedVariations = async () => {
+        const batch = failedVariationBatch;
+        if (!batch || batch.projectId !== currentProjectId) {
+            toast.error('Failed variation batch belongs to a different project and cannot be retried here.');
+            return;
+        }
+        if (!canvasImages.some(image => image.id === batch.source.id)) {
+            toast.error('The original variation source is no longer on this canvas.');
+            return;
+        }
+        setIsGenerating(true);
+        try {
+            const settled = await Promise.allSettled(batch.slots.map(() => ImageGeneration.generateImages({
+                prompt: batch.prompt, count: 1, sourceImages: [{ mimeType: batch.mimeType, data: batch.base64Data }],
+            })));
+            const stillFailed: number[] = [];
+            const padding = 40;
+            const width = batch.source.width ?? 512;
+            const height = batch.source.height ?? 512;
+            const positions = [
+                { x: batch.source.x + width + padding, y: batch.source.y },
+                { x: batch.source.x + width + padding, y: batch.source.y + height + padding },
+                { x: batch.source.x, y: batch.source.y + height + padding },
+                { x: batch.source.x + width + padding + width + padding, y: batch.source.y },
+            ];
+            let recovered = 0;
+            settled.forEach((result, retryIndex) => {
+                const slot = batch.slots[retryIndex]!;
+                if (result.status !== 'fulfilled' || result.value.length === 0) {
+                    stillFailed.push(slot);
+                    return;
+                }
+                result.value.forEach(asset => {
+                    const position = positions[slot]!;
+                    addCanvasImage({ id: asset.id, base64: asset.url, x: position.x, y: position.y, width, height, aspect: width / height, projectId: currentProjectId, prompt: batch.prompt, parentId: batch.source.id, originalX: position.x, originalY: position.y, originalWidth: width, originalHeight: height, parentOffsetX: position.x - batch.source.x, parentOffsetY: position.y - batch.source.y });
+                    addToHistory({ id: asset.id, url: asset.url, type: 'image', prompt: batch.prompt, timestamp: Date.now(), projectId: currentProjectId, origin: 'generated' });
+                    recovered += 1;
+                });
+            });
+            setFailedVariationBatch(stillFailed.length ? { ...batch, slots: stillFailed } : null);
+            if (recovered > 0) toast.success(`Recovered ${recovered} failed variation${recovered === 1 ? '' : 's'}.`);
+            if (stillFailed.length) toast.warning(`${stillFailed.length} variation slot${stillFailed.length === 1 ? '' : 's'} still failed and can be retried.`);
+        } catch (error) {
+            logger.error('[InfiniteCanvas] Failed variation retry error:', error);
+            toast.error('Failed variations could not be retried. Your completed variants are safe.');
         } finally {
             setIsGenerating(false);
         }
@@ -790,7 +851,7 @@ export default function InfiniteCanvas() {
         }
     };
 
-    const handleFlatten = () => {
+    const handleFlatten = async () => {
         if (canvasImages.length <= 1) {
             toast.success("Nothing to flatten");
             return;
@@ -802,6 +863,17 @@ export default function InfiniteCanvas() {
         });
         if (unavailableLayer) {
             toast.error(`Cannot flatten yet: layer ${unavailableLayer.id.slice(0, 8)} is still loading or unavailable.`);
+            return;
+        }
+
+        // A flatten replaces every source layer. Persist the exact pre-flatten
+        // document before the destructive state change so recovery survives a
+        // reload, unlike the short-lived in-component Undo control.
+        try {
+            await saveDesignVersion(`Before flatten — ${new Date().toLocaleString()}`);
+        } catch (error) {
+            logger.error('Could not save a recoverable pre-flatten revision:', error);
+            toast.error('Flatten was not performed because its recovery revision could not be saved.');
             return;
         }
 
@@ -843,11 +915,11 @@ export default function InfiniteCanvas() {
             return;
         }
         
-        // Remove old images
-        canvasImages.forEach(img => removeCanvasImage(img.id));
-        
-        // Add new flattened image
+        // Create the replacement only after every source was rendered. Keep an
+        // in-memory revision so this destructive-looking action has an immediate undo.
+        const sourceRevision = canvasImages.map(image => ({ ...image }));
         const newId = crypto.randomUUID();
+        canvasImages.forEach(img => removeCanvasImage(img.id));
         addCanvasImage({
             id: newId,
             base64: dataUrl,
@@ -859,9 +931,24 @@ export default function InfiniteCanvas() {
             projectId: currentProjectId,
             prompt: "Flattened Canvas"
         });
-        
+        setFlattenRevision({ flattenedId: newId, sources: sourceRevision });
         selectCanvasImage(newId);
-        toast.success("Layers flattened successfully!");
+        toast.success("Layers flattened successfully. Undo is available until the next flatten.");
+    };
+
+    const handleUndoFlatten = () => {
+        if (!flattenRevision) return;
+        const flattenedStillExists = canvasImages.some(image => image.id === flattenRevision.flattenedId);
+        if (!flattenedStillExists) {
+            setFlattenRevision(null);
+            toast.error('Cannot undo flatten because its replacement layer was removed.');
+            return;
+        }
+        removeCanvasImage(flattenRevision.flattenedId);
+        flattenRevision.sources.forEach(image => addCanvasImage(image));
+        selectCanvasImage(flattenRevision.sources[flattenRevision.sources.length - 1]?.id ?? null);
+        setFlattenRevision(null);
+        toast.success('Flatten undone. Original layers were restored.');
     };
 
     const handleZoomIn = () => {
@@ -1190,7 +1277,11 @@ export default function InfiniteCanvas() {
                 selectedCanvasImageId={selectedCanvasImageId}
                 removeCanvasImage={removeCanvasImage}
                 onFlatten={handleFlatten}
+                onUndoFlatten={handleUndoFlatten}
+                canUndoFlatten={!!flattenRevision}
                 onGenerateVariations={handleGenerateVariations}
+                onRetryFailedVariations={handleRetryFailedVariations}
+                failedVariationCount={failedVariationBatch?.slots.length}
                 onZoomIn={handleZoomIn}
                 onZoomOut={handleZoomOut}
                 onDetectObjects={handleDetectObjects}

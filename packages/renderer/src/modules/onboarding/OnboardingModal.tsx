@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import {
     runOnboardingConversation,
     processFunctionCalls,
+    externalizeOnboardingBrandAssets,
     generateEmptyResponseFallback,
     generateNaturalFallback,
     calculateProfileStatus,
@@ -144,7 +145,8 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
 
             if (functionCalls && functionCalls.length > 0) {
                 const { updatedProfile, isFinished, updates } = processFunctionCalls(functionCalls, userProfile, currentFiles);
-                setUserProfile(updatedProfile);
+                const externalized = await externalizeOnboardingBrandAssets(updatedProfile, currentFiles);
+                setUserProfile(externalized.profile);
 
                 if (updates.length > 0) {
                     // feedback about updates could go here
@@ -169,6 +171,12 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
                     setHistory(prev => [...prev, { role: 'model', parts: [{ text }] }]);
                 } else {
                     setHistory(prev => [...prev, { role: 'model', parts: [{ text: generateEmptyResponseFallback() }] }]);
+                }
+                if (externalized.warnings.length > 0) {
+                    setHistory(prev => [...prev, {
+                        role: 'model',
+                        parts: [{ text: externalized.warnings.join(' ') }],
+                    }]);
                 }
             } else {
                 setHistory(prev => [...prev, { role: 'model', parts: [{ text }] }]);
