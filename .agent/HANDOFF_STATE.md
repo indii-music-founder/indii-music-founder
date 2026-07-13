@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-07-13 17:59 EDT
+**Updated:** 2026-07-13 18:00 EDT
 **Branch:** `fix/issues-core`
 
 ## Recent Commits
 ```
+cedd5bc5f chore: session 2026-07-13 checkpoint — Road Manager finish + partial issues audit
+cfe43fb9f chore: mark ISSUE-949 FIXED — campaign persistence audit showed ledger was stale
 521cd7be3 chore: session checkpoint [17:58]
 2f47a14fc fix(social): validate future-time only for post scheduling (ISSUE-941)
 6394eeccf chore: session checkpoint [17:57]
@@ -12,13 +14,11 @@ dc4975f87 chore: ISSUE-704/705 progress checkpoint — 2 jobs complete, 4 jobs T
 100d6cb52 fix(road-manager): add miles tracking UI card + calculation utilities (ISSUE-705 job 2)
 cc426d298 fix(road-manager): generalize nearby places finder to support gas, hotel, food, rest types (ISSUE-705 job 1)
 b6530533e chore: session checkpoint [14:45]
-7e850923c chore: session checkpoint [14:43]
-6f7bfb6bb chore: session checkpoint [14:04]
 ```
 
 ## Working State
 ```
-M  .agent/test_ledger/OPEN_ISSUES.md
+clean working tree
 ```
 
 ## Decisions
