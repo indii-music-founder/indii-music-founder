@@ -41,7 +41,8 @@ vi.mock('../core/store', () => {
         // "loadNotesFromCloud is not a function" when App actually renders.
         loadNotesFromCloud: vi.fn().mockResolvedValue(undefined),
         loadBoardroomMessages: vi.fn().mockResolvedValue(vi.fn()),
-        loadSessions: vi.fn(),
+        // App.tsx calls loadSessions().catch(...) on mount — must resolve, not return undefined.
+        loadSessions: vi.fn().mockResolvedValue(undefined),
         loginWithGoogle: vi.fn(),
         pendingCount: 0,
         isSyncing: false,

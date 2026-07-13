@@ -6,6 +6,11 @@ import { VideoGeneration } from '@/services/video/VideoGenerationService';
 import { useToast } from '@/core/context/ToastContext';
 import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
 
+const { mockUploadReferenceMedia } = vi.hoisted(() => ({ mockUploadReferenceMedia: vi.fn() }));
+vi.mock('@/services/creative/CreativeStorageService', () => ({
+    CreativeStorageService: { uploadReferenceMedia: mockUploadReferenceMedia },
+}));
+
 // Mock dependencies
 const mockToastObject = {
     success: vi.fn(),
@@ -128,6 +133,7 @@ describe('DirectGenerationTab', () => {
         vi.useRealTimers();
         vi.clearAllMocks();
         vi.mocked(resolveStorageUrl).mockImplementation((uri: string) => Promise.resolve(uri));
+        mockUploadReferenceMedia.mockResolvedValue('gs://test-bucket/creative/test-user/references/selected-project-image.png');
         useMockStore.setState({
             studioControls: { model: 'fast', aspectRatio: '16:9', resolution: '1080p', duration: 6, personGeneration: 'allow_adult', negativePrompt: '', seed: '' },
             creativePrompt: '',
@@ -259,6 +265,48 @@ describe('DirectGenerationTab', () => {
         // Results grid should show the image
         const img = document.querySelector('img');
         expect(img).toBeTruthy();
+    });
+
+    it('ISSUE-776: sends the selected image handoff as referenceUris to generateImageV3', async () => {
+        useMockStore.setState({
+            videoInputs: {
+                ingredients: [{
+                    id: 'selected-project-image',
+                    url: 'https://cdn.example.com/project-a-image.png',
+                    type: 'image',
+                    prompt: 'Project A reference',
+                    timestamp: 1,
+                    projectId: 'test-project',
+                }],
+            },
+        });
+        render(<DirectGenerationTab />);
+        fireEvent.change(screen.getByTestId('direct-prompt-input'), { target: { value: 'Use this exact reference' } });
+
+        await act(async () => {
+            fireEvent.click(screen.getByTestId('direct-generate-btn'));
+        });
+
+        await waitFor(() => {
+            expect(mockUploadReferenceMedia).toHaveBeenCalledWith(
+                expect.any(String),
+                'https://cdn.example.com/project-a-image.png',
+                'image',
+                { scope: 'objects' },
+            );
+            expect(mockHttpsCallable).toHaveBeenCalledWith(expect.objectContaining({
+                referenceUris: ['gs://test-bucket/creative/test-user/references/selected-project-image.png'],
+                referenceUri: 'gs://test-bucket/creative/test-user/references/selected-project-image.png',
+            }));
+        });
+
+        // Drain the rest of the generation chain (resolveStorageUrl -> addToHistory)
+        // before the test ends. Without this, the pending promise resolves during
+        // the NEXT test instead, injecting a stray 'mock-job-id' entry into that
+        // test's generatedHistory assertion — a real cross-test leak, not a fluke.
+        await waitFor(() => {
+            expect(useMockStore.getState().addToHistory).toHaveBeenCalled();
+        });
     });
 
     it('opens immediately when image generation returns a completed resultUri', async () => {
