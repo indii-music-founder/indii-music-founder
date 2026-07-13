@@ -57,7 +57,7 @@ describe('MemoryBankService', () => {
         const query = 'Find info for secret: "topSecretToken" and credit card 4111 1111 1111 1111';
         const result = await memoryBankService.searchMemories('user-1', query);
 
-        expect(result).toEqual([]);
+        expect(result).toEqual({ results: [], hasMore: false });
         expect(fetchMock).not.toHaveBeenCalled();
     });
 });
