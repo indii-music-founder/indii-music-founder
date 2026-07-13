@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Send, Loader2, Sparkles, X, Copy, Trash2 } from 'lucide-react';
 import { knowledgeBaseService, KnowledgeDoc } from '../services/KnowledgeBaseService';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { AgentMessage } from '@/core/store/slices/agent';
 
 interface KnowledgeChatProps {
@@ -23,12 +24,14 @@ export const KnowledgeChat: React.FC<KnowledgeChatProps> = ({ isOpen, onClose, a
     const [streamingContent, setStreamingContent] = useState('');
     const scrollRef = useRef<HTMLDivElement>(null);
 
-    const { sessions, createSession, addMessageToSession, clearAgentHistory } = useStore(state => ({
-        sessions: state.sessions,
-        createSession: state.createSession,
-        addMessageToSession: state.addMessageToSession,
-        clearAgentHistory: state.clearAgentHistory
-    }));
+    const { sessions, createSession, addMessageToSession, clearAgentHistory } = useStore(
+        useShallow(state => ({
+            sessions: state.sessions,
+            createSession: state.createSession,
+            addMessageToSession: state.addMessageToSession,
+            clearAgentHistory: state.clearAgentHistory
+        }))
+    );
 
     const namespace = activeDoc ? `knowledge-advisor-${activeDoc.id}` : 'knowledge-advisor-global';
     const knowledgeSession = Object.values(sessions).find(s => s.namespace === namespace);
