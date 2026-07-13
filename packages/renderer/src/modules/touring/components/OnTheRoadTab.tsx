@@ -15,6 +15,7 @@ interface OnTheRoadTabProps {
     currentLocation: string;
     setCurrentLocation: (loc: string) => void;
     handleFindGasStations: () => void;
+    handleFindNearbyPlaces?: (placeType: string) => void;
     isFindingPlaces: boolean;
     nearbyPlaces: NearbyPlace[];
     fuelLogistics?: FuelLogistics | null;
@@ -26,6 +27,7 @@ export const OnTheRoadTab: React.FC<OnTheRoadTabProps> = ({
     currentLocation,
     setCurrentLocation,
     handleFindGasStations,
+    handleFindNearbyPlaces,
     isFindingPlaces,
     nearbyPlaces,
     fuelLogistics,
@@ -153,29 +155,51 @@ export const OnTheRoadTab: React.FC<OnTheRoadTabProps> = ({
                     </CardHeader>
 
                     <CardContent className="flex-1 flex flex-col gap-4 h-full">
-                        <div className="flex gap-2">
-                            <input
-                                type="text"
-                                placeholder={t('touring.hints.current_location')}
-                                value={currentLocation}
-                                onChange={(e) => setCurrentLocation(e.target.value)}
-                                className="flex-1 bg-bg-dark border border-gray-700 rounded-lg p-2 text-sm text-white focus:border-green-500 outline-none"
-                            />
-                            <Button
-                                onClick={handleLocateMe}
-                                variant="secondary"
-                                className="px-3"
-                                title="Use Current Location"
-                            >
-                                <Crosshair size={18} />
-                            </Button>
-                            <Button
-                                onClick={handleFindGasStations}
-                                disabled={isFindingPlaces}
-                                className="bg-green-500 hover:bg-green-600"
-                            >
-                                {isFindingPlaces ? <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }}><Navigation size={18} /></motion.div> : <Navigation size={18} />}
-                            </Button>
+                        <div className="flex flex-col gap-2">
+                            <div className="flex gap-2">
+                                <input
+                                    type="text"
+                                    placeholder={t('touring.hints.current_location')}
+                                    value={currentLocation}
+                                    onChange={(e) => setCurrentLocation(e.target.value)}
+                                    className="flex-1 bg-bg-dark border border-gray-700 rounded-lg p-2 text-sm text-white focus:border-green-500 outline-none"
+                                />
+                                <Button
+                                    onClick={handleLocateMe}
+                                    variant="secondary"
+                                    className="px-3"
+                                    title="Use Current Location"
+                                >
+                                    <Crosshair size={18} />
+                                </Button>
+                                <Button
+                                    onClick={handleFindGasStations}
+                                    disabled={isFindingPlaces}
+                                    className="bg-green-500 hover:bg-green-600"
+                                >
+                                    {isFindingPlaces ? <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }}><Navigation size={18} /></motion.div> : <Navigation size={18} />}
+                                </Button>
+                            </div>
+
+                            {/* Place Type Selector */}
+                            <div className="flex gap-2 flex-wrap">
+                                {[
+                                    { type: 'gas_station', label: '⛽ Gas' },
+                                    { type: 'lodging', label: '🏨 Hotel' },
+                                    { type: 'restaurant', label: '🍽️ Food' },
+                                    { type: 'rest_area', label: '🛑 Rest' }
+                                ].map(({ type, label }) => (
+                                    <Button
+                                        key={type}
+                                        onClick={() => handleFindNearbyPlaces?.(type)}
+                                        disabled={isFindingPlaces}
+                                        variant="outline"
+                                        className="text-xs py-1 h-auto"
+                                    >
+                                        {label}
+                                    </Button>
+                                ))}
+                            </div>
                         </div>
 
                         <div className="flex-1 bg-bg-dark border border-gray-800 rounded-lg overflow-y-auto custom-scrollbar p-2">

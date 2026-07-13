@@ -164,7 +164,7 @@ export default function Sidebar() {
     // Grouped navigation items based on the screenshot
     const managerItems: SidebarItem[] = [
         { id: 'brand', icon: Briefcase, label: 'Brand Manager' },
-        { id: 'road', icon: Users, label: 'Road Manager' },
+        { id: 'road', icon: Users, label: 'Road/tour' },
         { id: 'campaign', icon: Megaphone, label: 'Campaign Manager' },
         { id: 'agent', icon: CalendarDays, label: 'Booking Agent' },
         { id: 'publicist', icon: Mic, label: 'Publicist' },

@@ -352,7 +352,7 @@ const RoadManager: React.FC = () => {
         }
     };
 
-    const handleFindGasStations = async () => {
+    const handleFindNearbyPlaces = async (placeType: string = 'gas_station') => {
         if (!currentLocation) {
             toast.error("Please enter a location");
             return;
@@ -360,16 +360,21 @@ const RoadManager: React.FC = () => {
         setIsFindingPlaces(true);
         try {
             const findPlaces = httpsCallable(functions, 'findPlaces');
-            const response = await findPlaces({ location: currentLocation, type: 'gas_station' });
+            const response = await findPlaces({ location: currentLocation, type: placeType });
             const result = response.data as { places: NearbyPlace[] };
             setNearbyPlaces(result.places);
-            toast.success("Found gas stations nearby");
+            const typeLabel = placeType.replace('_', ' ');
+            toast.success(`Found ${typeLabel} nearby`);
         } catch (error: unknown) {
             logger.error("Find Places Failed:", error);
-            toast.error("Failed to find gas stations");
+            toast.error("Failed to find nearby places");
         } finally {
             setIsFindingPlaces(false);
         }
+    };
+
+    const handleFindGasStations = async () => {
+        await handleFindNearbyPlaces('gas_station');
     };
 
 
@@ -453,6 +458,7 @@ const RoadManager: React.FC = () => {
                                         currentLocation={currentLocation}
                                         setCurrentLocation={setCurrentLocation}
                                         handleFindGasStations={handleFindGasStations}
+                                        handleFindNearbyPlaces={handleFindNearbyPlaces}
                                         isFindingPlaces={isFindingPlaces}
                                         nearbyPlaces={nearbyPlaces}
                                         itinerary={itinerary}
