@@ -7,6 +7,7 @@ import { useToast } from '@/core/context/ToastContext';
 import { Logger } from '@/core/logger/Logger';
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { AgentMessage } from '@/core/store/slices/agent';
 
 interface VisaDoc {
@@ -141,12 +142,14 @@ export function VisaChecklist() {
     const [customCountryName, setCustomCountryName] = useState('');
     const [isGeneratingAI, setIsGeneratingAI] = useState(false);
 
-    const { sessions, createSession, addMessageToSession, clearAgentHistory } = useStore(state => ({
-        sessions: state.sessions,
-        createSession: state.createSession,
-        addMessageToSession: state.addMessageToSession,
-        clearAgentHistory: state.clearAgentHistory
-    }));
+    const { sessions, createSession, addMessageToSession, clearAgentHistory } = useStore(
+        useShallow(state => ({
+            sessions: state.sessions,
+            createSession: state.createSession,
+            addMessageToSession: state.addMessageToSession,
+            clearAgentHistory: state.clearAgentHistory
+        }))
+    );
 
     // Find existing visa session or fall back to default empty state
     const visaSession = Object.values(sessions).find(s => s.namespace === 'visa-advisor');

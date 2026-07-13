@@ -1,5 +1,27 @@
 # Handoff State
 **Updated:** 2026-07-13 14:45 EDT
+**Updated:** 2026-07-13 13:58 EDT
+**Branch:** `claude/inspiring-greider-59ed4a` (merged with `main`)
+
+## Recent Commits
+```
+668b68ab3 chore: session checkpoint [13:55]
+f8990cddd chore: session checkpoint [13:42]
+1ceae97c8 chore: session checkpoint [13:41]
+487213490 chore: session checkpoint [13:32]
+7fe88b1ec fix(store): wrap unstable useStore object-selectors in useShallow (ISSUE-1047)
+1d6b876b7 chore: session checkpoint [12:33]
+52ebe7c23 fix(e2e): replace invented selectors in cross-device-persistence spec with verified real ones (hunter finding)
+f36e1f62b fix(creative): gate first-run guidance on canvas emptiness, not editor-selection (hunter finding)
+9b085a87a fix(e2e): replace invented data-testid selectors with verified real ones (hunter finding)
+d389f9822 docs: add /ci-validate workflow to triage main deploy failures vs the known OOM flake
+
+## Merged from main
+37e1bd61e Merge pull request #236 from indii-music-founder/fix/issues-core
+92c708d6a fix(core): comprehensive system improvements across firebase, audio, creative, and state management
+95358bc9a fix(test): make video editor store tests assert deltas, not absolute counts (ISSUE-1046 follow-up)
+47ccc8aef fix(ci): resolve CI unit-test OOM by switching vitest pool to forks (ISSUE-1046)
+**Updated:** 2026-07-13 14:04 EDT
 **Branch:** `fix/issues-core`
 
 ## Recent Commits
@@ -18,7 +40,9 @@ d6cbef411 chore: session checkpoint [12:12]
 
 ## Working State
 ```
-clean working tree
+ M packages/shared/dist/schemas/creative.d.ts
+ M packages/shared/dist/schemas/env.schema.d.ts
+ M packages/shared/dist/schemas/workflowState.d.ts
 ```
 
 ## Decisions
