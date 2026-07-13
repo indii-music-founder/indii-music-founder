@@ -1,9 +1,12 @@
 # Handoff State
-**Updated:** 2026-07-13 10:20 EDT
+**Updated:** 2026-07-13 11:20 EDT
 **Branch:** `fix/issues-core`
 
 ## Recent Commits
 ```
+95358bc9a fix(test): make video editor store tests assert deltas, not absolute counts (ISSUE-1046 follow-up)
+47ccc8aef fix(ci): resolve CI unit-test OOM by switching vitest pool to forks (ISSUE-1046)
+35c14c97d chore: session checkpoint [10:20]
 14b465a50 chore: session checkpoint [10:19]
 f3285a76e chore: session checkpoint [10:16]
 5f3e8a69f chore: session checkpoint [10:13]
@@ -11,14 +14,10 @@ f3285a76e chore: session checkpoint [10:16]
 e4cb076a9 chore: session checkpoint [06:57]
 426457575 fix(creative): make Direct Generation advanced controls mode-aware (ISSUE-777)
 394a4a013 fix(video): check temporal-inpaint capability before reservation (ISSUE-869)
-c6b89ce32 chore: session checkpoint [19:27]
-c2dd57c9e docs(ledger): stop CI OOM iteration for ISSUE-1046 with a precise diagnostic finding
-8b035f01c fix(finance): stop claiming AI-narrative statement mapping is a completed normalization (ISSUE-856)
 ```
 
 ## Working State
 ```
- M .agent/test_ledger/OPEN_ISSUES.md
  M .agents/workflows/ci-validate.md
  M .github/workflows/deploy.yml
  M packages/firebase/firestore.indexes.json
@@ -34,7 +33,6 @@ c2dd57c9e docs(ledger): stop CI OOM iteration for ISSUE-1046 with a precise diag
  M packages/main/src/preload.ts
  M packages/renderer/src/core/App.tsx
  M packages/renderer/src/core/components/RightPanel.tsx
- M packages/renderer/src/core/components/SidebarNavigation.test.tsx
  M packages/renderer/src/core/components/right-panel/StudioControlsPanel.tsx
  M packages/renderer/src/core/store/slices/Keeper_Store_Persistence.test.ts
  M packages/renderer/src/core/store/slices/agent/agentSessionSlice.ts
@@ -49,14 +47,11 @@ c2dd57c9e docs(ledger): stop CI OOM iteration for ISSUE-1046 with a precise diag
  M packages/renderer/src/modules/creative/components/ImageSubMenu.tsx
  M packages/renderer/src/modules/creative/components/InfiniteCanvas.tsx
  M packages/renderer/src/modules/creative/components/InfiniteCanvasHUD.tsx
- M packages/renderer/src/modules/creative/components/__tests__/DirectGenerationTab.test.tsx
  M packages/renderer/src/modules/creative/components/whisk/WhiskDropZone.tsx
  M packages/renderer/src/modules/creative/hooks/directVideoInputs.test.ts
  M packages/renderer/src/modules/creative/hooks/directVideoInputs.ts
  M packages/renderer/src/modules/creative/hooks/useDirectGeneration.ts
  M packages/renderer/src/modules/creative/video/OmniWorkflow.tsx
- M packages/renderer/src/modules/creative/video/TheAnarchist.test.tsx
- M packages/renderer/src/modules/creative/video/TheDirector.test.tsx
  M packages/renderer/src/modules/creative/video/components/StoryboardTimeline.tsx
  M packages/renderer/src/modules/creative/video/schemas.ts
  M packages/renderer/src/modules/creative/video/store/videoEditorStore.test.ts
@@ -65,7 +60,6 @@ c2dd57c9e docs(ledger): stop CI OOM iteration for ISSUE-1046 with a precise diag
  M packages/renderer/src/modules/creative/video/visualizer/SceneBuilder.tsx
  M packages/renderer/src/modules/creative/video/visualizer/sceneBuilderFiles.test.ts
  M packages/renderer/src/modules/creative/video/visualizer/sceneBuilderFiles.ts
- M packages/renderer/src/modules/knowledge/components/KnowledgeChat.test.tsx
  M packages/renderer/src/modules/marketing/components/EPKGenerator.tsx
  M packages/renderer/src/modules/merchandise/components/EnhancedShowroom.tsx
  M packages/renderer/src/modules/merchandise/components/InventoryTracker.tsx
@@ -74,7 +68,6 @@ c2dd57c9e docs(ledger): stop CI OOM iteration for ISSUE-1046 with a precise diag
  M packages/renderer/src/modules/mobile-remote/components/QuickCaptureView.tsx
  M packages/renderer/src/modules/onboarding/OnboardingModal.tsx
  M packages/renderer/src/modules/onboarding/hooks/useOnboarding.ts
- M packages/renderer/src/modules/onboarding/pages/OnboardingPage.test.tsx
  M packages/renderer/src/modules/publicist/components/ReleaseKitModal.tsx
  M packages/renderer/src/modules/publishing/hooks/useDDEXRelease.test.ts
  M packages/renderer/src/modules/publishing/hooks/useDDEXRelease.ts
@@ -95,12 +88,10 @@ c2dd57c9e docs(ledger): stop CI OOM iteration for ISSUE-1046 with a precise diag
  M packages/renderer/src/services/agent/SessionService.test.ts
  M packages/renderer/src/services/agent/SessionService.ts
  M packages/renderer/src/services/agent/__tests__/conversationMode.qa.test.ts
- M packages/renderer/src/services/agent/benchmark_clearAllMemories.test.ts
  M packages/renderer/src/services/agent/builders/AgentPromptBuilder.ts
  M packages/renderer/src/services/agent/components/Keeper_ContextLeak.test.ts
  M packages/renderer/src/services/agent/definitions/SuperpowerTools.ts
  M packages/renderer/src/services/agent/governance/ToolPoolAssembler.ts
- M packages/renderer/src/services/agent/memory/AlwaysOnMemoryEngine.test.ts
  M packages/renderer/src/services/agent/types.ts
  M packages/renderer/src/services/audio/AudioAnalysisService.ts
  M packages/renderer/src/services/audio/AudioIntelligenceService.test.ts
@@ -119,7 +110,6 @@ c2dd57c9e docs(ledger): stop CI OOM iteration for ISSUE-1046 with a precise diag
  M packages/renderer/src/services/publishing/ISWCService.ts
  M packages/renderer/src/services/video/VideoGenerationService.schema.test.ts
  M packages/renderer/src/services/video/VideoGenerationService.ts
- M packages/renderer/src/tests/RouterContext.test.tsx
  M packages/renderer/src/types/electron.d.ts
  M packages/shared/dist/ipc/electron-api.types.d.ts
  M packages/shared/dist/ipc/electron-api.types.d.ts.map
@@ -130,7 +120,6 @@ c2dd57c9e docs(ledger): stop CI OOM iteration for ISSUE-1046 with a precise diag
  M packages/shared/dist/schemas/workflowState.d.ts
  M packages/shared/src/ipc/electron-api.types.ts
  M packages/shared/src/schemas/creative.ts
- M vitest.config.ts
 ?? packages/firebase/src/functions/remote/
 ?? packages/main/src/handlers/system.security.test.ts
 ?? packages/renderer/src/modules/publishing/hooks/releaseAssetValidation.test.ts
