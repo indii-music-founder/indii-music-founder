@@ -1545,9 +1545,13 @@ export const healthCheck = functions
                 lastCheck: admin.firestore.FieldValue.serverTimestamp()
             }, { merge: true });
             status.firestore = "connected";
-        } catch {
+        } catch (error: unknown) {
             status.firestore = "error";
             status.status = "degraded";
+            // Surface the real cause (e.g. IAM permission-denied) instead of
+            // silently swallowing it — a bare "error" string was undiagnosable.
+            functions.logger.error("[healthCheck] Firestore ping failed:", error);
+            status.firestoreErrorCode = error && typeof error === "object" && "code" in error ? (error as { code: unknown }).code : undefined;
         }
 
         res.status(200).json(status);
