@@ -110,7 +110,8 @@ export const QuickCapture: React.FC<QuickCaptureProps> = ({ isOpen, onClose }) =
                     const snapshot = await uploadBytes(ref(storage, storagePath), photoFile);
                     photoUrl = await getDownloadURL(snapshot.ref);
                 } catch (uploadErr: unknown) {
-                    logger.warn('[QuickCapture] Photo upload failed, saving without photo:', uploadErr);
+                    const msg = uploadErr instanceof Error ? uploadErr.message : String(uploadErr);
+                    throw new Error(`Photo upload failed: ${msg}`);
                 }
             }
 
