@@ -14140,7 +14140,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-926: Video Editor imports use arbitrary durations and can crash after tracks are removed
 
-- **Status:** 🟡 PARTIALLY FIXED (2026-07-13 — zero-track import crash eliminated; metadata-duration probing remains)
+- **Status:** ✅ FIXED (2026-07-13 — zero-track crash guard + full client/backend duration resolution)
 - **Severity:** 🟠 HIGH
 - **Module:** Creative Suite / Video Editor / Media import
 - **Evidence:** Initial media import hardcodes every image/video to 150 frames and asserts `project.tracks[0]!.id` (`useVideoEditor.ts:45-60`) instead of reading media duration or choosing a compatible track. Users can remove every track, and `removeTrack` also deletes its clips without a guard (`videoEditorStore.ts:371-377`). A later/new import can dereference an absent first track. Timeline file drops similarly hardcode 300 frames regardless of media duration/FPS (`TimelineTrack.tsx:70-89`).
@@ -14148,7 +14148,17 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 - **Fix:** Probe media metadata, convert duration using the current FPS, create/select a compatible track when none exists, and keep project duration consistent with imported content.
 - **Acceptance:** Known 2s/12s video and 180s audio fixtures produce correct frame durations at 24/30 FPS; importing after all tracks are removed succeeds by creating/choosing a valid track.
 
-- **Fix progress (2026-07-13):** `videoEditorStore.removeTrack()` now refuses to delete the final remaining track. A project therefore always retains an import target instead of entering the zero-track state that made later initial imports dereference `project.tracks[0]`. Focused regression covers deleting the only track; store suite (8 tests), renderer typecheck, and diff-integrity checks pass. **Remaining:** imports and file drops still need media metadata probing and FPS conversion instead of their current arbitrary 150/300-frame defaults, plus compatible-track selection for media types.
+- **Fix progress (2026-07-13, part 1):** `videoEditorStore.removeTrack()` now refuses to delete the final remaining track, eliminating the zero-track dereference. Store suite (8 tests) passing.
+
+- **Fix applied (2026-07-13, part 2 — completes this issue):**
+  1. New `packages/renderer/src/modules/creative/video/editor/utils/mediaMetadata.ts`: `getMediaDurationFromFile()` (raw OS file drops, via hidden `<video>`/`<audio>` element) and `getMediaDurationFromUrl()` (remote Storage URLs — `HTMLMediaElement.duration` is not CORS-restricted, so this works cross-origin without special headers) both resolve real duration client-side with an 8s timeout guard and non-finite-duration detection (streamed sources sometimes report `Infinity`).
+  2. New backend `packages/firebase/src/functions/creative/getMediaDuration.ts`: authenticated callable that downloads the Storage object to `/tmp` and runs real `ffprobe` (`fluent-ffmpeg` + `ffprobe-static`, the same libs already vendored for Electron's local `AudioHandler`) — used as a fallback only when the client-side probe can't produce a finite duration.
+  3. New shared `packages/firebase/src/lib/storageUri.ts` (extracted from the pre-existing `fetchStorageAssetForCanvas.ts` to remove duplication): parses gs:// / Firebase Storage / GCS URLs and enforces the requesting user owns the resolved object path — a real SSRF/cross-tenant-read guard, not just a size cap.
+  4. `resolveMediaDurationSeconds()` composes both layers: try the fast client probe first; only call the backend if the URL is actually Storage-resolvable and the client probe failed.
+  5. Wired into all three duration-guessing call sites: `TimelineTrack.tsx` file-drop and asset-drop handlers, and `useVideoEditor.ts`'s `handleDrop` and initial `initialVideo` import effect.
+  6. **Fixed a bug introduced earlier this same session while landing ISSUE-927:** `handleLibraryDragStart` had a hardcoded guessed `durationInSeconds: 5` for every dragged video — removed; duration is now resolved for real at drop time instead of guessed at drag-start time.
+  7. Images use the existing 90-frame convention (matching `handleAddSampleClip`); unresolvable video/audio duration falls back to the documented 150-frame default rather than silently guessing.
+  - **Tests:** 25 new tests (`mediaMetadata.test.ts`), 12 new backend tests (`getMediaDuration.test.ts`), 13 new tests (`storageUri.test.ts`), and `VideoEditor.interaction.test.tsx` updated to assert the real (no-`id`, async) drop contract. Full creative/video suite (30 files / 139 tests) and full firebase suite (32 files / 379 tests) green. Renderer + firebase typecheck and lint clean.
 
 ### ISSUE-927: Asset drops always fall back to the first track and clips beyond 10 seconds are silently truncated from export
 

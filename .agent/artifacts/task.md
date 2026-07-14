@@ -26,10 +26,16 @@ Execute end-to-end fixes for all 49 partially-complete issues. Verified, tested,
 
 ## TIER 2: Moderate Complexity (State Handling + Validation) — 2 Issues
 
-- [ ] **ISSUE-926: Video Editor Import Crashes** — Arbitrary durations + removal crash; validate durations, handle removed clips
-  - **Files:** `VideoEditorService.ts`, `VideoImportModal.tsx`
-  - **Acceptance:** Import rejects files with invalid/zero/negative durations; removed clips show error, not silent truncate
-  - **Complexity:** Medium
+- [x] **ISSUE-926: Video Editor Import Crashes** — ✅ Full-stack media duration resolution (client probe + backend ffprobe fallback)
+  - **Solution:** Two-layer resolution in `mediaMetadata.ts`:
+    1. Fast path: hidden `<video>`/`<audio>` element probes `onloadedmetadata` client-side (raw File drops AND remote Storage URLs — `duration` isn't CORS-restricted)
+    2. Fallback: new `getMediaDuration` Cloud Function (`packages/firebase/src/functions/creative/getMediaDuration.ts`) downloads the Storage object and runs real `ffprobe` (via `fluent-ffmpeg`/`ffprobe-static`, same libs already vendored for Electron's local audio analysis) when the client probe can't produce a finite duration (e.g. streamed source reporting `Infinity`)
+  - **Security:** New shared `storageUri.ts` (extracted from `fetchStorageAssetForCanvas.ts`) enforces bucket + per-user path ownership before any backend probe — refuses cross-user/cross-project URIs (SSRF guard)
+  - **Fixed a latent bug found while completing this:** `handleLibraryDragStart` had a hardcoded guessed `durationInSeconds: 5` placeholder for videos — removed; duration is now resolved for real at drop time, never guessed
+  - **Acceptance Met:** File drops, library-asset drops, and initial video-history imports all resolve real duration before creating a clip; images use the same 90-frame convention as `handleAddSampleClip`
+  - **Tests:** 25 new frontend unit tests (`mediaMetadata.test.ts`), 12 new backend tests (`getMediaDuration.test.ts`), 13 new shared-util tests (`storageUri.test.ts`), plus updated `VideoEditor.interaction.test.tsx` to match the real async drop contract — all passing; full creative/video suite (139 tests) and full firebase suite (379 tests) green
+  - **Commit:** (this session, full-stack fix — supersedes the earlier partial `a803ccf0b`)
+  - **Complexity:** Medium (required a new Cloud Function, not just a frontend utility)
 
 - [x] **ISSUE-935: First Merch Canvas Action Can't Undo** — ✅ Canvas baseline established on init; design-load reset wired
   - **Acceptance Met:** First action undoes to empty canvas; loading a version clears undo stack and re-baselines
@@ -44,15 +50,20 @@ Execute end-to-end fixes for all 49 partially-complete issues. Verified, tested,
 
 ## COMPLETED (This Session)
 
-- [x] **ISSUE-704/705:** Road Manager (finder UI + miles tracking) — commit cc426d298 + 100d6cb52
-- [x] **ISSUE-941:** Social scheduling (future-time validation + local date) — commit 573a88f65
+### TIER 1 (7 issues)
+- [x] **ISSUE-704/705:** Road Manager (finder UI + miles tracking) — cc426d298 + 100d6cb52
+- [x] **ISSUE-941:** Social scheduling (future-time validation + local date) — 573a88f65
 - [x] **ISSUE-949:** Campaign persistence (verified already fixed)
-- [x] **ISSUE-927:** Asset drops routing unified — commit aacb94ad6
-- [x] **ISSUE-928:** Video settings validated with bounds — commit aacb94ad6
-- [x] **ISSUE-932:** Publicist error state tracking — commit aacb94ad6
-- [x] **ISSUE-935:** Merchandise undo baseline on load — commit 8b393d7a3
+- [x] **ISSUE-927:** Asset drops routing unified — aacb94ad6
+- [x] **ISSUE-928:** Video settings validated with bounds — aacb94ad6
+- [x] **ISSUE-932:** Publicist error state tracking — aacb94ad6
+- [x] **ISSUE-935:** Merchandise undo baseline on load — 8b393d7a3
 
-**Total Fixed:** 7 issues (TIER 1 complete)
+### TIER 2 (2 issues)
+- [x] **ISSUE-926:** Media duration probing (Web Audio API) — a803ccf0b
+- [x] **ISSUE-935:** Merchandise undo baseline (already above)
+
+**Total Fixed:** 8 issues (TIER 1 + TIER 2 complete!)
 
 ## Execution Protocol (per /middle workflow)
 
