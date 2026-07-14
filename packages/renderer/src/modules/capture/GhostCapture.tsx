@@ -10,14 +10,15 @@ import { CaptureButtons } from './components/CaptureButtons';
 import { CapturePreview } from './components/CapturePreview';
 
 /**
- * GhostCapture — Rapid asset capture with OCR analysis simulation.
+ * GhostCapture — Rapid asset capture with preview preparation.
  *
  * Architecture:
  * - CaptureButtons  → Pre-capture action cards (Snap / Upload)
  * - CapturePreview  → Post-capture view with scanning overlay
  *   - ScanOverlay   → Blueprint-style HUD animation
  *
- * Flow: Upload image → Scanning animation → "INGEST COMPLETE" → Transmit to Studio
+ * Flow: Upload image → Scanning animation → "PREVIEW READY" → Transmit to Studio
+ * Note: Does not perform OCR or image analysis. This is a visual preparation UI only.
  */
 export default function GhostCapture() {
     const { currentProjectId, userProfile, createFileNode, setModule } = useStore(
