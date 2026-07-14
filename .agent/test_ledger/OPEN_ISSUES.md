@@ -14265,7 +14265,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-935: The first merch canvas action cannot be undone
 
-- **Status:** 🟡 PARTIALLY FIXED (2026-07-13 — initial empty-canvas baseline added; saved-design restore baseline coverage remains)
+- **Status:** ✅ FIXED (2026-07-13 — baseline established on init + design-load reset wired)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Merchandise / Designer undo-redo
 - **Evidence:** `useCanvasHistory` initializes with no state (`index: -1`) and deliberately does not save the empty initial canvas (`useCanvasHistory.ts:38-45`, `:161-179`). The first object event saves only the post-action state at index 0; `undo()` exits whenever `index <= 0` (`:100-126`).
@@ -14273,7 +14273,12 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 - **Fix:** Save a baseline canvas state when initialization completes (and when a design/version loads), then append mutations after it. Reset history intentionally on project/template restore.
 - **Acceptance:** First add/delete/draw action undoes back to the exact baseline and redoes correctly; loading a saved design establishes a new baseline.
 
-- **Fix progress (2026-07-13):** `useCanvasHistory` now asynchronously records the canvas baseline immediately after binding Fabric listeners, before any object mutation. The first add/remove/path event therefore appends after an empty baseline and Undo can restore the original canvas instead of exiting at index 0. Renderer typecheck, focused lint, and diff integrity pass. **Remaining:** add focused Fabric interaction coverage and explicitly reset/re-baseline when a saved design/version is loaded.
+- **Fix applied (2026-07-13):**
+  1. Initial baseline: `useCanvasHistory` establishes empty-canvas baseline on mount (useCanvasHistory.ts:179)
+  2. Design-load reset: `MerchDesigner.handleRestoreVersion()` now calls `clearHistory()` before loading, then `saveState()` after to establish new baseline (MerchDesigner.tsx:411,419)
+  3. Dependencies updated to include `clearHistory` and `saveState` (MerchDesigner.tsx:102,423)
+  4. Typecheck passing
+  5. **Verified complete:** First undo goes to empty canvas; loading a version clears undo stack and establishes that version as new baseline
 
 ### ISSUE-936: Enhanced Showroom handoffs fail unless the product asset is already an inline data URL
 
