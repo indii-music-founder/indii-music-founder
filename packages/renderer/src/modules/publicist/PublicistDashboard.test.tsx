@@ -139,6 +139,7 @@ describe('PublicistDashboard', () => {
             activeTab: 'campaigns',
             setActiveTab: vi.fn(),
             loading: true,
+            error: null,
             searchQuery: '',
             setSearchQuery: vi.fn(),
             filterType: 'all',
@@ -194,6 +195,7 @@ describe('PublicistDashboard', () => {
             activeTab: 'contacts', // SWITCHED TO CONTACTS
             setActiveTab: vi.fn(),
             loading: false,
+            error: null,
             searchQuery: '',
             setSearchQuery: vi.fn(),
             filterType: 'all',

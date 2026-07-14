@@ -67,7 +67,11 @@ export class PublicistService {
     /**
      * Subscribe to user's campaigns
      */
-    static subscribeToCampaigns(userId: string, callback: (campaigns: Campaign[]) => void) {
+    static subscribeToCampaigns(
+        userId: string,
+        callback: (campaigns: Campaign[]) => void,
+        errorCallback?: (error: Error | string) => void
+    ) {
         if (!userId) return () => { };
 
         const q = query(
@@ -87,16 +91,24 @@ export class PublicistService {
                 return [];
             });
             callback(campaigns);
+            if (errorCallback) errorCallback('');
         }, (error) => {
             logger.error("Error fetching campaigns:", error);
-            callback([]);
+            if (errorCallback) {
+                const message = error instanceof Error ? error.message : String(error);
+                errorCallback(`Failed to load campaigns: ${message}`);
+            }
         });
     }
 
     /**
      * Subscribe to user's contacts
      */
-    static subscribeToContacts(userId: string, callback: (contacts: Contact[]) => void) {
+    static subscribeToContacts(
+        userId: string,
+        callback: (contacts: Contact[]) => void,
+        errorCallback?: (error: Error | string) => void
+    ) {
         if (!userId) return () => { };
 
         const q = query(
@@ -115,9 +127,13 @@ export class PublicistService {
                 return [];
             });
             callback(contacts);
+            if (errorCallback) errorCallback('');
         }, (error) => {
             logger.error("Error fetching contacts:", error);
-            callback([]);
+            if (errorCallback) {
+                const message = error instanceof Error ? error.message : String(error);
+                errorCallback(`Failed to load contacts: ${message}`);
+            }
         });
     }
 
