@@ -12728,7 +12728,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 - **Fix applied (2026-07-10, bundled with ISSUE-786):** `content_id_csv_generator.py` now emits structured JSON on both success (`{status:'SUCCESS', csv, recordCount}`) and failure (`{status:'FAILED', error}`) — no more raw CSV to stdout. `distribution.ts`'s IPC handler unwraps `result.csv` to the top-level `csv` field `DistributionService.generateContentIdAssets()` already expected (was previously nesting everything under `report`, so the renderer could never resolve a CSV). Tests updated/passing.
 ### ISSUE-790: PRO dispatch marks registrations SUBMITTED without any external delivery
 
-- **Status:** 🔴 OPEN (regression against ISSUE-401)
+- **Status:** ✅ FIXED (2026-07-14 — PRO registration status accuracy) (regression against ISSUE-401)
 - **Severity:** 🔴 HIGH (false registration state)
 - **Module:** Publishing / PRO registration
 - **Evidence:** ISSUE-401 already flagged `dispatchPROPayload` as mock-only. Current `ddex-generator.ts:111-139` still builds a local payload with hardcoded `submitter_id: 'INDII_PUBLISHING'`, logs it, then writes `status: 'SUBMITTED'` to `users/{userId}/proRegistrations/{releaseId}`. `unified-distribution.ts:88-90` calls it and reports `pro_staged`.
