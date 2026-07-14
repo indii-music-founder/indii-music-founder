@@ -13024,13 +13024,14 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-816: Creator-protection readiness scores identifiers as protection evidence
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-14 — honesty fix)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Legal / Creator protection
 - **Evidence:** `CreatorProtectionCompiler.ts:22-38` creates a profile with `copyrightStatus: 'draft'` whenever metadata has an ISRC or UPC. `scoreReadiness()` then awards 15 points and the strength “At least one protected work has identifiers or registrations attached” if any work has an ISRC, UPC, ISWC, or copyright registration (`CreatorProtectionHarnessService.ts:353-369`).
-- **Impact:** Business identifiers can inflate a legal/protection readiness score even when no copyright registration, trademark clearance, monitoring authorization, or enforcement evidence exists.
-- **Fix:** Separate “identifiers attached” from “legal protection evidence.” Score ISRC/UPC/ISWC as metadata hygiene, not copyright/trademark protection, unless verified registration/enforcement artifacts exist.
-- **Acceptance:** A work with only ISRC/UPC/ISWC cannot receive protection-credit language; readiness explains which legal evidence is missing.
+- **Fix applied (2026-07-14):**
+  - `CreatorProtectionCompiler.ts`: Changed `copyrightStatus` assignment to always be `'unknown'` initially (not `'draft'` when ISRC/UPC present). ISRC/UPC are distribution identifiers, not copyright registration proof.
+  - `CreatorProtectionHarnessService.ts`: Split readiness scoring into two separate checks: (1) 15 pts for actual `copyrightRegistration` (legal evidence), (2) 5 pts for distribution identifiers (ISRC/UPC/ISWC as metadata hygiene). Updated strength language to clearly distinguish legal protection from distribution metadata.
+- **Acceptance:** ✅ A work with only ISRC/UPC/ISWC cannot receive protection-credit language; readiness accurately distinguishes between metadata hygiene (5 pts) and legal evidence (15 pts). Commit: `6b4abad12`.
 
 ### ISSUE-817: DDEX deal mapper converts physical-only releases into digital streaming/download deals
 
