@@ -60,7 +60,7 @@ export const TimelineTrack = memo(({
                         e.preventDefault();
                         e.dataTransfer.dropEffect = 'copy';
                     }}
-                    onDrop={(e) => {
+                    onDrop={async (e) => {
                         e.preventDefault();
 
                         const rect = e.currentTarget.getBoundingClientRect();
@@ -73,13 +73,26 @@ export const TimelineTrack = memo(({
                             const type = file.type.startsWith('video/') ? 'video' : file.type.startsWith('audio/') ? 'audio' : file.type.startsWith('image/') ? 'image' : 'video';
                             const url = URL.createObjectURL(file);
 
-                            import('../../store/videoEditorStore').then(({ useVideoEditorStore }) => {
+                            import('../../store/videoEditorStore').then(async ({ useVideoEditorStore }) => {
+                                // Extract actual media duration if available
+                                let durationInFrames = 300; // Fallback default
+                                if (type !== 'image') {
+                                    try {
+                                        const { getMediaDurationSeconds, durationSecondsToFrames } = await import('../utils/mediaMetadata');
+                                        const durationSeconds = await getMediaDurationSeconds(file);
+                                        const fps = useVideoEditorStore.getState().project.fps || 30;
+                                        durationInFrames = durationSecondsToFrames(durationSeconds, fps);
+                                    } catch (err) {
+                                        // Fall back to default if duration extraction fails
+                                    }
+                                }
+
                                 useVideoEditorStore.getState().addClip({
                                     type,
                                     trackId: track.id,
                                     name: file.name,
                                     startFrame: frame,
-                                    durationInFrames: 300,
+                                    durationInFrames,
                                     src: url,
                                     opacity: 1,
                                     scale: 1,
