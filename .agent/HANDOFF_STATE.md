@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-07-13 22:34 EDT
+**Updated:** 2026-07-14 06:59 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+866701648 chore: session checkpoint [22:34]
 a665c24f5 fix: ISSUE-926 — full-stack real media duration resolution (no more arbitrary guesses)
 4a8102ae2 chore: session checkpoint [21:34]
 056fb67ac chore: session checkpoint [21:11]
@@ -13,7 +14,6 @@ e20246ec6 chore: session checkpoint [20:57]
 91cd97d18 chore: update task ledger — TIER 1 complete (7 issues fixed)
 ecbb2b250 chore: session checkpoint [20:47]
 4740496f0 chore: session checkpoint — 5 issues fixed (927/928/932/941/935)
-8b393d7a3 fix: ISSUE-935 — merchandise undo baseline reset when design/version loads
 ```
 
 ## Working State
