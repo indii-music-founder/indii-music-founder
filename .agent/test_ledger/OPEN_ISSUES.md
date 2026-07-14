@@ -12970,7 +12970,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-811: Agent ISRC tool claims local/generated identifiers are officially registered
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-14 — ISRC status already uses generated_local)
 - **Severity:** 🔴 HIGH (same rights-identity class as ISSUE-781)
 - **Module:** Agent tools / Distribution identifiers
 - **Evidence:** `DistributionTools.ts:158-217` first tries the Electron authority layer, then falls back to `IdentifierService.nextISRC('US', 'IND')`. The fallback records a local/internal identifier only when a user is signed in (`:198-209`) but always returns `registry_status: 'REGISTERED'` and the user-facing message “generated and registered” (`:211-217`).
