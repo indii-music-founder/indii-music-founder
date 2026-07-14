@@ -9,6 +9,8 @@ import { livingPlanService } from '../LivingPlanService';
 import { logger } from '@/utils/logger';
 import { auth } from '@/services/firebase';
 import { importWithRetry } from '@/utils/dynamicImport';
+import { IdeaParkingService } from '../tools/IdeaParking';
+import { buildAmbitionDialPrompt } from '../builders/AmbitionDialPrompt';
 
 export interface PipelineContext extends AgentContext {
     chatHistoryString: string;
@@ -158,12 +160,19 @@ ${plan.draft.steps ? plan.draft.steps.map((s: PlanStep, i: number) => `    <step
             updatedAt: Timestamp.now()
         };
 
-        // 7. Assemble Pipeline Context
+        // 7. v1.5 Consent-based dial promotion: inject prompt if threshold hit
+        const ambitionDialNotes: string[] = [];
+        if (IdeaParkingService.shouldAskForDialUpgrade()) {
+            ambitionDialNotes.push(buildAmbitionDialPrompt());
+            IdeaParkingService.clearAmbitionPromptFlag();
+        }
+
+        // 8. Assemble Pipeline Context
         return {
             ...stateContext,
             chatHistoryString,
             relevantMemories,
-            userAlignmentRules,
+            userAlignmentRules: [...(userAlignmentRules || []), ...ambitionDialNotes],
             memoryContext,
             autoRecallBlock,
             activePlanBlock,

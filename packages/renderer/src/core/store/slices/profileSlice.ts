@@ -69,7 +69,9 @@ const DEFAULT_USER_PROFILE: UserProfile = {
         theme: 'system',
         notifications: true,
         observabilityEnabled: false,
-        agentAmbition: 'balanced'
+        agentAmbition: 'balanced',
+        ideaAcceptanceCount: 0,
+        lastAmbitionPromptTime: 0
     },
     brandKit: DEFAULT_BRAND_KIT,
     analyzedTrackIds: [],

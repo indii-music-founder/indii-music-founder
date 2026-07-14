@@ -123,6 +123,10 @@ export interface UserPreferences {
     wisdomPoolOptIn?: boolean;
     /** Judgment layer: how many unsolicited ideas agents may offer (never execute). Default: 'balanced'. */
     agentAmbition?: 'focused' | 'balanced' | 'ideas';
+    /** v1.5: Track user idea-acceptances for consent-based dial promotion. Only ask ONCE when threshold hit. */
+    ideaAcceptanceCount?: number;
+    /** v1.5: Unix timestamp of last ambition-dial promotion offer (prevents repeated asks). */
+    lastAmbitionPromptTime?: number;
 
     /** Allow extensibility — callers must narrow before use */
     [key: string]: unknown;
