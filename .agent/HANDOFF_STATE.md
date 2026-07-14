@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-07-13 20:10 EDT
+**Updated:** 2026-07-13 20:20 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+aacb94ad6 fix: ISSUE-927/928/932 — asset drops unified, video settings validated, publicist errors tracked
+ce99c633c chore: session checkpoint [20:10]
 0f854c4a3 chore: session checkpoint [20:05]
 5cceaf4fa chore: session checkpoint [19:48]
 b96fdfbc4 chore: session checkpoint [19:41]
@@ -12,14 +14,11 @@ afea6dc03 chore: session checkpoint [19:35]
 e4604f9cd chore: session checkpoint [19:34]
 fe009bbf2 chore: session checkpoint [18:47]
 ae802baba chore: session checkpoint [18:44]
-523492644 chore: ISSUE-956 audit — core fixes verified as complete
-54079816e chore: update task ledger for partial issues phase
 ```
 
 ## Working State
 ```
- M .agent/test_ledger/OPEN_ISSUES.md
- M packages/renderer/src/modules/creative/video/editor/hooks/useVideoEditor.ts
+clean working tree
 ```
 
 ## Decisions
