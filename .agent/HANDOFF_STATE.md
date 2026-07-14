@@ -1,9 +1,12 @@
 # Handoff State
-**Updated:** 2026-07-14 18:37 EDT
+**Updated:** 2026-07-14 18:42 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+b410b729f chore: update ledger — ISSUE-794 marked FIXED
+edab882db fix: ISSUE-794 — copyright fees and timing guidance updated to current standards
+b6b83d670 chore: session checkpoint [18:37]
 493f2653b chore: update ledger — ISSUE-947 marked FIXED
 5688f1529 fix: ISSUE-947 — Rapid Capture honesty (preview, not OCR analysis)
 1425e750f fix: ISSUE-948 — Quick Capture requires successful photo upload
@@ -11,13 +14,11 @@ bcea27a51 chore: update ledger — ISSUE-790 marked FIXED
 a750098f8 fix: ISSUE-790 — PRO registration status PREPARED instead of false SUBMITTED
 991327dab chore: session checkpoint [15:46]
 30d47de07 chore: session checkpoint [15:45]
-727980304 chore: update ledger — mark 4 fixed issues (session 2026-07-14)
-b8f951c23 chore: session checkpoint [15:38]
-428ca0a58 chore: zero partial items — all PARTIALLY FIXED → FIXED status
 ```
 
 ## Working State
 ```
+ M agents/marketing/prompt.md
  M packages/firebase/src/relay/agentPrompts.ts
  M packages/renderer/src/core/config/intelligence-models.ts
  M packages/renderer/src/core/store/slices/profileSlice.ts
@@ -25,6 +26,7 @@ b8f951c23 chore: session checkpoint [15:38]
  M packages/renderer/src/services/agent/BaseAgent.ts
  M packages/renderer/src/services/agent/builders/AgentPromptBuilder.ts
  M packages/renderer/src/services/agent/components/ContextPipeline.ts
+ M packages/renderer/src/services/agent/tools/SwarmTools.ts
  M packages/renderer/src/services/agent/types.ts
  M packages/renderer/src/types/User.ts
 ?? docs/flowcharts/judgment-layer-macro.md
