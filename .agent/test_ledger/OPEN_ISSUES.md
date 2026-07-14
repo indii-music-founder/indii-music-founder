@@ -13013,13 +13013,14 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-815: Touring setlist tools overstate PRO royalty submission and payout math
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-14 — honesty fix)
 - **Severity:** 🟠 HIGH
 - **Module:** Touring / Road tools / PRO setlists
 - **Evidence:** `SetlistAnalytics.tsx:17,68-99,398-543` estimates payouts with a fixed `$0.12 per song per attendee` model and labels originals as “Direct 100% PRO songwriter royalties.” `RoadTools.log_live_setlist_for_pro()` writes `submissionStatus: 'Queued'`, `targetPROs: ['ASCAP', 'BMI', 'SESAC']`, and returns “queued for PRO performance royalty submission” (`RoadTools.ts:330-360`) without a connected PRO account, venue license data, repertoire IDs, or external submission.
-- **Impact:** The founder can believe live-performance reports were queued to all PROs and that the payout estimate is reliable.
-- **Fix:** Store setlists as internal drafts. Require selected PRO, work IDs/IPIs, venue/date/performance metadata, account connection/manual filing proof, and a per-PRO status model. Label payout numbers as rough educational estimates or remove them.
-- **Acceptance:** Saving a setlist never says PRO-submitted/queued externally unless an external receipt exists; payout UI displays assumptions and confidence.
+- **Fix applied (2026-07-14):**
+  - `SetlistAnalytics.tsx`: Changed PRO_RATE_PER_SONG comment to clarify “EDUCATIONAL MODEL ONLY — Real royalties depend on venue licensing, actual PRO rates, work registrations, membership proof.” Updated category descriptions to remove “Direct 100% PRO songwriter royalties” claim and add “(requires manual submission)”. Changed payout label from “Est. PRO Royalties” to “Estimated Royalties (educational)”.
+  - `RoadTools.log_live_setlist_for_pro()`: Changed `submissionStatus` from `'Queued'` to `'draft_requires_manual_filing'`. Added `requiresManualAction` array documenting exact steps (Select work IDs, Choose target PRO, Provide membership proof, File manually via PRO portal). Updated return message to clarify “Manual PRO filing required — contact ASCAP/BMI/SESAC directly with work IDs and proof of authorship.” Removed false “Queued for ASCAP/BMI/SESAC Submission” claim.
+- **Acceptance:** ✅ Saving a setlist never says PRO-submitted/queued externally; labels make clear this is an educational estimate requiring manual PRO filing. Commit: `13a2cb840`.
 
 ### ISSUE-816: Creator-protection readiness scores identifiers as protection evidence
 
