@@ -1,19 +1,19 @@
 # Handoff State
-**Updated:** 2026-07-14 19:03 EDT
+**Updated:** 2026-07-14 19:06 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+64001ac48 chore: update ledger — ISSUE-837, ISSUE-846 marked FIXED (14 total)
+e0a76ffe1 fix: ISSUE-846 — Release velocity projections clarified as generic vs personalized
+e4aa672e7 fix: ISSUE-837 — A/B campaign tracking pixel changed from 'configured' to draft plan
+d72acb506 chore: session checkpoint [19:42] — 12 issues fixed, 76 OPEN remain
 e71a8f45e chore: update ledger — ISSUE-818, ISSUE-879 marked FIXED (12 total)
 179817147 fix: ISSUE-879 — Video audio toggle clarifies it's prompt-only, not API control
 4490cad79 fix: ISSUE-818 — Music metadata tools remove false embedding/registration claims
 8990f60a9 chore: update ledger — ISSUE-833, ISSUE-839 marked FIXED
 ccd770f8d fix: ISSUE-839 — Playlist pitch removed false Spotify scraping claim
 737510839 fix: ISSUE-833 — Merch mockup labels as preview only, not POD-ready
-6b4b816e4 chore: session checkpoint [18:59]
-15cdbafdb chore: session checkpoint [18:42]
-b410b729f chore: update ledger — ISSUE-794 marked FIXED
-edab882db fix: ISSUE-794 — copyright fees and timing guidance updated to current standards
 ```
 
 ## Working State
