@@ -81,14 +81,9 @@ export const INTELLIGENCE_CONFIG = {
         }
     },
     TEXT: {
-        /** Default maxOutputTokens for Pro model — safety cap for cost control */
+        /** Judgment layer: verbosity/cost backstop for agent-loop text responses.
+         *  Per-agent override via AgentConfig.maxOutputTokens. */
         MAX_OUTPUT_TOKENS_AGENT: 8192,
-        /** Default maxOutputTokens for Flash model — lower cap for fast tasks */
-        MAX_OUTPUT_TOKENS_FAST: 4096,
-        /** Default maxOutputTokens for Flash-Lite model — budget cap for high-volume tasks */
-        MAX_OUTPUT_TOKENS_LITE: 4096,
-        /** Default maxOutputTokens applied to all calls unless overridden */
-        MAX_OUTPUT_TOKENS_DEFAULT: 8192,
     },
     MEDIA_RESOLUTION: {
         DEFAULT: 'MEDIA_RESOLUTION_HIGH',

@@ -168,6 +168,8 @@ ${plan.draft.steps ? plan.draft.steps.map((s: PlanStep, i: number) => `    <step
             autoRecallBlock,
             activePlanBlock,
             directive,
+            // Judgment layer: user-owned ambition dial (default 'balanced' if unset)
+            ambitionLevel: userProfile?.preferences?.agentAmbition || 'balanced',
         };
     }
 

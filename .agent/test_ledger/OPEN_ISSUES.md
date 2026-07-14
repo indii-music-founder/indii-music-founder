@@ -3,10 +3,30 @@
 > This file is written by the /real test agent and consumed by a fixing agent.
 > The test agent NEVER modifies code. The fix agent NEVER runs tests.
 >
-> **Last updated:** 2026-07-13 23:59 EDT (end of session)
-> **Branch:** `fix/issues-core` (commits: 704/705 jobs + ISSUE-941 future-time validation + ledger audit)
-> **Current Session:** Road Manager finish (finder UI + miles tracking) + Partial issues audit (50 items; fixed 2/50 + corrected 1 stale entry)
-> **CI Status:** All pre-commit gates passing; ready for merge or QA
+> **Last updated:** 2026-07-14 EDT
+> **Branch:** `main`
+> **Current Session:** Judgment Layer — behavioral constraints for over-ambitious specialist agents
+> **CI Status:** typecheck + lint + full agent test suite (167 files / 1273 tests) green
+
+## Session 2026-07-14 — ISSUE-1048: Judgment Layer (agent behavioral constraints)
+
+**Status:** ✅ FIXED
+
+**Problem:** In-product specialist agents (Legal, Creative, Brand, Marketing, Finance, Music, etc.) behaved like overconfident new grads — doing more than asked, never stopping when done, talking too much. Audit found: personas actively encouraged expansiveness ("Maximize impact"), `SUPERPOWER_PROMPT` pushed over-action ("DO IT"), model calls carried no `maxOutputTokens` (dead constants in `intelligence-models.ts`), the chat loop had no definition-of-done, and `consult_specialist` (A2A) had no delegation-depth cap (only `delegate_task` did).
+
+**Fix (prompt + runtime, no retraining needed — full prompt rides as user content into fine-tuned Vertex endpoints):**
+- New `buildExecutionContract(ambition)` in `AgentPromptBuilder.ts` — SCOPE/DONE/LENGTH rules injected into every agent prompt, calibrated by a new user-owned ambition dial (`focused` / `balanced` / `ideas`, default `balanced`).
+- Fixed over-action line in `BaseAgent.ts` `SUPERPOWER_PROMPT`.
+- Mirrored condensed contract into server relay (`packages/firebase/src/relay/agentPrompts.ts`, `getAgentPrompt()`).
+- Ambition dial: `userProfile.preferences.agentAmbition` (types.ts) → `ContextPipeline` → `AgentContext.ambitionLevel`; settings control added to `AppearanceSection.tsx`.
+- Wired real `maxOutputTokens` (8192 default, per-agent override via `AgentConfig.maxOutputTokens`) into both `generateContentStream`/`generateContent` call sites; deleted dead `MAX_OUTPUT_TOKENS_FAST/LITE/DEFAULT` constants.
+- Added per-agent `maxIterations` override + a final-step "wrap-up" prompt nudge so the loop ends gracefully instead of hitting a silent iteration-cap dead end.
+- Closed the A2A hop-cap gap: `consult_specialist` (`SwarmTools.ts`) now shares `DelegationLoopDetector` (MAX_DELEGATION_DEPTH=4, repeat-target=loop) with `delegate_task`.
+- Persona sweep: rewrote the one genuine agent-behavior directive found (`agents/marketing/prompt.md` "Maximize impact") to surface-not-execute framing; domain-mission language ("help artists maximize revenue") left untouched.
+
+**Evidence:** `npm run typecheck` clean; lint clean on all touched files; new tests (`AgentPromptBuilder.test.ts` +9, `BaseAgentUsage.test.ts` +3, `SwarmToolsDelegationDepth.test.ts` new, `agentPrompts.test.ts` new in packages/firebase) all pass; full `packages/renderer/src/services/agent` suite (167 files, 1273 tests) green, zero regressions.
+
+**Follow-ups (documented, not built):** v1.5 consent-based ambition-dial promotion (agent asks once after repeated idea-acceptance, never auto-tunes silently); v2 suggestion chips (offered ideas as a parseable/tappable UI affordance).
 
 ## Session 2026-07-13 Final Summary
 

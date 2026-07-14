@@ -5,6 +5,7 @@ import { logger } from '@/utils/logger';
 import { validateHubAndSpoke } from '../types';
 import { agentIdentityService } from '../governance/AgentIdentity';
 import { importWithRetry } from '@/utils/dynamicImport';
+import { DelegationLoopDetector } from '../LoopDetector';
 
 /**
  * consult_specialist - A2A Swarm communication tool (canonical, single source of truth).
@@ -38,6 +39,16 @@ export const consult_specialist = wrapTool(
         if (hubSpokeError) {
             logger.warn(`[A2A:Consult] Hub-and-spoke violation: ${hubSpokeError}`);
             return toolError(hubSpokeError);
+        }
+
+        // Judgment layer: A2A consult chains share the same delegation-depth/loop
+        // budget as delegate_task (DelegationLoopDetector: MAX_DELEGATION_DEPTH=4,
+        // repeat-target = loop). Closes the previously uncapped swarm-delegation path.
+        const swarmId = context.swarmId || context.traceId || 'unknown';
+        const depthCheck = DelegationLoopDetector.recordDelegation(swarmId, targetAgentId);
+        if (depthCheck.isLoop) {
+            logger.warn(`[A2A:Consult] Delegation loop/depth exceeded: ${depthCheck.reason}. Pattern: ${depthCheck.pattern}`);
+            return toolError(`Cannot consult: ${depthCheck.reason}. Chain: ${depthCheck.pattern}`, 'DELEGATION_LOOP');
         }
 
         // GEAP: Record delegation provenance

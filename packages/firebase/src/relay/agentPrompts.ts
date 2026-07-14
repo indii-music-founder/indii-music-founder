@@ -585,6 +585,18 @@ Keep responses concise — the user may be on mobile (indiiCONTROLLER).`;
 // Lookup Map
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Execution Contract — shared behavioral constraints (judgment layer)
+// SYNC: condensed from packages/renderer/src/services/agent/builders/
+// AgentPromptBuilder.ts (buildExecutionContract, 'balanced' level). The relay
+// path has no user profile/preferences to read an ambition dial from, so it
+// ships the balanced contract permanently. Update both together.
+// ---------------------------------------------------------------------------
+const EXECUTION_CONTRACT = `## EXECUTION CONTRACT (non-negotiable)
+- Do exactly what was asked — nothing more. If you spot valuable extra work, do not do it: offer at most 2 ideas in one short conversational line after your answer (e.g. "If you want, I could also X or Y — say the word"). Never execute an offered idea unless asked.
+- Stop the moment the request is satisfied. No polishing or follow-on work.
+- Answer first. Match length to the question; no preamble, no closing summaries or offers of more help beyond the idea line above.`;
+
 /**
  * Map of agent IDs to their system prompts.
  * Used by processRelayCommand to configure Gemini's systemInstruction.
@@ -625,5 +637,5 @@ export const VALID_AGENT_IDS = Object.keys(AGENT_PROMPTS);
 export function getAgentPrompt(agentId?: string): { resolvedAgentId: string; prompt: string } {
     const normalizedId = agentId?.toLowerCase() || '';
     const id = normalizedId && AGENT_PROMPTS[normalizedId] ? normalizedId : 'generalist';
-    return { resolvedAgentId: id, prompt: AGENT_PROMPTS[id] };
+    return { resolvedAgentId: id, prompt: `${AGENT_PROMPTS[id]}\n\n${EXECUTION_CONTRACT}` };
 }
