@@ -14427,7 +14427,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-947: Rapid Capture reports completed OCR/ingest after only a two-second timer
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-14 — capture copy honesty)
 - **Severity:** 🟠 HIGH (false analysis result)
 - **Module:** Capture / Rapid Capture
 - **Evidence:** The component explicitly describes its behavior as an “OCR analysis simulation” and its user flow as scanning followed by “INGEST COMPLETE” (`GhostCapture.tsx:12-20`). Selecting any image calls `startMockIngest()`, which only flips local state after a two-second `setTimeout`; it performs no OCR, decoding, metadata extraction, integrity check, or service request (`:38-61`). The later Transmit action uploads the original file and creates an image node without any analysis result (`:72-102`).
@@ -14437,7 +14437,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-948: Quick Capture silently saves a contact without the photo the user selected
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-14 — photo upload requirement)
 - **Severity:** 🟠 HIGH (silent creative-data loss)
 - **Module:** Capture / Mobile contact capture
 - **Evidence:** The selected photo is previewed and retained in `photoFile` (`QuickCapture.tsx:88-95`). During Save, any Storage import/upload/download-URL failure is caught only in a log and execution intentionally continues with `photoUrl` undefined (`:103-126`). The contact is then saved, a full “Contact captured” success toast appears, the photo state is cleared, and the sheet closes (`:117-141`).
