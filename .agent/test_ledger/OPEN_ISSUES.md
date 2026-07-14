@@ -13238,7 +13238,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-837: A/B campaign tool marks tracking pixel configured without creating or verifying any pixel
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-14 — status/claim fix)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Marketing / Ads
 - **Evidence:** `MarketingTools.create_ab_test_campaign()` generates three local copy variants, a random campaign ID, and returns `pixel_framework.status: 'configured'` with events tracked (`MarketingTools.ts:269-287`). It does not call Meta/TikTok/Google ad APIs, create a pixel, install code, persist the campaign, or verify event receipt.
@@ -13329,7 +13329,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-846: Release velocity benchmark reports projections from a hard-coded follower baseline
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-14 — status/claim fix)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Analytics / Agent tools
 - **Evidence:** `AnalyticsTools.benchmark_release_velocity()` reads cached Spotify stats from `users/{uid}/platformStats/spotify` (`AnalyticsTools.ts:47-59`), then falls back to `followers = 1500` and `source = 'benchmark_baseline'` when no follower count exists (`:61-70`). It still returns projected day 1/7/30 streams and the message “Velocity benchmarking complete” (`:72-91`).
