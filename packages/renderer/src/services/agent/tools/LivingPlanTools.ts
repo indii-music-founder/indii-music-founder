@@ -25,10 +25,10 @@ export const LivingPlanTools = {
         const userId = context?.userId || state.user?.uid;
 
         if (!projectId) {
-            return { success: true, error: 'No active project found. Cannot propose a plan.' };
+            return { success: false, error: 'No active project found. Cannot propose a plan.' };
         }
         if (!userId) {
-            return { success: true, error: 'User not authenticated. Cannot propose a plan.' };
+            return { success: false, error: 'User not authenticated. Cannot propose a plan.' };
         }
 
         logger.debug('[LivingPlanTools] Proposing plan:', args.summary);
@@ -59,7 +59,7 @@ export const LivingPlanTools = {
         const projectId = toolContext?.get('currentProjectId') || context?.projectId || state.currentProjectId;
 
         if (!projectId) {
-            return { success: true, error: 'No active project found.' };
+            return { success: false, error: 'No active project found.' };
         }
 
         try {
@@ -88,7 +88,7 @@ export const LivingPlanTools = {
         const projectId = toolContext?.get('currentProjectId') || context?.projectId || state.currentProjectId;
 
         if (!projectId) {
-            return { success: true, error: 'No active project found.' };
+            return { success: false, error: 'No active project found.' };
         }
 
         try {
@@ -114,7 +114,7 @@ export const LivingPlanTools = {
         const projectId = toolContext?.get('currentProjectId') || context?.projectId || state.currentProjectId;
 
         if (!projectId) {
-            return { success: true, error: 'No active project found.' };
+            return { success: false, error: 'No active project found.' };
         }
 
         try {
@@ -137,7 +137,7 @@ export const LivingPlanTools = {
         const projectId = toolContext?.get('currentProjectId') || context?.projectId || state.currentProjectId;
 
         if (!projectId) {
-            return { success: true, error: 'No active project found.' };
+            return { success: false, error: 'No active project found.' };
         }
 
         try {
@@ -160,7 +160,7 @@ export const LivingPlanTools = {
         const projectId = toolContext?.get('currentProjectId') || context?.projectId || state.currentProjectId;
 
         if (!projectId) {
-            return { success: true, error: 'No active project found.' };
+            return { success: false, error: 'No active project found.' };
         }
 
         try {
