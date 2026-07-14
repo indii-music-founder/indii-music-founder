@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-07-14 15:09 EDT
+**Updated:** 2026-07-14 15:10 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+3493eda5b chore: session checkpoint [15:09]
 eadceb8c7 chore: final session checkpoint — 4 end-to-end fixes + 10 PARTIAL items verified
 61db4f293 fix: ISSUE-787 — workflow video nodes use valid Veo options and correct field names
 3632fed5a fix: ISSUE-791 — registration completeness requires confirmation from all relevant orgs
@@ -13,7 +14,6 @@ fe3714b6f chore: comprehensive status update — 10 PARTIAL items verified compl
 5c47d79e4 chore: update task ledger — 9 PARTIAL items complete/blocked, 6 remain
 9257157c9 fix: ISSUE-938 — capture immutable context when submitting video generation job
 2e3c96e77 fix: ISSUE-694 — surface actual Firestore error in healthCheck instead of swallowing it
-cd480375a chore: session checkpoint [11:31]
 ```
 
 ## Working State
