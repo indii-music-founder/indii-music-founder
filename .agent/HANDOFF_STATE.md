@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-07-13 20:57 EDT
+**Updated:** 2026-07-13 21:11 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+a803ccf0b fix: ISSUE-926 — media file drops extract actual duration instead of arbitrary 300 frames
+e20246ec6 chore: session checkpoint [20:57]
 388375d11 chore: session summary — TIER 1 complete, 7 issues fixed
 91cd97d18 chore: update task ledger — TIER 1 complete (7 issues fixed)
 ecbb2b250 chore: session checkpoint [20:47]
@@ -12,13 +14,11 @@ ecbb2b250 chore: session checkpoint [20:47]
 573a88f65 fix: ISSUE-941 — social scheduling uses local date instead of UTC
 f4fe33cdf chore: session checkpoint [20:20]
 aacb94ad6 fix: ISSUE-927/928/932 — asset drops unified, video settings validated, publicist errors tracked
-ce99c633c chore: session checkpoint [20:10]
-0f854c4a3 chore: session checkpoint [20:05]
 ```
 
 ## Working State
 ```
-clean working tree
+ M .agent/artifacts/task.md
 ```
 
 ## Decisions
