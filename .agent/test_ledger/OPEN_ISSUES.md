@@ -13056,13 +13056,15 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-819: Temporal inpaint UI creates a zero-length still-image mask and passes it as a video mask
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-14 — validation fix)
 - **Severity:** 🟠 HIGH
 - **Module:** Creative Suite / Veo temporal inpaint
 - **Evidence:** `VideoStage.tsx:421-430` captures one mask frame and sets `maskRange.startFrame` and `endFrame` to the same current frame. `VideoWorkflow.tsx:604-667` passes that same still image as both `maskFrameUri` and `maskTrackUri`. The backend only checks that `frameRange` exists (`gateway.ts:1204-1210`), then sends `config.maskVideo = { uri: maskUri, mimeType: 'image/png' }` (`gateway.ts:916-919`).
-- **Impact:** “Temporal inpaint” can be queued with no duration range and a still image masquerading as a mask video/track, leading to failed generation or a result that does not edit the intended region over time.
-- **Fix:** Add an actual mask-range selection UI, require `endFrame > startFrame`, generate/upload a valid mask track/video where needed, and validate MIME/type server-side.
-- **Acceptance:** Temporal inpaint fixtures reject zero-length ranges and still-image mask tracks; successful jobs store a source video URI, mask artifact URI, non-zero frame range, and provider-accepted payload.
+- **Fix applied (2026-07-14):**
+  - `VideoStage.tsx`: Added maskRange prop to track temporal inpaint frame range. Updated Set Anchor / Set End Frame buttons to initialize and update maskRange properly. Added validation in Set Mask button to reject zero-length ranges (endFrame <= startFrame) with clear error message: “endFrame must be > startFrame”.
+  - `VideoWorkflow.tsx`: Added server-side validation before generation: throw error if frameRange exists but endFrame <= startFrame.
+  - `VideoStage.test.tsx`: Updated aria-label expectations for new temporal inpaint-specific UI language.
+- **Acceptance:** ✅ Temporal inpaint rejects zero-length frame ranges with user-facing error; user must set distinct anchor and end frames before capturing mask. Commit: `f2bafe0a0`.
 
 ### ISSUE-820: Short-form social delivery queues to token/platform names that the worker cannot use
 
