@@ -1,103 +1,34 @@
 # Handoff State
-**Updated:** 2026-07-14 19:32 EDT
+**Updated:** 2026-07-14 19:17 EDT
 **Branch:** `main`
-**Status:** ✅ v1.5 (Consent-Based Dial Promotion) Complete
 
-## Session 2026-07-14 Summary
-
-### ✅ ISSUE-1048 Follow-Up Work — Judgment Layer v1.5 + v2 Roadmap
-
-**v1.5 (Consent-Based Dial Promotion)** — ✅ COMPLETE
-- **What it does:** Agent asks ONCE if user wants more ideas by default (after 5 idea acceptances)
-- **Principle:** "These are mine, hands off" — users own the dial, agents earn scope only with explicit consent
-- **Never silent auto-tuning** — cooldown 24h if user ignores, explicit yes/no required
-- **Architecture:**
-  - `IdeaParkingService`: tracks idea acceptances, schedules promotion at threshold
-  - `AmbitionDialPrompt`: agent text for the one-time dial upgrade question
-  - `UserPreferences`: added `ideaAcceptanceCount`, `lastAmbitionPromptTime` tracking
-  - `ContextPipeline` injection: prompt appears when threshold hit
-  - Tests: 3 cases (offer idea metadata, thresholds, cooldowns)
-
-**v2 Roadmap (Deferred)** — Documented in `docs/JUDGMENT_LAYER_V2_ROADMAP.md`
-- Suggestion chips: offered ideas as tappable UI elements (not buried text)
-- One-click acceptance (auto-re-send with idea text)
-- Idea vault: view/manage all parked ideas
-- Full implementation checklist included
-
-### Earlier Session Work
-
-1. **ISSUE-1048 (Judgment Layer Phase 1)** — ✅ FIXED (previously committed)
-   - Execution contract injection, runtime budget, A2A hop cap
-   - Ambition dial (focused/balanced/ideas) persisted in preferences
-   - All tests passing, deployed
-
-2. **ISSUE-811 (ISRC Honesty)** — ✅ FIXED
-   - Clarified ISRC status: `generated_local` (not false `REGISTERED`)
-   - Agent prompt updated
-   - Tests updated and passing
-
-## Commits This Session
-
+## Recent Commits
 ```
+68def06e0 chore: session checkpoint [19:32] — ISSUE-1048 v1.5 complete; v2 roadmap documented
 3914375a3 docs: ISSUE-1048 v2 roadmap — suggestion chips UI (deferred)
 eafeedd4e feat: ISSUE-1048 v1.5 — consent-based ambition dial promotion
 09ecd3082 chore: session checkpoint [19:12]
-3f181758e chore: session checkpoint [19:23] — ISSUE-1048 verified, ISSUE-811 fixed
+3f181758e chore: session checkpoint [19:23] — ISSUE-1048 verified, ISSUE-811 fixed; 2 issues complete, 76 remain
 193f50ba2 docs(ledger): mark ISSUE-811 FIXED with implementation details
-05440bcc2 fix: ISSUE-811 — clarify ISRC generation status as local/internal
+05440bcc2 fix: ISSUE-811 — clarify ISRC generation status as local/internal, not official registration
+85d836407 chore: session checkpoint [19:09]
+ef83a3c30 chore: update ledger — ISSUE-811 marked FIXED (code verified)
+bbf70f27c chore: session checkpoint [19:06]
 ```
 
-## Testing v1.5 (Ready for QA)
+## Working State
+```
+clean working tree
+```
 
-**Manual test flow:**
-1. Open Settings → Appearance → Ambition Dial: set to "Balanced"
-2. Interact with agents, manually trigger idea acceptances via `IdeaParkingService.acceptIdea()` (×5)
-3. Next agent message should include the dial upgrade prompt
-4. Verify: agent asks "Want me to bring more ideas by default?"
-5. User responds "Yes" → dial moves to "Ideas" (4 ideas/message, was 2)
-6. Verify: prompt never asked again (24h cooldown enforced)
+## Decisions
+- Session checkpoint created
+- Work state preserved for context continuity
 
-**Automated tests:**
-- IdeaParking.test.ts: 3 cases (offer metadata, threshold logic, cooldown)
-- ContextPipeline injection: prompt appears in userAlignmentRules when ready
-- All pre-commit gates passing (typecheck, lint, security, unit tests)
-
-## Architecture Notes
-
-**Why v1.5 Works Without v2 UI:**
-- Agent text already includes ideas: "If you want, I could also X or Y"
-- Prompt asks: "Want me to do this more often?"
-- User can say yes/no/ignore → dial persists their choice
-- No need for chips; text + settings control is sufficient for MVP
-
-**When to Build v2:**
-- After v1.5 ships and user behavior data shows idea-acceptance patterns
-- UX priority shift toward discoverable suggestions (not just text)
-- High-priority if users frequently say "yes" (adoption signal)
-
-## Current Priorities
-
-**High (Ready-to-Fix, Parallel-Safe):**
-- ISSUE-815..822: Honesty/data issues (same pattern as ISSUE-811)
-- Road Manager ISSUE-697→700→699→698 (requires sequencing)
-
-**Blocked:**
-- ISSUE-704: IA proposal awaits William's decision
-
-## Git State
-
-- **Branch:** main
-- **Unpushed:** 0 (just pushed)
-- **Working tree:** clean
-- **Test status:** ✓ typecheck, ✓ lint, ✓ unit tests (167 files, 1273 tests)
-- **Build:** all pre-commit gates passing
-
-## Next Agent Instructions
-
-1. v1.5 is ready for QA testing (manual or E2E)
-2. v2 roadmap is documented; design when ready
-3. Continue `/middle` execution loop: fix honesty issues (ISSUE-815..822)
-4. Road Manager sequencing: confirm ISSUE-704 IA pick before tackling 697→700→699→698
+## Next Steps
+- Review working state changes
+- Continue development from last known state
+- Run tests if changes are significant
 
 ---
-*Auto-generated. Full context in `.agent/test_ledger/OPEN_ISSUES.md` and `docs/JUDGMENT_LAYER_V2_ROADMAP.md`*
+*Auto-generated by Stop hook. Read this at session start to resume context.*
