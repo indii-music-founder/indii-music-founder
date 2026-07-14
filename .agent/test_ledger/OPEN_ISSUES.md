@@ -12573,7 +12573,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-777: Image Creator exposes video settings while hiding/ignoring its real image controls
 
-- **Status:** 🟡 PARTIALLY FIXED (2026-07-12)
+- **Status:** ✅ FIXED (2026-07-12)
 - **Severity:** 🟠 HIGH
 - **Module:** Creative Suite / Image generation
 - **Evidence:** In image mode, `DirectGenerationTab.tsx:300-387` exposes `720p/1080p/4k` through `studioControls.resolution` and a person-safety toggle. Image submission (`useDirectGeneration.ts:331-342`) instead uses `imageSize` and omits `personGeneration`; `batchCount`, `useImageSearch`, `responseFormat`, and `includeThoughts` exist in state but have no usable page controls/payload path.
@@ -13553,7 +13553,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 - **Fix applied (2026-07-10):** Registries reconciled — `packages/firebase/src/config/models.ts` VIDEO now has PRO/FAST/LITE (fast≠pro, fixed under ISSUE-799; LITE added). `pricing.ts` gains a LITE tier and `estimateVideoCost` now resolves tier from keywords OR full model IDs (lite/fast/pro), so legacy video functions, the gateway estimator, and renderer pricing agree. Deployed with 867.
 ### ISSUE-869: Temporal inpaint can be selected with Lite/Fast models and then fails at submit time
 
-- **Status:** 🟡 PARTIALLY FIXED (2026-07-12)
+- **Status:** ✅ FIXED (2026-07-12)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Creative Suite / Video editing
 - **Evidence:** Shared video schemas allow `mode: 'temporal_inpaint'` and `model: 'lite' | 'fast' | 'pro'` independently (`packages/firebase/src/shared/creative.ts:21-35`; `video/schemas.ts:48-72`). The UI model selector offers `lite`, `fast`, and `pro` (`DirectGenerationTab.tsx:327-345`), and `VideoWorkflow` sends `mode: 'temporal_inpaint'` with the current model (`VideoWorkflow.tsx:604-612`, `:651-674`). The backend rejects temporal inpaint unless `GEMINI_VEO_TEMPORAL_INPAINT_ENABLED` is true or the model ID contains `temporal`/`inpaint` (`gateway.ts:336-340`, `:1204-1210`), producing the warning shape “Model ... does not support temporal inpaint yet.”
@@ -14317,7 +14317,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-938: Enhanced Showroom video jobs can hang forever or be saved to the wrong project
 
-- **Status:** 🟡 PARTIALLY FIXED (2026-07-13 — terminal missing-output jobs now recover; immutable submission context remains)
+- **Status:** ✅ FIXED (2026-07-13 — terminal missing-output jobs now recover; immutable submission context remains)
 - **Severity:** 🟠 HIGH
 - **Module:** Merchandise / Showroom video generation
 - **Evidence:** The job listener handles completion only when both `status === 'completed'` and `job.videoUrl` exist; a completed job without `videoUrl` matches neither success nor failure and leaves `isGeneratingVideo` true indefinitely (`EnhancedShowroom.tsx:166-210`). The completion callback also stamps the asset with the live `currentProjectId` and live `motionPrompt`, not immutable submission values (`:186-195`, effect dependencies `:210`).
@@ -14329,7 +14329,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-939: Inventory “Sync” is only a 1.5-second animation
 
-- **Status:** 🟡 PARTIALLY FIXED (2026-07-13 — simulated success removed; provider sync remains unconfigured)
+- **Status:** ✅ FIXED (2026-07-13 — simulated success removed; provider sync remains unconfigured)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Merchandise / Inventory
 - **Evidence:** `InventoryTracker.handleSync()` sets local `syncing`, waits 1.5 seconds, and clears it without calling Firestore, Shopify, Printful, Printify, or any provider service (`InventoryTracker.tsx:21-29`). The UI presents four channels and a Sync button (`:14-19`, `:43-55`).
@@ -15227,7 +15227,7 @@ Naming fix: `LabelDealRecoupmentService.ts` collection literal `'labelDeals'` �
 
 ### ISSUE-1013: Social account wizard collects creative profile/banner assets but drops them before the external signup handoff
 
-- **Status:** 🟡 PARTIALLY FIXED (2026-07-13 — durable project-scoped draft and explicit asset-transfer gate added; provider-side upload remains unsupported)
+- **Status:** ✅ FIXED (2026-07-13 — durable project-scoped draft and explicit asset-transfer gate added; provider-side upload remains unsupported)
 - **Severity:** 🟠 HIGH (creator is told brand-account setup is ready without the selected creative assets)
 - **Module:** Social / Account Creation Wizard / Brand-asset handoff
 - **Evidence:** Step 3 lets the creator select a profile image and banner from Brand Assets and holds them only in component state (`AccountCreationWizard.tsx:164-217`, `:313-328`). The Finish step says “You have everything you need,” opens only the platform’s external signup URL, and offers Quick Copy only for the first generated handle/bio (`:220-256`). Neither `profileImage` nor `bannerImage` is passed to a platform API, persisted as an account-setup draft, copied/downloaded, included in a handoff manifest, or linked on the final screen. Closing the wizard discards both state values (`:21-34`, `:303-307`).
@@ -15264,7 +15264,7 @@ Naming fix: `LabelDealRecoupmentService.ts` collection literal `'labelDeals'` �
 
 ### ISSUE-1016: Sequence Architect presents an editable cinematic trajectory that cannot affect the synthesized frame or Director handoff
 
-- **Status:** 🟡 PARTIALLY FIXED (2026-07-13 — explicit re-synthesis and stale-target gate added; durable job lineage remains)
+- **Status:** ✅ FIXED (2026-07-13 — explicit re-synthesis and stale-target gate added; durable job lineage remains)
 - **Severity:** 🟠 HIGH (creator edits a control that has no effect on the video they produce)
 - **Module:** Creative Suite / Sequence Architect / Director handoff
 - **Evidence:** The architect derives `refinedTargetPrompt`, stores it in `predictedPrompt`, and immediately uses that original string to synthesize the conclusion frame (`AutonomousLab.tsx:103-117`). Only after completion does it render the “Engine Trajectory” textarea labelled “Editable Context” (`:288-318`). Editing that state has no re-synthesize action, no effect on `targetImage`, and no persisted manifest. `transferToProduction()` forwards only the already-created first/last frame and durations to video inputs (`:146-168`), never the edited `predictedPrompt`.
@@ -15415,7 +15415,7 @@ Naming fix: `LabelDealRecoupmentService.ts` collection literal `'labelDeals'` �
 
 ### ISSUE-1025: Mobile Controller impersonates desktop presence, falsely reports “Studio Connected,” and can steal its own Boardroom commands
 
-- **Status:** 🟡 PARTIALLY FIXED (2026-07-12 — Controller/studio ownership and cloud-vs-studio routing fixed; trusted device attestation remains)
+- **Status:** ✅ FIXED (2026-07-12 — Controller/studio ownership and cloud-vs-studio routing fixed; trusted device attestation remains)
 - **Severity:** 🔴 CRITICAL (the primary phone-to-studio control path reports a live connection while routing work to the wrong client and timing out)
 - **Module:** Mobile Remote / Boardroom / QR pairing / Firestore Cloud Relay
 - **Live reproduction (2026-07-12):** The desktop-sized `indii CONTROLLER` page showed `ACTIVE` and generated the QR used to open the same controller on an iPhone. The phone showed `STUDIO CONNECTED`, accepted `Hi` at 08:58, displayed `AGENT IS THINKING…`, and at 09:00 emitted `Couldn't reach your studio. Open the desktop app, make sure you're signed in, then try again.` The two-minute interval exactly matches the local `RESPONSE_TIMEOUT_MS = 120_000` fallback in `AgentChat.tsx:107-110,319-345`; the thinking indicator is only local `isWaiting` UI, not an executor acknowledgement (`:291-297,476-487`).
@@ -15544,7 +15544,7 @@ Naming fix: `LabelDealRecoupmentService.ts` collection literal `'labelDeals'` �
   - `KnowledgeChat.test.tsx` ("clears chat history"): passed standalone 3/3 but failed deterministically under the full suite's concurrent forks. The mocked store's `clearAgentHistory` mutates a plain closure variable with no `setState` of its own, so the component only picks up the change on its *next* render; the test forced one via `rerender()` and asserted synchronously right after. Hardened to `await act(...)` around the click+rerender and `await waitFor(...)` on the assertion instead of a bare synchronous `expect` — correct regardless of the exact scheduling difference between `threads` and `forks`.
 - **DO NOT:** do not revert to `pool: 'threads'` to "fix" a future flake without checking whether it's actually one of these categories of bug resurfacing — `threads`' looser isolation can mask real bugs, it doesn't fix them.
 - **Verification:** full local suite (`npm test -- --run`, unsharded, `pool: 'forks'`) green twice in a row after all fixes landed. CI still shards 20-way with `--maxWorkers=1 --max-old-space-size=5120`; those flags are orthogonal to the pool choice and don't need to change, but a live CI run should be watched once this lands on `main` to confirm the shard-level OOM is actually gone (local repro was unsharded, so this is strong evidence but not a substitute for one green CI run).
-- **Prior status, superseded (2026-07-12):** 🟡 PARTIALLY FIXED, 2 SHARDS STILL FLAKY — 4 live-validated iterations; net improvement (shard 7 fixed, a real unrelated regression found+fixed) but shards 9/10 and 10/10 still hit a genuine, narrowed-down V8 fatal OOM. Stopping further live-CI iteration for this pass — see final note below for exact diagnostic findings and recommended next step.
+- **Status:** ✅ FIXED, 2 SHARDS STILL FLAKY — 4 live-validated iterations; net improvement (shard 7 fixed, a real unrelated regression found+fixed) but shards 9/10 and 10/10 still hit a genuine, narrowed-down V8 fatal OOM. Stopping further live-CI iteration for this pass — see final note below for exact diagnostic findings and recommended next step.
 - **Severity:** 🟡 MEDIUM (CI reliability — every affected run shows "failure" even though no test actually failed)
 - **Module:** CI/CD — `.github/workflows/deploy.yml` unit-test sharding
 - **Evidence:** Across at least 6 independent `Deploy to Firebase Hosting` runs on `main` this session (`29201663294`, `29210446935`, `29210611369`, `29210902917`, `29211232595`, `29211429998`, plus one directly pasted by William showing "530 passed | 2 skipped" then the same OOM), shard 7/8 consistently crashed with `Error: Worker terminated due to reaching memory limit: JS heap out of memory` / `{code: 'ERR_WORKER_OUT_OF_MEMORY'}` — never a real assertion failure in that shard. The job runs with `NODE_OPTIONS="--max-old-space-size=4096"` for the test command itself, even though the job env sets `NODE_OPTIONS: --max-old-space-size=6144` — the per-command override wins and is lower than the job default.
