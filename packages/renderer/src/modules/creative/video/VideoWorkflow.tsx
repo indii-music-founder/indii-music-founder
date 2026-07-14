@@ -610,6 +610,11 @@ export default function VideoWorkflow() {
                 throw new Error('Temporal inpaint requires a selected video source and a captured mask frame.');
             }
 
+            // Validate frame range for temporal inpaint: endFrame must be > startFrame (non-zero duration)
+            if (isTemporalInpaint && frameRange && frameRange.endFrame <= frameRange.startFrame) {
+                throw new Error(`Invalid temporal inpaint frame range: endFrame (${frameRange.endFrame}) must be > startFrame (${frameRange.startFrame}). Set Anchor and End frames at different times.`);
+            }
+
             // Check for long-form Video (Daisy Chain or duration > 8s)
             if (!isTemporalInpaint && (studioControls.duration > 8 || videoInputs.isDaisyChain)) {
                 results = await VideoGeneration.generateLongFormVideo({
@@ -797,6 +802,7 @@ export default function VideoWorkflow() {
                                 activeVideo={activeVideo}
                                 firstFrame={videoInputs.firstFrame}
                                 lastFrame={videoInputs.lastFrame}
+                                maskRange={videoInputs.maskRange}
                                 setVideoInputs={setVideoInputs}
                                 onCancelJob={jobStatus === 'queued' || jobStatus === 'processing' || jobStatus === 'stitching' ? handleCancelJob : undefined}
                             />
