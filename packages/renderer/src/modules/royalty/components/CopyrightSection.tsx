@@ -48,11 +48,11 @@ export const CopyrightSection: React.FC<CopyrightSectionProps> = ({
                                 <div className="grid grid-cols-2 gap-4 text-xs font-medium text-slate-500 bg-slate-50 p-3 rounded-lg border border-slate-100 mb-5">
                                     <div>
                                         <span className="block uppercase tracking-wider mb-1">Standard Cost</span>
-                                        <span className="text-slate-900 text-sm">$45 - $65 per work</span>
+                                        <span className="text-slate-900 text-sm">$45–$85 per work</span>
                                     </div>
                                     <div>
                                         <span className="block uppercase tracking-wider mb-1">Timeline</span>
-                                        <span className="text-slate-900 text-sm">3 to 9 months processing</span>
+                                        <span className="text-slate-900 text-sm">3–9 months processing</span>
                                     </div>
                                 </div>
 
@@ -66,8 +66,8 @@ export const CopyrightSection: React.FC<CopyrightSectionProps> = ({
 
                                 {showMore && (
                                     <div className="mt-4 pt-4 border-t border-slate-100 text-sm text-slate-600 space-y-3">
-                                        <p>If you are an independent artist on a budget, it is common to delay formal copyright registration until a track starts generating significant revenue or is selected for a major sync placement (TV/film).</p>
-                                        <p>You can also save money by registering a collection of unpublished works (like an entire album) under a single application fee rather than registering each song separately.</p>
+                                        <p><strong>Timing matters:</strong> Register within 3 months of public release to preserve your right to statutory damages ($750–$30,000 per work) if infringement occurs. Registering after publication can still help in enforcement but may limit damages recoverable.</p>
+                                        <p>You can also save money by registering a collection of unpublished works (like an entire album) at the group rate rather than registering each song separately.</p>
                                     </div>
                                 )}
                             </div>

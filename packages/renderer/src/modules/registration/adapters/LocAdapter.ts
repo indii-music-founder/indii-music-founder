@@ -10,7 +10,7 @@ export const LocAdapter: OrgAdapter = {
   category: 'copyright',
   requiresDesktop: true,
   websiteUrl: 'https://eco.copyright.gov',
-  fee: { amount: 45, currency: 'USD', notes: '$45 single work / $65 group of unpublished works' },
+  fee: { amount: 45, currency: 'USD', notes: '$45 single author/work • $65 standard • $85 group unpublished • $65 group album' },
   timeline: '3–9 months',
 
   fields: [
