@@ -167,8 +167,9 @@ export async function dispatchPROPayload(releaseId: string): Promise<void> {
         releaseId,
         workTitle: data?.title || 'Unknown Work',
         iswc: data?.iswc || 'PENDING',
-        status: 'SUBMITTED',
-        submittedAt: new Date().toISOString(),
-        payload: proPayload
+        status: 'PREPARED',
+        preparedAt: new Date().toISOString(),
+        payload: proPayload,
+        requiresManualDelivery: true
     }, { merge: true });
 }
