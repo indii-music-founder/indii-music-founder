@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-07-14 18:42 EDT
+**Updated:** 2026-07-14 18:59 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+15cdbafdb chore: session checkpoint [18:42]
 b410b729f chore: update ledger — ISSUE-794 marked FIXED
 edab882db fix: ISSUE-794 — copyright fees and timing guidance updated to current standards
 b6b83d670 chore: session checkpoint [18:37]
@@ -13,23 +14,28 @@ b6b83d670 chore: session checkpoint [18:37]
 bcea27a51 chore: update ledger — ISSUE-790 marked FIXED
 a750098f8 fix: ISSUE-790 — PRO registration status PREPARED instead of false SUBMITTED
 991327dab chore: session checkpoint [15:46]
-30d47de07 chore: session checkpoint [15:45]
 ```
 
 ## Working State
 ```
+ M .agent/test_ledger/OPEN_ISSUES.md
  M agents/marketing/prompt.md
  M packages/firebase/src/relay/agentPrompts.ts
  M packages/renderer/src/core/config/intelligence-models.ts
  M packages/renderer/src/core/store/slices/profileSlice.ts
  M packages/renderer/src/modules/settings/settings-panel/AppearanceSection.tsx
  M packages/renderer/src/services/agent/BaseAgent.ts
+ M packages/renderer/src/services/agent/BaseAgentUsage.test.ts
  M packages/renderer/src/services/agent/builders/AgentPromptBuilder.ts
+ M packages/renderer/src/services/agent/builders/__tests__/AgentPromptBuilder.test.ts
  M packages/renderer/src/services/agent/components/ContextPipeline.ts
  M packages/renderer/src/services/agent/tools/SwarmTools.ts
+ M packages/renderer/src/services/agent/tools/SwarmToolsStreaming.test.ts
  M packages/renderer/src/services/agent/types.ts
  M packages/renderer/src/types/User.ts
 ?? docs/flowcharts/judgment-layer-macro.md
+?? packages/firebase/src/relay/agentPrompts.test.ts
+?? packages/renderer/src/services/agent/tools/SwarmToolsDelegationDepth.test.ts
 ```
 
 ## Decisions
