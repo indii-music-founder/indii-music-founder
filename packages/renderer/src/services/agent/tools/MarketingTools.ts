@@ -300,10 +300,11 @@ export const MarketingTools = {
             channels,
             variants,
             pixel_framework: {
-                status: 'configured',
-                events_tracked: ['ViewContent', 'AddToCart', 'Purchase']
+                status: 'draft_pixel_plan',
+                events_tracked: ['ViewContent', 'AddToCart', 'Purchase'],
+                requires_setup: ['provider_pixel_id', 'installed_tracking_code', 'verified_event_receipt', 'connected_ad_account']
             }
-        }, `A/B testing campaign created for ${product} with 3 copy variants and tracking pixel initialized.`);
+        }, `A/B testing campaign draft created for ${product} with 3 copy variants. Tracking pixel requires provider setup: need pixel ID, install code, verified events, and connected ad account.`);
     }),
 
     generate_ab_campaign: wrapTool('generate_ab_campaign', async (args: { productName: string; targetAudience: string; platform: 'Meta' | 'TikTok' | 'YouTube' }) => {
