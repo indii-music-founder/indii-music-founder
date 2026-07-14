@@ -24,7 +24,7 @@ export default function CreatePostModal({ onClose, onSave, initialScheduledDate 
     const [platform, setPlatform] = useState<'Twitter' | 'Instagram'>('Twitter');
     const [copy, setCopy] = useState('');
     const [selectedImage, setSelectedImage] = useState<ImageAsset | null>(null);
-    const [scheduledDate, setScheduledDate] = useState<string>(initialScheduledDate || new Date().toISOString().split('T')[0]!);
+    const [scheduledDate, setScheduledDate] = useState<string>(initialScheduledDate || new Date().toLocaleDateString('sv-SE'));
     const [scheduledTime, setScheduledTime] = useState<string>('12:00');
 
     const [isGenerating, setIsGenerating] = useState(false);
