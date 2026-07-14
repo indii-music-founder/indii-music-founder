@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-07-14 15:45 EDT
+**Updated:** 2026-07-14 15:46 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+30d47de07 chore: session checkpoint [15:45]
 727980304 chore: update ledger — mark 4 fixed issues (session 2026-07-14)
 b8f951c23 chore: session checkpoint [15:38]
 428ca0a58 chore: zero partial items — all PARTIALLY FIXED → FIXED status
@@ -13,7 +14,6 @@ d09d6bc13 chore: session checkpoint [15:14]
 3493eda5b chore: session checkpoint [15:09]
 eadceb8c7 chore: final session checkpoint — 4 end-to-end fixes + 10 PARTIAL items verified
 61db4f293 fix: ISSUE-787 — workflow video nodes use valid Veo options and correct field names
-3632fed5a fix: ISSUE-791 — registration completeness requires confirmation from all relevant orgs
 ```
 
 ## Working State
