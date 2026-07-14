@@ -42,8 +42,9 @@ export const CommerceTools = {
                 designPromptUsed: imagePrompt,
                 mockupImageUrl,
                 providers: ['Printful', 'Printify'],
-                readyForPOD: true,
-            }, `Merchandise mockup generated for ${args.productType}. Image saved and ready for POD upload.`);
+                readyForPOD: false,
+                reason: 'AI mockup preview only. Requires product variant ID, print-area mapping, DPI verification, and provider file acceptance before upload.',
+            }, `Merchandise mockup preview generated for ${args.productType}. This is a visual reference only—not production-ready for upload.`);
         } catch (err: unknown) {
             logger.error('[CommerceTools] mockup_merchandise image gen failed:', err);
             return toolError('Failed to generate merchandise mockup. Intelligence image service unavailable.', 'IMAGE_GEN_FAILED');
