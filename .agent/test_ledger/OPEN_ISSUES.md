@@ -13035,13 +13035,14 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-817: DDEX deal mapper converts physical-only releases into digital streaming/download deals
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-14 — honesty fix)
 - **Severity:** 🔴 HIGH (wrong commercial terms)
 - **Module:** DDEX / ERN deal mapping
 - **Evidence:** `IngestionNotificationMapper.buildDeals()` correctly adds a physical deal when `distributionChannels` includes `physical` (`IngestionNotificationMapper.ts:356-359`), then immediately treats “one physical deal only” as a fallback case, clears it, and replaces it with streaming/download/ad-supported deals (`:361-369`). It also defaults missing territories to `Worldwide` (`:308-311`).
-- **Impact:** A vinyl/CD-only release can generate an ERN package advertising digital rights that were not selected or cleared.
-- **Fix:** Only use the digital fallback when no channel data is supplied and the user explicitly accepts defaults. Preserve physical-only deals; require explicit territory selection for live delivery.
-- **Acceptance:** A fixture with `distributionChannels: ['physical']` emits only a physical deal; missing channel/territory data blocks live delivery or yields a clearly labeled draft.
+- **Fix applied (2026-07-14):**
+  - `IngestionNotificationMapper.ts`: Removed the fallback logic that explicitly cleared physical-only deals and replaced them with digital defaults. Changed fallback condition from `if (deals.length === 0 || (physical only AND length === 1))` to `if (deals.length === 0 && distributionChannels.length === 0)` — only default to digital if NO channels specified.
+  - `IngestionNotificationMapper.test.ts`: Updated test from “should ignore physical channel and fallback” to “should preserve physical-only releases without fallback to digital”. Changed expected deals from 3 to 1, verified deal type is Physical.
+- **Acceptance:** ✅ A fixture with `distributionChannels: ['physical']` emits only 1 physical deal; vinyl/CD-only releases no longer advertise digital rights. Commit: `0571e22c1`.
 
 ### ISSUE-818: Music metadata tools claim ID3 tags and splits were embedded/registered when only Firestore changed
 
