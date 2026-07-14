@@ -1,41 +1,24 @@
 # Handoff State
-**Updated:** 2026-07-14 18:59 EDT
+**Updated:** 2026-07-14 19:03 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+179817147 fix: ISSUE-879 — Video audio toggle clarifies it's prompt-only, not API control
+4490cad79 fix: ISSUE-818 — Music metadata tools remove false embedding/registration claims
+8990f60a9 chore: update ledger — ISSUE-833, ISSUE-839 marked FIXED
+ccd770f8d fix: ISSUE-839 — Playlist pitch removed false Spotify scraping claim
+737510839 fix: ISSUE-833 — Merch mockup labels as preview only, not POD-ready
+6b4b816e4 chore: session checkpoint [18:59]
 15cdbafdb chore: session checkpoint [18:42]
 b410b729f chore: update ledger — ISSUE-794 marked FIXED
 edab882db fix: ISSUE-794 — copyright fees and timing guidance updated to current standards
 b6b83d670 chore: session checkpoint [18:37]
-493f2653b chore: update ledger — ISSUE-947 marked FIXED
-5688f1529 fix: ISSUE-947 — Rapid Capture honesty (preview, not OCR analysis)
-1425e750f fix: ISSUE-948 — Quick Capture requires successful photo upload
-bcea27a51 chore: update ledger — ISSUE-790 marked FIXED
-a750098f8 fix: ISSUE-790 — PRO registration status PREPARED instead of false SUBMITTED
-991327dab chore: session checkpoint [15:46]
 ```
 
 ## Working State
 ```
- M .agent/test_ledger/OPEN_ISSUES.md
- M agents/marketing/prompt.md
- M packages/firebase/src/relay/agentPrompts.ts
- M packages/renderer/src/core/config/intelligence-models.ts
- M packages/renderer/src/core/store/slices/profileSlice.ts
- M packages/renderer/src/modules/settings/settings-panel/AppearanceSection.tsx
- M packages/renderer/src/services/agent/BaseAgent.ts
- M packages/renderer/src/services/agent/BaseAgentUsage.test.ts
- M packages/renderer/src/services/agent/builders/AgentPromptBuilder.ts
- M packages/renderer/src/services/agent/builders/__tests__/AgentPromptBuilder.test.ts
- M packages/renderer/src/services/agent/components/ContextPipeline.ts
- M packages/renderer/src/services/agent/tools/SwarmTools.ts
- M packages/renderer/src/services/agent/tools/SwarmToolsStreaming.test.ts
- M packages/renderer/src/services/agent/types.ts
- M packages/renderer/src/types/User.ts
-?? docs/flowcharts/judgment-layer-macro.md
-?? packages/firebase/src/relay/agentPrompts.test.ts
-?? packages/renderer/src/services/agent/tools/SwarmToolsDelegationDepth.test.ts
+M  .agent/test_ledger/OPEN_ISSUES.md
 ```
 
 ## Decisions

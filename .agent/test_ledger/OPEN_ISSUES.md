@@ -13045,7 +13045,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-818: Music metadata tools claim ID3 tags and splits were embedded/registered when only Firestore changed
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-14 — honesty fix)
 - **Severity:** 🟠 HIGH
 - **Module:** Agent tools / Music metadata
 - **Evidence:** `MusicTools.scrub_id3_tags()` builds an ID3 tag object and writes an audit doc with `status: 'completed'`, but never downloads, mutates, uploads, or returns a newly tagged audio file (`MusicTools.ts:207-249`). `inject_splits_to_metadata()` only writes `metadata.splits` to `users/{userId}/tracks/{trackId}` yet returns `status: 'Embedded in Distribution Metadata'` and says writers were “registered” (`:252-294`).
@@ -13679,7 +13679,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-879: Video “Audio” toggle is only prompt text, not an API control
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-14 — honesty fix)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Creative Suite / Veo / Audio controls
 - **Evidence:** Studio settings renders an `Audio` checkbox for video mode (`StudioSettingsPanel.tsx:289-301`). When disabled, `VideoWorkflow` only appends “no audio / silent video” text to the negative prompt and main prompt, while the inline comment says Veo 3.1 has no API-level audio toggle (`VideoWorkflow.tsx:554-566`).
