@@ -105,13 +105,13 @@ export function useLicensing() {
     }
 
     try {
-      // Trigger transition to negotiating status
+      // Trigger transition to negotiating status (does not generate draft)
       await toast.promise(
         licensingService.updateRequestStatus(request.id!, 'negotiating'),
         {
-          loading: 'Initiating draft sequence...',
-          success: 'Agreement draft generated. Status: Negotiating.',
-          error: 'Failed to initiate drafting.'
+          loading: 'Moving to negotiation...',
+          success: 'Request status updated to Negotiating. Draft generation requires separate licensing contract step.',
+          error: 'Failed to update request status.'
         }
       );
     } catch (error: unknown) {
