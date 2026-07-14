@@ -27,6 +27,13 @@ vi.mock('firebase/functions', () => ({
     getFunctions: vi.fn()
 }));
 
+vi.mock('../utils/mediaMetadata', () => ({
+    resolveMediaDurationSeconds: vi.fn().mockResolvedValue(10),
+    getMediaDurationFromFile: vi.fn().mockResolvedValue(0),
+    durationSecondsToFrames: (durationSeconds: number, fps: number, fallback = 150) =>
+        durationSeconds > 0 ? Math.round(durationSeconds * fps) : fallback,
+}));
+
 vi.mock('@/services/firebase', () => ({
     functions: {},
     functionsWest1: {},
@@ -168,25 +175,28 @@ describe('VideoEditor Integration', () => {
         });
     });
 
-    it('handles drag and drop from library', () => {
+    it('handles drag and drop from library', async () => {
         render(<VideoEditor />);
 
         // 1. Start Drag on Sidebar Item
         const asset = screen.getByTestId('draggable-asset');
         const dataTransfer = { setData: vi.fn(), getData: vi.fn(), dropEffect: 'none' };
 
-        // Mock getData to return what setData set (simplified)
-        dataTransfer.getData.mockReturnValue(JSON.stringify({ id: 'asset1', type: 'video', url: 'vid.mp4' }));
-
         fireEvent.dragStart(asset, { dataTransfer });
-        expect(dataTransfer.setData).toHaveBeenCalledWith('application/json', expect.stringContaining('asset1'));
+
+        // The real handler serializes a typed { type: 'asset', asset: {...} }
+        // payload (no raw `id`) so drop targets can validate/route it — see ISSUE-927.
+        expect(dataTransfer.setData).toHaveBeenCalledWith(
+            'application/json',
+            JSON.stringify({ type: 'asset', asset: { type: 'video', name: 'Imported video', url: 'vid.mp4' } })
+        );
+
+        // Mock getData to return exactly what setData produced, so the drop
+        // handler parses the real serialized contract, not a stale fixture.
+        const [, serializedPayload] = dataTransfer.setData.mock.calls[0]!;
+        dataTransfer.getData.mockReturnValue(serializedPayload);
 
         // 2. Drop on Timeline Container (VideoEditor has the drop handler on the bottom div)
-        // We need to target the container that has onDrop.
-        // In VideoEditor.tsx, it's the div wrapping VideoTimeline.
-        // We can find it by its class or structure, or add a testid to it in the source if needed.
-        // For now, let's try to find it by generic queries or structure.
-        // It's the parent of video-timeline.
         const timelineWrapper = screen.getByTestId('video-timeline').parentElement;
 
         fireEvent.drop(timelineWrapper!, {
@@ -195,10 +205,13 @@ describe('VideoEditor Integration', () => {
             currentTarget: { getBoundingClientRect: () => ({ left: 0 }) }
         });
 
-        expect(mockAddClip).toHaveBeenCalledWith(expect.objectContaining({
-            src: 'vid.mp4',
-            type: 'video'
-        }));
+        // handleDrop resolves duration asynchronously before calling addClip.
+        await waitFor(() => {
+            expect(mockAddClip).toHaveBeenCalledWith(expect.objectContaining({
+                src: 'vid.mp4',
+                type: 'video'
+            }));
+        });
         expect(mockToast.success).toHaveBeenCalledWith('Asset added to timeline');
     });
 });

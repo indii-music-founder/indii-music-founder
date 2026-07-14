@@ -68,37 +68,29 @@ export const TimelineTrack = memo(({
                         const frame = Math.max(0, Math.round(x / PIXELS_PER_FRAME));
 
                         const files = Array.from(e.dataTransfer.files) as File[];
+                        const { useVideoEditorStore } = await import('../../store/videoEditorStore');
+                        const { getMediaDurationFromFile, resolveMediaDurationSeconds, durationSecondsToFrames } = await import('../utils/mediaMetadata');
+                        const fps = useVideoEditorStore.getState().project?.fps || 30;
+
                         if (files.length > 0) {
                             const file = files[0]!;
                             const type = file.type.startsWith('video/') ? 'video' : file.type.startsWith('audio/') ? 'audio' : file.type.startsWith('image/') ? 'image' : 'video';
                             const url = URL.createObjectURL(file);
 
-                            import('../../store/videoEditorStore').then(async ({ useVideoEditorStore }) => {
-                                // Extract actual media duration if available
-                                let durationInFrames = 300; // Fallback default
-                                if (type !== 'image') {
-                                    try {
-                                        const { getMediaDurationSeconds, durationSecondsToFrames } = await import('../utils/mediaMetadata');
-                                        const durationSeconds = await getMediaDurationSeconds(file);
-                                        const fps = useVideoEditorStore.getState().project.fps || 30;
-                                        durationInFrames = durationSecondsToFrames(durationSeconds, fps);
-                                    } catch (err) {
-                                        // Fall back to default if duration extraction fails
-                                    }
-                                }
+                            const durationSeconds = type !== 'image' ? await getMediaDurationFromFile(file) : 0;
+                            const durationInFrames = type === 'image' ? 90 : durationSecondsToFrames(durationSeconds, fps);
 
-                                useVideoEditorStore.getState().addClip({
-                                    type,
-                                    trackId: track.id,
-                                    name: file.name,
-                                    startFrame: frame,
-                                    durationInFrames,
-                                    src: url,
-                                    opacity: 1,
-                                    scale: 1,
-                                    x: 0,
-                                    y: 0
-                                });
+                            useVideoEditorStore.getState().addClip({
+                                type,
+                                trackId: track.id,
+                                name: file.name,
+                                startFrame: frame,
+                                durationInFrames,
+                                src: url,
+                                opacity: 1,
+                                scale: 1,
+                                x: 0,
+                                y: 0
                             });
                         } else {
                             try {
@@ -106,20 +98,22 @@ export const TimelineTrack = memo(({
                                 if (dataString) {
                                     const data = JSON.parse(dataString);
                                     if (data.type === 'asset' && data.asset) {
-                                        const mediaType = data.asset.type === 'image' ? 'image' : data.asset.type === 'audio' ? 'audio' : 'video';
-                                        import('../../store/videoEditorStore').then(({ useVideoEditorStore }) => {
-                                            useVideoEditorStore.getState().addClip({
-                                                type: mediaType,
-                                                trackId: track.id,
-                                                name: data.asset.name,
-                                                startFrame: frame,
-                                                durationInFrames: data.asset.durationInSeconds ? Math.floor(data.asset.durationInSeconds * 30) : 300,
-                                                src: data.asset.url,
-                                                opacity: 1,
-                                                scale: 1,
-                                                x: 0,
-                                                y: 0
-                                            });
+                                        const mediaType: 'video' | 'audio' | 'image' = data.asset.type === 'image' ? 'image' : data.asset.type === 'audio' ? 'audio' : 'video';
+
+                                        const durationSeconds = await resolveMediaDurationSeconds(data.asset.url, mediaType);
+                                        const durationInFrames = mediaType === 'image' ? 90 : durationSecondsToFrames(durationSeconds, fps);
+
+                                        useVideoEditorStore.getState().addClip({
+                                            type: mediaType,
+                                            trackId: track.id,
+                                            name: data.asset.name,
+                                            startFrame: frame,
+                                            durationInFrames,
+                                            src: data.asset.url,
+                                            opacity: 1,
+                                            scale: 1,
+                                            x: 0,
+                                            y: 0
                                         });
                                     }
                                 }

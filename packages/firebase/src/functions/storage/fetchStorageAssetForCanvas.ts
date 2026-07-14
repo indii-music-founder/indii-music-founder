@@ -2,73 +2,13 @@ import * as admin from 'firebase-admin';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { z } from 'zod';
 import { validateAppCheckV2 } from '../../middleware/appCheck';
-
-const ENFORCE_APP_CHECK =
-  process.env.SKIP_APP_CHECK !== 'true' && process.env.ENFORCE_APP_CHECK !== 'false';
+import { parseStorageUri, assertUserOwnsStoragePath } from '../../lib/storageUri';
 
 const MAX_CANVAS_ASSET_BYTES = 20 * 1024 * 1024;
 
 const FetchStorageAssetSchema = z.object({
   uri: z.string().min(1),
 });
-
-function parseStorageUri(uri: string): { bucket: string; path: string } {
-  if (uri.startsWith('gs://')) {
-    const withoutScheme = uri.slice('gs://'.length);
-    const slashIndex = withoutScheme.indexOf('/');
-    if (slashIndex <= 0 || slashIndex === withoutScheme.length - 1) {
-      throw new HttpsError('invalid-argument', 'Storage URI must include a bucket and object path.');
-    }
-    return {
-      bucket: withoutScheme.slice(0, slashIndex),
-      path: withoutScheme.slice(slashIndex + 1),
-    };
-  }
-
-  let url: URL;
-  try {
-    url = new URL(uri);
-  } catch {
-    throw new HttpsError('invalid-argument', 'Storage asset URL is not a valid URL.');
-  }
-
-  if (url.hostname === 'firebasestorage.googleapis.com') {
-    const match = url.pathname.match(/^\/v0\/b\/([^/]+)\/o\/(.+)$/);
-    if (!match) {
-      throw new HttpsError('invalid-argument', 'Firebase Storage URL is missing bucket or object path.');
-    }
-    return {
-      bucket: decodeURIComponent(match[1]),
-      path: decodeURIComponent(match[2]),
-    };
-  }
-
-  if (url.hostname === 'storage.googleapis.com') {
-    const parts = url.pathname.replace(/^\/+/, '').split('/');
-    const bucket = parts.shift();
-    if (!bucket || parts.length === 0) {
-      throw new HttpsError('invalid-argument', 'Google Storage URL is missing bucket or object path.');
-    }
-    return {
-      bucket: decodeURIComponent(bucket),
-      path: decodeURIComponent(parts.join('/')),
-    };
-  }
-
-  throw new HttpsError('invalid-argument', 'Only Firebase Storage asset URLs are supported.');
-}
-
-function assertUserOwnsPath(path: string, userId: string): void {
-  const allowedPrefixes = [
-    `creative/${userId}/`,
-    `users/${userId}/assets/`,
-    `users/${userId}/generated_images/`,
-  ];
-
-  if (!allowedPrefixes.some(prefix => path.startsWith(prefix))) {
-    throw new HttpsError('permission-denied', 'Storage asset is outside the authenticated user scope.');
-  }
-}
 
 export const fetchStorageAssetForCanvas = onCall(
   { timeoutSeconds: 60, memory: '512MiB', enforceAppCheck: false },
@@ -88,7 +28,7 @@ export const fetchStorageAssetForCanvas = onCall(
     if (bucket !== defaultBucket) {
       throw new HttpsError('permission-denied', 'Storage asset bucket is not part of this project.');
     }
-    assertUserOwnsPath(path, request.auth.uid);
+    assertUserOwnsStoragePath(path, request.auth.uid);
 
     const file = admin.storage().bucket(bucket).file(path);
     const [metadata] = await file.getMetadata().catch((error: unknown) => {
