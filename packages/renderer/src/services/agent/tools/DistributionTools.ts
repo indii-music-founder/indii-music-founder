@@ -181,11 +181,11 @@ const issue_isrc = wrapTool('issue_isrc', async (args: {
                 year: year
             });
 
-            return {
+            return toolSuccess({
                 isrc: result.isrc,
                 source: 'Authority Layer (Python)',
-                registry: 'Local'
-            };
+                registry_status: 'recorded_internal'
+            }, `ISRC ${result.isrc} generated and recorded locally for "${trackTitle}". This is an internal identifier; official ISRC registration requires registration with an ISRC agency.`);
         } catch (e: unknown) {
             logger.warn('[DistributionTools] Authority Layer ISRC generation failed, falling back to JS:', e);
         }
@@ -220,8 +220,8 @@ const issue_isrc = wrapTool('issue_isrc', async (args: {
             source: 'JS Service',
             valid: true,
             track_title: trackTitle,
-            registry_status: 'RECORDED_EXTERNAL'
-        }, `ISRC ${isrc} generated and recorded for "${trackTitle}" (pending official registration).`);
+            registry_status: 'generated_local'
+        }, `ISRC ${isrc} generated for "${trackTitle}". This is an internal identifier; official ISRC registration requires registration with an ISRC agency.`);
     } catch (error: unknown) {
         return toolError(error instanceof Error ? error.message : 'ISRC failed', 'ISRC_ERROR');
     }
