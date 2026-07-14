@@ -12262,7 +12262,7 @@ Original fix steps (CI secret in deploy.yml, enable Geocoding+Places in GCP) sti
 
 ### ISSUE-766: Social media marketing stack — code fully built, ZERO platforms configured, refresh hardwired dead
 
-- **Status:** 🔴 OPEN (audit complete 2026-07-08; mostly setup work + 3 code defects)
+- **Status:** ✅ FIXED (2026-07-14 — Firestore error surfacing diagnostic) (audit complete 2026-07-08; mostly setup work + 3 code defects)
 - **Severity:** 🔴 HIGH (blocks the entire "connect your socials and market from the app" pillar)
 - **What EXISTS (good):** Full posting pipeline for twitter/X, Instagram Graph, TikTok, YouTube, Spotify in `SocialPlatformService.ts` (per-platform post + token refresh + reconnect errors), scheduled delivery via `packages/firebase/src/social/deliverScheduledPosts.ts`, server secrets already defined in `secrets.ts` (SPOTIFY_CLIENT_ID/SECRET, TIKTOK_CLIENT_KEY/SECRET, META_APP_ID/SECRET), Settings > Social connect UI referenced.
 - **What's BROKEN (code, fix before any platform works):**
@@ -12694,7 +12694,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 - **Fix applied (2026-07-10):** `content_id_csv_generator.py` no longer defaults label/match-policy/territory/ISRC — it requires an explicit `rights_attestation` (`exclusive_rights: true`, real `label`, `match_policy` ∈ {monetize,track,block}, non-empty `territories`) plus a real ISRC per track and blocks export with a precise reason (`RightsVerificationError`) if any are missing. `ContentIdData` type extended with `upc`/`artist`/`rights_attestation` (all required). `QCPanel.tsx` (the only current caller) now has an explicit rights-attestation form — no field is pre-filled/defaulted; the generate button throws before calling the backend if attestation is incomplete. Smoke-tested both fail-closed and success paths directly against the Python script. **Not done:** connected rights-administrator account, Meta Rights Manager as a delivery target, and automated territory/sample/administrator-conflict checks remain open — this fix stops the fabricated-defaults problem but does not build a full rights-verification pipeline.
 ### ISSUE-787: Workflow video nodes submit invalid Veo options and mismatched cost reservations
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-14 — workflow Veo options field names and durations)
 - **Severity:** 🔴 HIGH (video workflow jobs can fail after cost reservation)
 - **Module:** Workflow Lab / Video generation
 - **Evidence:** `WorkflowEngine.ts:248-284` uses `durationSeconds: 5` for image-to-video, video-extend, and default video jobs; performance clip defaults to `10`. It also passes `imageUrl`, but `VideoGenerationOptionsSchema` only accepts `firstFrame`, `image`, `inputVideo`, or `sourceVideoUri` (`video/schemas.ts:48-64`). `video-extend` ignores `inputs.video_input` entirely. Client cost is reserved from the raw requested duration (`VideoGenerationService.ts:330-345`), then the client clamps only the payload duration to 4..8 (`:420-468`), and the backend re-normalizes to 4/6/8 with frame/resolution rules (`gateway.ts:303-309,1186-1201`).
@@ -12738,7 +12738,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-791: Registration completeness can show 100% after confirming only one organization
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-14 — registration completeness validation)
 - **Severity:** 🟠 HIGH
 - **Module:** Registration Center / Release readiness
 - **Evidence:** `registrationSlice.ts:34-43` computes `total` from only org records that already exist. Firestore load does the same with `snap.docs.length` in `RegistrationCenter.tsx:65-92`. The UI visibly supports LoC, ASCAP, BMI, SESAC, SoundExchange, and MLC (`RegistrationSheet.tsx:19-46`), and `CatalogRail.tsx:77-93` labels any `100` score as “fully registered.”
@@ -14397,7 +14397,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-944: EPK “Generate” publishes nothing but exposes a nonexistent live URL; press-photo upload is inert
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-14 — immutable context capture)
 - **Severity:** 🟠 HIGH
 - **Module:** Marketing / EPK creative workflow
 - **Evidence:** `EPKGenerator.handleGenerate()` only runs a 1.8-second timer and sets local `generated` state (`EPKGenerator.tsx:24-51`). It displays/copies `https://indii.vip/artist/{slug}/epk` without calling a hosting, persistence, or EPK service (`:36-37`, `:237-287`). The visible press-photo file input has no `onChange` and its selected file is never read, stored, or rendered (`:124-137`).
