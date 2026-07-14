@@ -99,7 +99,7 @@ export default function MerchDesigner() {
     } = useCanvasControls(fabricCanvas);
 
     // Canvas history hook (undo/redo)
-    const { undo, redo, canUndo, canRedo } = useCanvasHistory(fabricCanvas);
+    const { undo, redo, canUndo, canRedo, clearHistory, saveState } = useCanvasHistory(fabricCanvas);
 
     // Auto-save hook
     const { saveDesign, lastSaved, isSaving } = useAutoSave(
@@ -407,12 +407,16 @@ export default function MerchDesigner() {
             // Parse the saved canvas JSON
             const canvasData = JSON.parse(version.canvasJSON);
 
-            // Clear current canvas
+            // Clear current canvas and undo/redo history
             clear();
+            clearHistory();
 
             // Load the saved state
             await canvas.loadFromJSON(canvasData);
             canvas.renderAll();
+
+            // Establish this loaded design as the new undo baseline
+            saveState();
 
             setDesignName(version.name);
             toast.success(`Restored "${version.name}"`);
@@ -420,7 +424,7 @@ export default function MerchDesigner() {
             logger.error('Failed to restore version:', error);
             toast.error('Failed to restore version');
         }
-    }, [clear, toast]);
+    }, [clear, clearHistory, saveState, toast]);
 
     // Background color change
     const handleBackgroundColorChange = useCallback((color: string) => {
