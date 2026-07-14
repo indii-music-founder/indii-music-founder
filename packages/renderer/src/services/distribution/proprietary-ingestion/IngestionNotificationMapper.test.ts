@@ -154,7 +154,7 @@ describe('IngestionNotificationMapper', () => {
         expect(deal!.dealTerms.releaseDisplayStartDate).toBe('2025-05-01');
     });
 
-    it('should ignore "physical" channel and fallback if it is the only channel', () => {
+    it('should preserve physical-only releases without fallback to digital', () => {
         const metadata: ExtendedGoldenMetadata = {
             ...MOCK_METADATA_BASE,
             distributionChannels: ['physical']
@@ -162,23 +162,12 @@ describe('IngestionNotificationMapper', () => {
 
         const deals = getDeals(metadata);
 
-        // Expect fallback behavior:
-        // Since 'physical' is not handled, deals array remains empty initially.
-        // The first fallback block in IngestionNotificationMapper adds 3 deals (Subscription, AdSupported, NonInteractive).
-        // The second fallback block is skipped because deals.length > 0.
-        // Expect fallback behavior (default is 2 deals: streaming + download fallback in buildDeals)
-        // Wait, looking at IngestionNotificationMapper implementation:
-        // If deals.length === 0 (which happens if only physical is passed),
-        // it adds SubscriptionModel (Stream) + PayAsYouGoModel (Download).
-        // That is 2 deals.
-        // Ah, looking at the previous failing test output, it got 3.
-        // Let's check IngestionNotificationMapper.ts again.
-        // It has TWO fallback blocks.
-        // Block 1: "Fallback: If no deal types were added... default to Streaming + Download" -> Adds 3 deals (Sub, PAYG, Ad)
-        // Block 2: "Fallback: If no deal types were added... default to Streaming + Download" -> Adds 2 deals (Sub, PAYG)
-        // If the first block runs, deals.length becomes 3. Then the second block (deals.length === 0) won't run.
-        // So it should be 3.
-        expect(deals.length).toBe(3);
+        // Physical-only releases should NOT be converted to streaming/download.
+        // The fix (ISSUE-817) ensures that explicit channel selections are preserved.
+        // A physical-only release should generate exactly 1 physical deal, not fallback to 3 digital deals.
+        expect(deals.length).toBe(1);
+        // Verify it's actually a physical deal
+        expect(deals[0].dealTerms?.usage?.[0]?.distributionChannelType).toBe('Physical');
     });
 
     it('should map Autonomous generation info correctly', () => {

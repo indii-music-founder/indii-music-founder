@@ -358,12 +358,10 @@ export class IngestionNotificationMapper {
                     addDeal('PayAsYouGoModel', 'PhysicalProduct', 'Physical');
                 }
 
-                // Fallback: If no digital deal types were added, default to Streaming + Download
-                if (deals.length === 0 || (deals.length === 1 && distributionChannels.includes('physical') && distributionChannels.length === 1)) {
-                    if (deals.length === 1) {
-                        deals.length = 0;
-                        dealCounter = 1;
-                    }
+                // Fallback: Only default to Streaming + Download if NO channels were specified and distribution is incomplete
+                // CRITICAL: Preserve physical-only releases; do NOT replace them with digital defaults
+                if (deals.length === 0 && distributionChannels.length === 0) {
+                    // User has not specified ANY distribution channels; defaults are reasonable
                     addDeal('SubscriptionModel', 'OnDemandStream', 'Stream');
                     addDeal('PayAsYouGoModel', 'PermanentDownload', 'Download');
                     addDeal('AdvertisementSupportedModel', 'OnDemandStream', 'Stream');
