@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-07-13 21:11 EDT
+**Updated:** 2026-07-13 21:34 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+056fb67ac chore: session checkpoint [21:11]
 a803ccf0b fix: ISSUE-926 — media file drops extract actual duration instead of arbitrary 300 frames
 e20246ec6 chore: session checkpoint [20:57]
 388375d11 chore: session summary — TIER 1 complete, 7 issues fixed
@@ -13,7 +14,6 @@ ecbb2b250 chore: session checkpoint [20:47]
 8b393d7a3 fix: ISSUE-935 — merchandise undo baseline reset when design/version loads
 573a88f65 fix: ISSUE-941 — social scheduling uses local date instead of UTC
 f4fe33cdf chore: session checkpoint [20:20]
-aacb94ad6 fix: ISSUE-927/928/932 — asset drops unified, video settings validated, publicist errors tracked
 ```
 
 ## Working State
