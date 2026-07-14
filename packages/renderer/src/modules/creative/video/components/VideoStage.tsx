@@ -14,6 +14,7 @@ interface VideoStageProps {
     activeVideo: HistoryItem | null;
     firstFrame?: HistoryItem | null;
     lastFrame?: HistoryItem | null;
+    maskRange?: { startFrame: number; endFrame: number };
     setVideoInputs: (inputs: Partial<CreativeSlice['videoInputs']>) => void;
     onCancelJob?: () => void;
 }
@@ -25,6 +26,7 @@ export const VideoStage = React.memo<VideoStageProps>(({
     activeVideo,
     firstFrame,
     lastFrame,
+    maskRange,
     setVideoInputs,
     onCancelJob
 }) => {
@@ -390,13 +392,17 @@ export const VideoStage = React.memo<VideoStageProps>(({
                                 onClick={() => {
                                     void createFrameAnchor('anchor').then((anchor) => {
                                         if (anchor) {
-                                            setVideoInputs({ firstFrame: anchor });
-                                            logger.info('[VideoStage] Anchor frame set (captured from canvas)');
+                                            const startFrame = Math.max(0, Math.round((playerRef.current?.currentTime() || 0) * 24));
+                                            setVideoInputs({
+                                                firstFrame: anchor,
+                                                maskRange: { startFrame, endFrame: startFrame } // Will be updated when end frame is set
+                                            });
+                                            logger.info('[VideoStage] Anchor frame set (start frame captured)');
                                         }
                                     });
                                 }}
                                 data-testid="set-anchor-btn"
-                                aria-label="Set as anchor frame for next generation"
+                                aria-label="Set as anchor frame for temporal inpaint (start frame)"
                                 className="px-2.5 py-1.5 bg-black/60 backdrop-blur-md hover:bg-green-500/30 rounded-lg text-[10px] font-semibold text-white/80 hover:text-white transition-all border border-white/10 hover:border-green-500/40 focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:outline-none"
                             >
                                 ⚓ Set Anchor
@@ -405,35 +411,50 @@ export const VideoStage = React.memo<VideoStageProps>(({
                                 onClick={() => {
                                     void createFrameAnchor('end').then((endFrame) => {
                                         if (endFrame) {
-                                            setVideoInputs({ lastFrame: endFrame });
-                                            logger.info('[VideoStage] End frame set (captured from canvas)');
+                                            const endFrameNum = Math.max(0, Math.round((playerRef.current?.currentTime() || 0) * 24));
+                                            // Update maskRange: keep existing startFrame, update endFrame
+                                            const updatedMaskRange = {
+                                                startFrame: maskRange?.startFrame ?? 0,
+                                                endFrame: endFrameNum
+                                            };
+                                            setVideoInputs({
+                                                lastFrame: endFrame,
+                                                maskRange: updatedMaskRange
+                                            });
+                                            logger.info(`[VideoStage] End frame set (end frame captured, range: ${updatedMaskRange.startFrame}→${updatedMaskRange.endFrame})`);
                                         }
                                     });
                                 }}
                                 data-testid="set-end-frame-btn"
-                                aria-label="Set as end frame for next generation"
+                                aria-label="Set as end frame for temporal inpaint"
                                 className="px-2.5 py-1.5 bg-black/60 backdrop-blur-md hover:bg-indigo-500/30 rounded-lg text-[10px] font-semibold text-white/80 hover:text-white transition-all border border-white/10 hover:border-indigo-500/40 focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:outline-none"
                             >
                                 🎬 Set End Frame
                             </button>
                             <button
                                 onClick={() => {
+                                    // Temporal inpaint requires a non-zero frame range (startFrame < endFrame)
+                                    if (!maskRange || maskRange.endFrame <= maskRange.startFrame) {
+                                        setExtractionState(prev => ({
+                                            ...prev,
+                                            error: 'Temporal inpaint requires a frame range (start < end). Set Anchor Frame (start) and End Frame at different times before capturing mask.'
+                                        }));
+                                        logger.warn('[VideoStage] Cannot set mask: invalid frame range (endFrame must be > startFrame).');
+                                        return;
+                                    }
                                     void createFrameAnchor('mask').then((maskFrame) => {
                                         if (maskFrame) {
                                             setVideoInputs({
                                                 maskFrame,
-                                                maskRange: {
-                                                    startFrame: Math.max(0, Math.round((playerRef.current?.currentTime() || 0) * 24)),
-                                                    endFrame: Math.max(0, Math.round((playerRef.current?.currentTime() || 0) * 24))
-                                                },
+                                                maskRange,
                                                 isTemporalInpaint: true
                                             } as Partial<CreativeSlice['videoInputs']>);
-                                            logger.info('[VideoStage] Mask frame set (captured from video)');
+                                            logger.info('[VideoStage] Mask frame set with temporal inpaint range');
                                         }
                                     });
                                 }}
                                 data-testid="set-mask-frame-btn"
-                                aria-label="Set as mask frame for temporal inpaint"
+                                aria-label="Set as mask frame for temporal inpaint (requires setting anchor and end frames first)"
                                 className="px-2.5 py-1.5 bg-black/60 backdrop-blur-md hover:bg-emerald-500/30 rounded-lg text-[10px] font-semibold text-white/80 hover:text-white transition-all border border-white/10 hover:border-emerald-500/40 focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:outline-none"
                             >
                                 🖌 Set Mask
