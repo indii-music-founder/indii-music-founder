@@ -4,6 +4,7 @@
 
 ## Recent Commits
 ```
+e71a8f45e chore: update ledger — ISSUE-818, ISSUE-879 marked FIXED (12 total)
 179817147 fix: ISSUE-879 — Video audio toggle clarifies it's prompt-only, not API control
 4490cad79 fix: ISSUE-818 — Music metadata tools remove false embedding/registration claims
 8990f60a9 chore: update ledger — ISSUE-833, ISSUE-839 marked FIXED
@@ -13,12 +14,11 @@ ccd770f8d fix: ISSUE-839 — Playlist pitch removed false Spotify scraping claim
 15cdbafdb chore: session checkpoint [18:42]
 b410b729f chore: update ledger — ISSUE-794 marked FIXED
 edab882db fix: ISSUE-794 — copyright fees and timing guidance updated to current standards
-b6b83d670 chore: session checkpoint [18:37]
 ```
 
 ## Working State
 ```
-M  .agent/test_ledger/OPEN_ISSUES.md
+clean working tree
 ```
 
 ## Decisions
