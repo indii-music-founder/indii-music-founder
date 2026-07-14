@@ -33,6 +33,38 @@ const UNICODE_TAG_REGEX = /[\u{E0000}-\u{E007F}]/gu;
 // Zero-width and invisible characters used for steganographic attacks.
 const ZERO_WIDTH_REGEX = /\u{200B}|\u{200C}|\u{200D}|\u{200E}|\u{200F}|\u{FEFF}|\u{2060}|\u{00AD}/gu;
 
+export type AgentAmbition = 'focused' | 'balanced' | 'ideas';
+
+/**
+ * EXECUTION CONTRACT — shared behavioral constraints injected into EVERY agent prompt.
+ * The judgment layer: scope discipline, definition-of-done, verbosity, and the user's
+ * ambition dial (how many unsolicited ideas an agent may offer, never execute).
+ * SYNC NOTE: a condensed copy lives in packages/firebase/src/relay/agentPrompts.ts
+ * (EXECUTION_CONTRACT). Update both when changing behavior rules.
+ */
+export function buildExecutionContract(ambition: AgentAmbition = 'balanced'): string {
+    const ideaRules: Record<AgentAmbition, string> = {
+        focused: `- Do NOT offer suggestions or extra ideas. Deliver the task, then stop.`,
+        balanced: `- If you spot valuable extra work, DO NOT do it. After your answer, offer at most 2 ideas in ONE short conversational line in your own voice (e.g. "If you want, I could also X or Y — say the word; otherwise they stay parked."). Never execute an offered idea unless the user asks.`,
+        ideas: `- If you spot valuable extra work, DO NOT do it. After your answer, you may offer up to 4 ideas as brief one-liners under a short natural lead-in. Never execute an offered idea unless the user asks.`,
+    };
+    return `
+## EXECUTION CONTRACT (non-negotiable — overrides any persona guidance about ambition, initiative, or thoroughness)
+
+1. SCOPE — Do exactly what was asked. Nothing more.
+   - Deliver the user's literal request. Do not add deliverables, run extra tools, or widen the task because it "would help".
+${ideaRules[ambition]}
+
+2. DONE — Stop the moment the request is satisfied.
+   - When the deliverable exists, deliver it and stop. No polishing, re-checking, extending, or starting follow-up work.
+
+3. LENGTH — Answer first, then stop talking.
+   - Lead with the answer or deliverable. No preamble, no restating the question.
+   - Match length to the ask: a one-line question gets a 1-3 sentence answer. Long-form output only when the deliverable itself requires it.
+   - No narrating what you did, no closing summaries, no offers of more help beyond the idea rule above.
+`;
+}
+
 /**
  * AgentPromptBuilder handles the assembly of complex prompts for agents.
  * This includes logic for mission, context, brand identity, WHISK references,
@@ -266,6 +298,9 @@ export class AgentPromptBuilder {
         const temporalContext = this.buildTemporalContext(context);
         const spatialContext = this.buildSpatialContext(context);
 
+        // Judgment layer: scope/stop/verbosity contract, calibrated by the user's ambition dial
+        const executionContract = buildExecutionContract(context?.ambitionLevel);
+
         return cleanPrompt(`
 # MISSION
 ${systemPrompt}
@@ -303,6 +338,8 @@ ${memorySection}
 ${distributorSection}
 
 ${superpowerPrompt}
+
+${executionContract}
 
 # CURRENT OBJECTIVE
 ${safeTask}

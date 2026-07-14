@@ -212,8 +212,9 @@ export const PublicistTools = {
     draft_pitch_email: wrapTool('draft_pitch_email', async (args: { playlistName: string; genre: string; trackTitle: string }) => {
         const schema = zodToJsonSchema(PitchStorySchema);
         const prompt = `
-        You are a PR Specialist. Scrape info for Spotify playlist "${args.playlistName}" (Genre: ${args.genre})
-        and draft a highly personalized pitch email for the track "${args.trackTitle}".
+        You are a PR Specialist. Draft a pitch email template for a ${args.genre} track titled "${args.trackTitle}"
+        targeting playlist curators. Use "${args.playlistName}" as an example target.
+        Note: This is a template. Real personalization requires connecting to Spotify API and verifying playlist curator info.
         `;
 
         const data = await AutonomousIntelligence.generateStructuredData(
@@ -246,10 +247,10 @@ export const PublicistTools = {
         }
 
         return toolSuccess(
-            { ...validated, saved: Boolean(docId), docId },
+            { ...validated, saved: Boolean(docId), docId, isTemplate: true },
             docId
-                ? `Personalized pitch email drafted and saved for Spotify playlist "${args.playlistName}" (ID: ${docId}).`
-                : `Personalized pitch email drafted for Spotify playlist "${args.playlistName}", but NOT saved: ${saveError}`
+                ? `Pitch email template drafted and saved for "${args.playlistName}" (ID: ${docId}). Requires Spotify API connection for real personalization.`
+                : `Pitch email template drafted for "${args.playlistName}", but NOT saved: ${saveError}`
         );
     })
 } satisfies Record<string, AnyToolFunction>;

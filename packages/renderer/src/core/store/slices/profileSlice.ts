@@ -68,7 +68,8 @@ const DEFAULT_USER_PROFILE: UserProfile = {
     preferences: {
         theme: 'system',
         notifications: true,
-        observabilityEnabled: false
+        observabilityEnabled: false,
+        agentAmbition: 'balanced'
     },
     brandKit: DEFAULT_BRAND_KIT,
     analyzedTrackIds: [],

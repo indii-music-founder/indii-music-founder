@@ -121,6 +121,8 @@ export interface UserPreferences {
 
     // Agent Strategy
     wisdomPoolOptIn?: boolean;
+    /** Judgment layer: how many unsolicited ideas agents may offer (never execute). Default: 'balanced'. */
+    agentAmbition?: 'focused' | 'balanced' | 'ideas';
 
     /** Allow extensibility — callers must narrow before use */
     [key: string]: unknown;

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { importWithRetry } from '@/utils/dynamicImport';
+import { DelegationLoopDetector } from '../LoopDetector';
 
 /**
  * consult_specialist → UI bridge tests.
@@ -39,6 +40,9 @@ function makeContext(overrides: Record<string, unknown> = {}) {
 describe('consult_specialist streaming bridge', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Judgment layer: each test represents an independent consult session, so clear
+    // the shared DelegationLoopDetector chain for the fixed traceId these tests reuse.
+    DelegationLoopDetector.cleanup('t1');
   });
 
   it('streams deltas through emitToken when a UI sink + streamAgent are present', async () => {
