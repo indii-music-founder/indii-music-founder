@@ -243,10 +243,11 @@ export const MusicTools = {
 
         return toolSuccess({
             fileUrl: args.fileUrl,
-            status: 'ID3 Tags Written',
+            status: 'Draft Metadata Saved',
             tagsWritten: writtenTags,
-            tagCount: writtenTags.length
-        }, `ID3 tags written to downloadable audio file: ${writtenTags.length} tags applied. Ready for sync export.`);
+            tagCount: writtenTags.length,
+            draft_only: true
+        }, `ID3 tag metadata saved as draft (${writtenTags.length} tags). To embed into audio file, use an audio export tool or DAW. Audio file itself was not modified.`);
     }),
 
     inject_splits_to_metadata: wrapTool('inject_splits_to_metadata', async (args: { trackId: string; splits: Array<{ writer: string; percentage: number; ipi: string }> }) => {
@@ -290,8 +291,9 @@ export const MusicTools = {
                 injectedSplits: args.splits.length,
                 totalPercentage: totalSplit,
                 writers: args.splits.map(s => `${s.writer} (${s.percentage}%, IPI: ${s.ipi})`),
-                status: 'Embedded in Distribution Metadata'
-            }, `Songwriter splits deeply embedded into the distribution metadata blob for track ${args.trackId}. ${args.splits.length} writers registered.`);
+                status: 'App Metadata Saved',
+                draft_only: true
+            }, `Songwriter splits saved to app metadata for track ${args.trackId}. ${args.splits.length} splits recorded. NOTE: App metadata is not the same as official PRO registration or embedded audio tags. Official registration requires PRO or publishing platform submission.`);
         } catch (error: unknown) {
             logger.warn('[MusicTools] Failed to inject splits:', error);
             return toolError('Failed to persist split data to Firestore.', 'PERSISTENCE_ERROR');
