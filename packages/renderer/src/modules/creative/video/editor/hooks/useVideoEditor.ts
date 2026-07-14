@@ -186,7 +186,16 @@ export function useVideoEditor(initialVideo?: HistoryItem) {
     };
 
     const handleLibraryDragStart = (e: React.DragEvent, item: HistoryItem) => {
-        e.dataTransfer.setData('application/json', JSON.stringify(item));
+        const payload = {
+            type: 'asset',
+            asset: {
+                type: item.type,
+                name: item.prompt || `Imported ${item.type}`,
+                url: item.url,
+                durationInSeconds: item.type === 'video' ? 5 : undefined
+            }
+        };
+        e.dataTransfer.setData('application/json', JSON.stringify(payload));
         e.dataTransfer.effectAllowed = 'copy';
     };
 
@@ -195,22 +204,25 @@ export function useVideoEditor(initialVideo?: HistoryItem) {
         const data = e.dataTransfer.getData('application/json');
         if (data) {
             try {
-                const item = JSON.parse(data) as HistoryItem;
-                const rect = e.currentTarget.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const dropFrame = Math.max(0, Math.round(x / PIXELS_PER_FRAME));
-                const trackId = project.tracks[0]?.id;
+                const payload = JSON.parse(data);
+                if (payload.type === 'asset' && payload.asset) {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const dropFrame = Math.max(0, Math.round(x / PIXELS_PER_FRAME));
+                    const trackId = project.tracks[0]?.id;
 
-                if (trackId) {
-                    addClip({
-                        type: item.type === 'video' ? 'video' : 'image',
-                        src: item.url,
-                        startFrame: dropFrame,
-                        durationInFrames: item.type === 'image' ? 90 : 150,
-                        trackId: trackId,
-                        name: item.prompt || `Imported ${item.type}`
-                    });
-                    toast.success('Asset added to timeline');
+                    if (trackId) {
+                        const mediaType = payload.asset.type === 'image' ? 'image' : payload.asset.type === 'audio' ? 'audio' : 'video';
+                        addClip({
+                            type: mediaType,
+                            src: payload.asset.url,
+                            startFrame: dropFrame,
+                            durationInFrames: payload.asset.durationInSeconds ? Math.floor(payload.asset.durationInSeconds * 30) : 300,
+                            trackId: trackId,
+                            name: payload.asset.name
+                        });
+                        toast.success('Asset added to timeline');
+                    }
                 }
             } catch (err: unknown) {
                 logger.error('Failed to parse dropped item', err);

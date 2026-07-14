@@ -17,6 +17,7 @@ export const usePublicist = () => {
     const [campaigns, setCampaigns] = useState<Campaign[]>([]);
     const [contacts, setContacts] = useState<Contact[]>([]);
     const [hasReceivedData, setHasReceivedData] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     // Mounted guard to prevent state updates on unmounted component (Firestore b815 crash fix)
     const isMountedRef = useRef(true);
@@ -25,24 +26,39 @@ export const usePublicist = () => {
         return () => { isMountedRef.current = false; };
     }, []);
 
-    // Derive loading from userId presence + data receipt
+    // Derive loading from userId presence + data receipt (distinct from error state)
     const userId = userProfile?.uid || userProfile?.id;
-    const loading = !!userId && !hasReceivedData;
+    const loading = !!userId && !hasReceivedData && !error;
 
     // Initial Data Fetch
     useEffect(() => {
         if (!userId) return;
 
         // Subscribe to live data
-        const unsubCampaigns = PublicistService.subscribeToCampaigns(userId, (data) => {
-            if (!isMountedRef.current) return;
-            setCampaigns(data);
-            setHasReceivedData(true);
-        });
-        const unsubContacts = PublicistService.subscribeToContacts(userId, (data) => {
-            if (!isMountedRef.current) return;
-            setContacts(data);
-        });
+        const unsubCampaigns = PublicistService.subscribeToCampaigns(
+            userId,
+            (data) => {
+                if (!isMountedRef.current) return;
+                setCampaigns(data);
+                setHasReceivedData(true);
+                setError(null);
+            },
+            (err) => {
+                if (!isMountedRef.current) return;
+                if (err) setError(err instanceof Error ? err.message : String(err));
+            }
+        );
+        const unsubContacts = PublicistService.subscribeToContacts(
+            userId,
+            (data) => {
+                if (!isMountedRef.current) return;
+                setContacts(data);
+            },
+            (err) => {
+                if (!isMountedRef.current) return;
+                if (err) setError(err instanceof Error ? err.message : String(err));
+            }
+        );
 
         return () => {
             safeUnsubscribe(unsubCampaigns);
@@ -81,6 +97,7 @@ export const usePublicist = () => {
         filterType,
         setFilterType,
         loading,
+        error,
         userProfile // Expose for creating campaigns
     };
 };
