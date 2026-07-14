@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-07-14 19:06 EDT
+**Updated:** 2026-07-14 19:09 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+ef83a3c30 chore: update ledger — ISSUE-811 marked FIXED (code verified)
+bbf70f27c chore: session checkpoint [19:06]
 64001ac48 chore: update ledger — ISSUE-837, ISSUE-846 marked FIXED (14 total)
 e0a76ffe1 fix: ISSUE-846 — Release velocity projections clarified as generic vs personalized
 e4aa672e7 fix: ISSUE-837 — A/B campaign tracking pixel changed from 'configured' to draft plan
@@ -12,13 +14,13 @@ e71a8f45e chore: update ledger — ISSUE-818, ISSUE-879 marked FIXED (12 total)
 179817147 fix: ISSUE-879 — Video audio toggle clarifies it's prompt-only, not API control
 4490cad79 fix: ISSUE-818 — Music metadata tools remove false embedding/registration claims
 8990f60a9 chore: update ledger — ISSUE-833, ISSUE-839 marked FIXED
-ccd770f8d fix: ISSUE-839 — Playlist pitch removed false Spotify scraping claim
-737510839 fix: ISSUE-833 — Merch mockup labels as preview only, not POD-ready
 ```
 
 ## Working State
 ```
-clean working tree
+ M agents/distribution/prompt.md
+ M packages/renderer/src/services/agent/tools/DistributionTools.test.ts
+ M packages/renderer/src/services/agent/tools/DistributionTools.ts
 ```
 
 ## Decisions
