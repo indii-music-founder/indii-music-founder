@@ -30,7 +30,7 @@ export class CreatorProtectionCompiler implements HarnessCompiler<CreatorProtect
         publisherName: metadata.publisherName ?? metadata.publisher,
         pro: metadata.pro,
         ipiCae: metadata.composerIPI,
-        copyrightStatus: metadata.isrc || metadata.upc ? 'draft' : 'unknown',
+        copyrightStatus: 'unknown', // ISRC/UPC are distribution IDs, not copyright evidence; only actual registrations set to 'draft' or 'registered'
         trademarkStatus: 'unknown',
         aiVoiceLikenessPermission: 'not_authorized',
         monitoringOptIn: false,
