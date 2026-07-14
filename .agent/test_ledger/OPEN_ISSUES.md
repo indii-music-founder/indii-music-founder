@@ -13197,7 +13197,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-833: Merch mockup tool labels AI product photos as POD-ready manufacturing assets
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-14 — honesty fix)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Commerce / Merchandise agent tools
 - **Evidence:** `CommerceTools.mockup_merchandise()` creates an AI image prompt for a product photo (`CommerceTools.ts:8-25`), optionally stores only `productType`, `designIdea`, and `imageUrl` in Firestore (`:27-37`), then returns `providers: ['Printful', 'Printify']`, `readyForPOD: true`, and “ready for POD upload” (`:40-46`).
@@ -13259,7 +13259,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-839: Playlist pitch email tool asks the model to “scrape” Spotify without a scraper or source data
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-14 — honesty fix)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Publicist / Playlist pitching
 - **Evidence:** `PublicistTools.draft_pitch_email()` prompts the model to “Scrape info for Spotify playlist” (`PublicistTools.ts:176-181`) but only calls `AutonomousIntelligence.generateStructuredData()` (`:183-188`). There is no Spotify API, web fetch, playlist URL input, curator contact lookup, or source context before the generated pitch is saved/returned (`:190-207`).
