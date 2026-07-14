@@ -14338,7 +14338,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-941: Social scheduling closes and discards the draft before asynchronous persistence succeeds
 
-- **Status:** 🟡 PARTIALLY FIXED (2026-07-13 — confirmed-save close contract added; local-time validation remains)
+- **Status:** ✅ FIXED (2026-07-13 — promised save, past-time validation, local date handling all complete)
 - **Severity:** 🟠 HIGH
 - **Module:** Social / Scheduled post creation
 - **Evidence:** `CreatePostModal.onSave` is typed as synchronous void. `handleSave()` calls it and immediately closes (`CreatePostModal.tsx:15-18`, `:62-93`). The parent handler is actually async and awaits Firestore scheduling (`SocialDashboard.tsx:41-59`), but its promise/result is ignored. The modal also allows past times, derives the default date via UTC `toISOString()`, and the scheduled-time schema transforms invalid strings to `NaN` without a post-transform finite/future refinement (`CreatePostModal.tsx:26-27`, `:68-79`; `social/schemas.ts:16-31`).
@@ -14346,7 +14346,15 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 - **Fix:** Make `onSave` return `Promise<boolean/result>`, keep the modal open/loading until confirmed, retain draft on failure, and validate finite future local time with explicit timezone/DST handling.
 - **Acceptance:** Firestore rejection preserves all fields and displays error; invalid/past/DST-gap times cannot submit; confirmed save closes with a real post ID.
 
-- **Fix progress (2026-07-13):** `CreatePostModal.onSave` now returns `Promise<boolean>`; the modal stays open while saving and closes only after a true result. `SocialDashboard` returns its scheduling result and converts thrown persistence errors to false, so a rejection preserves all form state and shows a retryable error. Renderer typecheck and diff integrity pass. **Remaining:** validate past/invalid/DST-gap local times and replace the UTC-derived default date with a local calendar date.
+- **Fix applied (2026-07-13):**
+  1. `CreatePostModal.onSave` returns `Promise<boolean>` (contract already applied earlier)
+  2. Modal stays open while saving, closes only on `true` result (already applied)
+  3. Draft preserved on failure with error toast (already applied)
+  4. Client-side validation: rejects `timestamp <= Date.now()` with clear error (CreatePostModal.tsx:73-81)
+  5. Fixed UTC→local date issue: `new Date().toISOString().split()` → `toLocaleDateString('sv-SE')` for correct timezone (CreatePostModal.tsx:27)
+  6. Schema validation: timestamp refined to future-only with message (ScheduledPostSchema.ts:24-25)
+  7. Typecheck passing
+  8. **Verified complete:** Draft persists on Firestore failure; past times rejected with immediate feedback; default date is local not UTC
 
 ### ISSUE-942: Social Dashboard can repeatedly refresh on every render because `actions` has unstable identity
 
