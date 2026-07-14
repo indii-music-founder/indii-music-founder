@@ -250,26 +250,32 @@ export class WorkflowEngine {
                     const imageUrl = (inputs.image_input as string) || undefined;
                     const results = await VideoGeneration.generateVideo({
                         prompt,
-                        durationSeconds: 5,
+                        durationSeconds: 8, // Veo accepts 4, 6, or 8 seconds
                         aspectRatio: '16:9',
-                        ...(imageUrl ? { imageUrl } : {}),
+                        ...(imageUrl ? { firstFrame: imageUrl } : {}),
                     });
                     return results[0]?.url;
                 }
                 if (jobId === 'video-extend') {
                     // Extend the incoming video clip
+                    const videoUrl = (inputs.video_input as string) || undefined;
                     const results = await VideoGeneration.generateVideo({
                         prompt: `Continue: ${prompt}`,
-                        durationSeconds: 5,
+                        durationSeconds: 8, // Veo accepts 4, 6, or 8 seconds
                         aspectRatio: '16:9',
+                        ...(videoUrl ? { inputVideo: videoUrl } : {}),
                     });
                     return results[0]?.url;
                 }
                 if (jobId === 'video-performance-clip') {
                     // Performance clip: artist image → performance video
                     const artistImageUrl = (inputs.image_input as string) || '';
-                    const durationSecStr = (inputs.duration_input as string) || '10';
-                    const durationSeconds = parseInt(durationSecStr, 10) || 10;
+                    const durationSecStr = (inputs.duration_input as string) || '8';
+                    let durationSeconds = parseInt(durationSecStr, 10) || 8;
+                    // Clamp to valid Veo durations: 4, 6, 8 seconds
+                    if (durationSeconds <= 5) durationSeconds = 4;
+                    else if (durationSeconds <= 7) durationSeconds = 6;
+                    else durationSeconds = 8;
                     if (!artistImageUrl) throw new Error('Artist image required for performance clip');
                     const results = await VideoGeneration.generateVideo({
                         prompt: `Artist performance: ${prompt}`,
@@ -281,7 +287,7 @@ export class WorkflowEngine {
                     return results[0]?.url;
                 }
                 // Default: text-to-video
-                const results = await VideoGeneration.generateVideo({ prompt, durationSeconds: 5, aspectRatio: '16:9' });
+                const results = await VideoGeneration.generateVideo({ prompt, durationSeconds: 8, aspectRatio: '16:9' });
                 return results[0]?.url;
             }
 
