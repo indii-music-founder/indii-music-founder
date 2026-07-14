@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-07-13 21:34 EDT
+**Updated:** 2026-07-13 22:34 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+a665c24f5 fix: ISSUE-926 — full-stack real media duration resolution (no more arbitrary guesses)
+4a8102ae2 chore: session checkpoint [21:34]
 056fb67ac chore: session checkpoint [21:11]
 a803ccf0b fix: ISSUE-926 — media file drops extract actual duration instead of arbitrary 300 frames
 e20246ec6 chore: session checkpoint [20:57]
@@ -12,13 +14,11 @@ e20246ec6 chore: session checkpoint [20:57]
 ecbb2b250 chore: session checkpoint [20:47]
 4740496f0 chore: session checkpoint — 5 issues fixed (927/928/932/941/935)
 8b393d7a3 fix: ISSUE-935 — merchandise undo baseline reset when design/version loads
-573a88f65 fix: ISSUE-941 — social scheduling uses local date instead of UTC
-f4fe33cdf chore: session checkpoint [20:20]
 ```
 
 ## Working State
 ```
- M .agent/artifacts/task.md
+clean working tree
 ```
 
 ## Decisions
