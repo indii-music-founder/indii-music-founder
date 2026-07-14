@@ -1,9 +1,12 @@
 # Handoff State
-**Updated:** 2026-07-13 20:47 EDT
+**Updated:** 2026-07-13 20:57 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+388375d11 chore: session summary — TIER 1 complete, 7 issues fixed
+91cd97d18 chore: update task ledger — TIER 1 complete (7 issues fixed)
+ecbb2b250 chore: session checkpoint [20:47]
 4740496f0 chore: session checkpoint — 5 issues fixed (927/928/932/941/935)
 8b393d7a3 fix: ISSUE-935 — merchandise undo baseline reset when design/version loads
 573a88f65 fix: ISSUE-941 — social scheduling uses local date instead of UTC
@@ -11,9 +14,6 @@ f4fe33cdf chore: session checkpoint [20:20]
 aacb94ad6 fix: ISSUE-927/928/932 — asset drops unified, video settings validated, publicist errors tracked
 ce99c633c chore: session checkpoint [20:10]
 0f854c4a3 chore: session checkpoint [20:05]
-5cceaf4fa chore: session checkpoint [19:48]
-b96fdfbc4 chore: session checkpoint [19:41]
-b16c79d24 Merge branch 'fix/issues-core'
 ```
 
 ## Working State
