@@ -13148,7 +13148,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-828: Licensing request flow says an agreement draft was generated when it only changes status
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-14 — honesty/validation fix)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Licensing / Request workflow
 - **Evidence:** `useLicensing.ts:100-116` validates request status, calls only `licensingService.updateRequestStatus(request.id!, 'negotiating')`, and shows the success toast “Agreement draft generated. Status: Negotiating.” No contract record, agreement content, artifact, or draft ID is created in that path.
@@ -13169,7 +13169,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-830: Living-plan tools return `success: true` when required project/auth context is missing
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-14 — honesty/validation fix)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Agent tools / Planning
 - **Evidence:** `LivingPlanTools.propose_plan()` returns `{ success: true, error: 'No active project found...' }` and `{ success: true, error: 'User not authenticated...' }` (`LivingPlanTools.ts:27-32`). The same false-success pattern appears in `refine_plan`, `get_plan`, `cancel_plan`, `complete_step`, and `complete_plan` when no project is active (`:61-63`, `:90-92`, `:116-118`, `:139-141`, `:162-164`).
