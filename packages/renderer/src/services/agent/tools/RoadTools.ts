@@ -328,7 +328,7 @@ export const RoadTools = {
     }),
 
     log_live_setlist_for_pro: wrapTool('log_live_setlist_for_pro', async (args: { venue: string; date: string; tracks: string[] }) => {
-        // Item 138: Persist setlist to Firestore for PRO royalty submission
+        // Item 138: Save setlist as a local draft for manual PRO filing (not auto-submitted)
         const setlistId = `SET-${Date.now().toString(36).toUpperCase()}`;
         const userId = auth.currentUser?.uid;
 
@@ -339,13 +339,14 @@ export const RoadTools = {
                     venue: args.venue,
                     date: args.date,
                     tracks: args.tracks,
-                    submissionStatus: 'Queued',
-                    targetPROs: ['ASCAP', 'BMI', 'SESAC'],
+                    submissionStatus: 'draft_requires_manual_filing',
+                    // Manual filing required: user must contact PRO directly with work IDs and membership/account proof
+                    requiresManualAction: ['Select work IDs/IPIs', 'Choose target PRO', 'Provide account/membership proof', 'File manually via PRO portal'],
                     createdAt: new Date().toISOString()
                 });
-                logger.info(`[RoadTools] Setlist ${setlistId} persisted for PRO submission.`);
+                logger.info(`[RoadTools] Setlist ${setlistId} saved as draft for manual PRO filing.`);
             } catch (e: unknown) {
-                logger.warn('[RoadTools] Failed to persist setlist:', e);
+                logger.warn('[RoadTools] Failed to save setlist:', e);
             }
         }
 
@@ -355,9 +356,9 @@ export const RoadTools = {
             date: args.date,
             tracksLogged: args.tracks.length,
             tracks: args.tracks,
-            submissionStatus: 'Queued for ASCAP/BMI/SESAC Submission',
-            note: userId ? 'Setlist saved to your account for PRO submission.' : 'Sign in to persist setlist data.'
-        }, `Live setlist logged for ${args.venue} on ${args.date}. ${args.tracks.length} tracks queued for PRO performance royalty submission.`);
+            submissionStatus: 'draft (manual filing required)',
+            note: userId ? 'Setlist saved locally as a draft. Manual PRO filing required: contact ASCAP/BMI/SESAC directly with work IDs and proof of authorship.' : 'Sign in to save setlist data.'
+        }, `Live setlist saved as a local draft for ${args.venue} on ${args.date} (${args.tracks.length} tracks). Note: Setlists are not automatically submitted to PROs. To claim royalties, you must manually file with your chosen PRO using work IDs and membership proof.`);
     })
 } satisfies Record<string, AnyToolFunction>;
 
