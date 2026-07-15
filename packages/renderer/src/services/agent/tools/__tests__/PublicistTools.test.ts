@@ -62,7 +62,10 @@ describe('PublicistTools', () => {
         const result = await PublicistTools.draft_pitch_email({ playlistName: 'RapCaviar', genre: 'Hip Hop', trackTitle: 'Hot Track' });
 
         expect(result.success).toBe(true);
-        expect(result.data).toEqual({ ...mockResponse, saved: true, docId: 'mock-doc-id' });
+        // draft_pitch_email honestly flags its output as a template (real
+        // personalization needs a Spotify API connection), so isTemplate is
+        // part of the contract.
+        expect(result.data).toEqual({ ...mockResponse, saved: true, docId: 'mock-doc-id', isTemplate: true });
     });
 
     it('generate_crisis_response returns valid schema', async () => {
