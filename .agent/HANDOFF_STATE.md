@@ -1,9 +1,12 @@
 # Handoff State
-**Updated:** 2026-07-14 20:08 EDT
+**Updated:** 2026-07-14 20:11 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+3ea7819ba fix: ISSUE-894 — Storage scrub tool returns error when callable unavailable
+0c1ef5840 fix: ISSUE-822 — remove static 'complete' defaults from distribution checklist
+5d6bf4bf0 chore: session checkpoint [20:08]
 67fb0a699 chore: session checkpoint [20:07]
 b880ef12d docs(ledger): mark ISSUE-821 FIXED — honesty pass on release readiness gate
 b99c2816e fix: ISSUE-852 — Manufacturing status changed from 'started' to 'queued'
@@ -11,9 +14,6 @@ b4fcdb4cf fix: ISSUE-850 — Merch pricing clarified as static baseline, not mar
 76a280b78 fix: ISSUE-821 — replace PRO-only release gate with full readiness matrix
 a8e36f71c fix: ISSUE-841 — Permission audit reports partial status, not complete
 0ba236f5d chore: session checkpoint [20:02]
-cc6c406ae fix: ISSUE-1049 — reconcile two stale tests with honesty-pass renames
-9a48bef11 test: update PublicistTools test for isTemplate flag (ISSUE-839)
-b00b15aed chore: update ledger — ISSUE-831 marked FIXED
 ```
 
 ## Working State
