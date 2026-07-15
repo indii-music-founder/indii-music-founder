@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-07-15 14:44 EDT
+**Updated:** 2026-07-15 14:45 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+3e6b620a7 chore: session checkpoint [14:44]
 9e247d25f chore: session checkpoint [14:43]
 d66137a5f chore: session checkpoint [14:42]
 ad9fb698a chore: session checkpoint [14:40]
@@ -13,7 +14,6 @@ d3db49bde fix(ISSUE-913): Project context binding for async generations
 11ba5dc5b chore: session checkpoint [14:00]
 7f9a41781 chore: session checkpoint [13:59]
 1d09fb259 docs(ledger): mark ISSUE-705 complete — all 6 Road Manager jobs wired (2026-07-15)
-a8f178b4e feat(touring): ISSUE-705 Job 6 — Booking Handoff Contract
 ```
 
 ## Working State
