@@ -1,19 +1,19 @@
 # Handoff State
-**Updated:** 2026-07-14 19:58 EDT
+**Updated:** 2026-07-14 20:02 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+cc6c406ae fix: ISSUE-1049 — reconcile two stale tests with honesty-pass renames
+9a48bef11 test: update PublicistTools test for isTemplate flag (ISSUE-839)
+b00b15aed chore: update ledger — ISSUE-831 marked FIXED
+1517a8d19 fix: ISSUE-831 — PRO repertoire lookup removed model hallucination instruction
+fcea190e3 chore: update ledger — ISSUE-828, ISSUE-830 marked FIXED (17 total)
+39fb3fc78 fix: ISSUE-830 — Living plan tools return success: false on missing context
+f03701adf chore: session checkpoint [19:58]
 c0d7752a1 fix: ISSUE-828 — Licensing request status change message clarified
 a5be31b46 chore: session checkpoint [19:57]
 f93022c0f chore: session checkpoint [20:02] — ISSUE-815..819 honesty-pass sweep
-c325d335a docs(ledger): mark ISSUE-819 FIXED — temporal inpaint zero-length mask validation
-f2bafe0a0 fix: ISSUE-819 — reject zero-length temporal inpaint mask ranges
-c936eb8d9 docs(ledger): mark ISSUE-817 FIXED — honesty pass on physical-only deal preservation
-0571e22c1 fix: ISSUE-817 — preserve physical-only releases in DDEX deal mapping
-531089405 docs(ledger): mark ISSUE-816 FIXED — honesty pass on copyright vs distribution identifiers
-6b4abad12 fix: ISSUE-816 — separate identifier hygiene from copyright protection evidence
-07206fb54 docs(ledger): mark ISSUE-815 FIXED — honesty pass on PRO royalty submission claims
 ```
 
 ## Working State
