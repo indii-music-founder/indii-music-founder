@@ -14799,7 +14799,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-979: CRM destroys a launch draft after `createCampaign` converts persistence failure into `null`
 
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ FIXED (2026-07-15 — handleLaunch requires a non-null persisted ID before closing/clearing; null keeps modal + draft with error toast; double-submit guard; regression test in CRMDashboard.test.tsx)
 - **Severity:** 🟠 HIGH (false launch success and creative draft loss)
 - **Module:** Superfan CRM / New Drop
 - **Evidence:** `handleLaunch()` awaits `createCampaign()` and unconditionally closes the modal and clears every field when the promise resolves (`CRMDashboard.tsx:43-65`). The store action catches Firestore/auth/rules failures, sets a dashboard error, and returns `null` instead of rejecting (`crmSlice.ts:108-127`). The caller never inspects the returned ID. Consequently the same resolved path runs for a confirmed document ID and for no document at all.
