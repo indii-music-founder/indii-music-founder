@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-07-14 20:25 EDT
+**Updated:** 2026-07-14 20:28 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+35622030d fix: ISSUE-823 — publishing compiler requires all critical items for registration ready
+f258d5d99 chore: session checkpoint [20:25]
 00b31089b chore: session checkpoint [20:19]
 d484a004b fix: ISSUE-1049 — reconcile 3 more stale tests with honest source
 b379563ba chore: session checkpoint [20:12]
@@ -12,8 +14,6 @@ bfbb79ad1 chore: session checkpoint [20:11]
 3ea7819ba fix: ISSUE-894 — Storage scrub tool returns error when callable unavailable
 0c1ef5840 fix: ISSUE-822 — remove static 'complete' defaults from distribution checklist
 5d6bf4bf0 chore: session checkpoint [20:08]
-67fb0a699 chore: session checkpoint [20:07]
-b880ef12d docs(ledger): mark ISSUE-821 FIXED — honesty pass on release readiness gate
 ```
 
 ## Working State
