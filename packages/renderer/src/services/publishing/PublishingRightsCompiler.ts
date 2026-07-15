@@ -202,12 +202,13 @@ export class PublishingRightsCompiler implements HarnessCompiler<PublishingRight
       });
     }
 
-    // CRITICAL: Registration ready requires ALL critical items
-    // Missing MLC, IPI, or ISWC should block registration (not just PRO)
-    const hasCriticalBlockers = blockers.length > 0 || 
+    // CRITICAL: Registration ready requires the actual delivery blockers.
+    // A missing ISWC is deliberately NOT a blocker — it delays global royalty
+    // collection but does not block delivery/registration (see the medium
+    // 'missing_iswc' finding above). Counting it here contradicted that finding.
+    const hasCriticalBlockers = blockers.length > 0 ||
                                  input.mlcRegistrationStatus === 'unregistered' ||
-                                 missingIpis.length > 0 ||
-                                 !input.iswc;
+                                 missingIpis.length > 0;
     
     // registrationReady means: ready to file splits/works with proper identifiers
     // This requires: PRO active, writer IPIs present, ISWC assigned, MLC registered
