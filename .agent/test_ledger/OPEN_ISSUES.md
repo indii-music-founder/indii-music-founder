@@ -15607,3 +15607,12 @@ Naming fix: `LabelDealRecoupmentService.ts` collection literal `'labelDeals'` �
   ```
 - **Acceptance (met):** Opening Notes shows the notes list/editor with no console errors; creating, selecting, and editing a note (title + content) works without the module remounting.
 - **DO NOT:** Do not paper over a future recurrence by wrapping a module in an extra error boundary or try/catch — the underlying selector is the defect; fix that, not the symptom. Consider a static guard (grep or lint rule) for `useStore(\s*\(?state\)?\s*=>\s*\({` without a `useShallow(` wrapper on the same statement, so this class of bug is caught at write-time across the whole codebase, not one site at a time — not done this pass (out of scope beyond the discovered instances), flagged here for a future session.
+
+### ISSUE-1049: CI red on main — two stale tests lagging intentional honesty renames
+
+- **Status:** ✅ FIXED (2026-07-14). CI was failing on `main` (runs #788/#789/#790) on shards 14 & 16 — two independent stale tests that never got updated when the source was deliberately reworded during honesty passes. Both fixes are test-only; the production copy was already correct.
+- **Severity:** 🔴 HIGH (blocked all deploys — main was red).
+- **Failure 1 — `PublicistTools.test.ts > draft_pitch_email returns valid schema`:** `draft_pitch_email` now returns `isTemplate: true` (honest flag: it's a template, real personalization needs a Spotify API connection — `PublicistTools.ts:250`). The `toEqual` assertion didn't include the field. Fix: added `isTemplate: true` to the expected object.
+- **Failure 2 — `GhostCapture.test.tsx > shows the completion overlay and transmit button`:** ISSUE-947 renamed the overlay copy `INGEST COMPLETE` → `PREVIEW READY` (it's a preview, not real OCR analysis — `CapturePreview.tsx:44`). Test still queried for the old string. Fix: updated `getByText` to `PREVIEW READY`.
+- **Verification:** both files pass locally (`PublicistTools` 7/7, `GhostCapture` 7/7). Pushed to main; CI re-run confirmed green.
+- **DO NOT:** do not "fix" either by stripping `isTemplate` or reverting the copy in source — both source strings are the intentional honest output. When an honesty pass renames user-facing copy or adds a truthfulness flag, update the test in the same commit.
