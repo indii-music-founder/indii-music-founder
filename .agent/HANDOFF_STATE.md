@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-07-15 08:07 EDT
+**Updated:** 2026-07-15 08:12 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+b0cb9bdde chore(ledger): mark ISSUE-920 and ISSUE-923 fixed
+db4bce9f3 chore: session checkpoint [08:07]
 cf38bb833 chore: session checkpoint [08:06]
 424fa14a0 fix: ISSUE-836 — unified marketing campaign platform enums across layers
 e99d3c248 chore: session checkpoint [07:56]
@@ -12,13 +14,11 @@ af62fe4c4 fix: ISSUE-873 — Masked-edit prompt now based on sourceMask presence
 99179088d fix: ISSUE-874 — Image Search grounding toggle now forwarded by direct generation
 5a280d804 chore: session checkpoint [07:41]
 bcb2a91d7 chore: session checkpoint [07:41]
-dce6c99e7 chore: session checkpoint [07:40]
-daf57edd7 chore: session checkpoint [07:36]
 ```
 
 ## Working State
 ```
-M  .agent/test_ledger/OPEN_ISSUES.md
+clean working tree
 ```
 
 ## Decisions
