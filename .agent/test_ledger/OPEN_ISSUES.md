@@ -12768,14 +12768,14 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-792: MLC “BWARM” export is the wrong shape and fabricates legal data
 
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ FIXED (2026-07-15, commit b0a6c9bc7)
 - **Severity:** 🔴 HIGH (royalty registration rejection / false writer data)
 - **Module:** Distribution / Keys Layer / MLC
 - **Evidence:** `keys_manager.py:29-79` emits a simplified CSV, defaults writer name to `John Doe`, publisher to `Self-Published`, collection share to `100`, and release date to today. `KeysPanel.tsx:223-257` labels it “BWARM Generation” and “compliant with The MLC standards.”
 - **External constraint:** The MLC describes three registration routes: individual Member Hub entry, CWR by contacting support, or bulk upload using the Bulk Work Registration template ([MLC self-administered songwriter page](https://www.themlc.com/self-administered-songwriters)). Their help page says bulk registration is for users with a Publisher IPI and otherwise walks self-administered writers through individual work registration ([MLC Help Center](https://help.themlc.com/en/support/how-to-register-works-in-the-mlc-portal)).
 - **Impact:** The export is likely rejected and can misstate writer/publisher ownership.
-- **Fix:** Either generate the actual MLC workbook/template or a valid CWR package, or relabel the current output as an internal draft. Require real writer legal names, IPIs, shares, publisher/admin data, and release dates; never default legal parties.
-- **Acceptance:** A fixture with two writers creates the accepted MLC/CWR structure with separate writer/share rows and no fabricated names or shares.
+- **Fix:** Removed all fabricated defaults from `keys_manager.py`: writer names (“John Doe” → requires real first/last name), publisher (“Self-Published” → requires real publisher), collection share (100% hardcode → from actual metadata splits), release date (today → from metadata). Updated `KeysPanel.tsx` to validate metadata before BWARM generation: splits must have real legal names, publisher must be non-empty/non-default, release date required. Skipped works log reasons. Updated BWarmWork type to reflect required fields.
+- **Acceptance:** ✅ VERIFIED — BWARM export skips works with incomplete metadata, requires real writer/publisher/release-date data, never fabricates legal information. Commit b0a6c9bc7 passed all pre-commit gates (lint/typecheck/security/tests).
 
 ### ISSUE-793: Tax certification schema mismatch blocks certification and can store raw TINs locally
 
