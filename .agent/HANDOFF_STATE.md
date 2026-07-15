@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-07-15 10:27 EDT
+**Updated:** 2026-07-15 12:37 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+4f130080c fix(video): stop waitForJob resolving early on transient 'stitching' progress (ISSUE-878 regression)
+4ace6430e chore: session checkpoint [10:27]
 b869064ac chore: session checkpoint [10:23]
 0db3dd525 chore: session checkpoint [10:22]
 3be128b5a fix: IntelligenceCampaignModal a11y test — match actual component platforms
@@ -12,8 +14,6 @@ c8047a575 chore: session checkpoint [10:05]
 d509d07a7 chore: session checkpoint [10:04]
 5c31a3d0d chore: session checkpoint [10:03]
 f0435e73b chore: session checkpoint [09:10]
-62785297b docs(ledger): mark ISSUE-795 and ISSUE-792 as fixed
-b0a6c9bc7 fix: ISSUE-792 — MLC BWARM export compliance, remove fabricated legal data
 ```
 
 ## Working State
