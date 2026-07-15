@@ -11,6 +11,50 @@ import { Logger } from '@/core/logger/Logger';
  */
 export class MetadataOrchestrator {
     /**
+     * Compute whether metadata meets golden (distribution-ready) requirements.
+     * Golden status requires: at least one split, non-default publisher, valid identifiers.
+     */
+    static computeGoldenStatus(metadata: Partial<ExtendedGoldenMetadata>): boolean {
+        // Must have at least one royalty split
+        if (!metadata.splits || metadata.splits.length === 0) {
+            return false;
+        }
+
+        // All splits must have valid data (legalName, email, valid percentage)
+        const allSplitsValid = metadata.splits.every(split =>
+            split.legalName?.trim() &&
+            split.email?.trim() &&
+            typeof split.percentage === 'number' &&
+            split.percentage > 0 &&
+            split.percentage <= 100
+        );
+        if (!allSplitsValid) {
+            return false;
+        }
+
+        // Publisher must not be default/empty
+        if (!metadata.publisher || metadata.publisher === 'Self-Published' || !metadata.publisher.trim()) {
+            return false;
+        }
+
+        // Label name must not be empty (required for golden)
+        if (!metadata.labelName || !metadata.labelName.trim()) {
+            return false;
+        }
+
+        // Must have valid ISRC format
+        if (!metadata.isrc || !/^[A-Z]{2}[A-Z0-9]{3}\d{7}$/.test(metadata.isrc)) {
+            return false;
+        }
+
+        // Must have basic metadata
+        if (!metadata.trackTitle || !metadata.artistName || !metadata.genre) {
+            return false;
+        }
+
+        return true;
+    }
+    /**
      * Creates a high-fidelity Golden Metadata record from a raw audio file.
      */
     async createGoldenMetadata(file: File, initialData: Partial<ExtendedGoldenMetadata> = {}): Promise<ExtendedGoldenMetadata> {

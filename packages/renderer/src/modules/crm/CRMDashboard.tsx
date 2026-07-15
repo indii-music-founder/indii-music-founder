@@ -52,9 +52,11 @@ export default function CRMDashboard() {
         // nothing for a fan to discover, purchase, or unlock.
         const hasDeliverable = !!deliverableUrl.trim();
 
+        // ISSUE-979: double-submit guard — a slow write must not launch twice.
+        if (isSubmitting) return;
         setIsSubmitting(true);
         try {
-            await createCampaign({
+            const id = await createCampaign({
                 name: campaignName,
                 type: campaignType,
                 supply: parseInt(supply, 10),
@@ -62,6 +64,13 @@ export default function CRMDashboard() {
                 deliverableUrl: deliverableUrl.trim() || undefined,
                 status: hasDeliverable ? 'active' : 'draft'
             });
+            // ISSUE-979: the store action returns null on persistence failure
+            // (offline, signed-out, rules, quota). Only a real document ID may
+            // close the modal and clear the draft.
+            if (!id) {
+                toast.error('Launch failed — your drop was NOT saved. Fix the connection or sign-in and try again; your draft is untouched.');
+                return;
+            }
             toast.success(hasDeliverable
                 ? 'Drop launched!'
                 : 'Saved as a draft — add a deliverable link to launch it.');
@@ -73,6 +82,7 @@ export default function CRMDashboard() {
             setDeliverableUrl('');
         } catch (err) {
             console.error('Failed to create campaign:', err);
+            toast.error('Launch failed — your drop was NOT saved. Your draft is untouched.');
         } finally {
             setIsSubmitting(false);
         }
