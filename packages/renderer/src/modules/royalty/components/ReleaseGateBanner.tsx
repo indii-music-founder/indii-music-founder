@@ -8,10 +8,16 @@ interface ReleaseGateBannerProps {
 }
 
 export const ReleaseGateBanner: React.FC<ReleaseGateBannerProps> = ({ profile, scrollToSection }) => {
+    // All four items required for release (not just PRO)
     const isProActive = profile.proRegistration.status === 'active';
     const isMlcActive = profile.mlcRegistration.status === 'active';
+    const isSoundExchangeActive = profile.soundExchangeRegistration.status === 'active';
+    const hasCopyright = profile.copyrightRegistrations.some(r => r.status === 'active');
 
-    if (isProActive) return null; // Not gated
+    const allComplete = isProActive && isMlcActive && isSoundExchangeActive && hasCopyright;
+
+    // If all requirements met, don't show blocker banner
+    if (allComplete) return null;
 
     return (
         <div className="bg-red-50 border-l-4 border-red-500 p-5 rounded-lg shadow-sm mb-6 flex flex-col md:flex-row gap-4 items-start">
@@ -22,7 +28,7 @@ export const ReleaseGateBanner: React.FC<ReleaseGateBannerProps> = ({ profile, s
             <div className="flex-1">
                 <h3 className="text-lg font-bold text-red-900 mb-2">Release Blocked</h3>
                 <p className="text-red-800 text-sm mb-4 leading-relaxed max-w-2xl">
-                    You cannot schedule an audio release yet. Your royalty collection pipeline is incomplete. Complete the following mandatory registrations to proceed:
+                    You cannot schedule an audio release yet. Your royalty collection pipeline is incomplete. Complete ALL of the following required registrations to proceed:
                 </p>
 
                 <ul className="space-y-3 mb-5">
@@ -32,11 +38,22 @@ export const ReleaseGateBanner: React.FC<ReleaseGateBannerProps> = ({ profile, s
                             <span className="font-medium text-sm">PRO registration (BMI/ASCAP/SESAC) is Required</span>
                         </li>
                     )}
-                    {/* Future splitsheet required flag logic */}
                     {!isMlcActive && (
-                        <li className="flex items-center gap-3 text-amber-700 bg-amber-50 p-2 rounded-lg border border-amber-100 opacity-80">
-                            <AlertCircle className="w-5 h-5 flex-shrink-0" />
-                            <span className="font-medium text-sm text-amber-800">MLC registration (Mechanicals) is highly Recommended, but optional today</span>
+                        <li className="flex items-center gap-3 text-red-700 bg-red-100/50 p-2 rounded-lg border border-red-100">
+                            <XCircle className="w-5 h-5 flex-shrink-0" />
+                            <span className="font-medium text-sm">MLC registration (Mechanical licenses) is Required</span>
+                        </li>
+                    )}
+                    {!isSoundExchangeActive && (
+                        <li className="flex items-center gap-3 text-red-700 bg-red-100/50 p-2 rounded-lg border border-red-100">
+                            <XCircle className="w-5 h-5 flex-shrink-0" />
+                            <span className="font-medium text-sm">SoundExchange registration (Neighboring rights) is Required</span>
+                        </li>
+                    )}
+                    {!hasCopyright && (
+                        <li className="flex items-center gap-3 text-red-700 bg-red-100/50 p-2 rounded-lg border border-red-100">
+                            <XCircle className="w-5 h-5 flex-shrink-0" />
+                            <span className="font-medium text-sm">Copyright registration for at least one work is Required</span>
                         </li>
                     )}
                 </ul>
