@@ -22,11 +22,12 @@ const VisualsPanel: React.FC<VisualsPanelProps> = ({
 }) => {
     const toast = useToast();
 
-    // -- Handoff Intercept Hook --
+    // -- Handoff Intercept Hook (Acknowledge-after-persist) --
+    const peekHandoff = useStore(state => state.peekHandoff);
     const consumeHandoff = useStore(state => state.consumeHandoff);
 
     useEffect(() => {
-        const payload = consumeHandoff('marketing');
+        const payload = peekHandoff('marketing');
         if (payload) {
             const newAsset = {
                 id: payload.assetId || crypto.randomUUID(),
@@ -37,10 +38,21 @@ const VisualsPanel: React.FC<VisualsPanelProps> = ({
             };
             const updatedAssets = [...(brandKit.brandAssets || []), newAsset];
             updateBrandKit({ brandAssets: updatedAssets });
-            saveBrandKit({ brandAssets: updatedAssets });
-            toast.success(`Staged creative "${newAsset.description}" loaded into Campaigns!`);
+
+            // Await persistence before consuming handoff to prevent loss on write failure
+            saveBrandKit({ brandAssets: updatedAssets })
+                .then(() => {
+                    // Only acknowledge after successful persistence
+                    consumeHandoff('marketing');
+                    toast.success(`Staged creative "${newAsset.description}" loaded into Campaigns!`);
+                })
+                .catch((error: unknown) => {
+                    // Keep handoff available for retry on write failure
+                    const msg = error instanceof Error ? error.message : 'Failed to save asset';
+                    toast.error(`Failed to save creative: ${msg}`);
+                });
         }
-    }, [consumeHandoff, brandKit, updateBrandKit, saveBrandKit, toast]);
+    }, [peekHandoff, consumeHandoff, brandKit, updateBrandKit, saveBrandKit, toast]);
 
     // -- Color Handlers --
     const handleAddColor = () => {
