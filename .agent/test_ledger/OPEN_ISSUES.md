@@ -8,6 +8,46 @@
 > **Current Session:** Judgment Layer — behavioral constraints for over-ambitious specialist agents
 > **CI Status:** typecheck + lint + full agent test suite (167 files / 1273 tests) green
 
+## Session 2026-07-15 — ISSUE-826 & ISSUE-827: Honesty Pass (Waterfall + Sync-Clearance Contracts)
+
+**Status:** ✅ FIXED
+
+**Problem (ISSUE-826):** Waterfall payout distribution rendering did not match Python engine output. TS types accepted `gross`, `splits` but engine outputs nested `{split, amount}` per user. BankPanel rendering assumed flat structure, breaking on complex multi-recipient deals.
+
+**Fix:** 
+- Added `WaterfallDistributionEntry` interface: `{split: string, amount: number}`
+- Updated `WaterfallReport`: nested `distributions: Record<string, WaterfallDistributionEntry>`
+- Added `processed_at: string` field (ISO-8601 UTC, emitted by Python engine at line 92)
+- BankPanel: changed rendering from `Object.entries(distributions)` flat iteration to `Object.entries(dist).map(([user, {split, amount}])` pattern (lines 303-327)
+- DistributionTools.ts: payload normalizes user input splits to `{split, amount}` before calling engine
+- Contract locked: TS types now match exact Python output shape
+
+**Problem (ISSUE-827):** Sync-clearance workflow had three honesty gaps:
+1. Storage path was client-side raw Firestore writes (`clearance/{userId}/...`); should route through service with proper path scoping (`users/{userId}/clearance/{releaseId}/{clearanceId}/{filename}`)
+2. Modal was manually managing Firestore refs + storage uploads instead of delegating to service; caused path inconsistencies and undefined-field rejections
+3. Compiler allowed evidence refs alone to mark track cleared; honesty requires `approvedClearanceDocIds` (approved documents) to determine clearance status, evidence refs are audit trail only
+
+**Fix:**
+- SyncLicensingClearanceService: fixed storage path to `users/{userId}/clearance/{releaseId}/{clearanceId}/{filename}` (line 147), added conditional spreads to prevent undefined-valued Firestore fields (lines 124-130)
+- SyncBriefMatcher.tsx: refactored `handleSubmit` to use service (removed raw Firestore/storage imports; calls `createClearanceRequirement` + `uploadClearanceFile` per file)
+- firestore.rules: added clearance_docs block, restricts create to `pending_upload` status, update to `pending_upload|uploaded` (reviewer-only)
+- LicensingSyncCompiler: separated evidence refs (`verifiedClearanceEvidenceRefs` for audit) from clearance determination (`approvedClearanceDocIds`); compiler only marks cleared if `approvedClearanceDocIds.length > 0` (lines 110-114)
+- Firestore rules: client side limited to pending_upload|uploaded states; review/approval reviewer-only via `request.auth.uid in resource.data.reviewers`
+
+**Evidence:** 
+- ISSUE-826: BankPanel test verifies `$425/$255/$170` distribution amounts + `processed_at` timestamp; all pass
+- ISSUE-826: DistributionTools correctly normalize payload before API call
+- ISSUE-827: SyncLicensingClearanceService test suite verifies: path construction, no undefined fields, merge-update strategy; all pass
+- ISSUE-827: LicensingSyncCompiler test proves: evidence refs alone do NOT clear (test line 97-121); only `approvedClearanceDocIds.length > 0` marks cleared (test line 66-95)
+- ISSUE-827: SyncBriefMatcher test verifies service calls and labeling ("internal clearance record, not a sync pitch submission")
+- npm typecheck: clean
+- npm lint: clean
+- All relevant unit tests: green
+
+**Commits:** 549695646 + prior checkpoints in this session
+
+---
+
 ## Session 2026-07-14 — ISSUE-1048: Judgment Layer (agent behavioral constraints)
 
 **Status:** ✅ FIXED
