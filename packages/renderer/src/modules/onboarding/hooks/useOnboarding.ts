@@ -264,6 +264,10 @@ export function useOnboarding(options: UseOnboardingOptions = {}) {
     const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files.length > 0) {
             await processFiles(e.target.files);
+            // ISSUE-957: reset the native input so selecting the exact same
+            // file again (e.g. after a failed send restored the composer)
+            // still fires a change event.
+            e.target.value = '';
         }
     };
 
@@ -429,7 +433,13 @@ export function useOnboarding(options: UseOnboardingOptions = {}) {
                 errorText = secureRandomPick(errorResponses);
             }
 
-            setHistory(prev => [...prev, { role: 'model', parts: [{ text: errorText }] }]);
+            // ISSUE-957: a failed send must not cost the artist their work.
+            // Restore the exact typed text and every selected attachment to
+            // the composer, and withdraw the unanswered user turn from the
+            // thread so "send again" reproduces the identical request once.
+            setInput(textToSend);
+            setFiles(currentFiles);
+            setHistory(prev => [...prev.filter(m => m !== userMsg), { role: 'model', parts: [{ text: errorText }] }]);
         } finally {
             setIsProcessing(false);
         }
