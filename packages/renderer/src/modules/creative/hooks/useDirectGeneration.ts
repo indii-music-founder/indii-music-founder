@@ -348,6 +348,7 @@ export function useDirectGeneration() {
                 imageSize: studioControls.imageSize,
                 thinkingLevel: studioControls.thinkingLevel,
                 useGoogleSearch: studioControls.useGrounding,
+                useImageSearch: studioControls.useImageSearch && studioControls.model === 'fast',
                 referenceUri,
                 referenceUris
             });
