@@ -8,6 +8,7 @@ import { functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { PlanningTab } from './components/PlanningTab';
 import { OnTheRoadTab } from './components/OnTheRoadTab';
+import { TourBookTab } from './components/TourBookTab';
 import { useTouring } from './hooks/useTouring';
 import { Itinerary, ItineraryStop, NearbyPlace, LogisticsReport, EmergencyContact } from './types';
 
@@ -462,6 +463,13 @@ const RoadManager: React.FC = () => {
                                         isFindingPlaces={isFindingPlaces}
                                         nearbyPlaces={nearbyPlaces}
                                         itinerary={itinerary}
+                                    />
+                                )}
+
+                                {activeTab === 'tour-book' && (
+                                    <TourBookTab
+                                        itinerary={itinerary}
+                                        onUpdateStop={handleUpdateStop}
                                     />
                                 )}
 
