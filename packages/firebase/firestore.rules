@@ -1005,12 +1005,30 @@ service cloud.firestore {
     }
 
     // =========================================================================
-    // Licensing Clearances
+    // Licensing Clearances (ISSUE-827: Sync clearance workflow)
     // =========================================================================
     match /licensing_clearances/{clearanceId} {
       allow read: if (isVerifiedUser() && resource.data.get('userId', null) == request.auth.uid) || (isGuest() && resource.data.get('userId', null) == 'founder-demo-uid');
       allow create: if (isVerifiedUser() && request.resource.data.get('userId', null) == request.auth.uid) || (isGuest() && request.resource.data.get('userId', null) == 'founder-demo-uid');
       allow update, delete: if false;
+    }
+
+    // =========================================================================
+    // Clearance Docs (ISSUE-827) — SyncLicensingClearanceService
+    // Client may create requirements and mark its own doc uploaded; approval /
+    // rejection is reviewer-only (deferred: admin surface / Cloud Function).
+    // =========================================================================
+    match /clearance_docs/{clearanceId} {
+      allow read: if (isVerifiedUser() && resource.data.get('userId', null) == request.auth.uid)
+                  || (isGuest() && resource.data.get('userId', null) == 'founder-demo-uid');
+      allow create: if ((isVerifiedUser() && request.resource.data.get('userId', null) == request.auth.uid)
+                    || (isGuest() && request.resource.data.get('userId', null) == 'founder-demo-uid'))
+                    && request.resource.data.get('status', '') == 'pending_upload';
+      allow update: if isVerifiedUser()
+                    && resource.data.get('userId', null) == request.auth.uid
+                    && request.resource.data.get('userId', null) == resource.data.get('userId', null)
+                    && request.resource.data.get('status', '') in ['pending_upload', 'uploaded'];
+      allow delete: if false;
     }
 
     // =========================================================================

@@ -68,8 +68,10 @@ const parseDurationDays = (value?: string): number => {
 const toSupportedPlatform = (channel: string): ScheduledPost['platform'] => {
     const normalized = channel.toLowerCase();
     if (normalized.includes('instagram')) return 'Instagram';
-    if (normalized.includes('linkedin')) return 'LinkedIn';
-    if (normalized.includes('email') || normalized.includes('newsletter')) return 'Email';
+    // LinkedIn and Email are draft-only (not supported for native delivery)
+    if (normalized.includes('linkedin') || normalized.includes('email') || normalized.includes('newsletter')) {
+        return 'Twitter'; // Default to Twitter for draft-only channels
+    }
     return 'Twitter';
 };
 

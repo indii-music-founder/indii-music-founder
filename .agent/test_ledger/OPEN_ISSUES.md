@@ -13623,7 +13623,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 - **Fix applied (2026-07-10):** Placeholder default `gemini-omni-flash-preview` removed — `resolveOmniFlashModel()` returns null unless `GEMINI_OMNI_FLASH_MODEL` is explicitly configured, and `generateOmniRemixV3` throws `failed-precondition` ("Omni Remix is not available yet… no cost was reserved or charged") before any job/reservation write. generateOmniRemixV3 deployed.
 ### ISSUE-873: Mask-URI image edits do not tell the model the edit is masked
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-14 — sourceMask-based prompt)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Creative Suite / Image editing / Masked edits
 - **Evidence:** The renderer uploads masks to storage and sends `maskUri` to the backend (`EditingService.ts:113-149`). The backend resolves a mask from either inline `data.mask` or `data.maskUri` (`image_generation.ts:619-620`) and includes the mask media in the model parts (`:648-656`, `:707-715`). But the prompt only says “Edit the masked region...” when inline `data.mask` exists (`:681-685`, `:743-747`), not when the mask arrived as `maskUri`.
@@ -13633,13 +13633,13 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-874: Image Search grounding toggle is not forwarded by direct generation
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-14 — parameter forwarding)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Creative Suite / Image generation / Grounding
 - **Evidence:** The store defines `useImageSearch` as “NB2 (3.1 Flash) exclusive” (`creativeControlsSlice.ts:90-95`) and the right controls panel exposes a `+ Images` toggle when grounding is enabled on the fast model (`StudioControlsPanel.tsx:724-755`). The lower image generation service can send `useImageSearch` (`ImageGenerationService.ts:363-387`), and the gateway only enables `image_search` when `model === 'fast' && useImageSearch` (`gateway.ts:1047-1050`). But the main direct-generation hook sends only `useGoogleSearch: studioControls.useGrounding` and omits `studioControls.useImageSearch` (`useDirectGeneration.ts:331-342`).
 - **Impact:** Users can turn on `+ Images` and still get web-only grounding in the direct generation path.
-- **Fix:** Include `useImageSearch: studioControls.useImageSearch` in the direct-generation payload and validate it is only enabled for the fast image model.
-- **Acceptance:** With Fast + Google Search + Image Search enabled, the submitted payload includes `useImageSearch: true` and the gateway receives `search_types: ['web_search', 'image_search']`.
+- **Fix:** Added useImageSearch parameter to direct-generation payload with guard to only enable for fast model (matches gateway validation).
+- **Acceptance:** ✅ With Fast + Google Search + Image Search enabled, payload includes useImageSearch: true; typecheck clean, tests pass, pre-commit gates pass.
 
 ### ISSUE-875: Video duration is normalized after client cost reservation
 

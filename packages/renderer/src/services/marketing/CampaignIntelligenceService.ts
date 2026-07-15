@@ -169,9 +169,7 @@ Total posts needed: ${brief.durationDays * brief.postsPerDay}
 
         const platformLimits: Record<Platform, number> = {
             Twitter: 280,
-            Instagram: 2200,
-            LinkedIn: 3000,
-            Email: 10000 // Arbitrary high limit for email
+            Instagram: 2200
         };
 
         const prompt = `

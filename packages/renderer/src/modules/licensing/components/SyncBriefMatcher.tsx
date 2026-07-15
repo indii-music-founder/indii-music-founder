@@ -10,9 +10,8 @@ import { Zap, Music2, Film, Star, ChevronDown, ChevronUp, RefreshCw, Tag, Upload
 import { licensingService } from '@/services/licensing/LicensingService';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { SyncBrief, SyncCatalogTrack as CatalogTrack, SyncMood as Mood } from '@/services/licensing/LicensingService';
-import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { storage, db, auth } from '@/services/firebase';
+import { syncLicensingClearanceService } from '@/services/licensing/SyncLicensingClearanceService';
+import { auth } from '@/services/firebase';
 
 function matchScore(brief: SyncBrief, track: CatalogTrack): number {
     // BPM fit: 1.0 if in range, decays outside
@@ -89,24 +88,22 @@ function ClearanceUploadModal({ brief, track, onClose, onUploaded }: ClearanceUp
         const urls: string[] = [];
         try {
             for (const file of files) {
-                const path = `users/${uid}/clearance/${brief.id}/${track.id}/${file.name}`;
-                const fileRef = storageRef(storage, path);
-                await uploadBytes(fileRef, file);
-                const url = await getDownloadURL(fileRef);
-                urls.push(url);
+                // brief.id acts as the service's releaseId key (sync briefs are the clearance context)
+                const req = await syncLicensingClearanceService.createClearanceRequirement(
+                    uid,
+                    brief.id,
+                    track.id,
+                    track.title,
+                    'sync_license',
+                    `Clearance for "${track.title}" -> brief "${brief.project}"`,
+                    undefined,
+                    undefined,
+                    { briefId: brief.id, briefProject: brief.project, trackISRC: track.isrc }
+                );
+                const uploaded = await syncLicensingClearanceService.uploadClearanceFile(req.id, file);
+                if (!uploaded?.downloadUrl) throw new Error(`Upload failed for ${file.name}`);
+                urls.push(uploaded.downloadUrl);
             }
-            // Record clearance submission in Firestore
-            await addDoc(collection(db, 'licensing_clearances'), {
-                briefId: brief.id,
-                briefProject: brief.project,
-                trackId: track.id,
-                trackTitle: track.title,
-                trackISRC: track.isrc,
-                userId: uid,
-                clearanceDocUrls: urls,
-                submittedAt: serverTimestamp(),
-                status: 'uploaded',
-            });
             setUploadedUrls(urls);
             setStatus('done');
         } catch (err: unknown) {

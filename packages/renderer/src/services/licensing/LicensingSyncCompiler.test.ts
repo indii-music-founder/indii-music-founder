@@ -63,7 +63,7 @@ describe('LicensingSyncCompiler', () => {
     expect(run.approvalGates.some(g => g.id === 'gate_clearance_evidence')).toBe(true);
   });
 
-  it('verified clearance evidence is required before the compiler can mark a pitch cleared', () => {
+  it('approved clearance documents are required before the compiler can mark a pitch cleared (ISSUE-827)', () => {
     const input: LicensingSyncInput = {
       trackId: 'track_3',
       hasStems: true,
@@ -72,6 +72,7 @@ describe('LicensingSyncCompiler', () => {
       hasUnClearedSamples: false,
       metadataComplete: true,
       catalogSearchable: true,
+      approvedClearanceDocIds: ['clearance-doc-1'],
       verifiedClearanceEvidenceRefs: [
         {
           id: 'clearance-doc-1',
@@ -91,6 +92,50 @@ describe('LicensingSyncCompiler', () => {
     expect(run.recommendations.some(r => r.title === 'Auto-Pitch Recommendation')).toBe(true);
     expect(run.agentBriefs.some(b => b.agentId === 'marketing')).toBe(true);
     expect(run.evidenceRefs).toHaveLength(1);
+  });
+
+  it('evidence refs alone cannot clear a track without approvedClearanceDocIds (ISSUE-827 honesty fix)', () => {
+    const input: LicensingSyncInput = {
+      trackId: 'track_evidence_only',
+      hasStems: true,
+      hasInstrumental: true,
+      hasLyrics: true,
+      hasUnClearedSamples: false,
+      metadataComplete: true,
+      catalogSearchable: true,
+      // approvedClearanceDocIds is empty/missing
+      verifiedClearanceEvidenceRefs: [
+        {
+          id: 'clearance-doc-1',
+          type: 'document',
+          label: 'Some evidence',
+        },
+      ],
+    };
+
+    const run = compiler.compile(input, baseCtx);
+
+    expect(run.output.rightsClearanceStatus).toBe('pending');
+    expect(run.output.pitchPackageGenerated).toBe(false);
+    expect(run.approvalGates.some(g => g.id === 'gate_clearance_evidence')).toBe(true);
+  });
+
+  it('empty approvedClearanceDocIds array keeps clearance pending', () => {
+    const input: LicensingSyncInput = {
+      trackId: 'track_empty_docs',
+      hasStems: true,
+      hasInstrumental: true,
+      hasLyrics: true,
+      hasUnClearedSamples: false,
+      metadataComplete: true,
+      catalogSearchable: true,
+      approvedClearanceDocIds: [], // Explicitly empty
+    };
+
+    const run = compiler.compile(input, baseCtx);
+
+    expect(run.output.rightsClearanceStatus).toBe('pending');
+    expect(run.output.pitchPackageGenerated).toBe(false);
   });
 
   it('missing multiple assets significantly reduces readiness', () => {

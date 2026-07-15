@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { HistoryItem } from '@/core/store/slices/creative';
@@ -93,14 +93,23 @@ const AssetLibraryItem: React.FC<AssetLibraryItemProps> = ({ item, onDragStart, 
 };
 
 export const EditorAssetLibrary: React.FC<EditorAssetLibraryProps> = ({ onDragStart }) => {
-    const { history } = useStore(useShallow((state) => ({
-        history: state.generatedHistory
+    const { history, uploadedImages, uploadedAudio } = useStore(useShallow((state) => ({
+        history: state.generatedHistory,
+        uploadedImages: state.uploadedImages,
+        uploadedAudio: state.uploadedAudio
     })));
 
-    // Filter for supported types
-    const assets = history.filter((item: HistoryItem) =>
-        ['image', 'video', 'music'].includes(item.type)
-    );
+    // ISSUE-923: the library must include the creator's own uploads (artwork,
+    // songs/stems) alongside generated history — dragging your own track onto
+    // the audio track is the core music-video use case. Dedupe by id in case
+    // an item appears in both collections.
+    const assets = useMemo(() => {
+        const seen = new Set<string>();
+        return [...history, ...uploadedImages, ...uploadedAudio]
+            .filter((item: HistoryItem) => ['image', 'video', 'music'].includes(item.type))
+            .filter((item: HistoryItem) => (seen.has(item.id) ? false : (seen.add(item.id), true)))
+            .sort((a, b) => b.timestamp - a.timestamp);
+    }, [history, uploadedImages, uploadedAudio]);
 
     const getIcon = (type: string) => {
         switch (type) {

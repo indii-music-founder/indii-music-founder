@@ -15,7 +15,7 @@ export interface ImageAsset {
 
 export interface ScheduledPost {
     id: string;
-    platform: 'Twitter' | 'Instagram' | 'LinkedIn' | 'Email';
+    platform: 'Twitter' | 'Instagram';
     copy: string;
     subject?: string; // Optional for Email
     imageAsset: ImageAsset;
@@ -50,7 +50,7 @@ export interface MarketingStats {
 
 export type CampaignObjective = 'awareness' | 'engagement' | 'conversion' | 'launch';
 export type CampaignTone = 'professional' | 'casual' | 'edgy' | 'inspirational';
-export type Platform = 'Twitter' | 'Instagram' | 'LinkedIn' | 'Email';
+export type Platform = 'Twitter' | 'Instagram';
 
 export interface CampaignBrief {
     topic: string;
