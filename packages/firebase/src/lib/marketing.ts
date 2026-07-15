@@ -11,7 +11,7 @@ export const CampaignStatusSchema = z.enum(['PENDING', 'EXECUTING', 'DONE', 'FAI
 
 export const ScheduledPostSchema = z.object({
     id: z.string(),
-    platform: z.enum(['Twitter', 'Instagram', 'LinkedIn']),
+    platform: z.enum(['Twitter', 'Instagram']),
     copy: z.string(),
     imageAsset: z.object({
         assetType: z.literal('image'),

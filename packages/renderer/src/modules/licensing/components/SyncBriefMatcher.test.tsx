@@ -2,11 +2,19 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { SyncBriefMatcher } from './SyncBriefMatcher';
 import { licensingService } from '@/services/licensing/LicensingService';
+import { syncLicensingClearanceService } from '@/services/licensing/SyncLicensingClearanceService';
 
 vi.mock('@/services/licensing/LicensingService', () => ({
     licensingService: {
         getSyncBriefs: vi.fn(),
         getCatalogTracksForSync: vi.fn(),
+    },
+}));
+
+vi.mock('@/services/licensing/SyncLicensingClearanceService', () => ({
+    syncLicensingClearanceService: {
+        createClearanceRequirement: vi.fn(),
+        uploadClearanceFile: vi.fn(),
     },
 }));
 
@@ -37,6 +45,42 @@ describe('SyncBriefMatcher', () => {
                 isrc: 'US-AAA-26-00001',
             },
         ]);
+        vi.mocked(syncLicensingClearanceService.createClearanceRequirement).mockResolvedValue({
+            id: 'clearance-req-1',
+            userId: 'test-uid',
+            releaseId: 'brief-1',
+            trackId: 'track-1',
+            trackTitle: 'Lead Song',
+            docType: 'sync_license',
+            status: 'pending_upload',
+            storagePath: null,
+            downloadUrl: null,
+            originalFilename: null,
+            description: 'Clearance for "Lead Song" -> brief "Project Alpha"',
+            briefId: 'brief-1',
+            briefProject: 'Project Alpha',
+            trackISRC: 'US-AAA-26-00001',
+            createdAt: {} as any,
+            updatedAt: {} as any,
+        });
+        vi.mocked(syncLicensingClearanceService.uploadClearanceFile).mockResolvedValue({
+            id: 'clearance-req-1',
+            userId: 'test-uid',
+            releaseId: 'brief-1',
+            trackId: 'track-1',
+            trackTitle: 'Lead Song',
+            docType: 'sync_license',
+            status: 'uploaded',
+            storagePath: 'users/test-uid/clearance/brief-1/track-1/clearance.pdf',
+            downloadUrl: 'https://example.com/clearance.pdf',
+            originalFilename: 'clearance.pdf',
+            description: 'Clearance for "Lead Song" -> brief "Project Alpha"',
+            briefId: 'brief-1',
+            briefProject: 'Project Alpha',
+            trackISRC: 'US-AAA-26-00001',
+            createdAt: {} as any,
+            updatedAt: {} as any,
+        });
     });
 
     it('labels the flow as clearance upload only and not a submitted pitch', async () => {
@@ -61,6 +105,27 @@ describe('SyncBriefMatcher', () => {
         await screen.findByText('Clearance uploaded');
         expect(screen.queryByText('Submission received')).toBeNull();
         expect(screen.getByText(/internal clearance record, not a sync pitch submission/i)).toBeInTheDocument();
+
+        // Verify service methods were called correctly (ISSUE-827)
+        expect(syncLicensingClearanceService.createClearanceRequirement).toHaveBeenCalledWith(
+            'test-uid', // uid from auth mock
+            'brief-1',
+            'track-1',
+            'Lead Song',
+            'sync_license',
+            expect.stringContaining('Clearance for'),
+            undefined,
+            undefined,
+            expect.objectContaining({
+                briefId: 'brief-1',
+                briefProject: 'Project Alpha',
+                trackISRC: 'US-AAA-26-00001',
+            })
+        );
+        expect(syncLicensingClearanceService.uploadClearanceFile).toHaveBeenCalledWith(
+            'clearance-req-1',
+            expect.objectContaining({ name: 'clearance.pdf' })
+        );
 
         fireEvent.click(screen.getByRole('button', { name: 'Done' }));
 

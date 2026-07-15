@@ -42,14 +42,23 @@ interface GalleryItemProps {
 
 const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference, setSelectedItem, toast, generationMode, onDelete, setPrompt, setViewMode, playTrack, pauseTrack, resumeTrack, currentTrack, isPlaying, pinToClipboard, sendToModule, sendToStage }: GalleryItemProps) => {
     const [showSendMenu, setShowSendMenu] = useState(false);
+    const [imageLoadFailed, setImageLoadFailed] = useState(false);
     const videoUrlToResolve = item.type === 'video' && !item.localPath ? item.url : null;
-    const imageUrlToResolve = item.type === 'image' && item.url !== 'placeholder:dev-data-uri-too-large' ? item.url : null;
+    // ISSUE-920: prefer the small grid thumbnail when present; the resolver
+    // passes plain HTTPS/data URLs through and converts gs:// URIs.
+    const imageUrlToResolve = item.type === 'image' && item.url !== 'placeholder:dev-data-uri-too-large'
+        ? (item.thumbnailUrl || item.url)
+        : null;
     const { url: resolvedVideoUrl } = useResolvedStorageUrl(videoUrlToResolve);
     const { url: resolvedImageUrl } = useResolvedStorageUrl(imageUrlToResolve);
 
     const playableVideoSrc = item.type === 'video'
         ? (item.localPath ? `file://${item.localPath}` : resolvedVideoUrl || item.url)
         : resolvedImageUrl || item.url;
+    // A raw gs:// URI can never render in an <img>; while unresolved (or after
+    // an onError) show the controlled fallback tile instead of broken alt text.
+    const displayImageSrc = resolvedImageUrl || item.thumbnailUrl || item.url;
+    const imageUnrenderable = imageLoadFailed || displayImageSrc.startsWith('gs://');
     return (
         <div
             draggable
@@ -97,12 +106,18 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                         <ImageIcon size={24} className="mb-2 opacity-20" />
                         <span className="text-[10px] font-mono leading-tight">DEV PREVIEW<br />(Size Limit)</span>
                     </div>
+                ) : imageUnrenderable ? (
+                    <div className="w-full h-full flex flex-col items-center justify-center bg-gray-900 text-gray-500 p-4 text-center" data-testid={`gallery-image-fallback-${item.id}`}>
+                        <ImageIcon size={24} className="mb-2 opacity-20" />
+                        <span className="text-[10px] font-mono leading-tight">{imageLoadFailed ? 'PREVIEW UNAVAILABLE' : 'LOADING PREVIEW…'}</span>
+                    </div>
                 ) : (
                     <img
-                        src={item.url}
+                        src={displayImageSrc}
                         alt={item.prompt}
                         loading="lazy"
                         decoding="async"
+                        onError={() => setImageLoadFailed(true)}
                         className="w-full h-full object-contain bg-black"
                     />
                 )

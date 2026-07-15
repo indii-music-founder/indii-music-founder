@@ -98,7 +98,9 @@ export const TimelineTrack = memo(({
                                 if (dataString) {
                                     const data = JSON.parse(dataString);
                                     if (data.type === 'asset' && data.asset) {
-                                        const mediaType: 'video' | 'audio' | 'image' = data.asset.type === 'image' ? 'image' : data.asset.type === 'audio' ? 'audio' : 'video';
+                                        // ISSUE-923: canonical HistoryItem type for songs/stems is 'music' — map it
+                                        // (and legacy 'audio') to an audio clip, never a video clip.
+                                        const mediaType: 'video' | 'audio' | 'image' = data.asset.type === 'image' ? 'image' : (data.asset.type === 'audio' || data.asset.type === 'music') ? 'audio' : 'video';
 
                                         const durationSeconds = await resolveMediaDurationSeconds(data.asset.url, mediaType);
                                         const durationInFrames = mediaType === 'image' ? 90 : durationSecondsToFrames(durationSeconds, fps);

@@ -100,7 +100,8 @@ class SyncLicensingClearanceService {
         docType: ClearanceDocType,
         description: string,
         sourcework?: string,
-        originalRightsHolder?: string
+        originalRightsHolder?: string,
+        extra?: { briefId?: string; briefProject?: string; trackISRC?: string }
     ): Promise<ClearanceDocument> {
         const id = uuidv4();
         const clearanceDoc: ClearanceDocument = {
@@ -115,8 +116,11 @@ class SyncLicensingClearanceService {
             downloadUrl: null,
             originalFilename: null,
             description,
-            sourcework,
-            originalRightsHolder,
+            ...(sourcework !== undefined && { sourcework }),
+            ...(originalRightsHolder !== undefined && { originalRightsHolder }),
+            ...(extra?.briefId && { briefId: extra.briefId }),
+            ...(extra?.briefProject && { briefProject: extra.briefProject }),
+            ...(extra?.trackISRC && { trackISRC: extra.trackISRC }),
             createdAt: serverTimestamp() as Timestamp,
             updatedAt: serverTimestamp() as Timestamp,
         };
@@ -139,8 +143,8 @@ class SyncLicensingClearanceService {
 
         const clearanceDoc = snap.data() as ClearanceDocument;
 
-        // Upload to Firebase Storage
-        const storagePath = `clearance/${clearanceDoc.userId}/${clearanceDoc.releaseId}/${clearanceId}/${file.name}`;
+        // Upload to Firebase Storage using the users/{userId}/* owner rule
+        const storagePath = `users/${clearanceDoc.userId}/clearance/${clearanceDoc.releaseId}/${clearanceId}/${file.name}`;
         const storageRef = ref(storage, storagePath);
         await uploadBytes(storageRef, file);
         const downloadUrl = await getDownloadURL(storageRef);

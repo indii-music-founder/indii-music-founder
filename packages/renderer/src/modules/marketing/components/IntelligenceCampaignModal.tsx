@@ -34,9 +34,7 @@ const TONES: { id: CampaignTone; label: string }[] = [
 
 const PLATFORMS: { id: Platform; label: string; icon: string }[] = [
     { id: 'Instagram', label: 'Instagram', icon: '📸' },
-    { id: 'Twitter', label: 'X / Twitter', icon: '🐦' },
-    { id: 'LinkedIn', label: 'LinkedIn', icon: '💼' },
-    { id: 'Email', label: 'Email', icon: '✉️' }
+    { id: 'Twitter', label: 'X / Twitter', icon: '🐦' }
 ];
 
 export default function IntelligenceCampaignModal({ onClose, onSave }: IntelligenceCampaignModalProps) {

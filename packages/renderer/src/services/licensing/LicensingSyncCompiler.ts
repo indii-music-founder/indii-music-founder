@@ -21,6 +21,10 @@ export interface LicensingSyncInput {
   metadataComplete: boolean;
   catalogSearchable: boolean;
   verifiedClearanceEvidenceRefs?: HarnessEvidenceRef[];
+  /** IDs of clearance_docs with status 'approved' for this track
+   *  (from syncLicensingClearanceService.checkTrackClearance().approvedDocs).
+   *  Evidence refs alone can no longer mark a track cleared (ISSUE-827). */
+  approvedClearanceDocIds?: string[];
   opportunityFitScore?: number; // 0 to 100
 }
 
@@ -103,10 +107,11 @@ export class LicensingSyncCompiler implements HarnessCompiler<LicensingSyncInput
       rationale: 'Based on presence of stems, instrumentals, lyrics, and metadata.'
     });
 
+    const approvedClearanceDocIds = input.approvedClearanceDocIds ?? [];
+    const hasApprovedClearance = approvedClearanceDocIds.length > 0;
     const verifiedClearanceEvidenceRefs = input.verifiedClearanceEvidenceRefs ?? [];
-    const hasVerifiedClearanceEvidence = verifiedClearanceEvidenceRefs.length > 0;
 
-    let rightsClearanceStatus: 'cleared' | 'blocked' | 'pending' = hasVerifiedClearanceEvidence ? 'cleared' : 'pending';
+    let rightsClearanceStatus: 'cleared' | 'blocked' | 'pending' = hasApprovedClearance ? 'cleared' : 'pending';
     
     // Un-cleared sample blocks sync pitch
     if (input.hasUnClearedSamples) {
@@ -135,11 +140,11 @@ export class LicensingSyncCompiler implements HarnessCompiler<LicensingSyncInput
         brief: 'Clear samples for track.',
         inputs: [input.trackId]
       });
-    } else if (!hasVerifiedClearanceEvidence) {
+    } else if (!hasApprovedClearance) {
       approvalGates.push({
         id: 'gate_clearance_evidence',
-        label: 'Verified clearance evidence required',
-        reason: 'Sync pitches stay manual until approved clearance documents, provider verification, or legal review evidence is attached.',
+        label: 'Approved clearance documents required',
+        reason: 'Sync pitches stay manual until approved clearance documents are attached.',
         requiredFor: 'pitch_package',
         riskTier: 'approval'
       });
