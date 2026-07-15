@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-07-15 09:10 EDT
+**Updated:** 2026-07-15 10:03 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+f0435e73b chore: session checkpoint [09:10]
 62785297b docs(ledger): mark ISSUE-795 and ISSUE-792 as fixed
 b0a6c9bc7 fix: ISSUE-792 — MLC BWARM export compliance, remove fabricated legal data
 ebb4c65c8 chore: session checkpoint [09:01]
@@ -13,7 +14,6 @@ f0216e0b5 chore: session checkpoint [08:25]
 36266b8a7 docs(ledger): BLITZ SWEEP — close 60 issues by strategic triage
 b80cd0cce chore: session checkpoint [08:12]
 b0cb9bdde chore(ledger): mark ISSUE-920 and ISSUE-923 fixed
-db4bce9f3 chore: session checkpoint [08:07]
 ```
 
 ## Working State
