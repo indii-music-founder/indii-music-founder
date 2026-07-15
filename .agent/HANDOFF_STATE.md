@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-07-15 06:40 EDT
+**Updated:** 2026-07-15 06:48 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+e0696697b fix: ISSUE-953 — creative-to-marketing handoff now persists before acknowledging
+78d8629bd fix: ISSUE-878 — long-form video completion status changed to 'stitching' instead of 'completed'
 e0492588e fix(distribution): ISSUE-826 waterfall engine emits processed_at timestamp
 3b848431e fix: ISSUE-903 — failed Songfile search no longer creates false 'not_required' clearance
 b00363066 fix: ISSUE-892 — DevOps tools return toolError instead of false successes
@@ -12,8 +14,6 @@ b00363066 fix: ISSUE-892 — DevOps tools return toolError instead of false succ
 ce870489d fix: ISSUE-1050 — missing ISWC must not block registrationReady
 2f81f7c7b chore: session checkpoint [20:43]
 0be4562b9 chore: session checkpoint [20:38]
-874d4d5f0 chore: session checkpoint — honesty-pass sweep complete (ISSUE-815..824)
-ed28ae01f chore(ledger): mark ISSUE-822 and ISSUE-823 FIXED (honesty pass: distribution + publishing)
 ```
 
 ## Working State
@@ -24,7 +24,6 @@ ed28ae01f chore(ledger): mark ISSUE-822 and ISSUE-823 FIXED (honesty pass: distr
  M packages/renderer/src/services/agent/tools/DistributionTools.test.ts
  M packages/renderer/src/services/agent/tools/DistributionTools.ts
  M packages/renderer/src/services/distribution/DistributionService.integration.test.ts
- M packages/renderer/src/services/video/VideoGenerationService.ts
  M packages/renderer/src/types/distribution.ts
 ```
 
