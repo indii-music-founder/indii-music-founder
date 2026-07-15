@@ -13090,7 +13090,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-822: Distribution checklist can show “Ready” from static defaults instead of release evidence
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-14 — honesty fix)
 - **Severity:** 🟠 HIGH
 - **Module:** Distribution / Registration checklist
 - **Evidence:** `RegistrationChecklistPanel.tsx:18-25` initializes cover art and metadata as `complete` without inspecting any selected release, and marks contributor splits optional. The component has no release props/store binding (`:27-30`). ISRC generation calls `distributionService.assignISRCs()` with no release/track metadata (`:92-100`), UPC assignment uses a generic desktop generator (`:108-123`), and the “Ready” state is only `progress === 100` over the locally mutated checklist (`:136-141`, `:155-161`).
@@ -13100,7 +13100,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-823: Publishing rights compiler marks registration ready while MLC/IPI/ISWC are missing or pending
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-14 — honesty fix)
 - **Severity:** 🟠 HIGH
 - **Module:** Publishing / Rights harness
 - **Evidence:** `PublishingRightsCompiler.ts:140-163` treats missing ISWC as only a medium finding/recommendation and sets any supplied ISWC to `assigned`. `mlcRegistrationStatus === 'unregistered'` creates a high finding and `needsMlc = true` but no blocker (`:178-189`). Missing writer IPIs are only a medium finding (`:191-200`). `registrationReady` is then computed solely from `blockers.length === 0` (`:203-214`), and PRO `pending` is not blocked because only `unregistered` is checked (`:165-176`).
