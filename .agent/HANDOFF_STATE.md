@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-07-15 07:55 EDT
+**Updated:** 2026-07-15 07:56 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+11d8db6c1 chore: session checkpoint [07:55]
 af62fe4c4 fix: ISSUE-873 — Masked-edit prompt now based on sourceMask presence
 99179088d fix: ISSUE-874 — Image Search grounding toggle now forwarded by direct generation
 5a280d804 chore: session checkpoint [07:41]
@@ -13,7 +14,6 @@ daf57edd7 chore: session checkpoint [07:36]
 8bd1b96a6 test: distribution module — BankPanel tax/waterfall validation + types
 ceafc71b1 chore: session checkpoint [06:48]
 e0696697b fix: ISSUE-953 — creative-to-marketing handoff now persists before acknowledging
-78d8629bd fix: ISSUE-878 — long-form video completion status changed to 'stitching' instead of 'completed'
 ```
 
 ## Working State
