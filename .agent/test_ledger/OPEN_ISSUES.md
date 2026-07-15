@@ -13953,7 +13953,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-905: Marketing Agent deployment tool descriptions claim live provider actions that the tools do not perform
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-14 — tool description honesty)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Marketing agent / Ads + email tooling
 - **Evidence:** `MarketingAgent` describes `deploy_micro_ad_campaign` as deploying “across Meta or TikTok Graph APIs” (`MarketingAgent.ts:153-155`), but `MarketingTools.deploy_micro_ad_campaign()` only returns a local package with `status: 'ready_for_approval'` and notes that live ad platform credentials are not invoked (`MarketingTools.ts:320-339`). `MarketingAgent` also describes `deploy_email_newsletter` as syncing with Mailchimp/Klaviyo APIs to deploy a template (`MarketingAgent.ts:168-170`), while `MarketingTools.deploy_email_newsletter()` only returns `status: 'requires_email_provider_credentials'` and says provider credentials are required before sending (`MarketingTools.ts:342-356`).
