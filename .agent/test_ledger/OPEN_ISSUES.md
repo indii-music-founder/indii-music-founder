@@ -13110,7 +13110,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-824: Tax form collection is disconnected from payees and renders 0/0 progress
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟡 MEDIUM
 - **Module:** Finance / Tax forms
 - **Evidence:** `TaxFormCollection.tsx:21-33` initializes `collaborators` from an empty constant and does not accept props or load payees from store/backend. The empty state says “Add collaborators to collect W-9 or W-8BEN forms automatically” (`:89-95`), but the component has no add/import path. Progress renders `verifiedCount/totalCount` (`:36-38`, `:66-81`), so the default state is `0/0` and the progress width evaluates `(0 / 0) * 100`.
