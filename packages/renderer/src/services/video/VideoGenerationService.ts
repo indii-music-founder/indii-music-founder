@@ -570,12 +570,19 @@ export class VideoGenerationService {
             unsub = this.subscribeToJob(jobId, async (job: VideoJob | null) => {
                 if (!job) return;
 
-                if (job.status === 'completed' || job.status === 'failed' || job.status === 'cancelled') {
+                if (job.status === 'completed' || job.status === 'stitching' || job.status === 'failed' || job.status === 'cancelled') {
                     if (job.status === 'cancelled') {
                         reject(new Error(job.error || 'Video generation cancelled by user.'));
                         return;
                     }
-                    if (job.status === 'completed') {
+                    if (job.status === 'stitching') {
+                        // Multi-segment long-form video: all segments are ready for assembly
+                        // UI should use segmentUrls to build a timeline/project
+                        resolve({
+                            ...job,
+                            output: job.output || { metadata: job.output?.metadata },
+                        });
+                    } else if (job.status === 'completed') {
                         // Enforce MIME Type Guard for Veo 3.1 Compliance
                         const mimeType = job.output?.metadata?.mime_type;
                         if (mimeType && mimeType !== 'video/mp4') {
@@ -860,24 +867,22 @@ export class VideoGenerationService {
 
             options.onProgress?.(numBlocks, numBlocks);
 
-            // Mark as completed with all segment URLs
+            // Mark as stitching (all segments ready for assembly)
+            // videoUrl and output.url remain undefined until stitching is complete
             const { updateDoc } = await import('firebase/firestore');
             await updateDoc(jobRef, {
-                status: 'completed',
-                videoUrl: segmentUrls[0]!, // Primary URL is first segment
+                status: 'stitching',
                 segmentUrls,
-                'output.url': segmentUrls[0]!,
                 'output.metadata.quality': 'pro',
                 'output.metadata.mime_type': 'video/mp4',
                 'chainState.complete': true,
                 'chainState.totalSegments': numBlocks,
                 updatedAt: serverTimestamp(),
-                completedAt: serverTimestamp(),
             });
 
             return [{
                 id: jobId,
-                url: segmentUrls[0]!,
+                url: segmentUrls[0] || '',
                 prompt: options.prompt
             }];
         } catch (error: unknown) {

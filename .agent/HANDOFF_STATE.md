@@ -1,24 +1,31 @@
 # Handoff State
-**Updated:** 2026-07-14 20:50 EDT
+**Updated:** 2026-07-15 06:40 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+e0492588e fix(distribution): ISSUE-826 waterfall engine emits processed_at timestamp
+3b848431e fix: ISSUE-903 — failed Songfile search no longer creates false 'not_required' clearance
+b00363066 fix: ISSUE-892 — DevOps tools return toolError instead of false successes
+7d3c3835a chore: session checkpoint [20:50]
 8360d0f13 chore: session checkpoint [20:49]
 ce870489d fix: ISSUE-1050 — missing ISWC must not block registrationReady
 2f81f7c7b chore: session checkpoint [20:43]
 0be4562b9 chore: session checkpoint [20:38]
 874d4d5f0 chore: session checkpoint — honesty-pass sweep complete (ISSUE-815..824)
 ed28ae01f chore(ledger): mark ISSUE-822 and ISSUE-823 FIXED (honesty pass: distribution + publishing)
-0cc49d93b chore: update ledger — ISSUE-824 marked FIXED (tax form collection 0/0 progress guard)
-b49279984 fix: ISSUE-824 — tax form collection guards against 0/0 progress and clarifies collaborator requirement
-41d36d76a chore: session checkpoint [20:35]
-6fcdbf3e8 chore: session checkpoint [20:34]
 ```
 
 ## Working State
 ```
-clean working tree
+ M .agent/test_ledger/OPEN_ISSUES.md
+ M packages/renderer/src/modules/distribution/components/BankPanel.tsx
+ M packages/renderer/src/modules/distribution/components/__tests__/BankPanel.test.tsx
+ M packages/renderer/src/services/agent/tools/DistributionTools.test.ts
+ M packages/renderer/src/services/agent/tools/DistributionTools.ts
+ M packages/renderer/src/services/distribution/DistributionService.integration.test.ts
+ M packages/renderer/src/services/video/VideoGenerationService.ts
+ M packages/renderer/src/types/distribution.ts
 ```
 
 ## Decisions
