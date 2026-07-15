@@ -1,9 +1,12 @@
 # Handoff State
-**Updated:** 2026-07-15 14:27 EDT
+**Updated:** 2026-07-15 14:40 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+783209277 fix(onboarding): ISSUE-957 failed send keeps prompt and files
+d3db49bde fix(ISSUE-913): Project context binding for async generations
+4877e1690 chore: session checkpoint [14:27]
 11ba5dc5b chore: session checkpoint [14:00]
 7f9a41781 chore: session checkpoint [13:59]
 1d09fb259 docs(ledger): mark ISSUE-705 complete — all 6 Road Manager jobs wired (2026-07-15)
@@ -11,9 +14,6 @@ a8f178b4e feat(touring): ISSUE-705 Job 6 — Booking Handoff Contract
 50cbf8478 feat: ISSUE-705 Job 5 — Tour Book Tab with Advance Email
 4a646549c fix: ISSUE-705 Job 4 — Settlement Sheet in DaySheetModal
 c0eac5767 fix: ISSUE-705 Job 3 — Quick Expense button on OnTheRoadTab
-74ed09392 chore: session checkpoint [13:27]
-af833095f chore: session checkpoint [13:22]
-276b8cdb8 docs(ledger): ISSUE-826 & ISSUE-827 fixed — waterfall contract + sync-clearance honesty gap
 ```
 
 ## Working State
