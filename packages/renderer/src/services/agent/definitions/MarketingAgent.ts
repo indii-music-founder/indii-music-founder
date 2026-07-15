@@ -194,7 +194,7 @@ export const MarketingAgent: AgentConfig = {
             },
             {
                 name: "deploy_sms_blast",
-                description: "Hooks into Twilio APIs to send direct SMS blasts to a segmented superfan list for surprise drops or pre-saves.",
+                description: "Prepares SMS message content for delivery to a segmented superfan list (requires connected Twilio account for live sending).",
                 parameters: {
                     type: "OBJECT",
                     properties: {
