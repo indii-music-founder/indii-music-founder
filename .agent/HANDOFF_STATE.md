@@ -18,7 +18,7 @@ b379563ba chore: session checkpoint [20:12]
 
 ## Working State
 ```
-clean working tree
+M  .agent/HANDOFF_STATE.md
 ```
 
 ## Decisions
