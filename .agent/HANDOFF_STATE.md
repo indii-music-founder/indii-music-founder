@@ -1,9 +1,12 @@
 # Handoff State
-**Updated:** 2026-07-15 14:45 EDT
+**Updated:** 2026-07-15 18:35 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+53eae7686 fix(test): give KeysPanel's mockCatalog a complete metadataSnapshot
+7b28683b8 docs: fix mermaid syntax and add transition breakdown to judgment layer flowchart
+bfc1fb1af chore: session checkpoint [14:45]
 3e6b620a7 chore: session checkpoint [14:44]
 9e247d25f chore: session checkpoint [14:43]
 d66137a5f chore: session checkpoint [14:42]
@@ -11,14 +14,14 @@ ad9fb698a chore: session checkpoint [14:40]
 783209277 fix(onboarding): ISSUE-957 failed send keeps prompt and files
 d3db49bde fix(ISSUE-913): Project context binding for async generations
 4877e1690 chore: session checkpoint [14:27]
-11ba5dc5b chore: session checkpoint [14:00]
-7f9a41781 chore: session checkpoint [13:59]
-1d09fb259 docs(ledger): mark ISSUE-705 complete — all 6 Road Manager jobs wired (2026-07-15)
 ```
 
 ## Working State
 ```
-clean working tree
+ M .agent/test_ledger/OPEN_ISSUES.md
+ M packages/renderer/src/core/store/slices/creative/creativeHistorySlice.ts
+ M packages/renderer/src/modules/creative/components/BrandAssetsDrawer.tsx
+ M packages/renderer/src/modules/creative/components/CreativeGallery.tsx
 ```
 
 ## Decisions
