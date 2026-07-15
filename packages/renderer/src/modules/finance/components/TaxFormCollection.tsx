@@ -35,6 +35,7 @@ export function TaxFormCollection() {
 
     const verifiedCount = collaborators.filter((c) => c.status === 'verified').length;
     const totalCount = collaborators.length;
+    const progressPercent = totalCount === 0 ? 0 : (verifiedCount / totalCount) * 100;
 
     function handleRequestForm(id: number) {
         setError("Tax form collection requires the backend secure upload service. No request was sent.");
@@ -78,7 +79,7 @@ export function TaxFormCollection() {
                     <motion.div
                         className="h-full bg-linear-to-r from-amber-500 to-orange-400 rounded-full"
                         initial={{ width: 0 }}
-                        animate={{ width: `${(verifiedCount / totalCount) * 100}%` }}
+                        animate={{ width: `${progressPercent}%` }}
                         transition={{ duration: 0.8 }}
                     />
                 </div>
@@ -89,10 +90,17 @@ export function TaxFormCollection() {
                 {collaborators.length === 0 ? (
                     <div className="p-8 text-center flex flex-col items-center">
                         <FileText size={24} className="text-gray-600 mb-3" />
-                        <h3 className="text-sm font-bold text-white mb-1">No Tax Forms Needed Yet</h3>
-                        <p className="text-xs text-gray-500 max-w-[250px]">
-                            Add collaborators to collect W-9 or W-8BEN forms automatically.
+                        <h3 className="text-sm font-bold text-white mb-1">No Collaborators Added</h3>
+                        <p className="text-xs text-gray-500 max-w-[250px] mb-4">
+                            Connect payment partners to request and collect W-9 or W-8BEN tax forms.
                         </p>
+                        <button
+                            disabled
+                            className="px-3 py-1.5 rounded-lg bg-amber-500/10 text-amber-400 text-[10px] font-bold border border-amber-500/20 opacity-50 cursor-not-allowed"
+                            title="Collaborator management requires backend integration"
+                        >
+                            Add Collaborators
+                        </button>
                     </div>
                 ) : (
                     <table className="w-full text-xs">
