@@ -192,9 +192,9 @@ export default function ManufacturingPanel({ theme, productType, productId, desi
                 });
 
                 if (result.success) {
-                    toast.success(`Production Started! Order ID: ${result.orderId}`);
+                    toast.success(`Manufacturing request queued. ID: ${result.orderId}. Awaiting approval and provider confirmation.`);
                     if (!productId) {
-                        toast.info("Note: This order was created from a draft design.");
+                        toast.info("Note: This request was created from a draft design.");
                     }
                 }
             }
