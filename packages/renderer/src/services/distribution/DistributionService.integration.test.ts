@@ -97,7 +97,18 @@ describe.skip('DistributionService Integration', () => {
 
     it('should handle waterfall execution success', async () => {
         const data = { gross: 1000, splits: { 'user1': 1.0 } };
-        const mockReport = { distributions: { 'user1': 1000 }, net_revenue: 1000, processed_at: '2024-01-01' };
+        // Locked Python report shape (ISSUE-826) — mirrors waterfall_payout.py output
+        const mockReport = {
+            gross: 1000,
+            platform_fee: { percent: '15.0%', amount: 150 },
+            revenue_after_fee: 850,
+            recoupment: { starting_balance: 0, applied: 0, remaining_balance: 0 },
+            distributions: { user1: { split: '100.0%', amount: 850 } },
+            summary_status: 'PROCESSED' as const,
+            total_distributed: 850,
+            unallocated_balance: 0,
+            processed_at: '2026-07-14T12:00:00+00:00'
+        };
         mockElectronAPI.distribution.executeWaterfall.mockResolvedValue({
             success: true,
             report: mockReport

@@ -47,7 +47,7 @@ export const BankPanel: React.FC = () => {
             splits.forEach(s => splitMap[s.userId] = s.percentage);
 
             const data: WaterfallData = {
-                gross_revenue: parseFloat(amount),
+                gross: parseFloat(amount),
                 splits: splitMap
             };
 
@@ -300,27 +300,32 @@ export const BankPanel: React.FC = () => {
                                 </div>
 
                                 <div className="space-y-4">
-                                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                                    {Object.entries(waterfallReport.distributions).map(([user, distAmount], _i) => (
+                                    {Object.entries(waterfallReport.distributions).map(([user, dist]) => (
                                         <div key={user} className="flex items-center gap-4 group">
                                             <div className="w-1.5 h-1.5 rounded-full bg-dept-creative group-hover:scale-150 transition-all" />
                                             <div className="flex-1 p-4 bg-black/40 border border-white/10 rounded-xl flex items-center justify-between group-hover:border-dept-creative/30 transition-all">
                                                 <div className="flex flex-col">
-                                                    <span className="text-[9px] font-black text-gray-600 uppercase tracking-widest">Beneficiary Node</span>
+                                                    <span className="text-[9px] font-black text-gray-600 uppercase tracking-widest">Beneficiary Node · {dist.split}</span>
                                                     <span className="text-xs font-bold text-gray-300 font-mono">{user}</span>
                                                 </div>
                                                 <div className="flex items-center gap-3">
                                                     <ArrowDownRight className="w-4 h-4 text-dept-creative opacity-20 group-hover:opacity-100 transition-all" />
-                                                    <span className="text-xl font-black text-white italic">${distAmount.toLocaleString('en-US')}</span>
+                                                    <span className="text-xl font-black text-white italic">${dist.amount.toLocaleString('en-US')}</span>
                                                 </div>
                                             </div>
                                         </div>
                                     ))}
                                 </div>
 
-                                <div className="mt-8 pt-6 border-t border-gray-800 flex justify-between items-center">
-                                    <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Total Dispersed</span>
-                                    <span className="text-lg font-black text-white italic">${waterfallReport.net_revenue.toLocaleString('en-US')}</span>
+                                <div className="mt-8 pt-6 border-t border-gray-800 space-y-2">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Platform Fee ({waterfallReport.platform_fee.percent})</span>
+                                        <span className="text-xs font-bold text-gray-400 font-mono">-${waterfallReport.platform_fee.amount.toLocaleString('en-US')}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Total Dispersed</span>
+                                        <span className="text-lg font-black text-white italic">${waterfallReport.total_distributed.toLocaleString('en-US')}</span>
+                                    </div>
                                 </div>
                             </div>
                         )
