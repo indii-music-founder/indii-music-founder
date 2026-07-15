@@ -5,11 +5,14 @@ import { toast } from '@/core/context/ToastContext';
 
 export interface HandoffSlice {
     pendingHandoffs: Partial<Record<SendToTarget, SendToPayload>>;
-    
+
     /** Stages an asset for handoff, triggers routing, and coordinates transitions */
     sendToModule: (target: SendToTarget, payload: SendToPayload) => void;
-    
-    /** Consumes and clears the pending asset within the target module */
+
+    /** Peeks at the pending asset without consuming it (for safe read-then-persist) */
+    peekHandoff: (target: SendToTarget) => SendToPayload | null;
+
+    /** Consumes and clears the pending asset after successful persistence */
     consumeHandoff: (target: SendToTarget) => SendToPayload | null;
 }
 
@@ -79,7 +82,24 @@ export const createHandoffSlice: StateCreator<HandoffSlice> = (set, get) => ({
             }
         }).catch(err => logger.error('[HandoffSlice] Routing switch failed:', err));
     },
-    
+
+    peekHandoff: (target) => {
+        const { pendingHandoffs } = get();
+        const payload = pendingHandoffs[target];
+        if (!payload) {
+            return null;
+        }
+
+        const ageMs = Date.now() - (payload.timestamp || 0);
+        if (ageMs > 10 * 60 * 1000) {
+            logger.warn(`[HandoffSlice] Expired handoff for "${target}" (${payload.assetId}) after ${Math.round(ageMs / 1000)}s.`);
+            return null;
+        }
+
+        logger.debug(`[HandoffSlice] Handoff peeked (not yet consumed) by target: "${target}"`);
+        return payload;
+    },
+
     consumeHandoff: (target) => {
         const { pendingHandoffs } = get();
         const payload = pendingHandoffs[target];
@@ -103,8 +123,8 @@ export const createHandoffSlice: StateCreator<HandoffSlice> = (set, get) => ({
             const next = { ...state.pendingHandoffs };
             delete next[target];
             return { pendingHandoffs: next };
-        }); // Clear instantly to make it atomic
-        logger.debug(`[HandoffSlice] Handoff consumed successfully by target: "${target}"`);
+        });
+        logger.debug(`[HandoffSlice] Handoff consumed and cleared by target: "${target}"`);
         return payload;
     }
 });
