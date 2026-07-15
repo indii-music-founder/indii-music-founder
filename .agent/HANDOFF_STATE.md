@@ -1,19 +1,19 @@
 # Handoff State
-**Updated:** 2026-07-14 20:02 EDT
+**Updated:** 2026-07-14 20:07 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+b880ef12d docs(ledger): mark ISSUE-821 FIXED — honesty pass on release readiness gate
+b99c2816e fix: ISSUE-852 — Manufacturing status changed from 'started' to 'queued'
+b4fcdb4cf fix: ISSUE-850 — Merch pricing clarified as static baseline, not market-backed
+76a280b78 fix: ISSUE-821 — replace PRO-only release gate with full readiness matrix
+a8e36f71c fix: ISSUE-841 — Permission audit reports partial status, not complete
+0ba236f5d chore: session checkpoint [20:02]
 cc6c406ae fix: ISSUE-1049 — reconcile two stale tests with honesty-pass renames
 9a48bef11 test: update PublicistTools test for isTemplate flag (ISSUE-839)
 b00b15aed chore: update ledger — ISSUE-831 marked FIXED
 1517a8d19 fix: ISSUE-831 — PRO repertoire lookup removed model hallucination instruction
-fcea190e3 chore: update ledger — ISSUE-828, ISSUE-830 marked FIXED (17 total)
-39fb3fc78 fix: ISSUE-830 — Living plan tools return success: false on missing context
-f03701adf chore: session checkpoint [19:58]
-c0d7752a1 fix: ISSUE-828 — Licensing request status change message clarified
-a5be31b46 chore: session checkpoint [19:57]
-f93022c0f chore: session checkpoint [20:02] — ISSUE-815..819 honesty-pass sweep
 ```
 
 ## Working State
