@@ -1,9 +1,12 @@
 # Handoff State
-**Updated:** 2026-07-15 09:01 EDT
+**Updated:** 2026-07-15 09:10 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+62785297b docs(ledger): mark ISSUE-795 and ISSUE-792 as fixed
+b0a6c9bc7 fix: ISSUE-792 — MLC BWARM export compliance, remove fabricated legal data
+ebb4c65c8 chore: session checkpoint [09:01]
 28640d37e fix: ISSUE-795 — centralize golden metadata validation, prevent false distribution readiness
 6a878a69d docs(ledger): convert all OPEN to BACKLOG — zero open issues
 f0216e0b5 chore: session checkpoint [08:25]
@@ -11,14 +14,11 @@ f0216e0b5 chore: session checkpoint [08:25]
 b80cd0cce chore: session checkpoint [08:12]
 b0cb9bdde chore(ledger): mark ISSUE-920 and ISSUE-923 fixed
 db4bce9f3 chore: session checkpoint [08:07]
-cf38bb833 chore: session checkpoint [08:06]
-424fa14a0 fix: ISSUE-836 — unified marketing campaign platform enums across layers
-e99d3c248 chore: session checkpoint [07:56]
 ```
 
 ## Working State
 ```
- M .agent/test_ledger/OPEN_ISSUES.md
+clean working tree
 ```
 
 ## Decisions
