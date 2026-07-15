@@ -36,6 +36,10 @@ export interface VideoJob {
     videoUrl?: string;
     url?: string;
     stitchError?: string;
+    // Long-form/daisy-chain: URL of each completed segment, in order (ISSUE-878).
+    // Presence signals a genuine multi-segment job — used to distinguish a real
+    // long-form 'stitching' completion from a transient mid-render progress marker.
+    segmentUrls?: string[];
     safety_ratings?: VideoSafetyRating[];
     metadata?: Record<string, unknown>;
     createdAt: string;

@@ -157,6 +157,38 @@ describe('Lens: Veo 3.1 Payload & Pipeline Integrity', () => {
         expect(result.output!.metadata!.duration_seconds).toBeGreaterThan(0);
     });
 
+    it('resolves early on "stitching" only for genuine long-form jobs with segmentUrls (ISSUE-878)', async () => {
+        // A job WITHOUT segmentUrls that reports 'stitching' is just mid-render
+        // progress (as tested above) and must keep waiting for 'completed'. A job
+        // WITH segmentUrls is the real long-form multi-segment case ISSUE-878
+        // fixed — it should resolve immediately at 'stitching' so the UI can
+        // start timeline/project assembly without waiting on a stitch/render step
+        // that may never mark the job 'completed'.
+        const jobId = 'job-veo-longform-001';
+        mocks.doc.mockReturnValue('doc-ref');
+
+        mocks.onSnapshot.mockImplementation((ref, callback) => {
+            callback({
+                exists: () => true,
+                id: jobId,
+                data: () => ({
+                    status: 'stitching',
+                    progress: 100,
+                    segmentUrls: [
+                        'https://storage.googleapis.com/bucket/segment-1.mp4',
+                        'https://storage.googleapis.com/bucket/segment-2.mp4',
+                    ],
+                }),
+            });
+            return () => { };
+        });
+
+        const result = await service.waitForJob(jobId, 60000);
+
+        expect(result.status).toBe('stitching');
+        expect(result.segmentUrls).toHaveLength(2);
+    });
+
     it('should handle "SafetySettings" rejection gracefully', async () => {
         // Simulates Google's safety filter triggering a 500 or blocking content
         const jobId = 'job-safety-fail';
