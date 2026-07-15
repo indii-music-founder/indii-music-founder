@@ -679,7 +679,7 @@ export class GeminiImageService {
                 }
 
                 // Prompt text
-                const promptText = data.mask
+                const promptText = sourceMask
                     ? `Edit the masked region of this image according to this instruction: ${data.prompt}`
                     : data.prompt;
                 newParts.push({ text: promptText });
@@ -741,7 +741,7 @@ export class GeminiImageService {
                 }
 
                 // Prompt text last (after images — consistent with multi-turn ordering)
-                const promptText = data.mask
+                const promptText = sourceMask
                     ? `Edit the masked region of this image according to this instruction: ${data.prompt}`
                     : data.prompt;
                 parts.push({ text: promptText });
