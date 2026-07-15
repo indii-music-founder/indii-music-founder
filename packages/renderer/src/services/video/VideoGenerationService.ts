@@ -570,12 +570,20 @@ export class VideoGenerationService {
             unsub = this.subscribeToJob(jobId, async (job: VideoJob | null) => {
                 if (!job) return;
 
-                if (job.status === 'completed' || job.status === 'stitching' || job.status === 'failed' || job.status === 'cancelled') {
+                // 'stitching' is only a terminal (resolve-now) state for genuine
+                // multi-segment long-form jobs, which have segmentUrls to assemble
+                // (ISSUE-878). A single-generation job can also transiently report
+                // 'stitching' as an intermediate progress marker before its final
+                // 'completed' event carries the real output — that case must keep
+                // waiting, not resolve early with an empty output (ISSUE-878 follow-up).
+                const isLongFormStitching = job.status === 'stitching' && !!job.segmentUrls?.length;
+
+                if (job.status === 'completed' || isLongFormStitching || job.status === 'failed' || job.status === 'cancelled') {
                     if (job.status === 'cancelled') {
                         reject(new Error(job.error || 'Video generation cancelled by user.'));
                         return;
                     }
-                    if (job.status === 'stitching') {
+                    if (isLongFormStitching) {
                         // Multi-segment long-form video: all segments are ready for assembly
                         // UI should use segmentUrls to build a timeline/project
                         resolve({
