@@ -24,7 +24,7 @@ export interface ProfileSlice {
     setOrganization: (id: string) => void;
     addOrganization: (org: Organization) => void;
     setUserProfile: (profile: UserProfile) => void;
-    updateBrandKit: (updates: Partial<BrandKit>) => void;
+    updateBrandKit: (updates: Partial<BrandKit>) => Promise<void>;
     loadUserProfile: (uid: string) => Promise<void>;
     logout: () => Promise<void>;
     setTheme: (theme: 'dark' | 'light' | 'system') => void;
@@ -100,16 +100,18 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
         // Persistence Strategy: Hybrid (IndexedDB for speed + Firestore for cloud backup)
         saveProfileToStorage(newProfile).catch(err => logger.error("[ProfileSlice] Failed to save profile:", err));
     },
-    updateBrandKit: (updates) => set((state) => {
+    updateBrandKit: async (updates) => {
+        const state = get();
         const currentBrandKit = state.userProfile.brandKit || DEFAULT_BRAND_KIT;
         const newProfile = {
             ...state.userProfile,
             brandKit: { ...currentBrandKit, ...updates },
             updatedAt: Timestamp.now()
         };
-        saveProfileToStorage(newProfile).catch(err => logger.error("[ProfileSlice] Failed to save profile update:", err));
-        return { userProfile: newProfile };
-    }),
+        set({ userProfile: newProfile });
+        // Await persistence before returning so caller knows the write succeeded
+        await saveProfileToStorage(newProfile);
+    },
     loadUserProfile: async (uid: string) => {
         logger.info('[Profile] Loading user profile for:', uid);
 

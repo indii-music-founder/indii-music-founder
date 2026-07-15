@@ -18,6 +18,11 @@ export interface ItineraryStop {
     // Day sheet data (set via DaySheetModal)
     schedule?: Array<{ time: string; event: string }>;
     contacts?: Array<{ role: string; name: string; phone: string }>;
+    // Settlement data for finance reconciliation (ISSUE-705 Job 4)
+    guarantee?: number;
+    door_count?: number;
+    split_pct?: number;
+    merch_cut?: number;
 }
 
 export interface Itinerary {

@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
-import { X, Clock, User, Phone, Save, Plus, Trash2, Calendar } from 'lucide-react';
+import { X, Clock, User, Phone, Save, Plus, Trash2, Calendar, DollarSign } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import type { ItineraryStop } from '../types';
 
@@ -14,6 +14,13 @@ interface Contact {
     role: string;
     name: string;
     phone: string;
+}
+
+interface Settlement {
+    guarantee: number;
+    door_count?: number;
+    split_pct?: number;
+    merch_cut?: number;
 }
 
 interface DaySheetModalProps {
@@ -43,6 +50,13 @@ export const DaySheetModal: React.FC<DaySheetModalProps> = ({ isOpen, stop, onCl
         { role: 'Sound Guy', name: '', phone: '' },
     ]);
 
+    const [settlement, setSettlement] = useState<Settlement>({
+        guarantee: stop.guarantee ?? 0,
+        door_count: stop.door_count,
+        split_pct: stop.split_pct,
+        merch_cut: stop.merch_cut
+    });
+
     const handleScheduleChange = (index: number, field: keyof ScheduleItem, value: string) => {
         const newSchedule = [...schedule];
         newSchedule[index] = { ...newSchedule[index]!, [field]: value };
@@ -59,7 +73,12 @@ export const DaySheetModal: React.FC<DaySheetModalProps> = ({ isOpen, stop, onCl
         onSave({
             ...stop,
             schedule,
-            contacts
+            contacts,
+            // ISSUE-705 Job 4: settlement data for finance reconciliation
+            guarantee: settlement.guarantee,
+            door_count: settlement.door_count,
+            split_pct: settlement.split_pct,
+            merch_cut: settlement.merch_cut
         });
         onClose();
     };
@@ -105,7 +124,7 @@ export const DaySheetModal: React.FC<DaySheetModalProps> = ({ isOpen, stop, onCl
                     </button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-10 grid grid-cols-1 md:grid-cols-2 gap-12 custom-scrollbar">
+                <div className="flex-1 overflow-y-auto p-10 grid grid-cols-1 md:grid-cols-3 gap-12 custom-scrollbar">
                     {/* Schedule Section */}
                     <section className="space-y-8">
                         <div className="flex items-center justify-between">
@@ -213,6 +232,81 @@ export const DaySheetModal: React.FC<DaySheetModalProps> = ({ isOpen, stop, onCl
                                     </motion.div>
                                 ))}
                             </AnimatePresence>
+                        </div>
+                    </section>
+
+                    {/* Settlement Section - ISSUE-705 Job 4 */}
+                    <section className="space-y-8">
+                        <div className="flex items-center justify-between">
+                            <h3 className="text-[10px] font-black text-amber-400 uppercase tracking-[0.4em] flex items-center gap-3">
+                                <DollarSign size={14} /> Settlement Sheet
+                            </h3>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div className="p-5 bg-black/40 border border-gray-800/50 rounded-xl space-y-4 focus-within:border-amber-500/40 focus-within:bg-amber-500/5 transition-all">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-bold text-amber-500 uppercase tracking-widest block">
+                                        Guarantee ($)
+                                    </label>
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        className="w-full bg-transparent text-lg font-bold text-white outline-none border-b border-amber-500/20 focus:border-amber-500 pb-2"
+                                        placeholder="0.00"
+                                        value={settlement.guarantee || ''}
+                                        onChange={(e) => setSettlement({ ...settlement, guarantee: parseFloat(e.target.value) || 0 })}
+                                    />
+                                </div>
+
+                                <div className="grid grid-cols-1 gap-3">
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block">
+                                            Door Count
+                                        </label>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            className="w-full bg-transparent text-sm font-mono text-gray-300 outline-none border-b border-gray-700 focus:border-amber-500 pb-1"
+                                            placeholder="Attendance"
+                                            value={settlement.door_count || ''}
+                                            onChange={(e) => setSettlement({ ...settlement, door_count: parseInt(e.target.value) || undefined })}
+                                        />
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block">
+                                            Split %
+                                        </label>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            max="100"
+                                            step="0.1"
+                                            className="w-full bg-transparent text-sm font-mono text-gray-300 outline-none border-b border-gray-700 focus:border-amber-500 pb-1"
+                                            placeholder="0-100"
+                                            value={settlement.split_pct || ''}
+                                            onChange={(e) => setSettlement({ ...settlement, split_pct: parseFloat(e.target.value) || undefined })}
+                                        />
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block">
+                                            Merch Cut ($)
+                                        </label>
+                                        <input
+                                            type="number"
+                                            step="0.01"
+                                            min="0"
+                                            className="w-full bg-transparent text-sm font-mono text-gray-300 outline-none border-b border-gray-700 focus:border-amber-500 pb-1"
+                                            placeholder="0.00"
+                                            value={settlement.merch_cut || ''}
+                                            onChange={(e) => setSettlement({ ...settlement, merch_cut: parseFloat(e.target.value) || undefined })}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </section>
                 </div>
