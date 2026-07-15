@@ -58,7 +58,16 @@ describe('KeysPanel', () => {
             releaseId: 'rel-1',
             createdAt: {},
             updatedAt: {},
-            userId: 'user-1'
+            userId: 'user-1',
+            // KeysPanel.handleGenerateBWARM (ISSUE-792) requires real writer
+            // splits, a non-"Self-Published" publisher, and a release date
+            // sourced from metadataSnapshot — without this, works.length is
+            // always 0 and generateBWARM is never called.
+            metadataSnapshot: {
+                splits: [{ legalName: 'Jane Songwriter', percentage: 100 }],
+                publisher: 'Test Publishing Co',
+                releaseDate: '2026-01-01',
+            }
         }
     ];
 
