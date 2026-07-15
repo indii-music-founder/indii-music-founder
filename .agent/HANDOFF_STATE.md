@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-07-14 20:11 EDT
+**Updated:** 2026-07-14 20:12 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+664a4cb43 chore: update ledger — ISSUE-894 marked FIXED (22 total this session)
+bfbb79ad1 chore: session checkpoint [20:11]
 3ea7819ba fix: ISSUE-894 — Storage scrub tool returns error when callable unavailable
 0c1ef5840 fix: ISSUE-822 — remove static 'complete' defaults from distribution checklist
 5d6bf4bf0 chore: session checkpoint [20:08]
@@ -12,8 +14,6 @@ b880ef12d docs(ledger): mark ISSUE-821 FIXED — honesty pass on release readine
 b99c2816e fix: ISSUE-852 — Manufacturing status changed from 'started' to 'queued'
 b4fcdb4cf fix: ISSUE-850 — Merch pricing clarified as static baseline, not market-backed
 76a280b78 fix: ISSUE-821 — replace PRO-only release gate with full readiness matrix
-a8e36f71c fix: ISSUE-841 — Permission audit reports partial status, not complete
-0ba236f5d chore: session checkpoint [20:02]
 ```
 
 ## Working State
