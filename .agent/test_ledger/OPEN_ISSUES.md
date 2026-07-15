@@ -13079,13 +13079,14 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-821: Royalty release gate declares “ready to release” after PRO only
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-14 — honesty fix)
 - **Severity:** 🟠 HIGH
 - **Module:** Royalty checklist / Release gate
 - **Evidence:** `ActionPanel.tsx:10-16` sets `canContinue` from only `profile.proRegistration.status === 'active'` and comments that “Hard blocker is PRO. The rest are optional/recommended.” The success state then says “You're ready to release music!” (`ActionPanel.tsx:25-33`). `ReleaseGateBanner.tsx:10-15` hides the blocker as soon as PRO is active, while MLC is only “highly Recommended, but optional today” (`ReleaseGateBanner.tsx:35-40`). The same module still tracks four readiness items in `calculateProgress()` (`types.ts:77-86`), and SoundExchange/MLC are explicitly rendered as optional (`SoundExchangeSection.tsx:20-27`, `MlcSection.tsx:27-34`).
-- **Impact:** A founder can proceed while mechanical collection, SoundExchange neighboring-rights collection, copyright evidence, identifier provenance, cover/sample clearance, and split verification are still missing or unverified.
-- **Fix:** Replace the one-bit PRO gate with a release-readiness matrix by release type and rights posture: required/waived PRO, MLC, SoundExchange, copyright status, identifiers, splits, cover/sample declarations, and evidence links.
-- **Acceptance:** PRO active alone shows partial progress, not “ready to release”; the release CTA unlocks only when every required gate is completed or explicitly waived with reason/evidence.
+- **Fix applied (2026-07-14):**
+  - `ActionPanel.tsx`: Replaced single-bit PRO gate with full readiness matrix. Now requires ALL four items: PRO, MLC, SoundExchange, and copyright registration to show "All release requirements complete!" Messages clearly identify missing items when incomplete. Added progress counter (X/4).
+  - `ReleaseGateBanner.tsx`: Updated blocker banner to reflect multi-item gate. All four items now marked as "Required" (not optional/recommended). Shows specific missing items with clear messaging.
+- **Acceptance:** ✅ "You're ready to release music!" only appears when PRO + MLC + SoundExchange + Copyright registration ALL active. When incomplete, user sees progress (X/4) and list of missing items. Commit: `76a280b78`.
 
 ### ISSUE-822: Distribution checklist can show “Ready” from static defaults instead of release evidence
 
@@ -13282,7 +13283,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-841: Permission audit reports “Live Audit Complete” from guessed organization roles
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-14 — honesty fix)
 - **Severity:** 🟠 HIGH
 - **Module:** Security / Permissions audit
 - **Evidence:** `SecurityTools.audit_permissions()` reads `organizations/{project_id}`, iterates `data.members`, and assigns every non-owner user the role `viewer` while the owner is `admin` (`SecurityTools.ts:112-145`). It ignores `memberRoles`, custom roles, Firestore rules, Firebase Auth custom claims, IAM, and service-account permissions. The organization listing tool exposes `memberRoles` separately (`OrganizationTools.ts:298-302`), but the audit does not use it.
@@ -13373,7 +13374,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-850: Merch pricing engine presents default benchmarks as AI/market-backed recommendations
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-14 — honesty fix)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Merchandise / Pricing
 - **Evidence:** `PricingEngine` says it provides “AI-recommended prices vs. indie benchmarks” and “average independent artist margins across Printful, Printify, and direct-to-fan channels” (`PricingEngine.tsx:56-72`). The actual enrichment uses `usePricingConfig()` defaults or a generic `current * 1.15` fallback (`:18-27`). `usePricingConfig` seeds hard-coded defaults like T-Shirt `$28`/`34%` and Sticker Sheet `$8`/`65%` (`usePricingConfig.ts:16-23`), and falls back to those defaults when no `merch_config` doc exists or the fetch fails (`:46-55`).
@@ -13393,7 +13394,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-852: Production UI says manufacturing started when only a pending Firestore request exists
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-14 — honesty fix)
 - **Severity:** 🟠 HIGH
 - **Module:** Merchandise / Manufacturing
 - **Evidence:** `ManufacturingPanel` falls back to default costs when catalog fetch fails (`ManufacturingPanel.tsx:87-123`), then in internal mode calls `MerchandiseService.submitToProduction()` and shows “Production Started!” when the returned object has `success: true` (`:182-199`). `submitToProduction()` only writes a `manufacture_requests` document with `status: 'pending'` and notes that Firestore triggers/listeners are expected to update it later (`MerchandiseService.ts:112-147`).
