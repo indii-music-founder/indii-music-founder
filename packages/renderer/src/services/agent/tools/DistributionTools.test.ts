@@ -78,7 +78,22 @@ function enableElectron() {
             generateIngestionNotification: vi.fn().mockResolvedValue('<xml>...</xml>'),
             calculateTax: vi.fn().mockResolvedValue({ report: { withholding_rate: 0 } }),
             certifyTax: vi.fn().mockResolvedValue({ report: { certified: true, payout_status: 'ACTIVE' } }),
-            executeWaterfall: vi.fn().mockResolvedValue({ report: { net_revenue: 9000 } }),
+            executeWaterfall: vi.fn().mockResolvedValue({
+                report: {
+                    gross: 10000,
+                    platform_fee: { percent: '10.0%', amount: 1000 },
+                    revenue_after_fee: 9000,
+                    recoupment: { starting_balance: 0, applied: 0, remaining_balance: 0 },
+                    distributions: {
+                        Artist: { split: '60.0%', amount: 5400 },
+                        Producer: { split: '40.0%', amount: 3600 }
+                    },
+                    summary_status: 'PROCESSED',
+                    total_distributed: 9000,
+                    unallocated_balance: 0,
+                    processed_at: '2026-07-14T12:00:00+00:00'
+                }
+            }),
             validateMetadata: vi.fn().mockResolvedValue({ report: { valid: true, errors: [], warnings: [] } }),
             generateBWARM: vi.fn().mockResolvedValue({ csv: '...', report: {} }),
             checkMerlinStatus: vi.fn().mockResolvedValue({ report: { compliant: true } })
@@ -239,6 +254,36 @@ describe('DistributionTools', () => {
     });
 
     describe('calculate_payout', () => {
+        it('sends the locked Python contract to the Bank Layer (ISSUE-826)', async () => {
+            enableElectron();
+            const { DistributionTools } = await importWithRetry(() => import('./DistributionTools'));
+
+            const result = await DistributionTools.calculate_payout({
+                grossRevenue: 10000,
+                indiiFeePercent: 10,
+                recoupableExpenses: 0,
+                splits: [
+                    { name: 'Artist', percentage: 60 },
+                    { name: 'Producer', percentage: 40 }
+                ]
+            });
+
+            const waterfallMock = (window as unknown as { electronAPI: { distribution: { executeWaterfall: import('vitest').Mock } } }).electronAPI.distribution.executeWaterfall;
+            // Contract lock: 'gross' (not gross_revenue), 'recoupment' (not expenses),
+            // and percent→fraction conversion for both fee and splits.
+            expect(waterfallMock).toHaveBeenCalledWith({
+                gross: 10000,
+                splits: { Artist: 0.6, Producer: 0.4 },
+                recoupment: 0,
+                indii_fee_percent: 0.1
+            });
+
+            expect(result.success).toBe(true);
+            expect(result.data.message).toContain('9000');
+            expect(result.data.total_distributed).toBe(9000);
+            disableElectron();
+        });
+
         it('should calculate waterfall correctly', async () => {
             const { DistributionTools } = await importWithRetry(() => import('./DistributionTools'));
 

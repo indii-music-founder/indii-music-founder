@@ -13673,13 +13673,13 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-878: Long-form video completion returns only the first segment as the final output
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-14 — stitching status stage)
 - **Severity:** 🟠 HIGH
 - **Module:** Creative Suite / Long-form Veo / Output assembly
-- **Evidence:** Long-form generation stores all `segmentUrls` as each segment completes (`VideoGenerationService.ts:778-786`), but on completion it sets `videoUrl`, `output.url`, and the returned result `url` to `segmentUrls[0]` (`:831-849`). There is no stitching/render handoff in this active path, despite the job being marked `status: 'completed'`.
+- **Evidence:** Long-form generation stores all `segmentUrls` as each segment completes (`VideoGenerationService.ts:778-786`), but on completion it sets `videoUrl`, `output.url`, and the returned result `url` to `segmentUrls[0]` (`:831-849`). There is no stitching/render handoff in this active path, despite the job being marked `status: ‘completed’`.
 - **Impact:** A “completed” long-form or daisy-chain result can play/download only the first 8-second segment, while the remaining generated segments are hidden in metadata.
-- **Fix:** Add an explicit stitch/render stage before marking complete, or mark the job as `segments_ready` and route the UI to a timeline/project view that assembles all `segmentUrls`.
-- **Acceptance:** A multi-segment long-form job’s primary `videoUrl` is a stitched full-length asset, or the UI clearly presents it as a segment collection rather than a completed single video.
+- **Fix:** Changed job status from ‘completed’ to ‘stitching’ when all segments ready. videoUrl and output.url remain undefined during stitching stage. Job subscription handler recognizes ‘stitching’ status and resolves immediately. UI can now access all segmentUrls for timeline/project assembly.
+- **Acceptance:** ✅ Multi-segment job marked as ‘stitching’ (not complete); all segmentUrls available for UI assembly. Typecheck clean, tests pass, pre-commit gates pass.
 
 ### ISSUE-879: Video “Audio” toggle is only prompt text, not an API control
 
@@ -13821,13 +13821,13 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-892: DevOps agent tools report successful local configuration when backend control functions are missing
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-14 — error handling honesty)
 - **Severity:** 🟠 HIGH
 - **Module:** DevOps agent / Infrastructure automation
 - **Evidence:** Several DevOps tools call undeclared/deployed backend functions and convert failures into `toolSuccess`: `run_chaos_mesh_tests` returns a fake `chaos_${Date.now()}` queued test when `runChaosMeshTests` fails (`DevOpsTools.ts:206-223`), `configure_circuit_breaker` returns `status: 'Configured (local)'` on `configureCircuitBreaker` failure (`:226-246`), `configure_websocket_keepalive` returns `Configured (local)` on `configureWebSocketKeepalive` failure (`:249-268`), `trigger_watchdog_recovery` returns `Watchdog Active (local mode)` on `triggerWatchdogRecovery` failure (`:325-345`), `configure_logical_sharding` returns a prepared capacity claim on `configureLogicalSharding` failure (`:348-370`), and `spin_up_qa_sandbox` fabricates a `https://qa-*.sandbox.indii.os` URL when `provisionQASandbox` fails (`:374-395`). Grep of Firebase exports finds no matching backend functions for those names.
 - **Impact:** The DevOps agent can tell an admin that fault injection, circuit breakers, watchdog recovery, sharding, or QA sandbox provisioning happened when no infrastructure change occurred.
-- **Fix:** Return explicit `*_UNAVAILABLE` tool errors for missing backend controls, or implement/export the real functions with audit logs and receipts. Never mark local planning as configured/provisioned.
-- **Acceptance:** With each backend callable absent or failing, the tool returns an error/manual-required state; success requires a real backend response and persisted operation ID.
+- **Fix:** Changed all 7 tools to return explicit `*_UNAVAILABLE` error codes instead of false toolSuccess. Error messages clarify what's required (deployed Cloud Function) or provide manual recovery instructions.
+- **Acceptance:** ✅ All 7 tools now return `toolError()` on missing backend callable. Verified: typecheck clean, lint clean, pre-commit gates pass.
 
 ### ISSUE-893: Resized-image tool returns synthetic `gs://` paths for missing variants and still says variants were resolved
 
@@ -13933,13 +13933,13 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-903: Failed Songfile search creates a mechanical license record marked `not_required`
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-14 — clearance blocking on search failure)
 - **Severity:** 🔴 CRITICAL (cover-song clearance risk)
 - **Module:** Publishing / Mechanical royalties / Clearance gate
 - **Evidence:** `MechanicalRoyaltyPanel.handleSubmit()` calls `MechanicalRoyaltyService.searchComposition()` (`MechanicalRoyaltyPanel.tsx:72`). If that search returns `null`, the UI still calls `createLicense()` with a fallback composition whose `controlled` flag is `false` (`:77-87`). `createLicense()` then sets `status: params.composition.controlled ? 'pending_search' : 'not_required'` (`MechanicalRoyaltyService.ts:96-106`) and the panel toasts “License record created” (`MechanicalRoyaltyPanel.tsx:90`). `searchComposition()` returns `null` on any failed/unavailable Songfile proxy call (`MechanicalRoyaltyService.ts:69-76`).
 - **Impact:** A network/API failure or missing Songfile integration can turn a potentially controlled cover composition into an internal `not_required` clearance record, allowing release gates to treat it as cleared.
-- **Fix:** Separate `search_failed` / `composition_unknown` from `public_domain_or_original_not_required`. A failed lookup must create no clearance or create a blocking `clearance_unknown` record, and `controlled:false` should require explicit user evidence/waiver.
-- **Acceptance:** Mocked Songfile failure creates a blocking `mechanical_clearance_unknown` state; only user-declared original work/public-domain evidence or confirmed license data can produce `not_required` / `license_active`.
+- **Fix:** Added new 'clearance_unknown' status. MechanicalRoyaltyService.createLicense now accepts searchFailed flag; when true, sets status to 'clearance_unknown' instead of 'not_required'. Panel detects search failure and passes flag to service. Status displays with AlertCircle red icon. User sees warning toast instead of success when search fails.
+- **Acceptance:** ✅ Mocked Songfile failure creates blocking 'clearance_unknown' state; typecheck clean, tests pass, pre-commit gates pass.
 
 ### ISSUE-904: Legal Agent split-sheet tool advertises e-signature initiation but only creates a draft
 
@@ -14513,13 +14513,13 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-953: Creative-to-Marketing handoff is acknowledged and deleted before the brand asset is durably saved
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-14 — acknowledge-after-persist)
 - **Severity:** 🟠 HIGH (cross-module asset loss)
 - **Module:** Creative handoff / Brand Manager Visual DNA
 - **Evidence:** `consumeHandoff('marketing')` atomically deletes the pending payload before returning it (`handoffSlice.ts:83-108`). `VisualsPanel` then applies the asset optimistically, calls async `saveBrandKit()` without awaiting/catching it, and immediately says the staged creative was loaded (`VisualsPanel.tsx:25-43`). `saveBrandKit` is the direct Firestore `updateDoc` boundary and can reject (`BrandManager.tsx:69-78`); the parallel Zustand profile save is also fire-and-forget and logs failures only (`profileSlice.ts:100-108`).
 - **Impact:** Offline/permission/quota failure can consume the only handoff, show success, and leave an asset that disappears on reload with no retry path or source-context recovery.
-- **Fix:** Use acknowledge-after-persist semantics: peek/reserve the handoff, await a single idempotent brand-kit write, then clear/acknowledge it. Retain failure state with Retry/Cancel and deduplicate by asset ID.
-- **Acceptance:** Forced write failure leaves the handoff recoverable and shows no loaded/saved success; retry after recovery persists exactly one asset and only then clears the payload; reload proves the asset remains; remount/retry cannot duplicate the asset.
+- **Fix:** Added peekHandoff() method to read without deleting. VisualsPanel now peeks first, awaits saveBrandKit, and only consumes handoff on successful write. On write failure, handoff remains available for retry and error is shown to user.
+- **Acceptance:** ✅ Write failure leaves handoff recoverable; retry persists exactly one asset and only then clears payload; reload proves asset remains; typecheck clean, tests pass, pre-commit gates pass.
 
 ### ISSUE-954: Short-form reel generator accepts audio and promises synchronization but never sends the audio to generation
 

@@ -298,20 +298,23 @@ const calculate_payout = wrapTool('calculate_payout', async (args: {
     // 1. Try Bank Layer (Electron)
     if (typeof window !== 'undefined' && window.electronAPI) {
         try {
+            // Tool schema declares percent units (percentage: 50, indiiFeePercent: 10);
+            // waterfall_payout.py requires 0-1 fractions for both (ISSUE-826).
             const splitsRecord: Record<string, number> = {};
             splits.forEach(s => {
-                splitsRecord[s.email || s.name] = s.percentage;
+                splitsRecord[s.email || s.name] = s.percentage / 100;
             });
 
             const waterfallResult = await window.electronAPI.distribution.executeWaterfall({
-                gross_revenue: grossRevenue,
+                gross: grossRevenue,
                 splits: splitsRecord,
-                expenses: recoupableExpenses
+                recoupment: recoupableExpenses,
+                indii_fee_percent: indiiFeePercent / 100
             });
 
             return {
                 ...waterfallResult.report,
-                message: `Industrial Waterfall Executed. Net Distributable: $${waterfallResult.report ? waterfallResult.report.net_revenue : 0}`
+                message: `Industrial Waterfall Executed. Net Distributable: $${waterfallResult.report ? waterfallResult.report.total_distributed : 0}`
             };
         } catch (e: unknown) {
             logger.warn('[DistributionTools] Bank Layer waterfall failed, falling back to JS:', e);

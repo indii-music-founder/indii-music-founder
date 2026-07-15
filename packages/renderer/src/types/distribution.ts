@@ -66,16 +66,45 @@ export interface TaxReport {
     withholding_rate: number;
 }
 
+/**
+ * CONTRACT LOCK (ISSUE-826): field names below MUST match what
+ * execution/finance/waterfall_payout.py reads verbatim — the IPC handler
+ * passes this payload through untranslated. The engine requires 'gross'
+ * (it exits 1 on 'gross_revenue') and reads 'recoupment', never 'expenses'.
+ */
 export interface WaterfallData {
-    gross_revenue: number;
-    splits: Record<string, number>; // userId -> percentage (0.0 to 1.0)
-    expenses?: number;
+    gross: number;
+    splits: Record<string, number>; // party -> fraction 0.0 to 1.0
+    /** Outstanding recoupable balance, applied after the platform fee. */
+    recoupment?: number;
+    /** Platform fee as a 0-1 fraction (0.15 = 15%). Python default: 0.15. */
+    indii_fee_percent?: number;
 }
 
+export interface WaterfallDistributionEntry {
+    /** Display string from the engine, e.g. "50.0%". */
+    split: string;
+    /** Payout amount in dollars. */
+    amount: number;
+}
+
+/**
+ * CONTRACT LOCK (ISSUE-826): mirrors the report dict printed by
+ * execution/finance/waterfall_payout.py exactly. Distributions are NESTED
+ * objects (split + amount), not flat numbers. "Net" for display purposes is
+ * total_distributed (post-fee, post-recoupment) — revenue_after_fee ignores
+ * recoupment.
+ */
 export interface WaterfallReport {
-    distributions: Record<string, number>; // userId -> amount
-    net_revenue: number;
-    processed_at: string;
+    gross: number;
+    platform_fee: { percent: string; amount: number };
+    revenue_after_fee: number;
+    recoupment: { starting_balance: number; applied: number; remaining_balance: number };
+    distributions: Record<string, WaterfallDistributionEntry>;
+    summary_status: 'PROCESSED';
+    total_distributed: number;
+    unallocated_balance: number;
+    processed_at: string; // ISO-8601 UTC (added to the engine in ISSUE-826)
 }
 
 export interface ContentIdData {

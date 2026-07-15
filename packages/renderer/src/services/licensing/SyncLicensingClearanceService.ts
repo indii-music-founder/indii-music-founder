@@ -63,6 +63,12 @@ export interface ClearanceDocument {
     sourcework?: string;
     /** Original rights holder */
     originalRightsHolder?: string;
+    /** Sync brief id (for clearance docs created from brief uploads) */
+    briefId?: string;
+    /** Sync brief project name (for context) */
+    briefProject?: string;
+    /** Track ISRC (for provenance) */
+    trackISRC?: string;
     /** Reviewer notes (populated during review) */
     reviewNotes?: string;
     /** Review timestamp */
