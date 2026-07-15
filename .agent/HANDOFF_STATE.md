@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-07-15 06:48 EDT
+**Updated:** 2026-07-15 07:36 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+8bd1b96a6 test: distribution module — BankPanel tax/waterfall validation + types
+ceafc71b1 chore: session checkpoint [06:48]
 e0696697b fix: ISSUE-953 — creative-to-marketing handoff now persists before acknowledging
 78d8629bd fix: ISSUE-878 — long-form video completion status changed to 'stitching' instead of 'completed'
 e0492588e fix(distribution): ISSUE-826 waterfall engine emits processed_at timestamp
@@ -12,19 +14,11 @@ b00363066 fix: ISSUE-892 — DevOps tools return toolError instead of false succ
 7d3c3835a chore: session checkpoint [20:50]
 8360d0f13 chore: session checkpoint [20:49]
 ce870489d fix: ISSUE-1050 — missing ISWC must not block registrationReady
-2f81f7c7b chore: session checkpoint [20:43]
-0be4562b9 chore: session checkpoint [20:38]
 ```
 
 ## Working State
 ```
- M .agent/test_ledger/OPEN_ISSUES.md
- M packages/renderer/src/modules/distribution/components/BankPanel.tsx
- M packages/renderer/src/modules/distribution/components/__tests__/BankPanel.test.tsx
- M packages/renderer/src/services/agent/tools/DistributionTools.test.ts
- M packages/renderer/src/services/agent/tools/DistributionTools.ts
- M packages/renderer/src/services/distribution/DistributionService.integration.test.ts
- M packages/renderer/src/types/distribution.ts
+ M packages/renderer/src/services/licensing/SyncLicensingClearanceService.ts
 ```
 
 ## Decisions
