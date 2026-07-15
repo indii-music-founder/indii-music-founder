@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-07-14 20:43 EDT
+**Updated:** 2026-07-14 20:49 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+ce870489d fix: ISSUE-1050 — missing ISWC must not block registrationReady
+2f81f7c7b chore: session checkpoint [20:43]
 0be4562b9 chore: session checkpoint [20:38]
 874d4d5f0 chore: session checkpoint — honesty-pass sweep complete (ISSUE-815..824)
 ed28ae01f chore(ledger): mark ISSUE-822 and ISSUE-823 FIXED (honesty pass: distribution + publishing)
@@ -12,14 +14,11 @@ b49279984 fix: ISSUE-824 — tax form collection guards against 0/0 progress and
 41d36d76a chore: session checkpoint [20:35]
 6fcdbf3e8 chore: session checkpoint [20:34]
 1be6598ed chore: final session checkpoint — 23 issues fixed, 60 OPEN remain, ready for next phase
-48f9cfdf6 chore: session checkpoint [20:30]
-6357276d8 chore: update ledger — ISSUE-905 marked FIXED (23 total, 60 OPEN remain)
 ```
 
 ## Working State
 ```
-M  .agent/HANDOFF_STATE.md
- M packages/renderer/src/services/publishing/PublishingRightsCompiler.ts
+clean working tree
 ```
 
 ## Decisions
