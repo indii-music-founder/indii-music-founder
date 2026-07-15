@@ -127,6 +127,8 @@ describe('useOnboarding handleSend failure recovery (ISSUE-957)', () => {
 
         // Attach a file, type a narrative
         const file = new File(['hello'], 'notes.txt', { type: 'text/plain' });
+        // jsdom's File lacks .text()
+        Object.assign(file, { text: () => Promise.resolve('hello') });
         await act(async () => {
             await result.current.handleFileSelect({ target: { files: [file], value: '' } } as any);
         });
