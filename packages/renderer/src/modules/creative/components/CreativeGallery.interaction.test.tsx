@@ -139,6 +139,82 @@ describe('🖱️ Click: CreativeGallery Interaction', () => {
         expect(mockToastSuccess).toHaveBeenCalledWith("Character Reference Set");
     });
 
+    // ISSUE-922: upload toast must reflect real per-file outcomes, never a
+    // blanket success fired before reads/persistence finish.
+    describe('ISSUE-922: honest upload reporting', () => {
+        const makeFile = (name: string, type: string, sizeBytes = 10) =>
+            new File([new Uint8Array(sizeBytes)], name, { type });
+
+        it('reports success only after durable persistence resolves true', async () => {
+            const mockAddImage = vi.fn().mockResolvedValue(true);
+            (useStore as unknown as import("vitest").Mock).mockImplementation((selector: any) => {
+                const s = { ...mockStore, addUploadedImage: mockAddImage };
+                return selector ? selector(s) : s;
+            });
+            render(<CreativeGallery />);
+
+            const input = screen.getAllByTestId('gallery-upload-input')[0];
+            fireEvent.change(input, { target: { files: [makeFile('art.png', 'image/png')] } });
+
+            await vi.waitFor(() => {
+                expect(mockAddImage).toHaveBeenCalled();
+                expect(mockToastSuccess).toHaveBeenCalledWith('1 asset(s) uploaded.');
+            });
+        });
+
+        it('reports failure when persistence resolves false and never claims success', async () => {
+            const mockAddImage = vi.fn().mockResolvedValue(false);
+            const mockToastError = vi.fn();
+            (useStore as unknown as import("vitest").Mock).mockImplementation((selector: any) => {
+                const s = { ...mockStore, addUploadedImage: mockAddImage };
+                return selector ? selector(s) : s;
+            });
+            (useToast as unknown as import("vitest").Mock).mockReturnValue({
+                success: mockToastSuccess,
+                info: mockToastInfo,
+                error: mockToastError
+            });
+            render(<CreativeGallery />);
+
+            const input = screen.getAllByTestId('gallery-upload-input')[0];
+            fireEvent.change(input, { target: { files: [makeFile('art.png', 'image/png')] } });
+
+            await vi.waitFor(() => {
+                expect(mockToastError).toHaveBeenCalledWith(expect.stringContaining('1 asset(s) failed to save'));
+            });
+            expect(mockToastSuccess).not.toHaveBeenCalled();
+        });
+
+        it('skips unsupported and oversized files with an explicit message', async () => {
+            const mockAddImage = vi.fn().mockResolvedValue(true);
+            const mockToastError = vi.fn();
+            (useStore as unknown as import("vitest").Mock).mockImplementation((selector: any) => {
+                const s = { ...mockStore, addUploadedImage: mockAddImage };
+                return selector ? selector(s) : s;
+            });
+            (useToast as unknown as import("vitest").Mock).mockReturnValue({
+                success: mockToastSuccess,
+                info: mockToastInfo,
+                error: mockToastError
+            });
+            render(<CreativeGallery />);
+
+            const input = screen.getAllByTestId('gallery-upload-input')[0];
+            const oversized = makeFile('huge.png', 'image/png');
+            Object.defineProperty(oversized, 'size', { value: 26 * 1024 * 1024 });
+            fireEvent.change(input, {
+                target: { files: [makeFile('doc.pdf', 'application/pdf'), oversized] }
+            });
+
+            await vi.waitFor(() => {
+                expect(mockToastError).toHaveBeenCalledWith(expect.stringContaining('doc.pdf (unsupported type)'));
+                expect(mockToastError).toHaveBeenCalledWith(expect.stringContaining('huge.png (over 25MB limit)'));
+            });
+            expect(mockAddImage).not.toHaveBeenCalled();
+            expect(mockToastSuccess).not.toHaveBeenCalled();
+        });
+    });
+
     it('verifies the Like lifecycle (Click → Feedback)', async () => {
         render(<CreativeGallery />);
         const likeBtn = screen.getByTestId('like-btn');
