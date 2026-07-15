@@ -214,13 +214,18 @@ export function useDirectGeneration() {
                     try {
                         const finalUrl = await resolveStorageUrl(data.resultUri);
 
+                        // ISSUE-913: Use the projectId from the job data (captured at submission time).
+                        // This ensures generations file into the correct project even if user switched projects.
+                        // Fall back to current project only if the backend didn't store it (safety fallback).
+                        const submissionProjectId = (data as any).projectId || currentProjectIdRef.current;
+
                         const finalItem: HistoryItem = {
                             id: job.id,
                             url: finalUrl,
                             type: data.type || mode,
                             prompt: data.prompt || job.prompt,
                             timestamp: Date.now(),
-                            projectId: currentProjectIdRef.current,
+                            projectId: submissionProjectId,
                             origin: 'generated' as const
                         };
 
@@ -302,6 +307,9 @@ export function useDirectGeneration() {
             throw new Error('User must be authenticated to generate images.');
         }
 
+        // ISSUE-913: Capture projectId at submission time to prevent it from changing if user switches projects during generation
+        const submissionProjectId = currentProjectId;
+
         try {
             // Verify auth token is available before calling backend
             const token = await auth.currentUser?.getIdToken();
@@ -372,7 +380,7 @@ export function useDirectGeneration() {
                         type: data.type || 'image',
                         prompt: localPrompt,
                         timestamp: Date.now(),
-                        projectId: currentProjectIdRef.current,
+                        projectId: submissionProjectId,
                         origin: 'generated' as const
                     };
 
@@ -508,6 +516,9 @@ export function useDirectGeneration() {
         }
         if (generatingRef.current) return;
 
+        // ISSUE-913: Capture projectId at submission time to prevent changes if user switches projects during generation
+        const submissionProjectId = currentProjectId;
+
         generatingRef.current = true;
         setIsGenerating(true);
 
@@ -522,7 +533,7 @@ export function useDirectGeneration() {
                     type: mode as 'image' | 'video',
                     prompt: localPrompt,
                     timestamp: Date.now(),
-                    projectId: currentProjectIdRef.current,
+                    projectId: submissionProjectId,
                     origin: 'generated' as const
                 };
                 
