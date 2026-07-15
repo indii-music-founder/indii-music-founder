@@ -133,7 +133,8 @@ export type MechanicalLicenseStatus =
     | 'license_requested'
     | 'license_active'
     | 'license_denied'
-    | 'not_required';
+    | 'not_required'
+    | 'clearance_unknown';
 
 export interface MechanicalLicenseDocument extends BaseDocument {
     userId: string;

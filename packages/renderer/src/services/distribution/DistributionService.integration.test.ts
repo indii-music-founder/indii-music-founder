@@ -96,7 +96,7 @@ describe.skip('DistributionService Integration', () => {
     });
 
     it('should handle waterfall execution success', async () => {
-        const data = { gross_revenue: 1000, splits: { 'user1': 1.0 } };
+        const data = { gross: 1000, splits: { 'user1': 1.0 } };
         const mockReport = { distributions: { 'user1': 1000 }, net_revenue: 1000, processed_at: '2024-01-01' };
         mockElectronAPI.distribution.executeWaterfall.mockResolvedValue({
             success: true,
