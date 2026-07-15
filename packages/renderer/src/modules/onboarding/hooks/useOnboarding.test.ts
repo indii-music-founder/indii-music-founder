@@ -2,9 +2,15 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useOnboarding } from './useOnboarding';
 
-const { mockExtractText } = vi.hoisted(() => ({
+const { mockExtractText, mockRunConversation } = vi.hoisted(() => ({
     mockExtractText: vi.fn(),
+    mockRunConversation: vi.fn(),
 }));
+
+vi.mock('@/services/onboarding/onboardingService', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@/services/onboarding/onboardingService')>();
+    return { ...actual, runOnboardingConversation: mockRunConversation };
+});
 
 vi.mock('@/core/store', () => ({
     useStore: () => ({
@@ -102,5 +108,56 @@ describe('useOnboarding processFiles (ISSUE-955)', () => {
         expect(result.current.files[0]!.base64).toBeUndefined();
         expect(result.current.files[0]!.content).toContain('over the');
         expect(result.current.files[0]!.content).toContain('limit');
+    });
+});
+
+/**
+ * ISSUE-957: a failed send must not discard the typed prompt or selected
+ * attachments — the composer is restored so "send again" reproduces the
+ * exact same turn.
+ */
+describe('useOnboarding handleSend failure recovery (ISSUE-957)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('restores input text and attachments when the conversation call fails', async () => {
+        mockRunConversation.mockRejectedValue(new Error('ONBOARDING_TIMEOUT'));
+        const { result } = renderHook(() => useOnboarding());
+
+        // Attach a file, type a narrative
+        const file = new File(['hello'], 'notes.txt', { type: 'text/plain' });
+        await act(async () => {
+            await result.current.handleFileSelect({ target: { files: [file], value: '' } } as any);
+        });
+        await waitFor(() => expect(result.current.files).toHaveLength(1));
+        act(() => result.current.setInput('My long artist story'));
+
+        await act(async () => {
+            await result.current.handleSend();
+        });
+
+        // Composer fully restored — text and attachment both intact.
+        expect(result.current.input).toBe('My long artist story');
+        expect(result.current.files).toHaveLength(1);
+        expect(result.current.files[0]!.file.name).toBe('notes.txt');
+        // The unanswered user turn was withdrawn; the thread ends with the error message.
+        const lastMsg = result.current.history[result.current.history.length - 1]!;
+        expect(lastMsg.role).toBe('model');
+        expect(result.current.history.some(m => m.role === 'user' && m.parts?.[0]?.text === 'My long artist story')).toBe(false);
+    });
+
+    it('clears the composer only on success', async () => {
+        mockRunConversation.mockResolvedValue({ text: 'Great, tell me more!', functionCalls: [] });
+        const { result } = renderHook(() => useOnboarding());
+
+        act(() => result.current.setInput('My long artist story'));
+        await act(async () => {
+            await result.current.handleSend();
+        });
+
+        expect(result.current.input).toBe('');
+        expect(result.current.files).toHaveLength(0);
+        expect(result.current.history.some(m => m.role === 'user' && m.parts?.[0]?.text === 'My long artist story')).toBe(true);
     });
 });

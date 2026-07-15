@@ -56,7 +56,6 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
             return;
         }
 
-        // For uploads, we'll default to style_reference if under limit, else logo
         const MAX_REF = INTELLIGENCE_CONFIG.IMAGE.DEFAULT.maxReferenceImages;
         const currentCount = userProfile?.brandKit?.referenceImages?.length || 0;
 
@@ -66,56 +65,87 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
             const newLogos: BrandAsset[] = [];
             const newUploadedImages = [];
             const timestamp = Date.now();
+            const failures: Array<{ file: string; reason: string }> = [];
 
+            // Upload each file and collect results (with settled pattern for partial success)
             for (const file of files) {
-                const assetId = crypto.randomUUID();
-                const path = `users/${userId}/brand_assets/${assetId}`;
-                
-                logger.debug(`[BrandAssets] Uploading: ${file.name} to ${path}`);
-                const downloadUrl = await StorageService.uploadFile(file, path);
+                try {
+                    const assetId = crypto.randomUUID();
+                    const path = `users/${userId}/brand_assets/${assetId}`;
 
-                const asset: BrandAsset = { 
-                    url: downloadUrl, 
-                    description: file.name,
-                    category: 'other'
-                };
+                    logger.debug(`[BrandAssets] Uploading: ${file.name} to ${path}`);
+                    const downloadUrl = await StorageService.uploadFile(file, path);
 
-                // Logic: prioritize filling Style References (up to 14)
-                if (currentCount + newRefImages.length < MAX_REF) {
-                    newRefImages.push(asset);
-                } else {
-                    asset.category = 'logo';
-                    newLogos.push(asset);
+                    const asset: BrandAsset = {
+                        url: downloadUrl,
+                        description: file.name,
+                        category: 'other'
+                    };
+
+                    // Prioritize Style References up to limit, then overflow to Logos
+                    if (currentCount + newRefImages.length < MAX_REF) {
+                        newRefImages.push(asset);
+                    } else {
+                        asset.category = 'logo';
+                        newLogos.push(asset);
+                    }
+
+                    newUploadedImages.push({
+                        id: assetId,
+                        type: 'image' as const,
+                        url: downloadUrl,
+                        prompt: file.name,
+                        timestamp,
+                        projectId: currentProjectId || 'unassigned'
+                    });
+                } catch (error: unknown) {
+                    const err = error as { message?: string };
+                    failures.push({
+                        file: file.name,
+                        reason: err.message || 'Unknown error'
+                    });
+                    logger.warn(`[BrandAssets] Failed to upload ${file.name}:`, error);
                 }
-
-                newUploadedImages.push({
-                    id: assetId,
-                    type: 'image' as const,
-                    url: downloadUrl,
-                    prompt: file.name,
-                    timestamp,
-                    projectId: currentProjectId || 'unassigned'
-                });
             }
 
-            const currentKit = userProfile?.brandKit || { brandAssets: [], referenceImages: [] };
-            
-            updateBrandKit({
-                referenceImages: [...(currentKit.referenceImages || []), ...newRefImages],
-                brandAssets: [...(currentKit.brandAssets || []), ...newLogos]
-            });
+            // Only persist if we have at least one successful upload
+            if (newRefImages.length > 0 || newLogos.length > 0) {
+                const currentKit = userProfile?.brandKit || { brandAssets: [], referenceImages: [] };
 
-            newUploadedImages.forEach(img => addUploadedImage({
-                ...img,
-                prompt: img.prompt || ''
-            }));
+                try {
+                    await updateBrandKit({
+                        referenceImages: [...(currentKit.referenceImages || []), ...newRefImages],
+                        brandAssets: [...(currentKit.brandAssets || []), ...newLogos]
+                    });
 
-            if (newRefImages.length > 0) toast.success(`${newRefImages.length} style reference(s) added`);
-            if (newLogos.length > 0) toast.success(`${newLogos.length} logo/graphic(s) added`);
+                    newUploadedImages.forEach(img => addUploadedImage({
+                        ...img,
+                        prompt: img.prompt || ''
+                    }));
 
+                    if (newRefImages.length > 0) toast.success(`${newRefImages.length} style reference(s) added`);
+                    if (newLogos.length > 0) toast.success(`${newLogos.length} logo/graphic(s) added`);
+                } catch (persistError: unknown) {
+                    const err = persistError as { message?: string };
+                    logger.error("[BrandAssets] Failed to persist uploads:", persistError);
+                    toast.error(`Failed to save assets: ${err.message || 'Unknown error'}`);
+                    // Note: Storage objects remain — user can retry profile save
+                    return;
+                }
+            }
+
+            // Report any failures that occurred
+            if (failures.length > 0) {
+                const failureMsg = failures.map(f => `${f.file}: ${f.reason}`).join('; ');
+                toast.error(`Failed to upload ${failures.length} file(s): ${failureMsg}`);
+            }
+
+            if (newRefImages.length === 0 && newLogos.length === 0 && failures.length > 0) {
+                toast.error('All uploads failed. No files were added.');
+            }
         } catch (error: unknown) {
-            const err = error as { message?: string; code?: string; stack?: string };
-            logger.error("[BrandAssets] Upload failed:", err);
+            const err = error as { message?: string };
+            logger.error("[BrandAssets] Upload flow failed:", err);
             toast.error(`Upload failed: ${err.message || 'Unknown error'}`);
         } finally {
             setIsGenerating(false);
@@ -124,40 +154,55 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
 
     const moveAsset = async (asset: BrandAsset, from: 'style' | 'logo') => {
         const currentKit = userProfile?.brandKit || { brandAssets: [], referenceImages: [] };
-        
-        if (from === 'style') {
-            // Move from Style References to Logos
-            const newRefImages = (currentKit.referenceImages || []).filter((a: BrandAsset) => a.url !== asset.url);
-            const newLogos = [...(currentKit.brandAssets || []), { ...asset, category: 'logo' as const }];
-            
-            await updateBrandKit({
-                referenceImages: newRefImages,
-                brandAssets: newLogos
-            });
-            toast.success("Moved to Logos & Graphics");
-        } else {
-            // Move from Logos to Style References
-            const MAX_REF = INTELLIGENCE_CONFIG.IMAGE.DEFAULT.maxReferenceImages;
-            if ((currentKit.referenceImages || []).length >= MAX_REF) {
-                toast.error(`Limit reached. You can only have up to ${MAX_REF} style references.`);
-                return;
-            }
 
-            const newLogos = (currentKit.brandAssets || []).filter((a: BrandAsset) => a.url !== asset.url);
-            const newRefImages = [...(currentKit.referenceImages || []), { ...asset, category: 'other' as const }];
-            
-            await updateBrandKit({
-                referenceImages: newRefImages,
-                brandAssets: newLogos
-            });
-            toast.success("Moved to Style References");
+        try {
+            if (from === 'style') {
+                // Move from Style References to Logos
+                const newRefImages = (currentKit.referenceImages || []).filter((a: BrandAsset) => a.url !== asset.url);
+                const newLogos = [...(currentKit.brandAssets || []), { ...asset, category: 'logo' as const }];
+
+                await updateBrandKit({
+                    referenceImages: newRefImages,
+                    brandAssets: newLogos
+                });
+                toast.success("Moved to Logos & Graphics");
+            } else {
+                // Move from Logos to Style References
+                const MAX_REF = INTELLIGENCE_CONFIG.IMAGE.DEFAULT.maxReferenceImages;
+                if ((currentKit.referenceImages || []).length >= MAX_REF) {
+                    toast.error(`Limit reached. You can only have up to ${MAX_REF} style references.`);
+                    return;
+                }
+
+                const newLogos = (currentKit.brandAssets || []).filter((a: BrandAsset) => a.url !== asset.url);
+                const newRefImages = [...(currentKit.referenceImages || []), { ...asset, category: 'other' as const }];
+
+                await updateBrandKit({
+                    referenceImages: newRefImages,
+                    brandAssets: newLogos
+                });
+                toast.success("Moved to Style References");
+            }
+        } catch (error: unknown) {
+            const err = error as { message?: string };
+            logger.error("[BrandAssets] Move failed:", error);
+            toast.error(`Failed to move asset: ${err.message || 'Unknown error'}`);
         }
     };
 
     const deleteAsset = async (asset: BrandAsset, from: 'style' | 'logo') => {
         const currentKit = userProfile?.brandKit || { brandAssets: [], referenceImages: [] };
-        
+
         try {
+            // Extract storage path from URL (gs://... URLs need to be converted to paths)
+            let storagePath: string | null = null;
+            if (asset.url.startsWith('gs://')) {
+                // Convert gs://bucket/path to just path
+                const match = asset.url.match(/gs:\/\/[^/]+\/(.*)/);
+                storagePath = match ? match[1] : null;
+            }
+
+            // Remove from profile
             if (from === 'style') {
                 const newRefImages = (currentKit.referenceImages || []).filter((a: BrandAsset) => a.url !== asset.url);
                 await updateBrandKit({ referenceImages: newRefImages });
@@ -165,9 +210,22 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
                 const newLogos = (currentKit.brandAssets || []).filter((a: BrandAsset) => a.url !== asset.url);
                 await updateBrandKit({ brandAssets: newLogos });
             }
-            toast.success("Asset removed matching project settings");
-        } catch (_error) {
-            toast.error("Failed to remove asset");
+
+            // Delete from Storage (best effort, don't block on failure)
+            if (storagePath) {
+                try {
+                    await StorageService.deleteFile(storagePath);
+                } catch (storageErr) {
+                    logger.warn(`[BrandAssets] Failed to delete storage file ${storagePath}:`, storageErr);
+                    // Continue — profile is already updated
+                }
+            }
+
+            toast.success("Asset removed");
+        } catch (error: unknown) {
+            const err = error as { message?: string };
+            logger.error("[BrandAssets] Delete failed:", error);
+            toast.error(`Failed to remove asset: ${err.message || 'Unknown error'}`);
         }
     };
 
@@ -215,40 +273,47 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
 
                 const currentKit = userProfile?.brandKit || { brandAssets: [], referenceImages: [] };
 
-                if (targetCategory === 'style_reference') {
-                    const MAX_REF = INTELLIGENCE_CONFIG.IMAGE.DEFAULT.maxReferenceImages;
-                    const currentCount = currentKit.referenceImages?.length || 0;
+                try {
+                    if (targetCategory === 'style_reference') {
+                        const MAX_REF = INTELLIGENCE_CONFIG.IMAGE.DEFAULT.maxReferenceImages;
+                        const currentCount = currentKit.referenceImages?.length || 0;
 
-                    if (currentCount >= MAX_REF) {
-                        toast.warning("Limit reached. Asset generated but could not be added to Style References. Adding to Graphics instead.");
-                        updateBrandKit({
-                            brandAssets: [...(currentKit.brandAssets || []), { ...newAsset, category: 'logo' as const }]
-                        });
+                        if (currentCount >= MAX_REF) {
+                            toast.warning("Limit reached. Asset generated but could not be added to Style References. Adding to Graphics instead.");
+                            await updateBrandKit({
+                                brandAssets: [...(currentKit.brandAssets || []), { ...newAsset, category: 'logo' as const }]
+                            });
+                        } else {
+                            await updateBrandKit({
+                                referenceImages: [...(currentKit.referenceImages || []), newAsset]
+                            });
+                            toast.success("Style reference generated and added");
+                        }
                     } else {
-                        updateBrandKit({
-                            referenceImages: [...(currentKit.referenceImages || []), newAsset]
+                        await updateBrandKit({
+                            brandAssets: [...(currentKit.brandAssets || []), newAsset]
                         });
-                        toast.success("Style reference generated and added");
+                        toast.success("Brand asset generated and added");
                     }
-                } else {
-                    updateBrandKit({
-                        brandAssets: [...(currentKit.brandAssets || []), newAsset]
+
+                    addUploadedImage({
+                        id: assetId,
+                        type: 'image',
+                        url: downloadUrl,
+                        prompt: prompt,
+                        timestamp: Date.now(),
+                        projectId: currentProjectId || 'personal',
+                        origin: 'uploaded'
                     });
-                    toast.success("Brand asset generated and added");
+
+                    setPrompt('');
+                    setActiveTab('upload');
+                } catch (persistError: unknown) {
+                    const err = persistError as { message?: string };
+                    logger.error("[BrandAssets] Failed to persist generated asset:", persistError);
+                    toast.error(`Failed to save asset: ${err.message || 'Unknown error'}`);
+                    // Storage object remains — user can retry via profile save
                 }
-
-                addUploadedImage({
-                    id: assetId,
-                    type: 'image',
-                    url: downloadUrl,
-                    prompt: prompt,
-                    timestamp: Date.now(),
-                    projectId: currentProjectId || 'personal',
-                    origin: 'uploaded'
-                });
-
-                setPrompt('');
-                setActiveTab('upload');
             }
 
         } catch (error: unknown) {

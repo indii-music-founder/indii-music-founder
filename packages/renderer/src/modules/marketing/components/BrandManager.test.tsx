@@ -30,6 +30,9 @@ vi.mock('@/core/store', () => {
         updateBrandKit: vi.fn(),
         setUserProfile: vi.fn(),
         pendingHandoffs: {},
+        // VisualsPanel.tsx calls useStore(state => state.peekHandoff) directly —
+        // must exist alongside consumeHandoff or it throws "not a function".
+        peekHandoff: vi.fn(() => null),
         consumeHandoff: vi.fn(() => null),
         pinToClipboard: vi.fn(),
         sendToModule: vi.fn(),
