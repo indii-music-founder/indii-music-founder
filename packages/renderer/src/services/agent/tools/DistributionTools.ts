@@ -94,7 +94,7 @@ const prepare_release = wrapTool('prepare_release', async (args: {
             publisher: 'Self-Published',
             containsSamples: false,
             samples: [],
-            isGolden: true,
+            isGolden: false, // Not golden: empty splits and default publisher (ISSUE-795)
             territories: ['Worldwide'],
             distributionChannels: ['streaming', 'download'],
             aiGeneratedContent: { isFullyAIGenerated: false, isPartiallyAIGenerated: false }
@@ -532,6 +532,9 @@ export const DistributionTools = {
             trackTitle,
             artistName,
             isrc: args.metadata.isrc,
+            territories: [],
+            distributionChannels: [],
+            isGolden: false,
             upc: args.metadata.upc,
             labelName,
             releaseType: args.metadata?.releaseType || 'Single',
@@ -546,11 +549,12 @@ export const DistributionTools = {
             publisher: args.metadata?.publisher || 'Self-Published',
             containsSamples: args.metadata?.containsSamples ?? false,
             samples: args.metadata?.samples || [],
-            isGolden: true,
-            territories: args.metadata?.territories || ['Worldwide'],
-            distributionChannels: args.metadata?.distributionChannels || ['streaming', 'download'],
             aiGeneratedContent: args.metadata?.aiGeneratedContent || { isFullyAIGenerated: false, isPartiallyAIGenerated: false },
         };
+
+        // Compute golden status based on actual requirements (ISSUE-795)
+        const { MetadataOrchestrator } = await import('@/services/metadata/MetadataOrchestrator');
+        meta.isGolden = MetadataOrchestrator.computeGoldenStatus(meta);
 
         try {
             const result = await ingestionNotificationService.generateERN(meta, undefined, 'generic', undefined, { isTestMode: false });

@@ -165,7 +165,7 @@ describe.skip('DAWIntegrationService', () => {
     });
 
     describe.skip('populateDistributionFields', () => {
-        it('should merge parsed values into industry-standard Golden Metadata fields', () => {
+        it('should merge parsed values into industry-standard Golden Metadata fields', async () => {
             const parsed = {
                 bpm: 130,
                 key: 'D# Major',
@@ -178,13 +178,13 @@ describe.skip('DAWIntegrationService', () => {
                 trackTitle: 'Original Track'
             };
 
-            const result = dawIntegrationService.populateDistributionFields(parsed, current);
+            const result = await dawIntegrationService.populateDistributionFields(parsed, current);
 
             expect(result.bpm).toBe(130);
             expect(result.key).toBe('D# Major');
             expect(result.durationFormatted).toBe('3:15');
             expect(result.durationDDEXFormatted).toBe('PT3M15S');
-            expect(result.isGolden).toBe(true);
+            expect(result.isGolden).toBe(false); // Not golden without splits, real publisher, label, ISRC
         });
     });
 

@@ -69,6 +69,8 @@ describe('CRMDashboard', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        // ISSUE-979: the dashboard only closes/clears after a real persisted ID.
+        mockCreateCampaign.mockResolvedValue('new-campaign-id');
         (useStore as unknown as import('vitest').Mock).mockImplementation((selector: any) => {
             if (selector) return selector(defaultState);
             return defaultState;
@@ -224,6 +226,27 @@ describe('CRMDashboard', () => {
                 status: 'active'
             });
         });
+    });
+
+    it('ISSUE-979: keeps the modal and draft intact when createCampaign returns null (persistence failure)', async () => {
+        mockCreateCampaign.mockResolvedValue(null);
+        render(<CRMDashboard />);
+
+        fireEvent.click(screen.getByText('New Drop'));
+        fireEvent.change(screen.getByPlaceholderText('e.g. Genesis Digital Vinyl Drop'), { target: { value: 'Synthwave Collector Pack' } });
+        fireEvent.change(screen.getByPlaceholderText('100'), { target: { value: '250' } });
+        fireEvent.change(screen.getByPlaceholderText('9.99'), { target: { value: '14.99' } });
+
+        fireEvent.click(screen.getByText('Save as Draft'));
+
+        await waitFor(() => {
+            expect(mockCreateCampaign).toHaveBeenCalled();
+        });
+        // Modal stays open, draft values are preserved — nothing was saved.
+        expect(screen.getByText('Launch a new Digital Vinyl or VIP drop for your superfans.')).toBeInTheDocument();
+        expect(screen.getByPlaceholderText('e.g. Genesis Digital Vinyl Drop')).toHaveValue('Synthwave Collector Pack');
+        expect(screen.getByPlaceholderText('100')).toHaveValue(250);
+        expect(screen.getByPlaceholderText('9.99')).toHaveValue(14.99);
     });
 
     it('cancels form modal inputs and closes when Cancel is clicked', () => {
