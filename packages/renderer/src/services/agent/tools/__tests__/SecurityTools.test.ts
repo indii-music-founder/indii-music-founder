@@ -121,7 +121,10 @@ describe('SecurityTools (Mocked)', () => {
             const result = await audit_permissions({ project_id: 'org-1' });
             const parsed = result.data;
 
-            expect(parsed.status).toBe("Live Audit Complete");
+            // Honesty pass: audit_permissions reports a partial membership
+            // summary, not a false "complete" claim (it doesn't check custom
+            // roles, Firestore rules, Auth claims, or IAM).
+            expect(parsed.status).toBe("shallow_membership_summary");
 
             // Logic: owner = admin, others = viewer
             // user-1 is owner -> admin
