@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-07-14 20:49 EDT
+**Updated:** 2026-07-14 20:50 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+8360d0f13 chore: session checkpoint [20:49]
 ce870489d fix: ISSUE-1050 — missing ISWC must not block registrationReady
 2f81f7c7b chore: session checkpoint [20:43]
 0be4562b9 chore: session checkpoint [20:38]
@@ -13,7 +14,6 @@ ed28ae01f chore(ledger): mark ISSUE-822 and ISSUE-823 FIXED (honesty pass: distr
 b49279984 fix: ISSUE-824 — tax form collection guards against 0/0 progress and clarifies collaborator requirement
 41d36d76a chore: session checkpoint [20:35]
 6fcdbf3e8 chore: session checkpoint [20:34]
-1be6598ed chore: final session checkpoint — 23 issues fixed, 60 OPEN remain, ready for next phase
 ```
 
 ## Working State
