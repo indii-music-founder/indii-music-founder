@@ -13179,7 +13179,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-831: PRO repertoire lookup can invent registry records from model memory
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-14 — removed model hallucination)
 - **Severity:** 🟠 HIGH (rights data integrity)
 - **Module:** Agent tools / Publishing lookup
 - **Evidence:** `UniversalTools.pro_lookup()` performs a best-effort Google navigation/extract if an Electron bridge exists (`UniversalTools.ts:120-130`), then prompts the model to return PRO registry records and explicitly says, “If exact details are not in the provided search context, use your comprehensive internal knowledge base of registered musical works” (`:133-145`). The tool returns “Repertoire search completed” with the generated text (`:147-153`).
@@ -13210,7 +13210,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-834: POD connection state is based on registered adapters, not verified provider credentials
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-14 — removed model hallucination)
 - **Severity:** 🟠 HIGH
 - **Module:** Merchandise / POD integrations
 - **Evidence:** `PrintOnDemandService.isConfigured()` returns true when a provider adapter is registered and not `internal` (`PrintOnDemandService.ts:898-900`), so `ManufacturingPanel.tsx:76-80` can mark Printful configured without checking user credentials or backend Cloud Functions. The provider implementation then calls Firebase functions like `pod_printfulGetProducts`/`pod_printfulCreateOrder` (`PrintOnDemandService.ts:209-219`, `:223-276`) and does not read the user-scoped credentials saved by `PODCredentialService` (`PODCredentialService.ts:37-66`). `PODIntegrationPanel.tsx:176-194` marks a partner connected when a Firestore key field exists, while sync failures are swallowed (`:207-217`).
