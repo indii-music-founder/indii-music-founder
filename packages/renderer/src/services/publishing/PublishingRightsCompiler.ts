@@ -178,6 +178,7 @@ export class PublishingRightsCompiler implements HarnessCompiler<PublishingRight
     let needsMlc = false;
     if (input.mlcRegistrationStatus === 'unregistered') {
       needsMlc = true;
+      blockers.push('MLC registration missing — required for mechanical royalty collection.');
       findings.push({
         id: 'mlc_unregistered',
         domain: this.domain,
@@ -190,6 +191,7 @@ export class PublishingRightsCompiler implements HarnessCompiler<PublishingRight
 
     // IPI Check
     if (missingIpis.length > 0) {
+      blockers.push(`Missing writer IPI/CAE: ${missingIpis.join(', ')}`);
       findings.push({
         id: 'missing_ipi',
         domain: this.domain,
@@ -200,7 +202,16 @@ export class PublishingRightsCompiler implements HarnessCompiler<PublishingRight
       });
     }
 
-    const registrationReady = blockers.length === 0;
+    // CRITICAL: Registration ready requires ALL critical items
+    // Missing MLC, IPI, or ISWC should block registration (not just PRO)
+    const hasCriticalBlockers = blockers.length > 0 || 
+                                 input.mlcRegistrationStatus === 'unregistered' ||
+                                 missingIpis.length > 0 ||
+                                 !input.iswc;
+    
+    // registrationReady means: ready to file splits/works with proper identifiers
+    // This requires: PRO active, writer IPIs present, ISWC assigned, MLC registered
+    const registrationReady = !hasCriticalBlockers;
 
     const output: PublishingRightsOutput = {
       registrationReady,
