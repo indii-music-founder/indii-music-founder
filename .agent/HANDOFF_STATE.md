@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-07-15 13:18 EDT
+**Updated:** 2026-07-15 13:22 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+276b8cdb8 docs(ledger): ISSUE-826 & ISSUE-827 fixed — waterfall contract + sync-clearance honesty gap
+23d121b63 chore: session checkpoint [13:18]
 549695646 chore: session checkpoint [13:12]
 68319b7c7 chore: session checkpoint [13:09]
 0647f8b60 chore: session checkpoint [13:05]
@@ -12,13 +14,11 @@ c1e82a9f0 chore: session checkpoint [12:37]
 4f130080c fix(video): stop waitForJob resolving early on transient 'stitching' progress (ISSUE-878 regression)
 4ace6430e chore: session checkpoint [10:27]
 b869064ac chore: session checkpoint [10:23]
-0db3dd525 chore: session checkpoint [10:22]
-3be128b5a fix: IntelligenceCampaignModal a11y test — match actual component platforms
 ```
 
 ## Working State
 ```
-clean working tree
+ M packages/renderer/src/modules/onboarding/hooks/useOnboarding.ts
 ```
 
 ## Decisions
