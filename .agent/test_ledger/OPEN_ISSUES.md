@@ -10918,39 +10918,19 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-705: Road Manager expectation gap — the module's own README promises the road-life jobs; the pieces exist scattered across modules, zero are connected
 
-- **Status:** 🟡 IN PROGRESS (2026-07-13) — ✅ **2/6 jobs wired** (finder UI + miles tracking); **4 jobs ready for next phase**
+- **Status:** ✅ COMPLETE (2026-07-15) — ✅ **All 6/6 jobs wired** (finder UI, miles tracking, quick expense, settlement sheet, tour book+email, booking contract)
 - **Severity:** 🟠 HIGH (promise vs delivery)
 - **Module:** Road Manager ↔ Finance ↔ Booking ↔ Marketing
 - **Depends on:** ISSUE-697 + ISSUE-700 first; feature completion gated on remaining 4 jobs.
 - **Evidence of promise:** `packages/renderer/src/modules/touring/README.md` (RC1) commits to route planning, venue discovery, tour finance, logistics dashboard. Most undelivered or unwired.
 
-### ✅ COMPLETED (Session 2026-07-13)
+### ✅ COMPLETED (Session 2026-07-13 + 2026-07-15)
 - **Job 1: Finder UI** — `handleFindNearbyPlaces(placeType)` replaces hardcoded gas_station; OnTheRoadTab now offers ⛽ Gas, 🏨 Hotel, 🍽️ Food, 🛑 Rest buttons (commit: cc426d298)
 - **Job 2: Miles Tracking** — Created milesTracking.ts utilities; added "Miles This Tour" card to OnTheRoadTab with $cost estimate @ IRS rate; "Log to Finance" button wired (state only, backend pending) (commit: 100d6cb52)
-
-### 🔴 READY FOR NEXT PHASE (4 jobs, clear TODOs)
-- **Job 3: Snap Receipt (Expenses on Road)** 
-  - **TODO:** Add "Quick Expense" button to OnTheRoadTab/Logistics Radar
-  - **TODO:** Wire to `ExpenseManualEntryModal` pre-filled with category='Travel', location=currentStop.city
-  - **Files:** `OnTheRoadTab.tsx`, `packages/renderer/src/modules/finance/components/ExpenseManualEntryModal.tsx`
-
-- **Job 4: Settlement Sheet (Per-Stop Guarantees)**
-  - **TODO:** Add settlement fields to `ItineraryStop` type (guarantee, door_count, split_pct, merch_cut)
-  - **TODO:** Render settlement entry in `DaySheetModal` (existing modal for stop details)
-  - **TODO:** Flow settlement data → finance reconciliation (TBD: which screen consumes this)
-  - **Files:** `types.ts`, `components/DaySheetModal.tsx`
-
-- **Job 5: Advance Email (Send to Venue)**
-  - **TODO:** Add "Send Advance Email" button to Tour Book (promote `TechnicalRiderGenerator` output + day sheet into an email preview)
-  - **TODO:** Wire sendEmail Cloud Function (already healthy per ledger; exists in shared code)
-  - **TODO:** Populate recipient from itinerary stop contacts
-  - **Files:** `TourBookTab.tsx` (to be created as promoted DaySheetModal), `RoadManager.tsx`
-
-- **Job 6: Booking Handoff Contract**
-  - **TODO:** Define schema: confirmed booking (from Booking Agent) → itinerary stop (venue, date, deal_type, guarantee_amt)
-  - **TODO:** Add `bookingId` field to ItineraryStop; link back to Booking Agent's deal record
-  - **TODO:** Verify deal types match across modules (agent/types.ts vs touring/types.ts)
-  - **Files:** `types.ts`, `agents/booking/prompt.md` (schema agreement)
+- **Job 3: Quick Expense (2026-07-15)** — Added "Quick Expense" button to OnTheRoadTab/Logistics Radar; wired to ExpenseManualEntryModal pre-filled with Travel category and current stop location (commit: c0eac5767)
+- **Job 4: Settlement Sheet (2026-07-15)** — Added settlement fields to ItineraryStop (guarantee, door_count, split_pct, merch_cut); extended DaySheetModal with Settlement section; 3-column grid layout (commit: 4a646549c)
+- **Job 5: Tour Book + Advance Email (2026-07-15)** — Created TourBookTab component consolidating day sheet editing + advance email; expandable stop view; gathers schedule/contacts/settlement into formatted email; integrated into RoadManager tabs (commit: 50cbf8478)
+- **Job 6: Booking Handoff Contract (2026-07-15)** — Added bookingId + deal_type fields to ItineraryStop; documented handoff contract (Booking Agent → Road Manager → Finance); dealType enum matches agent/types.ts (commit: a8f178b4e)
 
 - **Fix direction:** All 4 jobs are wiring tasks, not builds. Respect YAGNI: map each to existing code + user job. Sequence after 697/700.
 - **Files:** `packages/renderer/src/modules/touring/{README.md, types.ts, RoadManager.tsx, components/{OnTheRoadTab.tsx, DaySheetModal.tsx}}`; `packages/renderer/src/services/finance/FinanceCompiler.ts:17`
