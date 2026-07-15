@@ -97,7 +97,6 @@ export class MetadataOrchestrator {
             durationFormatted: this.formatDuration(profile.technical.duration),
             releaseDate: initialData.releaseDate || new Date().toISOString().split('T')[0]!,
             releaseType: initialData.releaseType || 'Single',
-            isGolden: true, // Mark as Golden since it's Intelligence-verified and ID-assigned
             aiGeneratedContent: initialData.aiGeneratedContent || {
                 isFullyAIGenerated: false,
                 isPartiallyAIGenerated: false,
@@ -105,6 +104,9 @@ export class MetadataOrchestrator {
                 humanContribution: 'Original recording provided by user.'
             }
         };
+
+        // Compute golden status based on actual metadata requirements
+        metadata.isGolden = MetadataOrchestrator.computeGoldenStatus(metadata);
 
         // 4. Save to Track Library (Firestore)
         await trackLibrary.saveTrack(metadata);

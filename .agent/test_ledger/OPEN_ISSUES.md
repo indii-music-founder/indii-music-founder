@@ -12191,21 +12191,21 @@ Remove `VisaChecklist.tsx` from the ephemeral list — its chat reads from a nam
 
 ### Ledger Updates (all issues in `.agent/test_ledger/OPEN_ISSUES.md`)
 
-- ISSUE-750 (Archive Parity): Status `🔴 OPEN (partial UI, a11y test failures)`
-- ISSUE-751 (Project-Scoped Conversations): Status `🔴 OPEN (project unification 758/762 incomplete)`
+- ISSUE-750 (Archive Parity): Status `⏳ BACKLOG (partial UI, a11y test failures)`
+- ISSUE-751 (Project-Scoped Conversations): Status `⏳ BACKLOG (project unification 758/762 incomplete)`
 - ISSUE-752 (Discuss Image Attach): Status `🟢 FIXED (image routed through attachment pipeline, tested)`
 - ISSUE-753 (Agent Switcher): Status `🟢 FIXED (AgentSwitcherStrip built, integrated in RightPanel + ChatOverlay)`
 - ISSUE-754 (Creations Affordance): Status `🟡 PARTIAL (collapsed affordance added with pulse, needs one-shot logic)`
-- ISSUE-755 (Conversations Vanish): Status `🔴 OPEN (safety-net creates sessions, but 4 blockers prevent full fix)`
+- ISSUE-755 (Conversations Vanish): Status `⏳ BACKLOG (safety-net creates sessions, but 4 blockers prevent full fix)`
   - Depends: 756, 757, 758, 762
 - ISSUE-756 (Session Pagination): Status `✅ FIXED (cursor pagination + loadMoreSessions, 2026-07-12)`
 - ISSUE-757 (Memory Recall): Status `🟡 PARTIAL (frontend caps → 1000, backend recall depth still needs increase, 2026-07-12)`
-- ISSUE-758 (Dual Project Systems): Status `🔴 OPEN (one ProjectService remains, appSlice still has currentProjectId, not unified)`
-- ISSUE-759 (Archived Projects Unrecoverable): Status `🔴 OPEN (archive action exists, unarchive UI missing)`
+- ISSUE-758 (Dual Project Systems): Status `⏳ BACKLOG (one ProjectService remains, appSlice still has currentProjectId, not unified)`
+- ISSUE-759 (Archived Projects Unrecoverable): Status `⏳ BACKLOG (archive action exists, unarchive UI missing)`
 - ISSUE-760 (Boardroom Persistence): Status `🟢 FIXED (now persists via agentHistory, tested)`
 - ISSUE-761 (Notes Device-Local Only): Status `✅ FIXED (Firestore sync + offline queue, 2026-07-12)`
-- ISSUE-762 (Duplicate ProjectService): Status `🔴 OPEN (old services/project/ProjectService.ts deleted but appSlice ProjectService is 2nd impl)`
-- ISSUE-763 (Beta First-Touch): Status `🔴 OPEN (ISSUE-676 upload path still missing; 753 agent switcher done)`
+- ISSUE-762 (Duplicate ProjectService): Status `⏳ BACKLOG (old services/project/ProjectService.ts deleted but appSlice ProjectService is 2nd impl)`
+- ISSUE-763 (Beta First-Touch): Status `⏳ BACKLOG (ISSUE-676 upload path still missing; 753 agent switcher done)`
 
 ### Recommended Next Agent
 
