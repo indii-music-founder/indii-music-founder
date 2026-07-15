@@ -1,5 +1,5 @@
 import { StorageService } from '@/services/StorageService';
-import { wrapTool, toolSuccess } from '../utils/ToolUtils';
+import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 import { importWithRetry } from '@/utils/dynamicImport';
 
@@ -61,14 +61,11 @@ export const StorageTools = {
                 savedBytes: result.data.savedBytes,
                 status: result.data.status
             }, `Storage scrub completed for bucket ${args.bucketId}. Deleted ${result.data.deletedFiles} orphaned files, saved ${(result.data.savedBytes / 1024 / 1024).toFixed(1)} MB.`);
-        } catch (__error: unknown) {
-            return toolSuccess({
-                bucketId: args.bucketId,
-                olderThanDays: args.olderThanDays,
-                deletedFiles: 0,
-                savedBytes: 0,
-                status: 'Scan queued (deploy Cloud Function for execution)'
-            }, `Storage scrub queued for bucket ${args.bucketId}. Deploy Cloud Function 'scrubOrphanedMedia' for actual cleanup.`);
+        } catch (error: unknown) {
+            return toolError(
+                `Storage scrub unavailable: Cloud Function 'scrubOrphanedMedia' not deployed. Existing cleanup jobs: cleanupOrphanedVideos (scheduled), cleanupExpiredVideoTemps (scheduled), flagVideosForArchival (manual). ${error instanceof Error ? error.message : ''}`,
+                'STORAGE_SCRUB_UNAVAILABLE'
+            );
         }
     })
 } satisfies Record<string, AnyToolFunction>;
