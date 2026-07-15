@@ -1,25 +1,24 @@
 # Handoff State
-**Updated:** 2026-07-15 13:27 EDT
+**Updated:** 2026-07-15 13:59 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+1d09fb259 docs(ledger): mark ISSUE-705 complete — all 6 Road Manager jobs wired (2026-07-15)
+a8f178b4e feat(touring): ISSUE-705 Job 6 — Booking Handoff Contract
+50cbf8478 feat: ISSUE-705 Job 5 — Tour Book Tab with Advance Email
+4a646549c fix: ISSUE-705 Job 4 — Settlement Sheet in DaySheetModal
+c0eac5767 fix: ISSUE-705 Job 3 — Quick Expense button on OnTheRoadTab
+74ed09392 chore: session checkpoint [13:27]
 af833095f chore: session checkpoint [13:22]
 276b8cdb8 docs(ledger): ISSUE-826 & ISSUE-827 fixed — waterfall contract + sync-clearance honesty gap
 23d121b63 chore: session checkpoint [13:18]
 549695646 chore: session checkpoint [13:12]
-68319b7c7 chore: session checkpoint [13:09]
-0647f8b60 chore: session checkpoint [13:05]
-31e9b6a55 chore: session checkpoint [13:04]
-c1e82a9f0 chore: session checkpoint [12:37]
-4f130080c fix(video): stop waitForJob resolving early on transient 'stitching' progress (ISSUE-878 regression)
-4ace6430e chore: session checkpoint [10:27]
 ```
 
 ## Working State
 ```
- M packages/renderer/src/modules/onboarding/hooks/useOnboarding.ts
- M packages/renderer/src/modules/touring/components/OnTheRoadTab.tsx
+clean working tree
 ```
 
 ## Decisions
