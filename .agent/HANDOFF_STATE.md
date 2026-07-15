@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-07-15 07:47 EDT
+**Updated:** 2026-07-15 07:55 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+af62fe4c4 fix: ISSUE-873 — Masked-edit prompt now based on sourceMask presence
+99179088d fix: ISSUE-874 — Image Search grounding toggle now forwarded by direct generation
 5a280d804 chore: session checkpoint [07:41]
 bcb2a91d7 chore: session checkpoint [07:41]
 dce6c99e7 chore: session checkpoint [07:40]
@@ -12,14 +14,15 @@ daf57edd7 chore: session checkpoint [07:36]
 ceafc71b1 chore: session checkpoint [06:48]
 e0696697b fix: ISSUE-953 — creative-to-marketing handoff now persists before acknowledging
 78d8629bd fix: ISSUE-878 — long-form video completion status changed to 'stitching' instead of 'completed'
-e0492588e fix(distribution): ISSUE-826 waterfall engine emits processed_at timestamp
-3b848431e fix: ISSUE-903 — failed Songfile search no longer creates false 'not_required' clearance
 ```
 
 ## Working State
 ```
+ M .agent/test_ledger/OPEN_ISSUES.md
  M packages/firebase/firestore.rules
  M packages/renderer/src/modules/creative/components/CreativeGallery.tsx
+ M packages/renderer/src/modules/creative/video/editor/components/EditorAssetLibrary.tsx
+ M packages/renderer/src/modules/creative/video/editor/components/TimelineTrack.tsx
  M packages/renderer/src/modules/licensing/components/SyncBriefMatcher.test.tsx
  M packages/renderer/src/modules/licensing/components/SyncBriefMatcher.tsx
  M packages/renderer/src/services/licensing/LicensingSyncCompiler.test.ts
