@@ -13841,7 +13841,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-894: Storage scrub agent calls a nonexistent cleanup callable and reports a queued scrub
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-14 — error handling honesty)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Storage agent tools / Maintenance operations
 - **Evidence:** `scrub_orphaned_media()` calls `httpsCallable(functions, 'scrubOrphanedMedia')` (`StorageTools.ts:41-55`), but Firebase exports only scheduled storage maintenance functions such as `cleanupOrphanedVideos`, `cleanupExpiredVideoTemps`, `trackStorageQuotas`, and `flagVideosForArchival` (`index.ts:151`). When the callable fails, the tool returns `toolSuccess` with `deletedFiles: 0`, `savedBytes: 0`, and `status: 'Scan queued (deploy Cloud Function for execution)'` (`StorageTools.ts:64-72`).
