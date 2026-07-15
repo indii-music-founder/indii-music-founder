@@ -134,8 +134,8 @@ export const UniversalTools = {
             const { AutonomousIntelligence, getResponseText } = await importWithRetry(() => import('@/services/intelligence/AutonomousIntelligence'));
             const { getFineTunedModel } = await importWithRetry(() => import('../fine-tuned-models'));
 
-            const systemPrompt = `You are the Publishing Manager for indii. Analyze performing rights organizations (ASCAP, BMI, SESAC, PRS, GEMA, etc.) registry records. Return a structured breakdown containing work title, ISWC, writer names, publisher names, split percentages, and society affiliations. If exact details are not in the provided search context, use your comprehensive internal knowledge base of registered musical works.`;
-            const prompt = `Society Requested: ${society}\nSearch Query: ${args.query}\n\nSearch Context:\n${searchContext || 'No live web search context available'}`;
+            const systemPrompt = `You are a PRO registry data analyst. Analyze ONLY the provided search context from ASCAP, BMI, SESAC, PRS, GEMA, or MLC official websites. Return work details ONLY if present in the search context: work title, ISWC, writer names, publisher names, split percentages, society affiliations. If search context is empty or does not contain the requested work, return "not_found". Never use internal knowledge or guesses for registry data - all returned data must be sourced from the provided search context.`;
+            const prompt = `Society Requested: ${society}\nSearch Query: ${args.query}\n\nOfficial Search Context:\n${searchContext || 'No live web search context available - cannot perform lookup without official source.'}`;
 
             const response = await AutonomousIntelligence.generateContent(
                 prompt,
@@ -149,8 +149,12 @@ export const UniversalTools = {
             return toolSuccess({
                 query: args.query,
                 society,
-                results: resultText
-            }, `Repertoire search completed for "${args.query}" under ${society}.`);
+                results: resultText,
+                source: searchContext ? 'official_web_search' : 'no_search_context',
+                hasOfficialSource: Boolean(searchContext)
+            }, searchContext
+                ? `Repertoire search completed for "${args.query}" under ${society}. Results from official web search.`
+                : `Search failed - no live web context available. PRO registries must be searched directly via official PRO websites (ascap.com, bmi.com, etc.) to verify work registration.`);
         } catch (error: unknown) {
             return toolError(
                 `PRO lookup failed: ${error instanceof Error ? error.message : String(error)}`,
