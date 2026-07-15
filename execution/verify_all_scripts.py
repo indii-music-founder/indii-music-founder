@@ -26,6 +26,9 @@ def test_waterfall():
         data = json.loads(res.stdout)
         # (1000 - 150 - 100) * 0.5
         assert data["distributions"]["artist"]["amount"] == 375.0
+        assert data["total_distributed"] == 750.0
+        # ISSUE-826: report must carry a timestamp for the UI contract
+        assert "processed_at" in data
         print("✅ Waterfall Payout Passed")
     else:
         print(f"❌ Waterfall Payout Failed: {res.stderr}")
