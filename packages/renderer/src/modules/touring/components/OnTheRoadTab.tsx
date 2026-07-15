@@ -3,11 +3,14 @@ import { useTranslation } from 'react-i18next';
 import React, { useEffect, useState } from 'react';
 
 import { motion } from 'motion/react';
-import { Navigation, Fuel, Clock, Crosshair, TrendingUp } from 'lucide-react';
+import { Navigation, Fuel, Clock, Crosshair, TrendingUp, Receipt } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Itinerary, ItineraryStop, NearbyPlace, FuelLogistics } from '../types';
 import { getTotalMilesFromItinerary, calculateMileageCost } from '../milesTracking';
+import { ExpenseManualEntryModal } from '@/modules/finance/components/ExpenseManualEntryModal';
+import { Expense } from '@/services/finance/FinanceService';
+import { financeService } from '@/services/finance/FinanceService';
 
 import { TourMap } from './TourMap';
 import { logger } from '@/utils/logger';
@@ -36,6 +39,7 @@ export const OnTheRoadTab: React.FC<OnTheRoadTabProps> = ({
 }) => {
     const { t } = useTranslation();
     const [isLoggingMiles, setIsLoggingMiles] = useState(false);
+    const [showExpenseModal, setShowExpenseModal] = useState(false);
 
     // Find next stop logic
     const today = new Date();
@@ -56,6 +60,22 @@ export const OnTheRoadTab: React.FC<OnTheRoadTabProps> = ({
                 logger.error("Geolocation failed:", error);
             }
         );
+    };
+
+    const handleQuickExpense = async (expenseData: Partial<Expense>) => {
+        // Pre-fill with Travel category and current stop location
+        const expenseWithDefaults: Partial<Expense> = {
+            ...expenseData,
+            category: 'Travel',
+            description: expenseData.description || `Expense at ${nextStop?.city || 'on tour'}`
+        };
+
+        try {
+            await financeService.addExpense(expenseWithDefaults);
+            logger.info('Quick expense logged:', expenseWithDefaults);
+        } catch (error) {
+            logger.error('Failed to log quick expense:', error);
+        }
     };
 
     const range = fuelLogistics?.currentRangeMiles ?? 200;
@@ -217,8 +237,8 @@ export const OnTheRoadTab: React.FC<OnTheRoadTabProps> = ({
                                 </Button>
                             </div>
 
-                            {/* Place Type Selector */}
-                            <div className="flex gap-2 flex-wrap">
+                            {/* Place Type Selector & Quick Expense */}
+                            <div className="flex gap-2 flex-wrap items-center">
                                 {[
                                     { type: 'gas_station', label: '⛽ Gas' },
                                     { type: 'lodging', label: '🏨 Hotel' },
@@ -235,6 +255,15 @@ export const OnTheRoadTab: React.FC<OnTheRoadTabProps> = ({
                                         {label}
                                     </Button>
                                 ))}
+                                <Button
+                                    onClick={() => setShowExpenseModal(true)}
+                                    variant="outline"
+                                    className="text-xs py-1 h-auto ml-auto text-amber-400 border-amber-400/30 hover:bg-amber-400/10"
+                                    title="Log an expense while on the road"
+                                >
+                                    <Receipt size={16} className="mr-1" />
+                                    Quick Expense
+                                </Button>
                             </div>
                         </div>
 
@@ -263,6 +292,14 @@ export const OnTheRoadTab: React.FC<OnTheRoadTabProps> = ({
                     </CardContent>
                 </Card>
             </div>
+
+            {/* Quick Expense Modal */}
+            {showExpenseModal && (
+                <ExpenseManualEntryModal
+                    onClose={() => setShowExpenseModal(false)}
+                    onAdd={handleQuickExpense}
+                />
+            )}
         </div>
     );
 };
