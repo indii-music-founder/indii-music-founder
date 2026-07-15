@@ -15622,3 +15622,12 @@ Naming fix: `LabelDealRecoupmentService.ts` collection literal `'labelDeals'` �
   - `SecurityTools.test.ts`: `audit_permissions` now returns honest `status: "shallow_membership_summary"` + `completeness: "partial"` (doesn't check custom roles / Firestore rules / Auth claims / IAM) instead of a false `"Live Audit Complete"`. Updated the assertion.
   - `WorkflowEngine.test.ts` (×2): Veo only accepts 4/6/8s, so the engine sends `durationSeconds: 8`; tests still expected the invalid `5`. Updated to `8`.
   - Not touched: `KnowledgeChat.test.tsx > clears chat history` failed only under local `--maxWorkers=2` (mock-store closure leaking across concurrent files); passes standalone and CI runs `--maxWorkers=1`, so it is not a CI blocker. Deeper mock isolation is a separate task.
+
+### ISSUE-1050: Missing-ISWC wrongly blocked registrationReady (regression from ISSUE-823)
+
+- **Status:** ✅ FIXED (2026-07-14). Real source bug, not a stale test. Concurrent commit `35622030d` (ISSUE-823, "requires all critical items for registration ready") added `!input.iswc` to `hasCriticalBlockers` in `PublishingRightsCompiler.ts`, so a song with no ISWC returned `registrationReady: false`.
+- **Severity:** 🔴 HIGH (broke CI on main — shard 8 — and was substantively wrong).
+- **Self-contradiction it introduced:** the same compiler emits a **medium** `missing_iswc` finding whose detail literally reads *"This does not block delivery, but delays global publishing royalty collection,"* and the test `distinguishes between missing ISWC and actual registration blockers` asserts `registrationReady === true` when ISWC is absent. ISSUE-823 flipped the boolean without updating either — three signals said "not a blocker," the code said "blocker."
+- **Fix:** removed `!input.iswc` from `hasCriticalBlockers` (PublishingRightsCompiler.ts:207). MLC-unregistered and missing-IPI remain real blockers. ISWC absence stays a medium finding + recommendation, not a delivery gate.
+- **Verification:** `PublishingRightsCompiler.test.ts` 6/6, and full local suite `vitest run --maxWorkers=2` = 750 files passed / 0 failed.
+- **DO NOT:** don't re-add ISWC to the blocker set without also rewriting the `missing_iswc` finding text and the test — they encode the deliberate business rule that ISWC delays royalty collection but does not block delivery.
