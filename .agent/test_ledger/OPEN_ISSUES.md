@@ -14580,7 +14580,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-957: Failed Brand Interview sends discard the typed prompt and all selected attachments before asking the user to retry
 
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ FIXED (2026-07-15 — failed sends restore exact input text + all attachments to the composer and withdraw the unanswered turn; native file input resets so same-file reselect works; regression tests in useOnboarding.test.ts)
 - **Severity:** 🟠 HIGH (creative input loss)
 - **Module:** Brand Manager / Brand Interview conversation
 - **Evidence:** `handleSend()` copies the current files, then immediately clears both `input` and `files` before awaiting `runOnboardingConversation` (`useOnboarding.ts:212-232`). On timeout/rate-limit/provider failure, the catch only appends a generic “Hit send again” style model message and never restores the text or attachments (`:338-359`). File picker re-selection is also awkward because its value is not reset after a selection (`:192-196`).
@@ -15775,4 +15775,64 @@ These items represent systematic refactoring or feature-completion work, not ind
 **New SCOPED Backlog Items:** 3 (representing ~50 former individual issues)
 
 **Next Phase:** Pick one SCOPED item from backlog based on product priority. All systematic refactoring is identified and ready for scope + estimation.
+
+
+## Session 2026-07-15 Final — ISSUE-511/913/957/958 Scoped Workstream Complete
+
+**Status:** ✅ FIXED (all three items)
+
+### ISSUE-511: Veo Async Job Architecture
+**Status:** ✅ MERGED (prior session) — Foundation already in place
+
+### ISSUE-957: Brand Interview Discard State Loss
+**Status:** ✅ FIXED
+- Input/files restoration on catch already implemented (`useOnboarding.ts:440-442`)
+- File input reset working (`useOnboarding.ts:270`)
+- Restoration captures text + all attachments, blanks unanswered turn, shows error message
+- Ready for Retry/Edit UX enhancement if desired, but core protection is live
+
+**Implementation:** State capture before async call (lines 289-304), restoration on failure (440-442), file input reset (270)
+**Verification:** Pre-commit tests passing
+
+### ISSUE-958: Brand Assets Persistence & Deletion Lifecycle
+**Status:** ✅ FIXED
+- Made `updateBrandKit` async/awaitable (profileSlice.ts:27, 103-114) so add/move/delete operations wait for Firestore persistence
+- BrandAssetsDrawer: all operations now await updateBrandKit with proper error handling
+- Delete action removes BOTH profile reference AND Storage object (best-effort cleanup with path extraction)
+- Batch upload uses settled pattern to handle partial failures gracefully, only persists on success
+- Failures in individual file uploads don't block other files or orphan successful uploads
+
+**Files Changed:**
+- `packages/renderer/src/core/store/slices/profileSlice.ts` — async updateBrandKit implementation
+- `packages/renderer/src/modules/creative/components/BrandAssetsDrawer.tsx` — error handling + Storage deletion
+- `packages/renderer/src/core/store/slices/profileSlice.test.ts` — async test update
+
+**Verification:** Typecheck clean, pre-commit tests passing
+
+### ISSUE-913: Gallery State — Project Context Binding for Async Generations
+**Status:** ✅ FIXED
+- Capture `submissionProjectId` at generation submission time (before async calls) in `handleGenerate` and `handleImageGenerate`
+- Use captured projectId for immediate results (image) and mock data
+- For async job completion: prefer `data.projectId` from Firestore job (if backend persists it) with fallback to captured value
+- Prevents cross-project contamination when user switches projects during render
+
+**Files Changed:**
+- `packages/renderer/src/modules/creative/hooks/useDirectGeneration.ts` — capture at submission, use in completion
+
+**How It Works:**
+1. `handleGenerate` captures `submissionProjectId = currentProjectId` before any async work
+2. `handleImageGenerate` captures before the generateImageV3 callable
+3. Immediate results use captured value
+4. Async jobs: completion callback uses `data.projectId` (source of truth) falling back to captured value
+
+**Verification:** Typecheck clean, pre-commit tests passing, commit d3db49bde
+
+### Summary: Three-Issue Consolidation Complete
+All scoped work from ISSUE-511/913/957/958 consolidated effort:
+- Async job queue (ISSUE-511): ✅ Foundation ready
+- Brand Interview safety (ISSUE-957): ✅ State restoration live
+- Brand Assets ops (ISSUE-958): ✅ Durable persistence + deletion working
+- Gallery project binding (ISSUE-913): ✅ Context captured at submission
+
+**Next phase:** QA sweep, E2E verification, then tackle remaining backlog items (Gallery soft-delete, reference file accumulation, optimistic undo stack if prioritized).
 
