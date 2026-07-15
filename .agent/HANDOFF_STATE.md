@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-07-15 10:23 EDT
+**Updated:** 2026-07-15 10:27 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+b869064ac chore: session checkpoint [10:23]
 0db3dd525 chore: session checkpoint [10:22]
 3be128b5a fix: IntelligenceCampaignModal a11y test — match actual component platforms
 2d323883a docs(ledger): ISSUE-979 fixed, not backlog
@@ -13,7 +14,6 @@ d509d07a7 chore: session checkpoint [10:04]
 f0435e73b chore: session checkpoint [09:10]
 62785297b docs(ledger): mark ISSUE-795 and ISSUE-792 as fixed
 b0a6c9bc7 fix: ISSUE-792 — MLC BWARM export compliance, remove fabricated legal data
-ebb4c65c8 chore: session checkpoint [09:01]
 ```
 
 ## Working State
