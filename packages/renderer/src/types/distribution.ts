@@ -23,8 +23,23 @@ export interface MerlinReport {
 
 export interface BWarmWork {
     title: string;
-    writers: string[];
     isrc?: string;
+    artist?: string;
+    // ISSUE-792 FIX: Real writer data (never defaults like "John Doe")
+    writer_first: string;
+    writer_last: string;
+    writer_ipi?: string;
+    writer_role?: string; // C (Composer), A (Author), CA (Both)
+    // Publisher data (never "Self-Published" default)
+    publisher: string;
+    publisher_ipi?: string;
+    // Royalty split share (from actual metadata, not hardcoded 100%)
+    collection_share: number;
+    // Release date from metadata (not today's date)
+    release_date: string;
+    // Metadata helpers
+    id?: string;
+    iswc?: string;
     [key: string]: unknown;
 }
 

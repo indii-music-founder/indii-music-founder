@@ -29,26 +29,28 @@ class KeysManager:
     def generate_bwarm_csv(self, works: List[Dict[str, Any]]) -> str:
         """Generates a CSV formatted for The MLC (Mechanical Licensing Collective).
 
-        Using a simplified BWARM-compatible schema:
-        - Work Title
-        - ISWC (if available)
-        - HFA Code (if available)
-        - Writer 1 Last Name
-        - Writer 1 First Name
-        - Writer 1 IPI
-        - Publisher Name
-        - Publisher IPI
-        - Collection Share
+        ISSUE-792 FIX: Requires real writer/publisher data. Never fabricates legal names or shares.
+
+        Schema (MLC Bulk Work Registration template):
+        - Work Title (required)
+        - ISWC (optional)
+        - Writer Last Name (required - no defaults)
+        - Writer First Name (required - no defaults)
+        - Writer IPI (optional but recommended)
+        - Publisher Name (required - no "Self-Published" default)
+        - Publisher IPI (optional but recommended)
+        - Collection Share % (from actual metadata, summed across splits)
+        - Original Release Date (from metadata, not defaulted to today)
         """
         output = io.StringIO()
         fieldnames = [
             'Work Title',
             'ISWC',
             'Internal Work ID',
-            'Writer 1 Last Name',
-            'Writer 1 First Name',
-            'Writer 1 Role (C/A)',
-            'Writer 1 IPI',
+            'Writer Last Name',
+            'Writer First Name',
+            'Writer Role (C/A)',
+            'Writer IPI',
             'Publisher Name',
             'Publisher IPI',
             'Collection Share (%)',
@@ -59,21 +61,47 @@ class KeysManager:
         writer.writeheader()
 
         for work in works:
+            # ISSUE-792: Validate required fields before writing
+            title = work.get('title', '').strip()
+            if not title:
+                logger.warning("Skipping work with missing or empty title")
+                continue
+
+            writer_last = work.get('writer_last', '').strip()
+            writer_first = work.get('writer_first', '').strip()
+            if not writer_last or not writer_first:
+                logger.warning(f"Skipping work '{title}': requires real writer legal names (first and last)")
+                continue
+
+            publisher = work.get('publisher', '').strip()
+            if not publisher:
+                logger.warning(f"Skipping work '{title}': requires real publisher name (no 'Self-Published' default)")
+                continue
+
+            # Collection share should come from actual royalty split data, not hardcoded to 100%
+            collection_share = work.get('collection_share')
+            if collection_share is None:
+                logger.warning(f"Skipping work '{title}': requires actual collection share from royalty splits")
+                continue
+
+            # Release date must be from metadata, never defaulted to today
+            release_date = work.get('release_date', '').strip()
+            if not release_date:
+                logger.warning(f"Skipping work '{title}': requires actual release date from metadata")
+                continue
+
             writer.writerow({
-                'Work Title': work.get('title', 'Untitled Work'),
-                'ISWC': work.get('iswc', ''),
-                'Internal Work ID': work.get('id', ''),
-                'Writer 1 Last Name': work.get('writer_last', 'Doe'),
-                'Writer 1 First Name': work.get('writer_first', 'John'),
-                'Writer 1 Role (C/A)': 'C',  # Composer/Author
-                'Writer 1 IPI': work.get('writer_ipi', ''),
-                'Publisher Name': work.get('publisher', 'Self-Published'),
-                'Publisher IPI': work.get('publisher_ipi', ''),
-                'Collection Share (%)': '100',
-                'Original Release Date': work.get(
-                    'release_date',
-                    datetime.datetime.now().strftime('%Y-%m-%d')
-                )
+                'Work Title': title,
+                'ISWC': work.get('iswc', '').strip(),
+                'Internal Work ID': work.get('id', '').strip(),
+                'Writer Last Name': writer_last,
+                'Writer First Name': writer_first,
+                'Writer Role (C/A)': work.get('writer_role', 'C'),  # Composer/Author/Both
+                'Writer IPI': work.get('writer_ipi', '').strip(),
+                'Publisher Name': publisher,
+                'Publisher IPI': work.get('publisher_ipi', '').strip(),
+                'Collection Share (%)': str(collection_share),
+                'Original Release Date': release_date
             })
 
         return output.getvalue()
