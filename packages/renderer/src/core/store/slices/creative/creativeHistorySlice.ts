@@ -90,12 +90,12 @@ export interface CreativeHistorySlice {
 
     // Uploads
     uploadedImages: HistoryItem[];
-    addUploadedImage: (img: HistoryItem) => void;
+    addUploadedImage: (img: HistoryItem) => Promise<boolean>;
     updateUploadedImage: (id: string, updates: Partial<HistoryItem>) => void;
     removeUploadedImage: (id: string) => void;
 
     uploadedAudio: HistoryItem[];
-    addUploadedAudio: (audio: HistoryItem) => void;
+    addUploadedAudio: (audio: HistoryItem) => Promise<boolean>;
     removeUploadedAudio: (id: string) => void;
 
     // Soft delete from project view
@@ -320,12 +320,16 @@ export function buildCreativeHistoryState(
         },
 
         uploadedImages: [],
+        // ISSUE-922: returns whether durable persistence succeeded so callers
+        // can report honest per-file outcomes. Never rejects — legacy
+        // fire-and-forget callers stay safe.
         addUploadedImage: (img: HistoryItem) => {
             // Eviction policy: cap at 50 items to prevent memory bloat
             set((state) => ({ uploadedImages: [img, ...state.uploadedImages].slice(0, 50) }));
-            import('@/services/StorageService').then(({ StorageService }) => {
-                StorageService.saveItem(img).catch((e) => { logger.error('[Store] Failed to save item:', e); });
-            });
+            return import('@/services/StorageService')
+                .then(({ StorageService }) => StorageService.saveItem(img))
+                .then(() => true)
+                .catch((e) => { logger.error('[Store] Failed to save item:', e); return false; });
         },
         updateUploadedImage: (id: string, updates: Partial<HistoryItem>) => set((state) => ({
             uploadedImages: state.uploadedImages.map(img => img.id === id ? { ...img, ...updates } : img)
@@ -338,12 +342,14 @@ export function buildCreativeHistoryState(
         },
 
         uploadedAudio: [],
+        // ISSUE-922: same honest-persistence contract as addUploadedImage.
         addUploadedAudio: (audio: HistoryItem) => {
             // Eviction policy: cap at 50 items to prevent memory bloat
             set((state) => ({ uploadedAudio: [audio, ...state.uploadedAudio].slice(0, 50) }));
-            import('@/services/StorageService').then(({ StorageService }) => {
-                StorageService.saveItem(audio).catch((e) => { logger.error('[Store] Failed to save item:', e); });
-            });
+            return import('@/services/StorageService')
+                .then(({ StorageService }) => StorageService.saveItem(audio))
+                .then(() => true)
+                .catch((e) => { logger.error('[Store] Failed to save item:', e); return false; });
         },
         removeUploadedAudio: (id: string) => {
             set((state) => ({ uploadedAudio: state.uploadedAudio.filter(i => i.id !== id) }));

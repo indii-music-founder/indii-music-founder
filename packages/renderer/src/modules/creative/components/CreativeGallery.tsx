@@ -539,37 +539,62 @@ export default function CreativeGallery({ compact = false, onSelect, className =
         return [...filteredUploadedImages, ...filteredUploadedAudio, ...filteredGenerated].sort((a, b) => b.timestamp - a.timestamp);
     }, [uploadedImages, uploadedAudio, generatedHistory, searchQuery]);
 
-    const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    // ISSUE-922: uploads are validated up front, each file's read AND durable
+    // persistence are awaited, and the toast reports real per-file outcomes —
+    // never a blanket success before anything actually saved.
+    const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;
         if (!files || files.length === 0) return;
+        // Reset so re-selecting the same file after a failure fires again.
+        e.target.value = '';
 
-        Array.from(files).forEach(file => {
+        const MAX_UPLOAD_BYTES = 25 * 1024 * 1024; // data-URI storage — keep renderer memory bounded
+        let succeeded = 0;
+        let failed = 0;
+        const skipped: string[] = [];
+
+        const readAsDataUrl = (file: File) => new Promise<string>((resolve, reject) => {
             const reader = new FileReader();
-            reader.onload = (e) => {
-                if (e.target?.result) {
-                    const isVideo = file.type.startsWith('video/');
-                    const isAudio = file.type.startsWith('audio/');
-
-                    const newItem: HistoryItem = {
-                        id: crypto.randomUUID(),
-                        type: isAudio ? 'music' : (isVideo ? 'video' : 'image'),
-                        url: e.target.result as string,
-                        prompt: file.name,
-                        timestamp: Date.now(),
-                        projectId: currentProjectId,
-                        origin: 'uploaded'
-                    };
-
-                    if (isAudio) {
-                        addUploadedAudio(newItem);
-                    } else {
-                        addUploadedImage(newItem);
-                    }
-                }
-            };
+            reader.onload = () => (typeof reader.result === 'string' ? resolve(reader.result) : reject(new Error('Empty read result')));
+            reader.onerror = () => reject(reader.error ?? new Error('File read failed'));
             reader.readAsDataURL(file);
         });
-        toast.success(`${files.length} asset(s) uploaded.`);
+
+        for (const file of Array.from(files)) {
+            const isVideo = file.type.startsWith('video/');
+            const isAudio = file.type.startsWith('audio/');
+            const isImage = file.type.startsWith('image/');
+
+            if (!isVideo && !isAudio && !isImage) {
+                skipped.push(`${file.name} (unsupported type)`);
+                continue;
+            }
+            if (file.size > MAX_UPLOAD_BYTES) {
+                skipped.push(`${file.name} (over ${MAX_UPLOAD_BYTES / 1024 / 1024}MB limit)`);
+                continue;
+            }
+
+            try {
+                const dataUrl = await readAsDataUrl(file);
+                const newItem: HistoryItem = {
+                    id: crypto.randomUUID(),
+                    type: isAudio ? 'music' : (isVideo ? 'video' : 'image'),
+                    url: dataUrl,
+                    prompt: file.name,
+                    timestamp: Date.now(),
+                    projectId: currentProjectId,
+                    origin: 'uploaded'
+                };
+                const persisted = isAudio ? await addUploadedAudio(newItem) : await addUploadedImage(newItem);
+                if (persisted) { succeeded++; } else { failed++; }
+            } catch {
+                failed++;
+            }
+        }
+
+        if (succeeded > 0) toast.success(`${succeeded} asset(s) uploaded.`);
+        if (failed > 0) toast.error(`${failed} asset(s) failed to save — they may not survive a reload. Try again.`);
+        if (skipped.length > 0) toast.error(`Skipped: ${skipped.join(', ')}`);
     }, [addUploadedAudio, addUploadedImage, currentProjectId, toast]);
 
     const isEmpty = allItems.length === 0;
@@ -629,6 +654,7 @@ export default function CreativeGallery({ compact = false, onSelect, className =
                     }}
                 />
                 <input
+                    data-testid="gallery-upload-input"
                     type="file"
                     ref={fileInputRef}
                     className="hidden"
@@ -659,6 +685,7 @@ export default function CreativeGallery({ compact = false, onSelect, className =
                             Upload
                         </button>
                         <input
+                            data-testid="gallery-upload-input"
                             type="file"
                             ref={fileInputRef}
                             className="hidden"

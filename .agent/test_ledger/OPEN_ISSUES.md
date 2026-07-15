@@ -14144,7 +14144,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-922: Gallery upload reports all files uploaded before reads/cloud persistence finish
 
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** 🟡 PARTIAL (2026-07-15 — upload honesty core FIXED: MIME+25MB validation up front, FileReader onerror handled, per-file awaited durable persistence via addUploadedImage/addUploadedAudio returning Promise<boolean>, accurate succeeded/failed/skipped toasts, input reset for retry; 3 regression tests in CreativeGallery.interaction.test.tsx. REMAINING: the silent 50-item eviction in creativeHistorySlice — needs paginated project-scoped asset storage or an explicit archive/delete choice)
 - **Severity:** 🟠 HIGH
 - **Module:** Creative Suite / Asset upload
 - **Evidence:** `handleFileUpload()` starts asynchronous `FileReader` operations for every selected file (`CreativeGallery.tsx:520-549`) and immediately toasts `${files.length} asset(s) uploaded` (`:550`) before any `onload`, error, authentication, Storage upload, or Firestore write completes. It has no `FileReader.onerror`, MIME enforcement beyond the bypassable picker hint, or size/memory limit. Store persistence is a second fire-and-forget async operation whose failure is only logged (`creativeHistorySlice.ts:281-304`). In addition, `addUploadedImage` and `addUploadedAudio` silently retain only the newest 50 records via `.slice(0, 50)`, with no visible eviction state, archive, or confirmed cleanup of the older asset (`creativeHistorySlice.ts:280-304`).
@@ -14590,7 +14590,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-958: Brand Assets reports successful add/move/delete without durable confirmation and leaks uploaded objects
 
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ FIXED (see the "ISSUE-958: Brand Assets Persistence & Deletion Lifecycle" entry below — async updateBrandKit, awaited ops, Storage cleanup on delete, settled batch pattern)
 - **Severity:** 🟠 HIGH (asset lifecycle inconsistency)
 - **Module:** Creative Studio / Brand Assets drawer
 - **Evidence:** Multi-file upload writes each object to Storage sequentially, but commits profile references only after every upload finishes (`BrandAssetsDrawer.tsx:52-106`). A later-file failure leaves earlier objects orphaned and records none. `updateBrandKit` is typed synchronous/fire-and-forget, yet upload/move/delete paths treat it as awaitable or immediately toast success (`profileSlice.ts:27`, `:100-108`; `BrandAssetsDrawer.tsx:103-119`, `:125-171`, `:209-250`). Delete only filters profile arrays by URL; it never removes the corresponding Storage object and can remove every duplicate reference sharing that URL (`BrandAssetsDrawer.tsx:157-168`). Generated/uploaded items can likewise be announced and added to local history before profile cloud persistence succeeds.
