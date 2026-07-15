@@ -1,5 +1,26 @@
 import { Timestamp } from 'firebase/firestore';
 
+/**
+ * ISSUE-705 Job 6: Booking Handoff Contract
+ * ============================================
+ * Booking Agent (agent/types.ts) → Road Manager (touring/types.ts)
+ *
+ * Booking Agent produces GigOpportunity (status: BOOKED):
+ *   - venueId, venue name/city
+ *   - proposedDate (timestamp)
+ *   - dealType: 'guarantee' | 'door_split' | 'promoter_profit' | 'unknown'
+ *   - guaranteeAmount (if applicable)
+ *
+ * Road Manager consumes via ItineraryStop.bookingId:
+ *   - Lookup GigOpportunity by bookingId
+ *   - Extract dealType → ItineraryStop.deal_type (enum match required)
+ *   - Extract guaranteeAmount → ItineraryStop.guarantee (optional override)
+ *   - proposedDate → ItineraryStop.date (YYYY-MM-DD string)
+ *   - venueId + name/city → ItineraryStop venue/city fields
+ *
+ * Data ownership: Road Manager may override guarantee/split/merch after negotiation.
+ * Booking Agent can mark GigOpportunity as executed when itinerary.stops contains matching bookingId.
+ */
 
 export interface ItineraryStop {
     id?: string;
@@ -23,6 +44,9 @@ export interface ItineraryStop {
     door_count?: number;
     split_pct?: number;
     merch_cut?: number;
+    // Booking handoff contract (ISSUE-705 Job 6)
+    bookingId?: string; // Link to Booking Agent's deal record
+    deal_type?: 'guarantee' | 'door_split' | 'promoter_profit' | 'unknown'; // Must match agent/types.ts
 }
 
 export interface Itinerary {
