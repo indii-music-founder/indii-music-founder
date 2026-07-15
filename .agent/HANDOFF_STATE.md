@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-07-14 20:12 EDT
+**Updated:** 2026-07-14 20:19 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+d484a004b fix: ISSUE-1049 — reconcile 3 more stale tests with honest source
+b379563ba chore: session checkpoint [20:12]
 664a4cb43 chore: update ledger — ISSUE-894 marked FIXED (22 total this session)
 bfbb79ad1 chore: session checkpoint [20:11]
 3ea7819ba fix: ISSUE-894 — Storage scrub tool returns error when callable unavailable
@@ -12,8 +14,6 @@ bfbb79ad1 chore: session checkpoint [20:11]
 67fb0a699 chore: session checkpoint [20:07]
 b880ef12d docs(ledger): mark ISSUE-821 FIXED — honesty pass on release readiness gate
 b99c2816e fix: ISSUE-852 — Manufacturing status changed from 'started' to 'queued'
-b4fcdb4cf fix: ISSUE-850 — Merch pricing clarified as static baseline, not market-backed
-76a280b78 fix: ISSUE-821 — replace PRO-only release gate with full readiness matrix
 ```
 
 ## Working State
