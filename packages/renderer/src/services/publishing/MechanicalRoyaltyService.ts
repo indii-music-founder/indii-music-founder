@@ -83,6 +83,9 @@ export const MechanicalRoyaltyService = {
     /**
      * Create a new mechanical license record in Firestore for a cover track.
      * Uses 2026 statutory rates: 13.1¢/work or 2.52¢/min, whichever is larger.
+     *
+     * When searchFailed is true, status is set to 'clearance_unknown' to block
+     * release until the user confirms the composition status.
      */
     async createLicense(params: {
         releaseId: string;
@@ -91,6 +94,7 @@ export const MechanicalRoyaltyService = {
         composition: CompositionInfo;
         distributionCopies?: number;
         durationSeconds?: number;
+        searchFailed?: boolean;
     }): Promise<MechanicalLicense> {
         const uid = auth.currentUser?.uid;
         if (!uid) throw new Error('Not authenticated');
@@ -108,6 +112,14 @@ export const MechanicalRoyaltyService = {
         const fee = Math.round(copies * ratePerCopy * 100) / 100;
 
         const licenseId = `ml_${uid}_${Date.now()}`;
+        // When search failed, mark as clearance_unknown (blocking). Otherwise, use composition status.
+        let status: MechanicalLicenseStatus;
+        if (params.searchFailed) {
+            status = 'clearance_unknown';
+        } else {
+            status = params.composition.controlled ? 'pending_search' : 'not_required';
+        }
+
         const license: Omit<MechanicalLicense, 'createdAt' | 'updatedAt'> = {
             id: licenseId,
             userId: uid,
@@ -115,7 +127,7 @@ export const MechanicalRoyaltyService = {
             trackTitle: params.trackTitle,
             isrc: params.isrc,
             composition: params.composition,
-            status: params.composition.controlled ? 'pending_search' : 'not_required',
+            status,
             distributionCopies: copies,
             ratePerCopy,
             totalFee: fee,
