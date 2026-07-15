@@ -1,9 +1,12 @@
 # Handoff State
-**Updated:** 2026-07-14 20:29 EDT
+**Updated:** 2026-07-14 20:30 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+6357276d8 chore: update ledger — ISSUE-905 marked FIXED (23 total, 60 OPEN remain)
+32381bf74 fix: ISSUE-905 — SMS blast tool description changed from 'hooks into' to 'prepares'
+283f8db73 chore: session checkpoint [20:29]
 f9c57781e chore: session checkpoint [20:28]
 35622030d fix: ISSUE-823 — publishing compiler requires all critical items for registration ready
 f258d5d99 chore: session checkpoint [20:25]
@@ -11,14 +14,11 @@ f258d5d99 chore: session checkpoint [20:25]
 d484a004b fix: ISSUE-1049 — reconcile 3 more stale tests with honest source
 b379563ba chore: session checkpoint [20:12]
 664a4cb43 chore: update ledger — ISSUE-894 marked FIXED (22 total this session)
-bfbb79ad1 chore: session checkpoint [20:11]
-3ea7819ba fix: ISSUE-894 — Storage scrub tool returns error when callable unavailable
-0c1ef5840 fix: ISSUE-822 — remove static 'complete' defaults from distribution checklist
 ```
 
 ## Working State
 ```
- M packages/renderer/src/services/agent/definitions/MarketingAgent.ts
+clean working tree
 ```
 
 ## Decisions
