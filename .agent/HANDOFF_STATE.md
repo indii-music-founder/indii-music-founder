@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-07-16 08:41 EDT
+**Updated:** 2026-07-16 09:22 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+6170b9567 chore: session checkpoint [08:41]
 77071dc56 chore: session checkpoint [07:52]
 0f57786a0 chore: verify issues 481, 487, 493 and implement IA consolidation for 488
 278e7b90c chore: session checkpoint [00:09]
@@ -13,7 +14,6 @@ de311b4c4 chore: session checkpoint [21:27]
 dfc3c0b01 chore: session checkpoint [21:24]
 d8bdbadfe chore: session checkpoint [21:18]
 96bfebab0 chore: session checkpoint [21:09]
-1de17387a chore: session checkpoint [21:06]
 ```
 
 ## Working State
@@ -21,12 +21,32 @@ d8bdbadfe chore: session checkpoint [21:18]
  M .agent/test_ledger/OPEN_ISSUES.md
  M .gitignore
  M OPEN_ISSUES.md
+ M agents/analytics/prompt.md
  M agents/creative/prompt.md
+ M agents/distribution/prompt.md
  M agents/finance/prompt.md
+ M agents/hospitality/prompt.md
+ M agents/legal/prompt.md
+ M agents/licensing/prompt.md
+ M agents/marketing/prompt.md
+ M agents/merchandise/prompt.md
+ M agents/music/prompt.md
+ M agents/publicist/prompt.md
+ M agents/publishing/prompt.md
+ M agents/road/prompt.md
+ M agents/social/prompt.md
+ M agents/video/prompt.md
 D  client_secret_148015878263-pfcoueoik0p1cn744vdn2m1u1gjl119m.apps.googleusercontent.com.json
  M package-lock.json
  M packages/admin-dashboard/src/firebase.ts
+ M packages/firebase/firestore.rules
+ M packages/firebase/src/stripe/webhookHandler.ts
  M packages/main/src/handlers/auth.ts
+ M packages/main/src/handlers/daw.ts
+ M packages/main/src/handlers/mobile_remote.ts
+ M packages/main/src/handlers/scheduler.ts
+ M packages/main/src/main.ts
+ M packages/main/src/updater.ts
  M packages/renderer/src/components/shared/GlobalDropZone.tsx
  M packages/renderer/src/modules/creative/components/BrandAssetsDrawer.test.tsx
  M packages/renderer/src/modules/creative/components/BrandAssetsDrawer.tsx
@@ -34,13 +54,13 @@ D  client_secret_148015878263-pfcoueoik0p1cn744vdn2m1u1gjl119m.apps.googleuserco
  M packages/renderer/src/modules/creative/components/DirectGenerationTab.tsx
  M packages/renderer/src/modules/creative/components/__tests__/CharacterLibrary.test.tsx
  M packages/renderer/src/modules/creative/components/__tests__/DirectGenerationTab.test.tsx
- M packages/renderer/src/services/agent/definitions/CreativeAgent.ts
- M packages/renderer/src/services/agent/definitions/FinanceAgent.ts
  M packages/renderer/src/services/agent/tools/StorageTools.ts
  D packages/renderer/src/services/agent/tools/__tests__/StorageTools.test.ts
  M scripts/verify-backend-apis.ts
 ?? docs/architecture/INTER_AGENT_DATA_ACCESS.md
 ?? docs/flowcharts/zero-open-issues-macro.md
+?? fix-ipc.cjs
+?? fix-ipc.js
 ?? packages/renderer/src/services/agent/tools/DomainTools.ts
 ?? packages/renderer/src/services/agent/tools/StorageTools.test.ts
 ```
