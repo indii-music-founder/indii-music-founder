@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-07-15 20:46 EDT
+**Updated:** 2026-07-15 20:47 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+e17f9befc docs: update ledger — ISSUE-899 marked FIXED with implementation details
+fb7dd6e85 chore: session checkpoint [20:46]
 0c0709e7c fix(merch): ISSUE-899 — reframe marketplace product creation UI copy to be honest
 9f3ca0e52 chore: session checkpoint [20:42]
 86b8e5c82 chore: session checkpoint [20:41]
@@ -12,13 +14,11 @@
 f24474af8 chore: session checkpoint [20:28]
 a48d072dd chore: session checkpoint — ISSUE-704 complete, all tests passing
 bc012333c chore: session checkpoint [20:25]
-824b98c63 docs: mark ISSUE-704 COMPLETE — Road Manager IA reorganization
-448a03e6d chore: session checkpoint [20:24]
 ```
 
 ## Working State
 ```
- M .agent/test_ledger/OPEN_ISSUES.md
+clean working tree
 ```
 
 ## Decisions
