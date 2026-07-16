@@ -1,30 +1,27 @@
 # Handoff State
-**Updated:** 2026-07-16 10:10 EDT
+**Updated:** 2026-07-16 17:23 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+93cfa5083 fix(creative): complete image generation settings contract
+34bd6c921 fix(api): replace strict enforceAppCheck with manual middleware validation for 22 endpoints
+fbeebd640 fix(remote): disable App Check enforcement for Studio Executor Cloud Functions
+131b2fcce chore(repo): stage pending changes prior to ci-validate
+7dfd8b20a chore(creative): cleanup obsolete DaisyChainControls, stream keys, and update agent schemas
+c44ed3c93 test(repo): fix stripe webhooks, google auth, and agent tool accessibility tests
+6e3a67dca chore: session checkpoint [10:10]
 923053808 chore: session checkpoint [09:56]
 a45603c72 chore: session checkpoint [09:43]
 774fc3059 chore(repo): consolidate pending changes
-066ba972f chore: session checkpoint [09:24]
-127d44de2 chore: session checkpoint [09:22]
-6170b9567 chore: session checkpoint [08:41]
-77071dc56 chore: session checkpoint [07:52]
-0f57786a0 chore: verify issues 481, 487, 493 and implement IA consolidation for 488
-278e7b90c chore: session checkpoint [00:09]
-e2f3a2212 chore: session checkpoint [23:56]
 ```
 
 ## Working State
 ```
- M .agent/test_ledger/OPEN_ISSUES.md
- M packages/firebase/src/__tests__/stripeWebhook.test.ts
- M packages/main/src/handlers/auth.login-google.test.ts
- M packages/renderer/src/services/agent/agent_tools_accessibility.test.ts
- M packages/renderer/src/services/agent/definitions/FinanceAgent.ts
- M packages/renderer/src/services/agent/definitions/LicensingAgent.ts
- M packages/renderer/src/services/agent/definitions/PublishingAgent.ts
+ M docs/flowcharts/IA-consolidation-macro.md
+ M docs/flowcharts/zero-open-issues-macro.md
+ M packages/renderer/src/modules/creative/components/__tests__/DirectGenerationTab.test.tsx
+ M packages/renderer/src/services/video/__tests__/VideoGenerationService.test.ts
 ```
 
 ## Decisions
