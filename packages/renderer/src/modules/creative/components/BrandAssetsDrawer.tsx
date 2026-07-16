@@ -197,12 +197,25 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
             // Extract storage path from URL (gs://... URLs need to be converted to paths)
             let storagePath: string | null = null;
             if (asset.url.startsWith('gs://')) {
-                // Convert gs://bucket/path to just path
                 const match = asset.url.match(/gs:\/\/[^/]+\/(.*)/);
                 storagePath = match ? match[1] : null;
             }
 
-            // Remove from profile
+            // Step 1: Delete from Storage first (before profile update, so orphaning is less likely)
+            let storageDeleteError: string | null = null;
+            if (storagePath) {
+                try {
+                    await StorageService.deleteFile(storagePath);
+                } catch (storageErr) {
+                    storageDeleteError = `Storage deletion failed: ${storageErr instanceof Error ? storageErr.message : String(storageErr)}`;
+                    logger.warn(`[BrandAssets] Failed to delete storage file ${storagePath}:`, storageErr);
+                    // Note: We continue to remove from profile, but will report the issue to user
+                }
+            }
+
+            // Step 2: Remove from profile (use identity comparison, not just URL, to avoid removing unintended duplicates)
+            // For now, we still use URL matching since BrandAsset doesn't have stable IDs
+            // This is acceptable for "remove this specific asset" flows where user selected it
             if (from === 'style') {
                 const newRefImages = (currentKit.referenceImages || []).filter((a: BrandAsset) => a.url !== asset.url);
                 await updateBrandKit({ referenceImages: newRefImages });
@@ -211,17 +224,11 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
                 await updateBrandKit({ brandAssets: newLogos });
             }
 
-            // Delete from Storage (best effort, don't block on failure)
-            if (storagePath) {
-                try {
-                    await StorageService.deleteFile(storagePath);
-                } catch (storageErr) {
-                    logger.warn(`[BrandAssets] Failed to delete storage file ${storagePath}:`, storageErr);
-                    // Continue — profile is already updated
-                }
+            if (storageDeleteError) {
+                toast.warning(`Asset removed from profile, but ${storageDeleteError}`);
+            } else {
+                toast.success("Asset removed");
             }
-
-            toast.success("Asset removed");
         } catch (error: unknown) {
             const err = error as { message?: string };
             logger.error("[BrandAssets] Delete failed:", error);
