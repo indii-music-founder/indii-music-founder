@@ -9,13 +9,12 @@ import { Ingredient } from '../components/IngredientDropZone';
 import { SequenceBlock } from '../components/SequenceTimeline';
 import { VideoGenerationJob } from '../components/veo/VideoGenerationProgress';
 import { VideoAspectRatioSchema } from '../video/schemas';
-import { GenerateImageSchema } from '@indii/shared';
 import { functions, db, auth } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
-import { getFirebaseFunction } from '@/services/firebase-guards';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { CreativeStorageService } from '@/services/creative/CreativeStorageService';
 import { VideoGeneration } from '@/services/video/VideoGenerationService';
+import { ImageGeneration, type ImageGenerationOptions } from '@/services/image/ImageGenerationService';
 import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
 import { buildDirectVideoInputManifest } from './directVideoInputs';
@@ -342,70 +341,49 @@ export function useDirectGeneration() {
                 }
             }
 
-            const fbFunctions = getFirebaseFunction('generateImageV3');
-            if (!fbFunctions) {
-                throw new Error('Firebase Functions service not available. Please refresh the page.');
-            }
-
-            const generateImageV3 = httpsCallable(fbFunctions, 'generateImageV3');
-            const payload = compactCallablePayload({
+            const imageSize: NonNullable<ImageGenerationOptions['imageSize']> = studioControls.imageSize === '0.5K'
+                ? '512'
+                : studioControls.imageSize.toLowerCase() as NonNullable<ImageGenerationOptions['imageSize']>;
+            const generationResults = await ImageGeneration.generateImages(compactCallablePayload({
                 prompt: finalPrompt,
                 sessionId: currentProjectId ? `creative_${currentProjectId}` : undefined,
                 aspectRatio: studioControls.aspectRatio,
+                count: studioControls.batchCount,
                 model: studioControls.model,
-                imageSize: studioControls.imageSize,
-                thinkingLevel: studioControls.thinkingLevel,
+                imageSize,
+                thinkingLevel: studioControls.thinkingLevel === 'none' ? undefined : studioControls.thinkingLevel,
+                includeThoughts: studioControls.includeThoughts,
                 useGoogleSearch: studioControls.useGrounding,
                 useImageSearch: studioControls.useImageSearch && studioControls.model === 'fast',
-                referenceUri,
-                referenceUris
-            });
-            const payloadValidation = GenerateImageSchema.safeParse(payload);
-            if (!payloadValidation.success) {
-                const errorMsg = payloadValidation.error.issues.map(issue => issue.message).join(', ');
-                throw new Error(`Invalid image gateway payload: ${errorMsg}`);
-            }
+                responseFormat: studioControls.responseFormat,
+                referenceUris: referenceUris?.length ? referenceUris : referenceUri ? [referenceUri] : undefined,
+            }));
 
-            const res = await generateImageV3(payloadValidation.data);
-
-            const data = res.data as { jobId: string; resultUri?: string; resultUrl?: string; type?: 'image' | 'video' };
-            const completedUri = data.resultUrl || data.resultUri;
-
-            if (completedUri) {
-                try {
-                    const finalUrl = await resolveStorageUrl(completedUri);
-                    const finalItem: HistoryItem = {
-                        id: data.jobId,
-                        url: finalUrl,
-                        type: data.type || 'image',
+            if (generationResults.length > 0) {
+                const finalItems: HistoryItem[] = generationResults.map(result => ({
+                        id: result.id,
+                        url: result.url,
+                        type: 'image',
                         prompt: localPrompt,
                         timestamp: Date.now(),
                         projectId: submissionProjectId,
-                        origin: 'generated' as const
-                    };
-
-                    addToHistory({ ...finalItem });
-                    setSelectedItem(finalItem);
-                    setViewMode('editor');
-                    toast.success('Image generation finished!');
-                    return;
-                } catch (urlError: unknown) {
-                    logger.error('Failed to resolve image URL:', urlError);
-                    throw new Error('Generated image is ready but couldn\'t be displayed. Try refreshing.');
-                }
+                        origin: 'generated' as const,
+                        meta: result.textNarration || result.thoughtSignature,
+                    }));
+                finalItems.forEach(item => addToHistory(item));
+                setSelectedItem(finalItems[0]);
+                setViewMode('editor');
+                toast.success(`${finalItems.length} image${finalItems.length === 1 ? '' : 's'} generated.`);
+                return;
             }
 
-            setActiveJobs(prev => [
-                ...prev,
-                { id: data.jobId, prompt: localPrompt, status: 'queued' as const, progress: 0 }
-            ]);
-            toast.info('Image job queued. Check gallery for progress.');
+            throw new Error('Image generation completed without returning an image.');
         } catch (error: unknown) {
             logger.error('Image generation inner error:', error);
             throw error; // Re-throw for handleGenerate to catch
         }
 
-    }, [studioControls.aspectRatio, studioControls.model, studioControls.imageSize, studioControls.thinkingLevel, studioControls.useGrounding, localPrompt, videoInputs?.ingredients, toast, currentProjectId, addToHistory, setSelectedItem, setViewMode]);
+    }, [studioControls.aspectRatio, studioControls.model, studioControls.imageSize, studioControls.batchCount, studioControls.thinkingLevel, studioControls.includeThoughts, studioControls.useGrounding, studioControls.useImageSearch, studioControls.responseFormat, localPrompt, videoInputs?.ingredients, toast, currentProjectId, addToHistory, setSelectedItem, setViewMode]);
 
     const handleVideoGenerate = useCallback(async (finalPrompt: string) => {
         const userId = auth.currentUser?.uid;

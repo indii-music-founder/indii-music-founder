@@ -205,7 +205,9 @@ describe('Image and Content Generation Functions', () => {
                         userId: 'user123',
                         type: 'image',
                         status: 'APPROVED',
-                        estimatedCost: 0.04,
+                        // The request asks for two outputs, so the reservation
+                        // must cover the same batch count enforced by the gateway.
+                        estimatedCost: 0.08,
                     }),
                 }),
             };
@@ -231,6 +233,7 @@ describe('Image and Content Generation Functions', () => {
             const generateImageCall = generateImageV3 as any;
             const result = await generateImageCall({ data, auth: context.auth });
 
+            expect(mocks.createInteraction).toHaveBeenCalledTimes(2);
             expect(mocks.createInteraction).toHaveBeenCalledWith(
                 expect.objectContaining({
                     model: 'gemini-3.1-flash-image',
@@ -246,7 +249,11 @@ describe('Image and Content Generation Functions', () => {
 
             expect(result).toEqual(expect.objectContaining({
                 jobId: 'mock-doc',
-                resultUri: expect.stringContaining('gs://')
+                resultUri: expect.stringContaining('gs://'),
+                resultUris: expect.arrayContaining([
+                    expect.stringContaining('gs://'),
+                    expect.stringContaining('gs://'),
+                ]),
             }));
         });
     });

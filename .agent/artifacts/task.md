@@ -26,6 +26,7 @@ Finish every issue in `.agent/test_ledger/OPEN_ISSUES.md` that is not `✅ FIXED
 - [x] ISSUE-775 — Omni labels output "SynthID Protected" without verifying any watermark
   - **Status:** Relabeled to "SynthID Requested" — false protection claim removed.
 - [ ] ISSUE-777 — Image Creator exposes video settings while hiding/ignoring real image settings
+  - **Status:** Code and automated acceptance complete (2026-07-16); remains PARTIAL pending mandatory live Chrome interaction proof.
 - [ ] ISSUE-784 — DDEX compiler emits fake DPID + ERN 4.2 doc app can't actually deliver
 - [x] ISSUE-786 — YouTube/Meta rights exports default to claims user may not legally hold
   - **Status:** Codeable fix landed; requires new provisioned key (external action).
@@ -194,4 +195,3 @@ Finish every issue in `.agent/test_ledger/OPEN_ISSUES.md` that is not `✅ FIXED
 - ✅ Diagnostic improvement ISSUE-694 (Firestore error surfacing in healthCheck)
 - ✅ Verified 9 PARTIAL items complete or blocked
 - → Continue with high-value OPEN items if time permits
-

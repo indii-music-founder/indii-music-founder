@@ -1335,3 +1335,10 @@ Before pushing any branch, run `/plat` (see `.claude/commands/plat.md`). It exec
 - BUG: The `/health_audit` manual command `npm run health:check` failed before running tests because the script used `vitest --run --grep ...`, but the installed Vitest 4.1.8 CLI does not support `--grep`.
 - FIX: Select integration files by filename with `find packages/renderer/src/services -name "*.integration.test.ts" -print`, then pass those files to `vitest run`; exit cleanly if none exist.
 - PREVENTION: For Vitest 4, use positional file filters for filename selection and `-t/--testNamePattern` only for test-name filtering. Do not port Jest-style `--grep` flags into npm scripts without checking `npx vitest --help`.
+
+## 2026-07-16 Multi-Output Generation - Partial Storage Writes Must Be Compensated
+- SEVERITY: High
+- FILES: `packages/firebase/src/functions/creative/gateway.ts`
+- BUG: A metered multi-output request can successfully write output 1 to Cloud Storage, fail while writing output 2, then void the cost reservation while leaving output 1 orphaned and absent from the failed job response.
+- FIX: Complete provider generation for the full batch before Storage persistence, track every written `gs://` URI, and delete already-written objects when any later Storage write fails. Only mark the job completed and settle cost after every requested output is durable.
+- PREVENTION: Any operation that produces multiple external side effects under one transaction/reservation needs a compensation path. Tests must force failure after the first successful write and assert cleanup plus reservation voiding.

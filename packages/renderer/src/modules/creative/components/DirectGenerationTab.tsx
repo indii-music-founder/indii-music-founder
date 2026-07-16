@@ -409,24 +409,119 @@ export default function DirectGenerationTab() {
                                     </div>
                                 </div>
 
-                                {/* Grounding Toggles */}
-                                <div className="flex flex-col gap-2 bg-white/2 p-3 rounded-xl border border-white/5">
-                                    <div className="flex justify-between items-center">
-                                        <div className="flex items-center gap-2">
-                                            <Globe size={13} className="text-gray-400" />
-                                            <div>
-                                                <h4 className="text-[11px] font-bold text-white">Google Search Grounding</h4>
-                                                <p className="text-[9px] text-gray-500">Injects real-time knowledge</p>
+                                {mode === 'image' && (
+                                    <>
+                                        <div className="flex flex-col gap-3 bg-white/2 p-3 rounded-xl border border-white/5">
+                                            <div className="flex justify-between items-center">
+                                                <div className="flex items-center gap-2">
+                                                    <Globe size={13} className="text-gray-400" />
+                                                    <div>
+                                                        <h4 className="text-[11px] font-bold text-white">Google Search Grounding</h4>
+                                                        <p className="text-[9px] text-gray-500">Injects current web knowledge</p>
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    aria-label="Toggle Google Search grounding"
+                                                    data-testid="direct-google-search-toggle"
+                                                    onClick={() => setStudioControls({
+                                                        useGrounding: !studioControls.useGrounding,
+                                                        useImageSearch: studioControls.useGrounding ? false : studioControls.useImageSearch,
+                                                    })}
+                                                    className={`w-9 h-5 rounded-full p-0.5 transition-colors ${studioControls.useGrounding ? 'bg-dept-creative' : 'bg-white/10'}`}
+                                                >
+                                                    <div className={`w-4 h-4 bg-white rounded-full transition-transform ${studioControls.useGrounding ? 'translate-x-4' : 'translate-x-0'}`} />
+                                                </button>
+                                            </div>
+                                            {studioControls.useGrounding && studioControls.model === 'fast' && (
+                                                <div className="flex justify-between items-center border-t border-white/5 pt-3">
+                                                    <div>
+                                                        <h4 className="text-[11px] font-bold text-white">Include Image Search</h4>
+                                                        <p className="text-[9px] text-gray-500">Use visual search results as grounding</p>
+                                                    </div>
+                                                    <button
+                                                        aria-label="Toggle Image Search grounding"
+                                                        data-testid="direct-image-search-toggle"
+                                                        onClick={() => setStudioControls({ useImageSearch: !studioControls.useImageSearch })}
+                                                        className={`w-9 h-5 rounded-full p-0.5 transition-colors ${studioControls.useImageSearch ? 'bg-cyan-500' : 'bg-white/10'}`}
+                                                    >
+                                                        <div className={`w-4 h-4 bg-white rounded-full transition-transform ${studioControls.useImageSearch ? 'translate-x-4' : 'translate-x-0'}`} />
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="flex flex-col gap-2">
+                                            <label className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Thinking Level</label>
+                                            <div className="grid grid-cols-3 gap-1.5">
+                                                {(studioControls.model === 'fast' ? ['none', 'minimal', 'high'] : ['high']).map((level) => (
+                                                    <button
+                                                        key={level}
+                                                        data-testid={`direct-thinking-${level}`}
+                                                        onClick={() => setStudioControls({ thinkingLevel: level as 'none' | 'minimal' | 'high' })}
+                                                        className={`py-1.5 rounded-lg text-[9px] font-bold uppercase border transition-all ${studioControls.thinkingLevel === level || (studioControls.model === 'pro' && level === 'high')
+                                                            ? 'bg-green-500/10 border-green-500/30 text-green-300'
+                                                            : 'bg-white/2 border-white/5 text-gray-500 hover:text-gray-300'}`}
+                                                    >
+                                                        {studioControls.model === 'pro' ? 'Always High' : level}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                            <button
+                                                data-testid="direct-include-thoughts-toggle"
+                                                onClick={() => setStudioControls({ includeThoughts: !studioControls.includeThoughts })}
+                                                className={`flex items-center justify-between rounded-xl border px-3 py-2 text-left transition-all ${studioControls.includeThoughts
+                                                    ? 'border-green-500/30 bg-green-500/10 text-green-200'
+                                                    : 'border-white/5 bg-white/2 text-gray-400'}`}
+                                            >
+                                                <span>
+                                                    <span className="block text-[10px] font-bold uppercase">Return thought summary</span>
+                                                    <span className="block text-[9px] text-gray-500">Stores the provider summary with the generated asset</span>
+                                                </span>
+                                                <span className="text-[9px] font-bold uppercase">{studioControls.includeThoughts ? 'On' : 'Off'}</span>
+                                            </button>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div className="flex flex-col gap-2">
+                                                <label className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Image Count</label>
+                                                <div className="grid grid-cols-4 gap-1">
+                                                    {[1, 2, 3, 4].map(count => (
+                                                        <button
+                                                            key={count}
+                                                            data-testid={`direct-batch-${count}`}
+                                                            onClick={() => setStudioControls({ batchCount: count })}
+                                                            className={`py-1.5 rounded-lg text-[9px] font-bold border transition-all ${studioControls.batchCount === count
+                                                                ? 'bg-white/5 border-white/25 text-white'
+                                                                : 'bg-white/2 border-white/5 text-gray-500 hover:text-gray-300'}`}
+                                                        >
+                                                            {count}×
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            <div className="flex flex-col gap-2">
+                                                <label className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Response</label>
+                                                <div className="grid grid-cols-2 gap-1">
+                                                    {([
+                                                        ['image_only', 'Image'],
+                                                        ['image_and_text', '+ Text'],
+                                                    ] as const).map(([format, label]) => (
+                                                        <button
+                                                            key={format}
+                                                            data-testid={`direct-response-${format}`}
+                                                            onClick={() => setStudioControls({ responseFormat: format })}
+                                                            className={`py-1.5 rounded-lg text-[9px] font-bold uppercase border transition-all ${studioControls.responseFormat === format
+                                                                ? 'bg-white/5 border-white/25 text-white'
+                                                                : 'bg-white/2 border-white/5 text-gray-500 hover:text-gray-300'}`}
+                                                        >
+                                                            {label}
+                                                        </button>
+                                                    ))}
+                                                </div>
                                             </div>
                                         </div>
-                                        <button
-                                            onClick={() => setStudioControls({ useGrounding: !studioControls.useGrounding })}
-                                            className={`w-9 h-5 rounded-full p-0.5 transition-colors ${studioControls.useGrounding ? 'bg-dept-creative' : 'bg-white/10'}`}
-                                        >
-                                            <div className={`w-4 h-4 bg-white rounded-full transition-transform ${studioControls.useGrounding ? 'translate-x-4' : 'translate-x-0'}`} />
-                                        </button>
-                                    </div>
-                                </div>
+                                    </>
+                                )}
 
                                 {/* ISSUE-777: personGeneration is only in GenerateVideoSchema —
                                     the image payload (handleImageGenerate) never sends it, so this

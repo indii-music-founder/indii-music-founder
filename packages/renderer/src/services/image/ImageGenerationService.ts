@@ -39,6 +39,8 @@ export interface ImageGenerationOptions {
     /** Person generation policy: ALLOW_ALL | ALLOW_ADULT | ALLOW_NONE */
     personGeneration?: string;
     sourceImages?: { mimeType: string; data: string }[]; // Reference images for composition
+    /** Already-uploaded references for callers that own the storage handoff. */
+    referenceUris?: string[];
     referenceImages?: {
         image: { uri?: string; imageBytes?: string; mimeType?: string };
         referenceType: 'asset' | 'person' | 'face' | 'style' | 'subject'; // Allow likeness tuning for Face Swap
@@ -137,10 +139,17 @@ export class ImageGenerationService {
             count: options.count ?? 1,
             aspectRatio: options.aspectRatio,
             resolution: options.resolution,
+            imageSize: options.imageSize,
             model: options.model,
+            thinkingLevel: options.thinkingLevel,
+            includeThoughts: options.includeThoughts,
+            useGoogleSearch: options.useGoogleSearch,
+            useImageSearch: options.useImageSearch,
+            responseFormat: options.responseFormat,
             seed: options.seed,
             sessionId: options.sessionId,
             sourceImages: options.sourceImages,
+            referenceUris: options.referenceUris,
             referenceImages: options.referenceImages,
         });
     }
@@ -398,8 +407,7 @@ export class ImageGenerationService {
             // Resolve imageSize: prefer explicit imageSize, fall back to resolution.
             const imageSize = options.imageSize || this.normalizeImageResolution(options.resolution);
 
-            let referenceUri: string | undefined;
-            let referenceUris: string[] | undefined;
+            let referenceUris = options.referenceUris?.slice(0, 14);
             const allReferenceImages: { mimeType: string; data: string }[] = [...(options.sourceImages || [])];
 
             // Auto-inject user's stored headshots from profile
@@ -431,13 +439,16 @@ export class ImageGenerationService {
             }
 
             if (allReferenceImages.length > 0) {
-                referenceUris = (await Promise.all(
+                const uploadedReferenceUris = (await Promise.all(
                     allReferenceImages.slice(0, 14).map((img) =>
                         CreativeStorageService.uploadReferenceMedia(uid, `data:${img.mimeType};base64,${img.data}`, 'image', { scope: 'objects' })
                     )
                 )).filter((uri): uri is string => !!uri);
-                referenceUri = referenceUris[0];
+                referenceUris = [...(referenceUris ?? []), ...uploadedReferenceUris]
+                    .filter((uri, index, all) => all.indexOf(uri) === index)
+                    .slice(0, 14);
             }
+            const referenceUri = referenceUris?.[0];
 
             const payload: Record<string, unknown> = {
                 prompt: fullPrompt,
@@ -498,23 +509,28 @@ export class ImageGenerationService {
                 jobId?: string;
                 resultUri?: string;
                 resultUrl?: string;
+                resultUris?: string[];
                 textNarration?: string;
                 thoughtSignature?: string;
+                thoughtSummary?: string;
                 groundingMetadata?: Record<string, unknown>;
             }
             const data = result.data as GenerateImageResponse;
 
             // New gateway contract: image is already saved in Cloud Storage.
-            const generatedUri = data.resultUrl || data.resultUri;
-            if (generatedUri) {
-                results.push({
-                    id: data.jobId || crypto.randomUUID(),
+            const generatedUris = data.resultUris?.length
+                ? data.resultUris
+                : [data.resultUrl || data.resultUri].filter((uri): uri is string => !!uri);
+            if (generatedUris.length > 0) {
+                const storedResults = await Promise.all(generatedUris.map(async (generatedUri, index) => ({
+                    id: index === 0 && data.jobId ? data.jobId : `${data.jobId || crypto.randomUUID()}_${index + 1}`,
                     url: await this.resolveGeneratedAssetUrl(generatedUri),
                     prompt: options.prompt,
                     textNarration: data.textNarration,
-                    thoughtSignature: data.thoughtSignature,
+                    thoughtSignature: data.thoughtSignature || data.thoughtSummary,
                     groundingMetadata: data.groundingMetadata,
-                });
+                })));
+                results.push(...storedResults);
             }
 
             // Cloud Function returns { images: [...], textNarration?, thoughtSignature?, groundingMetadata? }

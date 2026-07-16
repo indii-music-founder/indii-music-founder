@@ -6,9 +6,15 @@ import { VideoGeneration } from '@/services/video/VideoGenerationService';
 import { useToast } from '@/core/context/ToastContext';
 import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
 
-const { mockUploadReferenceMedia } = vi.hoisted(() => ({ mockUploadReferenceMedia: vi.fn() }));
+const { mockUploadReferenceMedia, mockGenerateImages } = vi.hoisted(() => ({
+    mockUploadReferenceMedia: vi.fn(),
+    mockGenerateImages: vi.fn(),
+}));
 vi.mock('@/services/creative/CreativeStorageService', () => ({
     CreativeStorageService: { uploadReferenceMedia: mockUploadReferenceMedia },
+}));
+vi.mock('@/services/image/ImageGenerationService', () => ({
+    ImageGeneration: { generateImages: mockGenerateImages },
 }));
 
 // Mock dependencies
@@ -134,8 +140,28 @@ describe('DirectGenerationTab', () => {
         vi.clearAllMocks();
         vi.mocked(resolveStorageUrl).mockImplementation((uri: string) => Promise.resolve(uri));
         mockUploadReferenceMedia.mockResolvedValue('gs://test-bucket/creative/test-user/references/selected-project-image.png');
+        mockGenerateImages.mockResolvedValue([{
+            id: 'mock-job-id',
+            url: 'https://test.com/image.png',
+            prompt: 'Generated image',
+        }]);
         useMockStore.setState({
-            studioControls: { model: 'fast', aspectRatio: '16:9', resolution: '1080p', duration: 6, personGeneration: 'allow_adult', negativePrompt: '', seed: '' },
+            studioControls: {
+                model: 'fast',
+                aspectRatio: '16:9',
+                resolution: '1080p',
+                duration: 6,
+                personGeneration: 'allow_adult',
+                negativePrompt: '',
+                seed: '',
+                imageSize: '2K',
+                batchCount: 1,
+                thinkingLevel: 'none',
+                includeThoughts: false,
+                useGrounding: false,
+                useImageSearch: false,
+                responseFormat: 'image_only',
+            },
             creativePrompt: '',
             currentProjectId: 'test-project',
             whiskState: {},
@@ -206,6 +232,38 @@ describe('DirectGenerationTab', () => {
         expect(screen.queryByText('Image Output Size')).not.toBeInTheDocument();
     });
 
+    it('ISSUE-777: visible image controls change the metered outbound generation request', async () => {
+        render(<DirectGenerationTab />);
+        fireEvent.click(screen.getByText('Advanced Config'));
+        fireEvent.click(screen.getByText('1K'));
+        fireEvent.click(screen.getByTestId('direct-batch-3'));
+        fireEvent.click(screen.getByTestId('direct-response-image_and_text'));
+        fireEvent.click(screen.getByTestId('direct-thinking-minimal'));
+        fireEvent.click(screen.getByTestId('direct-include-thoughts-toggle'));
+        fireEvent.click(screen.getByTestId('direct-google-search-toggle'));
+        fireEvent.click(await screen.findByTestId('direct-image-search-toggle'));
+        fireEvent.change(screen.getByTestId('direct-prompt-input'), {
+            target: { value: 'Grounded three-image concept set' },
+        });
+
+        await act(async () => {
+            fireEvent.click(screen.getByTestId('direct-generate-btn'));
+        });
+
+        await waitFor(() => {
+            expect(mockGenerateImages).toHaveBeenCalledWith(expect.objectContaining({
+                prompt: 'Grounded three-image concept set',
+                count: 3,
+                imageSize: '1k',
+                thinkingLevel: 'minimal',
+                includeThoughts: true,
+                useGoogleSearch: true,
+                useImageSearch: true,
+                responseFormat: 'image_and_text',
+            }));
+        });
+    });
+
     it('ISSUE-788: shows all aspect ratios again in image mode (no Veo restriction)', () => {
         render(<DirectGenerationTab />);
         fireEvent.click(screen.getByTestId('direct-video-mode-btn'));
@@ -254,8 +312,8 @@ describe('DirectGenerationTab', () => {
             fireEvent.click(generateBtn);
         });
 
-        expect(mockHttpsCallable).toHaveBeenCalled();
-        const imagePayload = mockHttpsCallable.mock.calls[0]?.[0];
+        expect(mockGenerateImages).toHaveBeenCalled();
+        const imagePayload = mockGenerateImages.mock.calls[0]?.[0];
         expect(imagePayload).not.toHaveProperty('referenceUri');
 
         await act(async () => {
@@ -294,9 +352,8 @@ describe('DirectGenerationTab', () => {
                 'image',
                 { scope: 'objects' },
             );
-            expect(mockHttpsCallable).toHaveBeenCalledWith(expect.objectContaining({
+            expect(mockGenerateImages).toHaveBeenCalledWith(expect.objectContaining({
                 referenceUris: ['gs://test-bucket/creative/test-user/references/selected-project-image.png'],
-                referenceUri: 'gs://test-bucket/creative/test-user/references/selected-project-image.png',
             }));
         });
 
@@ -309,14 +366,12 @@ describe('DirectGenerationTab', () => {
         });
     });
 
-    it('opens immediately when image generation returns a completed resultUri', async () => {
-        mockHttpsCallable.mockResolvedValueOnce({
-            data: {
-                jobId: 'completed-image-job',
-                resultUri: 'gs://mock-bucket/creative/test-user/completed.png',
-            }
-        });
-        vi.mocked(resolveStorageUrl).mockResolvedValueOnce('https://cdn.example.com/completed.png');
+    it('opens immediately when image generation returns a completed stored result', async () => {
+        mockGenerateImages.mockResolvedValueOnce([{
+            id: 'completed-image-job',
+            url: 'https://cdn.example.com/completed.png',
+            prompt: 'A finished image',
+        }]);
 
         render(<DirectGenerationTab />);
         fireEvent.change(screen.getByTestId('direct-prompt-input'), {
@@ -384,7 +439,7 @@ describe('DirectGenerationTab', () => {
     });
 
     it('displays error message when generation fails', async () => {
-        mockHttpsCallable.mockRejectedValueOnce(new Error('API Error'));
+        mockGenerateImages.mockRejectedValueOnce(new Error('API Error'));
 
         const mockToast = useToast();
 
@@ -401,7 +456,7 @@ describe('DirectGenerationTab', () => {
     });
 
     it('surfaces Firebase callable details when the public message is internal', async () => {
-        mockHttpsCallable.mockRejectedValueOnce({
+        mockGenerateImages.mockRejectedValueOnce({
             code: 'functions/internal',
             message: 'internal',
             details: { cause: 'Gemini model is not available in this project or region' },
@@ -422,7 +477,7 @@ describe('DirectGenerationTab', () => {
     });
 
     it('surfaces backend connection failures as an unavailable generation service', async () => {
-        mockHttpsCallable.mockRejectedValueOnce({
+        mockGenerateImages.mockRejectedValueOnce({
             code: 'functions/internal',
             message: 'internal',
             details: { cause: 'connect ECONNREFUSED 127.0.0.1:5001' },
@@ -443,7 +498,7 @@ describe('DirectGenerationTab', () => {
     });
 
     it('surfaces depleted Google AI Studio prepayment credits as a billing blocker', async () => {
-        mockHttpsCallable.mockRejectedValueOnce({
+        mockGenerateImages.mockRejectedValueOnce({
             code: 'functions/resource-exhausted',
             message: 'Image generation failed: {"error":{"code":429,"message":"Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ","status":"RESOURCE_EXHAUSTED"}}',
             details: {
