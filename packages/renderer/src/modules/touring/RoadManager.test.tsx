@@ -123,14 +123,14 @@ describe('RoadManager', () => {
         fireEvent.change(input, { target: { value: 'New York' } });
         fireEvent.click(addButton);
 
-        expect(screen.getByText('New York')).toBeInTheDocument();
+        expect(screen.getByLabelText('Remove New York')).toBeInTheDocument();
 
         // Remove location
         const removeButton = screen.getByLabelText('Remove New York');
         fireEvent.click(removeButton);
 
         await waitFor(() => {
-            expect(screen.queryByText('New York')).not.toBeInTheDocument();
+            expect(screen.queryByLabelText('Remove New York')).not.toBeInTheDocument();
         });
     });
 
@@ -178,7 +178,7 @@ describe('RoadManager', () => {
 
         // Wait for location to appear
         await waitFor(() => {
-            expect(screen.getByText('New York')).toBeInTheDocument();
+            expect(screen.getByLabelText('Remove New York')).toBeInTheDocument();
         });
 
         const generateButton = screen.getByText('Initialize Route');
