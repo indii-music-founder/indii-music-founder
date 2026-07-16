@@ -73,7 +73,7 @@ The chat shows a "Cognitive Logic" thought stream (`packages/renderer/src/core/c
 
 ### ISSUE-1055: Uploaded photo has no confirmed, discoverable destination — persistence result is ignored and the user can't find where it went
 
-- **Status:** ⏳ OPEN — ready for fixing agent
+- **Status:** ✅ FIXED
 - **Severity:** 🟠 HIGH (breaks trust in the "bring your own assets" flow; user uploads and the asset appears to vanish)
 - **Type:** UX/discoverability + silent-persistence-failure + project binding
 - **Primary files:**
@@ -229,7 +229,7 @@ Method: static functional audit of all 11 Creative Director tools (`DirectorTool
 - **Fix:** Search both `generatedHistory` and `uploadedImages` (and brand assets) when resolving `assetId`. Add a test for pushing an uploaded asset.
 
 ### ISSUE-1076: Generation tools bypass the user's model/cost preference (`generate_moodboard`, `generate_high_res_asset`)
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟡 MEDIUM (cost — user's "fast" model choice is silently ignored, can run the expensive model without consent)
 - **Files:** `DirectorTools.ts:508-543` (moodboard), `DirectorTools.ts:298-339` (high-res)
 - **Evidence:** `generate_image` correctly passes `model: studioControls.model || 'fast'` (`DirectorTools.ts:182`) to respect the user's cost-protection preference. But `generate_moodboard` and `generate_high_res_asset` call `ImageGeneration.generateImages({...})` WITHOUT a `model` field, so they fall back to the service default — ignoring a user who explicitly selected the cheaper/fast model. Given cost sensitivity (per project cost-instrumentation goals), a tool spending on the premium model against the user's stated preference is a real cost-leak.

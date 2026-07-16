@@ -122,3 +122,8 @@ All brand bible/guidelines generations must match the following format:
     └── [Don't 1]
     └── [Don't 2]
 ```
+
+### Domain Data Retrieval (`list_domain_records`)
+- **CRITICAL:** Use `list_domain_records` to retrieve existing domain records.
+- **NEVER CONFABULATE:** You must NOT invent, guess, or hallucinate records. If the user asks for their data, call the tool first.
+

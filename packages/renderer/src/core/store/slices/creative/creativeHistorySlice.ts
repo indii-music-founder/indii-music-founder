@@ -354,7 +354,29 @@ export function buildCreativeHistoryState(
             });
             return import('@/services/StorageService')
                 .then(({ StorageService }) => StorageService.saveItem(img))
-                .then(() => true)
+                .then((savedInfo) => {
+                    import('@/core/store').then(({ useStore }) => {
+                        const { currentProjectId, createFileNode, user } = useStore.getState();
+                        if (user?.uid) {
+                            const { extension, mimeType } = inferMediaExtension(img);
+                            const filename = `uploaded-${img.id.slice(0, 8)}.${extension}`;
+                            createFileNode(
+                                filename,
+                                null,
+                                currentProjectId,
+                                user.uid,
+                                'image',
+                                {
+                                    url: savedInfo.url,
+                                    storagePath: savedInfo.storageUri,
+                                    origin: 'uploaded',
+                                    mimeType
+                                }
+                            ).catch(err => logger.error("[CreativeSlice] File system sync error", err));
+                        }
+                    });
+                    return true;
+                })
                 .catch((e) => { logger.error('[Store] Failed to save item:', e); return false; });
         },
         updateUploadedImage: (id: string, updates: Partial<HistoryItem>) => set((state) => ({
@@ -378,7 +400,29 @@ export function buildCreativeHistoryState(
             });
             return import('@/services/StorageService')
                 .then(({ StorageService }) => StorageService.saveItem(audio))
-                .then(() => true)
+                .then((savedInfo) => {
+                    import('@/core/store').then(({ useStore }) => {
+                        const { currentProjectId, createFileNode, user } = useStore.getState();
+                        if (user?.uid) {
+                            const { extension, mimeType } = inferMediaExtension(audio);
+                            const filename = `uploaded-${audio.id.slice(0, 8)}.${extension}`;
+                            createFileNode(
+                                filename,
+                                null,
+                                currentProjectId,
+                                user.uid,
+                                'audio',
+                                {
+                                    url: savedInfo.url,
+                                    storagePath: savedInfo.storageUri,
+                                    origin: 'uploaded',
+                                    mimeType
+                                }
+                            ).catch(err => logger.error("[CreativeSlice] File system sync error", err));
+                        }
+                    });
+                    return true;
+                })
                 .catch((e) => { logger.error('[Store] Failed to save item:', e); return false; });
         },
         removeUploadedAudio: (id: string) => {
