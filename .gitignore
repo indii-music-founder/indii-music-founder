@@ -180,3 +180,4 @@ anonymous_users_audit_report.json
 
 # Python test fixtures
 python/tests/fixtures/
+client_secret_*.json

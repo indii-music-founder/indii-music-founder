@@ -1,3 +1,4 @@
+import { validateSender } from '../utils/ipc-security';
 /**
  * Mobile Remote IPC Handler — Electron Main Process
  *
@@ -23,7 +24,8 @@ export function registerMobileRemoteHandlers(): void {
    * Renderer requests pairing info (starts server if not running).
    * It also fetches the active Ngrok Auth Token from the user's environment.
    */
-  ipcMain.handle('system:getMobileRemoteInfo', async () => {
+  ipcMain.handle('system:getMobileRemoteInfo', async (event) => {
+        validateSender(event);
     try {
       // In production, we'd grab this from Keytar or user desktop settings.
       // For now, we try to load the Ngrok token from env vars.
@@ -71,7 +73,8 @@ export function registerMobileRemoteHandlers(): void {
   /**
    * Renderer requests server shutdown.
    */
-  ipcMain.handle('mobile-remote:stop', async () => {
+  ipcMain.handle('mobile-remote:stop', async (event) => {
+        validateSender(event);
     await indiiRemoteService.stop();
     return { success: true };
   });

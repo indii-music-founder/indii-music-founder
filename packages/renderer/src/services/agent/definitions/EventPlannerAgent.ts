@@ -7,6 +7,16 @@ import { KnowledgeTools } from '../tools/KnowledgeTools';
 import { SocialTools } from '../tools/SocialTools';
 import { UniversalTools } from '../tools/UniversalTools';
 import { RoadTools } from '../tools/RoadTools';
+import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '../tools/DomainTools';
+
+
+
+const eventPlannerRetrievalConfig = {
+    'events': { path: 'events', requiresUserIdFilter: true },
+    'bookings': { path: 'bookings', requiresUserIdFilter: true }
+};
+const eventPlannerRetrievalTools = buildDomainRetrievalTools('EventPlanner', eventPlannerRetrievalConfig);
+const eventPlannerRetrievalDeclarations = buildDomainRetrievalDeclarations('EventPlanner', eventPlannerRetrievalConfig);
 
 export const EventPlannerAgent: AgentConfig = {
     id: 'event-planner',
@@ -17,6 +27,7 @@ export const EventPlannerAgent: AgentConfig = {
     systemPrompt: systemPrompt,
     get functions() {
         return {
+            ...eventPlannerRetrievalTools,
             search_places: RoadTools.search_places,
             get_place_details: RoadTools.get_place_details,
             get_distance_matrix: RoadTools.get_distance_matrix,
@@ -27,9 +38,10 @@ export const EventPlannerAgent: AgentConfig = {
             credential_vault: UniversalTools.credential_vault,
         } as Record<string, import('@/services/agent/types').AnyToolFunction>;
     },
-    authorizedTools: ['search_places', 'get_place_details', 'get_distance_matrix', 'create_project', 'search_knowledge', 'generate_social_post', 'browser_tool', 'credential_vault'],
+    authorizedTools: ['list_domain_records', 'search_places', 'get_place_details', 'get_distance_matrix', 'create_project', 'search_knowledge', 'generate_social_post', 'browser_tool', 'credential_vault'],
     tools: [{
         functionDeclarations: [
+            ...eventPlannerRetrievalDeclarations,
             {
                 name: "search_places",
                 description: "Find venues and production vendors.",

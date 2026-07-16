@@ -7,6 +7,18 @@ import { logger } from '@/utils/logger';
 import systemPrompt from '@agents/publicist/prompt.md?raw';
 import { UniversalTools } from '../tools/UniversalTools';
 import { importWithRetry } from '@/utils/dynamicImport';
+import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '../tools/DomainTools';
+
+
+
+const publicistRetrievalConfig = {
+    'press_releases': { path: 'press_releases', requiresUserIdFilter: true },
+    'email_pitches': { path: 'email_pitches', requiresUserIdFilter: true },
+    'publicist_campaigns': { path: 'publicist_campaigns', requiresUserIdFilter: true },
+    'publicist_contacts': { path: 'publicist_contacts', requiresUserIdFilter: true }
+};
+const publicistRetrievalTools = buildDomainRetrievalTools('Publicist', publicistRetrievalConfig);
+const publicistRetrievalDeclarations = buildDomainRetrievalDeclarations('Publicist', publicistRetrievalConfig);
 
 export const PublicistAgent = createAgent('publicist')
     .withName('Publicist Director')
@@ -570,6 +582,7 @@ Return ONLY valid JSON. No markdown fences.`;
         'generate_pdf', 'generate_live_epk', 'pitch_media', 'draft_press_release',
         'find_media_contacts'
     ])
+    .withDomainRetrieval(publicistRetrievalDeclarations, publicistRetrievalTools)
     .build();
 
 // Freeze the schema to prevent cross-test contamination

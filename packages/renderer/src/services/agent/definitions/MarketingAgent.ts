@@ -4,6 +4,16 @@ import { MarketingTools } from '../tools/MarketingTools';
 import { UniversalTools } from '../tools/UniversalTools';
 import systemPrompt from '@agents/marketing/prompt.md?raw';
 
+
+const marketingRetrievalConfig = {
+    'campaigns': { path: 'campaigns', requiresUserIdFilter: true },
+    'scheduledPosts': { path: 'scheduledPosts', requiresUserIdFilter: true },
+    'bountyLinks': { path: 'bountyLinks', requiresUserIdFilter: true },
+    'influencerBounties': { path: 'influencerBounties', requiresUserIdFilter: true }
+};
+const marketingRetrievalTools = buildDomainRetrievalTools('Marketing', marketingRetrievalConfig);
+const marketingRetrievalDeclarations = buildDomainRetrievalDeclarations('Marketing', marketingRetrievalConfig);
+
 export const MarketingAgent: AgentConfig = {
     id: 'marketing',
     name: 'Marketing Director',
@@ -13,6 +23,7 @@ export const MarketingAgent: AgentConfig = {
     systemPrompt: systemPrompt,
     get functions() {
         return {
+            ...marketingRetrievalTools,
             create_campaign_brief: MarketingTools.create_campaign_brief,
             analyze_audience: MarketingTools.analyze_audience,
             schedule_content: MarketingTools.schedule_content,
@@ -32,9 +43,10 @@ export const MarketingAgent: AgentConfig = {
             analyze_campaign_roi: MarketingTools.analyze_campaign_roi,
         } as Record<string, import('@/services/agent/types').AnyToolFunction>;
     },
-    authorizedTools: ['create_campaign_brief', 'analyze_audience', 'schedule_content', 'track_performance', 'generate_campaign_from_audio', 'browser_tool', 'indii_image_gen', 'create_artifact_drop', 'generate_ab_campaign', 'deploy_micro_ad_campaign', 'deploy_email_newsletter', 'generate_presave_campaign', 'deploy_sms_blast', 'enrich_fan_data', 'generate_influencer_bounty', 'generate_ad_copy', 'analyze_campaign_roi'],
+    authorizedTools: ['list_domain_records', 'create_campaign_brief', 'analyze_audience', 'schedule_content', 'track_performance', 'generate_campaign_from_audio', 'browser_tool', 'indii_image_gen', 'create_artifact_drop', 'generate_ab_campaign', 'deploy_micro_ad_campaign', 'deploy_email_newsletter', 'generate_presave_campaign', 'deploy_sms_blast', 'enrich_fan_data', 'generate_influencer_bounty', 'generate_ad_copy', 'analyze_campaign_roi'],
     tools: [{
         functionDeclarations: [
+            ...marketingRetrievalDeclarations,
             {
                 name: 'create_campaign_brief',
                 description: 'Generate a structured campaign brief including target audience, budget, and channels.',
@@ -263,6 +275,8 @@ export const MarketingAgent: AgentConfig = {
 };
 
 import { freezeAgentConfig } from '../FreezeDiagnostic';
+import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '../tools/DomainTools';
+
 
 // Freeze the schema to prevent cross-test contamination
 freezeAgentConfig(MarketingAgent);

@@ -3,6 +3,15 @@ import { UniversalTools } from '../tools/UniversalTools';
 import { LegalTools } from '../tools/LegalTools';
 import systemPrompt from '@agents/legal/prompt.md?raw';
 
+
+const legalRetrievalConfig = {
+    'contracts': { path: 'contracts', requiresUserIdFilter: true },
+    'contract_analyses': { path: 'contract_analyses', requiresUserIdFilter: true },
+    'legal_audit_ledger': { path: 'legal_audit_ledger', requiresUserIdFilter: true }
+};
+const legalRetrievalTools = buildDomainRetrievalTools('Legal', legalRetrievalConfig);
+const legalRetrievalDeclarations = buildDomainRetrievalDeclarations('Legal', legalRetrievalConfig);
+
 export const LegalAgent: AgentConfig = {
     id: "legal",
     name: "Legal Director",
@@ -12,6 +21,7 @@ export const LegalAgent: AgentConfig = {
     systemPrompt: systemPrompt,
     get functions() {
         return {
+            ...legalRetrievalTools,
             analyze_rights: async (args: { isCover: boolean, hasSamples: boolean, aiGenerated: boolean }) => {
                 const risks = [];
                 let advice = "";
@@ -56,7 +66,7 @@ export const LegalAgent: AgentConfig = {
             summarize_contract_terms: LegalTools.summarize_contract_terms,
         } as Record<string, import('@/services/agent/types').AnyToolFunction>;
     },
-    authorizedTools: [
+    authorizedTools: ['list_domain_records', 
         'analyze_rights',
         'browser_tool',
         'document_query',
@@ -65,6 +75,7 @@ export const LegalAgent: AgentConfig = {
     ],
     tools: [{
         functionDeclarations: [
+            ...legalRetrievalDeclarations,
             {
                 name: "analyze_rights",
                 description: "Analyze the copyright status of a track based on its composition.",
@@ -147,6 +158,8 @@ export const LegalAgent: AgentConfig = {
 };
 
 import { freezeAgentConfig } from '../FreezeDiagnostic';
+import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '../tools/DomainTools';
+
 
 // Freeze the schema to prevent cross-test contamination
 freezeAgentConfig(LegalAgent);

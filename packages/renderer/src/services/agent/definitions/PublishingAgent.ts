@@ -6,6 +6,17 @@ import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntell
 import type { Schema } from '@/shared/types/ai.dto';
 import { PublishingTools } from '../tools/PublishingTools';
 import { UniversalTools } from '../tools/UniversalTools';
+import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '../tools/DomainTools';
+
+
+
+const publishingRetrievalConfig = {
+    'publishingCatalog': { path: 'publishingCatalog', requiresUserIdFilter: true },
+    'iswc_works': { path: 'iswc_works', requiresUserIdFilter: true },
+    'publishing_registrations': { path: 'publishing_registrations', requiresUserIdFilter: true }
+};
+const publishingRetrievalTools = buildDomainRetrievalTools('Publishing', publishingRetrievalConfig);
+const publishingRetrievalDeclarations = buildDomainRetrievalDeclarations('Publishing', publishingRetrievalConfig);
 
 export const PublishingAgent: AgentConfig = {
     id: 'publishing',
@@ -20,6 +31,7 @@ export const PublishingAgent: AgentConfig = {
             try {
                 const response = await AutonomousIntelligence.generateStructuredData<Record<string, unknown>>(prompt, { type: 'object' } as Schema, { maxOutputTokens: 8192, temperature: 1.0 });
                 return {
+            ...publishingRetrievalTools,
                     success: true,
                     data: {
                         status: "DraftReady",
@@ -58,9 +70,10 @@ export const PublishingAgent: AgentConfig = {
         pro_scraper: UniversalTools.pro_scraper,
         payment_gate: UniversalTools.payment_gate,
     },
-    authorizedTools: ['analyze_contract', 'register_work', 'check_pro_catalog', 'package_release_assets', 'pro_scraper', 'payment_gate', 'search_pro_database', 'register_work_with_pro'],
+    authorizedTools: ['list_domain_records', 'analyze_contract', 'register_work', 'check_pro_catalog', 'package_release_assets', 'pro_scraper', 'payment_gate', 'search_pro_database', 'register_work_with_pro'],
     tools: [{
         functionDeclarations: [
+            ...publishingRetrievalDeclarations,
             {
                 name: "analyze_contract",
                 description: "Analyze a publishing contract.",

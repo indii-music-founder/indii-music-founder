@@ -110,7 +110,7 @@ const useMockStore = create<any>((set) => ({
     addCharacterReference: vi.fn(),
     removeCharacterReference: vi.fn(),
     updateCharacterReference: vi.fn(),
-    addUploadedImage: vi.fn(),
+    addUploadedImage: vi.fn().mockResolvedValue(true),
     generatedHistory: []
 }));
 

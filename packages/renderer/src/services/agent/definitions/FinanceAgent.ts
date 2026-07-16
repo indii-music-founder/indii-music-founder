@@ -3,6 +3,16 @@ import systemPrompt from "@agents/finance/prompt.md?raw";
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { UniversalTools } from '../tools/UniversalTools';
+
+const financeRetrievalConfig = {
+    'earnings': { path: 'earnings', requiresUserIdFilter: true },
+    'recoupment_balances': { path: 'recoupment_balances', requiresUserIdFilter: true },
+    'tax_profiles': { path: 'tax_profiles', requiresUserIdFilter: true },
+    'ledger': { path: 'ledger', requiresUserIdFilter: true }
+};
+const financeRetrievalTools = buildDomainRetrievalTools('Finance', financeRetrievalConfig);
+const financeRetrievalDeclarations = buildDomainRetrievalDeclarations('Finance', financeRetrievalConfig);
+
 export const FinanceAgent: AgentConfig = {
     id: "finance",
     name: 'Finance Director',
@@ -15,6 +25,7 @@ export const FinanceAgent: AgentConfig = {
             const efficiency = args.amount < 50000 ? "High" : "Medium";
             const managerFeeSaved = args.amount * 0.20;
             return {
+            ...financeRetrievalTools,
                 success: true,
                 data: {
                     status: "approved",
@@ -165,9 +176,10 @@ export const FinanceAgent: AgentConfig = {
         payment_gate: UniversalTools.payment_gate,
         browser_tool: UniversalTools.browser_tool,
     },
-    authorizedTools: ['analyze_budget', 'audit_metadata', 'search_knowledge', 'analyze_receipt', 'audit_distribution', 'credential_vault', 'payment_gate', 'browser_tool', 'generate_tax_report', 'forecast_revenue'],
+    authorizedTools: ['list_domain_records', 'analyze_budget', 'audit_metadata', 'search_knowledge', 'analyze_receipt', 'audit_distribution', 'credential_vault', 'payment_gate', 'browser_tool', 'generate_tax_report', 'forecast_revenue'],
     tools: [{
         functionDeclarations: [
+            ...financeRetrievalDeclarations,
             {
                 name: "analyze_budget",
                 description: "Analyze a project budget and calculate the 'indii Dividend' savings.",
@@ -307,6 +319,8 @@ export const FinanceAgent: AgentConfig = {
 };
 
 import { freezeAgentConfig } from '../FreezeDiagnostic';
+import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '../tools/DomainTools';
+
 
 // Freeze the schema to prevent cross-test contamination
 freezeAgentConfig(FinanceAgent);

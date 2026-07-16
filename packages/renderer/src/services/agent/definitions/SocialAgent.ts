@@ -5,6 +5,16 @@ import type { Schema } from '@/shared/types/ai.dto';
 import { SocialTools } from '../tools/SocialTools';
 import { UniversalTools } from '../tools/UniversalTools';
 import systemPrompt from '@agents/social/prompt.md?raw';
+import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '../tools/DomainTools';
+
+
+
+const socialRetrievalConfig = {
+    'scheduled_posts': { path: 'scheduled_posts', requiresUserIdFilter: true },
+    'posts': { path: 'posts', requiresUserIdFilter: true }
+};
+const socialRetrievalTools = buildDomainRetrievalTools('Social', socialRetrievalConfig);
+const socialRetrievalDeclarations = buildDomainRetrievalDeclarations('Social', socialRetrievalConfig);
 
 export const SocialAgent: AgentConfig = {
     id: 'social',
@@ -15,6 +25,7 @@ export const SocialAgent: AgentConfig = {
     systemPrompt: systemPrompt,
     get functions() {
         return {
+            ...socialRetrievalTools,
             analyze_trends: async (args: { topic: string }) => {
                 const prompt = `Analyze current social media trends for the topic: "${args.topic}". Return a JSON with trend_score (0-100), sentiment (positive/neutral/negative), keywords (array), and a summary.`;
                 try {
@@ -71,9 +82,10 @@ export const SocialAgent: AgentConfig = {
             },
         } as Record<string, import('@/services/agent/types').AnyToolFunction>;
     },
-    authorizedTools: ['generate_content_calendar', 'schedule_post_execution', 'generate_social_post', 'analyze_trends', 'browser_tool', 'indii_image_gen', 'credential_vault', 'draft_advanced_thread', 'analyze_sentiment', 'multi_platform_autopost', 'dispatch_community_webhook', 'analyze_engagement_rate'],
+    authorizedTools: ['list_domain_records', 'generate_content_calendar', 'schedule_post_execution', 'generate_social_post', 'analyze_trends', 'browser_tool', 'indii_image_gen', 'credential_vault', 'draft_advanced_thread', 'analyze_sentiment', 'multi_platform_autopost', 'dispatch_community_webhook', 'analyze_engagement_rate'],
     tools: [{
         functionDeclarations: [
+            ...socialRetrievalDeclarations,
             {
                 name: "generate_content_calendar",
                 description: "Generate a multi-week content calendar for a music release.",
