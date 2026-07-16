@@ -2,7 +2,7 @@ import React from 'react';
 import { Map, Truck, Coffee, ChevronRight, Route, FileText, ListMusic, Globe, Settings, BookOpen, type LucideIcon } from 'lucide-react';
 import { motion } from 'motion/react';
 
-export type TouringTab = 'planning' | 'on-the-road' | 'tour-book' | 'rider' | 'route-optimizer' | 'tech-rider' | 'setlist' | 'visa';
+export type TouringTab = 'plan' | 'tour-book' | 'on-the-road' | 'insights';
 
 interface RoadManagerSidebarProps {
     activeTab: TouringTab;
@@ -11,14 +11,10 @@ interface RoadManagerSidebarProps {
 
 export const RoadManagerSidebar: React.FC<RoadManagerSidebarProps> = ({ activeTab, setActiveTab }) => {
     const navItems: { id: TouringTab; label: string; icon: LucideIcon; description: string }[] = [
-        { id: 'planning', label: 'Tour Planning', icon: Map, description: 'Logistics & Routing' },
-        { id: 'on-the-road', label: 'On The Road', icon: Truck, description: 'Live Telemetry' },
-        { id: 'tour-book', label: 'Tour Book', icon: BookOpen, description: 'Day Sheets & Advance Info' },
-        { id: 'rider', label: 'Hospitality Rider', icon: Coffee, description: 'Inventory & Needs' },
-        { id: 'route-optimizer', label: 'Route Optimizer', icon: Route, description: 'Spotify Density Map' },
-        { id: 'tech-rider', label: 'Tech Rider', icon: FileText, description: 'Stage Plot & Requirements' },
-        { id: 'setlist', label: 'Setlist Analytics', icon: ListMusic, description: 'ASCAP/BMI Submission' },
-        { id: 'visa', label: 'Visa Checklist', icon: Globe, description: 'International Touring' },
+        { id: 'plan', label: 'Plan', icon: Map, description: 'Route & Optimization' },
+        { id: 'tour-book', label: 'Tour Book', icon: BookOpen, description: 'Day Sheets & Tech Rider' },
+        { id: 'on-the-road', label: 'On the Road', icon: Truck, description: 'Live GPS & Logistics' },
+        { id: 'insights', label: 'Insights', icon: ListMusic, description: 'Analytics & Streams' },
     ];
 
     return (

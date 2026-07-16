@@ -9,10 +9,10 @@ describe('handoff view resolution', () => {
         expect(resolveBrandManagerTab('bad-tab')).toBe('visuals');
     });
 
-    it('defaults touring handoffs to the rider tab', () => {
-        expect(resolveTouringTab()).toBe('rider');
-        expect(resolveTouringTab('tech-rider')).toBe('tech-rider');
-        expect(resolveTouringTab('bad-tab')).toBe('rider');
+    it('defaults touring handoffs to the plan tab', () => {
+        expect(resolveTouringTab()).toBe('plan');
+        expect(resolveTouringTab('tour-book')).toBe('tour-book');
+        expect(resolveTouringTab('bad-tab')).toBe('plan');
     });
 
     it('defaults merch handoffs to the design view', () => {

@@ -15,12 +15,9 @@ import { Itinerary, ItineraryStop, NearbyPlace, LogisticsReport, EmergencyContac
 import { RoadMode } from './components/RoadMode';
 import { useMobile } from '@/hooks/useMobile';
 import { RoadManagerSidebar, TouringTab } from './components/RoadManagerSidebar';
-import { RiderChecklist } from './components/RiderChecklist';
 import { Phone, Calendar, CheckSquare, Navigation, Plus, Edit2, Trash2 } from 'lucide-react';
 import { TourRouteOptimizer } from './components/TourRouteOptimizer';
-import { TechnicalRiderGenerator } from './components/TechnicalRiderGenerator';
 import { SetlistAnalytics } from './components/SetlistAnalytics';
-import { VisaChecklist } from './components/VisaChecklist';
 import { logger } from '@/utils/logger';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 import { resolveTouringTab } from '@/modules/handoffViews';
@@ -237,7 +234,7 @@ const RoadManager: React.FC = () => {
     const [isGenerating, setIsGenerating] = useState(false);
 
     // Feature Tabs
-    const [activeTab, setActiveTab] = useState<TouringTab>('planning');
+    const [activeTab, setActiveTab] = useState<TouringTab>('plan');
 
     useEffect(() => {
         if (!pendingTouringHandoff) return;
@@ -433,23 +430,38 @@ const RoadManager: React.FC = () => {
                                 transition={{ duration: 0.2, ease: 'easeOut' }}
                                 className="h-full"
                             >
-                                {activeTab === 'planning' && (
-                                    <PlanningTab
-                                        startDate={startDate}
-                                        setStartDate={setStartDate}
-                                        endDate={endDate}
-                                        setEndDate={setEndDate}
-                                        locations={locations}
-                                        newLocation={newLocation}
-                                        setNewLocation={setNewLocation}
-                                        handleAddLocation={handleAddLocation}
-                                        handleRemoveLocation={handleRemoveLocation}
-                                        handleGenerateItinerary={handleGenerateItinerary}
-                                        isGenerating={isGenerating}
+                                {activeTab === 'plan' && (
+                                    <div className="flex gap-6 h-full">
+                                        <div className="flex-1 overflow-y-auto">
+                                            <PlanningTab
+                                                startDate={startDate}
+                                                setStartDate={setStartDate}
+                                                endDate={endDate}
+                                                setEndDate={setEndDate}
+                                                locations={locations}
+                                                newLocation={newLocation}
+                                                setNewLocation={setNewLocation}
+                                                handleAddLocation={handleAddLocation}
+                                                handleRemoveLocation={handleRemoveLocation}
+                                                handleGenerateItinerary={handleGenerateItinerary}
+                                                isGenerating={isGenerating}
+                                                itinerary={itinerary}
+                                                handleCheckLogistics={handleCheckLogistics}
+                                                isCheckingLogistics={isCheckingLogistics}
+                                                logisticsReport={logisticsReport}
+                                                onUpdateStop={handleUpdateStop}
+                                            />
+                                        </div>
+                                        <div className="hidden xl:flex w-96 flex-col border-l border-gray-800 p-6 overflow-y-auto flex-shrink-0">
+                                            <h3 className="text-sm font-bold text-white mb-4">Route Optimization</h3>
+                                            <TourRouteOptimizer />
+                                        </div>
+                                    </div>
+                                )}
+
+                                {activeTab === 'tour-book' && (
+                                    <TourBookTab
                                         itinerary={itinerary}
-                                        handleCheckLogistics={handleCheckLogistics}
-                                        isCheckingLogistics={isCheckingLogistics}
-                                        logisticsReport={logisticsReport}
                                         onUpdateStop={handleUpdateStop}
                                     />
                                 )}
@@ -466,40 +478,9 @@ const RoadManager: React.FC = () => {
                                     />
                                 )}
 
-                                {activeTab === 'tour-book' && (
-                                    <TourBookTab
-                                        itinerary={itinerary}
-                                        onUpdateStop={handleUpdateStop}
-                                    />
-                                )}
-
-                                {activeTab === 'rider' && (
-                                    <div className="h-full">
-                                        <RiderChecklist />
-                                    </div>
-                                )}
-
-                                {activeTab === 'route-optimizer' && (
-                                    <div className="h-full p-6 overflow-y-auto">
-                                        <TourRouteOptimizer />
-                                    </div>
-                                )}
-
-                                {activeTab === 'tech-rider' && (
-                                    <div className="h-full p-6 overflow-y-auto">
-                                        <TechnicalRiderGenerator />
-                                    </div>
-                                )}
-
-                                {activeTab === 'setlist' && (
+                                {activeTab === 'insights' && (
                                     <div className="h-full p-6 overflow-y-auto">
                                         <SetlistAnalytics />
-                                    </div>
-                                )}
-
-                                {activeTab === 'visa' && (
-                                    <div className="h-full p-6 overflow-y-auto">
-                                        <VisaChecklist />
                                     </div>
                                 )}
                             </motion.div>
@@ -507,10 +488,9 @@ const RoadManager: React.FC = () => {
                     </main>
                 </div>
 
-                {/* ── RIGHT PANEL — On The Road Info ─────────────────── */}
+                {/* ── RIGHT PANEL — Tour Info ─────────────────────────── */}
                 <aside className="hidden lg:flex w-72 2xl:w-80 flex-col border-l border-white/5 overflow-y-auto p-3 gap-3 flex-shrink-0">
                     <ItinerarySummaryPanel itinerary={itinerary} />
-                    <RiderQuickPanel onNavigate={() => setActiveTab('rider')} />
                     <EmergencyContactsPanel
                         contacts={emergencyContacts}
                         onSave={saveEmergencyContact}
@@ -554,29 +534,6 @@ function ItinerarySummaryPanel({ itinerary }: { itinerary: Itinerary | null }) {
                         <p className="text-[10px] text-gray-500">Total Distance</p>
                     </div>
                 </div>
-            </div>
-        </div>
-    );
-}
-
-
-function RiderQuickPanel({ onNavigate }: { onNavigate?: () => void }) {
-    return (
-        <div className="rounded-xl bg-white/[0.02] border border-white/5 p-3">
-            <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 px-1">Rider Checklist</h3>
-            <div className="flex flex-col items-center justify-center py-3 text-center">
-                <CheckSquare size={14} className="text-gray-600 mb-1.5" />
-                <p className="text-[10px] text-gray-600">No active rider</p>
-                {onNavigate ? (
-                    <button
-                        onClick={onNavigate}
-                        className="text-[10px] text-yellow-500/70 hover:text-yellow-400 mt-1 transition-colors underline underline-offset-2"
-                    >
-                        Create one in Rider tab →
-                    </button>
-                ) : (
-                    <p className="text-[10px] text-gray-700 mt-0.5">Create a rider in the Rider tab</p>
-                )}
             </div>
         </div>
     );
