@@ -4,6 +4,7 @@
 
 ## Recent Commits
 ```
+71c073a23 chore: session checkpoint [20:47]
 e17f9befc docs: update ledger — ISSUE-899 marked FIXED with implementation details
 fb7dd6e85 chore: session checkpoint [20:46]
 0c0709e7c fix(merch): ISSUE-899 — reframe marketplace product creation UI copy to be honest
@@ -13,7 +14,6 @@ fb7dd6e85 chore: session checkpoint [20:46]
 3519e473e chore: session checkpoint [20:35]
 f24474af8 chore: session checkpoint [20:28]
 a48d072dd chore: session checkpoint — ISSUE-704 complete, all tests passing
-bc012333c chore: session checkpoint [20:25]
 ```
 
 ## Working State
