@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-07-15 20:35 EDT
+**Updated:** 2026-07-15 20:41 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+3190a6edb fix(test): RoadManager and KnowledgeChat selector specificity
+3519e473e chore: session checkpoint [20:35]
 f24474af8 chore: session checkpoint [20:28]
 a48d072dd chore: session checkpoint — ISSUE-704 complete, all tests passing
 bc012333c chore: session checkpoint [20:25]
@@ -12,14 +14,11 @@ bc012333c chore: session checkpoint [20:25]
 c213a6e24 fix(creative): ISSUE-922 remainder — explicit upload eviction notice
 0b3562618 feat(touring): ISSUE-704 create useTourGeo reactive hook
 cec0d85ed feat(touring): ISSUE-704 create TourGeoService for location consolidation
-c8218c309 feat(touring): ISSUE-704 expand Tour Book with tech rider & visa tabs
-ae8e9615c feat(touring): ISSUE-704 Road Manager tab consolidation
 ```
 
 ## Working State
 ```
- M packages/renderer/src/modules/knowledge/components/KnowledgeChat.test.tsx
- M packages/renderer/src/modules/touring/RoadManager.test.tsx
+ M packages/renderer/src/modules/finance/components/MerchTable.tsx
 ```
 
 ## Decisions
