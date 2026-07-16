@@ -5,6 +5,25 @@ import { StoreState } from '@/core/store';
 
 let creativeHistoryUnsubscribe: (() => void) | null = null;
 
+// ISSUE-922 (remainder): the in-memory gallery keeps only the most recent
+// uploads (data-URI items are memory-heavy). Evicted items remain durable in
+// the cloud library and reappear through the uncapped Firestore snapshot
+// rebuild in loadHistory — but trimming the visible list must never be silent.
+export const UPLOAD_MEMORY_CAP = 50;
+let lastEvictionNoticeAt = 0;
+function notifyUploadEviction(kind: 'image' | 'audio'): void {
+    logger.info(`[CreativeSlice] Upload list exceeded ${UPLOAD_MEMORY_CAP} ${kind} items — oldest trimmed from view (cloud copies remain).`);
+    const now = Date.now();
+    if (now - lastEvictionNoticeAt < 30_000) return; // one notice per batch, not per file
+    lastEvictionNoticeAt = now;
+    import('@/core/events').then(({ events }) => {
+        events.emit('SYSTEM_ALERT', {
+            level: 'info',
+            message: `Showing your ${UPLOAD_MEMORY_CAP} most recent uploads — older uploads stay in your cloud library and reappear after sync.`
+        });
+    }).catch(() => { /* events module unavailable in some test contexts */ });
+}
+
 const KNOWN_MEDIA_EXTENSIONS: Record<string, string> = {
     mp4: 'video/mp4',
     webm: 'video/webm',
@@ -324,8 +343,15 @@ export function buildCreativeHistoryState(
         // can report honest per-file outcomes. Never rejects — legacy
         // fire-and-forget callers stay safe.
         addUploadedImage: (img: HistoryItem) => {
-            // Eviction policy: cap at 50 items to prevent memory bloat
-            set((state) => ({ uploadedImages: [img, ...state.uploadedImages].slice(0, 50) }));
+            // Eviction policy: keep the 50 most recent in memory (data-URI
+            // items are heavy). Evicted items are durable in the cloud and
+            // reappear via the Firestore snapshot rebuild (which is uncapped)
+            // — but the trim must never be silent (ISSUE-922 remainder).
+            set((state) => {
+                const next = [img, ...state.uploadedImages];
+                if (next.length > UPLOAD_MEMORY_CAP) notifyUploadEviction('image');
+                return { uploadedImages: next.slice(0, UPLOAD_MEMORY_CAP) };
+            });
             return import('@/services/StorageService')
                 .then(({ StorageService }) => StorageService.saveItem(img))
                 .then(() => true)
@@ -342,10 +368,14 @@ export function buildCreativeHistoryState(
         },
 
         uploadedAudio: [],
-        // ISSUE-922: same honest-persistence contract as addUploadedImage.
+        // ISSUE-922: same honest-persistence + explicit-eviction contract as
+        // addUploadedImage.
         addUploadedAudio: (audio: HistoryItem) => {
-            // Eviction policy: cap at 50 items to prevent memory bloat
-            set((state) => ({ uploadedAudio: [audio, ...state.uploadedAudio].slice(0, 50) }));
+            set((state) => {
+                const next = [audio, ...state.uploadedAudio];
+                if (next.length > UPLOAD_MEMORY_CAP) notifyUploadEviction('audio');
+                return { uploadedAudio: next.slice(0, UPLOAD_MEMORY_CAP) };
+            });
             return import('@/services/StorageService')
                 .then(({ StorageService }) => StorageService.saveItem(audio))
                 .then(() => true)
