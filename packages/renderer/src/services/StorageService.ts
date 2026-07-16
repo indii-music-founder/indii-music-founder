@@ -238,7 +238,12 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
             userId: auth.currentUser.uid
         } as HistoryDocument);
 
-        return item.id;
+        return { 
+            id: item.id, 
+            url: imageUrl, 
+            thumbnailUrl, 
+            storageUri: storageUri ?? item.storageUri 
+        };
 
     }
 
