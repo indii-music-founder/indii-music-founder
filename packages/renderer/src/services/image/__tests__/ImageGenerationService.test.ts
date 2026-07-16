@@ -253,6 +253,45 @@ describe("ImageGenerationService", () => {
       ]);
     });
 
+    it("ISSUE-777: returns every stored batch result and forwards advanced image settings", async () => {
+      mockGenerateImage.mockResolvedValue({
+        data: {
+          jobId: 'batch-job',
+          resultUris: [
+            'gs://mock-bucket/creative/test-user/one.png',
+            'gs://mock-bucket/creative/test-user/two.png',
+            'gs://mock-bucket/creative/test-user/three.png',
+          ],
+          textNarration: 'Campaign direction',
+          thoughtSummary: 'Composition summary',
+        },
+      });
+
+      const results = await ImageGeneration.generateImages({
+        prompt: 'Three campaign concepts',
+        count: 3,
+        imageSize: '1k',
+        thinkingLevel: 'minimal',
+        includeThoughts: true,
+        useGoogleSearch: true,
+        useImageSearch: true,
+        responseFormat: 'image_and_text',
+        referenceUris: ['gs://mock-bucket/creative/test-user/reference.png'],
+      });
+
+      expect(results).toHaveLength(3);
+      expect(results.every(result => result.textNarration === 'Campaign direction')).toBe(true);
+      expect(results.every(result => result.thoughtSignature === 'Composition summary')).toBe(true);
+      expect(mockGenerateImage).toHaveBeenCalledWith(expect.objectContaining({
+        count: 3,
+        imageSize: '1k',
+        includeThoughts: true,
+        responseFormat: 'image_and_text',
+        referenceUri: 'gs://mock-bucket/creative/test-user/reference.png',
+        referenceUris: ['gs://mock-bucket/creative/test-user/reference.png'],
+      }));
+    });
+
     it("should return fallback or empty on generation failure", async () => {
       mockGenerateImage.mockRejectedValue(new Error("Generation failed"));
 

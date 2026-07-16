@@ -21,7 +21,10 @@ export declare const GenerateImageSchema: z.ZodObject<{
     aspectRatio: z.ZodDefault<z.ZodEnum<["1:1", "16:9", "9:16", "3:4", "4:3"]>>;
     model: z.ZodDefault<z.ZodEnum<["lite", "fast", "pro", "legacy"]>>;
     imageSize: z.ZodOptional<z.ZodEnum<["512", "0.5K", "1K", "2K", "4K", "1k", "2k", "4k"]>>;
+    count: z.ZodDefault<z.ZodNumber>;
     thinkingLevel: z.ZodOptional<z.ZodEnum<["none", "minimal", "low", "medium", "high"]>>;
+    includeThoughts: z.ZodOptional<z.ZodBoolean>;
+    responseFormat: z.ZodDefault<z.ZodEnum<["image_only", "image_and_text"]>>;
     useGoogleSearch: z.ZodOptional<z.ZodBoolean>;
     useImageSearch: z.ZodOptional<z.ZodBoolean>;
     useGrounding: z.ZodOptional<z.ZodBoolean>;
@@ -29,11 +32,14 @@ export declare const GenerateImageSchema: z.ZodObject<{
     prompt: string;
     aspectRatio: "16:9" | "9:16" | "1:1" | "3:4" | "4:3";
     model: "lite" | "fast" | "pro" | "legacy";
+    count: number;
+    responseFormat: "image_only" | "image_and_text";
     sessionId?: string | undefined;
     referenceUri?: string | undefined;
     referenceUris?: string[] | undefined;
     imageSize?: "4k" | "512" | "0.5K" | "1K" | "2K" | "4K" | "1k" | "2k" | undefined;
     thinkingLevel?: "none" | "minimal" | "low" | "medium" | "high" | undefined;
+    includeThoughts?: boolean | undefined;
     useGoogleSearch?: boolean | undefined;
     useImageSearch?: boolean | undefined;
     useGrounding?: boolean | undefined;
@@ -45,7 +51,10 @@ export declare const GenerateImageSchema: z.ZodObject<{
     referenceUri?: string | undefined;
     referenceUris?: string[] | undefined;
     imageSize?: "4k" | "512" | "0.5K" | "1K" | "2K" | "4K" | "1k" | "2k" | undefined;
+    count?: number | undefined;
     thinkingLevel?: "none" | "minimal" | "low" | "medium" | "high" | undefined;
+    includeThoughts?: boolean | undefined;
+    responseFormat?: "image_only" | "image_and_text" | undefined;
     useGoogleSearch?: boolean | undefined;
     useImageSearch?: boolean | undefined;
     useGrounding?: boolean | undefined;
