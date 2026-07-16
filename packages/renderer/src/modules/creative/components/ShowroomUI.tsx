@@ -46,27 +46,55 @@ export default function ShowroomUI() {
 
     const toast = useToast();
 
-    const handleAssetSelected = (files: File[]) => {
+    // ISSUE-959: validate type, handle read errors, and verify the bytes
+    // actually decode as an image BEFORE accepting the asset — a renamed or
+    // corrupt file must never reach the (expensive) generation request.
+    const handleAssetSelected = async (files: File[]) => {
         if (files.length === 0) return;
         const file = files[0];
         if (!file) return;
-        
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            if (e.target?.result) {
-                const newItem: HistoryItem = {
-                    id: crypto.randomUUID(),
-                    type: 'image',
-                    url: e.target.result as string,
-                    prompt: 'Showroom Asset',
-                    timestamp: Date.now(),
-                    projectId: currentProjectId,
-                    origin: 'uploaded'
-                };
-                setShowroomState({ productAsset: newItem });
-            }
+
+        const SUPPORTED_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
+        if (!SUPPORTED_TYPES.includes(file.type)) {
+            toast.error(`"${file.name}" is ${file.type || 'an unknown type'} — use a PNG, JPEG, or WebP graphic.`);
+            return;
+        }
+
+        let dataUrl: string;
+        try {
+            dataUrl = await new Promise<string>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => (typeof reader.result === 'string' ? resolve(reader.result) : reject(new Error('Empty read result')));
+                reader.onerror = () => reject(reader.error ?? new Error('File read failed'));
+                reader.readAsDataURL(file);
+            });
+        } catch {
+            toast.error(`Could not read "${file.name}" — the file may be locked or removed. Try again.`);
+            return;
+        }
+
+        // Decode check: the browser must be able to parse the actual bytes.
+        const decoded = await new Promise<{ width: number; height: number } | null>((resolve) => {
+            const img = new Image();
+            img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
+            img.onerror = () => resolve(null);
+            img.src = dataUrl;
+        });
+        if (!decoded || decoded.width === 0 || decoded.height === 0) {
+            toast.error(`"${file.name}" is not a valid image — it may be corrupt or mislabeled. Re-export it as PNG, JPEG, or WebP.`);
+            return;
+        }
+
+        const newItem: HistoryItem = {
+            id: crypto.randomUUID(),
+            type: 'image',
+            url: dataUrl,
+            prompt: 'Showroom Asset',
+            timestamp: Date.now(),
+            projectId: currentProjectId,
+            origin: 'uploaded'
         };
-        reader.readAsDataURL(file);
+        setShowroomState({ productAsset: newItem });
     };
 
     const handleGenerateMockup = async () => {
