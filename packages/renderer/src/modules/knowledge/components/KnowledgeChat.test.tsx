@@ -183,17 +183,16 @@ describe('👁️ Pixel: KnowledgeChat Stream Verification', () => {
         await waitFor(() => screen.getByText('Temp Msg'));
         await waitFor(() => screen.getByText('Response'));
 
-        // Now clear. clearChat() mutates the mocked store's closure state directly
-        // (no setState of its own), so the component only picks it up on its next
-        // render — force one via rerender(), inside act() so React flushes fully
-        // before the assertion. A bare synchronous expect() right after was flaky
-        // under full-suite load (deterministic pass standalone, deterministic fail
-        // under concurrent forks) — wait for the DOM to actually settle instead.
+        // Now clear. The mock mutates testSessions directly, and rerender() should
+        // trigger the component's useStore hook to see the updated sessions via
+        // mockStore.mockImplementation. Wrap both in act() and wait for the DOM
+        // to settle inside waitFor to ensure React has time to process everything.
+        fireEvent.click(clearButton);
         await act(async () => {
-            fireEvent.click(clearButton);
             rerender(<KnowledgeChat {...defaultProps} />);
         });
 
+        // After rerender, wait for the DOM to actually settle
         await waitFor(() => {
             expect(screen.queryByText('Temp Msg')).not.toBeInTheDocument();
         });
