@@ -521,4 +521,29 @@ describe('DirectGenerationTab', () => {
             );
         });
     });
+
+    it('ISSUE-1006: surfaces expired server generation quotas as a cost ledger blocker', async () => {
+        mockGenerateImages.mockRejectedValueOnce({
+            code: 'functions/resource-exhausted',
+            message: 'internal',
+            details: {
+                cause: 'Insufficient tokens in cost ledger.',
+            },
+        });
+
+        const mockToast = useToast();
+
+        render(<DirectGenerationTab />);
+        fireEvent.change(screen.getByTestId('direct-prompt-input'), { target: { value: 'fail' } });
+
+        await act(async () => {
+            fireEvent.click(screen.getByTestId('direct-generate-btn'));
+        });
+
+        await waitFor(() => {
+            expect(mockToast.error).toHaveBeenCalledWith(
+                'Insufficient tokens in cost ledger.'
+            );
+        });
+    });
 });
