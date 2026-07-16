@@ -13933,13 +13933,17 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-899: Merch “Mint New Item” creates a marketplace product, not an on-chain token
 
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ FIXED (2026-07-15 — UI copy updated to honest storefront language)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Merchandise / Finance merch table / Web3 wording
 - **Evidence:** `MerchTable` renders the CTA “Mint New Item” (`MerchTable.tsx:117-125`). `handleMint()` calls only `MarketplaceService.createProduct()` with price, inventory, images, and splits (`:71-91`), then toasts “Asset Minted successfully!” (`:93`). It does not call `SmartContractService.tokenizeAsset()` or any wallet/on-chain mint flow, which is implemented separately (`SmartContractService.ts:201-235`).
 - **Impact:** Users can believe they minted an NFT/SongShares/on-chain asset when they only created a marketplace listing.
-- **Fix:** Rename this flow to “List Product” / “Create Digital Asset Listing,” or wire it to the real wallet-backed tokenization flow and show chain, contract, token ID, and transaction hash.
-- **Acceptance:** Marketplace-only creation never uses “mint” language; on-chain mint success includes a verified transaction/contract/token record.
+- **Applied Fix:** Reframed marketplace product creation UI copy to be honest:
+  - Button label: “Mint New Item” → “Add to Storefront”
+  - Form header: “Global Asset Minting” → “Add Product to Storefront”
+  - Success toast: “Asset Minted successfully!” → “Product added to storefront!”
+  - Error toast: “Failed to mint asset.” → “Failed to add product to storefront.”
+- **Acceptance:** Marketplace-only creation never uses “mint” language. Product creation is now honestly framed as a storefront listing operation, not blockchain tokenization.
 
 ### ISSUE-900: Credential rotation fabricates a new local key for unsupported services but says provider rotation succeeded
 
