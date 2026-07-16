@@ -3,6 +3,7 @@ import { z } from "zod";
 import { FUNCTION_INTELLIGENCE_MODELS } from "../config/models";
 import { enforceRateLimit } from "./rateLimit";
 import { getVertexAIClient } from "./vertexClient";
+import { validateAppCheckV1 } from "../middleware/appCheck";
 
 export const GenerateSpeechRequestSchema = z.object({
     text: z.string().min(1, "Text is required"),
@@ -37,11 +38,13 @@ Return ONLY a JSON object that adheres to the following schema:
  */
 export const analyzeAudioFn = () => functions
     .region("us-central1")
-    .runWith({ enforceAppCheck: true,
+    .runWith({ enforceAppCheck: false,
         timeoutSeconds: 120,
         memory: "512MB"
      })
     .https.onCall(async (data: unknown, context) => {
+        validateAppCheckV1(context);
+
         // 1. Auth Check
         if (!context.auth) {
             throw new functions.https.HttpsError(

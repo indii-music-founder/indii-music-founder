@@ -1,6 +1,7 @@
 import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
 import { GoogleGenAI } from "@google/genai";
+import { validateAppCheckV1 } from "../middleware/appCheck";
 import { FUNCTION_INTELLIGENCE_MODELS, NANO_BANANA_CAPABILITIES, type NanoBananaTier } from "../config/models";
 import {
     GenerateImageRequestSchema,
@@ -819,12 +820,13 @@ const service = new GeminiImageService();
 export const generateImageV3Fn = () => functions
     .region("us-central1")
     .runWith({
-        enforceAppCheck: ENFORCE_APP_CHECK,
+        enforceAppCheck: false,
         timeoutSeconds: 120,
         // Bumped to 1GB: Pro 4K generation + long-context history needs parity with editImageFn
         memory: "1GB"
     })
     .https.onCall(async (data: unknown, context) => {
+        validateAppCheckV1(context);
         // 1. Authenticate
         if (!context.auth) {
             throw new functions.https.HttpsError("unauthenticated", "User must be authenticated.");
@@ -855,11 +857,12 @@ export const generateImageV3Fn = () => functions
 export const editImageFn = () => functions
     .region("us-central1")
     .runWith({
-        enforceAppCheck: ENFORCE_APP_CHECK,
+        enforceAppCheck: false,
         timeoutSeconds: 120,
         memory: "1GB" // Bumped from 512MB — editing with references + 4K can exceed 512MB
     })
     .https.onCall(async (data: unknown, context) => {
+        validateAppCheckV1(context);
         // 1. Authenticate
         if (!context.auth) {
             throw new functions.https.HttpsError("unauthenticated", "User must be authenticated.");

@@ -235,6 +235,6 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 });
 
 export const mcpEndpoint = functions
-    .runWith({ enforceAppCheck: ENFORCE_APP_CHECK })
+    .runWith({ enforceAppCheck: false })
     .https.onRequest(app);
 export const expressApp = app;

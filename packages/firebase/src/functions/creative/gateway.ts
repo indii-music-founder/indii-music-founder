@@ -5,6 +5,7 @@ import { getGeminiApiKey, geminiApiKey } from '../../config/secrets';
 import { validateAppCheckV2 } from '../../middleware/appCheck';
 import { FUNCTION_INTELLIGENCE_MODELS } from '../../config/models';
 import { getVertexAIClient } from '../../lib/vertexClient';
+import { parseStorageUri } from '../../lib/storageUri';
 import { GenerateAudioSchema, GenerateImageSchema, GenerateVideoSchema, GenerateOmniRemixSchema } from '../../shared/creative';
 import { VideoJobDocumentSchema, type VideoJobDocument } from '../../shared/videoJob';
 import { finalizeOperationReservation } from '../billing/enforceOperationCost';
@@ -193,6 +194,13 @@ async function uploadToStorage(
     contentType: contentType || (extension === 'mp4' ? 'video/mp4' : extension === 'wav' ? 'audio/wav' : 'image/jpeg')
   });
   return `gs://${bucket.name}/${filename}`;
+}
+
+async function deleteStorageOutputs(uris: string[]): Promise<void> {
+  await Promise.allSettled(uris.map(async uri => {
+    const { bucket, path } = parseStorageUri(uri);
+    await getStorage().bucket(bucket).file(path).delete({ ignoreNotFound: true });
+  }));
 }
 
 async function safeDbSet(
@@ -492,6 +500,41 @@ function extractInteractionImage(response: unknown, kind: MediaKind = 'image'): 
     .slice(0, 180) || undefined;
 
   throw new MediaGenerationError(kind, 'NO_IMAGE', textPreview);
+}
+
+function extractInteractionMetadata(response: unknown): { textNarration?: string; thoughtSummary?: string } {
+  const typed = response as {
+    outputs?: Array<Record<string, unknown>>;
+    steps?: Array<Record<string, unknown>>;
+    thought_summary?: string;
+  };
+  const narration: string[] = [];
+  const thoughts: string[] = typed.thought_summary ? [typed.thought_summary] : [];
+
+  const collectContent = (entry: Record<string, unknown>, target: string[]) => {
+    if (typeof entry.text === 'string') target.push(entry.text);
+    if (typeof entry.summary === 'string') target.push(entry.summary);
+    for (const part of (entry.parts as Array<Record<string, unknown>> | undefined) ?? []) {
+      if (typeof part.text === 'string') target.push(part.text);
+      if (typeof part.summary === 'string') target.push(part.summary);
+    }
+    for (const part of (entry.content as Array<Record<string, unknown>> | undefined) ?? []) {
+      if (typeof part.text === 'string') target.push(part.text);
+      if (typeof part.summary === 'string') target.push(part.summary);
+    }
+  };
+
+  for (const output of typed.outputs ?? []) {
+    collectContent(output, output.type === 'thought' ? thoughts : narration);
+  }
+  for (const step of typed.steps ?? []) {
+    collectContent(step, step.type === 'thought' ? thoughts : narration);
+  }
+
+  return {
+    textNarration: narration.filter(Boolean).join('\n\n') || undefined,
+    thoughtSummary: thoughts.filter(Boolean).join('\n\n') || undefined,
+  };
 }
 
 function buildOmniPrompt(data: z.infer<typeof GenerateOmniRemixSchema>): string {
@@ -1026,11 +1069,33 @@ export const generateImageV3 = onCall({ timeoutSeconds: 120, memory: '1GiB', sec
     throw new HttpsError('invalid-argument', 'Payload validation failed. Ensure no base64 is passed and only gs:// URIs are used.');
   }
 
-  const { prompt, sessionId, aspectRatio, model, imageSize, thinkingLevel, useGoogleSearch, useGrounding, useImageSearch, costReservationId } = parsed.data;
+  const {
+    prompt,
+    sessionId,
+    aspectRatio,
+    model,
+    imageSize,
+    count,
+    thinkingLevel,
+    includeThoughts,
+    responseFormat,
+    useGoogleSearch,
+    useGrounding,
+    useImageSearch,
+    costReservationId,
+  } = parsed.data;
   const userId = request.auth.uid;
   const jobId = getDb().collection('creative_jobs').doc().id;
-  await loadCostReservation(userId, costReservationId, 'image');
+  const reservation = await loadCostReservation(userId, costReservationId, 'image');
+  const minimumReservedCost = count * 0.04;
+  if (reservation.estimatedCost + 0.0001 < minimumReservedCost) {
+    throw new HttpsError(
+      'failed-precondition',
+      `Cost reservation covers fewer than ${count} requested images.`,
+    );
+  }
   let outputCompleted = false;
+  const outputUris: string[] = [];
 
   try {
     await safeDbSet(jobId, {
@@ -1040,10 +1105,15 @@ export const generateImageV3 = onCall({ timeoutSeconds: 120, memory: '1GiB', sec
       status: 'processing',
       type: 'image',
       prompt,
+      requestedCount: count,
       costReservationId,
       createdAt: new Date().toISOString()
     });
     const ai = getAiClient('image');
+    const imageAi = ai as unknown as {
+      interactions?: { create: (data: Record<string, unknown>) => Promise<unknown> };
+      models: { generateContent: (data: Record<string, unknown>) => Promise<unknown> };
+    };
     const modelId = resolveImageModel(model);
     const normalizedThinkingLevel = normalizeThinkingLevel(thinkingLevel);
     const normalizedImageSize = normalizeImageSize(imageSize);
@@ -1067,69 +1137,104 @@ export const generateImageV3 = onCall({ timeoutSeconds: 120, memory: '1GiB', sec
         }]
       : undefined;
 
-    let image: { data: string; mimeType: string };
+    const generatedImages: Array<{ data: string; mimeType: string }> = [];
+    const narrationParts: string[] = [];
+    const thoughtSummaries: string[] = [];
 
-    if ((ai as any).interactions) {
-      const interaction = await (ai as any).interactions.create({
-        model: modelId,
-        input: interactionInput,
-        response_modalities: ['image'],
-        generation_config: {
-          image_config: {
-            aspect_ratio: aspectRatio,
-            ...(normalizedImageSize ? { image_size: normalizedImageSize } : {}),
+    for (let imageIndex = 0; imageIndex < count; imageIndex += 1) {
+      let image: { data: string; mimeType: string };
+
+      if (imageAi.interactions) {
+        const interaction = await imageAi.interactions.create({
+          model: modelId,
+          input: interactionInput,
+          response_modalities: responseFormat === 'image_and_text' ? ['text', 'image'] : ['image'],
+          generation_config: {
+            image_config: {
+              aspect_ratio: aspectRatio,
+              ...(normalizedImageSize ? { image_size: normalizedImageSize } : {}),
+            },
+            ...(normalizedThinkingLevel && model === 'fast'
+              ? { thinking_level: normalizedThinkingLevel }
+              : {}),
+            ...(includeThoughts ? { thinking_summaries: 'auto' } : {}),
           },
-          ...(normalizedThinkingLevel && model === 'fast'
-            ? { thinking_level: normalizedThinkingLevel }
-            : {}),
-        },
-        ...(googleSearchTool ? { tools: googleSearchTool } : {}),
-      });
-      image = extractInteractionImage(interaction);
-    } else {
-      console.log('[generateImageV3] ai.interactions is undefined (Vertex AI mode). Falling back to models.generateContent...');
-      const response = await (ai.models as any).generateContent({
-        model: modelId,
-        contents: interactionInput,
-        config: {
-          responseModalities: ['IMAGE'],
-          imageConfig: {
-            aspectRatio: aspectRatio,
-            ...(normalizedImageSize ? { imageSize: normalizedImageSize } : {}),
-          },
-          ...(normalizedThinkingLevel && model === 'fast'
-            ? { thinkingConfig: { thinkingLevel: normalizedThinkingLevel.charAt(0).toUpperCase() + normalizedThinkingLevel.slice(1) } }
-            : {}),
           ...(googleSearchTool ? { tools: googleSearchTool } : {}),
-        }
-      });
+        });
+        image = extractInteractionImage(interaction);
+        const metadata = extractInteractionMetadata(interaction);
+        if (metadata.textNarration) narrationParts.push(metadata.textNarration);
+        if (metadata.thoughtSummary) thoughtSummaries.push(metadata.thoughtSummary);
+      } else {
+        console.log('[generateImageV3] ai.interactions is undefined (Vertex AI mode). Falling back to models.generateContent...');
+        const thinkingConfig = {
+          ...(normalizedThinkingLevel && model === 'fast'
+            ? { thinkingLevel: normalizedThinkingLevel.charAt(0).toUpperCase() + normalizedThinkingLevel.slice(1) }
+            : {}),
+          ...(includeThoughts ? { includeThoughts: true } : {}),
+        };
+        const response = await imageAi.models.generateContent({
+          model: modelId,
+          contents: interactionInput,
+          config: {
+            responseModalities: responseFormat === 'image_and_text' ? ['TEXT', 'IMAGE'] : ['IMAGE'],
+            imageConfig: {
+              aspectRatio: aspectRatio,
+              ...(normalizedImageSize ? { imageSize: normalizedImageSize } : {}),
+            },
+            ...(Object.keys(thinkingConfig).length > 0 ? { thinkingConfig } : {}),
+            ...(googleSearchTool ? { tools: googleSearchTool } : {}),
+          }
+        });
 
-      const candidates = (response as any).candidates;
-      if (!candidates || candidates.length === 0) {
-        throw new Error('No candidates returned from Gemini API.');
+        const candidates = (response as GeminiContentResponse).candidates;
+        if (!candidates || candidates.length === 0) {
+          throw new Error('No candidates returned from Gemini API.');
+        }
+        const parts = candidates[0].content?.parts;
+        if (!parts || parts.length === 0) {
+          throw new Error('No parts in response.');
+        }
+        const part = parts.find(candidatePart => candidatePart.inlineData?.data && !candidatePart.thought);
+        if (!part?.inlineData?.data) {
+          throw new Error('No image data found in response.');
+        }
+        image = {
+          data: part.inlineData.data,
+          mimeType: part.inlineData.mimeType || 'image/png'
+        };
+        const textNarration = parts
+          .filter(candidatePart => candidatePart.text && !candidatePart.thought)
+          .map(candidatePart => candidatePart.text)
+          .join('\n\n');
+        const thoughtSummary = parts
+          .filter(candidatePart => candidatePart.text && candidatePart.thought)
+          .map(candidatePart => candidatePart.text)
+          .join('\n\n');
+        if (textNarration) narrationParts.push(textNarration);
+        if (thoughtSummary) thoughtSummaries.push(thoughtSummary);
       }
-      const parts = candidates[0].content?.parts;
-      if (!parts || parts.length === 0) {
-        throw new Error('No parts in response.');
-      }
-      const part = parts.find((p: any) => p.inlineData);
-      if (!part || !part.inlineData) {
-        throw new Error('No image data found in response.');
-      }
-      image = {
-        data: part.inlineData.data,
-        mimeType: part.inlineData.mimeType || 'image/png'
-      };
+
+      generatedImages.push(image);
     }
-    
-    const buffer = Buffer.from(image.data, 'base64');
-    
-    // Strict Thin Client adherence: Save directly to Cloud Storage
-    const outputUri = await uploadToStorage(userId, buffer, extensionForMime(image.mimeType, 'jpg'), image.mimeType);
+
+    for (const image of generatedImages) {
+      const buffer = Buffer.from(image.data, 'base64');
+      outputUris.push(await uploadToStorage(
+        userId,
+        buffer,
+        extensionForMime(image.mimeType, 'jpg'),
+        image.mimeType,
+      ));
+    }
     
     await safeDbUpdate(jobId, {
       status: 'completed',
-      resultUri: outputUri,
+      resultUri: outputUris[0],
+      resultUris: outputUris,
+      outputCount: outputUris.length,
+      ...(narrationParts.length > 0 ? { textNarration: narrationParts.join('\n\n') } : {}),
+      ...(thoughtSummaries.length > 0 ? { thoughtSummary: thoughtSummaries.join('\n\n') } : {}),
       completedAt: new Date().toISOString()
     });
     outputCompleted = true;
@@ -1139,8 +1244,13 @@ export const generateImageV3 = onCall({ timeoutSeconds: 120, memory: '1GiB', sec
       console.error('[generateImageV3] Output completed but reservation settlement needs reconciliation:', settlementError);
     }
 
-    // Return only the lightweight URI to the client
-    return { jobId, resultUri: outputUri };
+    return {
+      jobId,
+      resultUri: outputUris[0],
+      resultUris: outputUris,
+      ...(narrationParts.length > 0 ? { textNarration: narrationParts.join('\n\n') } : {}),
+      ...(thoughtSummaries.length > 0 ? { thoughtSummary: thoughtSummaries.join('\n\n') } : {}),
+    };
   } catch (error: unknown) {
     // COMPREHENSIVE DEBUG LOGGING
     console.error(`[generateImageV3] CRITICAL FAILURE: Unhandled exception caught.`);
@@ -1156,6 +1266,9 @@ export const generateImageV3 = onCall({ timeoutSeconds: 120, memory: '1GiB', sec
       }
     }
 
+    if (!outputCompleted && outputUris.length > 0) {
+      await deleteStorageOutputs(outputUris);
+    }
     await safeDbUpdate(jobId, {
       status: 'failed',
       error: errorMessage(error)
