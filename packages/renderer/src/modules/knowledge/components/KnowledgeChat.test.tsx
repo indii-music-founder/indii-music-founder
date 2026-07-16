@@ -189,7 +189,8 @@ describe('👁️ Pixel: KnowledgeChat Stream Verification', () => {
         // to settle inside waitFor to ensure React has time to process everything.
         fireEvent.click(clearButton);
         await act(async () => {
-            rerender(<KnowledgeChat {...defaultProps} />);
+            // @ts-expect-error React.Attributes provides key, but strict typecheck might complain
+            rerender(<KnowledgeChat {...defaultProps} key="rerender" />);
         });
 
         // After rerender, wait for the DOM to actually settle

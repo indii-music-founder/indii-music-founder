@@ -66,6 +66,7 @@ export function registerMobileRemoteHandlers(): void {
    * Renderer sends a Zustand state slice to broadcast to all mobile clients.
    */
   ipcMain.on('mobile-remote:broadcast', (_event, payload: unknown) => {
+      validateSender(_event);
     // We wrap it in a format the mobile WS client expects
     indiiRemoteService.sendToMobile({ type: 'sync', payload, ts: Date.now() });
   });

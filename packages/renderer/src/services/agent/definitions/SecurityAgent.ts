@@ -3,6 +3,32 @@ import { freezeAgentConfig } from '../FreezeDiagnostic';
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { Schema } from '@/shared/types/ai.dto';
+import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '../tools/DomainTools';
+
+const securityRetrievalConfig = {
+    audit_logs: {
+        path: 'audit_logs',
+        requiresUserIdFilter: true,
+        description: 'System access logs, API gateway logs, and permission audit histories.',
+        defaultLimit: 100
+    },
+    compliance_reports: {
+        path: 'compliance_reports',
+        requiresUserIdFilter: true,
+        description: 'Compliance reports, PII scan results, and data governance records.',
+        defaultLimit: 10
+    },
+    incident_records: {
+        path: 'incident_records',
+        requiresUserIdFilter: true,
+        description: 'Security incident reports, credential rotations, and vulnerability findings.',
+        defaultLimit: 20
+    }
+};
+
+const securityRetrievalTools = buildDomainRetrievalTools('Security', securityRetrievalConfig);
+const securityRetrievalDeclarations = buildDomainRetrievalDeclarations('Security', securityRetrievalConfig);
+
 
 export const SecurityAgent: AgentConfig = {
     id: 'security',
@@ -118,6 +144,7 @@ If a task is outside Security, say:
 "This is outside Security scope — routing back to indii Conductor for [department]. Standing by for any security implications."
 `,
     functions: {
+        ...securityRetrievalTools,
         scan_content: async (args: { text: string }) => {
             const prompt = `Scan the following text for PII (Personally Identifiable Information), offensive content, or security secrets.
             Text: ${args.text}
@@ -131,9 +158,10 @@ If a task is outside Security, say:
             }
         }
     },
-    authorizedTools: ['audit_permissions', 'check_api_status', 'scan_content', 'rotate_credentials', 'browser_tool', 'credential_vault', 'scan_for_vulnerabilities'],
+    authorizedTools: ['audit_permissions', 'check_api_status', 'scan_content', 'rotate_credentials', 'browser_tool', 'credential_vault', 'scan_for_vulnerabilities', 'list_domain_records'],
     tools: [{
         functionDeclarations: [
+            ...securityRetrievalDeclarations,
             {
                 name: 'audit_permissions',
                 description: 'Audit permissions for a specific user to detect risks.',

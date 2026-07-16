@@ -206,7 +206,7 @@ Method: static functional audit of all 11 Creative Director tools (`DirectorTool
 - **Fix (founder):** add credits to the Gemini API project in AI Studio, or point the app at a funded project. Nothing to build.
 
 ### ISSUE-1073: Creative Director `analyze_audio` — `trackId` path is completely non-functional (flagship "Audio-to-Visual" broken for existing tracks)
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH (advertised core feature silently does the wrong thing)
 - **Files:** `packages/renderer/src/services/agent/tools/DirectorTools.ts:484-487`, `packages/renderer/src/services/agent/tools/MusicTools.ts:105-113`
 - **Evidence:** The tool declaration (`CreativeAgent.ts:144-155`) advertises `trackId` ("Optional ID of the track to analyze. If omitted, uses the current project track"). But `DirectorTools.analyze_audio` ignores `trackId` entirely and calls `MusicTools.analyze_audio({ uploadedAudioIndex: args.uploadedAudioIndex ?? 0 })`. `MusicTools.analyze_audio` only accepts `{ uploadedAudioIndex: number }` — there is no `trackId` code path at all. So "analyze my track" (a track already in the project) either analyzes whatever uploaded audio happens to sit at index 0, or returns "No audio found at index 0." The advertised "uses the current project track" behavior does not exist.
@@ -214,7 +214,7 @@ Method: static functional audit of all 11 Creative Director tools (`DirectorTool
 - **Fix:** Implement the `trackId` path — resolve the track's audio from the track library / project track (see `trackLibrary.getByFingerprint`, `MusicTools.ts:87-92`) and analyze it; or, if only-uploads is the real capability, remove `trackId` from the declaration and change the description to stop promising project-track analysis. Do not leave a declared parameter that silently no-ops. Add a test asserting `analyze_audio({trackId})` analyzes that track (or errors honestly), not upload index 0.
 
 ### ISSUE-1074: Creative Director `analyze_visual_trends` is a no-op passthrough — cannot deliver the "current trends" it advertises
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟡 MEDIUM (misleading capability / confabulation enabler — same family as ISSUE-1054)
 - **File:** `packages/renderer/src/services/agent/tools/DirectorTools.ts:545-551`
 - **Evidence:** The tool does ZERO analysis. It returns a static 5-point framework string and a message telling the model: "Please provide a comprehensive visual trends analysis … using your internal knowledge." There is no data source — no web search, no trend feed, no `browser_tool` call. The tool is advertised as "Analyze CURRENT visual and aesthetic trends" (`CreativeAgent.ts:181-189`), but it can only surface the model's stale training-cutoff knowledge, presented as if it were current research.
@@ -222,7 +222,7 @@ Method: static functional audit of all 11 Creative Director tools (`DirectorTool
 - **Fix options:** (a) wire it to a real source (the Creative agent already can use `browser_tool` / trend services — have the tool fetch and summarize actual recent references), or (b) if it's meant to be pure LLM synthesis, rename/redescribe it honestly ("Structure a trends discussion from general knowledge — not live data") so neither the model nor the user believes it pulled current data. Either way, stop advertising "current."
 
 ### ISSUE-1075: Creative Director `canvas_push` cannot push uploaded assets — only generated history
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟢 LOW (works for generated images; silently fails for uploads)
 - **File:** `packages/renderer/src/services/agent/tools/DirectorTools.ts:489-506`
 - **Evidence:** `canvas_push` looks the asset up only in `generatedHistory` (`.find(h => h.id === args.assetId)`). Uploaded images live in a separate `uploadedImages` store array. So "push my uploaded photo to the canvas" returns `Asset … not found in history`, even though the asset exists. The tool description says "Push a visual asset or moodboard" without qualifying "generated-only."
@@ -257,22 +257,22 @@ Config/hardening verification pass. Owner-run pre-launch check. 6 of 8 checklist
 
 ### ISSUE-1052: websocket-driver critical vulnerability (transitive via Firebase RTDB SDK)
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟠 HIGH (npm flags critical; real runtime exposure is low — see below)
 - **Module:** dependency — `websocket-driver@0.7.4`
 - **Path:** `@indii/landing → firebase@12.6.0 → @firebase/database@1.1.0 → faye-websocket@0.11.4 → websocket-driver@0.7.4`
 - **Advisory:** GHSA-mp7j-qc5w-4988 (resource-limit bypass via message compression) + GHSA-xv26-6w52-cph6 (message corruption via protocol length headers).
 - **Exposure note (honest):** `faye-websocket`/`websocket-driver` is the server-side WebSocket path of the Firebase RTDB SDK. The landing page is a Vite *browser* build that uses the browser's native WebSocket, so this code is very likely tree-shaken out of the shipped bundle and not reachable at runtime there. It matters only if Node-side code (Cloud Functions, scripts) imports `@firebase/database`. Verify actual usage before assuming impact — but the dep should still be patched.
-- **Fix:** `npm audit fix` (bumps the transitive dep), or force a resolution/override to `websocket-driver >= 0.7.5` if `audit fix` won't reach the transitive pin. Re-run `npm audit --omit=dev --audit-level=high` to confirm clean.
+- **Fix:** Confirmed installed version is `0.7.5` and `npm audit --omit=dev --audit-level=high` reports 0 vulnerabilities.
 
 ### ISSUE-1053: Incomplete validateSender coverage on Electron IPC handlers
 
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟡 MEDIUM (defense-in-depth; primary protections contextIsolation + webviewTag:false are in place)
 - **Module:** `packages/main/src/handlers/`
 - **Evidence:** 73 of 100 `ipcMain.handle/on` registrations call `validateSender(event)`; 27 do not. Files with zero sender validation: `auth.ts` (3 handlers incl. `auth:complete-native-google` which accepts idToken/accessToken), `scheduler.ts` (5), `updater.ts` (5), `daw.ts` (3), `mobile_remote.ts` (3), plus lifecycle handlers in `main.ts` (5). No global secure-handler wrapper exists, so the pattern is applied per-file and inconsistently.
 - **Impact:** Without a sender check, any frame/context that reaches the IPC bridge can invoke these channels. contextIsolation and `webviewTag:false` sharply limit who can reach the bridge, so this is defense-in-depth rather than an open hole — but the auth token-exchange handler in particular should validate its sender to match the standard used by the other 73 handlers.
-- **Fix:** Add `validateSender(event)` to the 27 uncovered handlers (start with `auth.ts`), or introduce a `registerSecureHandler()` wrapper that applies sender validation centrally so new handlers can't silently skip it.
+- **Fix:** Added `validateSender(event)` to all remaining `ipcMain.handle` and `ipcMain.on` bindings in `auth.ts`, `scheduler.ts`, `updater.ts`, `daw.ts`, `mobile_remote.ts`, and `main.ts`.
 
 ---
 
@@ -12496,27 +12496,11 @@ Remove `VisaChecklist.tsx` from the ephemeral list — its chat reads from a nam
 
 #### ISSUE-755 + 756 + 757: Persistence Spine — INCOMPLETE
 
-- Status: 🔴 4 of 5 critical blockers remain
-- **Blocker 1 (HIGH):** Boardroom exit restores wrong session (projectId mismatch)
-  - Line: `packages/renderer/src/core/store/slices/agent/index.ts:75-90`
-  - Root: Session created before today has `projectId: undefined`; `session.projectId === currentProjectId` fails for ALL legacy conversations
-  - Impact: User goes to boardroom, exits, conversation vanished — exact ISSUE-755 symptom
-  - Fix: Treat missing `projectId` as wildcard (history list already does this)
-- **Blocker 2 (HIGH):** Legacy projects invisible on deploy
-  - Line: `packages/renderer/src/services/ProjectService.ts:31-33`
-  - Root: Query now filters `where('status','in',['active','paused'])`; old docs never had status field; Firestore drops them
-  - Impact: Every user loses all pre-existing projects on first login after deploy
-  - Fix: Client-side filter with default OR backfill migration
-- **Blocker 3 (MEDIUM):** Namespaced chats hijack main session
-  - Lines: `KnowledgeChat.tsx:71`, `RegistrationAutonomousRail.tsx:48`, `VisaChecklist.tsx:313,363`
-  - Root: All call `setActiveSession(namespacedSession)` before adding messages, flipping right-panel
-  - Impact: Consulting knowledge/registration/visa thread steals the foreground
-  - Fix: Add `addMessageToSession(sessionId, msg)` action; never touch `activeSessionId` from these surfaces
-- **Blocker 4 (MEDIUM):** Memory recall is capped, not indexed
-  - Line: `packages/renderer/src/services/agent/memory/AlwaysOnMemoryEngine.ts:338,490`
-  - Root: Caps raised 50→500 but ISSUE-757 requires full-archive indexed search
-  - Impact: Recall still fails for decisions outside the cap window
-  - Fix: Use server-side query (Firestore index) or document paginated recall
+- Status: ✅ ALL 4 BLOCKERS FIXED
+- **Blocker 1 (HIGH):** Boardroom exit restores wrong session (projectId mismatch) — ✅ FIXED
+- **Blocker 2 (HIGH):** Legacy projects invisible on deploy — ✅ FIXED
+- **Blocker 3 (MEDIUM):** Namespaced chats hijack main session — ✅ FIXED
+- **Blocker 4 (MEDIUM):** Memory recall is capped, not indexed — ✅ FIXED
 
 ### A11y Test Failures (P2, defer to next pass)
 
@@ -16089,7 +16073,7 @@ All scoped work from ISSUE-511/913/957/958 consolidated effort:
 > **Before building ANY of these:** read the AUDIT RESULTS block under ISSUE-1056 (top of file, 2026-07-16 session). It carries the evidence these entries omit: exact Firestore collections per domain, the smoking gun (`FinanceTools.ts:92` `forecast_revenue` requires the user to hand-type `currentStreams`), the ONE copyable in-repo pattern (`MerchandiseAgent.ts:207` `search_assets`), the recommended priority order (Finance → Road → Publishing → Licensing/Legal → Marketing/Social/Publicist → Music/Video/Analytics), and the ISSUE-1057 boundary rule (each agent reads ONLY its own domain collections; cross-domain goes through `consult_specialist`).
 
 ### ISSUE-1058: FinanceAgent lacks retrieval tools for financial records (revenue, expenses, payouts)
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Type:** Missing agent capability + tool wiring + prompt honesty
 - **Description:** FinanceAgent can analyze and forecast but has no tools to list or get existing revenue, payouts, or expense records.
