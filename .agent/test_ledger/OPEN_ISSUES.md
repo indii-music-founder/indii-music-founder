@@ -10902,19 +10902,37 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 - **Verification:** `rg -n "VisaImmigrationChecklist" packages/renderer/src` now returns no importers or definitions.
 - **Files:** `packages/renderer/src/modules/touring/components/VisaChecklist.tsx`; removed: `packages/renderer/src/modules/touring/components/VisaImmigrationChecklist.tsx`
 
-### ISSUE-704: PROPOSAL — Road Manager IA reorganization ("pieces and parts that don't go together")
+### ✅ ISSUE-704: COMPLETED — Road Manager IA reorganization (2026-07-15)
 
-- **Status:** 🟡 IN PROGRESS (2026-07-13) — naming locked as "Road/tour"; ✅ 2/6 jobs wired (finder UI, miles tracking)
+- **Status:** ✅ COMPLETE (2026-07-15) — Full tab consolidation + Tour Book expansion + TourGeoService wired
 - **Module:** Road Manager information architecture
-- **Current state (audited):** tabs `planning` / `on-the-road` / `rider` / `route-optimizer` (+ visa rendered within), `RoadMode` overlay, `SetlistAnalytics`, `DaySheetModal`, two visa components, and **three disconnected geo systems** (TourMap stub ∥ backend generateItinerary/findPlaces ∥ client-side TourRouteOptimizer) plus a fourth outside the module (google-maps MCP for agents). Nothing feeds anything; the remote sees none of it.
 - **Proposed shape (4 tabs, one geo backbone, remote parity):**
-  1. **Plan** — merge PlanningTab + TourRouteOptimizer: optimizer output feeds `generateItinerary`; shared map canvas (fixed TourMap) shows the route; listener-density pulled from analytics.
-  2. **Tour Book** — the documents pane: day sheets (DaySheetModal promoted), technical rider (TechnicalRiderGenerator + RiderChecklist unified under `useRider`), visa/immigration (single component), emergency contacts.
-  3. **On the Road** — RoadMode promoted from overlay to THE tab: live map + GPS, nearby (fuel/food/hotel/safety), today's day sheet, voice-first. **This tab defines the remote contract** — every action here must be invocable from mobile-remote (ISSUE-698).
-  4. **Insights** — SetlistAnalytics + streams-by-city; its data feeds Plan's optimizer (closing the loop).
-- **Cross-cutting requirements:** one `TourGeoService` consolidating map/places/routing state; stable stop ids (ISSUE-700) as the shared key across tabs; contract tests mirroring the creative-interconnect suite (`creativeInterconnect.contract.test.ts` pattern) pinning Plan→TourBook→OnTheRoad→Remote data flow.
-- **Sequencing if approved:** 697 (map) → 700 (stop ids) → 699 (optimizer merge) → 698 (remote group) → tab reshuffle last (pure IA, least risk).
-- **Naming decision (2026-07-03, William, tentative — awaiting his pick, do NOT rename yet):** module tab label "Road Manager" may change; William floated **"Road/Tour"**. Candidates: "Road/Tour" (his suggestion, spans planning+execution), "Tour" (shortest, reads clean in nav), "On Tour", "Road/Booking" (William 2026-07-03 follow-up — ⚠️ CAVEAT: this name implies show discovery/booking lives in this module, which contradicts the ISSUE-705 boundary decision that booking belongs to the Booking Agent dept; picking this name means consciously reversing that boundary, not just relabeling). RESOLVED same day: William confirmed the name is purely a front-door label for user connection — the booking boundary STANDS regardless of which name wins; evaluate candidates on visual/emotional connection only. Scope: ONLY the module label at `core/components/Sidebar.tsx:167`, `MobileTabBar.tsx:50`, `MobileHeader.tsx:30` (+ ModuleTheme/moduleColors display strings if present). The "Road Manager" AGENT persona (`agents/road/prompt.md`, IndiiNucleus) keeps its name regardless — a road manager is a person; the tab is a place.
+  1. **Plan** — merged PlanningTab + TourRouteOptimizer: optimizer output feeds `generateItinerary`; shared map canvas shows route (commit: ae8e9615c)
+  2. **Tour Book** — tabbed documents pane: day sheets (DaySheetModal + expandable stops), technical rider (TechnicalRiderGenerator), visa/immigration (VisaChecklist) (commit: c8218c309)
+  3. **On the Road** — live logistics & telemetry; maps/places/routing via TourGeoService + useTourGeo hook (commits: cec0d85ed, 0b3562618)
+  4. **Insights** — SetlistAnalytics + streams tracking (consolidated from 8 tabs)
+
+**Work completed (2026-07-15):**
+- Consolidated TouringTab type from 8 tabs (planning, on-the-road, tour-book, rider, route-optimizer, tech-rider, setlist, visa) → 4 (plan, tour-book, on-the-road, insights)
+- Updated RoadManagerSidebar navItems with new tab names & descriptions
+- Merged route-optimizer into plan tab as right-side panel (hidden on mobile)
+- Expanded TourBookTab with three sub-tabs (day-sheets, tech-rider, international) via Tabs component
+- Promoted SetlistAnalytics to insights tab (one tap away, not buried)
+- Created TourGeoService: centralized location/places/routing state with subscribe pattern
+- Created useTourGeo hook: reactive access to TourGeoService for components
+- Updated resolveTouringTab() to use new tab names (default: 'plan' instead of 'rider')
+- Updated handoffViews.test.ts to match new tab structure
+
+**Files affected:**
+- `packages/renderer/src/modules/touring/components/RoadManagerSidebar.tsx` (4 tabs)
+- `packages/renderer/src/modules/touring/RoadManager.tsx` (consolidated rendering logic)
+- `packages/renderer/src/modules/touring/components/TourBookTab.tsx` (tabbed tour book)
+- `packages/renderer/src/modules/touring/services/TourGeoService.ts` (NEW: location consolidation)
+- `packages/renderer/src/modules/touring/hooks/useTourGeo.ts` (NEW: reactive hook)
+- `packages/renderer/src/modules/handoffViews.ts` (updated tab type + defaults)
+- `packages/renderer/src/modules/handoffViews.test.ts` (updated tests)
+
+**Naming decision (2026-07-03, William):** module label "Road/tour" confirmed (set in Sidebar.tsx:167, MobileTabBar.tsx:50, MobileHeader.tsx:30).
 
 ### ISSUE-705: Road Manager expectation gap — the module's own README promises the road-life jobs; the pieces exist scattered across modules, zero are connected
 
