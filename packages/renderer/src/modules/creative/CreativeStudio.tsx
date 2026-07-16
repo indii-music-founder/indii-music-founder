@@ -22,6 +22,7 @@ import { buildDistributorContext, validateImageForDistributor } from '@/services
 
 import CreativeClipboard from './components/CreativeClipboard';
 import OmniWorkflow from './video/OmniWorkflow';
+import CanvasModePicker from './components/CanvasModePicker';
 
 /**
  * ISSUE-1007: decodes the actual persisted image's pixel dimensions instead
@@ -491,37 +492,46 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                     {/* Main Workspace - Studio Tab on Mobile, always visible on desktop */}
                     <div className={`${activeMobileTab === 'studio' ? 'flex' : 'hidden'} md:flex flex-1 flex-col relative min-w-0 bg-[#0f0f0f]`}>
                         {chatImportContext && (
-                            <div className="bg-dept-creative/20 text-white text-sm px-4 py-2 flex items-center justify-between border-b border-dept-creative/30">
+                            <div className="bg-dept-creative/20 text-white text-sm px-4 py-2 flex items-center justify-between border-b border-dept-creative/30 z-[110] relative">
                                 <span>Imported from chat — {chatImportContext.agentId}'s response to: "{chatImportContext.prompt.substring(0, 50)}{chatImportContext.prompt.length > 50 ? '...' : ''}"</span>
                                 <button onClick={clearChatImportContext} className="text-gray-400 hover:text-white">&times;</button>
                             </div>
                         )}
-                        {viewMode === 'direct' && <DirectGenerationTab />}
-                        {viewMode === 'canvas' && (
-                            <div className="relative flex-1">
-                                <InfiniteCanvas />
-                                {/* First-run guidance: only when the canvas has no images yet */}
-                                {canvasImages.length === 0 && (
-                                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                        <div className="text-center bg-black/40 backdrop-blur-sm rounded-lg p-8 max-w-md">
-                                            <Sparkles className="w-12 h-12 mx-auto mb-4 text-blue-400 opacity-80" />
-                                            <h2 className="text-white text-lg font-semibold mb-2">Create Your First Image</h2>
-                                            <p className="text-gray-300 text-sm mb-4">
-                                                Start by generating an image with a prompt, or upload your own photo to edit.
-                                            </p>
-                                            <p className="text-gray-400 text-xs">
-                                                Use the toolbar at the top to generate, upload, or browse your project's assets.
-                                            </p>
-                                        </div>
+                        
+                        {/* Always mount InfiniteCanvas as the unified base layer */}
+                        <div className="absolute inset-0 z-0">
+                            <InfiniteCanvas />
+                            {(canvasImages?.length || 0) === 0 && viewMode === 'canvas' && (
+                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                    <div className="text-center bg-black/40 backdrop-blur-sm rounded-lg p-8 max-w-md">
+                                        <Sparkles className="w-12 h-12 mx-auto mb-4 text-blue-400 opacity-80" />
+                                        <h2 className="text-white text-lg font-semibold mb-2">Create Your First Image</h2>
+                                        <p className="text-gray-300 text-sm mb-4">
+                                            Start by generating an image with a prompt, or upload your own photo to edit.
+                                        </p>
+                                        <p className="text-gray-400 text-xs">
+                                            Use the toolbar at the top to generate, upload, or browse your project's assets.
+                                        </p>
                                     </div>
-                                )}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Floating Mode Picker */}
+                        <CanvasModePicker />
+
+                        {/* Mode Overlays (rendered on top of canvas) */}
+                        <div className="absolute inset-0 z-10 pointer-events-none">
+                            <div className="w-full h-full pointer-events-auto">
+                                {viewMode === 'direct' && <DirectGenerationTab />}
+                                {viewMode === 'video_production' && <VideoWorkflow />}
+                                {viewMode === 'omni' && <OmniWorkflow />}
+                                {viewMode === 'showroom' && <ShowroomUI />}
+                                {viewMode === "lab" && <AutonomousLab />}
                             </div>
-                        )}
-                        {viewMode === 'video_production' && <VideoWorkflow />}
-                        {viewMode === 'omni' && <OmniWorkflow />}
-                        {viewMode === 'showroom' && <ShowroomUI />}
-                        {viewMode === "lab" && <AutonomousLab />}
-                        {viewMode === 'editor' && selectedItem && (
+                        </div>
+
+                        {/* Legacy Editor Modal Overlay */}
                             <CreativeCanvas
                                 item={selectedItem}
                                 onClose={() => {
@@ -547,7 +557,6 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                                     }
                                 }}
                             />
-                        )}
                     </div>
                 </div>
 

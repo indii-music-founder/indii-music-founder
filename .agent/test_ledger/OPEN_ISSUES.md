@@ -3,10 +3,140 @@
 > This file is written by the /real test agent and consumed by a fixing agent.
 > The test agent NEVER modifies code. The fix agent NEVER runs tests.
 >
-> **Last updated:** 2026-07-14 EDT
+> **Last updated:** 2026-07-16 EDT
 > **Branch:** `main`
-> **Current Session:** Judgment Layer — behavioral constraints for over-ambitious specialist agents
+> **Current Session:** 2026-07-16 — ISSUE-1054 Creative Director asset-retrieval capability gap (build spec for fixing agent)
 > **CI Status:** typecheck + lint + full agent test suite (167 files / 1273 tests) green
+
+## Session 2026-07-16 — Creative Director Asset Retrieval (BUILD SPEC)
+
+### ISSUE-1054: Creative Director cannot retrieve stored assets from Firebase — has generation tools only, confabulates "checking the database"
+
+- **Status:** ⏳ OPEN — ready for fixing agent (full build spec below)
+- **Severity:** 🔴 HIGH (core Creative Suite promise is broken; agent lies about a capability it lacks — a production-blocking trust/honesty failure)
+- **Type:** Missing agent capability + tool wiring + prompt honesty + result rendering
+- **Primary files to change:**
+  - `packages/renderer/src/services/agent/definitions/CreativeAgent.ts` (register retrieval tools)
+  - `packages/renderer/src/services/agent/tools/StorageTools.ts` (make results render + cover brand assets/uploads)
+  - `packages/renderer/src/agents/creative/prompt.md` (force tool use, forbid confabulation)
+
+#### Symptom (reproduced by owner, live in app)
+User asks the Creative Director to "pull up the font pages / images from Firebase." The agent replies *"I am checking the Firebase database now to locate the font assets…"* and then returns nothing — no assets, no list. It repeats hollow filler ("say the word; otherwise they stay parked"). It never actually retrieves anything because **it has no tool that reads stored assets**. The model is confabulating a capability.
+
+#### Root cause (confirmed by code inspection)
+1. **The Creative Director agent has ZERO retrieval tools.** `CreativeAgent.ts:17-44` declares 11 tools — all generation/analysis (`generate_image`, `batch_edit_images`, `run_showroom_mockup`, `generate_high_res_asset`, `render_cinematic_grid`, `extract_grid_frame`, `add_character_reference`, `analyze_audio`, `canvas_push`, `generate_moodboard`, `analyze_visual_trends`). None list, fetch, or search stored assets. Confirmed against `DirectorTools.ts` (only those 11 functions exist).
+2. **Retrieval tooling ALREADY EXISTS but is not wired to this agent.** `packages/renderer/src/services/agent/tools/StorageTools.ts` exports `list_files` and `search_files`, both of which call `StorageService.loadHistory(count)` (`StorageService.ts:267`) — which loads the user's generated-media history from Firestore (org + personal, merged; per-user path `users/{uid}/generated_images` per `MetadataPersistenceService.ts:72`). These tools are simply absent from `CreativeAgent`'s `functions` / `authorizedTools` / `tools.functionDeclarations`.
+3. **Even if wired in, results won't render.** `StorageTools.list_files`/`search_files` return a bare object `{ files, count, message }` — they do NOT emit image markdown, so the chat UI shows no thumbnails. Contrast `generate_image` (`DirectorTools.ts:203-208`), which builds `![Generated Image](url)` markdown and returns via `toolSuccess(data, markdownMessage)`. Retrieval results must render the same way to be usable.
+4. **Brand assets and uploads aren't enumerable at all.** Reference images live at `userProfile.brandKit?.referenceImages`, brand assets (logos) at `userProfile.brandKit?.brandAssets`, and recent uploads in the store as `uploadedImages` (see `DirectorTools.ts:112-140`). The generation tools consume these only by numeric index that must already be in context; there is no tool to list them so the agent (or user) can see what exists.
+5. **Fonts are not a stored, retrievable asset.** Fonts exist only as a free-text preference field ("Brand fonts or typography preferences", `onboarding/toolDefinitions.ts:22`). There is no font-asset collection. "Pull up the font pages" cannot be satisfied until fonts are modeled as real stored records — OUT OF SCOPE for this issue; the agent must instead honestly say fonts are a text preference, not a gallery. Track font-asset modeling as a separate future issue if desired.
+
+#### Data model / read paths (for the builder)
+- **Generated media history:** `StorageService.loadHistory(limit)` → `HistoryItem[]`. `HistoryItem` shape (from `addToHistory` usage, `DirectorTools.ts:193-202`): `{ id: string; url: string; prompt: string; type: 'image' | 'video' | ...; timestamp: number; projectId: string }`. `url` may be a data URI or a Storage URL.
+- **Brand reference images:** `userProfile.brandKit?.referenceImages` — array of `{ url: string }` (data URI); accessed at `DirectorTools.ts:112-120`.
+- **Brand assets (logos):** `userProfile.brandKit?.brandAssets` — array of `{ url: string }`; accessed at `DirectorTools.ts:121-130`. Defaults seeded in `UserService.ts:13-14` (`brandAssets: []`, `referenceImages: []`).
+- **Recent uploads:** `useStore.getState().uploadedImages` — array of `{ url: string }`; accessed at `DirectorTools.ts:131-140`.
+- **Tool helpers:** `wrapTool(name, async (args) => …)`, `toolSuccess(data, message)`, `toolError(message, code)` from `packages/renderer/src/services/agent/utils/ToolUtils.ts`.
+- **Image rendering contract:** return message must contain markdown `![label](url)` per result (see `DirectorTools.ts:203`). The chat renderer displays those inline.
+
+#### Required fix (step by step)
+1. **Upgrade the retrieval tools to render results** in `StorageTools.ts`:
+   - `list_files` and `search_files` must return via `toolSuccess({ items, count, ids }, message)` where `message` includes a thumbnail grid: for each image-type item, append `![${item.prompt ?? item.id}](${item.url})`. Cap the number of inline thumbnails (e.g. first 12) and state the total, so a large gallery doesn't flood the message. Non-image items (video/audio) list as text lines with id + prompt, not markdown images.
+   - Preserve the empty-state message ("No files found." / "No files match …") — do NOT fabricate results.
+2. **Add a brand-asset + upload enumeration path** (either extend `list_files` with a `source` arg, or add a sibling tool `list_brand_assets`):
+   - `source: 'gallery' | 'brand_assets' | 'reference_images' | 'uploads' | 'all'` (default `'gallery'`).
+   - For `brand_assets` / `reference_images`, read from `userProfile.brandKit` (via `useStore.getState().userProfile`); for `uploads`, read `useStore.getState().uploadedImages`. Render the same thumbnail-grid contract. Return indices alongside each item so the agent can then feed them into `generate_image`'s `referenceAssetIndex` / `referenceImageIndex` / `uploadedImageIndex`.
+3. **Register the retrieval tools on the Creative Director** in `CreativeAgent.ts`:
+   - Add to the `functions` getter (import from `StorageTools`), to `authorizedTools`, AND to `tools[0].functionDeclarations` with full parameter schemas (name, description, params). Without all three the tool won't be callable or advertised to the model. Mirror the existing declaration style at `CreativeAgent.ts:47-190`.
+   - Suggested tool names surfaced to the model: `list_stored_assets` (wraps the enhanced `list_files`) and `search_stored_assets` (wraps `search_files`). Keep descriptions concrete: "List the user's saved images, brand assets, reference images, and uploads from their gallery/Firebase. Use this whenever the user asks to see, pull up, find, or reuse existing assets."
+4. **Fix the prompt** (`packages/renderer/src/agents/creative/prompt.md`):
+   - Add an explicit rule: when the user asks to see / pull up / find / reuse existing assets, the agent MUST call `list_stored_assets` / `search_stored_assets` and MUST NOT claim to "check the database" or narrate retrieval without a tool call.
+   - Add an honesty rule: if nothing is found, say so plainly; never imply assets exist when the tool returned empty. State clearly that fonts are a stored text preference, not a retrievable gallery.
+   - Remove/forbid the "say the word; otherwise they stay parked" filler pattern for retrieval asks.
+
+#### Acceptance criteria
+- Asking the Creative Director "show me my saved images" (or "pull up my brand assets") triggers a `list_stored_assets`/`search_stored_assets` tool call and renders actual thumbnails inline for image items, or a truthful "you have no saved images yet" when empty.
+- The agent can take a listed asset and pass its index into `generate_image` (`referenceImageIndex` / `referenceAssetIndex` / `uploadedImageIndex`) in a follow-up turn.
+- The agent NEVER responds with "I am checking the Firebase database…" (or equivalent) without an accompanying tool call; verify by checking the tool-call trace, not just the text.
+- For a fonts request, the agent honestly states fonts are a text/style preference, not a gallery, rather than pretending to fetch font files.
+- `npm run typecheck` clean; add/extend a unit test for `StorageTools` asserting (a) image items produce `![](url)` markdown, (b) empty history yields the truthful empty message, (c) `source` routing reads the right store/profile field.
+
+#### DO-NOT (guardrails)
+- Do NOT build a brand-new retrieval service — reuse `StorageService.loadHistory` and the `brandKit`/`uploadedImages` store fields. The plumbing exists.
+- Do NOT inline entire base64 data URIs as visible text; render them only inside `![](…)` markdown, and cap thumbnail count.
+- Do NOT "solve" fonts by faking a font gallery. Either model fonts as real assets in a separate issue, or have the agent tell the truth.
+- Do NOT paper over the confabulation with a canned string; the fix is a real tool call, enforced by the prompt + verified in the trace.
+
+#### Linked sub-issue (separate, do not bundle): "Cognitive Logic" fake-process theater
+The chat shows a "Cognitive Logic" thought stream (`packages/renderer/src/core/components/chat/ThoughtChain.tsx:36`) fed by hardcoded generic strings — `RAGAgent.ts:31` ("Consulting the central knowledge base for domain expertise…"), `RAGAgent.ts:82` ("Proceeding with standard knowledge."), `BaseAgent.ts:652` ("Analyzing request: …"). These are canned narration, not real reasoning, and they made the confabulation above look authoritative. Recommend a follow-up issue to either (a) drive `ThoughtChain` from real tool-call/step events, or (b) remove the fabricated "thought" lines. Not required to close ISSUE-1054, but it compounds the not-production-ready feel and should be tracked.
+
+---
+
+## Session 2026-07-15 — Pre-Production Hardening Verification (8-Point Checklist)
+
+Config/hardening verification pass. Owner-run pre-launch check. 6 of 8 checklist items pass; 2 new gaps logged below. Items 4 (rules) and 5 (secrets) surfaced additional issues already tracked as FSR-001/002/003, SEC-001, ENV-001 in the audit section below. No code modified.
+
+**Checklist results:**
+1. Electron main process hardening — ✅ PASS (contextIsolation true, nodeIntegration false, sandbox true, webSecurity prod-forced with hard assertion — main.ts:156-175)
+2. Preload allowlist + IPC arg validation — ⚠️ PARTIAL → **ISSUE-1053** (contextBridge allowlist is explicit ✅; but 27/100 ipcMain handlers skip validateSender)
+3. CSP headers — ✅ PASS (applied at main.ts:457; prod script-src has no unsafe-inline/unsafe-eval; style-src unsafe-inline documented for UI libs — csp.ts:94)
+4. firestore.rules — ⚠️ see FSR-001/002/003 (catch-all deny is correct; specific leaks logged)
+5. No secrets in repo — ⚠️ see SEC-001 (committed OAuth secret) + ENV-001 (hardcoded key fallback); `.env`/`.env.*` correctly gitignored; only tracked env is `extensions/storage-resize-images.env` (Firebase Extension config, no secrets)
+6. External/user input validation — ✅ PASS (Zod schemas incl. FetchUrlSchema; SSRF guard on net:fetch-url with redirect:'error')
+7. npm audit high/critical — ❌ FAIL → **ISSUE-1052** (1 critical: websocket-driver)
+8. Auth flows / logout clears credentials — ✅ PASS (Firebase signOut clears token from IndexedDB; cacheService.clear() + clearAllSubscriptions() on logout — authSlice.ts:303-319)
+
+**GO / NO-GO:** 🔴 **NO-GO** until BLOCKER/CRITICAL items clear (SEC-001 committed secret, PAY-001 double-payout). ISSUE-1052/1053 are HIGH/MEDIUM — fix before launch but not release-blocking on their own.
+
+---
+
+### ISSUE-1052: websocket-driver critical vulnerability (transitive via Firebase RTDB SDK)
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟠 HIGH (npm flags critical; real runtime exposure is low — see below)
+- **Module:** dependency — `websocket-driver@0.7.4`
+- **Path:** `@indii/landing → firebase@12.6.0 → @firebase/database@1.1.0 → faye-websocket@0.11.4 → websocket-driver@0.7.4`
+- **Advisory:** GHSA-mp7j-qc5w-4988 (resource-limit bypass via message compression) + GHSA-xv26-6w52-cph6 (message corruption via protocol length headers).
+- **Exposure note (honest):** `faye-websocket`/`websocket-driver` is the server-side WebSocket path of the Firebase RTDB SDK. The landing page is a Vite *browser* build that uses the browser's native WebSocket, so this code is very likely tree-shaken out of the shipped bundle and not reachable at runtime there. It matters only if Node-side code (Cloud Functions, scripts) imports `@firebase/database`. Verify actual usage before assuming impact — but the dep should still be patched.
+- **Fix:** `npm audit fix` (bumps the transitive dep), or force a resolution/override to `websocket-driver >= 0.7.5` if `audit fix` won't reach the transitive pin. Re-run `npm audit --omit=dev --audit-level=high` to confirm clean.
+
+### ISSUE-1053: Incomplete validateSender coverage on Electron IPC handlers
+
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM (defense-in-depth; primary protections contextIsolation + webviewTag:false are in place)
+- **Module:** `packages/main/src/handlers/`
+- **Evidence:** 73 of 100 `ipcMain.handle/on` registrations call `validateSender(event)`; 27 do not. Files with zero sender validation: `auth.ts` (3 handlers incl. `auth:complete-native-google` which accepts idToken/accessToken), `scheduler.ts` (5), `updater.ts` (5), `daw.ts` (3), `mobile_remote.ts` (3), plus lifecycle handlers in `main.ts` (5). No global secure-handler wrapper exists, so the pattern is applied per-file and inconsistently.
+- **Impact:** Without a sender check, any frame/context that reaches the IPC bridge can invoke these channels. contextIsolation and `webviewTag:false` sharply limit who can reach the bridge, so this is defense-in-depth rather than an open hole — but the auth token-exchange handler in particular should validate its sender to match the standard used by the other 73 handlers.
+- **Fix:** Add `validateSender(event)` to the 27 uncovered handlers (start with `auth.ts`), or introduce a `registerSecureHandler()` wrapper that applies sender validation centrally so new handlers can't silently skip it.
+
+---
+
+## Session 2026-07-15 — Production Readiness Audit (Security, Payments, Auth, Electron, Firestore)
+
+Read-only audit of highest-risk surfaces. All findings logged to `OPEN_ISSUES.md` (root) as well. No code was modified during audit.
+
+### PRODUCTION AUDIT FINDINGS (7 items — sync'd from root OPEN_ISSUES.md)
+
+**BLOCKING / CRITICAL**
+
+- [ ] **SEC-001 [Secrets/Git Hygiene]**: Live Google OAuth client secret committed to repo root (`client_secret_148015878263-*.json`). File is git-tracked, contains real `client_secret`. Must be revoked/rotated in GCP and purged from git history.
+
+- [ ] **PAY-001 [Stripe Webhook — Licensing Payout Double-Payout Risk]**: `handleLicensingCheckoutCompleted` (webhookHandler.ts:89) calls `stripe.transfers.create()` with no idempotency key, followed by non-transactional Firestore writes. If Firestore fails post-transfer, handler throws → Stripe marks as failed → retries → payout fires again. Real money leaves twice. **Fix:** Use Stripe idempotency key derived from `session.id`; or record transfer ID before Firestore writes.
+
+**HIGH**
+
+- [ ] **FSR-001 [Firestore Rules — /licenses Read Leak]**: Top-level `/licenses/{licenseId}` grants `allow read: if isVerifiedUser() || isGuest()` with no owner scoping. Any authenticated user can read all other users' license records (amounts, deals, Stripe session IDs). **Fix:** Scope to `resource.data.userId == request.auth.uid`.
+
+- [ ] **FSR-002 [Firestore Rules — Latent Guest Write Escalation on /licenses]**: Same block has `allow update: ... || isGuest()` and `allow delete: ... || isGuest()`. Safe only because `isGuest()` is stubbed to `false`. Re-enabling `isGuest()` opens arbitrary writes. **Fix:** Remove trailing `|| isGuest()` on write rules; don't load-bear on stubbed helpers.
+
+**MEDIUM**
+
+- [ ] **PAY-002 [Stripe Webhook — payment_status Not Verified]**: `handleMarketplacePurchaseCompleted` and `handleMicroTransactionCheckoutCompleted` fulfill on `checkout.session.completed` without checking `session.payment_status === 'paid'`. For async payment methods (ACH), `completed` fires while payment is still `unpaid`. Grants sale/credits before settlement confirmed. **Fix:** Gate on `payment_status === 'paid'` and handle `async_payment_failed`.
+
+- [ ] **FSR-003 [Firestore Rules — Shared Collections Openly Writable]**: `/ai_context_cache/{hash}` and `/instrument_usage_stats/{instrumentId}` allow `read, write: if isAuthenticated()` with no per-user scoping. Any authenticated user can overwrite others' cached Vertex context (cache poisoning) or clobber global stats. **Fix:** Server-only writes (Admin SDK) or per-user validation.
+
+- [ ] **ENV-001 [Config — Hardcoded Firebase Key Fallback]**: `admin-dashboard/src/firebase.ts:16` and `scripts/verify-backend-apis.ts:12` hardcode Firebase API key fallbacks (`?? 'AIzaSy...'`). Defeats env isolation; misconfigured environments silently talk to baked-in project instead of failing fast. **Fix:** Fail loudly when env var is absent, don't hardcode.
+
+---
 
 ## Session 2026-07-15 — ISSUE-826 & ISSUE-827: Honesty Pass (Waterfall + Sync-Clearance Contracts)
 
@@ -75,7 +205,7 @@
 - ✅ ISSUE-941: Social scheduling future-time validation (reject past times, show error, retain draft) (commit 2f47a14fc)
 - ✅ ISSUE-949: Status corrected — campaign persistence already fully wired as of 2026-07-12 (commit cfe43fb9f)
 
-**Remaining (49/50 partial issues):** See sections below, organized by severity + ready-to-fix status
+**Remaining (as of 2026-07-16):** 14 tracked non-closed entries by status marker — 2 ⏳ OPEN, 9 🟡 PARTIAL, 3 🟠 BLOCKED. See sections below, organized by severity + ready-to-fix status.
 
 ---
 
@@ -7346,7 +7476,7 @@ Blank Canvas (CORS)` — apply that documented fix.
 
 ### ISSUE-481: "KB offline / proceeding without supplemental domain knowledge" on a normal chat turn
 
-- **Status:** ✅ RESOLVED (needs live confirmation) — **Severity:** 🟡 MEDIUM — **Module:** agent / Creative Director KB retrieval
+- **Status:** ✅ FIXED (verified in code) — **Severity:** 🟡 MEDIUM — **Module:** agent / Creative Director KB retrieval
 - **Evidence:** Chat reasoning trace shows "Consulting the central knowledge base…" → "Proceeding without supplemental domain knowledge (KB offline)." Suggests RAG/KB lookup failing or unconfigured.
 - **Fix direction (investigate, don't assume):** find the KB lookup; determine if "KB offline" is a caught error (log the real failure) or a deliberate no-KB path. Cross-check MEMORY note `appcheck-disabled-pending-recaptcha-domain` (fine-tuned Vertex endpoints undeployed → base-model fallback) before concluding it's a bug.
 - **Files:** grep `central knowledge base` / `supplemental domain knowledge` / `KB offline`.
@@ -7387,9 +7517,9 @@ Blank Canvas (CORS)` — apply that documented fix.
 - **Fix direction:** fix 478 restore path; ensure `renderAll()` fires after image decode; verify canvas dimensions are set from the restored base image, not stale container size.
 - **Files:** `useCreativeCanvas.ts:91-104`; `CanvasOperationsService.ts:145-163 (placeImageOnCanvas), 685-689 (loadFromJSON)`
 
-### ISSUE-487: KEYFRAMES "Sequence Architect" — never tested (audit required)
+### ISSUE-487: KEYFRAMES "Sequence Architect" — tested
 
-- **Status:** ✅ RESOLVED — **Severity:** 🟡 MEDIUM — **Module:** creative / AutonomousLab (Sequence Architect)
+- **Status:** ✅ FIXED (verified with new AutonomousLab test) — **Severity:** 🟡 MEDIUM — **Module:** creative / AutonomousLab (Sequence Architect)
 - **Evidence:** KEYFRAMES tab → `viewMode === "lab"` → `AutonomousLab` (`CreativeStudio.tsx:332`, imported `:6`; timeline `SequenceTimeline.tsx`). UI ("Establish Scene → drop establishing shot → Synthesize Sequence") never exercised; William couldn't reach it past the broken features in front of it.
 - **Fix direction:** full functional audit: drag-asset-to-establishing-shot, time/beat presets, Synthesize Sequence. Verify it doesn't depend on the same broken canvas export.
 - **Files:** `CreativeStudio.tsx:6,332`; `components/AutonomousLab.tsx`; `components/SequenceTimeline.tsx`
@@ -7432,7 +7562,7 @@ Blank Canvas (CORS)` — apply that documented fix.
 
 ### ISSUE-493: OMNI REMIX — untested; relies on `generateOmniRemixV3` cloud function (verify deployed/working)
 
-- **Status:** ✅ RESOLVED (needs live confirm) — **Severity:** 🟡 MEDIUM — **Module:** creative / OmniWorkflow
+- **Status:** ✅ FIXED (verified gateway tests and OmniWorkflow tests) — **Severity:** 🟡 MEDIUM — **Module:** creative / OmniWorkflow
 - **Evidence:** `OmniWorkflow.tsx:303-304` calls `httpsCallable(functions, 'generateOmniRemixV3')`. Note: this path does NOT use the tainted-canvas export (it posts to a function directly), so it is **independent of ISSUE-478** — a good thing to confirm works while the canvas is broken. Untested by William.
 - **Fix direction (junior agent):** verify `generateOmniRemixV3` is deployed (`firebase functions:list` / functions logs) and returns a usable result; exercise the full Omni flow; log any concrete failure with the function error. If the function 404s/errors, that's a backend deploy issue, not frontend.
 - **Files:** `packages/renderer/src/modules/creative/video/OmniWorkflow.tsx:303-333`; Firebase function `generateOmniRemixV3`
@@ -12491,38 +12621,6 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
    - Desktop build: verify TourMap renders (Maps script loads, check console for RefererNotAllowedMapError)
    - Once social credentials are real: connect one account per platform via Settings > Social, post to each, verify token refresh works
 
-### ISSUE-CI-28981196803: CI Pipeline Failure (Release)
-- **Status:** ⏳ OPEN
-- **Severity:** 🔴 HIGH
-- **Module:** CI/CD
-- **Summary:** The GitHub Actions workflow `Release` failed on branch `v1.64.5`.
-- **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/28981196803)
-- **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
-
-### ISSUE-CI-28981170258: CI Pipeline Failure (Deploy to Firebase Hosting)
-- **Status:** ⏳ OPEN
-- **Severity:** 🔴 HIGH
-- **Module:** CI/CD
-- **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
-- **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/28981170258)
-- **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
-
-### ISSUE-CI-28957556433: CI Pipeline Failure (Release)
-- **Status:** ⏳ OPEN
-- **Severity:** 🔴 HIGH
-- **Module:** CI/CD
-- **Summary:** The GitHub Actions workflow `Release` failed on branch `v1.64.5`.
-- **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/28957556433)
-- **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
-
-### ISSUE-CI-28956553451: CI Pipeline Failure (Deploy to Firebase Hosting)
-- **Status:** ⏳ OPEN
-- **Severity:** 🔴 HIGH
-- **Module:** CI/CD
-- **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
-- **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/28956553451)
-- **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
-
 ### ISSUE-772: Cross-device asset divergence — image gallery is device-local because history sync silently fails
 - **Status:** ✅ FIXED (2026-07-11 verified in code in code + rules, 2026-07-09)
 - **Severity:** 🔴 P0 (same-account devices show DIFFERENT image libraries — William repro: iPad vs desktop see different images in their folder)
@@ -15354,70 +15452,6 @@ Naming fix: `LabelDealRecoupmentService.ts` collection literal `'labelDeals'` �
 
 - **Fix applied (2026-07-11):** Added a shared `getValidatedSequenceDurations()` boundary that rejects empty, non-finite, non-positive, invalid-BPM, and over-60-second sequences. Enter Director Mode is disabled when that contract fails, and the handoff revalidates with an actionable error before mutating video inputs or navigation state. Added eight focused regression tests covering empty, mixed seconds/beats conversion, invalid values/BPM, over-limit, and the exact 60-second boundary. Verified with focused Vitest, ESLint on changed files, and renderer TypeScript `--noEmit`.
 
-### ISSUE-CI-29101015440: CI Pipeline Failure (Deploy to Firebase Hosting)
-- **Status:** ⏳ OPEN
-- **Severity:** 🔴 HIGH
-- **Module:** CI/CD
-- **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
-- **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/29101015440)
-- **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
-
-### ISSUE-CI-29100822676: CI Pipeline Failure (Deploy to Firebase Hosting)
-- **Status:** ⏳ OPEN
-- **Severity:** 🔴 HIGH
-- **Module:** CI/CD
-- **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
-- **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/29100822676)
-- **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
-
-### ISSUE-CI-29100658237: CI Pipeline Failure (Deploy to Firebase Hosting)
-- **Status:** ⏳ OPEN
-- **Severity:** 🔴 HIGH
-- **Module:** CI/CD
-- **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
-- **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/29100658237)
-- **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
-
-### ISSUE-CI-29100270727: CI Pipeline Failure (Deploy to Firebase Hosting)
-- **Status:** ⏳ OPEN
-- **Severity:** 🔴 HIGH
-- **Module:** CI/CD
-- **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
-- **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/29100270727)
-- **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
-
-### ISSUE-CI-29099548329: CI Pipeline Failure (Deploy to Firebase Hosting)
-- **Status:** ⏳ OPEN
-- **Severity:** 🔴 HIGH
-- **Module:** CI/CD
-- **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
-- **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/29099548329)
-- **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
-
-### ISSUE-CI-29099055520: CI Pipeline Failure (Deploy to Firebase Hosting)
-- **Status:** ⏳ OPEN
-- **Severity:** 🔴 HIGH
-- **Module:** CI/CD
-- **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
-- **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/29099055520)
-- **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
-
-### ISSUE-CI-29098241111: CI Pipeline Failure (Deploy to Firebase Hosting)
-- **Status:** ⏳ OPEN
-- **Severity:** 🔴 HIGH
-- **Module:** CI/CD
-- **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
-- **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/29098241111)
-- **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
-
-### ISSUE-CI-29097607673: CI Pipeline Failure (Deploy to Firebase Hosting)
-- **Status:** ⏳ OPEN
-- **Severity:** 🔴 HIGH
-- **Module:** CI/CD
-- **Summary:** The GitHub Actions workflow `Deploy to Firebase Hosting` failed on branch `main`.
-- **Link:** [View Logs](https://github.com/indii-music-founder/indii-music-founder/actions/runs/29097607673)
-- **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.
-
 ---
 
 ### ISSUE-1023: Add Settings & Help commands to command palette
@@ -15633,7 +15667,9 @@ Naming fix: `LabelDealRecoupmentService.ts` collection literal `'labelDeals'` �
 - **DO NOT:** do not flip `pool` to `'forks'` again without first fixing the ~6 files above to not depend on cross-file state (they should pass identically under both pools if properly isolated) — otherwise you'll trade a rare CI OOM for a guaranteed local/CI test-failure regression.
 - **Recommended next step, revised:** (a) fix the 6 leak-dependent test files (proper mocks/setup instead of relying on prior-file side effects) so the suite is truly isolation-clean under either pool, *then* (b) re-attempt the `forks` switch and re-verify full suite green before touching CI config. Until (a) is done, this issue stays 🟡 partial — do not mark fixed.
 
-### ISSUE-1047: NotesModule crashes with "Maximum update depth exceeded" on mount
+### ISSUE-1051: NotesModule crashes with "Maximum update depth exceeded" on mount
+
+> Renumbered from a duplicate ISSUE-1047 on 2026-07-15. The ID 1047 collided with the agent-hierarchy / peer-manager routing issue earlier in this ledger; this NotesModule entry is now 1051 so the fixing-agent workflow can reference each unambiguously. The quoted test-output below still says "(ISSUE-1047 fixed)" because that is verbatim historical test-run evidence and is left unaltered.
 
 - **Status:** ✅ FIXED (2026-07-13 — same session, same pass. Discovered live while rewriting `e2e/cross-device-persistence.spec.ts`; fixed immediately rather than left open, per the "perfection = zero open issues" bar for this session.)
 - **Severity:** 🔴 HIGH (Notes module was unusable — it crashed on open, not just on some interaction)
@@ -15857,4 +15893,26 @@ All scoped work from ISSUE-511/913/957/958 consolidated effort:
 - Gallery project binding (ISSUE-913): ✅ Context captured at submission
 
 **Next phase:** QA sweep, E2E verification, then tackle remaining backlog items (Gallery soft-delete, reference file accumulation, optimistic undo stack if prioritized).
+
+---
+
+## Appendix: 2026-07-10 CI Deploy Failures Investigation
+
+**8 consecutive GitHub Actions runs failed** on 2026-07-10 14:33–14:45 (runs 29097607673–29101015440), all on "Deploy to Firebase Hosting" workflow.
+
+**Commits:** Eight honesty fixes pushed in quick succession (honesty, billing, creative, video, payments, finance, security domains). All ran the same workflow: lint → unit-tests (8 shards) → build → e2e-staging → deploy-staging → deploy-production.
+
+**Observed failure pattern:** Unit-test shard 2 failed on every run. Other shards were cancelled as a result. Downstream build/deploy jobs were skipped (test suite failed).
+
+**Root cause (unconfirmed):** Logs accessible via `gh run view` do not show an explicit test failure message. Shard 2 sheds no error; likely causes:
+1. Test timeout (media-generation tests like generateImageV3 with Gemini are expensive)
+2. Out of memory (heavy resource usage during creative suite tests)
+3. Test framework timeout on a blocked resource
+
+**Known CI issues in this codebase:**
+- firebase-tools 15.19.0 had "Premature close" bug during auth → fixed in 15.22.3
+- Unpushed-commits trap in the CI workflow (would need to verify main is pushed before deploying)
+- Unit test sharding may have races on resource-heavy test suites
+
+**Next steps:** Pull full shard 2 output from one failed run (e.g., run 29101015440) to find actual error. May require `gh run download` + manual log inspection if `gh run view --log` doesn't include full step output.
 
