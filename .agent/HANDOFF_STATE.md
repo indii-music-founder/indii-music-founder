@@ -1,26 +1,24 @@
 # Handoff State
-**Updated:** 2026-07-15 20:13 EDT
+**Updated:** 2026-07-15 20:24 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+c213a6e24 fix(creative): ISSUE-922 remainder — explicit upload eviction notice
+0b3562618 feat(touring): ISSUE-704 create useTourGeo reactive hook
+cec0d85ed feat(touring): ISSUE-704 create TourGeoService for location consolidation
+c8218c309 feat(touring): ISSUE-704 expand Tour Book with tech rider & visa tabs
+ae8e9615c feat(touring): ISSUE-704 Road Manager tab consolidation
 602ecef08 chore: session checkpoint [20:09]
 210b8b361 chore: update handoff state — three-workstream complete, ready for deployment
 70dd41eed fix(creative): ISSUE-959 showroom validates image intake
 c68682f3b chore: session checkpoint [20:07]
 d188f1437 chore: session checkpoint [20:06]
-f7eca3712 chore: session end — three-workstream implementation complete
-47d72cd69 chore: session checkpoint [20:02]
-a977e3f72 fix(creative): BrandAssetsDrawer delete order — remove storage before profile
-10700466c chore: session checkpoint [20:00]
-03ee786b6 chore: session checkpoint [19:58]
 ```
 
 ## Working State
 ```
-M  .agent/HANDOFF_STATE.md
- M packages/renderer/src/core/store/slices/creative/creativeHistorySlice.ts
- M packages/renderer/src/modules/touring/components/RoadManagerSidebar.tsx
+ M .agent/test_ledger/OPEN_ISSUES.md
 ```
 
 ## Decisions
