@@ -36,7 +36,7 @@ export function CanvasViewport({
     const { url: resolvedVideoUrl, isResolving, error: resolveError } = useResolvedStorageUrl(item.type === 'video' ? item.url : null);
 
     return (
-        <main className="flex-1 relative bg-[#050505] flex items-center justify-center overflow-hidden p-12">
+        <main className="flex-1 relative bg-transparent flex items-center justify-center overflow-hidden p-12">
             {item.type === 'video' && !item.url.startsWith('data:image') ? (
                 isResolving ? (
                     <div className="flex items-center justify-center rounded-lg border border-white/10 bg-black/70 px-4 py-3 text-sm text-white/60">

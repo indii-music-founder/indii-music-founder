@@ -192,6 +192,7 @@ describe('🖱️ Click: Video Production Daisychain', () => {
                 studioControls: { resolution: '1K', aspectRatio: '16:9', duration: 4, fps: 24 },
                 currentProjectId: 'p1',
                 currentOrganizationId: 'o1',
+                canvasImages: [],
                 whiskState: {
                     subjects: [],
                     scenes: [],

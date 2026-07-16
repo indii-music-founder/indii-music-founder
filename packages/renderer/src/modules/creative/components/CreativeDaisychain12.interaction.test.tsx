@@ -259,6 +259,16 @@ describe('Creative Director 12-Click Daisychain', () => {
                     >
                         Go to Showroom
                     </button>
+                    <button
+                        data-testid="canvas-view-btn"
+                        onClick={() => {
+                            setLocalViewMode('canvas');
+                            mockSetViewMode('canvas');
+                        }}
+                        style={{ display: 'none' }}
+                    >
+                        Go to Canvas
+                    </button>
                     <IntelligencePromptBuilder
                         onAddTag={(tag: string) => {
                             setLocalPrompt(prev => prev ? `${prev}, ${tag}` : tag);
@@ -372,8 +382,7 @@ describe('Creative Director 12-Click Daisychain', () => {
         });
 
         // --- CLICK 12: Switch to Canvas (Gallery removed — assets are in Omni-Panel) ---
-        // IA Option C: Canvas is a sub-view of the Image mode, so activate Image first.
-        fireEvent.click(screen.getByTestId('mode-image-btn'));
+        // Canvas is now the unified base layer.
         const canvasBtn = screen.getByTestId('canvas-view-btn');
         fireEvent.click(canvasBtn);
         expect(mockSetViewMode).toHaveBeenCalledWith('canvas');

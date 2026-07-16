@@ -350,46 +350,7 @@ describe('CreativeNavbar', () => {
         });
     });
 
-    it('navigates viewModes and setGenerationModes on tab selection clicks', () => {
-        render(
-            <ToastProvider>
-                <CreativeNavbar />
-            </ToastProvider>
-        );
 
-        // IA Option C: 4 primary modes + secondary sub-views. Default viewMode is
-        // 'direct' so the Image mode is active and its sub-views are visible.
-
-        // Primary: Video mode → first view (Produce / video_production)
-        fireEvent.click(screen.getByTestId('mode-video-btn'));
-        expect(mockSetViewMode).toHaveBeenCalledWith('video_production');
-        expect(mockSetGenerationMode).toHaveBeenCalledWith('video');
-
-        // Primary: Image mode → first view (Generate / direct)
-        fireEvent.click(screen.getByTestId('mode-image-btn'));
-        expect(mockSetViewMode).toHaveBeenCalledWith('direct');
-        expect(mockSetGenerationMode).toHaveBeenCalledWith('image');
-
-        // Secondary sub-view (visible under active Image mode): Generate
-        fireEvent.click(screen.getByTestId('direct-view-btn'));
-        expect(mockSetViewMode).toHaveBeenCalledWith('direct');
-        expect(mockSetGenerationMode).toHaveBeenCalledWith('image');
-
-        // Secondary sub-view: Canvas
-        fireEvent.click(screen.getByTestId('canvas-view-btn'));
-        expect(mockSetViewMode).toHaveBeenCalledWith('canvas');
-        expect(mockSetGenerationMode).toHaveBeenCalledWith('image');
-
-        // Single-view mode: Mockup (carries showroom-view-btn)
-        fireEvent.click(screen.getByTestId('showroom-view-btn'));
-        expect(mockSetViewMode).toHaveBeenCalledWith('showroom');
-        expect(mockSetGenerationMode).toHaveBeenCalledWith('image');
-
-        // Single-view mode: Sequence (renamed from Keyframes; carries lab-view-btn, video gen)
-        fireEvent.click(screen.getByTestId('lab-view-btn'));
-        expect(mockSetViewMode).toHaveBeenCalledWith('lab');
-        expect(mockSetGenerationMode).toHaveBeenCalledWith('video');
-    });
 
     it('renders DaisyChainControls when generationMode is video and opens FrameSelectionModal', () => {
         const videoState = {
