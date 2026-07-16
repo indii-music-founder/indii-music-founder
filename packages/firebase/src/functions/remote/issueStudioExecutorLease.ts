@@ -28,6 +28,7 @@ async function assertLease(uid: string, deviceId: unknown, leaseToken: unknown) 
  */
 export const issueStudioExecutorLease = functions
   .region('us-central1')
+  .runWith({ enforceAppCheck: false })
   .https.onCall(async (data: unknown, context) => {
     if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'Sign in is required.');
     const input = data as { deviceId?: unknown; enrollmentSecret?: unknown };
@@ -59,7 +60,7 @@ export const issueStudioExecutorLease = functions
     return { deviceId: input.deviceId, leaseToken, expiresAt: expiresAt.toMillis() };
   });
 
-export const publishStudioPresence = functions.region('us-central1').https.onCall(async (data: unknown, context) => {
+export const publishStudioPresence = functions.region('us-central1').runWith({ enforceAppCheck: false }).https.onCall(async (data: unknown, context) => {
   if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'Sign in is required.');
   const input = data as { deviceId?: unknown; leaseToken?: unknown; state?: Record<string, unknown> };
   await assertLease(context.auth.uid, input.deviceId, input.leaseToken);
@@ -81,7 +82,7 @@ export const publishStudioPresence = functions.region('us-central1').https.onCal
   return { ok: true };
 });
 
-export const releaseStudioPresence = functions.region('us-central1').https.onCall(async (data: unknown, context) => {
+export const releaseStudioPresence = functions.region('us-central1').runWith({ enforceAppCheck: false }).https.onCall(async (data: unknown, context) => {
   if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'Sign in is required.');
   const input = data as { deviceId?: unknown; leaseToken?: unknown; studioInstanceId?: unknown };
   await assertLease(context.auth.uid, input.deviceId, input.leaseToken);
@@ -96,7 +97,7 @@ export const releaseStudioPresence = functions.region('us-central1').https.onCal
   return { ok: true };
 });
 
-export const claimStudioCommand = functions.region('us-central1').https.onCall(async (data: unknown, context) => {
+export const claimStudioCommand = functions.region('us-central1').runWith({ enforceAppCheck: false }).https.onCall(async (data: unknown, context) => {
   if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'Sign in is required.');
   const input = data as { deviceId?: unknown; leaseToken?: unknown; commandId?: unknown; studioInstanceId?: unknown };
   await assertLease(context.auth.uid, input.deviceId, input.leaseToken);
@@ -118,7 +119,7 @@ export const claimStudioCommand = functions.region('us-central1').https.onCall(a
   return { claimed };
 });
 
-export const publishStudioResponse = functions.region('us-central1').https.onCall(async (data: unknown, context) => {
+export const publishStudioResponse = functions.region('us-central1').runWith({ enforceAppCheck: false }).https.onCall(async (data: unknown, context) => {
   if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'Sign in is required.');
   const input = data as { deviceId?: unknown; leaseToken?: unknown; commandId?: unknown; text?: unknown; agentId?: unknown; imageUrls?: unknown; isStreaming?: unknown; boardroomMessageId?: unknown };
   const { deviceId } = await assertLease(context.auth.uid, input.deviceId, input.leaseToken);
@@ -143,7 +144,7 @@ export const publishStudioResponse = functions.region('us-central1').https.onCal
   return { ok: true };
 });
 
-export const completeStudioCommand = functions.region('us-central1').https.onCall(async (data: unknown, context) => {
+export const completeStudioCommand = functions.region('us-central1').runWith({ enforceAppCheck: false }).https.onCall(async (data: unknown, context) => {
   if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'Sign in is required.');
   const input = data as { deviceId?: unknown; leaseToken?: unknown; commandId?: unknown };
   const { deviceId } = await assertLease(context.auth.uid, input.deviceId, input.leaseToken);
