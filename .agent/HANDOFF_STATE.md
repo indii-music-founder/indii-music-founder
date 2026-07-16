@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-07-15 20:41 EDT
+**Updated:** 2026-07-15 20:42 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+86b8e5c82 chore: session checkpoint [20:41]
 3190a6edb fix(test): RoadManager and KnowledgeChat selector specificity
 3519e473e chore: session checkpoint [20:35]
 f24474af8 chore: session checkpoint [20:28]
@@ -13,12 +14,11 @@ bc012333c chore: session checkpoint [20:25]
 448a03e6d chore: session checkpoint [20:24]
 c213a6e24 fix(creative): ISSUE-922 remainder — explicit upload eviction notice
 0b3562618 feat(touring): ISSUE-704 create useTourGeo reactive hook
-cec0d85ed feat(touring): ISSUE-704 create TourGeoService for location consolidation
 ```
 
 ## Working State
 ```
- M packages/renderer/src/modules/finance/components/MerchTable.tsx
+clean working tree
 ```
 
 ## Decisions
