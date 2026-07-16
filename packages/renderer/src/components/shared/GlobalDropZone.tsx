@@ -167,7 +167,7 @@ export const GlobalDropZone: React.FC<{ children: React.ReactNode }> = ({ childr
 
                         // Read the local file when import progress finishes
                         const reader = new FileReader();
-                        reader.onload = (e) => {
+                        reader.onload = async (e) => {
                             const result = e.target?.result as string;
                             if (!result) {
                                 updateUploadStatus(queueId, 'error', 'Failed to read file');
@@ -186,10 +186,18 @@ export const GlobalDropZone: React.FC<{ children: React.ReactNode }> = ({ childr
                                 };
 
                                 if (isAudio) {
-                                    addUploadedAudio(newItem);
+                                    const success = await addUploadedAudio(newItem);
+                                    if (!success) {
+                                        updateUploadStatus(queueId, 'error', 'Failed to save to cloud library');
+                                        return;
+                                    }
                                     audioCount++;
                                 } else {
-                                    addUploadedImage(newItem);
+                                    const success = await addUploadedImage(newItem);
+                                    if (!success) {
+                                        updateUploadStatus(queueId, 'error', 'Failed to save to cloud library');
+                                        return;
+                                    }
                                     imagesVideoCount++;
                                 }
                             } else if (isDocument) {

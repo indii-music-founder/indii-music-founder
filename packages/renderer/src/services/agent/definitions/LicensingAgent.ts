@@ -7,6 +7,19 @@ import { licenseScannerService } from "../../knowledge/LicenseScannerService";
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { LegalTools } from "../tools/LegalTools";
 import { UniversalTools } from "../tools/UniversalTools";
+import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '../tools/DomainTools';
+
+
+const licensingRetrievalConfig = {
+    'licenses': { path: 'licenses', requiresUserIdFilter: true },
+    'licensing_clearances': { path: 'licensing_clearances', requiresUserIdFilter: true },
+    'licensingDeals': { path: 'licensingDeals', requiresUserIdFilter: true },
+    'syncBriefs': { path: 'syncBriefs', requiresUserIdFilter: true },
+    'clearance_docs': { path: 'clearance_docs', requiresUserIdFilter: true }
+};
+const licensingRetrievalTools = buildDomainRetrievalTools('Licensing', licensingRetrievalConfig);
+const licensingRetrievalDeclarations = buildDomainRetrievalDeclarations('Licensing', licensingRetrievalConfig);
+
 export const LicensingAgent: AgentConfig = {
     id: 'licensing',
     name: 'Licensing Director',
@@ -50,6 +63,7 @@ export const LicensingAgent: AgentConfig = {
             });
 
             return {
+            ...licensingRetrievalTools,
                 success: true,
                 data: {
                     requestId,
@@ -194,9 +208,10 @@ export const LicensingAgent: AgentConfig = {
             };
         }
     },
-    authorizedTools: ['check_availability', 'analyze_contract', 'draft_license', 'search_sync_opportunities', 'calculate_sync_fee_estimate', 'browser_tool', 'document_query', 'payment_gate'],
+    authorizedTools: ['list_domain_records', 'check_availability', 'analyze_contract', 'draft_license', 'search_sync_opportunities', 'calculate_sync_fee_estimate', 'browser_tool', 'document_query', 'payment_gate'],
     tools: [{
         functionDeclarations: [
+            ...licensingRetrievalDeclarations,
             {
                 name: "check_availability",
                 description: "Check if a piece of content is available for licensing. Can use a URL for deep analysis.",

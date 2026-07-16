@@ -732,7 +732,10 @@ service cloud.firestore {
 
     // Global, non-sensitive aggregate operational stats (doc ID = instrumentId).
     match /instrument_usage_stats/{instrumentId} {
-      allow read, write: if isAuthenticated();
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() &&
+        request.resource.data.diff(resource.data).affectedKeys().hasAny(['totalExecutions', 'successfulExecutions', 'failedExecutions', 'lastExecutionTime', 'updatedAt']);
     }
 
     match /iswc_works/{workId} {
@@ -827,7 +830,9 @@ service cloud.firestore {
     // Shared, non-sensitive Vertex context-cache metadata (doc ID = content hash,
     // not user-scoped by design — the whole point is cross-session reuse).
     match /ai_context_cache/{hash} {
-      allow read, write: if isAuthenticated();
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.keys().hasAll(['id', 'hash', 'expireTime', 'lastUsed']);
+      allow update: if isAuthenticated() && request.resource.data.id == resource.data.id;
     }
 
     // =========================================================================
@@ -1428,10 +1433,10 @@ service cloud.firestore {
     }
 
     match /licenses/{licenseId} {
-      allow read: if isVerifiedUser() || isGuest();
-      allow create: if (isVerifiedUser() && request.resource.data.get('userId', null) == request.auth.uid) || (isGuest() && request.resource.data.get('userId', null) == 'founder-demo-uid');
-      allow update: if (isVerifiedUser() && resource.data.get('userId', null) == request.auth.uid && request.resource.data.get('userId', null) == resource.data.get('userId', null)) || isGuest();
-      allow delete: if (isVerifiedUser() && resource.data.get('userId', null) == request.auth.uid) || isGuest();
+      allow read: if isVerifiedUser() && resource.data.get('userId', null) == request.auth.uid;
+      allow create: if isVerifiedUser() && request.resource.data.get('userId', null) == request.auth.uid;
+      allow update: if isVerifiedUser() && resource.data.get('userId', null) == request.auth.uid && request.resource.data.get('userId', null) == resource.data.get('userId', null);
+      allow delete: if isVerifiedUser() && resource.data.get('userId', null) == request.auth.uid;
     }
 
     // Owner-by-path segment (uid).

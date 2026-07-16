@@ -7,6 +7,18 @@ import { ProjectTools } from '../tools/ProjectTools';
 import { KnowledgeTools } from '../tools/KnowledgeTools';
 import { SocialTools } from '../tools/SocialTools';
 import { UniversalTools } from '../tools/UniversalTools';
+import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '../tools/DomainTools';
+
+
+
+const roadRetrievalConfig = {
+    'tour_itineraries': { path: 'tour_itineraries', requiresUserIdFilter: true },
+    'tour_vehicles': { path: 'tour_vehicles', requiresUserIdFilter: true },
+    'tour_rider_items': { path: 'tour_rider_items', requiresUserIdFilter: true },
+    'tour_emergency_contacts': { path: 'tour_emergency_contacts', requiresUserIdFilter: true }
+};
+const roadRetrievalTools = buildDomainRetrievalTools('Road', roadRetrievalConfig);
+const roadRetrievalDeclarations = buildDomainRetrievalDeclarations('Road', roadRetrievalConfig);
 
 export const RoadAgent: AgentConfig = {
     id: 'road',
@@ -17,6 +29,7 @@ export const RoadAgent: AgentConfig = {
     systemPrompt: systemPrompt,
     get functions() {
         return {
+            ...roadRetrievalTools,
             plan_tour_route: RoadTools.plan_tour_route,
             estimate_tour_budget: RoadTools.estimate_tour_budget,
             create_project: ProjectTools.create_project,
@@ -31,9 +44,10 @@ export const RoadAgent: AgentConfig = {
             draft_tour_itinerary: RoadTools.draft_tour_itinerary,
         } as Record<string, import('@/services/agent/types').AnyToolFunction>;
     },
-    authorizedTools: ['plan_tour_route', 'estimate_tour_budget', 'create_project', 'search_knowledge', 'search_places', 'get_place_details', 'get_distance_matrix', 'generate_social_post', 'browser_tool', 'credential_vault', 'generate_visa_checklist', 'draft_tour_itinerary'],
+    authorizedTools: ['list_domain_records', 'plan_tour_route', 'estimate_tour_budget', 'create_project', 'search_knowledge', 'search_places', 'get_place_details', 'get_distance_matrix', 'generate_social_post', 'browser_tool', 'credential_vault', 'generate_visa_checklist', 'draft_tour_itinerary'],
     tools: [{
         functionDeclarations: [
+            ...roadRetrievalDeclarations,
             {
                 name: "plan_tour_route",
                 description: "Plan an optimized route for a tour.",

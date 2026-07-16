@@ -1,3 +1,4 @@
+import { validateSender } from './utils/ipc-security';
 import { app, BrowserWindow, shell, ipcMain, Tray, Menu, nativeImage, Notification, powerMonitor, crashReporter, protocol, net } from 'electron';
 import path from 'path';
 import log from 'electron-log';
@@ -584,14 +585,16 @@ if (!gotTheLock) {
         });
 
         // Send initial state on load
-        ipcMain.handle('power:get-state', () => {
+        ipcMain.handle('power:get-state', (event) => {
+        validateSender(event);
             return powerMonitor.isOnBatteryPower() ? 'battery' : 'ac';
         });
 
         // Window control (Sleep/Wake) — the renderer drives sleep mode by hiding
         // the window to the tray and waking it back. The process keeps running
         // (backgroundThrottling:false) so the relay listener stays alive while hidden.
-        ipcMain.handle('window:show', () => {
+        ipcMain.handle('window:show', (event) => {
+        validateSender(event);
             if (!mainWindow) return;
             mainWindow.show();
             mainWindow.moveTop();
@@ -600,7 +603,8 @@ if (!gotTheLock) {
                 app.focus({ steal: true });
             }
         });
-        ipcMain.handle('window:hide', () => {
+        ipcMain.handle('window:hide', (event) => {
+        validateSender(event);
             if (!mainWindow) return;
             mainWindow.hide();
             if (process.platform === 'darwin') {
@@ -620,7 +624,8 @@ if (!gotTheLock) {
 
         // Item 378: Developer-only memory snapshot — accessible via --inspect flag or IPC
         if (!app.isPackaged) {
-            ipcMain.handle('dev:heap-snapshot', async () => {
+            ipcMain.handle('dev:heap-snapshot', async (event) => {
+        validateSender(event);
                 try {
                     const v8 = await import('v8');
                     const snapshotPath = path.join(app.getPath('userData'), `heap-${Date.now()}.heapsnapshot`);

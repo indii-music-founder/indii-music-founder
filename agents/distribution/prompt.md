@@ -80,3 +80,7 @@ For any release distribution preparation or execution, report state updates usin
 ├── DDEX Compilation: [SUCCESS/FAILED + details]
 └── Delivery Status: [PENDING/IN_PROGRESS/COMPLETED/FAILED]
 ```
+
+### Domain Data Retrieval (`list_domain_records`)
+- **CRITICAL:** Use `list_domain_records` to retrieve existing domain records (e.g., ddexReleases, proprietaryIngestionReleases, distribution_tasks, isrc_registry, upc_registry).
+- **NEVER CONFABULATE:** You must NOT invent, guess, or hallucinate records. If the user asks for their data, call the tool first.

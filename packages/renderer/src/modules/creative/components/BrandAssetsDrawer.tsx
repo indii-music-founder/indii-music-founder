@@ -118,10 +118,17 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
                         brandAssets: [...(currentKit.brandAssets || []), ...newLogos]
                     });
 
-                    newUploadedImages.forEach(img => addUploadedImage({
-                        ...img,
-                        prompt: img.prompt || ''
-                    }));
+                    const uploadResults = await Promise.all(
+                        newUploadedImages.map(img => addUploadedImage({
+                            ...img,
+                            prompt: img.prompt || ''
+                        }))
+                    );
+
+                    const hasUploadFailures = uploadResults.some(success => !success);
+                    if (hasUploadFailures) {
+                        toast.warning("Some files were not added to the cloud library.");
+                    }
 
                     if (newRefImages.length > 0) toast.success(`${newRefImages.length} style reference(s) added`);
                     if (newLogos.length > 0) toast.success(`${newLogos.length} logo/graphic(s) added`);
@@ -303,7 +310,7 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
                         toast.success("Brand asset generated and added");
                     }
 
-                    addUploadedImage({
+                    const success = await addUploadedImage({
                         id: assetId,
                         type: 'image',
                         url: downloadUrl,
@@ -312,6 +319,10 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
                         projectId: currentProjectId || 'personal',
                         origin: 'uploaded'
                     });
+
+                    if (!success) {
+                        toast.warning("Asset generated, but failed to sync to the cloud library.");
+                    }
 
                     setPrompt('');
                     setActiveTab('upload');

@@ -106,7 +106,7 @@ describe('CharacterLibrary', () => {
 
     it('accepts a valid Creative Director reference', async () => {
         const addCharacterReference = vi.fn();
-        const addUploadedImage = vi.fn();
+        const addUploadedImage = vi.fn().mockResolvedValue(true);
         const generatedHistory = [
             {
                 id: 'generated-1',

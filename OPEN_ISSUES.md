@@ -51,3 +51,12 @@ Electron, Firestore rules). Ordered roughly by severity. No code was modified.
 ## Cross-Reference
 
 All 7 findings above are **also logged** to the canonical ledger at `.agent/test_ledger/OPEN_ISSUES.md` under the 2026-07-15 session header. Both documents are authoritative; when fixing, reference whichever is most convenient. Cross-links make them equally discoverable.
+
+### Creative Suite / Agent gaps (2026-07-16) — canonical-ledger only
+
+These are detailed build specs; they live in `.agent/test_ledger/OPEN_ISSUES.md` (2026-07-16 session), not mirrored in full here:
+
+- **ISSUE-1054** — Creative Director has no tool to retrieve stored assets from Firebase; confabulates "checking the database." Full build spec (reuse existing `StorageTools`, render thumbnails, register on the agent, prompt honesty fix).
+- **ISSUE-1055** — Uploaded photo has no confirmed/discoverable destination; upload handler ignores the persistence-success boolean and navigates away, so failed saves look successful.
+- **ISSUE-1056** — Adjacent/systemic: audit retrieval-tool coverage across all 20+ department agents (same shape as 1054).
+- **ISSUE-1057** — Architecture: formalize per-agent scoped data access + cross-domain requests via the existing `consult_specialist` (A2A) channel.

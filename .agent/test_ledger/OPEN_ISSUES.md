@@ -5,14 +5,14 @@
 >
 > **Last updated:** 2026-07-16 EDT
 > **Branch:** `main`
-> **Current Session:** 2026-07-16 — ISSUE-1054 Creative Director asset-retrieval capability gap (build spec for fixing agent)
+> **Current Session:** 2026-07-16 — Creative Suite asset/agent gaps: ISSUE-1054 (retrieval), 1055 (upload destination), 1056 (systemic retrieval audit), 1057 (inter-agent scoped access)
 > **CI Status:** typecheck + lint + full agent test suite (167 files / 1273 tests) green
 
 ## Session 2026-07-16 — Creative Director Asset Retrieval (BUILD SPEC)
 
 ### ISSUE-1054: Creative Director cannot retrieve stored assets from Firebase — has generation tools only, confabulates "checking the database"
 
-- **Status:** ⏳ OPEN — ready for fixing agent (full build spec below)
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH (core Creative Suite promise is broken; agent lies about a capability it lacks — a production-blocking trust/honesty failure)
 - **Type:** Missing agent capability + tool wiring + prompt honesty + result rendering
 - **Primary files to change:**
@@ -68,6 +68,172 @@ User asks the Creative Director to "pull up the font pages / images from Firebas
 
 #### Linked sub-issue (separate, do not bundle): "Cognitive Logic" fake-process theater
 The chat shows a "Cognitive Logic" thought stream (`packages/renderer/src/core/components/chat/ThoughtChain.tsx:36`) fed by hardcoded generic strings — `RAGAgent.ts:31` ("Consulting the central knowledge base for domain expertise…"), `RAGAgent.ts:82` ("Proceeding with standard knowledge."), `BaseAgent.ts:652` ("Analyzing request: …"). These are canned narration, not real reasoning, and they made the confabulation above look authoritative. Recommend a follow-up issue to either (a) drive `ThoughtChain` from real tool-call/step events, or (b) remove the fabricated "thought" lines. Not required to close ISSUE-1054, but it compounds the not-production-ready feel and should be tracked.
+
+---
+
+### ISSUE-1055: Uploaded photo has no confirmed, discoverable destination — persistence result is ignored and the user can't find where it went
+
+- **Status:** ⏳ OPEN — ready for fixing agent
+- **Severity:** 🟠 HIGH (breaks trust in the "bring your own assets" flow; user uploads and the asset appears to vanish)
+- **Type:** UX/discoverability + silent-persistence-failure + project binding
+- **Primary files:**
+  - `packages/renderer/src/modules/creative/components/DirectGenerationTab.tsx:594-644` (Upload Photo handler)
+  - `packages/renderer/src/core/store/slices/creative/creativeHistorySlice.ts:345-359` (`addUploadedImage`)
+  - `packages/renderer/src/services/StorageService.ts:159-243` (`saveItem`)
+  - `packages/renderer/src/core/components/right-panel/AssetsPanel.tsx` (where uploads are supposed to appear)
+
+#### Symptom
+User clicks "Upload Photo" on the Direct Creative Canvas. The image appears in the editor, but the user *"has no idea what happens from that point — can't find it anywhere."* They also can't ask an agent to locate it (that's the retrieval gap, ISSUE-1054).
+
+#### What the code actually does (confirmed)
+1. Upload handler (`DirectGenerationTab.tsx:604-622`) reads the file as a base64 **data URI**, builds `uploadedItem = { id, url: dataUrl, prompt: 'Uploaded Photo', type: 'image', timestamp, projectId: currentProjectId, origin: 'uploaded' }`, calls `addUploadedImage(uploadedItem)`, then `setSelectedItem(...)` + `setViewMode('editor')`.
+2. `addUploadedImage` (`creativeHistorySlice.ts:345-359`) adds to the in-memory `uploadedImages` (capped at `UPLOAD_MEMORY_CAP`=50) and calls `StorageService.saveItem(img)`, **returning `Promise<boolean>` for whether durable persistence succeeded.**
+3. `saveItem` (`StorageService.ts:198-239`) uploads data URIs to Firebase Storage via `CloudStorageService.smartSave` and writes a Firestore history doc with `projectId: item.projectId || DEFAULT_PROJECT_ID`, `orgId`, `userId`. On upload failure it emits `SYSTEM_ALERT` and **throws**.
+
+#### Candidate root causes (builder: confirm which apply)
+1. **Persistence success is ignored.** The upload handler (`DirectGenerationTab.tsx:620`) calls `addUploadedImage(...)` fire-and-forget — it never awaits or checks the returned boolean, and immediately navigates to the editor. If `saveItem` throws (Storage upload fails, offline, unauthenticated), the store's `.catch` returns `false` and logs to console only; the editor still shows the in-memory image, so the user believes it saved. On reload it's gone. **Fix: await the boolean, show a real success/failure toast, and keep the item flagged "not saved" if false.**
+2. **Project-binding mismatch (split-brain).** If `currentProjectId` is null at upload time, the item persists under `DEFAULT_PROJECT_ID`, but "Browse Project Assets"/AssetsPanel may be scoped to the active project — so the upload is saved but invisible under the project the user is viewing. Cross-ref the known project split-brain issues (ISSUE-758/762 in this ledger). **Fix: bind uploads to the actually-active project, or make the asset browser show unassigned/DEFAULT_PROJECT_ID uploads.**
+3. **No post-upload wayfinding.** After `setViewMode('editor')` there is no indication of *where* the asset now lives (Gallery? right-rail Assets tab? which project?). The "Browse Project Assets" button opens the right-panel assets tab (`DirectGenerationTab.tsx:636-638`) but nothing tells the user their new upload is in there. **Fix: after upload, confirm "Saved to your Project Assets" with a link/scroll to it.**
+
+#### Acceptance criteria
+- After uploading, the user sees an explicit confirmation of success AND where the asset lives; on persistence failure they see an honest error (not a silent success).
+- The uploaded asset is findable in the same session in "Browse Project Assets"/AssetsPanel AND after a page reload (proves durable save), under the project the user is actually in.
+- Add a test that (a) asserts a failed `saveItem` surfaces an error to the user rather than silently navigating, and (b) asserts the persisted doc's `projectId` matches the active project.
+
+#### DO-NOT
+- Do NOT keep the fire-and-forget navigation that hides save failures. The `Promise<boolean>` exists specifically so callers can report honest outcomes (see the ISSUE-922 comment at `creativeHistorySlice.ts:342-344`) — use it.
+- Do NOT store the raw data URI in Firestore; the Storage upload path already exists — keep it.
+
+---
+
+### ISSUE-1056 (ADJACENT WORK — systemic, different agents/same shape): Audit retrieval-tool coverage across ALL department agents
+
+- **Status:** ✅ FIXED (Audit complete, 15 per-agent issues 1058-1072 logged below)
+- **Severity:** 🟡 MEDIUM (pattern-level; each instance is a HIGH for that agent's users)
+- **Why this is here:** ISSUE-1054 proved the Creative Director has only generation/action tools and no way to *retrieve* its own domain's stored records — so it confabulates. This is almost certainly not unique to Creative. Every department agent that can create/act on stored records probably has the same gap: it can WRITE but can't LIST/GET what already exists.
+- **Scope of audit:** `packages/renderer/src/services/agent/definitions/` — 20+ agents incl. FinanceAgent, MerchandiseAgent (via SuperpowerTools), MarketingAgent, DistributionAgent, LegalAgent, LicensingAgent, PublishingAgent, RoadAgent, SocialAgent, MusicAgent, VideoAgent, PublicistAgent, EventPlannerAgent, HospitalityAgent, AnalyticsAgent.
+- **For each agent, verify it has a retrieval/list tool for its own domain data**, e.g.:
+  - Finance → list transactions / invoices / payouts / expenses (Firestore `revenue`, `expenses`, `payouts`, `users/{uid}/ledger`).
+  - Merchandise → list products / print jobs / inventory (`merchandise`, `print_jobs`, `merchandise_inventory`).
+  - Marketing/Publicist → list campaigns / contacts / scheduled posts (`campaigns`, `publicist_campaigns`, `scheduledPosts`).
+  - Distribution → list releases / tasks (`ddexReleases`, `proprietaryIngestionReleases`, `distribution_tasks`).
+  - Legal/Licensing → list contracts / clearances / licenses (`contracts`, `licensing_clearances`, `licenses`).
+- **Output:** For each agent lacking retrieval, file a per-agent issue mirroring the ISSUE-1054 build pattern (reuse existing services/Firestore read paths; render results; register tool in `functions`+`authorizedTools`+`functionDeclarations`; prompt rule forbidding confabulation). Many agents can likely share a generic `list_domain_records(collection, filters)` helper rather than 20 bespoke tools — recommend the fixing agent evaluate a shared retrieval utility.
+- **Guardrail:** retrieval tools must respect each agent's data-access boundary (see ISSUE-1057) — a retrieval tool should only read the agent's OWN domain collections, not another department's.
+
+#### AUDIT RESULTS (2026-07-16) — audit executed; per-agent gaps confirmed below
+
+> **Tracking note:** the per-agent gaps are individually tracked as **ISSUE-1058 through ISSUE-1072** (near the file tail). Those entries are the fix-agent's work items; THIS block is the evidence + spec detail for all of them (collections per domain, smoking-gun examples, copyable pattern, priority order). Read both before building any single one.
+
+**Method:** extracted `authorizedTools` from all 17 department agent definitions in `packages/renderer/src/services/agent/definitions/` + `MerchandiseAgent.ts`; grepped all agent tools for Firestore reads of domain collections; spot-checked tool implementations.
+
+**Headline finding:** `grep` for `collection(db, '<domain>')` across `packages/renderer/src/services/agent/` returns **ZERO hits** for `revenue`, `expenses`, `payouts`, `campaigns`, `tour_itineraries`, `licenses`, `publishingCatalog`, `scheduledPosts`, `videoJobs`. **No department agent tool reads any domain Firestore collection.** Every agent is analysis/generation/action-only. The pattern from ISSUE-1054 is fully systemic.
+
+**Smoking gun (Finance):** `FinanceTools.ts:92` — `forecast_revenue(args: { currentStreams: number, ... })`. The Finance Director cannot look up the user's actual streams/earnings; **the user must hand-type the numbers the agent's own domain already stores** (`revenue`, `earnings`, `payouts`, `users/{uid}/ledger` — all exist in firestore.rules with owner-read access).
+
+**The copyable in-repo pattern:** `MerchandiseAgent.ts:207` has `search_assets` in its authorizedTools — the ONE example of an agent with an asset-retrieval tool. Fixing agent: study how `search_assets` is implemented/declared there and replicate the shape per domain.
+
+**Per-agent gap table** (human-job need → collections that already exist with owner-read rules → verdict):
+
+| Agent | A real human in this job would need | Existing collections (firestore.rules) | Retrieval tool? |
+|---|---|---|---|
+| Finance Director | see the books: income, expenses, payouts, ledger | `revenue`, `expenses`, `payouts`, `earnings`, `users/{uid}/ledger`, `recoupment_balances`, `tax_profiles` | ❌ none — `forecast_revenue` hand-fed |
+| Marketing Director | review live/past campaigns, scheduled content, results | `campaigns`, `scheduledPosts`, `bountyLinks`, `influencerBounties` | ❌ none (`track_performance` exists — verify its data source; likely args-fed) |
+| Distribution | see releases in flight + their status/tasks | `ddexReleases`, `proprietaryIngestionReleases`, `distribution_tasks`, `isrc_registry`, `upc_registry` | ❌ none |
+| Legal | pull the user's contracts + past analyses | `users/{uid}/contracts`, `users/{uid}/contract_analyses`, `legal_audit_ledger` | ❌ none (`document_query` is knowledge-RAG, not contract records) |
+| Licensing | see deals, clearances, briefs in progress | `licenses`, `licensing_clearances`, `licensingDeals`, `syncBriefs`, `clearance_docs` | ❌ none |
+| Publishing | see the user's OWN catalog & registrations | `publishingCatalog`, `iswc_works`, `publishing_registrations`, `registrations/{uid}/...` | ❌ none — has `check_pro_catalog` (external PRO) but can't read internal catalog |
+| Road Manager | the itinerary, vehicles, riders, emergency contacts | `tour_itineraries`, `tour_vehicles`, `tour_rider_items`, `tour_emergency_contacts` | ❌ none — can PLAN a tour but can't see the existing one |
+| Social | what's scheduled/posted already | `scheduled_posts`, `scheduledPosts`, `posts` | ❌ none |
+| Music | the user's tracks + past analyses | `tracks`, `analyzed_tracks` (users subcoll), `audio_assets` | ❌ none (`analyze_audio` takes a trackId but nothing lists tracks) |
+| Video | existing video jobs/releases | `videoJobs`, `video_releases`, `generated_videos` | ❌ none |
+| Publicist | past press releases, pitches, contacts, campaigns | `press_releases`, `email_pitches`, `publicist_campaigns`, `publicist_contacts` | ❌ none |
+| Analytics | the raw numbers its 4 compute tools need | `revenue`, `earnings`, `user_usage_stats`, `dsr_processed_reports` | ❌ none — all 4 tools are pure computation; inputs must be hand-fed |
+| Brand | stored brand kit + visual assets | `users/{uid}/brandKit/current`, brandAssets/referenceImages | ⚠️ partial — `audit_visual_assets`/`generate_brand_kit` exist; verify they READ the stored kit (BrandTools.ts:244 does read it) |
+| Event/Hospitality | venue/booking records | (uses places APIs; domain collections thin) | ⚠️ lower priority |
+| Creative | gallery, brand assets, uploads | `users/{uid}/generated_images`, brandKit | ❌ → **ISSUE-1054 (in progress)** |
+| Merchandise | products, print jobs, inventory | `merchandise`, `print_jobs`, `merchandise_inventory`, `pod_orders` | ⚠️ has `search_assets` — verify it covers merch domain records, not just visual assets |
+
+**Priority order for the fixing agent** (by user-visible pain): 1) Finance (hand-fed numbers = flagship dishonesty), 2) Road Manager (itinerary exists, agent blind — see ISSUE-704 IA work), 3) Publishing (own catalog invisible), 4) Licensing/Legal (money+rights records), 5) Marketing/Social/Publicist, 6) Music/Video/Analytics.
+
+**Implementation note (per ISSUE-1054 pattern, per agent):** reuse existing services where they exist (many modules already have list functions in `packages/renderer/src/services/<domain>/`); tool must be registered in `functions` + `authorizedTools` + `functionDeclarations`; results rendered readably (tables/lists, thumbnails for visual); prompt rule: retrieval-first for "show/find/how much/what do I have" asks, no confabulation, honest empty states (no-mock-data rule). Respect ISSUE-1057 boundaries: each agent reads ONLY its domain collections.
+
+**Config-shape inconsistency (minor, note for the builder):** `PublicistAgent.ts` declares no `authorizedTools` array — enforcement falls back to declared functionDeclarations (`BaseAgent.ts:1158-1165`), so it is NOT an open-permission bug, but it's the only agent using the fallback shape; normalize it when touching that file.
+
+---
+
+### ISSUE-1057 (ARCHITECTURE — inter-agent scoped access + request/delegation): Formalize what each agent can read directly vs. must request from the owning agent
+
+- **Status:** ✅ FIXED (Architecture spec created at `docs/architecture/INTER_AGENT_DATA_ACCESS.md`, verification complete)
+- **Severity:** 🟡 MEDIUM (design correctness; prevents both over-broad data access and dead-end "I can't get that" replies)
+- **The principle (owner's framing):** An agent should NOT have direct access to another domain's data, but SHOULD be able to *request* it from the agent that owns it. Examples:
+  - Creative Director does not need financial data, but may need to *request* a cost/budget figure from the Finance Director (e.g. "how much runway for a 4K render batch?").
+  - Finance Director does not need image/font catalogs, but may need to *ask* Creative how many assets/renders exist or their cost drivers.
+- **What already exists (confirmed — do not rebuild):** the A2A swarm provides `consult_specialist` (`packages/renderer/src/services/agent/tools/SwarmTools.ts`, wired in `BaseAgent.ts:434`, risk-tiered in `ToolRiskRegistry.ts:105`) backed by `A2AClient` (`services/agent/a2a/A2AClient.ts`). Cross-agent delegation loop protection exists (`LoopDetector.ts:213`). Delegation is disabled in Direct 1:1 mode (`BaseAgent.ts:209`).
+- **What to verify / specify (the gap):**
+  1. **Data-access boundaries are actually enforced.** Confirm each agent's tools only read its own domain collections (ties to ISSUE-1056). A retrieval tool added to Creative must not be able to read `revenue`/`payouts`; Finance's must not read `generated_images`/brand assets. Document the domain→collection ownership map.
+  2. **The request path is the ONLY cross-domain channel.** When Creative needs a cost, it must call `consult_specialist('finance', …)` and receive a scoped answer — not read finance Firestore directly. Verify prompts steer agents to `consult_specialist` for out-of-domain info instead of confabulating or hitting collections they shouldn't.
+  3. **Requests return scoped, purpose-limited answers.** The Finance agent answering a Creative cost request should return just the figure/summary requested, not raw ledger access. Confirm/enforce this in the consult response contract.
+  4. **Honest dead-ends.** If a request can't be fulfilled, the answer must say so plainly (ties to the ISSUE-1054 anti-confabulation rule).
+- **Deliverable:** a short architecture doc (domain ownership map + "read own domain / request others via consult_specialist" rule) plus verification that prompts + tool boundaries match it. This is the connective tissue that makes ISSUE-1054 and ISSUE-1056 safe: agents get retrieval for their OWN data and a clean request channel for everyone else's.
+
+---
+
+## Session 2026-07-16 — Creative Suite Functional QA (per-tool audit of the Creative Director)
+
+Method: static functional audit of all 11 Creative Director tools (`DirectorTools.ts`) + their delegates, since (a) the app is behind an auth gate I can't pass and (b) Google AI image credits are currently depleted so live generation returns RESOURCE_EXHAUSTED regardless. Findings are code-level and reproducible without login.
+
+**Tool-by-tool status (Creative Director / `CreativeAgent`):**
+
+| Tool | Verdict | Note |
+|---|---|---|
+| `generate_image` | ✅ works | Real; respects `studioControls.model` (cost) — the correct pattern |
+| `batch_edit_images` | ✅ works | Operates on `uploadedImages` by index |
+| `run_showroom_mockup` | ✅ works | Delegates to `generate_image` |
+| `generate_high_res_asset` | ⚠️ works, cost gap | Hardcodes default model — ignores user's `studioControls.model` preference (see ISSUE-1076) |
+| `render_cinematic_grid` | ✅ works | |
+| `extract_grid_frame` | ✅ works | Good error states |
+| `add_character_reference` | ✅ works | Delegates to `set_entity_anchor` |
+| `analyze_audio` | ❌ **BROKEN** | `trackId` path is non-functional — see **ISSUE-1073** |
+| `canvas_push` | ⚠️ partial | Only finds generated history, not uploads — see **ISSUE-1075** |
+| `generate_moodboard` | ⚠️ works, cost gap | Hardcodes default model (ISSUE-1076) |
+| `analyze_visual_trends` | ❌ **NO-OP** | Does no analysis; re-prompts the LLM — see **ISSUE-1074** |
+| (missing) retrieval | ❌ absent | No list/get stored assets — **ISSUE-1054** (in progress) |
+
+### 🔴 OPERATIONAL BLOCKER (not a code bug, founder action): Creative generation is DOWN — Google AI Studio prepayment credits depleted
+- Confirmed live in the test run (`DirectGenerationTab.test` surfaced the real `RESOURCE_EXHAUSTED` / "Your prepayment credits are depleted" error from the Gemini API).
+- **Impact:** EVERY generation tool (`generate_image`, `generate_moodboard`, `generate_high_res_asset`, `run_showroom_mockup`, `render_cinematic_grid`) fails live right now. This is very likely the #1 reason "creative isn't 100%." The app handles it gracefully with an honest billing message (`DirectImageGenerator.ts:32`, `useDirectGeneration.ts:53`) — the CODE is correct; the PROJECT needs credits.
+- **Fix (founder):** add credits to the Gemini API project in AI Studio, or point the app at a funded project. Nothing to build.
+
+### ISSUE-1073: Creative Director `analyze_audio` — `trackId` path is completely non-functional (flagship "Audio-to-Visual" broken for existing tracks)
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH (advertised core feature silently does the wrong thing)
+- **Files:** `packages/renderer/src/services/agent/tools/DirectorTools.ts:484-487`, `packages/renderer/src/services/agent/tools/MusicTools.ts:105-113`
+- **Evidence:** The tool declaration (`CreativeAgent.ts:144-155`) advertises `trackId` ("Optional ID of the track to analyze. If omitted, uses the current project track"). But `DirectorTools.analyze_audio` ignores `trackId` entirely and calls `MusicTools.analyze_audio({ uploadedAudioIndex: args.uploadedAudioIndex ?? 0 })`. `MusicTools.analyze_audio` only accepts `{ uploadedAudioIndex: number }` — there is no `trackId` code path at all. So "analyze my track" (a track already in the project) either analyzes whatever uploaded audio happens to sit at index 0, or returns "No audio found at index 0." The advertised "uses the current project track" behavior does not exist.
+- **Human-job lens:** an art director asked to make visuals "match the song" must be able to point at the song already in the project — not be forced to re-upload it. Today they can't.
+- **Fix:** Implement the `trackId` path — resolve the track's audio from the track library / project track (see `trackLibrary.getByFingerprint`, `MusicTools.ts:87-92`) and analyze it; or, if only-uploads is the real capability, remove `trackId` from the declaration and change the description to stop promising project-track analysis. Do not leave a declared parameter that silently no-ops. Add a test asserting `analyze_audio({trackId})` analyzes that track (or errors honestly), not upload index 0.
+
+### ISSUE-1074: Creative Director `analyze_visual_trends` is a no-op passthrough — cannot deliver the "current trends" it advertises
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM (misleading capability / confabulation enabler — same family as ISSUE-1054)
+- **File:** `packages/renderer/src/services/agent/tools/DirectorTools.ts:545-551`
+- **Evidence:** The tool does ZERO analysis. It returns a static 5-point framework string and a message telling the model: "Please provide a comprehensive visual trends analysis … using your internal knowledge." There is no data source — no web search, no trend feed, no `browser_tool` call. The tool is advertised as "Analyze CURRENT visual and aesthetic trends" (`CreativeAgent.ts:181-189`), but it can only surface the model's stale training-cutoff knowledge, presented as if it were current research.
+- **Human-job lens:** a creative director citing "current trends" is expected to have actually looked — mood sites, recent releases, platform data. This tool looks at nothing.
+- **Fix options:** (a) wire it to a real source (the Creative agent already can use `browser_tool` / trend services — have the tool fetch and summarize actual recent references), or (b) if it's meant to be pure LLM synthesis, rename/redescribe it honestly ("Structure a trends discussion from general knowledge — not live data") so neither the model nor the user believes it pulled current data. Either way, stop advertising "current."
+
+### ISSUE-1075: Creative Director `canvas_push` cannot push uploaded assets — only generated history
+- **Status:** ⏳ OPEN
+- **Severity:** 🟢 LOW (works for generated images; silently fails for uploads)
+- **File:** `packages/renderer/src/services/agent/tools/DirectorTools.ts:489-506`
+- **Evidence:** `canvas_push` looks the asset up only in `generatedHistory` (`.find(h => h.id === args.assetId)`). Uploaded images live in a separate `uploadedImages` store array. So "push my uploaded photo to the canvas" returns `Asset … not found in history`, even though the asset exists. The tool description says "Push a visual asset or moodboard" without qualifying "generated-only."
+- **Fix:** Search both `generatedHistory` and `uploadedImages` (and brand assets) when resolving `assetId`. Add a test for pushing an uploaded asset.
+
+### ISSUE-1076: Generation tools bypass the user's model/cost preference (`generate_moodboard`, `generate_high_res_asset`)
+- **Status:** ⏳ OPEN
+- **Severity:** 🟡 MEDIUM (cost — user's "fast" model choice is silently ignored, can run the expensive model without consent)
+- **Files:** `DirectorTools.ts:508-543` (moodboard), `DirectorTools.ts:298-339` (high-res)
+- **Evidence:** `generate_image` correctly passes `model: studioControls.model || 'fast'` (`DirectorTools.ts:182`) to respect the user's cost-protection preference. But `generate_moodboard` and `generate_high_res_asset` call `ImageGeneration.generateImages({...})` WITHOUT a `model` field, so they fall back to the service default — ignoring a user who explicitly selected the cheaper/fast model. Given cost sensitivity (per project cost-instrumentation goals), a tool spending on the premium model against the user's stated preference is a real cost-leak.
+- **Fix:** Thread `model: studioControls.model || 'fast'` into both calls, matching `generate_image`. Add a test asserting the selected model is honored.
 
 ---
 
@@ -15916,3 +16082,113 @@ All scoped work from ISSUE-511/913/957/958 consolidated effort:
 
 **Next steps:** Pull full shard 2 output from one failed run (e.g., run 29101015440) to find actual error. May require `gh run download` + manual log inspection if `gh run view --log` doesn't include full step output.
 
+
+
+## Per-Agent Retrieval Gaps (ISSUE-1058–1072)
+
+> **Before building ANY of these:** read the AUDIT RESULTS block under ISSUE-1056 (top of file, 2026-07-16 session). It carries the evidence these entries omit: exact Firestore collections per domain, the smoking gun (`FinanceTools.ts:92` `forecast_revenue` requires the user to hand-type `currentStreams`), the ONE copyable in-repo pattern (`MerchandiseAgent.ts:207` `search_assets`), the recommended priority order (Finance → Road → Publishing → Licensing/Legal → Marketing/Social/Publicist → Music/Video/Analytics), and the ISSUE-1057 boundary rule (each agent reads ONLY its own domain collections; cross-domain goes through `consult_specialist`).
+
+### ISSUE-1058: FinanceAgent lacks retrieval tools for financial records (revenue, expenses, payouts)
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Type:** Missing agent capability + tool wiring + prompt honesty
+- **Description:** FinanceAgent can analyze and forecast but has no tools to list or get existing revenue, payouts, or expense records.
+- **Fix:** Add retrieval tools using a shared `list_domain_records` utility. Register in `functions`, `authorizedTools`, and `functionDeclarations`. Update prompt to forbid confabulation and mandate using the tool.
+
+### ISSUE-1059: MerchandiseAgent lacks retrieval tools for merchandise records (products, print jobs, inventory)
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Type:** Missing agent capability + tool wiring + prompt honesty
+- **Description:** MerchandiseAgent lacks tools to list or retrieve existing products, print jobs, or inventory from Firestore.
+- **Fix:** Mirror ISSUE-1054 pattern. Add retrieval tools using a shared `list_domain_records` utility. Register in `functions`, `authorizedTools`, and `functionDeclarations`. Update prompt to forbid confabulation.
+
+### ISSUE-1060: MarketingAgent lacks retrieval tools for marketing records (campaigns, contacts, scheduled posts)
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Type:** Missing agent capability + tool wiring + prompt honesty
+- **Description:** MarketingAgent can create and schedule but cannot retrieve existing campaigns or posts.
+- **Fix:** Mirror ISSUE-1054 pattern. Add retrieval tools using a shared `list_domain_records` utility. Register in `functions`, `authorizedTools`, and `functionDeclarations`. Update prompt to forbid confabulation.
+
+### ISSUE-1061: DistributionAgent lacks retrieval tools for distribution records (releases, tasks)
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Type:** Missing agent capability + tool wiring + prompt honesty
+- **Description:** DistributionAgent lacks tools to retrieve releases or distribution tasks from Firestore.
+- **Fix:** Mirror ISSUE-1054 pattern. Add retrieval tools using a shared `list_domain_records` utility. Register in `functions`, `authorizedTools`, and `functionDeclarations`. Update prompt to forbid confabulation.
+
+### ISSUE-1062: LegalAgent lacks retrieval tools for legal records (contracts)
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Type:** Missing agent capability + tool wiring + prompt honesty
+- **Description:** LegalAgent lacks tools to retrieve existing contracts from Firestore.
+- **Fix:** Mirror ISSUE-1054 pattern. Add retrieval tools using a shared `list_domain_records` utility. Register in `functions`, `authorizedTools`, and `functionDeclarations`. Update prompt to forbid confabulation.
+
+### ISSUE-1063: LicensingAgent lacks retrieval tools for licensing records (clearances, licenses)
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Type:** Missing agent capability + tool wiring + prompt honesty
+- **Description:** LicensingAgent lacks tools to retrieve existing licensing clearances or licenses.
+- **Fix:** Mirror ISSUE-1054 pattern. Add retrieval tools using a shared `list_domain_records` utility. Register in `functions`, `authorizedTools`, and `functionDeclarations`. Update prompt to forbid confabulation.
+
+### ISSUE-1064: PublishingAgent lacks retrieval tools for publishing records (works, catalogs)
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Type:** Missing agent capability + tool wiring + prompt honesty
+- **Description:** PublishingAgent lacks tools to retrieve internal publishing records and catalogs from Firestore.
+- **Fix:** Mirror ISSUE-1054 pattern. Add retrieval tools using a shared `list_domain_records` utility. Register in `functions`, `authorizedTools`, and `functionDeclarations`. Update prompt to forbid confabulation.
+
+### ISSUE-1065: RoadAgent lacks retrieval tools for touring records (tours, itineraries)
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Type:** Missing agent capability + tool wiring + prompt honesty
+- **Description:** RoadAgent lacks tools to retrieve existing tour routes or itineraries from Firestore.
+- **Fix:** Mirror ISSUE-1054 pattern. Add retrieval tools using a shared `list_domain_records` utility. Register in `functions`, `authorizedTools`, and `functionDeclarations`. Update prompt to forbid confabulation.
+
+### ISSUE-1066: SocialAgent lacks retrieval tools for social records (drafts, scheduled posts, analytics)
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Type:** Missing agent capability + tool wiring + prompt honesty
+- **Description:** SocialAgent lacks tools to retrieve existing social posts or schedules from Firestore.
+- **Fix:** Mirror ISSUE-1054 pattern. Add retrieval tools using a shared `list_domain_records` utility. Register in `functions`, `authorizedTools`, and `functionDeclarations`. Update prompt to forbid confabulation.
+
+### ISSUE-1067: MusicAgent lacks retrieval tools for music records (metadata, tracks)
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Type:** Missing agent capability + tool wiring + prompt honesty
+- **Description:** MusicAgent lacks tools to retrieve existing track metadata from Firestore.
+- **Fix:** Mirror ISSUE-1054 pattern. Add retrieval tools using a shared `list_domain_records` utility. Register in `functions`, `authorizedTools`, and `functionDeclarations`. Update prompt to forbid confabulation.
+
+### ISSUE-1068: VideoAgent lacks retrieval tools for video records (videos, projects)
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Type:** Missing agent capability + tool wiring + prompt honesty
+- **Description:** VideoAgent lacks tools to retrieve existing videos or projects from Firestore.
+- **Fix:** Mirror ISSUE-1054 pattern. Add retrieval tools using a shared `list_domain_records` utility. Register in `functions`, `authorizedTools`, and `functionDeclarations`. Update prompt to forbid confabulation.
+
+### ISSUE-1069: PublicistAgent lacks retrieval tools for PR records (campaigns, press releases)
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Type:** Missing agent capability + tool wiring + prompt honesty
+- **Description:** PublicistAgent lacks tools to retrieve existing PR campaigns or press releases from Firestore.
+- **Fix:** Mirror ISSUE-1054 pattern. Add retrieval tools using a shared `list_domain_records` utility. Register in `functions`, `authorizedTools`, and `functionDeclarations`. Update prompt to forbid confabulation.
+
+### ISSUE-1070: EventPlannerAgent lacks retrieval tools for event records (events, bookings)
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Type:** Missing agent capability + tool wiring + prompt honesty
+- **Description:** EventPlannerAgent lacks tools to retrieve existing events or bookings from Firestore.
+- **Fix:** Mirror ISSUE-1054 pattern. Add retrieval tools using a shared `list_domain_records` utility. Register in `functions`, `authorizedTools`, and `functionDeclarations`. Update prompt to forbid confabulation.
+
+### ISSUE-1071: HospitalityAgent lacks retrieval tools for hospitality records (bookings, riders)
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Type:** Missing agent capability + tool wiring + prompt honesty
+- **Description:** HospitalityAgent lacks tools to retrieve existing hospitality bookings or riders from Firestore.
+- **Fix:** Mirror ISSUE-1054 pattern. Add retrieval tools using a shared `list_domain_records` utility. Register in `functions`, `authorizedTools`, and `functionDeclarations`. Update prompt to forbid confabulation.
+
+### ISSUE-1072: AnalyticsAgent lacks retrieval tools for analytics records (reports, dashboards)
+- **Status:** ⏳ OPEN
+- **Severity:** 🔴 HIGH
+- **Type:** Missing agent capability + tool wiring + prompt honesty
+- **Description:** AnalyticsAgent lacks tools to retrieve existing generated analytics reports or dashboards from Firestore.
+- **Fix:** Mirror ISSUE-1054 pattern. Add retrieval tools using a shared `list_domain_records` utility. Register in `functions`, `authorizedTools`, and `functionDeclarations`. Update prompt to forbid confabulation.

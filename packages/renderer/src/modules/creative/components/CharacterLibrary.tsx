@@ -129,7 +129,12 @@ export const CharacterLibrary: React.FC = () => {
             projectId: currentProjectId || DEFAULT_PROJECT_ID
         };
 
-        addUploadedImage(newItem);
+        const success = await addUploadedImage(newItem);
+        if (!success) {
+            toast.error("Failed to save character reference to cloud library.");
+            return false;
+        }
+
         addCharacterReference({ image: newItem, referenceType: 'subject', name: `Character ${currentRefCount + 1}` });
         setDimensions(prev => ({ ...prev, [newItem.id]: dims }));
         toast.success(`Character reference added (${dims.width}×${dims.height}).`);
@@ -178,7 +183,12 @@ export const CharacterLibrary: React.FC = () => {
             projectId: currentProjectId || DEFAULT_PROJECT_ID
         };
 
-        addUploadedImage(newItem);
+        const success = await addUploadedImage(newItem);
+        if (!success) {
+            toast.error("Failed to save character reference to cloud library.");
+            return;
+        }
+
         addCharacterReference({ image: newItem, referenceType: 'subject', name: `Character ${characterReferences.length + 1}` });
         setDimensions(prev => ({ ...prev, [newItem.id]: dims }));
         setShowAddOptions(false);
@@ -206,7 +216,12 @@ export const CharacterLibrary: React.FC = () => {
             projectId: currentProjectId || DEFAULT_PROJECT_ID
         };
 
-        addUploadedImage(newItem);
+        const success = await addUploadedImage(newItem);
+        if (!success) {
+            toast.error("Failed to save character reference to cloud library.");
+            return;
+        }
+        
         addCharacterReference({ image: newItem, referenceType: 'subject', name: asset.description || `Character ${characterReferences.length + 1}` });
         setDimensions(prev => ({ ...prev, [newItem.id]: dims }));
         setShowAddOptions(false);

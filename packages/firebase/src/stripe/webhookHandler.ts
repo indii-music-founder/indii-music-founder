@@ -33,6 +33,11 @@ function verifyStripeWebhook(
  * Handle checkout.session.completed event
  */
 async function handleMicroTransactionCheckoutCompleted(session: Stripe.Checkout.Session): Promise<void> {
+  if (session.payment_status !== 'paid') {
+    logger.info(`[handleMicroTransaction] Session ${session.id} not paid yet (${session.payment_status})`);
+    return;
+  }
+
   const userId = session.metadata?.userId;
   const credits = parseInt(session.metadata?.credits || '0', 10);
   
@@ -67,6 +72,11 @@ async function handleMicroTransactionCheckoutCompleted(session: Stripe.Checkout.
 }
 
 async function handleLicensingCheckoutCompleted(session: Stripe.Checkout.Session): Promise<void> {
+  if (session.payment_status !== 'paid') {
+    logger.info(`[handleLicensingCheckoutCompleted] Session ${session.id} not paid yet (${session.payment_status})`);
+    return;
+  }
+
   const userId = session.metadata?.userId;
   const connectedAccountId = session.metadata?.connectedAccountId;
   const artistAmountStr = session.metadata?.artistAmount;
@@ -91,6 +101,8 @@ async function handleLicensingCheckoutCompleted(session: Stripe.Checkout.Session
       currency: 'usd',
       destination: connectedAccountId,
       description: `indii Sync License payout - Session: ${session.id}`,
+    }, {
+      idempotencyKey: `transfer_${session.id}`,
     });
     logger.info(`[handleLicensingCheckoutCompleted] Transferred ${artistAmount} cents to connected account ${connectedAccountId}, transferId: ${transfer.id}`);
   } catch (err: any) {
@@ -177,6 +189,11 @@ async function handleFounderSeatCheckoutCompleted(session: Stripe.Checkout.Sessi
  * time, which is what prevents oversell).
  */
 async function handleMarketplacePurchaseCompleted(session: Stripe.Checkout.Session): Promise<void> {
+  if (session.payment_status !== 'paid') {
+    logger.info(`[handleMarketplacePurchaseCompleted] Session ${session.id} not paid yet (${session.payment_status})`);
+    return;
+  }
+
   const reservationId = session.metadata?.reservationId;
   if (!reservationId) {
     logger.error('[handleMarketplacePurchaseCompleted] Missing reservationId metadata', { sessionId: session.id });
@@ -585,9 +602,11 @@ export const stripeWebhook = onRequest({
   try {
     switch (event.type) {
       case 'checkout.session.completed':
+      case 'checkout.session.async_payment_succeeded':
         await handleCheckoutCompleted(event);
         break;
       case 'checkout.session.expired':
+      case 'checkout.session.async_payment_failed':
         await handleMarketplaceCheckoutExpired(event.data.object as Stripe.Checkout.Session);
         break;
       case 'customer.subscription.created':

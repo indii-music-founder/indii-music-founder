@@ -605,7 +605,7 @@ export default function DirectGenerationTab() {
                                                 const dataUrl = event.target?.result as string;
                                                 const newId = `upload_${Date.now()}`;
                                                 const { useStore } = await import('@/core/store');
-                                                const { addUploadedImage, currentProjectId, setSelectedItem, setViewMode } = useStore.getState();
+                                                const { addUploadedImage, currentProjectId, setSelectedItem, setViewMode, setRightPanelTab } = useStore.getState();
                                                 
                                                 const uploadedItem = {
                                                     id: newId,
@@ -617,9 +617,19 @@ export default function DirectGenerationTab() {
                                                     origin: 'uploaded' as const
                                                 };
                                                 
-                                                addUploadedImage(uploadedItem);
+                                                // ISSUE-1055: Optimistically update local UI state before network request
+                                                // so timeouts don't block the user from editing the image immediately.
+                                                setRightPanelTab('assets');
                                                 setSelectedItem(uploadedItem);
                                                 setViewMode('editor');
+
+                                                addUploadedImage(uploadedItem).then((success) => {
+                                                    if (success) {
+                                                        toast.success('Photo saved to Project Assets');
+                                                    } else {
+                                                        toast.error('Photo available locally but failed to backup to cloud');
+                                                    }
+                                                });
                                             };
                                             reader.readAsDataURL(file);
                                         }

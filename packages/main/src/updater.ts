@@ -1,3 +1,4 @@
+import { validateSender } from './utils/ipc-security';
 /**
  * Electron Auto-Updater
  *
@@ -203,7 +204,8 @@ export function registerUpdaterHandlers(): void {
     handlersRegistered = true;
 
     // IPC handlers for renderer control - registered unconditionally
-    ipcMain.handle('updater:check', async () => {
+    ipcMain.handle('updater:check', async (event) => {
+        validateSender(event);
         if (!autoUpdater) return { available: false };
         try {
             const result = await autoUpdater.checkForUpdates();
@@ -214,14 +216,16 @@ export function registerUpdaterHandlers(): void {
         }
     });
 
-    ipcMain.handle('updater:install', () => {
+    ipcMain.handle('updater:install', (event) => {
+        validateSender(event);
         if (autoUpdater) {
             autoUpdater.quitAndInstall(false, true);
         }
     });
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ipcMain.handle('updater:set-channel', (_event: any, channel: 'stable' | 'beta') => {
+    ipcMain.handle('updater:set-channel', (event: any, channel: 'stable' | 'beta') => {
+        validateSender(event);
         if (autoUpdater) {
             store.set('updater-channel', channel);
             const currentSource = store.get('updater-source', 'firebase') as 'github' | 'firebase';
@@ -231,7 +235,8 @@ export function registerUpdaterHandlers(): void {
     });
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ipcMain.handle('updater:set-source', (_event: any, source: 'github' | 'firebase') => {
+    ipcMain.handle('updater:set-source', (event: any, source: 'github' | 'firebase') => {
+        validateSender(event);
         if (autoUpdater) {
             store.set('updater-source', source);
             const currentChannel = store.get('updater-channel', 'stable') as 'stable' | 'beta';
@@ -240,7 +245,8 @@ export function registerUpdaterHandlers(): void {
         }
     });
 
-    ipcMain.handle('updater:get-config', () => {
+    ipcMain.handle('updater:get-config', (event) => {
+        validateSender(event);
         const currentChannel = store.get('updater-channel', 'stable') as 'stable' | 'beta';
         const currentSource = store.get('updater-source', 'firebase') as 'github' | 'firebase';
         return {

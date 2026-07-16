@@ -9,10 +9,15 @@ const __dirname = path.dirname(__filename);
 // Load environment variables
 dotenv.config({ path: path.join(__dirname, '../.env') });
 
-const firebaseApiKey = process.env.VITE_FIREBASE_API_KEY || 'AIzaSyD4VdBp0id8y5o-YRSvpla2lrp2RTtx6XU';
-const projectId = process.env.VITE_FIREBASE_PROJECT_ID || 'indii-music-founder';
+const firebaseApiKey = process.env.VITE_FIREBASE_API_KEY;
+const projectId = process.env.VITE_FIREBASE_PROJECT_ID;
 const functionsRegion = process.env.VITE_FUNCTIONS_REGION || 'us-central1';
 const functionsBaseUrl = process.env.VITE_FUNCTIONS_URL || `https://${functionsRegion}-${projectId}.cloudfunctions.net`;
+
+if (!firebaseApiKey || !projectId) {
+    console.error('❌ Missing required Firebase environment variables (VITE_FIREBASE_API_KEY or VITE_FIREBASE_PROJECT_ID).');
+    process.exit(1);
+}
 
 console.log('==================================================');
 console.log('   Starting Backend REST API Verification Suite   ');

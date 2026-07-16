@@ -2,40 +2,126 @@ import { StorageService } from '@/services/StorageService';
 import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 import { importWithRetry } from '@/utils/dynamicImport';
+import { useStore } from '@/core/store';
 
 export const StorageTools = {
-    list_files: wrapTool('list_files', async (args: { limit?: number, type?: string }) => {
+    list_files: wrapTool('list_files', async (args: { source?: 'gallery' | 'brand_assets' | 'reference_images' | 'uploads' | 'all', limit?: number, type?: string }) => {
         const count = args.limit || 20;
-        const items = await StorageService.loadHistory(count);
+        const source = args.source || 'gallery';
+        const state = useStore.getState();
 
-        let filtered = items;
-        if (args.type) {
-            filtered = items.filter(item => item.type === args.type);
+        let allItems: any[] = [];
+
+        if (source === 'gallery' || source === 'all') {
+            const galleryItems = await StorageService.loadHistory(count);
+            allItems = allItems.concat(galleryItems.map(item => ({ ...item, _source: 'gallery' })));
+        }
+        if (source === 'brand_assets' || source === 'all') {
+            const assets = state.userProfile?.brandKit?.brandAssets || [];
+            allItems = allItems.concat(assets.map((item, idx) => ({ 
+                id: `brand-asset-${idx}`, url: item.url, type: 'image', _source: 'brand_assets', referenceAssetIndex: idx 
+            })));
+        }
+        if (source === 'reference_images' || source === 'all') {
+            const references = state.userProfile?.brandKit?.referenceImages || [];
+            allItems = allItems.concat(references.map((item, idx) => ({ 
+                id: `ref-image-${idx}`, url: item.url, type: 'image', _source: 'reference_images', referenceImageIndex: idx 
+            })));
+        }
+        if (source === 'uploads' || source === 'all') {
+            const uploads = state.uploadedImages || [];
+            allItems = allItems.concat(uploads.map((item, idx) => ({ 
+                id: `upload-${idx}`, url: item.url, type: 'image', _source: 'uploads', uploadedImageIndex: idx 
+            })));
         }
 
-        return {
+        let filtered = allItems;
+        if (args.type) {
+            filtered = allItems.filter(item => item.type === args.type);
+        }
+        
+        filtered = filtered.slice(0, count);
+
+        if (filtered.length === 0) {
+            return toolSuccess({ files: [], count: 0 }, "No files found.");
+        }
+
+        // Generate thumbnails
+        const thumbnailCount = Math.min(filtered.length, 12);
+        const thumbnails = filtered.slice(0, thumbnailCount)
+            .filter(item => item.type === 'image')
+            .map(item => `![${item.prompt || item.id}](${item.url})`)
+            .join(' ');
+            
+        const nonImageLines = filtered.slice(0, thumbnailCount)
+            .filter(item => item.type !== 'image')
+            .map(item => `- [${item.type}] ${item.prompt || item.id}`)
+            .join('\n');
+
+        const thumbnailMsg = thumbnails ? `\n\n${thumbnails}` : '';
+        const nonImageMsg = nonImageLines ? `\n\n${nonImageLines}` : '';
+        const additionalMsg = thumbnailCount < filtered.length ? `\n\n(Plus ${filtered.length - thumbnailCount} more items not shown inline.)` : '';
+
+        return toolSuccess({
             files: filtered,
             count: filtered.length,
-            message: filtered.length === 0 ? "No files found." : `Found ${filtered.length} files.`
-        };
+        }, `Found ${filtered.length} files.${thumbnailMsg}${nonImageMsg}${additionalMsg}`);
     }),
 
     search_files: wrapTool('search_files', async (args: { query: string }) => {
-        // Basic efficient search: load recent usage and filter. 
-        // Ideally backend would support search.
-        const items = await StorageService.loadHistory(100);
+        const state = useStore.getState();
+        let allItems: any[] = [];
+        
+        // Search across all sources
+        const galleryItems = await StorageService.loadHistory(100);
+        allItems = allItems.concat(galleryItems.map(item => ({ ...item, _source: 'gallery' })));
+        
+        const assets = state.userProfile?.brandKit?.brandAssets || [];
+        allItems = allItems.concat(assets.map((item, idx) => ({ 
+            id: `brand-asset-${idx}`, url: item.url, type: 'image', _source: 'brand_assets', referenceAssetIndex: idx 
+        })));
+        
+        const references = state.userProfile?.brandKit?.referenceImages || [];
+        allItems = allItems.concat(references.map((item, idx) => ({ 
+            id: `ref-image-${idx}`, url: item.url, type: 'image', _source: 'reference_images', referenceImageIndex: idx 
+        })));
+        
+        const uploads = state.uploadedImages || [];
+        allItems = allItems.concat(uploads.map((item, idx) => ({ 
+            id: `upload-${idx}`, url: item.url, type: 'image', _source: 'uploads', uploadedImageIndex: idx 
+        })));
+
         const q = args.query.toLowerCase();
 
-        const matches = items.filter(item =>
+        const matches = allItems.filter(item =>
             (item.prompt && item.prompt.toLowerCase().includes(q)) ||
-            (item.type && item.type.toLowerCase().includes(q))
+            (item.type && item.type.toLowerCase().includes(q)) ||
+            (item._source && item._source.toLowerCase().includes(q))
         );
 
-        return {
+        if (matches.length === 0) {
+            return toolSuccess({ results: [], count: 0 }, `No files found matching query "${args.query}".`);
+        }
+
+        const thumbnailCount = Math.min(matches.length, 12);
+        const thumbnails = matches.slice(0, thumbnailCount)
+            .filter(item => item.type === 'image')
+            .map(item => `![${item.prompt || item.id}](${item.url})`)
+            .join(' ');
+            
+        const nonImageLines = matches.slice(0, thumbnailCount)
+            .filter(item => item.type !== 'image')
+            .map(item => `- [${item.type}] ${item.prompt || item.id}`)
+            .join('\n');
+
+        const thumbnailMsg = thumbnails ? `\n\n${thumbnails}` : '';
+        const nonImageMsg = nonImageLines ? `\n\n${nonImageLines}` : '';
+        const additionalMsg = thumbnailCount < matches.length ? `\n\n(Plus ${matches.length - thumbnailCount} more items not shown inline.)` : '';
+
+        return toolSuccess({
             results: matches,
             count: matches.length,
-            message: matches.length === 0 ? `No files found matching query "${args.query}".` : `Found ${matches.length} files matching "${args.query}".`
-        };
+        }, `Found ${matches.length} files matching "${args.query}".${thumbnailMsg}${nonImageMsg}${additionalMsg}`);
     }),
 
     scrub_orphaned_media: wrapTool('scrub_orphaned_media', async (args: { olderThanDays: number; bucketId: string }) => {

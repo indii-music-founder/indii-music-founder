@@ -160,8 +160,11 @@ async function redeemDesktopHandoffCode(code: string): Promise<AuthTokens | null
 // IPC HANDLERS
 // ============================================================================
 
+import { validateSender } from '../utils/ipc-security';
+
 export function registerAuthHandlers() {
-    ipcMain.handle('auth:login-google', async () => {
+    ipcMain.handle('auth:login-google', async (event) => {
+        validateSender(event);
         // NOTE: Explicitly disconnected from the external landing/login bridge.
         // Auth should occur in-renderer via Firebase signInWithPopup to avoid
         // cross-app handoff failures and stuck loading states.
@@ -169,7 +172,8 @@ export function registerAuthHandlers() {
         return { ok: false, reason: 'external-login-bridge-disabled' };
     });
 
-    ipcMain.handle('auth:complete-native-google', async (_event, payload: { idToken?: string; accessToken?: string | null; error?: string }) => {
+    ipcMain.handle('auth:complete-native-google', async (event, payload: { idToken?: string; accessToken?: string | null; error?: string }) => {
+        validateSender(event);
         if (payload?.error) {
             notifyAuthError(payload.error);
             return;
@@ -189,7 +193,8 @@ export function registerAuthHandlers() {
         notifyAuthSuccess({ idToken: payload.idToken, accessToken: payload.accessToken });
     });
 
-    ipcMain.handle('auth:logout', async () => {
+    ipcMain.handle('auth:logout', async (event) => {
+        validateSender(event);
         log.info('Logout requested');
         try {
             await authStorage.deleteToken();

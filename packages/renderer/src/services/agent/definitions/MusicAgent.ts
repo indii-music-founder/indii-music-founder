@@ -9,6 +9,17 @@ import { AgentConfig } from "../types";
 import { freezeAgentConfig } from '../FreezeDiagnostic';
 import { MusicTools } from '../tools/MusicTools';
 import systemPrompt from '@agents/music/prompt.md?raw';
+import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '../tools/DomainTools';
+
+
+
+const musicRetrievalConfig = {
+    'tracks': { path: 'tracks', requiresUserIdFilter: true },
+    'audio_assets': { path: 'audio_assets', requiresUserIdFilter: true },
+    'analyzed_tracks': { path: 'analyzed_tracks', requiresUserIdFilter: true }
+};
+const musicRetrievalTools = buildDomainRetrievalTools('Music', musicRetrievalConfig);
+const musicRetrievalDeclarations = buildDomainRetrievalDeclarations('Music', musicRetrievalConfig);
 
 export const MusicAgent: AgentConfig = {
     id: "music",
@@ -19,6 +30,7 @@ export const MusicAgent: AgentConfig = {
     systemPrompt: systemPrompt,
     get functions() {
         return {
+            ...musicRetrievalTools,
             analyze_audio: MusicTools.analyze_audio,
             analyze_audio_stem: MusicTools.analyze_audio_stem,
             detect_bpm_and_key: MusicTools.detect_bpm_and_key,
@@ -29,10 +41,11 @@ export const MusicAgent: AgentConfig = {
             inject_splits_to_metadata: MusicTools.inject_splits_to_metadata,
         } as Record<string, import('@/services/agent/types').AnyToolFunction>;
     },
-    authorizedTools: ['create_music_metadata', 'analyze_audio', 'analyze_audio_stem', 'detect_bpm_and_key', 'verify_metadata_golden', 'update_track_metadata', 'scrub_id3_tags', 'inject_splits_to_metadata'],
+    authorizedTools: ['list_domain_records', 'create_music_metadata', 'analyze_audio', 'analyze_audio_stem', 'detect_bpm_and_key', 'verify_metadata_golden', 'update_track_metadata', 'scrub_id3_tags', 'inject_splits_to_metadata'],
 
     tools: [{
         functionDeclarations: [
+            ...musicRetrievalDeclarations,
             {
                 name: "analyze_audio",
                 description: "Deep technical analysis of an uploaded audio file.",

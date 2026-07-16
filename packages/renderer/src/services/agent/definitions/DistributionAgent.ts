@@ -11,6 +11,17 @@ import { MusicTools } from '../tools/MusicTools';
 import { UniversalTools } from '../tools/UniversalTools';
 import systemPrompt from '@agents/distribution/prompt.md?raw';
 
+
+const distributionRetrievalConfig = {
+    'ddexReleases': { path: 'ddexReleases', requiresUserIdFilter: true },
+    'proprietaryIngestionReleases': { path: 'proprietaryIngestionReleases', requiresUserIdFilter: true },
+    'distribution_tasks': { path: 'distribution_tasks', requiresUserIdFilter: true },
+    'isrc_registry': { path: 'isrc_registry', requiresUserIdFilter: true },
+    'upc_registry': { path: 'upc_registry', requiresUserIdFilter: true }
+};
+const distributionRetrievalTools = buildDomainRetrievalTools('Distribution', distributionRetrievalConfig);
+const distributionRetrievalDeclarations = buildDomainRetrievalDeclarations('Distribution', distributionRetrievalConfig);
+
 export const DistributionAgent: AgentConfig = {
     id: "distribution",
     name: "Distribution Director",
@@ -20,6 +31,7 @@ export const DistributionAgent: AgentConfig = {
     systemPrompt: systemPrompt,
     get functions() {
         return {
+            ...distributionRetrievalTools,
             prepare_release: DistributionTools.prepare_release,
             run_audio_qc: DistributionTools.run_audio_qc,
             issue_isrc: DistributionTools.issue_isrc,
@@ -39,9 +51,10 @@ export const DistributionAgent: AgentConfig = {
             credential_vault: UniversalTools.credential_vault
         } as Record<string, import('@/services/agent/types').AnyToolFunction>;
     },
-    authorizedTools: ['prepare_release', 'run_audio_qc', 'issue_isrc', 'certify_tax_profile', 'calculate_payout', 'run_metadata_qc', 'generate_bwarm', 'check_merlin_status', 'check_dsp_delivery_status', 'validate_metadata_readiness', 'create_music_metadata', 'verify_metadata_golden', 'update_track_metadata', 'browser_tool', 'pro_scraper', 'payment_gate', 'credential_vault'],
+    authorizedTools: ['list_domain_records', 'prepare_release', 'run_audio_qc', 'issue_isrc', 'certify_tax_profile', 'calculate_payout', 'run_metadata_qc', 'generate_bwarm', 'check_merlin_status', 'check_dsp_delivery_status', 'validate_metadata_readiness', 'create_music_metadata', 'verify_metadata_golden', 'update_track_metadata', 'browser_tool', 'pro_scraper', 'payment_gate', 'credential_vault'],
     tools: [{
         functionDeclarations: [
+            ...distributionRetrievalDeclarations,
             {
                 name: "prepare_release",
                 description: "Prepare a release for distribution by generating a DDEX ERN 4.3 message.",
@@ -293,6 +306,8 @@ export const DistributionAgent: AgentConfig = {
 };
 
 import { freezeAgentConfig } from '../FreezeDiagnostic';
+import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '../tools/DomainTools';
+
 
 // Freeze the schema to prevent cross-test contamination
 freezeAgentConfig(DistributionAgent);
