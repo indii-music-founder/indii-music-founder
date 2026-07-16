@@ -332,6 +332,11 @@ describe('VideoGenerationService', () => {
                 personGeneration: 'allow_adult',
                 negativePrompt: 'blurry',
                 seed: 42,
+                inputManifest: [
+                    { role: 'first_frame', uri: 'gs://mock-bucket/mock-uri' },
+                    { role: 'last_frame', uri: 'gs://mock-bucket/mock-uri' },
+                    { role: 'ingredient', uri: 'gs://mock-bucket/mock-uri' },
+                ],
                 directorSettings: expect.objectContaining({
                     fps: 24,
                     totalFrames: 144
