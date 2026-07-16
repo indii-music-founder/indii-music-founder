@@ -1,16 +1,18 @@
 import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
+import { validateAppCheckV1 } from "../middleware/appCheck";
 
 const ENFORCE_APP_CHECK = true;
 
 export const generateReleaseDownloadUrl = functions
     .region("us-central1")
     .runWith({
-        enforceAppCheck: ENFORCE_APP_CHECK,
+        enforceAppCheck: false,
         timeoutSeconds: 30,
         memory: "256MB"
     })
     .https.onCall(async (data: unknown, context: functions.https.CallableContext): Promise<{ success: boolean; url?: string; message?: string }> => {
+        validateAppCheckV1(context);
         if (!context.auth) {
             throw new functions.https.HttpsError(
                 "unauthenticated",

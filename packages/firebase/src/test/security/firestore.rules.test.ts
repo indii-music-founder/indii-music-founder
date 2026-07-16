@@ -1046,6 +1046,51 @@ describe('Firestore Security Rules', () => {
     });
 
     // ──────────────────────────────────────────────────────────────────────
+    // 14. AUDIO ASSETS (/audio_assets/{docId})
+    // ──────────────────────────────────────────────────────────────────────
+
+    describe('audio_assets/{docId}', () => {
+        const audioAssetData = { userId: ALICE_UID, type: 'music', mimeType: 'audio/wav' };
+
+        beforeEach(async () => {
+            if (requireEmulator()) return;
+            await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                await setDoc(doc(ctx.firestore(), 'audio_assets', 'audio-1'), audioAssetData);
+            });
+        });
+
+        it('verified owner: read allowed', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(ALICE_UID).firestore();
+            await assertSucceeds(getDoc(doc(db, 'audio_assets', 'audio-1')));
+        });
+
+        it('other user: read denied', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(BOB_UID).firestore();
+            await assertFails(getDoc(doc(db, 'audio_assets', 'audio-1')));
+        });
+
+        it('unauthenticated: read denied', async () => {
+            if (requireEmulator()) return;
+            const db = unauthCtx().firestore();
+            await assertFails(getDoc(doc(db, 'audio_assets', 'audio-1')));
+        });
+
+        it('verified owner: create own audio allowed', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(ALICE_UID).firestore();
+            await assertSucceeds(setDoc(doc(db, 'audio_assets', 'audio-new'), audioAssetData));
+        });
+
+        it('cannot create audio asset for another user', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(BOB_UID).firestore();
+            await assertFails(setDoc(doc(db, 'audio_assets', 'audio-fake'), audioAssetData));
+        });
+    });
+
+    // ──────────────────────────────────────────────────────────────────────
     // DENY-ALL: arbitrary collection access denied
     // ──────────────────────────────────────────────────────────────────────
 

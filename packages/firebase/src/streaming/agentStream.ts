@@ -29,8 +29,10 @@ import { onRequest } from "firebase-functions/v2/https";
 import { HttpsError } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
 import { Request, Response } from "express";
+import { z } from "zod";
 import { FUNCTION_INTELLIGENCE_MODELS } from "../config/models";
 import { getVertexAIClient } from "../lib/vertexClient";
+import { validateAppCheckHttp } from "../middleware/appCheck";
 
 interface StreamToken {
   token: string;
@@ -38,12 +40,14 @@ interface StreamToken {
   timestamp: number;
 }
 
-interface AgentStreamRequest {
-  userId: string;
-  agentId: string;
-  input: string;
-  context?: Record<string, unknown>;
-}
+export const AgentStreamRequestSchema = z.object({
+  userId: z.string().min(1, "userId is required"),
+  agentId: z.string().min(1, "agentId is required"),
+  input: z.string().min(1, "input is required"),
+  context: z.record(z.unknown()).optional(),
+});
+
+export type AgentStreamRequest = z.infer<typeof AgentStreamRequestSchema>;
 
 /**
  * Stream Agent Response
@@ -96,19 +100,16 @@ export const agentStreamResponse = onRequest(
         throw new HttpsError("invalid-argument", "Request body required");
       }
 
-      const {
-        userId,
-        agentId,
-        input
-      } = body as Partial<AgentStreamRequest>;
-
-      // Validate required fields
-      if (!userId || !agentId || !input) {
+      // Zod Validation
+      const validation = AgentStreamRequestSchema.safeParse(body);
+      if (!validation.success) {
         throw new HttpsError(
           "invalid-argument",
-          "Missing required fields: userId, agentId, input"
+          `Validation failed: ${validation.error.issues.map(i => i.message).join(", ")}`
         );
       }
+
+      const { userId, agentId, input } = validation.data;
 
       // Verify user authentication (from Firebase ID token in Authorization header)
       const authToken = req.headers.authorization?.split("Bearer ")[1];
@@ -129,6 +130,11 @@ export const agentStreamResponse = onRequest(
           "permission-denied",
           "User ID does not match authorization token"
         );
+      }
+
+      // Verify App Check manually after CORS preflight has passed
+      if (!(await validateAppCheckHttp(req, res))) {
+        return;
       }
 
       // Set SSE headers

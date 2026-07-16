@@ -8,6 +8,7 @@ const mockGetMetadata = vi.fn();
 const mockSet = vi.fn();
 const mockUpdate = vi.fn();
 const mockSave = vi.fn();
+const mockDelete = vi.fn();
 const mockFinalizeReservation = vi.hoisted(() => vi.fn());
 const mockCollectionNames: string[] = [];
 const mockOnCallOptions = vi.hoisted(() => [] as unknown[]);
@@ -85,6 +86,7 @@ vi.mock('firebase-admin', () => ({
       name: 'test-bucket',
       file: vi.fn(() => ({
         save: mockSave,
+        delete: mockDelete,
         download: mockDownload,
         getMetadata: mockGetMetadata,
       })),
@@ -174,6 +176,89 @@ describe('creative gateway generateImageV3', () => {
       userId: 'user-123',
       operationId: 'image-op-1',
       outcome: 'SETTLED',
+    });
+  });
+
+  it('ISSUE-777: honors batch, text response, and thought-summary settings end to end', async () => {
+    mockInteractionsCreate.mockResolvedValue({
+      outputs: [
+        { type: 'text', text: 'Visual direction notes' },
+        { type: 'thought', summary: 'Composition summary' },
+        {
+          type: 'image',
+          data: Buffer.from('image-bytes').toString('base64'),
+          mime_type: 'image/png',
+        },
+      ],
+    });
+
+    const result = await callGenerateImage({
+      auth: { uid: 'user-123' },
+      data: {
+        prompt: 'Three grounded campaign concepts',
+        aspectRatio: '1:1',
+        model: 'fast',
+        imageSize: '1K',
+        count: 3,
+        thinkingLevel: 'minimal',
+        includeThoughts: true,
+        responseFormat: 'image_and_text',
+        useGoogleSearch: true,
+        useImageSearch: true,
+        costReservationId: 'image-op-batch',
+      },
+    }) as {
+      resultUris: string[];
+      textNarration?: string;
+      thoughtSummary?: string;
+    };
+
+    expect(mockInteractionsCreate).toHaveBeenCalledTimes(3);
+    expect(mockInteractionsCreate).toHaveBeenCalledWith(expect.objectContaining({
+      response_modalities: ['text', 'image'],
+      generation_config: expect.objectContaining({
+        thinking_level: 'minimal',
+        thinking_summaries: 'auto',
+      }),
+      tools: [{ type: 'google_search', search_types: ['web_search', 'image_search'] }],
+    }));
+    expect(mockSave).toHaveBeenCalledTimes(3);
+    expect(result.resultUris).toHaveLength(3);
+    expect(result.textNarration).toContain('Visual direction notes');
+    expect(result.thoughtSummary).toContain('Composition summary');
+    expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining({
+      status: 'completed',
+      outputCount: 3,
+      resultUris: expect.any(Array),
+    }));
+  });
+
+  it('ISSUE-777: removes already-uploaded batch outputs when a later Storage write fails', async () => {
+    mockInteractionsCreate.mockResolvedValue({
+      output_image: {
+        data: Buffer.from('image-bytes').toString('base64'),
+        mime_type: 'image/png',
+      },
+    });
+    mockSave
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(new Error('Storage unavailable'));
+
+    await expect(callGenerateImage({
+      auth: { uid: 'user-123' },
+      data: {
+        prompt: 'Two-image batch',
+        count: 2,
+        model: 'fast',
+        costReservationId: 'image-op-cleanup',
+      },
+    })).rejects.toBeDefined();
+
+    expect(mockDelete).toHaveBeenCalledTimes(1);
+    expect(mockFinalizeReservation).toHaveBeenCalledWith({
+      userId: 'user-123',
+      operationId: 'image-op-cleanup',
+      outcome: 'VOIDED',
     });
   });
 

@@ -10,6 +10,7 @@
 import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
 import { getPandaDocApiKey, pandaDocApiKey } from "../config/secrets";
+import { validateAppCheckV1 } from "../middleware/appCheck";
 
 const PANDADOC_API = "https://api.pandadoc.com/public/v1";
 
@@ -63,10 +64,11 @@ export const pandadocListTemplates = functions
     .runWith({
         timeoutSeconds: 30,
         memory: "256MB",
-        enforceAppCheck: ENFORCE_APP_CHECK,
+        enforceAppCheck: false,
         secrets: [pandaDocApiKey],
     })
     .https.onCall(async (_data: unknown, context: functions.https.CallableContext) => {
+        validateAppCheckV1(context);
         if (!context.auth) {
             throw new functions.https.HttpsError("unauthenticated", "Authentication required.");
         }
@@ -97,10 +99,11 @@ export const pandadocCreateDocument = functions
     .runWith({
         timeoutSeconds: 60,
         memory: "256MB",
-        enforceAppCheck: ENFORCE_APP_CHECK,
+        enforceAppCheck: false,
         secrets: [pandaDocApiKey],
     })
     .https.onCall(async (data: unknown, context: functions.https.CallableContext) => {
+        validateAppCheckV1(context);
         if (!context.auth) {
             throw new functions.https.HttpsError("unauthenticated", "Authentication required.");
         }
@@ -179,10 +182,11 @@ export const pandadocSendDocument = functions
     .runWith({
         timeoutSeconds: 30,
         memory: "256MB",
-        enforceAppCheck: ENFORCE_APP_CHECK,
+        enforceAppCheck: false,
         secrets: [pandaDocApiKey],
     })
     .https.onCall(async (data: unknown, context: functions.https.CallableContext) => {
+        validateAppCheckV1(context);
         if (!context.auth) {
             throw new functions.https.HttpsError("unauthenticated", "Authentication required.");
         }
@@ -219,10 +223,11 @@ export const pandadocGetDocumentStatus = functions
     .runWith({
         timeoutSeconds: 30,
         memory: "256MB",
-        enforceAppCheck: ENFORCE_APP_CHECK,
+        enforceAppCheck: false,
         secrets: [pandaDocApiKey],
     })
     .https.onCall(async (data: unknown, context: functions.https.CallableContext) => {
+        validateAppCheckV1(context);
         if (!context.auth) {
             throw new functions.https.HttpsError("unauthenticated", "Authentication required.");
         }
@@ -267,10 +272,11 @@ export const pandadocGetSigningLink = functions
     .runWith({
         timeoutSeconds: 30,
         memory: "256MB",
-        enforceAppCheck: ENFORCE_APP_CHECK,
+        enforceAppCheck: false,
         secrets: [pandaDocApiKey],
     })
     .https.onCall(async (data: unknown, context: functions.https.CallableContext) => {
+        validateAppCheckV1(context);
         if (!context.auth) {
             throw new functions.https.HttpsError("unauthenticated", "Authentication required.");
         }

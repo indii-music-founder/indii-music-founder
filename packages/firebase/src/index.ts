@@ -37,7 +37,7 @@ import { clearbitApiKey, apolloApiKey, getClearbitApiKey, getApolloApiKey } from
 
 import { estimateVideoCost } from "./config/pricing";
 import { enforceRateLimit, RATE_LIMITS } from "./lib/rateLimit";
-import { validateAppCheckHttp } from "./middleware/appCheck";
+import { validateAppCheckHttp, validateAppCheckV1 } from "./middleware/appCheck";
 
 
 // Vertex AI SDK
@@ -360,10 +360,12 @@ export const triggerVideoJob = functions
     .runWith({
         timeoutSeconds: 60,
         memory: "2GB",
-        enforceAppCheck: ENFORCE_APP_CHECK
+        enforceAppCheck: false
     })
     // Item 352: Explicit return type annotation
     .https.onCall(async (data: unknown, context: functions.https.CallableContext): Promise<{ success: boolean; message: string }> => {
+        validateAppCheckV1(context);
+        
         if (!context.auth) {
             throw new functions.https.HttpsError(
                 "unauthenticated",
@@ -446,7 +448,6 @@ export const triggerVideoJob = functions
 export const executeVideoJob = functions
     .region("us-central1")
     .runWith({
-        enforceAppCheck: ENFORCE_APP_CHECK,
         timeoutSeconds: 540, // 9 minutes
         memory: "2GB"
     })
@@ -505,10 +506,12 @@ export const triggerLongFormVideoJob = functions
         secrets: [inngestEventKey],
         timeoutSeconds: 60,
         memory: "2GB",
-        enforceAppCheck: ENFORCE_APP_CHECK
+        enforceAppCheck: false
     })
     // Item 352: Explicit return type annotation
     .https.onCall(async (data: unknown, context: functions.https.CallableContext): Promise<{ success: boolean; message: string }> => {
+        validateAppCheckV1(context);
+
         if (!context.auth) {
             throw new functions.https.HttpsError(
                 "unauthenticated",
@@ -672,10 +675,12 @@ export const renderVideo = functions
         secrets: [inngestEventKey],
         timeoutSeconds: 60,
         memory: "2GB",
-        enforceAppCheck: ENFORCE_APP_CHECK
+        enforceAppCheck: false
     })
     // Item 352: Explicit return type annotation
     .https.onCall(async (data: unknown, context: functions.https.CallableContext): Promise<{ success: boolean; renderId: string; message: string }> => {
+        validateAppCheckV1(context);
+
         if (!context.auth) {
             throw new functions.https.HttpsError(
                 "unauthenticated",
@@ -768,7 +773,7 @@ export const renderVideo = functions
  */
 export const inngestApi = functions
     .runWith({
-        enforceAppCheck: ENFORCE_APP_CHECK,
+        enforceAppCheck: false,
         secrets: [inngestSigningKey, inngestEventKey, geminiApiKey],
         timeoutSeconds: 540 // 9 minutes
     })
@@ -810,9 +815,11 @@ export const editImage = editImageFn();
 export const analyzeAudio = analyzeAudioFn();
 
 export const generateSpeech = functions
-    .runWith({ enforceAppCheck: ENFORCE_APP_CHECK, timeoutSeconds: 60, memory: "512MB" })
+    .runWith({ enforceAppCheck: false, timeoutSeconds: 60, memory: "512MB" })
     // Item 352: Explicit return type annotation
     .https.onCall(async (data: unknown, context): Promise<{ audioContent: string }> => {
+        validateAppCheckV1(context);
+
         if (!context.auth) {
             throw new functions.https.HttpsError("unauthenticated", "User must be authenticated.");
         }
@@ -1156,8 +1163,9 @@ import * as marketingService from './lib/marketing';
  * List GKE Clusters
  */
 export const listGKEClusters = functions
-    .runWith({ enforceAppCheck: ENFORCE_APP_CHECK, timeoutSeconds: 30, memory: '256MB' })
+    .runWith({ enforceAppCheck: false, timeoutSeconds: 30, memory: '256MB' })
     .https.onCall(async (_data, context) => {
+        validateAppCheckV1(context);
         requireAdmin(context);
 
         const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
@@ -1190,8 +1198,9 @@ export const createInfluencerBounty = marketingService.createInfluencerBounty;
  * Get GKE Cluster Status
  */
 export const getGKEClusterStatus = functions
-    .runWith({ enforceAppCheck: ENFORCE_APP_CHECK, timeoutSeconds: 30, memory: '256MB' })
+    .runWith({ enforceAppCheck: false, timeoutSeconds: 30, memory: '256MB' })
     .https.onCall(async (data: { location: string; clusterName: string }, context) => {
+        validateAppCheckV1(context);
         requireAdmin(context);
 
         const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
@@ -1211,8 +1220,9 @@ export const getGKEClusterStatus = functions
  * Scale GKE Node Pool
  */
 export const scaleGKENodePool = functions
-    .runWith({ enforceAppCheck: ENFORCE_APP_CHECK, timeoutSeconds: 60, memory: '256MB' })
+    .runWith({ enforceAppCheck: false, timeoutSeconds: 60, memory: '256MB' })
     .https.onCall(async (data: { location: string; clusterName: string; nodePoolName: string; nodeCount: number }, context) => {
+        validateAppCheckV1(context);
         requireAdmin(context);
 
         const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
@@ -1232,8 +1242,9 @@ export const scaleGKENodePool = functions
  * List GCE Instances
  */
 export const listGCEInstances = functions
-    .runWith({ enforceAppCheck: ENFORCE_APP_CHECK, timeoutSeconds: 30, memory: '256MB' })
+    .runWith({ enforceAppCheck: false, timeoutSeconds: 30, memory: '256MB' })
     .https.onCall(async (_data, context) => {
+        validateAppCheckV1(context);
         requireAdmin(context);
 
         const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
@@ -1253,8 +1264,9 @@ export const listGCEInstances = functions
  * Restart GCE Instance
  */
 export const restartGCEInstance = functions
-    .runWith({ enforceAppCheck: ENFORCE_APP_CHECK, timeoutSeconds: 60, memory: '256MB' })
+    .runWith({ enforceAppCheck: false, timeoutSeconds: 60, memory: '256MB' })
     .https.onCall(async (data: { zone: string; instanceName: string }, context) => {
+        validateAppCheckV1(context);
         requireAdmin(context);
 
         const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
@@ -1278,8 +1290,9 @@ export const restartGCEInstance = functions
  * Execute BigQuery Query
  */
 export const executeBigQueryQuery = functions
-    .runWith({ enforceAppCheck: ENFORCE_APP_CHECK, timeoutSeconds: 120, memory: '512MB' })
+    .runWith({ enforceAppCheck: false, timeoutSeconds: 120, memory: '512MB' })
     .https.onCall(async (data: { query: string; maxResults?: number }, context) => {
+        validateAppCheckV1(context);
         requireAdmin(context);
 
         if (!data.query) {
@@ -1307,8 +1320,9 @@ export const executeBigQueryQuery = functions
  * Get BigQuery Table Schema
  */
 export const getBigQueryTableSchema = functions
-    .runWith({ enforceAppCheck: ENFORCE_APP_CHECK, timeoutSeconds: 30, memory: '256MB' })
+    .runWith({ enforceAppCheck: false, timeoutSeconds: 30, memory: '256MB' })
     .https.onCall(async (data: { datasetId: string; tableId: string }, context) => {
+        validateAppCheckV1(context);
         requireAdmin(context);
 
         const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
@@ -1328,8 +1342,9 @@ export const getBigQueryTableSchema = functions
  * List BigQuery Datasets
  */
 export const listBigQueryDatasets = functions
-    .runWith({ enforceAppCheck: ENFORCE_APP_CHECK, timeoutSeconds: 30, memory: '256MB' })
+    .runWith({ enforceAppCheck: false, timeoutSeconds: 30, memory: '256MB' })
     .https.onCall(async (_data, context) => {
+        validateAppCheckV1(context);
         requireAdmin(context);
 
         const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
@@ -1392,9 +1407,10 @@ export {
  * (images/audio stored in Cloud Storage) - those URLs are included.
  */
 export const exportUserData = functions
-    .runWith({ enforceAppCheck: ENFORCE_APP_CHECK, timeoutSeconds: 120, memory: "512MB" })
+    .runWith({ enforceAppCheck: false, timeoutSeconds: 120, memory: "512MB" })
     // Item 352: Explicit return type annotation
     .https.onCall(async (_data, context): Promise<Record<string, unknown>> => {
+        validateAppCheckV1(context);
         if (!context.auth) {
             throw new functions.https.HttpsError("unauthenticated", "Authentication required.");
         }
@@ -1459,9 +1475,10 @@ export const exportUserData = functions
  * Actual deletion happens asynchronously via a scheduled function.
  */
 export const requestAccountDeletion = functions
-    .runWith({ enforceAppCheck: ENFORCE_APP_CHECK, timeoutSeconds: 120, memory: "256MB" })
+    .runWith({ enforceAppCheck: false, timeoutSeconds: 120, memory: "256MB" })
     // Item 352: Explicit return type annotation
     .https.onCall(async (_data, context): Promise<{ success: boolean; deletedDocs: number; errors: string[]; deletedAt: string }> => {
+        validateAppCheckV1(context);
         if (!context.auth) {
             throw new functions.https.HttpsError("unauthenticated", "Authentication required.");
         }
@@ -1530,7 +1547,7 @@ export const requestAccountDeletion = functions
  * Returns service status and basic diagnostics.
  */
 export const healthCheck = functions
-    .runWith({ enforceAppCheck: ENFORCE_APP_CHECK, timeoutSeconds: 60, memory: "256MB" })
+    .runWith({ enforceAppCheck: false, timeoutSeconds: 60, memory: "256MB" })
     .https.onRequest(async (_req, res) => {
         const status: Record<string, unknown> = {
             status: "ok",
@@ -1563,7 +1580,7 @@ export const healthCheck = functions
  */
 export const healthCheckWest1 = functions
     .region("us-central1")
-    .runWith({ enforceAppCheck: ENFORCE_APP_CHECK, timeoutSeconds: 60, memory: "256MB" })
+    .runWith({ enforceAppCheck: false, timeoutSeconds: 60, memory: "256MB" })
     .https.onRequest(async (_req, res) => {
         res.status(200).json({
             status: "ok",
@@ -1582,11 +1599,12 @@ export const enrichFanData = functions
     .runWith({
         timeoutSeconds: 300,
         memory: "1GB",
-        enforceAppCheck: ENFORCE_APP_CHECK,
+        enforceAppCheck: false,
         secrets: [clearbitApiKey, apolloApiKey]
     })
     // Item 352: Explicit return type annotation
     .https.onCall(async (data: Record<string, unknown>, context): Promise<{ results: unknown[]; metadata: { provider: string; count: number; timestamp: string } }> => {
+        validateAppCheckV1(context);
         // 1. Security Check
         if (!context.auth) {
             throw new functions.https.HttpsError(
