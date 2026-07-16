@@ -3,11 +3,8 @@ import { useStore } from '@/core/store';
 import { ImageIcon, Video, MonitorPlay, FlaskConical } from 'lucide-react';
 
 const MODES = [
-    { id: 'canvas', label: 'Image Canvas', icon: ImageIcon, gen: 'image' as const },
+    { id: 'canvas', label: 'Image Studio', icon: ImageIcon, gen: 'image' as const },
     { id: 'video_production', label: 'Video Studio', icon: Video, gen: 'video' as const },
-    { id: 'omni', label: 'Omni Remix', icon: Video, gen: 'video' as const },
-    { id: 'showroom', label: 'Showroom', icon: MonitorPlay, gen: 'image' as const },
-    { id: 'lab', label: 'Sequence', icon: FlaskConical, gen: 'video' as const },
 ] as const;
 
 export default function CanvasModePicker() {

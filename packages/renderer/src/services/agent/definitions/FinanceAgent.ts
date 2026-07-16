@@ -5,6 +5,9 @@ import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { UniversalTools } from '../tools/UniversalTools';
 
 const financeRetrievalConfig = {
+    'revenue': { path: 'revenue', requiresUserIdFilter: true },
+    'expenses': { path: 'expenses', requiresUserIdFilter: true },
+    'payouts': { path: 'payouts', requiresUserIdFilter: true },
     'earnings': { path: 'earnings', requiresUserIdFilter: true },
     'recoupment_balances': { path: 'recoupment_balances', requiresUserIdFilter: true },
     'tax_profiles': { path: 'tax_profiles', requiresUserIdFilter: true },

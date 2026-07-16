@@ -297,7 +297,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
      */
     generate_high_res_asset: wrapTool('generate_high_res_asset', async (args: GenerateHighResAssetArgs) => {
         const { useStore } = await importWithRetry(() => import('@/core/store'));
-        const { userProfile, currentProjectId, addToHistory } = useStore.getState();
+        const { userProfile, currentProjectId, addToHistory, studioControls } = useStore.getState();
 
         const isCover = ['cd_front', 'cd_back', 'vinyl_jacket', 'jacket', 'vinyl', 'booklet', 'cover'].includes(args.templateType);
         
@@ -312,6 +312,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
                 resolution: '4K',
                 aspectRatio: isCover ? '1:1' : '2:3',
                 isCoverArt: isCover,
+                model: studioControls?.model || 'fast',
                 userProfile
             });
 
@@ -343,7 +344,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
      */
     render_cinematic_grid: wrapTool('render_cinematic_grid', async (args: { prompt: string }, context, toolContext) => {
         const { useStore } = await importWithRetry(() => import('@/core/store'));
-        const { userProfile, characterReferences, currentProjectId, addToHistory } = useStore.getState();
+        const { userProfile, characterReferences, currentProjectId, addToHistory, studioControls } = useStore.getState();
 
         // Include the first subject reference if available as a character anchor
         const sourceImages = characterReferences
@@ -362,6 +363,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
                 resolution: '4K',
                 aspectRatio: '16:9',
                 sourceImages: sourceImages.length > 0 ? sourceImages : undefined,
+                model: studioControls?.model || 'fast',
                 userProfile
             });
 
@@ -481,25 +483,27 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
         return DirectorTools.set_entity_anchor!(args);
     }),
 
-    analyze_audio: wrapTool('analyze_audio', async (args: { uploadedAudioIndex?: number; trackId?: string }) => {
-        const index = args.uploadedAudioIndex ?? 0;
-        return MusicTools.analyze_audio!({ uploadedAudioIndex: index });
+    analyze_audio: wrapTool('analyze_audio', async (args: { uploadedAudioIndex: number }) => {
+        return MusicTools.analyze_audio!({ uploadedAudioIndex: args.uploadedAudioIndex });
     }),
 
     canvas_push: wrapTool('canvas_push', async (args: { assetId: string; label?: string }) => {
         const { useStore } = await importWithRetry(() => import('@/core/store'));
-        const { generatedHistory } = useStore.getState();
+        const { generatedHistory, uploadedImages, userProfile } = useStore.getState();
         
-        const asset = generatedHistory.find(h => h.id === args.assetId);
+        const asset = generatedHistory.find(h => h.id === args.assetId) 
+            || uploadedImages.find(h => h.id === args.assetId)
+            || userProfile?.brandKit?.brandAssets?.find(a => a.id === args.assetId);
+            
         if (!asset) {
-            return toolError(`Asset with ID ${args.assetId} not found in history.`, "NOT_FOUND");
+            return toolError(`Asset with ID ${args.assetId} not found in history, uploads, or brand assets.`, "NOT_FOUND");
         }
 
         return CanvasTools.canvas_push!({
             type: 'markdown',
             title: args.label || `Asset: ${args.assetId}`,
             data: {
-                content: `![${args.label || 'Generated Asset'}](${asset.url})\n\n**Prompt:** ${asset.prompt}`
+                content: `![${args.label || 'Generated Asset'}](${asset.url})\n\n${'prompt' in asset && asset.prompt ? `**Prompt:** ${asset.prompt}` : ''}`
             },
             agentId: 'creative'
         });
@@ -507,7 +511,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
 
     generate_moodboard: wrapTool('generate_moodboard', async (args: { theme: string, style?: string }) => {
         const { useStore } = await importWithRetry(() => import('@/core/store'));
-        const { userProfile, currentProjectId, addToHistory } = useStore.getState();
+        const { userProfile, currentProjectId, addToHistory, studioControls } = useStore.getState();
         try {
             const effectivePrompt = `A professional design moodboard for the theme "${args.theme}". ${args.style ? `Style: ${args.style}. ` : ''}Including color palettes, textures, and typography inspiration, cohesive visual aesthetic, high resolution, laid out as a moodboard collage`;
 
@@ -516,6 +520,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
                 count: 1,
                 resolution: '4K',
                 aspectRatio: '16:9',
+                model: studioControls?.model || 'fast',
                 userProfile
             });
 
@@ -547,7 +552,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
         return toolSuccess({
             framework: analysisFramework,
             topic: args.industry_or_genre
-        }, `Please provide a comprehensive visual trends analysis for "${args.industry_or_genre}" using your internal knowledge, structured around the provided framework.`);
+        }, `Please provide a comprehensive visual trends analysis for "${args.industry_or_genre}" using your internal knowledge, structured around the provided framework. Note: This analysis is based on your general knowledge and is not a live data feed.`);
     }),
 };
 

@@ -2,6 +2,31 @@ import { AgentConfig } from "../types";
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { audioIntelligence } from '@/services/audio/AudioIntelligenceService';
 import systemPrompt from '@agents/brand/prompt.md?raw';
+import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '../tools/DomainTools';
+
+const brandRetrievalConfig = {
+    brand_guidelines: {
+        path: 'brand_guidelines',
+        requiresUserIdFilter: true,
+        description: 'Brand bibles, tone of voice guidelines, and visual identity pillars.',
+        defaultLimit: 5
+    },
+    visual_assets: {
+        path: 'visual_assets',
+        requiresUserIdFilter: true,
+        description: 'Logos, color palettes, typography, and approved visual assets.',
+        defaultLimit: 10
+    },
+    moodboards: {
+        path: 'moodboards',
+        requiresUserIdFilter: true,
+        description: 'Creative moodboards and thematic inspirations.',
+        defaultLimit: 5
+    }
+};
+
+const brandRetrievalTools = buildDomainRetrievalTools('Brand', brandRetrievalConfig);
+const brandRetrievalDeclarations = buildDomainRetrievalDeclarations('Brand', brandRetrievalConfig);
 
 export const BrandAgent: AgentConfig = {
     id: 'brand',
@@ -11,6 +36,7 @@ export const BrandAgent: AgentConfig = {
     category: 'department',
     systemPrompt: systemPrompt,
     functions: {
+        ...brandRetrievalTools,
         verify_output: async (args: { goal: string, content: string }) => {
             const prompt = `Critique the following content against the stated goal/guidelines.
             Goal: ${args.goal}
@@ -130,9 +156,10 @@ export const BrandAgent: AgentConfig = {
             }
         }
     },
-    authorizedTools: ['verify_output', 'analyze_brand_consistency', 'generate_brand_guidelines', 'audit_visual_assets', 'analyze_audio', 'analyze_brand_sentiment', 'generate_brand_kit'],
+    authorizedTools: ['verify_output', 'analyze_brand_consistency', 'generate_brand_guidelines', 'audit_visual_assets', 'analyze_audio', 'analyze_brand_sentiment', 'generate_brand_kit', 'list_domain_records'],
     tools: [{
         functionDeclarations: [
+            ...brandRetrievalDeclarations,
             {
                 name: 'verify_output',
                 description: 'Critique and verify generated content against a goal (Brand Bible).',

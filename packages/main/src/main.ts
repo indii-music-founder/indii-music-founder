@@ -554,6 +554,7 @@ if (!gotTheLock) {
 
         // Register Notification IPC
         ipcMain.on('show-notification', (_event, { title, body }) => {
+            validateSender(_event);
             showNotification(title, body);
         });
 

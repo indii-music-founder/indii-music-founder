@@ -2,6 +2,32 @@ import { AgentConfig } from "../types";
 import { freezeAgentConfig } from '../FreezeDiagnostic';
 import { DirectorTools } from '../tools/DirectorTools';
 import systemPrompt from '@agents/creative/prompt.md?raw';
+import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '../tools/DomainTools';
+
+const creativeRetrievalConfig = {
+    canvases: {
+        path: 'canvases',
+        requiresUserIdFilter: true,
+        description: 'Active design canvases, moodboards, and visual workspaces.',
+        defaultLimit: 5
+    },
+    storyboards: {
+        path: 'storyboards',
+        requiresUserIdFilter: true,
+        description: 'Multi-shot sequence plans and video storyboards.',
+        defaultLimit: 5
+    },
+    concept_art: {
+        path: 'concept_art',
+        requiresUserIdFilter: true,
+        description: 'Generated concept art, high-res assets, and reference images.',
+        defaultLimit: 10
+    }
+};
+
+const creativeRetrievalTools = buildDomainRetrievalTools('Creative', creativeRetrievalConfig);
+const creativeRetrievalDeclarations = buildDomainRetrievalDeclarations('Creative', creativeRetrievalConfig);
+
 
 /**
  * Creative Agent — Visual Identity & Asset Generation Specialist
@@ -16,6 +42,7 @@ export const CreativeAgent: AgentConfig = {
     systemPrompt: systemPrompt,
     get functions() {
         return {
+            ...creativeRetrievalTools,
             generate_image: DirectorTools.generate_image,
             batch_edit_images: DirectorTools.batch_edit_images,
             run_showroom_mockup: DirectorTools.run_showroom_mockup,
@@ -41,9 +68,11 @@ export const CreativeAgent: AgentConfig = {
         'canvas_push',
         'generate_moodboard',
         'analyze_visual_trends',
+        'list_domain_records',
     ],
     tools: [{
         functionDeclarations: [
+            ...creativeRetrievalDeclarations,
             {
                 name: 'generate_image',
                 description: 'Generate Intelligence images using text prompts with support for aspect ratios, reference images, and brand guidelines. Images are automatically saved to history.',
@@ -143,11 +172,10 @@ export const CreativeAgent: AgentConfig = {
             },
             {
                 name: 'analyze_audio',
-                description: 'Perform "Audio-to-Visual" analysis to extract BPM, key, mood, and energy from a track to guide artistic direction.',
+                description: 'Perform "Audio-to-Visual" analysis to extract BPM, key, mood, and energy from an uploaded track to guide artistic direction.',
                 parameters: {
                     type: 'OBJECT',
                     properties: {
-                        trackId: { type: 'STRING', description: 'Optional ID of the track to analyze. If omitted, uses the current project track.' },
                         uploadedAudioIndex: { type: 'NUMBER', description: 'Optional index of a recently uploaded audio file.' }
                     },
                     required: []
@@ -179,7 +207,7 @@ export const CreativeAgent: AgentConfig = {
             },
             {
                 name: 'analyze_visual_trends',
-                description: 'Analyze current visual and aesthetic trends for a specific industry or music genre.',
+                description: 'Structure a visual and aesthetic trends discussion from general knowledge for a specific industry or music genre (not live data).',
                 parameters: {
                     type: 'OBJECT',
                     properties: {

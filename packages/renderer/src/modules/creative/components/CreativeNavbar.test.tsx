@@ -92,23 +92,7 @@ vi.mock('./AgentCapabilityRegistry', () => ({
     )
 }));
 
-vi.mock('../video/components/FrameSelectionModal', () => ({
-    default: ({ isOpen, onClose, onSelect, target }: any) => isOpen ? (
-        <div data-testid="frame-selection-modal" data-target={target}>
-            <button onClick={onClose}>Close Modal</button>
-            <button onClick={() => onSelect({ url: 'test-frame.png' })}>Select Frame</button>
-        </div>
-    ) : null
-}));
 
-vi.mock('./DaisyChainControls', () => ({
-    default: ({ onOpenFrameModal }: { onOpenFrameModal: (target: 'firstFrame' | 'lastFrame') => void }) => (
-        <div data-testid="daisy-chain-controls">
-            <button onClick={() => onOpenFrameModal('firstFrame')}>Trigger First Frame</button>
-            <button onClick={() => onOpenFrameModal('lastFrame')}>Trigger Last Frame</button>
-        </div>
-    )
-}));
 
 describe('CreativeNavbar', () => {
     const mockSetGenerationMode = vi.fn();
@@ -352,40 +336,5 @@ describe('CreativeNavbar', () => {
 
 
 
-    it('renders DaisyChainControls when generationMode is video and opens FrameSelectionModal', () => {
-        const videoState = {
-            ...defaultState,
-            generationMode: 'video'
-        };
-        (useStore as unknown as import('vitest').Mock).mockImplementation((selector: any) => {
-            if (selector) return selector(videoState);
-            return videoState;
-        });
 
-        render(
-            <ToastProvider>
-                <CreativeNavbar />
-            </ToastProvider>
-        );
-
-        // Verify DaisyChainControls renders instead of image right buttons
-        expect(screen.getByTestId('daisy-chain-controls')).toBeInTheDocument();
-        expect(screen.queryByText('Brand')).not.toBeInTheDocument();
-
-        // Trigger First Frame selection
-        const triggerFirstFrameBtn = screen.getByText('Trigger First Frame');
-        fireEvent.click(triggerFirstFrameBtn);
-
-        // Modal should render with target firstFrame
-        const modal = screen.getByTestId('frame-selection-modal');
-        expect(modal).toBeInTheDocument();
-        expect(modal).toHaveAttribute('data-target', 'firstFrame');
-
-        // Select frame
-        const selectBtn = screen.getByText('Select Frame');
-        fireEvent.click(selectBtn);
-
-        // Verify setVideoInput is called
-        expect(mockSetVideoInput).toHaveBeenCalledWith('firstFrame', { url: 'test-frame.png' });
-    });
 });

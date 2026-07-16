@@ -1,5 +1,31 @@
 import { AgentConfig } from "../types";
 import { freezeAgentConfig } from '../FreezeDiagnostic';
+import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '../tools/DomainTools';
+
+const devopsRetrievalConfig = {
+    infrastructure_state: {
+        path: 'infrastructure_state',
+        requiresUserIdFilter: true,
+        description: 'GKE cluster configurations, deployment manifests, and active instances.',
+        defaultLimit: 10
+    },
+    deployment_logs: {
+        path: 'deployment_logs',
+        requiresUserIdFilter: true,
+        description: 'Logs from recent deployments, scaling events, and rollbacks.',
+        defaultLimit: 50
+    },
+    alerts: {
+        path: 'alerts',
+        requiresUserIdFilter: true,
+        description: 'Active and historical monitoring alerts, incident reports, and system health records.',
+        defaultLimit: 20
+    }
+};
+
+const devopsRetrievalTools = buildDomainRetrievalTools('DevOps', devopsRetrievalConfig);
+const devopsRetrievalDeclarations = buildDomainRetrievalDeclarations('DevOps', devopsRetrievalConfig);
+
 
 const systemPrompt = `
 ## MISSION
@@ -111,6 +137,7 @@ export const DevOpsAgent: AgentConfig = {
     category: "department",
     systemPrompt,
     functions: {
+        ...devopsRetrievalTools,
         list_clusters: async () => {
             return { success: false, error: 'Cluster listing requires a connected cloud provider. No cluster data was generated.' };
         },
@@ -130,9 +157,10 @@ export const DevOpsAgent: AgentConfig = {
             return { success: false, error: 'Restarting services requires a connected cloud provider. No service was restarted.' };
         }
     },
-    authorizedTools: ['list_clusters', 'get_cluster_status', 'scale_deployment', 'list_instances', 'restart_service', 'browser_tool', 'credential_vault'],
+    authorizedTools: ['list_clusters', 'get_cluster_status', 'scale_deployment', 'list_instances', 'restart_service', 'browser_tool', 'credential_vault', 'list_domain_records'],
     tools: [{
         functionDeclarations: [
+            ...devopsRetrievalDeclarations,
             {
                 name: "list_clusters",
                 description: "List all Google Kubernetes Engine (GKE) clusters and their basic status.",

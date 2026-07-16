@@ -9,18 +9,15 @@ import {
     Palette, Clock, FlaskConical, Rocket, Cpu
 } from 'lucide-react';
 import IntelligencePromptBuilder from './IntelligencePromptBuilder';
-import DaisyChainControls from './DaisyChainControls';
 import { useToast } from '@/core/context/ToastContext';
 import BrandAssetsDrawer from './BrandAssetsDrawer';
 import HistoryDrawer from './HistoryDrawer';
 import AgentCapabilityRegistry from './AgentCapabilityRegistry';
-import FrameSelectionModal from '../video/components/FrameSelectionModal';
 
 interface CreativeNavbarProps extends React.HTMLAttributes<HTMLDivElement> { }
 
 export default function CreativeNavbar(props: CreativeNavbarProps) {
     const {
-        setVideoInput,
         creativePrompt,
         setCreativePrompt,
         generationMode,
@@ -32,7 +29,6 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
         showPromptBuilder,
         togglePromptBuilder
     } = useStore(useShallow(state => ({
-        setVideoInput: state.setVideoInput,
         creativePrompt: state.creativePrompt,
         setCreativePrompt: state.setCreativePrompt,
         generationMode: state.generationMode,
@@ -53,8 +49,6 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
     const showHistory = activePanel === 'history';
     const showRosterRegistry = activePanel === 'roster';
     const togglePanel = (p: Exclude<RailPanel, null>) => setActivePanel(prev => (prev === p ? null : p));
-    const [showFrameModal, setShowFrameModal] = useState(false);
-    const [frameModalTarget, setFrameModalTarget] = useState<'firstFrame' | 'lastFrame'>('firstFrame');
 
     const selectView = (viewId: string, gen: 'image' | 'video') => {
         setViewMode(viewId as typeof viewMode);
@@ -81,63 +75,51 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
                     <div className="h-3.5 w-px bg-white/8 mx-0.5" />
                 </div>
 
-                {/* Right: Context Controls */}
                 <div className="hidden md:flex items-center gap-1.5 shrink-0 overflow-hidden max-w-[40%] justify-end">
-                    {generationMode === 'image' ? (
-                        <div className="flex items-center bg-white/4 p-0.5 rounded-lg border border-white/6">
-                            <button
-                                onClick={togglePromptBuilder}
-                                data-testid="builder-btn"
-                                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-all text-[10px] font-bold uppercase tracking-wider
-                                    ${showPromptBuilder
-                                        ? 'bg-green-500/15 text-green-300 shadow-[0_0_12px_rgba(168,85,247,0.1)]'
-                                        : 'text-gray-500 hover:text-gray-300 hover:bg-white/4'}`}
-                            >
-                                <MessageSquare size={11} className={showPromptBuilder ? 'text-green-400' : ''} />
-                                <span className="hidden xl:inline">Builder</span>
-                            </button>
-                            <button
-                                onClick={() => togglePanel('brand')}
-                                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-all text-[10px] font-bold uppercase tracking-wider
-                                    ${showBrandAssets
-                                        ? 'bg-green-500/15 text-green-300 shadow-[0_0_12px_rgba(168,85,247,0.1)]'
-                                        : 'text-gray-500 hover:text-gray-300 hover:bg-white/4'}`}
-                            >
-                                <Sparkles size={11} className={showBrandAssets ? 'text-green-400' : ''} />
-                                <span className="hidden xl:inline">Brand</span>
-                            </button>
-                            <button
-                                onClick={() => togglePanel('history')}
-                                data-testid="history-btn"
-                                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-all text-[10px] font-bold uppercase tracking-wider
-                                    ${showHistory
-                                        ? 'bg-green-500/15 text-green-300 shadow-[0_0_12px_rgba(168,85,247,0.1)]'
-                                        : 'text-gray-500 hover:text-gray-300 hover:bg-white/4'}`}
-                            >
-                                <Clock size={11} className={showHistory ? 'text-green-400' : ''} />
-                                <span className="hidden xl:inline">History</span>
-                            </button>
-                            <button
-                                onClick={() => togglePanel('roster')}
-                                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-all text-[10px] font-bold uppercase tracking-wider
-                                    ${showRosterRegistry
-                                        ? 'bg-green-500/15 text-green-300 shadow-[0_0_12px_rgba(168,85,247,0.1)]'
-                                        : 'text-gray-500 hover:text-gray-300 hover:bg-white/4'}`}
-                            >
-                                <Cpu size={11} className={showRosterRegistry ? 'text-green-400' : ''} />
-                                <span className="hidden xl:inline">Roster</span>
-                            </button>
-                        </div>
-                    ) : (
-                        <div className="min-w-0 flex-1 flex justify-end">
-                            <DaisyChainControls
-                                onOpenFrameModal={(target) => {
-                                    setFrameModalTarget(target);
-                                    setShowFrameModal(true);
-                                }}
-                            />
-                        </div>
-                    )}
+                    <div className="flex items-center bg-white/4 p-0.5 rounded-lg border border-white/6">
+                        <button
+                            onClick={togglePromptBuilder}
+                            data-testid="builder-btn"
+                            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-all text-[10px] font-bold uppercase tracking-wider
+                                ${showPromptBuilder
+                                    ? 'bg-green-500/15 text-green-300 shadow-[0_0_12px_rgba(168,85,247,0.1)]'
+                                    : 'text-gray-500 hover:text-gray-300 hover:bg-white/4'}`}
+                        >
+                            <MessageSquare size={11} className={showPromptBuilder ? 'text-green-400' : ''} />
+                            <span className="hidden xl:inline">Builder</span>
+                        </button>
+                        <button
+                            onClick={() => togglePanel('brand')}
+                            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-all text-[10px] font-bold uppercase tracking-wider
+                                ${showBrandAssets
+                                    ? 'bg-green-500/15 text-green-300 shadow-[0_0_12px_rgba(168,85,247,0.1)]'
+                                    : 'text-gray-500 hover:text-gray-300 hover:bg-white/4'}`}
+                        >
+                            <Sparkles size={11} className={showBrandAssets ? 'text-green-400' : ''} />
+                            <span className="hidden xl:inline">Brand</span>
+                        </button>
+                        <button
+                            onClick={() => togglePanel('history')}
+                            data-testid="history-btn"
+                            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-all text-[10px] font-bold uppercase tracking-wider
+                                ${showHistory
+                                    ? 'bg-green-500/15 text-green-300 shadow-[0_0_12px_rgba(168,85,247,0.1)]'
+                                    : 'text-gray-500 hover:text-gray-300 hover:bg-white/4'}`}
+                        >
+                            <Clock size={11} className={showHistory ? 'text-green-400' : ''} />
+                            <span className="hidden xl:inline">History</span>
+                        </button>
+                        <button
+                            onClick={() => togglePanel('roster')}
+                            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-all text-[10px] font-bold uppercase tracking-wider
+                                ${showRosterRegistry
+                                    ? 'bg-green-500/15 text-green-300 shadow-[0_0_12px_rgba(168,85,247,0.1)]'
+                                    : 'text-gray-500 hover:text-gray-300 hover:bg-white/4'}`}
+                        >
+                            <Cpu size={11} className={showRosterRegistry ? 'text-green-400' : ''} />
+                            <span className="hidden xl:inline">Roster</span>
+                        </button>
+                    </div>
 
 
                     {/* PLP Mode Toggle */}
@@ -223,14 +205,6 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
                 )}
             </AnimatePresence>
 
-
-            <FrameSelectionModal
-                isOpen={showFrameModal}
-                onClose={() => setShowFrameModal(false)}
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                onSelect={(image: any) => setVideoInput(frameModalTarget, image)}
-                target={frameModalTarget}
-            />
         </div>
     );
 }
