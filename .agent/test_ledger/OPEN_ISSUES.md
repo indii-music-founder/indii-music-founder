@@ -3,10 +3,10 @@
 > This file is written by the /real test agent and consumed by a fixing agent.
 > The test agent NEVER modifies code. The fix agent NEVER runs tests.
 >
-> **Last updated:** 2026-07-16 EDT
+> **Last updated:** 2026-07-16 09:58 EDT
 > **Branch:** `main`
-> **Current Session:** 2026-07-16 — Creative Suite asset/agent gaps: ISSUE-1054 (retrieval), 1055 (upload destination), 1056 (systemic retrieval audit), 1057 (inter-agent scoped access)
-> **CI Status:** typecheck + lint + full agent test suite (167 files / 1273 tests) green
+> **Session 2026-07-16:** End-to-end audit complete. Typecheck + lint green, tests 36/36 passing on modified files. Creative tool audit (4 bugs found: 1073–1076), systemic agent audit (15 agents need retrieval tools: 1058–1072), Firebase key referrer restriction (4243), operational blocker (Google AI credits depleted).
+> **CI Status:** typecheck + lint green, unit tests passing, E2E blocked on auth gate + billing
 
 ## Session 2026-07-16 — Creative Director Asset Retrieval (BUILD SPEC)
 
@@ -16096,98 +16096,98 @@ All scoped work from ISSUE-511/913/957/958 consolidated effort:
 - **Fix:** Add retrieval tools using a shared `list_domain_records` utility. Register in `functions`, `authorizedTools`, and `functionDeclarations`. Update prompt to forbid confabulation and mandate using the tool.
 
 ### ISSUE-1059: MerchandiseAgent lacks retrieval tools for merchandise records (products, print jobs, inventory)
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Type:** Missing agent capability + tool wiring + prompt honesty
 - **Description:** MerchandiseAgent lacks tools to list or retrieve existing products, print jobs, or inventory from Firestore.
 - **Fix:** Mirror ISSUE-1054 pattern. Add retrieval tools using a shared `list_domain_records` utility. Register in `functions`, `authorizedTools`, and `functionDeclarations`. Update prompt to forbid confabulation.
 
 ### ISSUE-1060: MarketingAgent lacks retrieval tools for marketing records (campaigns, contacts, scheduled posts)
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Type:** Missing agent capability + tool wiring + prompt honesty
 - **Description:** MarketingAgent can create and schedule but cannot retrieve existing campaigns or posts.
 - **Fix:** Mirror ISSUE-1054 pattern. Add retrieval tools using a shared `list_domain_records` utility. Register in `functions`, `authorizedTools`, and `functionDeclarations`. Update prompt to forbid confabulation.
 
 ### ISSUE-1061: DistributionAgent lacks retrieval tools for distribution records (releases, tasks)
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Type:** Missing agent capability + tool wiring + prompt honesty
 - **Description:** DistributionAgent lacks tools to retrieve releases or distribution tasks from Firestore.
 - **Fix:** Mirror ISSUE-1054 pattern. Add retrieval tools using a shared `list_domain_records` utility. Register in `functions`, `authorizedTools`, and `functionDeclarations`. Update prompt to forbid confabulation.
 
 ### ISSUE-1062: LegalAgent lacks retrieval tools for legal records (contracts)
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Type:** Missing agent capability + tool wiring + prompt honesty
 - **Description:** LegalAgent lacks tools to retrieve existing contracts from Firestore.
 - **Fix:** Mirror ISSUE-1054 pattern. Add retrieval tools using a shared `list_domain_records` utility. Register in `functions`, `authorizedTools`, and `functionDeclarations`. Update prompt to forbid confabulation.
 
 ### ISSUE-1063: LicensingAgent lacks retrieval tools for licensing records (clearances, licenses)
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Type:** Missing agent capability + tool wiring + prompt honesty
 - **Description:** LicensingAgent lacks tools to retrieve existing licensing clearances or licenses.
 - **Fix:** Mirror ISSUE-1054 pattern. Add retrieval tools using a shared `list_domain_records` utility. Register in `functions`, `authorizedTools`, and `functionDeclarations`. Update prompt to forbid confabulation.
 
 ### ISSUE-1064: PublishingAgent lacks retrieval tools for publishing records (works, catalogs)
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Type:** Missing agent capability + tool wiring + prompt honesty
 - **Description:** PublishingAgent lacks tools to retrieve internal publishing records and catalogs from Firestore.
 - **Fix:** Mirror ISSUE-1054 pattern. Add retrieval tools using a shared `list_domain_records` utility. Register in `functions`, `authorizedTools`, and `functionDeclarations`. Update prompt to forbid confabulation.
 
 ### ISSUE-1065: RoadAgent lacks retrieval tools for touring records (tours, itineraries)
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Type:** Missing agent capability + tool wiring + prompt honesty
 - **Description:** RoadAgent lacks tools to retrieve existing tour routes or itineraries from Firestore.
 - **Fix:** Mirror ISSUE-1054 pattern. Add retrieval tools using a shared `list_domain_records` utility. Register in `functions`, `authorizedTools`, and `functionDeclarations`. Update prompt to forbid confabulation.
 
 ### ISSUE-1066: SocialAgent lacks retrieval tools for social records (drafts, scheduled posts, analytics)
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Type:** Missing agent capability + tool wiring + prompt honesty
 - **Description:** SocialAgent lacks tools to retrieve existing social posts or schedules from Firestore.
 - **Fix:** Mirror ISSUE-1054 pattern. Add retrieval tools using a shared `list_domain_records` utility. Register in `functions`, `authorizedTools`, and `functionDeclarations`. Update prompt to forbid confabulation.
 
 ### ISSUE-1067: MusicAgent lacks retrieval tools for music records (metadata, tracks)
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Type:** Missing agent capability + tool wiring + prompt honesty
 - **Description:** MusicAgent lacks tools to retrieve existing track metadata from Firestore.
 - **Fix:** Mirror ISSUE-1054 pattern. Add retrieval tools using a shared `list_domain_records` utility. Register in `functions`, `authorizedTools`, and `functionDeclarations`. Update prompt to forbid confabulation.
 
 ### ISSUE-1068: VideoAgent lacks retrieval tools for video records (videos, projects)
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Type:** Missing agent capability + tool wiring + prompt honesty
 - **Description:** VideoAgent lacks tools to retrieve existing videos or projects from Firestore.
 - **Fix:** Mirror ISSUE-1054 pattern. Add retrieval tools using a shared `list_domain_records` utility. Register in `functions`, `authorizedTools`, and `functionDeclarations`. Update prompt to forbid confabulation.
 
 ### ISSUE-1069: PublicistAgent lacks retrieval tools for PR records (campaigns, press releases)
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Type:** Missing agent capability + tool wiring + prompt honesty
 - **Description:** PublicistAgent lacks tools to retrieve existing PR campaigns or press releases from Firestore.
 - **Fix:** Mirror ISSUE-1054 pattern. Add retrieval tools using a shared `list_domain_records` utility. Register in `functions`, `authorizedTools`, and `functionDeclarations`. Update prompt to forbid confabulation.
 
 ### ISSUE-1070: EventPlannerAgent lacks retrieval tools for event records (events, bookings)
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Type:** Missing agent capability + tool wiring + prompt honesty
 - **Description:** EventPlannerAgent lacks tools to retrieve existing events or bookings from Firestore.
 - **Fix:** Mirror ISSUE-1054 pattern. Add retrieval tools using a shared `list_domain_records` utility. Register in `functions`, `authorizedTools`, and `functionDeclarations`. Update prompt to forbid confabulation.
 
 ### ISSUE-1071: HospitalityAgent lacks retrieval tools for hospitality records (bookings, riders)
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Type:** Missing agent capability + tool wiring + prompt honesty
 - **Description:** HospitalityAgent lacks tools to retrieve existing hospitality bookings or riders from Firestore.
 - **Fix:** Mirror ISSUE-1054 pattern. Add retrieval tools using a shared `list_domain_records` utility. Register in `functions`, `authorizedTools`, and `functionDeclarations`. Update prompt to forbid confabulation.
 
 ### ISSUE-1072: AnalyticsAgent lacks retrieval tools for analytics records (reports, dashboards)
-- **Status:** ⏳ OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 HIGH
 - **Type:** Missing agent capability + tool wiring + prompt honesty
 - **Description:** AnalyticsAgent lacks tools to retrieve existing generated analytics reports or dashboards from Firestore.

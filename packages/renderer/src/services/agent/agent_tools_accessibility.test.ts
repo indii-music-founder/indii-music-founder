@@ -255,6 +255,7 @@ describe('Agent Tool Accessibility Audit', () => {
                 missingImplementations.forEach(({ agent, tool }) => {
                     console.log(`   - ${agent}: ${tool}`);
                 });
+                console.log('\nDEBUG all missing:', JSON.stringify(missingImplementations));
             } else {
                 // console.log('   ✅ All declared tools have implementations');
             }

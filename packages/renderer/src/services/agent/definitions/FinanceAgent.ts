@@ -21,11 +21,11 @@ export const FinanceAgent: AgentConfig = {
     category: 'department',
     systemPrompt: systemPrompt,
     functions: {
+        ...financeRetrievalTools,
         analyze_budget: async (args: { amount: number; breakdown: string }) => {
             const efficiency = args.amount < 50000 ? "High" : "Medium";
             const managerFeeSaved = args.amount * 0.20;
             return {
-            ...financeRetrievalTools,
                 success: true,
                 data: {
                     status: "approved",

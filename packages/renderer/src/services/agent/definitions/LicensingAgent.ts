@@ -28,6 +28,7 @@ export const LicensingAgent: AgentConfig = {
     category: 'department',
     systemPrompt,
     functions: {
+        ...licensingRetrievalTools,
         browser_tool: UniversalTools.browser_tool,
         document_query: UniversalTools.document_query,
         payment_gate: UniversalTools.payment_gate,
@@ -63,7 +64,6 @@ export const LicensingAgent: AgentConfig = {
             });
 
             return {
-            ...licensingRetrievalTools,
                 success: true,
                 data: {
                     requestId,

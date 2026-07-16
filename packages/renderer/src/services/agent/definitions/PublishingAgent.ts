@@ -26,12 +26,12 @@ export const PublishingAgent: AgentConfig = {
     category: 'department',
     systemPrompt: systemPrompt,
     functions: {
+        ...publishingRetrievalTools,
         register_work: async (args: { title: string, writers: string[], split: string }) => {
             const prompt = `Validate this music work registration draft. Title: "${args.title}", Contributors: ${args.writers.join(', ')}. Return missing fields, split warnings, and filing readiness. Do not generate or claim an official ISWC.`;
             try {
                 const response = await AutonomousIntelligence.generateStructuredData<Record<string, unknown>>(prompt, { type: 'object' } as Schema, { maxOutputTokens: 8192, temperature: 1.0 });
                 return {
-            ...publishingRetrievalTools,
                     success: true,
                     data: {
                         status: "DraftReady",

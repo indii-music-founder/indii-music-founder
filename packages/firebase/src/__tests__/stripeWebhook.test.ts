@@ -452,6 +452,7 @@ describe('Stripe Webhook Handler (WO-8)', () => {
     it('should handle checkout.session.completed for a licensing purchase', async () => {
         const session: Partial<Stripe.Checkout.Session> = {
             id: 'cs_lic_001',
+            payment_status: 'paid',
             metadata: {
                 userId: 'user-123',
                 type: 'licensing_purchase',
@@ -474,12 +475,15 @@ describe('Stripe Webhook Handler (WO-8)', () => {
         expect(statusFn).not.toHaveBeenCalled();
         expect(jsonFn).toHaveBeenCalledWith({ received: true });
 
-        // Verify Stripe transfer was created
+        // Verify Stripe transfer was created (with idempotencyKey option)
         expect(mocks.mockTransferCreate).toHaveBeenCalledWith(
             expect.objectContaining({
                 amount: 1000000,
                 currency: 'usd',
                 destination: 'acct_123456',
+            }),
+            expect.objectContaining({
+                idempotencyKey: 'transfer_cs_lic_001',
             })
         );
 
@@ -528,6 +532,7 @@ describe('Stripe Webhook Handler (WO-8)', () => {
     it('should finalize a marketplace purchase as a durable sale without touching inventory again', async () => {
         const session: Partial<Stripe.Checkout.Session> = {
             id: 'cs_mkt_001',
+            payment_status: 'paid',
             metadata: {
                 type: 'marketplace_purchase',
                 reservationId: 'res-1',
