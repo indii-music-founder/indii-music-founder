@@ -17,6 +17,7 @@ vi.mock('electron', () => ({
   ipcMain: { handle: handleMock },
   shell: { openExternal: openExternalMock },
   BrowserWindow: { getAllWindows: getAllWindowsMock },
+  app: { getAppPath: () => '/app', isPackaged: false },
   session: {
     defaultSession: {
       clearStorageData: vi.fn(),
@@ -53,7 +54,8 @@ describe('auth:login-google handler', () => {
     const loginHandler = handleMock.mock.calls.find(([channel]) => channel === 'auth:login-google')?.[1];
     expect(loginHandler).toBeDefined();
 
-    const result = await loginHandler();
+    const mockEvent = { senderFrame: { url: 'http://localhost:4243/' } };
+    const result = await loginHandler(mockEvent);
 
     expect(result).toEqual({ ok: false, reason: 'external-login-bridge-disabled' });
     expect(openExternalMock).not.toHaveBeenCalled();
