@@ -1,5 +1,6 @@
-import { db } from '@/services/firebase';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { auth, db, functions } from '@/services/firebase';
+import { doc, getDoc } from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions';
 import { logger } from '@/utils/logger';
 
 export interface CachedContextRef {
@@ -7,6 +8,7 @@ export interface CachedContextRef {
     hash: string; // Content hash to check for changes
     expireTime: number; // ISO timestamp
     lastUsed: number;
+    userId: string;
 }
 
 export class CachedContextService {
@@ -32,7 +34,10 @@ export class CachedContextService {
      */
     static async findCache(hash: string): Promise<string | null> {
         try {
-            const ref = doc(db, this.COLLECTION, hash);
+            const userId = auth.currentUser?.uid;
+            if (!userId) return null;
+
+            const ref = doc(db, this.COLLECTION, `${userId}_${hash}`);
             const snap = await getDoc(ref);
 
             if (snap.exists()) {
@@ -53,16 +58,14 @@ export class CachedContextService {
      */
     static async registerCache(hash: string, resourceName: string, ttlSeconds: number = 3600): Promise<void> {
         try {
-            const ref = doc(db, this.COLLECTION, hash);
-            const data: CachedContextRef = {
-                id: resourceName,
+            const register = httpsCallable<
+                { hash: string; resourceName: string; ttlSeconds: number },
+                { success: boolean }
+            >(functions, 'registerAiContextCache');
+            await register({
                 hash,
-                expireTime: Date.now() + (ttlSeconds * 1000),
-                lastUsed: Date.now()
-            };
-            await setDoc(ref, {
-                ...data,
-                updatedAt: serverTimestamp()
+                resourceName,
+                ttlSeconds,
             });
         } catch (error: unknown) {
             logger.error('[CachedContextService] Failed to register cache:', error);

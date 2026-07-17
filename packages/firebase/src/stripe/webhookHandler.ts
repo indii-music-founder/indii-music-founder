@@ -95,8 +95,9 @@ async function handleLicensingCheckoutCompleted(session: Stripe.Checkout.Session
   }
 
   // Execute Stripe transfer to connected account
+  let transfer: Stripe.Transfer;
   try {
-    const transfer = await stripe.transfers.create({
+    transfer = await stripe.transfers.create({
       amount: artistAmount,
       currency: 'usd',
       destination: connectedAccountId,
@@ -110,9 +111,16 @@ async function handleLicensingCheckoutCompleted(session: Stripe.Checkout.Session
     throw err; // Throw to trigger webhook retry
   }
 
-  // Update or record the completed license in Firestore
+  // Record fulfillment with deterministic document IDs. Stripe retries return
+  // the same transfer for the idempotency key above; deterministic Firestore
+  // IDs make the rest of fulfillment idempotent as well. A batch prevents a
+  // license without its matching financial ledger entry (or vice versa).
   const db = getFirestore();
-  await db.collection('licenses').add({
+  const licenseRef = db.collection('licenses').doc(session.id);
+  const ledgerRef = db.collection(`users/${userId}/ledger`).doc(`sync_license_${session.id}`);
+  const batch = db.batch();
+
+  batch.set(licenseRef, {
     userId,
     title: trackTitle,
     artist,
@@ -120,19 +128,22 @@ async function handleLicensingCheckoutCompleted(session: Stripe.Checkout.Session
     status: 'active',
     amount: artistAmount,
     stripeSessionId: session.id,
+    stripeTransferId: transfer.id,
     createdAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp(),
-  });
+  }, { merge: true });
 
-  // Log transaction entry in ledger
-  await db.collection(`users/${userId}/ledger`).add({
+  batch.set(ledgerRef, {
     type: 'sync_license_sale',
     amount: artistAmount,
     currency: 'usd',
     status: 'paid',
     stripeSessionId: session.id,
+    stripeTransferId: transfer.id,
     createdAt: FieldValue.serverTimestamp(),
-  });
+  }, { merge: true });
+
+  await batch.commit();
 }
 
 /**
@@ -595,8 +606,11 @@ export const stripeWebhook = onRequest({
       return;
     }
   } catch (idempotencyErr) {
-    // Non-fatal: log and continue — better to process twice than drop
-    logger.warn('[stripeWebhook] Idempotency check failed (proceeding):', idempotencyErr);
+    // Fail closed. Stripe will retry a 5xx delivery; proceeding without the
+    // atomic claim can duplicate non-idempotent financial side effects.
+    logger.error('[stripeWebhook] Idempotency check failed:', idempotencyErr);
+    res.status(500).json({ error: 'Webhook idempotency check failed' });
+    return;
   }
 
   try {

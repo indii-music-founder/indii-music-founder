@@ -20,6 +20,8 @@ const mocks = vi.hoisted(() => {
     const mockUpdate = vi.fn().mockResolvedValue(undefined);
     const mockSet = vi.fn().mockResolvedValue(undefined);
     const mockAdd = vi.fn().mockResolvedValue(undefined);
+    const mockBatchSet = vi.fn();
+    const mockBatchCommit = vi.fn().mockResolvedValue(undefined);
 
     // Firestore doc snapshot factory
     const makeSnap = (exists: boolean, data: Record<string, unknown> = {}) => ({
@@ -70,6 +72,7 @@ const mocks = vi.hoisted(() => {
             where: mockWhere,
         })),
         runTransaction: mockRunTransaction,
+        batch: vi.fn(() => ({ set: mockBatchSet, commit: mockBatchCommit })),
     };
 
     const mockConstructEvent = vi.fn();
@@ -80,6 +83,8 @@ const mocks = vi.hoisted(() => {
         mockSet,
         mockUpdate,
         mockAdd,
+        mockBatchSet,
+        mockBatchCommit,
         mockDoc,
         mockCollection,
         mockRunTransaction,
@@ -241,6 +246,19 @@ describe('Stripe Webhook Handler (WO-8)', () => {
         await stripeWebhook(req, res);
 
         expect(jsonFn).toHaveBeenCalledWith({ received: true, duplicate: true });
+    });
+
+    it('should fail closed when the idempotency claim cannot be recorded', async () => {
+        const event: Partial<Stripe.Event> = { id: 'evt_claim_failed', type: 'checkout.session.completed' };
+        mocks.mockConstructEvent.mockReturnValue(event);
+        mocks.mockRunTransaction.mockRejectedValueOnce(new Error('firestore unavailable'));
+
+        const { req, res, statusFn, jsonFn } = makeReqRes(event);
+        await stripeWebhook(req, res);
+
+        expect(statusFn).toHaveBeenCalledWith(500);
+        expect(jsonFn).toHaveBeenCalledWith({ error: 'Webhook idempotency check failed' });
+        expect(mocks.mockTransferCreate).not.toHaveBeenCalled();
     });
 
     // ── checkout.session.completed — Subscription ────────────────────────────
@@ -487,9 +505,11 @@ describe('Stripe Webhook Handler (WO-8)', () => {
             })
         );
 
-        // Verify active license was recorded in Firestore
+        // Verify deterministic, atomic license fulfillment records.
         expect(mocks.mockDb.collection).toHaveBeenCalledWith('licenses');
-        expect(mocks.mockAdd).toHaveBeenCalledWith(
+        expect(mocks.mockDoc).toHaveBeenCalledWith('cs_lic_001');
+        expect(mocks.mockBatchSet).toHaveBeenCalledWith(
+            expect.anything(),
             expect.objectContaining({
                 userId: 'user-123',
                 title: 'Midnight Blaze',
@@ -497,18 +517,25 @@ describe('Stripe Webhook Handler (WO-8)', () => {
                 licenseType: 'sync',
                 status: 'active',
                 amount: 1000000,
-            })
+                stripeTransferId: 'tr_123',
+            }),
+            { merge: true },
         );
 
         // Verify transaction log in user's ledger
         expect(mocks.mockDb.collection).toHaveBeenCalledWith('users/user-123/ledger');
-        expect(mocks.mockAdd).toHaveBeenCalledWith(
+        expect(mocks.mockDoc).toHaveBeenCalledWith('sync_license_cs_lic_001');
+        expect(mocks.mockBatchSet).toHaveBeenCalledWith(
+            expect.anything(),
             expect.objectContaining({
                 type: 'sync_license_sale',
                 amount: 1000000,
                 status: 'paid',
-            })
+                stripeTransferId: 'tr_123',
+            }),
+            { merge: true },
         );
+        expect(mocks.mockBatchCommit).toHaveBeenCalledTimes(1);
     });
 
     // ── Unknown event type ────────────────────────────────────────────────────

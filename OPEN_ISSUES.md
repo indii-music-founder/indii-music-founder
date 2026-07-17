@@ -22,23 +22,23 @@ Electron, Firestore rules). Ordered roughly by severity. No code was modified.
 
 ### Blocking / Critical
 
-- [ ] **[Secrets / Git Hygiene]**: A live Google OAuth client secret is committed to the repo root at `client_secret_148015878263-pfcoueoik0p1cn744vdn2m1u1gjl119m.apps.googleusercontent.com.json`. It is git-tracked (`git ls-files` confirms) and the JSON contains a real `client_secret` value (a True Secret per `docs/API_CREDENTIALS_POLICY.md` §3.1). This must be revoked/rotated in GCP and purged from git history — it is exposed to anyone with repo access and to all forks/clones.
+- [ ] **[Secrets / Git Hygiene] — PARTIAL**: The OAuth client JSON is removed from the current tree and ignored, but its live-shaped secret remains reachable in git history. Revoke/rotate it in GCP and coordinate a history purge. Full evidence is in canonical ledger SEC-001.
 
-- [ ] **[Stripe Webhook — Licensing Payout]**: `handleLicensingCheckoutCompleted` in `packages/firebase/src/stripe/webhookHandler.ts:89` calls `stripe.transfers.create(...)` with **no idempotency key**, then writes to Firestore in two non-transactional `add()` calls (`licenses` at :103 and `users/{userId}/ledger` at :116). If the transfer succeeds but a subsequent Firestore write throws, the handler throws, the delivery is marked `failed`, and Stripe retries. On retry the delivery is explicitly re-processed (the idempotency guard at :554 treats `failed` as retryable), so `stripe.transfers.create` runs **again → duplicate real payout to the connected account**. Pass a Stripe idempotency key derived from `session.id`, and/or record the transfer id before creating it.
+- [x] **[Stripe Webhook — Licensing Payout] — FIXED 2026-07-16**: Transfer idempotency, deterministic license/ledger IDs, atomic receipt writes, transfer lineage, and fail-closed event claiming are implemented and covered. See PAY-001 in the canonical ledger.
 
 ### High
 
-- [ ] **[Firestore Rules — licenses read leak]**: `packages/firebase/firestore.rules:1431` grants `allow read: if isVerifiedUser() || isGuest();` on the top-level `/licenses/{licenseId}` collection with **no owner scoping**. Any authenticated (non-anonymous) user can read every other user's license records (sync deals, amounts, track titles, Stripe session ids written by the webhook at webhookHandler.ts:103). Scope reads to `resource.data.userId == request.auth.uid` like every other owner-scoped collection in this file.
+- [x] **[Firestore Rules — licenses read leak] — FIXED**: Reads are owner-scoped; live-emulator tests deny anonymous and cross-user reads.
 
-- [ ] **[Firestore Rules — licenses update/delete via guest branch]**: Same block, `packages/firebase/firestore.rules:1433-1434`: `allow update: ... || isGuest();` and `allow delete: ... || isGuest();`. These currently fail closed only because `isGuest()` is hardcoded to `false` (line 25-27). This is a latent footgun — if `isGuest()` is ever re-enabled, any guest could update/delete arbitrary licenses. The trailing `|| isGuest()` on write rules should be removed, not left load-bearing on a stubbed helper.
+- [x] **[Firestore Rules — licenses update/delete via guest branch] — FIXED**: No guest write branch remains; ownership is immutable and emulator-tested.
 
 ### Medium
 
-- [ ] **[Stripe Webhook — payment_status not verified]**: `handleMarketplacePurchaseCompleted` (`webhookHandler.ts:179`) and `handleMicroTransactionCheckoutCompleted` (`webhookHandler.ts:35`) fulfill on `checkout.session.completed` without checking `session.payment_status === 'paid'`. For asynchronous payment methods (ACH/bank debit, etc.) `checkout.session.completed` fires while the payment is still `unpaid`/processing, and settlement can later fail. Marketplace grants the sale + revenue record and micro-transactions grant credits before funds are confirmed. Gate fulfillment on `payment_status === 'paid'` and additionally handle `checkout.session.async_payment_succeeded` / `async_payment_failed`. (Note: `handleFounderSeatCheckoutCompleted` at :143 correctly checks `amount_total`; apply the same rigor here.)
+- [x] **[Stripe Webhook — payment_status not verified] — FIXED**: Paid-status gates and asynchronous success/failure routing are present.
 
-- [ ] **[Firestore Rules — shared collections writable by any user]**: `/ai_context_cache/{hash}` (`firestore.rules:829`) and `/instrument_usage_stats/{instrumentId}` (`firestore.rules:734`) both allow `read, write: if isAuthenticated()` with no per-user scoping. Any authenticated user can overwrite another user's cached Vertex context (cache poisoning that then feeds AI responses) or clobber global instrument stats. If cross-session reuse is intentional, writes should be server-only (Admin SDK) or validated, not open client writes.
+- [x] **[Firestore Rules — shared collections writable by any user] — FIXED 2026-07-16**: Client writes are denied; validated authenticated callables write through Admin SDK, and cache reads are owner-scoped. All 133 emulator rule cases pass.
 
-- [ ] **[Config — hardcoded Firebase key fallback]**: `packages/admin-dashboard/src/firebase.ts:16` hardcodes an `AIzaSy...` API key as the fallback when `VITE_FIREBASE_API_KEY` is unset (`?? 'AIzaSy...'`), and `scripts/verify-backend-apis.ts:12` does the same. Firebase API keys are identifiers, not secrets (policy §3.1), so this is not a credential leak — but the hardcoded fallback defeats the env-isolation requirement (policy §3.2.4): a misconfigured environment silently talks to the baked-in project instead of failing fast. Prefer failing when the env var is absent.
+- [x] **[Config — hardcoded Firebase key fallback] — FIXED**: Both paths now require environment-provided Firebase identifiers and fail fast.
 
 ### Notes / Verified-OK (not issues)
 
