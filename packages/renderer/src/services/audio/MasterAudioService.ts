@@ -69,15 +69,27 @@ export class MasterAudioService {
         }
 
         const resolvedMasterFingerprint = metadata.customMetadata?.masterFingerprint?.trim() || options.masterFingerprint;
-        const verifyMaster = httpsCallable<
-            { storagePath: string; expectedSha256: string; masterFingerprint: string },
-            { verified: true }
-        >(functions, 'verifyMasterAudio');
-        await verifyMaster({
+        const queueProfiling = httpsCallable<
+            { storagePath: string; masterFingerprint: string },
+            {
+                success: true;
+                status: 'QUEUED_FOR_DSP_PROFILING';
+                masterFingerprint: string;
+                contentHash: string;
+                generation: string;
+            }
+        >(functions, 'processAudioIngestion');
+        const profiling = await queueProfiling({
             storagePath,
-            expectedSha256: contentHash,
             masterFingerprint: resolvedMasterFingerprint,
         });
+        if (
+            profiling.data.contentHash !== contentHash ||
+            profiling.data.masterFingerprint !== resolvedMasterFingerprint ||
+            !profiling.data.generation
+        ) {
+            throw new Error('Server profiling receipt does not match the canonical master identity.');
+        }
 
         return {
             audioProperties,

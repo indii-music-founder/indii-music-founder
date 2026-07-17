@@ -102,6 +102,7 @@ export async function verifyMasterAudioObject(
         customMetadata.contentHash !== expectedSha256 ? 'content-hash metadata does not match' : '',
         customMetadata.immutable !== 'true' ? 'immutable metadata is missing' : '',
         customMetadata.masterFingerprint !== masterFingerprint ? 'master fingerprint metadata does not match' : '',
+        !/^[1-9][0-9]*$/.test(generation) ? 'stored generation is invalid' : '',
     ].filter(Boolean);
 
     if (metadataIssues.length > 0) {

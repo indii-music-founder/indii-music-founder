@@ -26,6 +26,7 @@ import { queueVerifiedAudioIngestion } from '../distribution/ingestion';
 
 const HASH = 'a'.repeat(64);
 const STORAGE_PATH = `masters/owner-1/${HASH}/original.wav`;
+const STORAGE_BUCKET = 'indii-test.firebasestorage.app';
 const VALID_ENV = {
     GCLOUD_PROJECT: 'indii-test',
     ENGINE_DSP_URL: 'https://engine-dsp-abc-uc.a.run.app/profile',
@@ -71,6 +72,7 @@ describe('queueVerifiedAudioIngestion', () => {
             masterFingerprint: 'SONIC-1',
         }, {
             env: VALID_ENV,
+            storageBucket: STORAGE_BUCKET,
             verifyMaster: verifyMaster as never,
             tasksClient,
         })).rejects.toThrow(/does not belong/);
@@ -92,6 +94,7 @@ describe('queueVerifiedAudioIngestion', () => {
             masterFingerprint: 'SONIC-1',
         }, {
             env: VALID_ENV,
+            storageBucket: STORAGE_BUCKET,
             verifyMaster,
             tasksClient,
         });
@@ -105,6 +108,7 @@ describe('queueVerifiedAudioIngestion', () => {
 
         const request = tasksClient.createTask.mock.calls[0]?.[0];
         expect(request?.parent).toContain('/dsp-processing-queue');
+        expect(request?.task.dispatchDeadline).toEqual({ seconds: 1_800 });
         expect(request?.task.httpRequest).toEqual(expect.objectContaining({
             url: VALID_ENV.ENGINE_DSP_URL,
             oidcToken: {
@@ -114,6 +118,7 @@ describe('queueVerifiedAudioIngestion', () => {
         }));
         const payload = JSON.parse(Buffer.from(request?.task.httpRequest.body ?? '', 'base64').toString('utf8'));
         expect(payload).toEqual({
+            storageBucket: STORAGE_BUCKET,
             storagePath: STORAGE_PATH,
             masterFingerprint: 'SONIC-1',
             contentHash: HASH,

@@ -1,4 +1,5 @@
 import { CloudTasksClient } from '@google-cloud/tasks';
+import { getStorage } from 'firebase-admin/storage';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
 
 import { verifyMasterAudioObject, VerifyMasterAudioResponse } from '../functions/storage/verifyMasterAudio';
@@ -26,6 +27,7 @@ interface CloudTasksClientLike {
     createTask(request: {
         parent: string;
         task: {
+            dispatchDeadline: { seconds: number };
             httpRequest: {
                 httpMethod: 'POST';
                 url: string;
@@ -42,6 +44,7 @@ interface CloudTasksClientLike {
 
 interface AudioIngestionDependencies {
     env?: NodeJS.ProcessEnv;
+    storageBucket?: string;
     tasksClient?: CloudTasksClientLike;
     verifyMaster?: (
         userId: string,
@@ -158,6 +161,11 @@ export async function queueVerifiedAudioIngestion(
 ): Promise<QueueAudioIngestionResponse> {
     const input = parseInput(rawInput);
     const config = requireRuntimeConfig(dependencies.env ?? process.env);
+    const storageBucket = requiredString(
+        dependencies.storageBucket ?? getStorage().bucket().name,
+        'storageBucket',
+        256
+    );
     const verifyMaster = dependencies.verifyMaster ?? verifyMasterAudioObject;
     const verification = await verifyMaster(userId, {
         storagePath: input.storagePath,
@@ -168,6 +176,7 @@ export async function queueVerifiedAudioIngestion(
     const tasksClient = dependencies.tasksClient ?? new CloudTasksClient();
     const parent = tasksClient.queuePath(config.project, config.location, config.queue);
     const payload = {
+        storageBucket,
         storagePath: verification.storagePath,
         masterFingerprint: input.masterFingerprint,
         contentHash: verification.contentHash,
@@ -175,6 +184,7 @@ export async function queueVerifiedAudioIngestion(
         ownerId: userId,
     };
     const task = {
+        dispatchDeadline: { seconds: 1_800 },
         httpRequest: {
             httpMethod: 'POST' as const,
             url: config.engineDspUrl,
