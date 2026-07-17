@@ -1342,3 +1342,14 @@ Before pushing any branch, run `/plat` (see `.claude/commands/plat.md`). It exec
 - BUG: A metered multi-output request can successfully write output 1 to Cloud Storage, fail while writing output 2, then void the cost reservation while leaving output 1 orphaned and absent from the failed job response.
 - FIX: Complete provider generation for the full batch before Storage persistence, track every written `gs://` URI, and delete already-written objects when any later Storage write fails. Only mark the job completed and settle cost after every requested output is durable.
 - PREVENTION: Any operation that produces multiple external side effects under one transaction/reservation needs a compensation path. Tests must force failure after the first successful write and assert cleanup plus reservation voiding.
+
+## 2026-07-17 — Firebase auth/requests-from-referer-blocked on ALL localhost ports (not port-specific)
+
+- SEVERITY: High (blocks all local web dev auth)
+- ERROR: `Firebase: Error (auth/requests-from-referer-http://localhost:4243-are-blocked.)`
+- ROOT CAUSE: The browser API key (`VITE_FIREBASE_API_KEY`, prefix AIzaSyD4Vd) has HTTP-referrer restrictions allowlisting ONLY production domains (`indii-music-founder.web.app`, `.firebaseapp.com`). NO localhost referrer passes — probed 4242, 4243, 3000, bare localhost, and 127.0.0.1: all blocked. Changing dev ports can NEVER fix this. Electron is unaffected only because native apps send no browser Referer header.
+- DIAGNOSIS TECHNIQUE (no GCP console needed): probe Identity Toolkit directly per candidate referrer —
+  `curl -s -X POST "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=$KEY" -H "Referer: http://localhost:4243/" -d '{"email":"probe@probe.invalid","password":"x","returnSecureToken":true}'`
+  → blocked referrer returns "Requests from referer ... are blocked."; allowed referrer returns a normal auth error (e.g. INVALID_LOGIN_CREDENTIALS).
+- FIX: GCP Console → APIs & Services → Credentials → the browser key → Application restrictions → HTTP referrers → ADD `http://localhost:4243/*` (web dev) alongside prod entries. Requires an account with apikeys perms on `indii-music-founder` (the.walking.agency.det@gmail.com is DENIED; wiil@indii.music is the firebase-tools owner account — use it: `gcloud config set account wiil@indii.music`).
+- PORT MAP (do not reshuffle): 4242 = Electron dev (permanent), 4243 = web dev/test (`dev:web`), 3000 = landing/marketing.
