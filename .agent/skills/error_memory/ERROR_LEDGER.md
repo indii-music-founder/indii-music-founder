@@ -1368,3 +1368,25 @@ Before pushing any branch, run `/plat` (see `.claude/commands/plat.md`). It exec
 - DIAGNOSIS: probe billing/validity with a minimal live call — `curl -X POST "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=$KEY" -d '{"contents":[{"parts":[{"text":"ping"}]}],"generationConfig":{"maxOutputTokens":5}}'` → 400 invalid-key vs 429 prepay-depleted vs 200 OK are unambiguous.
 - FIX (2026-07-17): added Secret Manager version 191 of `GEMINI_API_KEY` containing the valid "API 1" keyString (verified live: 200 OK). Gen2 functions bind the new version on next deploy (CI deploy on push to main). Requires `wiil@indii.music` gcloud account (`gcloud config set account wiil@indii.music`).
 - PREVENTION: after any key auto-rotation, re-sync Secret Manager; a validity probe belongs in deploy verification. Do not trust old 429 messages — re-probe live before concluding billing is the blocker.
+
+## 2026-07-17 — Stripe escrow release: capturing before validating the payout plan, and non-idempotent capture bricking retries
+
+- SEVERITY: Critical (real-money path)
+- BUG PATTERN 1: capture-then-distribute flows that validate payees DURING the transfer loop (skip/continue on missing split or account) can capture funds and pay nobody, while marking the record RELEASED. Stripe transfers draw from platform balance — they are NOT capped by the captured amount, so splits summing >100% overpay.
+- BUG PATTERN 2: on partial failure after capture, reverting status for "retry" is a trap if the retry path re-calls `paymentIntents.capture` — capturing an already-captured intent throws, permanently wedging the flow.
+- FIX: validate the ENTIRE payout plan (split total in (0,100], every positive-split party has an account) inside the Firestore transaction BEFORE the status moves and before any Stripe call; make capture idempotent (`retrieve` first, skip when `status === 'succeeded'`); keep per-party idempotency keys on transfers. See `packages/firebase/src/stripe/splitEscrow.ts` (ISSUE-1079).
+- PREVENTION: in any money-movement function, no Stripe mutation until every downstream leg of the plan is proven executable.
+
+## 2026-07-17 — Zustand persist: adding base64-bearing state to partialize silently risks killing ALL localStorage persistence
+
+- SEVERITY: High
+- BUG: persisting any store field that carries base64 image/audio data (e.g. a retry batch with `base64Data`) can exceed the ~5MB localStorage quota; the persist write fails and takes down persistence for every other field sharing the storage key (notes, prompts, prefs).
+- FIX: keep large-payload state store-resident but OUT of `partialize` — in-memory store residency already survives component unmounts, which is usually the actual requirement. See `packages/renderer/src/core/store/index.ts` comment (ISSUE-1080).
+- PREVENTION: before adding a field to `partialize`, ask "can this ever contain media bytes?" If yes, persist a reference (id/path), never the bytes.
+
+## 2026-07-17 — AI provider single-point-of-failure: fallback matcher tuned only to key errors missed billing exhaustion
+
+- SEVERITY: Critical (was the "creative is down" outage)
+- BUG: creative gateway preferred the AI Studio API key and fell back to Vertex ADC only on API-KEY errors. Prepaid billing exhaustion (`RESOURCE_EXHAUSTED` / "prepayment credits are depleted") is not a key error, so the fallback never fired and users ate the outage.
+- FIX: `getMediaProvider()` policy — production defaults to Vertex ADC on the postpaid project, dev/QA defaults to the key (spend isolation), `MEDIA_PROVIDER` overrides; fallback matcher extended to billing-exhaustion strings. Cloud Monitoring log alert + GCP budget now page the founder. See `packages/firebase/src/functions/creative/gateway.ts` (ISSUE-1082).
+- PREVENTION: when a provider has a fallback, enumerate every error class that means "this provider is unusable" — not just the one that motivated the fallback. Billing outages must page a human, never only surface as user-facing errors.
