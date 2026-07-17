@@ -72,13 +72,17 @@ class InstrumentRegistry {
   /**
    * Persist usage statistics after each execution to Firestore.
    */
-  private async persistUsageStats(instrumentId: string, outcome: 'success' | 'failed'): Promise<void> {
+  private async persistUsageStats(
+    instrumentId: string,
+    outcome: 'success' | 'failed',
+    executionId: string,
+  ): Promise<void> {
     try {
       const recordUsage = httpsCallable<
-        { instrumentId: string; outcome: 'success' | 'failed' },
-        { success: boolean }
+        { instrumentId: string; outcome: 'success' | 'failed'; executionId: string },
+        { success: boolean; duplicate?: boolean }
       >(functions, 'recordInstrumentUsage');
-      await recordUsage({ instrumentId, outcome });
+      await recordUsage({ instrumentId, outcome, executionId });
     } catch (error: unknown) {
       logger.warn(`[InstrumentRegistry] Failed to persist stats for ${instrumentId}:`, error);
     }
@@ -254,6 +258,7 @@ class InstrumentRegistry {
     };
     stats.totalExecutions++;
     let executionOutcome: 'success' | 'failed' = 'failed';
+    const executionId = crypto.randomUUID();
 
     try {
       // Execute with optional timeout
@@ -291,7 +296,7 @@ class InstrumentRegistry {
     } finally {
       this.usageStats.set(instrumentId, stats);
       // Persist to Firestore (fire-and-forget, don't block execution return)
-      void this.persistUsageStats(instrumentId, executionOutcome);
+      void this.persistUsageStats(instrumentId, executionOutcome, executionId);
     }
   }
 

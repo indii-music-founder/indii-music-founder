@@ -1181,6 +1181,14 @@ describe('Firestore Security Rules', () => {
             }));
             await assertFails(updateDoc(statsRef, { totalExecutions: 999_999 }));
             await assertFails(deleteDoc(statsRef));
+            await assertFails(setDoc(doc(db, 'instrument_usage_events', `${ALICE_UID}_forged`), {
+                userId: ALICE_UID,
+                executionId: 'forged',
+            }));
+            await assertFails(setDoc(doc(db, 'instrument_usage_rate_limits', `${ALICE_UID}_generate_image`), {
+                userId: ALICE_UID,
+                count: 0,
+            }));
         });
     });
 
