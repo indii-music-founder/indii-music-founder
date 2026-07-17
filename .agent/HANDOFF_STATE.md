@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-07-17 15:24 EDT
+**Updated:** 2026-07-17 15:37 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+3cb48a800b fix(mobile-remote): harden relay resilience
+04b5509719 chore: session checkpoint [15:24]
 903a1fa4f7 feat(ui): add manual width adjustment to right panel
 93172c8503 chore: session checkpoint [13:49]
 1328be15a4 chore: complete session auto-fixes and workflow enhancements
@@ -12,13 +14,10 @@
 73bdc26b42 docs(ledger): add escrow money-path, persist-quota, and AI provider fallback patterns
 a56188700f chore: session checkpoint [13:21]
 df9394f6d2 chore: session checkpoint [13:19]
-33100d435a chore: session checkpoint [13:18]
-b7ad31ce46 docs(error-memory): GEMINI_API_KEY secret was stale post-rotation — synced to valid key (v191), live-verified
 ```
 
 ## Working State
 ```
- M .agent/skills/error_memory/ERROR_LEDGER.md
  M .agent/test_ledger/UNFINISHED_WORK.md
  M .claude/settings.json
  M ANTIGRAVITY.md
@@ -39,23 +38,18 @@ b7ad31ce46 docs(error-memory): GEMINI_API_KEY secret was stale post-rotation —
  M packages/firebase/storage.rules
  M packages/main/src/handlers/distribution.ts
  M packages/main/src/handlers/distribution_redaction.security.test.ts
- M packages/renderer/src/hooks/useRemoteCommandListener.ts
  M packages/renderer/src/modules/creative/components/InfiniteCanvasHUD.tsx
  M packages/renderer/src/modules/creative/video/store/videoEditorStore.ts
- M packages/renderer/src/modules/mobile-remote/MobileRemote.test.tsx
- M packages/renderer/src/modules/mobile-remote/MobileRemote.tsx
- M packages/renderer/src/modules/mobile-remote/components/AgentChat.tsx
- M packages/renderer/src/modules/mobile-remote/components/GenerationMonitor.tsx
- M packages/renderer/src/modules/mobile-remote/components/QuickCaptureView.tsx
- M packages/renderer/src/modules/mobile-remote/components/SettingsView.tsx
- M packages/renderer/src/modules/mobile-remote/components/StreamView.tsx
- M packages/renderer/src/modules/mobile-remote/components/TransportBar.tsx
  M packages/renderer/src/modules/publishing/hooks/useDDEXRelease.test.ts
  M packages/renderer/src/modules/publishing/hooks/useDDEXRelease.ts
  M packages/renderer/src/modules/registration/RegistrationCenter.tsx
  M packages/renderer/src/modules/registration/adapters/LocAdapter.ts
- M packages/renderer/src/services/agent/RemoteRelayService.test.ts
- M packages/renderer/src/services/agent/RemoteRelayService.ts
+ M packages/renderer/src/modules/royalty/components/ActionPanel.tsx
+ M packages/renderer/src/modules/royalty/components/CopyrightSection.tsx
+ M packages/renderer/src/modules/royalty/components/MlcSection.tsx
+ M packages/renderer/src/modules/royalty/components/ProRegistrationSection.tsx
+ M packages/renderer/src/modules/royalty/components/ReleaseGateBanner.tsx
+ M packages/renderer/src/modules/royalty/components/SoundExchangeSection.tsx
  M packages/renderer/src/services/agent/tools/DistributionTools.ts
  M packages/renderer/src/services/distribution/DistributionService.integration.test.ts
  M packages/renderer/src/services/distribution/DistributionService.ts
@@ -63,6 +57,10 @@ b7ad31ce46 docs(error-memory): GEMINI_API_KEY secret was stale post-rotation —
  M packages/renderer/src/services/distribution/proprietary-ingestion/EarningsUploadService.test.ts
  M packages/renderer/src/services/distribution/proprietary-ingestion/EarningsUploadService.ts
  M packages/renderer/src/services/distribution/types/distributor.ts
+ M packages/renderer/src/services/finance/RoyaltyPayoutService.ts
+ M packages/renderer/src/services/finance/RoyaltyService.test.ts
+ M packages/renderer/src/services/finance/RoyaltyService.ts
+ M packages/renderer/src/services/finance/__tests__/RoyaltyPayoutService.test.ts
  M packages/renderer/src/services/ingestion/TrackIngestionService.test.ts
  M packages/renderer/src/services/ingestion/TrackIngestionService.ts
  M packages/renderer/src/services/metadata/TrackLibraryService.ts
@@ -81,13 +79,12 @@ b7ad31ce46 docs(error-memory): GEMINI_API_KEY secret was stale post-rotation —
 ?? .cursorrules
 ?? .windsurfrules
 ?? packages/firebase/src/__tests__/ingest_earnings_report.test.ts
+?? packages/firebase/src/__tests__/recoupment_balance.test.ts
 ?? packages/firebase/src/__tests__/royalty_allocation.test.ts
 ?? packages/firebase/src/__tests__/verify_master_audio.test.ts
 ?? packages/firebase/src/functions/finance/
 ?? packages/firebase/src/functions/storage/verifyMasterAudio.ts
 ?? packages/firebase/src/test/security/storage.rules.test.ts
-?? packages/renderer/src/modules/mobile-remote/components/AgentChat.test.tsx
-?? packages/renderer/src/modules/mobile-remote/components/TransportBar.test.tsx
 ?? packages/renderer/src/modules/registration/adapters/LocAdapter.test.ts
 ?? packages/renderer/src/modules/registration/services/RegistrationCatalog.test.ts
 ?? packages/renderer/src/modules/registration/services/RegistrationCatalog.ts
