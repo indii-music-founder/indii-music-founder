@@ -205,6 +205,11 @@ class AnalyzerTests(unittest.TestCase):
             "vocal_description": "instrumental",
             "language": "none",
             "clean_or_explicit_signal": "no audible lyrics",
+            "sonic_texture": "warm analog synthesizers",
+            "visual_direction": "slow-moving blue neon city lights",
+            "image_prompt": "Blue neon city lights, no text.",
+            "video_prompt": "Slow camera drift through blue neon city lights.",
+            "marketing_keywords": ["electronic", "focused"],
             "marketing_moments": [],
         }
         response = Mock(text=json.dumps(profile))

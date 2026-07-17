@@ -88,6 +88,11 @@ class GeminiMusicProfile(BaseModel):
     vocal_description: str = Field(max_length=800)
     language: str = Field(max_length=80)
     clean_or_explicit_signal: str = Field(max_length=240)
+    sonic_texture: str = Field(max_length=240)
+    visual_direction: str = Field(max_length=800)
+    image_prompt: str = Field(max_length=1200)
+    video_prompt: str = Field(max_length=1200)
+    marketing_keywords: list[Annotated[str, Field(max_length=80)]] = Field(max_length=16)
     marketing_moments: list[MarketingMoment] = Field(max_length=8)
 
 
@@ -461,7 +466,8 @@ class GeminiAudioAnalyzer:
         prompt = (
             "Analyze this canonical music master for reusable artist intelligence. "
             "Describe only what is audible. Identify likely genres, moods, instrumentation, "
-            "vocal characteristics/language, and up to eight timestamped moments useful for "
+            "vocal characteristics/language, sonic texture, a visual direction, image/video prompts, "
+            "marketing keywords, and up to eight timestamped moments useful for "
             "short-form marketing or video editing. For clean_or_explicit_signal, report only "
             "audible evidence and say uncertain when uncertain. Do not infer copyright ownership, "
             "registrations, royalty splits, identities, or legal rights."
