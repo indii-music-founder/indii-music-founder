@@ -24,7 +24,6 @@ import {
     collection,
     doc,
     addDoc,
-    setDoc,
     updateDoc,
     onSnapshot,
     query,
@@ -262,6 +261,7 @@ const LOCAL_P2P_PASSCODE_KEY = 'indii_p2p_passcode';
 // pairing holds while the desktop is backgrounded; a genuinely closed desktop is
 // still detected within 120s.
 export const DESKTOP_HEARTBEAT_STALE_MS = 120_000;
+export const DESKTOP_HEARTBEAT_CLOCK_SKEW_TOLERANCE_MS = 30_000;
 
 function getFeedRecencyCutoff(): Timestamp {
     return Timestamp.fromMillis(Date.now() - FEED_RECENCY_HOURS * 60 * 60 * 1000);
@@ -310,10 +310,9 @@ export function isFreshDesktopState(
     
     // Account for local clock skew between phone and server.
     // Use Math.abs() to handle clocks that are either ahead or behind.
-    // Allow up to 30 seconds of skew. The local setTimeout in MobileRemote
-    // will catch an actually dead desktop after 15 seconds anyway.
-    const CLOCK_SKEW_TOLERANCE_MS = 30 * 1000;
-    return Math.abs(now - timestamp) <= staleMs + CLOCK_SKEW_TOLERANCE_MS;
+    // Allow up to 30 seconds of skew. MobileRemote schedules its local stale
+    // edge from this same total window, then adds a short transient grace.
+    return Math.abs(now - timestamp) <= staleMs + DESKTOP_HEARTBEAT_CLOCK_SKEW_TOLERANCE_MS;
 }
 
 /**
@@ -331,6 +330,25 @@ export function isFreshStudioState(
         && typeof state.studioInstanceId === 'string'
         && state.studioInstanceId.length > 0
         && state.listenerReady === true;
+}
+
+/**
+ * How long the current Studio lease can still be treated as fresh on this
+ * device. MobileRemote uses the same boundary as isFreshStudioState so its
+ * timeout cannot fire early, briefly recover inside the skew allowance, and
+ * then forget to schedule the real stale transition.
+ */
+export function studioStateFreshnessRemainingMs(
+    state: DesktopState | null | undefined,
+    now = Date.now(),
+    staleMs = DESKTOP_HEARTBEAT_STALE_MS
+): number {
+    if (!isFreshStudioState(state, now, staleMs)) return 0;
+    const timestamp = relayTimestampToMillis(state?.timestamp);
+    return Math.max(
+        0,
+        timestamp + staleMs + DESKTOP_HEARTBEAT_CLOCK_SKEW_TOLERANCE_MS - now
+    );
 }
 
 export function cacheRemotePairingToken(token: string | null | undefined): string | null {
@@ -364,7 +382,7 @@ export function getCachedRemotePairingToken(search = typeof window !== 'undefine
 class RemoteRelayService {
     private localWs: WebSocket | null = null;
     private localMessageCallbacks: Map<string, (data: RemoteResponse) => void> = new Map();
-    private localStateCallback: ((state: DesktopState | null) => void) | null = null;
+    private localStateCallbacks = new Set<(state: DesktopState | null) => void>();
     private wsRetryCount = 0;
 
     constructor() {
@@ -407,8 +425,8 @@ class RemoteRelayService {
                             });
                         }
                     } else if (parsed.type === 'sync' && parsed.payload) {
-                        if (this.localStateCallback) {
-                            this.localStateCallback({
+                        for (const callback of this.localStateCallbacks) {
+                            callback({
                                 ...parsed.payload,
                                 timestamp: Timestamp.now()
                             });
@@ -664,11 +682,11 @@ class RemoteRelayService {
             });
         }
 
-        this.localStateCallback = callback;
+        this.localStateCallbacks.add(callback);
 
         return () => {
             unsubFirestore();
-            this.localStateCallback = null;
+            this.localStateCallbacks.delete(callback);
         };
     }
 

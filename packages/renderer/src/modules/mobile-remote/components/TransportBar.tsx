@@ -4,7 +4,7 @@
  */
 
 import { useRef, useEffect, useState } from 'react';
-import { HistoryItem } from '@/core/types/history';
+import type { HistoryItem } from '@/core/types/history';
 import {
     Play, Pause, SkipForward, Volume2, VolumeX,
     Square, Music2, Headphones, Activity
@@ -12,6 +12,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
  
 import { cn } from '@/lib/utils';
+import { logger } from '@/utils/logger';
 
 interface TransportBarProps {
     track: HistoryItem | null;
@@ -27,6 +28,7 @@ function formatTime(seconds: number): string {
 
 export default function TransportBar({ track, onNext }: TransportBarProps) {
     const audioRef = useRef<HTMLAudioElement | null>(null);
+    const playbackRequestRef = useRef(0);
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
@@ -39,6 +41,7 @@ export default function TransportBar({ track, onNext }: TransportBarProps) {
         const handleTimeUpdate = () => setCurrentTime(audio.currentTime);
         const handleDurationChange = () => setDuration(audio.duration);
         const handleEnded = () => {
+            playbackRequestRef.current += 1;
             setIsPlaying(false);
             if (onNext) onNext();
         };
@@ -55,35 +58,58 @@ export default function TransportBar({ track, onNext }: TransportBarProps) {
     }, [onNext]);
 
     useEffect(() => {
-        if (audioRef.current && track?.url) {
-            audioRef.current.src = track.url;
-            audioRef.current.load();
-            audioRef.current.play().then(() => {
-                setIsPlaying(true);
-            }).catch((err) => {
-                console.error('[TransportBar] Playback failed:', err);
-                setIsPlaying(false);
-            });
-        } else if (audioRef.current && !track) {
-            audioRef.current.pause();
-            audioRef.current.src = '';
+        const audio = audioRef.current;
+        if (!audio) return;
+        const requestId = ++playbackRequestRef.current;
+
+        if (track?.url) {
+            audio.src = track.url;
+            audio.load();
+            void (async () => {
+                try {
+                    await audio.play();
+                    if (playbackRequestRef.current === requestId) setIsPlaying(true);
+                } catch (err) {
+                    if (playbackRequestRef.current === requestId) {
+                        logger.error('[TransportBar] Playback failed:', err);
+                        setIsPlaying(false);
+                    }
+                }
+            })();
+        } else if (!track) {
+            audio.pause();
+            audio.src = '';
             // eslint-disable-next-line react-hooks/set-state-in-effect
             setIsPlaying(false);
             setCurrentTime(0);
             setDuration(0);
         }
+
+        return () => {
+            if (playbackRequestRef.current === requestId) playbackRequestRef.current += 1;
+        };
     }, [track]);
 
     const togglePlay = () => {
         if (!audioRef.current || !track) return;
         if (isPlaying) {
+            playbackRequestRef.current += 1;
             audioRef.current.pause();
             setIsPlaying(false);
         } else {
-            audioRef.current.play().catch((err) => {
-                console.error('[TransportBar] Toggle play failed:', err);
-            });
-            setIsPlaying(true);
+            const requestId = ++playbackRequestRef.current;
+            const audio = audioRef.current;
+            void (async () => {
+                try {
+                    await audio.play();
+                    if (playbackRequestRef.current === requestId) setIsPlaying(true);
+                } catch (err) {
+                    if (playbackRequestRef.current === requestId) {
+                        logger.error('[TransportBar] Toggle play failed:', err);
+                        setIsPlaying(false);
+                    }
+                }
+            })();
         }
     };
 
@@ -95,6 +121,7 @@ export default function TransportBar({ track, onNext }: TransportBarProps) {
 
     const handleStop = () => {
         if (!audioRef.current) return;
+        playbackRequestRef.current += 1;
         audioRef.current.pause();
         audioRef.current.currentTime = 0;
         setIsPlaying(false);

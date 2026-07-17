@@ -25,6 +25,7 @@ import { remoteRelayService, type RemoteCommand, type RemoteResponse } from '@/s
 import type { Unsubscribe } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { logger } from '@/utils/logger';
 
 // ─── Aspect Ratio Options ────────────────────────────────────────────────────
 const ASPECT_RATIOS = [
@@ -73,6 +74,7 @@ function cleanPrompt(commandText?: string): string {
  * gallery — an unmatched/orphan response is quarantined (excluded), never
  * relabeled with a generic "Remote image generation" caption.
  */
+// eslint-disable-next-line react-refresh/only-export-components -- pure gallery reducer is exported for regression tests
 export function buildGeneratedImagesGallery(
     relayCommands: RemoteCommand[],
     relayResponses: RemoteResponse[],
@@ -129,6 +131,8 @@ export default function GenerationMonitor() {
     const [error, setError] = useState<string | null>(null);
     const [activeStylePreset, setActiveStylePreset] = useState<string | null>(null);
     const activeListenerRef = useRef<Unsubscribe | null>(null);
+    const activeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const isMountedRef = useRef(true);
     // ISSUE-989: tracks the in-flight command so a timeout OR unmount can
     // actually cancel it in Firestore, not just detach the local listener.
     const activeCommandIdRef = useRef<string | null>(null);
@@ -149,9 +153,10 @@ export default function GenerationMonitor() {
 
         setIsSending(true);
         setError(null);
+        let commandId: string | null = null;
 
         try {
-            const commandId = await remoteRelayService.sendCommand(
+            commandId = await remoteRelayService.sendCommand(
                 `[GENERATE_IMAGE] ${inputPrompt.trim()}`,
                 undefined,
                 { aspectRatio, type: 'generate_image' } as Record<string, unknown>,
@@ -168,28 +173,43 @@ export default function GenerationMonitor() {
                 activeListenerRef.current();
                 activeListenerRef.current = null;
             }
+            if (activeTimeoutRef.current) {
+                clearTimeout(activeTimeoutRef.current);
+                activeTimeoutRef.current = null;
+            }
             activeCommandIdRef.current = commandId;
 
-            const timeout = setTimeout(async () => {
+            activeTimeoutRef.current = setTimeout(async () => {
+                activeTimeoutRef.current = null;
                 if (activeListenerRef.current) {
                     activeListenerRef.current();
                     activeListenerRef.current = null;
                 }
-                setIsSending(false);
+                if (isMountedRef.current) setIsSending(false);
                 // ISSUE-989: actively cancel in Firestore, not just detach the
                 // listener — otherwise a pending command survives and a later
                 // desktop recovery/backlog scan can still execute (and pay
                 // for) a generation the phone already gave up on.
                 const cancelled = await remoteRelayService.cancelCommand(commandId);
+                // The user can start another generation while the cancellation
+                // transaction is in flight. Never let the older completion
+                // clear or annotate the newer command.
+                if (activeCommandIdRef.current !== commandId) return;
                 activeCommandIdRef.current = null;
-                setError(cancelled
-                    ? 'Generation timed out and was cancelled — no cost incurred.'
-                    : 'Generation timed out, but the desktop had already started — check desktop studio before retrying to avoid duplicate cost.');
+                if (isMountedRef.current) {
+                    setError(cancelled
+                        ? 'Generation timed out and was cancelled — no cost incurred.'
+                        : 'Generation timed out, but the desktop had already started — check desktop studio before retrying to avoid duplicate cost.');
+                }
             }, 90000);
 
             activeListenerRef.current = remoteRelayService.onResponse(commandId, (response: RemoteResponse) => {
                 if (response.isFinal && response.text) {
-                    clearTimeout(timeout);
+                    if (activeCommandIdRef.current !== commandId) return;
+                    if (activeTimeoutRef.current) {
+                        clearTimeout(activeTimeoutRef.current);
+                        activeTimeoutRef.current = null;
+                    }
                     if (activeListenerRef.current) {
                         activeListenerRef.current();
                         activeListenerRef.current = null;
@@ -214,6 +234,20 @@ export default function GenerationMonitor() {
                 }
             });
         } catch (err: unknown) {
+            if (activeTimeoutRef.current) {
+                clearTimeout(activeTimeoutRef.current);
+                activeTimeoutRef.current = null;
+            }
+            if (activeListenerRef.current) {
+                activeListenerRef.current();
+                activeListenerRef.current = null;
+            }
+            if (commandId && activeCommandIdRef.current === commandId) {
+                remoteRelayService.cancelCommand(commandId).catch((error) => {
+                    logger.warn('[GenerationMonitor] Failed to cancel command after listener setup error:', error);
+                });
+                activeCommandIdRef.current = null;
+            }
             setError(err instanceof Error ? err.message : 'Pipeline Error');
             setIsSending(false);
         }
@@ -235,7 +269,13 @@ export default function GenerationMonitor() {
     );
 
     useEffect(() => {
+        isMountedRef.current = true;
         return () => {
+            isMountedRef.current = false;
+            if (activeTimeoutRef.current) {
+                clearTimeout(activeTimeoutRef.current);
+                activeTimeoutRef.current = null;
+            }
             if (activeListenerRef.current) {
                 activeListenerRef.current();
                 activeListenerRef.current = null;
@@ -244,7 +284,9 @@ export default function GenerationMonitor() {
             // pending (uncancelled) command for a later backlog scan to pick
             // up — cancel it if the desktop hasn't claimed it yet.
             if (activeCommandIdRef.current) {
-                remoteRelayService.cancelCommand(activeCommandIdRef.current).catch(() => {});
+                remoteRelayService.cancelCommand(activeCommandIdRef.current).catch((error) => {
+                    logger.warn('[GenerationMonitor] Failed to cancel pending command during cleanup:', error);
+                });
                 activeCommandIdRef.current = null;
             }
         };
