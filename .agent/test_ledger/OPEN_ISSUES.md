@@ -15409,7 +15409,7 @@ Naming fix: `LabelDealRecoupmentService.ts` collection literal `'labelDeals'` �
 
 ### ISSUE-1003: Direct video generation silently replaces the selected First Frame with the first reference ingredient
 
-- **Status:** 🟡 PARTIAL (2026-07-12 — role manifest and pre-submit summary added; end-to-end payload capture remains)
+- **Status:** ✅ FIXED (2026-07-16 — client assembly, service payload, and both gateway job documents proven)
 - **Severity:** 🟠 HIGH (creator-selected visual anchor is not the one rendered)
 - **Module:** Creative Suite / Direct video generation / First-frame and reference controls
 - **Evidence:** The Gallery and creative handoff explicitly store a user-selected start anchor in `videoInputs.firstFrame` and confirm it as “Set as First Frame” (`CreativeGallery.tsx:119`, `CreativeStudio.tsx:395-405`); the UI separately supports reference ingredients. But `handleVideoGenerate()` derives `firstFrame` as `ingredientsList[0]` before `videoInputs.firstFrame` (`useDirectGeneration.ts:419-423`), then sends that same value as both `directorSettings.firstFrameUri` and `VideoGeneration.generateVideo({ firstFrame })` (`:457-484`). Thus any ingredient—often a style/character/reference image—silently becomes the video’s start-frame constraint even when a different explicit start frame is visibly selected.
@@ -15422,6 +15422,8 @@ Naming fix: `LabelDealRecoupmentService.ts` collection literal `'labelDeals'` �
 - **A/B/C payload-contract coverage (2026-07-12):** Extracted direct-video role assembly into `buildDirectVideoInputManifest()` and made `useDirectGeneration` consume that one contract. The fixture supplies distinct A (explicit first), B (ingredient), C (character reference), and D (last): it proves `firstFrame`/director first-frame is A only, B/C are reference roles only, and the immutable manifest preserves A/D/B/C role order. This is now the concrete outbound payload object passed to `VideoGeneration.generateVideo`, not merely UI copy. Renderer typecheck and Direct Generation suites pass (18 tests; jsdom scroll warning is non-fatal). **Remaining:** live callable/emulator capture confirming the same manifest survives the provider gateway/job write is an environment integration check, not another client role-selection gap.
 
 - **Residual payload-test completion (2026-07-16):** The previously uncommitted `VideoGenerationService` expectation is valid coverage, not a runtime patch: after first/last/reference media upload, the service sends the role-labelled `inputManifest` beside the legacy URI fields. The focused renderer run passes both affected suites (2 files, 30 tests). ISSUE-1003 remains PARTIAL until the manifest is observed in a live/emulated gateway job document.
+
+- **Gateway job-document closure (2026-07-16):** Added a Firebase gateway regression with distinct A (first frame), D (last frame), B (ingredient), and C (character reference) URIs. It submits the callable contract and proves the exact immutable `inputManifest`, explicit first/last fields, and B/C-only reference array are written to both `creative_jobs` and `videoJobs`. Because completion uses partial document updates, the manifest remains attached to the completed history record. Firebase gateway suite passes 23 tests. This satisfies the final acceptance gate and closes ISSUE-1003.
 
 ### ISSUE-1004: Screenwriter accepts invalid scene durations and serializes them as a production storyboard
 
@@ -15472,6 +15474,8 @@ Naming fix: `LabelDealRecoupmentService.ts` collection literal `'labelDeals'` �
 - **Settled/refunded receipt breakdown (2026-07-12):** The authenticated cost-status callable now returns `settledCost` and `voidedCost` in addition to current pending holds, and Creative Studio displays both as settled and refunded totals. Added the `costLedger(userId,status)` Firestore composite index required by the owner-scoped status queries. Renderer billing tests (5), renderer typecheck, and Firebase build pass. **Still open:** per-operation history is summarized rather than paginated/actionable; deployed index creation plus real emulator/scheduler tests remain necessary before ISSUE-1006 can close.
 
 - **Residual failure-message coverage (2026-07-16):** The previously uncommitted Direct Generation regression test is valid and now proves a quota/cost-ledger rejection surfaces the callable's actionable `details.cause` (`Insufficient tokens in cost ledger.`) instead of the generic Firebase `internal` message. The focused renderer run passes both affected suites (2 files, 30 tests). This closes the local error-surface criterion only; ISSUE-1006 remains PARTIAL for the deployed scheduler/index/emulator and per-operation-history gates above.
+
+- **Operation-history and expiry completion pass (2026-07-16):** Added the authenticated `getOperationCostHistory` callable with owner-only querying, stable timestamp/operation cursors, bounded pagination, and explicit `pending_auto_release`/`settled`/`refunded` receipts. Creative Studio now displays each operation's amount, resolution, receipt ID, pending auto-release deadline, a safe-to-retry refund state, refresh, and Load More pagination. Added tests proving owner query/cursor construction, all receipt states, stale-hold selection, malformed/raced reservation handling, and transactional refund idempotency across daily/monthly/hourly aggregates; focused Firebase tests pass 29 and renderer tests pass 23. A deployment-pipeline defect was also found and fixed: production deployed Functions but never Firestore indexes, so the workflow now deploys `firestore:indexes` before Functions. **Status remains PARTIAL only until the new composite index, callable, and scheduler are observed healthy in production after push.**
 
 ### ISSUE-1007: “Cover Art” mode promises distributor compliance but only asks the model for it and never verifies the delivered file
 
@@ -16189,3 +16193,12 @@ All scoped work from ISSUE-511/913/957/958 consolidated effort:
 - **Type:** Missing agent capability + tool wiring + prompt honesty
 - **Description:** AnalyticsAgent lacks tools to retrieve existing generated analytics reports or dashboards from Firestore.
 - **Fix:** Mirror ISSUE-1054 pattern. Add retrieval tools using a shared `list_domain_records` utility. Register in `functions`, `authorizedTools`, and `functionDeclarations`. Update prompt to forbid confabulation.
+
+### ISSUE-1073: Browser acceptance script stores a real login credential in plaintext
+- **Status:** 🔴 OPEN (2026-07-16 — active ISSUE-777 browser worktree artifact; not committed)
+- **Severity:** 🔴 CRITICAL
+- **Module:** Test automation / Credential hygiene
+- **Evidence:** The active untracked `run-issue-777-test.ts` browser script contains an account email and plaintext password literal. The file is not tracked by Git, but it is present in the shared workspace and could be accidentally staged, copied into logs, or retained in checkpoints.
+- **Impact:** Anyone who receives the artifact or workspace snapshot may be able to authenticate as that account; committing it would turn a local exposure into repository history.
+- **Fix:** Remove all credential literals, use an already-authenticated browser profile or short-lived environment-injected test credentials, add the evidence filenames/script to an appropriate ignore rule, and rotate the exposed password if it is real.
+- **Acceptance:** Secret scanning finds no credential literal in tracked or untracked ISSUE-777 artifacts; the browser proof still runs through an authenticated session without embedding credentials; the exposed credential is confirmed rotated or invalidated.
