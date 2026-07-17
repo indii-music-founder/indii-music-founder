@@ -75,6 +75,51 @@ service cloud.firestore {
       return field is string && field.size() >= minLen && field.size() <= maxLen;
     }
 
+    function isValidRemoteRelayMetadata(metadata) {
+      return metadata is map &&
+        metadata.keys().hasOnly(['aspectRatio', 'type', 'entryCommandId', 'source']) &&
+        (!('aspectRatio' in metadata) || isValidString(metadata.aspectRatio, 1, 16)) &&
+        (!('type' in metadata) || isValidString(metadata.type, 1, 64)) &&
+        (!('entryCommandId' in metadata) || isValidString(metadata.entryCommandId, 1, 80)) &&
+        (!('source' in metadata) || isValidString(metadata.source, 1, 40));
+    }
+
+    function isValidRemoteRelayCommand(data) {
+      return data.keys().hasOnly([
+          'text',
+          'targetAgentId',
+          'metadata',
+          'executionTarget',
+          'timestamp',
+          'status',
+          'createdAt',
+          'executorId',
+          'executorDeviceId',
+          'claimedAt',
+          'completedAt'
+        ]) &&
+        data.keys().hasAll(['text', 'executionTarget', 'timestamp', 'status', 'createdAt']) &&
+        isValidString(data.text, 1, 20000) &&
+        data.executionTarget in ['cloud', 'studio'] &&
+        data.status in ['pending', 'processing', 'completed', 'cancelled'] &&
+        data.timestamp is timestamp &&
+        data.createdAt is timestamp &&
+        (!('targetAgentId' in data) || isValidString(data.targetAgentId, 1, 100)) &&
+        (!('metadata' in data) || isValidRemoteRelayMetadata(data.metadata)) &&
+        (!('executorId' in data) || isValidString(data.executorId, 16, 128)) &&
+        (!('executorDeviceId' in data) || isValidString(data.executorDeviceId, 16, 128)) &&
+        (!('claimedAt' in data) || data.claimedAt is timestamp) &&
+        (!('completedAt' in data) || data.completedAt is timestamp);
+    }
+
+    function isValidRemoteSleepSettings(data) {
+      return data.keys().hasOnly(['sleepEnabled', 'autoSleepMinutes', 'updatedAt']) &&
+        data.keys().hasAll(['sleepEnabled', 'autoSleepMinutes', 'updatedAt']) &&
+        data.sleepEnabled is bool &&
+        data.autoSleepMinutes in [0, 15, 30, 60] &&
+        data.updatedAt is timestamp;
+    }
+
     function isValidEntryCommand(data, ownerId, scope) {
       return data.keys().hasOnly([
           'id',
@@ -224,7 +269,9 @@ service cloud.firestore {
       // HandoffService writes to: users/{uid}/settings/handoff
       // =========================================================================
       match /settings/{settingId} {
-        allow read, create, update: if isOwner(userId);
+        allow read: if isOwner(userId);
+        allow create, update: if isOwner(userId) &&
+          (settingId != 'remoteSettings' || isValidRemoteSleepSettings(request.resource.data));
         allow delete: if false;
       }
 
@@ -298,13 +345,23 @@ service cloud.firestore {
 
       // Commands (phone writes, desktop reads/updates) — ephemeral relay docs
       match /remote-relay-commands/{commandId} {
-        allow read, create: if isOwner(userId);
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) &&
+          request.resource.data.keys().hasOnly([
+            'text', 'targetAgentId', 'metadata', 'executionTarget',
+            'timestamp', 'status', 'createdAt'
+          ]) &&
+          request.resource.data.status == 'pending' &&
+          isValidRemoteRelayCommand(request.resource.data);
         // A Controller may cancel its own still-pending request, but cannot
-        // claim, complete, or otherwise impersonate the Studio executor.
-        allow update: if isOwner(userId) && (
-          resource.data.get('executionTarget', 'cloud') != 'studio' ||
-          (resource.data.get('status', null) == 'pending' && request.resource.data.get('status', null) == 'cancelled')
-        );
+        // mutate its payload, claim, complete, or otherwise impersonate an
+        // executor. Validate the full post-update document to close the usual
+        // create-valid/update-invalid bypass.
+        allow update: if isOwner(userId) &&
+          resource.data.get('status', null) == 'pending' &&
+          request.resource.data.get('status', null) == 'cancelled' &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']) &&
+          isValidRemoteRelayCommand(request.resource.data);
         allow delete: if isOwner(userId) && resource.data.get('executionTarget', 'cloud') != 'studio';
       }
 

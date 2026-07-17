@@ -41,6 +41,7 @@ import {
     serializeRemoteResponse,
     resolveRemoteCommandExecutionTarget,
     remoteRelayService,
+    studioStateFreshnessRemainingMs,
     DESKTOP_HEARTBEAT_STALE_MS as _DESKTOP_HEARTBEAT_STALE_MS,
     type DesktopState
 } from './RemoteRelayService';
@@ -391,6 +392,45 @@ describe('RemoteRelayService - Studio executor lease (ISSUE-1025)', () => {
             studioInstanceId: 'studio-window-1',
             listenerReady: false,
         }, now)).toBe(false);
+    });
+
+    it('uses the complete heartbeat + skew window when scheduling the stale edge', () => {
+        const studioState: DesktopState = {
+            ...baseState,
+            role: 'studio',
+            studioInstanceId: 'studio-window-1',
+            listenerReady: true,
+        };
+
+        expect(studioStateFreshnessRemainingMs(studioState, now)).toBe(150_000);
+        expect(studioStateFreshnessRemainingMs(studioState, now + 149_999)).toBe(1);
+        expect(studioStateFreshnessRemainingMs(studioState, now + 150_001)).toBe(0);
+    });
+});
+
+describe('RemoteRelayService - local state subscription fanout', () => {
+    it('keeps each P2P subscriber independent when another subscriber unmounts', () => {
+        const service = remoteRelayService as unknown as {
+            localStateCallbacks: Set<(state: DesktopState | null) => void>;
+        };
+        service.localStateCallbacks.clear();
+        const first = vi.fn();
+        const second = vi.fn();
+        const unsubscribeFirst = remoteRelayService.onDesktopState(first);
+        const unsubscribeSecond = remoteRelayService.onDesktopState(second);
+        const state = { online: true } as DesktopState;
+
+        service.localStateCallbacks.forEach(callback => callback(state));
+        expect(first).toHaveBeenCalledWith(state);
+        expect(second).toHaveBeenCalledWith(state);
+
+        unsubscribeFirst();
+        service.localStateCallbacks.forEach(callback => callback(null));
+        expect(first).toHaveBeenCalledTimes(1);
+        expect(second).toHaveBeenLastCalledWith(null);
+
+        unsubscribeSecond();
+        expect(service.localStateCallbacks.size).toBe(0);
     });
 });
 

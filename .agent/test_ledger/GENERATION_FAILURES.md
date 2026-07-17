@@ -8,6 +8,16 @@
 
 ## RESOLVED Failures
 
+### 2026-07-17 | Mobile Remote Stale Completion Overwrote Newer Work
+- **Error:** A cancelled or superseded remote generation/playback operation could clear the timeout or UI state belonging to the next request.
+- **Surface:** indiiCONTROLLER generation monitor and transport controls
+- **Root Cause:** Async completion and timeout cleanup mutated shared refs without first proving that the completing operation still owned them.
+- **Impact:** A newer command could lose its timeout, appear idle, or show the wrong playback state after an older promise settled.
+- **Reproduction:** Start one operation, replace or cancel it, then allow the first timer or media promise to settle after the replacement begins.
+- **Fix:** Track every timer, cancel on unmount or replacement, and guard cleanup/state updates with active-command, timer, media, and mounted identity checks.
+- **Test Coverage:** `GenerationMonitor`, `AgentChat`, and `TransportBar` regression suites cover standby availability, timeout cleanup, rejected playback, and stale media completions.
+- **Lesson:** Cleanup of shared async state must be conditional on ownership; unconditional `ref = null` is a race even when the original operation has already ended.
+
 ### 2026-06-30 | Firebase Functions Export Order Bug
 - **Error:** `Cannot read properties of undefined (reading 'create')`
 - **Surface:** Image generation failed in Creative Director

@@ -20,9 +20,9 @@
 
 import { useEffect, useCallback, useState, useRef, lazy, Suspense } from 'react';
 import {
-  DESKTOP_HEARTBEAT_STALE_MS,
   isFreshStudioState,
   remoteRelayService,
+  studioStateFreshnessRemainingMs,
   type DesktopState,
 } from '@/services/agent/RemoteRelayService';
 import { auth } from '@/services/firebase';
@@ -138,6 +138,8 @@ export default function MobileRemote() {
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const stalePresenceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const transientHeartbeatTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pairingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const refreshFeedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Track auth readiness to re-subscribe when auth becomes available
   const [isAuth, setIsAuth] = useState(() => remoteRelayService.isAuthenticated());
@@ -245,11 +247,13 @@ export default function MobileRemote() {
             setConnectionStatus('connected');
             setIsReconnecting(false);
             setReconnectAttempts(0);
+            scheduleStalePresenceCheck(desktopStateRef.current);
             return;
           }
 
           logger.warn('[MobileRemote] Desktop heartbeat still stale after grace window. Initiating auto-reconnect sequence…');
-          setIsPaired(false);
+          // Pairing is an authenticated relationship, not a heartbeat. Keep the
+          // controls available in Standby so a durable command can wake Studio.
           setIsReconnecting(true);
           setConnectionStatus('pairing');
           setReconnectAttempts(1);
@@ -258,6 +262,30 @@ export default function MobileRemote() {
         setConnectionStatus('idle');
         setIsReconnecting(false);
       }
+    };
+
+    const scheduleStalePresenceCheck = (state: DesktopState | null) => {
+      if (stalePresenceTimeoutRef.current) {
+        clearTimeout(stalePresenceTimeoutRef.current);
+        stalePresenceTimeoutRef.current = null;
+      }
+
+      const remainingMs = studioStateFreshnessRemainingMs(state);
+      if (remainingMs <= 0) {
+        markDesktopOffline();
+        return;
+      }
+
+      stalePresenceTimeoutRef.current = setTimeout(() => {
+        stalePresenceTimeoutRef.current = null;
+        // Timers can fire a few milliseconds early. Re-check the canonical
+        // freshness predicate and reschedule instead of losing the stale edge.
+        if (isFreshStudioState(desktopStateRef.current)) {
+          scheduleStalePresenceCheck(desktopStateRef.current);
+          return;
+        }
+        markDesktopOffline();
+      }, remainingMs);
     };
 
     const unsub = remoteRelayService.onDesktopState((state) => {
@@ -281,9 +309,7 @@ export default function MobileRemote() {
         setIsReconnecting(false);
         setReconnectAttempts(0);
         
-        if (isVisible) {
-          stalePresenceTimeoutRef.current = setTimeout(markDesktopOffline, DESKTOP_HEARTBEAT_STALE_MS);
-        }
+        if (isVisible) scheduleStalePresenceCheck(state);
       } else {
         // If state is not fresh, only trigger offline/standby transition if visible AND we are past the grace period
         if (isVisible && Date.now() > gracePeriodUntilRef.current) {
@@ -311,8 +337,11 @@ export default function MobileRemote() {
         
         // Wait 15 seconds for Firestore sync before checking presence
         stalePresenceTimeoutRef.current = setTimeout(() => {
+          stalePresenceTimeoutRef.current = null;
           logger.info('[MobileRemote] Delayed visibility check running...');
-          if (!isFreshStudioState(desktopStateRef.current)) {
+          if (isFreshStudioState(desktopStateRef.current)) {
+            scheduleStalePresenceCheck(desktopStateRef.current);
+          } else {
             markDesktopOffline();
           }
         }, 15000);
@@ -359,11 +388,10 @@ export default function MobileRemote() {
     }
 
     if (reconnectAttempts > maxReconnectAttempts) {
-      logger.error('[MobileRemote] Max reconnection attempts reached. Marking as disconnected.');
+      logger.warn('[MobileRemote] Active reconnection window ended. Remaining in Standby.');
       queueMicrotask(() => {
         setIsReconnecting(false);
-        setConnectionStatus('idle');
-        setIsPaired(false);
+        setConnectionStatus(isPairedRef.current ? 'pairing' : 'idle');
       });
       return;
     }
@@ -382,9 +410,8 @@ export default function MobileRemote() {
   }, [isReconnecting, reconnectAttempts]);
 
   // Safety timeout: if stuck in 'pairing' for >10s initially, fall back to 'idle'
-  const pairingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
-    if (connectionStatus === 'pairing' && !isReconnecting) {
+    if (connectionStatus === 'pairing' && !isReconnecting && !isPaired) {
       pairingTimeoutRef.current = setTimeout(() => {
         setConnectionStatus('idle');
         setIsPaired(false);
@@ -399,7 +426,7 @@ export default function MobileRemote() {
     return () => {
       if (pairingTimeoutRef.current) clearTimeout(pairingTimeoutRef.current);
     };
-  }, [connectionStatus, isReconnecting]);
+  }, [connectionStatus, isReconnecting, isPaired]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sendCommand = useCallback((command: { type: string; payload: any }) => {
@@ -434,6 +461,15 @@ export default function MobileRemote() {
       clearTimeout(stalePresenceTimeoutRef.current);
       stalePresenceTimeoutRef.current = null;
     }
+    if (transientHeartbeatTimeoutRef.current) {
+      clearTimeout(transientHeartbeatTimeoutRef.current);
+      transientHeartbeatTimeoutRef.current = null;
+    }
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
+    }
+    gracePeriodUntilRef.current = 0;
     setReconnectAttempts(1);
     setIsReconnecting(true);
     setConnectionStatus('pairing');
@@ -467,15 +503,28 @@ export default function MobileRemote() {
       setIsRefreshing(true);
       triggerHaptic([50, 100, 50]);
       handleManualRetry();
-      setTimeout(() => {
+      if (refreshFeedbackTimeoutRef.current) {
+        clearTimeout(refreshFeedbackTimeoutRef.current);
+      }
+      refreshFeedbackTimeoutRef.current = setTimeout(() => {
          setIsRefreshing(false);
          setPullProgress(0);
+         refreshFeedbackTimeoutRef.current = null;
       }, 1500);
     } else {
       setPullProgress(0);
     }
     touchStartY.current = 0;
   };
+
+  useEffect(() => {
+    return () => {
+      if (refreshFeedbackTimeoutRef.current) {
+        clearTimeout(refreshFeedbackTimeoutRef.current);
+        refreshFeedbackTimeoutRef.current = null;
+      }
+    };
+  }, []);
 
   // ─── Render ────────────────────────────────────────────────────────────────
 

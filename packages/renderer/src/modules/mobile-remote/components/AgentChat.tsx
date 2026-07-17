@@ -289,7 +289,7 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
     }, [messages.length, messages[messages.length - 1]?.text]);
 
     const handleSend = useCallback(async () => {
-        if (!input.trim() || isWaiting || !isAuthenticated || !isPaired || !isStudioOnline) return;
+        if (!input.trim() || isWaiting || !isAuthenticated || !isPaired) return;
         if (isListening) toggleListening(); // stop dictation before sending
         const userText = input.trim();
         setInput('');
@@ -366,7 +366,7 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
             setIsWaiting(false);
             setInput(userText); // Restore input on failure
         }
-    }, [input, isWaiting, isAuthenticated, isPaired, isStudioOnline, selectedAgent, selectedMode, selectedDept, teardownResponseWatch, isListening, toggleListening]);
+    }, [input, isWaiting, isAuthenticated, isPaired, selectedAgent, selectedMode, selectedDept, teardownResponseWatch, isListening, toggleListening]);
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter' && !e.shiftKey) {
@@ -402,7 +402,7 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
                     "w-2 h-2 rounded-full",
                     isStudioOnline ? "bg-blue-400 animate-pulse shadow-[0_0_8px_rgba(96,165,250,0.8)]" : "bg-amber-400"
                 )} />
-                {isStudioOnline ? "Studio Connected" : "Studio Executor Offline"}
+                {isStudioOnline ? "Studio Connected" : "Studio Standby — Send to Wake"}
             </div>
 
             {/* Messages Area */}
@@ -565,7 +565,7 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
                                 selectedMode === 'department' ? `Message ${selectedDept || 'Dept'}…` :
                                 `Direct message ${selectedAgent || 'Agent'}…`
                             }
-                            disabled={isWaiting || !isPaired || !isStudioOnline}
+                            disabled={isWaiting || !isPaired}
                             className="w-full bg-transparent border-none px-2 py-2 text-sm text-white placeholder:text-[#636366] focus:ring-0 resize-none max-h-32 custom-scrollbar"
                         />
                     </div>
@@ -592,10 +592,10 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
                         <motion.button
                             whileTap={{ scale: 0.9 }}
                             onClick={handleSend}
-                            disabled={!input.trim() || isWaiting || !isPaired || !isStudioOnline}
+                            disabled={!input.trim() || isWaiting || !isPaired}
                             className={cn(
                                 "w-11 h-11 rounded-xl flex items-center justify-center transition-all shadow-lg cursor-pointer",
-                                input.trim() && !isWaiting && isPaired && isStudioOnline
+                                input.trim() && !isWaiting && isPaired
                                     ? "bg-white text-black shadow-white/10" 
                                     : "bg-white/5 text-[#48484a] cursor-not-allowed"
                             )}

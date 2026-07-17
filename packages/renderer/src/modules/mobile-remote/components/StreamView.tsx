@@ -4,13 +4,14 @@
  */
 
 import { useEffect, useState, useMemo } from 'react';
-import { HistoryItem } from '@/core/types/history';
+import type { HistoryItem } from '@/core/types/history';
 import { StorageService } from '@/services/StorageService';
 import TransportBar from './TransportBar';
 import { motion } from 'framer-motion';
 import { Music, Play, Loader2, Cloud } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { triggerHaptic } from '../MobileRemote';
+import { logger } from '@/utils/logger';
 
 export default function StreamView() {
     const [tracks, setTracks] = useState<HistoryItem[]>([]);
@@ -30,7 +31,7 @@ export default function StreamView() {
                     setIsLoading(false);
                 }
             } catch (err) {
-                console.error('[StreamView] Failed to load tracks:', err);
+                logger.error('[StreamView] Failed to load tracks:', err);
                 if (active) setIsLoading(false);
             }
         };
@@ -119,7 +120,7 @@ export default function StreamView() {
                                             {title}
                                         </h4>
                                         <p className="text-[10px] text-[#8e8e93] font-bold uppercase tracking-wider mt-0.5">
-                                            {new Date(track.timestamp).toLocaleDateString()}
+                                            {new Date(track.timestamp).toLocaleDateString('en-US')}
                                         </p>
                                     </div>
                                 </motion.button>

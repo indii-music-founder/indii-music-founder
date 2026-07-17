@@ -7,6 +7,7 @@ import { useToast } from '@/core/context/ToastContext';
 import { cn } from '@/lib/utils';
 import { triggerHaptic } from '../MobileRemote';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { logger } from '@/utils/logger';
 
 /**
  * ISSUE-987: candidates in priority order — WebKit/Safari commonly can't
@@ -30,6 +31,7 @@ const AUDIO_MIME_EXTENSIONS: Record<string, string> = {
     'audio/wav': 'wav',
 };
 
+// eslint-disable-next-line react-refresh/only-export-components -- pure media capability helper is exported for regression tests
 export const pickSupportedAudioMimeType = (): string | undefined => {
     if (typeof MediaRecorder === 'undefined' || typeof MediaRecorder.isTypeSupported !== 'function') {
         return undefined;
@@ -38,11 +40,13 @@ export const pickSupportedAudioMimeType = (): string | undefined => {
 };
 
 /** Derive the real filename extension from the recorder's actual (possibly codec-qualified) mimeType, instead of always writing `.webm`. */
+// eslint-disable-next-line react-refresh/only-export-components -- pure filename helper is exported for regression tests
 export const audioExtensionForMimeType = (mimeType: string): string => {
     const base = mimeType.split(';')[0]?.trim().toLowerCase() ?? '';
     return AUDIO_MIME_EXTENSIONS[base] ?? 'webm';
 };
 
+// eslint-disable-next-line react-refresh/only-export-components -- browser download helper is exported for regression tests
 export function downloadCapturedMedia(source: Blob, filename: string): void {
     const url = URL.createObjectURL(source);
     const anchor = document.createElement('a');
@@ -138,7 +142,7 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
             try {
                 recorder.stop();
             } catch (error) {
-                console.error('Failed to stop media recorder', error);
+                logger.error('[QuickCapture] Failed to stop media recorder:', error);
                 setIsFinalizingRecording(false);
             }
         }
@@ -236,7 +240,7 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
             };
 
             recorder.onerror = (event) => {
-                console.error('MediaRecorder error', event);
+                logger.error('[QuickCapture] MediaRecorder error:', event);
                 if (isMountedRef.current && isStillActiveSession()) {
                     toast.error('Recording failed unexpectedly.');
                     setIsFinalizingRecording(false);
@@ -260,7 +264,7 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
             setIsRecording(true);
             clearMediaState();
         } catch (error) {
-            console.error("Failed to access microphone", error);
+            logger.error('[QuickCapture] Failed to access microphone:', error);
             triggerHaptic([100, 200, 100]);
         }
     };
@@ -325,7 +329,7 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
                     });
                     triggerHaptic([50, 50, 50]);
                 } catch (error) {
-                    console.error('Failed to dispatch pin:', error);
+                    logger.error('[QuickCapture] Failed to dispatch pin:', error);
                     triggerHaptic([100, 200, 100]);
                 } finally {
                     setIsDispatching(false);
@@ -333,7 +337,7 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
             },
             (error) => {
                 if (requestId !== locationRequestId.current) return;
-                console.error("Error getting location", error);
+                logger.error('[QuickCapture] Error getting location:', error);
                 // ISSUE-988: TIMEOUT gets a clearer message; every branch still
                 // unlocks isDispatching so a stalled provider can't freeze capture.
                 const message = error.code === error.TIMEOUT
@@ -366,7 +370,7 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
             setMomentText('');
             triggerHaptic([50, 50, 50]);
         } catch (error) {
-            console.error('Failed to dispatch text:', error);
+            logger.error('[QuickCapture] Failed to dispatch text:', error);
             triggerHaptic([100, 200, 100]);
         } finally {
             setIsDispatching(false);
@@ -444,7 +448,7 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
             if (uploadedPath && !dispatchAccepted) {
                 await StorageService.deleteFile(uploadedPath);
             }
-            console.error('Failed to dispatch media:', error);
+            logger.error('[QuickCapture] Failed to dispatch media:', error);
             toast.error(error instanceof Error ? error.message : 'Failed to save to Notes');
             triggerHaptic([100, 200, 100]);
         } finally {

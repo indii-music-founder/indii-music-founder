@@ -11,7 +11,7 @@
  * wake — we tell the user to open INDII on their Mac.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { doc, onSnapshot, setDoc, serverTimestamp } from 'firebase/firestore';
 import { motion } from 'framer-motion';
 import { Moon, Sun, Power, MonitorSmartphone, Check } from 'lucide-react';
@@ -49,6 +49,7 @@ function timeoutLabel(minutes: number): string {
 export default function SettingsView({ desktopState, isPaired }: SettingsViewProps) {
     const [settings, setSettings] = useState<RemoteSleepSettings>(DEFAULT_REMOTE_SLEEP_SETTINGS);
     const [isWaking, setIsWaking] = useState(false);
+    const wakeResetTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const status = resolveStatus(desktopState);
 
     // Load settings reactively (desktop writes nothing here, but other devices might).
@@ -76,6 +77,15 @@ export default function SettingsView({ desktopState, isPaired }: SettingsViewPro
         return unsub;
     }, []);
 
+    useEffect(() => {
+        return () => {
+            if (wakeResetTimeoutRef.current) {
+                clearTimeout(wakeResetTimeoutRef.current);
+                wakeResetTimeoutRef.current = null;
+            }
+        };
+    }, []);
+
     const persist = async (next: RemoteSleepSettings) => {
         setSettings(next); // optimistic
         const uid = auth.currentUser?.uid;
@@ -97,11 +107,15 @@ export default function SettingsView({ desktopState, isPaired }: SettingsViewPro
         setIsWaking(true);
         try {
             await remoteRelayService.sendCommand('[WAKE]', undefined, undefined, 'studio');
+            if (wakeResetTimeoutRef.current) clearTimeout(wakeResetTimeoutRef.current);
+            // Heartbeat clears sleepMode within ~5s; release the button after a beat.
+            wakeResetTimeoutRef.current = setTimeout(() => {
+                setIsWaking(false);
+                wakeResetTimeoutRef.current = null;
+            }, 6000);
         } catch (err) {
             logger.error('[SettingsView] Wake command failed:', err);
-        } finally {
-            // Heartbeat clears sleepMode within ~5s; release the button after a beat.
-            setTimeout(() => setIsWaking(false), 6000);
+            setIsWaking(false);
         }
     };
 

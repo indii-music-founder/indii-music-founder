@@ -977,9 +977,92 @@ describe('Firestore Security Rules', () => {
             if (requireEmulator()) return;
             const db = verifiedCtx(ALICE_UID).firestore();
             const command = doc(db, 'users', ALICE_UID, 'remote-relay-commands', 'phone-command');
-            await assertSucceeds(setDoc(command, { text: 'Hi', status: 'pending', executionTarget: 'studio' }));
+            await assertSucceeds(setDoc(command, {
+                text: 'Hi',
+                status: 'pending',
+                executionTarget: 'studio',
+                timestamp: Timestamp.now(),
+                createdAt: Timestamp.now(),
+            }));
             await assertSucceeds(updateDoc(command, { status: 'cancelled' }));
             await assertFails(updateDoc(command, { status: 'completed' }));
+        });
+
+        it('rejects malformed, oversized, and schema-polluted Controller commands', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(ALICE_UID).firestore();
+            const base = {
+                text: 'Hi',
+                status: 'pending',
+                executionTarget: 'studio',
+                timestamp: Timestamp.now(),
+                createdAt: Timestamp.now(),
+            };
+
+            await assertFails(setDoc(
+                doc(db, 'users', ALICE_UID, 'remote-relay-commands', 'missing-created-at'),
+                {
+                    text: base.text,
+                    status: base.status,
+                    executionTarget: base.executionTarget,
+                    timestamp: base.timestamp,
+                }
+            ));
+            await assertFails(setDoc(
+                doc(db, 'users', ALICE_UID, 'remote-relay-commands', 'oversized'),
+                { ...base, text: 'x'.repeat(20_001) }
+            ));
+            await assertFails(setDoc(
+                doc(db, 'users', ALICE_UID, 'remote-relay-commands', 'polluted'),
+                { ...base, isAdmin: true }
+            ));
+        });
+
+        it('allows cancellation to change only status, never the queued payload', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(ALICE_UID).firestore();
+            const command = doc(db, 'users', ALICE_UID, 'remote-relay-commands', 'immutable-payload');
+            await assertSucceeds(setDoc(command, {
+                text: 'Original request',
+                status: 'pending',
+                executionTarget: 'studio',
+                timestamp: Timestamp.now(),
+                createdAt: Timestamp.now(),
+                metadata: { source: 'mobile-remote' },
+            }));
+
+            await assertFails(updateDoc(command, {
+                status: 'cancelled',
+                text: 'Mutated request',
+            }));
+            await assertFails(updateDoc(command, {
+                status: 'cancelled',
+                arbitraryPayload: 'x'.repeat(10_000),
+            }));
+        });
+
+        it('validates the mobile remote sleep settings schema on create and update', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(ALICE_UID).firestore();
+            const settings = doc(db, 'users', ALICE_UID, 'settings', 'remoteSettings');
+
+            await assertSucceeds(setDoc(settings, {
+                sleepEnabled: true,
+                autoSleepMinutes: 30,
+                updatedAt: Timestamp.now(),
+            }));
+            await assertSucceeds(updateDoc(settings, {
+                sleepEnabled: false,
+                updatedAt: Timestamp.now(),
+            }));
+            await assertFails(updateDoc(settings, {
+                autoSleepMinutes: 1,
+                updatedAt: Timestamp.now(),
+            }));
+            await assertFails(updateDoc(settings, {
+                arbitraryPayload: 'x'.repeat(10_000),
+                updatedAt: Timestamp.now(),
+            }));
         });
     });
 

@@ -34,7 +34,7 @@ import { NotesTools } from '@/services/agent/tools/NotesTools';
 import { parseRemoteCommand } from '@/hooks/remoteCommandSecurity';
 import { auth, db } from '@/services/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { doc, setDoc, serverTimestamp, runTransaction } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { logger } from '@/utils/logger';
 import { delay } from '@/utils/async';
 import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
@@ -521,6 +521,10 @@ function useFirestoreRelay(enabled: boolean) {
             return;
         }
 
+        // Any accepted phone command is also a wake signal. Firestore keeps the
+        // queue durable while Studio rests in the tray; surface the window and
+        // clear sleep before executing the requested action.
+        wakeDesktop();
         isProcessing.current = true;
 
         // Safety: auto-unlock after 2 minutes so one stuck command can't block the relay forever
