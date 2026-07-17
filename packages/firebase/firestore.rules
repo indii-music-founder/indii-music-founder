@@ -857,13 +857,18 @@ service cloud.firestore {
     }
 
     match /recoupment_balances/{balanceId} {
-      allow read, update, delete: if isVerifiedUser() && resource.data.userId == request.auth.uid;
-      allow create: if isVerifiedUser() && request.resource.data.userId == request.auth.uid;
+      allow read: if (isAuthenticated() && resource.data.get('userId', null) == request.auth.uid) || (isGuest() && resource.data.get('userId', null) == 'founder-demo-uid');
+      allow create, update, delete: if false;
+    }
+
+    match /recoupment_adjustments/{adjustmentId} {
+      allow read: if (isAuthenticated() && resource.data.get('userId', null) == request.auth.uid) || (isGuest() && resource.data.get('userId', null) == 'founder-demo-uid');
+      allow create, update, delete: if false;
     }
 
     match /royalty_report_claims/{claimId} {
-      allow read, update, delete: if isVerifiedUser() && resource.data.userId == request.auth.uid;
-      allow create: if isVerifiedUser() && request.resource.data.userId == request.auth.uid;
+      allow read: if (isAuthenticated() && resource.data.get('userId', null) == request.auth.uid) || (isGuest() && resource.data.get('userId', null) == 'founder-demo-uid');
+      allow create, update, delete: if false;
     }
 
     match /scheduledPosts/{postId} {
@@ -1355,6 +1360,10 @@ service cloud.firestore {
       allow read: if (isAuthenticated() && resource.data.get('userId', null) == request.auth.uid) || (isGuest() && resource.data.get('userId', null) == 'founder-demo-uid');
       allow write: if false;
     }
+    match /master_verifications/{verificationId} {
+      allow read: if (isAuthenticated() && resource.data.get('userId', null) == request.auth.uid) || (isGuest() && resource.data.get('userId', null) == 'founder-demo-uid');
+      allow create, update, delete: if false;
+    }
     match /timelines/{userId}/items/{itemId} {
       allow read, write: if isOwner(userId);
     }
@@ -1574,8 +1583,8 @@ service cloud.firestore {
       allow delete: if false;
     }
     match /dsr_processed_reports/{docId} {
-      allow read, update, delete: if (isAuthenticated() && resource.data.get('userId', null) == request.auth.uid) || (isGuest() && resource.data.get('userId', null) == 'founder-demo-uid');
-      allow create: if (isVerifiedUser() && request.resource.data.get('userId', null) == request.auth.uid) || (isGuest() && request.resource.data.get('userId', null) == 'founder-demo-uid');
+      allow read: if (isAuthenticated() && resource.data.get('userId', null) == request.auth.uid) || (isGuest() && resource.data.get('userId', null) == 'founder-demo-uid');
+      allow create, update, delete: if false;
     }
     match /tracks/{docId} {
       allow read, update, delete: if (isAuthenticated() && resource.data.get('userId', null) == request.auth.uid) || (isGuest() && resource.data.get('userId', null) == 'founder-demo-uid');

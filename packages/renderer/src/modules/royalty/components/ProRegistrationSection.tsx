@@ -42,8 +42,8 @@ export const ProRegistrationSection: React.FC<ProRegistrationSectionProps> = ({
                     <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl flex gap-3 text-amber-800 shadow-sm">
                         <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" />
                         <div>
-                            <h4 className="font-semibold mb-1">Required before releasing music</h4>
-                            <p className="text-sm">You must register with a PRO before your music generates performance royalties. PROs generally do not pay retroactively.</p>
+                            <h4 className="font-semibold mb-1">Recommended for performance-royalty collection</h4>
+                            <p className="text-sm">PRO membership and accurate work registration help match and collect the composition&apos;s performance royalties. They are not a technical prerequisite for delivering a recording to a DSP.</p>
                         </div>
                     </div>
 
@@ -60,21 +60,21 @@ export const ProRegistrationSection: React.FC<ProRegistrationSectionProps> = ({
                             <tbody className="divide-y divide-gray-100 text-gray-700">
                                 <tr>
                                     <td className="px-4 py-3 font-medium">Cost</td>
-                                    <td className="px-4 py-3 text-green-600 font-medium">Free</td>
-                                    <td className="px-4 py-3">$50</td>
+                                    <td className="px-4 py-3">See current terms</td>
+                                    <td className="px-4 py-3">See current terms</td>
                                     <td className="px-4 py-3">Invite-only</td>
                                 </tr>
                                 <tr>
-                                    <td className="px-4 py-3 font-medium">Payout</td>
-                                    <td className="px-4 py-3">Quarterly</td>
-                                    <td className="px-4 py-3">Quarterly</td>
-                                    <td className="px-4 py-3">Monthly</td>
+                                    <td className="px-4 py-3 font-medium">Distributions</td>
+                                    <td className="px-4 py-3">Per current BMI schedule</td>
+                                    <td className="px-4 py-3">Per current ASCAP schedule</td>
+                                    <td className="px-4 py-3">Per current SESAC schedule</td>
                                 </tr>
                                 <tr>
-                                    <td className="px-4 py-3 font-medium">Best for</td>
-                                    <td className="px-4 py-3">Most independent artists</td>
-                                    <td className="px-4 py-3">Songwriters & producers</td>
-                                    <td className="px-4 py-3">Established professionals</td>
+                                    <td className="px-4 py-3 font-medium">Eligibility</td>
+                                    <td className="px-4 py-3">Open application</td>
+                                    <td className="px-4 py-3">Open application</td>
+                                    <td className="px-4 py-3">Invitation</td>
                                 </tr>
                             </tbody>
                         </table>

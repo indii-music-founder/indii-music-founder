@@ -40,7 +40,7 @@ const prepare_release = wrapTool('prepare_release', async (args: {
     // 1. Try Industrial Engine (Electron)
     if (typeof window !== 'undefined' && window.electronAPI) {
         try {
-            const rawDdex = await window.electronAPI.distribution.generateIngestionNotification({
+            const rawDdex = await window.electronAPI.distribution.generateDDEX({
                 releaseId: `rel-${isrc}`,
                 title,
                 artists: [artist],

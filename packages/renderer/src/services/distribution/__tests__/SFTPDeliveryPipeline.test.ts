@@ -16,7 +16,7 @@ describe('SFTP Delivery Pipeline', () => {
                 isConnected: vi.fn().mockResolvedValue(true)
             },
             distribution: {
-                generateIngestionNotification: vi.fn().mockResolvedValue({ success: true, xml: '<ern:NewReleaseMessage>...</ern:NewReleaseMessage>' }),
+                generateDDEX: vi.fn().mockResolvedValue({ success: true, xml: '<ern:NewReleaseMessage>...</ern:NewReleaseMessage>' }),
                 packageSpotify: vi.fn().mockResolvedValue({ success: true, packagePath: '/tmp/spotify_package' }),
             }
         };
@@ -35,7 +35,7 @@ describe('SFTP Delivery Pipeline', () => {
             coverArt: 'cover.jpg'
         };
 
-        const xmlResult = await window.electronAPI.distribution.generateIngestionNotification(mockMetadata);
+        const xmlResult = await window.electronAPI.distribution.generateDDEX(mockMetadata);
         expect(xmlResult.success).toBe(true);
         expect(xmlResult.xml).toBeTruthy();
 

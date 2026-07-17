@@ -1,7 +1,7 @@
 import React from 'react';
-import { FileMusic, Lock, ExternalLink, CheckCircle } from 'lucide-react';
+import { FileMusic, ExternalLink, CheckCircle } from 'lucide-react';
 import { RegistrationSection } from './RegistrationSection';
-import { RoyaltyProfile, RegistrationStatus } from '../types';
+import { RoyaltyProfile } from '../types';
 
 interface MlcSectionProps {
     profile: RoyaltyProfile;
@@ -13,15 +13,9 @@ interface MlcSectionProps {
 export const MlcSection: React.FC<MlcSectionProps> = ({
     profile,
     isExpanded,
-    onToggle,
-    onGoToPro
+    onToggle
 }) => {
     const { status, registeredWorks } = profile.mlcRegistration;
-    const proStatus = profile.proRegistration.status;
-
-    // Calculate if the MLC section is blocked by an incomplete PRO registration
-    const isBlockedByPro = proStatus === 'not_started' || proStatus === 'in_progress';
-    const displayStatus: RegistrationStatus = isBlockedByPro && status !== 'active' ? 'blocked' : status;
 
     return (
         <RegistrationSection
@@ -29,36 +23,18 @@ export const MlcSection: React.FC<MlcSectionProps> = ({
             icon={<FileMusic className="w-6 h-6" />}
             title="Mechanical Licensing Collective (MLC)"
             subtitle="Collect mechanical royalties directly from streaming services (Spotify, Apple Music) in the US"
-            status={displayStatus}
+            status={status}
             isRequired={false}
             isExpanded={isExpanded}
             onToggle={onToggle}
         >
-            {isBlockedByPro && status !== 'active' && (
-                <div className="bg-gray-100 border border-gray-200 p-5 rounded-xl shadow-sm text-center">
-                    <div className="mx-auto bg-gray-200 w-12 h-12 rounded-full flex items-center justify-center mb-3">
-                        <Lock className="w-5 h-5 text-gray-500" />
-                    </div>
-                    <h4 className="text-gray-900 font-semibold mb-2">Complete PRO registration first</h4>
-                    <p className="text-sm text-gray-600 mb-5 max-w-sm mx-auto">
-                        The MLC requires your IPI number from your Performance Rights Organization (PRO) registration to identify you accurately.
-                    </p>
-                    <button
-                        onClick={onGoToPro}
-                        className="inline-flex items-center justify-center px-4 py-2 bg-indigo-600 text-white hover:bg-indigo-700 text-sm font-medium rounded-lg transition-colors shadow-sm"
-                    >
-                        Go to PRO Registration
-                    </button>
-                </div>
-            )}
-
-            {!isBlockedByPro && status === 'not_started' && (
+            {status === 'not_started' && (
                 <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm space-y-4">
                     <h4 className="font-semibold text-gray-900">Why the MLC matters</h4>
                     <p className="text-sm text-gray-600 leading-relaxed">
                         Streaming services pay mechanical royalties to the Mechanical Licensing Collective.
                         <strong> If you are an independent releasing your own music, you act as your own publisher.</strong>
-                        If you're not registered with the MLC, that mechanical money goes unmatched and eventually gets paid out to major publishers based on market share.
+                        Accurate writer, publisher, and IPI/CAE data helps the MLC match usage and route U.S. digital mechanical royalties to the correct party.
                     </p>
                     <div className="pt-2">
                         <a

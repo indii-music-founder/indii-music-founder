@@ -1,34 +1,80 @@
-import { FirestoreService } from '@/services/FirestoreService';
-import { ExtendedGoldenMetadata } from './types';
-import { where } from 'firebase/firestore';
+import {
+    Timestamp,
+    collection,
+    doc,
+    getDoc,
+    getDocs,
+    query,
+    setDoc,
+    type QueryConstraint,
+} from 'firebase/firestore';
 
-export class TrackLibraryService extends FirestoreService<ExtendedGoldenMetadata> {
-    constructor() {
-        super('tracks');
+import { auth, db } from '@/services/firebase';
+import type { ExtendedGoldenMetadata } from './types';
+
+export class TrackLibraryService {
+    private requireUserId(): string {
+        const userId = auth.currentUser?.uid;
+        if (!userId) {
+            throw new Error('An authenticated user is required to access the track library.');
+        }
+        return userId;
     }
 
-    /**
-     * Retrieves track metadata by its audio fingerprint (Master ID).
-     */
     async getByFingerprint(fingerprint: string): Promise<ExtendedGoldenMetadata | null> {
-        const results = await this.query([
-            where('masterFingerprint', '==', fingerprint)
-        ]);
+        const userId = this.requireUserId();
+        const snapshot = await getDoc(doc(db, 'users', userId, 'tracks', fingerprint));
+        if (!snapshot.exists()) return null;
 
-        return results.length > 0 ? results[0]! : null;
+        return {
+            id: snapshot.id,
+            ...snapshot.data(),
+        } as ExtendedGoldenMetadata;
     }
 
-    /**
-     * Saves or updates track metadata.
-     * Uses fingerprint as the document ID to ensure uniqueness.
-     */
+    async list(constraints: QueryConstraint[] = []): Promise<ExtendedGoldenMetadata[]> {
+        const userId = this.requireUserId();
+        const snapshot = await getDocs(query(
+            collection(db, 'users', userId, 'tracks'),
+            ...constraints
+        ));
+
+        return snapshot.docs.map(track => ({
+            id: track.id,
+            ...track.data(),
+        } as ExtendedGoldenMetadata));
+    }
+
     async saveTrack(metadata: ExtendedGoldenMetadata): Promise<void> {
         if (!metadata.masterFingerprint) {
             throw new Error('Cannot save track without a master fingerprint');
         }
 
-        // Use fingerprint as Doc ID for direct lookup
-        await this.set(metadata.masterFingerprint, metadata);
+        const userId = this.requireUserId();
+        if (metadata.userId && metadata.userId !== userId) {
+            throw new Error('Track ownership does not match the authenticated user.');
+        }
+
+        await setDoc(
+            doc(db, 'users', userId, 'tracks', metadata.masterFingerprint),
+            this.pruneUndefined({
+                ...metadata,
+                userId,
+                updatedAt: Timestamp.now(),
+            }),
+            { merge: true }
+        );
+    }
+
+    private pruneUndefined(value: unknown): unknown {
+        if (value === null || typeof value !== 'object' || value instanceof Timestamp) return value;
+        if (Array.isArray(value)) return value.map(item => this.pruneUndefined(item));
+
+        return Object.fromEntries(
+            Object.entries(value)
+                .filter(([, entry]) => entry !== undefined)
+                .map(([key, entry]) => [key, this.pruneUndefined(entry)])
+        );
     }
 }
 

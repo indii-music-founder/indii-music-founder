@@ -9,19 +9,15 @@ interface ActionPanelProps {
 }
 
 export const ActionPanel: React.FC<ActionPanelProps> = ({ profile, onComplete }) => {
-    // Release readiness checklist: PRO, MLC, SoundExchange, Copyright all required
-    // This prevents false "ready to release" claims when only PRO is complete
     const isProActive = profile.proRegistration.status === 'active';
     const isMlcActive = profile.mlcRegistration.status === 'active';
     const isSoundExchangeActive = profile.soundExchangeRegistration.status === 'active';
     const hasCopyright = profile.copyrightRegistrations.some(r => r.status === 'active');
 
-    // Hard blockers for release: ALL four items required
-    const canContinue = isProActive && isMlcActive && isSoundExchangeActive && hasCopyright;
+    const royaltyCoverageComplete = isProActive && isMlcActive && isSoundExchangeActive && hasCopyright;
 
     // Progress for partial readiness message
     const { completed, total } = calculateProgress(profile);
-    const progressPercent = Math.round((completed / total) * 100);
 
     // Identify what's missing
     const missing: string[] = [];
@@ -38,9 +34,9 @@ export const ActionPanel: React.FC<ActionPanelProps> = ({ profile, onComplete })
 
                 {/* Action Button & Status */}
                 <div className="order-1 md:order-2 flex flex-col items-center md:items-end w-full md:w-auto">
-                    {canContinue ? (
+                    {royaltyCoverageComplete ? (
                         <div className="flex flex-col items-center md:items-end gap-1">
-                            <span className="text-sm font-medium text-green-600">All release requirements complete!</span>
+                            <span className="text-sm font-medium text-green-600">Royalty collection coverage complete</span>
                             <button
                                 onClick={onComplete}
                                 className="w-full md:w-auto inline-flex items-center justify-center gap-2 px-8 py-3 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 transition-colors shadow-md shadow-indigo-200"
@@ -53,18 +49,17 @@ export const ActionPanel: React.FC<ActionPanelProps> = ({ profile, onComplete })
                         <div className="flex flex-col items-center md:items-end gap-2 w-full">
                             <div className="flex items-center gap-2 text-amber-700">
                                 <AlertCircle className="w-5 h-5" />
-                                <span className="text-sm font-medium">Release requirements incomplete ({completed}/{total})</span>
+                                <span className="text-sm font-medium">Royalty coverage incomplete ({completed}/{total})</span>
                             </div>
                             <span className="text-xs text-gray-600 text-center md:text-right">
-                                Missing: {missing.join(', ')}
+                                Recommended next: {missing.join(', ')}
                             </span>
                             <button
-                                disabled
-                                className="w-full md:w-auto inline-flex items-center justify-center gap-2 px-8 py-3 bg-gray-200 text-gray-400 font-semibold rounded-xl cursor-not-allowed transition-colors"
-                                aria-disabled="true"
+                                onClick={onComplete}
+                                className="w-full md:w-auto inline-flex items-center justify-center gap-2 px-8 py-3 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 transition-colors shadow-md shadow-indigo-200"
                             >
-                                <span>Complete Setup</span>
-                                <ArrowRight className="w-5 h-5 opacity-50" />
+                                <span>Go to Dashboard</span>
+                                <ArrowRight className="w-5 h-5" />
                             </button>
                         </div>
                     )}

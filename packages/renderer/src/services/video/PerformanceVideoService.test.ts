@@ -59,6 +59,17 @@ const SONIC_PROFILE = {
 function baseOptions() {
     return {
         songUrl: 'https://cdn.example/song.mp3',
+        masterAsset: {
+            contentHash: 'a'.repeat(64),
+            downloadUrl: 'https://storage.example/canonical-master.wav',
+            masterFingerprint: 'SONIC-canonical-master',
+            mimeType: 'audio/wav',
+            originalFileName: 'master.wav',
+            sizeBytes: 1234,
+            storagePath: `masters/user-1/${'a'.repeat(64)}/original.wav`,
+            uploadedAt: '2026-07-17T18:00:00.000Z',
+        },
+        isrc: 'USABC2600001',
         artistImageUrl: 'https://cdn.example/artist.png', // skips image-generation branch
         sceneCount: 1, // exactly one scene → exactly one generateVideo call
         aspectRatio: '16:9' as const,
@@ -87,6 +98,25 @@ describe('PerformanceVideoService.generate (ISSUE-994)', () => {
         expect(request.inputProps.project.clips).toBeInstanceOf(Array);
         // The old, broken shape must never be sent again.
         expect(request).not.toHaveProperty('project');
+    });
+
+    it('carries the canonical master identity into the audio timeline clip', async () => {
+        mockRenderVideo.mockResolvedValue({ data: { success: true, renderId: 'job-1', message: 'Render job queued.' } });
+        mockWaitForJob.mockResolvedValue({ id: 'job-1', status: 'completed', videoUrl: 'https://cdn.example/final.mp4' });
+
+        await performanceVideoService.generate(baseOptions());
+
+        const [request] = mockRenderVideo.mock.calls[0]!;
+        const audioClip = request.inputProps.project.clips.find((clip: { type: string }) => clip.type === 'audio');
+        expect(audioClip).toEqual(expect.objectContaining({
+            src: 'https://storage.example/canonical-master.wav',
+            masterFingerprint: 'SONIC-canonical-master',
+            isrc: 'USABC2600001',
+        }));
+        expect(mockAnalyzeAudio).toHaveBeenCalledWith({
+            audioUrl: 'https://storage.example/canonical-master.wav',
+            mimeType: 'audio/wav',
+        });
     });
 
     it('polls waitForJob for the real video URL instead of reading a field the callable never returns', async () => {

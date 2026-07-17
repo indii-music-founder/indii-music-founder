@@ -378,7 +378,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
         }
 
         try {
-            const result = await window.electronAPI.distribution.generateIngestionNotification(metadata);
+            const result = await window.electronAPI.distribution.generateDDEX(metadata);
             if (!result.success || !result.xml) {
                 throw new Error(result.error || 'DDEX Generation failed');
             }

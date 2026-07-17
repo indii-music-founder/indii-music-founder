@@ -1,147 +1,116 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { EarningsReportReport } from './types/dsr';
-import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
 
-/**
- * ISSUE-967: DSR import must never partially write earnings (one release
- * committed, another not) and must never return success without a durable
- * receipt. These tests cover the actual atomicity/idempotency contract.
- */
+const mocks = vi.hoisted(() => ({
+    ingestCallable: vi.fn(),
+    allocationCallable: vi.fn(),
+    httpsCallable: vi.fn(),
+    auth: { currentUser: { uid: 'user-1' } as { uid: string } | null },
+}));
 
-const mocks = vi.hoisted(() => {
-    const mockBatchSet = vi.fn();
-    const mockBatchCommit = vi.fn().mockResolvedValue(undefined);
-    const mockGetDoc = vi.fn();
-    const mockDoc = vi.fn((..._args: unknown[]) => ({ __docRefArgs: _args }));
-    const mockWriteBatch = vi.fn(() => ({ set: mockBatchSet, commit: mockBatchCommit }));
-
-    return { mockBatchSet, mockBatchCommit, mockGetDoc, mockDoc, mockWriteBatch };
-});
-
-vi.mock('firebase/firestore', async (importOriginal) => {
-    const actual = await importOriginal<typeof import('firebase/firestore')>();
-    return {
-        ...actual,
-        doc: mocks.mockDoc,
-        getDoc: mocks.mockGetDoc,
-        writeBatch: mocks.mockWriteBatch,
-    };
-});
+vi.mock('firebase/functions', () => ({
+    httpsCallable: mocks.httpsCallable,
+}));
 
 vi.mock('@/services/firebase', () => ({
-    db: {},
-    auth: { currentUser: { uid: 'user-1' } },
-    storage: {},
-    functions: { region: vi.fn(() => ({ httpsCallable: vi.fn() })) },
-    functionsWest1: { region: vi.fn(() => ({ httpsCallable: vi.fn() })) },
+    auth: mocks.auth,
+    functions: { project: 'test' },
 }));
 
 vi.mock('@sentry/react', () => ({ captureException: vi.fn() }));
 
 import { dsrUploadService } from './EarningsUploadService';
 
-function makeReport(reportId: string): EarningsReportReport {
+function makeReport(): EarningsReportReport {
     return {
-        reportId,
-        senderId: 'PASystemIdentityA',
-        recipientId: 'PASystemIdentityB',
-        reportingPeriod: { startDate: '2025-01-01', endDate: '2025-01-31' },
-        reportCreatedDateTime: '2025-02-01T12:00:00Z',
+        reportId: 'RPT-001',
+        senderId: 'PADPIDA2011112001R',
+        recipientId: 'PA-DPIDA-INDII',
+        reportingPeriod: { startDate: '2026-06-01', endDate: '2026-06-30' },
+        reportCreatedDateTime: '2026-07-15T12:00:00.000Z',
         currencyCode: 'USD',
-        summary: { totalUsageCount: 1, totalRevenue: 100, currencyCode: 'USD' },
+        summary: { totalUsageCount: 10, totalRevenue: 12.5, currencyCode: 'USD' },
         transactions: [{
             transactionId: 'TX-1',
-            resourceId: { isrc: 'US1234567890' },
-            usageType: 'Download',
-            usageCount: 1,
-            revenueAmount: 100,
+            resourceId: { isrc: 'USABC2600001' },
+            usageType: 'OnDemandStream',
+            usageCount: 10,
+            revenueAmount: 12.5,
             currencyCode: 'USD',
             territoryCode: 'US',
         }],
     };
 }
 
-function makeCatalog(): Map<string, ExtendedGoldenMetadata> {
-    const catalog = new Map<string, ExtendedGoldenMetadata>();
-    catalog.set('US1234567890', {
-        title: 'Test Track', artist: 'Test Artist', isrc: 'US1234567890', upc: '1234567890123',
-        releaseDate: '2024-01-01', genre: 'Pop', releaseType: 'Single', territories: ['US'],
-        splits: [], tracks: [], copyrightYear: '2024', copyrightOwner: 'Test Label',
-    } as unknown as ExtendedGoldenMetadata);
-    return catalog;
-}
-
 describe('EarningsReportUploadService.processAndSaveReport', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        mocks.mockBatchCommit.mockResolvedValue(undefined);
+        mocks.auth.currentUser = { uid: 'user-1' };
+        mocks.httpsCallable.mockImplementation((_functions, name) =>
+            name === 'calculateRoyaltyAllocations' ? mocks.allocationCallable : mocks.ingestCallable
+        );
     });
 
-    it('commits earnings and the receipt atomically in a single batch, never partially', async () => {
-        mocks.mockGetDoc.mockResolvedValue({ exists: () => false });
+    it('delegates all ledger writes to the authenticated backend callable', async () => {
+        mocks.ingestCallable.mockResolvedValue({
+            data: {
+                success: true,
+                batchId: 'dsr-stable',
+                totalRevenue: 12.5,
+                transactionCount: 1,
+                matchedReleases: 1,
+                unmatchedISRCs: [],
+                alreadyProcessed: false,
+            },
+        });
+        mocks.allocationCallable.mockResolvedValue({
+            data: {
+                success: true,
+                batchId: 'dsr-stable',
+                processedEarnings: 1,
+                alreadyProcessedEarnings: 0,
+                heldPayouts: 2,
+                blockedEarnings: 0,
+            },
+        });
+        const report = makeReport();
 
-        const result = await dsrUploadService.processAndSaveReport(makeReport('RPT-ATOMIC'), makeCatalog());
+        const result = await dsrUploadService.processAndSaveReport(report);
 
-        expect(result.success).toBe(true);
-        // One batch, one commit — not N independent writes.
-        expect(mocks.mockWriteBatch).toHaveBeenCalledTimes(1);
-        expect(mocks.mockBatchCommit).toHaveBeenCalledTimes(1);
-        // Earnings record(s) + the receipt were both staged before that single commit.
-        expect(mocks.mockBatchSet).toHaveBeenCalledTimes(2); // 1 earnings record (1 matched ISRC) + 1 receipt
+        expect(mocks.httpsCallable).toHaveBeenCalledWith(
+            expect.anything(),
+            'ingestEarningsReport'
+        );
+        expect(mocks.ingestCallable).toHaveBeenCalledWith({ report });
+        expect(mocks.allocationCallable).toHaveBeenCalledWith({ batchId: 'dsr-stable' });
+        expect(result).toEqual(expect.objectContaining({
+            success: true,
+            batchId: 'dsr-stable',
+            matchedReleases: 1,
+            allocation: expect.objectContaining({
+                heldPayouts: 2,
+                blockedEarnings: 0,
+            }),
+        }));
     });
 
-    it('returns success:false (never a swallowed partial success) when the atomic commit fails', async () => {
-        mocks.mockGetDoc.mockResolvedValue({ exists: () => false });
-        mocks.mockBatchCommit.mockRejectedValueOnce(new Error('Firestore unavailable'));
+    it('returns a failure when the backend rejects reconciliation', async () => {
+        mocks.ingestCallable.mockRejectedValue(new Error('totalRevenue does not reconcile'));
 
-        const result = await dsrUploadService.processAndSaveReport(makeReport('RPT-FAIL'), makeCatalog());
+        const result = await dsrUploadService.processAndSaveReport(makeReport());
 
         expect(result.success).toBe(false);
-        expect(result.error).toContain('Firestore unavailable');
+        expect(result.error).toContain('does not reconcile');
     });
 
-    it('is idempotent: re-importing the identical report returns the existing receipt without reprocessing', async () => {
-        const existingReceipt = {
-            totalRevenue: 100,
-            transactionCount: 1,
-            royaltiesSummary: { count: 1, totalNetRevenue: 85, totalGrossRevenue: 100 },
-        };
-        mocks.mockGetDoc.mockResolvedValue({ exists: () => true, data: () => existingReceipt });
+    it('refuses to submit without an authenticated user', async () => {
+        mocks.auth.currentUser = null;
 
-        const result = await dsrUploadService.processAndSaveReport(makeReport('RPT-DUPLICATE'), makeCatalog());
-
-        expect(result.success).toBe(true);
-        expect(result.totalRevenue).toBe(100);
-        expect(result.matchedReleases).toBe(1);
-        // Must short-circuit before ever touching a batch.
-        expect(mocks.mockWriteBatch).not.toHaveBeenCalled();
-    });
-
-    it('derives the same batch ID for the same (user, distributor, reportId) — the idempotency key', async () => {
-        mocks.mockGetDoc.mockResolvedValue({ exists: () => false });
-
-        await dsrUploadService.processAndSaveReport(makeReport('RPT-STABLE-KEY'), makeCatalog());
-        const firstCallDocArgs = mocks.mockDoc.mock.calls.find(args => String(args[1]).includes('dsr_'));
-
-        vi.clearAllMocks();
-        mocks.mockGetDoc.mockResolvedValue({ exists: () => false });
-        mocks.mockBatchCommit.mockResolvedValue(undefined);
-
-        await dsrUploadService.processAndSaveReport(makeReport('RPT-STABLE-KEY'), makeCatalog());
-        const secondCallDocArgs = mocks.mockDoc.mock.calls.find(args => String(args[1]).includes('dsr_'));
-
-        expect(firstCallDocArgs?.[1]).toBe(secondCallDocArgs?.[1]);
-    });
-
-    it('rejects when no user is authenticated', async () => {
-        const { auth } = await import('@/services/firebase');
-        (auth as unknown as { currentUser: unknown }).currentUser = null;
-
-        const result = await dsrUploadService.processAndSaveReport(makeReport('RPT-NOAUTH'), makeCatalog());
+        const result = await dsrUploadService.processAndSaveReport(makeReport());
 
         expect(result.success).toBe(false);
         expect(result.error).toContain('not authenticated');
-
-        (auth as unknown as { currentUser: unknown }).currentUser = { uid: 'user-1' };
+        expect(mocks.ingestCallable).not.toHaveBeenCalled();
+        expect(mocks.allocationCallable).not.toHaveBeenCalled();
     });
 });

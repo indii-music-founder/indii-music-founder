@@ -1,71 +1,49 @@
+import { collection, getDocs, query, where } from 'firebase/firestore';
+
+import { auth, db } from '@/services/firebase';
 import { logger } from '@/utils/logger';
-import { Timestamp, FieldValue, getFirestore, collection, addDoc, getDocs, query, where, updateDoc, doc } from 'firebase/firestore';
-import { app } from '@/services/firebase';
 
 export interface RoyaltyPayout {
     id?: string;
+    /** Owner account for this obligation ledger. */
+    userId?: string;
     artistId: string;
     artistName: string;
+    recipientEmail?: string;
     amount: number;
+    amountMicros?: number;
     currency: string;
-    period: string; // "2026-Q1"
-    status: 'pending' | 'processed' | 'failed';
+    period: string;
+    status: 'held_for_reconciliation' | 'pending' | 'processed' | 'failed';
     method: 'stripe' | 'wire' | 'manual';
-    processedAt?: Date | Timestamp | FieldValue;
+    taxStatus?: 'not_calculated' | 'ready' | 'withheld';
 }
 
+/** Read-only renderer view over the backend-owned payout obligation ledger. */
 export class RoyaltyPayoutService {
-    private db = getFirestore(app);
-    private collectionRef = collection(this.db, 'royalty_payouts');
-
-    /**
-     * Records a new payout in the ledger.
-     */
-    async createPayout(payout: Omit<RoyaltyPayout, 'id' | 'status'>): Promise<string> {
-        try {
-            const docRef = await addDoc(this.collectionRef, {
-                ...payout,
-                status: 'pending',
-                createdAt: new Date()
-            });
-            logger.info(`[Royalty] Created pending payout for ${payout.artistName} (${payout.amount} ${payout.currency})`);
-            return docRef.id;
-        } catch (error: unknown) {
-            logger.error('[Royalty] Failed to create payout:', error);
-            throw error;
-        }
+    async createPayout(_payout: Omit<RoyaltyPayout, 'id' | 'status'>): Promise<string> {
+        throw new Error('Payout obligations are server-owned and cannot be created from the renderer.');
     }
 
-    /**
-     * Mark a payout as processed.
-     */
-    async finalizePayout(payoutId: string, status: 'processed' | 'failed' = 'processed'): Promise<void> {
-        try {
-            const docRef = doc(this.db, 'royalty_payouts', payoutId);
-            await updateDoc(docRef, {
-                status,
-                processedAt: new Date()
-            });
-            logger.info(`[Royalty] Payout ${payoutId} updated to ${status}`);
-        } catch (error: unknown) {
-            logger.error('[Royalty] Failed to finalize payout:', error);
-        }
+    async finalizePayout(_payoutId: string, _status: 'processed' | 'failed' = 'processed'): Promise<void> {
+        throw new Error('Payout state is server-owned and requires the audited payment workflow.');
     }
 
-    /**
-     * Query all pending payouts for a period.
-     */
     async getPendingForPeriod(period: string): Promise<RoyaltyPayout[]> {
         try {
-            const q = query(
-                this.collectionRef,
-                where('period', '==', period),
-                where('status', '==', 'pending')
-            );
-            const snapshot = await getDocs(q);
+            const userId = auth.currentUser?.uid;
+            if (!userId) throw new Error('Authentication is required to read payout obligations.');
+            const snapshot = await getDocs(query(
+                collection(db, 'payouts'),
+                where('userId', '==', userId)
+            ));
             const payouts: RoyaltyPayout[] = [];
-            snapshot.forEach(doc => {
-                payouts.push({ id: doc.id, ...doc.data() } as RoyaltyPayout);
+            snapshot.forEach(document => {
+                const payout = { id: document.id, ...document.data() } as RoyaltyPayout;
+                if (
+                    payout.period === period &&
+                    (payout.status === 'held_for_reconciliation' || payout.status === 'pending')
+                ) payouts.push(payout);
             });
             return payouts;
         } catch (error: unknown) {
@@ -74,27 +52,23 @@ export class RoyaltyPayoutService {
         }
     }
 
-    /**
-     * One-click CSV export for offline bank batch processing.
-     */
     async generateCsv(payouts: RoyaltyPayout[]): Promise<string> {
         try {
             const headers = ['payoutId', 'artistId', 'artistName', 'amount', 'currency', 'method', 'period'];
-            const rows = payouts.map(p => [
-                p.id || '',
-                p.artistId,
-                p.artistName,
-                p.amount.toString(),
-                p.currency,
-                p.method,
-                p.period
+            const rows = payouts.map(payout => [
+                payout.id || '',
+                payout.artistId,
+                payout.artistName,
+                payout.amount.toString(),
+                payout.currency,
+                payout.method,
+                payout.period,
             ]);
-
+            const csvCell = (value: string) => `"${value.replace(/"/g, '""')}"`;
             const csvContent = [
                 headers.join(','),
-                ...rows.map(r => r.map(cell => `"${cell}"`).join(','))
+                ...rows.map(row => row.map(csvCell).join(',')),
             ].join('\n');
-
             logger.info(`[Royalty] Generated CSV for ${payouts.length} payouts.`);
             return csvContent;
         } catch (error: unknown) {

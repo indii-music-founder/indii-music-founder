@@ -4,6 +4,9 @@ import { trackLibrary } from '@/services/metadata/TrackLibraryService';
 import { ExtendedGoldenMetadata, INITIAL_METADATA } from '@/services/metadata/types';
 import { INGESTION_CONFIG } from '@/core/config/ingestion';
 import { Logger } from '@/core/logger/Logger';
+import { auth } from '@/services/firebase';
+import { masterAudioService } from '@/services/audio/MasterAudioService';
+import type { MasterAudioReference } from '@/services/metadata/types';
 
 export class TrackIngestionService {
 
@@ -24,12 +27,26 @@ export class TrackIngestionService {
             throw new Error('Failed to fingerprint audio file.');
         }
 
+        const userId = auth.currentUser?.uid;
+        if (!userId) {
+            throw new Error('User must be authenticated to ingest a master recording.');
+        }
+
+        const masterAsset = await masterAudioService.persist(file, {
+            userId,
+            masterFingerprint: fingerprint,
+        });
+
         // 2. Check Library (Idempotency)
         if (!options?.forceReanalyze) {
             const existing = await trackLibrary.getByFingerprint(fingerprint);
             if (existing) {
                 Logger.info('TrackIngestion', `Track already exists: ${fingerprint}`);
-                return existing;
+                const hydrated = { ...existing, userId, masterAsset };
+                if (existing.userId !== userId || existing.masterAsset?.storagePath !== masterAsset.storagePath) {
+                    await trackLibrary.saveTrack(hydrated);
+                }
+                return hydrated;
             }
         } else {
             Logger.info('TrackIngestion', `Force reanalyze enabled. Bypassing cache for: ${fingerprint}`);
@@ -43,7 +60,7 @@ export class TrackIngestionService {
         const profile = await audioIntelligence.analyze(file);
 
         // 4. Map to Golden Metadata
-        const metadata = this.mapProfileToMetadata(file, profile, fingerprint);
+        const metadata = this.mapProfileToMetadata(file, profile, fingerprint, userId, masterAsset);
 
         // 5. Save to Library
         Logger.info('TrackIngestion', 'Saving new track metadata...');
@@ -55,7 +72,9 @@ export class TrackIngestionService {
     private mapProfileToMetadata(
         file: File,
         profile: import('@/services/audio/types').AudioIntelligenceProfile,
-        fingerprint: string
+        fingerprint: string,
+        userId: string,
+        masterAsset: MasterAudioReference
     ): ExtendedGoldenMetadata {
         const { technical, semantic } = profile;
 
@@ -63,6 +82,8 @@ export class TrackIngestionService {
         const metadata: ExtendedGoldenMetadata = {
             ...INITIAL_METADATA,
             masterFingerprint: fingerprint,
+            masterAsset,
+            userId,
 
             // Inferred Basic Info
             trackTitle: file.name.replace(/\.[^/.]+$/, ""), // Strip extension

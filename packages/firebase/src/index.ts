@@ -91,6 +91,11 @@ export { initiateSplitEscrow, signEscrow, releaseEscrow } from './stripe/splitEs
 
 export { requestTaxForms } from './stripe/taxForms';
 
+// Finance Functions (server-owned DSR/earnings ledger writes)
+export { ingestEarningsReport } from './functions/finance/ingestEarningsReport';
+export { calculateRoyaltyAllocations } from './functions/finance/calculateRoyaltyAllocations';
+export { setRecoupmentBalance } from './functions/finance/setRecoupmentBalance';
+
 // Distribution Functions (Item 218: Delivery Status Polling)
 export { pollDeliveryStatus } from './distribution/pollDeliveryStatus';
 
@@ -153,6 +158,7 @@ export { analyticsExchangeToken, analyticsRefreshToken, analyticsRevokeToken } f
 // Storage Maintenance (Scheduled — orphan cleanup, quota tracking, archival flagging, temp cleanup)
 export { cleanupExpiredVideoTemps, cleanupOrphanedVideos, trackStorageQuotas, flagVideosForArchival } from './devops/storageMaintenance';
 export { fetchStorageAssetForCanvas } from './functions/storage/fetchStorageAssetForCanvas';
+export { verifyMasterAudio } from './functions/storage/verifyMasterAudio';
 
 // Remote Relay — Server-Side Agent Processing (replaces desktop-browser-dependent relay)
 export { processRelayCommand } from './relay/relayCommandProcessor';
@@ -724,6 +730,24 @@ export const renderVideo = functions
             }
 
             const segmentUrls = videoClips.map((c: Record<string, unknown>) => c.src as string);
+            const audioClips = (project.clips as Record<string, unknown>[])
+                .filter((clip: Record<string, unknown>) => (
+                    clip &&
+                    typeof clip === "object" &&
+                    clip.type === "audio" &&
+                    typeof clip.src === "string" &&
+                    clip.src.length > 0
+                ))
+                .map((clip: Record<string, unknown>) => ({
+                    ...(typeof clip.id === "string" ? { id: clip.id } : {}),
+                    url: clip.src as string,
+                    ...(typeof clip.masterFingerprint === "string" ? { masterFingerprint: clip.masterFingerprint } : {}),
+                    ...(typeof clip.isrc === "string" ? { isrc: clip.isrc } : {}),
+                    ...(typeof clip.trackId === "string" ? { trackId: clip.trackId } : {}),
+                    startFrame: Number.isFinite(Number(clip.startFrame)) ? Math.max(0, Number(clip.startFrame)) : 0,
+                    durationInFrames: Number.isFinite(Number(clip.durationInFrames)) ? Math.max(0, Number(clip.durationInFrames)) : 0,
+                    volume: Number.isFinite(Number(clip.volume)) ? Math.min(1, Math.max(0, Number(clip.volume))) : 1
+                }));
 
             // 2. Create Job Record (Atomic Create)
             await admin.firestore().collection("videoJobs").doc(jobId).create({
@@ -746,6 +770,11 @@ export const renderVideo = functions
                     jobId: jobId,
                     userId: userId,
                     segmentUrls: segmentUrls,
+                    audioClips,
+                    audioMix: {
+                        mode: "master_over_native",
+                        preserveNativeAudio: true
+                    },
                     options: {
                         resolution: `${project.width}x${project.height}`,
                         aspectRatio: project.width > project.height ? "16:9" : "9:16" // Rough approximation

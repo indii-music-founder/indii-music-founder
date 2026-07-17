@@ -60,7 +60,7 @@ export const SoundExchangeSection: React.FC<SoundExchangeSectionProps> = ({
 
                     <div className="flex justify-start">
                         <a
-                            href="https://www.soundexchange.com/artist-copyright-owner/registration/"
+                            href="https://www.soundexchange.com/register/"
                             target="_blank"
                             rel="noreferrer"
                             className="inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm"

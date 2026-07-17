@@ -10,6 +10,7 @@ import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { INGESTION_CONFIG } from '@/core/config/ingestion';
 import { StorageService } from '@/services/StorageService';
+import { masterAudioService } from '@/services/audio/MasterAudioService';
 import { agentService } from '@/services/agent/AgentService';
 import type { ExtendedGoldenMetadata, DDEXReleaseRecord } from '@/services/metadata/types';
 import type { DistributorId, ReleaseAssets } from '@/services/distribution/types/distributor';
@@ -262,7 +263,40 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
         setSubmitError(message);
         throw new Error(message);
       }
-      // Use a dedicated 'packaging' path to differentiate from analysis-only uploads
+      if (type === 'audio') {
+        // DDEX packaging references the same immutable, content-addressed
+        // master as ingestion, analysis, video, and the track library.
+        const masterFingerprint = metadata.masterFingerprint?.trim() || `SHA256-${audioMetadata.hash}`;
+        setUploadProgress(prev => ({ ...prev, audio: 10 }));
+        const masterAsset = await masterAudioService.persist(file, {
+          userId: userProfile.id,
+          masterFingerprint,
+        });
+        setUploadProgress(prev => ({ ...prev, audio: 100 }));
+
+        const audioInfo = {
+          url: masterAsset.downloadUrl,
+          mimeType: file.type,
+          sizeBytes: file.size,
+          format: audioMetadata.format,
+          sampleRate: audioMetadata.sampleRate,
+          bitDepth: audioMetadata.bitDepth,
+          hash: audioMetadata.hash,
+          storagePath: masterAsset.storagePath,
+          contentHash: masterAsset.contentHash,
+          masterFingerprint: masterAsset.masterFingerprint,
+        };
+        setSubmitError(null);
+        updateMetadata({
+          userId: userProfile.id,
+          masterFingerprint: masterAsset.masterFingerprint,
+          masterAsset,
+        });
+        updateAssets({ audioFile: audioInfo });
+        return masterAsset.downloadUrl;
+      }
+
+      // Non-audio release collateral retains its ordinary packaging path.
       const path = `orgs/${activeOrg.id}/releases/packaging/${Date.now()}_${file.name}`;
       const url = await StorageService.uploadFileWithProgress(
         file,
@@ -271,39 +305,21 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
           setUploadProgress(prev => ({ ...prev, [type]: progress }));
         }
       );
-
-      // Extract real metadata from audio file using Web Audio API
-      if (type === 'audio') {
-        const audioInfo = {
-          url,
-          mimeType: file.type,
-          sizeBytes: file.size,
-          format: audioMetadata.format,
-          sampleRate: audioMetadata.sampleRate,
-          bitDepth: audioMetadata.bitDepth,
-          hash: audioMetadata.hash,
-        };
-        setSubmitError(null);
-        updateAssets({ audioFile: audioInfo });
-      } else {
-        // Extract real image dimensions
-        const coverInfo = {
-          url,
-          mimeType: file.type,
-          sizeBytes: file.size,
-          width: imageDimensions.width,
-          height: imageDimensions.height,
-        };
-        setSubmitError(null);
-        updateAssets({ coverArt: coverInfo });
-      }
-
+      const coverInfo = {
+        url,
+        mimeType: file.type,
+        sizeBytes: file.size,
+        width: imageDimensions.width,
+        height: imageDimensions.height,
+      };
+      setSubmitError(null);
+      updateAssets({ coverArt: coverInfo });
       return url;
     } catch (error: unknown) {
       logger.error(`Error uploading ${type} asset:`, error);
       throw error;
     }
-  }, [activeOrg, userProfile, updateAssets]);
+  }, [activeOrg, userProfile, metadata.masterFingerprint, updateAssets, updateMetadata]);
 
   // Validation errors
   const getValidationErrors = useCallback((step: WizardStep): string[] => {
@@ -426,6 +442,10 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
             audioFormat,
             audioSampleRate: assets.audioFile?.sampleRate || 44100,
             audioBitDepth: assets.audioFile?.bitDepth || 16,
+            ...(assets.audioFile?.storagePath ? { audioStoragePath: assets.audioFile.storagePath } : {}),
+            ...(assets.audioFile?.contentHash ? { audioContentHash: assets.audioFile.contentHash } : {}),
+            ...(assets.audioFile?.masterFingerprint ? { masterFingerprint: assets.audioFile.masterFingerprint } : {}),
+            ...(metadata.isrc?.trim() ? { isrc: metadata.isrc.trim() } : {}),
             coverArtUrl: assets.coverArt?.url || '',
             coverArtWidth: assets.coverArt?.width || 3000,
             coverArtHeight: assets.coverArt?.height || 3000
@@ -460,6 +480,9 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
           'publishing',
           `Package the definitive assets for release ID: ${docId}.
           Audio URL: ${assets.audioFile?.url}
+          Canonical audio storage path: ${assets.audioFile?.storagePath || 'unavailable'}
+          Master fingerprint: ${assets.audioFile?.masterFingerprint || metadata.masterFingerprint || 'unavailable'}
+          ISRC: ${metadata.isrc || 'not assigned'}
           Cover Art URL: ${assets.coverArt?.url}`
         );
       } catch (agentError: unknown) {

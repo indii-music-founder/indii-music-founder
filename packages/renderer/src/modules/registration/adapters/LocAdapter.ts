@@ -5,15 +5,23 @@ import { getConfirmedAutomationResult } from './automationResult';
 
 export const LocAdapter: OrgAdapter = {
   id: 'loc',
-  name: 'Library of Congress',
-  shortName: 'LoC',
+  name: 'U.S. Copyright Office',
+  shortName: 'USCO',
   category: 'copyright',
   requiresDesktop: true,
-  websiteUrl: 'https://eco.copyright.gov',
-  fee: { amount: 45, currency: 'USD', notes: '$45 single author/work • $65 standard • $85 group unpublished • $65 group album' },
-  timeline: '3–9 months',
+  websiteUrl: 'https://www.copyright.gov/registration/',
+  timeline: 'Processing time varies by claim and filing method',
 
   fields: [
+    {
+      id: 'claimScope',
+      label: 'What are you registering?',
+      orgLabel: 'Type of Work / Claim Scope',
+      type: 'select',
+      required: true,
+      options: ['Sound recording only', 'Musical composition only', 'Both sound recording and musical composition'],
+      helpText: 'A composition (music/lyrics) and a particular sound recording are separate works. A combined claim is only available when the ownership requirements for both works are satisfied.',
+    },
     {
       id: 'workTitle',
       label: 'Song title',
@@ -89,8 +97,9 @@ export const LocAdapter: OrgAdapter = {
       const browserService = new BrowserAgentService();
 
       const result = await browserService.executeTask(
-        'Library of Congress',
+        'U.S. Copyright Office',
         `Register a copyright for the following work:
+          - Claim Scope: ${data.claimScope}
           - Title: ${data.workTitle}
           - Year of Creation: ${data.yearOfCreation}
           - Author/Claimant: ${data.authorName}
@@ -100,10 +109,10 @@ export const LocAdapter: OrgAdapter = {
           - Copyright Claimant: ${data.copyrightClaimant}
           Fill out the eCO registration form, submit it, and return the confirmation/case number.
           If login is required, stop and report back that credentials are needed.`,
-        'https://eco.copyright.gov'
+        'https://www.copyright.gov/registration/'
       );
 
-      const confirmationNumber = getConfirmedAutomationResult(result, 'Library of Congress');
+      const confirmationNumber = getConfirmedAutomationResult(result, 'U.S. Copyright Office');
       const persisted = await persistOrgRecord(userId, track.id, 'loc', data, confirmationNumber);
 
       return {
@@ -114,16 +123,18 @@ export const LocAdapter: OrgAdapter = {
       };
     } catch (err: unknown) {
       const isWebSession = typeof window !== 'undefined' && !window.electronAPI;
+      const persisted = await persistOrgRecord(userId, track.id, 'loc', data, undefined);
 
       if (isWebSession) {
-        logger.info('[LocAdapter] Web session — returning manual fallback for LoC submission');
+        logger.info('[LocAdapter] Web session — returning manual fallback for Copyright Office submission');
         return {
           success: false,
+          errorMessage: persisted ? undefined : 'The prepared filing could not be saved locally.',
           submittedAt: new Date(),
           requiresManualStep: true,
-          manualStepUrl: 'https://eco.copyright.gov',
+          manualStepUrl: 'https://www.copyright.gov/registration/',
           manualStepInstructions:
-            'Automatic submission requires the indii desktop app. Your pre-filled registration details are ready below — you can download them and complete submission on eco.copyright.gov.',
+            'Automatic submission requires the indii desktop app. Your prepared registration details are saved; complete the application, fee, and required deposit through the U.S. Copyright Office portal.',
         };
       }
 
@@ -132,6 +143,9 @@ export const LocAdapter: OrgAdapter = {
         success: false,
         errorMessage: err instanceof Error ? err.message : 'Submission failed',
         submittedAt: new Date(),
+        requiresManualStep: true,
+        manualStepUrl: 'https://www.copyright.gov/registration/',
+        manualStepInstructions: 'Your prepared registration details are saved. Complete the application, fee, and required deposit through the U.S. Copyright Office portal.',
       };
     }
   },

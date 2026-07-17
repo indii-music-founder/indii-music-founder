@@ -122,13 +122,34 @@ describe('🛡️ Shield: Distribution PII Redaction', () => {
 
         expect(mocks.agentSupervisor.execute).toHaveBeenCalledWith(
             'distribution',
-            'ddex_generator.py',
+            'ingestion_generator.py',
             expect.arrayContaining([JSON.stringify(sensitiveData)]),
             expect.any(Object),
             undefined,
             expect.anything(),
             [0]
         );
+    });
+
+    it('should require full XSD validation and return the validator report', async () => {
+        const report = {
+            valid: true,
+            mode: 'xsd',
+            errors: [],
+            warnings: [],
+            summary: 'XSD validation passed'
+        };
+        mocks.agentSupervisor.execute.mockResolvedValue(report);
+
+        const result = await invoke('distribution:validate-xsd', '<NewReleaseMessage />');
+
+        expect(mocks.agentSupervisor.execute).toHaveBeenCalledWith(
+            'distribution',
+            'xsd_validator.py',
+            [expect.stringMatching(/xsd-validation-.*\.xml$/), '--require-xsd'],
+            expect.any(Object)
+        );
+        expect(result).toEqual({ success: true, report });
     });
 
     it('should redact sensitive data in generate-bwarm', async () => {

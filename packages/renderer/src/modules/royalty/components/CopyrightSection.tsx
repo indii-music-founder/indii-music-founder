@@ -25,7 +25,7 @@ export const CopyrightSection: React.FC<CopyrightSectionProps> = ({
             id="copyright-registration"
             icon={<Copyright className="w-6 h-6" />}
             title="Copyright Protection"
-            subtitle="Register formally with the Library of Congress for full legal and statutory damages protection"
+            subtitle="Register the musical work, sound recording, or both with the U.S. Copyright Office"
             status={status}
             isRequired={false}
             isExpanded={isExpanded}
@@ -42,17 +42,17 @@ export const CopyrightSection: React.FC<CopyrightSectionProps> = ({
                                 <h4 className="font-semibold mb-2">When do you actually need to register?</h4>
                                 <p className="text-sm text-slate-600 mb-4 leading-relaxed">
                                     Copyright exists automatically the moment you record your song ("fixed in a tangible medium").
-                                    Formal registration with the US Copyright Office is only required if you plan to sue someone for copyright infringement and wish to collect statutory damages.
+                                    For U.S. works, registration (or refusal) is generally required before filing an infringement suit. Timely registration can also preserve eligibility for statutory damages and attorney&apos;s fees; it is separate from PRO, MLC, SoundExchange, and distribution registrations.
                                 </p>
 
                                 <div className="grid grid-cols-2 gap-4 text-xs font-medium text-slate-500 bg-slate-50 p-3 rounded-lg border border-slate-100 mb-5">
                                     <div>
-                                        <span className="block uppercase tracking-wider mb-1">Standard Cost</span>
-                                        <span className="text-slate-900 text-sm">$45–$85 per work</span>
+                                        <span className="block uppercase tracking-wider mb-1">Application fee</span>
+                                        <span className="text-slate-900 text-sm">Varies by filing and claim type</span>
                                     </div>
                                     <div>
-                                        <span className="block uppercase tracking-wider mb-1">Timeline</span>
-                                        <span className="text-slate-900 text-sm">3–9 months processing</span>
+                                        <span className="block uppercase tracking-wider mb-1">Processing</span>
+                                        <span className="text-slate-900 text-sm">Varies; check the current Office estimate</span>
                                     </div>
                                 </div>
 
@@ -66,8 +66,8 @@ export const CopyrightSection: React.FC<CopyrightSectionProps> = ({
 
                                 {showMore && (
                                     <div className="mt-4 pt-4 border-t border-slate-100 text-sm text-slate-600 space-y-3">
-                                        <p><strong>Timing matters:</strong> Register within 3 months of public release to preserve your right to statutory damages ($750–$30,000 per work) if infringement occurs. Registering after publication can still help in enforcement but may limit damages recoverable.</p>
-                                        <p>You can also save money by registering a collection of unpublished works (like an entire album) at the group rate rather than registering each song separately.</p>
+                                        <p><strong>Timing matters:</strong> Registration before infringement or within three months after first publication can affect remedies. Confirm the current requirements for your facts before relying on a deadline.</p>
+                                        <p>The composition and the sound recording are distinct works. Select the correct claim scope and deposit; group-registration options have specific eligibility rules.</p>
                                     </div>
                                 )}
                             </div>

@@ -5,6 +5,17 @@
 
 import { INGESTION_CONFIG } from '@/core/config/ingestion';
 
+export interface MasterAudioReference {
+    contentHash: string;
+    downloadUrl: string;
+    masterFingerprint: string;
+    mimeType: string;
+    originalFileName: string;
+    sizeBytes: number;
+    storagePath: string;
+    uploadedAt: string;
+}
+
 export interface RoyaltySplit {
     legalName: string;
     role: 'songwriter' | 'producer' | 'performer' | 'other';
@@ -29,6 +40,10 @@ export interface GoldenMetadata {
 
     // 2. The Economics
     splits: RoyaltySplit[];
+    /** Composition ownership/writer shares used for PRO, MLC, and publishing flows. */
+    compositionSplits?: RoyaltySplit[];
+    /** Sound-recording/master ownership shares used for recording revenue flows. */
+    recordingSplits?: RoyaltySplit[];
 
     // 3. Rights Administration
     pro: 'ASCAP' | 'BMI' | 'SESAC' | 'GMR' | 'None';
@@ -61,6 +76,8 @@ export interface GoldenMetadata {
 export interface ExtendedGoldenMetadata extends GoldenMetadata {
     // Internal Identifier
     id?: string;
+    userId?: string;
+    masterAsset?: MasterAudioReference;
 
     // Artist Disambiguation
     artistIsni?: string;
@@ -178,6 +195,10 @@ export interface DDEXReleaseRecord {
         audioFormat: 'wav' | 'flac' | 'mp3';
         audioSampleRate: number;
         audioBitDepth: number;
+        audioStoragePath?: string;
+        audioContentHash?: string;
+        masterFingerprint?: string;
+        isrc?: string;
         coverArtUrl: string;
         coverArtWidth: number;
         coverArtHeight: number;
