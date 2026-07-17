@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-07-17 13:05 EDT
+**Updated:** 2026-07-17 13:15 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+43bec2053d fix(ai): make Vertex AI the production media provider (ISSUE-1082)
+6b5036902a chore: session checkpoint [13:05]
 6e6398e93a docs(ledger): re-verify hardening checklist item 7 — npm audit 0 critical/high
 ffc8467df7 docs: add Auth Bypass UI testing pattern to error ledger
 2623b6659e chore: session checkpoint [12:58]
@@ -12,14 +14,11 @@ ffc8467df7 docs: add Auth Bypass UI testing pattern to error ledger
 05e43fa4eb chore: session checkpoint [12:56]
 bdb7707ed9 docs(error-memory): log localhost referrer-block root cause + probe technique
 7040bc8714 chore: session checkpoint [12:42]
-eb3a9e753f docs(ledger): carry SEC-001 FIXED status + Creative QA findings onto purged history
-e5b0bd36a0 fix: make cloud TTS durable and idempotent
 ```
 
 ## Working State
 ```
- M packages/firebase/src/functions/creative/gateway.ts
-?? packages/firebase/src/functions/creative/__tests__/mediaProvider.test.ts
+clean working tree
 ```
 
 ## Decisions
