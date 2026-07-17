@@ -37,10 +37,11 @@ _DIR = os.path.dirname(os.path.abspath(__file__))
 if _DIR not in sys.path:
     sys.path.insert(0, _DIR)
 
-from qc_validator import QCValidator
-from isrc_manager import IdentityManager
-from ingestion_generator import DDEXGenerator
-from sftp_uploader import SFTPUploader
+from qc_validator import QCValidator  # noqa: E402
+from isrc_manager import IdentityManager  # noqa: E402
+from ingestion_generator import DDEXGenerator  # noqa: E402
+from sftp_uploader import SFTPUploader  # noqa: E402
+from xsd_validator import DDEXXSDValidator  # noqa: E402
 
 
 def emit(step: str, status: str, progress: int, detail: str = "", data: Any = None) -> None:
@@ -102,12 +103,33 @@ def run(release: Dict[str, Any], storage_path: str, dry_run: bool) -> Dict[str, 
     if "artwork_url" in release and "cover_filename" not in release:
         release["cover_filename"] = "cover.jpg"
     
-    ingestion_metadata = {**release, "tracks": tracks}
-    xml_string = generator.generate_ern(ingestion_metadata)
-    
     # If a UPC was assigned during Identity management, ensure it's in metadata
+    ingestion_metadata = {**release, "tracks": tracks}
     if not ingestion_metadata.get("upc"):
         ingestion_metadata["upc"] = id_manager.generate_upc()
+
+    xml_string = generator.generate_ern(ingestion_metadata)
+
+    # A draft/dry-run may use the structural validator for local feedback, but
+    # an actual partner upload must prove conformance against the configured
+    # licensed ERN 4.3 XSD. No SFTP mutation happens before this gate passes.
+    sftp_config: Dict[str, Any] = release.get("sftpConfig") or {}
+    require_xsd = bool(sftp_config) and not dry_run
+    validation = DDEXXSDValidator(require_xsd=require_xsd).validate_xml_string(xml_string)
+    if not validation["valid"] or (require_xsd and validation.get("mode") != "xsd"):
+        emit(
+            "ingestion",
+            "error",
+            65,
+            f"DDEX validation failed: {validation.get('summary', 'unknown validation error')}",
+            validation,
+        )
+        return {
+            "status": "FAIL",
+            "stage": "ddex_validation",
+            "validation": validation,
+            "errors": validation.get("errors", []),
+        }
 
     xml_path = os.path.join(storage_path, f"ingestion_{release.get('releaseId', 'release')}.xml")
     os.makedirs(storage_path, exist_ok=True)
@@ -119,7 +141,6 @@ def run(release: Dict[str, Any], storage_path: str, dry_run: bool) -> Dict[str, 
     # -----------------------------------------------------------------------
     # STEP 4 — SFTP Upload (skipped in dry-run mode)
     # -----------------------------------------------------------------------
-    sftp_config: Dict[str, Any] = release.get("sftpConfig") or {}
     if dry_run or not sftp_config:
         reason = "dry-run mode" if dry_run else "no sftpConfig provided"
         emit("sftp", "done", 100, f"SFTP upload skipped ({reason})")
@@ -130,6 +151,9 @@ def run(release: Dict[str, Any], storage_path: str, dry_run: bool) -> Dict[str, 
             "tracks": tracks,
             "sftp_skipped": True,
             "sftp_skip_reason": reason,
+            "validation": validation,
+            "xsd_validated": validation.get("mode") == "xsd",
+            "delivery_ready": False,
         }
 
     host = str(sftp_config.get("host", "unknown"))
@@ -163,6 +187,9 @@ def run(release: Dict[str, Any], storage_path: str, dry_run: bool) -> Dict[str, 
         "xml": xml_string,
         "tracks": tracks,
         "sftp": sftp_result,
+        "validation": validation,
+        "xsd_validated": True,
+        "delivery_ready": True,
     }
 
 

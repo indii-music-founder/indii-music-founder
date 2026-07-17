@@ -4,15 +4,11 @@ import os
 import shutil
 import hashlib
 import logging
-import time
 
 # Ensure we can import sibling modules
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-try:
-    from ingestion_generator import DDEXGenerator
-except ImportError:
-    # Fallback if running from a different context
-    pass
+from ingestion_generator import DDEXGenerator
+from xsd_validator import DDEXXSDValidator
 
 # Configure logging
 logging.basicConfig(
@@ -81,14 +77,17 @@ def package_itmsp(release_id, staging_path):
         metadata["tracks"] = processed_tracks
 
         # 3. Generate XML
-        try:
-            generator = DDEXGenerator()
-            xml_content = generator.generate_ern(metadata)
-        except NameError:
-             # Handle case where import failed
-             from ingestion_generator import DDEXGenerator
-             generator = DDEXGenerator()
-             xml_content = generator.generate_ern(metadata)
+        generator = DDEXGenerator()
+        xml_content = generator.generate_ern(metadata)
+
+        validation = DDEXXSDValidator(require_xsd=True).validate_xml_string(xml_content)
+        if not validation["valid"] or validation.get("mode") != "xsd":
+            return {
+                "status": "FAIL",
+                "error": validation.get("summary", "DDEX ERN 4.3 XSD validation failed"),
+                "validation": validation,
+                "delivery_ready": False,
+            }
 
         # 4. Create Bundle Structure
         # ITMSP bundles are directories ending in .itmsp
@@ -103,7 +102,7 @@ def package_itmsp(release_id, staging_path):
         
         # 5. Move/Copy Assets
         # Write XML
-        with open(os.path.join(bundle_path, "metadata.xml"), 'w') as f:
+        with open(os.path.join(bundle_path, "metadata.xml"), 'w', encoding='utf-8') as f:
             f.write(xml_content)
 
         # Copy Assets
@@ -123,11 +122,12 @@ def package_itmsp(release_id, staging_path):
             "release_id": release_id,
             "bundle_path": bundle_path,
             "details": f"Successfully created ITMSP bundle at {bundle_path} with {len(processed_tracks)} tracks.",
-            "delivery_ready": True
+            "delivery_ready": True,
+            "validation": validation,
         }
     except Exception as e:
         logger.exception("Packaging failed")
-        return {"status": "FAIL", "error": str(e)}
+        return {"status": "FAIL", "error": str(e), "delivery_ready": False}
 
 
 

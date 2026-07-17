@@ -5,11 +5,9 @@ xsd_validator.py - DDEX Ingestion Protocol 4.3 XSD Schema Validator
 Validates DDEX ERN XML against the official XSD schema.
 Spotify REQUIRES XSD validation before delivery.
 
-XSD files must be downloaded from the DDEX Knowledge Base:
-  https://kb.ingestion.net/display/ERNDG/ERN+4
-
-Place the XSD files in the 'schemas/' subdirectory relative to this script,
-or set the DDEX_XSD_PATH environment variable.
+Use the ERN 4.3 XSD files supplied under the DDEX Implementation Licence.
+Place the XSD files in the 'schemas/' subdirectory relative to this script or
+set the DDEX_XSD_PATH environment variable.
 
 If the official XSD is not available, falls back to structural validation
 that checks for required elements, attribute patterns, and value constraints.
@@ -444,8 +442,8 @@ if __name__ == "__main__":
         description="DDEX Ingestion Protocol 4.3 XSD/Structural Validator",
         epilog=(
             "Install lxml for full XSD validation: pip install lxml\n"
-            "Download DDEX XSD from: https://kb.ingestion.net/display/ERNDG/ERN+4\n"
-            "Set DDEX_XSD_PATH environment variable to your XSD file."
+            "Use the licensed DDEX ERN 4.3 XSD package and set "
+            "DDEX_XSD_PATH to its entry-point XSD file."
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter
     )

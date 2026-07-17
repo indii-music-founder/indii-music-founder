@@ -41,9 +41,9 @@ function escapeXml(value: unknown): string {
 }
 
 /**
- * Verified DDEX sender party id (ISSUE-859). Must be the registered DPID
- * (indii.music / New Detroit Music LLC — PA-DPIDA-2025122604-E) supplied via
- * env — never a hard-coded placeholder. Compilation fails without it.
+ * Configured DDEX sender party id (ISSUE-859). It must be the DPID issued to
+ * the active sender and supplied via runtime configuration. Compilation fails
+ * without it; this module never embeds or assumes an allocation.
  */
 function requireSenderPartyId(): string {
     const partyId = (process.env.DDEX_SENDER_PARTY_ID || '').trim();

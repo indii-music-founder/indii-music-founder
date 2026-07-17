@@ -3,8 +3,8 @@ import { type SystemIdentity } from './proprietary-ingestion/types/common';
 /**
  * DeliveryProfile
  *
- * Configures how indii (as a registered DDEX sender, PA-DPIDA-2025122604-E)
- * delivers to a specific partner. All Party IDs sourced from dpid.ddex.net.
+ * Configures delivery to a specific partner. The sender DPID is supplied by
+ * verified runtime configuration; this file contains recipient profiles only.
  *
  * Mode is controlled per-environment via the DDEX_LIVE_MODE env var:
  *   - DDEX_LIVE_MODE=true  → MusicDistribution (live delivery)

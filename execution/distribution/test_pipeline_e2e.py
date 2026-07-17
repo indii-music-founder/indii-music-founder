@@ -23,6 +23,7 @@ import tempfile
 import shutil
 import unittest
 import xml.etree.ElementTree as ET
+from unittest.mock import patch
 
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -211,7 +212,8 @@ class TestFullPipeline(unittest.TestCase):
         xml_output = generator.generate_ern(self.release_data)
 
         self.assertIn("NewReleaseMessage", xml_output)
-        self.assertIn("http://ingestion.net/xml/ern/43", xml_output)
+        self.assertIn("http://ddex.net/xml/ern/43", xml_output)
+        self.assertNotIn("http://ingestion.net", xml_output)
 
         # Verify all tracks are in the XML
         for track in self.release_data["tracks"]:
@@ -285,7 +287,16 @@ class TestFullPipeline(unittest.TestCase):
         with open(os.path.join(self.staging_dir, "metadata.json"), 'w') as f:
             json.dump(self.release_data, f, indent=2)
 
-        result = package_itmsp("TEST-REL-001", self.staging_dir)
+        xsd_pass = {
+            "valid": True,
+            "mode": "xsd",
+            "errors": [],
+            "warnings": [],
+            "summary": "XSD validation passed",
+        }
+        with patch("package_itmsp.DDEXXSDValidator") as validator_class:
+            validator_class.return_value.validate_xml_string.return_value = xsd_pass
+            result = package_itmsp("TEST-REL-001", self.staging_dir)
 
         self.assertEqual(result["status"], "PASS", f"ITMSP packaging failed: {result}")
         self.assertTrue(result.get("delivery_ready", False))
@@ -318,11 +329,23 @@ class TestFullPipeline(unittest.TestCase):
         output_dir = os.path.join(self.staging_dir, "output")
         os.makedirs(output_dir)
 
-        result = package_spotify(
-            release_id="TEST-REL-001",
-            staging_path=self.staging_dir,
-            output_path=output_dir
-        )
+        xsd_pass = {
+            "valid": True,
+            "mode": "xsd",
+            "errors": [],
+            "warnings": [],
+            "summary": "XSD validation passed",
+        }
+        with patch.dict(os.environ, {
+                "DDEX_MANIFEST_NAMESPACE": "urn:ddex:test:manifest",
+                "DDEX_MANIFEST_XSD_PATH": "/licensed/test/manifest.xsd",
+        }), patch("package_spotify.DDEXXSDValidator") as validator_class:
+            validator_class.return_value.validate_xml_string.return_value = xsd_pass
+            result = package_spotify(
+                release_id="TEST-REL-001",
+                staging_path=self.staging_dir,
+                output_path=output_dir
+            )
 
         self.assertEqual(result["status"], "PASS", f"Spotify packaging failed: {result}")
         self.assertTrue(result.get("delivery_ready", False))
@@ -384,9 +407,18 @@ class TestFullPipeline(unittest.TestCase):
             json.dump(self.release_data, f, indent=2)
 
         # Step 6: Apple ITMSP
+        xsd_pass = {
+            "valid": True,
+            "mode": "xsd",
+            "errors": [],
+            "warnings": [],
+            "summary": "XSD validation passed",
+        }
         try:
             from package_itmsp import package_itmsp
-            itmsp_result = package_itmsp("PIPELINE-E2E-001", self.staging_dir)
+            with patch("package_itmsp.DDEXXSDValidator") as validator_class:
+                validator_class.return_value.validate_xml_string.return_value = xsd_pass
+                itmsp_result = package_itmsp("PIPELINE-E2E-001", self.staging_dir)
             self.assertEqual(itmsp_result["status"], "PASS")
         except ImportError:
             pass
@@ -396,11 +428,16 @@ class TestFullPipeline(unittest.TestCase):
             from package_spotify import package_spotify
             output_dir = os.path.join(self.staging_dir, "spotify_output")
             os.makedirs(output_dir)
-            spotify_result = package_spotify(
-                release_id="PIPELINE-E2E-001",
-                staging_path=self.staging_dir,
-                output_path=output_dir
-            )
+            with patch.dict(os.environ, {
+                    "DDEX_MANIFEST_NAMESPACE": "urn:ddex:test:manifest",
+                    "DDEX_MANIFEST_XSD_PATH": "/licensed/test/manifest.xsd",
+            }), patch("package_spotify.DDEXXSDValidator") as validator_class:
+                validator_class.return_value.validate_xml_string.return_value = xsd_pass
+                spotify_result = package_spotify(
+                    release_id="PIPELINE-E2E-001",
+                    staging_path=self.staging_dir,
+                    output_path=output_dir
+                )
             self.assertEqual(spotify_result["status"], "PASS")
         except ImportError:
             pass

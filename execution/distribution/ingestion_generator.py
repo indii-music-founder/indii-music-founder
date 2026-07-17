@@ -5,7 +5,7 @@ ingestion_generator.py - DDEX Ingestion Protocol 4.3 XML Generator
 Industrial-grade DDEX Electronic Release Notification generator
 for direct ingestion by Apple Music, Spotify, Amazon, and other DSPs.
 
-Implements DDEX Ingestion Protocol 4.3 standard (https://kb.ingestion.net/display/ERNDG/ERN+4)
+Implements the DDEX ERN 4.3 message namespace and delivery profile.
 """
 
 import datetime
@@ -55,14 +55,14 @@ class DDEXGenerator:
             raise ValueError(
                 "DDEX_SENDER_DPID is required; live DDEX generation cannot use a placeholder identity"
             )
-        self.sender_dpid = self._canonicalize_dpid(
+        self.sender_dpid = self.canonicalize_dpid(
             configured_sender_dpid,
             "DDEX_SENDER_DPID",
         )
         self.sender_name = sender_name or self.DEFAULT_SENDER_NAME
 
     @classmethod
-    def _canonicalize_dpid(cls, value: str, field_name: str) -> str:
+    def canonicalize_dpid(cls, value: str, field_name: str) -> str:
         """Return the canonical no-hyphen XML form of a DDEX Party Identifier."""
         canonical = value.strip().upper().replace("-", "")
         if not cls.DPID_PATTERN.fullmatch(canonical):
@@ -115,7 +115,7 @@ class DDEXGenerator:
         self._create_element(
             recipient_party,
             "PartyId",
-            self._canonicalize_dpid(recipient_dpid, "DDEX_RECIPIENT_DPID"),
+            self.canonicalize_dpid(recipient_dpid, "DDEX_RECIPIENT_DPID"),
         )
 
         # Message Created DateTime
