@@ -16296,3 +16296,11 @@ All scoped work from ISSUE-511/913/957/958 consolidated effort:
 - **Rules audit:** The existing `(default)` Standard/native Firestore database in `nam5` receives a server-write-only `audio_analysis_receipts` collection. Authenticated clients may read only records whose existing `userId` equals their UID; create/update/delete are unconditionally denied. Red-team score for this added match: 5/5 (no client update bypass, no request-data authority, no cross-user read, no schema-pollution write path).
 - **Local proof:** 9 Python tests pass, including real PCM decode/block measurements, mono rejection, GCS-not-inline Gemini transport, current-generation precondition, cached receipt replay, and failed-lease retry state. Ruff and Python compile pass. Firebase focused suites pass 7 tests with TypeScript/scoped ESLint clean. Sixteen renderer master/track/publishing tests prove the upload invokes the profiling boundary, propagates the canonical identity, and refuses false success when the route rejects. The full Firestore emulator suite passes 140/140, including owner read, client write denial, and cross-account denial for the new receipt. The Docker image builds and its non-root container passes `/healthz` plus legacy-payload rejection smoke tests.
 - **Acceptance (residual):** Provision/deploy `engine-dsp` as private Cloud Run with at least 2 GiB memory; set `MASTER_AUDIO_BUCKET`, `GEMINI_AUDIO_MODEL`, `VERTEX_LOCATION`, and the Firebase task variables; grant the runtime service account least-privilege Storage object read, Datastore/Firestore write, and Vertex AI use; grant only the task identity Cloud Run Invoker; deploy Firestore rules and the callable; enqueue a real canonical WAV and FLAC; prove Cloud Tasks OIDC is accepted, DSP and Gemini both analyze the same hash/generation, a single owner-readable complete receipt persists, retry returns the same receipt without a second model call, and no master object is copied/mutated.
+
+### GH-ISSUE-233: Weekly Demo Audit 2026-07-13 — GO
+- **Status:** OPEN
+- **Severity:** 🟢 LOW
+- **Link:** https://github.com/indii-music-founder/indii-music-founder/issues/233
+- **Summary:** Automated weekly demo-readiness audit. Verdict: **GO**
+- **Expected (acceptance):** Close the issue as it is just an audit report with a GO verdict.
+- **Honest fallback:** WONTFIX — Audit was a GO, nothing to fix.
