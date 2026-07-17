@@ -14,7 +14,6 @@ vi.mock('motion/react', async () => {
         motion: new Proxy({} as typeof actual.motion, {
             get: (_target, prop: string) =>
                 // Return a simple passthrough component for any motion.* tag
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 ({ children, ...rest }: any) => {
                     const Tag = prop as keyof JSX.IntrinsicElements;
                     return <Tag {...rest}>{children}</Tag>;
