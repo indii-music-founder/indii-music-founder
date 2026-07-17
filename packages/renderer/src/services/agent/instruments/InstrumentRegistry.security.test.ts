@@ -48,7 +48,11 @@ describe('InstrumentRegistry secure aggregate writes', () => {
         await instrumentRegistry.execute('generate_image', { prompt: 'cover art' });
 
         expect(mocks.httpsCallable).toHaveBeenCalledWith(expect.anything(), 'recordInstrumentUsage');
-        expect(mocks.callable).toHaveBeenCalledWith({ instrumentId: 'generate_image', outcome: 'success' });
+        expect(mocks.callable).toHaveBeenCalledWith({
+            instrumentId: 'generate_image',
+            outcome: 'success',
+            executionId: expect.any(String),
+        });
     });
 
     it('reports a failed result without accepting client aggregate counters', async () => {
@@ -56,6 +60,10 @@ describe('InstrumentRegistry secure aggregate writes', () => {
 
         await instrumentRegistry.execute('generate_video', { prompt: 'video' });
 
-        expect(mocks.callable).toHaveBeenCalledWith({ instrumentId: 'generate_video', outcome: 'failed' });
+        expect(mocks.callable).toHaveBeenCalledWith({
+            instrumentId: 'generate_video',
+            outcome: 'failed',
+            executionId: expect.any(String),
+        });
     });
 });

@@ -16,6 +16,7 @@ interface RegisterAiContextCacheRequest {
 interface RecordInstrumentUsageRequest {
     instrumentId: string;
     outcome: "success" | "failed";
+    executionId: string;
 }
 
 function requireAuthenticatedUid(context: functions.https.CallableContext): string {
@@ -86,7 +87,9 @@ export function validateInstrumentUsage(data: RecordInstrumentUsageRequest): Rec
     if (
         typeof data?.instrumentId !== "string" ||
         !ALLOWED_INSTRUMENT_IDS.has(data.instrumentId) ||
-        (data.outcome !== "success" && data.outcome !== "failed")
+        (data.outcome !== "success" && data.outcome !== "failed") ||
+        typeof data.executionId !== "string" ||
+        !/^[A-Za-z0-9_-]{8,80}$/.test(data.executionId)
     ) {
         throw new functions.https.HttpsError(
             "invalid-argument",
@@ -102,8 +105,14 @@ export function validateInstrumentUsage(data: RecordInstrumentUsageRequest): Rec
  */
 export const recordInstrumentUsage = functions.https.onCall(
     async (data: RecordInstrumentUsageRequest, context) => {
-        requireAuthenticatedUid(context);
-        const { instrumentId, outcome } = validateInstrumentUsage(data);
+        const userId = requireAuthenticatedUid(context);
+        const { instrumentId, outcome, executionId } = validateInstrumentUsage(data);
+        const db = admin.firestore();
+        const statsRef = db.collection("instrument_usage_stats").doc(instrumentId);
+        const eventRef = db.collection("instrument_usage_events").doc(`${userId}_${executionId}`);
+        const rateRef = db.collection("instrument_usage_rate_limits").doc(`${userId}_${instrumentId}`);
+        const maxPerMinute = instrumentId === "generate_video" ? 2 : 10;
+        const now = Date.now();
 
         const update: Record<string, unknown> = {
             totalExecutions: admin.firestore.FieldValue.increment(1),
@@ -115,11 +124,43 @@ export const recordInstrumentUsage = functions.https.onCall(
             update.lastExecutionTime = admin.firestore.FieldValue.serverTimestamp();
         }
 
-        await admin.firestore()
-            .collection("instrument_usage_stats")
-            .doc(instrumentId)
-            .set(update, { merge: true });
+        const duplicate = await db.runTransaction(async (tx) => {
+            const [eventSnapshot, rateSnapshot] = await Promise.all([
+                tx.get(eventRef),
+                tx.get(rateRef),
+            ]);
+            if (eventSnapshot.exists) return true;
 
-        return { success: true };
+            const priorRate = rateSnapshot.data() as { windowStartedAt?: number; count?: number } | undefined;
+            const sameWindow =
+                typeof priorRate?.windowStartedAt === "number" &&
+                now - priorRate.windowStartedAt < 60_000;
+            const count = sameWindow && typeof priorRate?.count === "number" ? priorRate.count : 0;
+            if (count >= maxPerMinute) {
+                throw new functions.https.HttpsError(
+                    "resource-exhausted",
+                    "Instrument usage reporting rate exceeded.",
+                );
+            }
+
+            tx.set(eventRef, {
+                userId,
+                instrumentId,
+                outcome,
+                executionId,
+                createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            });
+            tx.set(rateRef, {
+                userId,
+                instrumentId,
+                windowStartedAt: sameWindow ? priorRate!.windowStartedAt : now,
+                count: count + 1,
+                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            }, { merge: true });
+            tx.set(statsRef, update, { merge: true });
+            return false;
+        });
+
+        return { success: true, duplicate };
     },
 );

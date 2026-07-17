@@ -738,6 +738,14 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
 
+    // Server-only replay/rate-limit records used by recordInstrumentUsage.
+    match /instrument_usage_events/{eventId} {
+      allow read, write: if false;
+    }
+    match /instrument_usage_rate_limits/{rateId} {
+      allow read, write: if false;
+    }
+
     match /iswc_works/{workId} {
       allow read, update, delete: if isVerifiedUser() && resource.data.userId == request.auth.uid;
       allow create: if isVerifiedUser() && request.resource.data.userId == request.auth.uid;
