@@ -731,11 +731,11 @@ service cloud.firestore {
     }
 
     // Global, non-sensitive aggregate operational stats (doc ID = instrumentId).
+    // Clients may observe aggregates, but only the recordInstrumentUsage Admin
+    // SDK callable may mutate counters.
     match /instrument_usage_stats/{instrumentId} {
       allow read: if isAuthenticated();
-      allow create: if isAuthenticated();
-      allow update: if isAuthenticated() &&
-        request.resource.data.diff(resource.data).affectedKeys().hasAny(['totalExecutions', 'successfulExecutions', 'failedExecutions', 'lastExecutionTime', 'updatedAt']);
+      allow create, update, delete: if false;
     }
 
     match /iswc_works/{workId} {
@@ -827,12 +827,13 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // Shared, non-sensitive Vertex context-cache metadata (doc ID = content hash,
-    // not user-scoped by design — the whole point is cross-session reuse).
+    // Per-user Vertex context-cache metadata. The registerAiContextCache Admin
+    // SDK callable owns writes and stores documents as `{uid}_{contentHash}`.
+    // Owner-only reads prevent one user from discovering or using another
+    // user's Vertex cached-content resource reference.
     match /ai_context_cache/{hash} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && request.resource.data.keys().hasAll(['id', 'hash', 'expireTime', 'lastUsed']);
-      allow update: if isAuthenticated() && request.resource.data.id == resource.data.id;
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create, update, delete: if false;
     }
 
     // =========================================================================

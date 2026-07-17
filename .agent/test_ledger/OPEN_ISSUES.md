@@ -251,7 +251,7 @@ Config/hardening verification pass. Owner-run pre-launch check. 6 of 8 checklist
 7. npm audit high/critical — ❌ FAIL → **ISSUE-1052** (1 critical: websocket-driver)
 8. Auth flows / logout clears credentials — ✅ PASS (Firebase signOut clears token from IndexedDB; cacheService.clear() + clearAllSubscriptions() on logout — authSlice.ts:303-319)
 
-**GO / NO-GO:** 🔴 **NO-GO** until BLOCKER/CRITICAL items clear (SEC-001 committed secret, PAY-001 double-payout). ISSUE-1052/1053 are HIGH/MEDIUM — fix before launch but not release-blocking on their own.
+**GO / NO-GO (updated 2026-07-16):** 🔴 **NO-GO** until SEC-001's historical OAuth secret is rotated/revoked and removed from reachable git history. PAY-001 and the remaining code-level audit findings are fixed locally with focused and emulator coverage; production deployment verification is still required for this remediation commit.
 
 ---
 
@@ -284,23 +284,23 @@ Read-only audit of highest-risk surfaces. All findings logged to `OPEN_ISSUES.md
 
 **BLOCKING / CRITICAL**
 
-- [ ] **SEC-001 [Secrets/Git Hygiene]**: Live Google OAuth client secret committed to repo root (`client_secret_148015878263-*.json`). File is git-tracked, contains real `client_secret`. Must be revoked/rotated in GCP and purged from git history.
+- [ ] **SEC-001 [Secrets/Git Hygiene] — 🟡 PARTIAL**: The live-shaped Google OAuth client JSON is absent from the current tree and `client_secret_*.json` is ignored, but non-secret-printing history inspection confirms the value remains reachable before removal commit `774fc3059`. Rotation/revocation in GCP plus coordinated history purge remain mandatory; rewriting shared history or rotating a production OAuth credential was not attempted implicitly.
 
-- [ ] **PAY-001 [Stripe Webhook — Licensing Payout Double-Payout Risk]**: `handleLicensingCheckoutCompleted` (webhookHandler.ts:89) calls `stripe.transfers.create()` with no idempotency key, followed by non-transactional Firestore writes. If Firestore fails post-transfer, handler throws → Stripe marks as failed → retries → payout fires again. Real money leaves twice. **Fix:** Use Stripe idempotency key derived from `session.id`; or record transfer ID before Firestore writes.
+- [x] **PAY-001 [Stripe Webhook — Licensing Payout Double-Payout Risk] — ✅ FIXED (2026-07-16)**: Licensing transfers now use the stable Stripe idempotency key `transfer_<sessionId>`. License and user-ledger receipts use deterministic document IDs and one Firestore batch, include the Stripe transfer ID, and safely converge on retry. The event-level claim now fails closed with HTTP 500 when Firestore cannot record idempotency instead of processing financial effects unguarded. Focused webhook coverage proves the key, deterministic receipts, atomic commit, and fail-closed claim path.
 
 **HIGH**
 
-- [ ] **FSR-001 [Firestore Rules — /licenses Read Leak]**: Top-level `/licenses/{licenseId}` grants `allow read: if isVerifiedUser() || isGuest()` with no owner scoping. Any authenticated user can read all other users' license records (amounts, deals, Stripe session IDs). **Fix:** Scope to `resource.data.userId == request.auth.uid`.
+- [x] **FSR-001 [Firestore Rules — /licenses Read Leak] — ✅ FIXED (verified 2026-07-16)**: Current rules scope reads to a verified user whose uid matches `resource.data.userId`. Live-emulator adversarial coverage proves owner read succeeds while unauthenticated, anonymous, and cross-user reads fail.
 
-- [ ] **FSR-002 [Firestore Rules — Latent Guest Write Escalation on /licenses]**: Same block has `allow update: ... || isGuest()` and `allow delete: ... || isGuest()`. Safe only because `isGuest()` is stubbed to `false`. Re-enabling `isGuest()` opens arbitrary writes. **Fix:** Remove trailing `|| isGuest()` on write rules; don't load-bear on stubbed helpers.
+- [x] **FSR-002 [Firestore Rules — Latent Guest Write Escalation on /licenses] — ✅ FIXED (verified 2026-07-16)**: Current create/update/delete rules contain no guest branch, scope both old and new ownership to the caller, and prevent ownership transfer. Emulator tests prove cross-user update/delete and owner-to-other-user reassignment fail.
 
 **MEDIUM**
 
-- [ ] **PAY-002 [Stripe Webhook — payment_status Not Verified]**: `handleMarketplacePurchaseCompleted` and `handleMicroTransactionCheckoutCompleted` fulfill on `checkout.session.completed` without checking `session.payment_status === 'paid'`. For async payment methods (ACH), `completed` fires while payment is still `unpaid`. Grants sale/credits before settlement confirmed. **Fix:** Gate on `payment_status === 'paid'` and handle `async_payment_failed`.
+- [x] **PAY-002 [Stripe Webhook — payment_status Not Verified] — ✅ FIXED (verified 2026-07-16)**: Micro-transaction, licensing, and marketplace fulfillment handlers all return before side effects unless `session.payment_status === 'paid'`; `checkout.session.async_payment_succeeded` routes through fulfillment and `async_payment_failed` routes through reservation release.
 
-- [ ] **FSR-003 [Firestore Rules — Shared Collections Openly Writable]**: `/ai_context_cache/{hash}` and `/instrument_usage_stats/{instrumentId}` allow `read, write: if isAuthenticated()` with no per-user scoping. Any authenticated user can overwrite others' cached Vertex context (cache poisoning) or clobber global stats. **Fix:** Server-only writes (Admin SDK) or per-user validation.
+- [x] **FSR-003 [Firestore Rules — Shared Collections Openly Writable] — ✅ FIXED (2026-07-16)**: Both collections now deny every client create/update/delete. Authenticated callables own writes through Admin SDK with bounded schemas. Cached-context references are namespaced by authenticated uid and owner-readable only; instrument updates accept one validated success/failure event for the two registered instrument IDs rather than arbitrary counters. Renderer tests prove both client handoffs, callable tests prove auth/schema/write shape, and a real Standard-edition Firestore emulator run passes all 133 rules cases including cache poisoning, lateral read, aggregate clobber, and delete attempts.
 
-- [ ] **ENV-001 [Config — Hardcoded Firebase Key Fallback]**: `admin-dashboard/src/firebase.ts:16` and `scripts/verify-backend-apis.ts:12` hardcode Firebase API key fallbacks (`?? 'AIzaSy...'`). Defeats env isolation; misconfigured environments silently talk to baked-in project instead of failing fast. **Fix:** Fail loudly when env var is absent, don't hardcode.
+- [x] **ENV-001 [Config — Hardcoded Firebase Key Fallback] — ✅ FIXED (verified 2026-07-16)**: Both reported files now read only environment-provided Firebase identifiers and fail immediately when the API key or project ID is missing; no baked-in project fallback remains.
 
 ---
 
@@ -15453,7 +15453,7 @@ Naming fix: `LabelDealRecoupmentService.ts` collection literal `'labelDeals'` �
 
 ### ISSUE-1006: Failed or quota-rejected image generation permanently consumes the client cost ledger before any image exists
 
-- **Status:** 🟡 PARTIAL (2026-07-12 — server expiry added; budget-state UI and expiry integration tests remain)
+- **Status:** ✅ FIXED (2026-07-16 — production callable, scheduler, and composite index verified healthy)
 - **Severity:** 🔴 CRITICAL (failed creative attempts exhaust a creator’s budget)
 - **Module:** Image generation / Cost control / Quota enforcement
 - **Evidence:** `ImageGenerationService.generateImages()` calls `CostControlService.checkAndReserve()` before checking subscription quota (`ImageGenerationService.ts:258-344`), before reference-media uploads (`:356-365`), and before `generateImageV3` (`:414`). The server-side cost operation immediately increments daily/monthly/hourly totals and writes `costLedger/{operationId}` as `status: 'APPROVED'` (`enforceOperationCost.ts:218-282`), not a reversible pending reservation. The image request never includes that `operationId`, the image gateway has no image reservation verification path, and neither service defines a release/void/settle operation. Any quota denial, failed reference upload, callable error, malformed response, storage-resolution failure, or zero-result response after the cost check leaves the charged ledger entry intact.
@@ -15476,6 +15476,8 @@ Naming fix: `LabelDealRecoupmentService.ts` collection literal `'labelDeals'` �
 - **Residual failure-message coverage (2026-07-16):** The previously uncommitted Direct Generation regression test is valid and now proves a quota/cost-ledger rejection surfaces the callable's actionable `details.cause` (`Insufficient tokens in cost ledger.`) instead of the generic Firebase `internal` message. The focused renderer run passes both affected suites (2 files, 30 tests). This closes the local error-surface criterion only; ISSUE-1006 remains PARTIAL for the deployed scheduler/index/emulator and per-operation-history gates above.
 
 - **Operation-history and expiry completion pass (2026-07-16):** Added the authenticated `getOperationCostHistory` callable with owner-only querying, stable timestamp/operation cursors, bounded pagination, and explicit `pending_auto_release`/`settled`/`refunded` receipts. Creative Studio now displays each operation's amount, resolution, receipt ID, pending auto-release deadline, a safe-to-retry refund state, refresh, and Load More pagination. Added tests proving owner query/cursor construction, all receipt states, stale-hold selection, malformed/raced reservation handling, and transactional refund idempotency across daily/monthly/hourly aggregates; focused Firebase tests pass 29 and renderer tests pass 23. A deployment-pipeline defect was also found and fixed: production deployed Functions but never Firestore indexes, so the workflow now deploys `firestore:indexes` before Functions. **Status remains PARTIAL only until the new composite index, callable, and scheduler are observed healthy in production after push.**
+
+- **Production closure proof (2026-07-16):** Production deployment job `87774305436` completed its Firestore-index and Cloud-Functions steps successfully. Direct control-plane checks show `getOperationCostHistory` is `ACTIVE`, the `userId,timestamp,operationId,__name__` composite index is `READY`, and `firebase-schedule-expireStaleOperationCostReservations-us-central1` is `ENABLED` on its five-minute schedule. ISSUE-1006 is closed.
 
 ### ISSUE-1007: “Cover Art” mode promises distributor compliance but only asks the model for it and never verifies the delivered file
 

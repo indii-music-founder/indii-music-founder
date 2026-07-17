@@ -66,6 +66,7 @@ export { agentLoopCron } from './functions/agent/agentLoopCron';
 // Security Functions
 export { persistFraudAlert } from './functions/security/persistFraudAlert';
 export { logAuditEvent } from './functions/security/logAuditEvent';
+export { registerAiContextCache, recordInstrumentUsage } from './functions/security/writeSharedOperationalData';
 
 // REST API Router
 export {

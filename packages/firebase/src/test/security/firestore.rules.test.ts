@@ -315,6 +315,12 @@ describe('Firestore Security Rules', () => {
             await assertSucceeds(getDoc(doc(db, 'licenses', 'lic-1')));
         });
 
+        it('verified user: cannot read another user\'s license', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(BOB_UID).firestore();
+            await assertFails(getDoc(doc(db, 'licenses', 'lic-1')));
+        });
+
         it('anonymous user: create denied', async () => {
             if (requireEmulator()) return;
             const db = anonCtx().firestore();
@@ -331,6 +337,19 @@ describe('Firestore Security Rules', () => {
             if (requireEmulator()) return;
             const db = verifiedCtx(ALICE_UID).firestore();
             await assertFails(setDoc(doc(db, 'licenses', 'lic-fake'), { userId: BOB_UID, title: 'Fake License' }));
+        });
+
+        it('owner cannot transfer license ownership during update', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(ALICE_UID).firestore();
+            await assertFails(updateDoc(doc(db, 'licenses', 'lic-1'), { userId: BOB_UID }));
+        });
+
+        it('verified user cannot update or delete another user\'s license', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(BOB_UID).firestore();
+            await assertFails(updateDoc(doc(db, 'licenses', 'lic-1'), { title: 'Hijacked' }));
+            await assertFails(deleteDoc(doc(db, 'licenses', 'lic-1')));
         });
     });
 
@@ -491,10 +510,10 @@ describe('Firestore Security Rules', () => {
             await assertSucceeds(getDoc(doc(db, 'isrc_registry', 'isrc-1')));
         });
 
-        it('verified owner: create with valid ISRC format allowed', async () => {
+        it('verified owner: direct create denied because identifiers are server-assigned', async () => {
             if (requireEmulator()) return;
             const db = verifiedCtx(ALICE_UID).firestore();
-            await assertSucceeds(setDoc(doc(db, 'isrc_registry', 'isrc-new'), { ...validISRC, isrc: 'US-S1Z-25-00002' }));
+            await assertFails(setDoc(doc(db, 'isrc_registry', 'isrc-new'), { ...validISRC, isrc: 'US-S1Z-25-00002' }));
         });
 
         it('invalid ISRC format: create denied', async () => {
@@ -1050,7 +1069,16 @@ describe('Firestore Security Rules', () => {
     // ──────────────────────────────────────────────────────────────────────
 
     describe('audio_assets/{docId}', () => {
-        const audioAssetData = { userId: ALICE_UID, type: 'music', mimeType: 'audio/wav' };
+        const audioAssetData = {
+            id: 'audio-1',
+            userId: ALICE_UID,
+            type: 'music',
+            prompt: 'A bright synth intro',
+            mimeType: 'audio/wav',
+            estimatedDuration: 12,
+            generatedAt: '2026-07-12T23:00:00.000Z',
+            storageUrl: 'https://storage.example/audio-1.wav',
+        };
 
         beforeEach(async () => {
             if (requireEmulator()) return;
@@ -1080,13 +1108,79 @@ describe('Firestore Security Rules', () => {
         it('verified owner: create own audio allowed', async () => {
             if (requireEmulator()) return;
             const db = verifiedCtx(ALICE_UID).firestore();
-            await assertSucceeds(setDoc(doc(db, 'audio_assets', 'audio-new'), audioAssetData));
+            await assertSucceeds(setDoc(doc(db, 'audio_assets', 'audio-new'), {
+                ...audioAssetData,
+                id: 'audio-new',
+            }));
         });
 
         it('cannot create audio asset for another user', async () => {
             if (requireEmulator()) return;
             const db = verifiedCtx(BOB_UID).firestore();
-            await assertFails(setDoc(doc(db, 'audio_assets', 'audio-fake'), audioAssetData));
+            await assertFails(setDoc(doc(db, 'audio_assets', 'audio-fake'), {
+                ...audioAssetData,
+                id: 'audio-fake',
+            }));
+        });
+    });
+
+    // ──────────────────────────────────────────────────────────────────────
+    // SHARED OPERATIONAL DATA — server-only writes
+    // ──────────────────────────────────────────────────────────────────────
+
+    describe('shared operational collections', () => {
+        beforeEach(async () => {
+            if (requireEmulator()) return;
+            await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                await setDoc(doc(ctx.firestore(), 'ai_context_cache', `${ALICE_UID}_abc123`), {
+                    id: 'projects/test/locations/us-central1/cachedContents/cache-1',
+                    hash: 'abc123',
+                    userId: ALICE_UID,
+                    expireTime: Date.now() + 3_600_000,
+                    lastUsed: Date.now(),
+                });
+                await setDoc(doc(ctx.firestore(), 'instrument_usage_stats', 'generate_image'), {
+                    totalExecutions: 10,
+                    successfulExecutions: 9,
+                    failedExecutions: 1,
+                });
+            });
+        });
+
+        it('allows only the owner to read a context-cache reference', async () => {
+            if (requireEmulator()) return;
+            const cachePath = `ai_context_cache/${ALICE_UID}_abc123`;
+            await assertSucceeds(getDoc(doc(verifiedCtx(ALICE_UID).firestore(), cachePath)));
+            await assertFails(getDoc(doc(verifiedCtx(BOB_UID).firestore(), cachePath)));
+            await assertFails(getDoc(doc(unauthCtx().firestore(), cachePath)));
+        });
+
+        it('denies all client writes to context-cache references', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(ALICE_UID).firestore();
+            await assertFails(setDoc(doc(db, 'ai_context_cache', `${ALICE_UID}_new`), {
+                id: 'projects/test/locations/us-central1/cachedContents/poison',
+                hash: 'def456',
+                userId: ALICE_UID,
+                expireTime: Date.now() + 3_600_000,
+                lastUsed: Date.now(),
+            }));
+            await assertFails(updateDoc(doc(db, 'ai_context_cache', `${ALICE_UID}_abc123`), {
+                id: 'projects/attacker/locations/us-central1/cachedContents/poison',
+            }));
+            await assertFails(deleteDoc(doc(db, 'ai_context_cache', `${ALICE_UID}_abc123`)));
+        });
+
+        it('keeps instrument aggregates readable but denies all client writes', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(ALICE_UID).firestore();
+            const statsRef = doc(db, 'instrument_usage_stats', 'generate_image');
+            await assertSucceeds(getDoc(statsRef));
+            await assertFails(setDoc(doc(db, 'instrument_usage_stats', 'generate_video'), {
+                totalExecutions: 999,
+            }));
+            await assertFails(updateDoc(statsRef, { totalExecutions: 999_999 }));
+            await assertFails(deleteDoc(statsRef));
         });
     });
 
