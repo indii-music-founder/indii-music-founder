@@ -715,7 +715,7 @@ export default function MobileRemote() {
                   style={{ minHeight: '56px' }}
                 >
                   <QrCode className="w-5 h-5" />
-                  Show Pairing Code
+                  Pairing Instructions
                 </motion.button>
 
                 <motion.button
