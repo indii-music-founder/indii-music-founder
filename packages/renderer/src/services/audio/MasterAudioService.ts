@@ -95,6 +95,7 @@ export class MasterAudioService {
             audioProperties,
             contentHash,
             downloadUrl: await getDownloadURL(masterRef),
+            generation: profiling.data.generation,
             masterFingerprint: resolvedMasterFingerprint,
             mimeType: canonicalMimeType,
             originalFileName: file.name,

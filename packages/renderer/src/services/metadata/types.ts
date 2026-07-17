@@ -15,6 +15,8 @@ export interface MasterAudioReference {
     };
     contentHash: string;
     downloadUrl: string;
+    /** Immutable Cloud Storage generation profiled by the server worker. Legacy references may lack it. */
+    generation?: string;
     masterFingerprint: string;
     mimeType: string;
     originalFileName: string;
