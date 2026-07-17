@@ -112,6 +112,36 @@ describe('creativeHandoffSlice — cross-stage handoff semantics', () => {
         state.sendToStage('omni', makeHandoff(videoDirectorItem, 'source-video'));
         expect(state.pendingStageHandoff.omni?.item.storageUri).toBe('gs://bucket/video.mp4');
     });
+
+    it('contract: Omni video can be routed intact into the timeline editor', () => {
+        state.sendToStage('editor', {
+            item: omniOutputItem,
+            role: 'source-video',
+            originStage: 'omni',
+            timestamp: Date.now(),
+        });
+        expect(state.pendingStageHandoff.editor?.item).toEqual(omniOutputItem);
+        expect(state.setViewMode).toHaveBeenCalledWith('video_production');
+    });
+
+    it('contract: a persisted frame from an Omni video can become Veo first-frame input', () => {
+        const extractedFrame: HistoryItem = {
+            ...omniOutputItem,
+            id: 'omni-end-frame',
+            type: 'image',
+            url: 'https://storage.example/end-frame.jpg',
+            storageUri: 'gs://bucket/end-frame.jpg',
+            parentId: omniOutputItem.id,
+        };
+        state.sendToStage('veo', {
+            item: extractedFrame,
+            role: 'first-frame',
+            originStage: 'omni',
+            timestamp: Date.now(),
+        });
+        expect(state.pendingStageHandoff.veo?.item.storageUri).toBe('gs://bucket/end-frame.jpg');
+        expect(state.pendingStageHandoff.veo?.role).toBe('first-frame');
+    });
 });
 
 /** Reproduces the exact derivation in OmniWorkflow's handoff consumer + handleStartRemix */
@@ -119,10 +149,10 @@ function buildOmniPayloadFromHandoff(item: HistoryItem, remixPrompt: string) {
     const referenceVideoUri = item.storageUri || '';
     return {
         prompt: remixPrompt,
+        task: 'edit' as const,
         referenceVideoUri,
-        pipelineMode: 'pure-omni' as const,
         aspectRatio: '16:9' as const,
-        durationSeconds: Math.min(12, Math.max(4, 8)),
+        durationSeconds: Math.min(10, Math.max(3, 8)),
     };
 }
 
@@ -183,9 +213,9 @@ describe('generateOmniRemixV3 payload contract (Omni Flash API)', () => {
         }
     });
 
-    it('duration clamp in the client matches the schema bounds (4..12)', () => {
-        const clamp = (d: number) => Math.min(12, Math.max(4, d));
-        for (const [input, expected] of [[1, 4], [8, 8], [99, 12]] as const) {
+    it('duration clamp in the client matches the schema bounds (3..10)', () => {
+        const clamp = (d: number) => Math.min(10, Math.max(3, d));
+        for (const [input, expected] of [[1, 3], [8, 8], [99, 10]] as const) {
             const parsed = GenerateOmniRemixSchema.safeParse({
                 prompt: 'x',
                 referenceVideoUri: 'gs://b/a.mp4',

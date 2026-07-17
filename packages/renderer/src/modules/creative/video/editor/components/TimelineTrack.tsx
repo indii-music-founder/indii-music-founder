@@ -3,6 +3,7 @@ import { Eye, Volume2, Plus, Trash2 } from 'lucide-react';
 import { VideoTrack, VideoClip } from '../../store/videoEditorStore';
 import { TimelineClip } from './TimelineClip';
 import { PIXELS_PER_FRAME } from '../constants';
+import { readCreativeAssetDrag } from '@/services/creative/CreativeAssetDragService';
 
 export interface TimelineTrackProps {
     key?: React.Key;
@@ -94,13 +95,13 @@ export const TimelineTrack = memo(({
                             });
                         } else {
                             try {
-                                const dataString = e.dataTransfer.getData('application/json');
-                                if (dataString) {
-                                    const data = JSON.parse(dataString);
-                                    if (data.type === 'asset' && data.asset) {
+                                const data = readCreativeAssetDrag(e.dataTransfer);
+                                if (data) {
+                                    if (data.asset) {
                                         // ISSUE-923: canonical HistoryItem type for songs/stems is 'music' — map it
                                         // (and legacy 'audio') to an audio clip, never a video clip.
-                                        const mediaType: 'video' | 'audio' | 'image' = data.asset.type === 'image' ? 'image' : (data.asset.type === 'audio' || data.asset.type === 'music') ? 'audio' : 'video';
+                                        if (!['image', 'video', 'music'].includes(data.asset.type)) return;
+                                        const mediaType: 'video' | 'audio' | 'image' = data.asset.type === 'image' ? 'image' : data.asset.type === 'music' ? 'audio' : 'video';
 
                                         const durationSeconds = await resolveMediaDurationSeconds(data.asset.url, mediaType);
                                         const durationInFrames = mediaType === 'image' ? 90 : durationSecondsToFrames(durationSeconds, fps);

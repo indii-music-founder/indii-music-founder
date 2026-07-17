@@ -9,6 +9,7 @@ import { useToast } from '@/core/context/ToastContext';
 import { PIXELS_PER_FRAME } from '../constants';
 import { logger } from '@/utils/logger';
 import { resolveMediaDurationSeconds, durationSecondsToFrames } from '../utils/mediaMetadata';
+import { readCreativeAssetDrag, writeCreativeAssetDrag } from '@/services/creative/CreativeAssetDragService';
 
 export function useVideoEditor(initialVideo?: HistoryItem) {
     const {
@@ -195,28 +196,14 @@ export function useVideoEditor(initialVideo?: HistoryItem) {
     };
 
     const handleLibraryDragStart = (e: React.DragEvent, item: HistoryItem) => {
-        // Duration is resolved asynchronously at drop time (see handleDrop),
-        // not guessed here — dragstart has no reliable way to probe media length.
-        const payload = {
-            type: 'asset',
-            asset: {
-                type: item.type,
-                name: item.prompt || `Imported ${item.type}`,
-                url: item.url
-            }
-        };
-        e.dataTransfer.setData('application/json', JSON.stringify(payload));
-        e.dataTransfer.effectAllowed = 'copy';
+        writeCreativeAssetDrag(e.dataTransfer, item, 'editor-library');
     };
 
     const handleDrop = async (e: React.DragEvent) => {
         e.preventDefault();
-        const data = e.dataTransfer.getData('application/json');
-        if (!data) return;
-
         try {
-            const payload = JSON.parse(data);
-            if (payload.type !== 'asset' || !payload.asset) return;
+            const payload = readCreativeAssetDrag(e.dataTransfer);
+            if (!payload) return;
 
             const rect = e.currentTarget.getBoundingClientRect();
             const x = e.clientX - rect.left;
@@ -224,7 +211,11 @@ export function useVideoEditor(initialVideo?: HistoryItem) {
             const trackId = project.tracks[0]?.id;
             if (!trackId) return;
 
-            const mediaType: 'image' | 'audio' | 'video' = payload.asset.type === 'image' ? 'image' : payload.asset.type === 'audio' ? 'audio' : 'video';
+            if (!['image', 'video', 'music'].includes(payload.asset.type)) {
+                toast.info('This file type cannot be placed on the video timeline yet.');
+                return;
+            }
+            const mediaType: 'image' | 'audio' | 'video' = payload.asset.type === 'image' ? 'image' : payload.asset.type === 'music' ? 'audio' : 'video';
             const durationSeconds = await resolveMediaDurationSeconds(payload.asset.url, mediaType);
             const fps = useVideoEditorStore.getState().project?.fps || 30;
             const durationInFrames = mediaType === 'image' ? 90 : durationSecondsToFrames(durationSeconds, fps);

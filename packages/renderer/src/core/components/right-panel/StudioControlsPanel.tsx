@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { Wand2, History, ChevronRight, ChevronDown, Sliders, Zap, Brain, Layers, Video, Move, Sparkles, Image as ImageIcon, Film, ImagePlay, Loader2, Shield, Languages, Eye, Music } from 'lucide-react';
+import { Wand2, History, ChevronRight, ChevronDown, Sliders, Zap, Brain, Layers, Video, Move, Sparkles, Image as ImageIcon, Film, ImagePlay, Loader2, Shield, Eye, Music } from 'lucide-react';
 import CreativeGallery from '../../../modules/creative/components/CreativeGallery';
 import { useStore } from '../../store';
 import { useShallow } from 'zustand/react/shallow';
@@ -102,7 +102,7 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                 scope: 'assets'
             });
             return { url: storageUri, storageUri };
-        } catch (error) {
+        } catch (_error) {
             toast.warning(`Saved ${label.toLowerCase()} locally. Storage upload failed.`);
             return { url: content, storageUri: undefined };
         }
@@ -234,22 +234,54 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                                 <div className="flex items-center justify-between w-full">
                                     <span>Omni Stage Controls</span>
                                     <span className="text-[9px] text-green-400 font-mono font-medium ml-2 bg-green-500/10 px-1.5 py-0.5 rounded animate-pulse">
-                                        V2V Active
+                                        Omni Active
                                     </span>
                                 </div>
                             }
                             icon={<Sparkles className="text-green-400" size={14} />}
                         >
                             <div className="space-y-4">
-                                {/* ISSUE-774: "Hybrid Veo" retired — it never ran a second Veo
-                                    stage (always the same single Omni call) and only overcharged
-                                    at Pro pricing for identical output. Pure Omni is the only
-                                    real engine, so there is no longer a choice to make here. */}
                                 <div className="space-y-1.5">
-                                    <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest font-mono">Pipeline Mode</span>
+                                    <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest font-mono">Generation Engine</span>
                                     <div className="flex items-center gap-1.5 p-2 bg-black/60 rounded-lg border border-green-500/20 font-mono text-[9px] text-green-400 font-bold">
-                                        Pure Omni V2V Engine
+                                        Gemini Omni Flash · 4 task modes
                                     </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-2">
+                                    <label className="space-y-1.5">
+                                        <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest font-mono">Aspect ratio</span>
+                                        <select
+                                            aria-label="Omni aspect ratio"
+                                            value={studioControls.aspectRatio === '9:16' ? '9:16' : '16:9'}
+                                            onChange={(event) => setStudioControls({ aspectRatio: event.target.value as AspectRatio })}
+                                            className="w-full bg-black/60 text-[9px] p-2 rounded-lg border border-white/10 outline-none text-gray-200 font-mono"
+                                        >
+                                            <option value="16:9">16:9 Landscape</option>
+                                            <option value="9:16">9:16 Portrait</option>
+                                        </select>
+                                    </label>
+                                    <div className="space-y-1.5">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest font-mono">Duration</span>
+                                            <span className="text-[9px] text-green-400 font-mono">{Math.min(10, Math.max(3, studioControls.duration || 8))}s</span>
+                                        </div>
+                                        <input
+                                            aria-label="Omni duration"
+                                            type="range"
+                                            min="3"
+                                            max="10"
+                                            step="1"
+                                            value={Math.min(10, Math.max(3, studioControls.duration || 8))}
+                                            onChange={(event) => setStudioControls({ duration: Number(event.target.value) })}
+                                            className="w-full accent-purple-500 bg-black/45 h-1 rounded-full outline-none cursor-pointer"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center justify-between p-2 bg-black/40 rounded-xl border border-white/5 font-mono">
+                                    <span className="text-[9px] text-gray-400">HD 720p · 24 fps</span>
+                                    <span className="text-[9px] text-green-400">~${(Math.min(10, Math.max(3, studioControls.duration || 8)) * 0.1).toFixed(2)}</span>
                                 </div>
 
                                 <div className="flex items-center justify-between p-2 bg-black/40 rounded-xl border border-white/5">
@@ -362,40 +394,30 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
 
                                 <div className="p-2 rounded-xl bg-black/40 border border-white/5 space-y-2">
                                     <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest font-mono flex items-center gap-1">
-                                        <Languages size={11} className="text-green-400" />
-                                        Lip-Sync Dubbing
+                                        <Music size={11} className="text-green-400" />
+                                        Generated Audio
                                     </span>
-                                    <select
-                                        value={studioControls.selectedLanguage}
-                                        onChange={(e) => setStudioControls({ selectedLanguage: e.target.value })}
-                                        className="w-full bg-black/60 text-[9px] p-2 rounded-lg border border-white/10 outline-none text-gray-200 font-mono"
-                                    >
-                                        <option value="es">Spanish Dub</option>
-                                        <option value="ja">Japanese Dub</option>
-                                        <option value="fr">French Dub</option>
-                                        <option value="de">German Dub</option>
-                                    </select>
+                                    <span className="block text-[8px] text-gray-500 font-mono leading-relaxed">
+                                        Prompt dialogue, ambience, sound effects, and music. Uploaded audio and voice editing are unavailable in this preview.
+                                    </span>
                                 </div>
 
                                 <div className="flex items-center justify-between p-2 bg-black/40 rounded-xl border border-white/5">
                                     <div className="flex flex-col">
                                         <span className="text-[10px] font-bold text-white uppercase tracking-wider font-mono flex items-center gap-1">
-                                            <Shield size={11} className={studioControls.synthIdEnabled ? 'text-emerald-400' : 'text-gray-400'} />
-                                            Synth ID Mark
+                                            <Shield size={11} className="text-emerald-400" />
+                                            Automatic SynthID
                                         </span>
-                                        <span className="text-[8px] text-gray-500 font-mono">Secure digital watermark</span>
+                                        <span className="text-[8px] text-gray-500 font-mono">Applied by Google to every output</span>
                                     </div>
-                                    <button
-                                        onClick={() => setStudioControls({ synthIdEnabled: !studioControls.synthIdEnabled })}
-                                        className={`w-7 h-4 rounded-full relative transition-all ${studioControls.synthIdEnabled ? 'bg-emerald-600' : 'bg-gray-800'}`}
-                                    >
-                                        <div className={`absolute top-0.5 left-0.5 w-3 h-3 rounded-full bg-white transition-transform ${studioControls.synthIdEnabled ? 'translate-x-3.5' : 'translate-x-0'}`} />
-                                    </button>
+                                    <span className="text-[8px] font-bold font-mono text-emerald-400 uppercase">Always on</span>
                                 </div>
                             </div>
                         </SectionCard>
                     )}
 
+                    {viewMode !== 'omni' && (
+                    <>
                     <SectionCard
                         isOpen={expandedSection === 'mixer'}
                         onToggle={() => setExpandedSection(expandedSection === 'mixer' ? '' : 'mixer')}
@@ -1179,6 +1201,8 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                                 </div>
                             </div>
                         </SectionCard>
+                    )}
+                    </>
                     )}
                 </div>
             )}

@@ -23,7 +23,7 @@ const GetMediaDurationSchema = z.object({
   uri: z.string().min(1),
 });
 
-function probeDurationSeconds(filePath: string): Promise<number> {
+export function probeDurationSeconds(filePath: string): Promise<number> {
   return new Promise((resolve, reject) => {
     ffmpeg.ffprobe(filePath, (err, metadata) => {
       if (err) {

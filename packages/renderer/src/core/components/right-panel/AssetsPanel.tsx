@@ -9,6 +9,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/lib/utils';
 import { useSafeImageUrl } from '@/hooks/useSafeImageUrl';
+import { writeCreativeAssetDrag } from '@/services/creative/CreativeAssetDragService';
 
 type AssetFilter = 'all' | 'images' | 'videos' | 'audio' | 'files';
 type ViewStyle = 'grid' | 'list';
@@ -303,10 +304,10 @@ export default function AssetsPanel({ toggleRightPanel }: AssetsPanelProps) {
                             {filteredAssets.map((asset) => (
                                 <motion.button
                                     key={asset.id}
-                                    draggable={asset.type === 'image' || asset.type === 'video'}
+                                    draggable={!!asset.url}
                                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                     onDragStart={(e: any) => {
-                                        e.dataTransfer?.setData('text/plain', asset.id);
+                                        if (e.dataTransfer) writeCreativeAssetDrag(e.dataTransfer, asset, 'project-assets');
                                     }}
                                     initial={{ opacity: 0, scale: 0.9 }}
                                     animate={{ opacity: 1, scale: 1 }}
@@ -374,10 +375,10 @@ export default function AssetsPanel({ toggleRightPanel }: AssetsPanelProps) {
                             {filteredAssets.map((asset) => (
                                 <motion.button
                                     key={asset.id}
-                                    draggable={asset.type === 'image' || asset.type === 'video'}
+                                    draggable={!!asset.url}
                                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                     onDragStart={(e: any) => {
-                                        e.dataTransfer?.setData('text/plain', asset.id);
+                                        if (e.dataTransfer) writeCreativeAssetDrag(e.dataTransfer, asset, 'project-assets');
                                     }}
                                     initial={{ opacity: 0, x: -10 }}
                                     animate={{ opacity: 1, x: 0 }}

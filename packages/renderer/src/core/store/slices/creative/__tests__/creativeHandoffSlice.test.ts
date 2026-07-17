@@ -9,7 +9,7 @@ describe('creativeHandoffSlice', () => {
     let getState: () => any;
 
     beforeEach(() => {
-        const state = { pendingStageHandoff: { image: null, veo: null, omni: null } };
+        const state = { pendingStageHandoff: { image: null, veo: null, omni: null, editor: null } };
         setState = vi.fn((fn) => {
             const next = fn(state);
             Object.assign(state, next);
@@ -138,7 +138,7 @@ describe('creativeHandoffSlice', () => {
         it('navigates to target stage', () => {
             const mockSetViewMode = vi.fn();
             const mockState = {
-                pendingStageHandoff: { image: null, veo: null, omni: null },
+                pendingStageHandoff: { image: null, veo: null, omni: null, editor: null },
                 setViewMode: mockSetViewMode,
             };
 
@@ -163,6 +163,33 @@ describe('creativeHandoffSlice', () => {
             };
 
             store.sendToStage('veo', payload);
+
+            expect(mockSetViewMode).toHaveBeenCalledWith('video_production');
+        });
+
+        it('routes video assets to the timeline editor through video production', () => {
+            const mockSetViewMode = vi.fn();
+            const mockState = {
+                pendingStageHandoff: { image: null, veo: null, omni: null, editor: null },
+                setViewMode: mockSetViewMode,
+            };
+            getState = () => mockState;
+            store = buildCreativeHandoffState(setState, getState as any);
+
+            store.sendToStage('editor', {
+                item: {
+                    id: 'omni-video',
+                    type: 'video',
+                    url: 'https://example.com/omni.mp4',
+                    storageUri: 'gs://bucket/omni.mp4',
+                    prompt: 'Omni output',
+                    timestamp: 1,
+                    projectId: 'project-1',
+                },
+                role: 'source-video',
+                originStage: 'omni',
+                timestamp: Date.now(),
+            });
 
             expect(mockSetViewMode).toHaveBeenCalledWith('video_production');
         });

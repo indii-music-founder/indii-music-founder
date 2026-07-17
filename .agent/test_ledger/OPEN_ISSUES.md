@@ -10458,6 +10458,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 ### ISSUE-595: Omni page — replace Veo stub in `generateOmniRemixV3` with the real Gemini Omni Flash Interactions API
 
 - **Status:** ✅ COMPLETED (2026-07-01 18:03)
+- **2026-07-17 contract correction:** Re-implemented against Google's public documentation published after the original notebook-based attempt. The real 2.x SDK contract uses `generation_config.video_config.task` (singular), `response_format: { type: 'video', aspect_ratio, duration, delivery: 'uri' }`, Files API documents for uploaded video, and `completed` interaction status. Removed the speculative `response_modalities`, `tasks`, `duration_seconds`, `resolution`, inline-video, and uploaded-audio shapes. Added secure input ownership/metadata checks, URI download, stateful edits, and focused gateway tests.
 - **Type:** FEATURE (Part A)
 - **Severity:** 🔴 HIGH
 - **Module:** Creative / Omni video (backend)
@@ -12827,7 +12828,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-773: Omni storyboard says scenes are synced, but no storyboard data reaches generation
 
-- **Status:** ✅ FIXED (2026-07-12, remaining work documented; see notes below) — took the "until supported, rename + remove Synced" fallback rather than building the real storyboard-to-generation pipeline
+- **Status:** ✅ FIXED (2026-07-17) — real end-to-end timecode storyboard pipeline implemented
 - **Severity:** 🔴 HIGH (misleading primary feature)
 - **Module:** Creative Suite / Omni
 - **Evidence:** `OmniWorkflow.tsx:270-276,494-522,741-793` creates and displays timestamped frames as `Scenes Synced`; `handleStartRemix` payload at `:387-408` contains no storyboard/frame field. `GenerateOmniRemixSchema` has no storyboard contract.
@@ -12835,6 +12836,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 - **Fix:** Add a shared typed scene contract (timestamp, prompt, optional frame URI), validate timestamps against source duration, include it in the callable, and compile it into the actual Omni edit request. Until supported, rename the panel to a local planning board and remove “Synced.”
 - **Acceptance:** A two-scene test proves both timestamped directives reach the backend and alter the submitted generation request.
 - **Fix applied (2026-07-12):** Building the real end-to-end pipeline (shared scene contract, timestamp validation against source duration, and — critically — actually compiling per-scene directives into the Omni Interactions request) requires knowing whether the underlying Gemini Omni Flash API can even consume frame-level scene directives in a single edit call; there's no evidence in this codebase that it can, and guessing at a wire format server-side would be worse than the current honest-but-limited state. Took the fallback instead: `OmniWorkflow.tsx`'s bottom panel header changed from "Storyboard Sequences (Flow Builder)" to "Local Planning Board (not sent to generation)", and the count badge from "{n} Scenes Synced" to "{n} Scenes Planned" — no code claims synchronization that doesn't exist. Confirmed via code read that `storyboard` state is never referenced anywhere near the `handleStartRemix` payload construction. Test: extended `OmniWorkflow.test.tsx` (1 new case) — builds a one-scene sequence through the real Add-Frame modal flow, asserts the honest "1 Scenes Planned" label (and that "Scenes Synced" never appears), then runs the full remix flow and asserts the payload sent to the callable has no `storyboard`/`frames`/`scenes` key. Full creative/video suite (104 tests) green, typecheck/lint clean. **Not done:** the real fix (a working storyboard-to-generation contract) — this remains open as a genuine feature gap, now at least honestly labeled instead of falsely claiming sync.
+- **2026-07-17 completion:** Google's published Omni prompt guide explicitly supports natural-language timings and `[0-3s]` timecode syntax. Added a shared `storyboard` schema with bounded timestamps/prompts, validates every cue against the 3–10 second target, sends frames from the renderer, and compiles sorted cues into the provider prompt. Tests prove the real frame data reaches the callable and backend prompt.
 
 ### ISSUE-774: Retired “Omni + Veo 3.1 Hybrid” mode remains selectable but never runs a Veo stage
 
@@ -12854,7 +12856,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-775: Omni labels output “SynthID Protected” without verifying any watermark
 
-- **Status:** ✅ FIXED (2026-07-12, remaining work documented; see notes below) — the false "Protected" claim is removed; requested/providerReported/verified tri-state metadata is not implemented (no provider signal exists to populate it)
+- **Status:** ✅ FIXED (2026-07-17) — aligned to Google's automatic SynthID guarantee
 - **Severity:** 🔴 HIGH (provenance/compliance claim)
 - **Module:** Creative Suite / Omni
 - **Evidence:** `OmniWorkflow.tsx:579-585` renders `SynthID Protected` whenever the local toggle is on. The backend only stores `synthIdRequested` (`gateway.ts:1491-1496,1555-1564`); it neither requests a supported watermark setting nor verifies watermark metadata on the response.
@@ -12864,6 +12866,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 - **Fix applied (2026-07-12):** Confirmed via `gateway.ts` (both `omni-video` job-creation and completion writes) that the server never passes any watermark/synthID parameter into the actual `ai.interactions.create()` provider call, and never reads back any watermark/provenance field from the provider's response — `synthIdRequested` is pure client-toggle bookkeeping with zero connection to the actual generated output. `OmniWorkflow.tsx`'s post-generation overlay badge changed from "SynthID Protected" to "SynthID Requested" — the only change needed to satisfy "no local toggle can produce a protection claim," since the badge is driven entirely by that toggle. Test: extended the existing `OmniWorkflow.test.tsx` remix-flow test to assert the overlay reads "SynthID Requested" and never "SynthID Protected" once generation completes. Typecheck/lint clean. **Not done:** the fuller `requested`/`providerReported`/`verified` tri-state model — there is currently no provider-returned signal anywhere in the pipeline to populate `providerReported`/`verified` with, so building that schema now would just be unused scaffolding; it should land together with whatever backend change (if any) actually wires a real watermark parameter into the provider call.
 
 - **Copy correction (2026-07-12):** The toggle help text no longer calls this an “imperceptible digital watermark,” which was another unsupported output claim. It now accurately says it only records a provenance request and that verification is unavailable.
+- **2026-07-17 correction:** Google's now-public technical details state that all generated Omni videos include invisible SynthID watermarking. Removed the misleading local request toggle, persist `synthIdAppliedByProvider: true`, return `synthIdApplied: true`, and show “SynthID Applied” only after a successful provider result. This records the provider guarantee; it does not claim that indii independently ran a detector.
 
 ### ISSUE-776: Image sub-menu Edit/Reference/Remix actions target the wrong asset and Reference is dead state
 
@@ -13915,7 +13918,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 - **Fix applied (2026-07-10):** Lite removed from the image engine-grade selector (Fast + Pro only; a saved `lite` preference highlights Fast). Backend `resolveImageModel()` no longer maps `lite` → legacy 2.5 model; `lite` resolves to fast and only an explicit `legacy` request reaches the legacy ID. generateImageV3 deployed.
 ### ISSUE-872: Omni Remix uses a placeholder model ID and Veo pricing
 
-- **Status:** ✅ FIXED (2026-07-10, deployed)
+- **Status:** ✅ FIXED (2026-07-17; deployment still required)
 - **Severity:** 🟠 HIGH
 - **Module:** Creative Suite / Omni / Cost reservation
 - **Evidence:** `generateOmniRemixV3` says API access is “rolling out later” and is wired for when a model ID is configured (`gateway.ts:1443-1449`). But `resolveOmniFlashModel()` falls back to `gemini-omni-flash-preview` (`gateway.ts:271-275`) and the callable starts jobs with that model (`gateway.ts:1463`, `:1480-1497`). Its cost reservation uses `estimateVideoCost()` with Veo Pro/Fast IDs instead of an Omni-specific pricing row (`gateway.ts:1464-1469`), and the execution path requires an Interactions API client (`gateway.ts:1500-1533`).
@@ -13924,6 +13927,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 - **Acceptance:** No Omni job can start with the default placeholder ID; cost reservations cite the actual Omni model and pricing source used.
 
 - **Fix applied (2026-07-10):** Placeholder default `gemini-omni-flash-preview` removed — `resolveOmniFlashModel()` returns null unless `GEMINI_OMNI_FLASH_MODEL` is explicitly configured, and `generateOmniRemixV3` throws `failed-precondition` ("Omni Remix is not available yet… no cost was reserved or charged") before any job/reservation write. generateOmniRemixV3 deployed.
+- **2026-07-17 correction:** Google released `gemini-omni-flash-preview` publicly on 2026-06-30 and published the integration guide. The model is now a centralized, documented default with an optional rollout override. The gateway uses the current paid-tier Omni rate (~$0.10/output second) independently of Veo pipeline selection and verifies the client's reservation against that server estimate. Upgraded `@google/genai` to 2.x for the current Interactions contract.
 ### ISSUE-873: Mask-URI image edits do not tell the model the edit is masked
 
 - **Status:** ✅ FIXED (2026-07-14 — sourceMask-based prompt)

@@ -27,8 +27,8 @@ export interface SendToPayload {
     };
 }
 
-// Cross-stage handoff within Creative module (Image / Veo / Omni)
-export type CreativeStage = 'image' | 'veo' | 'omni';
+// Cross-stage handoff within Creative (Image / Veo / Omni / timeline editor)
+export type CreativeStage = 'image' | 'veo' | 'omni' | 'editor';
 
 export type HandoffRole =
     | 'source-video'      // Veo/Omni source (video input)

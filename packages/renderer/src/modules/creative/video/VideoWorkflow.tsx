@@ -9,7 +9,9 @@ import { useVideoEditorStore } from './store/videoEditorStore';
 import { VideoGeneration } from "@/services/video/VideoGenerationService";
 import { WhiskService } from "@/services/WhiskService";
 import { httpsCallable } from 'firebase/functions';
-import { functions } from '@/services/firebase';
+import { auth, functions } from '@/services/firebase';
+import { materializeVideoFrameForHandoff } from '@/services/creative/CreativeMediaHandoffService';
+import { creativeAssetPayloadToHistoryItem, readCreativeAssetDrag, writeCreativeAssetDrag } from '@/services/creative/CreativeAssetDragService';
 // Removed unused imports from motion and lucide-react as they are now in VideoStage
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Layout, Settings, Shuffle, ChevronDown, ChevronUp, Hash, Music, Trash2, Layers, Film, Send } from 'lucide-react';
@@ -303,9 +305,62 @@ export default function VideoWorkflow() {
     }, [setStudioControls]);
 
     // Stable handler for drag start
-    const handleDragStart = React.useCallback((_e: React.DragEvent, _item: HistoryItem) => {
-        // Drag logic
+    const handleDragStart = React.useCallback((e: React.DragEvent, item: HistoryItem) => {
+        writeCreativeAssetDrag(e.dataTransfer, item, 'veo-dailies');
     }, []);
+
+    const handleCreativeAssetDrop = React.useCallback(async (event: React.DragEvent<HTMLDivElement>) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const payload = readCreativeAssetDrag(event.dataTransfer);
+        if (!payload) return;
+        const item = creativeAssetPayloadToHistoryItem(payload);
+
+        try {
+            if (item?.type === 'image') {
+                if (!videoInputs.firstFrame) {
+                    setVideoInputs({ firstFrame: item });
+                    toast.success('Dropped image set as Veo’s first frame.');
+                } else if (!videoInputs.lastFrame) {
+                    setVideoInputs({ lastFrame: item });
+                    toast.success('Dropped image set as Veo’s last frame.');
+                } else {
+                    addCharacterReference({
+                        image: item,
+                        referenceType: 'reference',
+                        name: item.prompt || payload.asset.name,
+                    });
+                    toast.success('Dropped image added as a Veo visual reference.');
+                }
+                return;
+            }
+
+            if (item?.type === 'video') {
+                const userId = auth.currentUser?.uid;
+                if (!userId) throw new Error('Sign in before creating a Veo continuity frame.');
+                setActiveVideo(item);
+                setSourceJobId(item.id);
+                const continuityFrame = await materializeVideoFrameForHandoff(item, 'last', {
+                    userId,
+                    projectId: currentProjectId || item.projectId || undefined,
+                });
+                setVideoInputs({ firstFrame: continuityFrame, lastFrame: null });
+                toast.success('Dropped video loaded; its last frame starts the next Veo shot.');
+                return;
+            }
+
+            if (item?.type === 'music') {
+                useVideoEditorStore.getState().setInputAudio(item.url);
+                toast.success('Dropped audio attached to the Veo shot.');
+                return;
+            }
+
+            toast.info(`${payload.asset.name} cannot be used by Veo yet.`);
+        } catch (error) {
+            logger.error('[veo-drop] Failed to prepare dropped asset', error);
+            toast.error(error instanceof Error ? error.message : 'Failed to prepare the dropped asset for Veo.');
+        }
+    }, [addCharacterReference, currentProjectId, setVideoInputs, toast, videoInputs.firstFrame, videoInputs.lastFrame]);
 
     // ⚡ Bolt Optimization: Memoize filtered video list to prevent DailiesStrip re-renders
     const videoHistory = useMemo(() => {
@@ -322,46 +377,98 @@ export default function VideoWorkflow() {
         }
     }, [pendingPrompt, setCreativePrompt, setPendingPrompt]);
 
-    // Consume cross-stage handoff for Veo
+    // Consume cross-stage handoff for Veo. A video sent from Omni (or the
+    // gallery) is loaded as the active source and its last frame is persisted
+    // as Veo's first frame. Veo only extends Veo-generated provider outputs,
+    // so frame continuity is the supported bridge for arbitrary/Omni videos.
     useEffect(() => {
         const handoff = pendingStageHandoff?.veo;
-        if (handoff) {
-            const { item, role } = handoff;
-            const updates: Partial<typeof videoInputs> = {};
+        if (!handoff) return;
 
-            switch (role) {
-                case 'first-frame':
-                    updates.firstFrame = item;
-                    setSourceJobId(item.id);
-                    break;
-                case 'last-frame':
-                    updates.lastFrame = item;
-                    setSourceJobId(item.id);
-                    break;
-                case 'reference-image':
-                    // Add as character reference for styling guidance
+        consumeStageHandoff('veo');
+        let cancelled = false;
+
+        const receiveAsset = async () => {
+            const { item, role } = handoff;
+
+            try {
+                if (role === 'reference-image' && item.type === 'image') {
                     addCharacterReference({
                         image: item,
                         referenceType: 'reference',
                         name: item.prompt || 'Reference Image'
                     });
-                    break;
-                case 'source-video':
-                    // Veo doesn't have a source video concept (it generates from scratch or frames)
-                    logger.warn('[veo-handoff] source-video role not applicable to Veo generation', { role });
-                    break;
-                default:
-                    logger.warn('[veo-handoff] Unknown role', { role });
-            }
+                    toast.success('Reference image received in Veo');
+                    return;
+                }
 
-            if (Object.keys(updates).length > 0) {
-                setVideoInputs(updates);
-            }
+                if (role === 'source-video' && item.type === 'video') {
+                    setActiveVideo(item);
+                    setSourceJobId(item.id);
+                    const userId = auth.currentUser?.uid;
+                    if (!userId) throw new Error('Sign in before creating a Veo continuity frame.');
+                    const firstFrame = await materializeVideoFrameForHandoff(item, 'last', {
+                        userId,
+                        projectId: currentProjectId || item.projectId || undefined,
+                    });
+                    if (cancelled) return;
+                    setVideoInputs({ firstFrame, lastFrame: null });
+                    toast.success('Video loaded in Veo with its last frame ready for continuation');
+                    return;
+                }
 
-            consumeStageHandoff('veo');
-            toast.success('Asset received in Veo');
+                if ((role === 'first-frame' || role === 'last-frame') && (item.type === 'image' || item.type === 'video')) {
+                    const slot = role === 'first-frame' ? 'firstFrame' : 'lastFrame';
+                    let frame = item;
+                    if (item.type === 'video') {
+                        const userId = auth.currentUser?.uid;
+                        if (!userId) throw new Error('Sign in before extracting a video frame.');
+                        frame = await materializeVideoFrameForHandoff(
+                            item,
+                            role === 'first-frame' ? 'first' : 'last',
+                            {
+                                userId,
+                                projectId: currentProjectId || item.projectId || undefined,
+                            },
+                        );
+                    }
+                    if (cancelled) return;
+                    setVideoInputs({ [slot]: frame });
+                    setSourceJobId(item.id);
+                    toast.success(`${role === 'first-frame' ? 'First' : 'Last'} frame received in Veo`);
+                    return;
+                }
+
+                logger.warn('[veo-handoff] Unsupported asset/role combination', { role, type: item.type });
+                toast.error('That asset cannot be used by Veo in the selected role.');
+            } catch (error) {
+                if (cancelled) return;
+                logger.error('[veo-handoff] Failed to prepare handoff', error);
+                toast.error(error instanceof Error ? error.message : 'Failed to prepare the asset for Veo.');
+            }
+        };
+
+        void receiveAsset();
+        return () => { cancelled = true; };
+    }, [pendingStageHandoff?.veo, setVideoInputs, consumeStageHandoff, addCharacterReference, toast, currentProjectId]);
+
+    // The editor is a first-class destination. Route the original durable
+    // video into the timeline instead of regenerating or re-uploading it.
+    useEffect(() => {
+        const handoff = pendingStageHandoff?.editor;
+        if (!handoff) return;
+
+        consumeStageHandoff('editor');
+        if (handoff.item.type !== 'video' && handoff.item.type !== 'image') {
+            toast.error('Only video or image assets can be opened in the timeline editor.');
+            return;
         }
-    }, [pendingStageHandoff?.veo, setVideoInputs, consumeStageHandoff, addCharacterReference, toast]);
+
+        setActiveVideo(handoff.item);
+        setSourceJobId(handoff.item.id);
+        setViewMode('editor');
+        toast.success(`Opened ${handoff.originStage} asset in the timeline editor`);
+    }, [pendingStageHandoff?.editor, consumeStageHandoff, setViewMode, toast]);
 
     // Keyboard Shortcut for Mode Toggle
     useGlobalShortcut({
@@ -790,6 +897,12 @@ export default function VideoWorkflow() {
                 role="tabpanel"
                 aria-label="Director Mode"
                 className={`flex-1 flex flex-col relative transition-all duration-500 ${viewMode === 'director' ? 'opacity-100 z-10' : 'opacity-0 z-0 hidden'}`}
+                onDragOver={(event) => {
+                    event.preventDefault();
+                    event.dataTransfer.dropEffect = 'copy';
+                }}
+                onDrop={(event) => { void handleCreativeAssetDrop(event); }}
+                data-testid="veo-asset-drop-zone"
             >
 
 
@@ -823,6 +936,21 @@ export default function VideoWorkflow() {
                                         title="Send to Omni for remixing"
                                     >
                                         <Send size={16} />
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            sendToStage('editor', {
+                                                item: activeVideo,
+                                                role: 'source-video',
+                                                originStage: 'veo',
+                                                timestamp: Date.now()
+                                            });
+                                        }}
+                                        className="bg-emerald-600 hover:bg-emerald-500 text-white p-3 rounded-full shadow-2xl hover:scale-105 transition-all flex items-center justify-center border border-emerald-400/30"
+                                        title="Open this video in the timeline editor"
+                                        aria-label="Open Veo video in timeline editor"
+                                    >
+                                        <Film size={16} />
                                     </button>
                                 </div>
                             )}

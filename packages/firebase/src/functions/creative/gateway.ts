@@ -9,13 +9,16 @@ import { parseStorageUri } from '../../lib/storageUri';
 import { GenerateAudioSchema, GenerateImageSchema, GenerateVideoSchema, GenerateOmniRemixSchema } from '../../shared/creative';
 import { VideoJobDocumentSchema, type VideoJobDocument } from '../../shared/videoJob';
 import { checkOperationBudget, finalizeOperationReservation } from '../billing/enforceOperationCost';
+import { probeDurationSeconds } from './getMediaDuration';
 import { createHash } from 'node:crypto';
 import { readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { extname, join } from 'node:path';
 import {
+  FileState,
   GoogleGenAI,
   VideoGenerationReferenceType,
+  type File as GeminiFile,
   type GenerateVideosOperation,
   type Image,
   type Video,
@@ -24,8 +27,6 @@ import {
 
 type MediaKind = 'image' | 'video' | 'audio';
 type GatewayErrorCode = 'invalid-argument' | 'permission-denied' | 'failed-precondition' | 'not-found' | 'resource-exhausted' | 'deadline-exceeded' | 'unavailable' | 'internal';
-
-const ENFORCE_APP_CHECK = process.env.NODE_ENV === 'production' && process.env.SKIP_APP_CHECK !== "true" && process.env.ENFORCE_APP_CHECK !== "false";
 
 interface GeminiInlineData {
   data?: string;
@@ -64,9 +65,27 @@ const VIDEO_MODEL_IDS = {
 } as const;
 type VideoModelId = typeof VIDEO_MODEL_IDS[keyof typeof VIDEO_MODEL_IDS];
 
-const OMNI_FLASH_MODEL_ID = process.env.GEMINI_OMNI_FLASH_MODEL || '';
-const VIDEO_POLL_INTERVAL_MS = Number(process.env.VIDEO_POLL_INTERVAL_MS || '10000');
-const VIDEO_MAX_POLLS = Number(process.env.VIDEO_MAX_POLLS || '54');
+const OMNI_FLASH_MODEL_ID = process.env.GEMINI_OMNI_FLASH_MODEL || FUNCTION_INTELLIGENCE_MODELS.VIDEO.OMNI;
+const VIDEO_POLL_INTERVAL_MS = Number(process.env.VIDEO_POLL_INTERVAL_MS || '5000');
+const VIDEO_MAX_POLLS = Number(process.env.VIDEO_MAX_POLLS || '90');
+const MAX_OMNI_VIDEO_INPUT_BYTES = 256 * 1024 * 1024;
+const MAX_INLINE_IMAGE_BYTES = 10 * 1024 * 1024;
+const MAX_INLINE_IMAGE_TOTAL_BYTES = 14 * 1024 * 1024;
+const INLINE_IMAGE_MIME_TYPES = [
+  'image/png',
+  'image/jpeg',
+  'image/webp',
+  'image/heic',
+  'image/heif',
+  'image/gif',
+  'image/bmp',
+  'image/tiff',
+] as const;
+type InlineImageMimeType = typeof INLINE_IMAGE_MIME_TYPES[number];
+
+function isInlineImageMimeType(value: string): value is InlineImageMimeType {
+  return (INLINE_IMAGE_MIME_TYPES as readonly string[]).includes(value);
+}
 
 function getMediaVertexLocation(kind: MediaKind): string {
   switch (kind) {
@@ -179,6 +198,31 @@ function getAiClient(kind: MediaKind, forceVertex = false): GoogleGenAI {
   const client = getRawAiClient(kind, effectiveForceVertex);
   if (effectiveForceVertex) return client;
   return wrapWithFallback(client, false, () => getRawAiClient(kind, true));
+}
+
+/**
+ * Omni Flash is currently a paid-tier Gemini Developer API preview and is not
+ * exposed by this gateway's Vertex media client. Fail closed when the backend
+ * secret is missing instead of silently routing to an incompatible provider.
+ */
+function getOmniAiClient(): GoogleGenAI {
+  let apiKey: string | null;
+  try {
+    apiKey = getGeminiApiKey();
+  } catch (error) {
+    throw new HttpsError(
+      'failed-precondition',
+      'Gemini Omni Flash requires a server-side Gemini API key on a paid-tier project.',
+      error,
+    );
+  }
+  if (!apiKey || apiKey.includes('PLACEHOLDER')) {
+    throw new HttpsError(
+      'failed-precondition',
+      'Gemini Omni Flash requires a server-side Gemini API key on a paid-tier project.',
+    );
+  }
+  return new GoogleGenAI({ apiKey });
 }
 
 // Defer firestore and storage initialization until first use (for test compatibility)
@@ -309,13 +353,11 @@ function resolveVideoModel(model: string | undefined): VideoModelId {
 }
 
 /**
- * Omni Flash model resolution (ISSUE-872): there is NO verified default —
- * the old 'gemini-omni-flash-preview' fallback was a placeholder that let
- * jobs start (and reserve cost) against a model that may not exist. Omni is
- * unavailable unless GEMINI_OMNI_FLASH_MODEL is explicitly configured.
+ * Gemini Omni Flash entered public preview on 2026-06-30. Keep an environment
+ * override for rollout testing, while defaulting to the documented model ID.
  */
-function resolveOmniFlashModel(): string | null {
-  return process.env.GEMINI_OMNI_FLASH_MODEL || null;
+function resolveOmniFlashModel(): string {
+  return OMNI_FLASH_MODEL_ID;
 }
 
 function sleep(ms: number): Promise<void> {
@@ -445,8 +487,12 @@ function isOwnerScopedCreativePath(userId: string, path: string): boolean {
   );
 }
 
-async function loadReferenceImage(userId: string, uri: string): Promise<{ mimeType: string; data: string }> {
+async function loadReferenceImage(userId: string, uri: string): Promise<{ mimeType: InlineImageMimeType; data: string; byteLength: number }> {
   const { bucket, path } = parseGsUri(uri);
+  const defaultBucket = getStorage().bucket().name;
+  if (bucket !== defaultBucket) {
+    throw new HttpsError('permission-denied', 'Reference media must live in this project storage bucket.');
+  }
   if (!isOwnerScopedCreativePath(userId, path)) {
     throw new HttpsError('permission-denied', 'Reference media must live in your creative storage namespace.');
   }
@@ -454,21 +500,36 @@ async function loadReferenceImage(userId: string, uri: string): Promise<{ mimeTy
   const file = getStorage().bucket(bucket).file(path);
   const [metadata] = await file.getMetadata();
   const contentType = metadata.contentType || 'image/png';
-  if (!contentType.startsWith('image/')) {
-    throw new HttpsError('invalid-argument', `Reference media must be an image, got ${contentType}.`);
+  if (!isInlineImageMimeType(contentType)) {
+    throw new HttpsError('invalid-argument', `Reference media must use a supported raster image format, got ${contentType || 'unknown content type'}.`);
+  }
+  const size = Number(metadata.size || 0);
+  if (!Number.isFinite(size) || size <= 0) {
+    throw new HttpsError('failed-precondition', 'Reference image is empty or has invalid metadata.');
+  }
+  if (size > MAX_INLINE_IMAGE_BYTES) {
+    throw new HttpsError('resource-exhausted', 'Reference image exceeds the 10 MiB inline-media limit.');
   }
 
   const [buffer] = await file.download();
-  return { mimeType: contentType, data: buffer.toString('base64') };
+  if (buffer.length !== size) {
+    throw new HttpsError('failed-precondition', 'Reference image size does not match its Storage metadata.');
+  }
+  return { mimeType: contentType, data: buffer.toString('base64'), byteLength: buffer.length };
 }
 
-async function loadReferenceImages(userId: string, requestData: { referenceUri?: string; referenceUris?: string[] }): Promise<{ mimeType: string; data: string }[]> {
+async function loadReferenceImages(userId: string, requestData: { referenceUri?: string; referenceUris?: string[] }): Promise<{ mimeType: InlineImageMimeType; data: string; byteLength: number }[]> {
   const uris = [
     requestData.referenceUri,
     ...(requestData.referenceUris ?? []),
   ].filter((uri, index, array): uri is string => !!uri && array.indexOf(uri) === index);
 
-  return Promise.all(uris.map(uri => loadReferenceImage(userId, uri)));
+  const images = await Promise.all(uris.map(uri => loadReferenceImage(userId, uri)));
+  const totalBytes = images.reduce((sum, image) => sum + image.byteLength, 0);
+  if (totalBytes > MAX_INLINE_IMAGE_TOTAL_BYTES) {
+    throw new HttpsError('resource-exhausted', 'Combined reference images exceed the 14 MiB inline-media limit.');
+  }
+  return images;
 }
 
 function extractInteractionImage(response: unknown, kind: MediaKind = 'image'): { mimeType: string; data: string } {
@@ -564,24 +625,55 @@ function extractInteractionMetadata(response: unknown): { textNarration?: string
   };
 }
 
-function buildOmniPrompt(data: z.infer<typeof GenerateOmniRemixSchema>): string {
+type OmniVideoRequest = z.infer<typeof GenerateOmniRemixSchema>;
+type OmniVideoTask = NonNullable<OmniVideoRequest['task']>;
+
+function resolveOmniTask(data: OmniVideoRequest): OmniVideoTask {
+  if (data.task) return data.task;
+  if (data.previousInteractionId || data.referenceVideoUri) return 'edit';
+  if (data.firstFrameUri) return 'image_to_video';
+  if (data.referenceUris?.length) return 'reference_to_video';
+  return 'text_to_video';
+}
+
+function buildOmniPrompt(data: OmniVideoRequest, task: OmniVideoTask): string {
+  const imageRolePrefix = [
+    ...(data.firstFrameUri ? ['[# Sources <FIRST_FRAME>@Image1]'] : []),
+    ...((data.referenceUris ?? []).length > 0
+      ? [`[# References ${(data.referenceUris ?? []).map((_, index) => `<IMAGE_REF_${index}>@Image${index + (data.firstFrameUri ? 2 : 1)}`).join(' ')}]`]
+      : []),
+  ].join(' ');
+  const storyboardDirectives = [...(data.storyboard ?? [])]
+    .sort((a, b) => a.timestamp - b.timestamp)
+    .map((frame, index, frames) => {
+      const nextTimestamp = frames[index + 1]?.timestamp ?? data.durationSeconds;
+      return `[${frame.timestamp}-${nextTimestamp}s] ${frame.prompt}`;
+    });
   const directives = [
-    `Pipeline: ${data.pipelineMode}`,
-    `Pose preservation: ${Math.round((data.posePreservation ?? 0.8) * 100)}%`,
-    `Beat motion pulse: ${Math.round((data.beatPulse ?? 0.5) * 100)}%`,
-    `Character X-Ray continuity: ${data.characterXRay ? 'enabled' : 'disabled'}`,
-    `Pose preset: ${data.activePosePreset || 'performance continuity'}`,
+    task !== 'edit' ? `Target duration: approximately ${data.durationSeconds} seconds.` : undefined,
+    data.posePreservation !== undefined
+      ? `Preserve the source pose and movement continuity at roughly ${Math.round(data.posePreservation * 100)}% strength.`
+      : undefined,
+    data.beatPulse !== undefined
+      ? `Match visual motion to the implied beat at roughly ${Math.round(data.beatPulse * 100)}% intensity.`
+      : undefined,
+    data.characterXRay ? 'Maintain performer anatomy, posture, and identity consistently.' : undefined,
+    data.activePosePreset ? `Use ${data.activePosePreset.replace(/_/g, ' ')} as a motion reference.` : undefined,
     data.lyricsText ? `Kinetic lyrics: "${data.lyricsText}" using ${data.typographyStyle || 'minimal-infographic'} typography` : undefined,
-    data.selectedLanguage ? `Dubbing language target: ${data.selectedLanguage}` : undefined,
     data.visualizerColor ? `Visualizer color cue: ${data.visualizerColor}` : undefined,
-    data.audioUri ? 'Use the supplied audio reference for beat sync and motion timing.' : undefined,
+    data.firstFrameUri ? 'Use Image1 as the starting frame.' : undefined,
+    (data.referenceUris ?? []).length > 0
+      ? 'Use the tagged images as subject/style references, not as literal starting frames unless explicitly tagged.'
+      : undefined,
+    task === 'edit' ? 'Keep everything else the same.' : undefined,
   ].filter(Boolean);
 
   return [
-    data.prompt,
-    'Preserve performer identity, scene continuity, physical plausibility, and temporal coherence across the full clip.',
+    imageRolePrefix || undefined,
+    data.prompt.trim(),
+    ...storyboardDirectives,
     ...directives,
-  ].join('\n');
+  ].filter(Boolean).join('\n');
 }
 
 /** Article + noun for user-facing copy, e.g. "an image", "a video", "audio". */
@@ -1295,7 +1387,7 @@ export const generateVideoV3 = onCall({ timeoutSeconds: 540, secrets: [geminiApi
     seed,
     enhancePrompt,
     skipCostCheck,
-    costEstimate,
+    costEstimate: _costEstimate,
     costReservationId,
     directorSettings: requestedDirectorSettings,
     parentId,
@@ -1472,121 +1564,210 @@ export const cancelVideoJob = onCall({ timeoutSeconds: 30, enforceAppCheck: fals
   return { jobId, status: 'cancelled' };
 });
 
-/**
- * loadVideoInput - Download a gs:// video and return as an Interactions API input part.
- * [CONFIRM notebook] Videos >4MB: inline base64 vs URI handling.
- */
-async function loadVideoInput(gsUri: string): Promise<{ type: 'video'; mime_type: string; data: string }> {
-  const [bucket, ...pathParts] = gsUri.replace('gs://', '').split('/');
-  const path = pathParts.join('/');
-  const file = getStorage().bucket(bucket).file(path);
-  const [buffer] = await file.download();
-  return {
-    type: 'video',
-    mime_type: 'video/mp4',
-    data: buffer.toString('base64'),
+type OmniInteractionStatus = 'in_progress' | 'completed' | 'failed' | 'cancelled' | 'incomplete' | 'requires_action' | string;
+
+interface OmniInteractionVideoOutput {
+  type: 'video';
+  data?: string;
+  uri?: string;
+  mime_type?: string;
+}
+
+interface OmniInteractionResponse {
+  id: string;
+  status: OmniInteractionStatus;
+  output_video?: OmniInteractionVideoOutput;
+  steps?: Array<{
+    type: string;
+    content?: Array<{ type?: string; data?: string; uri?: string; mime_type?: string }>;
+    error?: { message?: string };
+  }>;
+  usage?: {
+    total_input_tokens?: number;
+    total_output_tokens?: number;
   };
 }
 
-/**
- * loadAudioInput - Download a gs:// audio file and return as an Interactions API input part.
- * [CONFIRM notebook] Audio/music reference for beat-sync/dubbing: input part type + field shape.
- */
-async function loadAudioInput(gsUri: string): Promise<{ type: 'audio'; mime_type: string; data: string }> {
-  const [bucket, ...pathParts] = gsUri.replace('gs://', '').split('/');
-  const path = pathParts.join('/');
-  const file = getStorage().bucket(bucket).file(path);
-  const [buffer] = await file.download();
-  return {
-    type: 'audio',
-    mime_type: 'audio/mpeg',
-    data: buffer.toString('base64'),
-  };
+async function assertOwnedPreviousOmniInteraction(
+  userId: string,
+  previousJobId: string,
+  previousInteractionId: string,
+): Promise<void> {
+  const snapshot = await getDb().collection('creative_jobs').doc(previousJobId).get();
+  if (!snapshot.exists) {
+    throw new HttpsError('not-found', 'Previous Omni job was not found.');
+  }
+  const previousJob = snapshot.data() as Record<string, unknown>;
+  if (previousJob.userId !== userId) {
+    throw new HttpsError('permission-denied', 'Previous Omni interaction does not belong to this user.');
+  }
+  if (
+    previousJob.type !== 'omni-video'
+    || previousJob.status !== 'completed'
+    || previousJob.interactionId !== previousInteractionId
+  ) {
+    throw new HttpsError('failed-precondition', 'Previous Omni interaction is not available for a stateful edit.');
+  }
 }
 
-/**
- * pollInteraction - Poll an Omni Flash Interactions API call until ACTIVE.
- * [CONFIRM notebook] `GET /v1beta/interactions/{id}` vs SDK `interactions.get()`; output ready sync vs poll.
- */
+async function waitForGeminiFileActive(ai: GoogleGenAI, file: GeminiFile, label: string): Promise<GeminiFile> {
+  let current = file;
+  for (let pollCount = 0; pollCount <= VIDEO_MAX_POLLS; pollCount += 1) {
+    if (current.state === FileState.ACTIVE || (!current.state && current.uri)) return current;
+    if (current.state === FileState.FAILED) {
+      throw new HttpsError('failed-precondition', `${label} processing failed: ${current.error?.message || 'unknown provider error'}`);
+    }
+    if (pollCount === VIDEO_MAX_POLLS) break;
+    if (!current.name) {
+      throw new HttpsError('internal', `${label} did not return a Gemini Files resource name.`);
+    }
+    await sleep(VIDEO_POLL_INTERVAL_MS);
+    current = await ai.files.get({ name: current.name });
+  }
+  throw new HttpsError('deadline-exceeded', `${label} processing timed out.`);
+}
+
+/** Upload an authenticated user's Storage video through the Gemini Files API. */
+async function uploadOwnedVideoToGeminiFiles(
+  ai: GoogleGenAI,
+  userId: string,
+  gsUri: string,
+): Promise<{ input: { type: 'document'; uri: string }; providerFileName: string }> {
+  const { bucket, path } = parseStorageUri(gsUri);
+  const defaultBucket = getStorage().bucket().name;
+  if (bucket !== defaultBucket) {
+    throw new HttpsError('permission-denied', 'Source video must live in this project storage bucket.');
+  }
+  if (!isOwnerScopedCreativePath(userId, path)) {
+    throw new HttpsError('permission-denied', 'Source video must live in your creative storage namespace.');
+  }
+
+  const file = getStorage().bucket(bucket).file(path);
+  const [metadata] = await file.getMetadata();
+  const mimeType = metadata.contentType || '';
+  if (!mimeType.startsWith('video/')) {
+    throw new HttpsError('invalid-argument', `Omni edit input must be a video, got ${mimeType || 'unknown content type'}.`);
+  }
+  const size = Number(metadata.size || 0);
+  if (!Number.isFinite(size) || size <= 0) {
+    throw new HttpsError('failed-precondition', 'Source video is empty or has invalid metadata.');
+  }
+  if (size > MAX_OMNI_VIDEO_INPUT_BYTES) {
+    throw new HttpsError('resource-exhausted', 'Source video exceeds the 256 MiB gateway upload limit.');
+  }
+
+  const extension = extname(path) || '.mp4';
+  const tempPath = join(tmpdir(), `omni_input_${crypto.randomUUID()}${extension}`);
+  try {
+    await file.download({ destination: tempPath });
+    let durationSeconds: number;
+    try {
+      durationSeconds = await probeDurationSeconds(tempPath);
+    } catch (error) {
+      throw new HttpsError('failed-precondition', 'Source video could not be decoded for duration validation.', error);
+    }
+    if (durationSeconds > 10.05) {
+      throw new HttpsError('invalid-argument', 'Gemini Omni Flash edit inputs must be 10 seconds or shorter.');
+    }
+    const uploaded = await ai.files.upload({
+      file: tempPath,
+      config: {
+        mimeType,
+        displayName: path.split('/').pop()?.slice(0, 512) || 'omni-source-video',
+      },
+    });
+    const active = await waitForGeminiFileActive(ai, uploaded, 'Source video');
+    if (!active.uri || !active.name) {
+      throw new HttpsError('internal', 'Gemini Files did not return a usable source video URI.');
+    }
+    return {
+      input: { type: 'document', uri: active.uri },
+      providerFileName: active.name,
+    };
+  } finally {
+    await rm(tempPath, { force: true }).catch(() => undefined);
+  }
+}
+
 async function pollInteraction(
   ai: GoogleGenAI,
-  interaction: any,
+  interaction: OmniInteractionResponse,
   jobId: string,
-): Promise<any> {
+): Promise<OmniInteractionResponse> {
   let current = interaction;
-  let pollCount = 0;
-
-  while (pollCount < VIDEO_MAX_POLLS) {
-    const status = current.status || current.state || '';
-    if (status.toUpperCase() === 'ACTIVE' || status === 'COMPLETED') {
-      return current;
+  for (let pollCount = 0; pollCount <= VIDEO_MAX_POLLS; pollCount += 1) {
+    const status = current.status.toLowerCase();
+    if (status === 'completed' || status === 'active') return current;
+    if (['failed', 'cancelled', 'incomplete', 'requires_action'].includes(status)) {
+      const providerMessage = current.steps?.find(step => step.error?.message)?.error?.message;
+      throw new Error(providerMessage || `Interaction failed with status: ${status}`);
     }
-
-    if (status.toUpperCase() === 'FAILED' || status === 'CANCELLED') {
-      throw new Error(`Interaction failed with status: ${status}`);
-    }
-
+    if (pollCount === VIDEO_MAX_POLLS) break;
     await sleep(VIDEO_POLL_INTERVAL_MS);
-    pollCount++;
-
-    const interactionId = current.id || current.name?.split('/').pop();
-    if (!interactionId) {
-      throw new Error('No interaction ID found for polling');
-    }
-
-    try {
-      current = await (ai as any).interactions.get({ id: interactionId });
-      const progress = Math.round((pollCount / VIDEO_MAX_POLLS) * 100);
-      await safeDbUpdate(jobId, { progress });
-    } catch (error) {
-      console.error('[pollInteraction] Poll request failed:', error);
-      throw new Error(`Failed to poll interaction: ${(error as Error).message}`);
-    }
+    current = await ai.interactions.get(current.id) as OmniInteractionResponse;
+    const progress = 20 + Math.round(((pollCount + 1) / VIDEO_MAX_POLLS) * 50);
+    await safeDbUpdate(jobId, { progress, updatedAt: new Date().toISOString() });
   }
-
-  throw new HttpsError('deadline-exceeded', `Omni video generation timed out after ${pollCount * VIDEO_POLL_INTERVAL_MS / 1000}s`);
+  throw new HttpsError('deadline-exceeded', 'Gemini Omni generation timed out before the interaction completed.');
 }
 
-/**
- * fetchInteractionVideo - Extract the output video from an Omni Flash Interactions response.
- * [CONFIRM notebook] output_video shape (uri vs data); handling both SDK sync + URI-poll paths.
- */
+function extractInteractionVideo(interaction: OmniInteractionResponse): OmniInteractionVideoOutput {
+  if (interaction.output_video?.data || interaction.output_video?.uri) return interaction.output_video;
+  for (const step of interaction.steps ?? []) {
+    if (step.error?.message) throw new Error(step.error.message);
+    const video = step.content?.find(content => content.type === 'video' && (content.data || content.uri));
+    if (video) {
+      return {
+        type: 'video',
+        data: video.data,
+        uri: video.uri,
+        mime_type: video.mime_type,
+      };
+    }
+  }
+  throw new MediaGenerationError('video', 'NO_VIDEO', 'No video output was present in the completed interaction.');
+}
+
+function geminiFileNameFromUri(uri: string): string | null {
+  const match = uri.match(/(?:^|\/)files\/([A-Za-z0-9-]+)/);
+  return match?.[1] ? `files/${match[1]}` : null;
+}
+
 async function fetchInteractionVideo(
   ai: GoogleGenAI,
-  interaction: any,
+  interaction: OmniInteractionResponse,
 ): Promise<{ buffer: Buffer; mimeType: string }> {
-  const output = interaction.output_video || interaction.outputVideo;
-
-  if (output?.data) {
-    return {
-      buffer: Buffer.from(output.data, 'base64'),
-      mimeType: output.mime_type || output.mimeType || 'video/mp4',
-    };
+  const output = extractInteractionVideo(interaction);
+  if (output.data) {
+    const buffer = Buffer.from(output.data, 'base64');
+    if (buffer.length === 0) throw new MediaGenerationError('video', 'NO_VIDEO', 'Gemini returned an empty video payload.');
+    return { buffer, mimeType: output.mime_type || 'video/mp4' };
   }
 
-  if (output?.uri) {
-    const response = await fetch(output.uri);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch video from URI: ${response.statusText}`);
-    }
-    const buffer = await response.arrayBuffer();
-    return {
-      buffer: Buffer.from(buffer),
-      mimeType: output.mime_type || output.mimeType || 'video/mp4',
-    };
+  const fileName = output.uri ? geminiFileNameFromUri(output.uri) : null;
+  if (!fileName) {
+    throw new MediaGenerationError('video', 'NO_VIDEO', 'Gemini returned an unsupported video URI.');
   }
-
-  throw new MediaGenerationError('video', 'NO_VIDEO', `No output_video found in interaction response`);
+  const generatedFile = await waitForGeminiFileActive(
+    ai,
+    await ai.files.get({ name: fileName }),
+    'Generated video',
+  );
+  const tempPath = join(tmpdir(), `omni_output_${crypto.randomUUID()}.mp4`);
+  try {
+    await ai.files.download({ file: generatedFile, downloadPath: tempPath });
+    const buffer = await readFile(tempPath);
+    if (buffer.length === 0) throw new MediaGenerationError('video', 'NO_VIDEO', 'Gemini downloaded an empty video file.');
+    return { buffer, mimeType: output.mime_type || generatedFile.mimeType || 'video/mp4' };
+  } finally {
+    await rm(tempPath, { force: true }).catch(() => undefined);
+  }
 }
 
 /**
- * generateOmniRemixV3 - Gemini Omni Flash video-to-video remixing via Interactions API.
- *
- * Google has announced Gemini Omni Flash for video creation/editing in Gemini app,
- * Flow, and Shorts, with API access rolling out later. This callable is wired so
- * the UI can use the real backend path as soon as the API model ID is configured.
+ * generateOmniRemixV3 - Gemini Omni Flash generation and conversational editing.
  */
-export const generateOmniRemixV3 = onCall({ timeoutSeconds: 540, secrets: [geminiApiKey] , enforceAppCheck: false}, async (request) => {
+export const generateOmniRemixV3 = onCall({ timeoutSeconds: 540, memory: '2GiB', secrets: [geminiApiKey], enforceAppCheck: false }, async (request) => {
   validateAppCheckV2(request);
   if (!request.auth) throw new HttpsError('unauthenticated', 'User must be authenticated.');
 
@@ -1598,94 +1779,103 @@ export const generateOmniRemixV3 = onCall({ timeoutSeconds: 540, secrets: [gemin
   const data = parsed.data;
   const userId = request.auth.uid;
   const jobId = getDb().collection('creative_jobs').doc().id;
-
-  // ISSUE-872: no placeholder model — Omni is unavailable until configured.
   const modelId = resolveOmniFlashModel();
-  if (!modelId) {
-    throw new HttpsError(
-      'failed-precondition',
-      'Omni Remix is not available yet: no Omni model is configured on the server. No cost was reserved or charged.'
-    );
-  }
-  const durationSeconds = Math.min(12, Math.max(4, data.durationSeconds));
-  // ISSUE-774: exactly one ai.interactions.create() call happens below,
-  // regardless of pipelineMode — there is no second Veo stage to charge Pro
-  // pricing for. `pipelineMode` no longer affects cost; it's accepted as a
-  // legacy/no-op field only (kept in the schema so any client with a stale
-  // persisted 'hybrid-veo' selection doesn't fail payload validation).
-  const serverEstimatedCost = estimateVideoCost(
-    durationSeconds,
-    VIDEO_MODEL_IDS.fast,
-    data.pipelineMode,
-  );
-  const reservation = data.costReservationId
-    ? await loadCostReservation(userId, data.costReservationId)
-    : null;
+  const task = resolveOmniTask(data);
   if (!data.costReservationId) {
     throw new HttpsError('failed-precondition', 'Missing cost reservation. Reserve cost before submitting the job.');
   }
-  if (Math.abs((reservation?.estimatedCost ?? serverEstimatedCost) - serverEstimatedCost) > 0.01) {
-    throw new HttpsError('failed-precondition', 'Cost reservation estimate does not match the current Omni job estimate.');
-  }
 
-  await safeDbSet(jobId, {
-    id: jobId,
-    userId,
-    status: 'processing',
-    type: 'omni-video',
-    prompt: data.prompt,
-    model: modelId,
-    progress: 0,
-    parentId: data.parentId,
-    costEstimate: reservation?.estimatedCost ?? serverEstimatedCost,
-    costReservationId: data.costReservationId,
-    metadata: {
-      pipelineMode: data.pipelineMode,
-      hasAudioReference: !!data.audioUri,
-      referenceCount: data.referenceUris?.length ?? 0,
-      synthIdRequested: data.synthIdEnabled ?? true,
-    },
-    createdAt: new Date().toISOString()
-  });
+  const durationSeconds = Math.min(10, Math.max(3, data.durationSeconds));
+  // Official paid-tier Standard pricing is approximately $0.10 per second of
+  // 720p output. This is deliberately independent of the retired pipelineMode.
+  const serverEstimatedCost = estimateVideoCost(durationSeconds, VIDEO_MODEL_IDS.fast);
 
+  let outputCompleted = false;
+  let outputUri: string | null = null;
   try {
-    const ai = getAiClient('video');
-
-    if (!(ai as any).interactions) {
-      throw new HttpsError('failed-precondition',
-        'Omni Flash requires a Gemini API key (Interactions API unavailable in Vertex mode).');
+    if (data.audioUri) {
+      throw new HttpsError(
+        'failed-precondition',
+        'Gemini Omni Flash does not currently support uploaded audio references. Describe the desired soundtrack in the prompt instead.',
+      );
+    }
+    if (data.previousInteractionId && data.previousJobId) {
+      await assertOwnedPreviousOmniInteraction(userId, data.previousJobId, data.previousInteractionId);
     }
 
-    const sourceVideo = await loadVideoInput(data.referenceVideoUri);
-    const referenceImages = await loadReferenceImages(userId, { referenceUris: data.referenceUris });
-    const audio = data.audioUri ? await loadAudioInput(data.audioUri) : undefined;
+    const reservation = await loadCostReservation(userId, data.costReservationId);
+    if (Math.abs(reservation.estimatedCost - serverEstimatedCost) > 0.01) {
+      throw new HttpsError('failed-precondition', 'Cost reservation estimate does not match the current Omni job estimate.');
+    }
 
-    const input = [
-      { type: 'text' as const, text: buildOmniPrompt(data) },
-      sourceVideo,
-      ...referenceImages.map(r => ({ type: 'image' as const, mime_type: r.mimeType as 'image/png' | 'image/jpeg' | 'image/webp' | 'image/heic' | 'image/heif' | 'image/gif' | 'image/bmp' | 'image/tiff', data: r.data })),
-      ...(audio ? [audio] : []),
-    ];
-
-    const durationSeconds = Math.min(12, Math.max(4, data.durationSeconds));
-    const interaction = await (ai as any).interactions.create({
+    const initialJob = {
+      id: jobId,
+      userId,
+      status: 'processing',
+      type: 'omni-video',
+      task,
+      prompt: data.prompt,
       model: modelId,
-      input,
-      response_modalities: ['video'],
-      generation_config: {
-        video_config: {
-          tasks: 'edit',
-          aspect_ratio: data.aspectRatio,
-          duration_seconds: durationSeconds,
-          resolution: '1080p',
-        },
+      progress: 0,
+      parentId: data.parentId,
+      costEstimate: reservation.estimatedCost,
+      costReservationId: data.costReservationId,
+      previousInteractionId: data.previousInteractionId,
+      previousJobId: data.previousJobId,
+      metadata: {
+        task,
+        aspectRatio: data.aspectRatio,
+        durationSeconds,
+        hasSourceVideo: !!data.referenceVideoUri,
+        hasFirstFrame: !!data.firstFrameUri,
+        referenceCount: data.referenceUris?.length ?? 0,
+        storyboardFrameCount: data.storyboard?.length ?? 0,
+        synthIdExpectedByProvider: true,
       },
-      response_format: { delivery: 'uri' },
+      createdAt: new Date().toISOString()
+    };
+
+    // Omni interaction IDs are required for secure stateful edits, so the job
+    // record is part of the transaction boundary rather than best-effort telemetry.
+    await getDb().collection('creative_jobs').doc(jobId).set(initialJob);
+    const ai = getOmniAiClient();
+    const sourceVideo = data.referenceVideoUri && !data.previousInteractionId
+      ? await uploadOwnedVideoToGeminiFiles(ai, userId, data.referenceVideoUri)
+      : undefined;
+    const referenceImages = await loadReferenceImages(userId, {
+      referenceUri: data.firstFrameUri,
+      referenceUris: data.referenceUris,
     });
 
-    const finished = await pollInteraction(ai, interaction, jobId);
+    const input = [
+      ...(sourceVideo ? [sourceVideo.input] : []),
+      ...referenceImages.map(r => ({ type: 'image' as const, mime_type: r.mimeType, data: r.data })),
+      { type: 'text' as const, text: buildOmniPrompt(data, task) },
+    ];
+
+    const interaction = await ai.interactions.create({
+      model: modelId,
+      input,
+      generation_config: {
+        video_config: {
+          task,
+        },
+      },
+      response_format: {
+        type: 'video',
+        aspect_ratio: data.aspectRatio,
+        duration: `${durationSeconds}s`,
+        delivery: 'uri',
+      },
+      ...(data.previousInteractionId ? { previous_interaction_id: data.previousInteractionId } : {}),
+      background: false,
+      stream: false,
+      store: true,
+    });
+
+    const finished = await pollInteraction(ai, interaction as OmniInteractionResponse, jobId);
     const { buffer, mimeType } = await fetchInteractionVideo(ai, finished);
-    const outputUri = await uploadToStorage(
+    outputUri = await uploadToStorage(
       userId,
       buffer,
       extensionForMime(mimeType, 'mp4'),
@@ -1697,28 +1887,66 @@ export const generateOmniRemixV3 = onCall({ timeoutSeconds: 540, secrets: [gemin
       },
     );
 
-    await safeDbUpdate(jobId, {
+    await getDb().collection('creative_jobs').doc(jobId).update({
       status: 'completed',
       resultUri: outputUri,
+      interactionId: finished.id,
       progress: 100,
-      costEstimate: reservation?.estimatedCost ?? serverEstimatedCost,
+      costEstimate: reservation.estimatedCost,
       costReservationId: data.costReservationId,
       metadata: {
         model: modelId,
-        pipelineMode: data.pipelineMode,
+        task,
         aspectRatio: data.aspectRatio,
         durationSeconds,
         mimeType,
-        hasAudioReference: !!data.audioUri,
+        providerInputFileName: sourceVideo?.providerFileName,
+        hasSourceVideo: !!data.referenceVideoUri,
+        hasFirstFrame: !!data.firstFrameUri,
         referenceCount: data.referenceUris?.length ?? 0,
-        synthIdRequested: data.synthIdEnabled ?? true,
+        storyboardFrameCount: data.storyboard?.length ?? 0,
+        synthIdAppliedByProvider: true,
+        usage: finished.usage,
       },
       completedAt: new Date().toISOString()
     });
+    outputCompleted = true;
+    try {
+      await finalizeOperationReservation({
+        userId,
+        operationId: data.costReservationId,
+        outcome: 'SETTLED',
+      });
+    } catch (settlementError) {
+      console.error('[generateOmniRemixV3] Output completed; reservation settlement needs reconciliation:', settlementError);
+    }
 
-    return { jobId, resultUri: outputUri };
+    return {
+      jobId,
+      resultUri: outputUri,
+      interactionId: finished.id,
+      task,
+      synthIdApplied: true,
+    };
   } catch (error: unknown) {
-    await safeDbUpdate(jobId, { status: 'failed', error: errorMessage(error) });
+    if (!outputCompleted && outputUri) await deleteStorageOutputs([outputUri]);
+    await safeDbUpdate(jobId, {
+      status: 'failed',
+      error: errorMessage(error),
+      failedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+    if (!outputCompleted) {
+      try {
+        await finalizeOperationReservation({
+          userId,
+          operationId: data.costReservationId,
+          outcome: 'VOIDED',
+        });
+      } catch (releaseError) {
+        console.error('[generateOmniRemixV3] Failed to release cost reservation:', releaseError);
+      }
+    }
     throw toGatewayError(error, 'Omni remix failed');
   }
 });

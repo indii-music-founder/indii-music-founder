@@ -53,11 +53,28 @@ export const GenerateVideoSchema = BaseMediaRequestSchema.extend({
     })).max(5).optional(),
 });
 
+export const OmniVideoTaskSchema = z.enum([
+    'text_to_video',
+    'image_to_video',
+    'reference_to_video',
+    'edit',
+]);
+
+export const OmniStoryboardFrameSchema = z.object({
+    timestamp: z.number().min(0).max(10),
+    prompt: z.string().trim().min(1).max(500),
+});
+
 export const GenerateOmniRemixSchema = z.object({
-    prompt: z.string().min(1),
-    referenceVideoUri: z.string().startsWith('gs://'),
+    prompt: z.string().trim().min(1).max(4000),
+    task: OmniVideoTaskSchema.optional(),
+    referenceVideoUri: z.string().startsWith('gs://').optional(),
+    firstFrameUri: z.string().startsWith('gs://').optional(),
     audioUri: z.string().startsWith('gs://').optional(),
     referenceUris: z.array(z.string().startsWith('gs://')).max(8).optional(),
+    previousInteractionId: z.string().trim().min(1).max(256).optional(),
+    previousJobId: z.string().trim().min(1).max(256).optional(),
+    storyboard: z.array(OmniStoryboardFrameSchema).max(12).optional(),
     costEstimate: z.number().optional(),
     costReservationId: z.string().optional(),
     // ISSUE-774: 'hybrid-veo' is retired — the UI no longer offers it and the
@@ -66,7 +83,7 @@ export const GenerateOmniRemixSchema = z.object({
     // selection doesn't fail payload validation.
     pipelineMode: z.enum(['pure-omni', 'hybrid-veo']).default('pure-omni'),
     aspectRatio: z.enum(['16:9', '9:16']).default('16:9'),
-    durationSeconds: z.number().min(4).max(12).default(8),
+    durationSeconds: z.number().min(3).max(10).default(8),
     parentId: z.string().optional(),
     posePreservation: z.number().min(0).max(1).optional(),
     beatPulse: z.number().min(0).max(1).optional(),
@@ -77,6 +94,88 @@ export const GenerateOmniRemixSchema = z.object({
     lyricsText: z.string().max(2000).optional(),
     typographyStyle: z.enum(['cyberpunk', 'kinetic-neon', 'liquid-gold', 'minimal-infographic']).optional(),
     visualizerColor: z.string().regex(/^#[0-9a-f]{6}$/i).optional(),
+}).superRefine((data, ctx) => {
+    const task = data.task
+        ?? (data.previousInteractionId || data.referenceVideoUri
+            ? 'edit'
+            : data.firstFrameUri
+                ? 'image_to_video'
+                : data.referenceUris?.length
+                    ? 'reference_to_video'
+                    : 'text_to_video');
+
+    if (task === 'edit' && !data.previousInteractionId && !data.referenceVideoUri) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['referenceVideoUri'],
+            message: 'Edit mode requires a source video or previous interaction ID.',
+        });
+    }
+    if (data.previousInteractionId && data.referenceVideoUri) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['referenceVideoUri'],
+            message: 'Choose either a stored interaction or an uploaded source video for one edit request.',
+        });
+    }
+    if (task !== 'edit' && (data.previousInteractionId || data.previousJobId || data.referenceVideoUri)) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['task'],
+            message: 'Previous interactions and source videos are valid only in edit mode.',
+        });
+    }
+    if (task === 'text_to_video' && (data.firstFrameUri || data.referenceUris?.length)) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['task'],
+            message: 'Text-to-video mode cannot include image inputs.',
+        });
+    }
+    if (data.previousInteractionId && !data.previousJobId) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['previousJobId'],
+            message: 'Stateful edits require the previous owned job ID.',
+        });
+    }
+    if (data.previousJobId && !data.previousInteractionId) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['previousInteractionId'],
+            message: 'A previous job ID requires its provider interaction ID.',
+        });
+    }
+    if (task === 'image_to_video' && !data.firstFrameUri) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['firstFrameUri'],
+            message: 'Image-to-video mode requires a first-frame image.',
+        });
+    }
+    if (task === 'reference_to_video' && !data.referenceUris?.length) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['referenceUris'],
+            message: 'Reference-to-video mode requires at least one reference image.',
+        });
+    }
+    if ((data.referenceUris?.length ?? 0) + (data.firstFrameUri ? 1 : 0) > 8) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['referenceUris'],
+            message: 'Omni accepts at most eight images across the first frame and references.',
+        });
+    }
+    for (const [index, frame] of (data.storyboard ?? []).entries()) {
+        if (frame.timestamp > data.durationSeconds) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ['storyboard', index, 'timestamp'],
+                message: 'Storyboard timestamps cannot exceed the target duration.',
+            });
+        }
+    }
 });
 
 export const TTSVoiceSchema = z.enum([
@@ -97,5 +196,6 @@ export const GenerateAudioSchema = z.object({
 export type BaseMediaRequest = z.infer<typeof BaseMediaRequestSchema>;
 export type GenerateImage = z.infer<typeof GenerateImageSchema>;
 export type GenerateVideo = z.infer<typeof GenerateVideoSchema>;
+export type OmniVideoTask = z.infer<typeof OmniVideoTaskSchema>;
 export type GenerateOmniRemix = z.infer<typeof GenerateOmniRemixSchema>;
 export type GenerateAudio = z.infer<typeof GenerateAudioSchema>;
