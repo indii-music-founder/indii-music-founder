@@ -138,6 +138,20 @@ describe('AuthSlice', () => {
             expect(useStore.getState().authError).toBe('Authentication service unavailable. Please try again later.');
         });
 
+        it('should normalize referer errors that embed the blocked localhost origin', async () => {
+            const error = Object.assign(new Error('raw Firebase referer error'), {
+                code: 'auth/requests-from-referer-http://localhost:4243-are-blocked'
+            });
+            vi.mocked(signInWithPopup).mockRejectedValueOnce(error);
+            const { loginWithGoogle } = useStore.getState();
+
+            await loginWithGoogle();
+
+            expect(useStore.getState().authError).toBe(
+                'Authentication service not configured for this domain. Please contact support.'
+            );
+        });
+
         it('should show user-friendly message for too-many-requests', async () => {
             const error = Object.assign(new Error('too many'), { code: 'auth/too-many-requests' });
             vi.mocked(signInWithPopup).mockRejectedValueOnce(error);

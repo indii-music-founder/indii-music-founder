@@ -18,11 +18,23 @@ import ShowroomUI from './components/ShowroomUI';
 import { logger } from '@/utils/logger';
 import { useRef } from 'react';
 import { awaitCompletedPlpVideoVariant } from './plpVideoVariant';
+import {
+    completePlpSlot,
+    createPlpBatch,
+    failPlpSlot,
+    getEligiblePlpSlots,
+    retryPlpSlot,
+    setPlpLaunchStatus,
+    queuePlpSlot,
+    type PlpBatch,
+    type PlpVariantResult,
+} from './plpBatch';
 import { buildDistributorContext, validateImageForDistributor } from '@/services/onboarding/DistributorContext';
 
 import CreativeClipboard from './components/CreativeClipboard';
 import OmniWorkflow from './video/OmniWorkflow';
 import CanvasModePicker from './components/CanvasModePicker';
+import PlpBatchStatus from './components/PlpBatchStatus';
 
 /**
  * ISSUE-1007: decodes the actual persisted image's pixel dimensions instead
@@ -154,6 +166,110 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
     })));
     const toast = useToast();
     const [activeMobileTab, setActiveMobileTab] = React.useState<'controls' | 'studio'>('studio');
+    const [plpBatch, setPlpBatch] = React.useState<PlpBatch | null>(null);
+    const plpBatchRef = React.useRef<PlpBatch | null>(null);
+    const plpRetryHandlersRef = React.useRef(new Map<number, () => Promise<void>>());
+    const plpRetryInFlightRef = React.useRef(new Set<number>());
+    const acceptedPlpSlotsRef = React.useRef(new Set<string>());
+    const plpLaunchInFlightRef = React.useRef(false);
+
+    const mutatePlpBatch = React.useCallback((mutate: (batch: PlpBatch) => PlpBatch) => {
+        const current = plpBatchRef.current;
+        if (!current) return;
+        const next = mutate(current);
+        plpBatchRef.current = next;
+        setPlpBatch(next);
+    }, []);
+
+    const handleRetryPlpSlot = React.useCallback(async (slotIndex: number) => {
+        const batch = plpBatchRef.current;
+        if (!batch) return;
+        if (useStore.getState().currentProjectId !== batch.projectId) {
+            toast.warning('Switch back to the project that started this PLP batch before retrying.');
+            return;
+        }
+        const retry = plpRetryHandlersRef.current.get(slotIndex);
+        if (!retry) {
+            toast.error('This variant no longer has retry context. Start a new PLP batch.');
+            return;
+        }
+        if (plpRetryInFlightRef.current.has(slotIndex)) return;
+        plpRetryInFlightRef.current.add(slotIndex);
+        try {
+            await retry();
+        } finally {
+            plpRetryInFlightRef.current.delete(slotIndex);
+        }
+    }, [toast]);
+
+    const handleLaunchPlpBatch = React.useCallback(async () => {
+        const batch = plpBatchRef.current;
+        if (!batch || plpLaunchInFlightRef.current || batch.launchStatus === 'launched') return;
+        if (useStore.getState().currentProjectId !== batch.projectId) {
+            toast.warning('Switch back to the project that started this PLP batch before launch.');
+            return;
+        }
+
+        const eligibleSlots = getEligiblePlpSlots(batch);
+        if (batch.slots.some(slot => slot.status === 'queued')) {
+            toast.info('Wait for queued PLP variants to finish before launch review.');
+            return;
+        }
+        if (eligibleSlots.length !== batch.slots.length) {
+            toast.error('Retry every failed PLP variant before launch. All 15 assets must be completed and playable.');
+            return;
+        }
+
+        plpLaunchInFlightRef.current = true;
+        let launch: Awaited<ReturnType<typeof CampaignConfigDialog.call>>;
+        try {
+            launch = await CampaignConfigDialog.call({
+                variantCount: eligibleSlots.length,
+                defaultBody: batch.prompt.slice(0, 120),
+            });
+        } catch (error: unknown) {
+            plpLaunchInFlightRef.current = false;
+            logger.error('[PLP] Campaign review dialog failed', error);
+            toast.error('Campaign review could not be opened. Your variants are still saved.');
+            return;
+        }
+        if (!launch) {
+            plpLaunchInFlightRef.current = false;
+            toast.info('Variants saved. No ad campaign was launched.');
+            return;
+        }
+
+        mutatePlpBatch(current => setPlpLaunchStatus(current, 'launching'));
+        try {
+            const { adAutomationService } = await import('@/services/marketing/AdAutomationService');
+            const adBudget = {
+                platform: 'meta' as const,
+                dailyBudget: launch.dailyBudget,
+                totalDays: launch.totalDays,
+                targetAgeRange: [launch.targetAgeMin, launch.targetAgeMax] as [number, number],
+                targetInterests: launch.targetInterests,
+            };
+            const adCreatives = eligibleSlots.map(slot => ({
+                creativeId: slot.result!.id,
+                postId: `plp_${batch.id}_${slot.index}`,
+                headline: launch.headline,
+                body: launch.body,
+                callToAction: (slot.kind === 'video' ? 'LEARN_MORE' : 'SHOP_NOW') as 'LEARN_MORE' | 'SHOP_NOW',
+            }));
+            await adAutomationService.deployPLPPipeline(adCreatives, adBudget);
+            mutatePlpBatch(current => setPlpLaunchStatus(current, 'launched'));
+            toast.success('Campaign deployed to Marketing Protocol.');
+        } catch (error: unknown) {
+            logger.error('[PLP] Failed to deploy marketing pipeline', error);
+            // A sequential provider deployment can fail after creating a campaign,
+            // ad set, or some ads. Fail closed instead of offering a blind retry
+            // that could create a second paid campaign.
+            mutatePlpBatch(current => setPlpLaunchStatus(current, 'attention_required'));
+            toast.error('Campaign launch could not be confirmed. Variants are saved; verify Marketing status before trying again.');
+        } finally {
+            plpLaunchInFlightRef.current = false;
+        }
+    }, [mutatePlpBatch, toast]);
 
     useEffect(() => {
         initializeDesignHistory();
@@ -246,124 +362,109 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
 
                     if (isPLP) {
                         const { VideoGeneration } = await import('@/services/video/VideoGenerationService');
-                        const { adAutomationService } = await import('@/services/marketing/AdAutomationService');
                         // Hold every result to the project that explicitly started this batch.
                         // A view/project switch while video jobs are pending must not refile
                         // their output into the newly active project.
                         const plpProjectId = currentProjectId;
+                        const batchId = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+                            ? crypto.randomUUID()
+                            : `plp_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+                        const initialBatch = createPlpBatch(batchId, plpProjectId, pendingPrompt);
+                        plpBatchRef.current = initialBatch;
+                        setPlpBatch(initialBatch);
+                        plpRetryHandlersRef.current.clear();
+                        plpRetryInFlightRef.current.clear();
+                        acceptedPlpSlotsRef.current.clear();
+                        plpLaunchInFlightRef.current = false;
 
-                        // 1. Generate 10 Image Variants
-                        const imagePromises = Array(10).fill(0).map((_, i) =>
-                            ImageGeneration.generateImages({
-                                prompt: `${finalPrompt}, variant iteration ${i + 1}, varied composition`,
-                                count: 1,
-                                resolution: studioControls.resolution,
-                                aspectRatio: studioControls.aspectRatio,
-                                negativePrompt: studioControls.negativePrompt,
-                                personGeneration: PERSON_GEN_API_MAP[studioControls.personGeneration] ?? 'ALLOW_ADULT',
-                                sourceImages: sourceImages,
-                                model: studioControls.model,
-                                thinkingLevel: studioControls.thinkingLevel === 'none' ? undefined : studioControls.thinkingLevel,
-                                useGrounding: studioControls.useGrounding,
-                                sessionId: plpProjectId ? `creative_${plpProjectId}` : undefined,
-                            })
-                        );
+                        const runSlot = async (index: number, isRetry: boolean): Promise<boolean> => {
+                            if (isRetry) {
+                                mutatePlpBatch(batch => batch.id === batchId ? retryPlpSlot(batch, index) : batch);
+                            }
 
-                        // 2. Generate 5 Video Variants (Veo 3.1)
-                        const videoPromises = Array(5).fill(0).map((_, i) =>
-                            awaitCompletedPlpVideoVariant(() => VideoGeneration.generateVideo({
-                                prompt: `${finalPrompt}, cinematic motion variant ${i + 1}`,
-                                resolution: studioControls.resolution,
-                                aspectRatio: ['9:16', '10:16', '9:21', '3:4'].includes(studioControls.aspectRatio) ? '9:16' : '16:9',
-                                duration: 4,
-                                cameraMovement: 'Dynamic',
-                                motionStrength: 0.8,
-                                model: studioControls.model,
-                                referenceImages: (characterReferences || []).map(ref => {
-                                    let bytes = ref.image.url;
-                                    const commaIndex = bytes.indexOf(',');
-                                    if (bytes.startsWith('data:') && commaIndex !== -1) {
-                                        bytes = bytes.substring(commaIndex + 1);
-                                    }
-                                    return {
-                                        image: { imageBytes: bytes, mimeType: 'image/jpeg' },
-                                        referenceType: 'asset' as const
-                                    };
-                                })
-                            }), (jobId) => VideoGeneration.waitForJob(jobId))
-                        );
+                            try {
+                                let item: PlpVariantResult | undefined;
+                                if (index < 10) {
+                                    item = (await ImageGeneration.generateImages({
+                                        prompt: `${finalPrompt}, variant iteration ${index + 1}, varied composition`,
+                                        count: 1,
+                                        resolution: studioControls.resolution,
+                                        aspectRatio: studioControls.aspectRatio,
+                                        negativePrompt: studioControls.negativePrompt,
+                                        personGeneration: PERSON_GEN_API_MAP[studioControls.personGeneration] ?? 'ALLOW_ADULT',
+                                        sourceImages,
+                                        model: studioControls.model,
+                                        thinkingLevel: studioControls.thinkingLevel === 'none' ? undefined : studioControls.thinkingLevel,
+                                        useGrounding: studioControls.useGrounding,
+                                        sessionId: plpProjectId ? `creative_${plpProjectId}` : undefined,
+                                    }))[0];
+                                } else {
+                                    const videoIndex = index - 10;
+                                    item = (await awaitCompletedPlpVideoVariant(() => VideoGeneration.generateVideo({
+                                        prompt: `${finalPrompt}, cinematic motion variant ${videoIndex + 1}`,
+                                        resolution: studioControls.resolution,
+                                        aspectRatio: ['9:16', '10:16', '9:21', '3:4'].includes(studioControls.aspectRatio) ? '9:16' : '16:9',
+                                        duration: 4,
+                                        cameraMovement: 'Dynamic',
+                                        motionStrength: 0.8,
+                                        model: studioControls.model,
+                                        referenceImages: (characterReferences || []).map(ref => {
+                                            let bytes = ref.image.url;
+                                            const commaIndex = bytes.indexOf(',');
+                                            if (bytes.startsWith('data:') && commaIndex !== -1) {
+                                                bytes = bytes.substring(commaIndex + 1);
+                                            }
+                                            return {
+                                                image: { imageBytes: bytes, mimeType: 'image/jpeg' },
+                                                referenceType: 'asset' as const
+                                            };
+                                        })
+                                    }), (jobId) => VideoGeneration.waitForJob(jobId), token => {
+                                        mutatePlpBatch(batch => batch.id === batchId ? queuePlpSlot(batch, index, token.id) : batch);
+                                    }))[0];
+                                }
 
-                        const allPromises = [...imagePromises, ...videoPromises];
-                        const results = await Promise.allSettled(allPromises);
+                                if (!item?.id || !item.url) {
+                                    throw new Error(`${index < 10 ? 'Image' : 'Video'} variant completed without a playable asset.`);
+                                }
 
-                        let successCount = 0;
-                        const creativeSeeds: { creativeId: string; index: number; isVideo: boolean }[] = [];
-
-                        results.forEach((res, index) => {
-                            if (res.status === 'fulfilled' && res.value.length > 0) {
-                                successCount++;
-                                const item = res.value[0]!;
-                                const isVideo = index >= 10;
-
+                                const slotKey = `${batchId}:${index}`;
+                                if (acceptedPlpSlotsRef.current.has(slotKey)) return true;
+                                acceptedPlpSlotsRef.current.add(slotKey);
+                                mutatePlpBatch(batch => batch.id === batchId ? completePlpSlot(batch, index, item!) : batch);
                                 addToHistory({
                                     id: item.id,
                                     url: item.url,
                                     prompt: pendingPrompt,
-                                    type: isVideo ? 'video' : 'image',
+                                    type: index < 10 ? 'image' : 'video',
                                     timestamp: Date.now(),
                                     projectId: plpProjectId,
                                     origin: 'generated'
                                 });
-
-                                creativeSeeds.push({ creativeId: item.id, index, isVideo });
-                            } else if (res.status === 'rejected') {
-                                logger.warn(`[PLP] Variant ${index + 1} failed:`, res.reason);
+                                return true;
+                            } catch (error: unknown) {
+                                const message = error instanceof Error ? error.message : 'Variant generation failed.';
+                                logger.warn(`[PLP] Variant ${index + 1} failed:`, error);
+                                mutatePlpBatch(batch => batch.id === batchId ? failPlpSlot(batch, index, message) : batch);
+                                return false;
                             }
+                        };
+
+                        const initialRuns = Array.from({ length: 15 }, (_, index) => {
+                            plpRetryHandlersRef.current.set(index, () => runSlot(index, true).then(() => undefined));
+                            return runSlot(index, false);
                         });
+                        const outcomes = await Promise.all(initialRuns);
+                        const successCount = outcomes.filter(Boolean).length;
+                        const failedCount = outcomes.length - successCount;
 
                         if (successCount > 0) {
-                            toast.success(`PLP: ${successCount}/15 Variants generated.`);
-
+                            toast.success(`PLP: ${successCount} completed, ${failedCount} failed. Review the batch before launch.`);
                             if (useStore.getState().currentProjectId !== plpProjectId) {
                                 toast.warning('PLP variants were saved to the project that started this batch. Switch back to review them before launch.');
-                                return;
-                            }
-
-                            // ISSUE-495: deploying to a REAL paid Meta ad campaign spends money.
-                            // Never auto-launch — the user reviews and edits budget, duration,
-                            // targeting, and ad copy in the dialog before any spend.
-                            const launch = await CampaignConfigDialog.call({
-                                variantCount: successCount,
-                                defaultBody: pendingPrompt.slice(0, 120),
-                            });
-
-                            if (!launch) {
-                                toast.info('Variants saved. No ad campaign was launched.');
-                            } else {
-                                const adBudget = {
-                                    platform: 'meta' as const,
-                                    dailyBudget: launch.dailyBudget,
-                                    totalDays: launch.totalDays,
-                                    targetAgeRange: [launch.targetAgeMin, launch.targetAgeMax] as [number, number],
-                                    targetInterests: launch.targetInterests,
-                                };
-                                const adCreatives = creativeSeeds.map(seed => ({
-                                    creativeId: seed.creativeId,
-                                    postId: `post_${Date.now()}_${seed.index}`,
-                                    headline: launch.headline,
-                                    body: launch.body,
-                                    callToAction: (seed.isVideo ? 'LEARN_MORE' : 'SHOP_NOW') as 'LEARN_MORE' | 'SHOP_NOW',
-                                }));
-                                try {
-                                    await adAutomationService.deployPLPPipeline(adCreatives, adBudget);
-                                    toast.success('Campaign deployed to Marketing Protocol.');
-                                } catch (e) {
-                                    logger.error('[PLP] Failed to deploy marketing pipeline', e);
-                                    toast.error('Variants saved, but the ad campaign could not be launched (marketing backend unavailable).');
-                                }
                             }
                         } else {
-                            toast.error("PLP pipeline failed: 0 variants generated.");
+                            toast.error('PLP pipeline failed: 0 variants generated. Retry failed slots from the batch panel.');
                         }
 
                     } else {
@@ -496,6 +597,15 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                                 <span>Imported from chat — {chatImportContext.agentId}'s response to: "{chatImportContext.prompt.substring(0, 50)}{chatImportContext.prompt.length > 50 ? '...' : ''}"</span>
                                 <button onClick={clearChatImportContext} className="text-gray-400 hover:text-white">&times;</button>
                             </div>
+                        )}
+
+                        {plpBatch && (
+                            <PlpBatchStatus
+                                batch={plpBatch}
+                                isProjectActive={currentProjectId === plpBatch.projectId}
+                                onRetry={handleRetryPlpSlot}
+                                onLaunch={handleLaunchPlpBatch}
+                            />
                         )}
                         
                         {/* Always mount InfiniteCanvas as the unified base layer */}

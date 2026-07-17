@@ -5,10 +5,12 @@ describe('awaitCompletedPlpVideoVariant', () => {
     it('does not return the queued empty URL and waits for playable output', async () => {
         const start = vi.fn().mockResolvedValue([{ id: 'job-1', url: '', prompt: 'variant' }]);
         const wait = vi.fn().mockResolvedValue({ output: { url: 'https://cdn/video.mp4' } });
+        const onQueued = vi.fn();
 
-        await expect(awaitCompletedPlpVideoVariant(start, wait)).resolves.toEqual([
+        await expect(awaitCompletedPlpVideoVariant(start, wait, onQueued)).resolves.toEqual([
             { id: 'job-1', url: 'https://cdn/video.mp4', prompt: 'variant' },
         ]);
+        expect(onQueued).toHaveBeenCalledWith({ id: 'job-1', url: '', prompt: 'variant' });
         expect(wait).toHaveBeenCalledWith('job-1');
     });
 
