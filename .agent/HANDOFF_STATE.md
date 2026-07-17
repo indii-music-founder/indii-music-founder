@@ -1,9 +1,12 @@
 # Handoff State
-**Updated:** 2026-07-17 12:58 EDT
+**Updated:** 2026-07-17 13:05 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+6e6398e93a docs(ledger): re-verify hardening checklist item 7 — npm audit 0 critical/high
+ffc8467df7 docs: add Auth Bypass UI testing pattern to error ledger
+2623b6659e chore: session checkpoint [12:58]
 4a9c973f3e docs(ledger): verify ISSUE-1073..1076 fixes green, refresh Creative tool status table
 9a432654f5 feat: complete issues 720, 1009, 1010 and natively verify 481, 487, 493
 05e43fa4eb chore: session checkpoint [12:56]
@@ -11,14 +14,12 @@ bdb7707ed9 docs(error-memory): log localhost referrer-block root cause + probe t
 7040bc8714 chore: session checkpoint [12:42]
 eb3a9e753f docs(ledger): carry SEC-001 FIXED status + Creative QA findings onto purged history
 e5b0bd36a0 fix: make cloud TTS durable and idempotent
-14cc1ff839 fix: harden PLP lifecycle and localhost auth
-e71ce8612d docs: reconcile shifted partial issue labels [skip ci]
-9530a618e0 fix(security): deduplicate instrument telemetry
 ```
 
 ## Working State
 ```
-clean working tree
+ M packages/firebase/src/functions/creative/gateway.ts
+?? packages/firebase/src/functions/creative/__tests__/mediaProvider.test.ts
 ```
 
 ## Decisions
