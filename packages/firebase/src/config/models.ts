@@ -31,7 +31,7 @@ export const FUNCTION_INTELLIGENCE_MODELS = {
         LITE: 'veo-3.1-lite-generate-001',
     },
     SPEECH: {
-        GENERATION: 'gemini-2.5-pro-tts',
+        GENERATION: 'gemini-3.1-flash-tts-preview',
     },
     AUDIO: {
         ANALYSIS: 'gemini-3-flash-preview', // Multimodal audio support

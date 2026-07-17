@@ -318,7 +318,7 @@ graph TB
         GEM_FLASH["gemini-3-flash<br/>(Fast Tasks)"]
         GEM_IMG["gemini-3.1-pro-image<br/>(Image Gen)"]
         VEO_VID["veo-3.1-generate<br/>(Video Gen)"]
-        GEM_TTS["gemini-2.5-pro-tts<br/>(Text-to-Speech)"]
+        GEM_TTS["gemini-3.1-flash-tts-preview<br/>(Text-to-Speech)"]
         FILE_SEARCH["Gemini File Search<br/>(RAG Memory)"]
     end
 

@@ -5,7 +5,13 @@
 export class AudioService {
     private static instance: AudioService;
     private isEnabled: boolean = true;
-    private queue: Array<{ data: string; mimeType: string; resolve: () => void; reject: (err: unknown) => void }> = [];
+    private queue: Array<{
+        source: string;
+        mimeType: string;
+        sourceType: 'base64' | 'url';
+        resolve: () => void;
+        reject: (err: unknown) => void;
+    }> = [];
     private isProcessing: boolean = false;
     private currentAudio: HTMLAudioElement | null = null;
 
@@ -40,7 +46,20 @@ export class AudioService {
         }
 
         return new Promise((resolve, reject) => {
-            this.queue.push({ data: base64Data, mimeType, resolve, reject });
+            this.queue.push({ source: base64Data, mimeType, sourceType: 'base64', resolve, reject });
+            this.processQueue();
+        });
+    }
+
+    /** Schedule a resolved Storage/download URL for playback without base64 expansion. */
+    async playUrl(url: string, mimeType: string = 'audio/wav'): Promise<void> {
+        if (!this.isEnabled) return;
+        if (!/^https?:\/\//i.test(url) && !url.startsWith('blob:')) {
+            throw new Error('Audio playback URL must use HTTPS or blob protocol');
+        }
+
+        return new Promise((resolve, reject) => {
+            this.queue.push({ source: url, mimeType, sourceType: 'url', resolve, reject });
             this.processQueue();
         });
     }
@@ -68,7 +87,10 @@ export class AudioService {
         }
 
         try {
-            const audio = new Audio(`data:${item.mimeType};base64,${item.data}`);
+            const source = item.sourceType === 'url'
+                ? item.source
+                : `data:${item.mimeType};base64,${item.source}`;
+            const audio = new Audio(source);
             this.currentAudio = audio;
 
             audio.onended = () => {

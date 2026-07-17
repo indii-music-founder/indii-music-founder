@@ -6,10 +6,17 @@ const mockGetVideosOperation = vi.fn();
 const mockDownload = vi.fn();
 const mockGetMetadata = vi.fn();
 const mockSet = vi.fn();
+const mockCreate = vi.fn();
+const mockAudioAssetSet = vi.fn();
 const mockUpdate = vi.fn();
+const mockJobGet = vi.fn();
 const mockSave = vi.fn();
 const mockDelete = vi.fn();
+const mockBatchSet = vi.fn();
+const mockBatchUpdate = vi.fn();
+const mockBatchCommit = vi.fn();
 const mockFinalizeReservation = vi.hoisted(() => vi.fn());
+const mockCheckOperationBudget = vi.hoisted(() => vi.fn());
 const mockCollectionNames: string[] = [];
 const mockOnCallOptions = vi.hoisted(() => [] as unknown[]);
 const mockOnCall = vi.hoisted(() => vi.fn((options, handler) => {
@@ -56,19 +63,29 @@ vi.mock('firebase-functions/v2/https', () => ({
 
 vi.mock('firebase-admin', () => ({
   firestore: vi.fn(() => ({
+    batch: vi.fn(() => ({
+      set: mockBatchSet,
+      update: mockBatchUpdate,
+      commit: mockBatchCommit,
+    })),
     collection: vi.fn((name: string) => {
       mockCollectionNames.push(name);
       return {
         doc: vi.fn((id?: string) => ({
           id: id || 'job-123',
-          set: mockSet,
+          path: `${name}/${id || 'job-123'}`,
+          collectionName: name,
+          set: name === 'audio_assets' ? mockAudioAssetSet : mockSet,
+          create: mockCreate,
           update: mockUpdate,
-          get: vi.fn(async () => name === 'costLedger'
+          get: vi.fn(async () => name === 'creative_jobs'
+            ? mockJobGet()
+            : name === 'costLedger'
             ? ({
                 exists: true,
                 data: () => ({
                   userId: 'user-123',
-                  type: id?.startsWith('image-') ? 'image' : 'video',
+                  type: id?.startsWith('image-') ? 'image' : id?.startsWith('audio-') ? 'audio' : 'video',
                   status: 'APPROVED',
                   estimatedCost: 0.8,
                 }),
@@ -101,9 +118,10 @@ vi.mock('../../config/secrets', () => ({
 
 vi.mock('../billing/enforceOperationCost', () => ({
   finalizeOperationReservation: mockFinalizeReservation,
+  checkOperationBudget: mockCheckOperationBudget,
 }));
 
-import { classifyMediaFinishFailure, generateImageV3, generateOmniRemixV3, generateVideoV3 } from './gateway';
+import { classifyMediaFinishFailure, generateAudioV3, generateImageV3, generateOmniRemixV3, generateVideoV3 } from './gateway';
 
 const callGenerateImage = generateImageV3 as unknown as (request: {
   auth?: { uid: string };
@@ -116,6 +134,11 @@ const callGenerateVideo = generateVideoV3 as unknown as (request: {
 }) => Promise<unknown>;
 
 const callGenerateOmniRemix = generateOmniRemixV3 as unknown as (request: {
+  auth?: { uid: string };
+  data: Record<string, unknown>;
+}) => Promise<unknown>;
+
+const callGenerateAudio = generateAudioV3 as unknown as (request: {
   auth?: { uid: string };
   data: Record<string, unknown>;
 }) => Promise<unknown>;
@@ -395,6 +418,145 @@ describe('classifyMediaFinishFailure', () => {
     expect(classifyMediaFinishFailure('image', 'NO_IMAGE').publicMessage).toContain('an image');
     expect(classifyMediaFinishFailure('video', 'OTHER').publicMessage).toContain('a video');
     expect(classifyMediaFinishFailure('audio', 'OTHER').publicMessage).toContain('audio from that prompt');
+  });
+});
+
+describe('creative gateway generateAudioV3', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockCollectionNames.length = 0;
+    mockSet.mockResolvedValue(undefined);
+    mockCreate.mockResolvedValue(undefined);
+    mockBatchCommit.mockResolvedValue(undefined);
+    mockDelete.mockResolvedValue(undefined);
+    mockCheckOperationBudget.mockResolvedValue({
+      allowed: true,
+      operationId: 'audio-reservation-1',
+      remainingBudget: 99,
+      dailyUsed: 0.02,
+      monthlyUsed: 0.02,
+    });
+    mockJobGet.mockResolvedValue({ exists: false, data: () => undefined });
+  });
+
+  it('generates playable TTS, durably records the owned library asset, and settles its server reservation', async () => {
+    const pcm = Buffer.alloc(48_000 * 2, 7); // 2 seconds of mono 24 kHz 16-bit PCM.
+    mockInteractionsCreate.mockResolvedValueOnce({
+      output_audio: {
+        data: pcm.toString('base64'),
+        mime_type: 'audio/pcm;rate=24000',
+      },
+    });
+
+    const result = await callGenerateAudio({
+      auth: { uid: 'user-123' },
+      data: {
+        prompt: 'Read this in a calm Detroit radio voice.',
+        voice: 'Kore',
+        requestId: '04df70bd-247f-4f9e-aef5-6ca9dc858b16',
+      },
+    }) as {
+      jobId: string;
+      libraryAssetId: string;
+      mimeType: string;
+      resultUri: string;
+    };
+
+    expect(mockInteractionsCreate).toHaveBeenCalledWith({
+      model: 'gemini-3.1-flash-tts-preview',
+      input: 'Read this in a calm Detroit radio voice.',
+      response_format: { type: 'audio' },
+      generation_config: { speech_config: [{ voice: 'Kore' }] },
+    });
+
+    const savedWav = mockSave.mock.calls[0]?.[0] as Buffer;
+    expect(savedWav.subarray(0, 4).toString('ascii')).toBe('RIFF');
+    expect(savedWav.subarray(8, 12).toString('ascii')).toBe('WAVE');
+    expect(result).toEqual(expect.objectContaining({
+      libraryAssetId: result.jobId,
+      mimeType: 'audio/wav',
+      resultUri: expect.stringContaining('gs://test-bucket/creative/user-123/audio/outputs/'),
+    }));
+
+    expect(mockBatchSet).toHaveBeenCalledWith(
+      expect.objectContaining({ collectionName: 'audio_assets' }),
+      expect.objectContaining({
+        id: result.jobId,
+        userId: 'user-123',
+        type: 'tts',
+        prompt: 'Read this in a calm Detroit radio voice.',
+        mimeType: 'audio/wav',
+        estimatedDuration: 2,
+        storageUrl: result.resultUri,
+        voicePreset: 'Kore',
+        fullText: 'Read this in a calm Detroit radio voice.',
+      }),
+    );
+    expect(mockBatchCommit).toHaveBeenCalledOnce();
+    expect(mockFinalizeReservation).toHaveBeenCalledWith(expect.objectContaining({
+      userId: 'user-123',
+      operationId: expect.any(String),
+      outcome: 'SETTLED',
+    }));
+  });
+
+  it('removes the uploaded object and voids the reservation when the atomic metadata commit fails', async () => {
+    mockInteractionsCreate.mockResolvedValueOnce({
+      output_audio: {
+        data: Buffer.alloc(48_000, 3).toString('base64'),
+        mime_type: 'audio/pcm;rate=24000',
+      },
+    });
+    mockBatchCommit.mockRejectedValueOnce(new Error('Firestore unavailable'));
+
+    await expect(callGenerateAudio({
+      auth: { uid: 'user-123' },
+      data: {
+        prompt: 'Read this once.',
+        voice: 'Kore',
+        requestId: 'd372061b-a954-4930-ac33-f82975a18335',
+      },
+    })).rejects.toMatchObject({ message: expect.stringContaining('Firestore unavailable') });
+
+    expect(mockDelete).toHaveBeenCalledOnce();
+    expect(mockFinalizeReservation).toHaveBeenCalledWith({
+      userId: 'user-123',
+      operationId: 'audio-reservation-1',
+      outcome: 'VOIDED',
+    });
+    expect(mockSet).toHaveBeenCalledWith(expect.objectContaining({ status: 'failed' }), { merge: true });
+  });
+
+  it('replays a completed request from durable Storage without generating or reserving again', async () => {
+    mockCreate.mockRejectedValueOnce(Object.assign(new Error('already exists'), { code: 6 }));
+    mockJobGet.mockResolvedValueOnce({
+      exists: true,
+      data: () => ({
+        userId: 'user-123',
+        status: 'completed',
+        resultUri: 'gs://test-bucket/creative/user-123/audio/outputs/existing.wav',
+        mimeType: 'audio/wav',
+      }),
+    });
+    mockGetMetadata.mockResolvedValueOnce([{ contentType: 'audio/wav', size: '48044' }]);
+
+    const result = await callGenerateAudio({
+      auth: { uid: 'user-123' },
+      data: {
+        prompt: 'Read this once.',
+        voice: 'Kore',
+        requestId: 'd372061b-a954-4930-ac33-f82975a18335',
+      },
+    });
+
+    expect(result).toEqual(expect.objectContaining({
+      resultUri: 'gs://test-bucket/creative/user-123/audio/outputs/existing.wav',
+      mimeType: 'audio/wav',
+    }));
+    expect(result).not.toHaveProperty('audioContent');
+    expect(mockGetMetadata).toHaveBeenCalledOnce();
+    expect(mockInteractionsCreate).not.toHaveBeenCalled();
+    expect(mockCheckOperationBudget).not.toHaveBeenCalled();
   });
 });
 

@@ -24,7 +24,7 @@ export const APPROVED_MODELS = {
     IMAGEN_FAST: 'imagen-4.0-fast-generate-001',
     AUDIO_PRO: 'gemini-3.1-pro-preview',
     AUDIO_FLASH: 'gemini-3-flash-preview',
-    AUDIO_TTS: 'gemini-2.5-pro-tts',
+    AUDIO_TTS: 'gemini-3.1-flash-tts-preview',
     VIDEO_PRO: 'veo-3.1-generate-001',
     VIDEO_FAST: 'veo-3.1-fast-generate-001',  // Fast mode — lower latency, lower cost
     VIDEO_LITE: 'veo-3.1-lite-generate-001',  // Lite mode — lowest cost, good quality
@@ -143,7 +143,7 @@ export const MODEL_PRICING = {
         perSecond: 0.05,     // 720p/1080p Video Only — lowest cost tier
         audioAddOn: 0.02     // Flat add-on for audio
     },
-    'gemini-2.5-pro-tts': { input: 0.60, output: 4.00 },
+    'gemini-3.1-flash-tts-preview': { input: 1.00, output: 20.00 },
     // Direct mode image models (token-based pricing, same tier as text)
     'gemini-3-pro-image': { input: 1.25, output: 10.00 },
     'gemini-3-pro-image-preview': { input: 1.25, output: 10.00 },

@@ -38,7 +38,7 @@
 - **Fast Tasks:** `gemini-3-flash-preview`
 - **Image Generation:** `gemini-3-pro-image-preview`
 - **Video Generation:** `veo-3.1-generate-preview`
-- **TTS:** `gemini-2.5-pro-tts`
+- **TTS:** `gemini-3.1-flash-tts-preview`
 
 ### 2.2 Banned Models (DO NOT USE)
 

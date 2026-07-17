@@ -556,7 +556,7 @@ Firebase API keys are **identifiers, not secrets** — security is enforced via 
 | AI SDK | `@google/genai` 1.30 + Genkit 1.26 | Unified Google Gen AI SDK |
 | AI Models | Gemini 3 Pro / Flash / Image | See [Model Policy](MODEL_POLICY.md) |
 | Video AI | Veo 3.1 | `veo-3.1-generate-preview` |
-| TTS | Gemini 2.5 Pro TTS | `gemini-2.5-pro-tts` |
+| TTS | Gemini 3.1 Flash TTS Preview | `gemini-3.1-flash-tts-preview` |
 | Embeddings | `text-embedding-004` | Vector similarity search |
 | Jobs | Inngest 3.46 | Reliable background task orchestration |
 | Payments | Stripe 20.1 | Subscription billing and payouts |
@@ -575,7 +575,7 @@ All AI interactions follow a strict model policy. Manual model string hardcoding
 | Fast Routing | `gemini-3-flash-preview` | MEDIUM |
 | Image Generation | `gemini-3-pro-image-preview` | — |
 | Video Generation | `veo-3.1-generate-preview` | — |
-| Text-to-Speech | `gemini-2.5-pro-tts` | — |
+| Text-to-Speech | `gemini-3.1-flash-tts-preview` | — |
 
 > **Banned Models:** `gemini-1.5-*`, `gemini-2.0-*`, `gemini-pro`, `gemini-pro-vision` — runtime validation enforces this.
 

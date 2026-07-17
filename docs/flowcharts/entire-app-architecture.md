@@ -64,7 +64,7 @@ graph TD
     subgraph AI ["Generative AI (Genkit 1.26 + Vertex AI)"]
         GTEXT["Gemini 3.1 Pro / Flash-Lite"]
         GIMG["Gemini 3 Pro Image (Nano Banana)"]
-        GTTS["Gemini 2.5 Pro TTS"]
+        GTTS["Gemini 3.1 Flash TTS Preview"]
         VEO["Veo 3.1 (Video Generation)"]
         RAG["Gemini File Search (Memory)"]
     end

@@ -27,7 +27,7 @@ import { logger } from '@/utils/logger';
  */
 
 /** ISO date the rates below were last reconciled. Bump this whenever rates change. */
-export const PRICING_LAST_VERIFIED = '2026-06-01';
+export const PRICING_LAST_VERIFIED = '2026-07-17';
 
 /** Token-priced models: separate input/output rates per 1,000,000 tokens. */
 interface TokenPricing {
@@ -54,11 +54,12 @@ interface VideoPricing {
     perSecond: number;
 }
 
-/** Text-to-speech models: priced per 1M characters of input text. */
+/** Text-to-speech models: priced for text input tokens and audio output tokens. */
 interface SpeechPricing {
     kind: 'tts';
-    /** USD per 1M input characters. */
-    perMillionChars: number;
+    inputPerMillion: number;
+    outputPerMillionAudioTokens: number;
+    audioTokensPerSecond: number;
 }
 
 export type ModelPricing = TokenPricing | ImagePricing | VideoPricing | SpeechPricing;
@@ -88,7 +89,12 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
     'gemini-2.5-flash-image': { kind: 'image', perImage: 0.039, inputPerMillion: 0.30 },
 
     // ── Speech (TTS) ──────────────────────────────────────────────────────────
-    'gemini-2.5-pro-tts': { kind: 'tts', perMillionChars: 16.0 },
+    'gemini-3.1-flash-tts-preview': {
+        kind: 'tts',
+        inputPerMillion: 1.0,
+        outputPerMillionAudioTokens: 20.0,
+        audioTokensPerSecond: 25,
+    },
 
     // ── Video (Veo) — GA IDs (ISSUE-867) ──────────────────────────────────────
     'veo-3.1-generate-001': { kind: 'video', perSecond: 0.40 },
@@ -123,7 +129,7 @@ export interface UsageUnits {
     images?: number;
     /** Seconds of video generated (video models). */
     seconds?: number;
-    /** Characters of input text (TTS models). */
+    /** Legacy input quantity retained for historical callers. */
     characters?: number;
 }
 
@@ -148,7 +154,7 @@ export function getModelPricing(model: string): ModelPricing {
  *  - token: (inputTokens · inputRate + outputTokens · outputRate) / 1M
  *  - image: images · perImage  (+ prompt-token cost if rate is defined)
  *  - video: seconds · perSecond
- *  - tts:   characters · perMillionChars / 1M
+ *  - tts:   input tokens + generated seconds converted to audio tokens
  *
  * Returns a non-negative number. Missing units are treated as 0 (e.g. a token
  * model called with only inputTokens still produces a valid estimate).
@@ -181,8 +187,11 @@ export function estimateCostUsd(model: string, units: UsageUnits): number {
             return seconds * pricing.perSecond;
         }
         case 'tts': {
-            const characters = Math.max(0, units.characters ?? 0);
-            return (characters / 1_000_000) * pricing.perMillionChars;
+            const seconds = Math.max(0, units.seconds ?? 0);
+            const inputCost = (inputTokens / 1_000_000) * pricing.inputPerMillion;
+            const outputAudioTokens = seconds * pricing.audioTokensPerSecond;
+            const outputCost = (outputAudioTokens / 1_000_000) * pricing.outputPerMillionAudioTokens;
+            return inputCost + outputCost;
         }
         default: {
             // Exhaustiveness guard: if a new pricing kind is added without a branch,

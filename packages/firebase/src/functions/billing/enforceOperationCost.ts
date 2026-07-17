@@ -3,7 +3,7 @@ import * as admin from 'firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 
-type OperationType = 'video' | 'image' | 'agent_stream';
+type OperationType = 'video' | 'image' | 'audio' | 'agent_stream';
 
 interface CostEnforcementRequest {
   operationType: OperationType;
@@ -102,7 +102,7 @@ export function serializeCostOperationHistoryItem(
   data: Record<string, unknown>,
 ): CostOperationHistoryItem {
   const operationId = typeof data.operationId === 'string' ? data.operationId : documentId;
-  const operationType = ['video', 'image', 'agent_stream'].includes(String(data.type))
+  const operationType = ['video', 'image', 'audio', 'agent_stream'].includes(String(data.type))
     ? data.type as OperationType
     : 'unknown';
   const status = ['APPROVED', 'SETTLED', 'VOIDED'].includes(String(data.status))
@@ -518,7 +518,18 @@ export async function expireStaleOperationReservations(
       continue;
     }
     try {
-      await finalize({ userId, operationId: operation.id, outcome: 'VOIDED' });
+      const metadata = data.metadata && typeof data.metadata === 'object'
+        ? data.metadata as Record<string, unknown>
+        : undefined;
+      const jobId = typeof metadata?.jobId === 'string' ? metadata.jobId : undefined;
+      let outcome: 'SETTLED' | 'VOIDED' = 'VOIDED';
+      if (jobId) {
+        const jobSnapshot = await db.doc(`creative_jobs/${jobId}`).get();
+        if (jobSnapshot.exists && jobSnapshot.data()?.status === 'completed') {
+          outcome = 'SETTLED';
+        }
+      }
+      await finalize({ userId, operationId: operation.id, outcome });
       expired += 1;
     } catch (error) {
       // Another gateway/scheduler may have finalized it first. The transactional

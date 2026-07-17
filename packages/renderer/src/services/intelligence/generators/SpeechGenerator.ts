@@ -2,8 +2,8 @@
  * SpeechGenerator — backend-only TTS generation.
  *
  * Browser-side Firebase AI is disabled. Speech routes through the secured
- * generateSpeech callable Cloud Function, which holds Google credentials on
- * the server and enforces Auth/App Check.
+ * generateAudioV3 callable Cloud Function, which holds Google credentials on
+ * the server and atomically persists every successful result.
  */
 
 import { httpsCallable } from 'firebase/functions';
@@ -12,10 +12,13 @@ import type { IntelligenceContext } from '../IntelligenceContext';
 import type { GenerateSpeechResponse } from '@/shared/types/ai.dto';
 import { AppErrorCode, AppException } from '@/shared/types/errors';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
+import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
 
 interface GenerateSpeechCallableResponse {
-    audioContent?: string;
     mimeType?: string;
+    jobId?: string;
+    libraryAssetId?: string;
+    resultUri?: string;
 }
 
 export async function generateSpeech(
@@ -27,33 +30,49 @@ export async function generateSpeech(
     if (!text || text.trim().length === 0) {
         throw new AppException(AppErrorCode.INVALID_ARGUMENT, 'Cannot generate speech for empty text');
     }
+    if (modelOverride && modelOverride !== INTELLIGENCE_MODELS.AUDIO.TTS) {
+        throw new AppException(
+            AppErrorCode.INVALID_ARGUMENT,
+            `Unsupported speech model override: ${modelOverride}`
+        );
+    }
 
     return ctx.mediaBreaker.execute(async () => {
         await ctx.ensureInitialized();
 
         const generateSpeechFn = httpsCallable<
-            { text: string; voice: string; model: string },
+            { prompt: string; voice: string; requestId: string },
             GenerateSpeechCallableResponse
-        >(functions, 'generateSpeech');
+        >(functions, 'generateAudioV3');
 
         try {
             const result = await generateSpeechFn({
-                text,
+                prompt: text,
                 voice,
-                model: modelOverride || INTELLIGENCE_MODELS.AUDIO.PRO,
+                requestId: crypto.randomUUID(),
             });
 
-            if (!result.data.audioContent) {
-                throw new AppException(AppErrorCode.INTERNAL_ERROR, 'Speech backend returned no audio content');
+            if (!result.data.resultUri || !result.data.libraryAssetId) {
+                throw new AppException(AppErrorCode.INTERNAL_ERROR, 'Speech backend returned no durable audio receipt');
+            }
+            const playbackUrl = await resolveStorageUrl(result.data.resultUri);
+            if (playbackUrl.startsWith('gs://')) {
+                throw new AppException(AppErrorCode.INTERNAL_ERROR, 'Stored speech could not be resolved for playback');
             }
 
             return {
                 audio: {
-                    inlineData: {
-                        mimeType: result.data.mimeType || 'audio/wav',
-                        data: result.data.audioContent,
-                    },
+                    mimeType: result.data.mimeType || 'audio/wav',
+                    playbackUrl,
                 },
+                ...(result.data.libraryAssetId && result.data.resultUri
+                    ? {
+                        persistedAsset: {
+                            id: result.data.libraryAssetId,
+                            storageUrl: result.data.resultUri,
+                        },
+                    }
+                    : {}),
             };
         } catch (error: unknown) {
             throw ctx.handleError(error);

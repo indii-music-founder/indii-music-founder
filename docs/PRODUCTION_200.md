@@ -124,7 +124,7 @@ This document contains **Part 3** and **Part 4** of the master production readin
 
 ### Next-Gen Beta Features & "The WOW Factor" 2.0 (191-200)
 
-- [x] **191. Agent Voice Interactions:** Integrate `gemini-2.5-pro-tts` and STT to allow users to verbally converse with their publicist while driving.
+- [x] **191. Agent Voice Interactions:** Integrate `gemini-3.1-flash-tts-preview` and STT to allow users to verbally converse with their publicist while driving.
 - [x] **192. Spatial/Dolby Atmos Preparation:** Interface for tagging stems with spatial coordinates for Atmos mix exportation. *(Wired: Spatial coordinate mapping + Firestore persistence in MusicTools.ts)*
 - [x] **193. Generative UI Morphing:** The app's UI dynamically shapes its layout based on if you are currently acting as an Artist vs. a Manager.
 - [x] **194. Vision API Workspace Sync:** Give indii Conductor vision access to a user's DAW (Ableton) screen via Electron to provide live production feedback.

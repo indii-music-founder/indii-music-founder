@@ -478,9 +478,9 @@ export class BaseAgent implements SpecializedAgent {
 
                 const VOICE_MAP: Record<string, string> = {
                     'kyra': 'Kore',
-                    'liora': 'Vega',
+                    'liora': 'Aoede',
                     'mistral': 'Charon',
-                    'seraph': 'Capella',
+                    'seraph': 'Leda',
                     'vance': 'Puck'
                 };
 
@@ -488,7 +488,7 @@ export class BaseAgent implements SpecializedAgent {
 
                 try {
                     const response = await AutonomousIntelligence.generateSpeech(text, selectedVoice);
-                    await audioService.play(response.audio.inlineData.data, response.audio.inlineData.mimeType);
+                    await audioService.playUrl(response.audio.playbackUrl, response.audio.mimeType);
                     return {
                         success: true,
                         message: 'Speech generated and played'

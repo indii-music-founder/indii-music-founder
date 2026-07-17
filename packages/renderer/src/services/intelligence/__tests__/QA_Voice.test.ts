@@ -2,7 +2,16 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { FirebaseIntelligenceService } from '../FirebaseIntelligenceService';
 
 // Hoist mocks
-const mockGenerateSpeech = vi.fn();
+const { mockGenerateSpeech, mockHttpsCallable } = vi.hoisted(() => {
+    const callable = vi.fn();
+    return {
+        mockGenerateSpeech: callable,
+        mockHttpsCallable: vi.fn(() => callable),
+    };
+});
+const { mockResolveStorageUrl } = vi.hoisted(() => ({
+    mockResolveStorageUrl: vi.fn(async () => 'https://storage.example/audio.wav'),
+}));
 
 // Mock Firebase Service
 vi.mock('@/services/firebase', () => ({
@@ -20,7 +29,11 @@ vi.mock('@/services/firebase', () => ({
 }));
 
 vi.mock('firebase/functions', () => ({
-    httpsCallable: vi.fn(() => mockGenerateSpeech)
+    httpsCallable: mockHttpsCallable
+}));
+
+vi.mock('@/services/storage/resolveStorageUrl', () => ({
+    resolveStorageUrl: mockResolveStorageUrl,
 }));
 
 vi.mock('firebase/remote-config', () => ({
@@ -56,8 +69,10 @@ describe('Voice Interface QA', () => {
         vi.clearAllMocks();
         mockGenerateSpeech.mockResolvedValue({
             data: {
-                audioContent: 'base64audio',
-                mimeType: 'audio/mp3'
+                mimeType: 'audio/wav',
+                jobId: 'audio-job-1',
+                libraryAssetId: 'audio-job-1',
+                resultUri: 'gs://test-bucket/creative/user-123/audio/outputs/audio.wav'
             }
         });
         service = new FirebaseIntelligenceService();
@@ -71,10 +86,12 @@ describe('Voice Interface QA', () => {
     it('should sanitize special characters', async () => {
         const result = await service.generateSpeech('Hello 🌍! @#$%^&*()', 'Kore');
         expect(result).toBeDefined();
-        expect(result.audio.inlineData.data).toBe('base64audio');
+        expect(result.audio.playbackUrl).toBe('https://storage.example/audio.wav');
+        expect(mockHttpsCallable).toHaveBeenCalledWith(expect.anything(), 'generateAudioV3');
         expect(mockGenerateSpeech).toHaveBeenCalledWith(expect.objectContaining({
-            text: 'Hello 🌍! @#$%^&*()',
-            voice: 'Kore'
+            prompt: 'Hello 🌍! @#$%^&*()',
+            voice: 'Kore',
+            requestId: expect.stringMatching(/^[0-9a-f-]{36}$/i)
         }));
     });
 

@@ -8,7 +8,7 @@ import { validateAppCheckV1 } from "../middleware/appCheck";
 export const GenerateSpeechRequestSchema = z.object({
     text: z.string().min(1, "Text is required"),
     voice: z.string().optional().default("en-US-Journey-F"),
-    model: z.string().optional().default("gemini-2.5-pro-tts"),
+    model: z.string().optional().default(FUNCTION_INTELLIGENCE_MODELS.SPEECH.GENERATION),
 });
 
 export const AnalyzeAudioRequestSchema = z.object({

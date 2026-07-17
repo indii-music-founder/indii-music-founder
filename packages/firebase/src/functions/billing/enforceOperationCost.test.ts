@@ -85,6 +85,14 @@ describe('ISSUE-1006 operation cost receipts and expiry', () => {
     }));
   });
 
+  it('preserves audio as a first-class operation type in owner receipts', () => {
+    expect(serializeCostOperationHistoryItem('audio-op-1', {
+      type: 'audio',
+      status: 'SETTLED',
+      estimatedCost: 0.02,
+    }).operationType).toBe('audio');
+  });
+
   it('returns only the owner query as a stable cursor-paginated page', async () => {
     const firstTimestamp = Date.parse('2026-07-16T20:00:00.000Z');
     const secondTimestamp = Date.parse('2026-07-16T19:00:00.000Z');
@@ -138,6 +146,34 @@ describe('ISSUE-1006 operation cost receipts and expiry', () => {
       userId: 'user-1',
       operationId: 'op-raced',
       outcome: 'VOIDED',
+    });
+  });
+
+  it('settles rather than refunds a stale hold when its durable creative job completed', async () => {
+    const query = createQuery([
+      {
+        id: 'audio-op-1',
+        data: () => ({ userId: 'user-1', metadata: { jobId: 'audio-job-1' } }),
+      },
+    ]);
+    const db = {
+      collection: vi.fn(() => query),
+      doc: vi.fn(() => ({
+        get: vi.fn(async () => ({ exists: true, data: () => ({ status: 'completed' }) })),
+      })),
+    };
+    mocks.firestore.mockReturnValue(db);
+    const finalize = vi.fn().mockResolvedValue(undefined);
+
+    await expect(expireStaleOperationReservations(
+      new Date('2026-07-16T20:30:00.000Z'),
+      finalize,
+    )).resolves.toBe(1);
+
+    expect(finalize).toHaveBeenCalledWith({
+      userId: 'user-1',
+      operationId: 'audio-op-1',
+      outcome: 'SETTLED',
     });
   });
 
