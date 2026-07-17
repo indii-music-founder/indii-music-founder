@@ -76,6 +76,7 @@ describe('MasterAudioService', () => {
         );
         expect(result.downloadUrl).toBe('https://storage.example/master.wav');
         expect(result.masterFingerprint).toBe('SONIC-abc');
+        expect(result.generation).toBe('987654321');
         expect(result.mimeType).toBe('audio/wav');
         expect(result.sizeBytes).toBe(file.size);
         expect(result.audioProperties).toEqual({
