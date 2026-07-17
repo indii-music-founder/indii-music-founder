@@ -1,27 +1,24 @@
 # Handoff State
-**Updated:** 2026-07-16 17:23 EDT
+**Updated:** 2026-07-16 20:23 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+f821e2d47 docs: resolve ISSUE-999 and fix label in MobileRemote
+17f766c7e fix(creative): close generation receipt gaps
+90aaabc85 test(e2e): fix test mocks for CostControlService
+470c9b693 test(creative): finish residual generation coverage
+4c56ec286 chore: session checkpoint [17:23]
 93cfa5083 fix(creative): complete image generation settings contract
 34bd6c921 fix(api): replace strict enforceAppCheck with manual middleware validation for 22 endpoints
 fbeebd640 fix(remote): disable App Check enforcement for Studio Executor Cloud Functions
 131b2fcce chore(repo): stage pending changes prior to ci-validate
 7dfd8b20a chore(creative): cleanup obsolete DaisyChainControls, stream keys, and update agent schemas
-c44ed3c93 test(repo): fix stripe webhooks, google auth, and agent tool accessibility tests
-6e3a67dca chore: session checkpoint [10:10]
-923053808 chore: session checkpoint [09:56]
-a45603c72 chore: session checkpoint [09:43]
-774fc3059 chore(repo): consolidate pending changes
 ```
 
 ## Working State
 ```
- M docs/flowcharts/IA-consolidation-macro.md
- M docs/flowcharts/zero-open-issues-macro.md
- M packages/renderer/src/modules/creative/components/__tests__/DirectGenerationTab.test.tsx
- M packages/renderer/src/services/video/__tests__/VideoGenerationService.test.ts
+clean working tree
 ```
 
 ## Decisions
