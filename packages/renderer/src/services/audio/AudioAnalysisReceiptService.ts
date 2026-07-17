@@ -96,24 +96,32 @@ export class AudioAnalysisReceiptService {
     ): Promise<AudioAnalysisReceipt> {
         return new Promise((resolve, reject) => {
             let unsubscribe: Unsubscribe | undefined;
-            const timeout = window.setTimeout(() => {
+            let settled = false;
+            const finish = (callback: () => void) => {
+                if (settled) return;
+                settled = true;
+                window.clearTimeout(timeout);
                 unsubscribe?.();
-                reject(new Error('Canonical-master analysis is still processing. You can safely return and retry; the server job remains durable.'));
+                callback();
+            };
+            const timeout = window.setTimeout(() => {
+                finish(() => reject(new Error('Canonical-master analysis is still processing. You can safely return and retry; the server job remains durable.')));
             }, timeoutMs);
             this.watch(master, userId, receipt => {
                 if (receipt.status === 'processing') return;
-                window.clearTimeout(timeout);
-                unsubscribe?.();
                 if (receipt.status === 'failed') {
-                    reject(new Error(`Canonical-master analysis failed: ${receipt.failureMessage || receipt.failureType || 'unknown worker failure'}`));
+                    finish(() => reject(new Error(`Canonical-master analysis failed: ${receipt.failureMessage || receipt.failureType || 'unknown worker failure'}`)));
                     return;
                 }
-                resolve(receipt);
+                finish(() => resolve(receipt));
             }, error => {
-                window.clearTimeout(timeout);
-                unsubscribe?.();
-                reject(error);
-            }).then(listener => { unsubscribe = listener; }).catch(reject);
+                finish(() => reject(error));
+            }).then(listener => {
+                unsubscribe = listener;
+                // `onSnapshot` may synchronously invoke its callback in a test
+                // or cached/offline state before this Promise resolves.
+                if (settled) unsubscribe();
+            }).catch(error => finish(() => reject(error)));
         });
     }
 
