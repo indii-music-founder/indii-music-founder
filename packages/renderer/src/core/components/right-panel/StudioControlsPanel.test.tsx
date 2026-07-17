@@ -1,9 +1,18 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import React from 'react';
 import StudioControlsPanel from './StudioControlsPanel';
 import { useStore } from '../../store';
 import { useToast } from '@/core/context/ToastContext';
+
+const billingMocks = vi.hoisted(() => ({
+    getStatus: vi.fn(),
+    getHistory: vi.fn(),
+}));
+
+vi.mock('@/services/billing/CostControlService', () => ({
+    CostControlService: billingMocks,
+}));
 
 // Mock store
 vi.mock('../../store', () => {
@@ -145,6 +154,22 @@ describe('StudioControlsPanel', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        billingMocks.getStatus.mockResolvedValue({
+            dailyUsed: 0,
+            monthlyUsed: 0,
+            dailyRemaining: 5,
+            monthlyRemaining: 50,
+            tier: 'free',
+            pendingHoldCost: 0,
+            pendingHoldCount: 0,
+            settledCost: 0,
+            voidedCost: 0,
+        });
+        billingMocks.getHistory.mockResolvedValue({
+            operations: [],
+            nextCursor: null,
+            hasMore: false,
+        });
         (useStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue(defaultState);
         (useStore as any).getState = () => defaultState;
         (useToast as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
@@ -287,6 +312,79 @@ describe('StudioControlsPanel', () => {
         fireEvent.change(resolutionSelect!, { target: { value: 'high' } });
 
         expect(mockSetStudioControls).toHaveBeenCalledWith({ mediaResolution: 'high' });
+    });
+
+    it('ISSUE-1006: shows actionable operation receipts and loads the next history page', async () => {
+        (useStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+            ...defaultState,
+            user: { uid: 'user-1' },
+        });
+        billingMocks.getStatus.mockResolvedValueOnce({
+            dailyUsed: 0.12,
+            monthlyUsed: 0.12,
+            dailyRemaining: 4.88,
+            monthlyRemaining: 49.88,
+            tier: 'free',
+            pendingHoldCost: 0.12,
+            pendingHoldCount: 1,
+            settledCost: 0,
+            voidedCost: 0.08,
+        });
+        billingMocks.getHistory.mockResolvedValueOnce({
+            operations: [
+                {
+                    operationId: 'op-pending',
+                    operationType: 'image',
+                    status: 'APPROVED',
+                    estimatedCost: 0.12,
+                    createdAt: '2026-07-16T20:00:00.000Z',
+                    finalizedAt: null,
+                    autoReleaseAt: '2026-07-16T20:15:00.000Z',
+                    resolution: 'pending_auto_release',
+                },
+                {
+                    operationId: 'op-refunded',
+                    operationType: 'image',
+                    status: 'VOIDED',
+                    estimatedCost: 0.08,
+                    createdAt: '2026-07-16T19:00:00.000Z',
+                    finalizedAt: '2026-07-16T19:01:00.000Z',
+                    autoReleaseAt: null,
+                    resolution: 'refunded',
+                },
+            ],
+            nextCursor: { timestampMs: 1_784_236_800_000, operationId: 'op-refunded' },
+            hasMore: true,
+        });
+
+        render(<StudioControlsPanel toggleRightPanel={mockToggleRightPanel} />);
+        await waitFor(() => expect(billingMocks.getHistory).toHaveBeenCalledWith('user-1'));
+
+        fireEvent.click(screen.getByText('Model & Constraints').closest('button')!);
+        expect(await screen.findByText(/Pending hold — auto-releases/)).toBeInTheDocument();
+        expect(screen.getByText('Refunded — safe to retry.')).toBeInTheDocument();
+
+        billingMocks.getHistory.mockResolvedValueOnce({
+            operations: [{
+                operationId: 'op-settled',
+                operationType: 'video',
+                status: 'SETTLED',
+                estimatedCost: 0.5,
+                createdAt: '2026-07-16T18:00:00.000Z',
+                finalizedAt: '2026-07-16T18:02:00.000Z',
+                autoReleaseAt: null,
+                resolution: 'settled',
+            }],
+            nextCursor: null,
+            hasMore: false,
+        });
+        fireEvent.click(screen.getByRole('button', { name: 'Load more' }));
+
+        expect(await screen.findByText('Settled — provider output billed.')).toBeInTheDocument();
+        expect(billingMocks.getHistory).toHaveBeenLastCalledWith(
+            'user-1',
+            { timestampMs: 1_784_236_800_000, operationId: 'op-refunded' },
+        );
     });
 
     it('toggles Google Search grounding', () => {

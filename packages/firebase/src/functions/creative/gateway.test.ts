@@ -432,6 +432,44 @@ describe('creative gateway generateVideoV3', () => {
     expect(mockSet).toHaveBeenCalledTimes(2);
   });
 
+  it('ISSUE-1003: persists the exact role-labelled input manifest to both video job documents', async () => {
+    const inputManifest = [
+      { role: 'first_frame', uri: 'gs://test-bucket/frames/a.png' },
+      { role: 'last_frame', uri: 'gs://test-bucket/frames/d.png' },
+      { role: 'ingredient', uri: 'gs://test-bucket/refs/b.png' },
+      { role: 'character_reference', uri: 'gs://test-bucket/refs/c.png' },
+    ];
+
+    await callGenerateVideo({
+      auth: { uid: 'user-123' },
+      data: {
+        prompt: 'Keep the opening frame while preserving the character reference',
+        aspectRatio: '16:9',
+        model: 'fast',
+        resolution: '1080p',
+        durationSeconds: 6,
+        firstFrameUri: inputManifest[0].uri,
+        lastFrameUri: inputManifest[1].uri,
+        referenceUris: [inputManifest[2].uri, inputManifest[3].uri],
+        inputManifest,
+        costReservationId: 'op-123',
+      },
+    });
+
+    expect(mockSet).toHaveBeenCalledTimes(2);
+    for (const [jobRecord] of mockSet.mock.calls) {
+      expect(jobRecord).toEqual(expect.objectContaining({
+        firstFrameUri: 'gs://test-bucket/frames/a.png',
+        lastFrameUri: 'gs://test-bucket/frames/d.png',
+        referenceUris: [
+          'gs://test-bucket/refs/b.png',
+          'gs://test-bucket/refs/c.png',
+        ],
+        payload: expect.objectContaining({ inputManifest }),
+      }));
+    }
+  });
+
   /**
    * ISSUE-870: GenerateVideoSchema's aspectRatio enum includes 1:1/3:4/4:3,
    * but Veo only actually produces 16:9 or 9:16 — normalizeVideoAspectRatio()

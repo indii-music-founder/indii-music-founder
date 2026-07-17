@@ -85,6 +85,10 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
     const [expandedSection, setExpandedSection] = useState<string>('mixer');
     const [prevViewMode, setPrevViewMode] = useState(viewMode);
     const [budgetStatus, setBudgetStatus] = useState<Awaited<ReturnType<typeof CostControlService.getStatus>> | null>(null);
+    const [costHistory, setCostHistory] = useState<Awaited<ReturnType<typeof CostControlService.getHistory>>['operations']>([]);
+    const [costHistoryCursor, setCostHistoryCursor] = useState<Awaited<ReturnType<typeof CostControlService.getHistory>>['nextCursor']>(null);
+    const [costHistoryHasMore, setCostHistoryHasMore] = useState(false);
+    const [costHistoryLoading, setCostHistoryLoading] = useState(false);
 
     const persistVideoFrame = async (content: string, label: string) => {
         const userId = user?.uid;
@@ -122,14 +126,66 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
     useEffect(() => {
         if (!user?.uid) {
             setBudgetStatus(null);
+            setCostHistory([]);
+            setCostHistoryCursor(null);
+            setCostHistoryHasMore(false);
             return;
         }
         let active = true;
-        CostControlService.getStatus(user.uid)
-            .then(status => { if (active) setBudgetStatus(status); })
-            .catch(() => { if (active) setBudgetStatus(null); });
+        setCostHistoryLoading(true);
+        Promise.all([
+            CostControlService.getStatus(user.uid),
+            CostControlService.getHistory(user.uid),
+        ]).then(([status, history]) => {
+            if (!active) return;
+            setBudgetStatus(status);
+            setCostHistory(history.operations);
+            setCostHistoryCursor(history.nextCursor);
+            setCostHistoryHasMore(history.hasMore);
+        }).catch(() => {
+            if (!active) return;
+            setBudgetStatus(null);
+            setCostHistory([]);
+            setCostHistoryCursor(null);
+            setCostHistoryHasMore(false);
+        }).finally(() => {
+            if (active) setCostHistoryLoading(false);
+        });
         return () => { active = false; };
     }, [user?.uid]);
+
+    const refreshCostHistory = async () => {
+        if (!user?.uid || costHistoryLoading) return;
+        setCostHistoryLoading(true);
+        try {
+            const [status, history] = await Promise.all([
+                CostControlService.getStatus(user.uid),
+                CostControlService.getHistory(user.uid),
+            ]);
+            setBudgetStatus(status);
+            setCostHistory(history.operations);
+            setCostHistoryCursor(history.nextCursor);
+            setCostHistoryHasMore(history.hasMore);
+        } finally {
+            setCostHistoryLoading(false);
+        }
+    };
+
+    const loadMoreCostHistory = async () => {
+        if (!user?.uid || !costHistoryCursor || costHistoryLoading) return;
+        setCostHistoryLoading(true);
+        try {
+            const history = await CostControlService.getHistory(user.uid, costHistoryCursor);
+            setCostHistory(current => [
+                ...current,
+                ...history.operations.filter(next => !current.some(existing => existing.operationId === next.operationId)),
+            ]);
+            setCostHistoryCursor(history.nextCursor);
+            setCostHistoryHasMore(history.hasMore);
+        } finally {
+            setCostHistoryLoading(false);
+        }
+    };
 
     if (!whiskState) return null;
 
@@ -625,6 +681,57 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                                             ${budgetStatus.pendingHoldCost.toFixed(2)} in {budgetStatus.pendingHoldCount} pending hold{budgetStatus.pendingHoldCount === 1 ? '' : 's'} — released automatically if generation fails.
                                         </p>
                                     )}
+                                    <div className="mt-2 border-t border-white/10 pt-2" data-testid="cost-operation-history">
+                                        <div className="flex items-center justify-between">
+                                            <span className="font-semibold uppercase tracking-wider text-gray-400">Recent operations</span>
+                                            <button
+                                                type="button"
+                                                onClick={refreshCostHistory}
+                                                disabled={costHistoryLoading}
+                                                className="text-blue-300 disabled:text-gray-600"
+                                            >
+                                                {costHistoryLoading ? 'Loading…' : 'Refresh'}
+                                            </button>
+                                        </div>
+                                        {costHistory.length === 0 && !costHistoryLoading && (
+                                            <p className="mt-1 text-gray-600">No metered creative operations yet.</p>
+                                        )}
+                                        <div className="mt-1 space-y-1.5">
+                                            {costHistory.map(operation => (
+                                                <div key={operation.operationId} className="rounded border border-white/5 bg-black/20 px-2 py-1.5">
+                                                    <div className="flex justify-between gap-2 text-gray-300">
+                                                        <span className="uppercase">{operation.operationType.replace('_', ' ')}</span>
+                                                        <span className="font-mono">${operation.estimatedCost.toFixed(2)}</span>
+                                                    </div>
+                                                    <p className={operation.resolution === 'pending_auto_release'
+                                                        ? 'text-amber-300'
+                                                        : operation.resolution === 'refunded'
+                                                            ? 'text-cyan-300'
+                                                            : operation.resolution === 'settled'
+                                                                ? 'text-green-300'
+                                                                : 'text-gray-500'}>
+                                                        {operation.resolution === 'pending_auto_release' && (
+                                                            <>Pending hold — auto-releases {operation.autoReleaseAt ? new Date(operation.autoReleaseAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : 'soon'}.</>
+                                                        )}
+                                                        {operation.resolution === 'refunded' && <>Refunded — safe to retry.</>}
+                                                        {operation.resolution === 'settled' && <>Settled — provider output billed.</>}
+                                                        {operation.resolution === 'unknown' && <>Unknown receipt state — refresh or contact support.</>}
+                                                    </p>
+                                                    <p className="truncate font-mono text-[9px] text-gray-600" title={operation.operationId}>{operation.operationId}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        {costHistoryHasMore && (
+                                            <button
+                                                type="button"
+                                                onClick={loadMoreCostHistory}
+                                                disabled={costHistoryLoading || !costHistoryCursor}
+                                                className="mt-2 w-full rounded border border-white/10 py-1 text-gray-300 disabled:text-gray-600"
+                                            >
+                                                Load more
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
                             )}
                             {/* ── Model Tier ─────────────────────────────── */}
