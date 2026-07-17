@@ -19,7 +19,20 @@ vi.mock('@/core/store', () => {
                     setViewMode: vi.fn(),
                     setVideoInputs: vi.fn(),
                     setStudioControls: vi.fn(),
-                    studioControls: {},
+                    studioControls: {
+                        omniReferenceVideo: null,
+                        aspectRatio: '16:9',
+                        duration: 8,
+                        posePreservation: 0.5,
+                        beatPulse: 0.5,
+                        characterXRay: false,
+                        activePosePreset: 'guitar_solo',
+                        typographyStyle: 'cyberpunk',
+                        visualizerColor: '#10B981',
+                    },
+                    pendingStageHandoff: { image: null, veo: null, omni: null, editor: null },
+                    consumeStageHandoff: vi.fn(),
+                    sendToStage: vi.fn(),
                     setGenerationMode: vi.fn(),
                     handoffPayload: null,
                     setHandoffPayload: vi.fn(),
@@ -73,7 +86,7 @@ describe('QA Runtime Verification (NATIVE BYPASS)', () => {
         render(<OmniWorkflow />);
         
         // Verify it didn't crash and the key UI buttons/headers are present
-        expect(screen.getByRole('button', { name: /Synthesize Omni Remix/i })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Generate Omni Video/i })).toBeInTheDocument();
     });
 
 });

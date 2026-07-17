@@ -1,26 +1,26 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    Video, Film, Music, Shield, Sliders, Play,
-    Sparkles, RefreshCw, Upload, Languages, Eye,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    Sparkle, Info, Download, CheckCircle, Volume2, Plus, Trash2, X
+    Video, Film, Shield, Sliders, Play,
+    Sparkles, RefreshCw, Upload, Image, Eye,
+    Sparkle, Info, Download, Plus, Trash2, X
 } from 'lucide-react';
-import { useStore } from '@/core/store';
+import { useStore, type StoreState } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/core/context/ToastContext';
-import { Logger } from '@/core/logger/Logger';
 import { CostControlService } from '@/services/billing/CostControlService';
 import { httpsCallable } from 'firebase/functions';
 import { getDownloadURL, ref } from 'firebase/storage';
 import { auth, functions, storage } from '@/services/firebase';
 import { CreativeStorageService } from '@/services/creative/CreativeStorageService';
-import { StageHandoffPayload } from '@/types/handoff';
+import { materializeVideoFrameForHandoff } from '@/services/creative/CreativeMediaHandoffService';
+import { creativeAssetPayloadToHistoryItem, readCreativeAssetDrag } from '@/services/creative/CreativeAssetDragService';
 import { resolveStorageUri } from '@/services/storage/storageUri';
 import { normalizeVideoAspectRatio } from '@/services/video/videoAspectRatio';
-import { VideoGeneration } from '@/services/video/VideoGenerationService';
 import { GenerateOmniRemixSchema } from '@indii/shared';
+import { downloadAsset } from '@/utils/download';
+import { z } from 'zod';
 
 interface StoryboardFrame {
     id: string;
@@ -40,6 +40,23 @@ interface ReferenceMedia {
     uri: string;
     label: string;
 }
+
+type OmniTask = 'text_to_video' | 'image_to_video' | 'reference_to_video' | 'edit';
+
+const OmniGatewayResponseSchema = z.object({
+    jobId: z.string().trim().min(1),
+    resultUri: z.string().startsWith('gs://'),
+    interactionId: z.string().trim().min(1),
+    task: z.enum(['text_to_video', 'image_to_video', 'reference_to_video', 'edit']),
+    synthIdApplied: z.literal(true),
+});
+
+const OMNI_TASKS: Array<{ value: OmniTask; label: string; description: string }> = [
+    { value: 'text_to_video', label: 'Text to video', description: 'Generate from the prompt and storyboard.' },
+    { value: 'image_to_video', label: 'Image to video', description: 'Animate the first image; use any others as references.' },
+    { value: 'reference_to_video', label: 'Reference to video', description: 'Guide subjects and style with up to eight images.' },
+    { value: 'edit', label: 'Edit video', description: 'Edit an uploaded clip or continue the last Omni result.' },
+];
 
 interface Bone {
     from: string;
@@ -232,7 +249,7 @@ const POSE_COORDINATES: Record<string, { joints: Joint[], bones: Bone[] }> = {
 export default function OmniWorkflow() {
     const toast = useToast();
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const audioInputRef = useRef<HTMLInputElement>(null);
+    const imageInputRef = useRef<HTMLInputElement>(null);
 
     // Global Store State Connection
     const {
@@ -243,8 +260,7 @@ export default function OmniWorkflow() {
         pendingStageHandoff,
         consumeStageHandoff,
         sendToStage
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } = useStore(useShallow((state: any) => ({
+    } = useStore(useShallow((state: StoreState) => ({
         studioControls: state.studioControls,
         setStudioControls: state.setStudioControls,
         addToHistory: state.addToHistory,
@@ -257,19 +273,24 @@ export default function OmniWorkflow() {
     // Local Interactive States
     const [isRemixing, setIsRemixing] = useState(false);
     const [remixPrompt, setRemixPrompt] = useState('Remix performance into a cyberpunk neon concert stage, dramatic volumetric fog');
+    // Launch from the only input required by Omni: a text prompt. Users can
+    // opt into image/reference/video editing modes when they add that media.
+    const [omniTask, setOmniTask] = useState<OmniTask>('text_to_video');
     const [refVideoFile, setRefVideoFile] = useState<File | null>(null);
     const [referenceVideoUri, setReferenceVideoUri] = useState<string | null>(null);
-    const [audioDubFile, setAudioDubFile] = useState<File | null>(null);
-    const [audioDubUri, setAudioDubUri] = useState<string | null>(null);
     const [referenceMedia, setReferenceMedia] = useState<ReferenceMedia[]>([]);
     const [activeFrameIndex, setActiveFrameIndex] = useState(0);
     const [outputVideoUrl, setOutputVideoUrl] = useState<string | null>(null);
     const [outputStorageUri, setOutputStorageUri] = useState<string | undefined>();
     const [sourceJobId, setSourceJobId] = useState<string | null>(null);
+    const [previousInteractionId, setPreviousInteractionId] = useState<string | null>(null);
+    const [previousJobId, setPreviousJobId] = useState<string | null>(null);
+    const [synthIdApplied, setSynthIdApplied] = useState(false);
+    const [routingOutputTo, setRoutingOutputTo] = useState<'veo' | 'editor' | 'image' | null>(null);
 
     // Storyboard frame modal/creator state
     const [isAddingFrame, setIsAddingFrame] = useState(false);
-    const [newFrameTimestamp, setNewFrameTimestamp] = useState<number>(10.0);
+    const [newFrameTimestamp, setNewFrameTimestamp] = useState<number>(3);
     const [newFramePrompt, setNewFramePrompt] = useState<string>('');
 
     // Flow Storyboard frames (dynamic state)
@@ -285,32 +306,46 @@ export default function OmniWorkflow() {
                 setReferenceMedia([]);
                 setReferenceVideoUri(handoff.item.storageUri || resolveStorageUri(handoff.item.url) || '');
                 setSourceJobId(handoff.item.id);
+                setPreviousInteractionId(null);
+                setPreviousJobId(null);
+                setOmniTask('edit');
                 setStudioControls({ omniReferenceVideo: handoff.item.url });
                 toast.success(`Loaded performance from ${handoff.originStage} stage — ready to remix!`);
-            } else if (handoff.role === 'reference-image' && handoff.item.type === 'image') {
+            } else if ((handoff.role === 'first-frame' || handoff.role === 'reference-image') && handoff.item.type === 'image') {
                 const referenceUri = handoff.item.storageUri || resolveStorageUri(handoff.item.url);
                 if (referenceUri) {
                     setReferenceMedia(prev => {
                         const next = prev.filter(entry => entry.uri !== referenceUri);
-                        return [...next, {
+                        const entry = {
                             uri: referenceUri,
                             label: handoff.item.prompt || `${handoff.originStage} reference`,
-                        }].slice(-8);
+                        };
+                        return handoff.role === 'first-frame'
+                            ? [entry, ...next].slice(0, 8)
+                            : [...next, entry].slice(-8);
                     });
-                    toast.info(`Using image from ${handoff.originStage} as visual reference.`);
+                    if (handoff.role === 'first-frame') {
+                        setRefVideoFile(null);
+                        setReferenceVideoUri(null);
+                        setPreviousInteractionId(null);
+                        setPreviousJobId(null);
+                        setStudioControls({ omniReferenceVideo: null });
+                        setOmniTask('image_to_video');
+                        toast.info(`Using image from ${handoff.originStage} as Omni's starting frame.`);
+                    } else {
+                        if (!referenceVideoUri) setOmniTask('reference_to_video');
+                        toast.info(`Using image from ${handoff.originStage} as visual reference.`);
+                    }
                 } else {
                     toast.info('Reference images are unavailable for this asset.');
                 }
             } else if (handoff.role === 'reference-audio' && handoff.item.type === 'music') {
-                // Optional audio reference for sync
-                setAudioDubUri(handoff.item.storageUri || resolveStorageUri(handoff.item.url) || '');
-                setAudioDubFile(null);
-                toast.info(`Using audio track for remix sync.`);
+                toast.info('Omni Flash does not accept uploaded audio references yet. Describe the soundtrack in the prompt.');
             }
             // Consume the handoff (clear pending)
             consumeStageHandoff('omni');
         }
-    }, [pendingStageHandoff?.omni, consumeStageHandoff, setStudioControls, toast]);
+    }, [pendingStageHandoff?.omni, consumeStageHandoff, referenceVideoUri, setStudioControls, toast]);
 
     const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -324,6 +359,9 @@ export default function OmniWorkflow() {
                 const uploadedUri = await CreativeStorageService.uploadReferenceMedia(userId, file, 'video');
                 setReferenceVideoUri(uploadedUri);
                 setSourceJobId(null);
+                setPreviousInteractionId(null);
+                setPreviousJobId(null);
+                setOmniTask('edit');
                 setStudioControls({ omniReferenceVideo: previewUrl });
                 toast.success(`Loaded reference performance: ${file.name}`);
             } catch (error) {
@@ -334,25 +372,108 @@ export default function OmniWorkflow() {
         }
     };
 
-    const handleAudioUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            try {
-                const userId = auth.currentUser?.uid;
-                if (!userId) throw new Error('User must be authenticated to upload reference audio.');
-                const uploadedUri = await CreativeStorageService.uploadReferenceMedia(userId, file, 'audio');
-                setAudioDubFile(file);
-                setAudioDubUri(uploadedUri);
-                toast.success(`Loaded multilingual audio track: ${file.name}`);
-            } catch (error) {
-                toast.error(`Audio upload failed: ${callableErrorMessage(error)}`);
-            }
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = Array.from(e.target.files ?? []).slice(0, Math.max(0, 8 - referenceMedia.length));
+        if (files.length === 0) return;
+        try {
+            const userId = auth.currentUser?.uid;
+            if (!userId) throw new Error('User must be authenticated to upload reference images.');
+            const uploaded = await Promise.all(files.map(async file => ({
+                uri: await CreativeStorageService.uploadReferenceMedia(userId, file, 'image'),
+                label: file.name,
+            })));
+            setReferenceMedia(prev => [...prev, ...uploaded].slice(0, 8));
+            if (omniTask === 'text_to_video' || omniTask === 'edit') setOmniTask('reference_to_video');
+            toast.success(`Loaded ${uploaded.length} visual reference${uploaded.length === 1 ? '' : 's'}.`);
+        } catch (error) {
+            toast.error(`Image upload failed: ${callableErrorMessage(error)}`);
+        } finally {
+            e.target.value = '';
         }
     };
 
+    const ensureOmniReferenceUri = useCallback(async (
+        item: NonNullable<ReturnType<typeof creativeAssetPayloadToHistoryItem>>,
+        mediaType: 'image' | 'video',
+    ) => {
+        const existingUri = item.storageUri || resolveStorageUri(item.url);
+        if (existingUri) return existingUri;
+        const userId = auth.currentUser?.uid;
+        if (!userId) throw new Error('Sign in before importing this external asset.');
+        return CreativeStorageService.uploadReferenceMedia(userId, item.url, mediaType, {
+            projectId: currentProjectId || item.projectId || undefined,
+        });
+    }, [currentProjectId]);
+
+    const handleCreativeAssetDrop = useCallback(async (event: React.DragEvent<HTMLDivElement>) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const payload = readCreativeAssetDrag(event.dataTransfer);
+        if (!payload) return;
+        const item = creativeAssetPayloadToHistoryItem(payload);
+
+        try {
+            if (item?.type === 'video') {
+                const uri = await ensureOmniReferenceUri(item, 'video');
+                setRefVideoFile(null);
+                setReferenceMedia([]);
+                setReferenceVideoUri(uri);
+                setSourceJobId(item.id);
+                setPreviousInteractionId(null);
+                setPreviousJobId(null);
+                setOmniTask('edit');
+                setStudioControls({ omniReferenceVideo: item.url });
+                toast.success('Dropped video loaded as the Omni edit source.');
+                return;
+            }
+
+            if (item?.type === 'image') {
+                const uri = await ensureOmniReferenceUri(item, 'image');
+                setReferenceMedia(previous => {
+                    const withoutDuplicate = previous.filter(reference => reference.uri !== uri);
+                    return [...withoutDuplicate, { uri, label: item.prompt || payload.asset.name }].slice(-8);
+                });
+                if (referenceMedia.length === 0) {
+                    setReferenceVideoUri(null);
+                    setRefVideoFile(null);
+                    setPreviousInteractionId(null);
+                    setPreviousJobId(null);
+                    setStudioControls({ omniReferenceVideo: null });
+                    setOmniTask('image_to_video');
+                    toast.success('Dropped image loaded as Omni’s starting frame.');
+                } else {
+                    if (!referenceVideoUri) setOmniTask('reference_to_video');
+                    toast.success('Dropped image added as an Omni visual reference.');
+                }
+                return;
+            }
+
+            if (item?.type === 'music') {
+                toast.info('Omni does not accept audio reference files yet; describe the soundtrack in the prompt.');
+                return;
+            }
+            toast.info(`${payload.asset.name} cannot be used in Omni’s current media inputs.`);
+        } catch (error) {
+            toast.error(`Could not use dropped asset: ${callableErrorMessage(error)}`);
+        }
+    }, [ensureOmniReferenceUri, referenceMedia.length, referenceVideoUri, setStudioControls, toast]);
+
     const handleStartRemix = async () => {
-        if (!studioControls.omniReferenceVideo || !referenceVideoUri) {
-            toast.error("Please upload an artist base performance video first!");
+        const canContinueInteraction = !!previousInteractionId && !!previousJobId;
+        if (omniTask === 'edit' && !canContinueInteraction && !referenceVideoUri) {
+            toast.error('Edit mode needs an uploaded source video or a completed Omni result.');
+            return;
+        }
+        if (omniTask === 'image_to_video' && referenceMedia.length === 0) {
+            toast.error('Image-to-video needs at least one image.');
+            return;
+        }
+        if (omniTask === 'reference_to_video' && referenceMedia.length === 0) {
+            toast.error('Reference-to-video needs at least one reference image.');
+            return;
+        }
+        if (!remixPrompt.trim()) {
+            toast.error('Describe the video you want to create.');
             return;
         }
 
@@ -364,66 +485,83 @@ export default function OmniWorkflow() {
         setIsRemixing(true);
         setOutputVideoUrl(null);
         setOutputStorageUri(undefined);
-        toast.info('Synthesizing Omni Remix (pure Omni)...');
+        setSynthIdApplied(false);
+        toast.info(canContinueInteraction && omniTask === 'edit' ? 'Continuing the stored Omni edit…' : 'Generating with Gemini Omni Flash…');
 
         try {
-            const durationSeconds = Math.min(12, Math.max(4, studioControls.duration || 8));
-            // ISSUE-774: the retired "hybrid-veo" mode never actually invoked a
-            // second Veo stage — exactly one Omni Interactions call runs either
-            // way — so cost is always estimated at the real (fast) rate now,
-            // never the 4x "pro" rate the dead hybrid option used to charge.
-            const estimatedCost = VideoGeneration.estimateVideoCost(
-                durationSeconds,
-                'veo-3.1-fast-generate-preview'
-            );
-            const costCheck = await CostControlService.checkAndReserve({
-                operationType: 'video',
-                estimatedCost,
-                userId: auth.currentUser?.uid || '',
-                metadata: {
-                    durationSeconds,
-                    pipelineMode: studioControls.omniPipelineMode,
-                    aspectRatio,
-                    referenceCount: referenceMedia.length,
-                },
-            });
-            if (!costCheck.allowed) {
-                throw new Error(`Omni remix blocked: ${costCheck.reason || 'Cost reservation failed.'}`);
-            }
-
-            const generateOmniRemixV3 = httpsCallable(functions, 'generateOmniRemixV3');
-            const payload = {
+            const durationSeconds = Math.min(10, Math.max(3, studioControls.duration || 8));
+            const estimatedCost = Math.round(durationSeconds * 0.1 * 100) / 100;
+            const usePreviousInteraction = omniTask === 'edit' && canContinueInteraction;
+            const firstFrameUri = omniTask === 'image_to_video' ? referenceMedia[0]?.uri : undefined;
+            const referenceUris = omniTask === 'image_to_video'
+                ? referenceMedia.slice(1).map(entry => entry.uri)
+                : referenceMedia.map(entry => entry.uri);
+            const basePayload = {
                 prompt: remixPrompt,
-                referenceVideoUri,
-                audioUri: audioDubUri || undefined,
-                referenceUris: referenceMedia.map(entry => entry.uri),
-                costEstimate: estimatedCost,
-                costReservationId: costCheck.operationId,
-                pipelineMode: studioControls.omniPipelineMode,
+                task: omniTask,
+                ...(omniTask === 'edit' && !usePreviousInteraction && referenceVideoUri ? { referenceVideoUri } : {}),
+                ...(firstFrameUri ? { firstFrameUri } : {}),
+                referenceUris,
+                ...(usePreviousInteraction && previousInteractionId && previousJobId
+                    ? { previousInteractionId, previousJobId }
+                    : {}),
+                storyboard: storyboard.map(frame => ({
+                    timestamp: Math.min(durationSeconds, Math.max(0, frame.timestamp)),
+                    prompt: frame.prompt,
+                })),
                 aspectRatio,
                 durationSeconds,
                 posePreservation: studioControls.posePreservation,
                 beatPulse: studioControls.beatPulse,
                 characterXRay: studioControls.characterXRay,
-                synthIdEnabled: studioControls.synthIdEnabled,
-                selectedLanguage: studioControls.selectedLanguage,
                 activePosePreset: studioControls.activePosePreset,
                 lyricsText: studioControls.lyricsText || undefined,
                 typographyStyle: studioControls.typographyStyle,
                 visualizerColor: studioControls.visualizerColor,
                 parentId: sourceJobId || undefined,
             };
-            const payloadValidation = GenerateOmniRemixSchema.safeParse(payload);
-            if (!payloadValidation.success) {
-                const errorMsg = payloadValidation.error.issues.map(issue => issue.message).join(', ');
+            const basePayloadValidation = GenerateOmniRemixSchema.safeParse(basePayload);
+            if (!basePayloadValidation.success) {
+                const errorMsg = basePayloadValidation.error.issues.map(issue => issue.message).join(', ');
                 throw new Error(`Invalid Omni gateway payload: ${errorMsg}`);
             }
-            const response = await generateOmniRemixV3(payloadValidation.data);
-            const data = response.data as { jobId: string; resultUri: string };
+
+            const costCheck = await CostControlService.checkAndReserve({
+                operationType: 'video',
+                estimatedCost,
+                userId: auth.currentUser?.uid || '',
+                metadata: {
+                    durationSeconds,
+                    model: 'gemini-omni-flash-preview',
+                    task: omniTask,
+                    aspectRatio,
+                    referenceCount: referenceMedia.length,
+                },
+            });
+            if (!costCheck.allowed || !costCheck.operationId) {
+                throw new Error(`Omni remix blocked: ${costCheck.reason || 'Cost reservation failed.'}`);
+            }
+
+            const generateOmniRemixV3 = httpsCallable(functions, 'generateOmniRemixV3');
+            const payload = {
+                ...basePayloadValidation.data,
+                costEstimate: estimatedCost,
+                costReservationId: costCheck.operationId,
+            };
+            const response = await generateOmniRemixV3(payload);
+            const parsedResponse = OmniGatewayResponseSchema.safeParse(response.data);
+            if (!parsedResponse.success) {
+                throw new Error('The Omni gateway returned an invalid response. The generated job was not added to local history.');
+            }
+            const data = parsedResponse.data;
             const videoUrl = await resolveStorageUrl(data.resultUri);
             const storageUri = resolveStorageUri(data.resultUri) || (data.resultUri.startsWith('gs://') ? data.resultUri : undefined);
             setOutputVideoUrl(videoUrl);
             setOutputStorageUri(storageUri);
+            setPreviousInteractionId(data.interactionId);
+            setPreviousJobId(data.jobId);
+            setSynthIdApplied(data.synthIdApplied);
+            setOmniTask('edit');
 
             const remixId = `omni_remix_${Date.now()}`;
             addToHistory({
@@ -431,32 +569,33 @@ export default function OmniWorkflow() {
                 type: 'video',
                 url: videoUrl,
                 storageUri,
-                prompt: `Omni Remix: ${remixPrompt}`,
+                prompt: `Omni ${data.task}: ${remixPrompt}`,
                 timestamp: Date.now(),
                 projectId: currentProjectId || '',
                 origin: 'generated',
                 parentId: sourceJobId || undefined,
                 meta: JSON.stringify({
                     jobId: data.jobId,
-                    pipelineMode: studioControls.omniPipelineMode,
+                    interactionId: data.interactionId,
+                    task: data.task,
                     aspectRatio,
                     durationSeconds,
                     posePreservation: studioControls.posePreservation,
                     beatPulse: studioControls.beatPulse,
                     characterXRay: studioControls.characterXRay,
-                    synthIdEnabled: studioControls.synthIdEnabled,
-                    selectedLanguage: studioControls.selectedLanguage,
+                    synthIdApplied: data.synthIdApplied,
                     activePosePreset: studioControls.activePosePreset,
                     lyricsText: studioControls.lyricsText || undefined,
                     typographyStyle: studioControls.typographyStyle,
                     visualizerColor: studioControls.visualizerColor,
-                    referenceUris: referenceMedia.map(entry => entry.uri),
-                    audioUri: audioDubUri || undefined,
+                    firstFrameUri,
+                    referenceUris,
+                    storyboard: payload.storyboard,
                     parentId: sourceJobId || undefined,
                 })
             });
 
-            toast.success("Omni performance remix completed! Video added to Showroom.");
+            toast.success('Omni video completed with automatic SynthID. You can refine it with another edit.');
         } catch (error) {
             const message = callableErrorMessage(error);
             if (message.includes('not configured for API use yet')) {
@@ -469,39 +608,102 @@ export default function OmniWorkflow() {
         }
     };
 
-    const handleDownload = () => {
+    const handleDownload = async () => {
         if (!outputVideoUrl) return;
+        const saved = await downloadAsset(outputVideoUrl, `omni_remix_${Date.now()}.mp4`);
+        if (saved) toast.success('Video download started.');
+        else toast.error('Video download failed. Please try again.');
+    };
 
-        // Custom Electron download bridge check
-        if (typeof window !== 'undefined' && 'electron' in window) {
-            try {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                (window.electron as any).saveAsset({
-                    url: outputVideoUrl,
-                    type: 'video',
-                    name: `omni_remix_${Date.now()}.mp4`
-                });
-                toast.success("Saved video to local timeline disk!");
-                return;
-            } catch (err) {
-                Logger.error('OmniWorkflow', 'Electron saving failed, falling back to browser download', err);
-            }
+    const buildOutputItem = () => {
+        if (!outputVideoUrl) return null;
+        return {
+            id: previousJobId || `omni_remix_${Date.now()}`,
+            url: outputVideoUrl,
+            storageUri: outputStorageUri,
+            type: 'video' as const,
+            prompt: remixPrompt,
+            timestamp: Date.now(),
+            projectId: currentProjectId || '',
+            origin: 'generated' as const,
+            parentId: sourceJobId || undefined,
+        };
+    };
+
+    const handleSendOutputToVeo = () => {
+        const item = buildOutputItem();
+        if (!item || routingOutputTo) return;
+        setRoutingOutputTo('veo');
+        try {
+            sendToStage('veo', {
+                item,
+                role: 'source-video',
+                originStage: 'omni',
+                timestamp: Date.now(),
+                parentJobId: sourceJobId || undefined,
+            });
+            toast.success('Sent to Veo; its last frame will become the next shot’s first frame.');
+        } finally {
+            setRoutingOutputTo(null);
+        }
+    };
+
+    const handleSendOutputToEditor = () => {
+        const item = buildOutputItem();
+        if (!item || routingOutputTo) return;
+        setRoutingOutputTo('editor');
+        try {
+            sendToStage('editor', {
+                item,
+                role: 'source-video',
+                originStage: 'omni',
+                timestamp: Date.now(),
+                parentJobId: sourceJobId || undefined,
+            });
+        } finally {
+            setRoutingOutputTo(null);
+        }
+    };
+
+    const handleSendOutputFrameToImage = async () => {
+        const item = buildOutputItem();
+        if (!item || routingOutputTo) return;
+        const userId = auth.currentUser?.uid;
+        if (!userId) {
+            toast.error('Sign in before extracting a frame for Image Studio.');
+            return;
         }
 
-        // Browser download path
-        const a = document.createElement('a');
-        a.href = outputVideoUrl;
-        a.download = `omni_remix_${Date.now()}.mp4`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        toast.success("Downloading video file...");
+        setRoutingOutputTo('image');
+        try {
+            const frame = await materializeVideoFrameForHandoff(item, 'last', {
+                userId,
+                projectId: currentProjectId || undefined,
+            });
+            sendToStage('image', {
+                item: frame,
+                role: 'image-input',
+                originStage: 'omni',
+                timestamp: Date.now(),
+                parentJobId: sourceJobId || undefined,
+            });
+            toast.success('Extracted the Omni end frame into Image Studio.');
+        } catch (error) {
+            toast.error(`Frame handoff failed: ${callableErrorMessage(error)}`);
+        } finally {
+            setRoutingOutputTo(null);
+        }
     };
 
     // Storyboard Frame Actions
     const handleAddFrame = () => {
         if (!newFramePrompt.trim()) {
             toast.error("Please specify a scene prompt!");
+            return;
+        }
+        const maxDuration = Math.min(10, Math.max(3, studioControls.duration || 8));
+        if (newFrameTimestamp < 0 || newFrameTimestamp > maxDuration) {
+            toast.error(`Storyboard timestamps must be between 0 and ${maxDuration} seconds.`);
             return;
         }
 
@@ -519,10 +721,6 @@ export default function OmniWorkflow() {
 
     const handleDeleteFrame = (id: string, e: React.MouseEvent) => {
         e.stopPropagation();
-        if (storyboard.length <= 1) {
-            toast.error("You must retain at least one storyboard frame!");
-            return;
-        }
         setStoryboard(prev => prev.filter(f => f.id !== id));
         setActiveFrameIndex(0);
         toast.info("Removed frame from sequence");
@@ -531,6 +729,13 @@ export default function OmniWorkflow() {
     const activePosePreset = POSE_COORDINATES[studioControls.activePosePreset] || POSE_COORDINATES['guitar_solo'] || { joints: [], bones: [] };
     const visualizerColor = studioControls.visualizerColor || '#8B5CF6';
     const pulseIntensity = studioControls.beatPulse || 0.5;
+    const hasPreviousInteraction = !!previousInteractionId && !!previousJobId;
+    const canGenerate = !!remixPrompt.trim() && !isRemixing && (
+        omniTask === 'text_to_video'
+        || (omniTask === 'edit' && (hasPreviousInteraction || !!referenceVideoUri))
+        || ((omniTask === 'image_to_video' || omniTask === 'reference_to_video') && referenceMedia.length > 0)
+    );
+    const selectedTask = OMNI_TASKS.find(task => task.value === omniTask) ?? OMNI_TASKS[0];
 
     return (
         <div className="flex-1 flex overflow-hidden h-full bg-[#070709] text-white select-none">
@@ -552,6 +757,8 @@ export default function OmniWorkflow() {
                                 setRefVideoFile(null);
                                 setReferenceVideoUri(null);
                                 setSourceJobId(null);
+                                setPreviousInteractionId(null);
+                                setPreviousJobId(null);
                                 setStudioControls({ omniReferenceVideo: null });
                                 setOutputVideoUrl(null);
                                 toast.info("Reference video cleared");
@@ -564,7 +771,15 @@ export default function OmniWorkflow() {
                 </div>
 
                 {/* Main Video Arena */}
-                <div className="flex-1 flex flex-col items-center justify-center border border-white/10 rounded-2xl bg-white/[0.02] shadow-2xl relative overflow-hidden group">
+                <div
+                    className="flex-1 flex flex-col items-center justify-center border border-white/10 rounded-2xl bg-white/[0.02] shadow-2xl relative overflow-hidden group"
+                    onDragOver={(event) => {
+                        event.preventDefault();
+                        event.dataTransfer.dropEffect = 'copy';
+                    }}
+                    onDrop={(event) => { void handleCreativeAssetDrop(event); }}
+                    data-testid="omni-asset-drop-zone"
+                >
                     {/* Synchronized Beat Pulse Glow Rings */}
                     <div 
                         className="absolute inset-0 rounded-2xl pointer-events-none transition-all duration-300"
@@ -587,15 +802,11 @@ export default function OmniWorkflow() {
                                 autoPlay 
                                 loop
                             />
-                            {/* Synth ID Watermark Overlay Indicator */}
-                            {/* ISSUE-775: this reflects the local generation-time toggle only —
-                                the server never requests a provider-side watermark parameter and
-                                never reads back verified provenance metadata, so this can never
-                                claim the output IS protected, only that it was requested. */}
-                            {studioControls.synthIdEnabled && (
+                            {/* Gemini automatically applies SynthID to every Omni video. */}
+                            {synthIdApplied && (
                                 <div className="absolute top-6 right-6 flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-500/10 border border-emerald-500/20 backdrop-blur-md rounded-full shadow-lg pointer-events-none select-none z-30">
                                     <Shield size={10} className="text-emerald-400" />
-                                    <span className="text-[9px] font-bold text-emerald-400 font-mono uppercase tracking-widest">SynthID Requested</span>
+                                    <span className="text-[9px] font-bold text-emerald-400 font-mono uppercase tracking-widest">SynthID Applied</span>
                                 </div>
                             )}
 
@@ -616,30 +827,31 @@ export default function OmniWorkflow() {
 
                             <div className="absolute bottom-6 right-6 flex gap-2 z-20">
                                 <button
-                                    onClick={() => {
-                                        if (outputVideoUrl) {
-                                            sendToStage('veo', {
-                                                item: {
-                                                    id: crypto.randomUUID(),
-                                                    url: outputVideoUrl,
-                                                    storageUri: outputStorageUri,
-                                                    type: 'video',
-                                                    prompt: remixPrompt,
-                                                    timestamp: Date.now(),
-                                                    projectId: currentProjectId
-                                                },
-                                                role: 'source-video',
-                                                originStage: 'omni',
-                                                timestamp: Date.now(),
-                                                parentJobId: sourceJobId || undefined
-                                            });
-                                            toast.success('Sent to Veo for further remixing!');
-                                        }
-                                    }}
+                                    onClick={handleSendOutputToVeo}
+                                    disabled={routingOutputTo !== null}
                                     className="bg-cyan-600 hover:bg-cyan-500 text-white p-3 rounded-full shadow-2xl hover:scale-105 transition-all flex items-center justify-center border border-cyan-400/30"
-                                    title="Send to Veo for further remixing"
+                                    title="Continue from this video's last frame in Veo"
+                                    aria-label="Continue Omni video in Veo"
                                 >
                                     <Video size={16} />
+                                </button>
+                                <button
+                                    onClick={handleSendOutputToEditor}
+                                    disabled={routingOutputTo !== null}
+                                    className="bg-emerald-600 hover:bg-emerald-500 text-white p-3 rounded-full shadow-2xl hover:scale-105 transition-all flex items-center justify-center border border-emerald-400/30"
+                                    title="Open this Omni video in the timeline editor"
+                                    aria-label="Open Omni video in timeline editor"
+                                >
+                                    <Film size={16} />
+                                </button>
+                                <button
+                                    onClick={() => { void handleSendOutputFrameToImage(); }}
+                                    disabled={routingOutputTo !== null}
+                                    className="bg-fuchsia-600 hover:bg-fuchsia-500 text-white p-3 rounded-full shadow-2xl hover:scale-105 transition-all flex items-center justify-center border border-fuchsia-400/30"
+                                    title="Extract the final frame into Image Studio"
+                                    aria-label="Send Omni final frame to Image Studio"
+                                >
+                                    <Image size={16} />
                                 </button>
                                 <button
                                     onClick={handleDownload}
@@ -727,9 +939,7 @@ export default function OmniWorkflow() {
 
                             <div className="flex items-center justify-between mt-auto z-10">
                                 <span className="text-[10px] font-mono text-gray-500 bg-black/40 px-2 py-1 rounded border border-white/5 truncate max-w-[200px]">{refVideoFile?.name || "base_performance.mp4"}</span>
-                                {/* ISSUE-774: "hybrid-veo" never ran a second Veo stage — only one
-                                    engine has ever executed here, so only one badge is ever shown. */}
-                                <span className="text-[9px] font-mono text-green-400 font-bold uppercase tracking-widest">PURE OMNI V2V ENGINE</span>
+                                <span className="text-[9px] font-mono text-green-400 font-bold uppercase tracking-widest">OMNI EDIT SOURCE</span>
                             </div>
                         </div>
                     ) : (
@@ -740,8 +950,12 @@ export default function OmniWorkflow() {
                             <div className="p-4 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 mb-4 group-hover:scale-115 transition-all shadow-inner shadow-green-500/5">
                                 <Upload size={28} />
                             </div>
-                            <span className="text-xs font-bold uppercase tracking-widest text-white">Upload Artist Base Performance</span>
-                            <span className="text-[10px] text-gray-500 mt-1.5 uppercase tracking-wider font-mono">Drag and drop `.mp4`/`.mov` or click to browse</span>
+                            <span className="text-xs font-bold uppercase tracking-widest text-white">
+                                {omniTask === 'edit' ? 'Upload a video to edit' : 'Optional video source'}
+                            </span>
+                            <span className="text-[10px] text-gray-500 mt-1.5 uppercase tracking-wider font-mono">
+                                {omniTask === 'edit' ? 'Choose .mp4/.mov, or switch generation mode' : `${selectedTask.label} is ready from the controller`}
+                            </span>
                             <input 
                                 type="file" 
                                 id="omni-video-file-input"
@@ -756,15 +970,9 @@ export default function OmniWorkflow() {
                 </div>
 
                 {/* Bottom Storyboard Panel */}
-                {/* ISSUE-773: this panel's frames are never sent to the Omni
-                    generation callable — GenerateOmniRemixSchema has no
-                    storyboard/frame field, so building a sequence here has
-                    zero effect on the remix. Labeled as a local planning
-                    board, not "synced", until a real storyboard contract
-                    exists end-to-end. */}
                 <div className="h-48 mt-6 border-t border-white/5 pt-4 flex flex-col gap-2 shrink-0">
                     <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider font-mono">Local Planning Board (not sent to generation)</span>
+                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider font-mono">Omni Timecode Storyboard (sent to generation)</span>
                         <div className="flex items-center gap-2">
                             <span className="text-[9px] text-gray-400 uppercase font-mono tracking-widest">{storyboard.length} Scenes Planned</span>
                             <button
@@ -824,17 +1032,37 @@ export default function OmniWorkflow() {
                 </h3>
 
                 <div className="space-y-6 flex-1 flex flex-col">
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest font-mono">
+                            Generation mode
+                        </label>
+                        <select
+                            aria-label="Omni generation mode"
+                            value={omniTask}
+                            onChange={(event) => setOmniTask(event.target.value as OmniTask)}
+                            className="w-full bg-black/60 text-[10px] p-2.5 rounded-lg border border-white/10 outline-none text-gray-200 font-mono focus:border-green-500/50"
+                        >
+                            {OMNI_TASKS.map(task => (
+                                <option key={task.value} value={task.value}>{task.label}</option>
+                            ))}
+                        </select>
+                        <p className="text-[9px] text-gray-500 leading-relaxed">{selectedTask.description}</p>
+                        {hasPreviousInteraction && omniTask === 'edit' && (
+                            <p className="text-[9px] text-emerald-400 font-mono">Continuing the last stored Omni interaction.</p>
+                        )}
+                    </div>
+
                     {/* Conversational Remix Box */}
                     <div className="space-y-2">
                         <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest font-mono flex items-center gap-1.5">
                             <Sparkle size={11} className="text-green-400" />
-                            Remix Style Directives
+                            Video prompt and edit directives
                         </label>
                         <textarea
                             value={remixPrompt}
                             onChange={(e) => setRemixPrompt(e.target.value)}
                             className="w-full bg-black/60 text-white text-xs p-3 rounded-xl border border-white/10 outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/10 h-24 resize-none placeholder:text-gray-600 transition-all font-mono leading-relaxed"
-                            placeholder="Describe how to augment the performance (backgrounds, style, effects)..."
+                            placeholder="Describe the result, action, camera, style, and soundtrack…"
                         />
                     </div>
 
@@ -890,59 +1118,42 @@ export default function OmniWorkflow() {
                         </div>
                     </div>
 
-                    {/* Dubbing & Lip-Sync */}
+                    {/* Audio is prompt-directed; uploaded audio is not supported by Omni preview. */}
                     <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/10 space-y-3">
                         <span className="text-[10px] font-bold text-white uppercase tracking-widest font-mono flex items-center gap-1.5">
-                            <Languages size={12} className="text-green-400" />
-                            Multilingual Dubbing
+                            <Info size={12} className="text-green-400" />
+                            Generated soundtrack
                         </span>
-                        
-                        <div className="relative">
-                            <select 
-                                value={studioControls.selectedLanguage}
-                                onChange={(e) => setStudioControls({ selectedLanguage: e.target.value })}
-                                className="w-full bg-black/60 text-[10px] p-2.5 rounded-lg border border-white/10 outline-none text-gray-200 appearance-none font-mono focus:border-green-500/50"
-                            >
-                                <option value="es">Spanish Dub (AI Lip-Sync)</option>
-                                <option value="ja">Japanese Dub (AI Lip-Sync)</option>
-                                <option value="fr">French Dub (AI Lip-Sync)</option>
-                                <option value="de">German Dub (AI Lip-Sync)</option>
-                            </select>
-                            <Volume2 size={12} className="absolute right-3 top-3 text-gray-500 pointer-events-none" />
-                        </div>
-                        
-                        <div className="space-y-2">
-                            {audioDubFile ? (
-                                <div className="flex items-center justify-between p-2 rounded-lg bg-green-500/5 border border-green-500/25">
-                                    <span className="text-[9px] font-mono text-green-300 truncate w-40">{audioDubFile.name}</span>
-                                    <CheckCircle size={12} className="text-green-400 shrink-0" />
-                                </div>
-                            ) : (
-                                <button 
-                                    onClick={() => audioInputRef.current?.click()}
-                                    className="w-full flex items-center justify-center gap-1.5 py-2 bg-green-500/10 hover:bg-green-500/15 border border-green-500/20 rounded-lg text-[10px] font-bold uppercase transition-colors tracking-widest font-mono text-green-300"
-                                >
-                                    <Music size={12} /> Upload translation audio
-                                </button>
-                            )}
-                            <input 
-                                type="file"
-                                id="omni-audio-file-input"
-                                ref={audioInputRef}
-                                accept="audio/*"
-                                onChange={handleAudioUpload}
-                                className="sr-only focus:outline-none focus:ring-2 focus:ring-dept-creative focus:ring-offset-2 focus:ring-offset-[#070709] rounded-md"
-                                aria-label="Upload translation audio"
-                            />
-                        </div>
+                        <p className="text-[9px] text-gray-500 leading-relaxed">
+                            Describe dialogue, ambience, sound effects, and music in the prompt. Uploaded audio and voice editing are not supported in this preview.
+                        </p>
                     </div>
 
-                    {referenceMedia.length > 0 && (
-                        <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/10 space-y-3">
+                    <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/10 space-y-3">
+                        <div className="flex items-center justify-between gap-2">
                             <span className="text-[10px] font-bold text-white uppercase tracking-widest font-mono flex items-center gap-1.5">
-                                <Upload size={12} className="text-green-400" />
-                                Visual References
+                                <Image size={12} className="text-green-400" />
+                                Visual references ({referenceMedia.length}/8)
                             </span>
+                            <button
+                                onClick={() => imageInputRef.current?.click()}
+                                disabled={referenceMedia.length >= 8}
+                                className="px-2 py-1 bg-green-500/10 hover:bg-green-500/15 disabled:opacity-40 border border-green-500/20 rounded text-[9px] font-bold uppercase font-mono text-green-300"
+                            >
+                                Add images
+                            </button>
+                            <input
+                                type="file"
+                                id="omni-image-file-input"
+                                ref={imageInputRef}
+                                accept="image/*"
+                                multiple
+                                onChange={handleImageUpload}
+                                className="sr-only"
+                                aria-label="Upload Omni reference images"
+                            />
+                        </div>
+                        {referenceMedia.length > 0 ? (
                             <div className="flex flex-wrap gap-2">
                                 {referenceMedia.map((entry) => (
                                     <button
@@ -956,47 +1167,38 @@ export default function OmniWorkflow() {
                                     </button>
                                 ))}
                             </div>
-                        </div>
-                    )}
+                        ) : (
+                            <p className="text-[9px] text-gray-500 leading-relaxed">Required for image and reference modes; optional during edits.</p>
+                        )}
+                    </div>
 
-                    {/* Synth ID Watermarking */}
-                    <div className="flex items-center justify-between p-3.5 rounded-xl bg-white/[0.03] border border-white/10 hover:border-emerald-500/20 transition-all group">
+                    {/* Gemini applies SynthID automatically. */}
+                    <div className="flex items-center justify-between p-3.5 rounded-xl bg-white/[0.03] border border-white/10">
                         <div className="flex flex-col">
                             <span className="text-[10px] font-bold text-white uppercase tracking-wider font-mono flex items-center gap-1.5">
-                                <Shield size={12} className={studioControls.synthIdEnabled ? 'text-emerald-400' : 'text-gray-400'} />
-                                Synth ID Mark
+                                <Shield size={12} className="text-emerald-400" />
+                                Automatic SynthID
                             </span>
-                            <span className="text-[9px] text-gray-500 mt-0.5">Records a provenance request; watermark verification is not available yet</span>
+                            <span className="text-[9px] text-gray-500 mt-0.5">Google watermarks every generated Omni video.</span>
                         </div>
-                        <button 
-                            onClick={() => setStudioControls({ synthIdEnabled: !studioControls.synthIdEnabled })}
-                            className={`w-9 h-5 rounded-full relative transition-all ${
-                                studioControls.synthIdEnabled 
-                                    ? 'bg-emerald-600 shadow-[0_0_10px_rgba(16,185,129,0.3)]' 
-                                    : 'bg-gray-800'
-                            }`}
-                        >
-                            <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${
-                                studioControls.synthIdEnabled ? 'translate-x-4' : 'translate-x-0'
-                            }`} />
-                        </button>
+                        <span className="text-[9px] font-bold font-mono text-emerald-400 uppercase">Always on</span>
                     </div>
 
                     {/* Remix Synthesis Button */}
                     <button 
                         onClick={handleStartRemix}
-                        disabled={!studioControls.omniReferenceVideo || isRemixing}
+                        disabled={!canGenerate}
                         className="w-full mt-6 py-3.5 bg-gradient-to-r from-green-600 to-indigo-600 hover:from-green-500 hover:to-indigo-500 disabled:from-gray-850 disabled:to-gray-850 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl text-xs font-bold uppercase tracking-widest font-mono flex items-center justify-center gap-2 shadow-xl shadow-green-500/10 border border-green-400/20 hover:scale-[1.01] active:scale-[0.99] transition-all shrink-0 text-white"
                     >
                         {isRemixing ? (
                             <>
                                 <RefreshCw size={14} className="animate-spin text-green-200" />
-                                Synthesizing Remix...
+                                Generating Omni video…
                             </>
                         ) : (
                             <>
                                 <Sparkles size={14} fill="white" className="text-green-200 animate-pulse" />
-                                Synthesize Omni Remix
+                                {hasPreviousInteraction && omniTask === 'edit' ? 'Refine Last Omni Video' : 'Generate Omni Video'}
                             </>
                         )}
                     </button>
@@ -1029,6 +1231,7 @@ export default function OmniWorkflow() {
                                         type="number" 
                                         step="0.1" 
                                         min="0"
+                                        max={Math.min(10, Math.max(3, studioControls.duration || 8))}
                                         value={newFrameTimestamp}
                                         onChange={(e) => setNewFrameTimestamp(parseFloat(e.target.value) || 0)}
                                         className="w-full bg-black/60 border border-white/10 rounded-lg p-2.5 outline-none focus:border-green-500/40 text-xs font-mono text-white"

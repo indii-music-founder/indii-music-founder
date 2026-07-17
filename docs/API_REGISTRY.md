@@ -20,7 +20,8 @@ Core generative and analysis endpoints. Payloads typically include media URLs, p
 - **`generateSpeech`**: Text-to-Speech (TTS) generation (Gemini 2.5 Pro TTS / Google Cloud TTS).
 - **`generateContentStream`**: Streaming content generator (likely uses Genkit/Gemini).
 - **`ragProxy`**: Retrieval-Augmented Generation endpoint for searching documents.
-- **`generateImageV3` / `generateVideoV3` / `generateAudioV3` / `generateOmniRemixV3`**: V3 creative gateway functions.
+- **`generateImageV3` / `generateVideoV3` / `generateAudioV3`**: V3 image, Veo video, and TTS gateway functions.
+- **`generateOmniRemixV3`**: Authenticated Gemini Omni Flash gateway. Supports `text_to_video`, `image_to_video`, `reference_to_video`, uploaded-video `edit`, and stateful follow-up edits. Inputs are validated `gs://` URIs in the caller's creative namespace; video inputs transfer through Gemini Files, output uses URI delivery, and cost reservations are settled or voided server-side. See [GEMINI_OMNI_INTEGRATION.md](./GEMINI_OMNI_INTEGRATION.md).
 
 ## 3. Touring & Logistics (Agent Spoke)
 Endpoints utilized by the touring and logistics subagents.

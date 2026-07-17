@@ -10,6 +10,7 @@ import { InfiniteCanvasHUD } from './InfiniteCanvasHUD';
 import { useToast } from '@/core/context/ToastContext';
 import { logger } from '@/utils/logger';
 import { fetchAsBase64 } from '@/services/storage/safeStorageFetch';
+import { readCreativeAssetDrag } from '@/services/creative/CreativeAssetDragService';
 
 export default function InfiniteCanvas() {
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -1072,19 +1073,22 @@ export default function InfiniteCanvas() {
             return;
         }
 
+        const creativePayload = readCreativeAssetDrag(e.dataTransfer);
         const rawData = e.dataTransfer.getData('text/plain');
-        let id = rawData;
+        let id = creativePayload?.asset.id || rawData;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        let droppedPayload: any = null;
+        let droppedPayload: any = creativePayload?.asset || null;
 
-        try {
-            const parsed = JSON.parse(rawData);
-            if (parsed && typeof parsed === 'object' && parsed.id) {
-                id = parsed.id;
-                droppedPayload = parsed;
+        if (!creativePayload) {
+            try {
+                const parsed = JSON.parse(rawData);
+                if (parsed && typeof parsed === 'object' && parsed.id) {
+                    id = parsed.id;
+                    droppedPayload = parsed;
+                }
+            } catch (_) {
+                // Keep original string if not valid JSON
             }
-        } catch (_) {
-            // Keep original string if not valid JSON
         }
         
         // Find in history, uploads, or file nodes

@@ -8,6 +8,7 @@ import { useToast } from '@/core/context/ToastContext';
 import { ActionableEmptyState } from '@/components/shared/ActionableEmptyState';
 import { SendToTarget, SendToPayload, CreativeStage, StageHandoffPayload } from '@/types/handoff';
 import { useResolvedStorageUrl } from '@/hooks/useResolvedStorageUrl';
+import { writeCreativeAssetDrag } from '@/services/creative/CreativeAssetDragService';
 
 import { HistoryItem } from '@/core/store';
 
@@ -62,7 +63,7 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
     return (
         <div
             draggable
-            onDragStart={(e) => e.dataTransfer.setData('text/plain', item.id)}
+            onDragStart={(e) => writeCreativeAssetDrag(e.dataTransfer, item, 'gallery')}
             onClick={() => onSelect(item)}
             onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
@@ -272,15 +273,15 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                                                             sendToStage('veo', {
                                                                 item,
                                                                 role: 'source-video',
-                                                                originStage: 'image',
+                                                                originStage: item.prompt.startsWith('Omni ') ? 'omni' : 'veo',
                                                                 timestamp: Date.now()
                                                             });
-                                                            toast.success("Sent to Veo for remixing!");
+                                                            toast.success("Sent to Veo for frame-continuity generation!");
                                                             setShowSendMenu(false);
                                                         }}
                                                         className="w-full px-2.5 py-1.5 text-[10px] text-gray-300 hover:bg-cyan-600/20 hover:text-cyan-300 transition-colors"
                                                     >
-                                                        <span>→ Veo (source)</span>
+                                                        <span>→ Veo (continue)</span>
                                                     </button>
                                                     <button
                                                         onClick={(e) => {
@@ -288,7 +289,7 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                                                             sendToStage('omni', {
                                                                 item,
                                                                 role: 'source-video',
-                                                                originStage: 'image',
+                                                                originStage: item.prompt.startsWith('Omni ') ? 'omni' : 'veo',
                                                                 timestamp: Date.now()
                                                             });
                                                             toast.success("Sent to Omni for remixing!");
@@ -297,6 +298,22 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                                                         className="w-full px-2.5 py-1.5 text-[10px] text-gray-300 hover:bg-purple-600/20 hover:text-purple-300 transition-colors"
                                                     >
                                                         <span>→ Omni (source)</span>
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            sendToStage('editor', {
+                                                                item,
+                                                                role: 'source-video',
+                                                                originStage: item.prompt.startsWith('Omni ') ? 'omni' : 'veo',
+                                                                timestamp: Date.now()
+                                                            });
+                                                            toast.success("Opening video in the timeline editor!");
+                                                            setShowSendMenu(false);
+                                                        }}
+                                                        className="w-full px-2.5 py-1.5 text-[10px] text-gray-300 hover:bg-emerald-600/20 hover:text-emerald-300 transition-colors"
+                                                    >
+                                                        <span>→ Timeline Editor</span>
                                                     </button>
                                                 </>
                                             )}
@@ -323,6 +340,22 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                                                             e.stopPropagation();
                                                             sendToStage('omni', {
                                                                 item,
+                                                                role: 'first-frame',
+                                                                originStage: 'image',
+                                                                timestamp: Date.now()
+                                                            });
+                                                            toast.success("Sent to Omni as the starting frame!");
+                                                            setShowSendMenu(false);
+                                                        }}
+                                                        className="w-full px-2.5 py-1.5 text-[10px] text-gray-300 hover:bg-purple-600/20 hover:text-purple-300 transition-colors"
+                                                    >
+                                                        <span>→ Omni (start)</span>
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            sendToStage('omni', {
+                                                                item,
                                                                 role: 'reference-image',
                                                                 originStage: 'image',
                                                                 timestamp: Date.now()
@@ -333,6 +366,22 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                                                         className="w-full px-2.5 py-1.5 text-[10px] text-gray-300 hover:bg-purple-600/20 hover:text-purple-300 transition-colors"
                                                     >
                                                         <span>→ Omni (ref)</span>
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            sendToStage('editor', {
+                                                                item,
+                                                                role: 'image-input',
+                                                                originStage: 'image',
+                                                                timestamp: Date.now()
+                                                            });
+                                                            toast.success("Opening image in the timeline editor!");
+                                                            setShowSendMenu(false);
+                                                        }}
+                                                        className="w-full px-2.5 py-1.5 text-[10px] text-gray-300 hover:bg-emerald-600/20 hover:text-emerald-300 transition-colors"
+                                                    >
+                                                        <span>→ Timeline Editor</span>
                                                     </button>
                                                 </>
                                             )}

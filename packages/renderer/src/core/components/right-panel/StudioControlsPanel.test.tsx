@@ -433,12 +433,20 @@ describe('StudioControlsPanel', () => {
         expect(omniStageBtn).toBeInTheDocument();
         fireEvent.click(omniStageBtn!);
 
-        // ISSUE-774: "Hybrid Veo" retired — it never ran a second Veo stage
-        // and only overcharged at Pro pricing for identical output. Pure
-        // Omni is now a static indicator, not a selectable option.
-        expect(screen.getByText('Pure Omni V2V Engine')).toBeInTheDocument();
+        expect(screen.getByText('Gemini Omni Flash · 4 task modes')).toBeInTheDocument();
         expect(screen.queryByText('Hybrid Veo')).not.toBeInTheDocument();
         expect(screen.getByText('Character X-Ray')).toBeInTheDocument();
+        expect(screen.getByText('Automatic SynthID')).toBeInTheDocument();
+        expect(screen.getByText('HD 720p · 24 fps')).toBeInTheDocument();
+        expect(screen.getByText('~$0.40')).toBeInTheDocument();
+        expect(screen.queryByText('Reference Mixer')).not.toBeInTheDocument();
+        expect(screen.queryByText('Model & Constraints')).not.toBeInTheDocument();
+        expect(screen.queryByText('NEGATIVE PROMPT')).not.toBeInTheDocument();
+
+        fireEvent.change(screen.getByLabelText('Omni aspect ratio'), { target: { value: '9:16' } });
+        expect(mockSetStudioControls).toHaveBeenCalledWith({ aspectRatio: '9:16' });
+        fireEvent.change(screen.getByLabelText('Omni duration'), { target: { value: '10' } });
+        expect(mockSetStudioControls).toHaveBeenCalledWith({ duration: 10 });
     });
 
     it('handles Character X-Ray toggle in omni viewMode', () => {

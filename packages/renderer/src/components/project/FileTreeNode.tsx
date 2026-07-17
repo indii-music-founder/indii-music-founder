@@ -14,6 +14,7 @@ import {
 import { FileNode } from '@/services/FileSystemService';
 import { cn } from '@/lib/utils';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
+import { createResourceAssetPayload, writeCreativeAssetDrag } from '@/services/creative/CreativeAssetDragService';
 
 // Reusing helper functions
 function getFileIcon(type?: FileNode['fileType']) {
@@ -119,7 +120,12 @@ export const FileTreeNode = memo(({
         }
         e.stopPropagation();
         e.dataTransfer.setData('nodeId', node.id);
-        e.dataTransfer.effectAllowed = 'move';
+        const assetPayload = createResourceAssetPayload(node);
+        if (assetPayload) {
+            writeCreativeAssetDrag(e.dataTransfer, assetPayload, 'resource-tree', 'copyMove');
+        } else {
+            e.dataTransfer.effectAllowed = 'move';
+        }
     };
 
     const handleDragOver = (e: React.DragEvent) => {

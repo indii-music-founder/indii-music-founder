@@ -74,7 +74,7 @@ vi.mock('./VideoEditorSidebar', () => ({
             <div
                 data-testid="draggable-asset"
                 draggable
-                onDragStart={(e) => onLibraryDragStart(e, { id: 'asset1', type: 'video', url: 'vid.mp4' })}
+                onDragStart={(e) => onLibraryDragStart(e, { id: 'asset1', type: 'video', url: 'https://example.com/vid.mp4' })}
             >
                 Asset 1
             </div>
@@ -184,17 +184,30 @@ describe('VideoEditor Integration', () => {
 
         fireEvent.dragStart(asset, { dataTransfer });
 
-        // The real handler serializes a typed { type: 'asset', asset: {...} }
-        // payload (no raw `id`) so drop targets can validate/route it — see ISSUE-927.
+        // The handler uses writeCreativeAssetDrag, which sets multiple formats
         expect(dataTransfer.setData).toHaveBeenCalledWith(
-            'application/json',
-            JSON.stringify({ type: 'asset', asset: { type: 'video', name: 'Imported video', url: 'vid.mp4' } })
+            'application/x-indii-creative-asset+json',
+            JSON.stringify({
+                version: 1,
+                kind: 'creative-asset',
+                source: 'editor-library',
+                asset: { id: 'asset1', type: 'video', url: 'https://example.com/vid.mp4', name: 'Untitled video', prompt: '' }
+            })
         );
 
         // Mock getData to return exactly what setData produced, so the drop
         // handler parses the real serialized contract, not a stale fixture.
-        const [, serializedPayload] = dataTransfer.setData.mock.calls[0]!;
-        dataTransfer.getData.mockReturnValue(serializedPayload);
+        dataTransfer.getData.mockImplementation((format: string) => {
+            if (format === 'application/x-indii-creative-asset+json') {
+                return JSON.stringify({
+                    version: 1,
+                    kind: 'creative-asset',
+                    source: 'editor-library',
+                    asset: { id: 'asset1', type: 'video', url: 'https://example.com/vid.mp4', name: 'Untitled video', prompt: '' }
+                });
+            }
+            return '';
+        });
 
         // 2. Drop on Timeline Container (VideoEditor has the drop handler on the bottom div)
         const timelineWrapper = screen.getByTestId('video-timeline').parentElement;
@@ -208,7 +221,7 @@ describe('VideoEditor Integration', () => {
         // handleDrop resolves duration asynchronously before calling addClip.
         await waitFor(() => {
             expect(mockAddClip).toHaveBeenCalledWith(expect.objectContaining({
-                src: 'vid.mp4',
+                src: 'https://example.com/vid.mp4',
                 type: 'video'
             }));
         });

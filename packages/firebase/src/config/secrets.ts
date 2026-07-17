@@ -1,4 +1,17 @@
 import { defineSecret } from "firebase-functions/params";
+import { createHash } from "node:crypto";
+
+const DENIED_GEMINI_KEY_HASHES = new Set([
+    // Legacy credential that was once committed here as a plaintext denylist.
+    "8af3605ee47b616b97a84b82f76d47445f835dc95edfe46ce6ee5fa5f8ac1de9",
+]);
+
+function usableGeminiApiKey(value: string | undefined): string | null {
+    const candidate = value?.trim();
+    if (!candidate || /^(?:your[_-]|placeholder)/i.test(candidate)) return null;
+    const digest = createHash("sha256").update(candidate).digest("hex");
+    return DENIED_GEMINI_KEY_HASHES.has(digest) ? null : candidate;
+}
 
 /**
  * Centralized Secret Definitions
@@ -74,34 +87,19 @@ export function getGithubToken(): string | null {
  */
 export function getGeminiApiKey(): string | null {
     // 1. Try Environment Variable (Local/Dev/Emulator)
-    let envKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_GENAI_API_KEY;
-    if (envKey === 'AIzaSyBH5WGpmbYLQcSNte0dOQxxVhMBZSEC-D-I') {
-        envKey = '';
-    }
-    if (envKey && envKey.trim().length > 0) {
-        return envKey;
-    }
+    const envKey = usableGeminiApiKey(process.env.GEMINI_API_KEY || process.env.GOOGLE_GENAI_API_KEY);
+    if (envKey) return envKey;
 
     // 2. Try Firebase Secret (Production)
     // For V1 functions, secrets are mounted as environment variables.
     // However, defineSecret().value() is the modern way to access them if initialized.
     try {
-        let secret = geminiApiKey.value();
-        if (secret === 'AIzaSyBH5WGpmbYLQcSNte0dOQxxVhMBZSEC-D-I') {
-            secret = '';
-        }
-        if (secret && secret.trim().length > 0) {
-            return secret;
-        }
+        const secret = usableGeminiApiKey(geminiApiKey.value());
+        if (secret) return secret;
     } catch (_e) {
         // Fallback to direct process.env check in case .value() fails in specific contexts
-        let directEnv = process.env.GEMINI_API_KEY || process.env.GOOGLE_GENAI_API_KEY;
-        if (directEnv === 'AIzaSyBH5WGpmbYLQcSNte0dOQxxVhMBZSEC-D-I') {
-            directEnv = '';
-        }
-        if (directEnv && directEnv.trim().length > 0) {
-            return directEnv;
-        }
+        const directEnv = usableGeminiApiKey(process.env.GEMINI_API_KEY || process.env.GOOGLE_GENAI_API_KEY);
+        if (directEnv) return directEnv;
     }
 
     return null;

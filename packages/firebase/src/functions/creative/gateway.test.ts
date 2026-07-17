@@ -1,9 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { writeFile } from 'node:fs/promises';
 
 const mockInteractionsCreate = vi.fn();
+const mockInteractionsGet = vi.fn();
 const mockGenerateVideos = vi.fn();
 const mockGetVideosOperation = vi.fn();
 const mockDownload = vi.fn();
+const mockFilesUpload = vi.fn();
+const mockFilesGet = vi.fn();
+const mockFilesDownload = vi.fn();
 const mockGetMetadata = vi.fn();
 const mockSet = vi.fn();
 const mockCreate = vi.fn();
@@ -17,6 +22,7 @@ const mockBatchUpdate = vi.fn();
 const mockBatchCommit = vi.fn();
 const mockFinalizeReservation = vi.hoisted(() => vi.fn());
 const mockCheckOperationBudget = vi.hoisted(() => vi.fn());
+const mockProbeDurationSeconds = vi.hoisted(() => vi.fn());
 const mockCollectionNames: string[] = [];
 const mockOnCallOptions = vi.hoisted(() => [] as unknown[]);
 const mockOnCall = vi.hoisted(() => vi.fn((options, handler) => {
@@ -29,6 +35,7 @@ vi.mock('@google/genai', () => ({
     return {
       interactions: {
         create: mockInteractionsCreate,
+        get: mockInteractionsGet,
       },
       models: {
         generateVideos: mockGenerateVideos,
@@ -37,13 +44,20 @@ vi.mock('@google/genai', () => ({
         getVideosOperation: mockGetVideosOperation,
       },
       files: {
-        download: mockDownload,
+        upload: mockFilesUpload,
+        get: mockFilesGet,
+        download: mockFilesDownload,
       },
     };
   }),
   VideoGenerationReferenceType: {
     ASSET: 'ASSET',
     STYLE: 'STYLE',
+  },
+  FileState: {
+    ACTIVE: 'ACTIVE',
+    PROCESSING: 'PROCESSING',
+    FAILED: 'FAILED',
   },
 }));
 
@@ -121,6 +135,10 @@ vi.mock('../billing/enforceOperationCost', () => ({
   checkOperationBudget: mockCheckOperationBudget,
 }));
 
+vi.mock('./getMediaDuration', () => ({
+  probeDurationSeconds: mockProbeDurationSeconds,
+}));
+
 import { classifyMediaFinishFailure, generateAudioV3, generateImageV3, generateOmniRemixV3, generateVideoV3 } from './gateway';
 
 const callGenerateImage = generateImageV3 as unknown as (request: {
@@ -146,7 +164,9 @@ const callGenerateAudio = generateAudioV3 as unknown as (request: {
 describe('creative gateway generateImageV3', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGetMetadata.mockResolvedValue([{ contentType: 'image/png' }]);
+    mockInteractionsCreate.mockReset();
+    mockGetMetadata.mockReset();
+    mockGetMetadata.mockResolvedValue([{ contentType: 'image/png', size: '15' }]);
   });
 
   it('allocates enough memory for the Gemini image SDK path', () => {
@@ -424,6 +444,8 @@ describe('classifyMediaFinishFailure', () => {
 describe('creative gateway generateAudioV3', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockInteractionsCreate.mockReset();
+    mockGetMetadata.mockReset();
     mockCollectionNames.length = 0;
     mockSet.mockResolvedValue(undefined);
     mockCreate.mockResolvedValue(undefined);
@@ -563,6 +585,7 @@ describe('creative gateway generateAudioV3', () => {
 describe('creative gateway generateVideoV3', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockInteractionsCreate.mockReset();
     mockCollectionNames.length = 0;
   });
 
@@ -798,19 +821,35 @@ describe('creative gateway generateVideoV3', () => {
 describe('creative gateway generateOmniRemixV3', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockInteractionsCreate.mockReset();
+    mockInteractionsGet.mockReset();
+    mockDownload.mockReset();
+    mockFilesUpload.mockReset();
+    mockFilesGet.mockReset();
+    mockFilesDownload.mockReset();
+    mockGetMetadata.mockReset();
+    mockSave.mockReset();
+    mockSet.mockReset();
+    mockSet.mockResolvedValue(undefined);
+    mockUpdate.mockReset();
+    mockUpdate.mockResolvedValue(undefined);
+    mockJobGet.mockReset();
+    mockProbeDurationSeconds.mockReset();
+    mockProbeDurationSeconds.mockResolvedValue(8);
     mockDownload.mockResolvedValue([Buffer.from('video-bytes')]);
-    mockGetMetadata.mockResolvedValue([{ contentType: 'video/mp4' }]);
-    process.env.GEMINI_OMNI_FLASH_MODEL = 'gemini-omni-flash-preview';
+    mockGetMetadata.mockResolvedValue([{ contentType: 'video/mp4', size: '1024' }]);
+    mockFilesUpload.mockResolvedValue({
+      name: 'files/source-123',
+      uri: 'https://generativelanguage.googleapis.com/v1beta/files/source-123',
+      state: 'ACTIVE',
+      mimeType: 'video/mp4',
+    });
   });
 
-  afterEach(() => {
-    delete process.env.GEMINI_OMNI_FLASH_MODEL;
-  });
-
-  it('generates a video via the Omni Flash Interactions API with correct payload', async () => {
+  it('uploads an owned edit source and sends the official Omni interaction contract', async () => {
     mockInteractionsCreate.mockResolvedValueOnce({
       id: 'interaction-123',
-      status: 'ACTIVE',
+      status: 'completed',
       output_video: {
         data: Buffer.from('omni-video-bytes').toString('base64'),
         mime_type: 'video/mp4',
@@ -821,7 +860,8 @@ describe('creative gateway generateOmniRemixV3', () => {
       auth: { uid: 'user-123' },
       data: {
         prompt: 'Add neon glow effects to the performance',
-        referenceVideoUri: 'gs://test-bucket/base/performance.mp4',
+        task: 'edit',
+        referenceVideoUri: 'gs://test-bucket/creative/user-123/video/assets/performance.mp4',
         aspectRatio: '16:9',
         durationSeconds: 8,
         costEstimate: 0.8,
@@ -831,40 +871,279 @@ describe('creative gateway generateOmniRemixV3', () => {
 
     expect(mockInteractionsCreate).toHaveBeenCalledWith(expect.objectContaining({
       model: 'gemini-omni-flash-preview',
-      response_modalities: ['video'],
-      generation_config: expect.objectContaining({
-        video_config: expect.objectContaining({
-          tasks: 'edit',
-          aspect_ratio: '16:9',
-          duration_seconds: 8,
-          resolution: '1080p',
+      input: expect.arrayContaining([
+        {
+          type: 'document',
+          uri: 'https://generativelanguage.googleapis.com/v1beta/files/source-123',
+        },
+        expect.objectContaining({
+          type: 'text',
+          text: expect.stringContaining('Keep everything else the same.'),
         }),
-      }),
-      response_format: { delivery: 'uri' },
+      ]),
+      generation_config: { video_config: { task: 'edit' } },
+      response_format: {
+        type: 'video',
+        aspect_ratio: '16:9',
+        duration: '8s',
+        delivery: 'uri',
+      },
+      background: false,
+      stream: false,
+      store: true,
+    }));
+    expect(mockFilesUpload).toHaveBeenCalledWith(expect.objectContaining({
+      config: expect.objectContaining({ mimeType: 'video/mp4' }),
     }));
     expect(mockGenerateVideos).not.toHaveBeenCalled();
     expect(result).toEqual(expect.objectContaining({
       jobId: 'job-123',
       resultUri: expect.stringContaining('gs://test-bucket/creative/user-123/'),
+      interactionId: 'interaction-123',
+      task: 'edit',
+      synthIdApplied: true,
     }));
+    expect(mockFinalizeReservation).toHaveBeenCalledWith({
+      userId: 'user-123',
+      operationId: 'cost-op-1',
+      outcome: 'SETTLED',
+    });
   });
 
-  it('requires a cost reservation and persists Omni cost metadata', async () => {
+  it.each([
+    ['text_to_video', {}],
+    ['image_to_video', { firstFrameUri: 'gs://test-bucket/creative/user-123/images/first.png' }],
+    ['reference_to_video', { referenceUris: ['gs://test-bucket/creative/user-123/images/artist.png'] }],
+  ] as const)('supports the %s task', async (task, taskInput) => {
+    if (task !== 'text_to_video') {
+      mockGetMetadata.mockResolvedValue([{ contentType: 'image/png', size: '11' }]);
+    }
     mockInteractionsCreate.mockResolvedValueOnce({
       id: 'interaction-123',
-      status: 'ACTIVE',
+      status: 'completed',
       output_video: {
         data: Buffer.from('omni-video-bytes').toString('base64'),
         mime_type: 'video/mp4',
       },
     });
+    const result = await callGenerateOmniRemix({
+      auth: { uid: 'user-123' },
+      data: {
+        prompt: 'A kinetic performance film in a midnight warehouse',
+        task,
+        ...taskInput,
+        aspectRatio: '16:9',
+        durationSeconds: 8,
+        costEstimate: 0.8,
+        costReservationId: 'cost-op-1',
+      },
+    });
+
+    expect(mockInteractionsCreate).toHaveBeenCalledWith(expect.objectContaining({
+      generation_config: { video_config: { task } },
+    }));
+    expect(result).toEqual(expect.objectContaining({ task }));
+  });
+
+  it('rejects unsupported reference-image formats and releases the reservation', async () => {
+    mockGetMetadata.mockResolvedValueOnce([{ contentType: 'image/svg+xml', size: '11' }]);
 
     await expect(callGenerateOmniRemix({
       auth: { uid: 'user-123' },
       data: {
-        prompt: 'Add neon glow effects to the performance',
-        referenceVideoUri: 'gs://test-bucket/base/performance.mp4',
+        prompt: 'Use the performer as the visual reference',
+        task: 'reference_to_video',
+        referenceUris: ['gs://test-bucket/creative/user-123/images/performer.svg'],
         aspectRatio: '16:9',
+        durationSeconds: 8,
+        costEstimate: 0.8,
+        costReservationId: 'cost-op-1',
+      },
+    })).rejects.toMatchObject({
+      code: 'invalid-argument',
+      message: expect.stringContaining('supported raster image format'),
+    });
+    expect(mockInteractionsCreate).not.toHaveBeenCalled();
+    expect(mockFinalizeReservation).toHaveBeenCalledWith({
+      userId: 'user-123',
+      operationId: 'cost-op-1',
+      outcome: 'VOIDED',
+    });
+  });
+
+  it('continues an owned stored interaction for stateful editing', async () => {
+    mockJobGet.mockResolvedValueOnce({
+      exists: true,
+      data: () => ({
+        userId: 'user-123',
+        type: 'omni-video',
+        status: 'completed',
+        interactionId: 'interaction-previous',
+      }),
+    });
+    mockInteractionsCreate.mockResolvedValueOnce({
+      id: 'interaction-next',
+      status: 'completed',
+      output_video: {
+        data: Buffer.from('edited-video').toString('base64'),
+        mime_type: 'video/mp4',
+      },
+    });
+
+    const result = await callGenerateOmniRemix({
+      auth: { uid: 'user-123' },
+      data: {
+        prompt: 'Make the jacket cobalt blue',
+        task: 'edit',
+        previousInteractionId: 'interaction-previous',
+        previousJobId: 'job-previous',
+        aspectRatio: '16:9',
+        durationSeconds: 8,
+        costEstimate: 0.8,
+        costReservationId: 'cost-op-1',
+      },
+    });
+
+    expect(mockInteractionsCreate).toHaveBeenCalledWith(expect.objectContaining({
+      previous_interaction_id: 'interaction-previous',
+      generation_config: { video_config: { task: 'edit' } },
+    }));
+    expect(mockFilesUpload).not.toHaveBeenCalled();
+    expect(result).toEqual(expect.objectContaining({
+      interactionId: 'interaction-next',
+      task: 'edit',
+    }));
+  });
+
+  it('rejects a stateful interaction that is not backed by an owned Omni job', async () => {
+    mockJobGet.mockResolvedValueOnce({
+      exists: true,
+      data: () => ({
+        userId: 'user-123',
+        type: 'video',
+        status: 'completed',
+        interactionId: 'interaction-previous',
+      }),
+    });
+
+    await expect(callGenerateOmniRemix({
+      auth: { uid: 'user-123' },
+      data: {
+        prompt: 'Make the jacket cobalt blue',
+        task: 'edit',
+        previousInteractionId: 'interaction-previous',
+        previousJobId: 'job-previous',
+        aspectRatio: '16:9',
+        durationSeconds: 8,
+        costEstimate: 0.8,
+        costReservationId: 'cost-op-1',
+      },
+    })).rejects.toMatchObject({ code: 'failed-precondition' });
+    expect(mockInteractionsCreate).not.toHaveBeenCalled();
+    expect(mockFinalizeReservation).toHaveBeenCalledWith({
+      userId: 'user-123',
+      operationId: 'cost-op-1',
+      outcome: 'VOIDED',
+    });
+  });
+
+  it('downloads URI-delivered output through the Gemini Files API', async () => {
+    mockInteractionsCreate.mockResolvedValueOnce({
+      id: 'interaction-123',
+      status: 'completed',
+      output_video: {
+        type: 'video',
+        uri: 'https://generativelanguage.googleapis.com/v1beta/files/output-456',
+        mime_type: 'video/mp4',
+      },
+    });
+    mockFilesGet.mockResolvedValueOnce({
+      name: 'files/output-456',
+      uri: 'https://generativelanguage.googleapis.com/v1beta/files/output-456',
+      state: 'ACTIVE',
+      mimeType: 'video/mp4',
+    });
+    mockFilesDownload.mockImplementationOnce(async ({ downloadPath }: { downloadPath: string }) => {
+      await writeFile(downloadPath, Buffer.from('downloaded-omni-video'));
+    });
+
+    const result = await callGenerateOmniRemix({
+      auth: { uid: 'user-123' },
+      data: {
+        prompt: 'A kinetic performance film in a midnight warehouse',
+        task: 'text_to_video',
+        aspectRatio: '16:9',
+        durationSeconds: 8,
+        costEstimate: 0.8,
+        costReservationId: 'cost-op-1',
+      },
+    });
+
+    expect(result).toEqual(expect.objectContaining({
+      resultUri: expect.stringContaining('gs://test-bucket/creative/user-123/'),
+    }));
+    expect(mockFilesGet).toHaveBeenCalledWith({ name: 'files/output-456' });
+    expect(mockFilesDownload).toHaveBeenCalledWith(expect.objectContaining({
+      file: expect.objectContaining({ name: 'files/output-456' }),
+      downloadPath: expect.any(String),
+    }));
+    expect(mockSave).toHaveBeenCalledWith(Buffer.from('downloaded-omni-video'), expect.any(Object));
+  });
+
+  it('rejects uploaded audio references before calling Gemini and voids the existing reservation', async () => {
+    await expect(callGenerateOmniRemix({
+      auth: { uid: 'user-123' },
+      data: {
+        prompt: 'Cut the video to this track',
+        task: 'text_to_video',
+        audioUri: 'gs://test-bucket/creative/user-123/audio/reference.wav',
+        aspectRatio: '16:9',
+        durationSeconds: 8,
+        costEstimate: 0.8,
+        costReservationId: 'cost-op-1',
+      },
+    })).rejects.toMatchObject({
+      code: 'failed-precondition',
+      message: expect.stringContaining('does not currently support uploaded audio references'),
+    });
+    expect(mockInteractionsCreate).not.toHaveBeenCalled();
+    expect(mockFinalizeReservation).toHaveBeenCalledWith({
+      userId: 'user-123',
+      operationId: 'cost-op-1',
+      outcome: 'VOIDED',
+    });
+  });
+
+  it('rejects uploaded edit sources longer than the documented 10-second limit', async () => {
+    mockProbeDurationSeconds.mockResolvedValueOnce(10.5);
+    await expect(callGenerateOmniRemix({
+      auth: { uid: 'user-123' },
+      data: {
+        prompt: 'Make the lighting blue',
+        task: 'edit',
+        referenceVideoUri: 'gs://test-bucket/creative/user-123/video/assets/performance.mp4',
+        durationSeconds: 8,
+        costEstimate: 0.8,
+        costReservationId: 'cost-op-1',
+      },
+    })).rejects.toMatchObject({
+      code: 'invalid-argument',
+      message: expect.stringContaining('10 seconds or shorter'),
+    });
+    expect(mockFilesUpload).not.toHaveBeenCalled();
+    expect(mockFinalizeReservation).toHaveBeenCalledWith({
+      userId: 'user-123',
+      operationId: 'cost-op-1',
+      outcome: 'VOIDED',
+    });
+  });
+
+  it('requires a matching reservation and voids it if Gemini fails', async () => {
+    await expect(callGenerateOmniRemix({
+      auth: { uid: 'user-123' },
+      data: {
+        prompt: 'A kinetic performance film',
+        task: 'text_to_video',
         durationSeconds: 8,
       },
     })).rejects.toMatchObject({
@@ -872,64 +1151,41 @@ describe('creative gateway generateOmniRemixV3', () => {
       message: expect.stringContaining('Missing cost reservation'),
     });
 
-    const result = await callGenerateOmniRemix({
+    mockInteractionsCreate.mockRejectedValueOnce(Object.assign(new Error('Provider unavailable'), { status: 503 }));
+    await expect(callGenerateOmniRemix({
       auth: { uid: 'user-123' },
       data: {
-        prompt: 'Add neon glow effects to the performance',
-        referenceVideoUri: 'gs://test-bucket/base/performance.mp4',
-        aspectRatio: '16:9',
+        prompt: 'A kinetic performance film',
+        task: 'text_to_video',
         durationSeconds: 8,
         costEstimate: 0.8,
         costReservationId: 'cost-op-1',
       },
+    })).rejects.toMatchObject({ code: 'deadline-exceeded' });
+    expect(mockFinalizeReservation).toHaveBeenCalledWith({
+      userId: 'user-123',
+      operationId: 'cost-op-1',
+      outcome: 'VOIDED',
     });
-
-    expect(mockSet).toHaveBeenCalledWith(expect.objectContaining({
-      costEstimate: 0.8,
-      costReservationId: 'cost-op-1',
-    }));
-    expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining({
-      costEstimate: 0.8,
-      costReservationId: 'cost-op-1',
-    }));
-    expect(result).toEqual(expect.objectContaining({
-      jobId: 'job-123',
-      resultUri: expect.stringContaining('gs://test-bucket/creative/user-123/'),
-    }));
   });
 
-  it('ISSUE-774: never prices "hybrid-veo" at the Pro rate — it never runs a second Veo stage', async () => {
-    mockInteractionsCreate.mockResolvedValueOnce({
-      id: 'interaction-123',
-      status: 'ACTIVE',
-      output_video: {
-        data: Buffer.from('omni-video-bytes').toString('base64'),
-        mime_type: 'video/mp4',
-      },
-    });
-
-    // A client with a stale persisted 'hybrid-veo' selection still reserves
-    // at the real (fast) rate. If the server priced this at the Pro rate
-    // (0.4/sec instead of 0.1/sec), 8 * 0.4 = 3.2 would mismatch this 0.8
-    // reservation and the job would be rejected before ever running.
-    const result = await callGenerateOmniRemix({
+  it('does not call Gemini when the durable job record cannot be created', async () => {
+    mockSet.mockRejectedValueOnce(new Error('Firestore unavailable'));
+    await expect(callGenerateOmniRemix({
       auth: { uid: 'user-123' },
       data: {
-        prompt: 'Add neon glow effects to the performance',
-        referenceVideoUri: 'gs://test-bucket/base/performance.mp4',
-        aspectRatio: '16:9',
+        prompt: 'A kinetic performance film',
+        task: 'text_to_video',
         durationSeconds: 8,
-        pipelineMode: 'hybrid-veo',
         costEstimate: 0.8,
         costReservationId: 'cost-op-1',
       },
+    })).rejects.toMatchObject({ message: expect.stringContaining('Firestore unavailable') });
+    expect(mockInteractionsCreate).not.toHaveBeenCalled();
+    expect(mockFinalizeReservation).toHaveBeenCalledWith({
+      userId: 'user-123',
+      operationId: 'cost-op-1',
+      outcome: 'VOIDED',
     });
-
-    expect(result).toEqual(expect.objectContaining({
-      jobId: 'job-123',
-      resultUri: expect.stringContaining('gs://test-bucket/creative/user-123/'),
-    }));
-    // Confirm exactly one generation call happened — no second Veo stage.
-    expect(mockInteractionsCreate).toHaveBeenCalledTimes(1);
   });
 });

@@ -187,7 +187,7 @@ export async function queueVerifiedAudioIngestion(
         dispatchDeadline: { seconds: 1_800 },
         httpRequest: {
             httpMethod: 'POST' as const,
-            url: config.engineDspUrl,
+            url: new URL('/profile', config.engineDspUrl).toString(),
             body: Buffer.from(JSON.stringify(payload)).toString('base64'),
             headers: { 'Content-Type': 'application/json' },
             oidcToken: {

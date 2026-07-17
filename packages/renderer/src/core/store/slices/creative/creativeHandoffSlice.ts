@@ -1,6 +1,6 @@
 /**
  * Creative Cross-Stage Handoff Slice
- * Manages asset transfers between Image, Veo, and Omni stages.
+ * Manages asset transfers between Image, Veo, Omni, and the timeline editor.
  * Enables round-tripping of assets without re-upload.
  */
 
@@ -40,6 +40,7 @@ export function buildCreativeHandoffState(
         image: null,
         veo: null,
         omni: null,
+        editor: null,
     },
 
     sendToStage: (target: CreativeStage, payload: StageHandoffPayload) => {
@@ -72,6 +73,7 @@ export function buildCreativeHandoffState(
             'image': 'gallery',
             'veo': 'video_production',
             'omni': 'omni',
+            'editor': 'video_production',
         };
 
         const store = get();

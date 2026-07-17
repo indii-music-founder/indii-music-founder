@@ -100,10 +100,10 @@ const genai = new GoogleGenAI({
 });
 ```
 
-**No external secrets:**
-- `GEMINI_API_KEY` secret exists for backward compatibility (ragProxy only)
-- Never used in main text/image/video/audio paths
-- All new hot paths use Vertex + ADC
+**Backend-only Developer API exception:**
+- `GEMINI_API_KEY` is used by `ragProxy` and Gemini Omni Flash. Omni is currently a paid-tier Gemini Developer API preview and is not routed through the Vertex media client.
+- The key is attached only to Cloud Functions through Secret Manager and is never exposed to the renderer.
+- The main text/image/Veo/TTS paths continue to use Vertex + ADC according to their provider policy.
 
 ### 4. API Restriction Verification
 
@@ -190,8 +190,8 @@ packages/firebase/src/lib/image_generation.ts     (image generation)
 
 ## Exceptions & Scope
 
-**Files API (ragProxy):**
-- Currently uses `GEMINI_API_KEY` secret (temporary)
+**Files API (ragProxy and Gemini Omni Flash):**
+- Uses the server-side `GEMINI_API_KEY` secret. Omni uses Gemini Files for authenticated user-owned video input and URI-delivered output.
 - Backend-only; client never sees key
 - Migration to Vertex Files API planned in Phase 4
 - Does not violate "backend-only" principle (key is server-side)

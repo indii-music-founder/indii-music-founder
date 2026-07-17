@@ -20,6 +20,7 @@ describe('🖱️ Click: CreativeGallery Interaction', () => {
     const mockRemoveItemFromProject = vi.fn();
     const mockSetVideoInput = vi.fn();
     const mockSetSelectedItem = vi.fn();
+    const mockSendToStage = vi.fn();
     const mockToastSuccess = vi.fn();
     const mockToastInfo = vi.fn();
 
@@ -47,6 +48,9 @@ describe('🖱️ Click: CreativeGallery Interaction', () => {
         setVideoInput: mockSetVideoInput,
         selectedItem: null,
         setSelectedItem: mockSetSelectedItem,
+        sendToStage: mockSendToStage,
+        sendToModule: vi.fn(),
+        pinToClipboard: vi.fn(),
         addCharacterReference: vi.fn(),
         setPrompt: vi.fn(),
         setCreativePrompt: vi.fn(),
@@ -137,6 +141,19 @@ describe('🖱️ Click: CreativeGallery Interaction', () => {
 
         // ✅ Assert Feedback: Toast confirmation (Check exact message from component)
         expect(mockToastSuccess).toHaveBeenCalledWith("Character Reference Set");
+    });
+
+    it('routes an image to Omni as a true starting frame', () => {
+        render(<CreativeGallery />);
+
+        fireEvent.click(screen.getByRole('button', { name: 'Send to workspace' }));
+        fireEvent.click(screen.getByText('→ Omni (start)'));
+
+        expect(mockSendToStage).toHaveBeenCalledWith('omni', expect.objectContaining({
+            item: mockItem,
+            role: 'first-frame',
+            originStage: 'image',
+        }));
     });
 
     // ISSUE-922: upload toast must reflect real per-file outcomes, never a

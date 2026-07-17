@@ -301,11 +301,36 @@ export declare const GenerateVideoSchema: z.ZodObject<{
         uri: string;
     }[] | undefined;
 }>;
-export declare const GenerateOmniRemixSchema: z.ZodObject<{
+export declare const OmniVideoTaskSchema: z.ZodEnum<["text_to_video", "image_to_video", "reference_to_video", "edit"]>;
+export declare const OmniStoryboardFrameSchema: z.ZodObject<{
+    timestamp: z.ZodNumber;
     prompt: z.ZodString;
-    referenceVideoUri: z.ZodString;
+}, "strip", z.ZodTypeAny, {
+    timestamp: number;
+    prompt: string;
+}, {
+    timestamp: number;
+    prompt: string;
+}>;
+export declare const GenerateOmniRemixSchema: z.ZodEffects<z.ZodObject<{
+    prompt: z.ZodString;
+    task: z.ZodOptional<z.ZodEnum<["text_to_video", "image_to_video", "reference_to_video", "edit"]>>;
+    referenceVideoUri: z.ZodOptional<z.ZodString>;
+    firstFrameUri: z.ZodOptional<z.ZodString>;
     audioUri: z.ZodOptional<z.ZodString>;
     referenceUris: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
+    previousInteractionId: z.ZodOptional<z.ZodString>;
+    previousJobId: z.ZodOptional<z.ZodString>;
+    storyboard: z.ZodOptional<z.ZodArray<z.ZodObject<{
+        timestamp: z.ZodNumber;
+        prompt: z.ZodString;
+    }, "strip", z.ZodTypeAny, {
+        timestamp: number;
+        prompt: string;
+    }, {
+        timestamp: number;
+        prompt: string;
+    }>, "many">>;
     costEstimate: z.ZodOptional<z.ZodNumber>;
     costReservationId: z.ZodOptional<z.ZodString>;
     pipelineMode: z.ZodDefault<z.ZodEnum<["pure-omni", "hybrid-veo"]>>;
@@ -325,13 +350,21 @@ export declare const GenerateOmniRemixSchema: z.ZodObject<{
     prompt: string;
     durationSeconds: number;
     aspectRatio: "16:9" | "9:16";
-    referenceVideoUri: string;
     pipelineMode: "pure-omni" | "hybrid-veo";
+    firstFrameUri?: string | undefined;
     costEstimate?: number | undefined;
     costReservationId?: string | undefined;
     referenceUris?: string[] | undefined;
     parentId?: string | undefined;
+    task?: "text_to_video" | "image_to_video" | "reference_to_video" | "edit" | undefined;
+    referenceVideoUri?: string | undefined;
     audioUri?: string | undefined;
+    previousInteractionId?: string | undefined;
+    previousJobId?: string | undefined;
+    storyboard?: {
+        timestamp: number;
+        prompt: string;
+    }[] | undefined;
     posePreservation?: number | undefined;
     beatPulse?: number | undefined;
     characterXRay?: boolean | undefined;
@@ -343,14 +376,78 @@ export declare const GenerateOmniRemixSchema: z.ZodObject<{
     visualizerColor?: string | undefined;
 }, {
     prompt: string;
-    referenceVideoUri: string;
     durationSeconds?: number | undefined;
     aspectRatio?: "16:9" | "9:16" | undefined;
+    firstFrameUri?: string | undefined;
     costEstimate?: number | undefined;
     costReservationId?: string | undefined;
     referenceUris?: string[] | undefined;
     parentId?: string | undefined;
+    task?: "text_to_video" | "image_to_video" | "reference_to_video" | "edit" | undefined;
+    referenceVideoUri?: string | undefined;
     audioUri?: string | undefined;
+    previousInteractionId?: string | undefined;
+    previousJobId?: string | undefined;
+    storyboard?: {
+        timestamp: number;
+        prompt: string;
+    }[] | undefined;
+    pipelineMode?: "pure-omni" | "hybrid-veo" | undefined;
+    posePreservation?: number | undefined;
+    beatPulse?: number | undefined;
+    characterXRay?: boolean | undefined;
+    synthIdEnabled?: boolean | undefined;
+    activePosePreset?: string | undefined;
+    selectedLanguage?: string | undefined;
+    lyricsText?: string | undefined;
+    typographyStyle?: "cyberpunk" | "kinetic-neon" | "liquid-gold" | "minimal-infographic" | undefined;
+    visualizerColor?: string | undefined;
+}>, {
+    prompt: string;
+    durationSeconds: number;
+    aspectRatio: "16:9" | "9:16";
+    pipelineMode: "pure-omni" | "hybrid-veo";
+    firstFrameUri?: string | undefined;
+    costEstimate?: number | undefined;
+    costReservationId?: string | undefined;
+    referenceUris?: string[] | undefined;
+    parentId?: string | undefined;
+    task?: "text_to_video" | "image_to_video" | "reference_to_video" | "edit" | undefined;
+    referenceVideoUri?: string | undefined;
+    audioUri?: string | undefined;
+    previousInteractionId?: string | undefined;
+    previousJobId?: string | undefined;
+    storyboard?: {
+        timestamp: number;
+        prompt: string;
+    }[] | undefined;
+    posePreservation?: number | undefined;
+    beatPulse?: number | undefined;
+    characterXRay?: boolean | undefined;
+    synthIdEnabled?: boolean | undefined;
+    activePosePreset?: string | undefined;
+    selectedLanguage?: string | undefined;
+    lyricsText?: string | undefined;
+    typographyStyle?: "cyberpunk" | "kinetic-neon" | "liquid-gold" | "minimal-infographic" | undefined;
+    visualizerColor?: string | undefined;
+}, {
+    prompt: string;
+    durationSeconds?: number | undefined;
+    aspectRatio?: "16:9" | "9:16" | undefined;
+    firstFrameUri?: string | undefined;
+    costEstimate?: number | undefined;
+    costReservationId?: string | undefined;
+    referenceUris?: string[] | undefined;
+    parentId?: string | undefined;
+    task?: "text_to_video" | "image_to_video" | "reference_to_video" | "edit" | undefined;
+    referenceVideoUri?: string | undefined;
+    audioUri?: string | undefined;
+    previousInteractionId?: string | undefined;
+    previousJobId?: string | undefined;
+    storyboard?: {
+        timestamp: number;
+        prompt: string;
+    }[] | undefined;
     pipelineMode?: "pure-omni" | "hybrid-veo" | undefined;
     posePreservation?: number | undefined;
     beatPulse?: number | undefined;
@@ -380,6 +477,7 @@ export declare const GenerateAudioSchema: z.ZodObject<{
 export type BaseMediaRequest = z.infer<typeof BaseMediaRequestSchema>;
 export type GenerateImage = z.infer<typeof GenerateImageSchema>;
 export type GenerateVideo = z.infer<typeof GenerateVideoSchema>;
+export type OmniVideoTask = z.infer<typeof OmniVideoTaskSchema>;
 export type GenerateOmniRemix = z.infer<typeof GenerateOmniRemixSchema>;
 export type GenerateAudio = z.infer<typeof GenerateAudioSchema>;
 //# sourceMappingURL=creative.d.ts.map

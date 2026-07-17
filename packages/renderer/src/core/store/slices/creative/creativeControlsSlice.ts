@@ -102,13 +102,7 @@ export interface CreativeControlsSlice {
         posePreservation: number;
         beatPulse: number;
         characterXRay: boolean;
-        synthIdEnabled: boolean;
-        selectedLanguage: string;
         omniReferenceVideo: string | null;
-        // ISSUE-774: 'hybrid-veo' is retired (the UI no longer sets it) —
-        // kept in the type only so a stale persisted value doesn't break
-        // hydration for existing users.
-        omniPipelineMode: 'pure-omni' | 'hybrid-veo';
         activePosePreset: string;
         lyricsText: string;
         typographyStyle: 'cyberpunk' | 'kinetic-neon' | 'liquid-gold' | 'minimal-infographic';
@@ -264,10 +258,7 @@ export function buildCreativeControlsState(
             posePreservation: 0.8,
             beatPulse: 0.5,
             characterXRay: true,
-            synthIdEnabled: true,
-            selectedLanguage: 'es',
             omniReferenceVideo: null,
-            omniPipelineMode: 'pure-omni',
             activePosePreset: 'guitar_solo',
             lyricsText: '',
             typographyStyle: 'cyberpunk',

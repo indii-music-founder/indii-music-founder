@@ -1,4 +1,0 @@
-
-> indii.music@1.64.2 lint
-> eslint packages/main/src packages/renderer/src packages/shared/src packages/firebase/src packages/landing/src packages/sdk/src
-
