@@ -110,6 +110,8 @@ export interface AppSlice {
     _lastModuleSwitch?: number;
     bugReportDialog?: { isOpen: boolean; type: 'bug' | 'feature'; prefilledError?: string; prefilledModule?: string };
     setBugReportDialog: (dialog: AppSlice['bugReportDialog']) => void;
+    rightPanelWidth: number;
+    setRightPanelWidth: (width: number) => void;
 }
 
 export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
@@ -119,6 +121,13 @@ export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
     hasUnsavedChanges: false,
     pendingCostWarning: null,
     bugReportDialog: { isOpen: false, type: 'bug' },
+    rightPanelWidth: typeof window !== 'undefined' ? parseInt(localStorage.getItem('indii_rightPanelWidth') || '320', 10) : 320,
+    setRightPanelWidth: (width) => {
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('indii_rightPanelWidth', width.toString());
+        }
+        set({ rightPanelWidth: width });
+    },
     setPendingCostWarning: (warning) => set({ pendingCostWarning: warning }),
     setBugReportDialog: (dialog) => set({ bugReportDialog: dialog }),
     setHasUnsavedChanges: (hasUnsaved) => set({ hasUnsavedChanges: hasUnsaved }),
