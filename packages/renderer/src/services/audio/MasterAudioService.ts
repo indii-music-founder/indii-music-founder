@@ -3,26 +3,12 @@ import { httpsCallable } from 'firebase/functions';
 
 import { functions, storage } from '@/services/firebase';
 import type { MasterAudioReference } from '@/services/metadata/types';
+import { inspectCanonicalMaster } from './MasterAudioValidation';
 
 interface PersistMasterAudioOptions {
     userId: string;
     masterFingerprint: string;
 }
-
-const EXTENSION_BY_MIME_TYPE: Record<string, string> = {
-    'audio/aac': 'aac',
-    'audio/aiff': 'aiff',
-    'audio/alac': 'alac',
-    'audio/flac': 'flac',
-    'audio/mp3': 'mp3',
-    'audio/mp4': 'm4a',
-    'audio/mpeg': 'mp3',
-    'audio/ogg': 'ogg',
-    'audio/wav': 'wav',
-    'audio/x-aiff': 'aiff',
-    'audio/x-flac': 'flac',
-    'audio/x-wav': 'wav',
-};
 
 function isObjectNotFound(error: unknown): boolean {
     return typeof error === 'object' && error !== null &&
@@ -31,8 +17,8 @@ function isObjectNotFound(error: unknown): boolean {
 
 export class MasterAudioService {
     async persist(file: File, options: PersistMasterAudioOptions): Promise<MasterAudioReference> {
-        if (!file.type.startsWith('audio/')) {
-            throw new Error('A valid audio file is required for master ingestion.');
+        if (!file || file.size <= 0) {
+            throw new Error('A non-empty audio file is required for master ingestion.');
         }
         if (!options.userId.trim()) {
             throw new Error('An authenticated owner is required for master ingestion.');
@@ -41,8 +27,9 @@ export class MasterAudioService {
             throw new Error('A master fingerprint is required for master ingestion.');
         }
 
-        const contentHash = await this.sha256(file);
-        const extension = EXTENSION_BY_MIME_TYPE[file.type.toLowerCase()] ?? 'audio';
+        const { audioProperties, contentHash } = await inspectCanonicalMaster(file);
+        const extension = audioProperties.container;
+        const canonicalMimeType = extension === 'flac' ? 'audio/flac' : 'audio/wav';
         const storagePath = `masters/${options.userId}/${contentHash}/original.${extension}`;
         const masterRef = ref(storage, storagePath);
 
@@ -54,13 +41,18 @@ export class MasterAudioService {
 
             try {
                 await uploadBytes(masterRef, file, {
-                    contentType: file.type,
+                    contentType: canonicalMimeType,
                     customMetadata: {
+                        bitDepth: String(audioProperties.bitDepth),
+                        channels: String(audioProperties.channels),
+                        codec: audioProperties.codec,
+                        container: audioProperties.container,
                         contentHash,
                         immutable: 'true',
                         masterFingerprint: options.masterFingerprint,
                         ownerId: options.userId,
                         originalFileName: file.name,
+                        sampleRate: String(audioProperties.sampleRate),
                     },
                 });
             } catch (uploadError: unknown) {
@@ -88,10 +80,11 @@ export class MasterAudioService {
         });
 
         return {
+            audioProperties,
             contentHash,
             downloadUrl: await getDownloadURL(masterRef),
             masterFingerprint: resolvedMasterFingerprint,
-            mimeType: file.type,
+            mimeType: canonicalMimeType,
             originalFileName: file.name,
             sizeBytes: file.size,
             storagePath,
@@ -99,20 +92,6 @@ export class MasterAudioService {
         };
     }
 
-    private async sha256(file: File): Promise<string> {
-        const bytes = typeof file.arrayBuffer === 'function'
-            ? await file.arrayBuffer()
-            : await new Promise<ArrayBuffer>((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onerror = () => reject(reader.error ?? new Error('Unable to read master audio bytes.'));
-                reader.onload = () => resolve(reader.result as ArrayBuffer);
-                reader.readAsArrayBuffer(file);
-            });
-        const digest = await crypto.subtle.digest('SHA-256', bytes);
-        return Array.from(new Uint8Array(digest))
-            .map(byte => byte.toString(16).padStart(2, '0'))
-            .join('');
-    }
 }
 
 export const masterAudioService = new MasterAudioService();

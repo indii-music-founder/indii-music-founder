@@ -90,10 +90,7 @@ export class TrackIngestionService {
             durationSeconds: technical.duration,
             durationFormatted: this.formatDuration(technical.duration),
             durationDDEXFormatted: this.formatDurationDDEX(technical.duration),
-            audioTechnical: technical.audit ? {
-                channels: technical.audit.isStereo ? 2 : 1,
-                sampleRate: technical.audit.sampleRate,
-            } : undefined,
+            audioTechnical: masterAsset.audioProperties,
 
             // DDEX Fields from AI
             genre: semantic.ddexGenre || '', // Strict Validation: leave empty so UI wizard catches it
