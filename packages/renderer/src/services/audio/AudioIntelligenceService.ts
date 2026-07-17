@@ -98,6 +98,11 @@ export class AudioIntelligenceService {
         const moods = strings(gemini.moods);
         const instruments = strings(gemini.instrumentation);
         const summary = typeof gemini.summary === 'string' ? gemini.summary : '';
+        const sonicTexture = typeof gemini.sonic_texture === 'string' ? gemini.sonic_texture : 'unmeasured';
+        const visualDirection = typeof gemini.visual_direction === 'string' ? gemini.visual_direction : summary;
+        const imagePrompt = typeof gemini.image_prompt === 'string' ? gemini.image_prompt : visualDirection;
+        const videoPrompt = typeof gemini.video_prompt === 'string' ? gemini.video_prompt : visualDirection;
+        const marketingKeywords = strings(gemini.marketing_keywords);
         const language = typeof gemini.language === 'string' ? gemini.language : '';
         const explicitSignal = typeof gemini.clean_or_explicit_signal === 'string' ? gemini.clean_or_explicit_signal.toLowerCase() : '';
         return {
@@ -114,11 +119,11 @@ export class AudioIntelligenceService {
                 ddexGenre: '', ddexSubGenre: '', language,
                 isExplicit: explicitSignal.includes('explicit') && !explicitSignal.includes('not explicit'),
                 marketingComment: summary,
-                timbre: { texture: 'See server analysis receipt', brightness: 'unmeasured', saturation: 'unmeasured', spaceDepth: 'unmeasured' },
+                timbre: { texture: sonicTexture, brightness: 'unmeasured', saturation: 'unmeasured', spaceDepth: 'unmeasured' },
                 productionValue: { era: 'unmeasured', quality: 'unmeasured', mixBalance: 'unmeasured', aiArtifacts: false },
-                visualImagery: { abstract: summary, narrative: summary, lighting: 'unmeasured' },
-                marketingHooks: { keywords: [...genres, ...moods], oneLiner: summary },
-                targetPrompts: { image: summary, veo: summary },
+                visualImagery: { abstract: visualDirection, narrative: visualDirection, lighting: 'unmeasured' },
+                marketingHooks: { keywords: marketingKeywords, oneLiner: summary },
+                targetPrompts: { image: imagePrompt, veo: videoPrompt },
             },
             analyzedAt: Date.now(), modelVersion: receipt.geminiModel || 'server-receipt',
         };
