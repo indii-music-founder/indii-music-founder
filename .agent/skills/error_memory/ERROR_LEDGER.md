@@ -1353,3 +1353,9 @@ Before pushing any branch, run `/plat` (see `.claude/commands/plat.md`). It exec
   → blocked referrer returns "Requests from referer ... are blocked."; allowed referrer returns a normal auth error (e.g. INVALID_LOGIN_CREDENTIALS).
 - FIX: GCP Console → APIs & Services → Credentials → the browser key → Application restrictions → HTTP referrers → ADD `http://localhost:4243/*` (web dev) alongside prod entries. Requires an account with apikeys perms on `indii-music-founder` (the.walking.agency.det@gmail.com is DENIED; wiil@indii.music is the firebase-tools owner account — use it: `gcloud config set account wiil@indii.music`).
 - PORT MAP (do not reshuffle): 4242 = Electron dev (permanent), 4243 = web dev/test (`dev:web`), 3000 = landing/marketing.
+
+## 2026-07-17 — Agent Browser UI Testing Auth Bypass Stuck
+- SEVERITY: Medium (wastes agent time/credits)
+- BUG: When testing locally at localhost, browser subagents can get permanently stuck at the auth wall despite `window.useStore` injection instructions. The agents will spin indefinitely retrying the navigation instead of reporting failure.
+- FIX: Natively verify UI rendering by explicitly mocking `useStore` in `Vitest` and testing the React component mounts directly without crashing, rather than relying on a visual browser subagent for routine UI rendering verification.
+- PREVENTION: Never deploy browser QA subagents for tasks that can be fully verified with explicit Vitest component rendering tests.
