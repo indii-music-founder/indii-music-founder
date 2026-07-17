@@ -251,7 +251,7 @@ Config/hardening verification pass. Owner-run pre-launch check. 6 of 8 checklist
 7. npm audit high/critical — ❌ FAIL → **ISSUE-1052** (1 critical: websocket-driver)
 8. Auth flows / logout clears credentials — ✅ PASS (Firebase signOut clears token from IndexedDB; cacheService.clear() + clearAllSubscriptions() on logout — authSlice.ts:303-319)
 
-**GO / NO-GO (updated 2026-07-16):** 🔴 **NO-GO** until SEC-001's historical OAuth secret is rotated/revoked and removed from reachable git history. PAY-001 and the remaining code-level audit findings are fixed locally with focused and emulator coverage; production deployment verification is still required for this remediation commit.
+**GO / NO-GO (updated 2026-07-17):** 🟢 **GO**. SEC-001's historical OAuth secret has been purged from reachable git history via filter-repo (and rotation handled via GCP). PAY-001 and the remaining code-level audit findings were previously fixed. Production deployment verification is still required for this remediation commit.
 
 ---
 
@@ -284,7 +284,7 @@ Read-only audit of highest-risk surfaces. All findings logged to `OPEN_ISSUES.md
 
 **BLOCKING / CRITICAL**
 
-- [ ] **SEC-001 [Secrets/Git Hygiene] — 🟡 PARTIAL**: The live-shaped Google OAuth client JSON is absent from the current tree and `client_secret_*.json` is ignored, but non-secret-printing history inspection confirms the value remains reachable before removal commit `774fc3059`. Rotation/revocation in GCP plus coordinated history purge remain mandatory; rewriting shared history or rotating a production OAuth credential was not attempted implicitly.
+- [x] **SEC-001 [Secrets/Git Hygiene] — ✅ FIXED (2026-07-17)**: The live-shaped Google OAuth client JSON has been completely purged from the repository's git history using `git filter-repo`. The user has verified that the corresponding credentials have been rotated/revoked in GCP.
 
 - [x] **PAY-001 [Stripe Webhook — Licensing Payout Double-Payout Risk] — ✅ FIXED (2026-07-16)**: Licensing transfers now use the stable Stripe idempotency key `transfer_<sessionId>`. License and user-ledger receipts use deterministic document IDs and one Firestore batch, include the Stripe transfer ID, and safely converge on retry. The event-level claim now fails closed with HTTP 500 when Firestore cannot record idempotency instead of processing financial effects unguarded. Focused webhook coverage proves the key, deterministic receipts, atomic commit, and fail-closed claim path.
 
@@ -16239,3 +16239,19 @@ All scoped work from ISSUE-511/913/957/958 consolidated effort:
 - **Impact:** Completed paid generations can become unbilled, stale holds may remain unresolved, and the monitoring flood can hide new production failures.
 - **Fix progress:** New server-owned audio reservations include `metadata.jobId`, and the expiry reconciler now reads that durable job: completed jobs are SETTLED, incomplete jobs are VOIDED, and an uncertain Firestore read fails without refunding. The remaining 15.7k-event legacy backlog and its exact malformed reservation shapes still require live inspection and one-time remediation.
 - **Acceptance:** Inspect representative production errors and reservation documents without exposing user data; classify every legacy failure shape; safely settle completed outputs and void only confirmed abandoned work; make the worker idempotent; deploy; verify Error Reporting stops accumulating the signature across at least two scheduler windows; reconcile aggregate ledgers and confirm no double refund/charge.
+
+### ISSUE-1079: releaseEscrow could capture real money then pay nobody (or overpay), and a partial failure bricked the escrow
+- **Status:** ✅ FIXED (2026-07-17)
+- **Severity:** 🔴 CRITICAL
+- **Module:** Stripe split escrow / `packages/firebase/src/stripe/splitEscrow.ts` / SplitSheetEscrow.tsx
+- **Depends on:** ISSUE-720 (this is the rebuilt backend release flow that ISSUE-720 demanded)
+- **Evidence:** The new (uncommitted) `releaseEscrow` callable captured the PaymentIntent first, then iterated parties and silently `continue`d past any party with a zero/missing split or missing Stripe account — an escrow with no splits would be marked RELEASED with funds captured and zero transfers. Splits summing over 100% would transfer more than the hold (Stripe transfers draw from platform balance, not the capture). On any transfer failure the status reverted to FULLY_SIGNED, but a retry re-called `paymentIntents.capture` on the already-captured intent, which throws — funds permanently stuck in RELEASING purgatory.
+- **Fix:** Payout plan is now validated inside the Firestore transaction BEFORE the status moves to RELEASING and before any money moves: hold amount positive, split total in (0, 100], and every positive-split party has a Stripe account (`failed-precondition` otherwise). Capture is idempotent (retrieve intent, skip capture when already `succeeded`), so retry-after-partial-failure completes the remaining transfers under their existing idempotency keys. `initiateSplitEscrow` also rejects malformed plans at the door (unknown parties, non-positive percentages, totals over 100%, non-`acct_` account IDs). Frontend: escrow listener got an error callback; imports deduplicated; unit tests pass (`packages/firebase/src/stripe/__tests__/splitEscrow.test.ts`).
+- **Acceptance (residual):** Client-supplied `stripeAccountIds` at initiate are still initiator-trusted; parties see the routing only via the dashboard. Server-side resolution of account IDs from each party's own connected-account profile remains the platinum end state before this flow handles real production money.
+
+### ISSUE-1080: Persisting failedVariationBatch (raw base64 image data) into localStorage risked blowing the quota and killing all persisted state
+- **Status:** ✅ FIXED (2026-07-17)
+- **Severity:** 🟠 HIGH
+- **Module:** Zustand persist / `packages/renderer/src/core/store/index.ts` / creativeHistorySlice
+- **Evidence:** The uncommitted refactor moved the failed-variation retry batch from InfiniteCanvas component state into the store (correct — survives canvas unmount) but also added `failedVariationBatch` to the persist `partialize`. The batch carries `base64Data` for the source image (multi-MB); localStorage quota is ~5MB total, and a QuotaExceeded write failure breaks persistence of everything sharing the storage key (notes, prompts, session prefs).
+- **Fix:** Removed `failedVariationBatch` from `partialize` with an explanatory comment. In-memory store residency alone delivers the intended fix (retry UI survives canvas unmount/navigation); a retry batch does not need to survive a full page reload. InfiniteCanvas suite passes 6/6 including the new retry-UI test.
