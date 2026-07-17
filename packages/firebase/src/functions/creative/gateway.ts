@@ -8,7 +8,8 @@ import { getVertexAIClient } from '../../lib/vertexClient';
 import { parseStorageUri } from '../../lib/storageUri';
 import { GenerateAudioSchema, GenerateImageSchema, GenerateVideoSchema, GenerateOmniRemixSchema } from '../../shared/creative';
 import { VideoJobDocumentSchema, type VideoJobDocument } from '../../shared/videoJob';
-import { finalizeOperationReservation } from '../billing/enforceOperationCost';
+import { checkOperationBudget, finalizeOperationReservation } from '../billing/enforceOperationCost';
+import { createHash } from 'node:crypto';
 import { readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -649,52 +650,6 @@ export class MediaGenerationError extends Error {
   }
 }
 
-function extractInlineMedia(response: unknown, kind: MediaKind): { data: string; mimeType: string } {
-  interface GeneratedImageResponse {
-    generatedImages?: Array<{
-      image?: {
-        mimeType?: string;
-        imageBytes?: string;
-      };
-    }>;
-  }
-  const typedResponse = response as GeneratedImageResponse;
-  if (kind === 'image' && typedResponse?.generatedImages?.[0]?.image?.imageBytes) {
-    return {
-      mimeType: typedResponse.generatedImages[0].image.mimeType || 'image/jpeg',
-      data: typedResponse.generatedImages[0].image.imageBytes
-    };
-  }
-
-  const result = response as GeminiContentResponse;
-  const candidates = result.candidates ?? [];
-  const parts = candidates.flatMap(candidate => candidate.content?.parts ?? []);
-  const matchingParts = parts.filter(part => {
-    const mimeType = part.inlineData?.mimeType;
-    return !!part.inlineData?.data && (!mimeType || mimeType.startsWith(`${kind}/`));
-  });
-  const mediaParts = matchingParts.length > 0 ? matchingParts : parts.filter(part => !!part.inlineData?.data);
-  const finalParts = mediaParts.filter(part => !part.thought);
-  const selectableParts = finalParts.length > 0 ? finalParts : mediaParts;
-  const selectedPart = selectableParts[selectableParts.length - 1];
-
-  if (selectedPart?.inlineData?.data) {
-    return {
-      data: selectedPart.inlineData.data,
-      mimeType: selectedPart.inlineData.mimeType || `${kind}/jpeg`,
-    };
-  }
-
-  const finishReasons = candidates.map(candidate => candidate.finishReason).filter(Boolean).join(', ') || 'unknown';
-  const textPreview = parts
-    .map(part => part.text)
-    .filter(Boolean)
-    .join(' ')
-    .slice(0, 180) || undefined;
-
-  throw new MediaGenerationError(kind, finishReasons, textPreview);
-}
-
 function extensionForMime(mimeType: string, fallback: string): string {
   const normalized = mimeType.toLowerCase();
   if (normalized === 'image/png') return 'png';
@@ -763,7 +718,7 @@ function toGatewayError(error: unknown, context: string): HttpsError {
     publicMessage = 'Google AI Studio prepayment credits are depleted for this Gemini API project. Add credits or switch the app to a funded project before trying image generation again.';
   } else if (status === 400 || lower.includes('invalid') || lower.includes('bad request') || lower.includes('safety') || lower.includes('policy') || lower.includes('blocked') || lower.includes('unsupported') || lower.includes('not supported')) {
     code = 'invalid-argument';
-    publicMessage = `Google rejected the image generation settings: ${message}`;
+    publicMessage = `Google rejected the generation request: ${message}`;
   }
   else if (status === 401 || status === 403 || lower.includes('api key') || lower.includes('permission') || lower.includes('auth')) code = 'permission-denied';
   else if (status === 404 || lower.includes('not found') || lower.includes('not available')) code = 'failed-precondition';
@@ -771,7 +726,7 @@ function toGatewayError(error: unknown, context: string): HttpsError {
   else if (status === 503 || status === 504 || lower.includes('timeout') || lower.includes('deadline') || lower.includes('overloaded')) code = 'deadline-exceeded';
   else if (status === 500 || lower.includes('internal error') || lower.includes('internal server error')) {
     code = 'unavailable';
-    publicMessage = 'Google Gemini returned a temporary internal error while generating the image. Try again; if it repeats, switch image model/settings or check Google AI Studio status for this project.';
+    publicMessage = 'Google Gemini returned a temporary internal generation error. Try again; if it repeats, check the selected model and Google AI Studio status for this project.';
   }
 
   if (lower.includes('is not configured') || lower.includes('api key unavailable') || lower.includes('model not found') || lower.includes('model is not available')) {
@@ -1742,53 +1697,231 @@ export const generateOmniRemixV3 = onCall({ timeoutSeconds: 540, secrets: [gemin
   }
 });
 
+interface InteractionAudioResponse {
+  output_audio?: {
+    data?: string;
+    mime_type?: string;
+  };
+}
+
+function extractInteractionAudio(response: unknown): { pcm: Buffer; sampleRate: number } {
+  const audio = (response as InteractionAudioResponse)?.output_audio;
+  if (!audio?.data) {
+    throw new MediaGenerationError('audio', 'NO_AUDIO');
+  }
+  const sampleRateMatch = audio.mime_type?.match(/rate=(\d+)/i);
+  const sampleRate = sampleRateMatch ? Number(sampleRateMatch[1]) : 24_000;
+  if (!Number.isSafeInteger(sampleRate) || sampleRate < 8_000 || sampleRate > 192_000) {
+    throw new HttpsError('failed-precondition', 'The speech provider returned an invalid sample rate.');
+  }
+  return { pcm: Buffer.from(audio.data, 'base64'), sampleRate };
+}
+
+/** Wrap Gemini's raw mono 16-bit PCM in a browser-playable WAV container. */
+function pcmToWav(pcm: Buffer, sampleRate: number): Buffer {
+  const header = Buffer.alloc(44);
+  const channels = 1;
+  const bitsPerSample = 16;
+  const blockAlign = channels * (bitsPerSample / 8);
+  header.write('RIFF', 0, 'ascii');
+  header.writeUInt32LE(36 + pcm.length, 4);
+  header.write('WAVE', 8, 'ascii');
+  header.write('fmt ', 12, 'ascii');
+  header.writeUInt32LE(16, 16);
+  header.writeUInt16LE(1, 20);
+  header.writeUInt16LE(channels, 22);
+  header.writeUInt32LE(sampleRate, 24);
+  header.writeUInt32LE(sampleRate * blockAlign, 28);
+  header.writeUInt16LE(blockAlign, 32);
+  header.writeUInt16LE(bitsPerSample, 34);
+  header.write('data', 36, 'ascii');
+  header.writeUInt32LE(pcm.length, 40);
+  return Buffer.concat([header, pcm]);
+}
+
+function estimateTtsDurationSeconds(prompt: string): number {
+  const wordCount = prompt.trim().split(/\s+/).filter(Boolean).length;
+  return Math.min(600, Math.max(1, Math.ceil((wordCount / 2.5) * 1.25)));
+}
+
 /**
- * generateAudioV3 - Routes to NB2
+ * Gemini 3.1 Flash TTS pricing: $1/M text input tokens and $20/M audio output
+ * tokens, with 25 audio tokens per generated second. Reserve a 25% duration
+ * buffer because the provider controls pacing.
  */
-export const generateAudioV3 = onCall({ timeoutSeconds: 300, secrets: [geminiApiKey] , enforceAppCheck: false}, async (request) => {
+function estimateTtsCost(prompt: string): number {
+  const inputTokens = Math.ceil(prompt.length / 4);
+  const bufferedSeconds = estimateTtsDurationSeconds(prompt);
+  const inputCost = inputTokens / 1_000_000;
+  const outputCost = (bufferedSeconds * 25 * 20) / 1_000_000;
+  return Math.max(0.001, Math.ceil((inputCost + outputCost) * 1_000_000) / 1_000_000);
+}
+
+function buildAudioJobId(userId: string, requestId: string): string {
+  const digest = createHash('sha256').update(`${userId}:${requestId}`).digest('hex').slice(0, 40);
+  return `audio-${digest}`;
+}
+
+function isAlreadyExistsError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+  const record = error as Record<string, unknown>;
+  return record.code === 6 || record.code === '6' || record.code === 'already-exists'
+    || errorMessage(error).toLowerCase().includes('already exists');
+}
+
+async function replayCompletedAudioJob(
+  jobId: string,
+  userId: string,
+): Promise<{ jobId: string; libraryAssetId: string; resultUri: string; mimeType: string }> {
+  const snapshot = await getDb().collection('creative_jobs').doc(jobId).get();
+  const existing = snapshot.data() as Record<string, unknown> | undefined;
+  if (!snapshot.exists || existing?.userId !== userId) {
+    throw new HttpsError('failed-precondition', 'The existing audio request could not be resumed.');
+  }
+  if (existing.status !== 'completed' || typeof existing.resultUri !== 'string') {
+    const status = existing.status === 'processing' ? 'still processing' : 'already failed';
+    throw new HttpsError('aborted', `This audio request is ${status}. Use a new request ID only for an intentional retry.`);
+  }
+  const { bucket, path } = parseStorageUri(existing.resultUri);
+  await getStorage().bucket(bucket).file(path).getMetadata();
+  return {
+    jobId,
+    libraryAssetId: jobId,
+    resultUri: existing.resultUri,
+    mimeType: typeof existing.mimeType === 'string' ? existing.mimeType : 'audio/wav',
+  };
+}
+
+/**
+ * Durable, idempotent single-speaker TTS gateway. The server owns cost
+ * reservation, generation, Storage persistence, and audio-library metadata.
+ */
+export const generateAudioV3 = onCall({ timeoutSeconds: 300, memory: '1GiB', secrets: [geminiApiKey], enforceAppCheck: false }, async (request) => {
   validateAppCheckV2(request);
   if (!request.auth) throw new HttpsError('unauthenticated', 'User must be authenticated.');
-  
+
   const parsed = GenerateAudioSchema.safeParse(request.data);
-  if (!parsed.success) throw new HttpsError('invalid-argument', 'Invalid payload.');
+  if (!parsed.success) {
+    throw new HttpsError('invalid-argument', 'Invalid TTS payload. Provide prompt, supported voice, and UUID requestId.');
+  }
 
-  const { prompt } = parsed.data;
+  const { prompt, voice, requestId } = parsed.data;
   const userId = request.auth.uid;
-  const jobId = getDb().collection('creative_jobs').doc().id;
-
-  await safeDbSet(jobId, {
-    id: jobId,
-    userId,
-    status: 'processing',
-    type: 'audio',
-    prompt,
-    createdAt: new Date().toISOString()
-  });
+  const jobId = buildAudioJobId(userId, requestId);
+  const db = getDb();
+  const jobRef = db.collection('creative_jobs').doc(jobId);
+  const createdAt = new Date().toISOString();
 
   try {
+    await jobRef.create({
+      id: jobId,
+      userId,
+      status: 'processing',
+      type: 'audio',
+      audioType: 'tts',
+      prompt,
+      voice,
+      requestId,
+      model: FUNCTION_INTELLIGENCE_MODELS.SPEECH.GENERATION,
+      createdAt,
+      updatedAt: createdAt,
+    });
+  } catch (error: unknown) {
+    if (isAlreadyExistsError(error)) return replayCompletedAudioJob(jobId, userId);
+    throw toGatewayError(error, 'Audio request initialization failed');
+  }
+
+  let outputUri: string | undefined;
+  let operationId: string | undefined;
+  try {
+    const estimatedCost = estimateTtsCost(prompt);
+    const reservation = await checkOperationBudget({
+      userId,
+      estimatedCost,
+      operationType: 'audio',
+      metadata: {
+        jobId,
+        requestId,
+        model: FUNCTION_INTELLIGENCE_MODELS.SPEECH.GENERATION,
+        type: 'tts',
+      },
+    });
+    if (!reservation.allowed || !reservation.operationId) {
+      throw new HttpsError('resource-exhausted', reservation.reason || 'Audio generation cost reservation was denied.');
+    }
+    operationId = reservation.operationId;
+    await jobRef.update({ costEstimate: estimatedCost, costReservationId: operationId, updatedAt: new Date().toISOString() });
+
     const ai = getAiClient('audio');
-    const response = await ai.models.generateContent({
-      model: FUNCTION_INTELLIGENCE_MODELS.TEXT.FAST, // Nano Banana 2
-      contents: prompt,
-      config: {
-        responseModalities: ["AUDIO"]
-      }
+    const interaction = await ai.interactions.create({
+      model: FUNCTION_INTELLIGENCE_MODELS.SPEECH.GENERATION,
+      input: prompt,
+      response_format: { type: 'audio' },
+      generation_config: { speech_config: [{ voice }] },
+    });
+    const { pcm, sampleRate } = extractInteractionAudio(interaction);
+    const wav = pcmToWav(pcm, sampleRate);
+    const actualDuration = Math.max(0.001, pcm.length / (sampleRate * 2));
+    outputUri = await uploadToStorage(userId, wav, 'wav', 'audio/wav', {
+      category: 'audio',
+      purpose: 'outputs',
     });
 
-    const audio = extractInlineMedia(response, 'audio');
-
-    const buffer = Buffer.from(audio.data, 'base64');
-    const outputUri = await uploadToStorage(userId, buffer, extensionForMime(audio.mimeType, 'wav'), audio.mimeType);
-    
-    await safeDbUpdate(jobId, {
+    const completedAt = new Date().toISOString();
+    const assetRef = db.collection('audio_assets').doc(jobId);
+    const batch = db.batch();
+    batch.set(assetRef, {
+      id: jobId,
+      userId,
+      type: 'tts',
+      prompt,
+      mimeType: 'audio/wav',
+      estimatedDuration: actualDuration,
+      generatedAt: completedAt,
+      storageUrl: outputUri,
+      voicePreset: voice,
+      fullText: prompt,
+    });
+    batch.update(jobRef, {
       status: 'completed',
       resultUri: outputUri,
-      completedAt: new Date().toISOString()
+      mimeType: 'audio/wav',
+      estimatedDuration: actualDuration,
+      costReservationId: operationId,
+      completedAt,
+      updatedAt: completedAt,
     });
+    await batch.commit();
 
-    return { jobId, resultUri: outputUri };
+    try {
+      await finalizeOperationReservation({ userId, operationId, outcome: 'SETTLED' });
+    } catch (settlementError) {
+      console.error('[generateAudioV3] Audio completed; reservation settlement queued for reconciliation:', settlementError);
+    }
+
+    return {
+      jobId,
+      libraryAssetId: jobId,
+      resultUri: outputUri,
+      mimeType: 'audio/wav',
+    };
   } catch (error: unknown) {
-    await safeDbUpdate(jobId, { status: 'failed', error: errorMessage(error) });
+    if (outputUri) await deleteStorageOutputs([outputUri]);
+    await jobRef.set({
+      status: 'failed',
+      error: errorMessage(error),
+      failedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }, { merge: true }).catch(jobError => {
+      console.error('[generateAudioV3] Failed to record audio job failure:', jobError);
+    });
+    if (operationId) {
+      try {
+        await finalizeOperationReservation({ userId, operationId, outcome: 'VOIDED' });
+      } catch (releaseError) {
+        console.error('[generateAudioV3] Failed to release audio reservation:', releaseError);
+      }
+    }
     throw toGatewayError(error, 'Audio generation failed');
   }
 });

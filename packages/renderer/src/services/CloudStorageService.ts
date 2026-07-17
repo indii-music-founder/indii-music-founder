@@ -263,4 +263,10 @@ export class CloudStorageService {
             };
         }
     }
+
+    /** Delete the exact object named by a persisted gs:// or download URL. */
+    static async deleteStorageUri(storageUri: string): Promise<void> {
+        if (!storageUri) throw new Error('Storage URI is required for deletion');
+        await deleteObject(ref(storage, storageUri));
+    }
 }

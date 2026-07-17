@@ -4,6 +4,7 @@
  * MANDATORY: Call this before ANY expensive operation:
  * - Video generation (Vertex Autonomous Veo)
  * - Image generation (Imagen)
+ * - Audio generation (Gemini TTS)
  * - Agent streaming (Gemini)
  *
  * This prevents runaway costs by enforcing hard budgets at the client level.
@@ -16,7 +17,7 @@ import { logger } from '@/utils/logger';
 import { isTestHarnessRuntime } from '@/utils/e2eMode';
 import { isAnonymousOrDemoUser, isDemoUserId } from '@/utils/authGuards';
 
-export type OperationType = 'video' | 'image' | 'agent_stream';
+export type OperationType = 'video' | 'image' | 'audio' | 'agent_stream';
 export type UserTier = 'free' | 'pro' | 'enterprise';
 
 export interface CostCheckRequest {

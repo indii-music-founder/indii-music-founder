@@ -329,7 +329,14 @@ export interface AudioPart {
 }
 
 export interface GenerateSpeechResponse {
-    audio: AudioPart;
+    audio: {
+        mimeType: string;
+        playbackUrl: string;
+    };
+    persistedAsset?: {
+        id: string;
+        storageUrl: string;
+    };
 }
 
 export interface EmbedContentResponse {

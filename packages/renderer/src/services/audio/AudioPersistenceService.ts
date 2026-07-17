@@ -8,6 +8,7 @@ import { auth } from '@/services/firebase';
 import { FirestoreService } from '@/services/FirestoreService';
 import { limit, where } from 'firebase/firestore';
 import { CloudStorageService } from '@/services/CloudStorageService';
+import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
 import { logger } from '@/utils/logger';
 
 export interface PersistedAudioMetadata {
@@ -33,6 +34,10 @@ export interface PersistedAudioMetadata {
     tempo?: string;
     voicePreset?: string;
     fullText?: string;
+
+    // Resolved at read time only. Never written to Firestore.
+    playbackUrl?: string;
+    playbackError?: string;
 }
 
 export class AudioPersistenceService extends FirestoreService<PersistedAudioMetadata> {
@@ -55,7 +60,16 @@ export class AudioPersistenceService extends FirestoreService<PersistedAudioMeta
             where('userId', '==', userId),
             limit(count)
         ]);
-        return assets.sort((a, b) => b.generatedAt.localeCompare(a.generatedAt));
+        const playableAssets = await Promise.all(assets.map(async asset => {
+            if (asset.dataUri) return { ...asset, playbackUrl: asset.dataUri };
+            if (!asset.storageUrl) return asset;
+            const playbackUrl = await resolveStorageUrl(asset.storageUrl);
+            if (playbackUrl.startsWith('gs://')) {
+                return { ...asset, playbackError: 'Stored audio could not be resolved for playback.' };
+            }
+            return { ...asset, playbackUrl };
+        }));
+        return playableAssets.sort((a, b) => b.generatedAt.localeCompare(a.generatedAt));
     }
 
     /**
@@ -63,7 +77,8 @@ export class AudioPersistenceService extends FirestoreService<PersistedAudioMeta
      */
     async saveAudioMetadata(metadata: PersistedAudioMetadata): Promise<void> {
         const userId = this.requireUserId();
-        await this.set(metadata.id, { ...metadata, userId });
+        const { playbackUrl: _playbackUrl, playbackError: _playbackError, ...persisted } = metadata;
+        await this.set(metadata.id, { ...persisted, userId });
     }
 
     /**
@@ -78,7 +93,7 @@ export class AudioPersistenceService extends FirestoreService<PersistedAudioMeta
         }
         if (metadata.storageUrl) {
             try {
-                await CloudStorageService.deleteAudio(id, userId, metadata.mimeType);
+                await CloudStorageService.deleteStorageUri(metadata.storageUrl);
             } catch (error: unknown) {
                 logger.warn('[AudioPersistence] Storage cleanup failed; retaining metadata for retry:', error);
                 throw error;

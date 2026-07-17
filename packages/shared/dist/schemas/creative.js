@@ -73,6 +73,16 @@ export const GenerateOmniRemixSchema = z.object({
     typographyStyle: z.enum(['cyberpunk', 'kinetic-neon', 'liquid-gold', 'minimal-infographic']).optional(),
     visualizerColor: z.string().regex(/^#[0-9a-f]{6}$/i).optional(),
 });
-export const GenerateAudioSchema = BaseMediaRequestSchema.extend({
-    durationSeconds: z.number().min(5).max(120).default(30),
+export const TTSVoiceSchema = z.enum([
+    'Achernar', 'Achird', 'Algenib', 'Algieba', 'Alnilam', 'Aoede', 'Autonoe',
+    'Callirrhoe', 'Charon', 'Despina', 'Enceladus', 'Erinome', 'Fenrir', 'Gacrux',
+    'Iapetus', 'Kore', 'Laomedeia', 'Leda', 'Orus', 'Puck', 'Pulcherrima',
+    'Rasalgethi', 'Sadachbia', 'Sadaltager', 'Schedar', 'Sulafat', 'Umbriel',
+    'Vindemiatrix', 'Zephyr', 'Zubenelgenubi',
+]);
+/** Durable single-speaker TTS request. requestId makes callable retries idempotent. */
+export const GenerateAudioSchema = z.object({
+    prompt: z.string().trim().min(1).max(10000),
+    voice: TTSVoiceSchema.default('Kore'),
+    requestId: z.string().uuid(),
 });

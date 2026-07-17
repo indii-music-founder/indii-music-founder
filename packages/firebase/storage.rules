@@ -60,21 +60,23 @@ service firebase.storage {
     // Users can only access their own storage
     match /users/{userId}/{allPaths=**} {
       allow read: if isAuthenticated() && request.auth.uid == userId;
-      // Write: authenticated, owner, under 500MB, valid media type
-      allow write: if isAuthenticated() && 
-                      request.auth.uid == userId &&
-                      isUnderSizeLimit(500) &&
-                      isAllowedMediaType();
+      allow delete: if isAuthenticated() && request.auth.uid == userId;
+      // Create/update: authenticated owner, under 500MB, valid media type.
+      allow create, update: if isAuthenticated() &&
+                              request.auth.uid == userId &&
+                              isUnderSizeLimit(500) &&
+                              isAllowedMediaType();
     }
 
     // Creative Suite thin client asset uploads
     match /creative/{userId}/{allPaths=**} {
       // Owner can read their own uploaded assets and results
       allow read: if (isAuthenticated() && request.auth.uid == userId) || (isGuest() && userId == 'founder-demo-uid');
-      // Owner can upload reference media
-      allow write: if ((isAuthenticated() && request.auth.uid == userId) || (isGuest() && userId == 'founder-demo-uid')) &&
-                      isUnderSizeLimit(100) && // limit references to 100MB
-                      (isImageType() || isVideoType() || isAudioType());
+      allow delete: if isAuthenticated() && request.auth.uid == userId;
+      // Owner can upload reference media; creation/update stays size and MIME gated.
+      allow create, update: if ((isAuthenticated() && request.auth.uid == userId) || (isGuest() && userId == 'founder-demo-uid')) &&
+                              isUnderSizeLimit(100) && // limit references to 100MB
+                              (isImageType() || isVideoType() || isAudioType());
     }
 
     // ========================================
