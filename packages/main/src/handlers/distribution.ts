@@ -14,6 +14,7 @@ import { z } from 'zod';
 
 import { AgentSupervisor } from '../utils/AgentSupervisor';
 import { credentialService } from '../services/CredentialService';
+import { stageCanonicalMasters } from '../services/MasterAudioStagingService';
 
 interface StagedFile {
     type: 'content' | 'path';
@@ -454,12 +455,17 @@ export const setupDistributionHandlers = () => {
      * Progress events are streamed back as 'distribution:submit-progress'.
      */
     ipcMain.handle('distribution:submit-release', async (event, releaseData: Record<string, unknown>) => {
+        let cleanupStagedMasters: (() => Promise<void>) | undefined;
         try {
             validateSender(event);
 
             if (!releaseData || typeof releaseData !== 'object') {
                 throw new Error('Missing or invalid release data');
             }
+
+            const stagedMasters = await stageCanonicalMasters(releaseData);
+            cleanupStagedMasters = stagedMasters.cleanup;
+            releaseData = stagedMasters.releaseData;
 
             const storagePath = getStoragePath();
 
@@ -524,6 +530,14 @@ export const setupDistributionHandlers = () => {
             return { success: result.status === 'SUCCESS', report: result };
         } catch (error) {
             return { success: false, error: error instanceof Error ? error.message : String(error) };
+        } finally {
+            if (cleanupStagedMasters) {
+                try {
+                    await cleanupStagedMasters();
+                } catch (cleanupError) {
+                    log.warn('[Distribution] Failed to clean canonical master staging directory:', cleanupError);
+                }
+            }
         }
     });
 

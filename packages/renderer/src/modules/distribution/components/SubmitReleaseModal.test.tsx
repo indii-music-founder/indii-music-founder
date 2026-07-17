@@ -3,8 +3,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { SubmitReleaseModal } from './SubmitReleaseModal';
 
-const { mockListLibrary, mockSubmitRelease, mockUserProfile } = vi.hoisted(() => ({
-    mockListLibrary: vi.fn(),
+const { mockListCanonicalTracks, mockSubmitRelease, mockUserProfile } = vi.hoisted(() => ({
+    mockListCanonicalTracks: vi.fn(),
     mockSubmitRelease: vi.fn(),
     mockUserProfile: {
         id: 'user-1',
@@ -25,21 +25,32 @@ vi.mock('@/core/store', () => ({
     useStore: (selector: any) => selector({ userProfile: mockUserProfile }),
 }));
 
-vi.mock('@/services/music/MusicLibraryService', () => ({
-    musicLibraryService: { listLibrary: mockListLibrary },
+vi.mock('@/services/metadata/TrackLibraryService', () => ({
+    trackLibrary: { list: mockListCanonicalTracks },
 }));
 
 vi.mock('@/services/distribution/DistributionService', () => ({
     distributionService: { submitRelease: mockSubmitRelease },
 }));
 
-const ANALYZED_TRACK = {
-    id: 'track-1',
+const CANONICAL_TRACK = {
+    id: 'SONIC-master-1',
     userId: 'user-1',
-    filename: 'master.wav',
-    fileHash: 'abc123hash',
-    features: { duration: 210, audit: { sampleRate: 44100 } },
-    analyzedAt: '2026-01-01T00:00:00Z',
+    trackTitle: 'Canonical Master',
+    artistName: 'Test Artist',
+    durationSeconds: 210,
+    audioTechnical: { sampleRate: 48000, channels: 2 },
+    masterFingerprint: 'SONIC-master-1',
+    masterAsset: {
+        contentHash: 'a'.repeat(64),
+        downloadUrl: 'https://firebasestorage.googleapis.com/v0/b/indii-test/o/masters%2Fuser-1%2Fmaster.wav?alt=media&token=test',
+        masterFingerprint: 'SONIC-master-1',
+        mimeType: 'audio/wav',
+        originalFileName: 'master.wav',
+        sizeBytes: 4096,
+        storagePath: 'masters/user-1/master.wav',
+        uploadedAt: '2026-01-01T00:00:00Z',
+    },
 };
 
 /**
@@ -51,7 +62,7 @@ const ANALYZED_TRACK = {
 describe('SubmitReleaseModal (ISSUE-969)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        mockListLibrary.mockResolvedValue([ANALYZED_TRACK]);
+        mockListCanonicalTracks.mockResolvedValue([CANONICAL_TRACK]);
         mockSubmitRelease.mockResolvedValue({ status: 'success' });
     });
 
@@ -63,39 +74,62 @@ describe('SubmitReleaseModal (ISSUE-969)', () => {
 
     it('keeps Submit disabled when no master track or cover asset is selected (metadata-only cannot pass)', async () => {
         render(<SubmitReleaseModal open onClose={vi.fn()} />);
-        await waitFor(() => expect(mockListLibrary).toHaveBeenCalled());
+        await waitFor(() => expect(mockListCanonicalTracks).toHaveBeenCalled());
 
         fillBasicMetadata();
 
         expect(screen.getByTestId('release-submit-button')).toBeDisabled();
     });
 
-    it('enables Submit only once a real analyzed track and staged cover asset are both selected', async () => {
+    it('enables Submit only once a canonical master and staged cover asset are both selected', async () => {
         render(<SubmitReleaseModal open onClose={vi.fn()} />);
-        await waitFor(() => expect(mockListLibrary).toHaveBeenCalled());
+        await waitFor(() => expect(mockListCanonicalTracks).toHaveBeenCalled());
 
         fillBasicMetadata();
-        fireEvent.change(screen.getByTestId('release-track-select'), { target: { value: 'abc123hash' } });
+        fireEvent.change(screen.getByTestId('release-track-select'), { target: { value: 'SONIC-master-1' } });
         fireEvent.change(screen.getByTestId('release-artwork-select'), { target: { value: 'https://cdn.example.com/cover.png' } });
 
         expect(screen.getByTestId('release-submit-button')).toBeEnabled();
     });
 
-    it('submits with the real file_hash/duration/sampleRate from the selected analyzed track, not freeform data', async () => {
+    it('submits duration and filename from the selected canonical master', async () => {
         render(<SubmitReleaseModal open onClose={vi.fn()} />);
-        await waitFor(() => expect(mockListLibrary).toHaveBeenCalled());
+        await waitFor(() => expect(mockListCanonicalTracks).toHaveBeenCalled());
 
         fillBasicMetadata();
-        fireEvent.change(screen.getByTestId('release-track-select'), { target: { value: 'abc123hash' } });
+        fireEvent.change(screen.getByTestId('release-track-select'), { target: { value: 'SONIC-master-1' } });
         fireEvent.change(screen.getByTestId('release-artwork-select'), { target: { value: 'https://cdn.example.com/cover.png' } });
         fireEvent.click(screen.getByTestId('release-submit-button'));
 
         await waitFor(() => expect(mockSubmitRelease).toHaveBeenCalled());
         const [releaseData] = mockSubmitRelease.mock.calls[0]!;
         expect(releaseData.artwork_url).toBe('https://cdn.example.com/cover.png');
-        expect(releaseData.tracks[0].file_hash).toBe('abc123hash');
         expect(releaseData.tracks[0].filename).toBe('master.wav');
         expect(releaseData.tracks[0].duration).toBe(210);
-        expect(releaseData.tracks[0].sample_rate).toBe(44100);
+        expect(releaseData.tracks[0].sample_rate).toBe(48000);
+        expect(releaseData.tracks[0].channels).toBe(2);
+        expect(releaseData.tracks[0].codec).toBe('PCM');
+    });
+
+    it('submits the immutable canonical master reference instead of analysis-cache metadata alone', async () => {
+        render(<SubmitReleaseModal open onClose={vi.fn()} />);
+        await waitFor(() => expect(mockListCanonicalTracks).toHaveBeenCalled());
+
+        fillBasicMetadata();
+        fireEvent.change(screen.getByTestId('release-track-select'), { target: { value: 'SONIC-master-1' } });
+        fireEvent.change(screen.getByTestId('release-artwork-select'), { target: { value: 'https://cdn.example.com/cover.png' } });
+        fireEvent.click(screen.getByTestId('release-submit-button'));
+
+        await waitFor(() => expect(mockSubmitRelease).toHaveBeenCalled());
+        const [releaseData] = mockSubmitRelease.mock.calls[0]!;
+        expect(releaseData.tracks[0].master_asset).toEqual({
+            content_hash: CANONICAL_TRACK.masterAsset.contentHash,
+            download_url: CANONICAL_TRACK.masterAsset.downloadUrl,
+            master_fingerprint: CANONICAL_TRACK.masterAsset.masterFingerprint,
+            mime_type: CANONICAL_TRACK.masterAsset.mimeType,
+            original_file_name: CANONICAL_TRACK.masterAsset.originalFileName,
+            size_bytes: CANONICAL_TRACK.masterAsset.sizeBytes,
+            storage_path: CANONICAL_TRACK.masterAsset.storagePath,
+        });
     });
 });

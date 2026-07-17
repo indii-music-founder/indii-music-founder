@@ -78,6 +78,11 @@ export interface ExtendedGoldenMetadata extends GoldenMetadata {
     id?: string;
     userId?: string;
     masterAsset?: MasterAudioReference;
+    /** Measured properties of the immutable master used in DDEX technical details. */
+    audioTechnical?: {
+        channels: number;
+        sampleRate: number;
+    };
 
     // Artist Disambiguation
     artistIsni?: string;

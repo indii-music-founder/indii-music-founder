@@ -4,9 +4,9 @@ import { distributionService } from '@/services/distribution/DistributionService
 import { useToast } from '@/core/context/ToastContext';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { IngestionMetadata } from '@/types/distribution';
-import { musicLibraryService, type AnalyzedTrack } from '@/services/music/MusicLibraryService';
+import { trackLibrary } from '@/services/metadata/TrackLibraryService';
+import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import type { BrandAsset } from '@/types/User';
 
 interface PipelineStep {
@@ -22,6 +22,21 @@ const INITIAL_STEPS: PipelineStep[] = [
     { id: 'ddex', label: 'DDEX XML Build', status: 'idle' },
     { id: 'sftp', label: 'DSP Delivery', status: 'idle' },
 ];
+
+const DDEX_CODEC_BY_MIME_TYPE: Record<string, string> = {
+    'audio/aac': 'AAC',
+    'audio/aiff': 'PCM',
+    'audio/alac': 'ALAC',
+    'audio/flac': 'FLAC',
+    'audio/mp3': 'MP3',
+    'audio/mp4': 'AAC',
+    'audio/mpeg': 'MP3',
+    'audio/ogg': 'Vorbis',
+    'audio/wav': 'PCM',
+    'audio/x-aiff': 'PCM',
+    'audio/x-flac': 'FLAC',
+    'audio/x-wav': 'PCM',
+};
 
 interface Props {
     open: boolean;
@@ -44,11 +59,11 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
     const [genre, setGenre] = useState('Electronic');
 
     // ISSUE-969: audio and cover art must reference a real, already-processed
-    // asset (a hashed analyzed track / an uploaded brand asset) rather than
+    // asset (an immutable canonical master / an uploaded brand asset) rather than
     // freeform, unverifiable text fields the QC step never checked existed.
-    const [availableTracks, setAvailableTracks] = useState<AnalyzedTrack[]>([]);
+    const [availableTracks, setAvailableTracks] = useState<ExtendedGoldenMetadata[]>([]);
     const [loadingTracks, setLoadingTracks] = useState(false);
-    const [selectedTrackHash, setSelectedTrackHash] = useState('');
+    const [selectedMasterFingerprint, setSelectedMasterFingerprint] = useState('');
     const [selectedCoverUrl, setSelectedCoverUrl] = useState('');
 
     const [submitting, setSubmitting] = useState(false);
@@ -71,8 +86,10 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
     useEffect(() => {
         if (!open) return;
         setLoadingTracks(true);
-        musicLibraryService.listLibrary()
-            .then(tracks => setAvailableTracks(tracks.filter(t => !!t.fileHash)))
+        trackLibrary.list()
+            .then(tracks => setAvailableTracks(tracks.filter(track => (
+                !!track.masterFingerprint && !!track.masterAsset && !!track.audioTechnical
+            ))))
             .finally(() => setLoadingTracks(false));
     }, [open]);
     const [done, setDone] = useState(false);
@@ -82,7 +99,7 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
 
     // ISSUE-969: metadata alone can no longer pass — a real hashed master
     // and a real staged cover asset are required before submission.
-    const formValid = title.trim() && artist.trim() && trackTitle.trim() && selectedTrackHash && selectedCoverUrl;
+    const formValid = title.trim() && artist.trim() && trackTitle.trim() && selectedMasterFingerprint && selectedCoverUrl;
 
     const updateStep = (id: string, patch: Partial<PipelineStep>) => {
         setSteps(prev => prev.map(s => s.id === id ? { ...s, ...patch } : s));
@@ -94,7 +111,7 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
         setDone(false);
         setDeliveryState('idle');
         setSubmitting(false);
-        setSelectedTrackHash('');
+        setSelectedMasterFingerprint('');
         setSelectedCoverUrl('');
     };
 
@@ -111,9 +128,17 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
     const handleSubmit = async () => {
         if (!formValid || submitting) return;
 
-        const selectedTrack = availableTracks.find(t => t.fileHash === selectedTrackHash);
-        if (!selectedTrack) {
-            toastError('Select a valid analyzed master track before submitting.');
+        const selectedTrack = availableTracks.find(track => (
+            track.masterFingerprint === selectedMasterFingerprint
+        ));
+        const masterAsset = selectedTrack?.masterAsset;
+        if (!selectedTrack || !masterAsset || !selectedTrack.audioTechnical) {
+            toastError('Select a delivery-ready canonical master with measured audio properties.');
+            return;
+        }
+        const ddexCodec = DDEX_CODEC_BY_MIME_TYPE[masterAsset.mimeType.toLowerCase()];
+        if (!ddexCodec) {
+            toastError(`The canonical master codec ${masterAsset.mimeType} is not supported for DDEX delivery.`);
             return;
         }
 
@@ -122,8 +147,7 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
         setSteps(INITIAL_STEPS);
         setOverallProgress(0);
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const releaseData: any = {
+        const releaseData: IngestionMetadata = {
             releaseId: `release-${crypto.randomUUID()}`,
             title: title.trim(),
             artist: artist.trim(),
@@ -137,12 +161,20 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
                 isrc: isrc.trim() || undefined,
                 artist: artist.trim(),
                 artists: [artist.trim()],
-                // ISSUE-969: real, measured values from the analyzed master
-                // instead of no audio reference at all.
-                file_hash: selectedTrack.fileHash,
-                filename: selectedTrack.filename,
-                duration: selectedTrack.features?.duration,
-                sample_rate: selectedTrack.features?.audit?.sampleRate,
+                filename: masterAsset.originalFileName,
+                duration: selectedTrack.durationSeconds,
+                channels: selectedTrack.audioTechnical?.channels,
+                codec: ddexCodec,
+                sample_rate: selectedTrack.audioTechnical?.sampleRate,
+                master_asset: {
+                    content_hash: masterAsset.contentHash,
+                    download_url: masterAsset.downloadUrl,
+                    master_fingerprint: masterAsset.masterFingerprint,
+                    mime_type: masterAsset.mimeType,
+                    original_file_name: masterAsset.originalFileName,
+                    size_bytes: masterAsset.sizeBytes,
+                    storage_path: masterAsset.storagePath,
+                },
             }],
         };
 
@@ -261,21 +293,21 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
                             <div>
                                 <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5">
                                     Master Track *
-                                    <span className="text-gray-600 normal-case font-medium"> (must be analyzed in Audio Analyzer first)</span>
+                                    <span className="text-gray-600 normal-case font-medium"> (from your upload-once catalog)</span>
                                 </label>
                                 <select
-                                    value={selectedTrackHash}
-                                    onChange={e => setSelectedTrackHash(e.target.value)}
+                                    value={selectedMasterFingerprint}
+                                    onChange={e => setSelectedMasterFingerprint(e.target.value)}
                                     data-testid="release-track-select"
                                     disabled={loadingTracks}
                                     className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-dept-distribution/50 transition-colors appearance-none disabled:opacity-40"
                                 >
                                     <option value="">
-                                        {loadingTracks ? 'Loading analyzed tracks…' : availableTracks.length === 0 ? 'No analyzed tracks found — analyze one first' : 'Select a hashed master track'}
+                                        {loadingTracks ? 'Loading canonical masters…' : availableTracks.length === 0 ? 'No canonical masters found — ingest one first' : 'Select an upload-once master track'}
                                     </option>
-                                    {availableTracks.map(t => (
-                                        <option key={t.fileHash} value={t.fileHash}>
-                                            {t.filename} ({Math.round(t.features?.duration || 0)}s)
+                                    {availableTracks.map(track => (
+                                        <option key={track.id ?? track.masterFingerprint} value={track.masterFingerprint}>
+                                            {track.trackTitle} ({Math.round(track.durationSeconds || 0)}s)
                                         </option>
                                     ))}
                                 </select>
