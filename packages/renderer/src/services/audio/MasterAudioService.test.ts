@@ -23,7 +23,26 @@ vi.mock('@/services/firebase', () => ({
 import { masterAudioService } from './MasterAudioService';
 
 describe('MasterAudioService', () => {
-    const file = new File(['canonical master bytes'], 'Final Master.WAV', { type: 'audio/wav' });
+    function pcmWav({ rate = 48_000, bits = 24, channels = 2 } = {}): Uint8Array {
+        const bytes = new Uint8Array(44);
+        const view = new DataView(bytes.buffer);
+        bytes.set(new TextEncoder().encode('RIFF'), 0);
+        view.setUint32(4, 36, true);
+        bytes.set(new TextEncoder().encode('WAVEfmt '), 8);
+        view.setUint32(16, 16, true);
+        view.setUint16(20, 1, true);
+        view.setUint16(22, channels, true);
+        view.setUint32(24, rate, true);
+        view.setUint16(34, bits, true);
+        bytes.set(new TextEncoder().encode('data'), 36);
+        return bytes;
+    }
+
+    function blobPart(bytes: Uint8Array): ArrayBuffer {
+        return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
+    }
+
+    const file = new File([blobPart(pcmWav())], 'Final Master.WAV', { type: 'audio/wav' });
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -51,17 +70,29 @@ describe('MasterAudioService', () => {
         expect(result.masterFingerprint).toBe('SONIC-abc');
         expect(result.mimeType).toBe('audio/wav');
         expect(result.sizeBytes).toBe(file.size);
+        expect(result.audioProperties).toEqual({
+            bitDepth: 24,
+            channels: 2,
+            codec: 'PCM',
+            container: 'wav',
+            sampleRate: 48_000,
+        });
         expect(storageMocks.uploadBytes).toHaveBeenCalledWith(
             expect.objectContaining({ fullPath: result.storagePath }),
             file,
             {
                 contentType: 'audio/wav',
                 customMetadata: {
+                    bitDepth: '24',
+                    channels: '2',
+                    codec: 'PCM',
+                    container: 'wav',
                     contentHash: result.contentHash,
                     immutable: 'true',
                     masterFingerprint: 'SONIC-abc',
                     ownerId: 'owner-1',
                     originalFileName: 'Final Master.WAV',
+                    sampleRate: '48000',
                 },
             }
         );
@@ -94,6 +125,20 @@ describe('MasterAudioService', () => {
         });
 
         expect(result.storagePath).toContain(`masters/owner-1/${result.contentHash}/`);
+        expect(storageMocks.uploadBytes).not.toHaveBeenCalled();
+    });
+
+    it('rejects renamed or lossy bytes before creating a canonical master object', async () => {
+        const renamedMp3 = new File([
+            blobPart(new Uint8Array([0x49, 0x44, 0x33, 0x04, 0x00, 0x00])),
+        ], 'Fake Master.wav', { type: 'audio/wav' });
+
+        await expect(masterAudioService.persist(renamedMp3, {
+            userId: 'owner-1',
+            masterFingerprint: 'SONIC-lossy',
+        })).rejects.toThrow(/WAV or FLAC master|truncated/);
+
+        expect(storageMocks.getMetadata).not.toHaveBeenCalled();
         expect(storageMocks.uploadBytes).not.toHaveBeenCalled();
     });
 });

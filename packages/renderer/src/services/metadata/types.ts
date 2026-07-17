@@ -6,6 +6,13 @@
 import { INGESTION_CONFIG } from '@/core/config/ingestion';
 
 export interface MasterAudioReference {
+    audioProperties?: {
+        bitDepth: number;
+        channels: number;
+        codec: 'PCM' | 'FLAC';
+        container: 'wav' | 'flac';
+        sampleRate: number;
+    };
     contentHash: string;
     downloadUrl: string;
     masterFingerprint: string;
@@ -80,7 +87,10 @@ export interface ExtendedGoldenMetadata extends GoldenMetadata {
     masterAsset?: MasterAudioReference;
     /** Measured properties of the immutable master used in DDEX technical details. */
     audioTechnical?: {
+        bitDepth: number;
         channels: number;
+        codec: 'PCM' | 'FLAC';
+        container: 'wav' | 'flac';
         sampleRate: number;
     };
 

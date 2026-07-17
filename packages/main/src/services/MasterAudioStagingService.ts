@@ -20,6 +20,14 @@ interface CanonicalMasterPayload {
     storage_path: string;
 }
 
+interface MeasuredMasterProperties {
+    bit_depth: number;
+    channels: number;
+    codec: 'PCM' | 'FLAC';
+    container: 'wav' | 'flac';
+    sample_rate: number;
+}
+
 export interface StagedCanonicalMasters {
     cleanup: () => Promise<void>;
     releaseData: Record<string, unknown>;
@@ -172,6 +180,81 @@ async function downloadAndVerify(asset: CanonicalMasterPayload, destination: str
     }
 }
 
+function validateMeasuredMaster(properties: MeasuredMasterProperties): void {
+    if (properties.sample_rate < 44_100) {
+        throw new Error(`Canonical master sample rate is below 44.1 kHz (${properties.sample_rate} Hz).`);
+    }
+    if (![16, 24].includes(properties.bit_depth)) {
+        throw new Error(`Canonical master bit depth must be 16 or 24 (${properties.bit_depth} measured).`);
+    }
+    if (properties.channels !== 2) {
+        throw new Error(`Canonical master must be stereo (${properties.channels} channels measured).`);
+    }
+}
+
+async function inspectStagedMaster(filePath: string, asset: CanonicalMasterPayload): Promise<MeasuredMasterProperties> {
+    const handle = await fs.open(filePath, 'r');
+    const header = Buffer.alloc(64 * 1024);
+    let bytesRead = 0;
+    try {
+        ({ bytesRead } = await handle.read(header, 0, header.length, 0));
+    } finally {
+        await handle.close();
+    }
+
+    const bytes = header.subarray(0, bytesRead);
+    let properties: MeasuredMasterProperties;
+    if (bytes.length >= 12 && bytes.toString('ascii', 0, 4) === 'RIFF' && bytes.toString('ascii', 8, 12) === 'WAVE') {
+        let offset = 12;
+        let formatOffset = -1;
+        while (offset + 8 <= bytes.length) {
+            const chunkSize = bytes.readUInt32LE(offset + 4);
+            const dataOffset = offset + 8;
+            if (bytes.toString('ascii', offset, offset + 4) === 'fmt ') {
+                if (chunkSize < 16 || dataOffset + 16 > bytes.length) {
+                    throw new Error('Canonical WAV master format header is truncated.');
+                }
+                formatOffset = dataOffset;
+                break;
+            }
+            offset = dataOffset + chunkSize + (chunkSize % 2);
+        }
+        if (formatOffset < 0) throw new Error('Canonical WAV master has no readable format header.');
+        const waveCodec = bytes.readUInt16LE(formatOffset);
+        if (waveCodec !== 1 && waveCodec !== 3) {
+            throw new Error(`Canonical WAV master uses compressed codec ${waveCodec}.`);
+        }
+        properties = {
+            bit_depth: bytes.readUInt16LE(formatOffset + 14),
+            channels: bytes.readUInt16LE(formatOffset + 2),
+            codec: 'PCM',
+            container: 'wav',
+            sample_rate: bytes.readUInt32LE(formatOffset + 4),
+        };
+    } else if (bytes.length >= 42 && bytes.toString('ascii', 0, 4) === 'fLaC' && bytes[4] === 0) {
+        const streamInfoLength = ((bytes[5] ?? 0) << 16) | ((bytes[6] ?? 0) << 8) | (bytes[7] ?? 0);
+        if (streamInfoLength !== 34) throw new Error('Canonical FLAC master STREAMINFO header is invalid.');
+        const packed = (BigInt(bytes.readUInt32BE(18)) << 32n) | BigInt(bytes.readUInt32BE(22));
+        properties = {
+            bit_depth: Number((packed >> 36n) & 31n) + 1,
+            channels: Number((packed >> 41n) & 7n) + 1,
+            codec: 'FLAC',
+            container: 'flac',
+            sample_rate: Number((packed >> 44n) & 0xfffffn),
+        };
+    } else {
+        throw new Error('Canonical master bytes are not a supported WAV or FLAC container.');
+    }
+
+    const expectedExtension = `.${properties.container}`;
+    const expectedMimeType = properties.container === 'wav' ? 'audio/wav' : 'audio/flac';
+    if (path.extname(asset.storage_path).toLowerCase() !== expectedExtension || asset.mime_type !== expectedMimeType) {
+        throw new Error('Canonical master container does not match its immutable storage metadata.');
+    }
+    validateMeasuredMaster(properties);
+    return properties;
+}
+
 export async function stageCanonicalMasters(
     releaseData: Record<string, unknown>
 ): Promise<StagedCanonicalMasters> {
@@ -196,11 +279,14 @@ export async function stageCanonicalMasters(
             const stagedName = `${String(index + 1).padStart(2, '0')}-${asset.content_hash.slice(0, 16)}${extension}`;
             const localPath = path.join(stagingPath, stagedName);
             await downloadAndVerify(asset, localPath);
+            const measured = await inspectStagedMaster(localPath, asset);
 
             stagedTracks.push({
                 ...record,
+                ...measured,
                 filename: `resources/${stagedName}`,
                 master_asset: {
+                    audio_properties: measured,
                     content_hash: asset.content_hash,
                     local_path: localPath,
                     master_fingerprint: asset.master_fingerprint,

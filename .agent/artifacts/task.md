@@ -45,6 +45,7 @@ Finish every issue in `.agent/test_ledger/OPEN_ISSUES.md` that is not `✅ FIXED
 - [ ] ISSUE-939 — Inventory "Sync" is only a 1.5-second animation
 - [ ] ISSUE-946 — Discord/Telegram webhook auto-announcement event wiring still unbuilt
 - [ ] ISSUE-961 — Audio Distribution QC treats every M4A/MP4 as lossless master, no codec inspection
+  - **Status:** PARTIAL (2026-07-17) — every canonical-master creator now uses one byte-level WAV/FLAC gate; measured codec/container/sample rate/bit depth/channels persist with the master and Electron independently rechecks downloaded bytes before DDEX. Remaining before full acceptance: add equally authoritative AIFF/ALAC parsing (or explicitly retire those picker options) and persist a server-verified technical probe for non-desktop delivery workers.
 - [ ] ISSUE-962 — Browser Audio QC base64-encodes + sends full master twice in parallel, no size/duration limit
 - [ ] ISSUE-963 — Publishing asset validation converts decode failures into compliant-looking metadata
 - [ ] ISSUE-964 — Publishing marks release submitted/metadata-complete when packaging fails

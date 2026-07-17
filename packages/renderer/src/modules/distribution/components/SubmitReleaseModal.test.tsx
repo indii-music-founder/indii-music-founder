@@ -42,6 +42,13 @@ const CANONICAL_TRACK = {
     audioTechnical: { sampleRate: 48000, channels: 2 },
     masterFingerprint: 'SONIC-master-1',
     masterAsset: {
+        audioProperties: {
+            bitDepth: 24,
+            channels: 2,
+            codec: 'PCM',
+            container: 'wav',
+            sampleRate: 48000,
+        },
         contentHash: 'a'.repeat(64),
         downloadUrl: 'https://firebasestorage.googleapis.com/v0/b/indii-test/o/masters%2Fuser-1%2Fmaster.wav?alt=media&token=test',
         masterFingerprint: 'SONIC-master-1',
@@ -109,6 +116,7 @@ describe('SubmitReleaseModal (ISSUE-969)', () => {
         expect(releaseData.tracks[0].sample_rate).toBe(48000);
         expect(releaseData.tracks[0].channels).toBe(2);
         expect(releaseData.tracks[0].codec).toBe('PCM');
+        expect(releaseData.tracks[0].bit_depth).toBe(24);
     });
 
     it('submits the immutable canonical master reference instead of analysis-cache metadata alone', async () => {

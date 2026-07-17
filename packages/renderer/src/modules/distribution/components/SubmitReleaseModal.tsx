@@ -23,21 +23,6 @@ const INITIAL_STEPS: PipelineStep[] = [
     { id: 'sftp', label: 'DSP Delivery', status: 'idle' },
 ];
 
-const DDEX_CODEC_BY_MIME_TYPE: Record<string, string> = {
-    'audio/aac': 'AAC',
-    'audio/aiff': 'PCM',
-    'audio/alac': 'ALAC',
-    'audio/flac': 'FLAC',
-    'audio/mp3': 'MP3',
-    'audio/mp4': 'AAC',
-    'audio/mpeg': 'MP3',
-    'audio/ogg': 'Vorbis',
-    'audio/wav': 'PCM',
-    'audio/x-aiff': 'PCM',
-    'audio/x-flac': 'FLAC',
-    'audio/x-wav': 'PCM',
-};
-
 interface Props {
     open: boolean;
     onClose: () => void;
@@ -88,7 +73,7 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
         setLoadingTracks(true);
         trackLibrary.list()
             .then(tracks => setAvailableTracks(tracks.filter(track => (
-                !!track.masterFingerprint && !!track.masterAsset && !!track.audioTechnical
+                !!track.masterFingerprint && !!track.masterAsset?.audioProperties
             ))))
             .finally(() => setLoadingTracks(false));
     }, [open]);
@@ -132,13 +117,9 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
             track.masterFingerprint === selectedMasterFingerprint
         ));
         const masterAsset = selectedTrack?.masterAsset;
-        if (!selectedTrack || !masterAsset || !selectedTrack.audioTechnical) {
+        const audioProperties = masterAsset?.audioProperties;
+        if (!selectedTrack || !masterAsset || !audioProperties) {
             toastError('Select a delivery-ready canonical master with measured audio properties.');
-            return;
-        }
-        const ddexCodec = DDEX_CODEC_BY_MIME_TYPE[masterAsset.mimeType.toLowerCase()];
-        if (!ddexCodec) {
-            toastError(`The canonical master codec ${masterAsset.mimeType} is not supported for DDEX delivery.`);
             return;
         }
 
@@ -163,9 +144,10 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
                 artists: [artist.trim()],
                 filename: masterAsset.originalFileName,
                 duration: selectedTrack.durationSeconds,
-                channels: selectedTrack.audioTechnical?.channels,
-                codec: ddexCodec,
-                sample_rate: selectedTrack.audioTechnical?.sampleRate,
+                bit_depth: audioProperties.bitDepth,
+                channels: audioProperties.channels,
+                codec: audioProperties.codec,
+                sample_rate: audioProperties.sampleRate,
                 master_asset: {
                     content_hash: masterAsset.contentHash,
                     download_url: masterAsset.downloadUrl,

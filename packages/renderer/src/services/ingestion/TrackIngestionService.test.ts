@@ -27,6 +27,13 @@ describe('TrackIngestionService', () => {
     const mockFile = new File(['test audio data'], 'test-song.mp3', { type: 'audio/mp3' });
     const mockFingerprint = 'SONIC-TEST-12345';
     const mockMasterAsset = {
+        audioProperties: {
+            bitDepth: 24,
+            channels: 2,
+            codec: 'PCM' as const,
+            container: 'wav' as const,
+            sampleRate: 48_000,
+        },
         contentHash: 'a'.repeat(64),
         downloadUrl: 'https://storage.example/master.mp3',
         masterFingerprint: mockFingerprint,
@@ -147,7 +154,7 @@ describe('TrackIngestionService', () => {
         expect(result.masterAsset).toEqual(mockMasterAsset);
         expect(result.trackTitle).toBe('test-song');
         expect(result.durationSeconds).toBe(180);
-        expect(result.audioTechnical).toEqual({ channels: 2, sampleRate: 48000 });
+        expect(result.audioTechnical).toEqual(mockMasterAsset.audioProperties);
         expect(result.genre).toBe('Pop'); // From ddexGenre
         expect(result.language).toBe('eng');
         expect(result.explicit).toBe(false);
