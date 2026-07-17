@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-07-17 13:15 EDT
+**Updated:** 2026-07-17 13:18 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+b7ad31ce46 docs(error-memory): GEMINI_API_KEY secret was stale post-rotation — synced to valid key (v191), live-verified
+098b9eb42e chore: session checkpoint [13:15]
 43bec2053d fix(ai): make Vertex AI the production media provider (ISSUE-1082)
 6b5036902a chore: session checkpoint [13:05]
 6e6398e93a docs(ledger): re-verify hardening checklist item 7 — npm audit 0 critical/high
@@ -12,8 +14,6 @@ ffc8467df7 docs: add Auth Bypass UI testing pattern to error ledger
 4a9c973f3e docs(ledger): verify ISSUE-1073..1076 fixes green, refresh Creative tool status table
 9a432654f5 feat: complete issues 720, 1009, 1010 and natively verify 481, 487, 493
 05e43fa4eb chore: session checkpoint [12:56]
-bdb7707ed9 docs(error-memory): log localhost referrer-block root cause + probe technique
-7040bc8714 chore: session checkpoint [12:42]
 ```
 
 ## Working State
