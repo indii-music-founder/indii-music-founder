@@ -46,6 +46,8 @@ Finish every issue in `.agent/test_ledger/OPEN_ISSUES.md` that is not `✅ FIXED
 - [ ] ISSUE-946 — Discord/Telegram webhook auto-announcement event wiring still unbuilt
 - [ ] ISSUE-961 — Audio Distribution QC treats every M4A/MP4 as lossless master, no codec inspection
   - **Status:** PARTIAL (2026-07-17) — every canonical-master creator now uses one byte-level WAV/FLAC gate; measured codec/container/sample rate/bit depth/channels persist with the master and Electron independently rechecks downloaded bytes before DDEX. Remaining before full acceptance: add equally authoritative AIFF/ALAC parsing (or explicitly retire those picker options) and persist a server-verified technical probe for non-desktop delivery workers.
+- [ ] ISSUE-1083 — Audio profiling callable accepted arbitrary Storage paths and queued an unauthenticated placeholder engine target
+  - **Status:** PARTIAL (2026-07-17) — the callable is now exported, App Check/auth guarded, requires the authenticated owner's server-verified immutable content-addressed master, and queues only its verified hash/generation/reference with a same-project OIDC service identity. Remaining before closure: provision the private engine-dsp Cloud Run service, queue, invoker service account/IAM, and runtime configuration; deploy; then prove a real task profiles a master and persists an authenticated analysis receipt.
 - [ ] ISSUE-962 — Browser Audio QC base64-encodes + sends full master twice in parallel, no size/duration limit
 - [ ] ISSUE-963 — Publishing asset validation converts decode failures into compliant-looking metadata
 - [ ] ISSUE-964 — Publishing marks release submitted/metadata-complete when packaging fails

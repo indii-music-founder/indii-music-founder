@@ -159,6 +159,7 @@ export { analyticsExchangeToken, analyticsRefreshToken, analyticsRevokeToken } f
 export { cleanupExpiredVideoTemps, cleanupOrphanedVideos, trackStorageQuotas, flagVideosForArchival } from './devops/storageMaintenance';
 export { fetchStorageAssetForCanvas } from './functions/storage/fetchStorageAssetForCanvas';
 export { verifyMasterAudio } from './functions/storage/verifyMasterAudio';
+export { processAudioIngestion } from './distribution/ingestion';
 
 // Remote Relay — Server-Side Agent Processing (replaces desktop-browser-dependent relay)
 export { processRelayCommand } from './relay/relayCommandProcessor';
