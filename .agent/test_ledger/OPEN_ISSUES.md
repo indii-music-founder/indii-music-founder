@@ -302,6 +302,8 @@ Read-only audit of highest-risk surfaces. All findings logged to `OPEN_ISSUES.md
 
 - [x] **ENV-001 [Config — Hardcoded Firebase Key Fallback] — ✅ FIXED (verified 2026-07-16)**: Both reported files now read only environment-provided Firebase identifiers and fail immediately when the API key or project ID is missing; no baked-in project fallback remains.
 
+**Partial-list reconciliation (2026-07-16):** The separately supplied seven-item partial list used stale/shifted issue numbers. Canonical ledger mapping is: “Chrome proof” → ISSUE-777 (still owned by the separate browser agent); “Storage/Generation” → ISSUE-1005; “Budget State UI” → ISSUE-1006 (now FIXED); “Batch UI” → ISSUE-1008; “Undo/Revision” → ISSUE-1009; “Late Completion” → ISSUE-1010; and “Decode Gate” → ISSUE-1014. Canonical ISSUE-1002 and ISSUE-1011 through ISSUE-1013 describe different work and are already marked FIXED below. Future work should follow the canonical numbers to avoid two agents editing the wrong subsystem.
+
 ---
 
 ## Session 2026-07-15 — ISSUE-826 & ISSUE-827: Honesty Pass (Waterfall + Sync-Clearance Contracts)
