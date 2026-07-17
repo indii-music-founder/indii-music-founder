@@ -44,7 +44,9 @@ export default function RightPanel() {
         isAgentProcessing,
         rightPanelView: view,
         setRightPanelView: setView,
-        generatedHistory
+        generatedHistory,
+        rightPanelWidth,
+        setRightPanelWidth
     } = useStore(
         useShallow(state => ({
             currentModule: state.currentModule,
@@ -58,7 +60,9 @@ export default function RightPanel() {
             isAgentProcessing: state.isAgentProcessing,
             rightPanelView: state.rightPanelView,
             setRightPanelView: state.setRightPanelView,
-            generatedHistory: state.generatedHistory
+            generatedHistory: state.generatedHistory,
+            rightPanelWidth: state.rightPanelWidth,
+            setRightPanelWidth: state.setRightPanelWidth
         }))
     );
 
@@ -329,10 +333,35 @@ export default function RightPanel() {
         <motion.aside
             aria-label="Context panel"
             initial={false}
-            animate={{ width: isRightPanelOpen ? 320 : 48 }}
+            animate={{ width: isRightPanelOpen ? rightPanelWidth : 48 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="h-full border-l border-border bg-card/80 backdrop-blur-xl shrink-0 hidden lg:flex flex-col overflow-hidden z-20 shadow-2xl"
+            className="h-full border-l border-border bg-card/80 backdrop-blur-xl shrink-0 hidden lg:flex flex-col overflow-hidden z-20 shadow-2xl relative"
         >
+            {isRightPanelOpen && (
+                <div 
+                    className="absolute left-0 top-0 bottom-0 w-1.5 cursor-col-resize hover:bg-white/10 active:bg-white/20 transition-colors z-50"
+                    onPointerDown={(e) => {
+                        const startX = e.clientX;
+                        const startWidth = rightPanelWidth;
+                        
+                        const onPointerMove = (moveEvent: PointerEvent) => {
+                            const delta = startX - moveEvent.clientX;
+                            const newWidth = Math.max(200, Math.min(800, startWidth + delta));
+                            setRightPanelWidth(newWidth);
+                        };
+                        
+                        const onPointerUp = () => {
+                            window.removeEventListener('pointermove', onPointerMove);
+                            window.removeEventListener('pointerup', onPointerUp);
+                            document.body.style.cursor = '';
+                        };
+                        
+                        document.body.style.cursor = 'col-resize';
+                        window.addEventListener('pointermove', onPointerMove);
+                        window.addEventListener('pointerup', onPointerUp);
+                    }}
+                />
+            )}
             <AnimatePresence mode="wait">
                 {!isRightPanelOpen ? (
                     <motion.div
