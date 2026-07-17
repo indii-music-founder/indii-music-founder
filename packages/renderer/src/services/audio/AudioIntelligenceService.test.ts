@@ -69,7 +69,7 @@ vi.mock('@/services/intelligence/NeuralCortexService', () => ({
     neuralCortex: { ingest: vi.fn(async () => undefined) },
 }));
 
-import { AudioIntelligenceService, MAX_BROWSER_ANALYSIS_BYTES } from './AudioIntelligenceService';
+import { AudioIntelligenceService } from './AudioIntelligenceService';
 
 const TECHNICAL_FEATURES = {
     bpm: 120,
@@ -108,43 +108,15 @@ describe('AudioIntelligenceService (ISSUE-962)', () => {
         vi.stubGlobal('navigator', { onLine: true });
     });
 
-    it('rejects a master over the browser analysis size limit before any encoding/upload work happens', async () => {
-        const oversized = new File(['x'], 'huge.wav', { type: 'audio/wav' });
-        Object.defineProperty(oversized, 'size', { value: MAX_BROWSER_ANALYSIS_BYTES + 1 });
+    it('never sends a browser master to Gemini as inline base64', async () => {
+        const file = new File(['small audio bytes'], 'track.wav', { type: 'audio/wav' });
+        await expect(service.analyze(file)).rejects.toThrow(/will not upload raw master bytes to Gemini/);
 
-        await expect(service.analyze(oversized)).rejects.toThrow(/too large for browser-based deep analysis/);
-        expect(mockAudioAnalyze).not.toHaveBeenCalled();
-
+        // Technical QC is allowed to run locally, but neither Gemini request
+        // may receive the full browser master.
+        expect(mockAudioAnalyze).toHaveBeenCalledWith(file);
         expect(mockGenerateStructuredData).not.toHaveBeenCalled();
         expect(mockMapEmotionalArcWithProxy).not.toHaveBeenCalled();
         expect(mockMapEmotionalArc).not.toHaveBeenCalled();
-    });
-
-    it('encodes the master to base64 exactly once and shares it between semantic and energy-map analysis', async () => {
-        const file = new File(['small audio bytes'], 'track.wav', { type: 'audio/wav' });
-        const fileToBase64Spy = vi.spyOn(AudioIntelligenceService.prototype as any, 'fileToBase64');
-
-        await service.analyze(file);
-
-        expect(fileToBase64Spy).toHaveBeenCalledTimes(1);
-
-        // The Gemini semantic call and the energy-map call must receive the
-        // SAME base64 payload produced by that single encode — never two
-        // independently-encoded copies of the full master.
-        const semanticCallArgs = mockGenerateStructuredData.mock.calls[0] as any;
-        const semanticInlineData = semanticCallArgs[0][1].inlineData.data;
-        const energyMapCallArgs = mockMapEmotionalArcWithProxy.mock.calls[0] as any;
-        const energyMapBase64 = energyMapCallArgs[0];
-        expect(mockMapEmotionalArc).not.toHaveBeenCalled();
-        expect(energyMapBase64).toBe(semanticInlineData);
-        expect(typeof semanticInlineData).toBe('string');
-        expect(semanticInlineData.length).toBeGreaterThan(0);
-    });
-
-    it('allows a master exactly at the size limit', async () => {
-        const file = new File(['x'], 'at-limit.wav', { type: 'audio/wav' });
-        Object.defineProperty(file, 'size', { value: MAX_BROWSER_ANALYSIS_BYTES });
-
-        await expect(service.analyze(file)).resolves.toBeDefined();
     });
 });
