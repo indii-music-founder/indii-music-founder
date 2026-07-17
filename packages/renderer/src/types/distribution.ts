@@ -173,7 +173,17 @@ export interface IngestionTrack {
     duration?: number; // In seconds
     explicit?: boolean;
     filename?: string;
-    file_hash?: string; // MD5 hash
+    file_hash?: string; // MD5 hash used by the DDEX resource descriptor
+    /** Immutable upload-once master verified and staged by the desktop delivery boundary. */
+    master_asset?: {
+        content_hash: string;
+        download_url: string;
+        master_fingerprint: string;
+        mime_type: string;
+        original_file_name: string;
+        size_bytes: number;
+        storage_path: string;
+    };
     genre?: string;
     sub_genre?: string;
     language?: string;
@@ -305,4 +315,3 @@ export interface SFTPReport {
     remote_path: string;
     error?: string;
 }
-

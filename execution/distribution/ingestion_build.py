@@ -16,9 +16,12 @@ Usage:
 """
 
 import argparse
+import hashlib
 import json
 import logging
 import os
+import re
+import shutil
 import sys
 import tempfile
 from typing import Any, Dict
@@ -42,6 +45,61 @@ from isrc_manager import IdentityManager  # noqa: E402
 from ingestion_generator import DDEXGenerator  # noqa: E402
 from sftp_uploader import SFTPUploader  # noqa: E402
 from xsd_validator import DDEXXSDValidator  # noqa: E402
+
+
+def _file_digest(file_path: str, algorithm: str) -> str:
+    """Hash a staged master without loading a potentially multi-GB file into memory."""
+    if algorithm == "md5":
+        digest = hashlib.md5(usedforsecurity=False)
+    else:
+        digest = hashlib.new(algorithm)
+    with open(file_path, "rb") as source:
+        for chunk in iter(lambda: source.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _safe_resource_name(index: int, original_file_name: str) -> str:
+    base_name = os.path.basename(original_file_name)
+    stem, extension = os.path.splitext(base_name)
+    safe_stem = re.sub(r"[^A-Za-z0-9._-]+", "-", stem).strip(".-") or "master"
+    safe_extension = extension.lower() if re.fullmatch(r"\.[A-Za-z0-9]{1,8}", extension) else ".audio"
+    return f"{index:02d}-{safe_stem}{safe_extension}"
+
+
+def _stage_master_resources(tracks: list[Dict[str, Any]], package_path: str) -> None:
+    """Copy verified canonical masters into the immutable delivery package."""
+    resources_path = os.path.join(package_path, "resources")
+    os.makedirs(resources_path, exist_ok=True)
+
+    for index, track in enumerate(tracks, 1):
+        master_asset = track.get("master_asset")
+        if not isinstance(master_asset, dict):
+            raise ValueError(f"Track {index} is missing its canonical master_asset")
+
+        local_path = master_asset.get("local_path")
+        expected_sha256 = str(master_asset.get("content_hash", "")).lower()
+        expected_size = master_asset.get("size_bytes")
+        if not isinstance(local_path, str) or not os.path.isfile(local_path) or os.path.islink(local_path):
+            raise ValueError(f"Track {index} canonical master is not a regular local file")
+        if not re.fullmatch(r"[a-f0-9]{64}", expected_sha256):
+            raise ValueError(f"Track {index} canonical master has an invalid SHA-256 digest")
+        if not isinstance(expected_size, int) or os.path.getsize(local_path) != expected_size:
+            raise ValueError(f"Track {index} canonical master size verification failed")
+        if _file_digest(local_path, "sha256") != expected_sha256:
+            raise ValueError(f"Track {index} canonical master SHA-256 verification failed")
+
+        resource_name = _safe_resource_name(
+            index,
+            str(master_asset.get("original_file_name") or track.get("filename") or "master.audio"),
+        )
+        destination = os.path.join(resources_path, resource_name)
+        shutil.copyfile(local_path, destination)
+
+        # DDEX's HashSumAlgorithmType below is MD5, so derive that digest from
+        # the verified bytes rather than mislabeling the SHA-256 content address.
+        track["filename"] = f"resources/{resource_name}"
+        track["file_hash"] = _file_digest(destination, "md5")
 
 
 def emit(step: str, status: str, progress: int, detail: str = "", data: Any = None) -> None:
@@ -93,10 +151,28 @@ def run(release: Dict[str, Any], storage_path: str, dry_run: bool) -> Dict[str, 
     emit("isrc", "done", 45, f"ISRC assigned to {len(tracks)} track(s)", {"tracks": [t.get("isrc") for t in tracks]})
 
     # -----------------------------------------------------------------------
-    # STEP 3 — DDEX XML Generation
+    # STEP 3 — Package canonical master resources and generate DDEX XML
     # -----------------------------------------------------------------------
     emit("ingestion", "running", 50, "Generating DDEX Ingestion Protocol 4.3 XML…")
     generator = DDEXGenerator()
+
+    safe_release_id = re.sub(r"[^A-Za-z0-9._-]+", "-", str(release.get("releaseId", "release"))).strip(".-")
+    if not safe_release_id:
+        raise ValueError("Release ID cannot be converted into a safe package name")
+    package_path = os.path.join(storage_path, "packages", safe_release_id)
+    shutil.rmtree(package_path, ignore_errors=True)
+    os.makedirs(package_path, exist_ok=True)
+    try:
+        _stage_master_resources(tracks, package_path)
+    except (OSError, ValueError) as error:
+        shutil.rmtree(package_path, ignore_errors=True)
+        emit("ingestion", "error", 50, f"Canonical master staging failed: {error}")
+        return {
+            "status": "FAIL",
+            "stage": "master_staging",
+            "errors": [str(error)],
+            "delivery_ready": False,
+        }
 
     # Normalise the release dict into the shape expected by DDEXGenerator
     # Ensure mandatory cover fields are present if using artwork_url
@@ -131,8 +207,7 @@ def run(release: Dict[str, Any], storage_path: str, dry_run: bool) -> Dict[str, 
             "errors": validation.get("errors", []),
         }
 
-    xml_path = os.path.join(storage_path, f"ingestion_{release.get('releaseId', 'release')}.xml")
-    os.makedirs(storage_path, exist_ok=True)
+    xml_path = os.path.join(package_path, f"{safe_release_id}.xml")
     with open(xml_path, "w", encoding="utf-8") as f:
         f.write(xml_string)
 
@@ -147,6 +222,7 @@ def run(release: Dict[str, Any], storage_path: str, dry_run: bool) -> Dict[str, 
         return {
             "status": "SUCCESS",
             "xml_path": xml_path,
+            "package_path": package_path,
             "xml": xml_string,
             "tracks": tracks,
             "sftp_skipped": True,
@@ -167,7 +243,7 @@ def run(release: Dict[str, Any], storage_path: str, dry_run: bool) -> Dict[str, 
         username=str(sftp_config.get("user", "")),
         password=os.environ.get("SFTP_PASSWORD"),
         key_path=os.environ.get("SFTP_KEY_PATH"),
-        local_path=xml_path,
+        local_path=package_path,
         remote_path=str(sftp_config.get("remotePath", "/")),
     )
 
@@ -177,6 +253,7 @@ def run(release: Dict[str, Any], storage_path: str, dry_run: bool) -> Dict[str, 
             "status": "FAIL",
             "stage": "sftp",
             "xml_path": xml_path,
+            "package_path": package_path,
             "sftp_error": sftp_result.get("error"),
         }
 
@@ -184,6 +261,7 @@ def run(release: Dict[str, Any], storage_path: str, dry_run: bool) -> Dict[str, 
     return {
         "status": "SUCCESS",
         "xml_path": xml_path,
+        "package_path": package_path,
         "xml": xml_string,
         "tracks": tracks,
         "sftp": sftp_result,

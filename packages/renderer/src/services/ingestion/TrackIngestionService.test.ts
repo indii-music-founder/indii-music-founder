@@ -46,7 +46,15 @@ describe('TrackIngestionService', () => {
             energy: 0.8,
             duration: 180,
             danceability: 0.9,
-            loudness: -5
+            loudness: -5,
+            audit: {
+                peakLevel: -0.8,
+                truePeakDb: -1,
+                integratedLoudness: -14,
+                sampleRate: 48000,
+                isStereo: true,
+                rejectionRisks: [],
+            },
         },
         semantic: {
             mood: ['Energetic', 'Happy'],
@@ -139,6 +147,7 @@ describe('TrackIngestionService', () => {
         expect(result.masterAsset).toEqual(mockMasterAsset);
         expect(result.trackTitle).toBe('test-song');
         expect(result.durationSeconds).toBe(180);
+        expect(result.audioTechnical).toEqual({ channels: 2, sampleRate: 48000 });
         expect(result.genre).toBe('Pop'); // From ddexGenre
         expect(result.language).toBe('eng');
         expect(result.explicit).toBe(false);

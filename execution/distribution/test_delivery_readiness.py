@@ -1,4 +1,5 @@
 import json
+import hashlib
 import os
 import sys
 import tempfile
@@ -93,6 +94,18 @@ class TestDDEXDeliveryReadiness(unittest.TestCase):
                 patch.object(ingestion_build, "DDEXGenerator") as generator_class, \
                 patch.object(ingestion_build, "DDEXXSDValidator", create=True) as validator_class, \
                 patch.object(ingestion_build, "SFTPUploader", return_value=uploader):
+            master_bytes = b"canonical-master-before-xsd-gate"
+            master_path = Path(storage_path, "verified-source.flac")
+            master_path.write_bytes(master_bytes)
+            release["tracks"][0]["master_asset"] = {
+                "content_hash": hashlib.sha256(master_bytes).hexdigest(),
+                "local_path": str(master_path),
+                "master_fingerprint": "SONIC-xsd-gate",
+                "mime_type": "audio/flac",
+                "original_file_name": "track.flac",
+                "size_bytes": len(master_bytes),
+                "storage_path": "masters/owner/hash/original.flac",
+            }
             qc_class.return_value.validate_metadata.return_value = {
                 "valid": True,
                 "errors": [],
@@ -107,6 +120,65 @@ class TestDDEXDeliveryReadiness(unittest.TestCase):
         self.assertEqual(result["status"], "FAIL")
         self.assertEqual(result["stage"], "ddex_validation")
         uploader.upload.assert_not_called()
+
+    def test_live_ingestion_uploads_a_package_containing_the_verified_master(self):
+        master_bytes = b"canonical-lossless-master"
+        release = release_fixture()
+        release["sftpConfig"] = {
+            "host": "delivery.example.test",
+            "user": "provider",
+            "remotePath": "/incoming/release-test-001",
+        }
+        uploader = MagicMock()
+        uploader.upload.return_value = {"status": "SUCCESS"}
+        xsd_pass = {
+            "valid": True,
+            "mode": "xsd",
+            "errors": [],
+            "warnings": [],
+            "summary": "XSD validation passed",
+        }
+
+        with tempfile.TemporaryDirectory() as storage_path:
+            source_path = Path(storage_path, "verified-source.flac")
+            source_path.write_bytes(master_bytes)
+            release["tracks"][0]["master_asset"] = {
+                "content_hash": hashlib.sha256(master_bytes).hexdigest(),
+                "local_path": str(source_path),
+                "master_fingerprint": "SONIC-master-1",
+                "mime_type": "audio/flac",
+                "original_file_name": "signal-path.flac",
+                "size_bytes": len(master_bytes),
+                "storage_path": "masters/owner/hash/original.flac",
+            }
+
+            with patch.object(ingestion_build, "QCValidator") as qc_class, \
+                    patch.object(ingestion_build, "IdentityManager"), \
+                    patch.object(ingestion_build, "DDEXGenerator") as generator_class, \
+                    patch.object(ingestion_build, "DDEXXSDValidator") as validator_class, \
+                    patch.object(ingestion_build, "SFTPUploader", return_value=uploader):
+                qc_class.return_value.validate_metadata.return_value = {
+                    "valid": True,
+                    "errors": [],
+                    "warnings": [],
+                }
+                generator_class.return_value.generate_ern.return_value = TEST_XML
+                validator_class.return_value.validate_xml_string.return_value = xsd_pass
+
+                result = ingestion_build.run(release, storage_path, dry_run=False)
+
+            uploaded_path = Path(uploader.upload.call_args.kwargs["local_path"])
+            staged_master = uploaded_path / "resources" / "01-signal-path.flac"
+            self.assertTrue(uploaded_path.is_dir())
+            self.assertEqual(staged_master.read_bytes(), master_bytes)
+            self.assertEqual(Path(result["xml_path"]).parent, uploaded_path)
+            generated_release = generator_class.return_value.generate_ern.call_args.args[0]
+            self.assertEqual(generated_release["tracks"][0]["filename"], "resources/01-signal-path.flac")
+            self.assertEqual(
+                generated_release["tracks"][0]["file_hash"],
+                hashlib.md5(master_bytes).hexdigest(),
+            )
+            self.assertTrue(result["delivery_ready"])
 
     def test_spotify_package_is_not_delivery_ready_without_xsd_proof(self):
         validation = {
