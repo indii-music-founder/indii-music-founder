@@ -28,6 +28,8 @@ export interface VideoClip {
     anchorY?: number; // 0 to 1 (percentage)
     borderRadius?: number;
     volume?: number; // 0 to 1
+    masterFingerprint?: string;
+    isrc?: string;
     // Text specific properties
     textColor?: string;
     fontSize?: number;

@@ -142,6 +142,7 @@ function wrapWithFallback<T extends object>(
             const isApiKeyError = errorMsg.includes('API key expired') ||
                                   errorMsg.includes('API_KEY_INVALID') ||
                                   errorMsg.includes('API key not valid') ||
+                                  errorMsg.includes('API keys are not supported') ||
                                   (errorMsg.includes('INVALID_ARGUMENT') && errorMsg.includes('API key'));
             // AI Studio prepaid-billing exhaustion is a key-scoped outage, not a
             // model outage — Vertex ADC on the postpaid project can still serve it.

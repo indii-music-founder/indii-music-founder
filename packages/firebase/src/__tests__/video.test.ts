@@ -294,6 +294,71 @@ describe('Video Functions', () => {
     });
 
     describe('renderVideo', () => {
+        it('forwards the canonical master audio to the stitch job', async () => {
+            const context: any = { auth: { uid: 'user123' } };
+            const data = {
+                compositionId: 'performance-video-123',
+                inputProps: {
+                    project: {
+                        width: 1920,
+                        height: 1080,
+                        tracks: [
+                            { id: 'video-1', type: 'video', name: 'Performance' },
+                            { id: 'audio-1', type: 'audio', name: 'Master' }
+                        ],
+                        clips: [
+                            {
+                                id: 'scene-1',
+                                type: 'video',
+                                src: 'https://cdn.example.com/scene.mp4',
+                                trackId: 'video-1',
+                                startFrame: 0,
+                                durationInFrames: 240
+                            },
+                            {
+                                id: 'master-audio',
+                                type: 'audio',
+                                src: 'https://cdn.example.com/master.wav',
+                                masterFingerprint: 'sha256-master',
+                                isrc: 'USABC2600001',
+                                trackId: 'audio-1',
+                                startFrame: 0,
+                                durationInFrames: 240,
+                                volume: 1
+                            }
+                        ]
+                    }
+                }
+            };
+
+            const result = await (renderVideo as any)(data, context);
+
+            expect(result).toEqual({
+                success: true,
+                renderId: 'performance-video-123',
+                message: 'Render job queued.'
+            });
+            expect(mocks.inngest.send).toHaveBeenCalledWith(expect.objectContaining({
+                name: 'video/stitch.requested',
+                data: expect.objectContaining({
+                    audioClips: [{
+                        id: 'master-audio',
+                        url: 'https://cdn.example.com/master.wav',
+                        masterFingerprint: 'sha256-master',
+                        isrc: 'USABC2600001',
+                        trackId: 'audio-1',
+                        startFrame: 0,
+                        durationInFrames: 240,
+                        volume: 1
+                    }],
+                    audioMix: {
+                        mode: 'master_over_native',
+                        preserveNativeAudio: true
+                    }
+                })
+            }));
+        });
+
         it('should process job correctly', async () => {
             // Setup mock for firestore get to return job data
             mocks.firestore.get.mockResolvedValue({

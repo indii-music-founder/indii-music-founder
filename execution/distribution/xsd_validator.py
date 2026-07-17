@@ -49,7 +49,7 @@ class DDEXXSDValidator:
     """
 
     # DDEX Ingestion Protocol 4.3 Namespace
-    ERN_NS = "http://ingestion.net/xml/ern/43"
+    ERN_NS = "http://ddex.net/xml/ern/43"
 
     # Required elements for a valid NewReleaseMessage
     REQUIRED_ELEMENTS = [
@@ -94,13 +94,16 @@ class DDEXXSDValidator:
     # Date pattern: YYYY-MM-DD
     DATE_PATTERN = re.compile(r'^\d{4}-\d{2}-\d{2}$')
 
-    def __init__(self, xsd_path: Optional[str] = None):
+    def __init__(self, xsd_path: Optional[str] = None, require_xsd: bool = False):
         """Initialize the validator.
 
         Args:
             xsd_path: Path to DDEX Ingestion Protocol 4.3 XSD schema file.
                       Defaults to DDEX_XSD_PATH env var or schemas/ern-main.xsd
+            require_xsd: Fail closed instead of using structural validation when
+                         the official schema cannot be loaded.
         """
+        self.require_xsd = require_xsd
         self.xsd_path = xsd_path or os.environ.get(
             "DDEX_XSD_PATH",
             os.path.join(os.path.dirname(__file__), "schemas", "ern-main.xsd")
@@ -127,6 +130,18 @@ class DDEXXSDValidator:
         """
         errors: List[str] = []
         warnings: List[str] = []
+
+        if self.require_xsd and self.xsd_schema is None:
+            return {
+                "valid": False,
+                "mode": "none",
+                "errors": [
+                    "Live delivery requires the official DDEX ERN 4.3 XSD; "
+                    f"no usable schema was loaded from {self.xsd_path}"
+                ],
+                "warnings": [],
+                "summary": "Official DDEX ERN 4.3 XSD is unavailable",
+            }
 
         # ─── Mode 1: Full XSD Validation (if schema loaded) ──────────────
         if self.xsd_schema and HAS_LXML:
@@ -211,8 +226,10 @@ class DDEXXSDValidator:
             ns = root_tag.split("}")[0] + "}"
             # Verify it's the DDEX namespace
             actual_ns = root_tag.split("}")[0].lstrip("{")
-            if "ingestion.net" not in actual_ns:
-                errors.append(f"Unexpected namespace: {actual_ns}. Expected DDEX ERN namespace.")
+            if actual_ns != self.ERN_NS:
+                errors.append(
+                    f"Unexpected namespace: {actual_ns}. Expected {self.ERN_NS}."
+                )
 
         # Check root element
         local_tag = root_tag.replace(ns, "")
@@ -434,10 +451,18 @@ if __name__ == "__main__":
     )
     parser.add_argument("xml_input", help="XML file path or XML string")
     parser.add_argument("--xsd", help="Path to DDEX ERN XSD schema file")
+    parser.add_argument(
+        "--require-xsd",
+        action="store_true",
+        help="Fail closed when the official ERN 4.3 XSD cannot be loaded",
+    )
 
     args = parser.parse_args()
 
-    validator = DDEXXSDValidator(xsd_path=args.xsd)
+    validator = DDEXXSDValidator(
+        xsd_path=args.xsd,
+        require_xsd=args.require_xsd,
+    )
 
     if os.path.exists(args.xml_input):
         result = validator.validate_file(args.xml_input)

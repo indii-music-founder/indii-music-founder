@@ -656,6 +656,51 @@ Four skill registries exist — do not confuse them. All are active; the "not li
 
 ---
 
+## Slash Workflows (`.agent/workflows/`)
+
+These commands form the backbone of the agent's development workflow. When a user invokes one, read its corresponding markdown file in `.agent/workflows/` and execute it.
+
+### The Core Pipeline
+- `/start` — Initializes a new session, feature, or prompt. (`.agent/workflows/start.md`)
+- `/proceed` — Resumes an active task and runs a compliance check. (`.agent/workflows/proceed.md`)
+- `/middle` — Drives the iterative coding and building process. (`.agent/workflows/middle.md`)
+- `/end` — Wraps up a session leaving a pristine repository. (`.agent/workflows/end.md`)
+- `/skill-skill` — Intelligent skill router for dynamic workflows. (`.agent/workflows/skill-skill.md`)
+
+### Utility & Verification Commands
+- `/review` — Conversational Q&A loop to review state and align context. (`.agent/workflows/review.md`)
+- `/opp` — Operator persona activation / handoff check. (`.agent/workflows/opp.md`)
+- `/go` — Universal recursive execution loop for task continuation. (`.agent/workflows/go.md`)
+- `/get-git` — Git sync, local validation, and background scheduling. (`.agent/workflows/get-git.md`)
+- `/c` — Continuous coordination engine (autonomous supervisor). (`.agent/workflows/c.md`)
+- `/away` — Autonomous CI monitor & merge loop. (`.agent/workflows/away.md`)
+- `/ci-validate` — Pre-push CI validation and commit consolidation. (`.agent/workflows/ci-validate.md`)
+- `/flowchart` — Dynamic architecture and flow visualizer using Mermaid. (`.agent/workflows/flowchart.md`)
+- `/db-sync` — Security rules and schema auditor. (`.agent/workflows/db-sync.md`)
+- `/auto-fix` — Auto-fix Sentry issues and CodeRabbit PR comments. (`.agent/workflows/auto-fix.md`)
+- `/hunter` — Full-spectrum bug hunter. (`.agent/workflows/hunter.md`)
+- `/issue-sweep` — End-to-end issue sweep and stabilization. (`.agent/workflows/issue-sweep.md`)
+- `/better` — Universal improvement engine (audit, elevate, polish). (`.agent/workflows/better.md`)
+- `/finish` — Unfinished work sweep (TODOs, stubs, slop). (`.agent/workflows/finish.md`)
+- `/devex-review` — Developer experience (DX) audit. (`.agent/workflows/devex-review.md`)
+- `/factory` — Automated test & fix loop (nightly/autonomous runs). (`.agent/workflows/factory.md`)
+- `/test` — Context-aware test runner. (`.agent/workflows/test.md`)
+- `/training` — AI agent dataset generation & fine-tuning. (`.agent/workflows/training.md`)
+- `/api` — The API knowledge base and diagnostic tool. (`.agent/workflows/api.md`)
+- `/to-prd` — Product Requirement Document (PRD) generator. (`.agent/workflows/to-prd.md`)
+- `/to-issues` — vertical-Slice Ticketer. (`.agent/workflows/to-issues.md`)
+- `/grill-me` — Architect Interviewer (stress-test ADRs). (`.agent/workflows/grill-me.md`)
+- `/zoom-out` — Codebase dependency mapper. (`.agent/workflows/zoom-out.md`)
+- `/tdd` — Test-driven development loop. (`.agent/workflows/tdd.md`)
+- `/mega` — Mega stress test orchestrator. (`.agent/workflows/mega.md`)
+- `/mega-test` — Single mega test plan execution. (`.agent/workflows/mega-test.md`)
+- `/real` — Adaptive real-life testing workflow. (`.agent/workflows/real.md`)
+- `/auto_qa` — Autonomous visual QA via browser subagent. (`.agent/workflows/auto_qa.md`)
+- `/issue` — The Fix Agent (resolves issues logged in the ledger). (`.agent/workflows/issue.md`)
+- Engine Swarm: `/a` (Finder), `/b` (Resolver), `/c` (Shipper), `/d` (Verifier), `/abcd` (Launch All). (`.agent/workflows/a.md`, `b.md`, `c.md`, `d.md`, `abcd.md`)
+
+---
+
 ## Skill Routing
 
 When a user request matches a skill pattern below, **READ the referenced skill file first and follow its instructions exactly**. Do not answer ad hoc when a skill exists — the skill provides a proven, structured workflow.
@@ -664,45 +709,42 @@ When a user request matches a skill pattern below, **READ the referenced skill f
 
 ### Agent Skills (`.agent/skills/`)
 
-#### Engineering (Matt Pocock Core Suite)
+#### Testing & QA
+- `test` — Smart test runner for modified files (`.agent/skills/test/SKILL.md`)
+- `auto_qa` — Visual QA, screenshot testing (`.agent/skills/auto_qa/SKILL.md`)
+- `tdd` — Red-green-refactor via public interfaces (`.agent/skills/tdd/SKILL.md`)
+- `health-check` — Preventative health audit (`.agent/skills/health-check/SKILL.md`)
 
-| Trigger | Skill File |
-| --- | --- |
-| Interview plan against codebase context & ADRs, stress-test decisions | `.agent/skills/grill-with-docs/SKILL.md` |
-| Hard bugs & perf regressions: reproduce → minimize → hypothesize → instrument → fix | `.agent/skills/diagnose/SKILL.md` |
-| Strict red-green-refactor via public interfaces | `.agent/skills/tdd/SKILL.md` |
-| Turn conversation into PRD, publish to issue tracker | `.agent/skills/to-prd/SKILL.md` |
-| Break PRD/plan into independently-grabbable vertical-slice issues | `.agent/skills/to-issues/SKILL.md` |
-| Map codebase area: callers, dependencies, structure | `.agent/skills/zoom-out/SKILL.md` |
+#### Debugging & Troubleshooting
+- `diagnose` — Trace root cause from logs to codebase to hypothesis to fix (`.agent/skills/diagnose/SKILL.md`)
+- `hunter` — Full-spectrum bug hunt (security, leaks, races) (`.agent/skills/hunter/SKILL.md`)
+- `error_memory` — **MANDATORY check before debug** (`.agent/skills/error_memory/ERROR_LEDGER.md`)
 
-#### Productivity (Matt Pocock)
+#### Code Planning & Architecture
+- `agentic-harness-architect` — Design/evaluate AI agent harnesses (`.agent/skills/agentic-harness-architect/SKILL.md`)
+- `zoom-out` — Map codebase callers, dependencies, structure (`.agent/skills/zoom-out/SKILL.md`)
+- `grill-with-docs` — Interview plan against codebase context & ADRs (`.agent/skills/grill-with-docs/SKILL.md`)
+- `to-prd` — Turn conversation into PRD (`.agent/skills/to-prd/SKILL.md`)
+- `to-issues` — Break PRD/plan into vertical-slice issues (`.agent/skills/to-issues/SKILL.md`)
 
-| Trigger | Skill File |
-| --- | --- |
-| Interview pattern for non-code planning (product/strategy) | `.agent/skills/grill-me/SKILL.md` |
-| Terse mode: cut ~75% tokens by dropping articles & pleasantries | `.agent/skills/caveman/SKILL.md` |
+#### Development Productivity
+- `grill-me` — Interview pattern for non-code planning (product/strategy) (`.agent/skills/grill-me/SKILL.md`)
+- `caveman` — Terse mode: cut ~75% tokens (`.agent/skills/caveman/SKILL.md`)
+- `walk` — Session bootstrap, drive codebase to prime (`.agent/skills/walk/SKILL.md`)
+- `go` — Recursive execution loop (`.agent/skills/go/SKILL.md`)
+- `skill – skill` — Dynamic skill/tool router (`.agent/skills/skill – skill/SKILL.md`)
 
-#### Misc (Matt Pocock)
+#### Code Review & Quality
+- `health_audit` — Full engineering health audit, ship readiness (`.agent/skills/health_audit/SKILL.md`)
+- `hooks` — Audit, improve, add, or remove hooks (`.agent/skills/hooks/SKILL.md`)
 
-| Trigger | Skill File |
-| --- | --- |
-| Install hook that blocks `git push`, `reset --hard`, `clean -f` | `.agent/skills/git-guardrails-claude-code/SKILL.md` |
-| Install Husky + lint-staged + Prettier + typecheck + tests on commit | `.agent/skills/setup-pre-commit/SKILL.md` |
+#### Configuration & Setup
+- `setup-pre-commit` — Install Husky + lint-staged + Prettier + tests (`.agent/skills/setup-pre-commit/SKILL.md`)
+- `git-guardrails-claude-code` — Block dangerous git commands (`.agent/skills/git-guardrails-claude-code/SKILL.md`)
 
-#### Indii-Specific Skills (Core & Essential)
-
-| Trigger | Skill File |
-| --- | --- |
-| Assess task, evaluate available skills, route to best match | `.agent/skills/skill – skill/SKILL.md` |
-| Resume mobile session, drive codebase to prime | `.agent/skills/walk/SKILL.md` |
-| Audit, improve, add, or remove hooks (agent, React, Firebase, webhooks) | `.agent/skills/hooks/SKILL.md` |
-| Design or evaluate an AI agent harness | `.agent/skills/agentic-harness-architect/SKILL.md` |
-| Visual QA, screenshot testing, UI validation | `.agent/skills/auto_qa/SKILL.md` |
-| Drive a task to verified completion (recursive loop) | `.agent/skills/go/SKILL.md` |
-| Full engineering health audit, ship readiness | `.agent/skills/health_audit/SKILL.md` |
-| Bug sweep, security scan, find and fix all issues | `.agent/skills/hunter/SKILL.md` |
-| Run tests, determine which tests apply | `.agent/skills/test/SKILL.md` |
-| **MANDATORY before any debug**: error pattern lookup | `.agent/skills/error_memory/ERROR_LEDGER.md` |
+#### Creative & Media Production
+- `indii-cinema-worldbuilder` — Cinematic worldbuilding (`.agent/skills/indii-cinema-worldbuilder/SKILL.md`)
+- `indii-director` — AI director for cinematic sequences (`.agent/skills/indii-director/SKILL.md`)
 
 ### Jules Tools (`.jules/`)
 
@@ -743,11 +785,9 @@ When Claude would invoke a named Skill tool, use the following Gemini-native app
 | `checkpoint` | Write current session state to `.agent/HANDOFF_STATE.md` with completed work, decisions, and next steps |
 | `health` | Use `.agent/skills/health_audit/SKILL.md` for full spectrum audit |
 
-## Skill routing
+## Skill routing (General Principles)
 
-When the user's request matches an available skill, ALWAYS invoke it using the Skill
-tool as your FIRST action. Do NOT answer directly, do NOT use other tools first.
-The skill has specialized workflows that produce better results than ad-hoc answers.
+When the user's request matches an available skill, ALWAYS invoke it using the Skill tool as your FIRST action. Do NOT answer directly, do NOT use other tools first. The skill has specialized workflows that produce better results than ad-hoc answers.
 
 Key routing rules:
 - Product ideas, "is this worth building", brainstorming → invoke office-hours

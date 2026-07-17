@@ -136,8 +136,6 @@ export interface ElectronDistributionAPI {
     generateUPC: (options?: unknown) => Promise<{ success: boolean; error?: string; upc?: string }>;
     registerRelease: (metadata: unknown, releaseId?: string) => Promise<{ success: boolean; error?: string }>;
     generateDDEX: (metadata: unknown) => Promise<{ success: boolean; error?: string; xml?: string }>;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    generateIngestionNotification: (metadata: any) => Promise<{ success: boolean; error?: string; xml?: string }>;
     generateContentIdCSV: (data: unknown) => Promise<{ success: boolean; error?: string; csvData?: string; csv?: string }>;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     generateBWARM: (data: unknown) => Promise<{ success: boolean; error?: string; csv?: string; report?: any }>;

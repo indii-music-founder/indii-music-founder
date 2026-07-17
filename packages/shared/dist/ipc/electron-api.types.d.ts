@@ -255,11 +255,6 @@ export interface ElectronDistributionAPI {
         error?: string;
         xml?: string;
     }>;
-    generateIngestionNotification: (metadata: any) => Promise<{
-        success: boolean;
-        error?: string;
-        xml?: string;
-    }>;
     generateContentIdCSV: (data: unknown) => Promise<{
         success: boolean;
         error?: string;

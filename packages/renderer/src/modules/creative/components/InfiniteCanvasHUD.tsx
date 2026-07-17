@@ -37,7 +37,7 @@ export const InfiniteCanvasHUD: React.FC<InfiniteCanvasHUDProps> = memo(({
 }) => {
     return (
         <TooltipProvider delayDuration={200}>
-            <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-background/60 backdrop-blur-xl border border-white/10 rounded-full px-4 py-2 flex items-center gap-2 shadow-2xl z-50">
+            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-background/60 backdrop-blur-xl border border-white/10 rounded-full px-4 py-2 flex items-center gap-2 shadow-2xl z-50">
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <button
@@ -50,7 +50,7 @@ export const InfiniteCanvasHUD: React.FC<InfiniteCanvasHUDProps> = memo(({
                             <Move size={18} />
                         </button>
                     </TooltipTrigger>
-                    <TooltipContent side="bottom" className="bg-[#1a1a1a] text-white border-white/10 z-50">Pan Tool</TooltipContent>
+                    <TooltipContent side="top" className="bg-[#1a1a1a] text-white border-white/10 z-50">Pan Tool</TooltipContent>
                 </Tooltip>
 
                 <Tooltip>
@@ -65,7 +65,7 @@ export const InfiniteCanvasHUD: React.FC<InfiniteCanvasHUDProps> = memo(({
                             <MousePointer2 size={18} />
                         </button>
                     </TooltipTrigger>
-                    <TooltipContent side="bottom" className="bg-[#1a1a1a] text-white border-white/10 z-50">Select/Move Tool</TooltipContent>
+                    <TooltipContent side="top" className="bg-[#1a1a1a] text-white border-white/10 z-50">Select/Move Tool</TooltipContent>
                 </Tooltip>
 
                 <Tooltip>
@@ -80,7 +80,7 @@ export const InfiniteCanvasHUD: React.FC<InfiniteCanvasHUDProps> = memo(({
                             <ImagePlus size={18} />
                         </button>
                     </TooltipTrigger>
-                    <TooltipContent side="bottom" className="bg-[#1a1a1a] text-white border-white/10 z-50">Generate/Outpaint Tool</TooltipContent>
+                    <TooltipContent side="top" className="bg-[#1a1a1a] text-white border-white/10 z-50">Generate/Outpaint Tool</TooltipContent>
                 </Tooltip>
 
                 <Tooltip>
@@ -95,7 +95,7 @@ export const InfiniteCanvasHUD: React.FC<InfiniteCanvasHUDProps> = memo(({
                             <Crop size={18} />
                         </button>
                     </TooltipTrigger>
-                    <TooltipContent side="bottom" className="bg-[#1a1a1a] text-white border-white/10 z-50">Adaptive Crop & Fill</TooltipContent>
+                    <TooltipContent side="top" className="bg-[#1a1a1a] text-white border-white/10 z-50">Adaptive Crop & Fill</TooltipContent>
                 </Tooltip>
 
                 <div className="w-px h-6 bg-white/10 mx-1"></div>
@@ -112,7 +112,7 @@ export const InfiniteCanvasHUD: React.FC<InfiniteCanvasHUDProps> = memo(({
                                 <ScanSearch size={18} />
                             </button>
                         </TooltipTrigger>
-                        <TooltipContent side="bottom" className="bg-[#1a1a1a] text-white border-white/10 z-50">Detect Objects (ID)</TooltipContent>
+                        <TooltipContent side="top" className="bg-[#1a1a1a] text-white border-white/10 z-50">Detect Objects (ID)</TooltipContent>
                     </Tooltip>
                 )}
 
@@ -128,7 +128,7 @@ export const InfiniteCanvasHUD: React.FC<InfiniteCanvasHUDProps> = memo(({
                                 <ZoomOut size={18} />
                             </button>
                         </TooltipTrigger>
-                        <TooltipContent side="bottom" className="bg-[#1a1a1a] text-white border-white/10 z-50">Zoom Out</TooltipContent>
+                        <TooltipContent side="top" className="bg-[#1a1a1a] text-white border-white/10 z-50">Zoom Out</TooltipContent>
                     </Tooltip>
                 )}
 
@@ -144,7 +144,7 @@ export const InfiniteCanvasHUD: React.FC<InfiniteCanvasHUDProps> = memo(({
                                 <ZoomIn size={18} />
                             </button>
                         </TooltipTrigger>
-                        <TooltipContent side="bottom" className="bg-[#1a1a1a] text-white border-white/10 z-50">Zoom In</TooltipContent>
+                        <TooltipContent side="top" className="bg-[#1a1a1a] text-white border-white/10 z-50">Zoom In</TooltipContent>
                     </Tooltip>
                 )}
 
@@ -162,7 +162,7 @@ export const InfiniteCanvasHUD: React.FC<InfiniteCanvasHUDProps> = memo(({
                                 <Layers size={18} />
                             </button>
                         </TooltipTrigger>
-                        <TooltipContent side="bottom" className="bg-[#1a1a1a] text-white border-white/10 z-50">Flatten Canvas</TooltipContent>
+                        <TooltipContent side="top" className="bg-[#1a1a1a] text-white border-white/10 z-50">Flatten Canvas</TooltipContent>
                     </Tooltip>
                 )}
 
@@ -179,7 +179,7 @@ export const InfiniteCanvasHUD: React.FC<InfiniteCanvasHUDProps> = memo(({
                                 <Undo2 size={18} />
                             </button>
                         </TooltipTrigger>
-                        <TooltipContent side="bottom" className="bg-[#1a1a1a] text-white border-white/10 z-50">Restore layers from last flatten</TooltipContent>
+                        <TooltipContent side="top" className="bg-[#1a1a1a] text-white border-white/10 z-50">Restore layers from last flatten</TooltipContent>
                     </Tooltip>
                 )}
 
@@ -195,7 +195,7 @@ export const InfiniteCanvasHUD: React.FC<InfiniteCanvasHUDProps> = memo(({
                             <Eraser size={18} />
                         </button>
                     </TooltipTrigger>
-                    <TooltipContent side="bottom" className="bg-[#1a1a1a] text-white border-white/10 z-50">Delete Selected</TooltipContent>
+                    <TooltipContent side="top" className="bg-[#1a1a1a] text-white border-white/10 z-50">Delete Selected</TooltipContent>
                 </Tooltip>
 
                 {onGenerateVariations && (
@@ -211,7 +211,7 @@ export const InfiniteCanvasHUD: React.FC<InfiniteCanvasHUDProps> = memo(({
                                 Variations
                             </button>
                         </TooltipTrigger>
-                        <TooltipContent side="bottom" className="bg-[#1a1a1a] text-white border-white/10 z-50">Generate Variations</TooltipContent>
+                        <TooltipContent side="top" className="bg-[#1a1a1a] text-white border-white/10 z-50">Generate Variations</TooltipContent>
                     </Tooltip>
                 )}
 

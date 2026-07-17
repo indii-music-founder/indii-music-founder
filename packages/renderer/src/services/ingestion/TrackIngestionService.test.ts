@@ -3,12 +3,18 @@ import { TrackIngestionService } from './TrackIngestionService';
 import { fingerprintService } from '@/services/audio/FingerprintService';
 import { audioIntelligence } from '@/services/audio/AudioIntelligenceService';
 import { trackLibrary } from '@/services/metadata/TrackLibraryService';
+import { masterAudioService } from '@/services/audio/MasterAudioService';
 import { ExtendedGoldenMetadata } from '@/services/metadata/types';
 
 // Mock dependencies
 vi.mock('@/services/audio/FingerprintService');
 vi.mock('@/services/audio/AudioIntelligenceService');
 vi.mock('@/services/metadata/TrackLibraryService');
+vi.mock('@/services/audio/MasterAudioService');
+vi.mock('@/services/firebase', async (importOriginal) => ({
+    ...await importOriginal<typeof import('@/services/firebase')>(),
+    auth: { currentUser: { uid: 'owner-1' } }
+}));
 
 describe('TrackIngestionService', () => {
     let service: TrackIngestionService;
@@ -20,6 +26,16 @@ describe('TrackIngestionService', () => {
 
     const mockFile = new File(['test audio data'], 'test-song.mp3', { type: 'audio/mp3' });
     const mockFingerprint = 'SONIC-TEST-12345';
+    const mockMasterAsset = {
+        contentHash: 'a'.repeat(64),
+        downloadUrl: 'https://storage.example/master.mp3',
+        masterFingerprint: mockFingerprint,
+        mimeType: 'audio/mp3',
+        originalFileName: 'test-song.mp3',
+        sizeBytes: mockFile.size,
+        storagePath: `masters/owner-1/${'a'.repeat(64)}/original.mp3`,
+        uploadedAt: '2026-07-17T18:00:00.000Z',
+    };
 
     const mockProfile = {
         id: mockFingerprint,
@@ -74,6 +90,7 @@ describe('TrackIngestionService', () => {
     it('should skip analysis if track already exists (Idempotency)', async () => {
         // Setup Mocks
         vi.mocked(fingerprintService.generateFingerprint).mockResolvedValue(mockFingerprint);
+        vi.mocked(masterAudioService.persist).mockResolvedValue(mockMasterAsset);
 
         const existingMetadata = {
             trackTitle: 'Existing Track',
@@ -87,14 +104,24 @@ describe('TrackIngestionService', () => {
 
         // Verify
         expect(fingerprintService.generateFingerprint).toHaveBeenCalledWith(mockFile);
+        expect(masterAudioService.persist).toHaveBeenCalledWith(mockFile, {
+            userId: 'owner-1',
+            masterFingerprint: mockFingerprint,
+        });
         expect(trackLibrary.getByFingerprint).toHaveBeenCalledWith(mockFingerprint);
         expect(audioIntelligence.analyze).not.toHaveBeenCalled(); // Crucial check
-        expect(result).toEqual(existingMetadata);
+        expect(result).toEqual({
+            ...existingMetadata,
+            userId: 'owner-1',
+            masterAsset: mockMasterAsset,
+        });
+        expect(trackLibrary.saveTrack).toHaveBeenCalledWith(result);
     });
 
     it('should perform full analysis and save if track is new', async () => {
         // Setup Mocks
         vi.mocked(fingerprintService.generateFingerprint).mockResolvedValue(mockFingerprint);
+        vi.mocked(masterAudioService.persist).mockResolvedValue(mockMasterAsset);
         vi.mocked(trackLibrary.getByFingerprint).mockResolvedValue(null); // Not found
         vi.mocked(audioIntelligence.analyze).mockResolvedValue(mockProfile);
 
@@ -108,6 +135,8 @@ describe('TrackIngestionService', () => {
 
         // Check Metadata Mapping
         expect(result.masterFingerprint).toBe(mockFingerprint);
+        expect(result.userId).toBe('owner-1');
+        expect(result.masterAsset).toEqual(mockMasterAsset);
         expect(result.trackTitle).toBe('test-song');
         expect(result.durationSeconds).toBe(180);
         expect(result.genre).toBe('Pop'); // From ddexGenre

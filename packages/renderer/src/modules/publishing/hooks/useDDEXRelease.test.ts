@@ -2,11 +2,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useDDEXRelease } from './useDDEXRelease';
 
-const { mockAddDoc, mockUpdateDoc, mockRunAgent, mockUploadFile, docIds } = vi.hoisted(() => ({
+const { mockAddDoc, mockUpdateDoc, mockRunAgent, mockUploadFile, mockPersistMaster, docIds } = vi.hoisted(() => ({
     mockAddDoc: vi.fn(),
     mockUpdateDoc: vi.fn(),
     mockRunAgent: vi.fn(),
     mockUploadFile: vi.fn(),
+    mockPersistMaster: vi.fn(),
     docIds: { counter: 0 },
 }));
 
@@ -25,6 +26,10 @@ vi.mock('@/services/firebase', () => ({
 
 vi.mock('@/services/StorageService', () => ({
     StorageService: { uploadFileWithProgress: mockUploadFile },
+}));
+
+vi.mock('@/services/audio/MasterAudioService', () => ({
+    masterAudioService: { persist: mockPersistMaster },
 }));
 
 vi.mock('@/services/agent/AgentService', () => ({
@@ -87,6 +92,40 @@ describe('useDDEXRelease.submitRelease (ISSUE-964)', () => {
         expect(mockUpdateDoc).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ status: 'metadata_complete' }));
         expect(result.current.currentStep).toBe('complete');
         expect(result.current.submitError).toBeNull();
+    });
+
+    it('carries canonical master identity and ISRC into the durable DDEX packaging record', async () => {
+        mockRunAgent.mockResolvedValue({ text: 'Packaged successfully' });
+        const { result } = renderHook(() => useDDEXRelease());
+        act(() => {
+            result.current.updateMetadata({ isrc: 'USABC2600001' });
+            result.current.updateAssets({
+                audioFile: {
+                    ...VALID_AUDIO_FILE,
+                    storagePath: 'masters/user-1/content-hash/original.wav',
+                    contentHash: 'content-hash',
+                    masterFingerprint: 'SONIC-master',
+                },
+                coverArt: VALID_COVER_ART,
+            });
+        });
+
+        await act(async () => {
+            await result.current.submitRelease();
+        });
+
+        expect(mockAddDoc).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+            assets: expect.objectContaining({
+                audioStoragePath: 'masters/user-1/content-hash/original.wav',
+                audioContentHash: 'content-hash',
+                masterFingerprint: 'SONIC-master',
+                isrc: 'USABC2600001',
+            }),
+        }));
+        expect(mockRunAgent).toHaveBeenCalledWith(
+            'publishing',
+            expect.stringContaining('Canonical audio storage path: masters/user-1/content-hash/original.wav')
+        );
     });
 
     it('marks packaging_failed with the real error instead of silently advancing to complete', async () => {
@@ -162,6 +201,54 @@ describe('useDDEXRelease.uploadAsset (ISSUE-963)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mockUploadFile.mockResolvedValue('https://storage.example.com/uploaded-file');
+        mockPersistMaster.mockResolvedValue({
+            contentHash: 'content-hash',
+            downloadUrl: 'https://storage.example.com/canonical-master.wav',
+            masterFingerprint: 'SHA256-measured-hash',
+            mimeType: 'audio/wav',
+            originalFileName: 'master.wav',
+            sizeBytes: 44,
+            storagePath: 'masters/user-1/content-hash/original.wav',
+            uploadedAt: '2026-07-17T00:00:00.000Z',
+        });
+    });
+
+    it('persists a valid release master once at its canonical content-addressed path', async () => {
+        const bytes = new Uint8Array(44);
+        const view = new DataView(bytes.buffer);
+        bytes.set(new TextEncoder().encode('RIFF'), 0);
+        view.setUint32(4, 36, true);
+        bytes.set(new TextEncoder().encode('WAVEfmt '), 8);
+        view.setUint32(16, 16, true);
+        view.setUint16(20, 1, true);
+        view.setUint16(22, 2, true);
+        view.setUint32(24, 48_000, true);
+        view.setUint32(28, 288_000, true);
+        view.setUint16(32, 6, true);
+        view.setUint16(34, 24, true);
+        bytes.set(new TextEncoder().encode('data'), 36);
+        const master = new File([bytes], 'master.wav', { type: 'audio/wav' });
+        Object.defineProperty(master, 'arrayBuffer', {
+            value: async () => bytes.buffer,
+        });
+        const { result } = renderHook(() => useDDEXRelease());
+
+        let returnedUrl = '';
+        await act(async () => {
+            returnedUrl = await result.current.uploadAsset('audio', master);
+        });
+
+        expect(mockPersistMaster).toHaveBeenCalledWith(master, {
+            userId: 'user-1',
+            masterFingerprint: expect.stringMatching(/^SHA256-[a-f0-9]{64}$/),
+        });
+        expect(mockUploadFile).not.toHaveBeenCalled();
+        expect(returnedUrl).toBe('https://storage.example.com/canonical-master.wav');
+        expect(result.current.assets.audioFile).toEqual(expect.objectContaining({
+            storagePath: 'masters/user-1/content-hash/original.wav',
+            contentHash: 'content-hash',
+            masterFingerprint: 'SHA256-measured-hash',
+        }));
     });
 
     it('rejects a lossy audio file before uploading any bytes', async () => {

@@ -91,6 +91,9 @@ export interface ReleaseAssets {
     format: 'wav' | 'flac' | 'mp3' | 'aac';
     sampleRate: number;
     bitDepth: number;
+    storagePath?: string;
+    contentHash?: string;
+    masterFingerprint?: string;
   }[];
   // Deprecated: Singular audioFile for backward compatibility (optional)
   audioFile?: {
@@ -103,6 +106,9 @@ export interface ReleaseAssets {
     name?: string;
     path?: string;
     hash?: string;
+    storagePath?: string;
+    contentHash?: string;
+    masterFingerprint?: string;
   };
   coverArt: {
     url: string;

@@ -620,7 +620,7 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                                             Start by generating an image with a prompt, or upload your own photo to edit.
                                         </p>
                                         <p className="text-gray-400 text-xs">
-                                            Use the toolbar at the top to generate, upload, or browse your project's assets.
+                                            Use the toolbar at the bottom to generate, upload, or browse your project's assets.
                                         </p>
                                     </div>
                                 </div>

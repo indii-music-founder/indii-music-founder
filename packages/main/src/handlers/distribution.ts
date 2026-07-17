@@ -316,7 +316,7 @@ export const setupDistributionHandlers = () => {
         try {
             validateSender(event);
             const storagePath = getStoragePath();
-            const result = await AgentSupervisor.execute<Record<string, unknown>>('distribution', 'ddex_generator.py', [
+            const result = await AgentSupervisor.execute<Record<string, unknown>>('distribution', 'ingestion_generator.py', [
                 JSON.stringify(metadata),
                 '--storage-path',
                 storagePath
@@ -643,11 +643,9 @@ export const setupDistributionHandlers = () => {
             const tempFile = path.join(os.tmpdir(), `xsd-validation-${crypto.randomUUID()}.xml`);
             await fs.writeFile(tempFile, xmlContent, 'utf-8');
 
-            const storagePath = getStoragePath();
             const report = await AgentSupervisor.execute<Record<string, unknown>>('distribution', 'xsd_validator.py', [
                 tempFile,
-                '--storage-path',
-                storagePath
+                '--require-xsd'
             ], { timeoutMs: 30000 });
 
             // Clean up temp file
@@ -658,10 +656,8 @@ export const setupDistributionHandlers = () => {
             }
 
             return {
-                success: report.valid,
-                errors: report.errors,
-                warnings: report.warnings,
-                message: report.summary
+                success: report.valid === true && report.mode === 'xsd',
+                report
             };
         } catch (error) {
             log.error('[Distribution] XSD validation failed:', error);

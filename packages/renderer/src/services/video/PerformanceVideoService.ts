@@ -5,6 +5,7 @@ import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { logger } from '@/utils/logger';
 import type { VideoProject, VideoClip, VideoTrack } from '@/modules/creative/video/store/videoEditorStore';
 import type { VideoGenerationOptions } from '@/modules/creative/video/schemas';
+import type { MasterAudioReference } from '@/services/metadata/types';
 
 interface SonicProfile {
   bpm: number;
@@ -18,8 +19,10 @@ interface SonicProfile {
   timestamp_markers?: Array<{ time: string; event: string }>;
 }
 
-interface PerformanceVideoOptions {
+export interface PerformanceVideoOptions {
   songUrl: string;
+  masterAsset?: MasterAudioReference;
+  isrc?: string;
   artistImageUrl?: string;
   artistDescription?: string;
   style?: string;
@@ -58,9 +61,11 @@ export class PerformanceVideoService {
 
     try {
       logger.info('[PerformanceVideo] Starting generation with options:', opts);
+      const masterAudioUrl = opts.masterAsset?.downloadUrl || opts.songUrl;
+      const masterMimeType = opts.masterAsset?.mimeType || 'audio/mpeg';
 
       // Step 1: Analyze the song
-      const sonicProfile = await this.analyzeSong(opts.songUrl);
+      const sonicProfile = await this.analyzeSong(masterAudioUrl, masterMimeType);
       logger.info('[PerformanceVideo] Song analysis:', {
         bpm: sonicProfile.bpm,
         mood: sonicProfile.mood,
@@ -94,9 +99,11 @@ export class PerformanceVideoService {
       // Step 4: Build Remotion project
       const project = this.buildRemotionProject(
         sceneUrls,
-        opts.songUrl,
+        masterAudioUrl,
         scenes,
-        opts.aspectRatio || '16:9'
+        opts.aspectRatio || '16:9',
+        opts.masterAsset?.masterFingerprint,
+        opts.isrc
       );
       logger.info('[PerformanceVideo] Built Remotion project:', {
         durationInFrames: project.durationInFrames,
@@ -118,13 +125,13 @@ export class PerformanceVideoService {
   /**
    * Call analyzeAudio Cloud Fn to extract BPM, mood, structure, etc.
    */
-  private async analyzeSong(songUrl: string): Promise<SonicProfile> {
+  private async analyzeSong(songUrl: string, mimeType: string): Promise<SonicProfile> {
     const analyzeAudio = httpsCallable<
       { audioUrl: string; mimeType?: string },
       SonicProfile
     >(functions, 'analyzeAudio');
 
-    const response = await analyzeAudio({ audioUrl: songUrl, mimeType: 'audio/mpeg' });
+    const response = await analyzeAudio({ audioUrl: songUrl, mimeType });
     return response.data;
   }
 
@@ -225,7 +232,9 @@ export class PerformanceVideoService {
     sceneUrls: string[],
     songUrl: string,
     scenes: Array<{ prompt: string; durationSec: number }>,
-    aspectRatio: '9:16' | '16:9' | '1:1'
+    aspectRatio: '9:16' | '16:9' | '1:1',
+    masterFingerprint?: string,
+    isrc?: string
   ): VideoProject {
     const fps = 30;
     const aspectRatios: Record<string, { width: number; height: number }> = {
@@ -269,6 +278,8 @@ export class PerformanceVideoService {
       trackId: 'audio-1',
       name: 'Original Song',
       volume: 1,
+      ...(masterFingerprint ? { masterFingerprint } : {}),
+      ...(isrc ? { isrc } : {}),
     });
 
     const tracks: VideoTrack[] = [
