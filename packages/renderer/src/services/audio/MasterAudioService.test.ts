@@ -7,13 +7,13 @@ const storageMocks = vi.hoisted(() => ({
     uploadBytes: vi.fn(),
 }));
 
-const verificationMocks = vi.hoisted(() => ({
+const profilingMocks = vi.hoisted(() => ({
     callable: vi.fn(),
     httpsCallable: vi.fn(),
 }));
 
 vi.mock('firebase/storage', () => storageMocks);
-vi.mock('firebase/functions', () => verificationMocks);
+vi.mock('firebase/functions', () => profilingMocks);
 
 vi.mock('@/services/firebase', () => ({
     storage: { bucket: 'test-bucket' },
@@ -47,8 +47,16 @@ describe('MasterAudioService', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         storageMocks.getDownloadURL.mockResolvedValue('https://storage.example/master.wav');
-        verificationMocks.httpsCallable.mockReturnValue(verificationMocks.callable);
-        verificationMocks.callable.mockResolvedValue({ data: { verified: true } });
+        profilingMocks.httpsCallable.mockReturnValue(profilingMocks.callable);
+        profilingMocks.callable.mockImplementation(async (request: { storagePath: string; masterFingerprint: string }) => ({
+            data: {
+                success: true,
+                status: 'QUEUED_FOR_DSP_PROFILING',
+                masterFingerprint: request.masterFingerprint,
+                contentHash: request.storagePath.split('/')[2],
+                generation: '987654321',
+            },
+        }));
     });
 
     it('creates one content-addressed, immutable master object with durable identity metadata', async () => {
@@ -96,13 +104,12 @@ describe('MasterAudioService', () => {
                 },
             }
         );
-        expect(verificationMocks.httpsCallable).toHaveBeenCalledWith(
+        expect(profilingMocks.httpsCallable).toHaveBeenCalledWith(
             expect.anything(),
-            'verifyMasterAudio'
+            'processAudioIngestion'
         );
-        expect(verificationMocks.callable).toHaveBeenCalledWith({
+        expect(profilingMocks.callable).toHaveBeenCalledWith({
             storagePath: result.storagePath,
-            expectedSha256: result.contentHash,
             masterFingerprint: 'SONIC-abc',
         });
     });
@@ -140,5 +147,20 @@ describe('MasterAudioService', () => {
 
         expect(storageMocks.getMetadata).not.toHaveBeenCalled();
         expect(storageMocks.uploadBytes).not.toHaveBeenCalled();
+    });
+
+    it('does not report ingestion success when the protected profiling route rejects the master', async () => {
+        storageMocks.getMetadata.mockResolvedValue({
+            customMetadata: { masterFingerprint: 'SONIC-abc' },
+            timeCreated: '2026-07-17T18:00:00.000Z',
+        });
+        profilingMocks.callable.mockRejectedValue(new Error('DSP route unavailable'));
+
+        await expect(masterAudioService.persist(file, {
+            userId: 'owner-1',
+            masterFingerprint: 'SONIC-abc',
+        })).rejects.toThrow(/DSP route unavailable/);
+
+        expect(storageMocks.getDownloadURL).not.toHaveBeenCalled();
     });
 });

@@ -1155,8 +1155,8 @@ describe('Firestore Security Rules', () => {
         });
     });
 
-    describe('server-owned royalty allocation ledgers', () => {
-        const collections = ['earnings', 'payouts', 'recoupment_balances', 'recoupment_adjustments', 'royalty_report_claims', 'master_verifications'];
+    describe('server-owned owner-readable ledgers and receipts', () => {
+        const collections = ['earnings', 'payouts', 'recoupment_balances', 'recoupment_adjustments', 'royalty_report_claims', 'master_verifications', 'audio_analysis_receipts'];
 
         beforeEach(async () => {
             if (requireEmulator()) return;

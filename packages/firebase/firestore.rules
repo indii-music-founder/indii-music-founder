@@ -1364,6 +1364,13 @@ service cloud.firestore {
       allow read: if (isAuthenticated() && resource.data.get('userId', null) == request.auth.uid) || (isGuest() && resource.data.get('userId', null) == 'founder-demo-uid');
       allow create, update, delete: if false;
     }
+    // Server-owned canonical-master analysis receipt. Required identity fields:
+    // userId, contentHash, generation, storageBucket, storagePath, status.
+    // The Admin SDK worker owns all writes; an artist can read only their receipt.
+    match /audio_analysis_receipts/{receiptId} {
+      allow read: if isAuthenticated() && resource.data.get('userId', null) == request.auth.uid;
+      allow create, update, delete: if false;
+    }
     match /timelines/{userId}/items/{itemId} {
       allow read, write: if isOwner(userId);
     }

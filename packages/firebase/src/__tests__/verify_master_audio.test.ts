@@ -104,4 +104,18 @@ describe('verifyMasterAudioObject', () => {
 
         expect(setup.bucket.file).not.toHaveBeenCalled();
     });
+
+    it('refuses a master that has no immutable Storage generation', async () => {
+        const setup = fixture(Buffer.from('master'));
+        const metadata = await setup.bucket.file().getMetadata();
+        setup.bucket.file().getMetadata.mockResolvedValue([{ ...metadata[0], generation: '' }]);
+
+        await expect(verifyMasterAudioObject('owner-1', {
+            storagePath: setup.storagePath,
+            expectedSha256: setup.hash,
+            masterFingerprint: 'SONIC-1',
+        }, setup.bucket as never, setup.firestore as never)).rejects.toThrow(/generation is invalid/);
+
+        expect(setup.bucket.file().createReadStream).not.toHaveBeenCalled();
+    });
 });
