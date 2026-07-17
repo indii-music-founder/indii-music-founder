@@ -574,6 +574,10 @@ jobs:
             fi
           fi
 
+      - name: Deploy Firestore rules
+        run: |
+          npx --no-install firebase deploy --only firestore:rules --project indii-music-founder --non-interactive --force
+
       - name: Deploy Firestore indexes
         run: |
           npx --no-install firebase deploy --only firestore:indexes --project indii-music-founder --non-interactive --force

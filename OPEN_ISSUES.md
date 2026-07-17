@@ -36,7 +36,7 @@ Electron, Firestore rules). Ordered roughly by severity. No code was modified.
 
 - [x] **[Stripe Webhook — payment_status not verified] — FIXED**: Paid-status gates and asynchronous success/failure routing are present.
 
-- [x] **[Firestore Rules — shared collections writable by any user] — FIXED 2026-07-16**: Client writes are denied; validated authenticated callables write through Admin SDK, and cache reads are owner-scoped. All 133 emulator rule cases pass.
+- [x] **[Firestore Rules — shared collections writable by any user] — FIXED 2026-07-16**: Client writes are denied; validated authenticated callables write through Admin SDK, cache reads are owner-scoped, all 133 emulator rule cases pass, and the production workflow now deploys Firestore rules before indexes and Functions.
 
 - [x] **[Config — hardcoded Firebase key fallback] — FIXED**: Both paths now require environment-provided Firebase identifiers and fail fast.
 
