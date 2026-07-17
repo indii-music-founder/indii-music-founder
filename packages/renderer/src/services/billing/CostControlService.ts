@@ -37,6 +37,28 @@ export interface CostCheckResponse {
   operationId?: string;
 }
 
+export interface CostOperationHistoryCursor {
+  timestampMs: number;
+  operationId: string;
+}
+
+export interface CostOperationHistoryItem {
+  operationId: string;
+  operationType: OperationType | 'unknown';
+  status: 'APPROVED' | 'SETTLED' | 'VOIDED' | 'UNKNOWN';
+  estimatedCost: number;
+  createdAt: string | null;
+  finalizedAt: string | null;
+  autoReleaseAt: string | null;
+  resolution: 'pending_auto_release' | 'settled' | 'refunded' | 'unknown';
+}
+
+export interface CostOperationHistoryResponse {
+  operations: CostOperationHistoryItem[];
+  nextCursor: CostOperationHistoryCursor | null;
+  hasMore: boolean;
+}
+
 type ServerCostCheckResponse = Partial<CostCheckResponse> & {
   allowed: boolean;
 };
@@ -244,6 +266,27 @@ export class CostControlService {
         settledCost: 0,
         voidedCost: 0,
       };
+    }
+  }
+
+  static async getHistory(
+    userId: string,
+    cursor: CostOperationHistoryCursor | null = null,
+    limit = 5,
+  ): Promise<CostOperationHistoryResponse> {
+    try {
+      if (!functions || auth.currentUser?.uid !== userId) {
+        throw new Error('Authenticated owner is required for cost history');
+      }
+      const getOperationCostHistory = httpsCallable<
+        { cursor: CostOperationHistoryCursor | null; limit: number },
+        CostOperationHistoryResponse
+      >(functions, 'getOperationCostHistory');
+      const result = await getOperationCostHistory({ cursor, limit });
+      return result.data;
+    } catch (err) {
+      logger.error('[CostControl] History fetch failed', err);
+      return { operations: [], nextCursor: null, hasMore: false };
     }
   }
 }

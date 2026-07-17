@@ -184,4 +184,38 @@ describe('CostControlService', () => {
     expect(mocks.httpsCallable).toHaveBeenCalledWith({ region: 'us-central1' }, 'getOperationCostStatus');
     expect(mocks.callable).toHaveBeenCalledWith();
   });
+
+  it('gets an owner-scoped cursor-paginated operation history', async () => {
+    const nextCursor = { timestampMs: 1_784_240_000_000, operationId: 'op-older' };
+    mocks.callable.mockResolvedValueOnce({
+      data: {
+        operations: [{
+          operationId: 'op-pending',
+          operationType: 'image',
+          status: 'APPROVED',
+          estimatedCost: 0.12,
+          createdAt: '2026-07-16T20:00:00.000Z',
+          finalizedAt: null,
+          autoReleaseAt: '2026-07-16T20:15:00.000Z',
+          resolution: 'pending_auto_release',
+        }],
+        nextCursor,
+        hasMore: true,
+      },
+    });
+
+    await expect(CostControlService.getHistory('auth-user-1', null, 5)).resolves.toEqual({
+      operations: [expect.objectContaining({
+        operationId: 'op-pending',
+        resolution: 'pending_auto_release',
+      })],
+      nextCursor,
+      hasMore: true,
+    });
+    expect(mocks.httpsCallable).toHaveBeenCalledWith(
+      { region: 'us-central1' },
+      'getOperationCostHistory',
+    );
+    expect(mocks.callable).toHaveBeenCalledWith({ cursor: null, limit: 5 });
+  });
 });

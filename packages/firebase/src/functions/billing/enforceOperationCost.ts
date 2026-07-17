@@ -35,6 +35,28 @@ export interface CostStatusResponse {
   voidedCost: number;
 }
 
+export interface CostOperationHistoryCursor {
+  timestampMs: number;
+  operationId: string;
+}
+
+export interface CostOperationHistoryItem {
+  operationId: string;
+  operationType: OperationType | 'unknown';
+  status: 'APPROVED' | 'SETTLED' | 'VOIDED' | 'UNKNOWN';
+  estimatedCost: number;
+  createdAt: string | null;
+  finalizedAt: string | null;
+  autoReleaseAt: string | null;
+  resolution: 'pending_auto_release' | 'settled' | 'refunded' | 'unknown';
+}
+
+export interface CostOperationHistoryResponse {
+  operations: CostOperationHistoryItem[];
+  nextCursor: CostOperationHistoryCursor | null;
+  hasMore: boolean;
+}
+
 /** Parameters for the reusable budget-check helper. */
 export interface CheckOperationBudgetParams {
   userId: string;
@@ -55,6 +77,104 @@ const BUDGET_LIMITS: Record<string, { daily: number; monthly: number; hourly: nu
   enterprise: { daily: 100, monthly: 1000, hourly: 20 },
   founder: { daily: 1000, monthly: 10000, hourly: Number.POSITIVE_INFINITY },
 };
+
+function timestampMillis(value: unknown): number | null {
+  let millis: number | null = null;
+  if (value && typeof value === 'object' && 'toMillis' in value && typeof value.toMillis === 'function') {
+    millis = Number(value.toMillis());
+  } else if (value instanceof Date) {
+    millis = value.getTime();
+  } else if (typeof value === 'string' || typeof value === 'number') {
+    millis = typeof value === 'number' ? value : Date.parse(value);
+  }
+  if (millis === null || !Number.isFinite(millis)) return null;
+  const normalized = new Date(millis).getTime();
+  return Number.isFinite(normalized) ? normalized : null;
+}
+
+function isoTimestamp(value: unknown): string | null {
+  const millis = timestampMillis(value);
+  return millis === null ? null : new Date(millis).toISOString();
+}
+
+export function serializeCostOperationHistoryItem(
+  documentId: string,
+  data: Record<string, unknown>,
+): CostOperationHistoryItem {
+  const operationId = typeof data.operationId === 'string' ? data.operationId : documentId;
+  const operationType = ['video', 'image', 'agent_stream'].includes(String(data.type))
+    ? data.type as OperationType
+    : 'unknown';
+  const status = ['APPROVED', 'SETTLED', 'VOIDED'].includes(String(data.status))
+    ? data.status as 'APPROVED' | 'SETTLED' | 'VOIDED'
+    : 'UNKNOWN';
+  const estimatedCostValue = Number(data.estimatedCost);
+  const estimatedCost = Number.isFinite(estimatedCostValue) && estimatedCostValue >= 0
+    ? estimatedCostValue
+    : 0;
+  const createdAtMillis = timestampMillis(data.timestamp);
+
+  return {
+    operationId,
+    operationType,
+    status,
+    estimatedCost,
+    createdAt: createdAtMillis === null ? null : new Date(createdAtMillis).toISOString(),
+    finalizedAt: isoTimestamp(data.finalizedAt),
+    autoReleaseAt: status === 'APPROVED' && createdAtMillis !== null
+      ? new Date(createdAtMillis + RESERVATION_TTL_MS).toISOString()
+      : null,
+    resolution: status === 'APPROVED'
+      ? 'pending_auto_release'
+      : status === 'SETTLED'
+        ? 'settled'
+        : status === 'VOIDED'
+          ? 'refunded'
+          : 'unknown',
+  };
+}
+
+export async function getOperationCostHistoryPage(
+  userId: string,
+  options: { limit?: number; cursor?: CostOperationHistoryCursor | null } = {},
+): Promise<CostOperationHistoryResponse> {
+  const requestedLimit = Number(options.limit ?? 10);
+  const limit = Number.isFinite(requestedLimit)
+    ? Math.min(25, Math.max(1, Math.floor(requestedLimit)))
+    : 10;
+  const db = admin.firestore();
+  let query: FirebaseFirestore.Query = db.collection('costLedger')
+    .where('userId', '==', userId)
+    .orderBy('timestamp', 'desc')
+    .orderBy('operationId', 'desc');
+
+  const cursor = options.cursor;
+  if (cursor && Number.isFinite(cursor.timestampMs) && cursor.timestampMs >= 0 && cursor.operationId) {
+    query = query.startAfter(admin.firestore.Timestamp.fromMillis(cursor.timestampMs), cursor.operationId);
+  }
+
+  const snapshot = await query.limit(limit + 1).get();
+  const hasMore = snapshot.docs.length > limit;
+  const pageDocs = snapshot.docs.slice(0, limit);
+  const operations = pageDocs.map(operation => serializeCostOperationHistoryItem(
+    operation.id,
+    operation.data() as Record<string, unknown>,
+  ));
+  const lastDoc = pageDocs.length > 0 ? pageDocs[pageDocs.length - 1] : undefined;
+  const lastData = lastDoc?.data() as Record<string, unknown> | undefined;
+  const lastTimestamp = timestampMillis(lastData?.timestamp);
+  const lastOperationId = lastData && typeof lastData.operationId === 'string'
+    ? lastData.operationId
+    : lastDoc?.id;
+
+  return {
+    operations,
+    hasMore,
+    nextCursor: hasMore && lastTimestamp !== null && lastOperationId
+      ? { timestampMs: lastTimestamp, operationId: lastOperationId }
+      : null,
+  };
+}
 
 function userLedgerDocument(userId: string, id: string): string {
   return `users/${userId}/costLedger/${id}`;
@@ -376,7 +496,10 @@ export async function finalizeOperationReservation(params: {
  * authoritative; this is only the bounded recovery path for clients that die
  * after reserving but before submitting a job.
  */
-export async function expireStaleOperationReservations(now = new Date()): Promise<number> {
+export async function expireStaleOperationReservations(
+  now = new Date(),
+  finalize: typeof finalizeOperationReservation = finalizeOperationReservation,
+): Promise<number> {
   const db = admin.firestore();
   const cutoff = admin.firestore.Timestamp.fromMillis(now.getTime() - RESERVATION_TTL_MS);
   const stale = await db.collection('costLedger')
@@ -395,7 +518,7 @@ export async function expireStaleOperationReservations(now = new Date()): Promis
       continue;
     }
     try {
-      await finalizeOperationReservation({ userId, operationId: operation.id, outcome: 'VOIDED' });
+      await finalize({ userId, operationId: operation.id, outcome: 'VOIDED' });
       expired += 1;
     } catch (error) {
       // Another gateway/scheduler may have finalized it first. The transactional
@@ -520,5 +643,30 @@ export const getOperationCostStatus = functions.https.onCall(
       settledCost: sumCost(settledSnap),
       voidedCost: sumCost(voidedSnap),
     };
+  },
+);
+
+/**
+ * Owner-scoped, cursor-paginated operation receipts for Creative Studio.
+ * Pending holds expose their automatic release deadline; settled and voided
+ * entries expose finalization state without leaking prompts or metadata.
+ */
+export const getOperationCostHistory = functions.https.onCall(
+  { region: 'us-central1', maxInstances: 20, timeoutSeconds: 30 },
+  async (request: functions.https.CallableRequest<unknown>): Promise<CostOperationHistoryResponse> => {
+    if (!request.auth) {
+      throw new functions.https.HttpsError('unauthenticated', 'Must be signed in');
+    }
+    const data = (request.data || {}) as {
+      limit?: unknown;
+      cursor?: { timestampMs?: unknown; operationId?: unknown } | null;
+    };
+    const limit = typeof data.limit === 'number' ? data.limit : 10;
+    const cursor = data.cursor
+      && typeof data.cursor.timestampMs === 'number'
+      && typeof data.cursor.operationId === 'string'
+      ? { timestampMs: data.cursor.timestampMs, operationId: data.cursor.operationId }
+      : null;
+    return getOperationCostHistoryPage(request.auth.uid, { limit, cursor });
   },
 );

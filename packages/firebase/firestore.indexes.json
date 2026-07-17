@@ -18,6 +18,15 @@
       "queryScope": "COLLECTION"
     },
     {
+      "collectionGroup": "costLedger",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "timestamp", "order": "DESCENDING" },
+        { "fieldPath": "operationId", "order": "DESCENDING" }
+      ],
+      "queryScope": "COLLECTION"
+    },
+    {
       "collectionGroup": "boardroom_messages",
       "fields": [
         {
