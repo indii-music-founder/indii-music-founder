@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CheckCircle2, Clock, Lock, Unlock, DollarSign, Users, AlertTriangle, CreditCard, Loader2, Download } from 'lucide-react';
 import { getFunctions, httpsCallable } from 'firebase/functions';
+import { onSnapshot, collection, query, where, getFirestore } from 'firebase/firestore';
+import { useStore } from '@/core/store';
 import { logger } from '@/utils/logger';
 
 /* ================================================================== */
@@ -22,6 +24,8 @@ interface Collaborator {
 // In production, these are loaded from a Firestore 'split_sheets' collection.
 
 export function SplitSheetEscrow() {
+    const user = useStore(state => state.user);
+    const [escrowDocId, setEscrowDocId] = useState<string | null>(null);
     const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
     const [releaseTitle, setReleaseTitle] = useState('');
     const [escrowAmount, setEscrowAmount] = useState(0);
@@ -33,10 +37,56 @@ export function SplitSheetEscrow() {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [exportUrl, setExportUrl] = useState<string | null>(null);
 
+    useEffect(() => {
+        if (!user) return;
+        const db = getFirestore();
+        const q = query(collection(db, 'split_escrows'), where('parties', 'array-contains', user.uid));
+
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            if (snapshot.empty) {
+                // No active escrow
+                return;
+            }
+            
+            // Just grab the first one for the dashboard
+            const docSnap = snapshot.docs[0];
+            const data = docSnap.data();
+            
+            setEscrowDocId(docSnap.id);
+            setEscrowAmount((data.holdAmountCents || 0) / 100);
+            
+            if (data.status === 'RELEASED') {
+                setReleased(true);
+            } else {
+                setReleased(false);
+            }
+            
+            // Hydrate collaborators from data.parties, data.splits, data.signoffs
+            const newCollaborators: Collaborator[] = (data.parties || []).map((uid: string) => ({
+                id: uid,
+                name: uid === user.uid ? 'You' : `User ${uid.slice(0, 4)}`, // Fallback names without full profiles
+                role: 'Collaborator',
+                splitPct: data.splits?.[uid] || 0,
+                signed: data.signoffs?.[uid] || false,
+                accountId: data.stripeAccountIds?.[uid]
+            }));
+            
+            setCollaborators(newCollaborators);
+            
+            if (data.trackId) {
+                setReleaseTitle(`Track: ${data.trackId}`);
+            }
+        }, (err) => {
+            logger.error('[SplitSheetEscrow] Escrow listener failed:', err);
+        });
+
+        return () => unsubscribe();
+    }, [user]);
+
     const signedCount = collaborators.filter(c => c.signed).length;
     const totalCount = collaborators.length;
-    const allSigned = signedCount === totalCount;
-    const progressPct = Math.round((signedCount / totalCount) * 100);
+    const allSigned = totalCount > 0 && signedCount === totalCount;
+    const progressPct = totalCount > 0 ? Math.round((signedCount / totalCount) * 100) : 0;
 
     /**
      * Item 202: Wire release to the real createTransfer Cloud Function.
@@ -44,13 +94,23 @@ export function SplitSheetEscrow() {
      * proportional to their split percentage.
      */
     const handleReleaseFunds = async () => {
-        if (!allSigned || releasing) return;
+        if (!allSigned || releasing || !escrowDocId) return;
         
-        // ISSUE-720: Real money transfers via raw createTransfer without idempotency 
-        // or persistent backend state risk double-payouts on retry/refresh.
-        // Also currently fails for non-admins due to token claim requirements.
-        // Disabled until the backend releaseEscrow flow is rebuilt.
-        setReleaseError('Feature temporarily disabled: Escrow release requires idempotency protection and backend signature verification before payout. Please contact support to release these funds.');
+        setReleasing(true);
+        setReleaseError(null);
+        
+        try {
+            const functions = getFunctions();
+            const releaseEscrowFn = httpsCallable<{ escrowDocId: string }, { success: boolean, message: string }>(functions, 'releaseEscrow');
+            
+            await releaseEscrowFn({ escrowDocId });
+            // Firestore onSnapshot will pick up the 'RELEASED' status change
+        } catch (err: unknown) {
+            logger.error('[SplitSheetEscrow] Release failed:', err);
+            setReleaseError(`Release failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+        } finally {
+            setReleasing(false);
+        }
     };
 
     /**
@@ -73,7 +133,7 @@ export function SplitSheetEscrow() {
                 { url: string; storagePath: string }
             >(functions, 'exportSplitSheet');
             const result = await exportFn({
-                splitSheetId: `ss_${Date.now()}`,
+                splitSheetId: escrowDocId || `ss_${Date.now()}`,
                 releaseTitle: trimmedReleaseTitle,
                 collaborators,
                 totalEscrowAmount: escrowAmount || undefined,
@@ -135,7 +195,7 @@ export function SplitSheetEscrow() {
                         ))}
                     </div>
                     <button
-                        onClick={() => { setReleased(false); setCollaborators([]); setEscrowAmount(0); }}
+                        onClick={() => { setReleased(false); setCollaborators([]); setEscrowAmount(0); setEscrowDocId(null); }}
                         className="text-xs text-gray-500 hover:text-gray-300 underline transition-colors mt-2"
                     >
                         Reset

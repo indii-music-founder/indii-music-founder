@@ -87,7 +87,7 @@ export {
 export { createStripeAccount, createStripeConnectAccount, createTransfer } from './stripe/connect';
 
 // Stripe Split Escrow (Item 135)
-export { initiateSplitEscrow, signEscrow } from './stripe/splitEscrow';
+export { initiateSplitEscrow, signEscrow, releaseEscrow } from './stripe/splitEscrow';
 
 export { requestTaxForms } from './stripe/taxForms';
 
