@@ -190,15 +190,15 @@ Method: static functional audit of all 11 Creative Director tools (`DirectorTool
 | `generate_image` | ✅ works | Real; respects `studioControls.model` (cost) — the correct pattern |
 | `batch_edit_images` | ✅ works | Operates on `uploadedImages` by index |
 | `run_showroom_mockup` | ✅ works | Delegates to `generate_image` |
-| `generate_high_res_asset` | ⚠️ works, cost gap | Hardcodes default model — ignores user's `studioControls.model` preference (see ISSUE-1076) |
+| `generate_high_res_asset` | ✅ works | Model preference honored (ISSUE-1076 ✅ FIXED 2026-07-17) |
 | `render_cinematic_grid` | ✅ works | |
 | `extract_grid_frame` | ✅ works | Good error states |
 | `add_character_reference` | ✅ works | Delegates to `set_entity_anchor` |
-| `analyze_audio` | ❌ **BROKEN** | `trackId` path is non-functional — see **ISSUE-1073** |
-| `canvas_push` | ⚠️ partial | Only finds generated history, not uploads — see **ISSUE-1075** |
-| `generate_moodboard` | ⚠️ works, cost gap | Hardcodes default model (ISSUE-1076) |
-| `analyze_visual_trends` | ❌ **NO-OP** | Does no analysis; re-prompts the LLM — see **ISSUE-1074** |
-| (missing) retrieval | ❌ absent | No list/get stored assets — **ISSUE-1054** (in progress) |
+| `analyze_audio` | ✅ works | Phantom `trackId` param removed from tool + declaration; uploads-only, honest (ISSUE-1073 ✅ FIXED 2026-07-17) |
+| `canvas_push` | ✅ works | Resolves generatedHistory + uploadedImages + brandAssets (ISSUE-1075 ✅ FIXED 2026-07-17) |
+| `generate_moodboard` | ✅ works | Model preference honored (ISSUE-1076 ✅ FIXED 2026-07-17) |
+| `analyze_visual_trends` | ✅ honest | Redeclared as general-knowledge synthesis, 'not live data' (ISSUE-1074 ✅ FIXED 2026-07-17) |
+| `list_domain_records` (retrieval) | ✅ registered | Creative retrieval declarations + list_domain_records on the agent (ISSUE-1054 build landed; live verify pending) |
 
 ### 🔴 OPERATIONAL BLOCKER (not a code bug, founder action): Creative generation is DOWN — Google AI Studio prepayment credits depleted
 - Confirmed live in the test run (`DirectGenerationTab.test` surfaced the real `RESOURCE_EXHAUSTED` / "Your prepayment credits are depleted" error from the Gemini API).
