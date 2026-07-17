@@ -79,20 +79,6 @@ const SEMANTIC_SCHEMA: Schema = {
     ]
 } as unknown as Schema;
 
-/**
- * ISSUE-962: the browser (non-Electron-proxy) path sends the full master as
- * base64 inlineData. Gemini's documented inlineData limit is ~100MB
- * base64-encoded (some regions/models still enforce an older 20MB limit).
- * Base64 adds ~33% overhead on top of holding the raw file in memory, and
- * this is now encoded ONCE and shared between semantic + energy-map calls
- * (previously encoded independently, twice). Capping the raw file at 50MB
- * keeps the encoded payload (~67MB) safely under the documented limit with
- * margin, while comfortably covering a real mastered WAV/AIFF track (a
- * "typical master" is 5-10MB per the original inline-vs-Files-API note
- * below).
- */
-export const MAX_BROWSER_ANALYSIS_BYTES = 50 * 1024 * 1024;
-
 export class AudioIntelligenceService {
 
     /**
@@ -107,19 +93,6 @@ export class AudioIntelligenceService {
                 : file.name;
 
             Logger.info('AudioIntelligence', `Starting analysis for ${filename}`);
-
-            // This must precede fingerprinting and technical analysis: both can
-            // read/decode the full browser File. A gate immediately before the
-            // inline base64 conversion still lets an oversize master allocate
-            // enough memory to crash the renderer first.
-            const browserFile = typeof file !== 'string' && !(window.electronAPI && (file as { path?: string }).path)
-                ? file
-                : null;
-            if (browserFile && browserFile.size > MAX_BROWSER_ANALYSIS_BYTES) {
-                throw new Error(
-                    `This master is ${(browserFile.size / 1024 / 1024).toFixed(0)}MB, too large for browser-based deep analysis (limit ${MAX_BROWSER_ANALYSIS_BYTES / 1024 / 1024}MB). Local technical QC is still available; semantic/emotional analysis requires the desktop app or a smaller file.`
-                );
-            }
 
             // 1. Generate ID (Fingerprint)
             let id = '';
@@ -182,25 +155,16 @@ export class AudioIntelligenceService {
                         return undefined;
                     });
             } else {
-                if (typeof file === 'string') {
-                    throw new Error('Cannot run browser base64 audio upload with a file path string. Must be a File object.');
-                }
-
-                // ISSUE-962: encode once and reuse for both semantic + energy
-                // map analysis, instead of each independently reading and
-                // base64-encoding the full master (two full copies + two
-                // uploads for one file).
-                Logger.info('AudioIntelligence', 'Converting audio to base64 for inline Gemini analysis...');
-                const mimeType = file.type || this.inferAudioMimeType(file.name);
-                const base64Data = await this.fileToBase64(file);
-                Logger.info('AudioIntelligence', `Audio converted: ${(base64Data.length * 0.75 / 1024 / 1024).toFixed(1)} MB, sharing one encoded copy across both analyses`);
-
-                semanticPromise = this.analyzeSemanticWithBase64(base64Data, mimeType, technical.bpm, technical.key);
-                energyMapPromise = energyMapService.mapEmotionalArcWithProxy(base64Data, mimeType, technical)
-                    .catch(e => {
-                        Logger.warn('AudioIntelligence', `EnergyMap failed (non-fatal): ${String(e)}`);
-                        return undefined;
-                    });
+                // ISSUE-962: a browser must never turn the master into inline
+                // base64 and hand it directly to Gemini. That created multiple
+                // unbounded in-memory copies, bypassed the canonical Storage
+                // object, and made model billing/provenance impossible to tie
+                // to the immutable master. The protected ingestion worker owns
+                // web semantic analysis; this legacy synchronous surface needs
+                // a receipt reader before it can expose that asynchronous work.
+                throw new Error(
+                    'Deep audio analysis is queued against the protected canonical master. Wait for the server analysis receipt, or use the desktop app which submits a bounded proxy; this browser will not upload raw master bytes to Gemini.'
+                );
             }
 
             const [semantic, emotionalNarrative] = await Promise.all([semanticPromise, energyMapPromise]);
@@ -261,125 +225,6 @@ export class AudioIntelligenceService {
 
             return profile;
         });
-    }
-
-    /**
-     * Converts a File/Blob to a base64-encoded string.
-     * Used to send audio as inlineData to avoid the Gemini Files API
-     * upload endpoint, which is CORS-blocked in browser environments.
-     */
-    private async fileToBase64(file: File | Blob): Promise<string> {
-        return new Promise<string>((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                const dataUrl = reader.result as string;
-                // Strip the "data:audio/...;base64," prefix — the SDK wants raw base64.
-                const base64 = dataUrl.split(',')[1];
-                if (!base64) {
-                    reject(new Error('FileReader produced an empty base64 payload'));
-                    return;
-                }
-                resolve(base64);
-            };
-            reader.onerror = () => reject(new Error('FileReader failed to read audio file'));
-            reader.readAsDataURL(file);
-        });
-    }
-
-    /**
-     * Uses Gemini to "listen" to the track and generate semantic metadata.
-     *
-     * ARCHITECTURE NOTE (2026-04-18):
-     * Previously used the Gemini Files API (resumable upload → poll → delete) via
-     * GeminiFileService.uploadFile(). That endpoint
-     * the browser-incompatible Gemini file upload endpoint does NOT return
-     * CORS headers, so every browser-based fetch was blocked with:
-     *   "No 'Access-Control-Allow-Origin' header is present"
-     *
-     * The fix: convert the audio to base64 and send it as `inlineData` in the
-     * generateContent request. The generateContent endpoint IS CORS-safe.
-     * Trade-off: ~33% larger payload over the wire, but eliminates the
-     * upload → poll → cleanup lifecycle and the CORS failure mode entirely.
-     * For typical masters (5-10 MB), the base64 overhead is negligible.
-     */
-    private async analyzeSemanticWithBase64(base64Data: string, mimeType: string, bpm: number, key: string): Promise<AudioSemanticData> {
-        const systemPrompt = `
-You are a world-class Musicologist, A&R Director, and Mastering Engineer with 20 years of experience at major labels.
-PHYSICALLY LISTEN to this audio track. Every field below must be derived from what you ACTUALLY HEAR — not assumptions.
-
-Technical Context (Do NOT override this with your assumptions):
-- BPM: ${Math.round(bpm)}
-- Key: ${key}
-
-=== OUTPUT TARGETS ===
-
-1. DDEX Industry Metadata:
-   - 'ddexGenre': Exact primary genre (Hip-Hop, R&B, Electronic, Rock, Pop, Jazz, Country, etc.). Be precise — do NOT default.
-   - 'ddexSubGenre': Exact sub-genre (Trap, Boom Bap, Nu-Soul, Ambient, etc.).
-   - 'language': ISO 639-2 code ('eng', 'spa', etc.). Use 'zxx' if purely instrumental.
-   - 'isExplicit': true if you can clearly hear explicit language.
-   - 'marketingComment': Write 2-3 sentences of high-conversion DSP pitch copy (as if pitching to Spotify Editorial). Capture the emotional hook, reference points, and who this is for. Be specific — no generic phrases.
-
-2. Sonic Soul — Timbre & Production Texture (Session 1 Calibration):
-   - 'timbre.texture': The single most accurate descriptor of the sonic texture (e.g., "Analog Warmth", "Digital Quantization", "Gritty Lo-Fi", "Glassy & Clean", "Saturated Tape").
-   - 'timbre.brightness': High-frequency character (e.g., "Dark & Muddy", "Crisp & Airy", "Harsh & Bright", "Midrange-Heavy").
-   - 'timbre.saturation': Dynamic range / compression character (e.g., "Heavily Brick-Walled", "Lightly Compressed", "Punchy with Headroom", "Dynamic & Unprocessed").
-   - 'timbre.spaceDepth': Reverb/stereo field (e.g., "Cavernous Hall Reverb", "Dry & Intimate", "Wide Stereo Field", "Mono Club Sound").
-   - 'productionValue.era': What era does the production most accurately evoke? (e.g., "Late 90s Boom Bap", "2010s Trap", "Modern Hyperpop", "70s Soul", "80s Synthwave").
-   - 'productionValue.quality': Production tier (e.g., "Bedroom Producer", "Independent Pro Studio", "Major Label Mastered", "Lo-Fi Aesthetic — Intentional").
-   - 'productionValue.mixBalance': Dominant frequency/element focus (e.g., "Bass-Forward", "Vocal-Forward", "Balanced", "Mid-Heavy", "High-End Shimmer").
-   - 'productionValue.aiArtifacts': true if you detect unnatural quantization, robotic phrasing, or clear signs of Intelligence-generated audio. This is a GOAL 3 COMPLIANCE check.
-
-3. Creative Direction (For Visual Agents):
-   - 'visualImagery.abstract': Abstract visual for a motion visualizer.
-   - 'visualImagery.narrative': Scene description for stock footage or Intelligence video generation.
-   - 'visualImagery.lighting': Specific lighting (e.g., "Red neon backlight through rain-soaked glass").
-   - 'targetPrompts.image': A render-ready prompt for Gemini Image 3.1 that captures this song's visual soul.
-   - 'targetPrompts.veo': A scene-ready prompt for Veo 3.1 with camera movement and atmosphere.
-
-CRITICAL RULES:
-- If it's dark, tag it dark. If it's happy, tag it happy. Do NOT hallucinate tone.
-- Do NOT produce generic output. Every field must be specific to THIS track.
-- 'aiArtifacts' must be based on audio evidence, not assumption.
-`;
-
-        const response = await AutonomousIntelligence.generateStructuredData<AudioSemanticData>(
-            [
-                { text: systemPrompt },
-                {
-                    inlineData: {
-                        mimeType,
-                        data: base64Data
-                    }
-                }
-            ],
-            SEMANTIC_SCHEMA,
-            8192, // Maps to thinkingLevel: 'HIGH' for Gemini 3.x (deep musicology analysis)
-            "You are an expert musicologist and audio analyst.",
-            INTELLIGENCE_MODELS.TEXT.AGENT // Explicitly require Gemini 3 Pro
-        );
-        return response;
-    }
-
-
-    /**
-     * Infers MIME type from file extension when file.type is empty.
-     * Prevents mislabeling WAV/FLAC/M4A files as audio/mpeg.
-     */
-    private inferAudioMimeType(fileName: string): string {
-        const ext = fileName.split('.').pop()?.toLowerCase();
-        const mimeByExtension: Record<string, string> = {
-            mp3: 'audio/mpeg',
-            wav: 'audio/wav',
-            flac: 'audio/flac',
-            m4a: 'audio/mp4',
-            aac: 'audio/aac',
-            ogg: 'audio/ogg',
-            aiff: 'audio/aiff',
-            alac: 'audio/mp4',
-        };
-
-        return mimeByExtension[ext ?? ''] ?? 'application/octet-stream';
     }
 
     private async analyzeSemanticWithProxy(
