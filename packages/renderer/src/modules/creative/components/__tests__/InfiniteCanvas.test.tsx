@@ -10,6 +10,7 @@ vi.mock('@/core/store', () => ({
 }));
 
 // Mock services to prevent errors
+import { ImageGeneration } from '@/services/image/ImageGenerationService';
 vi.mock('@/services/image/ImageGenerationService', () => ({
     ImageGeneration: { generateImages: vi.fn() }
 }));
@@ -94,7 +95,9 @@ describe('InfiniteCanvas Culling', () => {
                 selectCanvasImage: vi.fn(),
                 currentProjectId: 'test-project',
                 generatedHistory: [],
-                uploadedImages: []
+                uploadedImages: [],
+                failedVariationBatch: null,
+                setFailedVariationBatch: vi.fn()
             };
             return selector ? selector(state) : state;
         });
@@ -136,7 +139,9 @@ describe('InfiniteCanvas Culling', () => {
                 selectCanvasImage: vi.fn(),
                 currentProjectId: 'p1',
                 generatedHistory: [],
-                uploadedImages: []
+                uploadedImages: [],
+                failedVariationBatch: null,
+                setFailedVariationBatch: vi.fn()
             };
             return selector ? selector(state) : state;
         });
@@ -183,7 +188,9 @@ describe('InfiniteCanvas Culling', () => {
                 selectCanvasImage: vi.fn(),
                 currentProjectId: 'p1',
                 generatedHistory: [],
-                uploadedImages: []
+                uploadedImages: [],
+                failedVariationBatch: null,
+                setFailedVariationBatch: vi.fn()
             };
             return selector ? selector(state) : state;
         });
@@ -232,7 +239,9 @@ describe('InfiniteCanvas Culling', () => {
                 selectCanvasImage: vi.fn(),
                 currentProjectId: 'p1',
                 generatedHistory: [],
-                uploadedImages: []
+                uploadedImages: [],
+                failedVariationBatch: null,
+                setFailedVariationBatch: vi.fn()
             };
             return selector ? selector(state) : state;
         });
@@ -281,6 +290,8 @@ describe('InfiniteCanvas Culling', () => {
                 currentProjectId: 'p1',
                 generatedHistory: [],
                 uploadedImages: [],
+                failedVariationBatch: null,
+                setFailedVariationBatch: vi.fn()
             };
             return selector ? selector(state) : state;
         });
@@ -290,5 +301,100 @@ describe('InfiniteCanvas Culling', () => {
 
         expect(mockToast.error).toHaveBeenCalledWith(expect.stringContaining('still loading or unavailable'));
         expect(removeCanvasImage).not.toHaveBeenCalled();
+    });
+
+    it('aborts flatten if pre-flatten snapshot save fails', async () => {
+        const saveDesignVersion = vi.fn().mockRejectedValue(new Error('Network error'));
+        const removeCanvasImage = vi.fn();
+        
+        const images = [
+            { id: 'layer1', base64: 'data:image/png;base64,1', x: 0, y: 0, width: 100, height: 100, aspect: 1, projectId: 'p1' },
+            { id: 'layer2', base64: 'data:image/png;base64,2', x: 50, y: 50, width: 100, height: 100, aspect: 1, projectId: 'p1' },
+        ];
+
+        global.Image = class {
+            onload: (() => void) | null = null;
+            naturalWidth = 100;
+            complete = true;
+            width = 100;
+            height = 100;
+            set src(_value: string) {}
+        } as any;
+
+        mockUseStore.mockImplementation((selector: any) => {
+            const state = {
+                canvasImages: images,
+                addCanvasImage: vi.fn(),
+                updateCanvasImage: vi.fn(),
+                removeCanvasImage,
+                selectedCanvasImageId: null,
+                selectCanvasImage: vi.fn(),
+                currentProjectId: 'p1',
+                generatedHistory: [],
+                uploadedImages: [],
+                saveDesignVersion,
+                failedVariationBatch: null,
+                setFailedVariationBatch: vi.fn()
+            };
+            return selector ? selector(state) : state;
+        });
+
+        render(<InfiniteCanvas />);
+        fireEvent.click(screen.getByRole('button', { name: 'Flatten Canvas' }));
+
+        await waitFor(() => {
+            expect(saveDesignVersion).toHaveBeenCalled();
+            expect(mockToast.error).toHaveBeenCalledWith('Flatten was not performed because its recovery revision could not be saved.');
+            expect(removeCanvasImage).not.toHaveBeenCalled();
+        });
+    });
+
+    it('displays failed variation batch UI and allows retry', async () => {
+        const setFailedVariationBatch = vi.fn();
+        const failedBatch = {
+            source: { id: 'img1', base64: 'data:image/png;base64,1', x: 0, y: 0, width: 100, height: 100, aspect: 1, projectId: 'p1' },
+            prompt: 'Test prompt',
+            mimeType: 'image/png',
+            base64Data: 'base64,1',
+            projectId: 'p1',
+            slots: [1, 2] // slots 1 and 2 failed
+        };
+
+        mockUseStore.mockImplementation((selector: any) => {
+            const state = {
+                canvasImages: [failedBatch.source],
+                addCanvasImage: vi.fn(),
+                updateCanvasImage: vi.fn(),
+                removeCanvasImage: vi.fn(),
+                selectedCanvasImageId: null,
+                selectCanvasImage: vi.fn(),
+                currentProjectId: 'p1',
+                generatedHistory: [],
+                uploadedImages: [],
+                failedVariationBatch: failedBatch,
+                setFailedVariationBatch,
+                addToHistory: vi.fn()
+            };
+            return selector ? selector(state) : state;
+        });
+
+        render(<InfiniteCanvas />);
+
+        // The button should be visible
+        const resumeBtn = screen.getByRole('button', { name: /Retry Failed Variations/i });
+        expect(resumeBtn).toBeInTheDocument();
+        expect(resumeBtn).toHaveTextContent(/Retry 2 failed/i);
+        
+        // Mock successful generation for the retry
+        (ImageGeneration.generateImages as any).mockResolvedValue([{ id: 'gen1', url: 'data:image/png;base64,new' }]);
+
+        fireEvent.click(resumeBtn);
+
+        await waitFor(() => {
+            // Check if generateImages was called
+            expect(ImageGeneration.generateImages).toHaveBeenCalled();
+            // It should try to resume and immediately clear the batch (since it processes it)
+            expect(setFailedVariationBatch).toHaveBeenCalledWith(null);
+        });
     });
 });

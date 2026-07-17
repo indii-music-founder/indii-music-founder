@@ -16213,7 +16213,7 @@ All scoped work from ISSUE-511/913/957/958 consolidated effort:
 - **Fix:** Remove all credential literals, use an already-authenticated browser profile or short-lived environment-injected test credentials, add the evidence filenames/script to an appropriate ignore rule, and rotate the exposed password if it is real.
 - **Acceptance:** Secret scanning finds no credential literal in tracked or untracked ISSUE-777 artifacts; the browser proof still runs through an authenticated session without embedding credentials; the exposed credential is confirmed rotated or invalidated.
 
-### ISSUE-1074: Deploy-managed Firebase API-key restrictions repeatedly block the canonical localhost:4243 renderer
+### ISSUE-1081: Deploy-managed Firebase API-key restrictions repeatedly block the canonical localhost:4243 renderer *(renumbered 2026-07-17 — was mislabeled ISSUE-1074, colliding with the fixed analyze_visual_trends entry)*
 - **Status:** 🟡 PARTIAL (2026-07-17 — persistent repo fix complete; cloud rollout/probe pending)
 - **Severity:** 🟠 HIGH
 - **Module:** Firebase Authentication / Google Cloud API key / Local web and Electron renderer testing

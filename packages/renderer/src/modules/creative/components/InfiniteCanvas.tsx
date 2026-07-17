@@ -22,7 +22,9 @@ export default function InfiniteCanvas() {
         selectCanvasImage,
         currentProjectId,
         addToHistory,
-        saveDesignVersion
+        saveDesignVersion,
+        failedVariationBatch,
+        setFailedVariationBatch
     } = useStore(useShallow(state => ({
         canvasImages: state.canvasImages,
         addCanvasImage: state.addCanvasImage,
@@ -32,7 +34,9 @@ export default function InfiniteCanvas() {
         selectCanvasImage: state.selectCanvasImage,
         currentProjectId: state.currentProjectId,
         addToHistory: state.addToHistory,
-        saveDesignVersion: state.saveDesignVersion
+        saveDesignVersion: state.saveDesignVersion,
+        failedVariationBatch: state.failedVariationBatch,
+        setFailedVariationBatch: state.setFailedVariationBatch
     })));
     const toast = useToast();
 
@@ -48,7 +52,6 @@ export default function InfiniteCanvas() {
     const [promptText, setPromptText] = useState("");
     const [detectedObjects, setDetectedObjects] = useState<{ sourceImageId: string; objects: DetectedObject[] } | null>(null);
     const [flattenRevision, setFlattenRevision] = useState<{ flattenedId: string; sources: CanvasImage[] } | null>(null);
-    const [failedVariationBatch, setFailedVariationBatch] = useState<{ source: CanvasImage; prompt: string; mimeType: string; base64Data: string; projectId: string; slots: number[] } | null>(null);
 
     // Interaction State
     const isDragging = useRef(false);

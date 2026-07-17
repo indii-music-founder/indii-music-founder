@@ -137,6 +137,10 @@ export const useStore = create<StoreState>()(
                 selectedNoteId: state.selectedNoteId,
                 // ISSUE-006: Session persistence for draft prompts
                 ...(state.isSessionPersistent ? { creativePrompt: state.creativePrompt } : {})
+                // failedVariationBatch is deliberately NOT persisted: it carries raw
+                // base64 image data that can exceed the localStorage quota and break
+                // persistence of everything else. Store residency (in-memory) is what
+                // keeps it alive across canvas unmounts.
             }),
         }
     )

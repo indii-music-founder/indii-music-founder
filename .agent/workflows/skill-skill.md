@@ -14,7 +14,7 @@ This command can be dropped in at *any* time by either the user or the agent whe
 
 ## 2. Manifest & Skill Scan
 Scan our centralized command manifests:
-- **Manifest Audit:** Read and evaluate the active `/commands` listed inside [WIIL-skill.md](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/.agent/workflows/WIIL-skill.md).
+- **Manifest Audit:** Read and evaluate the active `/commands` listed inside [WIIL-skill.md](WIIL-skill.md) (same directory: `.agent/workflows/WIIL-skill.md`).
 - **Skill Inventory Audit:** Scan ALL FOUR skill registries — they serve different purposes:
   1. `.agent/skills/` — indii-authored skills (e.g. `zoom-out`, `to-prd`, `hunter`, `walk`). Editable, owned by us.
   2. `.agents/skills/` — **vendored third-party skills** pinned by `skills-lock.json` (e.g. `firebase-security-rules-auditor`, `firebase-firestore`, `developing-genkit-js`, `arcjet`). **READ-ONLY:** never edit in place — they are hash-verified and overwritten on update. To change one, update it from upstream via the skills installer.
@@ -48,7 +48,7 @@ Evaluate the task against this routing matrix if no specific arguments are passe
 - **Is it a resume or compliance question?** ➔ `/proceed` (Resume & Audit)
 - **Are we mid-sprint building complex logic?** ➔ `/middle` (Execution Loop via `/go`)
 - **Are database rules or storage schemas shifting?** ➔ `/db-sync` (Security Rules Synchronizer)
-- **Is there a bug or test failure?** ➔ `/test` (Vitest/Playwright Shard runner)
+- **Is there a bug or test failure?** ➔ FIRST check `.agent/skills/error_memory/ERROR_LEDGER.md` (mandatory, per CLAUDE.md Rule 5), THEN `/test` (Vitest/Playwright Shard runner)
 - **Hunting for latent bugs across the whole stack?** ➔ `/hunter` (Full-Spectrum Bug Hunter)
 - **Clearing the issue backlog in `OPEN_ISSUES.md`?** ➔ `/issue` (The Fix Agent)
 - **Sweeping for TODOs, stubs, and AI slop?** ➔ `/finish` (Unfinished Work Sweep)
@@ -57,6 +57,7 @@ Evaluate the task against this routing matrix if no specific arguments are passe
 - **Are we writing high-risk features?** ➔ `/tdd` (Test-Driven Development)
 - **Are we analyzing complex import trees?** ➔ `/zoom-out` (Codebase Dependency Mapper)
 - **Are we wrapping up work for review?** ➔ `/end` (Closing Protocol via `/ci-validate`)
+- **About to `git push` a substantive branch?** ➔ `/plat` (Platinum pre-push gate — `.claude/commands/plat.md`; mandatory per CLAUDE.md Rule 6)
 
 ---
 

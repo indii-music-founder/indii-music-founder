@@ -83,6 +83,15 @@ export interface CanvasImage {
     parentOffsetY?: number;
 }
 
+export interface FailedVariationBatch {
+    source: CanvasImage;
+    prompt: string;
+    mimeType: string;
+    base64Data: string;
+    projectId: string;
+    slots: number[];
+}
+
 export interface CreativeHistorySlice {
     // History
     generatedHistory: HistoryItem[];
@@ -101,6 +110,10 @@ export interface CreativeHistorySlice {
     updateCanvasImage: (id: string, updates: Partial<CanvasImage>) => void;
     removeCanvasImage: (id: string) => void;
     selectCanvasImage: (id: string | null) => void;
+
+    // Variations
+    failedVariationBatch: FailedVariationBatch | null;
+    setFailedVariationBatch: (batch: FailedVariationBatch | null) => void;
 
     // Chat Import
     chatImportContext: { messageId: string; agentId: string; prompt: string } | null;
@@ -129,6 +142,8 @@ export function buildCreativeHistoryState(
     return {
         generatedHistory: [],
         historySyncError: null,
+        failedVariationBatch: null,
+        setFailedVariationBatch: (batch) => set({ failedVariationBatch: batch }),
         addToHistory: (item: HistoryItem) => {
             // Use dynamic import to avoid circular dependency with store
             import('@/core/store').then(({ useStore }) => {
