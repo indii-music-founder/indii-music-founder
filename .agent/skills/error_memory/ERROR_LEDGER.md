@@ -1359,3 +1359,12 @@ Before pushing any branch, run `/plat` (see `.claude/commands/plat.md`). It exec
 - BUG: When testing locally at localhost, browser subagents can get permanently stuck at the auth wall despite `window.useStore` injection instructions. The agents will spin indefinitely retrying the navigation instead of reporting failure.
 - FIX: Natively verify UI rendering by explicitly mocking `useStore` in `Vitest` and testing the React component mounts directly without crashing, rather than relying on a visual browser subagent for routine UI rendering verification.
 - PREVENTION: Never deploy browser QA subagents for tasks that can be fully verified with explicit Vitest component rendering tests.
+
+## 2026-07-17 — Live image/video generation dead: GEMINI_API_KEY secret held a rotated-out (invalid) key — NOT depleted credits
+
+- SEVERITY: High (all API-key-path generation failed live)
+- ERROR SURFACE: historically surfaced as 429 "prepayment credits are depleted"; current live state was 400 "API key not valid" from the secret's stale value.
+- ROOT CAUSE: the GCP key "Gemini Developer API Key (Auto-Rotated)" rotates its keyString, but Secret Manager `GEMINI_API_KEY` kept the old string. Also note: that "Gemini" key's API targets are all Firebase services (it is actually the app's `VITE_FIREBASE_API_KEY`); the ONLY key allowed to call generativelanguage.googleapis.com is "API 1" (uid 5673dfd1).
+- DIAGNOSIS: probe billing/validity with a minimal live call — `curl -X POST "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=$KEY" -d '{"contents":[{"parts":[{"text":"ping"}]}],"generationConfig":{"maxOutputTokens":5}}'` → 400 invalid-key vs 429 prepay-depleted vs 200 OK are unambiguous.
+- FIX (2026-07-17): added Secret Manager version 191 of `GEMINI_API_KEY` containing the valid "API 1" keyString (verified live: 200 OK). Gen2 functions bind the new version on next deploy (CI deploy on push to main). Requires `wiil@indii.music` gcloud account (`gcloud config set account wiil@indii.music`).
+- PREVENTION: after any key auto-rotation, re-sync Secret Manager; a validity probe belongs in deploy verification. Do not trust old 429 messages — re-probe live before concluding billing is the blocker.
