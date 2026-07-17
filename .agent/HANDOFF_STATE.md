@@ -1,24 +1,33 @@
 # Handoff State
-**Updated:** 2026-07-16 20:23 EDT
+**Updated:** 2026-07-17 12:42 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
-f821e2d47 docs: resolve ISSUE-999 and fix label in MobileRemote
-17f766c7e fix(creative): close generation receipt gaps
-90aaabc85 test(e2e): fix test mocks for CostControlService
-470c9b693 test(creative): finish residual generation coverage
-4c56ec286 chore: session checkpoint [17:23]
-93cfa5083 fix(creative): complete image generation settings contract
-34bd6c921 fix(api): replace strict enforceAppCheck with manual middleware validation for 22 endpoints
-fbeebd640 fix(remote): disable App Check enforcement for Studio Executor Cloud Functions
-131b2fcce chore(repo): stage pending changes prior to ci-validate
-7dfd8b20a chore(creative): cleanup obsolete DaisyChainControls, stream keys, and update agent schemas
+eb3a9e753f docs(ledger): carry SEC-001 FIXED status + Creative QA findings onto purged history
+e5b0bd36a0 fix: make cloud TTS durable and idempotent
+14cc1ff839 fix: harden PLP lifecycle and localhost auth
+e71ce8612d docs: reconcile shifted partial issue labels [skip ci]
+9530a618e0 fix(security): deduplicate instrument telemetry
+7a36f1f4ac fix(ci): deploy Firestore security rules
+bbcc9bae81 fix(security): close production payment and rules gaps
+83e7f80f35 chore: session checkpoint [20:23]
+f821e2d473 docs: resolve ISSUE-999 and fix label in MobileRemote
+17f766c7ec fix(creative): close generation receipt gaps
 ```
 
 ## Working State
 ```
-clean working tree
+ M docs/CHAT_IMAGE_INTERACTION_PLAN.md
+ M packages/firebase/src/index.ts
+ M packages/firebase/src/stripe/splitEscrow.ts
+ M packages/renderer/src/core/store/index.ts
+ M packages/renderer/src/core/store/slices/creative/creativeHistorySlice.ts
+ M packages/renderer/src/modules/creative/components/InfiniteCanvas.tsx
+ M packages/renderer/src/modules/creative/components/__tests__/InfiniteCanvas.test.tsx
+ M packages/renderer/src/modules/finance/components/SplitSheetEscrow.tsx
+?? e2e/image-annotation.spec.ts
+?? packages/firebase/src/stripe/__tests__/
 ```
 
 ## Decisions
