@@ -1,9 +1,11 @@
 # Handoff State
-**Updated:** 2026-07-17 12:42 EDT
+**Updated:** 2026-07-17 12:56 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+bdb7707ed9 docs(error-memory): log localhost referrer-block root cause + probe technique
+7040bc8714 chore: session checkpoint [12:42]
 eb3a9e753f docs(ledger): carry SEC-001 FIXED status + Creative QA findings onto purged history
 e5b0bd36a0 fix: make cloud TTS durable and idempotent
 14cc1ff839 fix: harden PLP lifecycle and localhost auth
@@ -12,12 +14,13 @@ e71ce8612d docs: reconcile shifted partial issue labels [skip ci]
 7a36f1f4ac fix(ci): deploy Firestore security rules
 bbcc9bae81 fix(security): close production payment and rules gaps
 83e7f80f35 chore: session checkpoint [20:23]
-f821e2d473 docs: resolve ISSUE-999 and fix label in MobileRemote
-17f766c7ec fix(creative): close generation receipt gaps
 ```
 
 ## Working State
 ```
+M  .agent/HANDOFF_STATE.md
+ M .agent/test_ledger/OPEN_ISSUES.md
+ M .agent/workflows/skill-skill.md
  M docs/CHAT_IMAGE_INTERACTION_PLAN.md
  M packages/firebase/src/index.ts
  M packages/firebase/src/stripe/splitEscrow.ts
@@ -28,6 +31,8 @@ f821e2d473 docs: resolve ISSUE-999 and fix label in MobileRemote
  M packages/renderer/src/modules/finance/components/SplitSheetEscrow.tsx
 ?? e2e/image-annotation.spec.ts
 ?? packages/firebase/src/stripe/__tests__/
+?? packages/renderer/src/modules/creative/__tests__/QA_RuntimeVerification.test.tsx
+?? packages/renderer/src/services/agent/__tests__/RAGAgent.test.ts
 ```
 
 ## Decisions
