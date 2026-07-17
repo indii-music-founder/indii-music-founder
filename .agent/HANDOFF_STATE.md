@@ -1,9 +1,12 @@
 # Handoff State
-**Updated:** 2026-07-17 12:56 EDT
+**Updated:** 2026-07-17 12:58 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+4a9c973f3e docs(ledger): verify ISSUE-1073..1076 fixes green, refresh Creative tool status table
+9a432654f5 feat: complete issues 720, 1009, 1010 and natively verify 481, 487, 493
+05e43fa4eb chore: session checkpoint [12:56]
 bdb7707ed9 docs(error-memory): log localhost referrer-block root cause + probe technique
 7040bc8714 chore: session checkpoint [12:42]
 eb3a9e753f docs(ledger): carry SEC-001 FIXED status + Creative QA findings onto purged history
@@ -11,28 +14,11 @@ e5b0bd36a0 fix: make cloud TTS durable and idempotent
 14cc1ff839 fix: harden PLP lifecycle and localhost auth
 e71ce8612d docs: reconcile shifted partial issue labels [skip ci]
 9530a618e0 fix(security): deduplicate instrument telemetry
-7a36f1f4ac fix(ci): deploy Firestore security rules
-bbcc9bae81 fix(security): close production payment and rules gaps
-83e7f80f35 chore: session checkpoint [20:23]
 ```
 
 ## Working State
 ```
-M  .agent/HANDOFF_STATE.md
- M .agent/test_ledger/OPEN_ISSUES.md
- M .agent/workflows/skill-skill.md
- M docs/CHAT_IMAGE_INTERACTION_PLAN.md
- M packages/firebase/src/index.ts
- M packages/firebase/src/stripe/splitEscrow.ts
- M packages/renderer/src/core/store/index.ts
- M packages/renderer/src/core/store/slices/creative/creativeHistorySlice.ts
- M packages/renderer/src/modules/creative/components/InfiniteCanvas.tsx
- M packages/renderer/src/modules/creative/components/__tests__/InfiniteCanvas.test.tsx
- M packages/renderer/src/modules/finance/components/SplitSheetEscrow.tsx
-?? e2e/image-annotation.spec.ts
-?? packages/firebase/src/stripe/__tests__/
-?? packages/renderer/src/modules/creative/__tests__/QA_RuntimeVerification.test.tsx
-?? packages/renderer/src/services/agent/__tests__/RAGAgent.test.ts
+clean working tree
 ```
 
 ## Decisions
