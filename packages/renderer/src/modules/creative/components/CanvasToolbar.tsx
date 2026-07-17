@@ -22,9 +22,7 @@ interface CanvasToolbarProps {
 }
 
 export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     addRectangle,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     addCircle,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     addText,
