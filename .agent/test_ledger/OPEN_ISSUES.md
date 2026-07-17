@@ -248,7 +248,7 @@ Config/hardening verification pass. Owner-run pre-launch check. 6 of 8 checklist
 4. firestore.rules — ⚠️ see FSR-001/002/003 (catch-all deny is correct; specific leaks logged)
 5. No secrets in repo — ⚠️ see SEC-001 (committed OAuth secret) + ENV-001 (hardcoded key fallback); `.env`/`.env.*` correctly gitignored; only tracked env is `extensions/storage-resize-images.env` (Firebase Extension config, no secrets)
 6. External/user input validation — ✅ PASS (Zod schemas incl. FetchUrlSchema; SSRF guard on net:fetch-url with redirect:'error')
-7. npm audit high/critical — ❌ FAIL → **ISSUE-1052** (1 critical: websocket-driver)
+7. npm audit high/critical — ✅ PASS (re-verified 2026-07-17: 0 critical / 0 high; ISSUE-1052 websocket-driver resolved. 2 moderate remain in dev-only `firebase-functions-test`, below this checklist's bar)
 8. Auth flows / logout clears credentials — ✅ PASS (Firebase signOut clears token from IndexedDB; cacheService.clear() + clearAllSubscriptions() on logout — authSlice.ts:303-319)
 
 **GO / NO-GO (updated 2026-07-17):** 🟢 **GO**. SEC-001's historical OAuth secret has been purged from reachable git history via filter-repo (and rotation handled via GCP). PAY-001 and the remaining code-level audit findings were previously fixed. Production deployment verification is still required for this remediation commit.
