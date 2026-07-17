@@ -12,6 +12,8 @@ import { styleMemoryStore } from './StyleMemoryStore';
 import { energyMapService } from './EnergyMapService';
 import { autoCopywriter } from '@/services/marketing/AutoCopywriter';
 import { syncMetadataTaggingService } from '@/services/licensing/SyncMetadataTaggingService';
+import { audioAnalysisReceiptService, type AudioAnalysisReceipt } from './AudioAnalysisReceiptService';
+import type { MasterAudioReference } from '@/services/metadata/types';
 
 
 const SEMANTIC_SCHEMA: Schema = {
@@ -80,6 +82,47 @@ const SEMANTIC_SCHEMA: Schema = {
 } as unknown as Schema;
 
 export class AudioIntelligenceService {
+    /** Hydrates browser ingestion exclusively from the server-owned master receipt. */
+    async analyzeCanonicalMaster(master: MasterAudioReference, userId: string): Promise<AudioIntelligenceProfile> {
+        const receipt = await audioAnalysisReceiptService.waitForTerminalReceipt(master, userId);
+        return this.profileFromReceipt(receipt, master.masterFingerprint);
+    }
+
+    private profileFromReceipt(receipt: AudioAnalysisReceipt, id: string): AudioIntelligenceProfile {
+        const technical = receipt.technical;
+        const open = receipt.openSourceProfile ?? {};
+        const gemini = receipt.geminiProfile ?? {};
+        if (!technical || receipt.status !== 'complete') throw new Error('Completed receipt is missing measured technical analysis.');
+        const strings = (value: unknown): string[] => Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
+        const genres = strings(gemini.genres);
+        const moods = strings(gemini.moods);
+        const instruments = strings(gemini.instrumentation);
+        const summary = typeof gemini.summary === 'string' ? gemini.summary : '';
+        const language = typeof gemini.language === 'string' ? gemini.language : '';
+        const explicitSignal = typeof gemini.clean_or_explicit_signal === 'string' ? gemini.clean_or_explicit_signal.toLowerCase() : '';
+        return {
+            id,
+            technical: {
+                bpm: typeof open.tempoBpm === 'number' ? open.tempoBpm : 0,
+                key: 'unmeasured', scale: 'unmeasured', duration: technical.durationSeconds,
+                energy: 0, danceability: 0,
+                loudness: typeof open.rmsDbfs === 'number' ? open.rmsDbfs : 0,
+            },
+            semantic: {
+                mood: moods, genre: genres, instruments,
+                // Receipt analysis is deliberately not an identifier/rights authority.
+                ddexGenre: '', ddexSubGenre: '', language,
+                isExplicit: explicitSignal.includes('explicit') && !explicitSignal.includes('not explicit'),
+                marketingComment: summary,
+                timbre: { texture: 'See server analysis receipt', brightness: 'unmeasured', saturation: 'unmeasured', spaceDepth: 'unmeasured' },
+                productionValue: { era: 'unmeasured', quality: 'unmeasured', mixBalance: 'unmeasured', aiArtifacts: false },
+                visualImagery: { abstract: summary, narrative: summary, lighting: 'unmeasured' },
+                marketingHooks: { keywords: [...genres, ...moods], oneLiner: summary },
+                targetPrompts: { image: summary, veo: summary },
+            },
+            analyzedAt: Date.now(), modelVersion: receipt.geminiModel || 'server-receipt',
+        };
+    }
 
     /**
      * Orchestrates full audio analysis:

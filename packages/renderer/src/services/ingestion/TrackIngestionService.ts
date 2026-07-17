@@ -56,8 +56,8 @@ export class TrackIngestionService {
         // Note: AudioIntelligence actually runs this internally, but we can run it here
         // if we want to separate concerns. However, AudioIntelligence returns a profile
         // that contains 'technical'. Let's trust AudioIntelligence to orchestrate.
-        Logger.info('TrackIngestion', 'Requesting full Audio Intelligence analysis...');
-        const profile = await audioIntelligence.analyze(file);
+        Logger.info('TrackIngestion', 'Waiting for protected canonical-master analysis receipt...');
+        const profile = await audioIntelligence.analyzeCanonicalMaster(masterAsset, userId);
 
         // 4. Map to Golden Metadata
         const metadata = this.mapProfileToMetadata(file, profile, fingerprint, userId, masterAsset);
