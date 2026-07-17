@@ -79,6 +79,22 @@ function getMediaVertexLocation(kind: MediaKind): string {
   }
 }
 
+/**
+ * Media provider policy.
+ * - 'vertex': Vertex AI on the postpaid GCP project via ADC. Production default —
+ *   invoiced billing, no prepaid-credit cliff (see OPEN_ISSUES "credits depleted" blocker).
+ * - 'apikey': Google AI Studio API key with automatic Vertex fallback. Default for
+ *   dev/QA/emulators, so local testing burns the AI Studio key, never prod quota.
+ * Override with MEDIA_PROVIDER env var.
+ */
+type MediaProvider = 'vertex' | 'apikey';
+
+export function getMediaProvider(): MediaProvider {
+  const configured = (process.env.MEDIA_PROVIDER || '').toLowerCase();
+  if (configured === 'vertex' || configured === 'apikey') return configured;
+  return process.env.NODE_ENV === 'production' ? 'vertex' : 'apikey';
+}
+
 // Helper to resolve the GenAI client using Google AI Studio (API Key) or Vertex AI (ADC).
 // This fully adheres to the secure proxy architecture, with backend-only media routing.
 function getRawAiClient(kind: MediaKind, forceVertex = false): GoogleGenAI {
@@ -127,9 +143,15 @@ function wrapWithFallback<T extends object>(
                                   errorMsg.includes('API_KEY_INVALID') ||
                                   errorMsg.includes('API key not valid') ||
                                   (errorMsg.includes('INVALID_ARGUMENT') && errorMsg.includes('API key'));
+            // AI Studio prepaid-billing exhaustion is a key-scoped outage, not a
+            // model outage — Vertex ADC on the postpaid project can still serve it.
+            const lowerMsg = errorMsg.toLowerCase();
+            const isBillingExhausted = lowerMsg.includes('prepayment credits') ||
+                                       lowerMsg.includes('billing#prepay') ||
+                                       (lowerMsg.includes('resource_exhausted') && (lowerMsg.includes('prepay') || lowerMsg.includes('billing')));
 
-            if (isApiKeyError && !forceVertex) {
-              console.warn('[creativeGateway] API key error encountered. Retrying automatically with Vertex AI ADC...', errorMsg);
+            if ((isApiKeyError || isBillingExhausted) && !forceVertex) {
+              console.warn('[creativeGateway] API key unusable (invalid or prepaid credits exhausted). Retrying automatically with Vertex AI ADC...', errorMsg);
               const fallbackObj = fallbackFactory();
               const fallbackFn = Reflect.get(fallbackObj, prop, fallbackObj) as (...args: unknown[]) => Promise<unknown>;
               return await fallbackFn.apply(fallbackObj, args);
@@ -150,8 +172,11 @@ function wrapWithFallback<T extends object>(
 }
 
 function getAiClient(kind: MediaKind, forceVertex = false): GoogleGenAI {
-  const client = getRawAiClient(kind, forceVertex);
-  if (forceVertex) return client;
+  // Production policy: Vertex AI (postpaid, ADC) is the primary media provider.
+  // The API-key path stays available for dev/QA via MEDIA_PROVIDER=apikey.
+  const effectiveForceVertex = forceVertex || getMediaProvider() === 'vertex';
+  const client = getRawAiClient(kind, effectiveForceVertex);
+  if (effectiveForceVertex) return client;
   return wrapWithFallback(client, false, () => getRawAiClient(kind, true));
 }
 
