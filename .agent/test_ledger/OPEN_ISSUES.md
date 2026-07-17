@@ -12970,7 +12970,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-784: DDEX compiler emits a fake DPID and an ERN 4.2 document while the app claims ERN 4.3
 
-- **Status:** ✅ FIXED (2026-07-10, remaining work documented; see notes below) — namespace corrected on both non-canonical generators; full single-compiler consolidation and XSD/profile validation remain open
+- **Status:** 🟡 PARTIAL (2026-07-17) — identity/schema delivery gates are implemented; compiler consolidation and live partner proof remain open
 - **Severity:** 🔴 CRITICAL (partner delivery rejection / identity spoofing)
 - **Module:** Firebase Publishing / DDEX
 - **Evidence:** `packages/firebase/src/publishing/ddex-generator.ts:57-65` declares ERN 4.2 and hardcodes `<PartyId>PADPIDA123456</PartyId>`. `AuthorityPanel.tsx:103-105,192-207` tells users it generated ERN 4.3.
@@ -12979,6 +12979,8 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 - **Acceptance:** No fallback DPID exists; missing DPID blocks live packaging; output passes the selected ERN 4.3 profile validator.
 
 - **Fix applied (2026-07-10):** Both non-canonical generators corrected to declare the real ERN 4.3 namespace (`http://ddex.net/xml/ern/43`), matching the canonical generator (`IngestionParser.ts`, already correctly 4.3) that `AuthorityPanel.tsx`/`DistributionTools.ts` actually use in production: `ddex-generator.ts` was 4.2 (that function, `compileDDEXRelease`, is confirmed dead/unexported code — not deployed, per ISSUE-859/860 finding — but its declared version now matches reality regardless), and the MCP `draft_dsp_metadata_xml` tool was 4.1.1 (deployed, fixed live). DPID and XML-escaping were already fixed under ISSUE-859/861. **Not done:** full consolidation into one single canonical compiler (the acceptance criterion's larger ask) — three separate DDEX XML generators still exist in the codebase; only the live one was ever correct, the two dead/secondary ones now at least declare the right version. No XSD/profile validator is available to verify against the DDEX 4.3 business profile. Deployed: mcpEndpoint.
+
+- **Additional fix (2026-07-17):** The desktop Python path now assigns UPC before compilation, requires configured sender and recipient DPIDs, uses the official `http://ddex.net/xml/ern/43` namespace, and runs `DDEXXSDValidator(require_xsd=True)` before any live SFTP mutation. Spotify/Apple package builders no longer report `delivery_ready` without XSD-mode proof; Spotify's batched manifest separately requires its choreography namespace and entry-point XSD. Draft/dry-run generation may still use structural lint, but is explicitly `delivery_ready: false`. Focused proof: 26 Python distribution tests pass, including no-DPID, missing-XSD, missing-manifest-profile, official-namespace, and no-upload-before-validation assertions. Founder activation still requires an issued DPID, licensed ERN/choreography XSD files, bilateral recipient profile, and a partner-accepted test batch.
 ### ISSUE-785: Founder music-identity and royalty-registration checklist is incomplete and not connected to release readiness
 
 - **Status:** ⏳ BACKLOG — consolidated (FOUNDER + PRODUCT)
