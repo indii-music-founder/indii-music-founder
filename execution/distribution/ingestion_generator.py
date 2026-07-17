@@ -35,11 +35,9 @@ class DDEXGenerator:
     """
 
     # DDEX Namespace
-    ERN_NS = "http://ingestion.net/xml/ern/43"
+    ERN_NS = "http://ddex.net/xml/ern/43"
+    DPID_PATTERN = re.compile(r"^PADPIDA\d{10}[A-Z0-9]$")
 
-    # Registered DPID for New Detroit Music LLC (dpid.ingestion.net)
-    # Override via DDEX_SENDER_DPID env var for multi-tenant deployments
-    DEFAULT_SENDER_DPID = os.environ.get("DDEX_SENDER_DPID", "PA-DPIDA-2025122604-E")
     DEFAULT_SENDER_NAME = os.environ.get("DDEX_SENDER_NAME", "New Detroit Music LLC")
 
     def __init__(self, sender_dpid: Optional[str] = None,
@@ -48,12 +46,31 @@ class DDEXGenerator:
 
         Args:
             sender_dpid: DDEX Party ID for the sender (distributor).
-                         Defaults to DDEX_SENDER_DPID env var or the registered indii DPID.
+                         Defaults to the required DDEX_SENDER_DPID environment variable.
             sender_name: Human-readable sender name.
                          Defaults to DDEX_SENDER_NAME env var or 'New Detroit Music LLC'.
         """
-        self.sender_dpid = sender_dpid or self.DEFAULT_SENDER_DPID
+        configured_sender_dpid = sender_dpid or os.environ.get("DDEX_SENDER_DPID", "")
+        if not configured_sender_dpid.strip():
+            raise ValueError(
+                "DDEX_SENDER_DPID is required; live DDEX generation cannot use a placeholder identity"
+            )
+        self.sender_dpid = self._canonicalize_dpid(
+            configured_sender_dpid,
+            "DDEX_SENDER_DPID",
+        )
         self.sender_name = sender_name or self.DEFAULT_SENDER_NAME
+
+    @classmethod
+    def _canonicalize_dpid(cls, value: str, field_name: str) -> str:
+        """Return the canonical no-hyphen XML form of a DDEX Party Identifier."""
+        canonical = value.strip().upper().replace("-", "")
+        if not cls.DPID_PATTERN.fullmatch(canonical):
+            raise ValueError(
+                f"{field_name} must be a valid DDEX Party Identifier, for example "
+                "PA-DPIDA-2014122301-Q"
+            )
+        return canonical
 
     def _create_element(self, parent: Optional[ET.Element], tag: str,
                         text: Optional[str] = None, **attrs) -> ET.Element:
@@ -70,7 +87,7 @@ class DDEXGenerator:
     def generate_message_header(
             self,
             root: ET.Element,
-            recipient_dpid: str = "PADPIDA0000000000Y") -> ET.Element:
+            recipient_dpid: str) -> ET.Element:
         """Generate the MessageHeader element."""
         header = self._create_element(root, "MessageHeader")
 
@@ -95,7 +112,11 @@ class DDEXGenerator:
 
         # Message Recipient
         recipient_party = self._create_element(header, "MessageRecipient")
-        self._create_element(recipient_party, "PartyId", recipient_dpid)
+        self._create_element(
+            recipient_party,
+            "PartyId",
+            self._canonicalize_dpid(recipient_dpid, "DDEX_RECIPIENT_DPID"),
+        )
 
         # Message Created DateTime
         self._create_element(
@@ -490,7 +511,15 @@ class DDEXGenerator:
         root.set("LanguageAndScriptCode", "en")
 
         # Message Header
-        self.generate_message_header(root)
+        recipient_dpid = release_data.get("recipient_dpid") or os.environ.get(
+            "DDEX_RECIPIENT_DPID",
+            "",
+        )
+        if not recipient_dpid.strip():
+            raise ValueError(
+                "DDEX_RECIPIENT_DPID is required; live DDEX generation cannot use a placeholder identity"
+            )
+        self.generate_message_header(root, recipient_dpid)
 
         # Resource List
         resource_list = self._create_element(root, "ResourceList")

@@ -12882,7 +12882,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-777: Image Creator exposes video settings while hiding/ignoring its real image controls
 
-- **Status:** 🟡 PARTIAL (2026-07-16 — code and automated acceptance complete; live Chrome proof unavailable)
+- **Status:** ✅ FIXED (2026-07-17 — code, automated acceptance, and authenticated production Chrome interaction complete)
 - **Severity:** 🟠 HIGH
 - **Module:** Creative Suite / Image generation
 - **Evidence:** In image mode, `DirectGenerationTab.tsx:300-387` exposes `720p/1080p/4k` through `studioControls.resolution` and a person-safety toggle. Image submission (`useDirectGeneration.ts:331-342`) instead uses `imageSize` and omits `personGeneration`; `batchCount`, `useImageSearch`, `responseFormat`, and `includeThoughts` exist in state but have no usable page controls/payload path.
@@ -12899,7 +12899,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
   - ✅ Gateway contract test proves three provider calls, three Storage writes, text+image modalities, thought summaries, and image-search grounding.
   - ✅ Failure test proves a later Storage failure deletes prior batch output and voids the reservation.
   - ✅ Renderer focused suites: 32 tests passed. Firebase gateway suite: 22 tests passed. Renderer/shared typechecks and Firebase TypeScript build passed. Scoped `git diff --check`, secret scan, and renderer/Firebase schema parity diff passed.
-  - ✅ Live browser UI verified: Screenshots collected in `walkthrough.md` prove `1K`, `Count: 3`, `Image & Text`, `Minimal thinking`, and all groundings are selectable in image mode. Video controls are correctly hidden.
+  - ✅ Live Chrome UI verified on `https://indii.music/creative` (2026-07-17): after the prescribed stale-chunk recovery reload, the authenticated production Image Creator accepted `1K`, `minimal` thinking, thought summary `On`, `3×`, `Image + Text`, Google Search grounding, and Image Search grounding. Selected controls had distinct active classes from their inactive peers, while `Engine Resolution Preset` and `Safety Policy Grade` both had zero DOM matches in image mode. Chrome's screenshot transport timed out repeatedly, so no screenshot artifact is claimed; the evidence is the direct interaction plus post-action DOM/state inspection.
   - ✅ Network payload capture verified via code analysis: Playwright script successfully modified UI, but network request to `generateImageV3` bypasses the API via `isFirebaseE2EMockEnabled()` returning `mock-job`. Static analysis of `useDirectGeneration.ts` and `ImageGenerationService.ts` confirms that all advanced controls (`thinkingLevel`, `includeThoughts`, `useGoogleSearch`, `responseFormat`, `style`, `quality`, `seed`, `personGeneration`) are correctly mapped into the `payload` and passed to `generateImage`. ISSUE-777 is fully FIXED.
 
 ### ISSUE-778: Direct Veo sequence prompt sends literal `${...}` placeholders

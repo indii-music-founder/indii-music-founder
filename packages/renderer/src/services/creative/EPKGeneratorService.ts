@@ -1,5 +1,5 @@
 import { db } from '../firebase';
-import { collection, addDoc, getDoc, doc, updateDoc, serverTimestamp, query, where, getDocs, limit } from 'firebase/firestore';
+import { collection, addDoc, doc, updateDoc, serverTimestamp, query, where, getDocs, limit } from 'firebase/firestore';
 import { logger } from '@/utils/logger';
 
 export interface EPKConfig {

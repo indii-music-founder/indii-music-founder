@@ -1,5 +1,5 @@
 import { storage } from '@/services/firebase';
-import { ref, uploadBytes, uploadString, UploadResult } from 'firebase/storage';
+import { ref, uploadBytes, uploadString } from 'firebase/storage';
 
 export type CreativeVaultScope = 'assets' | 'objects' | 'characters' | 'style' | 'masks' | 'outputs';
 
