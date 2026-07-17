@@ -89,6 +89,34 @@ export function parseAudioAnalysisReceipt(
 }
 
 export class AudioAnalysisReceiptService {
+    async waitForTerminalReceipt(
+        master: Pick<MasterAudioReference, 'contentHash' | 'generation'>,
+        userId: string,
+        timeoutMs = 20 * 60 * 1000,
+    ): Promise<AudioAnalysisReceipt> {
+        return new Promise((resolve, reject) => {
+            let unsubscribe: Unsubscribe | undefined;
+            const timeout = window.setTimeout(() => {
+                unsubscribe?.();
+                reject(new Error('Canonical-master analysis is still processing. You can safely return and retry; the server job remains durable.'));
+            }, timeoutMs);
+            this.watch(master, userId, receipt => {
+                if (receipt.status === 'processing') return;
+                window.clearTimeout(timeout);
+                unsubscribe?.();
+                if (receipt.status === 'failed') {
+                    reject(new Error(`Canonical-master analysis failed: ${receipt.failureMessage || receipt.failureType || 'unknown worker failure'}`));
+                    return;
+                }
+                resolve(receipt);
+            }, error => {
+                window.clearTimeout(timeout);
+                unsubscribe?.();
+                reject(error);
+            }).then(listener => { unsubscribe = listener; }).catch(reject);
+        });
+    }
+
     async watch(
         master: Pick<MasterAudioReference, 'contentHash' | 'generation'>,
         userId: string,

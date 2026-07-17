@@ -36,6 +36,7 @@ describe('TrackIngestionService', () => {
         },
         contentHash: 'a'.repeat(64),
         downloadUrl: 'https://storage.example/master.mp3',
+        generation: '987654321',
         masterFingerprint: mockFingerprint,
         mimeType: 'audio/mp3',
         originalFileName: 'test-song.mp3',
@@ -124,7 +125,7 @@ describe('TrackIngestionService', () => {
             masterFingerprint: mockFingerprint,
         });
         expect(trackLibrary.getByFingerprint).toHaveBeenCalledWith(mockFingerprint);
-        expect(audioIntelligence.analyze).not.toHaveBeenCalled(); // Crucial check
+        expect(audioIntelligence.analyzeCanonicalMaster).not.toHaveBeenCalled(); // Crucial check
         expect(result).toEqual({
             ...existingMetadata,
             userId: 'owner-1',
@@ -138,7 +139,7 @@ describe('TrackIngestionService', () => {
         vi.mocked(fingerprintService.generateFingerprint).mockResolvedValue(mockFingerprint);
         vi.mocked(masterAudioService.persist).mockResolvedValue(mockMasterAsset);
         vi.mocked(trackLibrary.getByFingerprint).mockResolvedValue(null); // Not found
-        vi.mocked(audioIntelligence.analyze).mockResolvedValue(mockProfile);
+        vi.mocked(audioIntelligence.analyzeCanonicalMaster).mockResolvedValue(mockProfile);
 
         // Execute
         const result = await service.ingestTrack(mockFile);
@@ -146,7 +147,7 @@ describe('TrackIngestionService', () => {
         // Verify
         expect(fingerprintService.generateFingerprint).toHaveBeenCalledWith(mockFile);
         expect(trackLibrary.getByFingerprint).toHaveBeenCalledWith(mockFingerprint);
-        expect(audioIntelligence.analyze).toHaveBeenCalledWith(mockFile);
+        expect(audioIntelligence.analyzeCanonicalMaster).toHaveBeenCalledWith(mockMasterAsset, 'owner-1');
 
         // Check Metadata Mapping
         expect(result.masterFingerprint).toBe(mockFingerprint);
