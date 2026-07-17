@@ -99,6 +99,16 @@ interface FirebaseAuthError {
  * Centralised to avoid duplicating error strings across every auth method.
  */
 function getAuthErrorMessage(error: FirebaseAuthError): string | null {
+    // Firebase may embed the full blocked origin in the error code, for example:
+    // auth/requests-from-referer-http://localhost:4243-are-blocked
+    if (
+        typeof error.code === 'string' &&
+        error.code.startsWith('auth/requests-from-referer-') &&
+        error.code.endsWith('-are-blocked')
+    ) {
+        return 'Authentication service not configured for this domain. Please contact support.';
+    }
+
     switch (error.code) {
         // ── Config / service issues ────────────────────────────────────────
         case 'auth/argument-error':

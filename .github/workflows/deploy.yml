@@ -443,7 +443,7 @@ jobs:
 
           gcloud services api-keys update "$KEY_RESOURCE" \
             --project indii-music-founder \
-            --allowed-referrers="https://app.indii.music/*,https://indii.music/*,https://www.indii.music/*,https://founder.indii.music/*,https://indii-music-studio.web.app/*,https://indii-music-studio.firebaseapp.com/*,https://indii-music-founder.web.app/*,https://indii-music-founder.firebaseapp.com/*" \
+            --allowed-referrers="https://app.indii.music/*,https://indii.music/*,https://www.indii.music/*,https://founder.indii.music/*,https://indii-music-studio.web.app/*,https://indii-music-studio.firebaseapp.com/*,https://indii-music-founder.web.app/*,https://indii-music-founder.firebaseapp.com/*,http://localhost:4243/*,http://127.0.0.1:4243/*" \
             --api-target=service=identitytoolkit.googleapis.com \
             --api-target=service=securetoken.googleapis.com \
             --api-target=service=firestore.googleapis.com \
@@ -479,6 +479,8 @@ jobs:
             'https://indii.music/',
             'https://www.indii.music/',
             'https://founder.indii.music/',
+            'http://localhost:4243/',
+            'http://127.0.0.1:4243/',
           ];
 
           for (const referer of referrers) {

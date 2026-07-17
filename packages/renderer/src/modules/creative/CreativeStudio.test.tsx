@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import CreativeStudio from './CreativeStudio';
 import { useStore } from '@/core/store';
 import { useToast } from '@/core/context/ToastContext';
@@ -30,11 +30,38 @@ vi.mock('@/components/ui/ConfirmDialog', () => ({
     }
 }));
 
+const mockCampaignCall = vi.fn();
+vi.mock('@/components/ui/CampaignConfigDialog', () => ({
+    CampaignConfigDialog: {
+        call: (...args: any[]) => mockCampaignCall(...args)
+    }
+}));
+
 // Mock ImageGenerationService
 const mockGenerateImages = vi.fn();
 vi.mock('@/services/image/ImageGenerationService', () => ({
     ImageGeneration: {
         generateImages: (...args: any[]) => mockGenerateImages(...args)
+    }
+}));
+
+const mockGenerateVideo = vi.fn();
+const mockWaitForJob = vi.fn();
+vi.mock('@/services/video/VideoGenerationService', () => ({
+    VideoGenerationService: class {
+        generateVideo = (...args: any[]) => mockGenerateVideo(...args);
+        waitForJob = (...args: any[]) => mockWaitForJob(...args);
+    },
+    VideoGeneration: {
+        generateVideo: (...args: any[]) => mockGenerateVideo(...args),
+        waitForJob: (...args: any[]) => mockWaitForJob(...args)
+    }
+}));
+
+const mockDeployPlpPipeline = vi.fn();
+vi.mock('@/services/marketing/AdAutomationService', () => ({
+    adAutomationService: {
+        deployPLPPipeline: (...args: any[]) => mockDeployPlpPipeline(...args)
     }
 }));
 
@@ -45,6 +72,7 @@ describe('CreativeStudio', () => {
     const mockToastInfo = vi.fn();
     const mockToastSuccess = vi.fn();
     const mockToastError = vi.fn();
+    const mockToastWarning = vi.fn();
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -57,12 +85,17 @@ describe('CreativeStudio', () => {
         mockToastSuccess.mockClear();
         mockToastError.mockClear();
         mockConfirmCall.mockClear();
+        mockCampaignCall.mockClear();
         mockGenerateImages.mockClear();
+        mockGenerateVideo.mockClear();
+        mockWaitForJob.mockClear();
+        mockDeployPlpPipeline.mockClear();
 
         (useToast as unknown as import("vitest").Mock).mockReturnValue({
             info: mockToastInfo,
             success: mockToastSuccess,
-            error: mockToastError
+            error: mockToastError,
+            warning: mockToastWarning
         });
 
         const storeState = {
@@ -200,6 +233,90 @@ describe('CreativeStudio', () => {
         await waitFor(() => {
             expect(mockToastError).toHaveBeenCalledWith(expect.stringContaining('Image generation failed'));
         });
+    });
+
+    it('keeps queued PLP videos visible, retries only the failed slot, and launches only playable results', async () => {
+        const currentStore = (useStore as any).getState();
+        const updatedStore = {
+            ...currentStore,
+            pendingPrompt: 'release campaign',
+            generationMode: 'image',
+            studioControls: { ...currentStore.studioControls, isPLPMode: true }
+        };
+        (useStore as unknown as import('vitest').Mock).mockImplementation((selector: any) =>
+            selector ? selector(updatedStore) : updatedStore
+        );
+        (useStore as any).getState.mockReturnValue(updatedStore);
+
+        mockGenerateImages.mockImplementation(async ({ prompt }: { prompt: string }) => {
+            const iteration = prompt.match(/variant iteration (\d+)/)?.[1] ?? 'unknown';
+            return [{ id: `image-${iteration}`, url: `https://cdn.example/image-${iteration}.png`, prompt }];
+        });
+        mockGenerateVideo.mockImplementation(async ({ prompt }: { prompt: string }) => {
+            const attempt = mockGenerateVideo.mock.calls.length;
+            return [{ id: `video-job-${attempt}`, url: '', prompt }];
+        });
+
+        const pendingJobs: Array<{
+            resolve: (job: { output: { url: string } }) => void;
+            reject: (error: Error) => void;
+        }> = [];
+        mockWaitForJob.mockImplementation(() => new Promise((resolve, reject) => {
+            pendingJobs.push({ resolve, reject });
+        }));
+
+        render(<CreativeStudio />);
+
+        await waitFor(() => expect(mockWaitForJob).toHaveBeenCalledTimes(5));
+        expect(screen.getByLabelText('PLP batch status')).toBeInTheDocument();
+        await waitFor(() => {
+            expect(screen.getByText('10 completed')).toBeInTheDocument();
+            expect(screen.getByText('5 queued')).toBeInTheDocument();
+        });
+        expect(mockCampaignCall).not.toHaveBeenCalled();
+
+        await act(async () => {
+            pendingJobs.slice(0, 4).forEach((job, index) => job!.resolve({
+                output: { url: `https://cdn.example/video-${index + 1}.mp4` }
+            }));
+            pendingJobs[4]!.reject(new Error('Provider render failed.'));
+        });
+
+        await waitFor(() => {
+            expect(screen.getByText('14 completed')).toBeInTheDocument();
+            expect(screen.getByText('1 failed')).toBeInTheDocument();
+        });
+        expect(mockAddToHistory).toHaveBeenCalledTimes(14);
+        expect(mockAddToHistory.mock.calls.every(([item]) => Boolean(item.url))).toBe(true);
+
+        fireEvent.click(screen.getByRole('button', { name: 'Retry Video 5' }));
+        await waitFor(() => expect(mockWaitForJob).toHaveBeenCalledTimes(6));
+        await act(async () => {
+            pendingJobs[5]!.resolve({ output: { url: 'https://cdn.example/video-5-retry.mp4' } });
+        });
+
+        await waitFor(() => expect(screen.getByText('15 completed')).toBeInTheDocument());
+        expect(mockAddToHistory).toHaveBeenCalledTimes(15);
+        expect(new Set(mockAddToHistory.mock.calls.map(([item]) => item.id)).size).toBe(15);
+        expect(mockAddToHistory.mock.calls.every(([item]) => item.projectId === 'test-project')).toBe(true);
+
+        mockCampaignCall.mockResolvedValue({
+            dailyBudget: 20,
+            totalDays: 3,
+            targetAgeMin: 18,
+            targetAgeMax: 44,
+            targetInterests: ['independent music'],
+            headline: 'Listen now',
+            body: 'New release available',
+        });
+        mockDeployPlpPipeline.mockResolvedValue({ campaignId: 'campaign-1' });
+        fireEvent.click(screen.getByRole('button', { name: 'Review and launch 15 eligible variants' }));
+
+        await waitFor(() => expect(mockDeployPlpPipeline).toHaveBeenCalledTimes(1));
+        const [creatives] = mockDeployPlpPipeline.mock.calls[0]!;
+        expect(creatives).toHaveLength(15);
+        expect(new Set(creatives.map((creative: { creativeId: string }) => creative.creativeId)).size).toBe(15);
+        expect(screen.getByRole('button', { name: 'Campaign launched' })).toBeDisabled();
     });
 
     describe('ISSUE-1007: cover-art distributor compliance', () => {
