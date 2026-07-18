@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-07-18 05:27 EDT
+**Updated:** 2026-07-18 05:28 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+b8866a8d4 chore: session checkpoint [05:27]
 858466836 fix(mcp): fail-close all 10 tool stubs, carry JWT on SSE handshake, type new surface
 8cfeedbb5 feat: A2A Swarm MCP integration
 dfcf5c94e chore: sync github issues to OPEN_ISSUES.md
@@ -13,11 +14,11 @@ c690e29e1 fix: release terminal audio receipt listeners and fix drag/drop test m
 b59c65c4f feat: hydrate ingestion from canonical audio receipt
 48fdb0288 feat: ISSUE-962 — expose canonical audio analysis receipts
 2775cdb6f fix: ISSUE-962 — keep browser masters out of Gemini
-74f173eb1 fix: ISSUE-1084 — bind DSP and Gemini to canonical master
 ```
 
 ## Working State
 ```
+ M .agent/HANDOFF_STATE.md
  M packages/renderer/src/components/shared/FirstRunTour.tsx
  M packages/renderer/src/core/components/RightPanel.tsx
  M packages/renderer/src/core/components/command-bar/PromptArea.tsx
