@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-07-18 05:38 EDT
+**Updated:** 2026-07-18 09:10 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+da25408ce chore: session checkpoint [05:38]
 6c64d4d8a chore: session checkpoint [05:33]
 b95d7d4ee chore: session checkpoint [05:28]
 b8866a8d4 chore: session checkpoint [05:27]
@@ -13,22 +14,49 @@ dfcf5c94e chore: sync github issues to OPEN_ISSUES.md
 c690e29e1 fix: release terminal audio receipt listeners and fix drag/drop test mock
 36d8c8d5d fix: release terminal audio receipt listeners
 965684423 feat: reuse canonical audio analysis in creative workflows
-b59c65c4f feat: hydrate ingestion from canonical audio receipt
 ```
 
 ## Working State
 ```
+M  .agent/HANDOFF_STATE.md
  M .agent/test_ledger/OPEN_ISSUES.md
- M e2e/fixtures/auth.ts
+MM .agent/test_ledger/OPEN_ISSUES_V2.md
+M  e2e/fixtures/auth.ts
+M  e2e/mcp-a2a-routing.spec.ts
+ M packages/firebase/firestore.rules
+ M packages/firebase/src/index.ts
+ M packages/firebase/src/mcp/index.ts
+ M packages/firebase/src/mcp/registry.ts
+ M packages/firebase/src/mcp/tools/auditAssetResolutions.ts
+ M packages/firebase/src/mcp/tools/auditSampleClearance.ts
+ M packages/firebase/src/mcp/tools/calculateRecoupment.ts
+ M packages/firebase/src/mcp/tools/draftCwrRegistration.ts
+ M packages/firebase/src/mcp/tools/draftDspMetadata.ts
+ M packages/firebase/src/mcp/tools/fetchBrandKit.ts
+ M packages/firebase/src/mcp/tools/generatePlaylistPitch.ts
+ M packages/firebase/src/mcp/tools/queueRemotionRender.ts
+ M packages/firebase/src/mcp/tools/registerSplitSheet.ts
+ M packages/firebase/src/mcp/tools/scheduleCampaignWaterfall.ts
+ M packages/firebase/src/mcp/tools/stageStripePayouts.ts
+ M packages/firebase/src/mcp/types.ts
  M packages/renderer/src/components/shared/FirstRunTour.tsx
  M packages/renderer/src/core/components/RightPanel.tsx
  M packages/renderer/src/core/components/command-bar/PromptArea.tsx
  M packages/renderer/src/core/store/slices/appSlice.ts
+ M packages/renderer/src/hooks/useRemoteCommandListener.ts
+ M packages/renderer/src/modules/touring/RoadManager.tsx
  M packages/renderer/src/modules/touring/components/PlanningTab.tsx
  M packages/renderer/src/modules/touring/components/TourRouteOptimizer.tsx
  M packages/renderer/src/services/agent/BaseAgent.ts
+ M packages/renderer/src/services/agent/RemoteRelayService.ts
+ M packages/renderer/src/services/agent/StudioExecutorLeaseService.ts
  M packages/renderer/src/services/intelligence/FirebaseIntelligenceService.ts
-?? e2e/__tmp_visual_road.spec.ts
+?? e2e/mcp-boardroom-collaboration.spec.ts
+?? e2e/real-live-test.spec.ts
+?? packages/firebase/src/mcp/helpers.ts
+?? packages/firebase/src/mcp/processMcpJobs.ts
+?? packages/firebase/src/mcp/processPayoutJobs.ts
+?? packages/firebase/src/mcp/processVideoJobs.ts
 ```
 
 ## Decisions
