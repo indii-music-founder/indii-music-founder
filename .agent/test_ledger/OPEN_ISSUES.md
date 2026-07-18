@@ -16346,3 +16346,24 @@ All scoped work from ISSUE-511/913/957/958 consolidated effort:
 - **Module:** packages/renderer/src/modules/social/components/CreatePostModal.tsx
 - **Evidence:** `isSaving` state was set around `await onSave(...)` but never read anywhere — surfaced by the no-unused-vars sweep (ISSUE-1087). The Schedule Post button was disabled only by `isOverLimit`, so rapid double-clicks during a slow save invoked `onSave` twice → two scheduled posts.
 - **Fix:** `disabled={isOverLimit || isSaving}` on the submit button — uses the existing disabled styling; the dead state now does its job instead of being deleted.
+
+### ISSUE-1089: TourRouteOptimizer (two-column ~700px layout) crammed into RoadManager's 384px side column
+- **Status:** ✅ FIXED (2026-07-18)
+- **Severity:** 🟠 HIGH (Road Manager Plan tab visually broken: horizontal overflow, unstyled white native scrollbars floating mid-content, giant dead space)
+- **Module:** packages/renderer/src/modules/touring/components/TourRouteOptimizer.tsx, RoadManager.tsx
+- **Evidence:** William's screenshots of localhost:4243/road — Route Optimization panel overflowed its `w-96` host column; white horizontal scrollbar strip rendered mid-page; internal `flex gap-6` (w-56 cities column + flex-1 planner+map) needs ~700px.
+- **Fix:** Optimizer internal layout now stacks vertically (`flex flex-col gap-6 overflow-y-auto custom-scrollbar`); cities column `w-56` → `w-full`. Pattern sweep of all `w-64/72/80/96 + shrink-0` panels found no other wide-component-in-narrow-column offenders (aside widget rails all host simple stacks).
+
+### ISSUE-1090: Global chat RightPanel resizable down to 200px with width persisted — chat becomes unreadable forever
+- **Status:** ✅ FIXED (2026-07-18)
+- **Severity:** 🟠 HIGH (once dragged narrow, every session renders 15-chars-per-line chat until localStorage cleared)
+- **Module:** packages/renderer/src/core/components/RightPanel.tsx, core/store/slices/appSlice.ts
+- **Evidence:** Screenshot showed chat panel crushed to ~200px with vertical word-wrap; resize clamp was `Math.max(200, ...)` and `indii_rightPanelWidth` localStorage value was rehydrated unclamped.
+- **Fix:** Resize minimum raised to 320px; appSlice initializer clamps the stored value to [320, 800] (also guards NaN) so stale narrow widths self-heal on load.
+
+### ISSUE-1091: Stale purple glow (rgba(168,85,247)) on green-brand elements + FirstRunTour pill overlapping composer
+- **Status:** ✅ FIXED (2026-07-18)
+- **Severity:** 🟡 MEDIUM (visual identity clash; Start Tour pill covered chat send button and Your Creations bar)
+- **Module:** components/shared/FirstRunTour.tsx, core/components/command-bar/PromptArea.tsx, core/components/RightPanel.tsx
+- **Evidence:** Green `bg-green-600` buttons carried purple `rgba(168,85,247,…)` box-shadows (old brand color leftovers) in FirstRunTour pill, PromptArea Boardroom mode button, and composer focus glow. FirstRunTour pill at `fixed bottom-4 right-4 z-[150]` sat on top of the RightPanel composer send button.
+- **Fix:** All three shadows repointed to green rgba(34,197,94,…); tour pill moved to bottom-center (`left-1/2 -translate-x-1/2`). Bonus: "Your Creations" bar in RightPanel given green gradient/border/label treatment for visibility; PlanningTab date inputs stack below 2xl to stop native date input truncation ("mr 🗓").

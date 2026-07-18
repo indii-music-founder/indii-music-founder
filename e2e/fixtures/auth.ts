@@ -226,9 +226,11 @@ export async function setupE2EPage(page: Page): Promise<void> {
 
       if (url.includes("generateContentStream")) {
         let userMessage = "";
+        let contents: any[] = [];
         try {
           const parsed = JSON.parse(route.request().postData() || "{}");
-          const contents = Array.isArray(parsed.contents) ? parsed.contents : [];
+          contents = Array.isArray(parsed.contents) ? parsed.contents : [];
+          console.log("[E2E mock DEBUG CONTENTS] ->", JSON.stringify(contents));
           const userContents = contents.filter((c: any) => c?.role === "user");
           const userTextContents = userContents.filter((c: any) =>
             c?.parts?.some((p: any) => p?.text && p.text.trim() && !p.text.trim().startsWith("Continue."))
@@ -242,18 +244,25 @@ export async function setupE2EPage(page: Page): Promise<void> {
         }
 
         const lower = userMessage.toLowerCase();
+        console.log("[E2E mock] contents array:", JSON.stringify(contents));
         let text = "*(Analysis complete)*";
         const functionCalls: Array<{ name: string; args: Record<string, unknown> }> = [];
         const pushSeat = (agentId: string) => functionCalls.push({ name: "seat_agent", args: { targetAgentId: agentId } });
         const pushUnseat = (agentId: string) => functionCalls.push({ name: "unseat_agent", args: { targetAgentId: agentId } });
 
-        if (lower.includes("bring in marketing and finance")) {
+        if (contents.some((c: any) => c?.role === 'function' || (c?.parts && c.parts.some((p: any) => p?.functionResponse)))) {
+          console.log("[E2E mock] Detected function response!");
+          text = "[Publicist]: Here is your pitch: MOCK_DATA_FROM_MCP_SERVER.";
+        } else if (lower.includes("generate a playlist pitch")) {
+          text = "[Publicist]: Generating the pitch...";
+          functionCalls.push({ name: "generate_playlist_pitch", args: { releaseId: "track-123", targetPlaylist: "RapCaviar" } });
+        } else if (lower.includes("bring in marketing and finance")) {
           text = "[Executor]: Hello! I will seat Marketing and Finance at the table immediately to begin our campaign strategy session.";
           pushSeat("marketing");
           pushSeat("finance");
         } else if (lower.includes("how much should we spend") || lower.includes("spend on this campaign")) {
           text = "[Marketing Dept.]: We propose a $5,000 budget targeting TikTok ads and playlist pitching to support the upcoming release. [Finance Dept.]: A $5,000 marketing expense fits within our seasonal cash flow limits. However, we should secure contract splits first.";
-        } else if (lower.includes("bring in legal") || lower.includes("check the agreements") || lower.includes("legal")) {
+        } else if (lower.includes("bring in legal") || lower.includes("check the agreements")) {
           text = "[Executor]: Bringing Legal into the discussion to review the campaign split sheet agreements.";
           pushSeat("legal");
         } else if (lower.includes("good to go") || lower.includes("excused") || lower.includes("thank you")) {
@@ -266,7 +275,7 @@ export async function setupE2EPage(page: Page): Promise<void> {
           text = "[Executor]: Summoning Creative Director and Video Agent to design marketing visuals.";
           pushSeat("creative");
           pushSeat("video");
-        } else if (lower.includes("social copy") || lower.includes("social and publicist") || lower.includes("press release")) {
+        } else if (lower.includes("social copy") || lower.includes("press release")) {
           text = "[Executor]: Summoning Social and Publicist agents to outline copy and press releases.";
           pushSeat("social");
           pushSeat("publicist");
@@ -274,19 +283,17 @@ export async function setupE2EPage(page: Page): Promise<void> {
           text = "[Executor]: Summoning Brand and Music Directors to align on the artistic vibe.";
           pushSeat("brand");
           pushSeat("music");
-        } else if (lower.includes("generate a playlist pitch")) {
-          text = "[Publicist]: Generating the pitch...";
-          functionCalls.push({ name: "generate_playlist_pitch", args: { trackId: "track-123", pitchAngle: "aggressive" } });
         } else if (lower.includes("clear the table") || lower.includes("done for today")) {
           text = "[Executor]: Excusing all remaining agents.";
           ["legal", "creative", "video", "social", "publicist", "brand", "music"].forEach(pushUnseat);
         }
 
-        const streamBody = JSON.stringify({ text, functionCalls }) + "\n";
+        const streamBody = "data: " + JSON.stringify({ text, functionCalls }) + "\n\n";
+        console.log(`[DEBUG] [E2E mock] userMessage: "${userMessage}", functionCalls:`, JSON.stringify(functionCalls));
         await route.fulfill({
           status: 200,
           headers: corsHeaders,
-          contentType: "application/json",
+          contentType: "text/event-stream",
           body: streamBody,
         });
         return;
@@ -428,9 +435,11 @@ export async function setupE2EPage(page: Page): Promise<void> {
 
       if (url.includes("generateContentStream")) {
         let userMessage = "";
+        let contents: any[] = [];
         try {
           const parsed = JSON.parse(route.request().postData() || "{}");
-          const contents = Array.isArray(parsed.contents) ? parsed.contents : [];
+          contents = Array.isArray(parsed.contents) ? parsed.contents : [];
+          console.log("[E2E mock DEBUG CONTENTS 2] ->", JSON.stringify(contents));
           const userContents = contents.filter((c: any) => c?.role === "user");
           const userTextContents = userContents.filter((c: any) =>
             c?.parts?.some((p: any) => p?.text && p.text.trim() && !p.text.trim().startsWith("Continue."))
@@ -444,6 +453,7 @@ export async function setupE2EPage(page: Page): Promise<void> {
         }
 
         const lower = userMessage.toLowerCase();
+        console.log("[E2E mock] contents array 2:", JSON.stringify(contents));
         let text = "*(Analysis complete)*";
         const functionCalls: Array<{ name: string; args: Record<string, unknown> }> = [];
 
@@ -482,9 +492,11 @@ export async function setupE2EPage(page: Page): Promise<void> {
           text = "[Executor]: Summoning Brand and Music Directors to align on the artistic vibe.";
           pushSeat("brand");
           pushSeat("music");
+        } else if (contents.some((c: any) => c?.role === 'function' || (c?.parts && c.parts.some((p: any) => p?.functionResponse)))) {
+          text = "[Publicist]: Here is your pitch: MOCK_DATA_FROM_MCP_SERVER.";
         } else if (lower.includes("generate a playlist pitch")) {
           text = "[Publicist]: Generating the pitch...";
-          functionCalls.push({ name: "generate_playlist_pitch", args: { trackId: "track-123", pitchAngle: "aggressive" } });
+          functionCalls.push({ name: "generate_playlist_pitch", args: { releaseId: "track-123", targetPlaylist: "RapCaviar" } });
         } else if (lower.includes("clear the table") || lower.includes("done for today")) {
           text = "[Executor]: Excusing all remaining agents.";
           ["legal", "creative", "video", "social", "publicist", "brand", "music"].forEach(pushUnseat);
@@ -494,8 +506,8 @@ export async function setupE2EPage(page: Page): Promise<void> {
         await route.fulfill({
           status: 200,
           headers: corsHeaders,
-          contentType: "application/json",
-          body: `${streamChunk}\n`,
+          contentType: "text/event-stream",
+          body: `data: ${streamChunk}\n\n`,
         });
         return;
       }

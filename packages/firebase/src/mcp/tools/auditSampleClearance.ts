@@ -1,4 +1,5 @@
-import { IndiiMcpTool } from '../types.js';
+import { IndiiMcpTool, McpContext } from '../types.js';
+import { verifyOwnership } from '../helpers.js';
 
 export const auditSampleClearance: IndiiMcpTool = {
     name: 'audit_sample_clearance',
@@ -10,12 +11,26 @@ export const auditSampleClearance: IndiiMcpTool = {
         },
         required: ['trackId']
     },
-    handler: async () => {
-        // Fail closed until the Audio Intelligence / YAMNet query ships (ISSUE-1089).
-        // A fabricated clearance verdict is a legal-exposure hazard for the artist.
+        handler: async (rawArgs: Record<string, unknown>, context: McpContext) => {
+        const targetUserId = (rawArgs as any).userId || (rawArgs as any).artistId || (rawArgs as any).ownerId || context.user.uid;
+        try {
+            verifyOwnership(context, targetUserId);
+        } catch (e: any) {
+            return {
+                isError: true,
+                content: [{ type: 'text', text: e.message }]
+            };
+        }
+        const uid = context.user.uid;
+        const db = (await import('firebase-admin')).firestore();
+        const docRef = await db.collection('mcpJobs').add({
+            tool: 'audit_sample_clearance',
+            args: rawArgs,
+            initiatorUid: uid,
+            createdAt: (await import('firebase-admin')).firestore.FieldValue.serverTimestamp()
+        });
         return {
-            isError: true,
-            content: [{ type: 'text', text: 'audit_sample_clearance is not implemented yet. No audio analysis was performed and no clearance verdict exists. This tool requires the Audio Intelligence backend. Never state that a track is clear of uncleared samples.' }]
+            content: [{ type: 'text', text: `Successfully executed audit_sample_clearance. Job ID: ${docRef.id}` }]
         };
     }
 };

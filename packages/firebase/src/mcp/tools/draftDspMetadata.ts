@@ -1,5 +1,6 @@
 import { McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js';
-import { IndiiMcpTool } from '../types.js';
+import { IndiiMcpTool, McpContext } from '../types.js';
+import { verifyOwnership } from '../helpers.js';
 
 /** Escape a value for safe interpolation into XML content (ISSUE-861). */
 function escapeXmlMcp(value: unknown): string {
@@ -36,7 +37,19 @@ export const draftDspMetadata: IndiiMcpTool = {
         },
         required: ['releaseTitle', 'artists', 'genre', 'upc', 'isrc'],
     },
-    handler: async (rawArgs: Record<string, unknown>) => {
+    handler: async (rawArgs: Record<string, unknown>, context: McpContext) => {
+
+        const targetUserId = (rawArgs as any).userId || (rawArgs as any).artistId || (rawArgs as any).ownerId || context.user.uid;
+        try {
+            verifyOwnership(context, targetUserId);
+        } catch (e: any) {
+            return {
+                isError: true,
+                content: [{ type: 'text', text: e.message }]
+            };
+        }
+        const uid = context.user.uid;
+
         const args = rawArgs as {
             releaseTitle: string;
             artists: string[];

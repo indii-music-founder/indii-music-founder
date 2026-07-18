@@ -1,6 +1,6 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { CallToolRequestSchema, ListToolsRequestSchema, McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js';
-import { IndiiMcpTool } from './types.js';
+import { IndiiMcpTool, McpContext } from './types.js';
 
 export class McpToolRegistry {
     private tools: Map<string, IndiiMcpTool> = new Map();
@@ -11,7 +11,7 @@ export class McpToolRegistry {
         }
     }
 
-    register(server: Server) {
+    register(server: Server, context: McpContext) {
         server.setRequestHandler(ListToolsRequestSchema, async () => {
             return {
                 tools: Array.from(this.tools.values()).map(tool => ({
@@ -28,7 +28,7 @@ export class McpToolRegistry {
                 throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${request.params.name}`);
             }
 
-            return await tool.handler(request.params.arguments ?? {});
+            return await tool.handler(request.params.arguments ?? {}, context);
         });
     }
 }

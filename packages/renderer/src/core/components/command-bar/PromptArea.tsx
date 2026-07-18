@@ -359,7 +359,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
     const roundedClass = isMobile ? "rounded-lg" : "rounded-full";
 
     const modePickerButtonClasses = isBoardroom
-        ? "bg-green-600/30 border-green-500/40 hover:bg-green-600/50 shadow-[0_0_10px_rgba(168,85,247,0.3)]"
+        ? "bg-green-600/30 border-green-500/40 hover:bg-green-600/50 shadow-[0_0_10px_rgba(34,197,94,0.3)]"
         : conversationMode === 'department'
             ? "bg-blue-600/30 border-blue-500/40 hover:bg-blue-600/50"
             : "bg-pink-600/30 border-pink-500/40 hover:bg-pink-600/50";
@@ -371,7 +371,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                 "glass transition-all relative focus-within:ring-2",
                 isDocked ? "rounded-none border-x-0 border-b-0 border-t border-white/10 px-1" : "rounded-3xl",
                 isIndiiMode
-                    ? "border-green-500/50 ring-green-500/20 shadow-[0_0_30px_rgba(168,85,247,0.15)] bg-green-950/30"
+                    ? "border-green-500/50 ring-green-500/20 shadow-[0_0_30px_rgba(34,197,94,0.15)] bg-green-950/30"
                     : `${colors.border} ${colors.ring} bg-white/4 shadow-[0_8px_32px_rgba(0,0,0,0.4)]`,
                 isDragging && "ring-4 ring-blue-500/50 bg-blue-500/20",
                 className

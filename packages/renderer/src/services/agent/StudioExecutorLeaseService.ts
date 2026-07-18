@@ -39,8 +39,18 @@ class StudioExecutorLeaseService {
 
     async publishPresence(state: Record<string, unknown>): Promise<void> {
         const lease = await this.getLease();
-        const publish = httpsCallable(functions, 'publishStudioPresence');
-        await publish({ deviceId: lease.deviceId, leaseToken: lease.leaseToken, state });
+        const { getAuth } = await import('firebase/auth');
+        const { getFirestore, doc, setDoc, serverTimestamp } = await import('firebase/firestore');
+        const auth = getAuth();
+        if (!auth.currentUser) throw new Error('Not authenticated');
+        const db = getFirestore();
+        
+        await setDoc(doc(db, 'users', auth.currentUser.uid, 'remote-relay', 'state'), {
+            ...state,
+            executorDeviceId: lease.deviceId,
+            leaseToken: lease.leaseToken,
+            timestamp: serverTimestamp()
+        }, { merge: true });
     }
 
     async releasePresence(studioInstanceId: string): Promise<void> {

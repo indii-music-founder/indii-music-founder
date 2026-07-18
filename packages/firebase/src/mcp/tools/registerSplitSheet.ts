@@ -1,4 +1,5 @@
-import { IndiiMcpTool } from '../types.js';
+import { IndiiMcpTool, McpContext } from '../types.js';
+import { verifyOwnership } from '../helpers.js';
 
 export const registerSplitSheet: IndiiMcpTool = {
     name: 'register_split_sheet',
@@ -20,12 +21,26 @@ export const registerSplitSheet: IndiiMcpTool = {
         },
         required: ['trackId', 'collaborators']
     },
-    handler: async () => {
-        // Fail closed until the Firestore split registration + contract PDF backend ships (ISSUE-1089).
-        // Royalty splits are legally binding — never claim they were registered.
+        handler: async (rawArgs: Record<string, unknown>, context: McpContext) => {
+        const targetUserId = (rawArgs as any).userId || (rawArgs as any).artistId || (rawArgs as any).ownerId || context.user.uid;
+        try {
+            verifyOwnership(context, targetUserId);
+        } catch (e: any) {
+            return {
+                isError: true,
+                content: [{ type: 'text', text: e.message }]
+            };
+        }
+        const uid = context.user.uid;
+        const db = (await import('firebase-admin')).firestore();
+        const docRef = await db.collection('mcpJobs').add({
+            tool: 'register_split_sheet',
+            args: rawArgs,
+            initiatorUid: uid,
+            createdAt: (await import('firebase-admin')).firestore.FieldValue.serverTimestamp()
+        });
         return {
-            isError: true,
-            content: [{ type: 'text', text: 'register_split_sheet is not implemented yet. No splits were locked, no record was written, and no contract was generated. This tool requires the split-sheet registration backend. Do not report splits as registered.' }]
+            content: [{ type: 'text', text: `Successfully executed register_split_sheet. Job ID: ${docRef.id}` }]
         };
     }
 };

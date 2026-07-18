@@ -419,7 +419,7 @@ const RoadManager: React.FC = () => {
                 <RoadManagerSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
 
                 {/* ── CENTER — Main Content ──────────────────────────── */}
-                <div className="flex-1 flex flex-col min-w-0 overflow-y-auto selection:bg-yellow-500/30">
+                <div className="flex-1 flex flex-col min-w-0 overflow-y-auto custom-scrollbar selection:bg-yellow-500/30">
                     <main className="flex-1 p-6 md:p-8 w-full">
                         <AnimatePresence mode="wait">
                             <motion.div
@@ -432,7 +432,7 @@ const RoadManager: React.FC = () => {
                             >
                                 {activeTab === 'plan' && (
                                     <div className="flex gap-6 h-full">
-                                        <div className="flex-1 overflow-y-auto">
+                                        <div className="flex-1 overflow-y-auto custom-scrollbar">
                                             <PlanningTab
                                                 startDate={startDate}
                                                 setStartDate={setStartDate}
@@ -452,7 +452,7 @@ const RoadManager: React.FC = () => {
                                                 onUpdateStop={handleUpdateStop}
                                             />
                                         </div>
-                                        <div className="hidden xl:flex w-96 flex-col border-l border-gray-800 p-6 overflow-y-auto flex-shrink-0">
+                                        <div className="hidden xl:flex w-96 flex-col border-l border-gray-800 p-6 overflow-y-auto custom-scrollbar flex-shrink-0">
                                             <h3 className="text-sm font-bold text-white mb-4">Route Optimization</h3>
                                             <TourRouteOptimizer />
                                         </div>
