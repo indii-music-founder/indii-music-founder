@@ -3,7 +3,6 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import AutonomousLab from './AutonomousLab';
 import { useStore } from '@/core/store';
-import { ImageGeneration } from '@/services/image/ImageGenerationService';
 
 // Mock dependencies
 vi.mock('@/core/store');

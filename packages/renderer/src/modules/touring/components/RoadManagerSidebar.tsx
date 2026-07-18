@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Map, Truck, ChevronRight, ChevronsLeft, ChevronsRight, ListMusic, BookOpen, type LucideIcon } from 'lucide-react';
+import React from 'react';
+import { Map, Truck, ChevronRight, ListMusic, Settings, BookOpen, type LucideIcon } from 'lucide-react';
 import { motion } from 'motion/react';
 
 export type TouringTab = 'plan' | 'tour-book' | 'on-the-road' | 'insights';
@@ -9,26 +9,7 @@ interface RoadManagerSidebarProps {
     setActiveTab: (tab: TouringTab) => void;
 }
 
-const COLLAPSE_KEY = 'indii_roadmgr_sidebar_collapsed';
-
 export const RoadManagerSidebar: React.FC<RoadManagerSidebarProps> = ({ activeTab, setActiveTab }) => {
-    const [isCollapsed, setIsCollapsed] = useState(() => {
-        if (typeof window === 'undefined') return false;
-        return localStorage.getItem(COLLAPSE_KEY) === 'true';
-    });
-
-    const toggleCollapsed = () => {
-        setIsCollapsed(prev => {
-            const next = !prev;
-            try {
-                localStorage.setItem(COLLAPSE_KEY, String(next));
-            } catch {
-                // localStorage unavailable — collapse state just won't persist
-            }
-            return next;
-        });
-    };
-
     const navItems: { id: TouringTab; label: string; icon: LucideIcon; description: string }[] = [
         { id: 'plan', label: 'Plan', icon: Map, description: 'Route & Optimization' },
         { id: 'tour-book', label: 'Tour Book', icon: BookOpen, description: 'Day Sheets & Tech Rider' },
@@ -37,32 +18,18 @@ export const RoadManagerSidebar: React.FC<RoadManagerSidebarProps> = ({ activeTa
     ];
 
     return (
-        <div className={`${isCollapsed ? 'w-16' : 'w-64'} bg-bg-dark border-r border-gray-800 flex flex-col h-full flex-shrink-0 transition-[width] duration-300`}>
-            <div className={`${isCollapsed ? 'p-3 flex-col gap-2' : 'p-6'} border-b border-gray-800/50 flex items-center justify-between`}>
-                {!isCollapsed && (
-                    <div>
-                        <h1 className="text-xl font-black flex items-center gap-2 tracking-tighter uppercase italic text-white/90">
-                            <Truck className="text-yellow-500" size={24} />
-                            Road Mgr
-                        </h1>
-                        <p className="text-[10px] text-gray-500 font-mono mt-1 uppercase tracking-[0.2em]">
-                            Road Manager
-                        </p>
-                    </div>
-                )}
-                {isCollapsed && <Truck className="text-yellow-500" size={22} />}
-                <button
-                    onClick={toggleCollapsed}
-                    className="p-1.5 rounded-lg text-gray-600 hover:text-gray-300 hover:bg-white/5 transition-colors"
-                    title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-                    aria-label={isCollapsed ? 'Expand Road Manager sidebar' : 'Collapse Road Manager sidebar'}
-                    aria-expanded={!isCollapsed}
-                >
-                    {isCollapsed ? <ChevronsRight size={14} /> : <ChevronsLeft size={14} />}
-                </button>
+        <div className="w-64 bg-bg-dark border-r border-gray-800 flex flex-col h-full flex-shrink-0">
+            <div className="p-6 border-b border-gray-800/50">
+                <h1 className="text-xl font-black flex items-center gap-2 tracking-tighter uppercase italic text-white/90">
+                    <Truck className="text-yellow-500" size={24} />
+                    Road Mgr
+                </h1>
+                <p className="text-[10px] text-gray-500 font-mono mt-1 uppercase tracking-[0.2em]">
+                    Road Manager
+                </p>
             </div>
 
-            <nav className={`flex-1 ${isCollapsed ? 'p-2' : 'p-4'} space-y-2 overflow-y-auto custom-scrollbar`}>
+            <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
                 {navItems.map((item) => {
                     const isActive = activeTab === item.id;
                     const Icon = item.icon;
@@ -71,8 +38,7 @@ export const RoadManagerSidebar: React.FC<RoadManagerSidebarProps> = ({ activeTa
                         <button
                             key={item.id}
                             onClick={() => setActiveTab(item.id)}
-                            title={isCollapsed ? `${item.label} — ${item.description}` : undefined}
-                            className={`w-full group relative flex items-center gap-3 ${isCollapsed ? 'p-2 justify-center' : 'p-3'} rounded-xl transition-all duration-300 text-left border ${isActive
+                            className={`w-full group relative flex items-center gap-3 p-3 rounded-xl transition-all duration-300 text-left border ${isActive
                                 ? 'bg-yellow-500/10 border-yellow-500/20 text-yellow-500 shadow-[0_0_15px_rgba(234,179,8,0.1)]'
                                 : 'bg-transparent border-transparent text-gray-500 hover:text-gray-300 hover:bg-white/5'
                                 }`}
@@ -91,18 +57,16 @@ export const RoadManagerSidebar: React.FC<RoadManagerSidebarProps> = ({ activeTa
                                 <Icon size={18} />
                             </div>
 
-                            {!isCollapsed && (
-                                <div className="flex-1 min-w-0">
-                                    <div className={`text-xs font-bold uppercase tracking-wider ${isActive ? 'text-white' : ''}`}>
-                                        {item.label}
-                                    </div>
-                                    <div className="text-[10px] text-gray-600 font-medium truncate">
-                                        {item.description}
-                                    </div>
+                            <div className="flex-1 min-w-0">
+                                <div className={`text-xs font-bold uppercase tracking-wider ${isActive ? 'text-white' : ''}`}>
+                                    {item.label}
                                 </div>
-                            )}
+                                <div className="text-[10px] text-gray-600 font-medium truncate">
+                                    {item.description}
+                                </div>
+                            </div>
 
-                            {!isCollapsed && isActive && (
+                            {isActive && (
                                 <motion.div
                                     initial={{ opacity: 0, x: -5 }}
                                     animate={{ opacity: 1, x: 0 }}
@@ -115,18 +79,15 @@ export const RoadManagerSidebar: React.FC<RoadManagerSidebarProps> = ({ activeTa
                 })}
             </nav>
 
-            <div className={`${isCollapsed ? 'p-2' : 'p-4'} border-t border-gray-800/50`}>
-                <div
-                    className={`bg-gray-900/50 rounded-lg ${isCollapsed ? 'p-2 justify-center' : 'p-3'} border border-gray-800 flex items-center gap-3`}
-                    title={isCollapsed ? 'System Status: Online' : undefined}
-                >
-                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
-                    {!isCollapsed && (
-                        <div className="flex-1">
-                            <div className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">System Status</div>
-                            <div className="text-xs text-white font-mono">ONLINE</div>
-                        </div>
-                    )}
+            {/* Bottom Status / User Info could go here */}
+            <div className="p-4 border-t border-gray-800/50">
+                <div className="bg-gray-900/50 rounded-lg p-3 border border-gray-800 flex items-center gap-3">
+                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
+                    <div className="flex-1">
+                        <div className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">System Status</div>
+                        <div className="text-xs text-white font-mono">ONLINE</div>
+                    </div>
+                    <Settings size={14} className="text-gray-600 transition-colors" />
                 </div>
             </div>
         </div>
