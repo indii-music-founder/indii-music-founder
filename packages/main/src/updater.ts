@@ -11,6 +11,7 @@ import { BrowserWindow, ipcMain, Notification, app } from 'electron';
 import path from 'path';
 import log from 'electron-log';
 import Store from 'electron-store';
+import { isLocalUnsignedBuild } from './updaterPolicy';
 
 // Initialize configuration store
 interface IUpdaterStore {
@@ -106,6 +107,10 @@ function showUpdaterNotification(title: string, body: string, onClick?: () => vo
 
 export function setupAutoUpdater(): void {
     if (!autoUpdater) return;
+    if (isLocalUnsignedBuild(process.resourcesPath)) {
+        log.info('[Updater] Local unsigned build detected; public update checks are disabled.');
+        return;
+    }
 
     // Configure basic autoUpdater settings
     autoUpdater.logger = log;
@@ -206,7 +211,9 @@ export function registerUpdaterHandlers(): void {
     // IPC handlers for renderer control - registered unconditionally
     ipcMain.handle('updater:check', async (event) => {
         validateSender(event);
-        if (!autoUpdater) return { available: false };
+        if (!autoUpdater || isLocalUnsignedBuild(process.resourcesPath)) {
+            return { available: false, reason: 'local-unsigned-build' };
+        }
         try {
             const result = await autoUpdater.checkForUpdates();
             return { available: !!result?.updateInfo, version: result?.updateInfo?.version };
@@ -218,7 +225,7 @@ export function registerUpdaterHandlers(): void {
 
     ipcMain.handle('updater:install', (event) => {
         validateSender(event);
-        if (autoUpdater) {
+        if (autoUpdater && !isLocalUnsignedBuild(process.resourcesPath)) {
             autoUpdater.quitAndInstall(false, true);
         }
     });
@@ -252,7 +259,7 @@ export function registerUpdaterHandlers(): void {
         return {
             channel: currentChannel,
             source: currentSource,
-            isAvailable: !!autoUpdater,
+            isAvailable: !!autoUpdater && !isLocalUnsignedBuild(process.resourcesPath),
             releaseName: RELEASE_DISPLAY_NAME,
             releaseNumber: RELEASE_DISPLAY_NUMBER,
             technicalVersion: app.getVersion()
