@@ -16,7 +16,7 @@ graph TB
         LP["Landing Page<br/>(packages/landing)<br/>Vite + React • Port 3000"]
         SA["indii Studio Web App<br/>(packages/renderer)<br/>Vite + React 18 • Port 4242"]
         ED["Electron Desktop Shell<br/>(packages/main)<br/>Electron 41 + Forge"]
-        MR["indiiREMOTE<br/>(mobile-remote module)<br/>PWA • WebSocket Control"]
+        MR["indiiREMOTE<br/>(mobile-remote module)<br/>PWA • Firebase Cloud Relay"]
         INV["Investor Portal<br/>(investor module)<br/>Read-only Data Room"]
         CAP["Ghost Capture<br/>(capture module)<br/>Quick-capture PWA"]
     end
