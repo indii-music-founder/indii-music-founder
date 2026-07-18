@@ -89,7 +89,7 @@ export async function validateAppCheckHttp(req: express.Request, res: express.Re
         const token = Array.isArray(appCheckToken) ? appCheckToken[0] : appCheckToken;
         await admin.appCheck().verifyToken(token);
         return true;
-    } catch (err) {
+    } catch {
         res.status(401).send('Unauthorized: Invalid App Check token');
         return false;
     }

@@ -13,7 +13,6 @@ import { useToast } from '@/core/context/ToastContext';
 import { FileTreeNode } from './FileTreeNode';
 import { processForKnowledgeBase } from '@/services/rag/ragService';
 import { logger } from '@/utils/logger';
-import { Modal } from '@/components/ui/Modal';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 interface ResourceTreeProps {

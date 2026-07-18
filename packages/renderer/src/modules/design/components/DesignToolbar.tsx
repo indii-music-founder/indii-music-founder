@@ -1,5 +1,5 @@
 import React from 'react';
-import { MousePointer, Type, Image as ImageIcon, Box, Sparkles } from 'lucide-react';
+import { MousePointer, Type, Image as ImageIcon, Box } from 'lucide-react';
 import { motion } from 'motion/react';
 
 interface DesignToolbarProps {

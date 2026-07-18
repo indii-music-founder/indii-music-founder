@@ -3,7 +3,6 @@ import { logger } from '@/utils/logger';
 import { useStore } from '@/core/store';
 import {
     collection,
-    doc,
     addDoc,
     getDocs,
     query,

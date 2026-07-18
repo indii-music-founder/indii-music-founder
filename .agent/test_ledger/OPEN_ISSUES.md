@@ -16304,3 +16304,34 @@ All scoped work from ISSUE-511/913/957/958 consolidated effort:
 - **Summary:** Automated weekly demo-readiness audit. Verdict: **GO**
 - **Expected (acceptance):** Close the issue as it is just an audit report with a GO verdict.
 - **Honest fallback:** WONTFIX — Audit was a GO, nothing to fix.
+
+### ISSUE-1085: Dead per-file ENFORCE_APP_CHECK constants shadowed the real middleware flag in 7 firebase files
+- **Status:** ✅ FIXED (2026-07-17)
+- **Severity:** 🟢 LOW (misleading dead code; no behavior change)
+- **Module:** packages/firebase (App Check enforcement)
+- **Evidence:** `functions/agent/manageSemanticMemory.ts`, `functions/rights/queueRightsRegistration.ts`, `index.ts:188`, `legal/pandadocProxy.ts`, `lib/image_generation.ts`, `mcp/index.ts`, `releases/generateDownloadUrl.ts` each defined a local `ENFORCE_APP_CHECK` constant (four different formulas, including a hardcoded `true`) that was never referenced. Real enforcement is the exported env-driven flag inside `middleware/appCheck.ts`, applied via `validateAppCheckV1/V2/Http` calls — which all 6 traffic-bearing files already make.
+- **Impact:** Four divergent dead formulas invited a future editor to "fix" enforcement by editing a constant that does nothing (same failure family as the 2026-06-20 App Check entries: config that looks live but isn't).
+- **Fix:** Deleted all 7 dead constants and their orphaned comments. Single source of truth is `middleware/appCheck.ts`. `packages/firebase` tsc build clean; lint warnings for these sites gone.
+
+### ISSUE-1086: mcpEndpoint has no app-layer auth — currently shielded only by IAM invoker 403
+- **Status:** ✅ FIXED (2026-07-17)
+- **Severity:** 🟡 MEDIUM (dormant; no active exposure verified 2026-07-17)
+- **Module:** packages/firebase/src/mcp/index.ts (`mcpEndpoint`, Gen 1 onRequest)
+- **Evidence:** Express app with `cors({ origin: true })`, `enforceAppCheck: false`, and no `validateAppCheck*`/auth middleware on `/sse` or `/message`. Live check: `gcloud functions get-iam-policy mcpEndpoint --region=us-central1` returns an EMPTY policy (no `allUsers` invoker) → unauthenticated calls 403 at the platform layer today, matching the fleet-wide IAM lockdown. Exposure if opened: one stateless tool (`draft_dsp_metadata_xml`) — compute/cost abuse only, no Firestore/Storage/secret access.
+- **Impact:** The IAM 403 also blocks every legitimate external MCP client, so the endpoint is dead-to-the-world; anyone "fixing" that by binding `allUsers` would silently ship an unauthenticated public endpoint.
+- **Expected (acceptance):** Decide the auth model before granting any invoker: MCP clients cannot mint Firebase App Check tokens, so the gate must be a bearer/API key check or OIDC (Cloud Run IAM with authenticated callers). Implement the gate in the Express app, THEN bind the invoker. Until then, leave IAM as-is.
+- **Honest fallback:** If remote MCP is not on the roadmap, delete the export instead of carrying an unauthenticated endpoint behind an IAM accident.
+
+### ISSUE-1087: Repo-wide no-unused-vars lint debt (98 warnings) eliminated to zero
+- **Status:** ✅ FIXED (2026-07-17)
+- **Severity:** 🟢 LOW (dead code / noise; masked real findings like ISSUE-1085/1086/1088 which surfaced during this sweep)
+- **Module:** packages/main, packages/renderer, packages/firebase (~45 files)
+- **Evidence:** `npm run lint` reported 216 warnings, 98 of them `@typescript-eslint/no-unused-vars` + 1 unused eslint-disable directive. Categories: dead lucide/type/service imports (incl. 8 orphaned imports in `GeneralistAgent.ts` left from the execute()-unification gutting), unused catch bindings, unused Zustand selector subscriptions (`projects` in ConversationHistoryList, `agentMode` in AgentSwitcherStrip — each a needless re-render source), dead local component props (`selectedStop`/`setSendingEmailFor` in TourBookTab's DaySheetsList removed from interface+callsite+destructure), dead `PitchStorySchema` (ISSUE-911 fail-closed tool documents the plan), and intentionally-unused stub args (prefixed `_` per lint convention: web3 fail-closed sim, MediaGenerator disabled path, RAGAgent test stub).
+- **Fix:** Every warning fixed at root — removal for genuinely dead code, `_` prefix only where the arg is API-required. Zero `eslint-disable` added. Verified: typecheck 0 errors, firebase tsc 0 errors, lint 216→118 warnings with **0 unused-vars remaining** (rest are 106 no-explicit-any + 9 exhaustive-deps + 3 react-refresh, tracked as follow-up), full renderer suite 783 files / 4913 tests pass (identical pre/post), appCheck middleware 10/10.
+
+### ISSUE-1088: CreatePostModal Schedule Post button could double-submit during async save
+- **Status:** ✅ FIXED (2026-07-17)
+- **Severity:** 🟡 MEDIUM (duplicate scheduled posts possible on slow saves)
+- **Module:** packages/renderer/src/modules/social/components/CreatePostModal.tsx
+- **Evidence:** `isSaving` state was set around `await onSave(...)` but never read anywhere — surfaced by the no-unused-vars sweep (ISSUE-1087). The Schedule Post button was disabled only by `isOverLimit`, so rapid double-clicks during a slow save invoked `onSave` twice → two scheduled posts.
+- **Fix:** `disabled={isOverLimit || isSaving}` on the submit button — uses the existing disabled styling; the dead state now does its job instead of being deleted.

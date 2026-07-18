@@ -1,5 +1,4 @@
 import * as functions from 'firebase-functions/v1';
-import { getFirestore } from 'firebase-admin/firestore';
 
 export interface MechanicalLicenseRequest {
     trackTitle: string;

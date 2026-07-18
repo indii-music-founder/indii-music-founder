@@ -1,7 +1,6 @@
 import { ipcMain } from 'electron';
 import { validateSender } from '../utils/ipc-security';
 import log from 'electron-log';
-import * as crypto from 'crypto';
 
 // Types for transaction input
 export interface TransactionPayload {
@@ -146,7 +145,7 @@ class EthereumNetworkWrapper {
      * Simulation stub for when no RPC provider is available.
      * We cannot fabricate transaction data or gas estimates.
      */
-    private simulateTransactionExecution(tx: TransactionPayload) {
+    private simulateTransactionExecution(_tx: TransactionPayload) {
         throw new Error('Simulation unavailable: No active RPC provider configured.');
     }
 

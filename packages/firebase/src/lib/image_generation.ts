@@ -13,11 +13,6 @@ import {
 import { getVertexAIClient } from "./vertexClient";
 import { enforceRateLimit, RATE_LIMITS } from "./rateLimit";
 
-// Image callables currently run without Electron App Check support on the desktop client.
-// Keep enforcement opt-in so the packaged app can reach the backend until a desktop-safe
-// App Check provider ships.
-const ENFORCE_APP_CHECK = process.env.ENFORCE_APP_CHECK === "true";
-
 // ============================================================================
 // TYPES
 // ============================================================================

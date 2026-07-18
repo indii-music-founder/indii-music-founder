@@ -158,7 +158,7 @@ export const INITIAL_PROJECT: VideoProject = {
 
 const isSafeDimension = (value: number) => Number.isInteger(value) && value >= 64 && value <= 8192;
 const isSafeFps = (value: number) => Number.isInteger(value) && value >= 1 && value <= 120;
-const sanitizeProjectSettings = (candidate: Partial<VideoProject>, fallback: VideoProject): Partial<VideoProject> => {
+const sanitizeProjectSettings = (candidate: Partial<VideoProject>, _fallback: VideoProject): Partial<VideoProject> => {
     const safe = { ...candidate };
     if (safe.width !== undefined && !isSafeDimension(safe.width)) delete safe.width;
     if (safe.height !== undefined && !isSafeDimension(safe.height)) delete safe.height;

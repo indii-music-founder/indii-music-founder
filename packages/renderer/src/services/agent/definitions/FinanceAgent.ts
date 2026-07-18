@@ -178,8 +178,10 @@ export const FinanceAgent: AgentConfig = {
         credential_vault: UniversalTools.credential_vault,
         payment_gate: UniversalTools.payment_gate,
         browser_tool: UniversalTools.browser_tool,
+        calculate_recoupment: McpTools.calculate_recoupment,
+        stage_stripe_payouts: McpTools.stage_stripe_payouts,
     },
-    authorizedTools: ['list_domain_records', 'analyze_budget', 'audit_metadata', 'search_knowledge', 'analyze_receipt', 'audit_distribution', 'credential_vault', 'payment_gate', 'browser_tool', 'generate_tax_report', 'forecast_revenue'],
+    authorizedTools: ['list_domain_records', 'analyze_budget', 'audit_metadata', 'search_knowledge', 'analyze_receipt', 'audit_distribution', 'credential_vault', 'payment_gate', 'browser_tool', 'generate_tax_report', 'forecast_revenue', 'calculate_recoupment', 'stage_stripe_payouts'],
     tools: [{
         functionDeclarations: [
             ...financeRetrievalDeclarations,
@@ -316,6 +318,28 @@ export const FinanceAgent: AgentConfig = {
                     },
                     required: ["current_monthly_streams", "growth_rate_percent"]
                 }
+            },
+            {
+                name: "calculate_recoupment",
+                description: "Calculate the recoupment status of a specific release using the remote MCP backend.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        releaseId: { type: "STRING" }
+                    },
+                    required: ["releaseId"]
+                }
+            },
+            {
+                name: "stage_stripe_payouts",
+                description: "Stage Stripe Connect payouts for splits via the remote MCP backend.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        releaseId: { type: "STRING" }
+                    },
+                    required: ["releaseId"]
+                }
             }
         ]
     }]
@@ -323,6 +347,7 @@ export const FinanceAgent: AgentConfig = {
 
 import { freezeAgentConfig } from '../FreezeDiagnostic';
 import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '../tools/DomainTools';
+import { McpTools } from '../tools/McpTools';
 
 
 // Freeze the schema to prevent cross-test contamination

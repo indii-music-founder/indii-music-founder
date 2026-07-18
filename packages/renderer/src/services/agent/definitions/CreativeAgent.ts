@@ -3,6 +3,7 @@ import { freezeAgentConfig } from '../FreezeDiagnostic';
 import { DirectorTools } from '../tools/DirectorTools';
 import systemPrompt from '@agents/creative/prompt.md?raw';
 import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '../tools/DomainTools';
+import { McpTools } from '../tools/McpTools';
 
 const creativeRetrievalConfig = {
     canvases: {
@@ -54,6 +55,8 @@ export const CreativeAgent: AgentConfig = {
             canvas_push: DirectorTools.canvas_push,
             generate_moodboard: DirectorTools.generate_moodboard,
             analyze_visual_trends: DirectorTools.analyze_visual_trends,
+            queue_remotion_render: McpTools.queue_remotion_render,
+            audit_asset_resolutions: McpTools.audit_asset_resolutions,
         } as Record<string, import('@/services/agent/types').AnyToolFunction>;
     },
     authorizedTools: [
@@ -69,6 +72,8 @@ export const CreativeAgent: AgentConfig = {
         'generate_moodboard',
         'analyze_visual_trends',
         'list_domain_records',
+        'queue_remotion_render',
+        'audit_asset_resolutions'
     ],
     tools: [{
         functionDeclarations: [
@@ -214,6 +219,32 @@ export const CreativeAgent: AgentConfig = {
                         industry_or_genre: { type: 'STRING', description: 'The industry or music genre to analyze (e.g., "electronic music", "streetwear").' }
                     },
                     required: ['industry_or_genre']
+                }
+            },
+            {
+                name: "queue_remotion_render",
+                description: "Queue a Remotion video render using the remote MCP backend.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        compositionId: { type: "STRING" },
+                        inputProps: { type: "OBJECT" }
+                    },
+                    required: ["compositionId"]
+                }
+            },
+            {
+                name: "audit_asset_resolutions",
+                description: "Audit visual asset resolutions against DSP constraints using the remote MCP backend.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        assetUrls: {
+                            type: "ARRAY",
+                            items: { type: "STRING" }
+                        }
+                    },
+                    required: ["assetUrls"]
                 }
             }
         ]

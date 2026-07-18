@@ -127,10 +127,8 @@ Please confirm receipt of this information.
                             stops={itinerary.stops}
                             expandedStopId={expandedStopId}
                             setExpandedStopId={setExpandedStopId}
-                            selectedStop={selectedStop}
                             setSelectedStop={setSelectedStop}
                             sendingEmailFor={sendingEmailFor}
-                            setSendingEmailFor={setSendingEmailFor}
                             onSendAdvanceEmail={handleSendAdvanceEmail}
                         />
                     )}
@@ -161,10 +159,8 @@ interface DaySheetListProps {
     stops: ItineraryStop[];
     expandedStopId: string | null;
     setExpandedStopId: (id: string | null) => void;
-    selectedStop: ItineraryStop | null;
     setSelectedStop: (stop: ItineraryStop | null) => void;
     sendingEmailFor: string | null;
-    setSendingEmailFor: (id: string | null) => void;
     onSendAdvanceEmail: (stop: ItineraryStop) => Promise<void>;
 }
 
@@ -172,10 +168,8 @@ function DaySheetsList({
     stops,
     expandedStopId,
     setExpandedStopId,
-    selectedStop,
     setSelectedStop,
     sendingEmailFor,
-    setSendingEmailFor,
     onSendAdvanceEmail
 }: DaySheetListProps) {
     return (

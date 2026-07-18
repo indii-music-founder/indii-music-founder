@@ -22,7 +22,6 @@ import FileUpload from '@/components/kokonutui/file-upload';
 import { cn } from '@/lib/utils';
 import { HistoryItem } from '@/core/types/history';
 import { showroomService } from '@/services/creative/ShowroomService';
-import { StageHandoffPayload, CreativeStage } from '@/types/handoff';
 
 const PRODUCT_TYPES = ['T-Shirt', 'Hoodie', 'Mug', 'Bottle', 'Poster', 'Phone Screen'] as const;
 

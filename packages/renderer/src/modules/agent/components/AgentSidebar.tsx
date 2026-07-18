@@ -1,5 +1,5 @@
 import React from 'react';
-import { Map, List, Mail, Globe, Settings, MessageSquare, ListTodo, RotateCcw } from 'lucide-react';
+import { Map, List, Mail, Globe, MessageSquare, ListTodo, RotateCcw } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 export type AgentTab = 'scout' | 'campaigns' | 'inbox' | 'browser' | 'chat' | 'tasks' | 'loops';

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Star, ShoppingCart } from 'lucide-react';
+import { Star } from 'lucide-react';
 import { MerchProduct } from '../types';
 import { OptimizedImage } from '@/core/components/ui/OptimizedImage';
 

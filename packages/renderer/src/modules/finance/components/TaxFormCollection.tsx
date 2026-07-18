@@ -27,9 +27,9 @@ const STATUS_CONFIG: Record<FormStatus, { label: string; color: string; bg: stri
 };
 
 export function TaxFormCollection() {
-    const [collaborators, setCollaborators] = useState<TaxCollaborator[]>(INITIAL_COLLABORATORS);
-    const [sentNotifs, setSentNotifs] = useState<Set<number>>(new Set());
-    const [uploadedFiles, setUploadedFiles] = useState<Record<number, string>>({});
+    const [collaborators] = useState<TaxCollaborator[]>(INITIAL_COLLABORATORS);
+    const [sentNotifs] = useState<Set<number>>(new Set());
+    const [uploadedFiles] = useState<Record<number, string>>({});
     const [error, setError] = useState<string | null>(null);
     const fileRefs = useRef<Record<number, HTMLInputElement | null>>({});
 
@@ -37,11 +37,11 @@ export function TaxFormCollection() {
     const totalCount = collaborators.length;
     const progressPercent = totalCount === 0 ? 0 : (verifiedCount / totalCount) * 100;
 
-    function handleRequestForm(id: number) {
+    function handleRequestForm(_id: number) {
         setError("Tax form collection requires the backend secure upload service. No request was sent.");
     }
 
-    function handleFileChange(id: number, e: React.ChangeEvent<HTMLInputElement>) {
+    function handleFileChange(_id: number, _e: React.ChangeEvent<HTMLInputElement>) {
         setError("Secure upload requires configured Firebase Storage rules and backend processing. No file was uploaded.");
     }
 

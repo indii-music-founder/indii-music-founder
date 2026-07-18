@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { DashboardService } from './DashboardService';
 import { SalesAnalyticsSchema, SalesAnalyticsData } from './schema';
 import { logger } from '@/utils/logger';

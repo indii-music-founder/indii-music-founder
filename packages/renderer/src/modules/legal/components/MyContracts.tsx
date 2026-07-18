@@ -9,7 +9,6 @@ import { ContractStatus } from '@/modules/legal/types';
 import { useToast } from '@/core/context/ToastContext';
 import { logger } from '@/utils/logger';
 import { cn } from '@/lib/utils';
-import { Modal } from '@/components/ui/Modal';
 
 /* ================================================================== */
 /*  My Contracts — Live contract list with PDF export & management      */

@@ -2,7 +2,7 @@ import React from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { ArrowLeft, Award } from 'lucide-react';
-import { FOUNDERS, AGREEMENT_TERMS } from '@/config/founders';
+import { FOUNDERS } from '@/config/founders';
 
 export default function FoundersRecognition() {
     const { setModule } = useStore(
@@ -46,7 +46,7 @@ export default function FoundersRecognition() {
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {FOUNDERS.map((founder, idx) => (
+                        {FOUNDERS.map((founder) => (
                             <div
                                 key={founder.verificationHash}
                                 className="bg-white/[0.02] border border-white/10 rounded-lg p-4 text-left hover:border-amber-500/30 transition-all"

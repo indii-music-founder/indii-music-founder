@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { LayoutAdaptationService, LAYOUT_PRESETS } from '../LayoutAdaptationService';
 
 describe('LayoutAdaptationService', () => {

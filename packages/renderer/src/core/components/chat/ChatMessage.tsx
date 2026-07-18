@@ -124,7 +124,6 @@ const LivingPlanToolRenderer = memo(({ planId }: { planId: string }) => {
 
 const MessageRating = memo(({ messageId, currentRating }: { messageId: string, currentRating?: number }) => {
     const updateAgentMessage = useStore(state => state.updateAgentMessage);
-    const toast = useToast();
     const [hoverRating, setHoverRating] = useState<number>(0);
     const [optimisticRating, setOptimisticRating] = useState<number | undefined>(currentRating);
 

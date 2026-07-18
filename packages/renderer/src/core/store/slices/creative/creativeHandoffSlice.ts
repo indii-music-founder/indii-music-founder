@@ -6,7 +6,7 @@
 
 import { StateCreator } from 'zustand';
 import { StoreState } from '@/core/store';
-import { CreativeStage, StageHandoffPayload, HandoffRole, VALID_ASSET_TYPES } from '@/types/handoff';
+import { CreativeStage, StageHandoffPayload, VALID_ASSET_TYPES } from '@/types/handoff';
 import { logger } from '@/utils/logger';
 
 export interface CreativeHandoffSlice {

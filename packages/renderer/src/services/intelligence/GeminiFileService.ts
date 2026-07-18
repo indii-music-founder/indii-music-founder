@@ -1,5 +1,4 @@
 import { AppErrorCode, AppException } from '@/shared/types/errors';
-import { logger } from '@/utils/logger';
 
 export interface GeminiFile {
     name: string;
