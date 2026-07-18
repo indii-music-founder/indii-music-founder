@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-07-18 05:28 EDT
+**Updated:** 2026-07-18 05:33 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+b95d7d4ee chore: session checkpoint [05:28]
 b8866a8d4 chore: session checkpoint [05:27]
 858466836 fix(mcp): fail-close all 10 tool stubs, carry JWT on SSE handshake, type new surface
 8cfeedbb5 feat: A2A Swarm MCP integration
@@ -13,18 +14,20 @@ c690e29e1 fix: release terminal audio receipt listeners and fix drag/drop test m
 965684423 feat: reuse canonical audio analysis in creative workflows
 b59c65c4f feat: hydrate ingestion from canonical audio receipt
 48fdb0288 feat: ISSUE-962 — expose canonical audio analysis receipts
-2775cdb6f fix: ISSUE-962 — keep browser masters out of Gemini
 ```
 
 ## Working State
 ```
- M .agent/HANDOFF_STATE.md
+M  .agent/HANDOFF_STATE.md
+ M .agent/test_ledger/OPEN_ISSUES.md
  M packages/renderer/src/components/shared/FirstRunTour.tsx
  M packages/renderer/src/core/components/RightPanel.tsx
  M packages/renderer/src/core/components/command-bar/PromptArea.tsx
  M packages/renderer/src/core/store/slices/appSlice.ts
  M packages/renderer/src/modules/touring/components/PlanningTab.tsx
  M packages/renderer/src/modules/touring/components/TourRouteOptimizer.tsx
+ M packages/renderer/src/services/agent/BaseAgent.ts
+ M packages/renderer/src/services/intelligence/FirebaseIntelligenceService.ts
 ```
 
 ## Decisions
