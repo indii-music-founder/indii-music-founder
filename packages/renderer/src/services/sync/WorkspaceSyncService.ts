@@ -26,16 +26,21 @@ import { db, auth } from '@/services/firebase';
 import { logger } from '@/utils/logger';
 import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 import { getRealAuthenticatedUserId } from '@/utils/authGuards';
+import type { ReferencedAsset } from '@/core/store/slices/boardroomSlice';
+import type { Note } from '@/core/store/slices/notesSlice';
+import type { LivingPlan } from '@/services/agent/LivingPlanService';
+import type { ModuleId } from '@/core/constants';
+import type { ConversationMode } from '@/core/store/slices/agent/agentUISlice';
 
 export interface WorkspaceSnapshot {
     schemaVersion: number;
     activeAgents: string[];
-    referencedAssets: unknown[];
-    selectedPlan: unknown | null;
+    referencedAssets: ReferencedAsset[];
+    selectedPlan: LivingPlan | null;
     selectedPlanId: string | null;
-    currentModule: string;
-    conversationMode: string;
-    notes: unknown[];
+    currentModule: ModuleId;
+    conversationMode: ConversationMode;
+    notes: Note[];
     selectedNoteId: string | null;
     creativePrompt: string;
 }
@@ -141,9 +146,9 @@ class WorkspaceSyncService {
                 return null;
             }
 
-            const data = snapshot.data() as WorkspaceDoc;
+            const data = snapshot.data();
             logger.info('[WorkspaceSync] 📂 Snapshot pulled successfully');
-            return data;
+            return data as WorkspaceDoc;
         } catch (error) {
             logger.error('[WorkspaceSync] Pull failed:', error);
             return null;

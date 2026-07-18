@@ -38,14 +38,14 @@ describe('applyWorkspaceSnapshot', () => {
         const unsubscribe = useStore.subscribe(subscriber);
 
         applyWorkspaceSnapshot({
-            currentModule: 'studio',
+            currentModule: 'creative',
             creativePrompt: 'remixed',
             selectedNoteId: 'note-1',
             selectedPlanId: 'plan-1',
         });
 
         expect(subscriber).toHaveBeenCalled();
-        expect(useStore.getState().currentModule).toBe('studio');
+        expect(useStore.getState().currentModule).toBe('creative');
         expect(useStore.getState().creativePrompt).toBe('remixed');
         expect(useStore.getState().selectedNoteId).toBe('note-1');
         expect(useLivingPlanStore.getState().selectedPlanId).toBe('plan-1');
