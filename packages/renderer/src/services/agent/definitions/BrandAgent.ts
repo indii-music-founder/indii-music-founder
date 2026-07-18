@@ -154,9 +154,10 @@ export const BrandAgent: AgentConfig = {
             } catch (e: unknown) {
                 return { success: false, error: e instanceof Error ? e.message : String(e) };
             }
-        }
+        },
+        fetch_brand_kit: McpTools.fetch_brand_kit
     },
-    authorizedTools: ['verify_output', 'analyze_brand_consistency', 'generate_brand_guidelines', 'audit_visual_assets', 'analyze_audio', 'analyze_brand_sentiment', 'generate_brand_kit', 'list_domain_records'],
+    authorizedTools: ['verify_output', 'analyze_brand_consistency', 'generate_brand_guidelines', 'audit_visual_assets', 'analyze_audio', 'analyze_brand_sentiment', 'generate_brand_kit', 'list_domain_records', 'fetch_brand_kit'],
     tools: [{
         functionDeclarations: [
             ...brandRetrievalDeclarations,
@@ -243,6 +244,17 @@ export const BrandAgent: AgentConfig = {
                     },
                     required: ['description', 'core_values']
                 }
+            },
+            {
+                name: "fetch_brand_kit",
+                description: "Fetch the artist's brand kit from the remote MCP backend.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        artistId: { type: "STRING" }
+                    },
+                    required: ["artistId"]
+                }
             }
         ]
     }]
@@ -250,6 +262,7 @@ export const BrandAgent: AgentConfig = {
 
 import { freezeAgentConfig } from '../FreezeDiagnostic';
 import { importWithRetry } from '@/utils/dynamicImport';
+import { McpTools } from '../tools/McpTools';
 
 // Freeze the schema to prevent cross-test contamination
 freezeAgentConfig(BrandAgent);

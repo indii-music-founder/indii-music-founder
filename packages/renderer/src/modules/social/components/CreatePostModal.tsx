@@ -267,7 +267,7 @@ export default function CreatePostModal({ onClose, onSave, initialScheduledDate 
                     </button>
                     <button
                         onClick={handleSave}
-                        disabled={isOverLimit}
+                        disabled={isOverLimit || isSaving}
                         className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded-lg transition-colors shadow-lg shadow-blue-900/20 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         Schedule Post

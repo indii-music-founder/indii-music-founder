@@ -79,7 +79,7 @@ export default function KnowledgeBase() {
                 await knowledgeBaseService.deleteDocument(doc.rawName);
                 toast.success('Document deleted');
                 await loadDocuments();
-            } catch (err) {
+            } catch {
                 toast.error('Failed to delete document');
             }
         }

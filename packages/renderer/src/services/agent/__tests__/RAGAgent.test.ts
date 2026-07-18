@@ -31,11 +31,11 @@ class TestRAGAgent extends RAGAgent {
     }
     // Stub _executeInternal of BaseAgent
     protected async _executeInternal(
-        task: string,
-        context: any,
-        onProgress: any,
-        signal: any,
-        attachments: any
+        _task: string,
+        _context: any,
+        _onProgress: any,
+        _signal: any,
+        _attachments: any
     ): Promise<any> {
         return { success: true, text: 'Test successful', toolCalls: [], tokens: 0 };
     }

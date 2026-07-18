@@ -32,13 +32,6 @@ const MediaListSchema = z.array(z.object({
     tags: z.array(z.string())
 }));
 
-const PitchStorySchema = z.object({
-    outlet: z.string(),
-    status: z.string(),
-    subjectLine: z.string(),
-    emailBody: z.string()
-});
-
 // ISSUE-931: the model must never invent contact/identity facts. The
 // press release it drafts for generate_campaign_assets omits contactInfo
 // entirely — it is injected deterministically after generation from the

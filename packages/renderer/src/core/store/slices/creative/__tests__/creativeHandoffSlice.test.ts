@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { buildCreativeHandoffState } from '../creativeHandoffSlice';
 import { HistoryItem } from '@/core/types/history';
-import { CreativeStage, StageHandoffPayload } from '@/types/handoff';
+import { StageHandoffPayload } from '@/types/handoff';
 
 describe('creativeHandoffSlice', () => {
     let store: ReturnType<typeof buildCreativeHandoffState>;

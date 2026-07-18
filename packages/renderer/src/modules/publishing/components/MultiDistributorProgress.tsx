@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'motion/react';
 import {
     Loader2, CheckCircle2, XCircle, Clock,
-    ArrowRight, AlertCircle, RefreshCw, X
+    AlertCircle, RefreshCw, X
 } from 'lucide-react';
 import type { DistributorId } from '@/services/distribution/types/distributor';
 

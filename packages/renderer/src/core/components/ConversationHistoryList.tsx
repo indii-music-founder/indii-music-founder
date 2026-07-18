@@ -276,7 +276,6 @@ export const ConversationHistoryList = ({ className, onClose }: { className?: st
     );
     
     const currentProjectId = useStore(state => state.currentProjectId);
-    const projects = useStore(state => state.projects) || [];
 
     const [searchQuery, setSearchQuery] = React.useState('');
     const [activeTab, setActiveTab] = React.useState<'active' | 'archived'>('active');

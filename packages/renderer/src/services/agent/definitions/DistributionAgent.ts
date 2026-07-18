@@ -48,10 +48,11 @@ export const DistributionAgent: AgentConfig = {
             browser_tool: UniversalTools.browser_tool,
             pro_scraper: UniversalTools.pro_scraper,
             payment_gate: UniversalTools.payment_gate,
-            credential_vault: UniversalTools.credential_vault
+            credential_vault: UniversalTools.credential_vault,
+            draft_dsp_metadata: McpTools.draft_dsp_metadata
         } as Record<string, import('@/services/agent/types').AnyToolFunction>;
     },
-    authorizedTools: ['list_domain_records', 'prepare_release', 'run_audio_qc', 'issue_isrc', 'certify_tax_profile', 'calculate_payout', 'run_metadata_qc', 'generate_bwarm', 'check_merlin_status', 'check_dsp_delivery_status', 'validate_metadata_readiness', 'create_music_metadata', 'verify_metadata_golden', 'update_track_metadata', 'browser_tool', 'pro_scraper', 'payment_gate', 'credential_vault'],
+    authorizedTools: ['list_domain_records', 'prepare_release', 'run_audio_qc', 'issue_isrc', 'certify_tax_profile', 'calculate_payout', 'run_metadata_qc', 'generate_bwarm', 'check_merlin_status', 'check_dsp_delivery_status', 'validate_metadata_readiness', 'create_music_metadata', 'verify_metadata_golden', 'update_track_metadata', 'browser_tool', 'pro_scraper', 'payment_gate', 'credential_vault', 'draft_dsp_metadata'],
     tools: [{
         functionDeclarations: [
             ...distributionRetrievalDeclarations,
@@ -72,6 +73,24 @@ export const DistributionAgent: AgentConfig = {
                         releaseType: { type: "STRING", enum: ["Single", "EP", "Album"], description: "Single, EP, or Album" }
                     },
                     required: ["title", "artist", "upc", "isrc", "label", "genre", "language", "releaseDate"]
+                }
+            },
+            {
+                name: "draft_dsp_metadata",
+                description: "Draft an ERN XML fragment from release metadata via the remote MCP backend.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        releaseTitle: { type: "STRING" },
+                        artists: { type: "ARRAY", items: { type: "STRING" } },
+                        genre: { type: "STRING" },
+                        isrc: { type: "STRING" },
+                        upc: { type: "STRING" },
+                        duration: { type: "STRING" },
+                        releaseDate: { type: "STRING" },
+                        mode: { type: "STRING", enum: ["draft", "delivery"] }
+                    },
+                    required: ["releaseTitle", "artists", "genre", "upc", "isrc"]
                 }
             },
             {
@@ -307,6 +326,7 @@ export const DistributionAgent: AgentConfig = {
 
 import { freezeAgentConfig } from '../FreezeDiagnostic';
 import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '../tools/DomainTools';
+import { McpTools } from '../tools/McpTools';
 
 
 // Freeze the schema to prevent cross-test contamination

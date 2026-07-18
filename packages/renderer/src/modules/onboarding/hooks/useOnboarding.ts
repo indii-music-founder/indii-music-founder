@@ -86,13 +86,12 @@ export interface UseOnboardingOptions {
 }
 
 export function useOnboarding(options: UseOnboardingOptions = {}) {
-    const { userProfile, setUserProfile, setModule, addActiveAgent, removeActiveAgent } = useStore(
+    const { userProfile, setUserProfile, setModule, addActiveAgent } = useStore(
         useShallow(state => ({
             userProfile: state.userProfile,
             setUserProfile: state.setUserProfile,
             setModule: state.setModule,
-            addActiveAgent: state.addActiveAgent,
-            removeActiveAgent: state.removeActiveAgent
+            addActiveAgent: state.addActiveAgent
         }))
     );
      

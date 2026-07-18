@@ -15,7 +15,7 @@ import { Itinerary, ItineraryStop, NearbyPlace, LogisticsReport, EmergencyContac
 import { RoadMode } from './components/RoadMode';
 import { useMobile } from '@/hooks/useMobile';
 import { RoadManagerSidebar, TouringTab } from './components/RoadManagerSidebar';
-import { Phone, Calendar, CheckSquare, Navigation, Plus, Edit2, Trash2 } from 'lucide-react';
+import { Phone, Calendar, Navigation, Plus, Edit2, Trash2 } from 'lucide-react';
 import { TourRouteOptimizer } from './components/TourRouteOptimizer';
 import { SetlistAnalytics } from './components/SetlistAnalytics';
 import { logger } from '@/utils/logger';

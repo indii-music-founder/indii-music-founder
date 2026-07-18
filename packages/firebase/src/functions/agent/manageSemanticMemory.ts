@@ -5,7 +5,6 @@ import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { FieldValue } from 'firebase-admin/firestore';
 import { validateAppCheckV2 } from '../../middleware/appCheck';
 
-const ENFORCE_APP_CHECK = process.env.NODE_ENV === 'production' && process.env.SKIP_APP_CHECK !== "true" && process.env.ENFORCE_APP_CHECK !== "false";
 const DEFAULT_SEMANTIC_SEARCH_LIMIT = 5;
 const MAX_SEMANTIC_SEARCH_LIMIT = 100; // Increased from 20 to support full-archive recall (ISSUE-757)
 const MAX_SEMANTIC_TEXT_LENGTH = 4_000;

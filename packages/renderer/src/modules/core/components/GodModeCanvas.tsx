@@ -1,5 +1,5 @@
 import React from 'react';
-import { Globe2, Maximize2 } from 'lucide-react';
+import { Globe2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export const GodModeCanvas: React.FC = () => {

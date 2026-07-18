@@ -189,7 +189,7 @@ export class PublicistService {
      * Calculate aggregated stats from campaigns and contacts.
      * Replaces mock/estimation logic with real data derived from inputs.
      */
-    static calculateStats(campaigns: Campaign[], contacts: Contact[]) {
+    static calculateStats(campaigns: Campaign[], _contacts: Contact[]) {
         // 1. Calculate Average Open Rate
         const totalOpenRate = campaigns.reduce((acc, c) => acc + (c.openRate || 0), 0);
         const avgOpenRateVal = campaigns.length > 0 ? Math.round(totalOpenRate / campaigns.length) : 0;

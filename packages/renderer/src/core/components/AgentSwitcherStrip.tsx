@@ -1,23 +1,21 @@
 import React, { useState } from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import { Plus, Bot } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { AgentSelector } from './AgentSelector';
 
 export const AgentSwitcherStrip = () => {
     const [showSelector, setShowSelector] = useState(false);
-    
+
     const {
         activeSessionId,
         sessions,
-        availableAgents,
-        agentMode
+        availableAgents
     } = useStore(
         useShallow(state => ({
             activeSessionId: state.activeSessionId,
             sessions: state.sessions,
-            availableAgents: state.availableAgents,
-            agentMode: state.agentMode
+            availableAgents: state.availableAgents
         }))
     );
 

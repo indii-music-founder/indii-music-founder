@@ -1,8 +1,7 @@
 
-import { doc, updateDoc, deleteDoc, where, serverTimestamp, getDocs, query } from 'firebase/firestore';
+import { doc, updateDoc, deleteDoc, where, serverTimestamp } from 'firebase/firestore';
 import { FirestoreService } from './FirestoreService';
 import { Project } from '@/core/store/slices/appSlice';
-import { logger } from '@/utils/logger';
 import { db } from '@/services/firebase';
 import { isDemoUserId } from '@/utils/authGuards';
 

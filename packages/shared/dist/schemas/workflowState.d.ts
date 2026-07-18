@@ -17,14 +17,14 @@ export declare const WorkflowStepExecutionSchema: z.ZodObject<{
     stepId: z.ZodString;
     agentId: z.ZodString;
     prompt: z.ZodOptional<z.ZodString>;
-    status: z.ZodEffects<z.ZodEnum<["PLANNED", "EXECUTING_GENERATION", "AWAITING_HUMAN", "AWAITING_EVALUATION", "STEP_COMPLETE", "SKIPPED", "FAILED", "CANCELLED"]>, "FAILED" | "CANCELLED" | "PLANNED" | "AWAITING_HUMAN" | "AWAITING_EVALUATION" | "EXECUTING_GENERATION" | "STEP_COMPLETE" | "SKIPPED", unknown>;
+    status: z.ZodEffects<z.ZodEnum<["PLANNED", "EXECUTING_GENERATION", "AWAITING_HUMAN", "AWAITING_EVALUATION", "STEP_COMPLETE", "SKIPPED", "FAILED", "CANCELLED"]>, "FAILED" | "CANCELLED" | "PLANNED" | "AWAITING_HUMAN" | "AWAITING_EVALUATION" | "STEP_COMPLETE" | "SKIPPED" | "EXECUTING_GENERATION", unknown>;
     idempotencyKey: z.ZodString;
     startedAt: z.ZodOptional<z.ZodEffects<z.ZodOptional<z.ZodNumber>, number | undefined, unknown>>;
     completedAt: z.ZodOptional<z.ZodEffects<z.ZodOptional<z.ZodNumber>, number | undefined, unknown>>;
     result: z.ZodOptional<z.ZodString>;
     error: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
-    status: "FAILED" | "CANCELLED" | "PLANNED" | "AWAITING_HUMAN" | "AWAITING_EVALUATION" | "EXECUTING_GENERATION" | "STEP_COMPLETE" | "SKIPPED";
+    status: "FAILED" | "CANCELLED" | "PLANNED" | "AWAITING_HUMAN" | "AWAITING_EVALUATION" | "STEP_COMPLETE" | "SKIPPED" | "EXECUTING_GENERATION";
     stepId: string;
     agentId: string;
     idempotencyKey: string;
@@ -86,14 +86,14 @@ export declare const WorkflowExecutionSchema: z.ZodObject<{
         stepId: z.ZodString;
         agentId: z.ZodString;
         prompt: z.ZodOptional<z.ZodString>;
-        status: z.ZodEffects<z.ZodEnum<["PLANNED", "EXECUTING_GENERATION", "AWAITING_HUMAN", "AWAITING_EVALUATION", "STEP_COMPLETE", "SKIPPED", "FAILED", "CANCELLED"]>, "FAILED" | "CANCELLED" | "PLANNED" | "AWAITING_HUMAN" | "AWAITING_EVALUATION" | "EXECUTING_GENERATION" | "STEP_COMPLETE" | "SKIPPED", unknown>;
+        status: z.ZodEffects<z.ZodEnum<["PLANNED", "EXECUTING_GENERATION", "AWAITING_HUMAN", "AWAITING_EVALUATION", "STEP_COMPLETE", "SKIPPED", "FAILED", "CANCELLED"]>, "FAILED" | "CANCELLED" | "PLANNED" | "AWAITING_HUMAN" | "AWAITING_EVALUATION" | "STEP_COMPLETE" | "SKIPPED" | "EXECUTING_GENERATION", unknown>;
         idempotencyKey: z.ZodString;
         startedAt: z.ZodOptional<z.ZodEffects<z.ZodOptional<z.ZodNumber>, number | undefined, unknown>>;
         completedAt: z.ZodOptional<z.ZodEffects<z.ZodOptional<z.ZodNumber>, number | undefined, unknown>>;
         result: z.ZodOptional<z.ZodString>;
         error: z.ZodOptional<z.ZodString>;
     }, "strip", z.ZodTypeAny, {
-        status: "FAILED" | "CANCELLED" | "PLANNED" | "AWAITING_HUMAN" | "AWAITING_EVALUATION" | "EXECUTING_GENERATION" | "STEP_COMPLETE" | "SKIPPED";
+        status: "FAILED" | "CANCELLED" | "PLANNED" | "AWAITING_HUMAN" | "AWAITING_EVALUATION" | "STEP_COMPLETE" | "SKIPPED" | "EXECUTING_GENERATION";
         stepId: string;
         agentId: string;
         idempotencyKey: string;
@@ -140,7 +140,7 @@ export declare const WorkflowExecutionSchema: z.ZodObject<{
     userId: string;
     workflowId: string;
     steps: Record<string, {
-        status: "FAILED" | "CANCELLED" | "PLANNED" | "AWAITING_HUMAN" | "AWAITING_EVALUATION" | "EXECUTING_GENERATION" | "STEP_COMPLETE" | "SKIPPED";
+        status: "FAILED" | "CANCELLED" | "PLANNED" | "AWAITING_HUMAN" | "AWAITING_EVALUATION" | "STEP_COMPLETE" | "SKIPPED" | "EXECUTING_GENERATION";
         stepId: string;
         agentId: string;
         idempotencyKey: string;

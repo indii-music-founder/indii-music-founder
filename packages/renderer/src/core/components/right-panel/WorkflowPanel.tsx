@@ -1,5 +1,5 @@
 import React from 'react';
-import { Network, Play, Save, ChevronRight, Settings, Database, Activity, Loader2 } from 'lucide-react';
+import { Network, Play, ChevronRight, Database, Activity, Loader2 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useToast } from '@/core/context/ToastContext';
 import { useStore } from '@/core/store';

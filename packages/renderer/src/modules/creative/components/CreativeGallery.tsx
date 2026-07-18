@@ -2,7 +2,7 @@ import React, { useState, useRef, useMemo, memo, useCallback, useEffect } from '
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { Play, Pause, Image as ImageIcon, Trash2, Maximize2, Upload, ArrowLeftToLine, ArrowRightToLine, Anchor, ThumbsUp, ThumbsDown, Download, Share2, RotateCw, Sparkles, Pin, Send } from 'lucide-react';
+import { Play, Pause, Image as ImageIcon, Trash2, Maximize2, Upload, ArrowLeftToLine, ArrowRightToLine, Anchor, ThumbsUp, ThumbsDown, Download, Share2, RotateCw, Pin, Send } from 'lucide-react';
 
 import { useToast } from '@/core/context/ToastContext';
 import { ActionableEmptyState } from '@/components/shared/ActionableEmptyState';
@@ -454,7 +454,7 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                                     } else {
                                         toast.error('Failed to download asset.');
                                     }
-                                } catch (err: unknown) {
+                                } catch {
                                     toast.error('Download failed.');
                                 }
                             }}

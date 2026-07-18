@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
     Megaphone, DollarSign, Users, MapPin, Play, Pause,
-    Loader2, CheckCircle, TrendingUp, Target, Plus, Tag
+    Loader2, TrendingUp, Target, Plus, Tag
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { AlertCircle } from 'lucide-react';

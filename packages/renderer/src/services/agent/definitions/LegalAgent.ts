@@ -64,6 +64,9 @@ export const LegalAgent: AgentConfig = {
             document_query: UniversalTools.document_query,
             draft_split_sheet: LegalTools.generate_split_sheet,
             summarize_contract_terms: LegalTools.summarize_contract_terms,
+            register_split_sheet: McpTools.register_split_sheet,
+            draft_cwr_registration: McpTools.draft_cwr_registration,
+            audit_sample_clearance: McpTools.audit_sample_clearance,
         } as Record<string, import('@/services/agent/types').AnyToolFunction>;
     },
     authorizedTools: ['list_domain_records', 
@@ -72,6 +75,9 @@ export const LegalAgent: AgentConfig = {
         'document_query',
         'draft_split_sheet',
         'summarize_contract_terms',
+        'register_split_sheet',
+        'draft_cwr_registration',
+        'audit_sample_clearance'
     ],
     tools: [{
         functionDeclarations: [
@@ -152,6 +158,49 @@ export const LegalAgent: AgentConfig = {
                     },
                     required: ["contractText"]
                 }
+            },
+            {
+                name: "register_split_sheet",
+                description: "Register a split sheet with the remote MCP backend.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        releaseId: { type: "STRING" },
+                        splits: {
+                            type: "ARRAY",
+                            items: {
+                                type: "OBJECT",
+                                properties: {
+                                    name: { type: "STRING" },
+                                    percentage: { type: "NUMBER" }
+                                }
+                            }
+                        }
+                    },
+                    required: ["releaseId", "splits"]
+                }
+            },
+            {
+                name: "draft_cwr_registration",
+                description: "Draft a CWR (Common Works Registration) using the remote MCP backend.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        releaseId: { type: "STRING" }
+                    },
+                    required: ["releaseId"]
+                }
+            },
+            {
+                name: "audit_sample_clearance",
+                description: "Audit a track for sample clearance using the remote MCP backend.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        trackId: { type: "STRING" }
+                    },
+                    required: ["trackId"]
+                }
             }
         ]
     }]
@@ -159,6 +208,7 @@ export const LegalAgent: AgentConfig = {
 
 import { freezeAgentConfig } from '../FreezeDiagnostic';
 import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '../tools/DomainTools';
+import { McpTools } from '../tools/McpTools';
 
 
 // Freeze the schema to prevent cross-test contamination

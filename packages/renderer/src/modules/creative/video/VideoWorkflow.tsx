@@ -12,8 +12,6 @@ import { httpsCallable } from 'firebase/functions';
 import { auth, functions } from '@/services/firebase';
 import { materializeVideoFrameForHandoff } from '@/services/creative/CreativeMediaHandoffService';
 import { creativeAssetPayloadToHistoryItem, readCreativeAssetDrag, writeCreativeAssetDrag } from '@/services/creative/CreativeAssetDragService';
-// Removed unused imports from motion and lucide-react as they are now in VideoStage
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Layout, Settings, Shuffle, ChevronDown, ChevronUp, Hash, Music, Trash2, Layers, Film, Send } from 'lucide-react';
 import { ErrorBoundary } from '@/core/components/ErrorBoundary';
 import { StoryboardTimeline } from './components/StoryboardTimeline';

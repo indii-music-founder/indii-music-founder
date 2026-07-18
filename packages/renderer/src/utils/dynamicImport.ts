@@ -17,7 +17,7 @@ export const importWithRetry = async <T>(componentImport: () => Promise<T>): Pro
                 if (sessionStorage.getItem('agent-chunk-reload-attempted')) {
                     sessionStorage.removeItem('agent-chunk-reload-attempted');
                 }
-            } catch (e) {
+            } catch {
                 // Ignore errors
             }
             
@@ -46,7 +46,7 @@ export const importWithRetry = async <T>(componentImport: () => Promise<T>): Pro
                         } else {
                             logger.error('Page was already reloaded for a chunk error recently. Aborting to prevent loop.');
                         }
-                    } catch (e) {
+                    } catch {
                         // Ignore sessionStorage access errors (e.g. in test env)
                     }
                     

@@ -286,7 +286,7 @@ class BigBrainEngine {
 
         // 1. Semantic search via Mem0 (MemoryBankService) for global episodic recall with pagination
         try {
-            const { results: mem0Results, totalPages, scopeMessage } = await memoryBankService.searchMemoriesAllPages(userId, userMessage, 5);
+            const { results: mem0Results, scopeMessage } = await memoryBankService.searchMemoriesAllPages(userId, userMessage, 5);
             if (scopeMessage) {
                 lines.push(`[Search Scope] ${scopeMessage}`);
             }

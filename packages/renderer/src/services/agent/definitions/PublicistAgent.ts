@@ -8,6 +8,7 @@ import systemPrompt from '@agents/publicist/prompt.md?raw';
 import { UniversalTools } from '../tools/UniversalTools';
 import { importWithRetry } from '@/utils/dynamicImport';
 import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '../tools/DomainTools';
+import { McpTools } from '../tools/McpTools';
 
 
 
@@ -576,11 +577,40 @@ Return ONLY valid JSON. No markdown fences.`;
             return { success: false, error: `Failed to find media contacts: ${message}` };
         }
     })
+    .withTool({
+        functionDeclarations: [{
+            name: "schedule_campaign_waterfall",
+            description: "Schedule a campaign waterfall using the remote MCP backend.",
+            parameters: {
+                type: "OBJECT",
+                properties: {
+                    releaseId: { type: "STRING" },
+                    campaignStartDate: { type: "STRING" },
+                    budget: { type: "NUMBER" }
+                },
+                required: ["releaseId", "campaignStartDate"]
+            }
+        }]
+    }, McpTools.schedule_campaign_waterfall)
+    .withTool({
+        functionDeclarations: [{
+            name: "generate_playlist_pitch",
+            description: "Generate a playlist pitch using the remote MCP backend.",
+            parameters: {
+                type: "OBJECT",
+                properties: {
+                    trackId: { type: "STRING" },
+                    pitchAngle: { type: "STRING" }
+                },
+                required: ["trackId"]
+            }
+        }]
+    }, McpTools.generate_playlist_pitch)
     .withAuthorizedTools([
         'create_campaign', 'write_press_release', 'generate_crisis_response',
         'generate_social_post', 'indii_image_gen', 'browser_tool', 'credential_vault',
         'generate_pdf', 'generate_live_epk', 'pitch_media', 'draft_press_release',
-        'find_media_contacts'
+        'find_media_contacts', 'schedule_campaign_waterfall', 'generate_playlist_pitch'
     ])
     .withDomainRetrieval(publicistRetrievalDeclarations, publicistRetrievalTools)
     .build();

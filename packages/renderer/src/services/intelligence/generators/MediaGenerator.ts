@@ -7,8 +7,8 @@
 import { AppErrorCode, AppException } from '@/shared/types/errors';
 
 export async function generateVideo(
-    client: any,
-    options: any
+    _client: any,
+    _options: any
 ): Promise<string> {
     throw new AppException(
         AppErrorCode.UNAUTHORIZED,

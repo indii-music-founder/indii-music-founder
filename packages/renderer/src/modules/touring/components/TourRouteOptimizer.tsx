@@ -194,7 +194,7 @@ export function TourRouteOptimizer() {
             });
 
             toast.success('Route itinerary saved');
-        } catch (error) {
+        } catch {
             toast.error('Failed to build itinerary from this route');
         } finally {
             setIsBuildingItinerary(false);

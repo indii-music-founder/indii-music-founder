@@ -1,6 +1,6 @@
 import React from 'react';
 import { useStore } from '@/core/store';
-import { ImageIcon, Video, MonitorPlay, FlaskConical } from 'lucide-react';
+import { ImageIcon, Video } from 'lucide-react';
 
 const MODES = [
     { id: 'canvas', label: 'Image Studio', icon: ImageIcon, gen: 'image' as const },
@@ -11,8 +11,6 @@ export default function CanvasModePicker() {
     const viewMode = useStore(state => state.viewMode);
     const setViewMode = useStore(state => state.setViewMode);
     const setGenerationMode = useStore(state => state.setGenerationMode);
-
-    const activeMode = MODES.find(m => m.id === viewMode) || MODES[0];
 
     const handleSelectMode = (mode: typeof MODES[number]) => {
         setViewMode(mode.id as any);

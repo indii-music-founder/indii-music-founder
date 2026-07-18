@@ -8,10 +8,6 @@ if (!admin.apps.length) {
     admin.initializeApp();
 }
 
-// Item 331 convention (see src/index.ts): enforce by default, opt out via SKIP_APP_CHECK.
-const ENFORCE_APP_CHECK =
-    process.env.SKIP_APP_CHECK !== 'true' && process.env.ENFORCE_APP_CHECK !== 'false';
-
 export type RightsProvider = 'ascap' | 'bmi' | 'soundexchange';
 
 export interface RightsRegistrationMetadata {

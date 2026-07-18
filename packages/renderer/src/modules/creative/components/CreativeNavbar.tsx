@@ -5,8 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 import { ScreenControl } from '@/services/screen/ScreenControlService';
 import {
-    Sparkles, Image as ImageIcon, Video, MonitorPlay, MessageSquare,
-    Palette, Clock, FlaskConical, Rocket, Cpu
+    Sparkles, Video, MonitorPlay, MessageSquare,
+    Palette, Clock, Rocket, Cpu
 } from 'lucide-react';
 import IntelligencePromptBuilder from './IntelligencePromptBuilder';
 import { useToast } from '@/core/context/ToastContext';
@@ -21,8 +21,6 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
         creativePrompt,
         setCreativePrompt,
         generationMode,
-        viewMode,
-        setViewMode,
         studioControls,
         enablePLPMode,
         disablePLPMode,
@@ -32,8 +30,6 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
         creativePrompt: state.creativePrompt,
         setCreativePrompt: state.setCreativePrompt,
         generationMode: state.generationMode,
-        viewMode: state.viewMode,
-        setViewMode: state.setViewMode,
         studioControls: state.studioControls,
         enablePLPMode: state.enablePLPMode,
         disablePLPMode: state.disablePLPMode,
@@ -49,11 +45,6 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
     const showHistory = activePanel === 'history';
     const showRosterRegistry = activePanel === 'roster';
     const togglePanel = (p: Exclude<RailPanel, null>) => setActivePanel(prev => (prev === p ? null : p));
-
-    const selectView = (viewId: string, gen: 'image' | 'video') => {
-        setViewMode(viewId as typeof viewMode);
-        useStore.getState().setGenerationMode(gen);
-    };
 
     return (
         <div {...props} className={`flex flex-col z-20 relative bg-[#060608]/90 backdrop-blur-xl border-b border-white/6 select-none ${props.className || ''}`}>

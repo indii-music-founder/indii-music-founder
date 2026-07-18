@@ -54,6 +54,7 @@ import { consult_specialist, seat_agent, unseat_agent } from './SwarmTools';
 import { FoundationalTools } from './FoundationalTools';
 import { BillingTools } from './BillingTools';
 import { EmailTools } from './EmailTools';
+import { McpTools } from './McpTools';
 import { AnyToolFunction } from '../types';
 
 export const TOOL_REGISTRY: Record<string, AnyToolFunction> = {
@@ -120,6 +121,7 @@ export const TOOL_REGISTRY: Record<string, AnyToolFunction> = {
     ...CreatorProtectionTools,
     ...HarnessTools,
     ...EmailTools,
+    ...McpTools,
 };
 
 

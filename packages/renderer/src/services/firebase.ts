@@ -11,7 +11,7 @@ if (typeof window !== 'undefined' && import.meta.env.DEV) {
     if (import.meta.env.VITE_FIREBASE_E2E_MOCK !== 'true' && import.meta.env.VITE_E2E !== 'true') {
         try {
             localStorage.removeItem('FIREBASE_E2E_MOCK');
-        } catch (e) {
+        } catch {
             // ignore
         }
     }

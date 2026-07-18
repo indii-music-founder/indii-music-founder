@@ -2,8 +2,6 @@ import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
 import { validateAppCheckV1 } from "../middleware/appCheck";
 
-const ENFORCE_APP_CHECK = true;
-
 export const generateReleaseDownloadUrl = functions
     .region("us-central1")
     .runWith({

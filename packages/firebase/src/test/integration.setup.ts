@@ -25,7 +25,7 @@ export async function teardownServices() {
     if (admin.apps.length > 0) {
         try {
             await admin.firestore().terminate();
-        } catch (err) {
+        } catch {
             // ignore
         }
         await Promise.all(admin.apps.map(app => app?.delete()));
