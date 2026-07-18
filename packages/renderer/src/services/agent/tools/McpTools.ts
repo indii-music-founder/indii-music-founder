@@ -9,11 +9,20 @@ function createMcpWrapper(toolName: string) {
     return wrapTool(toolName, async (args: Record<string, unknown>) => {
         try {
             const result = await mcpClientService.executeTool(toolName, args);
-            // Standardize the response format for the frontend chat
-            const content = (result as any)?.content || result;
-            return toolSuccess(content, `Executed remote tool: ${toolName}`);
-        } catch (error: any) {
-            return toolError(`MCP execution failed: ${error.message}`);
+            // Standardize the response format for the frontend chat. Remote tools
+            // signal not-implemented/failed via isError — surface that as a tool
+            // error so agents never treat a fail-closed stub as success.
+            const { content, isError } = (result ?? {}) as { content?: unknown; isError?: boolean };
+            if (isError) {
+                const text = Array.isArray(content)
+                    ? content.map(c => (c as { text?: string }).text ?? '').join('\n')
+                    : String(content ?? 'Remote tool reported an error.');
+                return toolError(text);
+            }
+            return toolSuccess(content ?? result, `Executed remote tool: ${toolName}`);
+        } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            return toolError(`MCP execution failed: ${message}`);
         }
     });
 }

@@ -10,10 +10,12 @@ export const auditSampleClearance: IndiiMcpTool = {
         },
         required: ['trackId']
     },
-    handler: async (args: any) => {
-        // STUB: Will query Audio Intelligence / YAMNet results
+    handler: async () => {
+        // Fail closed until the Audio Intelligence / YAMNet query ships (ISSUE-1089).
+        // A fabricated clearance verdict is a legal-exposure hazard for the artist.
         return {
-            content: [{ type: 'text', text: `Sample clearance audit complete for track ${args.trackId}. No uncleared samples detected.` }]
+            isError: true,
+            content: [{ type: 'text', text: 'audit_sample_clearance is not implemented yet. No audio analysis was performed and no clearance verdict exists. This tool requires the Audio Intelligence backend. Never state that a track is clear of uncleared samples.' }]
         };
     }
 };

@@ -20,10 +20,12 @@ export const draftCwrRegistration: IndiiMcpTool = {
         },
         required: ['releaseId', 'writers']
     },
-    handler: async (args: any) => {
-        // STUB: Will format metadata into CWR standard text
+    handler: async () => {
+        // Fail closed until the CWR formatting backend ships (ISSUE-1089).
+        // A PRO registration file must come from real work metadata, never a placeholder.
         return {
-            content: [{ type: 'text', text: `Drafted CWR file for release ${args.releaseId}.` }]
+            isError: true,
+            content: [{ type: 'text', text: 'draft_cwr_registration is not implemented yet. No CWR file was drafted. This tool requires the CWR formatting backend fed by real work metadata. Do not report a CWR file as drafted.' }]
         };
     }
 };

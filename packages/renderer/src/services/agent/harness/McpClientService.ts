@@ -33,18 +33,25 @@ class McpClientService {
                 throw new Error('User must be authenticated to connect to MCP Server.');
             }
 
-            const idToken = await user.getIdToken();
+            // Inject a fresh Firebase ID token into EVERY request via the SDK's
+            // custom fetch. requestInit headers only cover the POST /message leg —
+            // the SSE GET handshake would arrive without Authorization and be 401'd
+            // by the backend JWT middleware. Per-request minting also survives the
+            // 1-hour ID-token expiry on long-lived sessions.
+            const authedFetch = async (input: string | URL, init?: RequestInit): Promise<Response> => {
+                const idToken = await auth.currentUser?.getIdToken();
+                if (!idToken) {
+                    throw new Error('MCP request blocked: no authenticated user.');
+                }
+                const headers = new Headers(init?.headers);
+                headers.set('Authorization', `Bearer ${idToken}`);
+                return fetch(input, { ...init, headers });
+            };
 
             // Create standard SSE transport pointing to our /sse endpoint
             this.transport = new SSEClientTransport(
                 new URL(`${MCP_SERVER_URL}/sse`),
-                {
-                    requestInit: {
-                        headers: {
-                            'Authorization': `Bearer ${idToken}`
-                        }
-                    }
-                }
+                { fetch: authedFetch }
             );
 
             this.client = new Client({
@@ -80,14 +87,25 @@ class McpClientService {
      * Executes a tool on the backend MCP server.
      */
     async executeTool(name: string, args: Record<string, unknown>) {
+        console.log(`[McpClientService] executeTool called for ${name}`);
         await this.connect();
-        if (!this.client) throw new Error('MCP Client not connected');
+        if (!this.client) {
+            console.error('[McpClientService] MCP Client not connected after connect()');
+            throw new Error('MCP Client not connected');
+        }
         
         console.log(`[McpClientService] Calling remote tool: ${name}`, args);
-        return this.client.callTool({
-            name,
-            arguments: args
-        });
+        try {
+            const result = await this.client.callTool({
+                name,
+                arguments: args
+            });
+            console.log(`[McpClientService] Tool ${name} returned:`, result);
+            return result;
+        } catch (err) {
+            console.error(`[McpClientService] Tool ${name} failed:`, err);
+            throw err;
+        }
     }
 
     /**

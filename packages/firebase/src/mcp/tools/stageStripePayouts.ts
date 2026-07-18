@@ -11,10 +11,12 @@ export const stageStripePayouts: IndiiMcpTool = {
         },
         required: ['artistId', 'payoutPeriod']
     },
-    handler: async (args: any) => {
-        // STUB: Will calculate fractional splits and create staged transfers in Stripe Connect
+    handler: async () => {
+        // Fail closed until the Stripe Connect staging backend ships (ISSUE-1089).
+        // A money-path tool must never fabricate success.
         return {
-            content: [{ type: 'text', text: `Stripe payouts staged for artist ${args.artistId} for period ${args.payoutPeriod}. Pending approval.` }]
+            isError: true,
+            content: [{ type: 'text', text: 'stage_stripe_payouts is not implemented yet. No payouts were staged and no Stripe transfers exist. This tool requires the Stripe Connect staging backend with caller-scoped authorization. Do not report payouts as staged.' }]
         };
     }
 };

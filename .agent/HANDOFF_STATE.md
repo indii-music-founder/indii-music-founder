@@ -1,12 +1,10 @@
 # Handoff State
-**Updated:** 2026-07-17 20:35 EDT
+**Updated:** 2026-07-18 05:23 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
-70e68c031 chore(lint): eliminate all 98 no-unused-vars warnings + fix double-submit guard
-17166a5f7 chore: session checkpoint [20:06]
-102cb5cd3 chore: session checkpoint [19:44]
+8cfeedbb5 feat: A2A Swarm MCP integration
 dfcf5c94e chore: sync github issues to OPEN_ISSUES.md
 c690e29e1 fix: release terminal audio receipt listeners and fix drag/drop test mock
 36d8c8d5d fix: release terminal audio receipt listeners
@@ -14,15 +12,32 @@ c690e29e1 fix: release terminal audio receipt listeners and fix drag/drop test m
 b59c65c4f feat: hydrate ingestion from canonical audio receipt
 48fdb0288 feat: ISSUE-962 — expose canonical audio analysis receipts
 2775cdb6f fix: ISSUE-962 — keep browser masters out of Gemini
+74f173eb1 fix: ISSUE-1084 — bind DSP and Gemini to canonical master
+03ce92ed4 fix: ISSUE-1083 — secure canonical audio profiling dispatch
 ```
 
 ## Working State
 ```
 M  .agent/HANDOFF_STATE.md
- M .agent/test_ledger/OPEN_ISSUES.md
+ M e2e/fixtures/auth.ts
+ M e2e/mcp-a2a-routing.spec.ts
  M packages/firebase/src/mcp/index.ts
- M packages/shared/dist/schemas/env.schema.d.ts
- M packages/shared/dist/schemas/workflowState.d.ts
+ M packages/firebase/src/mcp/registry.ts
+ M packages/firebase/src/mcp/tools/auditAssetResolutions.ts
+ M packages/firebase/src/mcp/tools/auditSampleClearance.ts
+ M packages/firebase/src/mcp/tools/calculateRecoupment.ts
+ M packages/firebase/src/mcp/tools/draftCwrRegistration.ts
+ M packages/firebase/src/mcp/tools/draftDspMetadata.ts
+ M packages/firebase/src/mcp/tools/fetchBrandKit.ts
+ M packages/firebase/src/mcp/tools/generatePlaylistPitch.ts
+ M packages/firebase/src/mcp/tools/queueRemotionRender.ts
+ M packages/firebase/src/mcp/tools/registerSplitSheet.ts
+ M packages/firebase/src/mcp/tools/scheduleCampaignWaterfall.ts
+ M packages/firebase/src/mcp/tools/stageStripePayouts.ts
+ M packages/firebase/src/mcp/types.ts
+ M packages/renderer/src/core/components/RightPanel.tsx
+ M packages/renderer/src/services/agent/harness/McpClientService.ts
+ M packages/renderer/src/services/agent/tools/McpTools.ts
 ```
 
 ## Decisions

@@ -36,7 +36,17 @@ export const draftDspMetadata: IndiiMcpTool = {
         },
         required: ['releaseTitle', 'artists', 'genre', 'upc', 'isrc'],
     },
-    handler: async (args: any) => {
+    handler: async (rawArgs: Record<string, unknown>) => {
+        const args = rawArgs as {
+            releaseTitle: string;
+            artists: string[];
+            genre: string;
+            isrc: string;
+            upc: string;
+            duration?: string;
+            releaseDate?: string;
+            mode?: string;
+        };
         if (!args.upc || !/^\d{12,13}$/.test(args.upc)) {
             throw new McpError(ErrorCode.InvalidParams, 'Invalid or missing UPC. Must be a 12 or 13 digit number.');
         }

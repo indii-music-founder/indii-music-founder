@@ -3,10 +3,10 @@ export interface IndiiMcpTool {
     description: string;
     inputSchema: {
         type: 'object';
-        properties: Record<string, any>;
+        properties: Record<string, unknown>;
         required?: string[];
     };
-    handler: (args: any) => Promise<{
+    handler: (args: Record<string, unknown>) => Promise<{
         content: Array<{ type: string; text: string }>;
         isError?: boolean;
     }>;

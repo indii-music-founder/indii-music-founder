@@ -12,12 +12,12 @@ export const generatePlaylistPitch: IndiiMcpTool = {
         },
         required: ['releaseId', 'targetPlaylist']
     },
-    handler: async (args: any) => {
-        // STUB: Will query YAMNet audio fingerprint and artist bio in the future
-        const pitch = `Hi ${args.curatorName || 'Curator'},\n\nI'm pitching a track from release ${args.releaseId} for ${args.targetPlaylist}. (This is a stubbed response from the MCP server.)`;
-        
+    handler: async () => {
+        // Fail closed until the YAMNet fingerprint + artist bio pipeline ships (ISSUE-1089).
+        // Same contract as pitch_story (ISSUE-911): no generated pitch without real analysis.
         return {
-            content: [{ type: 'text', text: pitch }]
+            isError: true,
+            content: [{ type: 'text', text: 'generate_playlist_pitch is not implemented yet. No audio analysis was performed and no pitch was generated. This tool requires the YAMNet audio fingerprint and artist bio backend. Do not draft a pitch from placeholder data.' }]
         };
     }
 };
