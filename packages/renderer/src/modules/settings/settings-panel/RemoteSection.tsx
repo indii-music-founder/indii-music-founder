@@ -265,14 +265,14 @@ const RemoteSection: React.FC = () => {
             <div className="space-y-1">
                 <SettingRow
                     icon={Wifi}
-                    label="Cloud Relay"
-                    description="Paired devices sync through the indii Cloud Relay while this studio is running."
+                    label="Cloud Relay Account"
+                    description="Signing in authorizes cloud relay access. The controller reports Active only after it discovers a ready Studio executor."
                 >
                     <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${auth.currentUser
                         ? 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/20'
                         : 'text-slate-500 bg-slate-800/60 border border-slate-700/50'
                         }`}>
-                        {auth.currentUser ? 'Active' : 'Signed out'}
+                        {auth.currentUser ? 'Signed in' : 'Signed out'}
                     </span>
                 </SettingRow>
             </div>

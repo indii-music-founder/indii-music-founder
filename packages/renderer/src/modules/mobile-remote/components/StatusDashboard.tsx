@@ -194,10 +194,12 @@ export default function StatusDashboard({ connectionStatus, isPaired, onTabChang
                 <div className="flex items-center gap-3">
                     <div className={cn(
                         "w-2 h-2 rounded-full",
-                        isPaired ? "bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.6)] animate-pulse" : "bg-red-400"
+                        connectionStatus === 'connected' ? "bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.6)] animate-pulse" :
+                            isPaired ? "bg-amber-400" : "bg-red-400"
                     )} />
                     <span className="text-[11px] font-bold text-[#8e8e93] uppercase tracking-widest">
-                        {isPaired ? 'Secure Cloud Relay Active' : 'Studio Disconnected'}
+                        {connectionStatus === 'connected' ? 'Studio Executor Active' :
+                            isPaired ? 'Studio Standby' : 'Studio Disconnected'}
                     </span>
                 </div>
                 {isPaired && connectionStatus === 'connected' && (

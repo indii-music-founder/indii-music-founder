@@ -5,6 +5,7 @@ import { createHash, randomBytes } from 'crypto';
 const LEASE_MS = 10 * 60 * 1000;
 const DEVICE_ID = /^[A-Za-z0-9_-]{16,128}$/;
 const ENROLLMENT_SECRET = /^[A-Za-z0-9_-]{32,256}$/;
+const REMOTE_RELAY_PROTOCOL_VERSION = 1;
 
 const digest = (value: string) => createHash('sha256').update(value).digest('hex');
 
@@ -62,8 +63,11 @@ export const issueStudioExecutorLease = functions
 
 export const publishStudioPresence = functions.region('us-central1').runWith({ enforceAppCheck: false }).https.onCall(async (data: unknown, context) => {
   if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'Sign in is required.');
-  const input = data as { deviceId?: unknown; leaseToken?: unknown; state?: Record<string, unknown> };
+  const input = data as { deviceId?: unknown; leaseToken?: unknown; protocolVersion?: unknown; state?: Record<string, unknown> };
   await assertLease(context.auth.uid, input.deviceId, input.leaseToken);
+  if (input.protocolVersion !== undefined && input.protocolVersion !== REMOTE_RELAY_PROTOCOL_VERSION) {
+    throw new functions.https.HttpsError('failed-precondition', 'This Studio uses an unsupported remote protocol version. Update indii Studio and try again.');
+  }
   const state = input.state || {};
   const studioInstanceId = typeof state.studioInstanceId === 'string' ? state.studioInstanceId : '';
   if (!DEVICE_ID.test(studioInstanceId)) throw new functions.https.HttpsError('invalid-argument', 'Invalid Studio instance.');
@@ -76,6 +80,7 @@ export const publishStudioPresence = functions.region('us-central1').runWith({ e
     role: 'studio',
     studioInstanceId,
     executorDeviceId: input.deviceId,
+    protocolVersion: REMOTE_RELAY_PROTOCOL_VERSION,
     listenerReady: true,
     timestamp: admin.firestore.FieldValue.serverTimestamp(),
   }, { merge: true });

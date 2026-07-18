@@ -94,6 +94,7 @@ import { registerSonicBridgeHandlers } from './handlers/sonic_bridge';
 import { registerDawHandlers } from './handlers/daw';
 import { registerMobileRemoteHandlers, stopMobileRemoteServer } from './handlers/mobile_remote';
 import { indiiRemoteService } from './services/IndiiRemoteService';
+import { isLegacyEdgeRemoteEnabled } from './services/RemoteTransportPolicy';
 import { registerSchedulerHandlers } from './handlers/scheduler';
 import { SchedulerService } from './services/SchedulerService';
 import { configureSecurity, auditSessionCookies } from './security';
@@ -141,17 +142,17 @@ const createWindow = async () => {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     try { require('dotenv').config(); } catch (__e) { /* dotenv optional */ }
 
-    try {
-        const token = process.env.VITE_NGROK_AUTHTOKEN || process.env.NGROK_AUTHTOKEN;
-        const password = crypto.randomUUID().substring(0, 6);
+    if (isLegacyEdgeRemoteEnabled()) {
         try {
+            const token = process.env.VITE_NGROK_AUTHTOKEN || process.env.NGROK_AUTHTOKEN;
+            const password = crypto.randomUUID().substring(0, 6);
             const url = await indiiRemoteService.start({ port: 3333, password, ngrokToken: token });
             log.info(`[IndiiRemote READY] Ngrok Tunnel: ${url}`);
         } catch (startErr) {
             log.error('[Main] IndiiRemoteService startup rejected:', startErr);
         }
-    } catch (e) {
-        log.error('[Main] Failed to start IndiiRemote subsystem:', e);
+    } else {
+        log.info('[Main] Legacy edge remote disabled; Mobile Remote uses the authenticated cloud relay.');
     }
 
     // Item 325: Hard assertion — webSecurity must always be true in production

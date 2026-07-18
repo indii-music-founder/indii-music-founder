@@ -2,10 +2,14 @@ import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import MobileRemote from './MobileRemote';
+import { getRemoteConnectionPhase } from './RemoteConnectionState';
+import { remoteRelayService } from '@/services/agent/RemoteRelayService';
 
 const mockOnAuthStateChanged = vi.fn();
 const relayMocks = vi.hoisted(() => ({
     desktopStateCallback: null as ((state: unknown) => void) | null,
+    desktopStateErrorCallback: null as ((error: unknown) => void) | null,
+    emitFreshStateOnSubscribe: true,
     isFreshStudioState: vi.fn(() => true),
     studioStateFreshnessRemainingMs: vi.fn(() => 60_000),
 }));
@@ -37,9 +41,10 @@ vi.mock('@/services/agent/RemoteRelayService', () => ({
     isPrivateIP: vi.fn(() => false),
     remoteRelayService: {
         isAuthenticated: vi.fn(() => true),
-        onDesktopState: vi.fn((callback: (state: unknown) => void) => {
+        onDesktopState: vi.fn((callback: (state: unknown) => void, onError?: (error: unknown) => void) => {
             relayMocks.desktopStateCallback = callback;
-            callback({
+            relayMocks.desktopStateErrorCallback = onError ?? null;
+            callback(relayMocks.emitFreshStateOnSubscribe ? {
                 currentModule: 'dashboard',
                 isAgentProcessing: false,
                 activeSessionId: 'studio-session',
@@ -48,7 +53,7 @@ vi.mock('@/services/agent/RemoteRelayService', () => ({
                 studioInstanceId: 'studio-1',
                 listenerReady: true,
                 timestamp: { toMillis: () => Date.now() },
-            });
+            } : null);
             return vi.fn();
         }),
         sendCommand: vi.fn(),
@@ -118,6 +123,8 @@ describe('MobileRemote', () => {
         vi.useRealTimers();
         vi.clearAllMocks();
         relayMocks.desktopStateCallback = null;
+        relayMocks.desktopStateErrorCallback = null;
+        relayMocks.emitFreshStateOnSubscribe = true;
         relayMocks.isFreshStudioState.mockReturnValue(true);
         relayMocks.studioStateFreshnessRemainingMs.mockReturnValue(60_000);
         mockOnAuthStateChanged.mockImplementation((_auth: unknown, callback: (user: unknown | null) => void) => {
@@ -167,5 +174,34 @@ describe('MobileRemote', () => {
         expect(screen.getByText('Standby')).toBeInTheDocument();
 
         view.unmount();
+    });
+
+    it('recreates the Firestore state subscription when the user retries', async () => {
+        relayMocks.emitFreshStateOnSubscribe = false;
+        relayMocks.isFreshStudioState.mockReturnValue(false);
+
+        render(<MobileRemote />);
+        const retry = await screen.findByRole('button', { name: /try reconnecting now/i });
+        fireEvent.click(retry);
+
+        await waitFor(() => {
+            expect(remoteRelayService.onDesktopState).toHaveBeenCalledTimes(2);
+        });
+        expect(getRemoteConnectionPhase({
+            authenticated: true,
+            paired: true,
+            reconnecting: true,
+            status: 'pairing',
+        })).toBe('recovering');
+    });
+
+    it('reports a typed error phase when the Firestore listener fails', async () => {
+        render(<MobileRemote />);
+
+        act(() => relayMocks.desktopStateErrorCallback?.(new Error('permission-denied')));
+
+        await waitFor(() => {
+            expect(document.querySelector('[data-connection-phase="error"]')).toBeInTheDocument();
+        });
     });
 });
