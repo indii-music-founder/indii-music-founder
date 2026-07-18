@@ -53,10 +53,9 @@ export const PlanningTab: React.FC<PlanningTabProps> = ({
     const hasLogisticsIssue = logisticsReport && !logisticsReport.isFeasible;
 
     return (
-        <div className="h-full flex flex-col gap-6">
+        <div className="h-full flex flex-col gap-6 @container">
             {/* Top Area: Map & Controls */}
-            {/* Top Area: Map & Controls */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[500px] min-h-[500px]">
+            <div className="grid grid-cols-1 @3xl:grid-cols-3 gap-6 @3xl:h-[500px] @3xl:min-h-[500px]">
                 {/* Left: Input Controls */}
                 <Card className="flex flex-col h-full bg-[#161b22] border-gray-800 shadow-2xl">
                     <CardHeader className="pb-4">
@@ -69,7 +68,7 @@ export const PlanningTab: React.FC<PlanningTabProps> = ({
                     <CardContent className="flex-1 flex flex-col gap-6 overflow-y-auto custom-scrollbar">
 
                         <div className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 @xl:grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <label htmlFor="startDate" className="text-xs text-gray-400 font-bold uppercase tracking-wider">Start Date</label>
                                     <input
@@ -168,7 +167,7 @@ export const PlanningTab: React.FC<PlanningTabProps> = ({
                 </Card>
 
                 {/* Right: Interactive Map */}
-                <div className="lg:col-span-2 bg-[#161b22] border border-gray-800 rounded-xl p-1 shadow-2xl relative group overflow-hidden">
+                <div className="@3xl:col-span-2 min-h-[320px] bg-[#161b22] border border-gray-800 rounded-xl p-1 shadow-2xl relative group overflow-hidden">
                     <TourMap
                         // If stops have non-zero coordinates, pass them as markers, otherwise they are geocoded via locations list
                         markers={itinerary ? itinerary.stops.filter(s => s.coordinates && s.coordinates.lat !== 0).map((stop, idx) => ({

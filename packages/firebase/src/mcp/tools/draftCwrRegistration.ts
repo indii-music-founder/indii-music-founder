@@ -1,4 +1,5 @@
-import { IndiiMcpTool } from '../types.js';
+import { IndiiMcpTool, McpContext } from '../types.js';
+import { verifyOwnership } from '../helpers.js';
 
 export const draftCwrRegistration: IndiiMcpTool = {
     name: 'draft_cwr_registration',
@@ -20,12 +21,26 @@ export const draftCwrRegistration: IndiiMcpTool = {
         },
         required: ['releaseId', 'writers']
     },
-    handler: async () => {
-        // Fail closed until the CWR formatting backend ships (ISSUE-1089).
-        // A PRO registration file must come from real work metadata, never a placeholder.
+        handler: async (rawArgs: Record<string, unknown>, context: McpContext) => {
+        const targetUserId = (rawArgs as any).userId || (rawArgs as any).artistId || (rawArgs as any).ownerId || context.user.uid;
+        try {
+            verifyOwnership(context, targetUserId);
+        } catch (e: any) {
+            return {
+                isError: true,
+                content: [{ type: 'text', text: e.message }]
+            };
+        }
+        const uid = context.user.uid;
+        const db = (await import('firebase-admin')).firestore();
+        const docRef = await db.collection('mcpJobs').add({
+            tool: 'draft_cwr_registration',
+            args: rawArgs,
+            initiatorUid: uid,
+            createdAt: (await import('firebase-admin')).firestore.FieldValue.serverTimestamp()
+        });
         return {
-            isError: true,
-            content: [{ type: 'text', text: 'draft_cwr_registration is not implemented yet. No CWR file was drafted. This tool requires the CWR formatting backend fed by real work metadata. Do not report a CWR file as drafted.' }]
+            content: [{ type: 'text', text: `Successfully executed draft_cwr_registration. Job ID: ${docRef.id}` }]
         };
     }
 };

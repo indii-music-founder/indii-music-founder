@@ -122,6 +122,8 @@ export interface DesktopState {
      * Offline. Absent/false in the web/PWA build (no Electron tray).
      */
     sleepMode?: boolean;
+    /** Populated locally by onSnapshot to decouple freshness from server clock skew. */
+    _localReceivedAtMs?: number;
 }
 
 export type RemoteExecutionTarget = 'cloud' | 'studio';
@@ -305,13 +307,16 @@ export function isFreshDesktopState(
     staleMs = DESKTOP_HEARTBEAT_STALE_MS
 ): boolean {
     if (!state?.online) return false;
+    
+    // If we have a local receipt timestamp, use it directly to avoid clock skew entirely
+    if (state._localReceivedAtMs) {
+        return now - state._localReceivedAtMs <= staleMs;
+    }
+
     const timestamp = relayTimestampToMillis(state.timestamp);
     if (timestamp === 0) return false;
     
-    // Account for local clock skew between phone and server.
-    // Use Math.abs() to handle clocks that are either ahead or behind.
-    // Allow up to 30 seconds of skew. MobileRemote schedules its local stale
-    // edge from this same total window, then adds a short transient grace.
+    // Fallback: Account for local clock skew between phone and server.
     return Math.abs(now - timestamp) <= staleMs + DESKTOP_HEARTBEAT_CLOCK_SKEW_TOLERANCE_MS;
 }
 
@@ -344,6 +349,11 @@ export function studioStateFreshnessRemainingMs(
     staleMs = DESKTOP_HEARTBEAT_STALE_MS
 ): number {
     if (!isFreshStudioState(state, now, staleMs)) return 0;
+    
+    if (state?._localReceivedAtMs) {
+        return Math.max(0, state._localReceivedAtMs + staleMs - now);
+    }
+    
     const timestamp = relayTimestampToMillis(state?.timestamp);
     return Math.max(
         0,
@@ -675,7 +685,9 @@ class RemoteRelayService {
         if (ref) {
             unsubFirestore = onSnapshot(ref, (snapshot) => {
                 if (snapshot.exists()) {
-                    callback(snapshot.data({ serverTimestamps: 'estimate' }) as DesktopState);
+                    const data = snapshot.data({ serverTimestamps: 'estimate' }) as DesktopState;
+                    data._localReceivedAtMs = Date.now();
+                    callback(data);
                 } else {
                     callback(null);
                 }

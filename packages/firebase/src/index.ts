@@ -175,6 +175,13 @@ export { generateTelegramLinkCode, getTelegramLinkStatus } from './relay/telegra
 // App Releases (Founder Delivery)
 export { generateReleaseDownloadUrl } from './releases/generateDownloadUrl';
 
+// MCP Server Endpoint and Triggers
+export { mcpEndpoint } from './mcp/index';
+export { processPayoutJobs } from './mcp/processPayoutJobs';
+export { processVideoJobs } from './mcp/processVideoJobs';
+export { processMcpJobs } from './mcp/processMcpJobs';
+
+
 // App Check enforcement flag — controls whether Firebase App Check tokens are validated.
 // PRODUCTION ENABLEMENT (Item 247):
 //   1. Set up reCAPTCHA Enterprise in GCP Console for your project.

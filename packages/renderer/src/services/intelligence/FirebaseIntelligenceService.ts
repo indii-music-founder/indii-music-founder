@@ -407,7 +407,9 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                         }
                     }
                     controller.close();
-                    resolveWrappedResponse(buildWrappedResponse());
+                    const finalResponse = buildWrappedResponse();
+                    console.log(`[DEBUG] [FirebaseIntelligenceService] Final built response:`, JSON.stringify(finalResponse.functionCalls()));
+                    resolveWrappedResponse(finalResponse);
                 } catch (error) {
                     controller.error(error);
                     rejectWrappedResponse(error);

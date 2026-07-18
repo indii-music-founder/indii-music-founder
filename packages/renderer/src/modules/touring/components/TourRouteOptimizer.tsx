@@ -212,9 +212,9 @@ export function TourRouteOptimizer() {
 
     return (
         <TooltipProvider delayDuration={200}>
-            <div className="flex gap-6 h-full">
+            <div className="flex flex-col gap-6 h-full overflow-y-auto custom-scrollbar">
                 {/* Left — city picker */}
-                <div className="w-56 flex-shrink-0 space-y-4">
+                <div className="w-full space-y-4">
                     <div>
                         <Tooltip>
                             <TooltipTrigger asChild>
@@ -229,7 +229,7 @@ export function TourRouteOptimizer() {
                         </Tooltip>
                     </div>
 
-                    <div className="space-y-1 max-h-72 overflow-y-auto pr-1">
+                    <div className="space-y-1 max-h-72 overflow-y-auto pr-1 custom-scrollbar">
                         {available.map(city => (
                             <button
                                 key={city.id}

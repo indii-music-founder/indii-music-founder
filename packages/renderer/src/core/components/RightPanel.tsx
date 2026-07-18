@@ -346,7 +346,7 @@ export default function RightPanel() {
                         
                         const onPointerMove = (moveEvent: PointerEvent) => {
                             const delta = startX - moveEvent.clientX;
-                            const newWidth = Math.max(200, Math.min(800, startWidth + delta));
+                            const newWidth = Math.max(320, Math.min(800, startWidth + delta));
                             setRightPanelWidth(newWidth);
                         };
                         

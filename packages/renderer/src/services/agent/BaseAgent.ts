@@ -1105,6 +1105,7 @@ export class BaseAgent implements SpecializedAgent {
                 }
 
                 const functionCalls = response.functionCalls() || [];
+                console.log(`[DEBUG] [BaseAgent] Extracted functionCalls for agent ${this.id}:`, JSON.stringify(functionCalls));
 
                 if (functionCalls.length > 0) {
                     for (const functionCall of functionCalls) {

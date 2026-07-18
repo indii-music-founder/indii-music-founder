@@ -434,10 +434,9 @@ function useFirestoreRelay(enabled: boolean) {
         };
 
         const loop = async () => {
-            pushState();
             while (active) {
+                if (active) await pushState();
                 await delay(5000);
-                if (active) pushState();
             }
         };
         loop();

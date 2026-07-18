@@ -121,7 +121,7 @@ export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
     hasUnsavedChanges: false,
     pendingCostWarning: null,
     bugReportDialog: { isOpen: false, type: 'bug' },
-    rightPanelWidth: typeof window !== 'undefined' ? parseInt(localStorage.getItem('indii_rightPanelWidth') || '320', 10) : 320,
+    rightPanelWidth: typeof window !== 'undefined' ? Math.max(320, Math.min(800, parseInt(localStorage.getItem('indii_rightPanelWidth') || '320', 10) || 320)) : 320,
     setRightPanelWidth: (width) => {
         if (typeof window !== 'undefined') {
             localStorage.setItem('indii_rightPanelWidth', width.toString());

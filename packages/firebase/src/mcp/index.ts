@@ -50,20 +50,8 @@ app.use(async (req, res, next) => {
     }
 });
 
-const server = new Server(
-    {
-        name: 'indii-remote-mcp-server',
-        version: '0.1.0',
-    },
-    {
-        capabilities: {
-            tools: {},
-        },
-    }
-);
-
-// Register all tools
-const registry = new McpToolRegistry([
+// We define the tool list once
+const toolsList = [
     draftDspMetadata,
     generatePlaylistPitch,
     scheduleCampaignWaterfall,
@@ -75,15 +63,35 @@ const registry = new McpToolRegistry([
     auditSampleClearance,
     calculateRecoupment,
     stageStripePayouts
-]);
-
-registry.register(server);
+];
 
 // Map to hold active SSE transports
 const transports = new Map<string, SSEServerTransport>();
 
 app.get('/sse', async (req, res) => {
     console.log(`[MCP Server] New SSE connection request`);
+
+    // The user was attached by the auth middleware
+    const user = (req as express.Request & { user?: admin.auth.DecodedIdToken }).user;
+    if (!user) {
+        res.status(401).send('Unauthorized: Missing user context');
+        return;
+    }
+
+    const server = new Server(
+        {
+            name: 'indii-remote-mcp-server',
+            version: '0.1.0',
+        },
+        {
+            capabilities: {
+                tools: {},
+            },
+        }
+    );
+
+    const registry = new McpToolRegistry(toolsList);
+    registry.register(server, { user });
 
     // In production this endpoint URL should match what Cloud Run exposes.
     const messageUrl = `${req.baseUrl || ''}/message`;
