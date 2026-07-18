@@ -26,7 +26,7 @@ import { MarketplaceSlice, createMarketplaceSlice } from './slices/marketplaceSl
 import { EmailSlice, createEmailSlice } from './slices/emailSlice';
 import { AnalyticsSlice, createAnalyticsSlice } from './slices/analyticsSlice';
 import { AgentFeedbackSlice, createAgentFeedbackSlice } from './slices/agentFeedbackSlice';
-import { BoardroomSlice, createBoardroomSlice } from './slices/boardroomSlice';
+import { BoardroomSlice, ReferencedAsset, createBoardroomSlice } from './slices/boardroomSlice';
 import { RegistrationSlice, createRegistrationSlice } from './slices/registrationSlice';
 import { AgentPlanSlice, createAgentPlanSlice } from './slices/agentPlanSlice';
 import { AgentCanvasSlice, createAgentCanvasSlice } from './slices/agentCanvasSlice';
@@ -34,9 +34,12 @@ import { AgentMemoryState, createAgentMemorySlice } from './slices/agentMemorySl
 import { HandoffSlice, createHandoffSlice } from './slices/handoffSlice';
 import { CRMSlice, createCRMSlice } from './slices/crmSlice';
 import { MapSlice, createMapSlice } from './slices/mapSlice';
-import { NotesSlice, createNotesSlice } from './slices/notesSlice';
+import { NotesSlice, Note, createNotesSlice } from './slices/notesSlice';
 import { useLivingPlanSlice } from './slices/livingPlanSlice';
+import type { LivingPlan } from '@/services/agent/LivingPlanService';
 import type { WorkspaceSnapshot } from '@/services/sync/WorkspaceSyncService';
+import type { ModuleId } from '@/core/constants';
+import type { ConversationMode } from '@/core/store/slices/agent/agentUISlice';
 
 export type { AgentMessage, AgentThought } from './slices/agent';
 
@@ -179,15 +182,15 @@ export function getWorkspaceSnapshot(state: StoreState): WorkspaceSnapshot {
 
     return {
         schemaVersion: 1,
-        activeAgents: (state as any).activeAgents || ['generalist'],
-        referencedAssets: (state as any).referencedAssets || [],
+        activeAgents: state.activeAgents || ['generalist'],
+        referencedAssets: state.referencedAssets || [],
         selectedPlan: planState.selectedPlan || null,
         selectedPlanId: planState.selectedPlanId || null,
-        currentModule: (state as any).currentModule || 'dashboard',
-        conversationMode: (state as any).conversationMode || 'normal',
-        notes: (state as any).notes || [],
-        selectedNoteId: (state as any).selectedNoteId || null,
-        creativePrompt: (state as any).creativePrompt || '',
+        currentModule: state.currentModule || ('dashboard' as ModuleId),
+        conversationMode: state.conversationMode || ('direct' as ConversationMode),
+        notes: state.notes || [],
+        selectedNoteId: state.selectedNoteId || null,
+        creativePrompt: state.creativePrompt || '',
     };
 }
 
@@ -203,16 +206,16 @@ export function applyWorkspaceSnapshot(snapshot: Partial<WorkspaceSnapshot>): vo
         rootUpdates.activeAgents = snapshot.activeAgents;
     }
     if (snapshot.referencedAssets !== undefined) {
-        rootUpdates.referencedAssets = snapshot.referencedAssets as any;
+        rootUpdates.referencedAssets = snapshot.referencedAssets;
     }
     if (snapshot.currentModule !== undefined) {
-        rootUpdates.currentModule = snapshot.currentModule as any;
+        rootUpdates.currentModule = snapshot.currentModule;
     }
     if (snapshot.conversationMode !== undefined) {
-        rootUpdates.conversationMode = snapshot.conversationMode as any;
+        rootUpdates.conversationMode = snapshot.conversationMode;
     }
     if (snapshot.notes !== undefined) {
-        rootUpdates.notes = snapshot.notes as any;
+        rootUpdates.notes = snapshot.notes;
     }
     if (snapshot.selectedNoteId !== undefined) {
         rootUpdates.selectedNoteId = snapshot.selectedNoteId;
@@ -222,13 +225,13 @@ export function applyWorkspaceSnapshot(snapshot: Partial<WorkspaceSnapshot>): vo
     }
 
     if (Object.keys(rootUpdates).length > 0) {
-        useStore.setState(rootUpdates as any);
+        useStore.setState(rootUpdates);
     }
 
     // Restore plan from separate store
     const planState = useLivingPlanSlice.getState();
     if (snapshot.selectedPlan !== undefined) {
-        planState.setSelectedPlan(snapshot.selectedPlan as any);
+        planState.setSelectedPlan(snapshot.selectedPlan);
     } else if (snapshot.selectedPlanId !== undefined) {
         planState.setSelectedPlanId(snapshot.selectedPlanId);
     }
