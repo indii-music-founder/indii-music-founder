@@ -12,10 +12,11 @@ export const scheduleCampaignWaterfall: IndiiMcpTool = {
         },
         required: ['releaseId', 'campaignStartDate']
     },
-    handler: async (args: any) => {
-        // STUB: Will trigger Inngest jobs
+    handler: async () => {
+        // Fail closed until the Inngest job dispatch ships (ISSUE-1089).
         return {
-            content: [{ type: 'text', text: `Campaign waterfall scheduled for release ${args.releaseId} starting on ${args.campaignStartDate}.` }]
+            isError: true,
+            content: [{ type: 'text', text: 'schedule_campaign_waterfall is not implemented yet. No campaign events were scheduled and no Inngest jobs exist. This tool requires the Inngest campaign backend. Do not report a campaign as scheduled.' }]
         };
     }
 };

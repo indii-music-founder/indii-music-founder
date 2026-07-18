@@ -10,10 +10,12 @@ export const auditAssetResolutions: IndiiMcpTool = {
         },
         required: ['releaseId']
     },
-    handler: async (args: any) => {
-        // STUB: Will check Firebase Storage metadata
+    handler: async () => {
+        // Fail closed until the Storage metadata audit ships (ISSUE-1089).
+        // A fabricated compliance pass could send a release to DSP rejection.
         return {
-            content: [{ type: 'text', text: `Assets for release ${args.releaseId} meet minimum DSP requirements.` }]
+            isError: true,
+            content: [{ type: 'text', text: 'audit_asset_resolutions is not implemented yet. No assets were inspected and no compliance verdict exists. This tool requires the Firebase Storage metadata audit backend. Do not report assets as meeting DSP requirements.' }]
         };
     }
 };

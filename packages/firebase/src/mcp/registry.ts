@@ -28,7 +28,7 @@ export class McpToolRegistry {
                 throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${request.params.name}`);
             }
 
-            return await tool.handler(request.params.arguments);
+            return await tool.handler(request.params.arguments ?? {});
         });
     }
 }

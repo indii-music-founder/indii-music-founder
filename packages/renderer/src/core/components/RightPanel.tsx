@@ -192,30 +192,30 @@ export default function RightPanel() {
                                 <BatchingStatus />
 
                                 {/* Asset Spotlight integration — collapsible */}
-                                <div className="border-t border-white/5 bg-black/20 shrink-0">
+                                <div className="border-t border-green-500/25 bg-gradient-to-r from-green-500/10 via-green-500/5 to-transparent shrink-0">
                                     <button
                                         onClick={() => {
                                             setIsCreationsCollapsed(prev => !prev);
                                             acknowledgeCreationsAffordance();
                                         }}
-                                        className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-white/5 transition-colors group"
+                                        className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-green-500/10 transition-colors group"
                                         aria-label={isCreationsCollapsed ? 'Expand Your Creations' : 'Collapse Your Creations'}
                                         aria-expanded={!isCreationsCollapsed}
                                         data-testid="toggle-creations-btn"
                                     >
-                                        <h4 className="text-[10px] uppercase tracking-wider text-gray-500 font-bold flex items-center gap-2 group-hover:text-gray-300 transition-colors">
-                                            <Sparkles size={10} className={isCreationsCollapsed && shouldPulseCreations ? "text-green-400 animate-pulse" : "text-green-400"} />
+                                        <h4 className="text-[10px] uppercase tracking-wider text-green-300/90 font-bold flex items-center gap-2 group-hover:text-green-200 transition-colors">
+                                            <Sparkles size={11} className={isCreationsCollapsed && shouldPulseCreations ? "text-green-400 animate-pulse" : "text-green-400"} />
                                             Your Creations
                                             {generatedHistory.length > 0 && (
-                                                <span className="ml-auto mr-2 px-1.5 py-0.5 text-[8px] font-mono bg-green-400/10 text-green-400 rounded border border-green-400/20">
+                                                <span className="ml-auto mr-2 px-1.5 py-0.5 text-[8px] font-mono bg-green-400/20 text-green-300 rounded border border-green-400/40">
                                                     {generatedHistory.length}
                                                 </span>
                                             )}
                                         </h4>
                                         {isCreationsCollapsed ? (
-                                            <ChevronUp size={12} className="text-gray-500 group-hover:text-gray-300 transition-colors" />
+                                            <ChevronUp size={12} className="text-green-400/70 group-hover:text-green-300 transition-colors" />
                                         ) : (
-                                            <ChevronDown size={12} className="text-gray-500 group-hover:text-gray-300 transition-colors" />
+                                            <ChevronDown size={12} className="text-green-400/70 group-hover:text-green-300 transition-colors" />
                                         )}
                                     </button>
                                     <motion.div

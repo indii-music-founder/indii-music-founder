@@ -1,7 +1,6 @@
 import * as functions from "firebase-functions/v1";
 import * as express from 'express';
 import cors from 'cors';
-import { defineSecret } from 'firebase-functions/params';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
 import { McpToolRegistry } from './registry.js';
@@ -39,8 +38,10 @@ app.use(async (req, res, next) => {
     const token = authHeader.split('Bearer ')[1].trim();
     try {
         const decodedToken = await admin.auth().verifyIdToken(token);
-        // We can attach the user to the request for later use
-        (req as any).user = decodedToken;
+        // Attach the verified caller for tool-level authorization. Real tool
+        // implementations MUST scope data access to this uid, never to
+        // model-supplied ids like artistId (see ISSUE-1086 / ISSUE-1083).
+        (req as express.Request & { user?: admin.auth.DecodedIdToken }).user = decodedToken;
         next();
     } catch (error) {
         console.error('[MCP Server] Error verifying Firebase Auth token:', error);

@@ -186,7 +186,7 @@ export async function setupE2EPage(page: Page): Promise<void> {
               user_id: "test-user-uid-e2e",
               iat: Math.floor(Date.now() / 1000),
               exp: Math.floor(Date.now() / 1000) + 3600,
-              email: "testuser@example.com",
+              email: "wiil@indii.music",
               email_verified: true,
               firebase: {
                   sign_in_provider: "custom",
@@ -274,6 +274,9 @@ export async function setupE2EPage(page: Page): Promise<void> {
           text = "[Executor]: Summoning Brand and Music Directors to align on the artistic vibe.";
           pushSeat("brand");
           pushSeat("music");
+        } else if (lower.includes("generate a playlist pitch")) {
+          text = "[Publicist]: Generating the pitch...";
+          functionCalls.push({ name: "generate_playlist_pitch", args: { trackId: "track-123", pitchAngle: "aggressive" } });
         } else if (lower.includes("clear the table") || lower.includes("done for today")) {
           text = "[Executor]: Excusing all remaining agents.";
           ["legal", "creative", "video", "social", "publicist", "brand", "music"].forEach(pushUnseat);
@@ -390,7 +393,7 @@ export async function setupE2EPage(page: Page): Promise<void> {
                   name: "projects/mock-project/databases/(default)/documents/users/test-user-uid-e2e",
                   fields: {
                     uid: { stringValue: "test-user-uid-e2e" },
-                    email: { stringValue: "e2e@indii.test" },
+                    email: { stringValue: "wiil@indii.music" },
                     displayName: { stringValue: "E2E Test User" },
                     onboardingCompleted: { booleanValue: true },
                   },
@@ -479,6 +482,9 @@ export async function setupE2EPage(page: Page): Promise<void> {
           text = "[Executor]: Summoning Brand and Music Directors to align on the artistic vibe.";
           pushSeat("brand");
           pushSeat("music");
+        } else if (lower.includes("generate a playlist pitch")) {
+          text = "[Publicist]: Generating the pitch...";
+          functionCalls.push({ name: "generate_playlist_pitch", args: { trackId: "track-123", pitchAngle: "aggressive" } });
         } else if (lower.includes("clear the table") || lower.includes("done for today")) {
           text = "[Executor]: Excusing all remaining agents.";
           ["legal", "creative", "video", "social", "publicist", "brand", "music"].forEach(pushUnseat);
@@ -1017,10 +1023,10 @@ export async function setupE2EPage(page: Page): Promise<void> {
       w.FIREBASE_E2E_MOCK = true;
       w.FIREBASE_USER_MOCK = {
         uid: "test-user-uid-e2e",
-        email: "e2e@indii.test",
+        email: "wiil@indii.music",
         displayName: "E2E Test User",
         isAnonymous: false,
-        getIdToken: () => Promise.resolve("eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vaW5kaWktbXVzaWMtZm91bmRlciIsImF1ZCI6ImluZGlpLW11c2ljLWZvdW5kZXIiLCJhdXRoX3RpbWUiOjE3MDAwMDAwMDAsInVzZXJfaWQiOiJ0ZXN0LXVzZXItdWlkLWUyZSIsInN1YiI6InRlc3QtdXNlci11aWQtZTJlIiwiaWF0IjoxNzAwMDAwMDAwLCJleHAiOjE4MDAwMDAwMDAsImVtYWlsIjoiZTJlQGluZGlpLnRlc3QiLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiZmlyZWJhc2UiOnsiaWRlbnRpdGllcyI6eyJlbWFpbCI6WyJlMmVAaW5kaWkudGVzdCJdfSwic2lnbl9pbl9wcm92aWRlciI6InBhc3N3b3JkIn19.signature"),
+        getIdToken: () => Promise.resolve("eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vaW5kaWktbXVzaWMtZm91bmRlciIsImF1ZCI6ImluZGlpLW11c2ljLWZvdW5kZXIiLCJhdXRoX3RpbWUiOjE3MDAwMDAwMDAsInVzZXJfaWQiOiJ0ZXN0LXVzZXItdWlkLWUyZSIsInN1YiI6InRlc3QtdXNlci11aWQtZTJlIiwiaWF0IjoxNzAwMDAwMDAwLCJleHAiOjE4MDAwMDAwMDAsImVtYWlsIjoid2lpbEBpbmRpaS5tdXNpYyIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJmaXJlYmFzZSI6eyJpZGVudGl0aWVzIjp7ImVtYWlsIjpbIndpaWxAaW5kaWkubXVzaWMiXX0sInNpZ25faW5fcHJvdmlkZXIiOiJwYXNzd29yZCJ9fQ.signature"),
       };
 
       // Signal FirestoreService to use E2E bypass (skips addDoc/updateDoc network calls)

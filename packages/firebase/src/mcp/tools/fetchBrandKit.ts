@@ -10,16 +10,12 @@ export const fetchBrandKit: IndiiMcpTool = {
         },
         required: ['artistId']
     },
-    handler: async (args: any) => {
-        // STUB: Will pull from Firestore
-        const mockBrandKit = {
-            primaryColor: '#FF0055',
-            secondaryColor: '#000000',
-            typography: 'Inter',
-            tone: 'Rebellious and energetic'
-        };
+    handler: async () => {
+        // Fail closed until the Firestore brand-kit read ships (ISSUE-1089).
+        // Never return a fabricated brand kit as if it were the artist's real data.
         return {
-            content: [{ type: 'text', text: JSON.stringify(mockBrandKit, null, 2) }]
+            isError: true,
+            content: [{ type: 'text', text: 'fetch_brand_kit is not implemented yet. No brand kit data was retrieved. This tool requires the Firestore brand-kit backend scoped to the authenticated caller. Do not invent brand colors, typography, or tone.' }]
         };
     }
 };

@@ -20,10 +20,12 @@ export const registerSplitSheet: IndiiMcpTool = {
         },
         required: ['trackId', 'collaborators']
     },
-    handler: async (args: any) => {
-        // STUB: Will update Firestore and generate PDF
+    handler: async () => {
+        // Fail closed until the Firestore split registration + contract PDF backend ships (ISSUE-1089).
+        // Royalty splits are legally binding — never claim they were registered.
         return {
-            content: [{ type: 'text', text: `Split sheet registered for track ${args.trackId} with ${args.collaborators.length} collaborators.` }]
+            isError: true,
+            content: [{ type: 'text', text: 'register_split_sheet is not implemented yet. No splits were locked, no record was written, and no contract was generated. This tool requires the split-sheet registration backend. Do not report splits as registered.' }]
         };
     }
 };

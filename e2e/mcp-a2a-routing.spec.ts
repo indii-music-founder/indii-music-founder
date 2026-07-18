@@ -19,10 +19,10 @@ test.describe('A2A Routing to MCP Tools', () => {
     });
 
     test('Publicist Agent successfully hits the MCP harness and triggers generate_playlist_pitch', async ({ authedPage: page }) => {
-        // Intercept the /mcp/sse and /mcp/message calls to simulate the Cloud Run MCP server
-        await page.route('**/mcp/sse', async (route) => {
+        // Intercept the /mcpEndpoint/sse and /mcpEndpoint/message calls to simulate the Cloud Run MCP server
+        await page.route('**/mcpEndpoint/sse', async (route) => {
             // Simulate SSE handshake
-            const sseResponse = `event: endpoint\ndata: /mcp/message\n\n`;
+            const sseResponse = `event: endpoint\ndata: /indii-music-founder/us-central1/mcpEndpoint/message\n\n`;
             await route.fulfill({
                 status: 200,
                 contentType: 'text/event-stream',
@@ -34,7 +34,7 @@ test.describe('A2A Routing to MCP Tools', () => {
             });
         });
 
-        await page.route('**/mcp/message', async (route) => {
+        await page.route('**/mcpEndpoint/message', async (route) => {
             // Simulate the JSON-RPC response from the backend stub
             const requestBody = JSON.parse(route.request().postData() || '{}');
             const response = {
