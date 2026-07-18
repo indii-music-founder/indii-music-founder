@@ -34,6 +34,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { getRemoteConnectionPhase } from './RemoteConnectionState';
 
 // Helper for haptic feedback
 // eslint-disable-next-line react-refresh/only-export-components
@@ -134,6 +135,7 @@ export default function MobileRemote() {
   // Reconnection state machine
   const [isReconnecting, setIsReconnecting] = useState(false);
   const [reconnectAttempts, setReconnectAttempts] = useState(0);
+  const [subscriptionEpoch, setSubscriptionEpoch] = useState(0);
   const maxReconnectAttempts = 5;
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const stalePresenceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -316,6 +318,10 @@ export default function MobileRemote() {
           markDesktopOffline();
         }
       }
+    }, (error) => {
+      logger.error('[MobileRemote] Desktop state subscription failed:', error);
+      setConnectionStatus('error');
+      setIsReconnecting(false);
     });
 
     // Visibility change listener to handle remote sleep/wake
@@ -375,7 +381,7 @@ export default function MobileRemote() {
         document.removeEventListener('visibilitychange', onVisibilityChange);
       }
     };
-  }, [isAuth]);
+  }, [isAuth, subscriptionEpoch]);
 
   // Handle active retry polling for reconnects
   useEffect(() => {
@@ -401,6 +407,7 @@ export default function MobileRemote() {
     logger.info(`[MobileRemote] Auto-reconnect attempt ${reconnectAttempts}/${maxReconnectAttempts} in ${delay}ms…`);
 
     reconnectTimeoutRef.current = setTimeout(() => {
+      setSubscriptionEpoch(epoch => epoch + 1);
       setReconnectAttempts(prev => prev + 1);
     }, delay);
 
@@ -470,6 +477,7 @@ export default function MobileRemote() {
       reconnectTimeoutRef.current = null;
     }
     gracePeriodUntilRef.current = 0;
+    setSubscriptionEpoch(epoch => epoch + 1);
     setReconnectAttempts(1);
     setIsReconnecting(true);
     setConnectionStatus('pairing');
@@ -528,6 +536,13 @@ export default function MobileRemote() {
 
   // ─── Render ────────────────────────────────────────────────────────────────
 
+  const connectionPhase = getRemoteConnectionPhase({
+    authenticated: isAuth,
+    paired: isPaired,
+    reconnecting: isReconnecting,
+    status: connectionStatus,
+  });
+
   const renderTabContent = () => {
     switch (activeTab) {
       case 'home':
@@ -574,7 +589,10 @@ export default function MobileRemote() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col font-sans selection:bg-blue-500/30 overflow-hidden relative pb-safe-bottom">
+    <div
+      data-connection-phase={connectionPhase}
+      className="min-h-screen bg-black text-white flex flex-col font-sans selection:bg-blue-500/30 overflow-hidden relative pb-safe-bottom"
+    >
       {/* ─── Premium Background ────────────────────────────────────────── */}
       <div className="fixed inset-0 z-0 pointer-events-none">
         <div className="absolute inset-0 bg-[#0a0a0c]" />
@@ -779,7 +797,7 @@ export default function MobileRemote() {
               </div>
               
               <p className="mt-12 text-[#48484a] text-xs font-bold uppercase tracking-[0.2em]">
-                Secure Cloud Relay v1.60
+                Remote Protocol v1
               </p>
             </motion.div>
           ) : (

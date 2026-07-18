@@ -328,13 +328,9 @@ service cloud.firestore {
         allow read: if isOwner(userId);
         // Diagnostics remain owner-writable.
         allow create, update: if isOwner(userId) && docId != 'state';
-        // The desktop Studio writes its presence directly. The mobile Controller
-        // could forge this, except the Studio must provide its current activeLeaseToken
-        // which only the Studio holds (verified via the studioExecutors collection).
-        allow create, update: if isOwner(userId) && docId == 'state' &&
-          request.resource.data.executorDeviceId != null &&
-          request.resource.data.leaseToken != null &&
-          get(/databases/$(database)/documents/users/$(userId)/studioExecutors/$(request.resource.data.executorDeviceId)).data.activeLeaseToken == request.resource.data.leaseToken;
+        // Trusted Studio presence is projected only by publishStudioPresence after
+        // the server validates the short-lived executor lease and its expiry.
+        allow create, update: if false;
         allow delete: if isOwner(userId) && docId != 'state';
       }
 

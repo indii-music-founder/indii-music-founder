@@ -973,6 +973,27 @@ describe('Firestore Security Rules', () => {
             }));
         });
 
+        it('same-account Controller cannot reuse a valid executor lease token to write presence', async () => {
+            if (requireEmulator()) return;
+            await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                await setDoc(doc(ctx.firestore(), 'users', ALICE_UID, 'studioExecutors', 'studio-device-0001'), {
+                    activeLeaseToken: 'server-secret-token',
+                    leaseExpiresAt: Timestamp.fromMillis(Date.now() + 60_000),
+                });
+            });
+
+            const db = verifiedCtx(ALICE_UID).firestore();
+            await assertFails(getDoc(doc(db, 'users', ALICE_UID, 'studioExecutors', 'studio-device-0001')));
+            await assertFails(setDoc(doc(db, 'users', ALICE_UID, 'remote-relay', 'state'), {
+                role: 'studio',
+                online: true,
+                listenerReady: true,
+                studioInstanceId: 'controller-fake-0001',
+                executorDeviceId: 'studio-device-0001',
+                leaseToken: 'server-secret-token',
+            }));
+        });
+
         it('same-account Controller can submit then cancel an unclaimed Studio command', async () => {
             if (requireEmulator()) return;
             const db = verifiedCtx(ALICE_UID).firestore();

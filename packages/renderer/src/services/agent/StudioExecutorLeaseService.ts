@@ -2,6 +2,7 @@ import { httpsCallable } from 'firebase/functions';
 import { functions } from '@/services/firebase';
 
 const KEYCHAIN_ID = 'studio-executor-enrollment-v1';
+export const REMOTE_RELAY_PROTOCOL_VERSION = 1;
 
 export interface StudioExecutorLease {
     deviceId: string;
@@ -39,18 +40,13 @@ class StudioExecutorLeaseService {
 
     async publishPresence(state: Record<string, unknown>): Promise<void> {
         const lease = await this.getLease();
-        const { getAuth } = await import('firebase/auth');
-        const { getFirestore, doc, setDoc, serverTimestamp } = await import('firebase/firestore');
-        const auth = getAuth();
-        if (!auth.currentUser) throw new Error('Not authenticated');
-        const db = getFirestore();
-        
-        await setDoc(doc(db, 'users', auth.currentUser.uid, 'remote-relay', 'state'), {
-            ...state,
-            executorDeviceId: lease.deviceId,
+        const publish = httpsCallable(functions, 'publishStudioPresence');
+        await publish({
+            deviceId: lease.deviceId,
             leaseToken: lease.leaseToken,
-            timestamp: serverTimestamp()
-        }, { merge: true });
+            protocolVersion: REMOTE_RELAY_PROTOCOL_VERSION,
+            state,
+        });
     }
 
     async releasePresence(studioInstanceId: string): Promise<void> {

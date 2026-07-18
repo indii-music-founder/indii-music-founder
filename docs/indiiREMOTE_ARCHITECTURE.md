@@ -1,38 +1,38 @@
-# indiiREMOTE Hybrid Architecture
+# indiiREMOTE Architecture
 
-The indiiREMOTE feature transforms your mobile device into a companion controller for the indii studio.
+## Supported production path
 
-## Architectural Model: Hybrid Cloud Relay + Edge
+Mobile Remote uses one supported transport: the authenticated Firestore cloud relay.
 
-We currently operate a **Hybrid** remote architecture that leverages the best of both cloud reliability and edge performance. The documentation previously stated that the Edge model replaced the Cloud Relay entirely, but in reality, both paths are active and serve different necessary functions.
+1. Electron stores a Studio enrollment credential in the operating-system credential vault.
+2. `issueStudioExecutorLease` validates that enrollment and returns a short-lived lease.
+3. Studio calls `publishStudioPresence`; the server validates the lease and expiry, then writes a sanitized presence projection.
+4. A same-account controller may read presence and create a Studio-targeted command.
+5. The leased Studio atomically claims the command, executes it once, publishes correlated responses, and completes it through server callables.
 
-### 1. Firestore Cloud Relay (Primary Command & State Path)
-The primary method for state synchronization and command delivery is the **Cloud Relay** (via Firebase Firestore). 
-- **Atomic Execution**: Commands are processed using a first-wins atomic claim system. The desktop studio claims the command if online; otherwise, the cloud function processes it.
-- **Persistence**: Ensures that commands and state updates are never lost, even if the mobile device temporarily drops connection or the desktop is offline.
-- **Text & Metadata**: Handles text generation commands, agent chat, and status dashboard syncing.
-- **Desktop-Only Commands Partition**: Desktop-only operations (e.g. `[GENERATE_IMAGE]`) are routed through Firestore but are ignored by the Cloud Function, allowing the desktop to claim and execute them locally.
+The public state projection contains `protocolVersion`, readiness, Studio identity, and timestamps. It never contains the lease token. Firestore rules deny every client write to trusted Studio presence and all client reads/writes of executor lease documents.
 
-### 2. Global Edge Computing (High-Bandwidth / Low-Latency Path)
-In parallel, the indii Electron app can silently boot a native Node.js Express server on port `3333`, mapped directly to the global internet via an encrypted **Ngrok Tunnel**.
-- **Headless Playback**: Designed for streaming audio/video chunks directly to the mobile device for preview without relying on slow database reads/writes.
-- **Direct Edge Access**: Provides a zero-install Thin Client React SPA served directly from the Mac.
-- **Desktop-Only Commands**: Provides an alternative fast-path for commands that require immediate desktop execution.
-We previously relied exclusively on a "Cloud Relay" model (via Firebase) and a localized Wi-Fi WebSocket model. We have now moved to a **Hybrid Edge Architecture**.
+## Pairing
 
-The system now supports two parallel paths:
-1. **Firestore Cloud Relay (Ubiquitous):** Serves as the primary, highly-available transport for text and commands across all network conditions.
-2. **Direct Edge Server (Low-Latency):** The indii Electron app silently boots a native Node.js Express server on port `3333` and maps it directly to the global internet via an encrypted **Ngrok Tunnel**. This direct WebSocket path is utilized for sub-millisecond sync of heavy payloads and real-time state.
+Settings creates a single-use handoff code with a five-minute expiry and embeds it in the hosted Mobile Remote URL. Redemption exchanges the code for a Firebase custom token for the same account. The current implementation does not create a durable controller-device record or require a second desktop acceptance step.
 
-## Core Components
+## Connection compatibility
 
-1. **RemoteRelayService (`packages/renderer/src/services/agent/RemoteRelayService.ts`)**: The primary React-side service that subscribes to Firestore for state sync and sends commands.
-2. **IndiiRemoteService (`packages/main/src/services/IndiiRemoteService.ts`)**: Manages the Express server, WebSocket lifecycle, and Ngrok tunnel bridging for the Edge path.
-3. **IPC Handler (`packages/main/src/handlers/mobile_remote.ts`)**: Translates Desktop UI requests to the background service and fetches the live HTTPS tunnel URL.
-4. **Cloud Relay Processor (`packages/firebase/src/relay/relayCommandProcessor.ts`)**: Backend cloud function ensuring command execution if the desktop is disconnected.
+Remote protocol version 1 is published with Studio presence. A callable rejects explicitly unsupported protocol versions with `failed-precondition`. Releases must deploy backward-compatible Functions and rules before clients, run a connection canary, then remove obsolete compatibility only after supported clients have migrated.
 
-## Security Model
+## Legacy edge transport
 
-- **Cloud Relay Rules**: Protected by strict Firestore security rules requiring proper authentication.
-- **Edge Encryption**: The direct Ngrok tunnel path uses end-to-end encryption via Ngrok TLS.
-- **Passcode Auth**: The IPC bridge generates a 6-digit Session Passcode (`sessionPasscode`) unique to each edge boot.
+`IndiiRemoteService` is retained for development and future protocol work, but it is unsupported and disabled by default. Electron does not open its listener, broadcast to it, or create an Ngrok tunnel unless the operator explicitly sets:
+
+```text
+INDII_ENABLE_LEGACY_EDGE_REMOTE=true
+```
+
+Enabling that flag is not a production recommendation. The legacy client authentication and message contracts require dedicated end-to-end repair before the edge transport can be advertised to users.
+
+## Failure semantics
+
+- Authentication establishes controller identity; it does not prove Studio is online.
+- Pairing/handoff redemption, Studio discovery, executor readiness, and Active connection are distinct states.
+- Retry recreates the Firestore state listener; it does not merely animate a counter.
+- Permission denial, backend unavailability, and protocol mismatch must remain distinct typed errors as observability is expanded.

@@ -38,7 +38,7 @@ export class GeneralistAgent extends BaseAgent {
         'list_organizations', 'switch_organization',
         'propose_plan', 'get_plan', 'refine_plan', 'cancel_plan',
         'report_bug', 'request_feature',
-        'edit_image_with_annotations', 'edit_document_with_annotations',
+        'edit_image_with_annotations', 'edit_document_with_annotations', 'open_remote_setup', 'get_remote_status',
         'seat_agent', 'unseat_agent'
     ];
 
@@ -97,6 +97,16 @@ export class GeneralistAgent extends BaseAgent {
         // Core tools that indii Conductor needs - we'll define the most important ones
         // with proper schemas for native function calling
         const functionDeclarations: FunctionDeclaration[] = [
+            {
+                name: 'open_remote_setup',
+                description: 'Open Settings > Mobile Remote when the user asks to connect, pair, link, configure, or troubleshoot a phone, tablet, controller, or remote. This local navigation tool never returns pairing codes or credentials.',
+                parameters: { type: 'OBJECT', properties: {}, required: [] }
+            },
+            {
+                name: 'get_remote_status',
+                description: 'Read a bounded Mobile Remote status summary: authentication, fresh Studio readiness, supported transport, and protocol version. It never returns device IDs, pairing codes, or lease tokens.',
+                parameters: { type: 'OBJECT', properties: {}, required: [] }
+            },
             {
                 name: 'canvas_push',
                 description: 'Push structured visual content (chart, table, card, markdown) to the user\'s workspace canvas for dashboard visualization.',

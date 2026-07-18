@@ -1,7 +1,20 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { render, screen, fireEvent, within } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { beforeEach, describe, it, expect, vi } from 'vitest';
 import SettingsPanel from './SettingsPanel';
+
+const settingsStoreState = {
+    user: {
+        uid: 'test-uid-12345678',
+        email: 'dtroit@indii.music',
+        displayName: 'D-Troit',
+        photoURL: null,
+    },
+    userProfile: {
+        bio: 'Detroit techno producer',
+        founderTier: null,
+    },
+};
 
 // Make AnimatePresence render children synchronously in jsdom — without this,
 // mode="wait" delays mounting the incoming section and fireEvent.click() tests
@@ -25,18 +38,11 @@ vi.mock('motion/react', async () => {
 // ── Mocks ──────────────────────────────────────────────────────────────────
 
 vi.mock('@/core/store', () => ({
-    useStore: () => ({
-        user: {
-            uid: 'test-uid-12345678',
-            email: 'dtroit@indii.music',
-            displayName: 'D-Troit',
-            photoURL: null,
-        },
-        userProfile: {
-            bio: 'Detroit techno producer',
-            founderTier: null,
-        },
-    }),
+    useStore: () => settingsStoreState,
+}));
+
+vi.mock('./settings-panel/RemoteSection', () => ({
+    default: () => <div>Remote pairing controls</div>,
 }));
 
 vi.mock('zustand/react/shallow', () => ({
@@ -99,6 +105,7 @@ vi.mock('./components/DownloadHub', () => ({
 // DesktopSection reads !!window.electronAPI to decide which branch to render.
 // Force it to undefined so the non-Electron path is exercised here.
 beforeEach(() => {
+    window.history.replaceState({}, '', '/settings');
     Object.defineProperty(window, 'electronAPI', {
         writable: true,
         configurable: true,
@@ -128,6 +135,14 @@ describe('SettingsPanel', () => {
         render(<SettingsPanel />);
         // Profile section should show the display name input
         expect(screen.getByPlaceholderText('settings.hints.display_name')).toBeInTheDocument();
+    });
+
+    it('renders the requested Remote section from shared navigation state', () => {
+        window.history.replaceState({}, '', '/settings?section=remote');
+        render(<SettingsPanel />);
+
+        expect(screen.getByText('Remote pairing controls')).toBeInTheDocument();
+        expect(screen.getAllByText('settings.sections.remote.label')[0]!.closest('button')).toHaveClass('bg-cyan-500/10');
     });
 
     it('switches to Connected Services when clicked', () => {

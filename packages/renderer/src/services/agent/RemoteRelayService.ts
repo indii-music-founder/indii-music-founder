@@ -116,6 +116,8 @@ export interface DesktopState {
     /** The Studio has mounted its queue consumer and may safely accept work. */
     listenerReady?: boolean;
     executorDeviceId?: string;
+    /** Public compatibility marker; executor credentials are never projected here. */
+    protocolVersion?: number;
     /**
      * True when the desktop is in sleep mode (window hidden to tray, still
      * listening to the relay queue). Lets the phone show Sleeping vs Active vs
@@ -679,7 +681,10 @@ class RemoteRelayService {
     /**
      * Listen for desktop state changes (phone side).
      */
-    onDesktopState(callback: (state: DesktopState | null) => void): Unsubscribe {
+    onDesktopState(
+        callback: (state: DesktopState | null) => void,
+        onError?: (error: unknown) => void,
+    ): Unsubscribe {
         let unsubFirestore: Unsubscribe = () => {};
         const ref = getRelayRef();
         if (ref) {
@@ -691,6 +696,9 @@ class RemoteRelayService {
                 } else {
                     callback(null);
                 }
+            }, (error) => {
+                logger.error('[RemoteRelay] desktop state listener error:', error);
+                onError?.(error);
             });
         }
 
