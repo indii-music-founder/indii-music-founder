@@ -1,9 +1,10 @@
 # Handoff State
-**Updated:** 2026-07-18 05:33 EDT
+**Updated:** 2026-07-18 05:38 EDT
 **Branch:** `main`
 
 ## Recent Commits
 ```
+6c64d4d8a chore: session checkpoint [05:33]
 b95d7d4ee chore: session checkpoint [05:28]
 b8866a8d4 chore: session checkpoint [05:27]
 858466836 fix(mcp): fail-close all 10 tool stubs, carry JWT on SSE handshake, type new surface
@@ -13,13 +14,12 @@ c690e29e1 fix: release terminal audio receipt listeners and fix drag/drop test m
 36d8c8d5d fix: release terminal audio receipt listeners
 965684423 feat: reuse canonical audio analysis in creative workflows
 b59c65c4f feat: hydrate ingestion from canonical audio receipt
-48fdb0288 feat: ISSUE-962 — expose canonical audio analysis receipts
 ```
 
 ## Working State
 ```
-M  .agent/HANDOFF_STATE.md
  M .agent/test_ledger/OPEN_ISSUES.md
+ M e2e/fixtures/auth.ts
  M packages/renderer/src/components/shared/FirstRunTour.tsx
  M packages/renderer/src/core/components/RightPanel.tsx
  M packages/renderer/src/core/components/command-bar/PromptArea.tsx
@@ -28,6 +28,7 @@ M  .agent/HANDOFF_STATE.md
  M packages/renderer/src/modules/touring/components/TourRouteOptimizer.tsx
  M packages/renderer/src/services/agent/BaseAgent.ts
  M packages/renderer/src/services/intelligence/FirebaseIntelligenceService.ts
+?? e2e/__tmp_visual_road.spec.ts
 ```
 
 ## Decisions
